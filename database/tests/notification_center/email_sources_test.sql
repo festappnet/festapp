@@ -1,6 +1,26 @@
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
+CREATE FUNCTION pg_temp.assert_prepared_families(p_org bigint,p_oc bigint,p_user uuid)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE v jsonb; k text; expected bigint; actual bigint;
+BEGIN
+ PERFORM public.project_notification_center(500);
+ PERFORM set_config('request.jwt.claim.sub',p_user::text,true);
+ v:=public.get_notification_center_view(p_org,p_oc);
+ FOR i IN 1..30 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100);END LOOP;
+ v:=public.get_notification_center_view(p_org,p_oc);
+ PERFORM assert_eq(v->>'state','ready','actual producers reach prepared ready');
+ FOR k IN SELECT DISTINCT kind FROM public.notification_center_events WHERE organization=p_org LOOP
+  SELECT count(*) INTO expected FROM public.notification_center_events e
+  WHERE e.organization=p_org AND e.kind=k AND public.notification_center_in_center_internal(e,clock_timestamp())
+   AND public.notification_center_allowed(e,p_user) AND EXISTS(SELECT 1 FROM public.notification_center_deliveries d WHERE d.event_id=e.id AND d.recipient=p_user);
+  SELECT coalesce(sum(coalesce((x#>>'{data,activityCount}')::bigint,(x#>>'{data,eventCount}')::bigint,1)),0) INTO actual
+   FROM jsonb_array_elements(v->'items') x WHERE x->>'kind'=k AND x->>'state'='ready';
+  PERFORM assert_eq(actual,expected,'prepared real producer count: '||k);
+ END LOOP;
+ PERFORM public.get_notification_center_view(p_org,p_oc,p_mode=>'close_all');
+END $$;
 DO $$
 DECLARE target_order bigint; org bigint; un bigint; oc bigint; editor uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); kind text; msg jsonb; message_uuid uuid; old_id uuid; n bigint; result jsonb; paused_fact timestamptz; event_row public.notification_center_events; delivery_row public.notification_center_deliveries;
 BEGIN
@@ -100,5 +120,6 @@ BEGIN
  PERFORM public.record_email_event(jsonb_build_object('key','notification-complaint-'||message_uuid,'provider_id','notification-'||message_uuid,'recipient','reducer@example.invalid','type','complaint','time',clock_timestamp()));
  PERFORM assert_eq((SELECT attention_revision FROM public.notification_center_events WHERE organization=org AND source_key='email:'||message_uuid),2::bigint,'real reducer adds complaint impact to same message');
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.notification_center_events WHERE organization=org AND (data ? 'recipient' OR data ? 'body' OR data ? 'token')),'projections contain no mail content or recipients');
+ PERFORM pg_temp.assert_prepared_families(org,oc,admin);
 END $$;
 ROLLBACK;

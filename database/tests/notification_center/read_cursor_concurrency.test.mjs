@@ -48,9 +48,14 @@ for(const [variant,openSql] of [
    assert.equal(opened.snapshot,1);
    await writer.query('BEGIN');
    await writer.query("SELECT public.notification_center_publish_internal($1,$2,'order_created','second')",[f.org,f.oc]);
-   const pid=(await writer.query('SELECT pg_backend_pid() pid')).rows[0].pid;
-   const pending=writer.query('SELECT public.project_notification_center(500)');
-   await blocked(setup,pid);await reader.query('COMMIT');await pending;await writer.query('COMMIT');
+   const deferred=(await writer.query('SELECT public.project_notification_center(500) processed')).rows[0].processed;
+   assert.equal(deferred,0,'hot personal state defers work without waiting or advancing recipient progress');
+   await writer.query('COMMIT');await reader.query('COMMIT');
+   for(let i=0;i<30;i++){
+    await writer.query('SELECT public.project_notification_center(500)');
+    if((await personalState(setup,f)).last===2)break;
+    await new Promise(resolve=>setTimeout(resolve,50));
+   }
    await actor(reader,f);
    const badge=(await reader.query('SELECT public.get_notification_center_badge($1) result',[f.org])).rows[0].result;
    assert.deepEqual({unread:badge.unread,last:badge.lastSequence,read:badge.readThrough},{unread:true,last:2,read:0});
@@ -118,4 +123,50 @@ test('a later capacity impact refreshes verified author eligibility instead of r
    FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id WHERE e.organization=$1 AND e.source_key='actor-capacity:episode:1'`,[f.org,f.user,second]));
   assert.deepEqual(r,{original_author:1,current_author:0});
  }finally{await c.end();}
+});
+test('prepared: locked scope returns preparing without acknowledging; committed source repair preserves token',async()=>{
+ const setup=await connect(),reader=await connect(),writer=await connect();
+ try{
+  const f=await fixture(setup);
+  await actor(reader,f);
+  assert.equal((await reader.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result.state,'preparing');
+  await reader.query('COMMIT');
+  for(let i=0;i<20;i++)await setup.query('SELECT public.prepare_notification_center(100)');
+  await writer.query('BEGIN');
+  await writer.query('SELECT 1 FROM public.notification_center_projection_scopes WHERE organization=$1 AND recipient=$2 FOR UPDATE',[f.org,f.user]);
+  await actor(reader,f);
+  const t=performance.now();
+  const busy=(await reader.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result;
+  assert.equal(busy.state,'preparing');assert.ok(performance.now()-t<1000);
+  await reader.query('COMMIT');assert.equal((await personalState(setup,f)).seen,0);
+  await writer.query('ROLLBACK');
+  await actor(reader,f);
+  const open=(await reader.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result;
+  assert.equal(open.state,'ready');await reader.query('COMMIT');
+  await writer.query('BEGIN');
+  await writer.query('SELECT public.notification_center_prepared_invalidate(id) FROM public.notification_center_events WHERE organization=$1',[f.org]);
+  await writer.query("UPDATE public.notification_center_events SET status='storno' WHERE organization=$1",[f.org]);
+  await actor(reader,f);
+  const repair=(await reader.query("SELECT public.get_notification_center_view($1,$2,p_mode=>'refresh',p_view=>$3) result",[f.org,f.oc,open.viewToken])).rows[0].result;
+  assert.equal(repair.state,'preparing');assert.ok(repair.items.every(x=>!x.data));
+  await reader.query('COMMIT');await writer.query('COMMIT');
+  for(let i=0;i<20;i++){await setup.query('SELECT public.prepare_notification_center(100)');await setup.query('SELECT public.prepare_notification_center_views(100)');}
+  await actor(reader,f);
+  const after=(await reader.query("SELECT public.get_notification_center_view($1,$2,p_mode=>'refresh',p_view=>$3) result",[f.org,f.oc,open.viewToken])).rows[0].result;
+  assert.equal(after.viewToken,open.viewToken);assert.ok(after.items.every(x=>x.state==='removed'));
+  await reader.query('COMMIT');
+ }finally{for(const c of [setup,reader,writer]){await c.query('ROLLBACK');await c.end();}}
+});
+test('prepared: relation lock defers a complete view-repair call and restores caller timeout',async()=>{
+ const maintenance=await connect(),worker=await connect();
+ try{
+  await worker.query('SELECT public.prepare_notification_center_views(100)');
+  await maintenance.query('BEGIN');
+  await maintenance.query('LOCK TABLE public.notification_center_view_rows IN ACCESS EXCLUSIVE MODE');
+  await worker.query("SET lock_timeout='2s'");
+  const start=performance.now();
+  assert.equal((await worker.query('SELECT public.prepare_notification_center_views(100) n')).rows[0].n,0);
+  assert.ok(performance.now()-start<1000,'relation-level contention is a bounded defer');
+  assert.equal((await worker.query('SHOW lock_timeout')).rows[0].lock_timeout,'2s');
+ }finally{await maintenance.query('ROLLBACK');await Promise.all([maintenance.end(),worker.end()]);}
 });

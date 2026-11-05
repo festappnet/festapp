@@ -152,6 +152,7 @@ BEGIN
         COALESCE(v_new_fields_array, '[]'::jsonb)
     );
 
+    PERFORM public.notification_center_prepared_invalidate_order(p_order_id);
     -- Update the order in the database
     UPDATE eshop.orders
     SET

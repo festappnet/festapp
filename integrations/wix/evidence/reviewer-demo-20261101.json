@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-11-01",
+  "creation": "Native supported Festapp occasion wizard in authenticated owner browser; no direct SQL writes or production fixtures",
+  "canonicalReadback": {
+    "sshHostname": "festapp-supabase-rehearsal-01",
+    "database": "festapp_rehearsal_20260909220601",
+    "organization": 3,
+    "unit": 8,
+    "unitTitle": "Testovací organizace",
+    "occasionId": 1072641,
+    "occasionTitle": "Wix review - testovací akce",
+    "catalogHidden": true,
+    "formId": 620,
+    "formUrl": "https://vstupenky.online/form/wix-review-test-2027",
+    "formOpen": true,
+    "productId": 1983,
+    "productTitle": "Testovací vstupenka zdarma",
+    "price": "0.00",
+    "currency": "CZK",
+    "bankAccount": null,
+    "blueprint": null
+  },
+  "scope": "Dedicated public free review event. This is a normal event with synthetic data, not the native authenticated read-only demo simulation. Existing events and prices were not modified.",
+  "sqlReadOnly": true,
+  "checkoutVerification": {
+    "route": "Direct public test form in browser",
+    "orderId": 7001,
+    "occasionId": 1072641,
+    "formId": 620,
+    "state": "sent",
+    "price": "0.00",
+    "currency": "CZK",
+    "ticketCount": 1,
+    "buyer": "Owner-controlled test recipient; no buyer details recorded",
+    "emailQueue": {
+      "order_tickets": "accepted by provider",
+      "order_confirmation": "cancelled"
+    },
+    "boundary": "Direct form checkout only; embedded native Wix checkout remains separate. Provider acceptance does not independently establish inbox delivery."
+  },
+  "nativeSettingsPersistence": {
+    "editor": "Harmony",
+    "formUrl": "https://vstupenky.online/form/wix-review-test-2027",
+    "saveReported": true,
+    "publishReported": true,
+    "coldReloadExactUrlConfirmedByBrowserOperator": true,
+    "operator": "wix_browser",
+    "embeddedCheckout": "passed",
+    "publishedSite": "https://info9468674.wixsite.com/my-site-3"
+  },
+  "marketplaceSubmitted": false,
+  "embeddedCheckoutVerification": {
+    "orderId": 7002,
+    "formId": 620,
+    "occasionId": 1072641,
+    "state": "sent",
+    "price": "0.00",
+    "currency": "CZK",
+    "emailQueue": {
+      "order_tickets": "accepted by provider",
+      "order_confirmation": "cancelled"
+    },
+    "canonicalOrigin": {
+      "channel": "wix",
+      "instanceId": "5ebf65f5-1d62-43a1-a7f6-f04b06f22354",
+      "siteId": "60fac33a-8ef8-4122-a754-2b6b98a7428b",
+      "verifiedAtPresent": true
+    },
+    "directControlOrder7001HasWixOrigin": false,
+    "boundary": "Actual published Harmony widget and canonical production checkout, dedicated zero-price synthetic event only. No real payment."
+  }
+}

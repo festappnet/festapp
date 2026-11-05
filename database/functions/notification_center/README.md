@@ -115,7 +115,7 @@ all previous migration bytes, including the flat feed, are sealed prerequisites.
 
 ## Category overview and one-request operations (2026-10-28)
 
-The current client uses `get_notification_center_daily_overview`; the installed
+The previously released client uses `get_notification_center_daily_overview`; the installed
 RPC name remains stable while the grouping is now per occasion and kind across
 all dates. One RPC returns complete order counts, place totals, at most three
 recent authorized contacts, pagination and the unread badge. All non-error
@@ -210,21 +210,94 @@ forward output and refuses to replace any differing existing output, including
 its default destination. Historical migrations are never regenerated after a
 source change; advance the manifest to a new forward migration instead.
 
-Hidden organization members (`organization_users.is_hidden`) never publish
-`occasion_joined` activity. Item authorization and the live center policy also
-exclude historical joins for currently hidden members, including frozen panels,
-group counts and unread badges. Membership and administration access remain intact.
+## Subject lookup cost
 
-Personal subject visibility is shared by publication, item authorization, DTOs
-and live center membership. It covers membership IDs, email recipient IDs and
-normalized tenant-scoped email identities, and order/waitlist buyer identities.
-Hidden operators do not suppress visible customers' orders; operational capacity
-and form facts retain their normal meaning. This does not erase accounting or
-security audit records.
+`subject_visibility.sql` checks hidden membership before opening payload-specific
+identity, order or email lookups. Keep those lookups in separate conditional
+statements: combining them into one OR initializes unrelated subplans per event
+and makes opening a long personal history expensive. The private predicates,
+tenant bindings and current hidden-member rules remain authoritative.
+`open_latency_test.sql` exercises 2000 real deliveries and 1000 sealed read
+batches with and without hidden members; `subject_visibility_test.sql` covers
+identity, contact, email and tenant isolation. Forward migration
+`20261105070000_notification_subject_lookup_performance.sql` installs the lookup
+change without touching delivery, read receipts or acknowledgment semantics.
 
-The explicit privileged `purge_hidden_notification_history_internal` maintenance
-boundary removes existing hidden-subject events and cascades recipient/delivery
-projections. It clears event-specific read receipts and source-state event links,
-while preserving business entities, shared read batches and sequence watermarks.
-The forward cleanup is scoped to organization 3; publication already rejects
-new hidden-subject activity before an event row exists.
+## Bounded delivery drain (local 2026-11-05)
+
+The forward migration `20261105110000_notification_center_delivery_draining.sql`
+keeps the single global transaction lease. Delivery rotates an organization
+cursor, shares its recipient budget between tenants, and checks a 250ms soft
+transaction budget between work items. It acquires personal state before event
+and recipient locks and skips busy rows. Deferral never advances processed
+revision. Source capture immediately completes a revision with no eligible work.
+The pending index includes the deterministic event-ID tie breaker.
+
+Each failed recipient revision rolls back its sequence and delivery together.
+The existing recipient row stores revision-scoped exponential backoff with jitter,
+SQLSTATE only, and quarantine after five failures. A newer eligible revision is
+independent of the previous revision's quarantine. Service-only
+`get_notification_center_delivery_health()` reports bounded tenant backlog and
+last-run metrics; `retry_notification_center_delivery(organization,event,user)`
+explicitly re-enables one failed item. No failure is silently certified ready.
+
+`setup_crons` defines a separate one-second delivery recovery job, with a 2s
+statement timeout. Minute maintenance remains an independent legacy call and
+must not be used as the high-throughput loop. Applying the migration only replaces
+`setup_crons`; registration on an authorized target remains an explicit release
+step. No live schedule has been changed.
+
+For disposable local measurements, run
+`NOTIFICATION_CENTER_DATABASE_URL=... node automation/notification-center/drain.mjs`.
+The CLI verifies localhost and the disposable database marker, and commits each
+SQL call independently. It stops on an idle/deferred pass; later recovery retries
+remaining durable work. It is deliberately not a production access tool.
+
+The later local prepared-view implementation below supersedes this delivery-only
+checkpoint. The sealed delivery migration remains a prerequisite.
+
+
+## Prepared personal views (2026-11-05)
+
+Canonical sources are `prepared_schema`, `prepared_projection`, `prepared_worker`,
+`prepared_views`, `prepared_wake`, and `prepared_operations`. The forward migration
+is `20261105120000_notification_center_prepared_views.sql`; the manifest preserves
+its sealed delivery prerequisite. No generic application triggers or second queue
+are used. Delivered facts, receipts and canonical source transitions own updates.
+
+Per-recipient membership and exact/unknown aggregate deltas are maintained off the
+opening path. Indexed scope aliases select the top 101 candidates per authorized
+scope, then merge at most 100 frozen slots. Contacts stay live and bounded to three
+references per row. Opening does not aggregate personal history. Hidden identities
+are checked in a coherent SQL snapshot; repairs redact payloads until ready.
+Role checks precede live display facts. Only the current bank episode is actionable,
+so retained obsolete deliveries cannot produce a second read/unread alert.
+
+`get_notification_center_view` supports open/preview/page/refresh/close/close_all.
+Token rows freeze batch classification, position, timestamp and the eligible
+sequence envelope at capture. New deliveries and newly eligible members outside
+that envelope require a new view. A captured member hidden and unhidden within the
+range can return to its original slot. No new slot is inserted into an old view.
+Read receipts are immutable unique ranges `(organization,recipient,group,after,
+through)`, preserving inherited gapped receipts and multi-tab reverse retries.
+
+Projection and view repairs run as separate committed, bounded calls under the
+existing single-writer lease. Idle scopes sleep until their next expiry; source
+writes queue work and active reads detect hidden-identity changes. Backfill is
+resumable. Every prepared foreign-key cascade has a leading lookup index;
+member/event and subject/event repair do not scan an entire recipient history
+for each removed contribution. SQLSTATE-only retry/backoff and quarantine never certify a failed scope
+ready. Service-only health/retry/pause operations expose no contact payloads.
+
+The protected Edge worker `process-notification-center` dispatches delivery,
+projection and retained-view repair independently. A pg_net after-commit hint and
+one-second scheduled recovery wake it. Its request secret is mandatory, including
+when JWT verification is disabled at the Edge gateway. Configure with
+`configure_notification_center_worker(origin)` and the existing request-secret
+owner; `setup_crons` registers recovery only during an authorized rollout.
+
+The old daily/temporal/open/read/badge interfaces are retained solely for released
+clients and share canonical source/read owners. The modern Flutter route has no
+fallback. Retire that boundary only after installed-client usage evidence permits
+it. See the dated execution result and modern measurement receipt for validation,
+readiness costs and rollout sequencing. No production operation was performed.

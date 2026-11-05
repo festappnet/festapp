@@ -93,6 +93,7 @@ BEGIN
  END IF;
  UPDATE eshop.orders SET data=jsonb_set(o.data,'{email}',to_jsonb(v_email)),updated_at=now()
   WHERE id=o.id RETURNING * INTO o;
+ PERFORM public.notification_center_prepared_invalidate_order(o.id);
  INSERT INTO eshop.orders_history("order",state,price,currency_code,data,created_by)
   VALUES(o.id,o.state,o.price,o.currency_code,o.data,auth.uid());
  -- A prepared payload is a snapshot of its recipient; retire pre-permit old

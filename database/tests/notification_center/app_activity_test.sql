@@ -1,4 +1,24 @@
 BEGIN;
+CREATE FUNCTION pg_temp.assert_prepared_families(p_org bigint,p_oc bigint,p_user uuid)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE v jsonb; k text; expected bigint; actual bigint;
+BEGIN
+ PERFORM public.project_notification_center(500);
+ PERFORM set_config('request.jwt.claim.sub',p_user::text,true);
+ v:=public.get_notification_center_view(p_org,p_oc);
+ FOR i IN 1..30 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100);END LOOP;
+ v:=public.get_notification_center_view(p_org,p_oc);
+ PERFORM assert_eq(v->>'state','ready','actual producers reach prepared ready');
+ FOR k IN SELECT DISTINCT kind FROM public.notification_center_events WHERE organization=p_org LOOP
+  SELECT count(*) INTO expected FROM public.notification_center_events e
+  WHERE e.organization=p_org AND e.kind=k AND public.notification_center_in_center_internal(e,clock_timestamp())
+   AND public.notification_center_allowed(e,p_user) AND EXISTS(SELECT 1 FROM public.notification_center_deliveries d WHERE d.event_id=e.id AND d.recipient=p_user);
+  SELECT coalesce(sum(coalesce((x#>>'{data,activityCount}')::bigint,(x#>>'{data,eventCount}')::bigint,1)),0) INTO actual
+   FROM jsonb_array_elements(v->'items') x WHERE x->>'kind'=k AND x->>'state'='ready';
+  PERFORM assert_eq(actual,expected,'prepared real producer count: '||k);
+ END LOOP;
+ PERFORM public.get_notification_center_view(p_org,p_oc,p_mode=>'close_all');
+END $$;
 DO $$
 DECLARE org bigint; oc bigint; editor uuid:=gen_random_uuid(); orders_only uuid:=gen_random_uuid(); member uuid:=gen_random_uuid();
  outsider uuid:=gen_random_uuid(); tenant_admin uuid:=gen_random_uuid(); ev bigint; response jsonb; notification uuid; snapshot bigint; n integer; usr uuid;
@@ -78,5 +98,6 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
  UPDATE public.occasion_users SET is_editor=false WHERE occasion=oc AND "user"=editor;
  BEGIN PERFORM public.open_notification_center(org,oc); RAISE EXCEPTION 'revoked app editor retained access'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM pg_temp.assert_prepared_families(org,oc,tenant_admin);
 END $$;
 ROLLBACK;

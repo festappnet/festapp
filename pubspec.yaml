@@ -59,7 +59,7 @@ dependencies:
   super_clipboard: 0.9.1
   http_parser: "^4.1.2"
   csslib: "^1.0.2"
-  trina_grid: "^2.3.0"
+  trina_grid: "^2.4.0"
   shadcn_ui: "^0.57.3"
   desktop_drop: "^0.9.2"
   csv: "^8.0.0"
@@ -158,8 +158,6 @@ dependency_overrides:
     path: packages/nm
   super_native_extensions:
     path: packages/super_native_extensions
-  trina_grid:
-    path: packages/trina_grid
 
 flutter:
 

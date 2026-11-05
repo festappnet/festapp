@@ -11,9 +11,15 @@ export const updateText = Object.freeze({
 });
 export const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fail = (file,field) => { throw new Error(`${file}: invalid or missing ${field}`); };
-function markdown(source, file, assetsDir, origin) {
+function markdown(source, file, assetsDir, origin, locale) {
   const MarkdownIt = require('markdown-it');
   const parser = new MarkdownIt({html:false,linkify:false,typographer:false});
+  const renderImage = parser.renderer.rules.image;
+  parser.renderer.rules.image = (tokens, index, options, env, renderer) => {
+    const src = tokens[index].attrGet('src');
+    const label = locale === 'cs' ? 'Zvětšit snímek' : 'View full-size screenshot';
+    return `<a class="update-image-link" href="${escape(src)}" target="_blank" rel="noopener noreferrer" title="${label}">${renderImage(tokens, index, options, env, renderer)}</a>`;
+  };
   const assets = new Set();
   const tokens = parser.parse(source, {});
   const inspect = list => { for (const token of list) {
@@ -61,7 +67,7 @@ export function resolveUpdates(origin, {contentDir=path.join(root,'content/platf
       const bodyFile=path.join(contentDir,entry.name,`${locale}.md`);
       let body; try {body=fs.readFileSync(bodyFile,'utf8');} catch {fail(bodyFile,'body');}
       if (!body.trim()) fail(bodyFile,'body');
-      const rendered=markdown(body,bodyFile,assetsDir,origin);
+      const rendered=markdown(body,bodyFile,assetsDir,origin,locale);
       for (const asset of rendered.assets) assets.add(asset);
       translations[locale]={title:copy.title,summary:copy.summary,url:new URL(`${updatePaths[locale]}/${meta.id}`,origin).href,html:rendered.html};
     }

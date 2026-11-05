@@ -200,7 +200,7 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
       ),
     );
     if (!mounted) return;
-    controller.close();
+    controller.close(retainView: target != null);
     focus.requestFocus();
     if (target != null) await _detail(target!, selection);
   }

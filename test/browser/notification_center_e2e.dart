@@ -13,9 +13,10 @@ external set _notificationTags(JSFunction value);
 
 Future<void> main() async {
   final backend = Uri.parse(AppConfig.effectiveSupabaseUrl);
-  if (backend.host != '127.0.0.1' || backend.port != 57421) {
+  const expectedPort = int.fromEnvironment('NOTIFICATION_E2E_PORT', defaultValue: 57421);
+  if (backend.host != '127.0.0.1' || backend.port != expectedPort) {
     throw StateError(
-        'Notification-center E2E requires the isolated local backend on 57421');
+        'Notification-center E2E requires the isolated local backend on $expectedPort');
   }
   // Notifications are an external production SDK, outside this local E2E.
   _notificationLogin = ((JSAny? _, JSFunction resolve, JSFunction reject) =>

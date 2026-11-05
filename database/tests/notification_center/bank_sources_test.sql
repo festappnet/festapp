@@ -77,6 +77,18 @@ BEGIN
   PERFORM public.complete_notification_center_bank_health(conn,tok,NULL,NULL,ts+make_interval(mins=>minute));
  END LOOP;
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='bank_problem'),3::bigint,'stale pull creates one new persistent episode');
+ -- Reproduce an inherited active-looking old episode beside the latest one.
+ SELECT id INTO ev FROM public.notification_center_events WHERE organization=org AND source_key='bank:'||conn||':episode:1';
+ UPDATE public.notification_center_events SET status='active' WHERE id=ev;
+ PERFORM assert_false(public.notification_center_in_center_internal((SELECT e FROM public.notification_center_events e WHERE id=ev),clock_timestamp()),'obsolete bank episode never reappears beside current incident');
+ PERFORM assert_false(public.notification_center_prepared_policy((SELECT e FROM public.notification_center_events e WHERE id=ev),clock_timestamp(),'[]'),'prepared policy rejects inherited duplicate bank episode');
+ PERFORM public.project_notification_center(500);
+ PERFORM set_config('request.jwt.claim.sub',admin::text,true);
+ item:=public.get_notification_center_view(org,NULL);
+ FOR i IN 1..30 LOOP PERFORM public.prepare_notification_center(100); END LOOP;
+ item:=public.get_notification_center_view(org,NULL);
+ PERFORM assert_eq(item->>'state','ready','bank prepared view ready');
+ PERFORM assert_eq((SELECT count(*) FROM jsonb_array_elements(item->'items') x WHERE x->>'kind'='bank_problem'),1::bigint,'only one current bank incident across unread/read sections');
  UPDATE eshop.bank_sync_connections SET state='suspended' WHERE id=conn;
  UPDATE public.notification_center_bank_health SET next_at='-infinity' WHERE connection_id=conn;
  claim:=public.claim_notification_center_bank_health();

@@ -1,0 +1,594 @@
+{
+  "method": "Static mutation candidates in canonical SQL; retained/overwritten definitions, dynamic SQL, indirect callers, external service writes and grants require semantic review.",
+  "writers": [
+    {
+      "source": "database/functions/abuse/email.sql",
+      "function": "public.admit_email_intent_v1(bigint,boolean)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/account_deletion/account_deletion_contract.sql",
+      "function": "public.cleanup_account_deletion_domain(uuid)",
+      "relations": [
+        "public.occasion_users",
+        "public.organization_users",
+        "public.user_info"
+      ]
+    },
+    {
+      "source": "database/functions/cleaning/set_cleaning_notifications_muted.sql",
+      "function": "public.set_cleaning_notifications_muted_internal_v1(bigint,boolean)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/cleaning/set_cleaning_reporter_blocked.sql",
+      "function": "public.set_cleaning_reporter_blocked_internal_v1(bigint,uuid,boolean)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_domain.sql",
+      "function": "public.enqueue_order_email(text,jsonb,bigint,bigint,bigint,timestamp with time zone,text)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_domain.sql",
+      "function": "public.cancel_order_email_intents(bigint)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_domain.sql",
+      "function": "public.apply_email_post_actions(uuid)",
+      "relations": [
+        "eshop.orders",
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_domain.sql",
+      "function": "public.enqueue_account_email(text,jsonb,jsonb,text,jsonb,text,text,text,timestamp with time zone)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_domain.sql",
+      "function": "public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.enqueue_email(text,jsonb,text,jsonb,text,text,timestamp with time zone,timestamp with time zone,bigint,bigint,jsonb)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.recover_email_leases()",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.claim_email()",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.renew_email_preparation(uuid,uuid)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.prepare_email(uuid,uuid,jsonb,jsonb)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.begin_email_send(uuid,uuid)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.finish_email_attempt(uuid,uuid,text,text,text)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.reconcile_email_events()",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.enqueue_prepared_email(text,jsonb,text,jsonb,text,text,text,timestamp with time zone)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.recover_email_delivery()",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "function": "public.reconcile_unknown_email(uuid,text,text,text)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/fakturoid_email_gate.sql",
+      "function": "public.enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/emails/fakturoid_email_gate.sql",
+      "function": "public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)",
+      "relations": [
+        "eshop.orders",
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/fakturoid_email_gate.sql",
+      "function": "public.abort_fakturoid_ticket_order_v1(bigint,uuid)",
+      "relations": [
+        "eshop.orders",
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/emails/queue_payment_reminders.sql",
+      "function": "public.queue_payment_reminders_internal(bigint,bigint)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/eshop/finalize_ticket_order.sql",
+      "function": "public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop/swap_spot_tickets.sql",
+      "function": "public._swap_spots_update_ticket(bigint,bigint,bigint)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_bank_sync/bank_sync_health.sql",
+      "function": "public.enqueue_bank_sync_health_alerts(bigint)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/delete_order.sql",
+      "function": "public.delete_order_internal_v1(bigint)",
+      "relations": [
+        "eshop.orders",
+        "public.email_messages",
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/internal_storno_tickets_221.sql",
+      "function": "public.internal_storno_tickets_221(bigint[])",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/mark_order_and_tickets_paid_internal_v1.sql",
+      "function": "public.mark_order_and_tickets_paid_internal_v1(bigint)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/recalculate_order_payment_status.sql",
+      "function": "public.reconcile_order_payment_internal_v1(bigint,text)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/repair_order_email_client_sync_v1.sql",
+      "function": "public.repair_order_email_client_sync_v1(bigint,text,text,bigint,text,uuid,boolean,uuid,text)",
+      "relations": [
+        "eshop.orders",
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/storno_tickets_bulk.sql",
+      "function": "public.storno_tickets_bulk_internal_v1(bigint[],boolean)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/update_order_and_tickets_to_sent.sql",
+      "function": "public.update_order_and_tickets_to_sent(bigint,bigint[])",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/update_order_and_tickets_to_storno.sql",
+      "function": "public.cancel_order_domain_internal_v1(bigint,boolean)",
+      "relations": [
+        "eshop.orders",
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/update_order_note_hidden.sql",
+      "function": "public.update_order_note_hidden(bigint,text)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/update_order_responses.sql",
+      "function": "public.update_order_responses(bigint,jsonb)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_orders/update_ticket_products_ws.sql",
+      "function": "public.update_ticket_products_wsv2(bigint,jsonb)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_stripe/ingest.sql",
+      "function": "public.ingest_stripe_payment_internal(uuid,uuid,jsonb,jsonb)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_stripe/refund_decisions.sql",
+      "function": "public.decide_stripe_partial_refund_client_sync_v1(bigint,text,bigint[],text,bigint,uuid)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_ticket_batches/create.sql",
+      "function": "public.create_ticket_batch_client_sync_v1(bigint,text,jsonb,uuid,uuid)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_ticket_batches/sales.sql",
+      "function": "public.sell_ticket_batch_items_client_sync_v1(uuid,bigint[],jsonb,boolean,uuid)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_waitlist/accept_offer.sql",
+      "function": "public.accept_waitlist_offer_internal(jsonb,uuid,uuid)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_waitlist/commands.sql",
+      "function": "public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_waitlist/fakturoid_recovery.sql",
+      "function": "public.abort_waitlist_acceptance_internal(bigint,uuid)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/eshop_waitlist/tickets.sql",
+      "function": "public.allocate_ticket_order_identity_internal(bigint)",
+      "relations": [
+        "eshop.orders"
+      ]
+    },
+    {
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
+      "function": "public.delete_owned_companion_internal_v1(bigint,uuid,uuid)",
+      "relations": [
+        "public.user_info"
+      ]
+    },
+    {
+      "source": "database/functions/groups/remove_occasion_user_domain.sql",
+      "function": "public.remove_occasion_user_domain_internal_v1(bigint,uuid)",
+      "relations": [
+        "public.notification_center_events",
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/app_activity.sql",
+      "function": "public.notification_center_event_capacity_internal(bigint,uuid)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/bank.sql",
+      "function": "public.complete_notification_center_bank_health(bigint,uuid,timestamp with time zone,text,timestamp with time zone)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/capacity.sql",
+      "function": "public.notification_center_capacity_transition_internal(bigint,bigint,text,jsonb,uuid,uuid)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/core.sql",
+      "function": "public.notification_center_capture_recipients_internal(uuid,uuid)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/core.sql",
+      "function": "public.notification_center_publish_internal(bigint,bigint,text,text,jsonb,uuid,timestamp with time zone,bigint[])",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/core.sql",
+      "function": "public.project_notification_center(integer)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/deleted_entities.sql",
+      "function": "public.notification_center_purge_deleted_internal(bigint)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/email.sql",
+      "function": "public.notification_center_email_internal(uuid,timestamp with time zone)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/maintenance.sql",
+      "function": "public.maintain_notification_center(integer)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/orders.sql",
+      "function": "public.notification_center_order_internal(bigint,text,text,uuid,jsonb)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/orders.sql",
+      "function": "public.notification_center_order_state_internal(bigint)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/notification_center/prepared_projection.sql",
+      "function": "public.notification_center_prepared_invalidate(uuid)",
+      "relations": [
+        "public.notification_center_events"
+      ]
+    },
+    {
+      "source": "database/functions/occasion_setup/finalize.sql",
+      "function": "public.finalize_occasion_setup_draft(uuid,bigint,uuid)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/occasion_setup/invitations.sql",
+      "function": "public.enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/occasion_setup/invitations.sql",
+      "function": "public.accept_occasion_team_invitation(text,text)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/organization_verification/notifications.sql",
+      "function": "public.enqueue_unit_verification_request(bigint)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/others/delete_occasion.sql",
+      "function": "public.delete_occasion_internal_v1(bigint)",
+      "relations": [
+        "eshop.orders",
+        "public.email_messages",
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/others/duplicate_occasion_client_sync_v1.sql",
+      "function": "public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint,text)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/sale_opening_notifications/commands.sql",
+      "function": "public.sale_opening_notification_command(text,jsonb)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/sale_opening_notifications/maintenance.sql",
+      "function": "public.maintain_sale_opening_notifications(integer)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/seed/seed_org_with_admin.sql",
+      "function": "public.seed_org_with_admin(text,text)",
+      "relations": [
+        "public.organization_users"
+      ]
+    },
+    {
+      "source": "database/functions/units/delete_unit.sql",
+      "function": "public.delete_unit(bigint)",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/user_services/delete_service_item.sql",
+      "function": "public.delete_service_item_internal_v1(bigint,text,text,boolean)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/users/create_companion_in_organization_internal_v1.sql",
+      "function": "public.create_companion_in_organization_internal_v1(bigint,bigint,uuid,text)",
+      "relations": [
+        "public.user_info"
+      ]
+    },
+    {
+      "source": "database/functions/users/create_user_in_organization_with_data_pure.sql",
+      "function": "public.create_user_in_organization_with_data_pure(bigint,text,text,text,jsonb)",
+      "relations": [
+        "user_info"
+      ]
+    },
+    {
+      "source": "database/functions/users/first_login_notifications.sql",
+      "function": "public.enqueue_first_login_notifications_v1()",
+      "relations": [
+        "public.email_messages"
+      ]
+    },
+    {
+      "source": "database/functions/users/import_occasion_users_from_csv.sql",
+      "function": "public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb)",
+      "relations": [
+        "public.occasion_users",
+        "public.user_info"
+      ]
+    },
+    {
+      "source": "database/functions/users/import_users_from_tickets.sql",
+      "function": "public.import_ticket_profiles_internal_v1(bigint)",
+      "relations": [
+        "public.occasion_users",
+        "public.user_info"
+      ]
+    },
+    {
+      "source": "database/functions/users/mark_app_links_sent.sql",
+      "function": "public.mark_app_links_sent(bigint,uuid)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/users/occasion_enrolment_internal.sql",
+      "function": "public.add_user_to_occasion_internal_v1(bigint,uuid)",
+      "relations": [
+        "occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/users/reception_qr_login.sql",
+      "function": "public.create_reception_user_v1(bigint,uuid,jsonb,bigint,text,boolean)",
+      "relations": [
+        "public.occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/users/save_occasion_user_for_edit.sql",
+      "function": "public.save_occasion_user_for_edit_internal_v1(jsonb)",
+      "relations": [
+        "public.occasion_users",
+        "public.user_info"
+      ]
+    },
+    {
+      "source": "database/functions/users/unit_access_deletion.sql",
+      "function": "public.delete_unit_user_internal_v1(uuid,bigint)",
+      "relations": [
+        "occasion_users"
+      ]
+    },
+    {
+      "source": "database/functions/users/update_user.sql",
+      "function": "public.update_user_internal_v1(jsonb)",
+      "relations": [
+        "public.user_info"
+      ]
+    }
+  ]
+}

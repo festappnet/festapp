@@ -145,7 +145,9 @@
       "deletion_complete": "Účet smazán",
       "google_mailbox": "Ověření adresy",
       "gotrue": "Ověření účtu",
-      "legacy_unknown": "Historický e-mail"
+      "legacy_unknown": "Historický e-mail",
+      "sale_opening_confirmation": "Potvrdit upozornění",
+      "sale_opening_opened": "Upozornění na spuštění prodeje"
     },
     "organization_scope": "Celá organizace",
     "refreshed": "Načteno {time}",
@@ -4604,7 +4606,11 @@
         "many": "{count} vypršelých nabídek",
         "other": "{count} vypršelých nabídek"
       }
-    }
+    },
+    "preparing": "Připravujeme aktuální oznámení…",
+    "expiredView": "Platnost přehledu vypršela. Otevřete jej znovu.",
+    "viewLimit": "Zavřete některý z dalších otevřených přehledů a zkuste to znovu.",
+    "viewLimitAction": "Zavřít ostatní přehledy"
   },
   "TicketBatches": {
     "selectedCount": "Vybráno: {count}",
@@ -4988,7 +4994,6 @@
     "settings": "Nastavení",
     "done": "Hotovo",
     "saveHint": "Změny uložíte tlačítkem Uložit ve formuláři.",
-
     "header": "Standardní hlavička",
     "countdown": "Odpočet",
     "mobile": "Mobilní náhled",

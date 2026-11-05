@@ -2,7 +2,7 @@ import 'package:flutter/material.dart' as sdk_material;
 import 'package:material_ui/material_ui.dart';
 
 /// Supplies the standalone UI theme and locale to dependencies that still use
-/// SDK Material (TrinaGrid 2.3 and flutter_colorpicker 1.1). Remove this boundary
+/// SDK Material (TrinaGrid 2.4 and flutter_colorpicker 1.1). Remove this boundary
 /// when those dependencies migrate; application widgets use material_ui only.
 class DependencyMaterialBridge extends StatelessWidget {
   const DependencyMaterialBridge({super.key, required this.child});

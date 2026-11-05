@@ -1,0 +1,14 @@
+{
+  "checkedAtUtc": "2026-11-01T21:51:29.912750+00:00",
+  "command": "pnpm --dir integrations/wix run release:check evidence/partner-billing-release-inputs-20261101.json",
+  "exitCode": 0,
+  "releaseInputs": "integrations/wix/evidence/partner-billing-release-inputs-20261101.json",
+  "releaseInputsSha256": "7a37cd4f69759d2c327e6303863c818643784c804941d62491f6e52b2e4669ab",
+  "independentReadbacks": [
+    "docs/operations/releases/wix-runtime-20261101.json",
+    "integrations/wix/evidence/live-native-auth-20261101.json",
+    "integrations/wix/evidence/reviewer-demo-20261101.json",
+    "integrations/wix/evidence/store-review-20261101.json"
+  ],
+  "scope": "Gate passed before marketplace submission. Current full direct and Harmony embedded synthetic free checkout plus historical Editor/Studio checkout/lifecycle and current all-three native authentication; no new full purchase on Editor/Studio claimed."
+}

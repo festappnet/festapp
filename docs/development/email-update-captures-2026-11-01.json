@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-01",
+  "purpose": "Czech platform update screenshots",
+  "source_head": "a31277e3c3d761ed37d6425a1f2a731584b92e8d",
+  "source_and_capture_sha256": {
+    "lib/components/eshop/views/order_state_cell.dart": "a3dff2a6d854691d4d23f49aaca181e81bc7e27bfcb8ebc360a83460cf7b764f",
+    "lib/components/eshop/views/order_email_repair_dialog.dart": "1fbf9d8f23ed08f080d2dbeb4f19112b5dc9caec3c748fc36b737c73b5d340e5",
+    "lib/components/email_delivery/email_delivery_indicator.dart": "d89482c3ada3297909c827ac35755999b84d961d40ef53f0112bed0fba65a445",
+    "lib/components/email_delivery/email_delivery_history.dart": "d99b30188b518e912d8026168d06f8447e0e91e7ec0dfb1ec0b8b11a8ee9dc21",
+    "web/platform-updates-media/email-delivery-orders.png": "dfbf27bc8fc267eaf9f3d2c242a061a2c1b0edbd4e54cc752c2aef5099e40350",
+    "web/platform-updates-media/email-delivery-history.png": "6e410fdc635b44d00f14ba169a5c158c0dec69fd9793d52b959050a96cc1e372",
+    "web/platform-updates-media/email-delivery-repair.png": "57a10e089d598f995f46c3d14c4cccf586a2a2beb449b1d1abbe6eef87c5212a"
+  },
+  "capture": "Real current Flutter web app, test/browser/full_app_e2e.dart, headless isolated local browser; Czech locale and light theme. Orders 1968x490, history and repair 1200x490. Screenshots are unretouched.",
+  "backend": "Disposable local Supabase project festapp-email-capture-20261101 on loopback; baseline 20260906140000, forward migrations, seed.sql and navigation tenant fixture. Reference tenant required fixture guard adjustment from one to two organizations; local link registry backfilled.",
+  "synthetic_data": "Fictional Czech event, organization and customers; reserved example.invalid contacts. Four local orders and local email records seeded; accepted, delivery, open and bounce timestamps are synthetic database facts, not live provider observations. One paid order has matching paid amount. Global local queue paused; no external sends.",
+  "interaction": "Actual authenticated local app and real RPCs; correction dialog opened from order-state warning via Flutter semantics click. Corrected example.com address entered but not saved or sent. History reached through its existing route. External OneSignal calls stubbed by the existing fixture and production network endpoints blocked.",
+  "limitations": "Screenshots demonstrate rendered states only, not a live email, provider response, recipient open, link click or send."
+}

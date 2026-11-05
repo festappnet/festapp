@@ -262,7 +262,9 @@
       "deletion_complete": "Deletion complete",
       "google_mailbox": "Google mailbox",
       "gotrue": "Gotrue",
-      "legacy_unknown": "Legacy unknown"
+      "legacy_unknown": "Legacy unknown",
+      "sale_opening_confirmation": "Potwierdź powiadomienie",
+      "sale_opening_opened": "Powiadomienie o rozpoczęciu sprzedaży"
     },
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
@@ -2569,7 +2571,11 @@
         "many": "{count} wygasłych ofert",
         "other": "{count} wygasłych ofert"
       }
-    }
+    },
+    "preparing": "Przygotowujemy aktualne powiadomienia…",
+    "expiredView": "Ten przegląd wygasł. Proszę otworzyć go ponownie.",
+    "viewLimit": "Proszę zamknąć inny otwarty przegląd i spróbować ponownie.",
+    "viewLimitAction": "Zamknij inne przeglądy"
   },
   "TicketBatches": {
     "selectedCount": "Wybrano: {count}",
@@ -2829,7 +2835,6 @@
     "settings": "Ustawienia",
     "done": "Gotowe",
     "saveHint": "Zapisz zmiany przyciskiem Zapisz w formularzu.",
-
     "header": "Standardowy nagłówek",
     "countdown": "Odliczanie",
     "mobile": "Podgląd mobilny",

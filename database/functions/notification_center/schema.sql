@@ -12,13 +12,17 @@ CREATE TABLE public.notification_center_events (
  affected_occasions bigint[] NOT NULL DEFAULT '{}', projected_revision bigint NOT NULL DEFAULT 0,
  UNIQUE(organization,source_key)
 );
-CREATE INDEX notification_center_order_projection ON public.notification_center_events(occasion,(data->>'orderId')) WHERE kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted');
-CREATE INDEX notification_center_pending ON public.notification_center_events(organization,occurred_at) WHERE projected_revision<attention_revision;
+CREATE INDEX notification_center_order_projection ON public.notification_center_events(occasion,(data->>'orderId'),id) WHERE kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted','offer_declined','offer_expired');
+CREATE INDEX notification_center_pending ON public.notification_center_events(organization,occurred_at,id) WHERE projected_revision<attention_revision;
 CREATE TABLE public.notification_center_recipients (
  event_id uuid NOT NULL REFERENCES public.notification_center_events(id) ON DELETE CASCADE, recipient uuid NOT NULL,
  processed_revision bigint NOT NULL DEFAULT 0, eligible_revision bigint NOT NULL DEFAULT 1,
+ pending_since timestamptz NOT NULL DEFAULT clock_timestamp(), retry_revision bigint NOT NULL DEFAULT 0,
+ retry_count integer NOT NULL DEFAULT 0, next_attempt_at timestamptz NOT NULL DEFAULT '-infinity',
+ last_error_code text, quarantined boolean NOT NULL DEFAULT false,
  PRIMARY KEY(event_id,recipient)
 );
+CREATE INDEX notification_center_recipient_retry ON public.notification_center_recipients(event_id,next_attempt_at,recipient) WHERE processed_revision<eligible_revision;
 CREATE TABLE public.notification_center_user_state (
  organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, recipient uuid NOT NULL,
  last_delivery_sequence bigint NOT NULL DEFAULT 0, read_through_sequence bigint NOT NULL DEFAULT 0,
@@ -39,7 +43,7 @@ CREATE TABLE public.notification_center_read_batches (
  after_sequence bigint NOT NULL, through_sequence bigint NOT NULL,
  read_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  CHECK(after_sequence>=0 AND through_sequence>after_sequence),
- UNIQUE(organization,recipient,group_key,through_sequence)
+ CONSTRAINT notification_center_read_receipt_range UNIQUE(organization,recipient,group_key,after_sequence,through_sequence)
 );
 CREATE TABLE public.notification_center_preferences (
  organization bigint NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, recipient uuid NOT NULL, occasion bigint NOT NULL,

@@ -1,5 +1,8 @@
 CREATE TABLE public.notification_center_maintenance (
- name text PRIMARY KEY, lease_token uuid, lease_until timestamptz, next_at timestamptz NOT NULL DEFAULT '-infinity', cursor bigint NOT NULL DEFAULT 0
+ name text PRIMARY KEY, lease_token uuid, lease_until timestamptz, next_at timestamptz NOT NULL DEFAULT '-infinity', cursor bigint NOT NULL DEFAULT 0,
+ last_scanned integer NOT NULL DEFAULT 0,last_processed integer NOT NULL DEFAULT 0,
+ last_deferred integer NOT NULL DEFAULT 0,last_failed integer NOT NULL DEFAULT 0,
+ last_elapsed_ms numeric,last_run_at timestamptz
 );
 CREATE TABLE public.notification_center_bank_health (
  connection_id bigint PRIMARY KEY, lease_token uuid, lease_until timestamptz,next_at timestamptz NOT NULL DEFAULT '-infinity',

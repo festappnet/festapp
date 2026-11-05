@@ -94,6 +94,7 @@ BEGIN
                is_editor_order_view = unit_is_editor_view
          WHERE occasion = oc AND "user" = usr;
     ELSE
+        PERFORM public.notification_center_prepared_invalidate_user(usr,oc);
         -- Insert a new row into occasion_users, using the unit-level role flags.
         INSERT INTO occasion_users (
             occasion,

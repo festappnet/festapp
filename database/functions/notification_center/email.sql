@@ -14,6 +14,7 @@ BEGIN
  -- A failed cancellation notice is a separate, still relevant incident.
  IF m.order_id IS NOT NULL AND m.message_kind<>'order_storno' AND EXISTS(
   SELECT 1 FROM eshop.orders o WHERE o.id=m.order_id AND o.occasion=m.occasion AND o.state='storno') THEN
+  PERFORM public.notification_center_prepared_invalidate(ev.id) FROM public.notification_center_events ev WHERE ev.organization=m.organization AND ev.source_key=key AND ev.status<>'recovered';
   UPDATE public.notification_center_events SET status='recovered'
    WHERE organization=m.organization AND source_key=key AND kind='email_problem';
   RETURN;
@@ -43,12 +44,14 @@ BEGIN
   ev:=public.notification_center_publish_internal(m.organization,m.occasion,'email_problem',key,
     jsonb_build_object('messageId',m.message_id,'messageKind',m.message_kind,'reason',reason),NULL,coalesce(fact_at,p_at));
   IF ev IS NOT NULL AND old.state->>'eventId'=ev::text THEN
+   PERFORM public.notification_center_prepared_invalidate((old.state->>'eventId')::uuid);
    UPDATE public.notification_center_events SET attention_revision=attention_revision+1,status='active',
     data=data||jsonb_build_object('reason',reason) WHERE id=(old.state->>'eventId')::uuid;
    PERFORM public.notification_center_capture_recipients_internal((old.state->>'eventId')::uuid,NULL);
   END IF;
   seen:=seen||jsonb_build_array(reason);
  ELSIF reason IS NULL AND old.state->>'eventId' IS NOT NULL AND public.email_reporting_state(m) IN ('delivery','open','click','accepted') THEN
+  PERFORM public.notification_center_prepared_invalidate((old.state->>'eventId')::uuid);
   UPDATE public.notification_center_events SET status='recovered' WHERE id=(old.state->>'eventId')::uuid;
  END IF;
  INSERT INTO public.notification_center_source_state(organization,source_key,state)

@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-01",
+  "intendedPublicTestForm": "https://vstupenky.online/form/new-form2026-test",
+  "existingPublishedForm": "https://vstupenky.online/form/wix-qa-20261025",
+  "result": "INCOMPLETE - no QA settings changes saved or published",
+  "harmony": "Opened native Settings. Cross-origin iframe was not accessible to the accessibility-frame tool. Coordinate input attempts using Meta+A and Control+A concatenated text into the existing URL; Wix validation rejected the malformed input. Closed unsaved Settings. Published Harmony cold readback still has the original QA URL.",
+  "studio": "Owned Studio editor remained under a loading overlay in background; no settings changed.",
+  "editor": "Not edited.",
+  "limitations": "The original QA form no longer exists, so these published QA examples are not usable as working demo forms. The separate live-native-auth-20261101.json proves live wrapper authentication with a temporary runtime-only valid form, not persistent QA settings or checkout.",
+  "ordersHoldsOrChargesCreated": false
+}

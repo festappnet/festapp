@@ -378,6 +378,19 @@
     "sale_opening_notifications/maintenance.sql",
     "sale_opening_notifications/email_context.sql",
     "sale_opening_notifications/admin.sql",
-    "presale_content/archive.sql"
+    "presale_content/archive.sql",
+    "notification_center/subject_visibility.sql",
+    "notification_center/core.sql",
+    "notification_center/delivery_operations.sql",
+    "notification_center/prepared_projection.sql",
+    "notification_center/prepared_views.sql",
+    "notification_center/prepared_worker.sql",
+    "notification_center/prepared_wake.sql",
+    "notification_center/prepared_operations.sql",
+    "notification_center/orders.sql",
+    "notification_center/email.sql",
+    "notification_center/bank.sql",
+    "notification_center/capacity.sql",
+    "notification_center/deleted_entities.sql"
   ]
 }

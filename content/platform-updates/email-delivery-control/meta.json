@@ -1,0 +1,15 @@
+{
+  "id": "email-delivery-control",
+  "status": "draft",
+  "kind": "improvement",
+  "translations": {
+    "cs": {
+      "title": "E-maily pod kontrolou: značky doručení a řešení problémů",
+      "summary": "Co znamenají značky u objednávek a jak postupovat, když zákazníkovi nepřišly vstupenky."
+    },
+    "en": {
+      "title": "Email delivery: understand the symbols and resolve problems",
+      "summary": "A customer cannot find their tickets? Learn what the email symbols mean, where to check delivery and how to correct an address or request another send."
+    }
+  }
+}

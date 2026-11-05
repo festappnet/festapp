@@ -40,8 +40,11 @@ NotificationItem row(
 Map<String, dynamic> opened([List<Map<String, dynamic>> items = const []]) => {
   'feedSupported': true,
   'timelineSupported': true,
-  'dailySupported': true,
-  'unread': true,
+  'viewSupported': true,
+  'state': 'ready',
+  'viewToken': '00000000-0000-0000-0000-000000000007',
+  'acknowledged': true,
+  'unread': false,
   'snapshot': 7,
   'feedItems': items,
   'items': items,
@@ -49,11 +52,30 @@ Map<String, dynamic> opened([List<Map<String, dynamic>> items = const []]) => {
   'occasions': [],
 };
 Map<String, dynamic> badge({bool unread = true}) => {
+  'viewSupported': true,
+  'state': 'ready',
   'feedSupported': true,
   'timelineSupported': true,
   'enabled': true,
   'unread': unread,
 };
+
+// Cleanup is orthogonal to the existing presentation/request assertions. Token
+// ownership, close races and selection handoff have dedicated protocol tests.
+NotificationCenterController testController({
+  NotificationRead? read,
+  String Function()? timezone,
+}) => NotificationCenterController(
+  timezone: timezone,
+  read: (name, params) {
+    if (params['p_mode'] == 'close')
+      return Future.value({'viewSupported': true, 'state': 'closed'});
+    return read?.call(name, params) ??
+        Future.value(
+          name == 'get_notification_center_prepared_badge' ? badge() : opened(),
+        );
+  },
+);
 
 void main() {
   setUp(() {
@@ -65,7 +87,7 @@ void main() {
     () async {
       final first = Completer<dynamic>();
       var calls = 0;
-      final c = NotificationCenterController(
+      final c = testController(
         read: (_, _) {
           calls++;
           return calls == 1 ? first.future : Future.value(badge(unread: false));
@@ -88,7 +110,7 @@ void main() {
     () async {
       final old = Completer<dynamic>(), current = Completer<dynamic>();
       var calls = 0;
-      final c = NotificationCenterController(
+      final c = testController(
         read: (_, _) => ++calls == 1 ? old.future : current.future,
       );
       addTearDown(c.dispose);
@@ -113,7 +135,7 @@ void main() {
     () async {
       final old = Completer<dynamic>(), current = Completer<dynamic>();
       var calls = 0;
-      final c = NotificationCenterController(
+      final c = testController(
         read: (_, _) => ++calls == 1 ? old.future : current.future,
       );
       addTearDown(c.dispose);
@@ -134,7 +156,7 @@ void main() {
   test('failed shared badge read releases pending work for retry', () async {
     final pending = Completer<dynamic>();
     var calls = 0;
-    final c = NotificationCenterController(
+    final c = testController(
       read: (_, _) => ++calls == 1 ? pending.future : Future.value(badge()),
     );
     addTearDown(c.dispose);
@@ -149,7 +171,7 @@ void main() {
   });
   test('disposing rejects completion of a shared badge read', () async {
     final pending = Completer<dynamic>();
-    final c = NotificationCenterController(read: (_, _) => pending.future);
+    final c = testController(read: (_, _) => pending.future);
     c.configure(userId: 'u', organizationId: 1);
     final refresh = c.refreshBadge();
     c.dispose();
@@ -160,9 +182,9 @@ void main() {
   test('successful mute starts a fresh badge read instead of joining pre-mute work', () async {
     final old = Completer<dynamic>(), current = Completer<dynamic>();
     var polls = 0;
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, _) async {
-        if (name == 'get_notification_center_badge') {
+        if (name == 'get_notification_center_prepared_badge') {
           return ++polls == 1 ? old.future : current.future;
         }
         return <String, dynamic>{};
@@ -184,10 +206,10 @@ void main() {
     'unread rows retain the pre-open watermark until the next open',
     () async {
       var watermark = 4;
-      final c = NotificationCenterController(
+      final c = testController(
         read: (name, params) async {
-          if (name == 'get_notification_center_badge') return badge();
-          if (params['p_open'] == true) {
+          if (name == 'get_notification_center_prepared_badge') return badge();
+          if (params['p_mode'] == 'open') {
             return {
               ...opened([
                 {'id': 'read', 'sequence': 4},
@@ -221,8 +243,9 @@ void main() {
     },
   );
   test('older backends do not invent an unread watermark', () async {
-    final c = NotificationCenterController(
-      read: (name, params) async => name == 'get_notification_center_badge'
+    final c = testController(
+      read: (name, params) async =>
+          name == 'get_notification_center_prepared_badge'
           ? badge()
           : opened([
               {'id': 'unknown', 'sequence': 5},
@@ -242,7 +265,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final c = NotificationCenterController();
+      final c = testController();
       addTearDown(c.dispose);
       c.snapshot = 7;
       c.previousReadThrough = 4;
@@ -302,10 +325,11 @@ void main() {
   test('open acknowledges once and late badge cannot restore unread', () async {
     final pending = Completer<dynamic>();
     final calls = <String>[];
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, params) async {
-        calls.add(params['p_open'] == true ? 'open_daily' : name);
-        if (name == 'get_notification_center_badge') return pending.future;
+        calls.add(params['p_mode'] == 'open' ? 'open_daily' : name);
+        if (name == 'get_notification_center_prepared_badge')
+          return pending.future;
         return opened();
       },
     );
@@ -320,9 +344,9 @@ void main() {
   test('badge begun during acknowledgement cannot undo it', () async {
     final pending = Completer<dynamic>(), polling = Completer<dynamic>();
     var polls = 0;
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, params) async {
-        if (name == 'get_notification_center_badge') {
+        if (name == 'get_notification_center_prepared_badge') {
           polls++;
           if (polls == 1) return badge();
           return polls == 2 ? polling.future : badge(unread: false);
@@ -346,9 +370,11 @@ void main() {
   });
   test('identity reset rejects a pending snapshot', () async {
     final pending = Completer<dynamic>();
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, params) async =>
-          name == 'get_notification_center_badge' ? badge() : pending.future,
+          name == 'get_notification_center_prepared_badge'
+          ? badge()
+          : pending.future,
     );
     addTearDown(c.dispose);
     c.configure(userId: 'u', organizationId: 1);
@@ -367,9 +393,9 @@ void main() {
     'capability absence hides center without detection acknowledgement',
     () async {
       final calls = <String>[];
-      final c = NotificationCenterController(
+      final c = testController(
         read: (name, params) async {
-          calls.add(params['p_open'] == true ? 'open_daily' : name);
+          calls.add(params['p_mode'] == 'open' ? 'open_daily' : name);
           return {'enabled': true};
         },
       );
@@ -378,19 +404,20 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       await c.open();
       expect(c.enabled, isFalse);
-      expect(calls, ['get_notification_center_badge']);
+      expect(calls, ['get_notification_center_prepared_badge']);
     },
   );
   test(
     'failed open preserves unread and pagination never acknowledges',
     () async {
       final calls = <String>[];
-      final c = NotificationCenterController(
+      final c = testController(
         read: (name, params) async {
-          calls.add(params['p_open'] == true ? 'open_daily' : name);
-          if (name == 'get_notification_center_badge') return badge();
-          if (params['p_open'] == true) throw StateError('offline');
+          calls.add(params['p_mode'] == 'open' ? 'open_daily' : name);
+          if (name == 'get_notification_center_prepared_badge') return badge();
+          if (params['p_mode'] == 'open') throw StateError('offline');
           return {
+            ...opened(),
             'items': [
               {'id': 'sixth'},
             ],
@@ -405,20 +432,23 @@ void main() {
       expect(c.unread, isTrue);
       c.snapshotAt = DateTime.utc(2026, 10, 26);
       c.nextCursor = 'cursor';
+      c.viewToken = '00000000-0000-0000-0000-000000000007';
       await c.loadMore();
       expect(c.items.single.id, 'sixth');
       expect(calls.where((name) => name == 'open_daily').length, 1);
-      expect(calls, contains('get_notification_center_daily_overview'));
+      expect(calls, contains('get_notification_center_view'));
     },
   );
   testWidgets('polling pauses in background and does not acknowledge', (
     tester,
   ) async {
     final calls = <String>[];
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, params) async {
-        calls.add(params['p_open'] == true ? 'open_daily' : name);
-        return name == 'get_notification_center_badge' ? badge() : opened();
+        calls.add(params['p_mode'] == 'open' ? 'open_daily' : name);
+        return name == 'get_notification_center_prepared_badge'
+            ? badge()
+            : {...opened(), 'unread': params['p_mode'] != 'open'};
       },
     );
     addTearDown(c.dispose);
@@ -436,9 +466,9 @@ void main() {
     expect(calls.length, count);
   });
   test('pagination failure retains items and snapshot', () async {
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, params) async {
-        if (name == 'get_notification_center_daily_overview') {
+        if (name == 'get_notification_center_view') {
           throw StateError('offline');
         }
         return badge();
@@ -451,60 +481,55 @@ void main() {
     c.snapshot = 9;
     c.snapshotAt = DateTime.utc(2026, 10, 26);
     c.nextCursor = 'cursor';
+    c.viewToken = '00000000-0000-0000-0000-000000000007';
     await c.loadMore();
     expect(c.items.single, same(item));
     expect(c.snapshot, 9);
     expect(c.pageFailed, isTrue);
   });
   test(
-    'hydration batches IDs, removes revoked and preserves section/order',
+    'token refresh restores slots and removes revoked private payloads',
     () async {
-      final batches = <int>[];
-      final c = NotificationCenterController(
+      final requests = <Map<String, dynamic>>[];
+      final c = testController(
         read: (name, params) async {
-          if (name == 'get_notification_center_badge') {
+          if (name == 'get_notification_center_prepared_badge')
             return badge(unread: false);
-          }
-          expect(name, 'get_notification_center_daily_overview');
-          final ids = params['p_ids'] as List;
-          batches.add(ids.length);
-          return {
-            'items': ids
-                .where((id) => id != '0')
-                .toList()
-                .reversed
-                .map(
-                  (id) => {
-                    'id': id,
-                    'kind': 'order_created',
-                    'status': 'paid',
-                    'data': {},
-                  },
-                )
-                .toList(),
-          };
+          requests.add(Map.of(params));
+          return opened([
+            {'id': '0', 'position': 1, 'state': 'removed'},
+            {
+              'id': '1',
+              'position': 2,
+              'state': 'ready',
+              'kind': 'order_created',
+              'section': 1,
+              'status': 'paid',
+            },
+          ]);
         },
       );
       addTearDown(c.dispose);
       c.configure(userId: 'u', organizationId: 1);
       await Future<void>.delayed(Duration.zero);
-      c.items = List.generate(201, (i) => row('$i', section: 1));
+      c.items = [row('0', section: 1), row('1', section: 1)];
       c.panelOpen = true;
+      c.viewToken = '00000000-0000-0000-0000-000000000007';
       await c.refresh();
-      expect(batches, [201]);
-      expect(c.items.length, 200);
-      expect(c.items.first.id, '1');
-      expect(c.items.first.status, 'paid');
-      expect(c.items.first.section, 1);
+      expect(requests.single['p_mode'], 'refresh');
+      expect(requests.single.containsKey('p_ids'), isFalse);
+      expect(c.items.first.state, 'removed');
+      expect(c.items.last.status, 'paid');
+      expect(c.items.last.section, 1);
     },
   );
   test(
     'permission failure clears private content, network failure retains it',
     () async {
       var denied = false;
-      final c = NotificationCenterController(
+      final c = testController(
         read: (name, params) async {
-          if (name == 'get_notification_center_badge') return badge();
+          if (name == 'get_notification_center_prepared_badge') return badge();
           if (denied) {
             throw const PostgrestException(message: 'denied', code: '42501');
           }
@@ -516,6 +541,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       c.items = [row('secret')];
       c.panelOpen = true;
+      c.viewToken = '00000000-0000-0000-0000-000000000007';
       await c.refresh();
       expect(c.items.single.id, 'secret');
       expect(c.refreshFailed, isTrue);
@@ -628,9 +654,7 @@ void main() {
   testWidgets(
     'panel is accessible at mobile, breakpoint and desktop with large text',
     (tester) async {
-      final controller = NotificationCenterController(
-        read: (_, params) async => {},
-      );
+      final controller = testController(read: (_, params) async => {});
       addTearDown(controller.dispose);
       controller.items = [
         row(
@@ -730,10 +754,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final calls = <String>[];
-      final c = NotificationCenterController(
+      final c = testController(
         read: (name, params) async {
-          calls.add(params['p_open'] == true ? 'open_daily' : name);
+          calls.add(params['p_mode'] == 'open' ? 'open_daily' : name);
           return {
+            ...opened(),
+            'unread': true,
             'items': [
               {
                 'id': 'sixth',
@@ -766,6 +792,7 @@ void main() {
       ];
       c.snapshotAt = DateTime.utc(2026, 10, 26);
       c.nextCursor = 'cursor';
+      c.viewToken = '00000000-0000-0000-0000-000000000007';
       c.unread = true;
       final selected = <String>[];
       await tester.pumpWidget(
@@ -787,7 +814,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Same title'), findsNWidgets(2));
       expect(find.text('NotificationCenter.kinds.form_opened'), findsOneWidget);
-      expect(calls, ['get_notification_center_daily_overview']);
+      expect(calls, ['get_notification_center_view']);
       expect(c.unread, isTrue);
       expect(tester.takeException(), isNull);
     },
@@ -799,7 +826,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final c = NotificationCenterController(read: (_, params) async => {});
+      final c = testController(read: (_, params) async => {});
       addTearDown(c.dispose);
       c.items = [
         row(
@@ -901,8 +928,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final c = NotificationCenterController()
-        ..snapshotAt = DateTime.utc(2026, 10, 26, 12);
+      final c = testController()..snapshotAt = DateTime.utc(2026, 10, 26, 12);
       addTearDown(c.dispose);
       c.items = [
         row(
@@ -961,21 +987,23 @@ void main() {
     'summary hydration updates full count without moving or acknowledging',
     () async {
       final calls = <String>[];
-      final c = NotificationCenterController(
+      final c = testController(
         read: (name, params) async {
-          calls.add(params['p_open'] == true ? 'open_daily' : name);
-          if (name == 'get_notification_center_badge') {
+          calls.add(params['p_mode'] == 'open' ? 'open_daily' : name);
+          if (name == 'get_notification_center_prepared_badge') {
             return badge(unread: false);
           }
-          expect(params['p_ids'], ['summary']);
+          expect(params['p_mode'], 'refresh');
+          expect(params['p_view'], isNotNull);
           return {
+            ...opened(),
             'items': [
               {
                 'id': 'summary',
                 'kind': 'order_created',
-                'section': 2,
-                'sequence': 99,
-                'occurredAt': '2026-11-01T12:00:00Z',
+                'section': 1,
+                'sequence': 5,
+                'occurredAt': '2026-10-26T12:00:00Z',
                 'occasionLink': 'event-1',
                 'data': {'activityCount': 34, 'relatedOrders': true},
               },
@@ -998,6 +1026,7 @@ void main() {
       });
       c.items = [original];
       c.panelOpen = true;
+      c.viewToken = '00000000-0000-0000-0000-000000000007';
       await c.refresh();
       final refreshed = c.items.single;
       expect(refreshed.data['activityCount'], 34);
@@ -1012,7 +1041,7 @@ void main() {
   testWidgets(
     'occasions stay separate, ages are row metadata and summary names adapt to width',
     (tester) async {
-      final c = NotificationCenterController();
+      final c = testController();
       addTearDown(c.dispose);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -1119,11 +1148,11 @@ void main() {
     () async {
       final requests = <Map<String, dynamic>>[];
       var timezone = 'Europe/Prague';
-      final c = NotificationCenterController(
+      final c = testController(
         timezone: () => timezone,
         read: (name, params) async {
-          if (name == 'get_notification_center_badge') return badge();
-          expect(name, 'get_notification_center_daily_overview');
+          if (name == 'get_notification_center_prepared_badge') return badge();
+          expect(name, 'get_notification_center_view');
           requests.add(Map.of(params));
           return {...opened(), 'snapshotDay': '2026-10-26'};
         },
@@ -1133,16 +1162,18 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       await c.open();
       expect(requests.length, 1);
-      expect(requests.single['p_open'], isTrue);
+      expect(requests.single['p_mode'], 'open');
       c.items = List.generate(201, (i) => row('$i'));
       requests.clear();
       await c.refresh();
       expect(requests.length, 1);
-      expect((requests.single['p_ids'] as List).length, 201);
-      expect(requests.single['p_open'], isNull);
+      expect(requests.single['p_limit'], inInclusiveRange(30, 100));
+      expect(requests.single.containsKey('p_ids'), isFalse);
+      expect(requests.single['p_mode'], 'refresh');
       timezone = 'America/New_York';
       requests.clear();
       c.nextCursor = 'next';
+      c.viewToken = '00000000-0000-0000-0000-000000000007';
       await c.loadMore();
       expect(requests.length, 1);
       expect(requests.single['p_cursor'], 'next');
@@ -1183,14 +1214,16 @@ void main() {
 
   test('summary hydration rejects stale identities', () async {
     final pending = Completer<dynamic>();
-    final c = NotificationCenterController(
-      read: (name, _) async =>
-          name == 'get_notification_center_badge' ? badge() : pending.future,
+    final c = testController(
+      read: (name, _) async => name == 'get_notification_center_prepared_badge'
+          ? badge()
+          : pending.future,
     );
     addTearDown(c.dispose);
     c.configure(userId: 'u', organizationId: 1);
     await Future<void>.delayed(Duration.zero);
     c.panelOpen = true;
+    c.viewToken = '00000000-0000-0000-0000-000000000007';
     c.items = [
       row('summary', data: {'activityCount': 35, 'relatedOrders': true}),
     ];
@@ -1210,9 +1243,9 @@ void main() {
   });
   test('server read state overrides seen watermark and item read is one scoped RPC', () async {
     final requests = <Map<String, dynamic>>[];
-    final c = NotificationCenterController(
+    final c = testController(
       read: (name, params) async {
-        if (name == 'mark_notification_center_item_read') {
+        if (name == 'mark_notification_center_view_item_read') {
           requests.add(params);
           return true;
         }
@@ -1222,6 +1255,7 @@ void main() {
     addTearDown(c.dispose);
     c.configure(userId: 'u', organizationId: 3);
     c.snapshot = 10;
+    c.viewToken = '00000000-0000-0000-0000-000000000007';
     c.previousReadThrough = 10;
     final item = NotificationItem.fromJson({
       'id': 'occasion-kind:1:form_opened:batch:0',
@@ -1234,8 +1268,7 @@ void main() {
     await c.markRead(item);
     expect(requests.single['p_scope'], {
       'id': item.id,
-      'snapshot': 10,
-      'throughSequence': 7,
+      'viewToken': '00000000-0000-0000-0000-000000000007',
     });
     expect(c.isUnread(item), isFalse);
     await c.markRead(item);
@@ -1243,12 +1276,13 @@ void main() {
   });
 
   test('selected group scope survives route and rights invalidation', () {
-    final c = NotificationCenterController();
+    final c = testController();
     addTearDown(c.dispose);
     c.configure(userId: 'u', organizationId: 3);
     c.snapshot = 42;
     c.snapshotAt = DateTime.utc(2026, 10, 28);
     c.displayTimezone = 'Europe/Prague';
+    c.viewToken = '00000000-0000-0000-0000-000000000007';
     final scope = c.selectionScope(
       row('occasion-kind:1:order_created', data: {'activityCount': 6}),
     );
@@ -1261,6 +1295,7 @@ void main() {
     expect(c.snapshot, 0);
     expect(scope, {
       'id': 'occasion-kind:1:order_created',
+      'viewToken': '00000000-0000-0000-0000-000000000007',
       'organization': 3,
       'snapshot': 42,
       'timezone': 'Europe/Prague',

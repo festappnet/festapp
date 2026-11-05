@@ -2,17 +2,13 @@
 """Generate the scoped E1 runtime contract from authored SQL, never live catalog hashes."""
 import argparse
 import hashlib
+import json
 import re
 from pathlib import Path
 from generate_canonical_source_contract import definitions, statements, CREATE, identity
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = [
-    'user_permissions/operation_rules.sql', 'user_permissions/domain_operations.sql', 'user_permissions/ticket_layout.sql', 'others/ticket_layout.sql', 'others/update_occasion.sql',
-    'others/save_occasion_client_sync_v1.sql',
-    'others/save_occasion_domain_command_internal_v1.sql',
-    'others/legacy_occasion_facades.sql',
-]
+SOURCES = json.loads((ROOT / 'automation/tickets/ticket-layout-write-contract-sources.json').read_text())
 TARGET = ROOT / 'database/functions/others/get_ticket_layout_write_contract_v1.sql'
 
 

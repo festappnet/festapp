@@ -74,6 +74,32 @@ void main() {
         expect(tester.takeException(), isNull);
         await tester.tap(unread);
         expect(followed?.id, 'unread');
+        // The panel retains its viewport and offset while polling and visiting
+        // settings, including in a narrow centered dialog.
+        controller.items = List.generate(30, (i) => row('history-$i', true, 1));
+        controller.notifyListeners();
+        await tester.pumpAndSettle();
+        final feed = find.byKey(const PageStorageKey('notification-feed'));
+        await tester.drag(feed, const Offset(0, -350));
+        await tester.pumpAndSettle();
+        final scroll = tester.widget<ListView>(feed).controller!;
+        final offset = scroll.offset;
+        final bounds = tester.getRect(feed);
+        expect(offset, greaterThan(100));
+        controller.loading = true;
+        controller.notifyListeners();
+        await tester.pump();
+        expect(scroll.offset, offset);
+        expect(tester.getRect(feed), bounds);
+        controller.loading = false;
+        controller.notifyListeners();
+        await tester.tap(find.byIcon(Icons.tune));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+        expect(tester.widget<ListView>(feed).controller!.offset, offset);
+        expect(tester.getRect(feed), bounds);
+
         const capturePath = String.fromEnvironment('NOTIFICATION_CAPTURE_DIR');
         if (capturePath.isNotEmpty) {
           final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(imageKey));

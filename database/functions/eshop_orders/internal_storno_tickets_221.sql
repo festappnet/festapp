@@ -40,6 +40,7 @@ BEGIN
     -- 2. (NEW) Delete any occasion_users linked to these tickets.
     -- We delete directly because the parent function already
     -- verified the user has 'editor' permissions.
+    PERFORM public.notification_center_prepared_invalidate_user(m."user",m.occasion) FROM public.occasion_users m WHERE m.ticket=ANY(ticket_ids_to_storno);
     DELETE FROM public.occasion_users
     WHERE ticket = ANY(ticket_ids_to_storno);
 

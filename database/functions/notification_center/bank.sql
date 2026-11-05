@@ -60,6 +60,7 @@ BEGIN
   ep:=old.episode;
   IF nc_reason IS NOT NULL AND (nc_reason='fio_token_invalid_or_inactive' OR (h.failures>=2 AND h.failure_since<=p_at-interval '15 minutes')) THEN
    IF NOT coalesce((old.state->>'problem')::boolean,false) THEN
+    PERFORM public.notification_center_prepared_invalidate((old.state->>'eventId')::uuid);
     ep:=ep+1;
     ev:=public.notification_center_publish_internal(scope.organization,NULL,'bank_problem',key||':episode:'||ep,
      jsonb_build_object('reason',nc_reason,'bankConnectionId',c.id),NULL,p_at,coalesce(affected,'{}'));
@@ -73,6 +74,7 @@ BEGIN
     old.state:=old.state||jsonb_build_object('reason',nc_reason);
    END IF;
   ELSIF nc_reason IS NULL AND p_success_at IS NOT NULL AND (old.observed_at<p_success_at OR NOT coalesce((old.state->>'problem')::boolean,false)) THEN
+   PERFORM public.notification_center_prepared_invalidate((old.state->>'eventId')::uuid);
    UPDATE public.notification_center_events SET status='recovered' WHERE id=(old.state->>'eventId')::uuid;
    old.state:=old.state||jsonb_build_object('problem',false,'reason',NULL);
   END IF;

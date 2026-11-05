@@ -18,6 +18,8 @@ BEGIN
  DELETE FROM public.event_users_saved WHERE "user"=p_user AND event IN(SELECT id FROM public.events WHERE occasion=p_occasion);
  DELETE FROM public.user_news WHERE "user"=p_user AND occasion=p_occasion;
  -- Membership attention belongs to the deleted application, not the account.
+ PERFORM public.notification_center_prepared_delete_events(ARRAY(SELECT e.id FROM public.notification_center_events e JOIN public.occasions o ON o.id=p_occasion AND o.organization=e.organization
+  WHERE e.occasion=p_occasion AND e.kind='occasion_joined' AND e.data->>'userId'=p_user::text));
  DELETE FROM public.notification_center_events e
  USING public.occasions o
  WHERE o.id=p_occasion AND e.organization=o.organization AND e.occasion=o.id

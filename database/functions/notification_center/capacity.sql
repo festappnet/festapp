@@ -41,6 +41,7 @@ BEGIN
   IF crossing='capacity_reopened' THEN
    UPDATE public.notification_center_events SET status='recovered',data=data||next_state WHERE organization=p_org AND source_key=p_key||':episode:'||nc_episode;
   ELSIF crossing='capacity_full' AND old.state->>'episodeEvent' IS NOT NULL THEN
+   PERFORM public.notification_center_prepared_invalidate((old.state->>'episodeEvent')::uuid);
    UPDATE public.notification_center_events SET kind='capacity_full',data=data||next_state,status='active',attention_revision=attention_revision+CASE WHEN created_xid=pg_current_xact_id() THEN 0 ELSE 1 END
     WHERE id=(old.state->>'episodeEvent')::uuid RETURNING id INTO event;
    IF event IS NOT NULL THEN PERFORM public.notification_center_capture_recipients_internal(event,p_actor);
@@ -118,6 +119,9 @@ DECLARE item record; bp bigint; org bigint;
 BEGIN
  SELECT oc.organization INTO org FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
  IF NOT public.notification_center_initialized_internal(org) THEN RETURN; END IF;
+ IF EXISTS(SELECT 1 FROM public.notification_center_events WHERE data->>'orderId'=p_order::text AND (data->>'count' IS NULL OR data->>'formContext' IS NULL)) THEN
+  PERFORM public.notification_center_prepared_invalidate_order(p_order);
+ END IF;
  PERFORM public.notification_center_form_capacity_internal((SELECT form FROM eshop.orders WHERE id=p_order));
  FOR item IN SELECT DISTINCT product FROM eshop.order_product_ticket WHERE "order"=p_order AND product IS NOT NULL LOOP
   PERFORM public.notification_center_product_capacity_internal(item.product);

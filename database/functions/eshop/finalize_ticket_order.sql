@@ -258,6 +258,7 @@ BEGIN
 
         END IF;
 
+        PERFORM public.notification_center_prepared_invalidate_order(order_id);
         -- persist all of the non‐state fields
         UPDATE eshop.orders
         SET

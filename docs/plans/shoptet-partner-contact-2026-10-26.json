@@ -1,5 +1,5 @@
 {
-  "state": "PARTNER_INQUIRY_SENT",
+  "state": "PROPOSAL_SUBMITTED_OWNER_CONFIRMED",
   "sent_recorded_at": "2026-10-26T21:03:41.143673+00:00",
   "channel": "email",
   "to": "api@shoptet.cz",
@@ -14,5 +14,12 @@
   "recipient_source": "https://developers.shoptet.com/api/basic-information/",
   "scope": "Initial technical/business inquiry using user-approved wording. Not a marketplace application, agreement, fixed-fee acceptance or addon approval.",
   "delivery_confirmed": false,
-  "form_submitted": false
+  "form_submitted": true,
+  "submission_confirmation": {
+    "recorded_at": "2026-11-01",
+    "source": "Explicit owner confirmation in conversation",
+    "independent_receipt_found": false,
+    "note": "Owner confirms proposal was already sent. Supersedes earlier unsubmitted form state; do not duplicate submission."
+  },
+  "next_action": "Await Shoptet response; do not resubmit."
 }

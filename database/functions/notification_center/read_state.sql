@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS public.notification_center_read_batches (
  after_sequence bigint NOT NULL, through_sequence bigint NOT NULL,
  read_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  CHECK(after_sequence>=0 AND through_sequence>after_sequence),
- UNIQUE(organization,recipient,group_key,through_sequence)
+ CONSTRAINT notification_center_read_receipt_range UNIQUE(organization,recipient,group_key,after_sequence,through_sequence)
 );
 ALTER TABLE public.notification_center_read_batches ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.notification_center_read_batches FROM PUBLIC,anon,authenticated,service_role;
@@ -25,7 +25,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
   SELECT b.* FROM public.notification_center_read_batches b,state s
   WHERE b.organization=d.organization AND b.recipient=d.recipient AND b.group_key=s.key
    AND d.sequence>b.after_sequence AND d.sequence<=b.through_sequence
-  ORDER BY b.through_sequence LIMIT 1),
+  ORDER BY b.through_sequence,b.read_at,b.id LIMIT 1),
  bounds AS (
   SELECT s.*,greatest(s.baseline,coalesce((SELECT max(b.through_sequence)
    FROM public.notification_center_read_batches b WHERE b.organization=d.organization
@@ -49,6 +49,7 @@ RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensi
 DECLARE id text:=p_scope->>'id'; base text; lower_bound bigint; upper_bound bigint;
  actual_upper bigint; baseline bigint; last_read bigint; occ bigint; snap bigint;
 BEGIN
+ IF p_scope ? 'viewToken' THEN RETURN public.mark_notification_center_view_item_read(p_organization,p_scope); END IF;
  PERFORM public.notification_center_check_context(p_organization);
  IF coalesce(p_scope->>'snapshot','') !~ '^[0-9]{1,18}$' THEN
   RAISE invalid_parameter_value USING MESSAGE='notification_invalid_snapshot'; END IF;
@@ -78,13 +79,7 @@ BEGIN
    ELSE 'event:'||(v.event).id=base END
   AND NOT coalesce((v.event).actor=auth.uid() AND (v.event).kind IN ('order_created','order_cancelled'),false);
  IF actual_upper IS NULL THEN RETURN false; END IF;
- SELECT coalesce(max(through_sequence),0) INTO last_read FROM public.notification_center_read_batches
- WHERE organization=p_organization AND recipient=auth.uid() AND group_key=base;
- lower_bound:=greatest(lower_bound,baseline,last_read);
- IF actual_upper<=lower_bound THEN RETURN true; END IF;
- INSERT INTO public.notification_center_read_batches(organization,recipient,group_key,after_sequence,through_sequence)
- VALUES(p_organization,auth.uid(),base,lower_bound,actual_upper) ON CONFLICT DO NOTHING;
- RETURN true;
+ RETURN public.notification_center_prepared_seal(p_organization,base,lower_bound,actual_upper);
 END $$;
 REVOKE ALL ON FUNCTION public.mark_notification_center_item_read(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.mark_notification_center_item_read(bigint,jsonb) TO authenticated;

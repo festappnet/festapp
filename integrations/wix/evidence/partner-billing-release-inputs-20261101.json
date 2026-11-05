@@ -23,18 +23,21 @@
     "refundPolicyReference": "Gmail 1a1825fe56ce9706"
   },
   "editorReceipts": {
-    "Harmony": null,
-    "Editor": null,
-    "Studio": null
+    "Harmony": "integrations/wix/evidence/reviewer-demo-20261101.json; integrations/wix/evidence/harmony-qualification-20261025.json",
+    "Editor": "integrations/wix/evidence/published-checkout-20261025.json; integrations/wix/evidence/editor-install-ab-20261025.json; integrations/wix/evidence/live-native-auth-20261101.json",
+    "Studio": "integrations/wix/evidence/published-checkout-current-20261025.json; integrations/wix/evidence/studio-lifecycle-20261025.json; integrations/wix/evidence/live-native-auth-20261101.json"
   },
-  "publicStoreAssetsVerified": false,
+  "publicStoreAssetsVerified": true,
   "billingImplementationReceipt": "integrations/wix/evidence/compatibility-20261101.json; docs/plans/wix-partner-billing-CRITIC-2026-10-28.md; docs/operations/releases/festapptickets-wix-critic-fix-2026-10-28.json",
-  "qualificationNote": "Native isExternalBilling=true and BI ingestion confirmed. Normal native config2.1 and prior stable widget restored after tests. A fresh actual native2.0 widget running the official full-client diagnostic returned Site/injectionCount0/proof timeout. App Market submission held for Wix SDK token-delivery investigation; current editor checkout/reviewer/store gates remain incomplete. Financial dispatch remains disabled.",
+  "qualificationNote": "Exact deployed widget sha256 7998e4272d7c81857bb358d4dfaef8a054140c790ac5261df4fcfc998b5929df passes genuine live native authentication on all three editors. Dedicated hidden zero-price review event1072641/form620 created through supported UI. Current direct order7001 and actual published Harmony embedded order7002 passed canonical checkout, ticket issuance and provider email acceptance; only7002 has verified Wix origin. Editor/Studio retain historical adapted synthetic checkout/lifecycle evidence plus current native authentication proof; new full purchases on those editors are not claimed. This is explicit evidence reuse across the unchanged checkout interface, not a claim that historical transport was production. Normal financial dispatch remains disabled. Native store/profile, saved demo, truthful historical gallery, public legal/support endpoints and current reviewer procedure verified in store-review-20261101.json. Minor historical gallery button wording difference is explicitly retained; no exact-current-screenshot claim.",
   "executedAddendumReceipt": "integrations/wix/evidence/addendum-completion-20261028.json",
   "previewHostingReceipt": "integrations/wix/evidence/hosting-preview-20261028.json",
-  "stableHostingReceipt": "integrations/wix/evidence/hosting-auth-fix-rollback-20261101.json",
+  "stableHostingReceipt": "docs/operations/releases/wix-runtime-20261101.json",
   "biCompletionReceipt": "integrations/wix/evidence/bi-verification-completion-20261101.json",
   "authInvestigationReceipt": "integrations/wix/evidence/auth-capture-fix-20261101.json",
   "nativeRestorationReceipt": "integrations/wix/evidence/native-restoration-20261101.json",
-  "nativeDiagnosticReceipt": "integrations/wix/evidence/native-auth-diagnostic-result-20261101.json"
+  "nativeDiagnosticReceipt": "integrations/wix/evidence/native-auth-diagnostic-result-20261101.json",
+  "nativeLiveAuthReceipt": "integrations/wix/evidence/live-native-auth-20261101.json",
+  "reviewerDemoReceipt": "integrations/wix/evidence/reviewer-demo-20261101.json",
+  "publicStoreAssetsReceipt": "integrations/wix/evidence/store-review-20261101.json"
 }

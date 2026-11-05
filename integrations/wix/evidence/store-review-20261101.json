@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-11-01",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "releasedVersion": "2.1",
+  "demo": {"wixUrl":"https://info9468674.wixsite.com/my-site-3","formUrl":"https://vstupenky.online/form/wix-review-test-2027","savedInAppInfo":true,"profileUpdated":true,"nativePublishedFormUrlColdReadback":true,"embeddedFreeCheckoutAccepted":true,"eventId":1072641,"formId":620,"embeddedOrderId":7002},
+  "gallery": {"count":2,"currentCdnOriginals":["https://static.wixstatic.com/media/397be0_5561fa2f82bb42fd98998b546e9fe296~mv2.png","https://static.wixstatic.com/media/397be0_fdfb3546ef264365a2585747e4ee4fb8~mv2.png"],"evidence":"integrations/wix/evidence/gallery-20261025.json","scope":"Historical unedited native synthetic variable-price checkout samples, not current UI captures; summary button wording has since changed. No actual buyer/payment data."},
+  "icon":"Canonical November 1 icon; see integrations/wix/evidence/canonical-icon-20261101.json",
+  "termsUrl":"https://vstupenky.online/terms/",
+  "privacyUrl":"https://vstupenky.online/privacy/",
+  "supportUrl":"https://vstupenky.online/support/",
+  "publicPagesOpened":true,
+  "nativeSupportEmail":"info@festapp.net",
+  "securityPrivacyDisclosure":"Existing saved declarations inspected; cloud providers Hetzner, Cloudflare, AWS SES Frankfurt; DPO contact info@festapp.net.",
+  "agreement":{"url":"https://dev.wix.com/app-market-partner-agreement","effective":"2026-06-30","scope":"Same previously reviewed agreement and signed addendum; default 20 percent net app revenue subject to written agreement, 2.5 percent Wix-collected billing transaction fee. See BILLING-APPROVAL.md and signed addendum evidence."},
+  "nativeChecklist":"0 blockers, 4 recommendations after profile update",
+  "marketplaceSubmitted":false
+}

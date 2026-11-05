@@ -173,6 +173,7 @@ BEGIN
   DELETE FROM public.user_companions WHERE "user"=v_user OR companion=v_user;
   DELETE FROM public.user_reset_token WHERE "user"=v_user;
   DELETE FROM eshop.bank_account_users WHERE "user"=v_user;
+  PERFORM public.notification_center_prepared_invalidate_user(v_user);
   DELETE FROM public.occasion_users WHERE "user"=v_user;
   DELETE FROM public.unit_users WHERE "user"=v_user;
   DELETE FROM public.organization_users WHERE "user"=v_user;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
@@ -228,8 +230,24 @@ class DbOrders {
       },
     );
 
-    // Response is the data object directly.
-    return _parseOrdersBundle(response);
+    // Keep the token retryable until the authorized response has reached and
+    // parsed on the client. A lost response must not destroy selection scope.
+    final bundle = _parseOrdersBundle(response);
+    if (notificationGroup?['viewToken'] != null) {
+      unawaited(
+        _supabase
+            .rpc(
+              'get_notification_center_view',
+              params: {
+                'p_organization': notificationGroup!['organization'],
+                'p_view': notificationGroup['viewToken'],
+                'p_mode': 'close',
+              },
+            )
+            .then<void>((_) {}, onError: (Object _) {}),
+      );
+    }
+    return bundle;
   }
 
   static ReservationsBundle _parseOrdersBundle(dynamic json) {

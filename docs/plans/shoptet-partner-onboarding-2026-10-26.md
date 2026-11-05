@@ -1,5 +1,9 @@
 # Shoptet: partnerský doplněk pro prodej vstupenek
 
+## Aktuální stav potvrzený vlastníkem - 2026-11-01
+
+Návrh pro Shoptet už byl odeslán podle výslovného potvrzení vlastníka. Čekáme na odpověď; další podání neposílat. Toto potvrzení nahrazuje starší záznamy o pouze připraveném a neodeslaném formuláři. Samostatný doklad o odeslání formuláře nebyl v této kontrole nalezen.
+
 26. 10. 2026 · Stav: úvodní návrh odeslán API týmu, čekáme na odpověď; platformní kontrakt dosud nepotvrzený · Ověřování: standard
 
 Stručný obchodní postup je níže, podrobný návrh kontraktů a testů v [technické příloze](shoptet-partner-technical-2026-10-26.md). Oba dokumenty tvoří jeden plán; příloha nerozšiřuje oprávnění k produkčním zásahům.

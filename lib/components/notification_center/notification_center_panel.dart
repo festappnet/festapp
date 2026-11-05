@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -26,6 +28,17 @@ class NotificationCenterPanel extends StatefulWidget {
 
 class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   bool settings = false;
+  final _feedScroll = ScrollController();
+  double _feedOffset = 0;
+  final _settingsScroll = ScrollController();
+
+  @override
+  void dispose() {
+    _feedScroll.dispose();
+    _settingsScroll.dispose();
+    super.dispose();
+  }
+
   String s(String key) => NotificationCenterStrings.text(key);
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -61,7 +74,24 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   actions: [
                     IconButton(
                       tooltip: s(settings ? 'back' : 'settings'),
-                      onPressed: () => setState(() => settings = !settings),
+                      onPressed: () {
+                        if (!settings && _feedScroll.hasClients) {
+                          _feedOffset = _feedScroll.offset;
+                        }
+                        setState(() => settings = !settings);
+                        if (settings) {
+                          unawaited(c.loadSettings());
+                        } else {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted && !settings && _feedScroll.hasClients) {
+                              _feedScroll.jumpTo(_feedOffset.clamp(
+                                0.0,
+                                _feedScroll.position.maxScrollExtent,
+                              ));
+                            }
+                          });
+                        }
+                      },
                       icon: Icon(settings ? Icons.arrow_back : Icons.tune),
                     ),
                   ],
@@ -70,15 +100,23 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
             ),
           ),
           const Divider(height: 1),
-          if (c.loading) const LinearProgressIndicator(),
+          SizedBox(
+            height: 4,
+            child: c.loading || c.preparing || c.settingsLoading
+                ? const LinearProgressIndicator()
+                : null,
+          ),
           Flexible(
             child: settings
                 ? ListView(
-                    shrinkWrap: true,
+                    key: const PageStorageKey('notification-settings'),
+                    controller: _settingsScroll,
+                    primary: false,
                     padding: const EdgeInsets.all(16),
                     children: [
                       Text(s('muteHelp')),
                       const SizedBox(height: 16),
+                      if (c.settingsFailed) Text(s('loadFailed')),
                       for (final occasion in c.occasions)
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
@@ -96,10 +134,19 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                                   }
                                 },
                         ),
+                      if (c.settingsCursor != null)
+                        TextButton(
+                          onPressed: c.settingsLoading
+                              ? null
+                              : () => c.loadSettings(more: true),
+                          child: Text(s('more')),
+                        ),
                     ],
                   )
                 : ListView(
-                    shrinkWrap: true,
+                    key: const PageStorageKey('notification-feed'),
+                    controller: _feedScroll,
+                    primary: false,
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
                     children: [
                       if (c.unread)
@@ -141,7 +188,47 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                             ],
                           ),
                         ),
-                      if (c.items.isEmpty && !c.loading && !c.failed)
+                      if (c.preparing)
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              s('preparing'),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      if (c.expired || c.viewLimit)
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              Text(
+                                s(c.expired ? 'expiredView' : 'viewLimit'),
+                                textAlign: TextAlign.center,
+                              ),
+                              TextButton(
+                                onPressed: c.loading
+                                    ? null
+                                    : (c.viewLimit
+                                          ? c.releaseOtherViews
+                                          : c.open),
+                                child: Text(
+                                  c.viewLimit
+                                      ? s('viewLimitAction')
+                                      : CommonStrings.retry,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (!c.hasReadyItems &&
+                          !c.loading &&
+                          !c.failed &&
+                          !c.preparing &&
+                          !c.expired &&
+                          !c.viewLimit)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Column(
@@ -164,7 +251,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                             ],
                           ),
                         ),
-                      ..._section(context, c.items),
+                      ..._section(
+                        context,
+                        c.items.where((item) => item.isReady).toList(),
+                      ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 16, 8, 4),
                         child: Text(
@@ -221,7 +311,11 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.sizeOf(context).height * .85,
           ),
-          child: SizedBox(width: 440, child: body),
+          child: SizedBox(
+            width: 440,
+            height: size.height * .85,
+            child: body,
+          ),
         ),
       );
     },
@@ -236,7 +330,9 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     }
     var firstSection = true;
     for (final entry in byOccasion.entries) {
-      final unreadItems = entry.value.where(widget.controller.isUnread).toList();
+      final unreadItems = entry.value
+          .where(widget.controller.isUnread)
+          .toList();
       final readItems = entry.value
           .where((item) => !widget.controller.isUnread(item))
           .toList();
@@ -449,7 +545,12 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
               borderRadius: radius,
               onTap: presentation.hasDetail
                   ? () => widget.onDetail(item)
-                  : unread ? () => ExceptionHandler.guard(context, futureFunction: () => widget.controller.markRead(item)) : null,
+                  : unread
+                  ? () => ExceptionHandler.guard(
+                      context,
+                      futureFunction: () => widget.controller.markRead(item),
+                    )
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,

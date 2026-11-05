@@ -22,6 +22,11 @@ BEGIN
       body:=jsonb_build_object('requestSecret',public.generate_request_secret(3600)),
       timeout_milliseconds:=360000)$$,p_project_url));
 
+  -- The protected worker alternates delivery/repair/backfill with a commit per RPC.
+  -- Retire direct, co-timed drains to avoid starving a work class on the lease.
+  PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname IN ('festapp_canonical_notification_center_delivery','festapp_canonical_notification_center_prepare');
+  PERFORM public.configure_notification_center_worker(p_project_url);
+  PERFORM cron.schedule('festapp_canonical_notification_center_wake','1 second','SELECT public.wake_notification_center()');
   PERFORM cron.schedule('festapp_canonical_notification_center_project','*/1 * * * *','SELECT public.maintain_notification_center(100)');
   PERFORM cron.schedule('festapp_canonical_sale_opening_notifications','*/1 * * * *','SELECT public.maintain_sale_opening_notifications(100)');
   PERFORM cron.schedule('festapp_canonical_waitlist_expiry','*/1 * * * *','SELECT public.expire_waitlist_offers(100)');

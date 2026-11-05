@@ -12,10 +12,18 @@ BEGIN
  UPDATE public.notification_center_events SET status=o.state WHERE id=event;
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_order_state_internal(p_order bigint)
-RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path=public,extensions AS $$
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.notification_center_events e JOIN eshop.orders o ON o.occasion=e.occasion
+  WHERE o.id=p_order AND e.data->>'orderId'=p_order::text AND e.kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted') AND (e.status='storno') IS DISTINCT FROM (o.state='storno')) OR EXISTS(SELECT 1 FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion
+ JOIN public.email_messages m ON m.order_id=o.id AND m.occasion=o.occasion AND m.organization=oc.organization
+ JOIN public.notification_center_events e ON e.organization=m.organization AND e.source_key='email:'||m.message_id AND e.kind='email_problem'
+ WHERE o.id=p_order AND o.state='storno' AND m.message_kind<>'order_storno' AND e.status NOT IN ('recovered','resolved')) THEN
+  PERFORM public.notification_center_prepared_invalidate_order(p_order);
+ END IF;
  UPDATE public.notification_center_events e SET status=o.state,data=e.data||jsonb_build_object('state',o.state)
  FROM eshop.orders o WHERE o.id=p_order AND e.data->>'orderId'=p_order::text
  AND e.occasion=o.occasion AND e.kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted');
-$$;
+END $$;
 REVOKE ALL ON FUNCTION public.notification_center_order_internal(bigint,text,text,uuid,jsonb),public.notification_center_order_state_internal(bigint)
  FROM PUBLIC,anon,authenticated,service_role;

@@ -72,13 +72,8 @@ BEGIN
 
   -- Delete attention while message identities still exist. Cascading recipients
   -- and deliveries make every overview, count and badge agree immediately.
-  DELETE FROM public.notification_center_events e
-  USING public.occasions oc
-  WHERE oc.id=order_oc AND e.organization=oc.organization AND e.occasion=order_oc
-    AND (e.data->>'orderId'=delete_order_internal_v1.order_id::text
-      OR (e.kind='email_problem' AND e.data->>'messageId' IN (
-        SELECT m.message_id::text FROM public.email_messages m
-        WHERE m.order_id=delete_order_internal_v1.order_id AND m.organization=oc.organization)));
+  PERFORM public.notification_center_prepared_delete_events(ARRAY(SELECT * FROM public.notification_center_prepared_order_events(delete_order_internal_v1.order_id)));
+  DELETE FROM public.notification_center_events WHERE id=ANY(ARRAY(SELECT * FROM public.notification_center_prepared_order_events(delete_order_internal_v1.order_id)));
   DELETE FROM public.notification_center_source_state s
   USING public.email_messages m
   WHERE m.order_id=delete_order_internal_v1.order_id

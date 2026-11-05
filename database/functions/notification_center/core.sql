@@ -64,7 +64,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_capture_recipients_internal(p_event uuid,p_actor uuid)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE e public.notification_center_events; u uuid;
+DECLARE e public.notification_center_events; u uuid; was_pending boolean;
 BEGIN
  SELECT * INTO e FROM public.notification_center_events WHERE id=p_event;
  IF NOT FOUND THEN RETURN; END IF;
@@ -77,10 +77,21 @@ BEGIN
      NOT public.notification_center_app_admin_internal(e.organization,e.occasion,p_actor)
    ELSE NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=e.occasion AND "user"=p_actor AND is_editor_order)
      AND NOT EXISTS(SELECT 1 FROM public.organization_users WHERE organization=e.organization AND "user"=p_actor AND is_admin) END) THEN
+   SELECT coalesce(bool_or(processed_revision<eligible_revision),false) INTO was_pending FROM public.notification_center_recipients WHERE event_id=e.id AND recipient=u;
    INSERT INTO public.notification_center_recipients(event_id,recipient,eligible_revision) VALUES(e.id,u,e.attention_revision)
-   ON CONFLICT(event_id,recipient) DO UPDATE SET eligible_revision=excluded.eligible_revision;
+   ON CONFLICT(event_id,recipient) DO UPDATE SET eligible_revision=excluded.eligible_revision,
+    pending_since=CASE WHEN notification_center_recipients.eligible_revision<>excluded.eligible_revision
+     THEN clock_timestamp() ELSE notification_center_recipients.pending_since END;
+   IF NOT was_pending THEN UPDATE public.notification_center_projection_scopes SET pending_delivery=pending_delivery+1,requested_at=CASE WHEN work_requested THEN requested_at ELSE clock_timestamp() END,work_requested=true,next_check_at=CASE WHEN retry_count=0 THEN least(next_check_at,clock_timestamp()) ELSE next_check_at END
+    WHERE organization=e.organization AND recipient=u AND delivery_initialized; END IF;
   END IF;
  END LOOP;
+ -- A source revision with no captured work is complete immediately. It must
+ -- not occupy the delivery candidate index or delay a drain's idle decision.
+ UPDATE public.notification_center_events ev SET projected_revision=attention_revision
+ WHERE ev.id=p_event AND NOT EXISTS(SELECT 1 FROM public.notification_center_recipients r
+  WHERE r.event_id=ev.id AND r.eligible_revision=ev.attention_revision AND r.processed_revision<r.eligible_revision);
+ PERFORM public.notification_center_prepared_wake();
 END $$;
 REVOKE ALL ON FUNCTION public.notification_center_capture_recipients_internal(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.notification_center_publish_internal(p_org bigint,p_occ bigint,p_kind text,p_key text,
@@ -118,35 +129,110 @@ $$;
 REVOKE ALL ON FUNCTION public.notification_center_unmuted(public.notification_center_events,uuid) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.project_notification_center(p_limit integer DEFAULT 100) RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE e public.notification_center_events; u uuid; n integer:=0; seq bigint; budget integer:=greatest(1,least(p_limit,500)); tz text;
+DECLARE e public.notification_center_events; work record; tenant record; tz text; seq bigint;
+ n integer:=0; scanned integer:=0; deferred integer:=0; failed integer:=0; tenant_work integer;
+ budget integer:=greatest(1,least(coalesce(p_limit,100),500)); after_org bigint; last_org bigint; tenant_budget integer;
+ started_at timestamptz:=clock_timestamp();
+ deadline timestamptz:=clock_timestamp()+interval '250 milliseconds'; error_code text;
+ previous_lock_timeout text:=current_setting('lock_timeout');
 BEGIN
  PERFORM public.notification_center_require_service();
  IF NOT pg_try_advisory_xact_lock(5831290471283) THEN RETURN 0; END IF;
- -- Row locks are the transaction lease. Rollback releases claims, including sequence allocation.
- FOR e IN SELECT ev.* FROM public.notification_center_events ev JOIN public.notification_center_organizations a ON a.organization=ev.organization
- WHERE ev.projected_revision<ev.attention_revision ORDER BY ev.organization,ev.occurred_at,ev.id
- LIMIT greatest(1,least(p_limit,500)) FOR UPDATE OF ev SKIP LOCKED LOOP
-  SELECT timezone INTO tz FROM public.notification_center_organizations WHERE organization=e.organization;
-  FOR u IN SELECT recipient FROM public.notification_center_recipients WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision ORDER BY recipient LIMIT budget-n LOOP
-   UPDATE public.notification_center_recipients SET processed_revision=e.attention_revision WHERE event_id=e.id AND recipient=u;
-   n:=n+1;
-   IF NOT public.notification_center_allowed(e,u) OR EXISTS(SELECT 1 FROM public.notification_center_deliveries
-    WHERE event_id=e.id AND recipient=u AND attention_revision=e.attention_revision) THEN CONTINUE; END IF;
-   IF NOT public.notification_center_unmuted(e,u) THEN CONTINUE; END IF;
-   INSERT INTO public.notification_center_user_state(organization,recipient) VALUES(e.organization,u) ON CONFLICT DO NOTHING;
-   UPDATE public.notification_center_user_state SET last_delivery_sequence=last_delivery_sequence+1
-    WHERE organization=e.organization AND recipient=u RETURNING last_delivery_sequence INTO seq;
-   INSERT INTO public.notification_center_deliveries(event_id,recipient,organization,attention_revision,sequence,group_key)
-    VALUES(e.id,u,e.organization,e.attention_revision,seq,
-     CASE WHEN e.kind='email_problem' THEN coalesce(e.occasion::text,'shared')||':email_problem:'||coalesce(e.data->>'reason','problem')||':'||(e.occurred_at AT TIME ZONE tz)::date::text
-     WHEN e.kind IN ('order_created','waitlist_registered','order_cancelled','occasion_joined') THEN
-      coalesce(e.occasion::text,'shared')||':'||e.kind||':'||(e.occurred_at AT TIME ZONE tz)::date::text ELSE e.id::text END);
+ INSERT INTO public.notification_center_maintenance(name) VALUES('delivery') ON CONFLICT DO NOTHING;
+ SELECT cursor INTO after_org FROM public.notification_center_maintenance WHERE name='delivery' FOR UPDATE;
+ SELECT greatest(1,budget/least(4,greatest(1,count(*)))) INTO tenant_budget
+ FROM public.notification_center_organizations a WHERE EXISTS(SELECT 1 FROM public.notification_center_events pending
+ WHERE pending.organization=a.organization AND pending.projected_revision<pending.attention_revision);
+ -- Rotate across tenants, with separate work/scan budgets. A busy personal row
+ -- never makes a recipient revision processed and never stalls another tenant.
+ FOR tenant IN
+  SELECT a.organization,a.timezone FROM public.notification_center_organizations a
+  WHERE EXISTS(SELECT 1 FROM public.notification_center_events ev
+   WHERE ev.organization=a.organization AND ev.projected_revision<ev.attention_revision)
+  ORDER BY (a.organization>after_org) DESC,a.organization LIMIT 32
+ LOOP
+  last_org:=tenant.organization; tz:=tenant.timezone; tenant_work:=0;
+  FOR work IN
+   SELECT ev.id event_id,r.recipient,r.eligible_revision FROM public.notification_center_events ev
+   JOIN public.notification_center_recipients r ON r.event_id=ev.id
+   WHERE ev.organization=tenant.organization AND ev.projected_revision<ev.attention_revision
+    AND r.eligible_revision=ev.attention_revision AND r.processed_revision<r.eligible_revision
+    AND (r.retry_revision<>r.eligible_revision OR (NOT r.quarantined AND r.next_attempt_at<=clock_timestamp()))
+   ORDER BY ev.occurred_at,ev.id,r.recipient LIMIT least(500,budget*4)
+  LOOP
+   EXIT WHEN n>=budget OR tenant_work>=tenant_budget OR scanned>=budget*4 OR clock_timestamp()>=deadline;
+   scanned:=scanned+1; tenant_work:=tenant_work+1;
+   BEGIN
+    -- Bound the first-insert race with an opening client too. Restore the
+    -- caller's setting on every return; all successful sequence writes are atomic.
+    PERFORM set_config('lock_timeout','5ms',true);
+    INSERT INTO public.notification_center_user_state(organization,recipient)
+     VALUES(tenant.organization,work.recipient) ON CONFLICT DO NOTHING;
+    PERFORM 1 FROM public.notification_center_user_state
+     WHERE organization=tenant.organization AND recipient=work.recipient FOR UPDATE SKIP LOCKED;
+    IF NOT FOUND THEN deferred:=deferred+1; PERFORM public.notification_center_prepared_defer(work.event_id,work.recipient,work.eligible_revision); CONTINUE; END IF;
+    -- Domain writers own event -> recipient. We acquire personal state first,
+    -- then SKIP LOCKED on both, so there is no wait edge back to a producer.
+    SELECT * INTO e FROM public.notification_center_events WHERE id=work.event_id FOR UPDATE SKIP LOCKED;
+    IF NOT FOUND THEN deferred:=deferred+1; PERFORM public.notification_center_prepared_defer(work.event_id,work.recipient,work.eligible_revision); CONTINUE; END IF;
+    PERFORM 1 FROM public.notification_center_recipients
+     WHERE event_id=e.id AND recipient=work.recipient AND eligible_revision=e.attention_revision
+      AND processed_revision<eligible_revision FOR UPDATE SKIP LOCKED;
+    IF NOT FOUND THEN deferred:=deferred+1; PERFORM public.notification_center_prepared_defer(work.event_id,work.recipient,work.eligible_revision); CONTINUE; END IF;
+    IF public.notification_center_allowed(e,work.recipient)
+      AND public.notification_center_unmuted(e,work.recipient)
+      AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries
+       WHERE event_id=e.id AND recipient=work.recipient AND attention_revision=e.attention_revision) THEN
+     UPDATE public.notification_center_user_state SET last_delivery_sequence=last_delivery_sequence+1
+      WHERE organization=e.organization AND recipient=work.recipient RETURNING last_delivery_sequence INTO seq;
+     INSERT INTO public.notification_center_deliveries(event_id,recipient,organization,attention_revision,sequence,group_key)
+     VALUES(e.id,work.recipient,e.organization,e.attention_revision,seq,
+      CASE WHEN e.kind='email_problem' THEN coalesce(e.occasion::text,'shared')||':email_problem:'||coalesce(e.data->>'reason','problem')||':'||(e.occurred_at AT TIME ZONE tz)::date::text
+       WHEN e.kind IN ('order_created','waitlist_registered','order_cancelled','occasion_joined') THEN
+        coalesce(e.occasion::text,'shared')||':'||e.kind||':'||(e.occurred_at AT TIME ZONE tz)::date::text ELSE e.id::text END);
+     PERFORM public.notification_center_prepared_on_delivery(e,(SELECT d FROM public.notification_center_deliveries d WHERE d.event_id=e.id AND d.recipient=work.recipient AND d.attention_revision=e.attention_revision));
+    END IF;
+    UPDATE public.notification_center_recipients SET processed_revision=e.attention_revision,
+     retry_revision=e.attention_revision,retry_count=0,next_attempt_at='-infinity',last_error_code=NULL,quarantined=false
+     WHERE event_id=e.id AND recipient=work.recipient;
+    IF NOT EXISTS(SELECT 1 FROM public.notification_center_recipients
+     WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision) THEN
+     UPDATE public.notification_center_events SET projected_revision=e.attention_revision WHERE id=e.id;
+    END IF;
+    UPDATE public.notification_center_projection_scopes SET pending_delivery=greatest(0,pending_delivery-1)
+     WHERE organization=e.organization AND recipient=work.recipient AND delivery_initialized;
+    n:=n+1;
+   EXCEPTION
+    WHEN lock_not_available THEN deferred:=deferred+1;PERFORM public.notification_center_prepared_defer(work.event_id,work.recipient,work.eligible_revision);
+    WHEN OTHERS THEN
+     GET STACKED DIAGNOSTICS error_code=RETURNED_SQLSTATE;
+     -- The subtransaction rolled back delivery and sequence allocation together.
+     -- Store only SQLSTATE, never private payload or exception message.
+     UPDATE public.notification_center_recipients r SET
+      retry_count=CASE WHEN retry_revision=eligible_revision THEN retry_count+1 ELSE 1 END,
+      next_attempt_at=clock_timestamp()+make_interval(secs=>least(300,power(2,least(CASE WHEN retry_revision=eligible_revision THEN retry_count ELSE 0 END,8))*(0.9+random()*0.2))),
+      quarantined=retry_revision=eligible_revision AND retry_count>=4,
+      retry_revision=eligible_revision,last_error_code=error_code
+     WHERE r.event_id=work.event_id AND r.recipient=work.recipient
+      AND r.eligible_revision=e.attention_revision;
+     failed:=failed+1;
+   END;
   END LOOP;
-  IF NOT EXISTS(SELECT 1 FROM public.notification_center_recipients WHERE event_id=e.id AND eligible_revision=e.attention_revision AND processed_revision<e.attention_revision) THEN
-   UPDATE public.notification_center_events SET projected_revision=e.attention_revision WHERE id=e.id;
-  END IF;
-  EXIT WHEN n>=budget;
+  -- Events with no eligible candidate must also leave the pending index.
+  UPDATE public.notification_center_events ev SET projected_revision=attention_revision
+   WHERE ev.id IN(SELECT z.id FROM (
+    SELECT pending.id,pending.attention_revision FROM public.notification_center_events pending
+    WHERE pending.organization=tenant.organization AND pending.projected_revision<pending.attention_revision
+    ORDER BY pending.occurred_at,pending.id LIMIT 25 FOR UPDATE SKIP LOCKED) z
+    WHERE NOT EXISTS(SELECT 1 FROM public.notification_center_recipients r WHERE r.event_id=z.id
+      AND r.eligible_revision=z.attention_revision AND r.processed_revision<z.attention_revision));
+  EXIT WHEN n>=budget OR scanned>=budget*4 OR clock_timestamp()>=deadline;
  END LOOP;
+ UPDATE public.notification_center_maintenance SET cursor=coalesce(last_org,after_org),
+  last_scanned=scanned,last_processed=n,last_deferred=deferred,last_failed=failed,
+  last_elapsed_ms=extract(epoch FROM clock_timestamp()-started_at)*1000,last_run_at=clock_timestamp()
+  WHERE name='delivery';
+ PERFORM set_config('lock_timeout',previous_lock_timeout,true);
  RETURN n;
 END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_dto(e public.notification_center_events,d public.notification_center_deliveries)

@@ -363,3 +363,6 @@ static_files = ["./functions/_shared/ticket-assets/*.ttf", "./functions/_shared/
 
 [functions.sale-opening-notifications]
 verify_jwt = false
+
+[functions.process-notification-center]
+verify_jwt = false

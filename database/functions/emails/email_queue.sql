@@ -456,6 +456,9 @@ BEGIN
  AND (workflow_state IN ('accepted','dead','cancelled','suppressed','expired') OR expires_at<now()) AND prepared IS NOT NULL;
  UPDATE public.email_messages SET prepared=NULL,data=jsonb_build_object('command_id',data->'command_id')
  WHERE created_at<now()-interval '30 days' AND workflow_state IN ('accepted','dead','cancelled','suppressed','expired') AND prepared IS NOT NULL;
+ PERFORM public.notification_center_prepared_invalidate(e.id) FROM public.email_messages m JOIN public.notification_center_events e
+  ON e.organization=m.organization AND e.kind='email_problem' AND e.data->>'messageId'=m.message_id::text
+  WHERE m.message_kind='sale_opening_opened' AND m.expires_at<now()-interval '30 days' AND m.workflow_state NOT IN ('sending','unknown') AND m.recipient IS NOT NULL;
  UPDATE public.email_messages SET recipient=NULL,prepared=NULL,data='{}'
  WHERE message_kind IN ('sale_opening_opened') AND expires_at<now()-interval '30 days'
  AND workflow_state NOT IN ('sending','unknown');

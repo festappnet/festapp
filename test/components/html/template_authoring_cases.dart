@@ -40,7 +40,47 @@ class TestTemplateProvider extends TemplateAuthoringProvider {
       !inLink && !inCode && !composing;
 }
 
+class UniqueTemplateProvider extends TestTemplateProvider {
+  @override
+  TemplateAuthoringEntry? entry(String code) => codes.contains(code)
+    ? TemplateAuthoringEntry(code:code,label:code,block:code=='fullOrder',repeatable:code!='fullOrder') : null;
+}
+
 void main() {
+  test('email atomic repeatability comes from the domain authoring entry', () {
+    final controller=RichHtmlEditorController(initialHtml:'<p>{{fullOrder}}</p><p>Text</p>', authoring:UniqueTemplateProvider(), owner:const HtmlMediaOwner.none());
+    addTearDown(controller.dispose);
+    expect(controller.canInsertAtomic('fullOrder'),isFalse);
+    expect(controller.insertTemplateToken('fullOrder'),isFalse);
+    expect(controller.canInsertAtomic('name'),isTrue);
+    expect(controller.html,'<p>{{fullOrder}}</p><p>Text</p>');
+  });
+
+  test('email atomic block shares select move delete and undo while preserving inline variables', () {
+    const html = '<p>Before {{name}}</p><p>{{fullOrder}}</p><p>After</p>';
+    final controller = RichHtmlEditorController(initialHtml: html, authoring: TestTemplateProvider(), owner: const HtmlMediaOwner.none());
+    addTearDown(controller.dispose);
+    final block = controller.editor.document.whereType<TemplateTokenBlock>().single;
+    controller.selectAtomic(block);
+    expect(controller.editor.composer.selection?.extent.nodeId, block.id);
+    controller.moveBlock(block.id, 1);
+    expect(controller.html.indexOf('After'), lessThan(controller.html.indexOf('{{fullOrder}}')));
+    controller.removeAtomic(block.id);
+    expect(controller.html, contains('{{name}}'));
+    expect(controller.html, isNot(contains('{{fullOrder}}')));
+    controller.undo(); controller.undo();
+    expect(controller.html, html);
+  });
+  test('email atomic block respects the same retained table bounds', () {
+    const html = '<table><tr><td><p>Cell {{name}}</p></td></tr></table><p>{{fullOrder}}</p><p>After</p>';
+    final controller = RichHtmlEditorController(initialHtml: html, authoring: TestTemplateProvider(), owner: const HtmlMediaOwner.none());
+    addTearDown(controller.dispose);
+    final block = controller.editor.document.whereType<TemplateTokenBlock>().single;
+    expect(controller.canMoveBlock(block.id, -1), isFalse);
+    controller.moveBlock(block.id, -1);
+    expect(controller.html, html);
+  });
+
   test(
       'tokens preserve table href, mixed formatting, unknown content and no-op',
       () {

@@ -186,7 +186,9 @@
       "deletion_complete": "Deletion complete",
       "google_mailbox": "Google mailbox",
       "gotrue": "Gotrue",
-      "legacy_unknown": "Legacy unknown"
+      "legacy_unknown": "Legacy unknown",
+      "sale_opening_confirmation": "Підтвердити сповіщення",
+      "sale_opening_opened": "Сповіщення про початок продажу"
     },
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
@@ -2739,7 +2741,11 @@
         "many": "{count} прострочених пропозицій",
         "other": "{count} прострочених пропозицій"
       }
-    }
+    },
+    "preparing": "Готуємо актуальні сповіщення…",
+    "expiredView": "Термін дії огляду минув. Відкрийте його знову.",
+    "viewLimit": "Закрийте інший відкритий огляд і спробуйте ще раз.",
+    "viewLimitAction": "Закрити інші огляди"
   },
   "TicketBatches": {
     "selectedCount": "Вибрано: {count}",
@@ -2999,7 +3005,6 @@
     "settings": "Налаштування",
     "done": "Готово",
     "saveHint": "Збережіть зміни кнопкою Зберегти у формі.",
-
     "header": "Стандартний заголовок",
     "countdown": "Відлік",
     "mobile": "Мобільний перегляд",

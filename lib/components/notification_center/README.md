@@ -22,15 +22,29 @@ shared customer label rule, removes duplicates/empty values, and measures actual
 text width at the current text scale to choose how many names fit. Place totals
 have priority and wrap independently when a name needs its own line.
 
-One RPC (`get_notification_center_daily_overview`) opens and marks the snapshot
-as seen, fetches another page, or refreshes all loaded IDs and badge state. Opening
-uses `p_open=true`; the watermark commits only after all overview data succeeds.
-Opening never marks individual items read. Order selection and its read receipt
-share `get_orders_tab_data`; other destinations explicitly acknowledge their item.
-The controller trusts server `isRead`/`isSeen`, retaining the old watermark only
-when an installed backend does not provide those fields. The new function requires migration
-`20261027220000_notification_center_daily_overview.sql` before deploying the client.
-Released clients retain their original overview/temporal APIs.
+The current controller uses only `get_notification_center_view`, the prepared
+badge and lazy settings RPCs. Successful ready `open` acknowledges its delivered
+snapshot as seen; preview/preparing/page/refresh never acknowledge new arrivals.
+The server owns opaque recipient/context/timezone-bound tokens, at most 100
+frozen slots per view, four live views per recipient and a 30-minute lease.
+Expired/quota/preparing states are explicit. The user can release their older
+views at the quota; no automatic eviction changes another tab's selection.
+
+Refresh passes one confirmed revision, never loaded ID arrays. A server-confirmed
+unchanged response retains rendered rows after current permissions, privacy and
+bounded display facts have been checked. Private data is cleared while repairs
+run. Source repairs retain slots and captured ranges. Settings load only when
+requested. The feed and settings have independent retained scroll positions;
+progress does not change the panel viewport.
+
+Related-order selection carries only the token and row ID. The server reconstructs
+and validates its captured group/range and writes the read receipt through the
+canonical orders owner. The client releases that lease after a successful orders
+response; failed navigation remains retryable. Other actionable items use
+`mark_notification_center_view_item_read`. There is no legacy fallback.
+Migration `20261105120000_notification_center_prepared_views.sql` and the protected
+`process-notification-center` Edge worker must be available before this client.
+Released clients retain their existing overview/temporal APIs.
 
 Web uses the browser's IANA timezone; native uses the application's selected zone
 from the shared time owner. The zone, snapshot instant and returned snapshot day
@@ -41,7 +55,7 @@ The bell clears its private state while the shared context refresh is pending,
 then reads the badge after the authoritative context completes. Context invalidation
 and browser resume share one scheduled update, including when frames were paused.
 
-When closed, only the lightweight existing badge RPC runs every 60 seconds: it
+When closed, only the lightweight prepared badge RPC runs every 60 seconds: it
 checks for an eligible unseen delivery without hydrating contacts or computing
 summary/place totals. Open panels refresh loaded data every 15 seconds through
 one RPC. Background/inactive routes pause. New arrivals wait for explicit refresh,

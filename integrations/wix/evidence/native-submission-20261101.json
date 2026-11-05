@@ -1,0 +1,24 @@
+{
+  "checkedAtUtc": "2026-11-01T21:54:35Z",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "extensionId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "statusAfterColdReload": "IN REVIEW",
+  "releasedVersion": "2.2",
+  "nativeMessages": ["AI review is in progress", "This version was submitted for review. Reviews can take up to 15 business days."],
+  "nativeBlockers": 0,
+  "nativeRecommendations": 4,
+  "submissionConfirmed": true,
+  "marketplaceApprovalOrLiveListingConfirmed": false,
+  "sequence": [
+    "Release check passed before submission using evidence/partner-billing-release-inputs-20261101.json.",
+    "Accepted the previously reviewed Partner Agreement effective June 30 2026, subject to signed addendum; no new paid plan selected.",
+    "Initial submission with released 2.1 returned HTTP 404: version [DRAFT] does not exist, errorcode -362223.",
+    "Saved widget display name from vstupenky.online to vstupenky.online - ticket form, retaining tag vstupenky-online-form, script https://festapp-wix.pages.dev/widget.js and enabled frontend SDK.",
+    "Submission returned HTTP 200 and transient submitted toast, but cold reload showed DECLINED and blocker to release a version.",
+    "Released minor 2.2 containing the widget display-name metadata change; App Profile remained up to date.",
+    "Submitted again after blocker cleared; transient success followed by cold-reloaded IN REVIEW status."
+  ],
+  "liveDemo": "https://info9468674.wixsite.com/my-site-3",
+  "storeEvidence": "integrations/wix/evidence/store-review-20261101.json",
+  "newBillingDispatchOrPaidPlan": false
+}

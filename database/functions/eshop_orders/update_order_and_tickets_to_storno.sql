@@ -48,6 +48,7 @@ BEGIN
         updated_at = NOW()
     WHERE id = order_id
     RETURNING data INTO updated_order_data;
+    PERFORM public.notification_center_order_state_internal(order_id);
 
     -- Finish the original email recovery task in the same cancellation transaction.
     -- Keep provider messages and delivery history intact.

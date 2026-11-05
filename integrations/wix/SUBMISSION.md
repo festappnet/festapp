@@ -4,7 +4,9 @@ Current authoritative state: [execution result](../../docs/plans/wix-partner-bil
 and [continuation receipt](evidence/continuation-20261101.json). Native external
 billing and BI ingestion are confirmed; normal financial dispatch remains disabled
 until actual settlement/acquisition evidence exists. The owner-signed addendum
-is complete. App Market submission has not been performed.
+is complete. Version 2.2 is submitted and persistently **IN REVIEW** after cold portal readback;
+see [submission evidence](evidence/native-submission-20261101.json).
+Approval and a live public catalogue listing are not yet confirmed.
 
 The visible-time authentication fix passes the real native proof probe in all
 three owned QA environments. The original 12-second wall-clock timeout was not
@@ -12,18 +14,40 @@ proof of a vendor failure: token delivery could occur later during background
 hydration. Keep current proof, historical full-checkout/lifecycle tests and store
 verification distinct; do not invent missing purchases or reviewer credentials.
 
-The native profile/configuration is 2.1, with canonical icon saved and CDN bytes
+The native profile/configuration is 2.2, with canonical icon saved and CDN bytes
 verified. Organizer help is public at https://wix-guide.festapp-wix.pages.dev/help.
-Candidate source publication, exact stable asset deployment and the remaining
-reviewer/checkout qualification must precede App Market submission. Zero native
+Source publication and exact stable asset deployment are complete; see
+[deployment evidence](../../docs/operations/releases/wix-runtime-20261101.json)
+and [live authentication evidence](evidence/live-native-auth-20261101.json).
+Reviewer/checkout qualification and the readiness gate passed before submission;
+see [the current demo receipt](evidence/reviewer-demo-20261101.json) and
+[readiness receipt](evidence/submission-readiness-20261101.json). Zero native
 blockers alone does not establish those effects.
 
 ## Draft listing identity
 
 - App/service name: `vstupenky.online` (Czech market).
-- Working tagline: `Sell event tickets directly on your website.`
-- Working summary: `Add your vstupenky.online ticket form to a page and manage
-  tickets, seating and orders in the connected service.`
+- Public developer name: `Festapp`. Keep the verified legal identity separate
+  from the public developer brand.
+- App language: Czech (`cs`). The listing copy below is Czech; saving this
+  document does not update the native Wix profile or its published listing.
+- App icon: [canonical PNG](media/icon-1000.png), exported from
+  [the approved square logo](../../assets/brand/vstupenky-online/vstupenky-online-square.svg).
+- Working tagline: `Prodávejte vstupenky na akce přímo na svém webu.`
+- Working summary: `Přidejte na svůj web prodejní formulář vstupenky.online.
+  Vstupenky, místa k sezení a objednávky spravujte v propojené službě.`
+- Overview features:
+  - `Vložte uložený veřejný prodejní formulář pomocí jeho adresy ze vstupenky.online.`
+  - `Akce, kapacity a objednávky spravujte ve službě vstupenky.online.`
+  - `Zvolte název formuláře a přizpůsobte jeho písmo svému webu.`
+  - `Stejný formulář otevřete také přímo na vstupenky.online.`
+- Overview description: `Přidejte na svůj web existující prodejní formulář
+  vstupenky.online. V nastavení vložte jeho veřejnou adresu, zvolte název a
+  případně převezměte písmo svého webu. Nastavení akce, kapacity vstupenek,
+  nákup, objednávky a doručení vstupenek zajišťuje vstupenky.online. Pro použití
+  potřebujete v této službě připravený veřejný formulář. Prodej se řídí
+  podmínkami služby a vztahují se na něj příslušné servisní poplatky. Editor
+  zobrazuje zástupný náhled, který při úpravách brání nechtěným objednávkám.`
 - Installation model: free widget installation; connected service charges for
   ticket sales at the organizer-agreed rate. Native Custom pricing is approved.
 - Canonical public support copy: `info@vstupenky.online` (native operational contacts may retain the existing owner mailbox).

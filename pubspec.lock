@@ -2194,10 +2194,11 @@ packages:
   trina_grid:
     dependency: "direct main"
     description:
-      path: "packages/trina_grid"
-      relative: true
-    source: path
-    version: "2.3.0"
+      name: trina_grid
+      sha256: cda88c3ad69748f54cf2bedb7c8e9af4a6a2e128dd994dbfb8e604d92f463a83
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
   two_dimensional_scrollables:
     dependency: transitive
     description:

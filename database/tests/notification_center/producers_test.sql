@@ -60,6 +60,26 @@ CREATE VIEW pg_temp.ticket_rows AS
 CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql AS $$
  SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
+CREATE FUNCTION pg_temp.assert_prepared_families(p_org bigint,p_oc bigint,p_user uuid)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE v jsonb; k text; expected bigint; actual bigint;
+BEGIN
+ PERFORM public.project_notification_center(500);
+ PERFORM set_config('request.jwt.claim.sub',p_user::text,true);
+ v:=public.get_notification_center_view(p_org,p_oc);
+ FOR i IN 1..30 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100);END LOOP;
+ v:=public.get_notification_center_view(p_org,p_oc);
+ PERFORM assert_eq(v->>'state','ready','actual producers reach prepared ready');
+ FOR k IN SELECT DISTINCT kind FROM public.notification_center_events WHERE organization=p_org LOOP
+  SELECT count(*) INTO expected FROM public.notification_center_events e
+  WHERE e.organization=p_org AND e.kind=k AND public.notification_center_in_center_internal(e,clock_timestamp())
+   AND public.notification_center_allowed(e,p_user) AND EXISTS(SELECT 1 FROM public.notification_center_deliveries d WHERE d.event_id=e.id AND d.recipient=p_user);
+  SELECT coalesce(sum(coalesce((x#>>'{data,activityCount}')::bigint,(x#>>'{data,eventCount}')::bigint,1)),0) INTO actual
+   FROM jsonb_array_elements(v->'items') x WHERE x->>'kind'=k AND x->>'state'='ready';
+  PERFORM assert_eq(actual,expected,'prepared real producer count: '||k);
+ END LOOP;
+ PERFORM public.get_notification_center_view(p_org,p_oc,p_mode=>'close_all');
+END $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(10); org bigint:=(x->>'organization')::bigint; f bigint:=(x->>'form')::bigint;
  r jsonb; oid bigint; ev uuid; id1 bigint; w jsonb; ids bigint[]; cmd uuid:=gen_random_uuid(); n bigint;
@@ -118,5 +138,6 @@ BEGIN
  PERFORM public.expire_waitlist_form_internal(f,clock_timestamp()+interval '2 hours');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='offer_expired'),1::bigint,'maintenance expiration emits once');
  PERFORM assert_eq((SELECT (data->>'count')::integer FROM public.notification_center_events WHERE organization=org AND kind='offer_expired'),1,'only remaining pending slot expires');
+ PERFORM pg_temp.assert_prepared_families(org,(x->>'occasion')::bigint,(x->>'actor')::uuid);
 END $$;
 ROLLBACK;

@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-11-02",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "publicListing": "https://www.wix.com/app-market/michael-bujnovský-vstupenky-online",
+  "publicDeveloper": "Festapp",
+  "publicAppLanguages": ["Czech"],
+  "publicIconUrl": "https://static.wixstatic.com/media/397be0_e87760243c4e43d7acf325e6d3b8741a~mv2.png",
+  "canonicalIconSha256": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+  "iconEvidence": "Public listing app logo and native App Info reference the canonical URL; previous 2026-11-01 evidence verified original CDN bytes against local PNG. Visual public listing checked.",
+  "changes": ["Company Info public name changed from Michael Bujnovský to Festapp", "App Audience available language changed from English to Czech", "Czech added to translations but remains inactive"],
+  "listingUpdate": "Wix confirmed Market listing updated and live. Public listing reloaded showing Festapp and Czech. Native pricing plan and its four benefits matched the public listing before update.",
+  "translationBlocker": "Wix returned 'An error occurred when trying to save your changes' for Czech Market Listing translation. The translation remains inactive; base listing copy remains English, which Wix instructs authors to use in App Info.",
+  "runtimeRelease": false,
+  "sharedCompanyLogoChanged": false,
+  "legalBillingIdentityChanged": false
+}

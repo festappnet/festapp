@@ -1,0 +1,99 @@
+{
+  "checkedAtUtc": "2026-11-01T13:34:37.345488+00:00",
+  "scope": "Read-only audit of source receipts, connected mailbox, native Make GET metadata and public API. No publications or messages sent.",
+  "make": {
+    "native": {
+      "name": "vstupenky-online-buoz5u",
+      "label": "vstupenky.online",
+      "version": 1,
+      "language": "en",
+      "description": "Read event sales summaries and order status without buyer contact details.",
+      "public": true,
+      "inReview": true,
+      "approved": false
+    },
+    "catalogueReleaseConfirmed": false,
+    "latestReviewReplyObserved": "2026-10-28, our response; no newer vendor decision found",
+    "case": "2351677:2082001",
+    "publicOpenApi": {
+      "url": "https://mcp.vstupenky.online/make/v1",
+      "http": 200,
+      "reportKeys": [
+        "schema_version",
+        "occasion",
+        "generated_at",
+        "spots",
+        "orders",
+        "tickets",
+        "valid",
+        "money_by_currency",
+        "timeline",
+        "products",
+        "ticket_batches",
+        "warnings"
+      ],
+      "historicalTwoFieldGapResolved": true
+    },
+    "qualificationRepeated": false
+  },
+  "chatgpt": {
+    "lastRecorded": "2026-10-27",
+    "version": "1.0.1",
+    "reviewStatus": "In review",
+    "published": false,
+    "freshPortalCheck": "Not independently confirmed in this pass; retain date and scope of earlier receipt. Browser audit did not return a current readback.",
+    "publicOAuthDiscoveryHttp": 200,
+    "dynamicRegistrationAdvertised": false,
+    "source": "integrations/chatgpt/review/portal-status.json"
+  },
+  "wordpress": {
+    "versionSubmitted": "1.0.3",
+    "latestVendorReceipt": "2026-10-27 updated file received",
+    "messageId": "1a17ed7a850a8e54",
+    "newerApprovalFound": false
+  },
+  "joomla": {
+    "directZip": "1.0.1 released",
+    "jedSubmission": 17931,
+    "oct29Email": "Your extension has been updated; generic notification, not approval proof",
+    "freshPortalCheck": "Not independently confirmed in this pass; retain date and scope of earlier receipt. Browser audit did not return a current readback."
+  },
+  "shoptet": {
+    "newVendorReply": "2026-10-29",
+    "messageId": "1a1872271f289533",
+    "requiredNextStep": "Await Shoptet response to the already submitted proposal. Do not submit again or treat the older prepared-form receipt as the current state.",
+    "oneTimeApiPartnershipFee": false,
+    "commissionTerms": "Discussed during approval; specific terms not agreed",
+    "implementedConnector": false,
+    "initialProposalSent": "2026-10-26, email to api@shoptet.cz",
+    "nativeFormPrepared": "2026-10-29, actual native form populated; receipt explicitly NOT submitted",
+    "preparedFormReceipt": "/Users/miakh/source/festapp-shoptet-research-20261029/docs/plans/shoptet-form-prepared-2026-10-29.json",
+    "proposalSubmitted": true,
+    "submissionConfirmation": {
+      "source": "Explicit owner confirmation in conversation on 2026-11-01",
+      "status": "Submitted; await Shoptet response",
+      "independentSubmissionReceiptFound": false
+    }
+  },
+  "upgates": {
+    "contactSent": "2026-10-27",
+    "messageId": "1a17d9581539a89e",
+    "newReplyFound": false,
+    "implementedConnector": false
+  },
+  "shopify": {
+    "source": "docs/plans/integration-next-platforms-2026-10-26.md",
+    "recordedState": "Deferred by owner due one-time publisher fee; not implemented"
+  },
+  "wooCommerce": {
+    "recordedState": "Proposed native cart connector, not implemented; existing WordPress integration embeds our form"
+  },
+  "wix": {
+    "runtimeDeployed": true,
+    "marketplaceSubmitted": false,
+    "freshListingLanguageCheck": "Not independently confirmed in this pass; retain date and scope of earlier receipt. Browser audit did not return a current readback.",
+    "historicalWidgetDescriptionLanguage": "Czech",
+    "listingTeaserLanguageInEarlierNov1Receipt": "English",
+    "languageConclusion": "Mixed: Czech widget description and help; English App Profile teaser in saved native readback from earlier Nov1. Full Czech catalogue localization not confirmed."
+  }
+}

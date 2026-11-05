@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../support/fixtures/localization_log_fixture.dart';
 import 'package:fstapp/router_service.dart';
@@ -9,6 +11,23 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 
 void main() {
+  test('Flutter catalogue entry hands off to webclient before mounting', () async {
+    final router = AppRouter();
+    final match = router.matcher.match('/', includePrefixMatches: false)!.single;
+    final completion = Completer<ResolverResult>();
+    var openedWebHome = false;
+    final guard = InitialRedirectGuard(openWebHome: () {
+      openedWebHome = true;
+    });
+
+    guard.onNavigation(NavigationResolver(router, completion, match), router);
+
+    expect(openedWebHome, isTrue);
+    expect((await completion.future).continueNavigation, isFalse,
+        reason: 'The legacy OrganizationPage must never mount in the browser.');
+    router.dispose();
+  });
+
   // This suite intentionally uses untranslated key fallback (no catalog).
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);

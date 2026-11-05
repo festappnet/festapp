@@ -280,7 +280,9 @@
       "deletion_complete": "Deletion complete",
       "google_mailbox": "Google mailbox",
       "gotrue": "Gotrue",
-      "legacy_unknown": "Legacy unknown"
+      "legacy_unknown": "Legacy unknown",
+      "sale_opening_confirmation": "Potvrdiť upozornenie",
+      "sale_opening_opened": "Upozornenie na spustenie predaja"
     },
     "organization_scope": "Entire organization",
     "refreshed": "Refreshed {time}",
@@ -2594,7 +2596,11 @@
         "many": "{count} ponúk po platnosti",
         "other": "{count} ponúk po platnosti"
       }
-    }
+    },
+    "preparing": "Pripravujeme aktuálne oznámenia…",
+    "expiredView": "Platnosť prehľadu vypršala. Otvorte ho znova.",
+    "viewLimit": "Zatvorte niektorý z ďalších otvorených prehľadov a skúste to znova.",
+    "viewLimitAction": "Zatvoriť ostatné prehľady"
   },
   "TicketBatches": {
     "selectedCount": "Vybrané: {count}",
@@ -2854,7 +2860,6 @@
     "settings": "Nastavenia",
     "done": "Hotovo",
     "saveHint": "Zmeny uložíte tlačidlom Uložiť vo formulári.",
-
     "header": "Štandardná hlavička",
     "countdown": "Odpočet",
     "mobile": "Mobilný náhľad",
