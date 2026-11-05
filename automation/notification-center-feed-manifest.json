@@ -1,6 +1,6 @@
 {
-  "name": "notification-prepared-scope-discovery-2026-11-05",
-  "output": "supabase/migrations/20261105190000_notification_prepared_scope_discovery.sql",
+  "name": "notification-idle-wake-2026-11-05",
+  "output": "supabase/migrations/20261105203000_notification_idle_wake.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -27,11 +27,11 @@
     "20261105070000_notification_subject_lookup_performance.sql",
     "20261105110000_notification_center_delivery_draining.sql",
     "20261105120000_notification_center_prepared_views.sql",
-    "20261105181000_notification_prepared_retention.sql"
+    "20261105181000_notification_prepared_retention.sql",
+    "20261105190000_notification_prepared_scope_discovery.sql"
   ],
   "sources": [
-    "notification_center/prepared_projection.sql",
-    "notification_center/prepared_views.sql"
+    "notification_center/prepared_wake.sql"
   ],
   "prerequisiteSha256": {
     "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
@@ -59,6 +59,7 @@
     "20261105110000_notification_center_delivery_draining.sql": "654e1c74293f6e547526fddb8df7bdec89bf461f833ad09ed1e2d76566906955",
     "20261101170000_hidden_participant_notifications.sql": "ac7f4cfc0f7035aac655aa1ac493e55e57ed946e1fa0793501ffee0b950d7422",
     "20261105120000_notification_center_prepared_views.sql": "eedaa17f51ee5bfa0089a91dc304ad9db655e43992a13040f8fcca364e53fd5f",
-    "20261105181000_notification_prepared_retention.sql": "b7258df423be6bec8cfed25576f4d561a5fda218db06e3eb4929d07a210f2e84"
+    "20261105181000_notification_prepared_retention.sql": "b7258df423be6bec8cfed25576f4d561a5fda218db06e3eb4929d07a210f2e84",
+    "20261105190000_notification_prepared_scope_discovery.sql": "47aeb72e259c91e066af92773b15b7a422d60a1dcf62b1de183fb8d73d61edd6"
   }
 }

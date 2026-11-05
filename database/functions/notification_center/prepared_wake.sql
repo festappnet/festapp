@@ -21,7 +21,18 @@ END $$;
 REVOKE ALL ON FUNCTION public.notification_center_prepared_wake() FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.wake_notification_center()
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN PERFORM public.notification_center_require_service();PERFORM public.notification_center_prepared_wake();END $$;
+BEGIN
+ PERFORM public.notification_center_require_service();
+ -- The one-second safety tick discovers durable work; it must not create an
+ -- HTTP request when idle. Domain commits retain their unconditional fast wake.
+ -- Keep existing views eligible so live privacy/read repair and expiry cleanup
+ -- are never delayed by this scheduler optimization.
+ IF EXISTS(SELECT 1 FROM public.notification_center_events WHERE projected_revision<attention_revision)
+  OR EXISTS(SELECT 1 FROM public.notification_center_projection_scopes WHERE next_check_at<=clock_timestamp() AND NOT quarantined)
+  OR EXISTS(SELECT 1 FROM public.notification_center_views) THEN
+  PERFORM public.notification_center_prepared_wake();
+ END IF;
+END $$;
 REVOKE ALL ON FUNCTION public.wake_notification_center() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.wake_notification_center() TO service_role;
 CREATE OR REPLACE FUNCTION public.configure_notification_center_worker(p_project_url text)
