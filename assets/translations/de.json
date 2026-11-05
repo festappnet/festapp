@@ -2835,6 +2835,14 @@
     "recover": "Frühere verborgene Inhalte wiederherstellen",
     "noArchive": "Kein archivierter Inhalt verfügbar.",
     "removed": "Block entfernt. E-Mail-Erfassung pausiert.",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "emailOn": "E-Mail-Benachrichtigungen aktiviert",
+    "emailOff": "E-Mail-Benachrichtigungen deaktiviert",
+    "emailPaused": "E-Mail-Erfassung pausiert",
+    "previewLabel": "Besuchervorschau",
+    "collectionLabel": "E-Mail-Adressen für Benachrichtigungen sammeln",
+    "collectionHint": "Besucher können sich für eine Benachrichtigung zum Anmeldestart eintragen.",
+    "collectionPausedHint": "Neue E-Mail-Adressen werden nicht erfasst. Bereits Angemeldete werden weiterhin benachrichtigt.",
+    "recipients": "Empfänger der Benachrichtigung"
   }
 }

@@ -104,7 +104,7 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
         minimumSize: const Size(double.infinity, 52),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      onPressed: widget.preview || busy || done ? null : submit,
+      onPressed: busy || done ? null : submit,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -132,78 +132,95 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
         ],
       ),
     );
-    return Align(
-      alignment: Alignment.center,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (!done && widget.operation == null)
-                Semantics(
-                  label: SaleOpeningStrings.email,
-                  child: TextField(
-                    controller: email,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const [AutofillHints.email],
-                    enabled: !widget.preview && !busy,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(fontSize: 16),
-                    decoration: InputDecoration(
-                      hintText: SaleOpeningStrings.email,
-                      errorText: emailError,
-                      isDense: true,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      confirmation.update(value);
-                      setState(() {
-                        suffix = false;
-                        emailError = null;
-                      });
-                    },
-                    onSubmitted: (_) => submit(),
+    return Semantics(
+      container: widget.preview,
+      label: widget.preview
+          ? '${SaleOpeningStrings.email}. ${SaleOpeningStrings.notifyShort}'
+          : null,
+      child: ExcludeSemantics(
+        excluding: widget.preview,
+        child: ExcludeFocus(
+          excluding: widget.preview,
+          child: IgnorePointer(
+            ignoring: widget.preview,
+            child: Align(
+              alignment: Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!done && widget.operation == null)
+                        Semantics(
+                          label: SaleOpeningStrings.email,
+                          child: TextField(
+                            controller: email,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.email],
+                            enabled: !busy,
+                            readOnly: widget.preview,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontSize: 16),
+                            decoration: InputDecoration(
+                              hintText: SaleOpeningStrings.email,
+                              errorText: emailError,
+                              isDense: true,
+                              border: const OutlineInputBorder(),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              confirmation.update(value);
+                              setState(() {
+                                suffix = false;
+                                emailError = null;
+                              });
+                            },
+                            onSubmitted: (_) => submit(),
+                          ),
+                        ),
+                      if (suffix) ...[
+                        Text(
+                          FormStrings.emailSuffixWarning(
+                            EmailDomainSuffix.classify(email.text).suffix,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            confirmation.confirm();
+                            setState(() => suffix = false);
+                          },
+                          child: Text(FormStrings.emailSuffixConfirm),
+                        ),
+                      ],
+                      if (!done) ...[
+                        if (widget.operation == null)
+                          const SizedBox(height: 12),
+                        action,
+                      ],
+                      if (message != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              message!,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              if (suffix) ...[
-                Text(
-                  FormStrings.emailSuffixWarning(
-                    EmailDomainSuffix.classify(email.text).suffix,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    confirmation.confirm();
-                    setState(() => suffix = false);
-                  },
-                  child: Text(FormStrings.emailSuffixConfirm),
-                ),
-              ],
-              if (!done) ...[
-                if (widget.operation == null) const SizedBox(height: 12),
-                action,
-              ],
-              if (message != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      message!,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ),
-            ],
+              ),
+            ),
           ),
         ),
       ),

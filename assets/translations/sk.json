@@ -2862,6 +2862,14 @@
     "recover": "Obnoviť predtým skrytý obsah",
     "noArchive": "Skrytý obsah nie je k dispozícii.",
     "removed": "Blok bol odstránený. Zber e-mailov je pozastavený.",
-    "undo": "Vrátiť"
+    "undo": "Vrátiť",
+    "emailOn": "Upozornenie e-mailom zapnuté",
+    "emailOff": "Upozornenie e-mailom vypnuté",
+    "emailPaused": "Zber e-mailov pozastavený",
+    "previewLabel": "Náhľad pre návštevníka",
+    "collectionLabel": "Zbierať e-maily na upozornenie",
+    "collectionHint": "Návštevníci sa môžu prihlásiť na upozornenie o otvorení.",
+    "collectionPausedHint": "Nové e-maily neprijímame. Skôr prihláseným upozornenie príde.",
+    "recipients": "Príjemcovia upozornenia"
   }
 }

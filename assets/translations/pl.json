@@ -2837,6 +2837,14 @@
     "recover": "Przywróć wcześniej ukrytą treść",
     "noArchive": "Brak zarchiwizowanej treści.",
     "removed": "Blok usunięty. Zbieranie adresów wstrzymane.",
-    "undo": "Cofnij"
+    "undo": "Cofnij",
+    "emailOn": "Powiadomienia e-mail włączone",
+    "emailOff": "Powiadomienia e-mail wyłączone",
+    "emailPaused": "Zbieranie adresów wstrzymane",
+    "previewLabel": "Podgląd dla odwiedzających",
+    "collectionLabel": "Zbieraj adresy do powiadomień",
+    "collectionHint": "Odwiedzający mogą zapisać się na powiadomienie o otwarciu zapisów.",
+    "collectionPausedHint": "Nie zbieramy nowych adresów. Dotychczasowi subskrybenci nadal otrzymają powiadomienie.",
+    "recipients": "Odbiorcy powiadomienia"
   }
 }

@@ -180,9 +180,18 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNull,
+        isNotNull,
       );
-      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+      final preview = find.ancestor(
+        of: find.byType(TextField),
+        matching: find.byType(IgnorePointer),
+      );
+      expect(
+        preview.evaluate().any((e) => (e.widget as IgnorePointer).ignoring),
+        isTrue,
+      );
     },
   );
   testWidgets(
@@ -392,11 +401,11 @@ void main() {
         isFalse,
       );
       expect(
-        find.textContaining('jen dříve přihlášení zájemci'),
+        find.textContaining('Dříve přihlášeným upozornění odejde.'),
         findsOneWidget,
       );
       expect(find.text('Přihlášení zájemci: 7'), findsNothing);
-      expect(find.text('Zájemci (7)'), findsOneWidget);
+      expect(find.text('Příjemci upozornění (7)'), findsOneWidget);
       expect(find.text('Upravit e-maily'), findsNothing);
       expect(find.text('Ukončit upozornění'), findsNothing);
       await tester.tap(find.byType(SwitchListTile));
@@ -519,7 +528,7 @@ void main() {
           expect(find.text('Zapnout upozornění'), findsNothing);
         }
         expect(find.text('Trvale ukončit upozornění'), findsNothing);
-        expect(find.text('Přihlášení zájemci: 0'), findsOneWidget);
+        expect(find.text('Příjemci upozornění: 0'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       }
@@ -563,7 +572,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Zapnout upozornění'), findsOneWidget);
+      expect(find.text('Zapnout upozornění'), findsNothing);
       final menu = find.byKey(const ValueKey('form-availability-menu'));
       await tester.tap(menu);
       await tester.pumpAndSettle();
@@ -576,8 +585,14 @@ void main() {
       await tester.tap(find.text('Zapnout upozornění'));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningEnabled, isTrue);
-      expect(form.definition.presaleContent, contains('form-sale-opening-notification'));
-      expect(tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges, isTrue);
+      expect(
+        form.definition.presaleContent,
+        contains('form-sale-opening-notification'),
+      );
+      expect(
+        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
+        isTrue,
+      );
       expect(find.text('Standardní hlavička'), findsNothing);
       expect(find.text('Použít změny'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -658,7 +673,7 @@ void main() {
         find.text('Stav upozornění se nepodařilo načíst.'),
         findsOneWidget,
       );
-      expect(find.text('Přihlášení zájemci: 0'), findsNothing);
+      expect(find.text('Příjemci upozornění: 0'), findsNothing);
       await tester.tap(find.text('Zkusit znovu'));
       await tester.pumpAndSettle();
       expect(reads, 2);

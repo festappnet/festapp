@@ -1,6 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class PresaleStrings {
+  static String get emailOn => 'PresaleContent.emailOn'.tr();
+  static String get emailOff => 'PresaleContent.emailOff'.tr();
+  static String get emailPaused => 'PresaleContent.emailPaused'.tr();
+  static String get previewLabel => 'PresaleContent.previewLabel'.tr();
+  static String get collectionLabel => 'PresaleContent.collectionLabel'.tr();
+  static String get collectionHint => 'PresaleContent.collectionHint'.tr();
+  static String get collectionPausedHint =>
+      'PresaleContent.collectionPausedHint'.tr();
+  static String get recipients => 'PresaleContent.recipients'.tr();
   static String get email => 'PresaleContent.email'.tr();
   static String get paused => 'PresaleContent.paused'.tr();
   static String get recover => 'PresaleContent.recover'.tr();

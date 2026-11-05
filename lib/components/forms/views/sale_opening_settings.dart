@@ -4,13 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../models/form_editor_draft.dart';
 import '../presale_content_draft.dart';
-import '../models/form_presentation.dart';
 import '../sale_opening_strings.dart';
+import '../presale_strings.dart';
 import 'sale_opening_subscribers.dart';
 
 /// Changes only the supplied draft. The surrounding editor owns persistence.
@@ -22,7 +21,7 @@ class SaleOpeningSettings extends StatefulWidget {
     required this.onChanged,
     this.loadSummary,
     this.enableBaseline,
-  this.onCollect,
+    this.onCollect,
     this.onPause,
     this.onEnd,
   });
@@ -63,13 +62,12 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
   void _collect() {
     if (widget.onCollect != null) {
       widget.onCollect!();
-    widget.onChanged();
+      widget.onChanged();
       return;
     }
     widget.form.definition = PresaleContentDraft.collectDefinition(
-      widget.form.definition
-        ,
-        );
+      widget.form.definition,
+    );
     widget.onChanged();
   }
 
@@ -124,9 +122,9 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
       widget.onEnd!();
     } else {
       widget.form.definition = widget.form.definition.withSaleOpening(
-      enabled: false,
-      paused: false,
-    );
+        enabled: false,
+        paused: false,
+      );
     }
     widget.onChanged();
   }
@@ -170,26 +168,11 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            form.isOpen != true
-                ? SaleOpeningStrings.text('formClosedState')
-                : form.startTime != null
-                ? SaleOpeningStrings.configuredStart(
-                    LocaleDateTime.dateTimeCell(
-                      form.startTime!,
-                      Localizations.localeOf(context).toString(),
-                    ),
-                  )
-                : SaleOpeningStrings.requiresStart,
+            PresaleStrings.email,
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
-          if (loaded && enabled && !terminal && form.startTime != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                SaleOpeningStrings.dateChange,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           if (!loaded && !snapshot.hasError)
             const Center(
               child: Padding(
@@ -212,10 +195,14 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
             if (enabled && eligible && !terminal) ...[
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(SaleOpeningStrings.text('collectionLabel')),
+                title: Text(PresaleStrings.collectionLabel),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(SaleOpeningStrings.text('collectionHint')),
+                  child: Text(
+                    form.saleOpeningPaused
+                        ? PresaleStrings.collectionPausedHint
+                        : PresaleStrings.collectionHint,
+                  ),
                 ),
                 value: !form.saleOpeningPaused,
                 onChanged: widget.canEdit
@@ -223,7 +210,14 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
                     : null,
               ),
             ] else ...[
-              Text(status, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                !terminal && !enabled && !eligible
+                    ? form.isOpen != true
+                          ? SaleOpeningStrings.text('formClosedState')
+                          : SaleOpeningStrings.requiresStart
+                    : status,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               if (!enabled && !terminal && eligible && widget.canEdit)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
@@ -244,7 +238,7 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(
-                    '${SaleOpeningStrings.subscribers} (${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0})',
+                    '${PresaleStrings.recipients} (${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0})',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => showDialog<void>(
@@ -256,7 +250,7 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
                 )
               else
                 Text(
-                  '${SaleOpeningStrings.text('subscriberCount')}: ${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0}',
+                  '${PresaleStrings.recipients}: ${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0}',
                 ),
             ],
             if (enabled && !terminal && widget.canEdit) ...[

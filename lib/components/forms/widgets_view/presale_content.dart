@@ -3,7 +3,7 @@ import 'package:fstapp/services/locale_date_time.dart';
 import '../sale_opening_strings.dart';
 import 'sale_opening_notification.dart';
 
-import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:html/parser.dart' as parser;
 
 import '../../html/html_embedded_block.dart';
@@ -112,7 +112,7 @@ class PresaleContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ConstrainedBox(
     constraints: BoxConstraints(
-      minHeight: _subscriptionOnly
+      minHeight: !preview && _subscriptionOnly
           ? (MediaQuery.sizeOf(context).height - 80)
                 .clamp(0.0, double.infinity)
                 .toDouble()
@@ -126,9 +126,22 @@ class PresaleContent extends StatelessWidget {
         children: [
           if (effectiveHeader == 'event_and_date' &&
               (eventTitle?.trim().isNotEmpty ?? false))
-            Text(eventTitle!, textAlign: TextAlign.center),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                eventTitle!,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           if (!_hasVisibleContent && effectiveHeader == 'none')
             Text(
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
               SaleOpeningStrings.scheduledStart(
                 LocaleDateTime.dateTimeCell(
                   targetTime,
@@ -137,13 +150,28 @@ class PresaleContent extends StatelessWidget {
               ),
             ),
           if (effectiveHeader != 'none')
-            Text(
-              LocaleDateTime.dateTimeCell(
-                targetTime,
-                Localizations.localeOf(context).toString(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+                LocaleDateTime.dateTimeCell(
+                  targetTime,
+                  Localizations.localeOf(context).toString(),
+                ),
               ),
             ),
           HtmlView(
+            key: ValueKey((
+              showTimer,
+              canSubscribe,
+              targetTime,
+              formLink,
+              hasTickets,
+              informal,
+              preview,
+            )),
             html:
                 '<div style="text-align: center;">${_singletonContent(showTimer ? countdownContent(html) : html ?? '')}</div>',
             fontSize: 24,

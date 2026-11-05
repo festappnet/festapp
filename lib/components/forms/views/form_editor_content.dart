@@ -68,6 +68,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   final _htmlSave = HtmlSaveCoordinator();
   final _snapshot = EditorSnapshot();
   final _presaleKey = GlobalKey();
+  final _presaleSectionController = ExpansibleController();
   final _draftRevision = ValueNotifier<int>(0);
   bool get _hasChanges =>
       _canEdit &&
@@ -118,6 +119,7 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   @override
   void dispose() {
+    _presaleSectionController.dispose();
     _draftRevision.dispose();
     _htmlSave.dispose();
     if (_prototype && !widget.embedded && !_prototypeSaved && _bundle != null) {
@@ -396,6 +398,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                   const Divider(height: 24),
                   PresaleContentEditor(
                     key: _presaleKey,
+                    sectionController: _presaleSectionController,
                     form: form,
                 coordinator: _htmlSave,
                           canEdit: _canEdit && !_prototype,
@@ -616,8 +619,10 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   Future<void> _openSaleOpeningSettings() async {
     final target = _presaleKey.currentContext;
-    if (target != null) await Scrollable.ensureVisible(
-      target, duration: const Duration(milliseconds: 200));
+    if (target == null) return;
+    _presaleSectionController.expand();
+    await Scrollable.ensureVisible(target,
+      duration: const Duration(milliseconds: 200));
   }
 
   Future<void> _openPublicForm({bool preview = false}) async {

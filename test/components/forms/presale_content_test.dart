@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/rendering.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -8,6 +11,7 @@ import 'package:festapp_core/time.dart' as core_time;
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/presale_content_draft.dart';
 import 'package:fstapp/components/forms/views/presale_content_editor.dart';
+import 'package:fstapp/components/forms/views/sale_opening_settings.dart';
 import 'package:fstapp/components/forms/widgets_view/presale_content.dart';
 import 'package:fstapp/components/forms/widgets_view/sale_opening_notification.dart';
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
@@ -230,6 +234,10 @@ void main() {
           );
           await tester.pump();
           expect(find.byType(RichHtmlEditorController), findsNothing);
+          expect(find.byType(PresaleContent), findsNothing);
+          expect(find.byType(SaleOpeningSettings), findsNothing);
+          await tester.tap(find.byKey(const ValueKey('presale-section')));
+          await tester.pumpAndSettle();
           expect(find.byType(PresaleContent), findsOneWidget);
           expect(find.text('Standardní hlavička'), findsNothing);
           expect(jsonEncode(f.toEditedJson()), before);
@@ -248,6 +256,12 @@ void main() {
           await tester.tap(find.byKey(const ValueKey('presale-customize')));
           await tester.pump();
           expect(find.text('Standardní hlavička'), findsNothing);
+          expect(jsonEncode(f.toEditedJson()), before);
+          await tester.ensureVisible(find.text('Stránka před otevřením'));
+          await tester.tap(find.text('Stránka před otevřením'));
+          await tester.pumpAndSettle();
+          expect(find.byType(PresaleContent), findsNothing);
+          expect(find.byType(SaleOpeningSettings), findsNothing);
           expect(jsonEncode(f.toEditedJson()), before);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
@@ -287,6 +301,120 @@ void main() {
       '<p><strong>Začátek přihlašování</strong></p>',
     );
   });
+  testWidgets('email-only preview stays content-sized inside a tall editor', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1024, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await env().pumpWidget(
+      tester,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PresaleContent(
+              targetTime: DateTime(2099),
+              onFinished: () {},
+              html: saleOpeningBlockHtml,
+              header: 'none',
+              showTimer: false,
+              canSubscribe: true,
+              preview: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.getSize(find.byType(PresaleContent)).height, lessThan(400));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  for (final adminDark in [false, true]) {
+    testWidgets(
+      'preview text remains readable against the opposite admin theme $adminDark',
+      (tester) async {
+        final f = form(enabled: false);
+        f.definition = f.definition.withThemeMode(adminDark ? 'light' : 'dark');
+        final media = HtmlSaveCoordinator();
+        addTearDown(media.dispose);
+        await env().pumpWidget(
+          tester,
+          MaterialApp(
+            theme: ThemeData(
+              brightness: adminDark ? Brightness.dark : Brightness.light,
+            ),
+            builder: DependencyMaterialBridge.builder,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: PresaleContentEditor(
+                  form: f,
+                  coordinator: media,
+                  canEdit: true,
+                  onChanged: () {},
+                  loadSummary: (_) async => {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Stránka před otevřením'));
+        await tester.pumpAndSettle();
+        final title = find.text('Form');
+        final paragraph = tester.renderObject<RenderParagraph>(title);
+        final foreground = paragraph.text.style!.color!.computeLuminance();
+        final background = Theme.of(tester.element(title))
+            .scaffoldBackgroundColor
+            .computeLuminance();
+        final ratio = foreground > background
+            ? (foreground + .05) / (background + .05)
+            : (background + .05) / (foreground + .05);
+        expect(ratio, greaterThanOrEqualTo(4.5));
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+  testWidgets(
+    'email-only preview hydrates when summary arrives after the HTML was mounted',
+    (tester) async {
+      final summary = Completer<Map<String, dynamic>>();
+      final f = form();
+      f.definition = f.definition
+          .withPresaleHeader('none')
+          .withPresaleContent(saleOpeningBlockHtml)
+          .withThemeMode('dark');
+      final media = HtmlSaveCoordinator();
+      addTearDown(media.dispose);
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          theme: ThemeData.light(),
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PresaleContentEditor(
+                form: f,
+                coordinator: media,
+                canEdit: true,
+                onChanged: () {},
+                loadSummary: (_) => summary.future,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      summary.complete({
+        'phase': 'armed',
+        'subscribers': {'active': 1},
+      });
+      await tester.pump();
+      await tester.tap(find.text('Stránka před otevřením'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SaleOpeningNotification), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   final fixtures = jsonDecode(
     File('shared/presale/render-cases.json').readAsStringSync(),
   ) as List;

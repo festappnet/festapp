@@ -9,6 +9,7 @@ import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/presale_content_editor.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:fstapp/services/web_bootstrap_bridge.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,9 @@ Future<void> main() async {
       path: 'assets/translations',
       child: const _App(),
     ),
+  );
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => WebBootstrapBridge.markAppReady(),
   );
 }
 
@@ -54,10 +58,14 @@ class _PreviewState extends State<_Preview> {
     occasionId: 1,
     isOpen: true,
     data: {
-      'design': {'presale_header': 'event_and_date'},
+      'design': {'presale_header': 'none', 'theme_mode': 'dark'},
+      'sale_opening_notifications': {
+        'enabled': true,
+        'collection_paused': false,
+      },
       'schedule': {
         'start_time': '2099-11-05T17:00:00Z',
-        'countdown_title': '<p>Večer plný hudby a tance.</p>',
+        'countdown_title': '<div class="html-editor-block form-sale-opening-notification"></div>',
       },
     },
   );
@@ -78,6 +86,16 @@ class _PreviewState extends State<_Preview> {
         appBar: AppBar(
           title: const Text('Náhled editoru - lokální data'),
           actions: [
+            IconButton(
+              tooltip: 'Změnit motiv formuláře',
+              icon: const Icon(Icons.contrast),
+              onPressed: () => setState(() {
+                form.definition = form.definition.withThemeMode(
+                  form.definition.themeMode == 'dark' ? 'light' : 'dark',
+                );
+                baseline = jsonEncode(form.toEditedJson());
+              }),
+            ),
             IconButton(
               tooltip: 'Změnit motiv',
               onPressed: () => setState(() => dark = !dark),
@@ -101,7 +119,10 @@ class _PreviewState extends State<_Preview> {
                     form: form,
                     coordinator: media,
                     canEdit: true,
-                    loadSummary: (_) async => {},
+                    loadSummary: (_) async => {
+                      'phase': 'armed',
+                      'subscribers': {'active': 1},
+                    },
                     onChanged: () => setState(() {}),
                   ),
                   FilledButton(

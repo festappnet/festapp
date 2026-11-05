@@ -4994,6 +4994,14 @@
     "recover": "Restore previously hidden content",
     "noArchive": "No archived content is available.",
     "removed": "Block removed. New email collection is paused.",
-    "undo": "Undo"
+    "undo": "Undo",
+    "emailOn": "Email notifications enabled",
+    "emailOff": "Email notifications disabled",
+    "emailPaused": "Email collection paused",
+    "previewLabel": "Visitor preview",
+    "collectionLabel": "Collect emails for opening notifications",
+    "collectionHint": "Visitors can sign up to be notified when registration opens.",
+    "collectionPausedHint": "New emails are paused. Existing subscribers will still be notified.",
+    "recipients": "Notification recipients"
   }
 }

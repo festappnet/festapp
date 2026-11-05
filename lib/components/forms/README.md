@@ -43,9 +43,10 @@ remain outside this confirmation gate; manual web registration uses it.
 ## Before registration opens
 
 One HTML document in `schedule.countdown_title` owns the complete presale page.
-`presaleContent` is its application name, not another wire key. The visible
-**Stránka před otevřením** section previews the actual public `PresaleContent`.
-Customization is collapsed until explicitly opened; view changes never alter
+`presaleContent` is its application name, not another wire key. The **Stránka před otevřením** section starts collapsed in its entirety,
+including the visitor preview and email controls. Opening it previews the actual
+public `PresaleContent` in a self-contained form theme and a content-sized viewport.
+Customization stays behind a second explicit action; view changes never alter
 HTML, flags or the parent dirty state. The form's existing Save owns persistence,
 media preparation, original aggregate/product versions and command identity.
 
