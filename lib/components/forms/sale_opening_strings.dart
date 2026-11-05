@@ -27,7 +27,6 @@ class SaleOpeningStrings {
   static String get subscribers => 'SaleOpening.subscribers'.tr();
   static String get requiresStart => 'SaleOpening.requiresStart'.tr();
   static String get dateChange => 'SaleOpening.dateChange'.tr();
-  static String get editEmails => 'SaleOpening.editEmails'.tr();
   static String get active => 'SaleOpening.active'.tr();
   static String get closed => 'SaleOpening.closed'.tr();
   static String get queued => 'SaleOpening.queued'.tr();

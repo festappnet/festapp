@@ -1,6 +1,5 @@
 import 'dart:convert';
 import '../sale_opening_strings.dart';
-import 'package:fstapp/app_config.dart';
 import 'sale_opening_settings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../waitlist_strings.dart';
@@ -699,14 +698,6 @@ class _FormEditorContentState extends State<FormEditorContent>
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, updateDialog) {
           final changed = jsonEncode(draft.toJson()) != before;
-          final canEditEmails =
-              !changed &&
-              !_hasChanges &&
-              RightsService.currentOccasion()?.id ==
-                  form.definition.occasionId &&
-              RightsService.hasCapability(
-                AuthorizationCapabilities.emailTemplatesOccasionRead,
-              );
           return AppDialog(
             child: SizedBox(
               width: 560,
@@ -727,15 +718,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                           enableBaseline: _pendingSaleOpeningBaseline,
                           canEdit: _canEdit,
                           onChanged: () => updateDialog(() {}),
-                          onEditEmails: canEditEmails
-                              ? () {
-                                  Navigator.pop(dialogContext, false);
-                                  RouterService.navigate(
-                                    context,
-                                    '/${RightsService.currentOccasion()!.link}/${AppConfig.defaultAdministrationRoute}/email-templates',
-                                  );
-                                }
-                              : null,
                         ),
                       ),
                     ),

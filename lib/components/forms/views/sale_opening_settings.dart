@@ -20,7 +20,6 @@ class SaleOpeningSettings extends StatefulWidget {
     required this.form,
     required this.canEdit,
     required this.onChanged,
-    this.onEditEmails,
     this.loadSummary,
     this.enableBaseline,
   });
@@ -28,7 +27,6 @@ class SaleOpeningSettings extends StatefulWidget {
   final FormDefinition? enableBaseline;
   final bool canEdit;
   final VoidCallback onChanged;
-  final VoidCallback? onEditEmails;
   final Future<Map<String, dynamic>> Function(int)? loadSummary;
   @override
   State<SaleOpeningSettings> createState() => _SaleOpeningSettingsState();
@@ -227,12 +225,9 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
                           child: SaleOpeningSubscribers(formId: form.id!),
                         ),
                       ),
-                      child: Text(SaleOpeningStrings.subscribers),
-                    ),
-                  if (widget.onEditEmails != null)
-                    TextButton(
-                      onPressed: widget.onEditEmails,
-                      child: Text(SaleOpeningStrings.editEmails),
+                      child: Text(
+                        '${SaleOpeningStrings.subscribers} (${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0})',
+                      ),
                     ),
                 ],
               ),
