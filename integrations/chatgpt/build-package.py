@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import struct
 from urllib.parse import urlparse
 import zipfile
 
@@ -31,7 +32,24 @@ auth = server['extensions']['com.openai']['auth']
 assert auth['client'] == {'mode':'provided','clientId':'festapp-chatgpt','tokenEndpointAuthMethod':'none'}
 assert auth['baseScopes'] == ['festapp:ticket-layouts:read','festapp:orders:read']
 assert not any(key in plugin for key in ['apps','hooks','skills'])
-files = ['plugin.json','mcp.json','assets/logo.png']
+# Package exports must stay byte-identical to the canonical brand masters.
+brand = root.parents[1] / 'assets/brand/vstupenky-online'
+images = {
+    'logo': ('assets/logo.png', 'vstupenky-online-square.png'),
+    'logoDark': ('assets/logo-dark.png', 'vstupenky-online-square-dark.png'),
+    'composerIcon': ('assets/composer-icon.png', 'vstupenky-online-icon.png'),
+    'composerIconDark': ('assets/composer-icon-dark.png', 'vstupenky-online-icon-dark.png'),
+}
+assert interface['brandColor'].lower() == '#19243b'
+assert interface['brandColorDark'].lower() == '#80bdf2'
+for key, (name, master) in images.items():
+    assert interface[key] == './' + name
+    data = (root/name).read_bytes()
+    assert data == (brand/master).read_bytes(), f'{name} differs from canonical {master}'
+    assert data[:8] == b'\x89PNG\r\n\x1a\n' and len(data) <= 5 * 1024 * 1024
+    width, height = struct.unpack('>II', data[16:24])
+    assert 48 <= width == height <= 4096
+files = ['plugin.json', 'mcp.json', *(name for name, _ in images.values())]
 args.output.parent.mkdir(parents=True, exist_ok=True)
 with zipfile.ZipFile(args.output,'w',compression=zipfile.ZIP_DEFLATED) as package:
     for name in files:
