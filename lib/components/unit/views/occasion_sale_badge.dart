@@ -35,7 +35,7 @@ class OccasionSaleBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = this.now;
     final status = this.status;
-    final hasTickets = occasion.saleForms?.any((f) => f.hasTickets) ?? true;
+    final hasTickets = occasion.saleForms?.any((f) => f.hasTickets) ?? false;
     String wording(String key, [Map<String, String>? args]) =>
         OccasionSaleStrings.domainText(hasTickets, key, args);
     final timezone = occasion.data?[Tb.occasions.data_timezone] as String?;

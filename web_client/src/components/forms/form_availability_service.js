@@ -68,7 +68,7 @@ export class FormAvailabilityService {
         if (showPreview) return false;
 
         if (status === FormAvailabilityService.Status.BEFORE_START) {
-            if (formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe) {
+            if (formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe || formModel.data?.sale_opening_notifications?.enabled) {
                 container.replaceChildren();
                 renderPresaleContent(container, formModel, context.onReload);
                 if (formModel.showBeforeStartMessage && formModel.beforeStartMessage) {

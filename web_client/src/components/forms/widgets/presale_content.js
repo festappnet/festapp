@@ -1,7 +1,8 @@
+import { LocalizationService } from '../../../services/localization_service.js';
 import { sanitizeHtml } from '../../../utils/html.js';
 import { CountdownWidget } from './countdown_widget.js';
 import { FormStrings } from '../form_strings.js';
-import { renderSaleOpening } from '../sale_opening_notifications.js';
+import { saleOpeningText, renderSaleOpening } from '../sale_opening_notifications.js';
 
 // One document owns order. Hydration occurs only after the common sanitizer.
 export function renderPresaleContent(container, model, onFinished, {preview = false} = {}) {
@@ -26,7 +27,14 @@ export function renderPresaleContent(container, model, onFinished, {preview = fa
         else slot.remove();
     }
     const date = doc.createElement('p');
-    if (model.startTime) date.textContent = new Intl.DateTimeFormat(undefined, {dateStyle: 'full', timeStyle: 'short', timeZone: model.saleOpeningNotification?.timeZone || 'Europe/Prague'}).format(model.startTime);
+    if (model.startTime) date.textContent = new Intl.DateTimeFormat(LocalizationService.currentLocale || undefined, {dateStyle: 'full', timeStyle: 'short', timeZone: model.saleOpeningNotification?.timeZone || 'Europe/Prague'}).format(model.startTime);
+    const meaningful = content.textContent.replace(/[\s\u200b]/gu, '') || content.querySelector('input,button,img,video,iframe,table,hr,.countdown-widget');
+    if (!meaningful && !model.enableCountdown) {
+        const opening = doc.createElement('p');
+        opening.className = 'form-scheduled-opening';
+        opening.textContent = saleOpeningText('scheduledStart').replace('{date}', () => date.textContent);
+        content.append(opening);
+    }
     if (model.enableCountdown) container.append(date);
     container.append(content);
 }

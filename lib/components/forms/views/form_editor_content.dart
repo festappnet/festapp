@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../sale_opening_strings.dart';
 import 'package:fstapp/app_config.dart';
 import 'sale_opening_settings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -68,6 +70,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
   final _htmlSave = HtmlSaveCoordinator();
   final _snapshot = EditorSnapshot();
+  FormDefinition? _pendingSaleOpeningBaseline;
   final _draftRevision = ValueNotifier<int>(0);
   bool get _hasChanges =>
       _canEdit &&
@@ -148,6 +151,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     if (!mounted || link != _formLink) return;
     setState(() {
       _bundle = bundle;
+      _pendingSaleOpeningBaseline = null;
       _loadFailed = bundle == null;
       if (bundle != null) {
         _snapshot.accept(bundle.form.toEditedJson());
@@ -218,6 +222,7 @@ class _FormEditorContentState extends State<FormEditorContent>
           severity: ToastSeverity.Ok);
       setState(() {
         _bundle = _bundle!.afterSave(saved);
+        _pendingSaleOpeningBaseline = null;
         _snapshot.accept(saved.toEditedJson());
         _acceptRenderedDraft(_bundle!);
       });
@@ -304,6 +309,14 @@ class _FormEditorContentState extends State<FormEditorContent>
                     ],
                   ),
                 ),
+                if (!_prototype && _canEdit)
+                  PopupMenuButton<String>(
+                    key: const ValueKey('form-availability-menu'),
+                    tooltip: CommonStrings.moreOptions,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (_) => _openSaleOpeningSettings(),
+                    itemBuilder: (_) => [PopupMenuItem(value: 'opening', child: Text(SaleOpeningStrings.text('settingsTitle')))],
+                  ),
                 Switch(
                   value: _prototype ? false : form.definition.isOpen ?? true,
                   onChanged: _canEdit && !_prototype
@@ -406,11 +419,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                             form.definition.withEnableCountdown(val))
                         : null,
                   ),
-                  SaleOpeningSettings(form: form, canEdit: _canEdit, onChanged: () => setState(() {}),
-                    onEditEmails: RightsService.currentOccasion()?.id == form.definition.occasionId &&
-                      RightsService.hasCapability(AuthorizationCapabilities.emailTemplatesOccasionRead)
-                      ? () => RouterService.navigate(context, '/${RightsService.currentOccasion()!.link}/${AppConfig.defaultAdministrationRoute}/email-templates')
-                      : null),
                   if (form.definition.startTime != null) ...[
                     const SizedBox(height: 12),
                     Container(
@@ -422,10 +430,10 @@ class _FormEditorContentState extends State<FormEditorContent>
                       child: Column(
                         children: [
                           _buildHtmlFieldPreview(
-                            FormStrings.labelCountdownMessage,
+                            SaleOpeningStrings.text('presaleContent'),
                             form.definition.enableCountdown ? countdownContent(form.definition.countdownTitle) : form.definition.countdownTitle ?? '',
                             embeddedBlocks: [countdownBlock(
-                                form.definition.startTime!, () {}), saleOpeningPreviewBlock()],
+                                form.definition.startTime!, () {}), saleOpeningPreviewBlock(enabled: form.definition.saleOpeningEnabled, paused: form.definition.saleOpeningPaused)],
                             (val) => setState(() {
                               final removed = (form.definition.countdownTitle?.contains('form-sale-opening-notification') ?? false) && !val.contains('form-sale-opening-notification');
                               final removedCountdown = (form.definition.countdownTitle?.contains('form-countdown') ?? false) && !val.contains('form-countdown');
@@ -679,6 +687,145 @@ class _FormEditorContentState extends State<FormEditorContent>
     );
   }
 
+  Future<void> _openSaleOpeningSettings() async {
+    if (_bundle == null) return;
+    final form = _bundle!.form;
+    final draft = FormEditorDraft.fromJson(
+      jsonDecode(jsonEncode(form.toJson())) as Map<String, dynamic>,
+    );
+    final before = jsonEncode(draft.toJson());
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, updateDialog) {
+          final changed = jsonEncode(draft.toJson()) != before;
+          final canEditEmails =
+              !changed &&
+              !_hasChanges &&
+              RightsService.currentOccasion()?.id ==
+                  form.definition.occasionId &&
+              RightsService.hasCapability(
+                AuthorizationCapabilities.emailTemplatesOccasionRead,
+              );
+          return AppDialog(
+            child: SizedBox(
+              width: 560,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppDialogHeader(
+                      title: Text(SaleOpeningStrings.text('settingsTitle')),
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: SaleOpeningSettings(
+                          form: draft,
+                          enableBaseline: _pendingSaleOpeningBaseline,
+                          canEdit: _canEdit,
+                          onChanged: () => updateDialog(() {}),
+                          onEditEmails: canEditEmails
+                              ? () {
+                                  Navigator.pop(dialogContext, false);
+                                  RouterService.navigate(
+                                    context,
+                                    '/${RightsService.currentOccasion()!.link}/${AppConfig.defaultAdministrationRoute}/email-templates',
+                                  );
+                                }
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 32),
+                    Text(
+                      SaleOpeningStrings.text('saveHint'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    if (changed || _hasChanges)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(SaleOpeningStrings.text('unsavedChanges')),
+                      ),
+                    const SizedBox(height: 12),
+                    AppDialogActions(
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(CommonStrings.cancel),
+                        ),
+                        FilledButton(
+                          onPressed: changed
+                              ? () => Navigator.pop(dialogContext, true)
+                              : null,
+                          child: Text(SaleOpeningStrings.text('applyAction')),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    if (result != true || !mounted) return;
+    if (!form.definition.saleOpeningEnabled && draft.definition.saleOpeningEnabled) {
+      _pendingSaleOpeningBaseline ??= form.definition;
+    }
+    setState(() {
+      form.definition = form.definition.copyWith(
+        data: {
+          ...?form.definition.data,
+          'sale_opening_notifications':
+              draft.definition.data?['sale_opening_notifications'],
+          'schedule': draft.definition.data?['schedule'],
+        },
+      );
+    });
+    _draftChanged();
+  }
+
+  Future<void> _openPublicForm({bool preview = false}) async {
+    if (_formLink == null) return;
+    if (_hasChanges) {
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AppAlertDialog(
+          title: Text(SaleOpeningStrings.text('unsavedChanges')),
+          content: Text(SaleOpeningStrings.text('viewSavedHint')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(CommonStrings.keepEditing),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'stored'),
+              child: Text(SaleOpeningStrings.text('showSavedAction')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, 'save'),
+              child: Text(SaleOpeningStrings.text('saveAndViewAction')),
+            ),
+          ],
+        ),
+      );
+      if (choice == null || !mounted) return;
+      if (choice == 'save') {
+        await saveChanges();
+        if (!mounted || _hasChanges) return;
+      }
+    }
+    if (!mounted) return;
+    await RouterService.navigate(
+      context,
+      '${FormPage.ROUTE}/$_formLink${preview ? '?preview=true' : ''}',
+    );
+  }
+
   void _addNewField() async {
     if (_bundle == null) return;
 
@@ -860,12 +1007,7 @@ class _FormEditorContentState extends State<FormEditorContent>
           if (!_prototype)
             FloatingActionButton(
               heroTag: "viewFormFab",
-              onPressed: () {
-                if (_formLink != null) {
-                  RouterService.navigate(
-                      context, "${FormPage.ROUTE}/$_formLink");
-                }
-              },
+              onPressed: () => _openPublicForm(),
               tooltip: FormStrings.publicView,
               child: const Icon(Icons.remove_red_eye_outlined),
             ),
@@ -873,12 +1015,7 @@ class _FormEditorContentState extends State<FormEditorContent>
           if (!_prototype)
             FloatingActionButton(
               heroTag: "previewFormFab",
-              onPressed: () {
-                if (_formLink != null) {
-                  RouterService.navigate(
-                      context, "${FormPage.ROUTE}/$_formLink?preview=true");
-                }
-              },
+              onPressed: () => _openPublicForm(preview: true),
               tooltip: FormStrings.editorPreview,
               child: const Icon(Icons.developer_mode),
             ),

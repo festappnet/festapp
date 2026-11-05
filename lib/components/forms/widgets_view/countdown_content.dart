@@ -63,11 +63,34 @@ class CountdownContent extends StatelessWidget {
   final String formLink;
   final bool hasTickets, informal;
 
+  bool get _hasVisibleContent {
+    if (showTimer || canSubscribe) return true;
+    final content = parser.parseFragment(html ?? '');
+    for (final slot in content.querySelectorAll(
+      '.html-editor-block.form-countdown, .html-editor-block.form-sale-opening-notification',
+    )) {
+      slot.remove();
+    }
+    return (content.text ?? '')
+            .replaceAll(RegExp(r'[\s\u200b]'), '')
+            .isNotEmpty ||
+        content.querySelector('img,video,iframe,table,hr') != null;
+  }
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(24),
     child: Column(
       children: [
+        if (!_hasVisibleContent)
+          Text(
+            SaleOpeningStrings.scheduledStart(
+              LocaleDateTime.dateTimeCell(
+                targetTime,
+                Localizations.localeOf(context).toString(),
+              ),
+            ),
+          ),
         if (showTimer)
           Text(
             LocaleDateTime.dateTimeCell(
@@ -122,8 +145,20 @@ String insertSaleOpeningBlock(String html) {
   return root.outerHtml;
 }
 
-HtmlEmbeddedBlock saleOpeningPreviewBlock() => HtmlEmbeddedBlock(
+HtmlEmbeddedBlock saleOpeningPreviewBlock({
+  bool enabled = true,
+  bool paused = false,
+}) => HtmlEmbeddedBlock(
   cssClass: 'form-sale-opening-notification',
   label: SaleOpeningStrings.title,
-  builder: (_) => const SaleOpeningNotification(formLink: '', preview: true),
+  builder: (_) => enabled && !paused
+      ? const SaleOpeningNotification(formLink: '', preview: true)
+      : Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(
+            SaleOpeningStrings.text(
+              paused ? 'previewPaused' : 'previewDisabled',
+            ),
+          ),
+        ),
 );

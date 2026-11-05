@@ -1,4 +1,3 @@
-import '../../forms/sale_opening_strings.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
@@ -168,10 +167,6 @@ class OccasionSetupSaleSettings extends StatelessWidget {
           title: Text(OccasionSetupSales.text(data, 'countdown')),
           subtitle: Text(OccasionSetupSales.text(data, 'countdownHelp')),
         ),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(SaleOpeningStrings.enable),
-          subtitle: Text(kind == 'scheduled' ? SaleOpeningStrings.explanation : SaleOpeningStrings.requiresStart),
-          value: data['saleOpeningNotifications'] == true && kind == 'scheduled',
-          onChanged: kind == 'scheduled' ? (value) => onChanged({'saleOpeningNotifications': value}) : null),
         if (!OccasionSetupSales.valid(data, DateTime.now()))
           Text(
             OccasionSetupSales.text(data, 'invalidTiming'),
