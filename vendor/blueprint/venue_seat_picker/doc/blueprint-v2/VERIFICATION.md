@@ -280,7 +280,7 @@ After the coordinator freezes source and builds `tool/demo.sh build`:
 
 ```sh
 fvm dart run packages/venue_layout_core/tool/qa_export.dart build/qa/fixtures
-fvm flutter test --concurrency=1 tool/export_browser_fixtures_test.dart --dart-define=QA_BROWSER_FIXTURES=build/qa/browser-fixtures
+(cd example && fvm flutter test --concurrency=1 test/browser_fixtures_test.dart --dart-define=QA_BROWSER_FIXTURES=../build/qa/browser-fixtures)
 QA_CAPTURE_ONLY=1 node tool/qa_raster.mjs build/qa/fixtures build/qa/raster
 fvm flutter test --concurrency=1 test/layout/qa_raster_test.dart --dart-define=QA_FIXTURES=build/qa/fixtures --dart-define=QA_CAMERAS=build/qa/raster/cameras.json
 QA_PHASE=parity node tool/qa_browser.mjs build/qa/fixtures build/qa/browser/final-kernel-parity

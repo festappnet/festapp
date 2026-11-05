@@ -1,5 +1,7 @@
 ## 0.4.6
 
+- Prepare edited and saved text resources independently so labels can be resized or restyled without losing save/export support.
+
 - Keep the object filter visible and editable when reopening the palette.
 
 - Keep readable-seat focus, overview toggling and painter-only highlight pulses in the canonical viewer API used by Festapp.

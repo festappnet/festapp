@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
-import 'package:venue_seat_picker/venue_layout_templates.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 
 void main() {

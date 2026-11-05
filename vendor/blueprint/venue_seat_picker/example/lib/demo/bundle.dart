@@ -85,12 +85,14 @@ class DemoBundle {
       }
       loaded[path] = data;
     }
-    final resources = jsonDecode(
-      utf8.decode(
-        loaded['resources/fixtures.json'] ??
-            (throw const FormatException('Missing local resources')),
-      ),
-    ) as Map<String, dynamic>;
+    final resources =
+        jsonDecode(
+              utf8.decode(
+                loaded['resources/fixtures.json'] ??
+                    (throw const FormatException('Missing local resources')),
+              ),
+            )
+            as Map<String, dynamic>;
     _validateResources(resources);
     final document = VenueLayoutDocument.fromJson(
       value['layout'] as Map<String, dynamic>,
@@ -195,8 +197,9 @@ class DemoBundle {
       throw const FormatException('Invalid demo revision');
     }
     if (host['template'] != null) {
-      if (host['template'] is! String)
+      if (host['template'] is! String) {
         throw const FormatException('Unknown demo template');
+      }
       try {
         // Gallery recommendations may change while existing portable files
         // retain any template still supported by the canonical catalog.

@@ -6,9 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
-import '../example/lib/demo/bundle.dart';
+import 'package:venue_seat_picker_example/demo/bundle.dart';
 
 void main() {
+  const enabled = bool.hasEnvironment('QA_BROWSER_FIXTURES');
   testWidgets(
     'public templates export valid version 2 portable browser fixtures',
     (tester) async {
@@ -27,12 +28,14 @@ void main() {
           'revision': 0,
         }).encode();
         expect(
-          DemoBundle.decode(Uint8List.fromList(utf8.encode(encoded))).document
-              .toJson(),
+          DemoBundle.decode(
+            Uint8List.fromList(utf8.encode(encoded)),
+          ).document.toJson(),
           document.toJson(),
         );
         File('${dir.path}/$id.json').writeAsStringSync(encoded);
       }
     },
+    skip: !enabled,
   );
 }

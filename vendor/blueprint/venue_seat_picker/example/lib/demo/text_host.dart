@@ -8,14 +8,22 @@ Future<Map<String, dynamic>> prepareDemoText(
   VenueLayoutDocument document,
   Map<String, dynamic> resources, {
   VenueLayoutDocument? baseline,
+  Future<Map<String, dynamic>> Function(Map<String, dynamic>) prepareBatch =
+      prepareTextBatch,
 }) async {
   final families = Map<String, dynamic>.from(
     resources['fontFamilies'] as Map? ?? {},
   );
-  final requests = {
-    ...collectTextRequests(document, families, includePresets: true),
-    if (baseline != null)
-      ...collectTextRequests(baseline, families, includePresets: true),
+  // Object IDs persist across edits; each snapshot can need a different
+  // immutable text resource for that same object.
+  final requests = <String, LayoutTextRequest>{
+    for (final snapshot in [document, ?baseline])
+      for (final request in collectTextRequests(
+        snapshot,
+        families,
+        includePresets: true,
+      ).values)
+        request.id: request,
   };
   final missing = requests.values
       .where((r) => !(resources['textLayouts'] as Map? ?? {}).containsKey(r.id))
@@ -24,7 +32,7 @@ Future<Map<String, dynamic>> prepareDemoText(
   var next = resources;
   Future<void> prepare(List<LayoutTextRequest> batch) async {
     if (batch.isEmpty) return;
-    final result = await prepareTextBatch({
+    final result = await prepareBatch({
       'requests': batch.map((r) => r.toJson()).toList(),
       'numericFaces': [],
     });

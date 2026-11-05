@@ -21,6 +21,7 @@ try{const c=await browser.newContext({viewport:{width:1440,height:1000},acceptDo
  await p.getByRole('button',{name:/250 CZK/}).first().click();
  await p.getByText('2 selected seats - 0 standing selected',{exact:true}).waitFor();
  await activate(p,control(p,'Seznam míst'));
+ await p.mouse.move(720,850);await p.mouse.wheel(0,900);
  await p.getByRole('button',{name:/Místa ke stání.*Volné/}).click();
  await activate(p,control(p,'Přidat'));
  await activate(p,control(p,'Potvrdit počet'));

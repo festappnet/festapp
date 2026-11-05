@@ -9,42 +9,150 @@ import 'package:venue_seat_picker_example/demo/text_host.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('concurrent prepared text retains live images and rejects immutable collisions', () {
-    final image = Object();
-    final current = <String, dynamic>{
-      'protocol': 2,
-      'images': {'image:one': image},
-      'textLayouts': {
-        'one': {'id': 'one'},
-      },
-    };
-    final merged = mergeDemoTextResources(current, {
-      'textLayouts': {
-        'two': {'id': 'two'},
-      },
-    });
-    expect((merged['images'] as Map)['image:one'], same(image));
-    expect((merged['textLayouts'] as Map).keys, containsAll(['one', 'two']));
-    expect(
-      mergeDemoTextResources(merged, {
+  test(
+    'concurrent prepared text retains live images and rejects immutable collisions',
+    () {
+      final image = Object();
+      final current = <String, dynamic>{
+        'protocol': 2,
+        'images': {'image:one': image},
+        'textLayouts': {
+          'one': {'id': 'one'},
+        },
+      };
+      final merged = mergeDemoTextResources(current, {
         'textLayouts': {
           'two': {'id': 'two'},
         },
-      }),
-      same(merged),
-    );
-    expect(
-      () => mergeDemoTextResources(merged, {
-        'textLayouts': {
-          'one': {'id': 'changed'},
+      });
+      expect((merged['images'] as Map)['image:one'], same(image));
+      expect((merged['textLayouts'] as Map).keys, containsAll(['one', 'two']));
+      expect(
+        mergeDemoTextResources(merged, {
+          'textLayouts': {
+            'two': {'id': 'two'},
+          },
+        }),
+        same(merged),
+      );
+      expect(
+        () => mergeDemoTextResources(merged, {
+          'textLayouts': {
+            'one': {'id': 'changed'},
+          },
+        }),
+        throwsFormatException,
+      );
+      expect(current['textLayouts'], {
+        'one': {'id': 'one'},
+      });
+    },
+  );
+  test(
+    'text preparation retains current and saved requests for the same object',
+    () async {
+      final fixtures = await loadLayoutFixtureResources();
+      final families = Map<String, dynamic>.from(
+        fixtures['fontFamilies'] as Map,
+      );
+      final layouts = Map<String, dynamic>.from(fixtures['textLayouts'] as Map);
+      final textLayouts = layouts.entries.where(
+        (entry) =>
+            ((entry.value as Map)['descriptor'] as Map)['request']['role'] ==
+            'text',
+      );
+      final saved = textLayouts.first;
+      final savedDescriptor =
+          (saved.value as Map)['descriptor']['request'] as Map;
+      final changed = textLayouts.firstWhere(
+        (entry) =>
+            (entry.value as Map)['descriptor']['request']['fontFaceId'] !=
+            savedDescriptor['fontFaceId'],
+      );
+      VenueLayoutDocument document(MapEntry<String, dynamic> prepared) {
+        final descriptor =
+            (prepared.value as Map)['descriptor']['request'] as Map;
+        final face =
+            ((families[descriptor['fontFamilyId']] as Map)['faces'] as Map)
+                .entries
+                .firstWhere((entry) => entry.value == descriptor['fontFaceId'])
+                .key
+                .toString()
+                .split(':');
+        final box = descriptor['box'] as Map;
+        final node = LayoutNode(
+          id: '00000000-0000-4000-8000-000000000123',
+          kind: 'text',
+          x: 2000,
+          y: 1500,
+          width: (box['width'] as num).toDouble(),
+          height: (box['height'] as num).toDouble(),
+          properties: {'text': descriptor['text']},
+          style: {
+            'label': {
+              for (final key in [
+                'fontFamilyId',
+                'size',
+                'language',
+                'direction',
+                'lineHeight',
+                'align',
+              ])
+                key: descriptor[key],
+              'weight': int.parse(face[0]),
+              'italic': face[1] == 'italic',
+            },
+          },
+        );
+        final empty = VenueLayoutDocument.empty();
+        final result = empty.copyWith(
+          canvas: {...empty.canvas, 'width': 4000, 'height': 3000},
+          nodes: [node],
+        );
+        expect(nodeTextRequest(result, node, families).id, prepared.key);
+        return result;
+      }
+
+      final baseline = document(saved), current = document(changed);
+      final cached = Map<String, dynamic>.from(layouts)
+        ..remove(saved.key)
+        ..remove(changed.key);
+      final requested = <String>{};
+      final prepared = await prepareDemoText(
+        current,
+        {...fixtures, 'textLayouts': cached},
+        baseline: baseline,
+        prepareBatch: (batch) async {
+          final ids = (batch['requests'] as List)
+              .map(
+                (request) => LayoutTextRequest(
+                  Map<String, dynamic>.from(request as Map),
+                ).id,
+              )
+              .toSet();
+          requested.addAll(ids);
+          // Real canonical resources replace the browser shaper at the transport seam.
+          return {
+            'protocol': 2,
+            'fontFamilies': families,
+            'textLayouts': {for (final id in ids) id: layouts[id]},
+            'numberSymbols': {},
+          };
         },
-      }),
-      throwsFormatException,
-    );
-    expect(current['textLayouts'], {
-      'one': {'id': 'one'},
-    });
-  });
+      );
+      expect(requested, {saved.key, changed.key});
+      final portable = DemoBundle(current, prepared, {
+        'savedBaseline': baseline.toJson(),
+      }).encode();
+      expect(
+        DemoBundle.decode(
+          Uint8List.fromList(utf8.encode(portable)),
+        ).document.toJson(),
+        current.toJson(),
+      );
+    },
+  );
+
   test(
     'portable metadata retains supported templates outside the current gallery',
     () async {
@@ -56,8 +164,9 @@ void main() {
           'template': id,
         }).encode();
         expect(
-          DemoBundle.decode(Uint8List.fromList(utf8.encode(encoded)))
-              .host['template'],
+          DemoBundle.decode(
+            Uint8List.fromList(utf8.encode(encoded)),
+          ).host['template'],
           id,
         );
         expect(
@@ -164,9 +273,9 @@ void main() {
       ]) {
         final malformed = jsonDecode(original) as Map<String, dynamic>;
         final item = (malformed['resources'] as List).first as Map;
-        final payload = jsonDecode(
-          utf8.decode(base64Decode(item['data'] as String)),
-        ) as Map;
+        final payload =
+            jsonDecode(utf8.decode(base64Decode(item['data'] as String)))
+                as Map;
         payload['assets'] = invalid;
         final bytes = utf8.encode(jsonEncode(payload));
         item['data'] = base64Encode(bytes);
@@ -196,8 +305,9 @@ void main() {
         throwsFormatException,
       );
       expect(
-        DemoBundle.decode(Uint8List.fromList(utf8.encode(original))).document
-            .toJson(),
+        DemoBundle.decode(
+          Uint8List.fromList(utf8.encode(original)),
+        ).document.toJson(),
         doc.toJson(),
       );
     },
