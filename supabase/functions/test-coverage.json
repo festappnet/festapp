@@ -527,6 +527,29 @@
         "supabase/functions/wix-checkout-context/handler_test.ts"
       ],
       "abusePolicy": []
+    },
+    "process-notification-center": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/notificationDispatcher_test.ts"
+      ],
+      "abusePolicy": []
+    },
+    "sale-opening-notifications": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/sale-opening-notifications/handler_test.ts",
+        "supabase/functions/sale-opening-notifications/protection_test.ts",
+        "supabase/functions/_shared/saleOpeningEmail_test.ts"
+      ],
+      "abusePolicy": [
+        "explicit-opt-in",
+        "turnstile-form-binding"
+      ]
     }
   },
   "excluded": {

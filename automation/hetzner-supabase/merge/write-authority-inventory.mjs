@@ -75,6 +75,7 @@ export function classifyWriteEntry(relativePath, signals) {
     writeOwner = 'release-or-cutover-operator';
   } else if (relativePath.startsWith('database/')) {
     writeOwner = 'postgres-runtime';
+    if (relativePath.startsWith('database/maintenance/')) lanes.add('manual');
     if (signals.includes('payment-side-effect')) { lanes.add('application'); lanes.add('manual'); }
   }
 

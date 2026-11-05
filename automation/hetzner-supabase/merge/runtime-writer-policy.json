@@ -375,6 +375,13 @@
         "cloudflare-turnstile-siteverify"
       ],
       "mutates_authority": true
+    },
+    "process-notification-center": {
+      "trigger": "post-commit-pg-net-and-canonical-cron",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -448,7 +455,8 @@
       "notification-center-maintain": "private-machine-proof-bounded-health-and-personal-projection-no-outbound-channel",
       "prepare-ticket-batch-document": "user-jwt-occasion-order-viewer-private-immutable-storage-service-attested-fenced-completion",
       "wix-checkout-context": "bounded-body-authoritative-wix-token-introspection-exact-app-and-tenant-signed-provenance-no-festapp-privileges",
-      "sale-opening-notifications": "bounded-body-server-validated-turnstile-hostname-action-form-contact-proof-or-opaque-unsubscribe-capability-transactional-admission"
+      "sale-opening-notifications": "bounded-body-server-validated-turnstile-hostname-action-form-contact-proof-or-opaque-unsubscribe-capability-transactional-admission",
+      "process-notification-center": "private-request-secret-machine-proof-bounded-committed-delivery-and-personal-projection-no-outbound-channel"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

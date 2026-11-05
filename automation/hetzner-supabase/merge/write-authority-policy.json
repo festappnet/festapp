@@ -5,33 +5,48 @@
   "legacy_adapters": [
     {
       "path": "lib/components/groups/db_groups.dart",
-      "command_modules": ["lib/components/groups/group_commands.dart"]
+      "command_modules": [
+        "lib/components/groups/group_commands.dart"
+      ]
     },
     {
       "path": "lib/components/icons/db_icons.dart",
-      "command_modules": ["lib/components/icons/icon_commands.dart"]
+      "command_modules": [
+        "lib/components/icons/icon_commands.dart"
+      ]
     },
     {
       "path": "lib/components/icons/db_place_types.dart",
       "canonical_only": true,
-      "command_modules": ["lib/components/map/map_commands.dart"]
+      "command_modules": [
+        "lib/components/map/map_commands.dart"
+      ]
     },
     {
       "path": "lib/components/information/db_information.dart",
       "canonical_only": true,
-      "command_modules": ["lib/components/information/information_commands.dart"]
+      "command_modules": [
+        "lib/components/information/information_commands.dart"
+      ]
     },
     {
       "path": "lib/components/map/db_places.dart",
-      "command_modules": ["lib/components/map/map_commands.dart"]
+      "command_modules": [
+        "lib/components/map/map_commands.dart"
+      ]
     },
     {
       "path": "lib/components/news/db_news.dart",
-      "command_modules": ["lib/components/news/news_commands.dart"]
+      "command_modules": [
+        "lib/components/news/news_commands.dart"
+      ]
     },
     {
       "path": "lib/components/occasion/db_occasions.dart",
-      "command_modules": ["lib/components/occasion/occasion_commands.dart"]
+      "command_modules": [
+        "lib/components/occasion/occasion_commands.dart"
+      ],
+      "canonical_only": true
     },
     {
       "path": "lib/components/schedule/db_events.dart",
