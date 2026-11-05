@@ -535,7 +535,7 @@ void main() {
     },
   );
   testWidgets(
-    'availability menu focuses the presale section and activation uses the parent draft',
+    'notification settings are inline without a duplicate availability menu',
     (tester) async {
       tester.view.physicalSize = const Size(1600, 1000);
       tester.view.devicePixelRatio = 1;
@@ -573,10 +573,18 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Zapnout upozornění'), findsNothing);
-      final menu = find.byKey(const ValueKey('form-availability-menu'));
-      await tester.tap(menu);
+      expect(
+        find.byKey(const ValueKey('form-availability-menu')),
+        findsNothing,
+      );
+      await tester.ensureVisible(find.text('Obsah zavřeného formuláře'));
+      await tester.tap(find.text('Obsah zavřeného formuláře'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Upozornění na začátek přihlašování'));
+      expect(find.text('Zapnout upozornění'), findsNothing);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('presale-settings')),
+      );
+      await tester.tap(find.byKey(const ValueKey('presale-settings')));
       await tester.pumpAndSettle();
       expect(find.text('Obsah zavřeného formuláře'), findsOneWidget);
       expect(find.text('Použít změny'), findsNothing);

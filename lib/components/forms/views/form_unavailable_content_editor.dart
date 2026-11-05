@@ -26,28 +26,13 @@ class FormUnavailableContentEditor extends StatefulWidget {
 
   @override
   State<FormUnavailableContentEditor> createState() =>
-      FormUnavailableContentEditorState();
+      _FormUnavailableContentEditorState();
 }
 
-class FormUnavailableContentEditorState
+class _FormUnavailableContentEditorState
     extends State<FormUnavailableContentEditor> {
-  final _section = ExpansibleController();
-  final _settings = ExpansibleController();
   bool _expanded = false;
   int _page = 0;
-
-  void openNotifications() {
-    setState(() => _page = 0);
-    _section.expand();
-    _settings.expand();
-  }
-
-  @override
-  void dispose() {
-    _section.dispose();
-    _settings.dispose();
-    super.dispose();
-  }
 
   Widget _panel(int page, Widget child) => Offstage(
     offstage: _page != page,
@@ -60,7 +45,6 @@ class FormUnavailableContentEditorState
   @override
   Widget build(BuildContext context) => ExpansionTile(
     key: const ValueKey('form-unavailable-section'),
-    controller: _section,
     initiallyExpanded: false,
     maintainState: true,
     tilePadding: EdgeInsets.zero,
@@ -109,7 +93,6 @@ class FormUnavailableContentEditorState
                 canEdit: widget.canEdit,
                 onChanged: widget.onChanged,
                 loadSummary: widget.loadSummary,
-                settingsController: _settings,
                 active: _expanded && _page == 0,
               ),
             ),

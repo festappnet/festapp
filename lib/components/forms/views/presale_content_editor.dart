@@ -13,7 +13,6 @@ import 'package:fstapp/components/html/html_text_style.dart';
 import '../models/form_editor_draft.dart';
 import '../models/form_presentation.dart';
 import '../presale_content_draft.dart';
-import '../form_appearance_theme.dart';
 import '../presale_strings.dart';
 import '../sale_opening_strings.dart';
 import '../../_shared/common_strings.dart';
@@ -28,13 +27,11 @@ class PresaleContentEditor extends StatefulWidget {
     required this.form,
     required this.coordinator,
     this.loadSummary,
-    this.settingsController,
     this.active = true,
     required this.canEdit,
     required this.onChanged,
   });
   final Future<Map<String, dynamic>> Function(int)? loadSummary;
-  final ExpansibleController? settingsController;
   final bool active;
   final FormEditorDraft form;
   final HtmlSaveCoordinator coordinator;
@@ -186,50 +183,38 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
     super.dispose();
   }
 
-  Widget _visitorPreview(ThemeData theme) {
+  Widget _visitorPreview() {
     final d = widget.form.definition;
+    final theme = Theme.of(context);
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: mobile ? 375 : 800),
-        child: Container(
+        child: SizedBox(
           key: const ValueKey('presale-preview-surface'),
           width: double.infinity,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-          child: Theme(
-            data: theme,
-            child: Material(
-              color: theme.scaffoldBackgroundColor,
-              child: DecoratedBox(
-                decoration:
-                    formAppearanceBackground(theme, d) ?? const BoxDecoration(),
-                child: DefaultTextStyle(
-                  style: theme.textTheme.bodyMedium!.copyWith(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  child: d.startTime == null
-                      ? Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(PresaleStrings.requiresStart),
-                        )
-                      : PresaleContent(
-                          targetTime: d.startTime!,
-                          onFinished: () {},
-                          html: d.presaleContent,
-                          showTimer: d.enableCountdown,
-                          canSubscribe:
-                              _collectionEligible &&
-                              d.saleOpeningEnabled &&
-                              !d.saleOpeningPaused,
-                          header: d.presaleHeader,
-                          eventTitle:
-                              widget.form.occasionModel?.title ?? d.title,
-                          preview: true,
-                        ),
-                ),
-              ),
+          child: DefaultTextStyle(
+            style: theme.textTheme.bodyMedium!.copyWith(
+              color: theme.colorScheme.onSurface,
             ),
+            child: d.startTime == null
+                ? Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(PresaleStrings.requiresStart),
+                  )
+                : PresaleContent(
+                    targetTime: d.startTime!,
+                    onFinished: () {},
+                    html: d.presaleContent,
+                    showTimer: d.enableCountdown,
+                    canSubscribe:
+                        _collectionEligible &&
+                        d.saleOpeningEnabled &&
+                        !d.saleOpeningPaused,
+                    header: d.presaleHeader,
+                    eventTitle: widget.form.occasionModel?.title ?? d.title,
+                    preview: true,
+                  ),
           ),
         ),
       ),
@@ -239,7 +224,6 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
   @override
   Widget build(BuildContext context) {
     final d = widget.form.definition;
-    final theme = formAppearanceTheme(formAppearanceBaseTheme(context, d), d);
     return FutureBuilder<Map<String, dynamic>>(
       future: _summary,
       builder: (context, summary) {
@@ -274,7 +258,7 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _visitorPreview(theme)),
+                    Expanded(child: _visitorPreview()),
                     if (widget.canEdit)
                       IconButton(
                         key: const ValueKey('presale-edit-content'),
@@ -320,7 +304,6 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
             const SizedBox(height: 12),
             ExpansionTile(
               key: const ValueKey('presale-settings'),
-              controller: widget.settingsController,
               initiallyExpanded: false,
               maintainState: true,
               tilePadding: EdgeInsets.zero,

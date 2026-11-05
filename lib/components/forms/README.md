@@ -49,7 +49,7 @@ Each page uses a rendered preview with a pencil to edit directly in place.
 Presale **Hotovo** returns to the preview without saving or resetting its native history.
 Both panels remain mounted across selection and collapse. **Nastavení** starts collapsed
 and contains email collection, heading, countdown and preview controls.
-The preview uses the actual public `PresaleContent` with its own form theme and natural height.
+The preview uses the actual public `PresaleContent` with the administration system theme and natural height. Form branding is applied only on the public page.
 View changes never alter HTML, flags or the parent dirty state. The form's existing Save owns persistence,
 media preparation, original aggregate/product versions and command identity.
 

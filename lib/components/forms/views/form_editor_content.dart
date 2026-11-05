@@ -67,7 +67,6 @@ class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
   final _htmlSave = HtmlSaveCoordinator();
   final _snapshot = EditorSnapshot();
-  final _presaleKey = GlobalKey<FormUnavailableContentEditorState>();
   final _draftRevision = ValueNotifier<int>(0);
   bool get _hasChanges =>
       _canEdit &&
@@ -304,14 +303,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                     ],
                   ),
                 ),
-                if (!_prototype && _canEdit)
-                  PopupMenuButton<String>(
-                    key: const ValueKey('form-availability-menu'),
-                    tooltip: CommonStrings.moreOptions,
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (_) => _openSaleOpeningSettings(),
-                    itemBuilder: (_) => [PopupMenuItem(value: 'opening', child: Text(SaleOpeningStrings.text('settingsTitle')))],
-                  ),
                 Switch(
                   value: _prototype ? false : form.definition.isOpen ?? true,
                   onChanged: _canEdit && !_prototype
@@ -395,7 +386,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                       ),
                   const Divider(height: 24),
               FormUnavailableContentEditor(
-                key: _presaleKey,
                 form: form,
                 coordinator: _htmlSave,
                 canEdit: _canEdit && !_prototype,
@@ -601,14 +591,6 @@ class _FormEditorContentState extends State<FormEditorContent>
         ),
       ],
     );
-  }
-
-  Future<void> _openSaleOpeningSettings() async {
-    final target = _presaleKey.currentContext;
-    if (target == null) return;
-    _presaleKey.currentState?.openNotifications();
-    await Scrollable.ensureVisible(target,
-      duration: const Duration(milliseconds: 200));
   }
 
   Future<void> _openPublicForm({bool preview = false}) async {

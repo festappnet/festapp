@@ -457,10 +457,13 @@ void main() {
   });
   for (final adminDark in [false, true]) {
     testWidgets(
-      'preview text remains readable against the opposite admin theme $adminDark',
+      'preview inherits the system theme despite custom form appearance $adminDark',
       (tester) async {
         final f = form(enabled: false);
-        f.definition = f.definition.withThemeMode(adminDark ? 'light' : 'dark');
+        f.definition = f.definition
+            .withThemeMode(adminDark ? 'light' : 'dark')
+            .withPrimaryColor(0xffff0000)
+            .withFontFamily('Custom form font');
         final media = HtmlSaveCoordinator();
         addTearDown(media.dispose);
         await env().pumpWidget(
@@ -491,6 +494,16 @@ void main() {
         await tester.tap(find.text('Obsah zavřeného formuláře'));
         await tester.pumpAndSettle();
         final title = find.text('Form');
+        final previewTheme = Theme.of(tester.element(title));
+        expect(
+          previewTheme.brightness,
+          adminDark ? Brightness.dark : Brightness.light,
+        );
+        expect(previewTheme.primaryColor, isNot(const Color(0xffff0000)));
+        expect(
+          previewTheme.textTheme.bodyMedium?.fontFamily,
+          isNot('Custom form font'),
+        );
         final paragraph = tester.renderObject<RenderParagraph>(title);
         final foreground = paragraph.text.style!.color!.computeLuminance();
         final background = Theme.of(tester.element(title))
