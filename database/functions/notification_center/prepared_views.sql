@@ -15,16 +15,14 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  bounds AS (
   SELECT s.*,greatest(s.baseline,coalesce((SELECT max(b.through_sequence)
    FROM public.notification_center_read_batches b WHERE b.organization=d.organization
-    AND b.recipient=d.recipient AND b.group_key=s.key AND b.read_at<=p_anchor),0)) last_read,
-   e.actor=d.recipient AND e.kind IN ('order_created','order_cancelled') own_action FROM state s)
- SELECT CASE WHEN coalesce(s.own_action,false) THEN s.key||':self'
-   WHEN d.sequence<=s.baseline THEN s.key||':legacy'
+    AND b.recipient=d.recipient AND b.group_key=s.key AND b.read_at<=p_anchor),0)) last_read FROM state s)
+ SELECT CASE WHEN d.sequence<=s.baseline THEN s.key||':legacy'
    WHEN r.id IS NOT NULL THEN s.key||':batch:'||r.after_sequence
    ELSE s.key||':batch:'||s.last_read END,
-  coalesce(s.own_action,false) OR d.sequence<=s.baseline OR r.id IS NOT NULL,
-  CASE WHEN coalesce(s.own_action,false) OR d.sequence<=s.baseline THEN 0
+  d.sequence<=s.baseline OR r.id IS NOT NULL,
+  CASE WHEN d.sequence<=s.baseline THEN 0
    WHEN r.id IS NOT NULL THEN r.after_sequence ELSE s.last_read END,
-  CASE WHEN coalesce(s.own_action,false) THEN d.sequence WHEN d.sequence<=s.baseline THEN s.baseline
+  CASE WHEN d.sequence<=s.baseline THEN s.baseline
    WHEN r.id IS NOT NULL THEN r.through_sequence ELSE d.sequence END,s.key
  FROM bounds s LEFT JOIN receipt r ON true;
 $$;

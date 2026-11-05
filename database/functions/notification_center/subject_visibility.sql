@@ -1,3 +1,18 @@
+-- Order operations are visible to their already-authorized order readers.
+-- Hidden membership protects participant identity/enrollment, not purchases.
+CREATE OR REPLACE FUNCTION public.notification_center_order_activity_internal(p_org bigint,p_kind text,p_data jsonb)
+RETURNS boolean LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
+BEGIN
+ IF p_kind IN ('order_created','order_cancelled','waitlist_registered','offer_accepted','offer_declined','offer_expired') THEN RETURN true; END IF;
+ IF p_kind='email_problem' THEN
+  RETURN EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.orders o ON o.id=m.order_id
+   JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=m.organization
+   WHERE m.organization=p_org AND m.message_id=CASE WHEN p_data->>'messageId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN (p_data->>'messageId')::uuid END);
+ END IF;
+ RETURN false;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_order_activity_internal(bigint,text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 -- Keep hidden membership subjects out of notification projections.
 CREATE OR REPLACE FUNCTION public.notification_center_subject_visible_internal(p_org bigint, p_kind text, p_data jsonb)
  RETURNS boolean
@@ -6,6 +21,7 @@ CREATE OR REPLACE FUNCTION public.notification_center_subject_visible_internal(p
  SET search_path TO 'public', 'extensions'
 AS $function$
 BEGIN
+ IF public.notification_center_order_activity_internal(p_org,p_kind,p_data) THEN RETURN true; END IF;
  -- Avoid initializing identity, order and email subplans for every event when
  -- this organization has no hidden members.
  IF NOT EXISTS(SELECT 1 FROM public.organization_users hidden

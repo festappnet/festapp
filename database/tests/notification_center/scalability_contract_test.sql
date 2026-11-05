@@ -42,7 +42,7 @@ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(v->'items') r WHERE r->>'isRead'='false' AND (r->>'sequence')::bigint=4),'late old arrival stays unread');
  INSERT INTO public.organization_users(organization,"user",is_hidden) VALUES(org,hidden,true);
  selected:=public.notification_center_order_selection(oc,scope);
- PERFORM assert_false(selected @> to_jsonb(ARRAY[order_ids[1]]),'old snapshot applies current hidden-email matching');
+ PERFORM assert_true(selected @> to_jsonb(ARRAY[order_ids[1]]),'hidden membership does not remove captured orders');
  UPDATE public.organization_users SET is_hidden=false WHERE organization=org AND "user"=hidden;
  PERFORM assert_true(public.notification_center_order_selection(oc,scope) @> to_jsonb(ARRAY[order_ids[1]]),'unhide restores eligible captured membership');
  UPDATE eshop.orders SET state='storno' WHERE id=order_ids[1];

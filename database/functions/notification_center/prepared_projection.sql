@@ -10,8 +10,10 @@ RETURNS SETOF text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $
  UNION SELECT 'e:'||(x->>'email') FROM jsonb_array_elements(p_state) x WHERE x->>'email' IS NOT NULL;
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_prepared_subjects(e public.notification_center_events)
-RETURNS SETOF text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- WITH orders AS(SELECT o.data->>'email' email FROM eshop.orders o
+RETURNS SETOF text LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
+BEGIN
+ IF public.notification_center_order_activity_internal(e.organization,e.kind,e.data) THEN RETURN; END IF;
+ RETURN QUERY WITH orders AS(SELECT o.data->>'email' email FROM eshop.orders o
   WHERE o.occasion=e.occasion AND o.id=CASE WHEN e.data->>'orderId' ~ '^[0-9]{1,18}$' THEN (e.data->>'orderId')::bigint END),
  messages AS(SELECT m.recipient,m.recipient_user,m.order_id FROM public.email_messages m
   WHERE e.kind='email_problem' AND m.organization=e.organization AND m.message_id=CASE WHEN e.data->>'messageId' ~* '^[0-9a-f-]{36}$' THEN (e.data->>'messageId')::uuid END),
@@ -22,7 +24,7 @@ RETURNS SETOF text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   UNION SELECT 'e:'||lower(btrim(o.data->>'email')) FROM messages m JOIN eshop.orders o ON o.id=m.order_id
    JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=e.organization WHERE nullif(btrim(o.data->>'email'),'') IS NOT NULL)
  SELECT subject FROM subjects;
-$$;
+END $$;
 CREATE OR REPLACE FUNCTION public.notification_center_prepared_tags(e public.notification_center_events)
 RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT CASE WHEN e.kind='bank_problem' THEN
@@ -108,7 +110,7 @@ DECLARE old public.notification_center_view_members; b record; id text; visible 
 BEGIN
  SELECT * INTO old FROM public.notification_center_view_members WHERE organization=d.organization AND recipient=d.recipient AND event_id=d.event_id;
  IF FOUND AND old.sequence>d.sequence THEN RETURN; END IF;
- SELECT * INTO b FROM public.notification_center_batch_internal(e,d);
+ SELECT * INTO b FROM public.notification_center_prepared_batch_at(e,d,p_anchor);
  id:=CASE WHEN e.kind IN ('email_problem','bank_problem') OR e.occasion IS NULL THEN e.id::text WHEN b.is_read THEN b.group_key||':history:read' ELSE b.batch_id||':unread' END;
  visible:=public.notification_center_prepared_policy(e,p_anchor,coalesce(p_privacy,(SELECT privacy FROM public.notification_center_projection_scopes WHERE organization=d.organization AND recipient=d.recipient)));
  places:=CASE WHEN e.data->>'count' ~ '^[0-9]{1,9}$' THEN nullif((e.data->>'count')::bigint,0) END;

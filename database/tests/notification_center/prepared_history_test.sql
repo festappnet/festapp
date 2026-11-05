@@ -46,7 +46,7 @@ BEGIN
  PERFORM public.project_notification_center(500);PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  v:=public.get_notification_center_view(org,oc);FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
  v:=public.get_notification_center_view(org,oc);item:=v#>'{items,0}';
- PERFORM assert_true(item->>'id' LIKE '%:history:read','modern self ID remains opaque');
+ PERFORM assert_true(item->>'id' LIKE '%:unread','own order activity stays unread until selected');
  scope:=jsonb_build_object('viewToken',v->>'viewToken','id',item->>'id','organization',org);
  PERFORM assert_eq(public.notification_center_order_selection(oc,scope),to_jsonb(ARRAY[oid]),'own cancelled selection uses server group key, not legacy ID parsing');
  -- A separately inherited global-read baseline uses the same server scope owner.

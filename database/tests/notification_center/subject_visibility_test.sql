@@ -25,7 +25,7 @@ BEGIN
  PERFORM assert_false(public.notification_center_subject_visible_internal(org,'occasion_joined',jsonb_build_object('userId',hidden)),'hidden membership is private');
  PERFORM assert_true(public.notification_center_subject_visible_internal(org,'occasion_joined',jsonb_build_object('userId',visible)),'visible membership remains visible');
  PERFORM assert_true(public.notification_center_subject_visible_internal(org,'occasion_joined',jsonb_build_object('userId',outsider)),'another tenant hidden membership cannot affect this tenant');
- PERFORM assert_false(public.notification_center_subject_visible_internal(org,'order_created',jsonb_build_object('orderId',oid)),'hidden order contact matches case and whitespace');
+ PERFORM assert_true(public.notification_center_subject_visible_internal(org,'order_created',jsonb_build_object('orderId',oid)),'hidden buyer orders remain operational activity');
  PERFORM assert_true(public.notification_center_subject_visible_internal(org,'order_created',jsonb_build_object('orderId',other_oid)),'order contact lookup is tenant bound');
  PERFORM assert_true(public.notification_center_subject_visible_internal(org,'order_created','{"orderId":"invalid"}'),'malformed order identifier is safe');
  PERFORM assert_true(public.notification_center_subject_visible_internal(org,'form_closed','{}'),'unrelated event remains visible');
@@ -37,7 +37,7 @@ BEGIN
  UPDATE public.email_messages SET recipient_user=NULL,recipient=' HIDDEN@example.invalid ' WHERE message_id=message;
  PERFORM assert_false(public.notification_center_subject_visible_internal(org,'email_problem',jsonb_build_object('messageId',message)),'hidden email address is private');
  UPDATE public.email_messages SET recipient='visible@example.invalid',order_id=oid WHERE message_id=message;
- PERFORM assert_false(public.notification_center_subject_visible_internal(org,'email_problem',jsonb_build_object('messageId',message)),'hidden linked order contact is private');
+ PERFORM assert_true(public.notification_center_subject_visible_internal(org,'email_problem',jsonb_build_object('messageId',message)),'order delivery problems remain operational activity');
  UPDATE public.email_messages SET order_id=other_oid WHERE message_id=message;
  PERFORM assert_true(public.notification_center_subject_visible_internal(org,'email_problem',jsonb_build_object('messageId',message)),'email order lookup cannot cross tenant boundaries');
  PERFORM assert_true(public.notification_center_subject_visible_internal(other_org,'email_problem',jsonb_build_object('messageId',message)),'email lookup cannot cross tenant boundaries');

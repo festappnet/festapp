@@ -52,8 +52,8 @@ BEGIN
  FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100); END LOOP;
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq(v->>'state','ready','privacy repair makes the same token usable');
- PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,2,'hidden source retracts exact totals');
- PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),2,'selection uses the same hidden-member policy');
+ PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,3,'hidden membership does not retract order totals');
+ PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),3,'order selection is independent of hidden membership');
  UPDATE public.organization_users SET is_hidden=false WHERE organization=org AND "user"=hidden;
  FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100); END LOOP;
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);

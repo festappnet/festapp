@@ -9,8 +9,11 @@ below. Age belongs to each row as small secondary metadata: Today, Yesterday,
 relative days within the last week, or older local dates. There are no day subheads.
 Unread rows precede read history within each occasion and use a restrained tint,
 trailing semantic dot and stronger title. Same-name occasions remain distinct.
-Only unread activity of the same occasion and action kind combines; reading seals
-that batch, so later arrivals create another notification across calendar dates. Selecting a summary opens the existing common order
+Unread activity of the same occasion and action kind combines separately from
+read history. Reading seals the captured batch; later arrivals remain new. Read
+history of the same occasion and kind compacts across days. Hidden membership
+suppresses participant joins, never order notifications. Own order activity also
+requires an explicit read action in prepared views. Selecting a summary opens the existing common order
 page directly; there is no expansion, unread filter or exact time in the list.
 
 A summary shows its activity count and an exact historical place total when all

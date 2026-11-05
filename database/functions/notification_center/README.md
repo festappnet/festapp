@@ -17,8 +17,11 @@ grouped client. See the [feed implementation record](../../../docs/plans/notific
 
 ## Publication, projection and acknowledgment
 
-Publication captures eligible recipients and suppresses a verified administrative
-author. The exclusive projector lease, bounded per-recipient revision work and
+Publication captures eligible recipients. Hidden membership suppresses participant
+enrollment, while order and waitlist activity remains visible to authorized order
+readers, including hidden buyers. Order-related delivery incidents follow the
+same boundary; unrelated hidden personal email remains private. Prepared views
+require explicit read receipts for own order activity too. The exclusive projector lease, bounded per-recipient revision work and
 personal state row lock retain their original ownership. Delivery allocation
 and explicit `open_notification_center` serialize on that same personal row;
 only open advances the acknowledgment watermark. Pagination, badge, mute and

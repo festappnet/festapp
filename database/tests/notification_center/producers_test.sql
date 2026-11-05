@@ -140,4 +140,46 @@ BEGIN
  PERFORM assert_eq((SELECT (data->>'count')::integer FROM public.notification_center_events WHERE organization=org AND kind='offer_expired'),1,'only remaining pending slot expires');
  PERFORM pg_temp.assert_prepared_families(org,(x->>'occasion')::bigint,(x->>'actor')::uuid);
 END $$;
+-- Hidden enrollment is private; purchases remain operational notifications,
+-- including an authenticated organizer buying through their own account.
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL);org bigint:=(x->>'organization')::bigint;
+ oc bigint:=(x->>'occasion')::bigint;viewer uuid:=(x->>'actor')::uuid;
+ r jsonb;v jsonb;old_view uuid;oid bigint;item jsonb;scope jsonb;receipts jsonb;
+BEGIN
+ UPDATE public.user_info SET organization=org,email_readonly='regression@example.invalid' WHERE id=viewer;
+ INSERT INTO public.organization_users(organization,"user",is_admin,is_hidden) VALUES(org,viewer,true,true);
+ PERFORM public.initialize_notification_center_internal(org);
+ -- Existing visible order is explicitly read, establishing the history row.
+ r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)||'{"email":"earlier@example.invalid"}');
+ PERFORM assert_eq(r->>'code','200'::text,'history checkout succeeds');
+ PERFORM public.project_notification_center(500);
+ v:=public.get_notification_center_view(org,oc);
+ FOR pass IN 1..30 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
+ v:=public.get_notification_center_view(org,oc);item:=v#>'{items,0}';
+ scope:=jsonb_build_object('viewToken',v->>'viewToken','id',item->>'id','organization',org);
+ PERFORM public.mark_notification_center_view_item_read(org,scope);
+ FOR pass IN 1..30 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
+ PERFORM public.get_notification_center_view(org,oc,p_mode=>'close_all');
+ v:=public.get_notification_center_view(org,oc);old_view:=(v->>'viewToken')::uuid;
+ SELECT jsonb_agg(to_jsonb(b) ORDER BY b.id) INTO receipts FROM public.notification_center_read_batches b WHERE organization=org;
+ r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
+ PERFORM assert_eq(r->>'code','200'::text,'hidden buyer checkout succeeds');oid:=(r#>>'{order,id}')::bigint;
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='order_created' AND data->>'orderId'=oid::text),1::bigint,'hidden buyer purchase publishes exactly once');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='occasion_joined'),0::bigint,'hidden participant enrollment remains suppressed');
+ PERFORM public.project_notification_center(500);
+ FOR pass IN 1..30 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
+ PERFORM assert_true((public.get_notification_center_prepared_badge(org)->>'unread')::boolean,'own hidden buyer order lights the bell');
+ v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>old_view);
+ PERFORM assert_true((v->>'unread')::boolean,'open frozen panel announces new items');
+ PERFORM assert_eq(jsonb_array_length(v->'items'),1,'new activity does not mutate captured history');
+ PERFORM public.get_notification_center_view(org,oc,p_mode=>'close_all');
+ v:=public.get_notification_center_view(org,oc);
+ PERFORM assert_eq(jsonb_array_length(v->'items'),2,'new purchase is separate from read history');
+ SELECT value INTO item FROM jsonb_array_elements(v->'items') WHERE value->>'isRead'='false';
+ PERFORM assert_not_null(item,'new own order remains unread until selected');
+ scope:=jsonb_build_object('viewToken',v->>'viewToken','id',item->>'id','organization',org);
+ PERFORM assert_eq(public.notification_center_order_selection(oc,scope),jsonb_build_array(oid),'new row opens the exact newly created order');
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(receipts) b WHERE NOT EXISTS(SELECT 1 FROM public.notification_center_read_batches rb WHERE to_jsonb(rb)=b)),'existing read receipts stay unchanged');
+END $$;
 ROLLBACK;

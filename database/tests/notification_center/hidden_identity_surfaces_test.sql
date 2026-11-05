@@ -25,10 +25,10 @@ BEGIN
  FOREACH kind IN ARRAY ARRAY['order_created','waitlist_registered','order_cancelled','offer_accepted'] LOOP
   PERFORM public.notification_center_order_internal(oid,kind,'hidden',viewer);
  END LOOP;
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),0::bigint,'all personal order and waitlist notifications hide hidden buyer');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),4::bigint,'all order and waitlist notifications include hidden buyer');
  INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"customer@test.invalid","name":"Customer"}') RETURNING id INTO visible_order;
  PERFORM public.notification_center_order_internal(visible_order,'order_created','visible',hidden_user);
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),1::bigint,'hidden operator does not hide actual customer business activity');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),5::bigint,'hidden operator does not hide actual customer business activity');
  INSERT INTO public.notification_center_events(organization,occasion,kind,source_key,data,occurred_at) VALUES(org,oc,'email_problem','hidden:legacy-email',jsonb_build_object('messageId',msg->>'message_id'),now()) RETURNING * INTO legacy;
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  PERFORM assert_false(public.notification_center_allowed(legacy,viewer),'old hidden-recipient notifications are denied');
