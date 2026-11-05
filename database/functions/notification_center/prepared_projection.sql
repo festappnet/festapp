@@ -37,13 +37,24 @@ RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_prepared_allowed_scopes(p_org bigint,p_current bigint,p_user uuid)
 RETURNS TABLE(scope text,section integer) LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- WITH occasions AS MATERIALIZED(SELECT oc.id,CASE WHEN oc.id=p_current THEN 1 ELSE 2 END priority,
-  public.notification_center_allowed(jsonb_populate_record(NULL::public.notification_center_events,jsonb_build_object('organization',p_org,'occasion',oc.id,'kind','order_created')),p_user) orders,
-  public.notification_center_allowed(jsonb_populate_record(NULL::public.notification_center_events,jsonb_build_object('organization',p_org,'occasion',oc.id,'kind','occasion_joined')),p_user) app,
-  public.notification_center_allowed(jsonb_populate_record(NULL::public.notification_center_events,jsonb_build_object('organization',p_org,'occasion',oc.id,'kind','email_problem')),p_user) email,
-  EXISTS(SELECT 1 FROM public.occasion_users m WHERE m.occasion=oc.id AND m."user"=p_user AND m.is_editor_order_view) bank
-  FROM public.occasions oc JOIN(SELECT m.occasion id FROM public.occasion_users m WHERE m."user"=p_user AND (m.is_editor_order_view OR m.is_editor OR m.is_manager)
-   UNION SELECT o.id FROM public.occasions o WHERE o.organization=p_org AND EXISTS(SELECT 1 FROM public.organization_users m WHERE m.organization=p_org AND m."user"=p_user AND m.is_admin)) own ON own.id=oc.id
+ -- Candidate discovery reads current roles once. Payloads and selection still
+ -- authorize each real event with notification_center_allowed before private reads.
+ WITH admin AS MATERIALIZED(SELECT EXISTS(SELECT 1 FROM public.organization_users
+  WHERE organization=p_org AND "user"=p_user AND is_admin) is_admin),
+ members AS MATERIALIZED(SELECT m.occasion,bool_or(m.is_editor_order_view) orders,
+  bool_or(public.participant_contacts_read_rule(m.is_editor,m.is_manager,false)) app
+  FROM public.occasion_users m WHERE m."user"=p_user AND (m.is_editor_order_view OR m.is_editor OR m.is_manager)
+  GROUP BY m.occasion),
+ own AS MATERIALIZED(SELECT occasion id FROM members
+  UNION SELECT o.id FROM public.occasions o,admin a WHERE o.organization=p_org AND a.is_admin),
+ occasions AS MATERIALIZED(SELECT oc.id,CASE WHEN oc.id=p_current THEN 1 ELSE 2 END priority,
+  coalesce(m.orders,false) AND d.occasion IS NULL orders,
+  (a.is_admin OR coalesce(m.app,false)) AND d.occasion IS NULL app,
+  a.is_admin OR (coalesce(m.orders,false) AND d.occasion IS NULL) email,
+  coalesce(m.orders,false) bank
+  FROM public.occasions oc JOIN own ON own.id=oc.id CROSS JOIN admin a
+  LEFT JOIN members m ON m.occasion=oc.id
+  LEFT JOIN public.demo_occasions d ON d.occasion=oc.id
   WHERE oc.organization=p_org),
  banks AS MATERIALIZED(SELECT DISTINCT c.id FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba
   ON uba.bank_account=c.bank_account_id OR uba.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
@@ -52,7 +63,7 @@ RETURNS TABLE(scope text,section integer) LANGUAGE sql STABLE SET search_path=pu
  SELECT 'orders:'||id,priority FROM occasions WHERE orders
  UNION ALL SELECT 'app:'||id,priority FROM occasions WHERE app
  UNION ALL SELECT 'email-admin:'||id,priority FROM occasions WHERE email
- UNION ALL SELECT 'email-admin:shared',0 WHERE EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_org AND "user"=p_user AND is_admin)
+ UNION ALL SELECT 'email-admin:shared',0 FROM admin WHERE is_admin
  UNION ALL SELECT 'bank-occasion:'||id,CASE WHEN p_current IS NULL OR id=p_current THEN 0 ELSE 2 END FROM occasions WHERE bank
  UNION ALL SELECT 'bank:'||id,CASE WHEN p_current IS NULL THEN 0 ELSE 2 END FROM banks
  UNION ALL SELECT 'bank-shared:'||id,0 FROM banks

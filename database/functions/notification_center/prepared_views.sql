@@ -47,13 +47,27 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=e.organization
  WHERE o.occasion=e.occasion AND o.id=CASE WHEN e.data->>'orderId' ~ '^[0-9]{1,18}$' THEN (e.data->>'orderId')::bigint END;
 $$;
-CREATE OR REPLACE FUNCTION public.notification_center_prepared_render(r public.notification_center_view_rows,v public.notification_center_views)
+-- The scope vector is derived from live roles inside the payload's SQL snapshot.
+-- Private subject visibility remains per event; no role result survives a request.
+CREATE OR REPLACE FUNCTION public.notification_center_prepared_event_access(e public.notification_center_events,p_org bigint,p_scopes text[])
+RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT coalesce(e.organization=p_org AND public.notification_center_subject_visible_internal(e.organization,e.kind,e.data) AND
+ CASE WHEN e.kind IN ('occasion_joined','event_capacity_full') THEN ('app:'||e.occasion)=ANY(p_scopes)
+ WHEN e.kind='email_problem' THEN 'email-admin:shared'=ANY(p_scopes) OR ('email-admin:'||e.occasion)=ANY(p_scopes)
+ WHEN e.kind='bank_problem' THEN ('bank:'||(e.data->>'bankConnectionId'))=ANY(p_scopes)
+  OR EXISTS(SELECT 1 FROM unnest(e.affected_occasions) oc WHERE ('bank-occasion:'||oc)=ANY(p_scopes))
+ ELSE ('orders:'||e.occasion)=ANY(p_scopes)
+  OR EXISTS(SELECT 1 FROM unnest(e.affected_occasions) oc WHERE ('orders:'||oc)=ANY(p_scopes)) END,false);
+$$;
+DROP FUNCTION IF EXISTS public.notification_center_prepared_render(public.notification_center_view_rows,public.notification_center_views);
+CREATE OR REPLACE FUNCTION public.notification_center_prepared_render(r public.notification_center_view_rows,v public.notification_center_views,p_scopes text[] DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE e public.notification_center_events; d public.notification_center_deliveries; dto jsonb; contact jsonb; previews jsonb; payload jsonb; grouped boolean;
 BEGIN
  IF r.state<>'ready' THEN RETURN jsonb_build_object('id',r.id,'position',r.position,'state',r.state); END IF;
  SELECT * INTO e FROM public.notification_center_events WHERE id=r.latest_event;
- IF NOT FOUND OR NOT public.notification_center_allowed(e,auth.uid()) THEN RETURN jsonb_build_object('id',r.id,'position',r.position,'state','removed'); END IF;
+ IF NOT FOUND OR e.organization<>v.organization OR NOT (CASE WHEN p_scopes IS NULL THEN public.notification_center_allowed(e,auth.uid())
+  ELSE public.notification_center_prepared_event_access(e,v.organization,p_scopes) END) THEN RETURN jsonb_build_object('id',r.id,'position',r.position,'state','removed'); END IF;
  SELECT * INTO d FROM public.notification_center_deliveries WHERE event_id=e.id AND recipient=v.recipient AND sequence<=v.snapshot ORDER BY sequence DESC LIMIT 1;
  IF NOT FOUND THEN RETURN jsonb_build_object('id',r.id,'position',r.position,'state','removed'); END IF;
  grouped:=e.occasion IS NOT NULL AND e.kind NOT IN ('email_problem','bank_problem');
@@ -75,9 +89,11 @@ BEGIN
   'section',CASE WHEN e.occasion IS NULL AND (v.current_occasion IS NULL OR cardinality(e.affected_occasions)=0 OR v.current_occasion=ANY(e.affected_occasions)) THEN 0 WHEN e.occasion=v.current_occasion THEN 1 ELSE 2 END,'occurredAt',r.latest_at,'day',(r.latest_at AT TIME ZONE v.timezone)::date,'isRead',r.is_read,
   'isSeen',r.is_read OR r.through_sequence<=v.previous_seen);
 END $$;
-CREATE OR REPLACE FUNCTION public.notification_center_prepared_display_key(p_token uuid,p_cursor integer,p_limit integer)
+DROP FUNCTION IF EXISTS public.notification_center_prepared_display_key(uuid,integer,integer);
+CREATE OR REPLACE FUNCTION public.notification_center_prepared_display_key(p_token uuid,p_cursor integer,p_limit integer,p_scopes text[] DEFAULT NULL)
 RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH owned AS MATERIALIZED(SELECT * FROM public.notification_center_views WHERE token=p_token AND recipient=auth.uid()),
+ rights AS MATERIALIZED(SELECT v.organization,coalesce(p_scopes,ARRAY(SELECT a.scope FROM public.notification_center_prepared_allowed_scopes(v.organization,v.current_occasion,v.recipient) a ORDER BY a.scope)) scopes FROM owned v),
  rows AS MATERIALIZED(SELECT r.*,r.xmin::text row_xid,r.ctid::text row_tid FROM public.notification_center_view_rows r WHERE r.token=p_token AND r.position>p_cursor AND r.position<=p_cursor+p_limit),
  facts AS(SELECT r.position,p.position preview,ev.id,ev.event_xid,ev.event_tid,
   o.xmin::text order_xid,o.ctid::text order_tid,m.xmin::text mail_xid,m.ctid::text mail_tid,
@@ -89,8 +105,8 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    LEFT JOIN public.unit_users um ON um.unit=u.id AND um."user"=auth.uid() WHERE c.id=(ev.data->>'bankConnectionId')::bigint) END bank_versions,
   CASE WHEN ev.kind='bank_problem' THEN(SELECT jsonb_agg(jsonb_build_array(impact.id,impact.xmin::text,impact.ctid::text) ORDER BY impact.id) FROM public.occasions impact
    WHERE impact.organization=ev.organization AND impact.id=ANY(ev.affected_occasions)) END impact_versions
-  FROM rows r CROSS JOIN LATERAL unnest(r.preview_events) WITH ORDINALITY p(id,position)
-  JOIN LATERAL(SELECT permitted.*,permitted.xmin::text event_xid,permitted.ctid::text event_tid FROM public.notification_center_events permitted WHERE permitted.id=p.id AND public.notification_center_allowed(permitted,auth.uid()) OFFSET 0) ev ON true
+  FROM rows r CROSS JOIN rights ac CROSS JOIN LATERAL unnest(r.preview_events) WITH ORDINALITY p(id,position)
+  JOIN LATERAL(SELECT permitted.*,permitted.xmin::text event_xid,permitted.ctid::text event_tid FROM public.notification_center_events permitted WHERE permitted.id=p.id AND public.notification_center_prepared_event_access(permitted,ac.organization,ac.scopes) OFFSET 0) ev ON true
   LEFT JOIN eshop.orders o ON o.occasion=ev.occasion AND o.id=CASE WHEN ev.data->>'orderId' ~ '^[0-9]{1,18}$' THEN (ev.data->>'orderId')::bigint END
   LEFT JOIN public.email_messages m ON m.organization=ev.organization AND m.message_id=CASE WHEN ev.data->>'messageId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN (ev.data->>'messageId')::uuid END
   LEFT JOIN eshop.orders mo ON mo.id=m.order_id AND mo.occasion=m.occasion
@@ -99,7 +115,7 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT md5(jsonb_build_array(
   (SELECT jsonb_agg(jsonb_build_array(position,row_xid,row_tid) ORDER BY position) FROM rows),
   (SELECT jsonb_agg(to_jsonb(f) ORDER BY position,preview) FROM facts f),
-  (SELECT jsonb_agg(jsonb_build_array(a.scope,a.section) ORDER BY a.scope,a.section) FROM owned v CROSS JOIN LATERAL public.notification_center_prepared_allowed_scopes(v.organization,v.current_occasion,v.recipient) a))::text);
+  (SELECT to_jsonb(scopes) FROM rights))::text);
 $$;
 
 -- One STABLE statement owns privacy/read checks and every payload read, avoiding
@@ -114,7 +130,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   WHERE v.token=p_token AND v.recipient=auth.uid()),
  status AS MATERIALIZED(SELECT o.*,EXISTS(SELECT 1 FROM public.notification_center_view_rows r WHERE r.token=o.token
   AND (r.revision<>o.current_revision OR r.read_revision<>o.current_read_revision OR r.privacy_key<>o.current_privacy OR r.state='preparing')) preparing FROM owned o),
- keyed AS(SELECT status.*,CASE WHEN preparing THEN NULL ELSE public.notification_center_prepared_display_key(token,p_cursor,p_limit) END display_key FROM status)
+ rights AS MATERIALIZED(SELECT o.token,ARRAY(SELECT a.scope FROM public.notification_center_prepared_allowed_scopes(o.organization,o.current_occasion,o.recipient) a ORDER BY a.scope) scopes FROM status o WHERE NOT o.preparing),
+ keyed AS(SELECT o.*,a.scopes,CASE WHEN o.preparing THEN NULL ELSE public.notification_center_prepared_display_key(o.token,p_cursor,p_limit,a.scopes) END display_key FROM status o LEFT JOIN rights a USING(token))
  SELECT jsonb_build_object('viewSupported',true,'state',CASE WHEN o.expires_at<=clock_timestamp() THEN 'expired' WHEN o.preparing THEN 'preparing' ELSE 'ready' END,
   'viewToken',o.token,'snapshot',o.snapshot,'snapshotAt',o.anchor,'snapshotDay',(o.anchor AT TIME ZONE o.timezone)::date,'timezone',o.timezone,
   'previousReadThrough',o.previous_seen,'acknowledged',o.acknowledged,'truncated',o.truncated,
@@ -122,7 +139,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'unchanged',NOT o.preparing AND p_revision=(o.current_revision::text||':'||o.current_read_revision::text||':'||o.current_privacy||':'||o.display_key),
   'items',CASE WHEN o.expires_at<=clock_timestamp() OR (NOT o.preparing AND p_revision=(o.current_revision::text||':'||o.current_read_revision::text||':'||o.current_privacy||':'||o.display_key)) THEN '[]'::jsonb ELSE coalesce((SELECT jsonb_agg(
    CASE WHEN o.preparing THEN jsonb_build_object('id',r.id,'position',r.position,'state','preparing')
-   ELSE public.notification_center_prepared_render(r,ROW(o.token,o.organization,o.recipient,o.current_occasion,o.timezone,o.snapshot,o.anchor,o.previous_seen,o.source_revision,o.read_revision,o.privacy_key,o.created_at,o.expires_at,o.acknowledged,o.truncated)::public.notification_center_views) END ORDER BY r.position)
+   ELSE public.notification_center_prepared_render(r,ROW(o.token,o.organization,o.recipient,o.current_occasion,o.timezone,o.snapshot,o.anchor,o.previous_seen,o.source_revision,o.read_revision,o.privacy_key,o.created_at,o.expires_at,o.acknowledged,o.truncated)::public.notification_center_views,o.scopes) END ORDER BY r.position)
    FROM public.notification_center_view_rows r WHERE r.token=o.token AND r.position>p_cursor AND r.position<=p_cursor+p_limit),'[]') END,
   'nextCursor',CASE WHEN EXISTS(SELECT 1 FROM public.notification_center_view_rows r WHERE r.token=o.token AND r.position>p_cursor+p_limit) THEN p_cursor+p_limit END,
   'retryAfterMs',CASE WHEN o.preparing THEN 1000 END)
@@ -187,16 +204,14 @@ BEGIN
       SELECT DISTINCT ON(x.id) x.id,a.section,x.latest_at FROM public.notification_center_prepared_allowed_scopes(p_organization,p_current_occasion,auth.uid()) a
       CROSS JOIN LATERAL(SELECT id,latest_at FROM public.notification_center_summary_scopes t WHERE t.organization=p_organization AND t.recipient=auth.uid() AND t.scope=a.scope
        ORDER BY latest_at DESC,id DESC LIMIT 101) x ORDER BY x.id,a.section),
-     ranked AS(SELECT *,row_number() OVER(ORDER BY section,latest_at DESC,id DESC) position FROM candidates ORDER BY section,latest_at DESC,id DESC LIMIT 101)
-     INSERT INTO public.notification_center_view_rows(token,position,id,group_key,after_sequence,through_sequence,kind,occasion,latest_at,latest_event,preview_events,capture_is_read,
+     ranked AS MATERIALIZED(SELECT *,row_number() OVER(ORDER BY section,latest_at DESC,id DESC) position FROM candidates ORDER BY section,latest_at DESC,id DESC LIMIT 101),
+     inserted AS(INSERT INTO public.notification_center_view_rows(token,position,id,group_key,after_sequence,through_sequence,kind,occasion,latest_at,latest_event,preview_events,capture_is_read,
       activity_count,known_count,places,multiple_count,is_read,revision,read_revision,privacy_key)
      SELECT token,r.position,r.id,b.group_key,least(b.after_sequence,b.first_sequence-1),b.through_sequence,b.kind,b.occasion,b.latest_at,b.latest_event,b.preview_events,b.is_read,
       b.activity_count,b.known_count,b.places,b.multiple_count,b.is_read,s.revision,u.view_read_revision,md5(s.privacy::text)
-      FROM ranked r JOIN public.notification_center_batch_summaries b ON b.organization=p_organization AND b.recipient=auth.uid() AND b.id=r.id WHERE r.position<=100;
-     -- Truncation requires only the same bounded scope candidates, never history.
-     SELECT count(*) INTO total FROM (SELECT DISTINCT x.id FROM public.notification_center_prepared_allowed_scopes(p_organization,p_current_occasion,auth.uid()) a
-      CROSS JOIN LATERAL(SELECT id FROM public.notification_center_summary_scopes t WHERE t.organization=p_organization AND t.recipient=auth.uid() AND t.scope=a.scope
-       ORDER BY latest_at DESC,id DESC LIMIT 101) x LIMIT 101) bounded;
+      FROM ranked r JOIN public.notification_center_batch_summaries b ON b.organization=p_organization AND b.recipient=auth.uid() AND b.id=r.id WHERE r.position<=100 RETURNING 1)
+     -- Catalogue rows and truncation share one authorized candidate discovery.
+     SELECT (SELECT count(*) FROM ranked) INTO total FROM (SELECT count(*) FROM inserted) completed;
      UPDATE public.notification_center_views SET truncated=total>100 WHERE notification_center_views.token=token;
      payload:=public.notification_center_prepared_payload(token,p_cursor,lim,CASE WHEN p_mode='refresh' THEN p_revision END);
     END IF;
@@ -235,7 +250,7 @@ BEGIN
  status AS(SELECT *,phase<>'ready' OR NOT delivery_initialized OR pending_delivery>0 OR pending_events>0 OR pending_groups>0 OR privacy_pending
    OR prepared_sequence<>last_delivery_sequence OR applied_read_revision<>view_read_revision OR next_expiry<clock_timestamp() OR privacy<>privacy_now preparing FROM current)
  SELECT jsonb_build_object('viewSupported',true,'timelineSupported',true,'enabled',true,'state',CASE WHEN preparing THEN 'preparing' ELSE 'ready' END,
-  'lastSequence',last_delivery_sequence,'unread',CASE WHEN preparing THEN NULL ELSE EXISTS(
+  'lastSequence',last_delivery_sequence,'unread',CASE WHEN preparing THEN NULL WHEN last_delivery_sequence<=seen THEN false ELSE EXISTS(
    SELECT 1 FROM public.notification_center_prepared_allowed_scopes(p_organization,NULL,auth.uid()) a
    CROSS JOIN LATERAL(SELECT t.id FROM public.notification_center_summary_scopes t WHERE t.organization=p_organization AND t.recipient=auth.uid()
     AND t.scope=a.scope AND NOT t.is_read AND t.sequence>status.seen ORDER BY t.sequence DESC LIMIT 1) t

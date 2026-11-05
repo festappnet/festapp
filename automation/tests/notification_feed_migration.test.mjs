@@ -26,11 +26,12 @@ test('default output cannot rewrite a published migration after source changes',
    ...manifest.prerequisites.map(name=>'supabase/migrations/'+name),
    ...manifest.sources.map(name=>'database/functions/'+name),
    'database/tables/tables.sql','database/functions/notification_center/schema.sql',
-   'database/functions/notification_center/maintenance.sql'];
+   'database/functions/notification_center/maintenance.sql',
+   'database/functions/notification_center/prepared_schema.sql'];
   for(const file of new Set(files)) {
    const target=join(dir,file);mkdirSync(dirname(target),{recursive:true});copyFileSync(join(root,file),target);
   }
-  const source=join(dir,'database/functions/notification_center/center_policy.sql');
+  const source=join(dir,'database/functions/'+manifest.sources[0]);
   writeFileSync(source,readFileSync(source,'utf8')+'\n-- Later source edit\n');
   const output=join(dir,manifest.output),before=readFileSync(output);
   const result=spawnSync('python3',[script],{cwd:dir,encoding:'utf8'});
