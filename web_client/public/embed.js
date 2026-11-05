@@ -55,54 +55,94 @@
         for (const sheet of document.styleSheets) read(sheet, sheet.href || document.baseURI);
         return faces;
     };
-    const isTransparent = color => {
-        if (!color || color === 'transparent') return true;
-        // CSS can serialize transparent white (or any other RGB value), not just
-        // rgba(0, 0, 0, 0). Modern color functions separate alpha with a slash.
-        const alpha = color.match(/\/\s*([\d.]+%?)\s*\)$/) ||
-            color.match(/^(?:rgba|hsla)\([^)]*,\s*([\d.]+%?)\s*\)$/);
-        return !!alpha && parseFloat(alpha[1]) === 0;
+    // Computed sRGB colors and WordPress hex tokens. Unsupported color spaces
+    // fall back to a known pair instead of guessing their contrast.
+    const rgba = value => {
+        const color = (value || '').trim().toLowerCase();
+        if (color === 'transparent') return [0, 0, 0, 0];
+        if (color === 'black') return [0, 0, 0, 1];
+        if (color === 'white') return [255, 255, 255, 1];
+        if (/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/.test(color)) {
+            let hex = color.slice(1);
+            if (hex.length < 5) hex = [...hex].map(c => c + c).join('');
+            return [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16))
+                .concat(hex.length === 8 ? parseInt(hex.slice(6), 16) / 255 : 1);
+        }
+        const match = color.match(/^rgba?\(([^)]+)\)$/);
+        if (!match) return null;
+        const parts = match[1].trim().split(/[\s, /]+/);
+        if (parts.length < 3 || parts.length > 4 || parts.some(p => !/^[+-]?(?:\d*\.)?\d+%?$/.test(p))) return null;
+        return parts.slice(0, 3).map(p => Math.max(0, Math.min(255, parseFloat(p) * (p.endsWith('%') ? 2.55 : 1))))
+            .concat(parts[3] === undefined ? 1 : Math.max(0, Math.min(1, parseFloat(parts[3]) / (parts[3].endsWith('%') ? 100 : 1))));
     };
+    const over = (front, back) => front.slice(0, 3).map((c, i) => c * front[3] + back[i] * (1 - front[3])).concat(1);
+    const cssColor = color => `rgb(${color.slice(0, 3).map(Math.round).join(', ')})`;
+    const backgroundAt = node => {
+        const layers = [];
+        for (; node; node = node.parentElement) {
+            const color = rgba(getComputedStyle(node).backgroundColor);
+            if (!color) continue;
+            layers.push(color);
+            if (color[3] === 1) break;
+        }
+        return layers.reverse().reduce((back, front) => over(front, back), [255, 255, 255, 1]);
+    };
+    const luminance = color => color.slice(0, 3).reduce((sum, channel, i) => {
+        const value = channel / 255;
+        return sum + (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][i];
+    }, 0);
+    const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
     const presentation = frame => {
         const container = frame.parentElement;
         const style = getComputedStyle(container);
-        let background = 'rgb(255, 255, 255)';
-        for (let node = container; node; node = node.parentElement) {
-            const color = getComputedStyle(node).backgroundColor;
-            if (!isTransparent(color)) { background = color; break; }
-        }
+        const background = backgroundAt(container);
         // Checkout projections are output, never a source of website appearance.
         const selector = ':is(button, .wp-element-button, .wp-block-button__link):not([data-festapp-embed-price] *)';
-        const button = container.querySelector(selector) || document.querySelector(selector);
-        const candidate = button && getComputedStyle(button);
-        // Navigation/outline buttons often have no fill; they cannot supply a
-        // usable primary/background pair for checkout buttons.
-        const buttonStyle = candidate && candidate.opacity !== '0' && candidate.display !== 'none' &&
-            candidate.visibility !== 'hidden' && !isTransparent(candidate.backgroundColor) &&
-            !isTransparent(candidate.color) ? candidate : null;
-        const primary = style.getPropertyValue('--wp--preset--color--primary').trim() || buttonStyle?.backgroundColor || style.color;
-        return {fontFamily: style.fontFamily, text: style.color, background, primary,
-            buttonText: buttonStyle?.color || background, fonts: fontFaces(style.fontFamily)};
+        let buttonFill, buttonText;
+        const candidates = new Set([...container.querySelectorAll(selector), ...document.querySelectorAll(selector)]);
+        for (const button of candidates) {
+            let visible = true;
+            for (let node = button; node; node = node.parentElement) {
+                const computed = getComputedStyle(node);
+                if (node.hidden || computed.opacity === '0' || computed.display === 'none' ||
+                    ['hidden', 'collapse'].includes(computed.visibility)) { visible = false; break; }
+            }
+            if (!visible) continue;
+            const computed = getComputedStyle(button);
+            const fill = rgba(computed.backgroundColor), text = rgba(computed.color);
+            if (!fill || !text || !fill[3] || !text[3]) continue;
+            buttonFill = over(fill, backgroundAt(button.parentElement));
+            buttonText = over(text, buttonFill);
+            break;
+        }
+        const preset = rgba(style.getPropertyValue('--wp--preset--color--primary'));
+        const primary = over(preset?.[3] ? preset : buttonFill || rgba(style.color) || [0, 0, 0, 1], background).map(Math.round);
+        // A preset owns its fill independently of a sampled button. Keep any
+        // foreground only when it remains readable on the actual exported fill.
+        let foreground = (buttonText || background).map(Math.round);
+        if (contrast(primary, foreground) < 4.5) {
+            const black = [0, 0, 0, 1], white = [255, 255, 255, 1];
+            foreground = contrast(primary, black) >= contrast(primary, white) ? black : white;
+        }
+        return {fontFamily: style.fontFamily, text: style.color, background: cssColor(background), primary: cssColor(primary),
+            buttonText: cssColor(foreground), fonts: fontFaces(style.fontFamily)};
     };
-    const send = (frame, record, type, includeTheme = true) => {
+    // null omits presentation for frequent scroll-only viewport messages.
+    const send = (frame, record, type, theme = presentation(frame)) => {
         const viewportOffset = Math.max(0, Math.min(20000,
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
-        // An explicit choice belongs to this iframe; absent markup uses the
-        // saved fallback for already-installed CMS integrations.
-        if (frame.dataset.festappStyle === 'inherit') data.inheritStyle = true;
-        else if (frame.dataset.festappStyle === 'default') data.inheritStyle = false;
-        if (includeTheme) {
-            const theme = presentation(frame);
+        if (theme !== null) {
             record.theme = JSON.stringify(theme);
             data.theme = theme;
         }
         frame.contentWindow?.postMessage(data, record.origin);
     };
     const refreshThemes = () => frames.forEach((record, frame) => {
-        if (JSON.stringify(presentation(frame)) !== record.theme) send(frame, record, 'theme');
+        const theme = presentation(frame);
+        if (JSON.stringify(theme) !== record.theme) send(frame, record, 'theme', theme);
     });
     // The child owns prices and formatting. The host projects only that view,
     // so native sticky positioning never waits for cross-frame scroll messages.
@@ -229,7 +269,7 @@
         // Scroll is already synchronized by the browser. Another RAF adds a
         // full frame of lag before the cross-frame message can be painted.
         frames.forEach((record, frame) => {
-            if (event?.type === 'resize' || !record.priceLayer) send(frame, record, 'viewport', false);
+            if (event?.type === 'resize' || !record.priceLayer) send(frame, record, 'viewport', null);
         });
     };
     window.addEventListener('scroll', updateVisibleViewport, {passive: true, capture: true});

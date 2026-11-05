@@ -127,7 +127,7 @@ export class FormPage extends Component {
         window.scrollTo(0, 0);
 
         this.currentLink = link;
-        this.embedBridge?.setInheritStyle(null);
+        this.embedBridge?.setInheritStyle(false);
         this.saleOpeningScope ||= consumeSaleOpeningLocation(window.location, window.history);
         if (isEmbed() && !this.embedBridge) {
             this.embedBridge = new EmbedBridge(); this.embedBridge.start();

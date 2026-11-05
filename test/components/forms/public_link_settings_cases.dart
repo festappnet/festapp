@@ -1,6 +1,8 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/forms/views/form_embed_code.dart';
+import 'package:fstapp/components/forms/views/form_design_settings.dart';
+import 'package:fstapp/components/fonts/form_font_catalog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:flutter/foundation.dart';
@@ -60,18 +62,12 @@ void main() {
         expect(code, contains('Open &lt;order&gt;'));
         expect(code.contains('data-festapp-embed'), isTrue);
         expect(code.contains('<script'), isTrue);
-        expect(code, contains('/embed.js?v=appearance-1'));
-        expect(code, contains('data-festapp-style="inherit"'));
+        expect(code, contains('/embed.js" defer'));
+        expect(code, isNot(contains('data-festapp-style=')));
+        expect(code, isNot(contains('width="100%"')));
         expect(
-          formEmbedCode(
-            tenantUrl: 'https://tenant.example',
-            savedLink: 'saved',
-            title: 'Form',
-            fallbackLabel: 'Open',
-            automatic: automatic,
-            inheritStyle: false,
-          ),
-          contains('data-festapp-style="default"'),
+          code,
+          contains('style="display:block;width:100%;max-width:100%;border:0"'),
         );
         expect(code, contains('allow="clipboard-write"'));
         expect(code, contains('height="800"'));
@@ -92,7 +88,52 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => _environment,
-    'embed dialog controls appearance in copied code in both height modes',
+    'saved embed appearance preference edits the draft and respects read-only mode',
+    (tester) async {
+      final form = FormEditorDraft();
+      var changes = 0;
+      Future<void> mount(bool enabled) async {
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: Scaffold(
+              body: FormDesignSettings(
+                form: form,
+                enabled: enabled,
+                onChanged: () => changes++,
+                loadFonts: () async => _Fonts(),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      final toggle = find.byKey(const ValueKey('form-embed-inherit-style'));
+      await mount(true);
+      expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(form.definition.embedInheritStyle, isFalse);
+      expect(
+        form.toEditedJson()['settings']['design']['embed_inherit_style'],
+        false,
+      );
+      expect(changes, 1);
+      await mount(false);
+      expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+      expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(form.definition.embedInheritStyle, isFalse);
+      expect(changes, 1);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'embed dialog uses saved appearance with helper in both height modes',
     (tester) async {
       await _environment.pumpWidget(
         tester,
@@ -109,31 +150,25 @@ void main() {
           .widgetList<CopyButton>(find.byType(CopyButton))
           .singleWhere((button) => button.value.contains('<iframe'))
           .value;
-      expect(find.byType(CheckboxListTile), findsOneWidget);
-      expect(find.text(FormStrings.embedInheritStyle), findsOneWidget);
-      expect(copiedCode(), contains('data-festapp-style="inherit"'));
-      await tester.tap(find.byKey(const ValueKey('embed-inherit-style')));
-      await tester.pumpAndSettle();
-      expect(copiedCode(), contains('data-festapp-style="default"'));
-      expect(copiedCode(), contains('/embed.js?v=appearance-1'));
+      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(find.text(FormStrings.embedInheritStyle), findsNothing);
+      expect(copiedCode(), isNot(contains('data-festapp-style=')));
+      expect(copiedCode(), contains('/embed.js" defer'));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedFixed).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsOneWidget);
-      expect(copiedCode(), contains('data-festapp-style="default"'));
-      expect(copiedCode(), contains('/embed.js?v=appearance-1'));
+      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(copiedCode(), isNot(contains('data-festapp-style=')));
+      expect(copiedCode(), contains('/embed.js" defer'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
-      await tester.tap(find.byKey(const ValueKey('embed-inherit-style')));
-      await tester.pumpAndSettle();
-      expect(copiedCode(), contains('data-festapp-style="inherit"'));
       expect(copiedCode(), contains('allow="clipboard-write"'));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedAutomatic).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsOneWidget);
-      expect(copiedCode(), contains('data-festapp-style="inherit"'));
+      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(copiedCode(), isNot(contains('data-festapp-style=')));
       expect(copiedCode(), isNot(contains('data-festapp-height="fixed"')));
     },
   );
@@ -261,4 +296,17 @@ void main() {
       expect(saves, 2);
     },
   );
+}
+
+class _Fonts implements FormFontCatalog {
+  @override
+  List<String> get families => ['Roboto'];
+  @override
+  Future<void> ensureFamily(String family) async {}
+  @override
+  TextStyle getFont(String family) => TextStyle(fontFamily: family);
+  @override
+  Future<TextStyle> previewStyle(String family) async => getFont(family);
+  @override
+  TextTheme getTextTheme(String family, TextTheme base) => base;
 }

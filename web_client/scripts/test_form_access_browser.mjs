@@ -149,6 +149,15 @@ try {
                 ? '!!document.getElementById("floating-price-widget")'
                 : 'document.querySelector("iframe").clientHeight > 2000');
             if(presentation==='native-embed') await browser('wait',selector);
+            if(presentation!=='regular') await browser('wait','--fn',`(() => {
+                const frame=document.querySelector('iframe');
+                const doc=frame.contentDocument;
+                const heading=doc.querySelector('.form-header');
+                const price=${presentation==='native-embed' ? 'document.querySelector("[data-festapp-embed-price] button")' : 'doc.getElementById("floating-price-widget")'};
+                if(!heading || !price)return false;
+                const priceBottom=price.getBoundingClientRect().bottom+${presentation==='legacy-embed' ? 'frame.getBoundingClientRect().top' : '0'};
+                return heading.getBoundingClientRect().top+frame.getBoundingClientRect().top>=priceBottom+8;
+            })()`);
             for(const y of [450,1000,700]) {
                 await browser('eval',`window.scrollTo(0,${y})`);
                 await browser('wait','--fn',`(() => {

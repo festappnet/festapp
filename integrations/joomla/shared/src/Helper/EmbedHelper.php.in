@@ -41,7 +41,7 @@ final class EmbedHelper
             return '<p class="@@ELEMENT@@-error">' . self::escape(Text::_('@@KEY@@_INVALID_URL')) . '</p>';
         }
         return sprintf(
-            '<div class="@@ELEMENT@@" data-festapp-embed-host><iframe%s src="%s" title="%s" width="100%%" height="%d" style="border:0;max-width:100%%" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
+            '<div class="@@ELEMENT@@" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
             ' data-festapp-embed' . (!$s['auto'] ? ' data-festapp-height="fixed"' : ''),
             self::escape($s['url'] . '?embed=1'), self::escape($s['title']), $s['height'],
             self::escape($s['url']), self::escape(Text::_('@@KEY@@_FALLBACK'))

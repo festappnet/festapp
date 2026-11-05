@@ -118,7 +118,6 @@ class _EmbedDialog extends StatefulWidget {
 
 class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
-  bool inheritStyle = true;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +127,6 @@ class _EmbedDialogState extends State<_EmbedDialog> {
       title: FormStrings.embedTitle,
       fallbackLabel: FormStrings.embedFallback,
       automatic: automatic,
-      inheritStyle: inheritStyle,
     );
     return AppAlertDialog(
       title: Text(FormStrings.embedAction),
@@ -157,16 +155,6 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                 onChanged: (value) {
                   if (value != null) setState(() => automatic = value);
                 },
-              ),
-              CheckboxListTile(
-                key: const ValueKey('embed-inherit-style'),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: Text(FormStrings.embedInheritStyle),
-                subtitle: Text(FormStrings.embedInheritStyleHelp),
-                value: inheritStyle,
-                onChanged: (value) =>
-                    setState(() => inheritStyle = value ?? false),
               ),
               const SizedBox(height: 12),
               SelectableText(code),

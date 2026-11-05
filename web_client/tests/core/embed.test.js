@@ -149,8 +149,7 @@ test('host supplies appearance independently of legacy flags and preserves fixed
     const navButton=dom.window.document.createElement('button');navButton.style.backgroundColor='transparent';dom.window.document.body.append(navButton);
     frame.dataset.festappStyle = 'inherit'; frame.dataset.festappHeight = 'fixed';
     message(frame, 'https://tickets.invalid', envelope('ready'));
-    assert.equal(sent[0].at(-1)[0].inheritStyle,true);
-    assert.equal(sent[1].at(-1)[0].inheritStyle,undefined);
+    assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
     const theme = sent[0].at(-1)[0].theme;
     assert.equal(theme.fontFamily, '"Site Serif", serif');
     assert.equal(theme.fonts[0].urls[0], 'https://host.invalid/fonts/site.woff2');
@@ -160,9 +159,9 @@ test('host supplies appearance independently of legacy flags and preserves fixed
     assert.ok(sent[1][0][0].theme);
     message(frame, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height:1500}));
     assert.equal(frame.style.height, '');
-    frame.dataset.festappStyle='default';
+    frame.dataset.festappStyle = 'default';
     message(frame, 'https://tickets.invalid', envelope('ready'));
-    assert.equal(sent[0].at(-1)[0].inheritStyle,false);
+    assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
     delete frame.dataset.festappStyle;
     await new Promise(resolve => dom.window.setTimeout(resolve, 50));
     assert.equal(sent[0].at(-1)[0].theme.fontFamily, theme.fontFamily);
@@ -458,4 +457,71 @@ test('new child uses one native reveal with a legacy host for end and nearest al
         assert.equal(requests[0].type, 'resize');
         dom.window.close();
     }
+});
+
+
+test('host refreshes changed appearance while scroll messages omit presentation', async () => {
+    const {dom, sent} = host();
+    const win = dom.window;
+    try {
+        win.document.body.style.backgroundColor = 'rgb(10, 20, 30)';
+        await new Promise(resolve => win.setTimeout(resolve, 50));
+        const updates = () => sent[0].filter(([data]) => data.type === 'theme');
+        assert.equal(updates().at(-1)[0].theme.background, 'rgb(10, 20, 30)');
+        const count = updates().length;
+        win.document.body.style.border = '1px solid black';
+        await new Promise(resolve => win.setTimeout(resolve, 50));
+        assert.equal(updates().length, count, 'unrelated mutations do not resend appearance');
+        win.dispatchEvent(new win.Event('scroll'));
+        const [viewport] = sent[0].at(-1);
+        assert.equal(viewport.type, 'viewport');
+        assert.equal(Object.hasOwn(viewport, 'theme'), false);
+    } finally { win.close(); }
+});
+
+test('host preset and sampled button always export a readable CTA pair', () => {
+    const {dom, frames:[frame], sent, message} = host();
+    dom.window.document.body.style.cssText = '--wp--preset--color--primary:#ffffcc;background:white;color:black';
+    const button = dom.window.document.createElement('button');
+    button.style.cssText = 'background:navy;color:white';
+    dom.window.document.body.append(button);
+    message(frame, 'https://tickets.invalid', envelope('ready'));
+    let theme = sent[0].at(-1)[0].theme;
+    assert.equal(theme.primary, 'rgb(255, 255, 204)');
+    assert.equal(theme.buttonText, 'rgb(0, 0, 0)');
+    dom.window.document.body.style.setProperty('--wp--preset--color--primary', '#112233');
+    button.style.cssText = 'background:white;color:black';
+    message(frame, 'https://tickets.invalid', envelope('ready'));
+    theme = sent[0].at(-1)[0].theme;
+    assert.equal(theme.primary, 'rgb(17, 34, 51)');
+    assert.equal(theme.buttonText, 'rgb(255, 255, 255)');
+    dom.window.close();
+});
+
+test('host skips hidden and outline candidates to find a painted website button', () => {
+    const {dom, frames:[frame], sent, message} = host();
+    const candidates = dom.window.document.createElement('div');
+    candidates.innerHTML = '<button style="display:none;background:red;color:white">Hidden</button>' +
+        '<div style="opacity:0"><button style="background:red;color:white">Hidden ancestor</button></div>' +
+        '<button style="background:transparent;color:navy">Outline</button>' +
+        '<button style="background:navy;color:white">Buy tickets</button>';
+    dom.window.document.body.prepend(candidates);
+    message(frame, 'https://tickets.invalid', envelope('ready'));
+    const theme = sent[0].at(-1)[0].theme;
+    assert.equal(theme.primary, 'rgb(0, 0, 128)');
+    assert.equal(theme.buttonText, 'rgb(255, 255, 255)');
+    dom.window.close();
+});
+
+test('host composites translucent ancestors over the dark page into an opaque background', () => {
+    const {dom, frames:[frame], sent, message} = host(true);
+    dom.window.document.documentElement.style.backgroundColor = 'rgb(0, 0, 0)';
+    dom.window.document.body.style.backgroundColor = 'rgba(100, 100, 100, 0.5)';
+    frame.parentElement.style.cssText = 'background:rgba(200, 200, 200, 0.2);color:white';
+    message(frame, 'https://tickets.invalid', envelope('ready'));
+    const theme = sent[0].at(-1)[0].theme;
+    assert.equal(theme.background, 'rgb(80, 80, 80)');
+    assert.equal(theme.primary, 'rgb(255, 255, 255)');
+    assert.equal(theme.buttonText, 'rgb(80, 80, 80)');
+    dom.window.close();
 });

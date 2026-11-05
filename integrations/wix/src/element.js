@@ -114,7 +114,7 @@ export function registerTicketElement(win, getViewMode, attribution) {
         host.className = 'vstupenky-wix'; host.dataset.festappEmbedHost = '';
         const frame = this.ownerDocument.createElement('iframe');
         frame.dataset.festappEmbed = '';
-        frame.loading = 'lazy'; frame.width = '100%'; frame.height = '800';
+        frame.loading = 'lazy'; frame.height = '800';
         frame.style.cssText = 'display:block;width:100%;max-width:100%;border:0';
         const paragraph = this.ownerDocument.createElement('p');
         paragraph.style.cssText = 'margin:12px 0 0;text-align:center;font-size:14px;line-height:1.5';
