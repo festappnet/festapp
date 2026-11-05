@@ -457,7 +457,9 @@ DO $$ BEGIN
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.context_private_access_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='a187283398f1802a1b79b46963ff98b6'),'current SQL source parity: public.context_private_access_rule(boolean,boolean,boolean)');
 -- supabase/migrations/20261105170000_presale_content.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.convert_form_presale_content(bigint,bigint,text,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='0de544fc06628ae21b0eaea5c74d7446'),'current SQL source parity: public.convert_form_presale_content(bigint,bigint,text,text,uuid)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.convert_form_presale_content(bigint,bigint,text,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='35b5cfbcb8d4d12625cc663ae938ade8'),'current SQL source parity: public.convert_form_presale_content(bigint,bigint,text,text,uuid)');
+-- supabase/migrations/20261105170000_presale_content.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='6c51ad873eaeb8124f8cabf7796bf14c'),'current SQL source parity: public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(to_regprocedure('public.copy_product_type_with_products(bigint)') IS NULL,'retired SQL identity remains absent: public.copy_product_type_with_products(bigint)');
 -- supabase/migrations/20261026210000_form_administration_completion.sql

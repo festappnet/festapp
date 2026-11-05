@@ -100,4 +100,25 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
  BEGIN PERFORM public.get_form_presale_archive(fid); RAISE EXCEPTION 'foreign read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.convert_form_presale_content(fid,0,source_hash,'<p>Main</p>',conversion); RAISE EXCEPTION 'foreign replay accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ -- Authorless legacy rows still have a safe operational migration path, owned
+ -- only by the real database operator and bound to the explicitly selected org.
+ INSERT INTO public.units(title,organization) VALUES('Orphaned organizer',org) RETURNING id INTO unit_id;
+ INSERT INTO public.occasions(title,link,organization,unit,start_time,end_time)
+ VALUES('Orphaned event',gen_random_uuid()::text,org,unit_id,now()+interval '3 days',now()+interval '4 days') RETURNING id INTO occ;
+ INSERT INTO public.forms(title,occasion,is_open,data) VALUES('Orphaned form',occ,false,original) RETURNING id INTO legacy_form;
+ PERFORM assert_false(public.can_author_forms(occ),'Orphan has no current author');
+ BEGIN
+  PERFORM public.convert_form_presale_content(legacy_form,0,source_hash,'<p>Main</p>',gen_random_uuid());
+  RAISE EXCEPTION 'public orphan conversion accepted';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  PERFORM public.convert_form_presale_content_internal(org+1,legacy_form,0,source_hash,'<p>Main</p>',gen_random_uuid());
+  RAISE EXCEPTION 'foreign operational scope accepted';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM assert_false(has_function_privilege('anon','public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid)','EXECUTE'),'Operator core not anonymous');
+ PERFORM assert_false(has_function_privilege('authenticated','public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid)','EXECUTE'),'Operator core not an author API');
+ PERFORM assert_false(has_function_privilege('service_role','public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid)','EXECUTE'),'Operator core is not service-role RPC');
+ result:=public.convert_form_presale_content_internal(org,legacy_form,0,source_hash,'<p>Main</p>',gen_random_uuid());
+ PERFORM assert_eq((result->>'version')::bigint,1::bigint,'Actual postgres operator converts orphan through same core');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_presale_content_archive WHERE form=legacy_form),'Orphan original is archived atomically');
 END $$;

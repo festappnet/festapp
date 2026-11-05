@@ -131,15 +131,16 @@ REVOKE ALL ON FUNCTION public.presale_conversion_budgets_internal(jsonb,text,jso
 -- Explicit operational conversion, not a read fallback or application trigger.
 -- The pure converter supplies reviewed HTML; original hash and version bind it
 -- to exactly the preflight input. No campaign/subscriber/queue writes occur.
-CREATE OR REPLACE FUNCTION public.convert_form_presale_content(
- p_form bigint,p_expected_version bigint,p_source_hash text,p_html text,p_conversion_id uuid
-) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE f public.forms%ROWTYPE; occasion_id bigint; version_now bigint; saved public.form_presale_content_archive%ROWTYPE;
+CREATE OR REPLACE FUNCTION public.convert_form_presale_content_internal(
+ p_organization bigint,p_form bigint,p_expected_version bigint,p_source_hash text,p_html text,p_conversion_id uuid
+) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE f public.forms%ROWTYPE; occasion_id bigint; organization_id bigint; version_now bigint; saved public.form_presale_content_archive%ROWTYPE;
  d jsonb; html_hash text; snapshot jsonb;
 BEGIN
- SELECT occasion INTO occasion_id FROM public.forms WHERE id=p_form;
- IF auth.uid() IS NULL OR NOT coalesce(public.can_author_forms(occasion_id),false) THEN
-  RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
+ SELECT source_form.occasion,source_occasion.organization INTO occasion_id,organization_id
+ FROM public.forms source_form JOIN public.occasions source_occasion ON source_occasion.id=source_form.occasion WHERE source_form.id=p_form;
+ IF p_organization IS NULL OR organization_id IS DISTINCT FROM p_organization THEN
+  RAISE insufficient_privilege USING MESSAGE='presale conversion organization mismatch'; END IF;
  PERFORM public.lock_blueprint_scope_internal(ARRAY[occasion_id]);
  SELECT * INTO f FROM public.forms WHERE id=p_form FOR UPDATE;
  html_hash:=encode(extensions.digest(convert_to(p_html,'UTF8'),'sha256'),'hex');
@@ -176,6 +177,23 @@ BEGIN
  IF (public.presale_conversion_budgets_internal(d,p_html,snapshot)->>'blocked')::boolean THEN
   RAISE program_limit_exceeded USING MESSAGE='PRESALE_SIZE_BLOCKED'; END IF;
  RETURN jsonb_build_object('form',p_form,'version',version_now+1,'replayed',false);
+END $$;
+-- The operational schema owner uses exactly this core, including orphaned
+-- forms. It is not an API operation and does not manufacture user membership.
+REVOKE ALL ON FUNCTION public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.convert_form_presale_content_internal(bigint,bigint,bigint,text,text,uuid) TO postgres;
+
+CREATE OR REPLACE FUNCTION public.convert_form_presale_content(
+ p_form bigint,p_expected_version bigint,p_source_hash text,p_html text,p_conversion_id uuid
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE occasion_id bigint; organization_id bigint;
+BEGIN
+ SELECT source_form.occasion,source_occasion.organization INTO occasion_id,organization_id
+ FROM public.forms source_form JOIN public.occasions source_occasion ON source_occasion.id=source_form.occasion WHERE source_form.id=p_form;
+ IF auth.uid() IS NULL OR NOT coalesce(public.can_author_forms(occasion_id),false) THEN
+  RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
+ RETURN public.convert_form_presale_content_internal(organization_id,p_form,p_expected_version,p_source_hash,p_html,p_conversion_id);
 END $$;
 REVOKE ALL ON FUNCTION public.convert_form_presale_content(bigint,bigint,text,text,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.convert_form_presale_content(bigint,bigint,text,text,uuid) TO authenticated;

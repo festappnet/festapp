@@ -89,7 +89,26 @@ upgrade zastavil starší neprovedený cutover plánků na
 migrační podmínka. Finální SQL/MCP kontroly používají již migrovanou označenou
 lokální databázi 61032; naplánované externí úlohy jsou vypnuté a e-mail pozastavený.
 
-## Připravený produkční postup - zatím neautorizovaný
+## Navazující release autorizace a datový preflight
+
+Uživatel následně výslovně požádal o produkční nasazení. Cíl byl potvrzen jako
+`prod/festapptickets`, `vstupenky.online`, organizace 3. Read-only inventura našla
+77 formulářů, z toho 7 bez existujícího autorizovaného editora. Kvůli tomu byl
+konverzní mechanismus rozdělen na jediný neveřejný `SECURITY INVOKER` core, dostupný
+pouze skutečnému PostgreSQL ownerovi, a původní veřejný wrapper s nezměněným
+`can_author_forms`. Core vyžaduje explicitní organizaci, verzi a hash zdroje;
+archiv, velikostní limity, transakce i retry jsou stejné pro oba způsoby spuštění.
+Žádná členství nebo práva se nepřidávají. Tento případ je ověřen skutečným SQL
+testem včetně zákazu přístupu authenticated, anon a service_role.
+
+Kanonický preflight podporuje také `--operator` namísto `--actor UUID`; tato volba
+vyžaduje skutečnou databázovou roli postgres. Produkční SSH operátor používá
+stejný převodník, private authoring projection, serverový budget a tento core,
+bez získávání hesel nebo vydávání se za uživatele. Průběh produkčního releasu
+má samostatnou provozní evidenci; původní lokální výsledek výše není tvrzením,
+že produkční nasazení již proběhlo.
+
+## Připravený produkční postup (původní lokální předání)
 
 Toto zadání nejmenuje produkčního tenanta ani nepovoluje datovou migraci nebo
 nasazení. Živá inventura proto nebyla prováděna a lokální fixture nejsou dokladem

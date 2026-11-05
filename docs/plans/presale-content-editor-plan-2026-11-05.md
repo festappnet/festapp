@@ -113,6 +113,17 @@ Před převodem vznikne kanonický soukromý záznam, například `public.form_p
 
 Archiv se nedává do `forms.data`: starý full-metadata writer by jej mohl vymazat a současná veřejná projekce by jej mohla odeslat návštěvníkům. Archiv není druhý aktivní dokument ani renderovací fallback.
 
+### Provozní doplnění podle živého preflightu
+
+Release preflight 5. 11. našel v organizaci 3 sedm formulářů bez existujícího
+autorizovaného editora. Migrační operátor proto používá neveřejné
+`convert_form_presale_content_internal` jako skutečný PostgreSQL owner, s explicitní
+organizací a stejnou zámkovou, hashovou, verzovanou a archivní transakcí. Jde o
+`SECURITY INVOKER` core s EXECUTE pouze pro postgres; API role ani service_role
+k němu přístup nemají. Veřejná authoring wrapper funkce nad tímto jediným core
+nadále vyžaduje `can_author_forms`. Žádná uživatelská práva se nepřidávají a nikdo
+se nevydává za chybějícího autora. Obnova v editoru má stále původní oprávnění.
+
 ### Algoritmus převodu
 
 1. Před změnami ověřit čistou kompozici a velikosti pro všechny formuláře zvoleného tenanta. Nevypisovat obsah ani osobní data do repozitáře; výstupem jsou počty, velikosti a identifikátory vyžadující řešení.
