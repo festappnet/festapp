@@ -284,6 +284,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
+    'editor empty paragraphs keep the standalone opt-in vertically centered',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CountdownContent(
+                targetTime: DateTime.utc(2099, 1, 1, 12),
+                onFinished: () {},
+                showTimer: false,
+                canSubscribe: true,
+                formLink: 'ples',
+                html: '$saleOpeningBlockHtml<p><br></p>',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final field = tester.getRect(find.byType(TextField));
+      final button = tester.getRect(find.byType(FilledButton));
+      expect(field.top, greaterThan(200));
+      expect(button.bottom, lessThan(600));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'paused subscription-only content shows the planned opening instead of an empty page',
     (tester) async {
       await env().pumpWidget(

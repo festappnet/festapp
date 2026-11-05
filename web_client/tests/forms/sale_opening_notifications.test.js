@@ -157,3 +157,25 @@ test('failed submit restores controls and allows one deliberate retry', async ()
   assert.equal(calls, 2); assert.equal(form.hidden, true);
  } finally { dom.window.close(); }
 });
+
+
+for (const around of ['<p><br></p>', '<div><p>\u200b</p></div>', '<div class="html-editor-block form-countdown"></div><p><br></p>']) {
+ test(`editor placeholders do not prevent standalone opt-in centering: ${around}`, () => {
+  const dom = new JSDOM('<main></main>'); globalThis.document = dom.window.document;
+  try {
+   const model = new FormModel({link:'ples',is_open:true,saleOpeningNotification:{canSubscribe:true},data:{schedule:{start_time:'2099-01-01T12:00:00Z',enable_countdown:false,countdown_title:`<div class="html-editor-block form-sale-opening-notification"></div>${around}`}}});
+   const host = document.querySelector('main'); Availability.renderStatus(host,model,Availability.getStatus(model));
+   const content = host.querySelector('.form-presale-subscription-only');
+   assert.ok(content); assert.equal(content.children.length,1); assert.equal(content.querySelectorAll('input[type=email]').length,1);
+  } finally { CountdownWidget.stop(); dom.window.close(); }
+ });
+}
+test('standalone centering preserves meaningful authored surrounding content', () => {
+ const dom = new JSDOM('<main></main>'); globalThis.document = dom.window.document;
+ try {
+  const model = new FormModel({link:'ples',is_open:true,saleOpeningNotification:{canSubscribe:true},data:{schedule:{start_time:'2099-01-01T12:00:00Z',enable_countdown:false,countdown_title:'<p>Úvod akce</p><div class="html-editor-block form-sale-opening-notification"></div><img src="poster.jpg">'}}});
+  const host = document.querySelector('main'); Availability.renderStatus(host,model,Availability.getStatus(model));
+  assert.equal(host.querySelector('.form-presale-subscription-only'),null);
+  assert.match(host.textContent,/Úvod akce/); assert.ok(host.querySelector('img'));
+ } finally { CountdownWidget.stop(); dom.window.close(); }
+});

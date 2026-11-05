@@ -80,16 +80,19 @@ class CountdownContent extends StatelessWidget {
   bool get _subscriptionOnly {
     if (showTimer || !canSubscribe) return false;
     final content = parser.parseFragment(html ?? '');
+    final hasNotification =
+        content.querySelector(
+          '.html-editor-block.form-sale-opening-notification',
+        ) !=
+        null;
     for (final slot in content.querySelectorAll(
-      '.html-editor-block.form-countdown',
+      '.html-editor-block.form-countdown, .html-editor-block.form-sale-opening-notification',
     )) {
       slot.remove();
     }
-    return content.children.length == 1 &&
-        content.children.single.classes.contains(
-          'form-sale-opening-notification',
-        ) &&
-        (content.text ?? '').trim().isEmpty;
+    return hasNotification &&
+        (content.text ?? '').replaceAll(RegExp(r'[\s\u200b]'), '').isEmpty &&
+        content.querySelector('img,video,iframe,table,hr') == null;
   }
 
   @override

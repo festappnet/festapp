@@ -10,10 +10,14 @@ export function renderPresaleContent(container, model, onFinished, {preview = fa
     const doc = container.ownerDocument;
     const content = doc.createElement('div'); content.className = 'form-header form-presale-content';
     content.innerHTML = sanitizeHtml(model.countdownTitle ?? `<p>${FormStrings.registrationStart}</p>`);
-    // Center the standalone opt-in without rearranging authored countdown content.
-    if (!model.enableCountdown && content.children.length === 1 &&
-        content.firstElementChild.matches('.html-editor-block.form-sale-opening-notification') && !content.textContent.trim()) {
+    // The editor retains empty paragraphs and inactive countdown slots around blocks.
+    const notification = content.querySelector('div.html-editor-block.form-sale-opening-notification');
+    const surrounding = content.cloneNode(true);
+    surrounding.querySelectorAll('.form-sale-opening-notification, .form-countdown').forEach(slot => slot.remove());
+    if (!model.enableCountdown && notification && (model.saleOpeningNotification?.canSubscribe || preview) &&
+        !surrounding.textContent.replace(/[\s\u200b]/gu, '') && !surrounding.querySelector('img,video,iframe,table,hr')) {
         content.classList.add('form-presale-subscription-only');
+        content.replaceChildren(notification);
     }
     const types = ['form-countdown', 'form-sale-opening-notification'];
     // Legacy countdown documents without a slot keep their original behavior.
