@@ -23,6 +23,7 @@ for(const f of fixtures) test(f.name,()=>{
  const legacyHtml=host.innerHTML;
  host.replaceChildren();assert.equal(Availability.renderStatus(host,model,Availability.getStatus(model),{onReload:()=>{}}),true);
  assert.ok(host.textContent.trim());
+ assert.equal(Boolean(host.querySelector('.form-scheduled-opening')),f.fallback,'actual BEFORE_START routing keeps the fallback');
  assert.ok(!legacyHtml.includes('undefined'));
  } finally { CountdownWidget.stop();dom.window.close(); }
 });

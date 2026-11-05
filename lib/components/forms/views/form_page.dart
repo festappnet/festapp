@@ -697,7 +697,7 @@ class _FormPageState extends State<FormPage> {
     bool showPreview = canPreview && isPreviewParam;
     bool showCountdown = isBeforeStart &&
         ((form?.definition.enableCountdown ?? false) || (form?.definition.countdownTitle?.isNotEmpty ?? false) || (form?.definition.canSubscribeSaleOpening ?? false) || (form?.definition.saleOpeningEnabled ?? false)||
-            (form?.definition.presaleHeader != 'none')) &&
+            (form?.definition.data?['design']?['presale_header'] != null)) &&
         !showPreview;
 
     if (_isLoading) {

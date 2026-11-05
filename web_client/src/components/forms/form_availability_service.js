@@ -68,7 +68,7 @@ export class FormAvailabilityService {
         if (showPreview) return false;
 
         if (status === FormAvailabilityService.Status.BEFORE_START) {
-            if (formModel.presaleHeader !== 'none' || formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe || formModel.data?.sale_opening_notifications?.enabled) {
+            if (formModel.data?.design?.presale_header != null || formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe || formModel.data?.sale_opening_notifications?.enabled) {
                 container.replaceChildren();
                 renderPresaleContent(container, formModel, context.onReload);
                 return true; // Stop flow
