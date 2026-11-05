@@ -4,7 +4,7 @@ The regional MCP endpoint is **https://mcp.vstupenky.online/mcp**. The old
 mcp.festapp.net host is retired with HTTP 410. The regional portal runs on
 Festapp; the future global Festapp Tickets connection is a separate product.
 
-This directory contains the public **draft package**, private-connection setup
+This directory contains the public **submission package**, private-connection setup
 and review evidence. A working private connection or ZIP is not directory
 approval. See [submission readiness](review/readiness.md) for actual gates.
 
@@ -72,14 +72,35 @@ chat before any event selection.
 historical evidence of the full operator profile, including hostile-note
 retrieval. The current public profile withholds that note instead.
 
-## Build the public draft ZIP
+## Build the review ZIP
 
-Run `python3 integrations/chatgpt/build-package.py /tmp/vstupenky-online-1.0.1.zip`
+Run `python3 integrations/chatgpt/build-package.py /tmp/vstupenky-online-1.0.2.zip`
 from the repository root. The deterministic archive contains only:
 
 - `plugin.json`
 - `mcp.json`
-- `assets/logo.png` (the owned regional ticket icon from the WordPress catalogue)
+- `assets/logo.png` and `assets/logo-dark.png` (canonical square listing logos)
+- `assets/composer-icon.png` and `assets/composer-icon-dark.png` (canonical compact ticket/V icons)
+
+All four images are exact copies of the corresponding masters under
+`assets/brand/vstupenky-online/`. The builder rejects image or color drift.
+The listing uses the complete signature; small composer icons use the symbol.
+Version 1.0.2 updates branding only; the reviewed connection, permissions,
+data profile and test cases are retained. The publisher email
+`info@festapp.net` was explicitly accepted by the owner on 2026-11-05.
+
+Version 1.0.2 is submitted for review with the canonical assets. The immutable
+1.0.1 ZIP remains historical. To recover the blocked app-version authorization,
+1.0.1 was returned to Draft before uploading and authorizing 1.0.2. Authentication
+is now Authorized and all six MCP tools scanned with zero findings.
+
+Before any later submission, complete the version's **Connect MCP server**
+authorization while it is still Draft. MCP-card **Reconnect** selects only the
+metadata-scanning account; it does not complete that separate version gate.
+Use the dedicated reviewer and only the two synthetic demo occasions.
+An approved update still needs an explicit publication action. See
+[current readiness](review/readiness.md) and the
+[dated receipt](review/update-2026-11-05.json) for exact hashes and portal state.
 
 It excludes this README, provisioning code, private policy files, credentials,
 SQL, SDK runner and evidence. No hooks, app references or speculative skills are

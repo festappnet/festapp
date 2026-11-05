@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "vstupenky-online",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Read selected vstupenky.online events, sales summaries and orders in ChatGPT.",
   "author": {
     "name": "Festapp",
@@ -38,10 +38,12 @@
           "Ukaž prodejní souhrn vybrané akce.",
           "Najdi objednávku podle jejího symbolu."
         ],
-        "brandColor": "#243858",
-        "brandColorDark": "#7CBDF3",
-        "composerIcon": "./assets/logo.png",
-        "logo": "./assets/logo.png"
+        "brandColor": "#19243B",
+        "brandColorDark": "#80BDF2",
+        "composerIcon": "./assets/composer-icon.png",
+        "composerIconDark": "./assets/composer-icon-dark.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png"
       },
       "review": {
         "test_cases": {
@@ -103,7 +105,7 @@
         "countries": [
           "CZ"
         ],
-        "release_notes": "Initial read-only vstupenky.online connector with selected-event consent, sales summaries and bounded order search/detail. Global Festapp Tickets is a separate product."
+        "release_notes": "Canonical vstupenky.online ticket/V branding: light and dark listing logos, compact composer icons and brand colors. Read-only selected-event consent, tools, data profile and permissions are unchanged."
       }
     }
   }

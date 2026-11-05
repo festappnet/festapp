@@ -1,6 +1,54 @@
 # vstupenky.online public review readiness
 
-## Actual state - 2026-10-27
+## Current state - 2026-11-05
+
+Public version **1.0.2 is In review / Not published**. The MCP configuration
+is **Configured**, authentication is **Authorized**, and the latest scan
+completed for all six tools with **zero findings**, including
+`festapp_orders_report`. The previous Authorization required / Needs attention
+state is resolved. Publication remains a separate action.
+
+This is public plugin `plugin_asdk_app_6ae002a14394819189521c68175a53d5`;
+the account's separate developer connector
+`plugin_asdk_app_6adfeebe85a88191b9d0ba9339e381d6` is not the submitted listing.
+See the [November 5 receipt](update-2026-11-05.json) for exact package hashes,
+version identifiers, runtime and portal verification.
+
+Version 1.0.2 contains the canonical October 29 ticket/V identity: full square
+listing logos, compact composer symbols, light and dark exports, and colors
+`#19243B` / `#80BDF2`. Descriptions, accepted publisher email, review cases,
+endpoint, read-only scopes and data profile are unchanged. The original 1.0.1
+artifact and historical receipt are retained.
+
+The [post-cutover hosted test](hosted-public-demo-evidence-post-cutover-2026-11-05.json)
+passed all 13 live checks on deployed source
+`2b80ebb92f8ae37515e65fdebadb8751a8109089`: ordinary dedicated-reviewer login,
+PKCE, exact event access, sales reports, order lookup, private-field exclusion,
+scope/write denials, refresh and immediate revocation. This is native SDK
+evidence, not a new conversational ChatGPT run. An independent critic approved
+the prepared 1.0.2 branding, metadata and package with no blocking findings.
+
+## Authorization recovery
+
+The portal has two distinct connections. **Reconnect** on the MCP card selects
+an account for metadata scans. The app-version authorization flag is completed
+through **Connect MCP server** on a **Draft** version. A working scanner token
+alone does not complete the app-version setup.
+
+The review screen did not expose the draft-only authorization action. To fix
+that state under the owner's instruction, version 1.0.1 was removed from the
+review queue, the approved 1.0.2 package was uploaded, and the real app-version
+OAuth flow was completed before resubmission. The dedicated reviewer consented
+only to demo occasions 1072614 and 1072615 with the existing two read scopes.
+The persisted version authorization flag became true; all six tools then
+completed scanning. No customer events or whole-organizer access were granted.
+
+One automated privacy-policy assessment was unavailable; the portal explicitly
+allowed submission for additional review. This is not an automated privacy
+approval and was not represented as one. Five positive and three negative
+cases, secure reviewer credentials, and Czechia-only availability were retained.
+
+## Historical submission - 2026-10-27
 
 Verified publisher Festapp; regional domain verification and dedicated-reviewer
 OAuth succeeded in the real portal. Draft
@@ -8,9 +56,9 @@ OAuth succeeded in the real portal. Draft
 no blocking findings; the two advisory metadata assessments are recorded below; after deployment a rescan confirmed the restricted order schema.
 Version 1.0.1 was uploaded and **submitted**. The portal list and version
 detail both show **In review**; publication is **Not published**. See
-[portal receipt](portal-status.json). Review is now pending with OpenAI.
+[portal receipt](portal-status.json). At that point, review was pending with OpenAI.
 
-## Deployed boundary
+### Original deployed boundary
 
 - MCP source: `bcacfc728a74cbd97b6afd6f007c8247116b90f2`; image
   `sha256:bdc4516832ee96af2ef232b99d861ab351ddc948c006c079cfd469836d610445`.
@@ -28,7 +76,7 @@ detail both show **In review**; publication is **Not published**. See
   `87468a4795855dd6eb9c7fac7f708536ac482cdf`, Pages `39c8bea7`.
   Three coherent production probes and current Czech privacy disclosure passed.
 
-## Evidence
+### Original evidence
 
 - 44 targeted remote/auth/wire and operation tests passed; modern and legacy
   text/structured output checks, arbitrary client IDs, private-field exclusion,
@@ -45,7 +93,7 @@ detail both show **In review**; publication is **Not published**. See
 - Two independent critics approved the restricted projection and configurable
   per-client architecture; final portal/package review precedes Submit.
 
-## Review package
+### Original review package
 
 Version 1.0.1, exact three-file ZIP allowlist (plugin.json, mcp.json, owned logo).
 No provisioning SQL, scripts, credentials or evidence is bundled. SHA256:
@@ -63,7 +111,7 @@ profile. The connector targets organizers, and the order fields carrying
 registration/document/buyer data are withheld. No automatic public publication
 is authorized merely by approval of review submission.
 
-## Final portal receipt
+### Original final portal receipt
 
 Version 1.0.1, current P5 withholding expectation, all five positive/three
 negative cases, Czechia scope, exact public video and secure current reviewer

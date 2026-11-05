@@ -1,0 +1,208 @@
+{
+  "preparedAt": "2026-11-05T03:41:16.260756+00:00",
+  "version": "1.0.2",
+  "state": "submitted_in_review",
+  "publicPluginId": "plugin_asdk_app_6ae002a14394819189521c68175a53d5",
+  "activeReview": {
+    "version": "1.0.2",
+    "versionId": "pluginrel_75d1f31522bc8191b0ae1cd3fd3e608c",
+    "status": "In review",
+    "published": false,
+    "estimatedCompletion": null,
+    "estimatedCompletionNote": "No ETA visible after resubmission."
+  },
+  "package": {
+    "file": "artifacts/vstupenky-online-1.0.2.zip",
+    "sha256": "b87b9dd26c22a9701191758d7f8535fce210cae2fb74d751ebd48819af4700c0",
+    "files": [
+      "plugin.json",
+      "mcp.json",
+      "assets/logo.png",
+      "assets/logo-dark.png",
+      "assets/composer-icon.png",
+      "assets/composer-icon-dark.png"
+    ]
+  },
+  "canonicalBrand": {
+    "source": "assets/brand/vstupenky-online",
+    "colors": {
+      "light": "#19243B",
+      "dark": "#80BDF2"
+    },
+    "listing": "square and square-dark masters",
+    "composer": "icon and icon-dark masters",
+    "allFourExportsByteIdentical": true
+  },
+  "unchanged": [
+    "publisher email info@festapp.net (owner accepted)",
+    "listing descriptions",
+    "MCP endpoint and OAuth configuration",
+    "read-only scopes and data profile",
+    "five positive and three negative review cases",
+    "CZ availability"
+  ],
+  "validation": {
+    "officialManifestSchema": "passed",
+    "schemaURL": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+    "canonicalImageDimensionsAndBytes": "passed",
+    "bothThemeColorContrastAtLeast2To1": "passed",
+    "deterministicArchive": "passed",
+    "exactSixFileAllowlistAndArchiveIntegrity": "passed",
+    "original101Sha256": "533a4652c42efc4bd3cdc0f17d1d1b95b132e574c96d3f29bd8ea249ee39fb76",
+    "original101Preserved": true
+  },
+  "liveFunctionalSmoke": {
+    "receipt": "hosted-public-demo-evidence-post-cutover-2026-11-05.json",
+    "actor": "dedicated synthetic reviewer",
+    "client": "festapp-chatgpt",
+    "dataProfile": "order-summary",
+    "checksPassed": 13,
+    "customerDataRead": false,
+    "businessWrites": false,
+    "boundary": "Real hosted SDK, not a new ChatGPT conversational acceptance run",
+    "executedAt": "2026-11-05T04:20:50.792Z",
+    "firstRunReceipt": "hosted-public-demo-evidence-2026-11-05-first.json",
+    "repeatReason": "Owner confirmed new MCP deployment; 13 checks rerun on new image."
+  },
+  "independentCritic": {
+    "date": "2026-11-05",
+    "result": "approved",
+    "blockingFindings": 0,
+    "scope": "local 1.0.2 branding, metadata, archive, unchanged configuration and historical artifact preservation",
+    "finalConsistencyReview": {
+      "result": "approved",
+      "blockingFindings": 0,
+      "scope": "Final readiness, README, receipt, screenshot and package hashes; current 1.0.2 In review / Not published state and resolved authorization accurately recorded."
+    }
+  },
+  "portalScan": {
+    "recoveryStatus": "resolved",
+    "authentication": "Authorized",
+    "mcpConfiguration": "Configured",
+    "needsAttention": false,
+    "appVersionId": "asdk_app_v_62c218a9fe708191b33537c6146b6689",
+    "oauthAuthorizedByVersion": true,
+    "scanTime": "2026-11-05T04:52:17Z",
+    "allSixToolsComplete": true,
+    "findings": 0,
+    "runtimeProblem": null,
+    "actor": "dedicated synthetic reviewer",
+    "selectedDemoOccasionIds": [
+      1072614,
+      1072615
+    ],
+    "organizerOrCustomerEventGrant": false,
+    "rootCause": "MCP-card Reconnect configured a separate scanner account; pending app-version authorization remained false. The real app-version authorization control was available only in Draft.",
+    "resolution": "Returned original review to Draft, uploaded validated 1.0.2 ZIP, completed Connect MCP server app-version OAuth, verified all six tools and resubmitted.",
+    "historicalAttempts": {
+      "initialOutcome": "failed authorization",
+      "initialMessage": "Authorization for scanning is missing or no longer works. Reconnect your account in the MCP card to resume scans.",
+      "recoveryStatus": "post_cutover_incomplete_authorization_required",
+      "isolatedReviewerBrowser": "Cloudflare human challenge; no bypass attempted; session closed",
+      "reconnected": true,
+      "scanActor": "signed-in owner; dedicated reviewer credentials unchanged",
+      "selectedDemoOccasionIds": [
+        1072614,
+        1072615
+      ],
+      "organizerOrCustomerEventGrant": false,
+      "consentLifetimeDays": 7,
+      "fiveToolsReviewedZeroFindings": [
+        "festapp_orders_list",
+        "festapp_orders_inspect",
+        "festapp_access_inspect",
+        "festapp_context_inspect",
+        "festapp_ticket_layouts_inspect"
+      ],
+      "unscannedTool": "festapp_orders_report",
+      "stateAfterReconnect": "Authorization required / Needs attention / Complete MCP setup",
+      "postDeploymentRescan": {
+        "reviewedAt": "2026-11-05T03:47:48Z",
+        "result": "Authorization required / Needs attention / Complete MCP setup",
+        "fiveToolFindings": 0,
+        "ordersReport": "Not scanned",
+        "specificErrorShown": false
+      },
+      "manualReconnectRequested": true,
+      "reviewPreserved": true,
+      "postCutoverRescan": {
+        "reviewedAt": "2026-11-05T04:21:46Z",
+        "runtimeSourceRevision": "2b80ebb92f8ae37515e65fdebadb8751a8109089",
+        "result": "Authorization required / Needs attention / Complete MCP setup",
+        "fiveToolFindings": 0,
+        "ordersReport": "Not scanned",
+        "specificErrorShown": false,
+        "reconnectOpenedPopup": false,
+        "newGrantsOrUploads": false
+      }
+    }
+  },
+  "nextAction": "Await OpenAI review for 1.0.2. No automatic publication is authorized. Keep dedicated reviewer demo available; use this receipt rather than historical 1.0.1 status.",
+  "liveRuntime": {
+    "observedAt": "2026-11-05T04:21:17.288027+00:00",
+    "image": "sha256:bae4268c82dd16041cd02d1f911eec84ea5d150ab037de1da57db0b43592e2bf",
+    "sourceRevision": "2b80ebb92f8ae37515e65fdebadb8751a8109089",
+    "containerStartedAt": "2026-11-05T04:15:29.433140636Z",
+    "status": "running",
+    "scope": "New deployed MCP image verified after owner-confirmed cutover."
+  },
+  "previousRuntimeChecks": [
+    {
+      "runtime": {
+        "observedAt": "2026-11-05T03:46:30Z",
+        "image": "sha256:bdd7f18b0d57a1929214fcf2b3839e65e38636cfeb33a79b26fb5d8d8d665bb3",
+        "sourceRevision": "f49623bf2d9e81067aab655702756e54c2e96bdd",
+        "containerStartedAt": "2026-11-05T03:45:55.999956147Z",
+        "status": "running",
+        "scope": "Current runtime only. A subsequent image/version cutover requires fresh acceptance."
+      },
+      "smoke": {
+        "receipt": "hosted-public-demo-evidence-2026-11-05.json",
+        "actor": "dedicated synthetic reviewer",
+        "client": "festapp-chatgpt",
+        "dataProfile": "order-summary",
+        "checksPassed": 13,
+        "customerDataRead": false,
+        "businessWrites": false,
+        "boundary": "Real hosted SDK, not a new ChatGPT conversational acceptance run",
+        "executedAt": "2026-11-05T03:46:22.085Z",
+        "firstRunReceipt": "hosted-public-demo-evidence-2026-11-05-first.json",
+        "repeatReason": "Owner reported a recent deployment and upcoming MCP version switch; reran all 13 live checks."
+      }
+    }
+  ],
+  "verifiedAt": "2026-11-05T04:55:16.843416+00:00",
+  "previousReview": {
+    "version": "1.0.1",
+    "action": "owner-authorized cancellation to return to Draft and repair blocked version authorization",
+    "cancelled": true,
+    "historicalPortalLabel": "REJECTED",
+    "reviewerRejectionObserved": false,
+    "originalEstimatedCompletion": "2026-11-07",
+    "originalEstimateNoLongerCurrent": true
+  },
+  "submission": {
+    "submitted": true,
+    "published": false,
+    "positiveCases": 5,
+    "negativeCases": 3,
+    "reviewerCredentialsPresent": true,
+    "countries": [
+      "CZ"
+    ],
+    "newLegalFactsInvented": false,
+    "metadataAdvisories": [
+      "Automated privacy-policy assessment unavailable; portal explicitly permitted additional review. Not claimed as an automated privacy approval."
+    ]
+  },
+  "portalScreenshot": {
+    "file": "review/portal-authorized-2026-11-05.png",
+    "sha256": "446323c746c02851725f7169c5910b619e26ee025cb7b362be25a82e510c25ba",
+    "scope": "Visual confirmation of displayed canonical logo, Authorized, Configured, In review, Not published and no MCP scan findings; alternate icon bytes validated in ZIP."
+  },
+  "browserCleanup": {
+    "taskTabsAndParticipantClosed": true,
+    "originalNeoSignedOutStateRestored": true,
+    "rawOAuthHARFilesRemoved": true
+  }
+}
