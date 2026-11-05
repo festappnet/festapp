@@ -134,13 +134,13 @@ REVOKE ALL ON FUNCTION public.presale_conversion_budgets_internal(jsonb,text,jso
 CREATE OR REPLACE FUNCTION public.convert_form_presale_content(
  p_form bigint,p_expected_version bigint,p_source_hash text,p_html text,p_conversion_id uuid
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE f public.forms%ROWTYPE; version_now bigint; saved public.form_presale_content_archive%ROWTYPE;
+DECLARE f public.forms%ROWTYPE; occasion_id bigint; version_now bigint; saved public.form_presale_content_archive%ROWTYPE;
  d jsonb; html_hash text; snapshot jsonb;
 BEGIN
- SELECT * INTO f FROM public.forms WHERE id=p_form;
- IF auth.uid() IS NULL OR NOT coalesce(public.can_author_forms(f.occasion),false) THEN
+ SELECT occasion INTO occasion_id FROM public.forms WHERE id=p_form;
+ IF auth.uid() IS NULL OR NOT coalesce(public.can_author_forms(occasion_id),false) THEN
   RAISE insufficient_privilege USING MESSAGE='form editor required'; END IF;
- PERFORM public.lock_blueprint_scope_internal(ARRAY[f.occasion]);
+ PERFORM public.lock_blueprint_scope_internal(ARRAY[occasion_id]);
  SELECT * INTO f FROM public.forms WHERE id=p_form FOR UPDATE;
  html_hash:=encode(extensions.digest(convert_to(p_html,'UTF8'),'sha256'),'hex');
  SELECT * INTO saved FROM public.form_presale_content_archive WHERE form=p_form;
