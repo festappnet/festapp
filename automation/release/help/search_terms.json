@@ -139,6 +139,24 @@
       "widget",
       "doplněk Wix",
       "instalace Wix"
+    ],
+    "ai-agents": [
+      "MCP",
+      "AI agent",
+      "umělá inteligence",
+      "ChatGPT",
+      "Codex",
+      "agentní přístup",
+      "připojení asistenta",
+      "automatizace formulářů"
+    ],
+    "mcp-reference": [
+      "MCP dokumentace",
+      "podporované nástroje",
+      "API reference",
+      "MCP možnosti",
+      "prompty",
+      "oprávnění agenta"
     ]
   },
   "en": {
@@ -263,6 +281,22 @@
       "Wix App Market",
       "widget",
       "install Wix app"
+    ],
+    "ai-agents": [
+      "MCP",
+      "AI agent",
+      "ChatGPT",
+      "Codex",
+      "assistant connection",
+      "form automation"
+    ],
+    "mcp-reference": [
+      "MCP documentation",
+      "supported tools",
+      "API reference",
+      "MCP capabilities",
+      "prompts",
+      "agent permissions"
     ]
   }
 }

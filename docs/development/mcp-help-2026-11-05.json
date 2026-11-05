@@ -1,0 +1,140 @@
+{
+  "date": "2026-11-05",
+  "scope": "New organizer help guide, no release or production business changes",
+  "sourceHead": "a31277e3c3d761ed37d6425a1f2a731584b92e8d",
+  "guide": {
+    "cs": "/napoveda/ai-agenti/",
+    "enPreview": "/napoveda/ai-agents/",
+    "shortPrompt": true,
+    "agentSetupPrompt": true,
+    "codexCommands": true,
+    "chatgptReadOnlyLimit": true,
+    "formExamples": 5,
+    "screenshots": "Two new real Czech production OAuth/sign-in screens; English uses pre-existing English local form editor."
+  },
+  "publicVerification": {
+    "health": "ok true",
+    "issuer": "https://mcp.vstupenky.online",
+    "resource": "https://mcp.vstupenky.online/mcp",
+    "oauthNativeStart": "Accepted PKCE request for festapp-codex and routed to actual tenant sign-in with form read/write requested. Does not establish issued scopes.",
+    "credentialsUsed": false,
+    "consentGranted": false,
+    "businessOperations": false,
+    "theme": "Actual website light-mode control, persisted preference and body.dark-mode absent; production bundle does not export ThemeService."
+  },
+  "contractReferences": [
+    "packages/festapp_contracts/mcp-permissions.mjs",
+    "tools/festapp/src/operations/forms.mjs",
+    "integrations/chatgpt/client-policy.json",
+    "tools/festapp/README.md"
+  ],
+  "externalSources": [
+    "https://learn.chatgpt.com/docs/extend/mcp",
+    "https://developers.openai.com/api/docs/guides/custom-mcp-server"
+  ],
+  "validation": {
+    "cliSyntax": "codex mcp add --help; codex mcp login --help",
+    "command": "node --test automation/tests/help_pages.test.mjs automation/tests/help_search.test.mjs",
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "initialFailure": "Renderer rejected the hash while connection screenshot was being recaptured. Final stable screenshot visually reviewed, manifest updated, batch passed.",
+    "staticPreview": "node automation/release/preview_help.mjs",
+    "browser": {
+      "result": "passed",
+      "url": "file:///.private/help-preview/cs/napoveda/ai-agenti/index.html (absolute workspace path used)",
+      "viewports": [
+        "desktop",
+        "390px mobile"
+      ],
+      "oneH1": true,
+      "horizontalOverflow": false,
+      "allImagesLoaded": 5,
+      "mcpSearchFirstResult": "ai-agents",
+      "aiSearchFindsGuide": true,
+      "promptAnchorNavigation": true,
+      "clipboardDeniedFallback": "text selected with localized Ctrl+C/⌘C instruction",
+      "isolatedSessionClosed": true
+    },
+    "followup": "Browser found absolute brand-logo src values breaking file:// preview. Preview generator now inlines both SVGs. Regenerated CS/EN, browser confirmed all images loaded; affected help_pages tests reran 2/2 passed. Search remained unchanged after its passing batch."
+  },
+  "unverified": [
+    "Authenticated production consent/token exchange/tool invocation in this run.",
+    "Production form save and persisted readback.",
+    "Public ChatGPT directory availability."
+  ],
+  "sha256": {
+    "automation/release/help/ai-agenti.html": "790dfe7caaea251e6bce5bed54f48e52f2c3f3df36c9a39ab3c9232cc2c3ad22",
+    "automation/release/help/en/ai-agents.html": "92191fb143a9f221140f5247b17b92648f94cdb2edd073c537c1fa307a5e2b4e",
+    "automation/release/help/media/cs/ai-agenti/pripojeni.png": "3980c7c913bca6d460aa80164cd33427855f501e61c4b2fa3bef3e4a6b77f5c1",
+    "automation/release/help/media/cs/ai-agenti/prihlaseni.png": "209207ce4bb2281d2bd858fcef97b3d4a232d983a73e75553bfc687402075aa0"
+  },
+  "generatedReference": {
+    "cs": "/napoveda/mcp-podporovane-operace/",
+    "enPreview": "/napoveda/mcp-supported-operations/",
+    "tools": 193,
+    "functionalPermissions": 83,
+    "examples": 29,
+    "generator": "pnpm --dir tools/festapp run docs:generate",
+    "freshnessCheck": "pnpm --dir tools/festapp run docs:check; help renderer verifies source digest",
+    "sources": [
+      "Operations.catalog",
+      "Zod input JSON Schema",
+      "packages/festapp_contracts/mcp-permissions.mjs",
+      "assets/translations/{cs,en}.json:McpConnection",
+      "integrations/chatgpt/client-policy.json"
+    ],
+    "publicSummaryProjection": "Generated through the same Operations catalog and clientAllowsScopes; separate public input schemas retained.",
+    "manualContent": "Prompt wording is editorial; operation references, tool links, scopes including dependencies, and public-client eligibility are derived and validated.",
+    "verification": {
+      "operatorDocumentationTests": {
+        "passed": 2,
+        "failed": 0
+      },
+      "helpPagesAndSearchTests": {
+        "passed": 5,
+        "failed": 0
+      },
+      "staticPreviews": "CS and EN rendered successfully",
+      "browser": {
+        "result": "passed",
+        "cs": [
+          "desktop and 390px: one H1, no horizontal overflow",
+          "technical name search finds the reference first",
+          "prompt links open the matching permission group and tool anchor",
+          "tool input JSON Schema expands",
+          "copy click succeeds; clipboard contents not independently verified",
+          "JSON catalog points to existing local assets/mcp-reference.json"
+        ],
+        "en": [
+          "lang=en, English H1 and prompts, no Czech content fallback",
+          "no horizontal overflow"
+        ],
+        "sessionClosed": true
+      },
+      "followup": "Fixed pre-existing undefined English branding in the help renderer and added a title assertion; documentation and help-page checks passed on updated inputs.",
+      "fullFunctionalAudit": {
+        "command": "pnpm --dir tools/festapp test",
+        "runtime": "Node 24; pnpm 11.24.0",
+        "database": "marker-verified loopback; cron off; email paused and external worker URL null",
+        "tests": 349,
+        "passed": 349,
+        "failed": 0,
+        "skipped": 0,
+        "allProductionFunctionsVerified": false,
+        "receipt": "mcp-clean-acceptance-2026-11-05.json"
+      },
+      "historicalFunctionalAudit": {
+        "tests": 346,
+        "passed": 316,
+        "failed": 30,
+        "skipped": 0,
+        "allFunctionsVerified": false
+      },
+      "realLocalAcceptance": "Actual Auth/Edge/OAuth/MCP/SQL, native form save/replay/readback, timezone context, scope/revocation and cleanup passed."
+    },
+    "deployment": false
+  },
+  "claimAudit": "mcp-help-claim-audit-2026-11-05.json",
+  "cleanAcceptance": "mcp-clean-acceptance-2026-11-05.json"
+}

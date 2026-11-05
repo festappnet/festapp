@@ -1,12 +1,13 @@
-# Festapp operator - MCP ticket artwork
+# Festapp operator - MCP
 
 This private Node package exposes the same fixed operations through a diagnostic
 CLI and the official MCP SDK's stdio transport. SQL remains the domain owner;
 `preview-ticket-layout` remains the only ticket renderer. Every profile starts
 with inspection/preview and enables artwork commands only after an authenticated
 backend contract check. The optional hosted OAuth pilot is described below;
-it is prepared separately from the local stdio release. No arbitrary SQL/shell
-tools or Blueprint V2 are exposed.
+it is prepared separately from the local stdio release. The operator catalog includes forms, orders, seating and other administration
+operations according to delegated permissions. No arbitrary SQL or shell tool is
+exposed. The public ChatGPT summary client remains limited to its read scopes.
 
 The E0 surface is:
 
@@ -348,3 +349,48 @@ OAuth scope cannot upgrade this server-owned profile. A private client selecting
 live backend permissions. Existing native/operator clients retain their current
 profile and operations; this is not a system-wide MCP redaction. Event labels,
 aggregate reports and template configuration remain organizer-authored content.
+
+## Generated public MCP reference
+
+The organizer help links to `/napoveda/mcp-podporovane-operace/` (English preview:
+`/napoveda/mcp-supported-operations/`). Its tool catalog and downloadable
+`assets/mcp-reference.json` are generated from `Operations.catalog`, Zod input
+schemas, the shared permission contract, consent translations and the checked-in
+public ChatGPT client policy. No session, backend call or tool invocation is used.
+The full operator implementation and the public summary projection are distinct;
+the snapshot does not establish deployment or live grants.
+
+```sh
+pnpm --dir tools/festapp run docs:generate
+pnpm --dir tools/festapp run docs:check
+```
+
+`automation/release/help/mcp-reference.json` is generated; do not edit it manually.
+Help rendering checks its source digest without requiring operator dependencies.
+`test/documentation.test.mjs` checks exact regeneration as part of the normal
+operator test suite. A new tool, permission, input schema, client policy or consent
+translation therefore requires regeneration before help can build.
+
+Editorial CS/EN prompt examples live in `automation/release/help/mcp-prompts.json`.
+Each references actual operation IDs; required scopes, tool links and public
+ChatGPT eligibility are derived during help rendering. Unknown operations fail
+the build. Add examples there rather than maintaining another capability list.
+
+
+## Reproducible local functional acceptance
+
+Use Node 24 and explicit `FESTAPP_AUTHORIZATION_DATABASE_URL` and
+`FESTAPP_MCP_TEST_DATABASE_URL` values for the marker-verified loopback fixture.
+The marked disposable database must be migrated through the latest repository
+migration before tests start. The shared `assertSchema` guard rejects a stale
+schema; fixture transactions insert synthetic data and never install application
+SQL. Use the canonical local database bootstrap/migration workflow rather than
+patching missing routines or changing migration ledger entries by hand.
+
+`test/local/pilot.e2e.mjs` uses that same schema guard and actual local Auth, Edge,
+OAuth and MCP. Besides the public summary client, its separate native operator
+connection exercises form inspection, a versioned metadata/schedule save,
+identical-command replay, persisted readback, a non-default event time zone,
+the saved public link, scope denial and independent connection revocation.
+This uses synthetic task data with cron and external email disabled. It does not
+establish public ChatGPT acceptance or authorize production changes.

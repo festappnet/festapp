@@ -89,6 +89,7 @@ test('public guides render crawlable linked documents, code generator without un
  for(const page of englishPages){
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
   assert.match(html,/<html lang="en">/);
+  assert.doesNotMatch(html,/<title>[^<]*undefined/);
   if(page.id==='fio-token') assert.match(html,/www\.youtube-nocookie\.com\/embed\/px9MCABSQbI/);assert.match(html,/noindex,nofollow/);
   assert.doesNotMatch(html,/\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English preview has no Czech chrome or screenshot fallback');
   if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing localized screenshot: ${page.id}`);

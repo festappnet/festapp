@@ -18,6 +18,7 @@ for (const page of fs.readdirSync(target, {recursive:true}).filter(file => file.
     return `<style>${css}</style>`;
   }).replace(/<script src="\/napoveda\/assets\/([^"]+)" defer><\/script>/g, (_,name) => `<script>document.addEventListener('DOMContentLoaded',()=>{${fs.readFileSync(path.join(target,'assets',name),'utf8').replace(/<\/script/g,'<\\/script')}},{once:true});</script>`)
     .replace(/src="\/napoveda\/assets\/([^"]+\.(png|jpg|webp))"/g, (_,name,extension) => `src="${data(path.join(target,'assets',name),'image/'+(extension === 'jpg' ? 'jpeg' : extension))}"`)
+    .replace(/src="\/(brand-logo(?:-light)?\.svg)"/g, (_,name) => `src="${data(path.join(root,'web_client/public',name),'image/svg+xml')}"`)
     .replace(/href="(\/[^\"]*)"/g, (_,href) => {
       if (!href.startsWith('/napoveda/')) return `href="https://vstupenky.online${href}"`;
       const [relative,hash] = href.slice('/napoveda/'.length).split('#');

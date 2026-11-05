@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {articleSections} from './help/search_index.mjs';
+import {readMcpReference,renderMcpReference,renderMcpPrompts} from './help/mcp_reference.mjs';
 import {renderSiteShell, publicThemeHead, publicThemeBody} from './organizers/site_shell.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -25,13 +26,16 @@ const source = locale === 'cs' ? directory : path.join(directory, 'en');
 const pages = JSON.parse(fs.readFileSync(path.join(directory, locale === 'cs' ? 'pages.json' : 'pages.en.json'), 'utf8'));
 const ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui.json'), 'utf8'))[locale];
 const site = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers', locale === 'cs' ? 'content.json' : 'content.en.json'), 'utf8')).publicProjection;
-const brand = locale === 'cs' ? (value('APP_NAME') || site.seo.siteName) : site.seo.siteName;
+const brand = locale === 'cs' ? (value('APP_NAME') || 'vstupenky.online') : 'Festapp Tickets';
 const origin = new URL(value('WEB_LINK')).origin;
 const helpRoot = '/napoveda/';
 const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const digest = data => createHash('sha256').update(data).digest('hex').slice(0,12);
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const assets = {};
+const mcpReference = readMcpReference(root);
+const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
+assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
 const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id));
 const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
 const previewImages = new Map();
@@ -119,6 +123,8 @@ const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
     .replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
+    .replace('{{MCP_REFERENCE}}', () => renderMcpReference(mcpReference,locale))
+    .replace('{{MCP_PROMPTS}}', () => renderMcpPrompts(mcpReference,mcpPrompts,locale))
     .replace(/\{\{PREVIEW:([a-z0-9/-]+)\}\}/g, (_,id) => previewImage(id))
     .replace(/\{\{VIDEO:([a-z-]+)\}\}/g, (_,id) => videoLink(id))
     .replace(/\{\{APP_LINK:([a-z-]+)\}\}/g, (_,intent) => appLink(intent))

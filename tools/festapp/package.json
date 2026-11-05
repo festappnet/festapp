@@ -11,7 +11,9 @@
     "festapp": "src/cli/main.mjs"
   },
   "scripts": {
-    "test": "node --test --test-concurrency=1 test/*.test.mjs"
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "docs:generate": "node scripts/generate-reference.mjs",
+    "docs:check": "node scripts/generate-reference.mjs --check"
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.11",

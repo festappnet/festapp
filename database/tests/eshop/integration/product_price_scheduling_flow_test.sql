@@ -89,7 +89,7 @@ BEGIN
       'secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_1_id),
       'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_1_id,'price',1000)));
     v_result := public.create_ticket_order(v_input_data);
-    PERFORM assert_eq((v_result->>'code')::int,200,'Order before scheduled change');
+    PERFORM assert_eq((v_result->>'code')::int,200,'Order before scheduled change: '||v_result::text);
     v_order_id := (v_result->'order'->>'id')::bigint;
     INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion)
       VALUES('products.price',v_product_deposit_id,'1200',now()-interval '1 minute',v_occasion_id);
