@@ -263,13 +263,13 @@ test('marketing streams stay online and do not consume the application offline b
 });
 
 test('public help and plugin downloads do not enter the installed app cache', () => {
-  for (const file of ['napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
+  for (const file of ['co-je-nove/_assets/runtime/landing.js','co-je-nove/_assets/brand-symbol.svg','napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
 });
 
 test('brand and startup symbols install with the shell for an offline cold start', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-brand-cache-'));
   const assets = ['loading-logo.svg', 'loading-animation.svg', 'loading-animation-light.svg',
-    'brand-logo.svg', 'brand-logo-light.svg'];
+    'brand-logo.svg', 'brand-logo-light.svg', 'brand-symbol.svg', 'brand-wordmark.svg', 'brand-wordmark-stacked.svg'];
   try {
     for (const name of ['flutter', 'webclient', 'main.dart.js', ...assets]) {
       await writeFile(path.join(root, name), name);

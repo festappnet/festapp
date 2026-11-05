@@ -22,6 +22,11 @@ test('built help owns its complete runtime outside the installed app cache', t=>
  const run=spawnSync(process.execPath,['automation/release/render_help_pages.mjs','--config',path.join(temp,'project.conf'),'--output',out,'--built-index',path.join(dist,'index.html')],{encoding:'utf8'});
  assert.equal(run.status,0,run.stderr);
  const html=fs.readFileSync(path.join(out,'index.html'),'utf8');
+ assert.match(html,/data-brand-asset-base="\/napoveda\/assets\/"/);
+ assert.doesNotMatch(html,/src="\/brand-/,'Fallback header/footer must not wait for an app version report');
+ for(const name of ['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg'])
+  assert.deepEqual(fs.readFileSync(path.join(out,'assets',name)),fs.readFileSync(path.join('web_client/public',name)),name+' must be the canonical tenant artwork');
+
  assert.match(html,/src="\/napoveda\/assets\/runtime\/help.js"/);
  assert.match(html,/href="\/napoveda\/assets\/runtime\/theme.css"/);
  // Exercise the actual generated pre-paint scripts, without loading the module runtime.

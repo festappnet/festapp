@@ -1,3 +1,4 @@
+import {publicRuntime} from './organizers/public_runtime.mjs';
 import { helpActionWebPath } from '../../web_client/src/services/help_action_routes.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,7 +33,8 @@ const helpRoot = '/napoveda/';
 const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const digest = data => createHash('sha256').update(data).digest('hex').slice(0,12);
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
-const assets = {};
+const runtime=publicRuntime(root,{builtIndex:arg('--built-index'),entry:'src/marketing/help.js',assetRoot:helpRoot+'assets/'});
+const assets = {...runtime.assets};
 const mcpReference = readMcpReference(root);
 const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
 assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
@@ -85,33 +87,9 @@ const appLink = intent => {
 };
 const searchIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
 const searchChrome = `<div class="help-toolbar"><div class="help-toolbar-inner"><a href="${helpRoot}" class="help-toolbar-home">${escape(ui.organizerHelp)}</a><button type="button" class="help-search-trigger" data-search-open aria-haspopup="dialog" aria-controls="help-search-dialog" hidden>${searchIcon}<span>${escape(ui.searchTrigger)}</span><kbd data-search-shortcut>Ctrl K</kbd></button></div></div><dialog id="help-search-dialog" class="help-search-dialog" aria-labelledby="help-search-title"><div class="help-search-top"><h2 id="help-search-title">${escape(ui.searchLabel)}</h2><button type="button" data-search-close aria-label="${escape(ui.searchClose)}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><form class="help-search" data-help-search role="search" action="${helpRoot}" method="get"><div class="help-search-fields">${searchIcon}<input id="help-query" name="q" aria-label="${escape(ui.searchLabel)}" type="search" maxlength="200" placeholder="${escape(ui.searchPlaceholder)}" autocomplete="off" autofocus><button type="button" data-search-clear hidden>${escape(ui.searchClear)}</button></div><div class="help-search-options"><label for="help-category">${escape(ui.searchCategory)}</label><select id="help-category" name="category"><option value="">${escape(ui.searchAll)}</option>${categoryPages.map(category => `<option value="${category.category}">${escape(category.label)}</option>`).join('')}</select></div></form><div class="help-search-body"><div data-search-intro><h3>${escape(ui.searchIntro)}</h3><p>${escape(ui.searchHint)}</p></div><section data-search-results aria-label="${escape(ui.searchTitle)}"><p role="status" aria-live="polite" aria-atomic="true"></p><ol></ol></section></div><div class="help-search-footer"><span><kbd>↓</kbd> ${escape(ui.searchKeyboard)}</span><span><kbd>Esc</kbd> ${escape(ui.searchClose)}</span></div></dialog><a data-help-base href="${helpRoot}" hidden></a>`;
-let accountScript = '', themeLinks = '';
-if (arg('--built-index')) {
-  const builtIndex = path.resolve(arg('--built-index'));
-  const manifest = JSON.parse(fs.readFileSync(path.join(path.dirname(builtIndex),'.vite/manifest.json'),'utf8'));
-  const entry = manifest['src/marketing/help.js'];
-  if (!entry?.file) throw new Error('Built help needs the Vite help entry');
-  // The installed app worker intentionally never pins /napoveda/assets/.
-  // Publish the same built graph under that public owner so existing workers
-  // can load help without an app-version report or forced PWA update.
-  const dist = path.dirname(builtIndex);
-  const runtimeRoot = helpRoot + 'assets/runtime/';
-  const relocate = text => text.replaceAll('web-assets/', runtimeRoot.slice(1))
-    .replaceAll('/assets/translations/', helpRoot + 'assets/translations/');
-  for (const file of fs.readdirSync(path.join(dist,'web-assets'),{recursive:true})) {
-    const full = path.join(dist,'web-assets',file);
-    if (!fs.statSync(full).isFile()) continue;
-    assets['runtime/' + file] = /\.(?:m?js|css)$/.test(file)
-      ? relocate(fs.readFileSync(full,'utf8')) : fs.readFileSync(full);
-  }
-  const translations = path.join(dist,'assets/translations');
-  for (const file of fs.readdirSync(translations)) {
-    if (file.endsWith('.json')) assets['translations/' + file] = fs.readFileSync(path.join(translations,file));
-  }
-  accountScript = `<script type="module" data-help-runtime src="${escape(relocate('/' + entry.file))}"></script>`;
-  themeLinks = (fs.readFileSync(builtIndex,'utf8').match(/<link[^>]*rel="stylesheet"[^>]*>/g) || []).filter(tag => /href="\/web-assets\/[^\"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).map(relocate).join('');
-}
-const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:helpRoot,helpLabel:ui.help,accountHeader:!!accountScript});
+const accountScript=runtime.entryUrl?`<script type="module" data-help-runtime src="${runtime.entryUrl}"></script>`:'';
+const themeLinks=runtime.themeLinks;
+const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:helpRoot,helpLabel:ui.help,accountHeader:!!accountScript,brandAssetBase:helpRoot+'assets/'});
 const videos = JSON.parse(read('videos.json'));
 const videoLink = id => {
   const video = videos[id]?.[locale];

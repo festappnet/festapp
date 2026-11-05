@@ -144,10 +144,12 @@ export class UserHeader extends HTMLElement {
         const container = document.createElement('div');
         container.className = 'user-header-container';
 
+        // Public help owns its branding outside version-pinned app resources.
+        const brandAssetBase = this.getAttribute('brand-asset-base') || '/';
         // Logo
         const ticketBrand = new URL(AppConfig.webLink).hostname === 'vstupenky.online';
         const logo = document.createElement('img');
-        logo.src = '/brand-logo.svg';
+        logo.src = brandAssetBase + 'brand-logo.svg';
         logo.alt = AppConfig.appName;
         logo.className = 'header-logo';
         logo.width = 240;
@@ -163,11 +165,11 @@ export class UserHeader extends HTMLElement {
             brand.className = 'header-brand-lockup';
             const symbol = document.createElement('img');
             symbol.className = 'header-brand-symbol';
-            symbol.src = '/brand-symbol.svg';
+            symbol.src = brandAssetBase + 'brand-symbol.svg';
             symbol.alt = '';
             symbol.width = 64;
             symbol.height = 44;
-            logo.src = '/brand-wordmark.svg';
+            logo.src = brandAssetBase + 'brand-wordmark.svg';
             logo.classList.add('header-brand-wordmark');
             logo.width = 240;
             logo.height = 28;
@@ -175,7 +177,7 @@ export class UserHeader extends HTMLElement {
             wordmark.className = 'header-brand-lettering';
             const stacked = document.createElement('source');
             stacked.media = '(max-width: 1100px)';
-            stacked.srcset = '/brand-wordmark-stacked.svg';
+            stacked.srcset = brandAssetBase + 'brand-wordmark-stacked.svg';
             wordmark.append(stacked, logo);
             brand.append(symbol, wordmark);
             homeLink.appendChild(brand);

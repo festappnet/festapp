@@ -12,7 +12,7 @@ export function expandSiteShell(template) {
     .replace('{{SITE_FOOTER}}', read('site-footer.html'));
 }
 
-export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false, platformUpdatesPath = null}) {
+export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, accountHeader = false, platformUpdatesPath = null, brandAssetBase = '/'}) {
   const content = JSON.parse(read(locale === 'cs' ? 'content.json' : `content.${locale}.json`)).publicProjection;
   const tokens = {APP_NAME: brand, CONTACT_EMAIL: contact, PROVIDER_NAME: content.provider?.name ?? 'Michael Bujnovský',
     CTA_HREF: content.cta.href, EVENT_DIRECTORY_HREF: locale === 'cs' ? 'https://plesy.vstupenky.online' : '/events'};
@@ -27,8 +27,10 @@ export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, ac
       return tokens[nested];
     }));
   });
-  const header = render(read('site-header.html'));
-  return {header: accountHeader ? header : header.replace(' auth-pending', ''), footer: render(read('site-footer.html'))};
+  const brandAssets = html => html.replace(/src="\/(brand-logo(?:-light)?\.svg)"/g, (_, name) => `src="${escape(brandAssetBase + name)}"`);
+  let header = brandAssets(render(read('site-header.html')));
+  if (brandAssetBase !== '/') header = header.replace('>', ` data-brand-asset-base="${escape(brandAssetBase)}">`);
+  return {header: accountHeader ? header : header.replace(' auth-pending', ''), footer: brandAssets(render(read('site-footer.html')))};
 }
 
 // Resolve the shared preference before stylesheets or page content can paint.

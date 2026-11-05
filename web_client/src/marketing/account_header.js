@@ -22,6 +22,7 @@ export async function initAccountHeader() {
         if (!RightsService.context) throw new Error('Account context unavailable');
         const header = document.createElement('user-header');
         header.setAttribute('data-marketing', '');
+        if (fallback?.dataset.brandAssetBase) header.setAttribute('brand-asset-base', fallback.dataset.brandAssetBase);
         fallback?.replaceWith(header);
     } catch (error) {
         fallback?.classList.remove('auth-pending');

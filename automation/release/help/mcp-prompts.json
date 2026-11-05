@@ -7,11 +7,11 @@
     ],
     "cs": {
       "title": "Souhrn prodeje",
-      "prompt": "Jak se prodávají vstupenky na Slavnostní ples U Lípy? Ukaž počet platných vstupenek, čekací listinu, hodnotu objednávek a kolik peněz už přišlo. Částky rozděl podle měny."
+      "prompt": "Ukaž prodej Slavnostního plesu U Lípy: platné vstupenky, čekací listinu, hodnotu objednávek a přijaté platby."
     },
     "en": {
       "title": "Sales summary",
-      "prompt": "How are ticket sales going for Linden Hall Ball? Show valid tickets, the waiting list, order value and payments received. Keep currencies separate."
+      "prompt": "Show Linden Hall Ball sales: valid tickets, waiting list, order value and payments received."
     }
   },
   {
@@ -22,11 +22,11 @@
     ],
     "cs": {
       "title": "Neuhrazené objednávky",
-      "prompt": "Vypiš všechny neuhrazené objednávky na Slavnostní ples U Lípy, jejich symboly a dlužné částky. Pokud je seznam neúplný, řekni mi, která část chybí."
+      "prompt": "Vypiš všechny neuhrazené objednávky Slavnostního plesu U Lípy se symboly a dlužnými částkami."
     },
     "en": {
       "title": "Unpaid orders",
-      "prompt": "List all unpaid orders for Linden Hall Ball, with their symbols and outstanding amounts. If the list is incomplete, tell me what is missing."
+      "prompt": "List all unpaid Linden Hall Ball orders with their symbols and outstanding amounts."
     }
   },
   {
@@ -38,11 +38,11 @@
     ],
     "cs": {
       "title": "Kontrola konkrétní objednávky",
-      "prompt": "Najdi na Slavnostním plese U Lípy objednávku podle symbolu, který ti pošlu, a ukaž její stav, počet vstupenek a platby."
+      "prompt": "Podle symbolu objednávky Slavnostního plesu U Lípy ukaž její stav, vstupenky a platby. Symbol pošlu."
     },
     "en": {
       "title": "Check an order",
-      "prompt": "Find the Linden Hall Ball order using the symbol I send you. Show its state, ticket count and payments."
+      "prompt": "Show the state, tickets and payments for a Linden Hall Ball order. I’ll send its symbol."
     }
   },
   {
@@ -55,11 +55,11 @@
     ],
     "cs": {
       "title": "Kontrola prodejního formuláře",
-      "prompt": "Zkontroluj prodejní formulář Slavnostního plesu U Lípy. Shrň povinné údaje, nabídku vstupenek, kapacitu a rozvrh prodeje. Upozorni, co ještě musím doplnit. Zatím nic neměň."
+      "prompt": "Zkontroluj formulář Slavnostního plesu U Lípy: povinné údaje, vstupenky, kapacitu a rozvrh prodeje. Co chybí?"
     },
     "en": {
       "title": "Check the sales form",
-      "prompt": "Check the Linden Hall Ball sales form. Summarize required information, ticket choices, capacity and sales schedule. Tell me what still needs attention. Do not change anything yet."
+      "prompt": "Check the Linden Hall Ball form: required fields, tickets, capacity and sales schedule. What’s missing?"
     }
   },
   {
@@ -72,11 +72,11 @@
     ],
     "cs": {
       "title": "Úprava formuláře po schválení",
-      "prompt": "U prodejního formuláře Slavnostního plesu U Lípy navrhni kratší úvod a nastav telefon jako nepovinný. Nejdřív mi ukaž návrh a počkej na schválení."
+      "prompt": "U formuláře Slavnostního plesu U Lípy navrhni kratší úvod a nepovinný telefon. Ukaž návrh ke schválení."
     },
     "en": {
       "title": "Edit a form after approval",
-      "prompt": "Suggest a shorter introduction for the Linden Hall Ball sales form and make the phone number optional. Show me the proposal and wait for approval first."
+      "prompt": "Propose a shorter introduction and optional phone field for the Linden Hall Ball form. Show me for approval."
     }
   },
   {
@@ -90,13 +90,11 @@
     ],
     "cs": {
       "title": "Nastavit rozvrh prodeje",
-      "prompt": "U Slavnostního plesu U Lípy nastav začátek prodeje na 15. ledna 2027 v 18:00 a konec na 20. února 2027 ve 12:00. Použij časové nastavení akce. Před uložením mi ukaž návrh a počkej na schválení.",
-      "note": "Asistent má vycházet z časového pásma nastaveného u akce. Pokud je připojení nedokáže určit, musí si je před uložením upřesnit; nemá je odhadovat z jazyka nebo zařízení."
+      "prompt": "Prodej na Slavnostní ples U Lípy: od 15. 1. 2027 v 18:00 do 20. 2. 2027 ve 12:00. Připrav ke schválení."
     },
     "en": {
       "title": "Schedule ticket sales",
-      "prompt": "Set sales for Linden Hall Ball to start on January 15, 2027 at 18:00 and end on February 20, 2027 at 12:00. Use the event’s time settings. Show the proposal and wait for approval before saving.",
-      "note": "The assistant should use the event’s configured time zone. If the connection cannot determine it, clarify before saving; do not infer it from language or device settings."
+      "prompt": "Prepare sales for Linden Hall Ball from January 15, 2027 at 18:00 to February 20, 2027 at 12:00 for approval."
     }
   },
   {
@@ -107,11 +105,11 @@
     ],
     "cs": {
       "title": "Nabídka, ceny a kapacity",
-      "prompt": "Ukaž nabídku vstupenek na Slavnostní ples U Lípy, jejich ceny a nastavené limity."
+      "prompt": "Ukaž vstupenky, ceny a limity Slavnostního plesu U Lípy."
     },
     "en": {
       "title": "Products, prices and limits",
-      "prompt": "Show the ticket choices for Linden Hall Ball, their prices and configured limits."
+      "prompt": "Show Linden Hall Ball tickets, prices and limits."
     }
   },
   {
@@ -123,11 +121,11 @@
     ],
     "cs": {
       "title": "Změna ceny vstupenky",
-      "prompt": "U Slavnostního plesu U Lípy změň cenu produktu „Vstupenka s místenkou“ na 350 Kč. Před uložením mi ukaž současnou a novou cenu a počkej na schválení."
+      "prompt": "Navrhni cenu 350 Kč pro „Vstupenku s místenkou“ na Slavnostní ples U Lípy. Ukaž změnu ke schválení."
     },
     "en": {
       "title": "Change a ticket price",
-      "prompt": "Change the price of “Reserved-seat ticket” for Linden Hall Ball to CZK 350. Show the current and proposed price and wait for approval before saving."
+      "prompt": "Propose a price of CZK 350 for the Linden Hall Ball “Reserved-seat ticket”. Show the change for approval."
     }
   },
   {
@@ -140,11 +138,11 @@
     ],
     "cs": {
       "title": "Přehled plánku a míst",
-      "prompt": "Prohlédni plánek Slavnostního plesu U Lípy a shrň stav jednotlivých míst. Nic nerezervuj ani neuvolňuj."
+      "prompt": "Ukaž stav míst v plánku Slavnostního plesu U Lípy."
     },
     "en": {
       "title": "Inspect seating",
-      "prompt": "Inspect the Linden Hall Ball seating plan and summarize the seat states. Do not reserve or release anything."
+      "prompt": "Show seat states in the Linden Hall Ball seating plan."
     }
   },
   {
@@ -157,11 +155,11 @@
     ],
     "cs": {
       "title": "Připravit blokaci míst",
-      "prompt": "Na Slavnostním plese U Lípy potřebuji zablokovat dvě místa pro techniku. Nech mě vybrat konkrétní místa a před provedením ukaž, kterých míst se blokace dotkne. Počkej na schválení."
+      "prompt": "Pomoz mi vybrat dvě místa pro techniku na Slavnostním plese U Lípy. Blokaci připrav ke schválení."
     },
     "en": {
       "title": "Block seats for equipment",
-      "prompt": "I need to block two seats for equipment at Linden Hall Ball. Let me choose the seats, show every affected seat and wait for approval before applying the block."
+      "prompt": "Help me choose two equipment seats at Linden Hall Ball. Prepare the block for approval."
     }
   },
   {
@@ -173,12 +171,12 @@
     ],
     "cs": {
       "title": "Náhled vzhledu vstupenky",
-      "prompt": "Ukaž mi náhled současné vstupenky Slavnostního plesu U Lípy s ukázkovými údaji. Vzhled neukládej a nikomu nic neposílej.",
+      "prompt": "Ukaž náhled vstupenky Slavnostního plesu U Lípy s ukázkovými údaji.",
       "note": "Vygenerování náhledu čerpá kvótu náhledů."
     },
     "en": {
       "title": "Preview ticket artwork",
-      "prompt": "Show a preview of the current Linden Hall Ball ticket using sample data. Do not save the artwork or send anything.",
+      "prompt": "Preview the Linden Hall Ball ticket with sample data.",
       "note": "Rendering a preview consumes preview quota."
     }
   },
@@ -192,11 +190,11 @@
     ],
     "cs": {
       "title": "Storno objednávky",
-      "prompt": "Na Slavnostním plese U Lípy chci stornovat objednávku podle symbolu, který ti pošlu. Zkontroluj ji, ukaž dopad storna a počkej na moje schválení."
+      "prompt": "Připrav storno objednávky Slavnostního plesu U Lípy ke schválení, včetně dopadů. Symbol objednávky pošlu."
     },
     "en": {
       "title": "Cancel an order",
-      "prompt": "I want to cancel a Linden Hall Ball order using the symbol I send you. Inspect it, show the impact of cancellation and wait for approval."
+      "prompt": "Prepare a Linden Hall Ball order cancellation for approval, including its impact. I’ll send the order symbol."
     }
   },
   {
@@ -209,11 +207,11 @@
     ],
     "cs": {
       "title": "Zaevidovat hotovostní platbu",
-      "prompt": "U objednávky na Slavnostní ples U Lípy chci zaevidovat hotovostní platbu. Pošlu ti symbol objednávky a skutečně přijatou částku. Zkontroluj objednávku a před zápisem mi ukaž návrh ke schválení."
+      "prompt": "Připrav zápis hotovostní platby k objednávce Slavnostního plesu U Lípy ke schválení. Pošlu symbol a přijatou částku."
     },
     "en": {
       "title": "Record cash received",
-      "prompt": "I want to record a cash payment for a Linden Hall Ball order. I will send the order symbol and the amount actually received. Inspect the order and show the proposed record for approval."
+      "prompt": "Prepare a Linden Hall Ball cash payment record for approval. I’ll send the order symbol and amount received."
     }
   },
   {
@@ -226,11 +224,11 @@
     ],
     "cs": {
       "title": "Znovu odeslat vstupenky",
-      "prompt": "Najdi objednávku Slavnostního plesu U Lípy podle symbolu, který ti pošlu. Zkontroluj možnost znovu odeslat vstupenky na uložený e-mail a před odesláním počkej na schválení."
+      "prompt": "Připrav opětovné odeslání vstupenek Slavnostního plesu U Lípy na uložený e-mail ke schválení. Symbol objednávky pošlu."
     },
     "en": {
       "title": "Resend tickets",
-      "prompt": "Find the Linden Hall Ball order using the symbol I send you. Check whether its tickets can be resent to the saved email and wait for approval before sending."
+      "prompt": "Prepare to resend Linden Hall Ball tickets to the saved email for approval. I’ll send the order symbol."
     }
   },
   {
@@ -244,12 +242,12 @@
     ],
     "cs": {
       "title": "Návrh pro čekací listinu",
-      "prompt": "U Slavnostního plesu U Lípy mi pomoz vybrat formulář a objednávku na čekací listině. Zkontroluj její stav a připrav návrh nabídky volných míst. Zatím nabídku neposílej ani nepřijímej.",
+      "prompt": "Pomoz mi vybrat čekající objednávku Slavnostního plesu U Lípy a připrav nabídku míst. Zatím ji neposílej.",
       "note": "Příprava návrhu může zároveň obnovit stav vypršelých nabídek. Sama neodesílá e-mail."
     },
     "en": {
       "title": "Prepare a waitlist proposal",
-      "prompt": "Help me choose a form and a waiting-list order for Linden Hall Ball. Inspect its state and prepare an available-place offer proposal. Do not send or accept the offer yet.",
+      "prompt": "Help me choose a waiting Linden Hall Ball order and prepare an offer of places. Don’t send it yet.",
       "note": "Preparing the proposal can also refresh expired offer states. It does not send an email."
     }
   },
@@ -263,11 +261,11 @@
     ],
     "cs": {
       "title": "Ověřit vstupenku bez odbavení",
-      "prompt": "Najdi objednávku Slavnostního plesu U Lípy podle symbolu, který ti pošlu. Nech mě vybrat vstupenku a zkontroluj, zda je platná a jestli už byla použitá. Vstup nepotvrzuj."
+      "prompt": "U objednávky Slavnostního plesu U Lípy zkontroluj platnost a použití vybrané vstupenky, bez odbavení. Symbol objednávky pošlu."
     },
     "en": {
       "title": "Check a ticket without admission",
-      "prompt": "Find the Linden Hall Ball order using the symbol I send you. Let me choose a ticket and check whether it is valid and has already been used. Do not confirm admission."
+      "prompt": "Check a selected Linden Hall Ball ticket’s validity and usage without admitting it. I’ll send the order symbol."
     }
   },
   {
@@ -278,11 +276,11 @@
     ],
     "cs": {
       "title": "Nastavení a viditelnost akce",
-      "prompt": "Zkontroluj název, termín, místo a viditelnost Slavnostního plesu U Lípy. Nic neměň."
+      "prompt": "Ukaž název, termín, místo a viditelnost Slavnostního plesu U Lípy."
     },
     "en": {
       "title": "Event settings and visibility",
-      "prompt": "Check the name, dates, venue and visibility of Linden Hall Ball. Do not change anything."
+      "prompt": "Show the Linden Hall Ball name, dates, venue and visibility."
     }
   },
   {
@@ -293,11 +291,11 @@
     ],
     "cs": {
       "title": "Založit skrytou akci",
-      "prompt": "Připrav novou akci Slavnostní ples U Lípy. Nech mě vybrat pořadatele, vyžádej si chybějící údaje a ukaž návrh. Po schválení ji založ jako skrytou s uzavřeným prodejem."
+      "prompt": "Připrav novou akci Slavnostní ples U Lípy jako skrytou s uzavřeným prodejem. Pořadatele a návrh mi dej ke schválení."
     },
     "en": {
       "title": "Create a hidden event",
-      "prompt": "Prepare a new Linden Hall Ball event. Let me choose the organizer, ask for missing details and show the proposal. After approval, create it as hidden with sales closed."
+      "prompt": "Prepare a new hidden Linden Hall Ball event with sales closed. Let me approve the organizer and proposal."
     }
   },
   {
@@ -310,11 +308,11 @@
     ],
     "cs": {
       "title": "Náhled e-mailové šablony",
-      "prompt": "U Slavnostního plesu U Lípy mi ukaž e-mailové šablony. Nech mě vybrat šablonu a zobraz její náhled s ukázkovými údaji. Nic neukládej ani neodesílej."
+      "prompt": "Ukaž e-mailové šablony Slavnostního plesu U Lípy a náhled vybrané šablony."
     },
     "en": {
       "title": "Preview an email template",
-      "prompt": "Show the email templates for Linden Hall Ball. Let me choose one and display a preview with sample data. Do not save or send anything."
+      "prompt": "Show Linden Hall Ball email templates and preview the one I choose."
     }
   },
   {
@@ -326,11 +324,11 @@
     ],
     "cs": {
       "title": "Stav bankovního propojení",
-      "prompt": "U vybraného pořadatele zkontroluj propojené bankovní účty a stav synchronizace. Upozorni na problémy, ale synchronizaci nespouštěj."
+      "prompt": "Zkontroluj bankovní účty vybraného pořadatele a stav synchronizace."
     },
     "en": {
       "title": "Bank connection health",
-      "prompt": "Check the selected organizer’s linked bank accounts and synchronization status. Highlight problems without triggering synchronization."
+      "prompt": "Check the selected organizer’s bank accounts and synchronization status."
     }
   },
   {
@@ -341,11 +339,11 @@
     ],
     "cs": {
       "title": "Stav plateb kartou",
-      "prompt": "U vybraného pořadatele zjisti, zda jsou platby kartou aktivní a jestli propojení nevyžaduje pozornost. Nastavení neměň."
+      "prompt": "Jsou u vybraného pořadatele aktivní platby kartou? Je propojení v pořádku?"
     },
     "en": {
       "title": "Card payment status",
-      "prompt": "Check whether card payments are active for the selected organizer and whether the connection needs attention. Do not change settings."
+      "prompt": "Are card payments active for the selected organizer? Is the connection healthy?"
     }
   },
   {
@@ -357,11 +355,11 @@
     ],
     "cs": {
       "title": "Historie změn akce",
-      "prompt": "U Slavnostního plesu U Lípy ukaž poslední zaznamenané změny a kdo je provedl. Uveď, jakou část historie jsi prošel."
+      "prompt": "Ukaž poslední změny Slavnostního plesu U Lípy a kdo je provedl."
     },
     "en": {
       "title": "Event change history",
-      "prompt": "Show recent recorded changes for Linden Hall Ball and who made them. State which part of the history you read."
+      "prompt": "Show recent Linden Hall Ball changes and who made them."
     }
   },
   {
@@ -372,11 +370,11 @@
     ],
     "cs": {
       "title": "Export objednávek",
-      "prompt": "Vyexportuj všechny objednávky Slavnostního plesu U Lípy. Pokud je potřeba více stránek nebo souborů, zahrň je a popiš jejich rozsah."
+      "prompt": "Vyexportuj všechny objednávky Slavnostního plesu U Lípy."
     },
     "en": {
       "title": "Export orders",
-      "prompt": "Export all orders for Linden Hall Ball. If multiple pages or files are needed, include them and describe their coverage."
+      "prompt": "Export all Linden Hall Ball orders."
     }
   },
   {
@@ -390,11 +388,11 @@
     ],
     "cs": {
       "title": "Přehled programu",
-      "prompt": "U Slavnostního plesu U Lípy ukaž program s časy a názvy míst. Upozorni na případné překryvy. Program neměň."
+      "prompt": "Ukaž program Slavnostního plesu U Lípy s časy, místy a případnými překryvy."
     },
     "en": {
       "title": "Program overview",
-      "prompt": "Show the Linden Hall Ball program with times and venue names. Flag any overlaps. Do not change the program."
+      "prompt": "Show the Linden Hall Ball program with times, venues and any overlaps."
     }
   },
   {
@@ -406,11 +404,11 @@
     ],
     "cs": {
       "title": "Místa a trasy",
-      "prompt": "U Slavnostního plesu U Lípy ukaž uložená místa a trasy. Nic neměň."
+      "prompt": "Ukaž uložená místa a trasy Slavnostního plesu U Lípy."
     },
     "en": {
       "title": "Places and routes",
-      "prompt": "Show the saved places and routes for Linden Hall Ball. Do not change anything."
+      "prompt": "Show saved Linden Hall Ball places and routes."
     }
   },
   {
@@ -421,11 +419,11 @@
     ],
     "cs": {
       "title": "Přehled účastníků",
-      "prompt": "Ukaž mi přehled účastníků Slavnostního plesu U Lípy. Nejdříve se zeptej, které údaje potřebuji."
+      "prompt": "Ukaž přehled účastníků Slavnostního plesu U Lípy."
     },
     "en": {
       "title": "Participant overview",
-      "prompt": "Show an overview of Linden Hall Ball participants. Ask which information I need first."
+      "prompt": "Show an overview of Linden Hall Ball participants."
     }
   },
   {
@@ -437,11 +435,11 @@
     ],
     "cs": {
       "title": "Skupiny a přiřazení",
-      "prompt": "U Slavnostního plesu U Lípy vypiš skupiny a nech mě vybrat skupinu, jejíž přiřazení chci zkontrolovat. Nic neměň."
+      "prompt": "Ukaž skupiny Slavnostního plesu U Lípy a přiřazení vybrané skupiny."
     },
     "en": {
       "title": "Groups and assignments",
-      "prompt": "List groups for Linden Hall Ball and let me choose one to inspect its assignments. Do not change anything."
+      "prompt": "Show Linden Hall Ball groups and the selected group’s assignments."
     }
   },
   {
@@ -455,12 +453,12 @@
     ],
     "cs": {
       "title": "Řečníci, témata a konzultace",
-      "prompt": "U vybrané akce ukaž řečníky a témata. Nech mě vybrat řečníka a vypiš jeho naplánované konzultační termíny.",
+      "prompt": "Ukaž řečníky a témata vybrané akce. U vybraného řečníka vypiš konzultační termíny.",
       "note": "Seznam konzultací neudává obsazenost ani počet volných míst."
     },
     "en": {
       "title": "Speakers, topics and counseling",
-      "prompt": "Show speakers and topics for the selected event. Let me choose a speaker and list their scheduled counseling sessions.",
+      "prompt": "Show the selected event’s speakers and topics, then a chosen speaker’s counseling schedule.",
       "note": "The counseling list does not report occupancy or remaining places."
     }
   },
@@ -472,11 +470,11 @@
     ],
     "cs": {
       "title": "Koncept a publikované aktivity",
-      "prompt": "U vybrané akce zkontroluj aktivity a rozliš uložený koncept od publikované verze. Nic nepublikuj ani nezahazuj."
+      "prompt": "Zkontroluj aktivity vybrané akce a rozliš koncept od publikované verze."
     },
     "en": {
       "title": "Draft and published activities",
-      "prompt": "Inspect activities for the selected event and distinguish the saved draft from the published version. Do not publish or discard anything."
+      "prompt": "Check the selected event’s activities and distinguish drafts from published versions."
     }
   }
 ]

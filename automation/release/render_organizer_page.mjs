@@ -1,3 +1,4 @@
+import {publicRuntime} from './organizers/public_runtime.mjs';
 import { expandSiteShell, publicThemeHead, publicThemeBody } from './organizers/site_shell.mjs';
 import { renderUpdate } from './platform_updates/render.mjs';
 import {updatePaths} from './platform_updates/context.mjs';
@@ -44,6 +45,7 @@ const manifestPath = path.join(path.dirname(target), 'organizer-pages.json');
 const cleanOutputs = () => {
   fs.rmSync(path.join(path.dirname(target),'organizers/updates'),{recursive:true,force:true});
   fs.rmSync(path.join(path.dirname(target),'platform-updates.json'),{force:true});
+  fs.rmSync(path.join(path.dirname(target),'co-je-nove/_assets'),{recursive:true,force:true});
   if (process.argv.includes('--built-index')) fs.rmSync(path.join(path.dirname(target),'platform-updates-media'),{recursive:true,force:true});
   for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
 };
@@ -90,8 +92,10 @@ if (builtIndexArg >= 0) {
     .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag) || tag.includes("https://fonts.googleapis.com/icon?family=Material+Icons")).join('');
   if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
 }
+const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexArg<0?null:path.resolve(process.argv[builtIndexArg+1]),entry:'src/marketing/landing.js',assetRoot:'/co-je-nove/_assets/'}):null;
+if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['media/'+asset.slice('/platform-updates-media/'.length)]=bytes;
   for (const page of context.pages) {
-  if (page.type) {outputs.push({asset:page.asset,html:renderUpdate(page,context,{css,themeLinks,primary,entryScript})});continue;}
+  if (page.type) {outputs.push({asset:page.asset,html:renderUpdate(page,context,{css,themeLinks:updatesRuntime.themeLinks,primary,entryScript:updatesRuntime.entryUrl?`<script type="module" src="${updatesRuntime.entryUrl}"></script>`:'',assetRoot:updatesRuntime.assetRoot})});continue;}
   const richTokens = renderLandingContent(contentData, clipsData, page, context.pages.filter(other=>!other.type));
   const substitute = text => text.replace(/{{([A-Z_0-9]+)}}/g, (_, key) => {
     if (key === 'PLATFORM_UPDATES_LINK') return context.updates ? `<a href="${updatePaths[context.locale]}">${context.locale==='cs'?'Co je nového':'What&#39;s new'}</a>` : '';
@@ -146,9 +150,13 @@ try {
     fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, output.html);
   }
   if (context.updates) fs.writeFileSync(path.join(staging,'platform-updates.json'),JSON.stringify(context.updates.feed)+'\n');
+  if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,'co-je-nove/_assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   cleanOutputs();
   if (context.updates) fs.renameSync(path.join(staging,'platform-updates.json'),path.join(path.dirname(target),'platform-updates.json'));
   if (process.argv.includes('--built-index')) for (const {asset,bytes} of updateAssets) {const file=path.join(path.dirname(target),asset);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
+  const runtimeOutput=path.join(path.dirname(target),'co-je-nove/_assets');
+  fs.rmSync(runtimeOutput,{recursive:true,force:true});
+  if(updatesRuntime)fs.cpSync(path.join(staging,'co-je-nove/_assets'),runtimeOutput,{recursive:true});
   for (const {asset} of outputs) {
     const destination = asset === '/organizers-page' ? target : path.join(path.dirname(target), asset.slice(1));
     fs.mkdirSync(path.dirname(destination), {recursive:true});
