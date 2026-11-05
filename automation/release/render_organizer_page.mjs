@@ -92,7 +92,7 @@ if (builtIndexArg >= 0) {
     .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag) || tag.includes("https://fonts.googleapis.com/icon?family=Material+Icons")).join('');
   if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
 }
-const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexArg<0?null:path.resolve(process.argv[builtIndexArg+1]),entry:'src/marketing/landing.js',assetRoot:'/co-je-nove/_assets/'}):null;
+const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexArg<0?null:path.resolve(process.argv[builtIndexArg+1]),entry:'src/marketing/landing.js',assetRoot:'/co-je-nove/_assets/',versioned:true}):null;
 if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['media/'+asset.slice('/platform-updates-media/'.length)]=bytes;
   for (const page of context.pages) {
   if (page.type) {outputs.push({asset:page.asset,html:renderUpdate(page,context,{css,themeLinks:updatesRuntime.themeLinks,primary,entryScript:updatesRuntime.entryUrl?`<script type="module" src="${updatesRuntime.entryUrl}"></script>`:'',assetRoot:updatesRuntime.assetRoot})});continue;}
@@ -150,7 +150,7 @@ try {
     fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, output.html);
   }
   if (context.updates) fs.writeFileSync(path.join(staging,'platform-updates.json'),JSON.stringify(context.updates.feed)+'\n');
-  if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,'co-je-nove/_assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
+  if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,updatesRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   cleanOutputs();
   if (context.updates) fs.renameSync(path.join(staging,'platform-updates.json'),path.join(path.dirname(target),'platform-updates.json'));
   if (process.argv.includes('--built-index')) for (const {asset,bytes} of updateAssets) {const file=path.join(path.dirname(target),asset);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}

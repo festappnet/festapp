@@ -3,6 +3,11 @@ import { AppConfig } from '../app_config.js';
 
 // EasyLocalization/SharedPreferences encodes its browser value as JSON.
 const sharedLocaleKey = 'flutter.locale';
+// Public documents are published in these languages independently of the
+// tenant's application language selector. They never persist a preference.
+const publicDocumentLocales = ['cs', 'en'];
+const supportsLocale = (locale, persist) => AppConfig.supportedLanguages.includes(locale)
+    || (persist === false && publicDocumentLocales.includes(locale));
 function savedLocale() {
     let shared;
     try { shared = JSON.parse(browserStorage.getItem(sharedLocaleKey)); } catch { /* Ignore corrupt preferences. */ }
@@ -30,7 +35,7 @@ export class LocalizationService {
         // 1. Load preference
         const saved = savedLocale();
         if (locale !== undefined) {
-            if (!AppConfig.supportedLanguages.includes(locale)) throw new Error('Unsupported document locale');
+            if (!supportsLocale(locale, persist)) throw new Error('Unsupported document locale');
             LocalizationService.currentLocale = locale;
         } else if (saved && AppConfig.supportedLanguages.includes(saved)) {
             LocalizationService.currentLocale = saved;
@@ -68,7 +73,7 @@ export class LocalizationService {
     }
 
     static async loadTranslations(locale, {persist = true} = {}) {
-        if (!AppConfig.supportedLanguages.includes(locale)) throw new Error('Unsupported locale');
+        if (!supportsLocale(locale, persist)) throw new Error('Unsupported locale');
         try {
             const res = await fetch(`/assets/translations/${locale}.json`);
             if (!res.ok) throw new Error('Translation not found');

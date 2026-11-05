@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
 
 export const publicBrandFiles=Object.freeze(['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg']);
@@ -6,10 +7,17 @@ const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 
 // Public documents do not report an installed app version. Their complete
 // runtime and canonical artwork belong under a network-owned page namespace.
-export function publicRuntime(root,{builtIndex,entry,assetRoot}){
+export function publicRuntime(root,{builtIndex,entry,assetRoot,versioned=false}){
  if(!assetRoot.startsWith('/')||!assetRoot.endsWith('/'))throw new Error('Public asset root must be an absolute directory');
  const assets=Object.fromEntries(publicBrandFiles.map(name=>[name,fs.readFileSync(path.join(root,'web_client/public',name))]));
  if(!builtIndex)return{assets,assetRoot,entryUrl:null,themeLinks:''};
+ // A previous missing response can remain in the browser HTTP cache. Give
+ // each built document and its canonical artwork a fresh asset namespace.
+ if(versioned){
+  const digest=createHash('sha256').update(fs.readFileSync(builtIndex));
+  for(const bytes of Object.values(assets))digest.update(bytes);
+  assetRoot+=digest.digest('hex').slice(0,16)+'/';
+ }
  const dist=path.dirname(path.resolve(builtIndex));
  const manifest=JSON.parse(fs.readFileSync(path.join(dist,'.vite/manifest.json'),'utf8'));
  const runtimeEntry=manifest[entry];
