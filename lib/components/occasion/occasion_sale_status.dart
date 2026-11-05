@@ -9,7 +9,7 @@ class OccasionSaleForm {
   const OccasionSaleForm(
       {required this.id,
       required this.isOpen,
-      this.hasTickets = true,
+      this.hasTickets = false,
       this.start,
       this.end,
       this.countdown = false,
@@ -21,7 +21,7 @@ class OccasionSaleForm {
       OccasionSaleForm(
           id: json['id'] as int,
           isOpen: json['is_open'] == true,
-          hasTickets: json['has_tickets'] != false,
+          hasTickets: json['has_tickets'] == true,
           start:
               DateTime.tryParse(json['start_time'] as String? ?? '')?.toUtc(),
           end: DateTime.tryParse(json['end_time'] as String? ?? '')?.toUtc(),

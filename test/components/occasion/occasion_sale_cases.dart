@@ -302,6 +302,39 @@ void main() {
             {...data, 'formEnabled': false, 'saleStart': 'broken'}, now),
         isTrue);
   });
+  for (final ticketFlag in [true, false, null]) {
+    testWidgetsWithEnvironment(() => environment,
+        'countdown uses canonical ticket presence: $ticketFlag', (tester) async {
+      final saleForm = OccasionSaleForm.fromJson({
+        'id': 1,
+        'is_open': false,
+        if (ticketFlag != null) 'has_tickets': ticketFlag,
+        'start_time': now.add(const Duration(days: 30)).toIso8601String(),
+        'enable_countdown': true,
+      });
+      final occasion = OccasionModel(
+          isOpen: true,
+          isHidden: false,
+          isPromoted: false,
+          saleForms: [saleForm]);
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: Scaffold(
+                  body: OccasionSaleBadge(
+                      occasion: occasion,
+                      status: status([saleForm]),
+                      now: now))));
+      expect(
+          find.text(ticketFlag == true
+              ? 'Prodej za 30 dní'
+              : 'Přihlašování za 30 dní'),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgetsWithEnvironment(
       () => environment, 'sale labels name counts and use Czech plural rules',
       (tester) async {
