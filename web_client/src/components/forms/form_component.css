@@ -825,41 +825,79 @@ body.dark-mode .surcharge-info {
 body[data-shared-appearance] { background: var(--form-background); }
 
 
-/* Compact presale opt-in, independent of the countdown's display typography. */
+/* Keep the opt-in compact even inside full-width, scaled rich-text headers. */
 .sale-opening-notification {
-    max-width: 480px;
-    margin: 12px auto;
+    width: min(100%, 30rem);
+    margin: 24px auto;
     font-size: 1rem;
-    text-align: left;
+    line-height: 1.5;
+    text-align: center;
 }
+.form-presale-subscription-only {
+    min-height: calc(100svh - 80px);
+    display: grid;
+    align-content: center;
+}
+.festapp-embed .form-presale-subscription-only { min-height: 0; }
 .sale-opening-form {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
+    display: grid;
+    gap: 12px;
 }
-.sale-opening-email { flex: 2; min-width: 0; }
+/* Author display rules otherwise override the browser's hidden attribute. */
+.sale-opening-form[hidden] { display: none; }
+.sale-opening-email { min-width: 0; text-align: start; }
 .sale-opening-email .form-control {
-    height: 44px;
-    padding: 10px 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 52px;
+    padding: 14px 16px;
     border: 1px solid var(--input-border, #999);
-    border-radius: 8px;
+    border-radius: var(--input-border-radius, 8px);
     font-size: 16px;
-    line-height: 22px;
+    line-height: 24px;
 }
-.sale-opening-email .form-control:focus {
+.sale-opening-email .form-control::placeholder { color: var(--text-color, #333); opacity: .75; }
+.sale-opening-email .form-control:focus-visible,
+.sale-opening-form > .btn:focus-visible {
     outline: 2px solid var(--primary-color, #007bff);
-    outline-offset: 1px;
+    outline-offset: 3px;
 }
 .sale-opening-form > .btn {
-    flex: 0 1 60%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
     min-width: 0;
     white-space: normal;
-    min-height: 44px;
-    padding: 10px 16px;
+    min-height: 52px;
+    padding: 14px 16px;
     font-size: 16px;
     line-height: 24px;
     text-transform: none;
     letter-spacing: normal;
 }
-.sale-opening-status { margin: 0; font-size: .875rem; }
-.sale-opening-status:not(:empty) { margin-top: 8px; }
+.sale-opening-form > .btn:disabled { cursor: default; opacity: .7; }
+.sale-opening-form[aria-busy="true"] > .btn { cursor: progress; }
+.sale-opening-form[aria-busy="true"] > .btn::before {
+    content: "";
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: 50%;
+    animation: sale-opening-spin .8s linear infinite;
+}
+.sale-opening-notification .sale-opening-status {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+.sale-opening-notification .sale-opening-status:not(:empty) { margin-top: 16px; }
+.sale-opening-status[data-state="success"] { padding: 16px 0; }
+@keyframes sale-opening-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .sale-opening-form[aria-busy="true"] > .btn::before { animation: none; }
+}

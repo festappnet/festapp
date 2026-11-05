@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fstapp/components/forms/views/form_editor_content.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
@@ -57,7 +59,7 @@ void main() {
     expect(reloaded.countdownTitle, html);
   });
   testWidgets(
-    'compact opt-in keeps email and short button on one mobile row without surrounding copy',
+    'compact opt-in stacks centered full-width controls on mobile without surrounding copy',
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1;
@@ -88,9 +90,62 @@ void main() {
       );
       final field = tester.getRect(find.byType(TextField));
       final button = tester.getRect(find.byType(FilledButton));
-      expect(button.top, field.top);
-      expect(button.left, greaterThan(field.right));
+      expect(button.top, greaterThan(field.bottom));
+      expect(button.left, field.left);
+      expect(button.width, field.width);
       expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'pending opt-in blocks duplicates, then replaces controls with confirmation',
+    (tester) async {
+      final response = Completer<Map<String, dynamic>>();
+      var calls = 0;
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SaleOpeningNotification(
+              formLink: 'ples',
+              command: (operation, payload) {
+                calls++;
+                expect(operation, 'subscribe');
+                expect(payload['email'], 'jana@example.com');
+                return response.future;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'jana@example.com');
+      final submit = tester
+          .widget<FilledButton>(find.byType(FilledButton))
+          .onPressed!;
+      submit();
+      submit();
+      await tester.pump();
+      expect(calls, 1);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Zpracovává se...'), findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      response.complete({'ok': true});
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(
+        find.text(
+          'Jakmile se otevře přihlašování, pošleme Vám zprávu na jana@example.com.',
+        ),
+        findsOneWidget,
+      );
+      submit();
+      expect(calls, 1);
     },
   );
   testWidgets(
@@ -255,6 +310,16 @@ void main() {
   testWidgets(
     'resuming collection restores a removed slot without duplicating it',
     (tester) async {
+      final previous = RightsService.occasionLinkModelNotifier.value;
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.formsSaleOpeningSubscribersRead: true,
+        },
+      );
+      addTearDown(
+        () => RightsService.occasionLinkModelNotifier.value = previous,
+      );
+
       final form = FormEditorDraft(
         id: 1,
         isOpen: true,
@@ -291,6 +356,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Sběr je pozastavený'), findsOneWidget);
       expect(find.text('Přihlášení zájemci: 7'), findsOneWidget);
+      expect(find.text('Zájemci (7)'), findsOneWidget);
+      expect(find.text('Upravit e-maily'), findsNothing);
       expect(find.byType(SwitchListTile), findsNothing);
       await tester.tap(find.text('Obnovit sběr'));
       await tester.pumpAndSettle();
@@ -383,30 +450,54 @@ void main() {
       await tester.tap(find.text('Použít změny'));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningEnabled, isFalse);
-      expect(form.definition.countdownTitle ?? '', isNot(contains('form-sale-opening-notification')));
+      expect(
+        form.definition.countdownTitle ?? '',
+        isNot(contains('form-sale-opening-notification')),
+      );
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets('missing or past start does not claim notifications are processing', (tester) async {
-    for (final start in [null, '2000-01-01T12:00:00Z']) {
-      final form = FormEditorDraft(isOpen: true, data: {
-        'sale_opening_notifications': {'enabled': true},
-        'schedule': {'start_time': start},
-      });
-      await env().pumpWidget(tester, MaterialApp(
-        builder: DependencyMaterialBridge.builder,
-        home: Scaffold(body: SaleOpeningSettings(form: form, canEdit: true, onChanged: () {})),
-      ));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Upozornění se zpracovávají'), findsNothing);
-      if (start == null) {
-        expect(find.text('Nastavte budoucí začátek a otevřete formulář.'), findsWidgets);
-      } else {
-        expect(find.text('Čekáme na skutečné otevření přihlašování.'), findsOneWidget);
+  testWidgets(
+    'missing or past start does not claim notifications are processing',
+    (tester) async {
+      for (final start in [null, '2000-01-01T12:00:00Z']) {
+        final form = FormEditorDraft(
+          isOpen: true,
+          data: {
+            'sale_opening_notifications': {'enabled': true},
+            'schedule': {'start_time': start},
+          },
+        );
+        await env().pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: Scaffold(
+              body: SaleOpeningSettings(
+                form: form,
+                canEdit: true,
+                onChanged: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Upozornění se zpracovávají'), findsNothing);
+        if (start == null) {
+          expect(
+            find.text('Nastavte budoucí začátek a otevřete formulář.'),
+            findsWidgets,
+          );
+        } else {
+          expect(
+            find.text('Čekáme na skutečné otevření přihlašování.'),
+            findsOneWidget,
+          );
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
       }
-      await tester.pumpWidget(const SizedBox.shrink());
-    }
-  });
+    },
+  );
   testWidgets(
     'summary failure offers retry instead of misleading zero subscribers',
     (tester) async {

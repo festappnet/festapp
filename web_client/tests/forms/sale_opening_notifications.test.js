@@ -108,3 +108,52 @@ test('future registration with paused subscription-only content shows its schedu
   assert.equal(host.querySelector('input,button'),null);
  }finally{CountdownWidget.stop();dom.window.close();}
 });
+
+
+test('pending submit is visible, blocks duplicate submits, and success really hides the form', async () => {
+ const dom = new JSDOM('<main></main>'); globalThis.document = dom.window.document;
+ try {
+  const css = readFileSync(new URL('../../src/components/forms/form_component.css', import.meta.url), 'utf8');
+  const style = document.createElement('style');
+  style.textContent = css.slice(css.indexOf('/* Keep the opt-in compact'));
+  document.head.append(style);
+  let calls = 0, release;
+  renderSaleOpening(document.querySelector('main'), {link:'ples'}, {command: () => {
+   calls++; return new Promise(resolve => { release = resolve; });
+  }});
+  const form = document.querySelector('form'), button = form.querySelector('button'), input = form.querySelector('input');
+  input.value = 'jana@example.com';
+  const submit = () => form.dispatchEvent(new dom.window.Event('submit', {cancelable:true}));
+  submit(); submit();
+  assert.equal(calls, 1);
+  assert.equal(button.disabled, true); assert.equal(input.disabled, true);
+  assert.equal(form.getAttribute('aria-busy'), 'true');
+  assert.equal(button.textContent, LocalizationService.tr('Common.processing'));
+  release({ok:true}); await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(form.getAttribute('aria-busy'), null);
+  assert.equal(dom.window.getComputedStyle(form).display, 'none');
+  assert.equal(document.querySelector('.sale-opening-status').dataset.state, 'success');
+  submit(); assert.equal(calls, 1);
+ } finally { dom.window.close(); }
+});
+
+test('failed submit restores controls and allows one deliberate retry', async () => {
+ const dom = new JSDOM('<main></main>'); globalThis.document = dom.window.document;
+ try {
+  let calls = 0;
+  renderSaleOpening(document.querySelector('main'), {link:'ples'}, {command: async () => {
+   if (++calls === 1) throw new Error('offline'); return {ok:true};
+  }});
+  const form = document.querySelector('form'), input = form.querySelector('input'), button = form.querySelector('button');
+  input.value = 'jana@example.com';
+  form.dispatchEvent(new dom.window.Event('submit', {cancelable:true}));
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(button.disabled, false); assert.equal(input.disabled, false);
+  assert.equal(input.value, 'jana@example.com');
+  assert.equal(button.textContent, 'Upozornit mě na začátek přihlašování');
+  assert.equal(document.querySelector('.sale-opening-status').dataset.state, 'error');
+  form.dispatchEvent(new dom.window.Event('submit', {cancelable:true}));
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(calls, 2); assert.equal(form.hidden, true);
+ } finally { dom.window.close(); }
+});

@@ -36,7 +36,9 @@ export function renderSaleOpening(container, model, {preview = false, scope = nu
     if (scope?.operation === 'invalid') { status.textContent = saleOpeningText('invalid'); section.append(status); container.append(section); return; }
     const form = doc.createElement('form'); form.className = 'sale-opening-form';
     const button = doc.createElement('button'); button.type = 'submit'; button.className = 'btn btn-primary';
-    button.textContent = saleOpeningText(scope?.operation || 'notifyShort'); button.disabled = preview;
+    const buttonLabel = saleOpeningText(scope?.operation || 'notifyShort');
+    button.textContent = buttonLabel; button.disabled = preview;
+    let pending = false, completed = false;
     let input; const suffixStates = new Map();
     if (!scope) {
         const field = doc.createElement('div'); field.className = 'sale-opening-email';
@@ -47,14 +49,30 @@ export function renderSaleOpening(container, model, {preview = false, scope = nu
     }
     form.append(button);
     form.addEventListener('submit', async event => {
-        event.preventDefault(); if (preview || button.disabled) return;
+        event.preventDefault(); if (preview || pending || completed) return;
         if (input && (!form.reportValidity() || !EmailSuffixConfirmation.validate(form, suffixStates))) return;
         const submittedEmail = input?.value.trim().toLowerCase();
-        button.disabled = true; status.textContent = '';
+        pending = true;
+        button.disabled = true;
+        if (input) input.disabled = true;
+        form.setAttribute('aria-busy', 'true');
+        button.textContent = LocalizationService.tr('Common.processing');
+        status.textContent = ''; delete status.dataset.state;
         try {
-            const result = await command(scope?.operation || 'subscribe', scope ? {token: scope.token} : {formLink: model.link, email: submittedEmail, lang: LocalizationService.currentLocale});
+            await command(scope?.operation || 'subscribe', scope ? {token: scope.token} : {formLink: model.link, email: submittedEmail, lang: LocalizationService.currentLocale});
+            completed = true;
+            status.dataset.state = 'success';
             form.hidden = true; status.textContent = scope ? saleOpeningText('unsubscribed') : saleOpeningText('subscribed').replace('{email}', () => submittedEmail);
-        } catch (error) { status.textContent = saleOpeningText(['tryLater','invalid'].includes(error.message) ? error.message : 'failed'); button.disabled = false; }
+        } catch (error) {
+            status.dataset.state = 'error';
+            status.textContent = saleOpeningText(['tryLater','invalid'].includes(error.message) ? error.message : 'failed');
+        } finally {
+            pending = false;
+            form.removeAttribute('aria-busy');
+            button.textContent = buttonLabel;
+            button.disabled = completed;
+            if (input) input.disabled = completed;
+        }
     });
     section.append(form, status); container.append(section);
 }

@@ -77,52 +77,78 @@ class CountdownContent extends StatelessWidget {
         content.querySelector('img,video,iframe,table,hr') != null;
   }
 
+  bool get _subscriptionOnly {
+    if (showTimer || !canSubscribe) return false;
+    final content = parser.parseFragment(html ?? '');
+    for (final slot in content.querySelectorAll(
+      '.html-editor-block.form-countdown',
+    )) {
+      slot.remove();
+    }
+    return content.children.length == 1 &&
+        content.children.single.classes.contains(
+          'form-sale-opening-notification',
+        ) &&
+        (content.text ?? '').trim().isEmpty;
+  }
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      children: [
-        if (!_hasVisibleContent)
-          Text(
-            SaleOpeningStrings.scheduledStart(
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: BoxConstraints(
+      minHeight: _subscriptionOnly
+          ? (MediaQuery.sizeOf(context).height - 80)
+                .clamp(0.0, double.infinity)
+                .toDouble()
+          : 0,
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!_hasVisibleContent)
+            Text(
+              SaleOpeningStrings.scheduledStart(
+                LocaleDateTime.dateTimeCell(
+                  targetTime,
+                  Localizations.localeOf(context).toString(),
+                ),
+              ),
+            ),
+          if (showTimer)
+            Text(
               LocaleDateTime.dateTimeCell(
                 targetTime,
                 Localizations.localeOf(context).toString(),
               ),
             ),
+          HtmlView(
+            html:
+                '<div style="text-align: center;">${showTimer ? countdownContent(html) : html ?? ''}</div>',
+            fontSize: 24,
+            embeddedBlocks: [
+              showTimer
+                  ? countdownBlock(targetTime, onFinished)
+                  : HtmlEmbeddedBlock(
+                      cssClass: 'form-countdown',
+                      builder: (_) => const SizedBox.shrink(),
+                    ),
+              HtmlEmbeddedBlock(
+                cssClass: 'form-sale-opening-notification',
+                label: SaleOpeningStrings.title,
+                builder: (_) => canSubscribe
+                    ? SaleOpeningNotification(
+                        formLink: formLink,
+                        hasTickets: hasTickets,
+                        informal: informal,
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
           ),
-        if (showTimer)
-          Text(
-            LocaleDateTime.dateTimeCell(
-              targetTime,
-              Localizations.localeOf(context).toString(),
-            ),
-          ),
-        HtmlView(
-          html:
-              '<div style="text-align: center;">${showTimer ? countdownContent(html) : html ?? ''}</div>',
-          fontSize: 24,
-          embeddedBlocks: [
-            showTimer
-                ? countdownBlock(targetTime, onFinished)
-                : HtmlEmbeddedBlock(
-                    cssClass: 'form-countdown',
-                    builder: (_) => const SizedBox.shrink(),
-                  ),
-            HtmlEmbeddedBlock(
-              cssClass: 'form-sale-opening-notification',
-              label: SaleOpeningStrings.title,
-              builder: (_) => canSubscribe
-                  ? SaleOpeningNotification(
-                      formLink: formLink,
-                      hasTickets: hasTickets,
-                      informal: informal,
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

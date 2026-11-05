@@ -10,6 +10,11 @@ export function renderPresaleContent(container, model, onFinished, {preview = fa
     const doc = container.ownerDocument;
     const content = doc.createElement('div'); content.className = 'form-header form-presale-content';
     content.innerHTML = sanitizeHtml(model.countdownTitle ?? `<p>${FormStrings.registrationStart}</p>`);
+    // Center the standalone opt-in without rearranging authored countdown content.
+    if (!model.enableCountdown && content.children.length === 1 &&
+        content.firstElementChild.matches('.html-editor-block.form-sale-opening-notification') && !content.textContent.trim()) {
+        content.classList.add('form-presale-subscription-only');
+    }
     const types = ['form-countdown', 'form-sale-opening-notification'];
     // Legacy countdown documents without a slot keep their original behavior.
     if (model.enableCountdown && !content.querySelector('.html-editor-block.form-countdown')) {

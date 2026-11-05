@@ -1,4 +1,5 @@
 import '../email_validation.dart';
+import '../../_shared/common_strings.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 import 'package:material_ui/material_ui.dart';
@@ -18,8 +19,11 @@ class SaleOpeningNotification extends StatefulWidget {
     this.token,
     this.hasTickets = true,
     this.informal = false,
+    this.command = SaleOpeningCommands.execute,
   });
   final String formLink;
+  final Future<Map<String, dynamic>> Function(String, Map<String, dynamic>)
+  command;
   final bool preview;
   final bool hasTickets, informal;
   final String? operation, token;
@@ -42,7 +46,7 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
   }
 
   Future<void> submit() async {
-    if (widget.preview || busy) return;
+    if (widget.preview || busy || done) return;
     if (widget.operation == null) {
       if (!EmailAddress.isValid(email.text)) {
         setState(() => emailError = EmailValidation.validator()(email.text));
@@ -60,7 +64,7 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
       message = null;
     });
     try {
-      await SaleOpeningCommands.execute(
+      await widget.command(
         widget.operation ?? 'subscribe',
         widget.operation == null
             ? {
@@ -97,14 +101,35 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
   Widget build(BuildContext context) {
     final action = FilledButton(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(0, 48),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        minimumSize: const Size(double.infinity, 52),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      onPressed: widget.preview || busy ? null : submit,
-      child: Text(
-        widget.operation == 'unsubscribe'
-            ? SaleOpeningStrings.unsubscribe
-            : SaleOpeningStrings.notifyShort,
+      onPressed: widget.preview || busy || done ? null : submit,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (busy) ...[
+            SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
+          Flexible(
+            child: Text(
+              busy
+                  ? CommonStrings.processing
+                  : widget.operation == 'unsubscribe'
+                  ? SaleOpeningStrings.unsubscribe
+                  : SaleOpeningStrings.notifyShort,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
       ),
     );
     return Align(
@@ -112,49 +137,41 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 24),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (!done && widget.operation == null)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Semantics(
-                        label: SaleOpeningStrings.email,
-                        child: TextField(
-                          controller: email,
-                          keyboardType: TextInputType.emailAddress,
-                          autofillHints: const [AutofillHints.email],
-                          enabled: !widget.preview && !busy,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontSize: 16),
-                          decoration: InputDecoration(
-                            hintText: SaleOpeningStrings.email,
-                            errorText: emailError,
-                            isDense: true,
-                            border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 14,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            confirmation.update(value);
-                            setState(() {
-                              suffix = false;
-                              emailError = null;
-                            });
-                          },
-                          onSubmitted: (_) => submit(),
-                        ),
+                Semantics(
+                  label: SaleOpeningStrings.email,
+                  child: TextField(
+                    controller: email,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.email],
+                    enabled: !widget.preview && !busy,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: SaleOpeningStrings.email,
+                      errorText: emailError,
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(flex: 3, child: action),
-                  ],
+                    onChanged: (value) {
+                      confirmation.update(value);
+                      setState(() {
+                        suffix = false;
+                        emailError = null;
+                      });
+                    },
+                    onSubmitted: (_) => submit(),
+                  ),
                 ),
               if (suffix) ...[
                 Text(
@@ -170,15 +187,19 @@ class _SaleOpeningNotificationState extends State<SaleOpeningNotification> {
                   child: Text(FormStrings.emailSuffixConfirm),
                 ),
               ],
-              if (!done && widget.operation != null) action,
+              if (!done) ...[
+                if (widget.operation == null) const SizedBox(height: 12),
+                action,
+              ],
               if (message != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: 16),
                   child: Semantics(
                     liveRegion: true,
                     child: Text(
                       message!,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
                 ),
