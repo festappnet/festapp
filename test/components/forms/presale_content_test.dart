@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:super_editor/super_editor.dart';
+import 'package:super_editor/super_editor_test.dart';
 import 'package:festapp_core/time.dart' as core_time;
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/presale_content_draft.dart';
@@ -332,7 +333,20 @@ void main() {
     final presale = tester
         .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
         .controller;
-    presale.appendHtml('<p>Nový text před otevřením</p>');
+    final presaleLayout = presale.layoutKey.currentState as DocumentLayout;
+    final presaleCaret = presaleLayout.getRectForPosition(
+      DocumentPosition(
+        nodeId: presale.editor.document.first.id,
+        nodePosition: const TextNodePosition(offset: 0),
+      ),
+    )!;
+    await tester.tapAt(
+      presaleLayout.getGlobalOffsetFromDocumentOffset(presaleCaret.center),
+    );
+    await tester.pump();
+    expect(presale.focusNode.hasFocus, isTrue);
+    expect(tester.testTextInput.hasAnyClients, isTrue);
+    await tester.typeImeText('Nový text před otevřením');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Po uzavření'));
     await tester.pumpAndSettle();
@@ -341,7 +355,20 @@ void main() {
     final closed = tester
         .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
         .controller;
-    closed.appendHtml('<p>Nový text po uzavření</p>');
+    final closedLayout = closed.layoutKey.currentState as DocumentLayout;
+    final closedCaret = closedLayout.getRectForPosition(
+      DocumentPosition(
+        nodeId: closed.editor.document.first.id,
+        nodePosition: const TextNodePosition(offset: 0),
+      ),
+    )!;
+    await tester.tapAt(
+      closedLayout.getGlobalOffsetFromDocumentOffset(closedCaret.center),
+    );
+    await tester.pump();
+    expect(closed.focusNode.hasFocus, isTrue);
+    expect(tester.testTextInput.hasAnyClients, isTrue);
+    await tester.typeImeText('Nový text po uzavření');
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Obsah zavřeného formuláře'));
     await tester.tap(find.text('Obsah zavřeného formuláře'));
