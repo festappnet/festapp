@@ -61,13 +61,26 @@ async function fetchFresh(pathname) {
 
 const marketing = resolveContext(readConfig(configPath));
 async function verifyOnce() {
+  const updateAssets = new Set();
   for (const page of marketing.pages) {
     const response = await fetchFresh(page.path);
     assert.equal(response.status,200,`marketing ${page.path}`);
-    verifyMarketingHtml(await response.text(),page,marketing);
+    const html = await response.text();
+    verifyMarketingHtml(html,page,marketing);
+    for (const match of html.matchAll(/(?:src|href)="(\/co-je-nove\/_assets\/[^"?#]+)"/g)) updateAssets.add(match[1]);
   }
 
   if (marketing.updates) {
+    for (const extension of ['svg', 'js', 'css']) {
+      assert.ok([...updateAssets].some(asset => asset.endsWith('.' + extension)), `update ${extension} assets missing from published HTML`);
+    }
+    await Promise.all([...updateAssets].map(async asset => {
+      const response = await fetchFresh(asset);
+      assert.equal(response.status, 200, `update asset ${asset}`);
+      const type = response.headers.get('content-type') || '';
+      assert.ok(!type.startsWith('text/html'), `update asset ${asset} returned HTML`);
+      await response.arrayBuffer();
+    }));
     const feed = await fetchFresh('/platform-updates.json');
     assert.equal(feed.status,200,'platform updates feed');
     assert.deepEqual(await feed.json(),marketing.updates.feed,'public update projection');

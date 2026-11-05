@@ -443,6 +443,27 @@ test('both update locales, closed namespaces, query-preserving 308 and JSON shar
  const xml=await(await productionWorker.fetch(new Request('https://vstupenky.online/sitemap.xml'),assets)).text();for(const p of ['/co-je-nove','/en/whats-new']) assert.ok(xml.includes('https://vstupenky.online'+p));
 });
 
+test('update runtime assets pass through the edge only when updates are enabled',async()=>{
+ const files=new Map([
+  ['/co-je-nove/_assets/brand-logo.svg',['<svg></svg>','image/svg+xml']],
+  ['/co-je-nove/_assets/runtime/landing-version.js',['export {};','application/javascript']],
+  ['/co-je-nove/_assets/runtime/landing-version.css',['body{}','text/css']],
+  ['/co-je-nove/_assets/media/article.png',['image','image/png']],
+ ]);
+ const fixture={...env,ASSETS:{fetch:async request=>{
+  const file=files.get(new URL(request.url).pathname);
+  return file?new Response(file[0],{headers:{'content-type':file[1]}}):new Response('missing',{status:404});
+ }}};
+ for(const [path,[body,type]]of files){
+  const url=new Request('https://vstupenky.online'+path);
+  const response=await productionWorker.fetch(url,fixture);
+  assert.equal(response.status,200,path);assert.equal(await response.text(),body);assert.equal(response.headers.get('content-type'),type);
+  assert.equal((await worker.fetch(url,fixture)).status,404,'disabled updates must not expose cached runtime assets');
+ }
+ for(const path of ['/co-je-nove/_assets/missing.js','/co-je-nove/unknown','/en/whats-new/_assets/brand-logo.svg'])
+  assert.equal((await productionWorker.fetch(new Request('https://vstupenky.online'+path),fixture)).status,404,path);
+});
+
 test('nested published details serve their own localized HTML and enter the same sitemap',async t=>{
  const contentDir=mkdtempSync(join(tmpdir(),'updates-worker-'));t.after(()=>rmSync(contentDir,{recursive:true,force:true}));
  const dir=join(contentDir,'stable-id');mkdirSync(dir);

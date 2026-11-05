@@ -468,7 +468,13 @@ async function routeRequest(request, env) {
       const response=await serveAsset(env,request,path);
       return new Response(response.body,{status:response.status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-cache"}});
     }
-    if (updateNamespace) return notFound();
+    if (updateNamespace) {
+      if (path.startsWith("/co-je-nove/_assets/") && MARKETING.feeds?.includes("/platform-updates.json")) {
+        const response = await serveAsset(env, request, path);
+        return response.ok ? response : notFound();
+      }
+      return notFound();
+    }
     if (path === "/sitemap.xml") return handleSitemap(request, env);
 
     if (path === "/" && FORCED_OCCASION_PATH) {
