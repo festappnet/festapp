@@ -281,6 +281,7 @@ export class FormModel {
     }
 
     get themeMode() { return ['light', 'dark'].includes(this._designData.theme_mode) ? this._designData.theme_mode : 'system'; }
+    get embedInheritStyle() { return this._designData.embed_inherit_style !== false; }
     get backgroundMode() { return this._designData.background_mode; }
 
     get fontFamily() {

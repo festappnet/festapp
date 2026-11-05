@@ -38,7 +38,7 @@ hranice: [READINESS.md](READINESS.md).
 aktivního jazyka. Pro celou českou administraci nainstalujte český jazyk Joomly.
 Přístupný název iframe popisuje formulář pro čtečky. Výchozí výška je 800 px,
 povolený rozsah 240-4000 px. Automatická výška a převzetí vzhledu jsou výchozí.
-Pevná výška s vypnutým převzetím vzhledu externí helper nepotřebuje. Záložní
+Pevná výška používá stejný externí helper pro vzhled jako automatická. Záložní
 odkaz otevírá běžný formulář v nové záložce i při blokování helperu.
 
 ## External service / English setup
@@ -149,3 +149,12 @@ proto poctivě identifikuje jako `Festapp-Joomla-Release-Check/1.0` a ověřuje 
 obsah stránek. Nejde o vypnutí ochrany. Živý browser test používá skutečný
 produkční helper a veřejný formulář z nainstalovaného Joomla modulu, bez
 odeslání objednávky nebo výběru sedadla.
+
+## Sdílené nastavení vzhledu
+
+Přebírání vzhledu webu nastavte ve Vzhledu uloženého formuláře v aplikaci.
+Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
+vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
+Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou
+aktualizovat doplněk nebo doplnit skript; běžné automatické vložení změnu převezme
+bez výměny kódu.

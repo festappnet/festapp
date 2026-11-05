@@ -75,7 +75,6 @@ function shortcode( $attributes ) {
 				'title'         => '',
 				'mode'          => 'auto',
 				'height'        => 800,
-				'inherit_style' => 'true',
 			),
 			$attributes,
 			'festapp_tickets'
@@ -98,30 +97,27 @@ function render( $attributes ) {
 	if ( '' === $title ) {
 		$title = __( 'Ticket sales - Festapp Tickets', 'festapp-tickets' );
 	}
-	$height = isset( $attributes['height'] ) && is_scalar( $attributes['height'] ) ? filter_var( $attributes['height'], FILTER_VALIDATE_INT ) : false;
-	$height = false !== $height && $height >= 240 && $height <= 4000 ? $height : 800;
-	$auto   = ! isset( $attributes['mode'] ) || 'fixed' !== $attributes['mode'];
-	$inherit_style = isset( $attributes['inheritStyle'] ) ? true === $attributes['inheritStyle'] : ( ! isset( $attributes['inherit_style'] ) || 'true' === $attributes['inherit_style'] );
+	$height        = isset( $attributes['height'] ) && is_scalar( $attributes['height'] ) ? filter_var( $attributes['height'], FILTER_VALIDATE_INT ) : false;
+	$height        = false !== $height && $height >= 240 && $height <= 4000 ? $height : 800;
+	$auto          = ! isset( $attributes['mode'] ) || 'fixed' !== $attributes['mode'];
 	wp_enqueue_style( 'festapp-tickets' );
-	if ( $auto || $inherit_style ) {
-		$handle = 'festapp-tickets-helper-' . substr( md5( $valid['origin'] ), 0, 12 );
-		// Secondary loops enqueue before wp_footer prints. Service owns revalidation.
-		// phpcs:disable WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Service-owned protocol with revalidation.
-		wp_enqueue_script(
-			$handle,
-			$valid['origin'] . '/embed.js',
-			array(),
-			null,
-			array(
-				'in_footer' => true,
-				'strategy'  => 'defer',
-			)
-		);
-		// phpcs:enable WordPress.WP.EnqueuedResourceParameters.MissingVersion
-	}
+	$handle = 'festapp-tickets-helper-' . substr( md5( $valid['origin'] ), 0, 12 );
+	// Secondary loops enqueue before wp_footer prints. Service owns revalidation.
+	// phpcs:disable WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Service-owned protocol with revalidation.
+	wp_enqueue_script(
+		$handle,
+		$valid['origin'] . '/embed.js',
+		array(),
+		null,
+		array(
+			'in_footer' => true,
+			'strategy'  => 'defer',
+		)
+	);
+	// phpcs:enable WordPress.WP.EnqueuedResourceParameters.MissingVersion
 	return sprintf(
 		'<div class="festapp-tickets" data-festapp-embed-host><iframe%s src="%s" title="%s" width="100%%" height="%d" style="border:0;max-width:100%%" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
-		( $auto || $inherit_style ? ' data-festapp-embed' : '' ) . ( ! $auto && $inherit_style ? ' data-festapp-height="fixed"' : '' ) . ( $inherit_style ? ' data-festapp-style="inherit"' : '' ),
+		' data-festapp-embed' . ( ! $auto ? ' data-festapp-height="fixed"' : '' ),
 		esc_url( $valid['url'] . '?embed=1' ),
 		esc_attr( $title ),
 		$height,

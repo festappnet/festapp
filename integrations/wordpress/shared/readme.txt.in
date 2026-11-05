@@ -23,9 +23,9 @@ Fixed height:
 [@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" mode="fixed" height="800"]
 
 Website appearance (optional):
-[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" inherit_style="true"]
+[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug"]
 
-"Use the WordPress theme instead of the app appearance" is enabled by default. It overrides the app font, background and colors only for this embedding. Disable it in the block or set inherit_style="false" to use the appearance configured in the app. Custom font-face URLs are passed to the form; their servers must allow cross-origin font loading. Unreadable stylesheets or blocked fonts retain the supplied font-family fallback. The seat map keeps the service appearance. This option requires /embed.js even with fixed height.
+Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page. The shared /embed.js helper loads in both height modes. Custom fonts must permit cross-origin loading. The seat map keeps its own appearance.
 
 Height is limited to 240-4000 pixels. Automatic mode uses the existing service helper. A standalone form link remains available without the helper. Multiple forms can appear on one page. Event settings, inventory, order processing, payments, ticket delivery and admission remain owned by @@NAME@@. The plugin does not implement any payment gateway. Embedded payment methods and browser compatibility require verification for the particular event; card gateways and bank-app handoffs are not guaranteed.
 

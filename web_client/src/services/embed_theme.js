@@ -1,28 +1,28 @@
 // Presentation-only consumer. The bridge owns origin/instance checks; this module
 // accepts bounded values, never host CSS, markup, scripts or purchase settings.
+const properties = {fontFamily: ['font-family', 'font-family'], text: ['text', 'color'],
+    background: ['background', 'color'], primary: ['primary', 'color'], buttonText: ['button-text', 'color']};
+
 export class EmbedTheme {
     constructor(win) {
         this.win = win;
         this.fonts = new Map();
+        this.enabled = false;
+        this.presentation = null;
+    }
+    // Saved form settings and validated host input meet at this single owner.
+    // Either may arrive first; invalid messages never replace valid input.
+    setEnabled(enabled) {
+        this.enabled = enabled === true;
+        this.#render();
     }
     apply(theme) {
-        const root = this.win.document.documentElement;
-        const properties = {fontFamily: ['font-family', 'font-family'], text: ['text', 'color'],
-            background: ['background', 'color'], primary: ['primary', 'color'], buttonText: ['button-text', 'color']};
         if (theme !== null && (typeof theme !== 'object' || !theme ||
             !Object.entries(properties).every(([key, [, property]]) =>
                 typeof theme[key] === 'string' && theme[key].length <= 512 &&
                 this.win.CSS?.supports(property, theme[key])))) return;
-        if (theme === null) {
-            delete root.dataset.embedTheme;
-            for (const [name] of Object.values(properties)) root.style.removeProperty(`--embed-${name}`);
-            this.clearFonts();
-            return;
-        }
-        root.dataset.embedTheme = 'host';
-        for (const [key, [name]] of Object.entries(properties)) root.style.setProperty(`--embed-${name}`, theme[key]);
-        const requested = new Set();
-        if (Array.isArray(theme.fonts) && theme.fonts.length <= 32 && this.win.FontFace && this.win.document.fonts) {
+        const fonts = [];
+        if (Array.isArray(theme?.fonts) && theme.fonts.length <= 32) {
             for (const font of theme.fonts) {
                 if (!font || typeof font.family !== 'string' || font.family.length > 256 ||
                     !Array.isArray(font.urls) || !font.urls.length || font.urls.length > 4 ||
@@ -35,11 +35,34 @@ export class EmbedTheme {
                     if (typeof font[key] !== 'string' || font[key].length > 512) return false;
                     descriptors[key] = font[key]; return true;
                 })) continue;
+                fonts.push({family: font.family, urls: [...font.urls], ...descriptors});
+            }
+        }
+        this.presentation = theme === null ? null : {
+            ...Object.fromEntries(Object.keys(properties).map(key => [key, theme[key]])), fonts
+        };
+        this.#render();
+    }
+    #render() {
+        const root = this.win.document.documentElement;
+        const theme = this.enabled ? this.presentation : null;
+        if (theme === null) {
+            delete root.dataset.embedTheme;
+            for (const [name] of Object.values(properties)) root.style.removeProperty(`--embed-${name}`);
+            this.clearFonts();
+            return;
+        }
+        root.dataset.embedTheme = 'host';
+        for (const [key, [name]] of Object.entries(properties)) root.style.setProperty(`--embed-${name}`, theme[key]);
+        const requested = new Set();
+        if (this.win.FontFace && this.win.document.fonts) {
+            for (const font of theme.fonts) {
+                const {family, urls, ...descriptors} = font;
                 const key = JSON.stringify(font);
                 requested.add(key);
                 if (this.fonts.has(key)) continue;
                 try {
-                    const face = new this.win.FontFace(font.family, font.urls.map(url => `url(${JSON.stringify(url)})`).join(', '), {...descriptors, display: 'swap'});
+                    const face = new this.win.FontFace(family, urls.map(url => `url(${JSON.stringify(url)})`).join(', '), {...descriptors, display: 'swap'});
                     this.fonts.set(key, face);
                     this.win.document.fonts.add(face);
                     // Font loading/CORS failure preserves the supplied font-family fallback.
@@ -55,5 +78,9 @@ export class EmbedTheme {
         for (const face of this.fonts.values()) this.win.document.fonts.delete(face);
         this.fonts.clear();
     }
-    destroy() { this.apply(null); }
+    destroy() {
+        this.enabled = false;
+        this.presentation = null;
+        this.#render();
+    }
 }

@@ -134,6 +134,16 @@ BEGIN
             ||CASE WHEN NOT public.normalize_form_metadata_internal(input_data->'data') ? 'sale_opening_notifications'
               AND public.normalize_form_metadata_internal(form_metadata) ? 'sale_opening_notifications'
               THEN jsonb_build_object('sale_opening_notifications',public.normalize_form_metadata_internal(form_metadata)->'sale_opening_notifications') ELSE '{}'::jsonb END;
+          -- Released clients predate embed_inherit_style. Omission in their full
+          -- metadata is not a request to reset a newer setting. An explicit null
+          -- or boolean still goes through the one settings validator below.
+          IF jsonb_typeof(coalesce(nullif(form_metadata->'design','null'::jsonb),'{}'::jsonb))='object'
+            AND NOT coalesce(form_metadata->'design','{}'::jsonb) ? 'embed_inherit_style'
+            AND public.normalize_form_metadata_internal(previous_form_metadata)#>'{design,embed_inherit_style}' IS NOT NULL THEN
+            form_metadata:=jsonb_set(form_metadata,'{design}',
+              coalesce(nullif(form_metadata->'design','null'::jsonb),'{}'::jsonb) ||
+              jsonb_build_object('embed_inherit_style',public.normalize_form_metadata_internal(previous_form_metadata)#>'{design,embed_inherit_style}'));
+          END IF;
           form_metadata:=public.apply_form_settings_internal(form_metadata,
             public.form_settings_from_metadata_internal(form_metadata));
         END IF;

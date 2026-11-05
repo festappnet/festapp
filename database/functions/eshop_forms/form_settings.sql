@@ -5,7 +5,7 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
  "payments":["bankEnabled","stripeConnectionId"],
- "design":["is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
+ "design":["embed_inherit_style","is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
  "sale_opening_notifications":["enabled","collection_paused"],
  "schedule":["start_time","end_time","enable_countdown","countdown_title"]}'::jsonb;
 $$;
@@ -101,7 +101,7 @@ BEGIN
    k:=field.key;v:=field.value;path:=entry.key||'.'||k;
    IF NOT (spec->entry.key) ? k THEN RAISE invalid_parameter_value USING MESSAGE='unsupported form setting: '||path; END IF;
    IF v='null'::jsonb THEN section:=section-k;CONTINUE; END IF;
-   IF path IN ('payments.bankEnabled','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
+   IF path IN ('payments.bankEnabled','design.embed_inherit_style','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
    ELSIF path='variable_symbol.starting_number' THEN
     IF jsonb_typeof(v)<>'number' OR v::text !~ '^[0-9]{1,10}$' OR (v::text)::bigint NOT BETWEEN 1 AND 9999999999 THEN

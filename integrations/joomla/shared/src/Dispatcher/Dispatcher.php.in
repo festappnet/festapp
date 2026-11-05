@@ -16,7 +16,7 @@ final class Dispatcher extends AbstractModuleDispatcher
         $data['embed'] = '';
         if ($this->getApplication()->isClient('site')) {
             $settings = EmbedHelper::settings($data['params']->toArray());
-            if ($settings !== null && $settings['helper']) {
+            if ($settings !== null) {
                 $assets = $this->getApplication()->getDocument()->getWebAssetManager();
                 $handle = '@@ELEMENT@@.embed';
                 if (!$assets->assetExists('script', $handle)) {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "eb82cb1a60b0addcde6ca7e2934cad57fe23e37de332df3c6cbd94a0bcca3266",
+  "sourceDigest": "b34193c6baf840081a9968b3e8344fd8b71cc5b608b21cb5627546b223a2cc37",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -5935,6 +5935,12 @@
                       {
                         "type": "object",
                         "properties": {
+                          "embed_inherit_style": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          },
                           "presale_header": {
                             "anyOf": [
                               {

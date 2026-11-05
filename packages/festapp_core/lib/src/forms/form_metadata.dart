@@ -52,6 +52,7 @@ abstract final class FormMetadata {
     'payment_message': ['type'],
     'payments': ['bankEnabled', 'stripeConnectionId'],
     'design': [
+      'embed_inherit_style',
       'is_card_design',
       'primary_color',
       'secondary_color',

@@ -3,6 +3,33 @@ import 'package:festapp_core/forms.dart';
 
 void main() {
   test(
+    'embed preference defaults on, persists both values and preserves design',
+    () {
+      final original = FormDefinition(
+        data: {
+          'design': {'font_family': 'Noto Sans'},
+        },
+      );
+      expect(original.embedInheritStyle, isTrue);
+      for (final enabled in [false, true]) {
+        final changed = original.withEmbedInheritStyle(enabled);
+        expect(
+          FormMetadata.authoringSettingsSnapshot(
+            changed.data,
+          )['design']['embed_inherit_style'],
+          enabled,
+        );
+        final restored = FormDefinition.fromJson({'data': changed.data});
+        expect(restored.embedInheritStyle, enabled);
+        expect(restored.fontFamily, 'Noto Sans');
+      }
+      expect(
+        original.data!['design'].containsKey('embed_inherit_style'),
+        isFalse,
+      );
+    },
+  );
+  test(
     'form appearance defaults to system and survives the authoring snapshot',
     () {
       final original = FormDefinition(data: {});

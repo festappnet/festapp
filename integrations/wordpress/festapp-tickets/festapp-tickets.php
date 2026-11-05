@@ -4,7 +4,7 @@
  * Plugin URI: https://tickets.festapp.net/
  * Description: Embed a saved Festapp Tickets ticket form with a block or shortcode.
  * Version: 1.0.0
- * Requires at least: 6.6.4
+ * Requires at least: 6.6
  * Requires PHP: 7.4.33
  * Author: Festapp
  * Author URI: https://festapp.net/

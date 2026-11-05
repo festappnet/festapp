@@ -189,3 +189,12 @@ loading/saving and permit a later render to retry a failed helper request.
 Published Editor recovery preserved the checkout iframe and loaded one helper;
 14 regression tests pass. This does not resolve native Wix portal/install errors
 or qualify commercial submission.
+
+## Sdílené nastavení vzhledu
+
+Přebírání vzhledu webu nastavte ve Vzhledu uloženého formuláře v aplikaci.
+Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
+vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
+Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou
+aktualizovat doplněk nebo doplnit skript; běžné automatické vložení změnu převezme
+bez výměny kódu.

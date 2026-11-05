@@ -18,7 +18,7 @@ msgstr ""
 msgid "Automatic"
 msgstr ""
 
-msgid "Automatic height is enabled. The appearance option in the block explicitly controls whether the WordPress theme overrides the appearance from the app."
+msgid "Automatic height is enabled. Website appearance is controlled in the saved form design settings."
 msgstr ""
 
 msgid "Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
@@ -84,9 +84,6 @@ msgstr ""
 msgid "Open vstupenky.online"
 msgstr ""
 
-msgid "Overrides the app font, background and colors for this block only. The form in the app and the seating map keep their appearance."
-msgstr ""
-
 msgid "Paid sales also require your payment and organizer details in the service."
 msgstr ""
 
@@ -117,9 +114,6 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
-msgid "The WordPress appearance override replaces the app font, background and colors only for this block. It does not change the saved form in the app or the seating map. Disable it to use the app appearance; for a shortcode, add inherit_style=\"false\"."
-msgstr ""
-
 msgid "The editor shows the block settings. Save the page and open its preview to see the real form, then publish when you are ready."
 msgstr ""
 
@@ -138,13 +132,10 @@ msgstr ""
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr ""
 
-msgid "Use the WordPress theme instead of the app appearance"
-msgstr ""
-
-msgid "Uses the appearance configured in the app."
-msgstr ""
-
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
+msgstr ""
+
+msgid "Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page."
 msgstr ""
 
 msgid "vstupenky.online"

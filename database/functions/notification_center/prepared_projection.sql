@@ -109,7 +109,7 @@ BEGIN
  SELECT * INTO old FROM public.notification_center_view_members WHERE organization=d.organization AND recipient=d.recipient AND event_id=d.event_id;
  IF FOUND AND old.sequence>d.sequence THEN RETURN; END IF;
  SELECT * INTO b FROM public.notification_center_batch_internal(e,d);
- id:=CASE WHEN e.kind IN ('email_problem','bank_problem') OR e.occasion IS NULL THEN e.id::text ELSE b.batch_id||CASE WHEN b.is_read THEN ':read' ELSE ':unread' END END;
+ id:=CASE WHEN e.kind IN ('email_problem','bank_problem') OR e.occasion IS NULL THEN e.id::text WHEN b.is_read THEN b.group_key||':history:read' ELSE b.batch_id||':unread' END;
  visible:=public.notification_center_prepared_policy(e,p_anchor,coalesce(p_privacy,(SELECT privacy FROM public.notification_center_projection_scopes WHERE organization=d.organization AND recipient=d.recipient)));
  places:=CASE WHEN e.data->>'count' ~ '^[0-9]{1,9}$' THEN nullif((e.data->>'count')::bigint,0) END;
  context:=nullif(e.data->'formContext','null'::jsonb);

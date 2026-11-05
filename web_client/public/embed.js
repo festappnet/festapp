@@ -5,7 +5,7 @@
     const namespace = 'festapp-embed';
     const frames = new Map();
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
-    // Presentation is opt-in and independent of checkout and automatic height.
+    // The saved form owns appearance; the host only supplies presentation tokens.
     const externalSheets = new Map();
     const fontFamily = value => value.trim().replace(/^["']|["']$/g, '').toLowerCase();
     const fontFaces = (family) => {
@@ -64,7 +64,6 @@
         return !!alpha && parseFloat(alpha[1]) === 0;
     };
     const presentation = frame => {
-        if (frame.dataset.festappStyle !== 'inherit') return null;
         const container = frame.parentElement;
         const style = getComputedStyle(container);
         let background = 'rgb(255, 255, 255)';
@@ -72,7 +71,9 @@
             const color = getComputedStyle(node).backgroundColor;
             if (!isTransparent(color)) { background = color; break; }
         }
-        const button = container.querySelector('button, .wp-element-button, .wp-block-button__link') || document.querySelector('.wp-element-button, .wp-block-button__link, button');
+        // Checkout projections are output, never a source of website appearance.
+        const selector = ':is(button, .wp-element-button, .wp-block-button__link):not([data-festapp-embed-price] *)';
+        const button = container.querySelector(selector) || document.querySelector(selector);
         const candidate = button && getComputedStyle(button);
         // Navigation/outline buttons often have no fill; they cannot supply a
         // usable primary/background pair for checkout buttons.
@@ -235,7 +236,7 @@
         scan();
         if (!themeRaf) themeRaf = requestAnimationFrame(() => { themeRaf = null; refreshThemes(); });
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true,
-        attributeFilter: ['class', 'style', 'src', 'data-festapp-style'] });
+        attributeFilter: ['class', 'style', 'src'] });
     document.fonts?.ready.then(refreshThemes);
     scan();
 })();

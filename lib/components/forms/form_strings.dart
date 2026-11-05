@@ -22,8 +22,6 @@ class FormStrings {
       'FeatureFormSettings.embedInheritStyle'.tr();
   static String get embedInheritStyleHelp =>
       'FeatureFormSettings.embedInheritStyleHelp'.tr();
-  static String get embedInheritStyleRequiresScript =>
-      'FeatureFormSettings.embedInheritStyleRequiresScript'.tr();
 
   static String get savedPublicLink =>
       'FeatureFormSettings.savedPublicLink'.tr();

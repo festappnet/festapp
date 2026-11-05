@@ -1,6 +1,6 @@
 {
-  "name": "notification-open-work-2026-11-05",
-  "output": "supabase/migrations/20261105213000_notification_open_work.sql",
+  "name": "notification-read-history-compaction-2026-11-05",
+  "output": "supabase/migrations/20261105230000_notification_read_history_compaction.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -29,11 +29,13 @@
     "20261105120000_notification_center_prepared_views.sql",
     "20261105181000_notification_prepared_retention.sql",
     "20261105190000_notification_prepared_scope_discovery.sql",
-    "20261105203000_notification_idle_wake.sql"
+    "20261105203000_notification_idle_wake.sql",
+    "20261105213000_notification_open_work.sql"
   ],
   "sources": [
     "notification_center/prepared_projection.sql",
-    "notification_center/prepared_views.sql"
+    "notification_center/prepared_views.sql",
+    "notification_center/read_history_cutover.sql"
   ],
   "prerequisiteSha256": {
     "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
@@ -63,6 +65,7 @@
     "20261105120000_notification_center_prepared_views.sql": "eedaa17f51ee5bfa0089a91dc304ad9db655e43992a13040f8fcca364e53fd5f",
     "20261105181000_notification_prepared_retention.sql": "b7258df423be6bec8cfed25576f4d561a5fda218db06e3eb4929d07a210f2e84",
     "20261105190000_notification_prepared_scope_discovery.sql": "47aeb72e259c91e066af92773b15b7a422d60a1dcf62b1de183fb8d73d61edd6",
-    "20261105203000_notification_idle_wake.sql": "304fe6a93881a104a2556b69829cdbd3d17a2533706380f4ea2ac7defbaa9e88"
+    "20261105203000_notification_idle_wake.sql": "304fe6a93881a104a2556b69829cdbd3d17a2533706380f4ea2ac7defbaa9e88",
+    "20261105213000_notification_open_work.sql": "a46859b59b870d0e7b78027917b630be08c58acea1589e2ad57bec115faaaf22"
   }
 }

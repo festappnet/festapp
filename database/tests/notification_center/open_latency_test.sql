@@ -3,7 +3,7 @@
 BEGIN;
 DO $$
 DECLARE org bigint; oc bigint; oid bigint; viewer uuid:=gen_random_uuid(); hidden uuid:=gen_random_uuid();
- result jsonb; warm jsonb; started timestamptz; elapsed_ms numeric;
+ occasions bigint[]; orders bigint[]; slot integer; result jsonb; warm jsonb; started timestamptz; elapsed_ms numeric;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Notification latency fixture') RETURNING id INTO org;
  INSERT INTO auth.users(id) VALUES(viewer),(hidden);
@@ -14,10 +14,22 @@ BEGIN
  INSERT INTO public.notification_center_organizations(organization,initialized_at) VALUES(org,now()-interval '60 days');
  INSERT INTO eshop.orders(occasion,state,order_symbol,order_sequence,data)
  VALUES(oc,'ordered',public.generate_order_symbol(),1,'{"name":"Jana","email":"buyer@example.invalid"}') RETURNING id INTO oid;
+ occasions:=ARRAY[oc];orders:=ARRAY[oid];
+ -- Enough distinct occasion groups to keep a full page after history compaction.
+ FOR i IN 2..31 LOOP
+  INSERT INTO public.occasions(organization,title,link,start_time,end_time)
+  VALUES(org,'Latency '||i,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(oc,viewer,true);
+  INSERT INTO eshop.orders(occasion,state,order_symbol,order_sequence,data)
+  VALUES(oc,'ordered',public.generate_order_symbol(),1,'{"name":"Jana","email":"buyer@example.invalid"}') RETURNING id INTO oid;
+  occasions:=array_append(occasions,oc);orders:=array_append(orders,oid);
+ END LOOP;
+ oc:=occasions[1];
  -- Real publication and delivery, including 1000 sealed personal read batches.
  FOR i IN 1..2000 LOOP
-  PERFORM public.notification_center_publish_internal(org,oc,'order_created','latency:'||i,
-   jsonb_build_object('orderId',oid,'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,now()-interval '1 day'+i*interval '1 millisecond');
+  slot:=1+(i%31);
+  PERFORM public.notification_center_publish_internal(org,occasions[slot],'order_created','latency:'||i,
+   jsonb_build_object('orderId',orders[slot],'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,now()-interval '1 day'+i*interval '1 millisecond');
  END LOOP;
  FOR i IN 1..40 LOOP
   EXIT WHEN NOT EXISTS(SELECT 1 FROM public.notification_center_events WHERE organization=org AND projected_revision<attention_revision);
@@ -25,8 +37,9 @@ BEGIN
  END LOOP;
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org),2000::bigint,'latency fixture delivers every event');
  INSERT INTO public.notification_center_read_batches(organization,recipient,group_key,after_sequence,through_sequence)
- SELECT org,viewer,'occasion-kind:'||oc||':order_created',sequence-1,sequence
- FROM public.notification_center_deliveries WHERE organization=org AND recipient=viewer AND sequence%2=0;
+ SELECT org,viewer,'occasion-kind:'||e.occasion||':order_created',d.sequence-1,d.sequence
+ FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
+ WHERE d.organization=org AND recipient=viewer AND d.sequence%2=0;
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  FOR i IN 1..2 LOOP
   IF i=2 THEN

@@ -3,7 +3,7 @@ export const HELP_URL = 'https://festapp-wix.pages.dev/help';
 export const CHECKOUT_CONTEXT_ENDPOINT = 'https://api.festapp.net/functions/v1/wix-checkout-context';
 export const TAG_NAME = 'vstupenky-online-form';
 export const DEFAULT_TITLE = 'Prodej vstupenek - vstupenky.online';
-export const PROPERTIES = ['form-url', 'form-title', 'inherit-style'];
+export const PROPERTIES = ['form-url', 'form-title'];
 
 // This is a public form URL, never an authentication or editor URL.
 export function formUrl(value) {
@@ -25,5 +25,5 @@ export function settingsFrom(values) {
   const url = formUrl(values['form-url']);
   if (!url) throw new Error('Vložte veřejný odkaz https://vstupenky.online/form/… bez dalších parametrů.');
   const title = String(values['form-title'] || DEFAULT_TITLE).trim().slice(0, 200) || DEFAULT_TITLE;
-  return {'form-url': url, 'form-title': title, 'inherit-style': values['inherit-style'] === 'false' ? 'false' : 'true'};
+  return {'form-url': url, 'form-title': title};
 }

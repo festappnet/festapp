@@ -1,8 +1,11 @@
 import 'package:fstapp/widgets/app_dialog.dart';
+
 import 'form_embed_code.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/link.dart';
 import 'package:fstapp/app_config.dart';
+
 import '../../_shared/copy_button.dart';
 import '../form_strings.dart';
 
@@ -21,51 +24,62 @@ class PublicLink extends StatelessWidget {
   final String? savedLink;
   final bool isForm;
   final bool showCopyLabel;
-  const PublicLink(
-      {super.key,
-      required this.link,
-      this.savedLink,
-      this.isForm = true,
-      this.showCopyLabel = false});
+  const PublicLink({
+    super.key,
+    required this.link,
+    this.savedLink,
+    this.isForm = true,
+    this.showCopyLabel = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final saved = savedLink;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (saved != null && saved.isNotEmpty) ...[
-        Text(FormStrings.savedPublicLink, style: const TextStyle(fontSize: 12)),
-        Row(children: [
-          Expanded(
-            child: Link(
-              uri: Uri.parse(publicLinkUrl(saved, isForm: isForm)),
-              target: LinkTarget.blank,
-              builder: (context, followLink) => InkWell(
-                onTap: followLink,
-                child: Text(
-                  publicLinkUrl(saved, isForm: isForm),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    decoration: TextDecoration.underline,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (saved != null && saved.isNotEmpty) ...[
+          Text(
+            FormStrings.savedPublicLink,
+            style: const TextStyle(fontSize: 12),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Link(
+                  uri: Uri.parse(publicLinkUrl(saved, isForm: isForm)),
+                  target: LinkTarget.blank,
+                  builder: (context, followLink) => InkWell(
+                    onTap: followLink,
+                    child: Text(
+                      publicLinkUrl(saved, isForm: isForm),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              CopyButton(
+                value: publicLinkUrl(saved, isForm: isForm),
+                showLabel: showCopyLabel,
+              ),
+            ],
           ),
-          CopyButton(
-              value: publicLinkUrl(saved, isForm: isForm),
-              showLabel: showCopyLabel),
-        ]),
-      ],
-      if (link != saved) ...[
-        Text(
+        ],
+        if (link != saved) ...[
+          Text(
             link.isEmpty
                 ? FormStrings.automaticPublicLink
                 : FormStrings.publicLinkPreview,
-            style: const TextStyle(fontSize: 12)),
-        if (link.isNotEmpty)
-          SelectableText(publicLinkUrl(link, isForm: isForm)),
+            style: const TextStyle(fontSize: 12),
+          ),
+          if (link.isNotEmpty)
+            SelectableText(publicLinkUrl(link, isForm: isForm)),
+        ],
       ],
-    ]);
+    );
   }
 }
 
@@ -75,20 +89,23 @@ class FormPublicLink extends StatelessWidget {
   const FormPublicLink({super.key, required this.link, this.savedLink});
 
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        PublicLink(link: link, savedLink: savedLink),
-        if (savedLink != null && savedLink!.isNotEmpty)
-          TextButton.icon(
-            icon: const Icon(Icons.code),
-            label: Text(FormStrings.embedAction),
-            onPressed: () => showDialog<void>(
-                context: context,
-                builder: (_) => _EmbedDialog(savedLink: savedLink!)),
-          )
-        else
-          Text(FormStrings.embedSaveFirst),
-      ]);
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      PublicLink(link: link, savedLink: savedLink),
+      if (savedLink != null && savedLink!.isNotEmpty)
+        TextButton.icon(
+          icon: const Icon(Icons.code),
+          label: Text(FormStrings.embedAction),
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (_) => _EmbedDialog(savedLink: savedLink!),
+          ),
+        )
+      else
+        Text(FormStrings.embedSaveFirst),
+    ],
+  );
 }
 
 class _EmbedDialog extends StatefulWidget {
@@ -101,23 +118,22 @@ class _EmbedDialog extends StatefulWidget {
 
 class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
-  bool inheritStyle = true;
 
   @override
   Widget build(BuildContext context) {
     final code = formEmbedCode(
-        tenantUrl: AppConfig.webLink,
-        savedLink: widget.savedLink,
-        title: FormStrings.embedTitle,
-        fallbackLabel: FormStrings.embedFallback,
-        automatic: automatic,
-        inheritStyle: inheritStyle);
+      tenantUrl: AppConfig.webLink,
+      savedLink: widget.savedLink,
+      title: FormStrings.embedTitle,
+      fallbackLabel: FormStrings.embedFallback,
+      automatic: automatic,
+    );
     return AppAlertDialog(
       title: Text(FormStrings.embedAction),
       content: SizedBox(
-          width: 600,
-          child: SingleChildScrollView(
-              child: Column(
+        width: 600,
+        child: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -128,33 +144,28 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                 isExpanded: true,
                 items: [
                   DropdownMenuItem(
-                      value: true, child: Text(FormStrings.embedAutomatic)),
+                    value: true,
+                    child: Text(FormStrings.embedAutomatic),
+                  ),
                   DropdownMenuItem(
-                      value: false, child: Text(FormStrings.embedFixed)),
+                    value: false,
+                    child: Text(FormStrings.embedFixed),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value != null) setState(() => automatic = value);
                 },
               ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: Text(FormStrings.embedInheritStyle),
-                subtitle: Text(automatic
-                    ? FormStrings.embedInheritStyleHelp
-                    : FormStrings.embedInheritStyleRequiresScript),
-                value: automatic && inheritStyle,
-                onChanged: automatic
-                    ? (value) => setState(() => inheritStyle = value ?? false)
-                    : null,
-              ),
               const SizedBox(height: 12),
               SelectableText(code),
               Align(
-                  alignment: Alignment.centerRight,
-                  child: CopyButton(value: code)),
+                alignment: Alignment.centerRight,
+                child: CopyButton(value: code),
+              ),
             ],
-          ))),
+          ),
+        ),
+      ),
     );
   }
 }

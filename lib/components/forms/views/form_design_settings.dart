@@ -8,6 +8,7 @@ import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/fonts/form_font_catalog.dart';
+
 import '../../fonts/font_family_picker.dart';
 
 import '../form_strings.dart';
@@ -18,12 +19,13 @@ class FormDesignSettings extends StatefulWidget {
   final VoidCallback onChanged;
   final Future<FormFontCatalog> Function() loadFonts;
 
-  const FormDesignSettings(
-      {super.key,
-      required this.form,
-      required this.onChanged,
-      this.enabled = true,
-      this.loadFonts = FormFontCatalog.load});
+  const FormDesignSettings({
+    super.key,
+    required this.form,
+    required this.onChanged,
+    this.enabled = true,
+    this.loadFonts = FormFontCatalog.load,
+  });
 
   @override
   State<FormDesignSettings> createState() => _FormDesignSettingsState();
@@ -38,26 +40,31 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
     _fonts = Future<FormFontCatalog>.sync(widget.loadFonts);
   }
 
-  void _pickColor(BuildContext context, Color currentColor,
-      Function(Color) onColorChanged) {
+  void _pickColor(
+    BuildContext context,
+    Color currentColor,
+    Function(Color) onColorChanged,
+  ) {
     if (!widget.enabled) return;
     showDialog(
-        context: context,
-        builder: (context) {
-          Color pickerColor = currentColor;
-          // Strip alpha (FF) from start of value string for display
-          // color.value.toRadixString(16) -> ffrrggbb
-          // We want #RRGGBB
-          String colorToHex(Color c) =>
-              '#${c.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+      context: context,
+      builder: (context) {
+        Color pickerColor = currentColor;
+        // Strip alpha (FF) from start of value string for display
+        // color.value.toRadixString(16) -> ffrrggbb
+        // We want #RRGGBB
+        String colorToHex(Color c) =>
+            '#${c.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
-          TextEditingController hexController =
-              TextEditingController(text: colorToHex(pickerColor));
-          FocusNode hexFocus = FocusNode();
+        TextEditingController hexController = TextEditingController(
+          text: colorToHex(pickerColor),
+        );
+        FocusNode hexFocus = FocusNode();
 
-          return AppAlertDialog(
-            title: Text(FormStrings.pickColor),
-            content: StatefulBuilder(builder: (context, setState) {
+        return AppAlertDialog(
+          title: Text(FormStrings.pickColor),
+          content: StatefulBuilder(
+            builder: (context, setState) {
               return SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -76,40 +83,45 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                       },
                       pickerAreaHeightPercent: 0.8,
                       enableAlpha: false, // Standard for simple UI
-                      labelTypes: const [], // Hide default labels to keep it clean
+                      labelTypes:
+                          const [], // Hide default labels to keep it clean
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: hexController,
                       focusNode: hexFocus,
                       decoration: InputDecoration(
-                          labelText: FormStrings.hexCodeLabel,
-                          hintText: '#RRGGBB',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.tag),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.content_paste),
-                            onPressed: () async {
-                              final data =
-                                  await Clipboard.getData(Clipboard.kTextPlain);
-                              if (data?.text != null) {
-                                hexController.text = data!.text!;
-                                // Trigger change logic manually
-                                String clean =
-                                    data.text!.replaceAll('#', '').trim();
-                                if (clean.length == 6) {
-                                  try {
-                                    Color c =
-                                        Color(int.parse('FF$clean', radix: 16));
-                                    setState(() {
-                                      pickerColor = c;
-                                    });
-                                    onColorChanged(c);
-                                  } catch (_) {}
-                                }
+                        labelText: FormStrings.hexCodeLabel,
+                        hintText: '#RRGGBB',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.tag),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.content_paste),
+                          onPressed: () async {
+                            final data = await Clipboard.getData(
+                              Clipboard.kTextPlain,
+                            );
+                            if (data?.text != null) {
+                              hexController.text = data!.text!;
+                              // Trigger change logic manually
+                              String clean = data.text!
+                                  .replaceAll('#', '')
+                                  .trim();
+                              if (clean.length == 6) {
+                                try {
+                                  Color c = Color(
+                                    int.parse('FF$clean', radix: 16),
+                                  );
+                                  setState(() {
+                                    pickerColor = c;
+                                  });
+                                  onColorChanged(c);
+                                } catch (_) {}
                               }
-                            },
-                          )),
+                            }
+                          },
+                        ),
+                      ),
                       onChanged: (val) {
                         String clean = val.replaceAll('#', '').trim();
                         if (clean.length == 6) {
@@ -129,27 +141,31 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                   ],
                 ),
               );
-            }),
-            actions: <Widget>[
-              ElevatedButton(
-                child: Text(FormStrings.buttonGotIt),
-                onPressed: () {
-                  widget.onChanged();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
+            },
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              child: Text(FormStrings.buttonGotIt),
+              onPressed: () {
+                widget.onChanged();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _applyPreset(AppearancePalette preset) {
     if (!widget.enabled) return;
     setState(() {
-      widget.form.definition =
-          widget.form.definition.withPrimaryColor(preset.primary);
-      widget.form.definition =
-          widget.form.definition.withSecondaryColor(preset.secondary);
+      widget.form.definition = widget.form.definition.withPrimaryColor(
+        preset.primary,
+      );
+      widget.form.definition = widget.form.definition.withSecondaryColor(
+        preset.secondary,
+      );
       widget.onChanged();
     });
   }
@@ -170,6 +186,20 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SwitchListTile(
+            key: const ValueKey('form-embed-inherit-style'),
+            title: Text(FormStrings.embedInheritStyle),
+            subtitle: Text(FormStrings.embedInheritStyleHelp),
+            value: widget.form.definition.embedInheritStyle,
+            contentPadding: EdgeInsets.zero,
+            onChanged: widget.enabled
+                ? (value) => setState(() {
+                    widget.form.definition = widget.form.definition
+                        .withEmbedInheritStyle(value);
+                    widget.onChanged();
+                  })
+                : null,
+          ),
           SwitchListTile(
             title: Text(FormStrings.labelCardDesign),
             subtitle: Text(FormStrings.subtitleCardDesign),
@@ -314,8 +344,10 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
           const SizedBox(height: 24),
           const Divider(),
           const SizedBox(height: 24),
-          Text(FormStrings.typography,
-              style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            FormStrings.typography,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 8),
           FutureBuilder<FormFontCatalog>(
             future: _fonts,
@@ -343,12 +375,16 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
                 value: widget.form.definition.fontFamily,
                 families: fonts.families,
                 previewStyle: fonts.previewStyle,
-                selectedStyle:
-                    _getSafeFont(fonts, widget.form.definition.fontFamily),
+                selectedStyle: _getSafeFont(
+                  fonts,
+                  widget.form.definition.fontFamily,
+                ),
                 onSelected: (value) async {
                   if (value != null) fonts.getFont(value);
-                  setState(() => widget.form.definition =
-                      widget.form.definition.withFontFamily(value));
+                  setState(
+                    () => widget.form.definition = widget.form.definition
+                        .withFontFamily(value),
+                  );
                   widget.onChanged();
                 },
               );
@@ -358,5 +394,4 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
       ),
     );
   }
-
 }

@@ -16,8 +16,8 @@ msgstr "Po zveřejnění se návštěvník připojí k Festapp Tickets a zadáv�
 msgid "Automatic"
 msgstr "Automatická"
 
-msgid "Automatic height and website styling are already enabled. Start with these defaults; change them only if your page needs it."
-msgstr "Automatická výška i převzetí vzhledu webu jsou už zapnuté. Začněte s tímto nastavením a upravte ho jen podle potřeby."
+msgid "Automatic height is enabled. Website appearance is controlled in the saved form design settings."
+msgstr "Automatická výška je zapnutá. Přebírání vzhledu webu nastavte ve vzhledu uloženého formuláře."
 
 msgid "Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr "Automatická výška načítá pomocný skript služby. Pevná výška (240-4000 px) používá posouvání uvnitř formuláře. Odkaz pod formulářem funguje i bez skriptu. Pokud šablona nebo bezpečnostní pravidla blokují vložení, návštěvník otevře formulář v nové záložce."
@@ -76,12 +76,6 @@ msgstr "Výška (px)"
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr "Při nejistém výsledku nákupu ověřte objednávku s pořadatelem před novým nákupem. Platby a dostupnost sedadel řídí služba. Deaktivace ani odinstalace pluginu nemaže objednávky ve službě; shortcode pak může být na stránce viditelný jako text."
 
-msgid "Match website style"
-msgstr "Převzít styl stránky"
-
-msgid "Match website style is enabled by default. Disable it in the block, or add inherit_style=\"false\" to the shortcode. The form uses the website font family and colors; the seat map keeps its own appearance. This option loads the service helper even with fixed height. Custom fonts must permit cross-origin loading."
-msgstr "Převzít styl stránky je zapnuto ve výchozím stavu. Vypněte jej v bloku nebo do shortcodu přidejte inherit_style=\"false\". Formulář použije rodinu písma a barvy webu; plánek sálu si zachová vlastní vzhled. Tato volba načítá pomocný skript služby i při pevné výšce. Vlastní fonty musí povolovat načtení z jiné domény."
-
 msgid "Open Festapp Tickets"
 msgstr "Otevřít Festapp Tickets"
 
@@ -139,11 +133,11 @@ msgstr "Vstupenky na vašem webu"
 msgid "Use https://tickets.festapp.net/form/saved-slug without query parameters or personal fragments."
 msgstr "Použijte https://tickets.festapp.net/form/ulozeny-odkaz bez parametrů a osobního fragmentu."
 
-msgid "Use the website font family and colors. Seat map keeps its own appearance. Website fonts must allow loading from the service."
-msgstr "Použít rodinu písma a barvy webu. Plánek sálu si zachová vlastní vzhled. Fonty webu musí povolovat načtení ze služby."
-
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your Festapp Tickets account."
 msgstr "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Objednávky, platby a odbavení spravujete ve svém účtu Festapp Tickets."
+
+msgid "Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page."
+msgstr "Přebírání vzhledu webu nastavte ve vzhledu uloženého formuláře. Změny platí pro všechna vložení po opětovném načtení stránky."
 
 msgctxt "block title"
 msgid "Festapp Tickets"

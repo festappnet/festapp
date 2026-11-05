@@ -28,13 +28,12 @@ Skutečné obrazovky: [obrázkový průchod](preview/onboarding/index.html).
 
 ## Převzetí vzhledu webu
 
-Blok má ve výchozím stavu zapnutou volbu **Převzít styl stránky**; totéž platí pro shortcode.
-`inherit_style="false"` ji vypíná. Sdílený servisní `/embed.js` předává skutečnou computed
+Přebírání vzhledu řídí uložené nastavení formuláře pro všechna vložení. Sdílený servisní `/embed.js` předává skutečnou computed
 `font-family`, dostupné definice fontů a barvy okolní stránky přes stejný ověřený
 embed protokol. Fonty se načítají také v iframe a potřebují CORS na svém serveru.
 Nepřístupné stylesheety/fonty ponechají fallback ze stejné font-family. Plánek
 zachovává původní vzhled služby. Pevná výška zůstává pevná i s helperem.
-WordPress pouze deklaruje volbu; nenese druhý renderer ani vlastní theme bridge.
+WordPress pouze vkládá formulář; nenese druhý renderer ani vlastní theme bridge.
 Změna vyžaduje nasazení aktualizovaného web clientu i `/embed.js` služby.
 
 ## Sestavení a lokální WordPress
@@ -147,3 +146,12 @@ pnpm run backend:stop
 ```
 
 `backend:stop --no-backup` odstraní vlastní disposable data. ZIPy a veřejné důkazy zůstávají. HAR, přihlašovací údaje, capability a raw queue capture patří pouze do ignorované `.private/` s režimem 0600, nikdy do ZIP/SVN. Nepoužívejte globální Docker stop/prune ani globální browser close. Stav úklidu: `evidence/cleanup.json`.
+
+## Sdílené nastavení vzhledu
+
+Přebírání vzhledu webu nastavte ve Vzhledu uloženého formuláře v aplikaci.
+Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
+vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
+Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou
+aktualizovat doplněk nebo doplnit skript; běžné automatické vložení změnu převezme
+bez výměny kódu.

@@ -23,7 +23,7 @@ export function registerTicketElement(win, getViewMode, attribution) {
         catch { this.attributionFailed=true; }
       }
     }
-    static observedAttributes = ['form-url', 'form-title', 'inherit-style'];
+    static observedAttributes = ['form-url', 'form-title'];
     connectedCallback() {
       const generation = this.generation = (this.generation || 0) + 1;
       this.mode = null;
@@ -130,8 +130,6 @@ export function registerTicketElement(win, getViewMode, attribution) {
       if (this.frame.getAttribute('src') !== source) this.frame.src = source;
       this.frame.title = this.getAttribute('form-title')?.trim().slice(0, 200) || DEFAULT_TITLE;
       this.fallback.href = this.directUrl(url);
-      if (this.getAttribute('inherit-style') === 'false') delete this.frame.dataset.festappStyle;
-      else this.frame.dataset.festappStyle = 'inherit';
       ensureHelper(this.ownerDocument);
     }
   }

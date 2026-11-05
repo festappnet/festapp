@@ -20,7 +20,7 @@ $invalid = VstupenkyOnline\render( array( 'url' => $url . '#private' ) );
 vo_assert( false === strpos( $invalid, '<iframe' ) && false === strpos( $invalid, 'private' ), 'invalid input never leaked' );
 $fixed = VstupenkyOnline\render( array( 'url' => $url, 'title' => '"><img src=x onerror=alert(1)>', 'inheritStyle' => false, 'mode' => 'fixed', 'height' => '4001" onload="bad' ) );
 vo_assert( false === strpos( $fixed, '<img' ) && false === strpos( $fixed, ' onload=' ), 'title/height escaping' );
-vo_assert( false !== strpos( $fixed, 'height="800"' ) && false === strpos( $fixed, ' data-festapp-embed ' ), 'fixed safe default' );
+vo_assert( false !== strpos( $fixed, 'height="800"' ) && false !== strpos( $fixed, ' data-festapp-embed ' ), 'fixed safe default' );
 vo_assert( false !== strpos( $fixed, 'noopener noreferrer' ) && false !== strpos( $fixed, '?embed=1' ), 'safe fallback and embed' );
 $block = render_block( array( 'blockName' => 'vstupenky-online/ticket-form', 'attrs' => array( 'url' => $url, 'mode' => 'fixed' ), 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
 $short = do_shortcode( '[vstupenky_online url="' . $url . '" mode="fixed"]' );

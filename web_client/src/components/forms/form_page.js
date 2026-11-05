@@ -127,6 +127,7 @@ export class FormPage extends Component {
         window.scrollTo(0, 0);
 
         this.currentLink = link;
+        this.embedBridge?.setInheritStyle(false);
         this.saleOpeningScope ||= consumeSaleOpeningLocation(window.location, window.history);
         if (isEmbed() && !this.embedBridge) {
             this.embedBridge = new EmbedBridge(); this.embedBridge.start();
@@ -541,6 +542,7 @@ export class FormPage extends Component {
     // Delegated to ThemeService
     applyTheme(formModel) {
         ThemeService.applyThemeFromModel(formModel);
+        this.embedBridge?.setInheritStyle(formModel.embedInheritStyle);
     }
 
     renderForm(formModel, showPreview, restoredDraft = null) {

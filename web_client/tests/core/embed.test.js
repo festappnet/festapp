@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
+import { FormModel } from '../../src/components/forms/form_models.js';
 import { isEmbed } from '../../src/services/embed_context.js';
 import { EmbedBridge, revealEmbedStep, preserveCheckoutScroll } from '../../src/services/embed_bridge.js';
 
@@ -135,7 +136,7 @@ test('revealing an embed step preserves native keyboard tab stops', () => {
     if(eventDescriptor)Object.defineProperty(globalThis,'CustomEvent',eventDescriptor);else delete globalThis.CustomEvent;
 });
 
-test('host appearance is opt-in, resolves stylesheet-relative fonts, updates and preserves fixed height', async () => {
+test('host supplies appearance independently of legacy flags and preserves fixed height', async () => {
     const {dom, frames: [frame, other], sent, message} = host();
     const style = dom.window.document.createElement('style');
     style.textContent = '@font-face {font-family: "Site Serif"; src:url("fonts/site.woff2"); font-weight:700} body {font-family:"Site Serif", serif;color:rgb(20, 30, 40);background-color:rgb(250, 249, 245)}';
@@ -144,7 +145,7 @@ test('host appearance is opt-in, resolves stylesheet-relative fonts, updates and
     const face = style.sheet.cssRules[0].style;
     const property = face.getPropertyValue.bind(face);
     face.getPropertyValue = name => name === 'src' ? 'url("fonts/site.woff2")' : property(name);
-    assert.equal(sent[0][0][0].theme, null);
+    assert.ok(sent[0][0][0].theme);
     const navButton=dom.window.document.createElement('button');navButton.style.backgroundColor='transparent';dom.window.document.body.append(navButton);
     frame.dataset.festappStyle = 'inherit'; frame.dataset.festappHeight = 'fixed';
     message(frame, 'https://tickets.invalid', envelope('ready'));
@@ -154,14 +155,32 @@ test('host appearance is opt-in, resolves stylesheet-relative fonts, updates and
     assert.equal(theme.fonts[0].weight, '700');
     assert.equal(theme.primary, 'rgb(20, 30, 40)');
     assert.equal(theme.buttonText, 'rgb(250, 249, 245)');
-    assert.equal(sent[1][0][0].theme, null);
+    assert.ok(sent[1][0][0].theme);
     message(frame, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height:1500}));
     assert.equal(frame.style.height, '');
     delete frame.dataset.festappStyle;
     await new Promise(resolve => dom.window.setTimeout(resolve, 50));
-    assert.equal(sent[0].at(-1)[0].theme, null);
-    assert.equal(sent[1].at(-1)[0].theme, null);
+    assert.equal(sent[0].at(-1)[0].theme.fontFamily, theme.fontFamily);
+    assert.ok(sent[1].at(-1)[0].theme);
     assert.equal(other.style.height, '');
+    dom.window.close();
+});
+
+test('host appearance never derives website colors from a projected checkout price', () => {
+    const {dom,frames:[frame,other],sent,message}=host(true);
+    const button=dom.window.document.createElement('button');
+    button.style.cssText='background-color:rgb(10, 20, 30);color:white';
+    dom.window.document.body.append(button);
+    const id=sent[0][0][0].instance;
+    message(frame,'https://tickets.invalid',envelope('price',id,{
+        price:{count:1,total:'100 Kč',lines:[]},visible:true,
+        appearance:{'background-color':'rgb(200, 0, 0)',color:'white'}
+    }));
+    for(const [index,target,origin] of [[0,frame,'https://tickets.invalid'],[1,other,'https://other.invalid']]) {
+        message(target,origin,envelope('ready'));
+        assert.equal(sent[index].at(-1)[0].theme.primary,'rgb(10, 20, 30)',
+            'checkout projections cannot become website appearance sources');
+    }
     dom.window.close();
 });
 
@@ -213,10 +232,20 @@ test('theme requires the pinned parent, rejects CSS/URL injection, cleans fonts 
     const message=(type,values,origin='https://host.invalid',source=parent)=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope(type,'one',values)}));
     message('theme',{theme});assert.equal(fonts.size,0);
     message('init',{viewportHeight:600,theme},'https://host.invalid',{});assert.equal(fonts.size,0);
-    message('init',{viewportHeight:600,theme});assert.equal(fonts.size,1);
+    message('init',{viewportHeight:600,theme});assert.equal(fonts.size,0);
+    // Loading saved form data enables the already received host presentation.
+    bridge.setInheritStyle(new FormModel({data:{design:{embed_inherit_style:true}}}).embedInheritStyle);assert.equal(fonts.size,1);
+    bridge.setInheritStyle(new FormModel({data:{design:{embed_inherit_style:false}}}).embedInheritStyle);assert.equal(fonts.size,0);
+    message('theme',{theme});assert.equal(fonts.size,0);
+    assert.equal(win.document.documentElement.dataset.embedTheme,undefined);
+    bridge.setInheritStyle(new FormModel({data:{design:{embed_inherit_style:true}}}).embedInheritStyle);assert.equal(fonts.size,1);
     assert.equal(win.document.documentElement.style.getPropertyValue('--embed-font-family'),theme.fontFamily);
     message('theme',{theme:{...theme,fontFamily:'evil; background:url(https://evil.invalid)'}});
     assert.equal(win.document.documentElement.style.getPropertyValue('--embed-font-family'),theme.fontFamily);
+    bridge.setInheritStyle(false);
+    bridge.setInheritStyle(true);
+    assert.equal(win.document.documentElement.style.getPropertyValue('--embed-font-family'),theme.fontFamily,
+        'invalid host input must not poison the last valid presentation');
     message('theme',{theme:null},'https://other.invalid');assert.equal(fonts.size,1);
     message('theme',{theme:{...theme,fonts:[{...theme.fonts[0],urls:['javascript:alert(1)']}]}});assert.equal(fonts.size,0);
     message('theme',{theme});message('viewport',{viewportHeight:800,theme});assert.equal(fonts.size,1);

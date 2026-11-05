@@ -111,11 +111,11 @@ test('settings validate before any writes, serialize readbacks and stop on a fai
   await assert.rejects(saveSettings(api, {'form-url':'https://evil.invalid/form/a'}));
   assert.equal(calls.length, 0);
   await saveSettings(api, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Test','inherit-style':'false'});
-  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title'],['set','inherit-style'],['get','inherit-style']]);
+  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title']]);
   const writes=[];
   await assert.rejects(saveSettings({async setProp(name) {writes.push(name);},async getProp() {return 'unexpected';}}, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`}));
   assert.deepEqual(writes,['form-url']);
-  assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`})['inherit-style'],'true');
+  assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`})['inherit-style'],undefined);
 });
 
 test('settings wait for propagated readback before writing sibling properties', async () => {
@@ -136,7 +136,7 @@ test('settings wait for propagated readback before writing sibling properties', 
       return value;
     },
   }, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Delayed','inherit-style':'false'});
-  assert.deepEqual(confirmed, ['form-url', 'form-title', 'inherit-style']);
+  assert.deepEqual(confirmed, ['form-url', 'form-title']);
 });
 
 test('settings page fails closed outside editor and surfaces save success', async () => {

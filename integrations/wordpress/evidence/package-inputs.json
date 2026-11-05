@@ -1,14 +1,14 @@
 {
   "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-  "blocks/ticket-form/block.json": "04c6402907fafabef2d02dbe8d999b7ad4150e3eeea2f43da1d3bf6755d8fcf3",
-  "blocks/ticket-form/editor.js": "91b94ee8c7288360740a355c3874a6333acb8626e15b763cff0573b5c190c65d",
+  "blocks/ticket-form/block.json": "15efa3f24c0993cb1b6b1bd5e777041d3ccc15d462aaf6d6fbbe0c5bcbf0d4fa",
+  "blocks/ticket-form/editor.js": "66279028207a82e9ff16fd5285e5c3bb05fb6b10f3c1f32184ac2bad60a82e91",
   "blocks/ticket-form/style.css": "28fca64ee334efbf98f947d7c7ff52cb2cfa64cb0f0925ef27b31fbf6d89a727",
-  "includes/admin.php": "fec85b8172b86477d3f96fb35bc2c1927f3f4ea2a18225751bbe0b2f4b0ac164",
-  "includes/embed.php": "0444da495d5b2aac323cf76792e643224a33169ba7dd03d264e45549f8e6dbf1",
-  "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "8afc1c4fb1fb6974eddf705bb5873ef1e35ac1669dbe3501b3bf1fcc804d1444",
-  "languages/vstupenky-online-cs_CZ.mo": "e83cc6622dc13a48161f53927833e823093e7f5df12a4d642b661ab3e5b1692e",
-  "languages/vstupenky-online-cs_CZ.po": "1c8350373eee62f6b1b3dea49a4e2a589acecb425b21c1c61fa2b2fb59051780",
-  "languages/vstupenky-online.pot": "46dee0a325d97dbe88907a84d6eb64490149af3077fb7dcc55617e8e8376626f",
-  "readme.txt": "6aac39e58429d7e7e2ed2a5868e5076afa8b3809a5e16de066e2afb0bc87ce7d",
+  "includes/admin.php": "6716f76444a75cbb691f18c8ff52c8511ec62459db67e97d4548f552f3e8059f",
+  "includes/embed.php": "5e512c686bdc95f37a1d32e28097e2cf885312c391cdd842a9287ebf067cc504",
+  "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "01728fa1f529165a8c248e718f5bedb9ef0fdbe4a8d12cf491e380d5716dedbe",
+  "languages/vstupenky-online-cs_CZ.mo": "efa09f548ecc068725840f98150e051868bfac8faf7f1e70db6c6e72e6099f83",
+  "languages/vstupenky-online-cs_CZ.po": "11b2e366cd6bfabf170d9f04e9cd3af245e4492bd9aa6e9a8be83aaeb0a8fa02",
+  "languages/vstupenky-online.pot": "4c852fea09d30b3277f01dfeee67a1e0acbd45e6088b4d1802fb55215c2a27ac",
+  "readme.txt": "2c3ae6a9af1694a050724fefd42cdec90b42b8f623bde872c3dc7aac7e3ec7a7",
   "vstupenky-online.php": "020cfcb781bfcd2066304640282fa3acad45bac2c089abe641657b0829f1d3fa"
 }

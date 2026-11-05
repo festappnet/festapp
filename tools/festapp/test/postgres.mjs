@@ -14,16 +14,28 @@ export async function assertSchema(db) {
 
 // Explicitly supported disposable projects only. A URL alone is never proof
 // that this task owns the data, and no remote/production fallback is accepted.
-export async function openDisposableDatabase(connection) {
+export function expectedDisposableProject(connection, env=process.env) {
     const url=new URL(connection);
     assert.equal(url.hostname,'127.0.0.1');
-    assert(['55432','61022','61032'].includes(url.port));
-    if(['61022','61032'].includes(url.port)) assert.equal(connection,process.env.FESTAPP_AUTHORIZATION_DATABASE_URL);
+    if(['55432','61022','61032'].includes(url.port)) {
+        if(url.port!=='55432') assert.equal(connection,env.FESTAPP_AUTHORIZATION_DATABASE_URL);
+        return url.port==='61032'?'festapp-mcp-hardening-20261029':url.port==='61022'?'festapp-authz-20261020':'festapp-db-tests-pg15';
+    }
+    // A task-owned bootstrap must bind both its URL and exact database marker.
+    assert.equal(connection,env.FESTAPP_MCP_TEST_DATABASE_URL);
+    assert.equal(url.port,env.FESTAPP_LOCAL_DB_PORT);
+    assert.match(env.FESTAPP_LOCAL_DB_PROJECT_ID??'',/^festapp-[a-z0-9-]+$/);
+    return env.FESTAPP_LOCAL_DB_PROJECT_ID;
+}
+
+export async function openDisposableDatabase(connection) {
+    const expectedProject=expectedDisposableProject(connection);
+    const url=new URL(connection);
     const db=new Client({connectionString:connection});await db.connect();
     try {
         const project=(await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project;
-        assert.equal(project,url.port==='61032'?'festapp-mcp-hardening-20261029':url.port==='61022'?'festapp-authz-20261020':'festapp-db-tests-pg15');
-        if(['61022','61032'].includes(url.port)) {
+        assert.equal(project,expectedProject);
+        if(url.port!=='55432') {
             assert.equal((await db.query('show cron.launch_active_jobs')).rows[0]['cron.launch_active_jobs'],'off');
             assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe,true);
         }

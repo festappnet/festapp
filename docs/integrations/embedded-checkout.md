@@ -120,14 +120,21 @@ po dokončení jej i vlastní disposable projekt zastavte.
 
 ## Volitelné převzetí vzhledu hostitele
 
-`data-festapp-style="inherit"` na `iframe[data-festapp-embed]` zapíná převzetí
-computed font-family, barvy textu, nejbližšího neprůhledného pozadí a hlavní barvy
-(z WordPress primary tokenu nebo tlačítka stránky). Bez atributu vzhled služby
-zůstává původní (existující ruční HTML se nemění). Nový kód z generátoru i
-WordPress blok/shortcode převzetí zapínají ve výchozím stavu; lze je vypnout.
-Oba adaptéry pouze deklarují stejné atributy, neobsahují kopii theme logiky.
-`data-festapp-height="fixed"` zakazuje pouze automatický resize;
-helper i ověřený handshake pro vzhled a viewport dále fungují.
+`forms.data.design.embed_inherit_style` je jediná uložená autorita (boolean,
+výchozí true). Nastavení se ukládá běžným form commandem ve Vzhledu formuláře.
+Host `/embed.js` pouze předává vypočtené prezentační tokeny. `EmbedBridge` předává ověřená data do `EmbedTheme`, který tokeny
+aplikuje až podle načteného FormModel; před načtením dat je prezentace vypnutá.
+Standalone formulář ani plánek se tím nemění. Změna se projeví při dalším načtení,
+nikoli nuceným restartem rozpracované objednávky.
+
+HTML generátor, oba WordPress pluginy, oba Joomla moduly a Wix používají stejný
+helper bez vlastního přepínače vzhledu. Staré atributy `data-festapp-style` a
+uložené lokální volby doplňků nemají na novém helperu žádný účinek. Žádné
+přepisování HTML není potřeba u vložení, která již helper načítají. Historická
+vložení bez helperu (pevná výška s vypnutým děděním) potřebují jednou doplnit
+skript nebo aktualizovat doplněk; bez spolupráce hostitele nelze číst jeho CSS.
+`data-festapp-height="fixed"` zakazuje pouze automatický resize. Nové generátory
+načítají helper i při pevné výšce; při blokovaném JS zůstává rám/záložní odkaz.
 
 Zprávy init/viewport/theme mohou nést `theme: null` (obnovit vzhled služby) nebo
 objekt s `fontFamily`, `text`, `background`, `primary`, `buttonText` a `fonts`.
@@ -142,7 +149,7 @@ a přenáší pouze rodiny skutečné font-family. Cizí stylesheet může pře�
 s jeho CORS souhlasem (bez credentials). Server fontu musí povolit načtení
 z originu služby; totéž musí povolit její font-src CSP. Jinak zůstane přesná
 předaná font-family s jejími fallbacky. Změna tříd/stylů hostitele, načtení fontů,
-resize i reload iframe aktualizují prezentaci. Vypnutí volby ji odstraní.
+resize i reload iframe aktualizují prezentaci. Vypnuté uložené nastavení zabrání použití hostitelského vzhledu.
 
 `EmbedTheme` je jediný příjemce prezentace ve web clientu, za ověřením bridge.
 CSS tokeny se přepisují pouze na veřejných checkout plochách, včetně rekapitulace,
@@ -202,7 +209,7 @@ Tím se stejné návratové chování používá pro šipku Zpět, zavření i E
 
 ## Aktualizace nainstalovaného pluginu
 
-WordPress plugin ukládá pouze adresu a prezentační nastavení. Veřejný iframe
+WordPress plugin ukládá adresu, přístupný název a výšku. Vzhled vlastní formulář. Veřejný iframe
 načítá živou službu a její verzované klientské assety; jeho `/embed.js` nemá
 verzi pluginu v URL a produkční worker vyžaduje revalidaci při každém načtení.
 Servisní vydání se tak projeví při dalším načtení stránky bez reinstalace

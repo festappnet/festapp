@@ -31,11 +31,10 @@ foreach ($products as [$element, $namespace, $origin]) {
             $params = ['url'=>$url, 'mode'=>$mode, 'inherit_style'=>$inherit, 'iframe_title'=>'"><script>alert(1)</script>'];
             $s = $helper::settings($params);
             $html = $helper::render($params);
-            check($s['helper'] === ($mode === 'auto' || $inherit === 1), 'Helper conditions');
             check(str_contains($html, 'data-festapp-embed-host'), 'Host wrapper');
-            check(str_contains($html, 'data-festapp-embed ') || !$s['helper'], 'Frame marker');
-            check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed' && $inherit === 1), 'Fixed helper');
-            check(str_contains($html, 'data-festapp-style="inherit"') === ($inherit === 1), 'Appearance');
+            check(str_contains($html, 'data-festapp-embed '), 'Frame marker');
+            check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed'), 'Fixed helper');
+            check(!str_contains($html, 'data-festapp-style'), 'Appearance');
             check(!str_contains($html, '<script>') && str_contains($html, '&lt;script&gt;'), 'Escaped title');
             check(str_contains($html, '?embed=1') && str_contains($html, 'rel="noopener noreferrer"'), 'Embed and fallback');
         }

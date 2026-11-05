@@ -558,10 +558,9 @@
     "embedHelp": "Vložte kód do HTML svého webu. Automatická výška vyžaduje povolený externí skript. Pokud jej váš web blokuje, použijte pevnou výšku.",
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
-    "embedFixed": "Pevná výška bez skriptu",
+    "embedFixed": "Pevná výška",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
-    "embedInheritStyleHelp": "Přepíše písmo, pozadí a barvy z aplikace vzhledem webu, pouze pro toto vložení.",
-    "embedInheritStyleRequiresScript": "Pro přizpůsobení vzhledu zvolte automatickou výšku.",
+    "embedInheritStyleHelp": "Přebírá písmo, pozadí a barvy webu ve všech vloženích tohoto formuláře. Po uložení se změna projeví při dalším načtení stránky. Plánek sálu si ponechává vlastní vzhled.",
     "productsAndPrices": "Produkty a ceny"
   },
   "OrderGridColumns": {

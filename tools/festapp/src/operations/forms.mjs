@@ -30,7 +30,7 @@ const settings=z.strictObject({
  variable_symbol:reset(z.strictObject({type:reset(z.enum(['random','sequence'])),starting_number:reset(id.max(9999999999))})),
  payment_message:reset(z.strictObject({type:reset(z.enum(['name_surname','none','occasion_title']))})),
  payments:reset(z.strictObject({bankEnabled:reset(z.boolean()),stripeConnectionId:reset(z.uuid())})),
- design:reset(z.strictObject({presale_header:reset(z.enum(['event_and_date','date','none'])),theme_mode:reset(z.enum(['system','light','dark'])),background_mode:reset(z.enum(['solid','gradient'])),is_card_design:reset(z.boolean()),primary_color:reset(z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)),
+ design:reset(z.strictObject({embed_inherit_style:reset(z.boolean()),presale_header:reset(z.enum(['event_and_date','date','none'])),theme_mode:reset(z.enum(['system','light','dark'])),background_mode:reset(z.enum(['solid','gradient'])),is_card_design:reset(z.boolean()),primary_color:reset(z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)),
   secondary_color:reset(z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)),font_family:reset(z.string().min(1).max(128).refine(v=>v.trim().length>0)),countdown_style:reset(z.string().min(1).max(128).refine(v=>v.trim().length>0))})),
  sale_opening_notifications:reset(z.strictObject({enabled:reset(z.boolean()),collection_paused:reset(z.boolean())})),
  schedule:reset(z.strictObject({start_time:reset(z.iso.datetime({offset:true})),end_time:reset(z.iso.datetime({offset:true})),

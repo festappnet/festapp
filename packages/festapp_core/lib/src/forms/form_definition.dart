@@ -146,7 +146,8 @@ class FormDefinition {
           ? FormCapacityModel.fromJson(json['capacity'])
           : null,
       registrationMode: json['registrationMode'],
-      saleOpeningNotification: (json['saleOpeningNotification'] as Map?)?.cast<String, dynamic>(),
+      saleOpeningNotification: (json['saleOpeningNotification'] as Map?)
+          ?.cast<String, dynamic>(),
       payments: json['payments'] is Map
           ? (json['payments'] as Map).cast<String, dynamic>()
           : null,
@@ -271,15 +272,24 @@ class FormDefinition {
     return copyWith(data: {...?data, metaSchedule: section});
   }
 
-  bool get saleOpeningEnabled => (data?['sale_opening_notifications'] as Map?)?['enabled'] == true;
-  bool get saleOpeningPaused => (data?['sale_opening_notifications'] as Map?)?['collection_paused'] == true;
-  bool get canSubscribeSaleOpening => saleOpeningNotification?['canSubscribe'] == true;
-  FormDefinition withSaleOpening({bool? enabled, bool? paused}) => copyWith(data: {
-    ...?data, 'sale_opening_notifications': {
-      ...?(data?['sale_opening_notifications'] as Map?)?.cast<String, dynamic>(),
-      if (enabled != null) 'enabled': enabled,
-      if (paused != null) 'collection_paused': paused,
-    }});
+  bool get saleOpeningEnabled =>
+      (data?['sale_opening_notifications'] as Map?)?['enabled'] == true;
+  bool get saleOpeningPaused =>
+      (data?['sale_opening_notifications'] as Map?)?['collection_paused'] ==
+      true;
+  bool get canSubscribeSaleOpening =>
+      saleOpeningNotification?['canSubscribe'] == true;
+  FormDefinition withSaleOpening({bool? enabled, bool? paused}) => copyWith(
+    data: {
+      ...?data,
+      'sale_opening_notifications': {
+        ...?(data?['sale_opening_notifications'] as Map?)
+            ?.cast<String, dynamic>(),
+        if (enabled != null) 'enabled': enabled,
+        if (paused != null) 'collection_paused': paused,
+      },
+    },
+  );
 
   bool get enableCountdown {
     if (_scheduleData.containsKey(metaEnableCountdown)) {
@@ -421,6 +431,15 @@ class FormDefinition {
     }
     final section = Map<String, dynamic>.from(_designData);
     section['theme_mode'] = value;
+    return copyWith(data: {...?data, metaDesign: section});
+  }
+
+  /// One saved preference for all supported embeds; standalone appearance is unchanged.
+  bool get embedInheritStyle => _designData['embed_inherit_style'] != false;
+
+  FormDefinition withEmbedInheritStyle(bool value) {
+    final section = Map<String, dynamic>.from(_designData);
+    section['embed_inherit_style'] = value;
     return copyWith(data: {...?data, metaDesign: section});
   }
 

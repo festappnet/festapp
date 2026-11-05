@@ -18,7 +18,7 @@ msgstr ""
 msgid "Automatic"
 msgstr ""
 
-msgid "Automatic height and website styling are already enabled. Start with these defaults; change them only if your page needs it."
+msgid "Automatic height is enabled. Website appearance is controlled in the saved form design settings."
 msgstr ""
 
 msgid "Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
@@ -78,12 +78,6 @@ msgstr ""
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr ""
 
-msgid "Match website style"
-msgstr ""
-
-msgid "Match website style is enabled by default. Disable it in the block, or add inherit_style=\"false\" to the shortcode. The form uses the website font family and colors; the seat map keeps its own appearance. This option loads the service helper even with fixed height. Custom fonts must permit cross-origin loading."
-msgstr ""
-
 msgid "Open Festapp Tickets"
 msgstr ""
 
@@ -141,10 +135,10 @@ msgstr ""
 msgid "Use https://tickets.festapp.net/form/saved-slug without query parameters or personal fragments."
 msgstr ""
 
-msgid "Use the website font family and colors. Seat map keeps its own appearance. Website fonts must allow loading from the service."
+msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your Festapp Tickets account."
 msgstr ""
 
-msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your Festapp Tickets account."
+msgid "Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page."
 msgstr ""
 
 msgctxt "block title"

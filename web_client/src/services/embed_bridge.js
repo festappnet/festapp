@@ -7,11 +7,19 @@ const viewport = value => Number.isFinite(value) && value >= 240 && value <= 400
 
 // The only wildcard message is a public, data-free readiness announcement.
 export class EmbedBridge {
-    constructor(win = window) { this.win = win; }
+    constructor(win = window) { this.win = win; this.theme = new EmbedTheme(win); }
+    // Form data is the sole authority. Host messages may arrive before it loads.
+    setInheritStyle(enabled) {
+        this.theme.setEnabled(enabled);
+        this.syncPrice();
+    }
+    receiveTheme(theme) {
+        this.theme.apply(theme);
+        this.syncPrice();
+    }
     start() {
         if (!isEmbed(this.win.location) || this.win.parent === this.win) return;
         applyEmbedContext();
-        this.theme = new EmbedTheme(this.win);
         this.onPrice = event => { this.price = event.detail; this.syncPrice(); };
         this.win.addEventListener('festapp-embed-price',this.onPrice);
         this.onScrollState=event=>{
@@ -31,20 +39,19 @@ export class EmbedBridge {
                 this.hostPrice = data.hostPrice === true;
                 this.syncPrice();
                 this.setViewport(data.viewportHeight, data.viewportOffset);
-                if (data.theme !== undefined) { this.theme.apply(data.theme); this.syncPrice(); }
+                if (data.theme !== undefined) { this.receiveTheme(data.theme); }
                 this.height = null;
                 this.measure();
             } else if (data.type === 'viewport' && this.origin && viewport(data.viewportHeight)) {
                 this.setViewport(data.viewportHeight, data.viewportOffset);
-                if (data.theme !== undefined) { this.theme.apply(data.theme); this.syncPrice(); }
+                if (data.theme !== undefined) { this.receiveTheme(data.theme); }
             } else if (data.type === 'price-ready' && this.origin && this.hostPrice) {
                 const root=this.win.document.documentElement;
                 if(root.classList.contains('festapp-host-price') !== (data.visible === true)) root.classList.toggle('festapp-host-price',data.visible === true);
             } else if (data.type === 'price-activate' && this.origin && this.hostPrice) {
                 this.win.document.getElementById('floating-price-widget')?.click();
             } else if (data.type === 'theme' && this.origin && data.theme !== undefined) {
-                this.theme.apply(data.theme);
-                this.syncPrice();
+                this.receiveTheme(data.theme);
             }
         };
         this.win.addEventListener('message', this.onMessage);

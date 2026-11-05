@@ -109,7 +109,21 @@ void main() {
         expect(form.toEditedJson()['settings']['design']['theme_mode'], mode);
       }
       expect(changes, 3);
+      final embedSwitch = find.byKey(
+        const ValueKey('form-embed-inherit-style'),
+      );
+      await tester.ensureVisible(embedSwitch);
+      expect(tester.widget<SwitchListTile>(embedSwitch).value, isTrue);
+      await tester.tap(embedSwitch);
+      await tester.pumpAndSettle();
+      expect(
+        form.toEditedJson()['settings']['design']['embed_inherit_style'],
+        isFalse,
+      );
+      expect(changes, 4);
       await mount(false);
+      expect(tester.widget<SwitchListTile>(embedSwitch).onChanged, isNull);
+      expect(tester.widget<SwitchListTile>(embedSwitch).value, isFalse);
       expect(
         tester
             .widget<ChoiceChip>(find.byKey(const ValueKey('form-theme-dark')))

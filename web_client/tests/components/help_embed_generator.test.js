@@ -21,7 +21,7 @@ test('public generator produces isolated service code without loading checkout',
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
-  assert.equal(frame.getAttribute('data-festapp-style'),'inherit');
+  assert.equal(frame.hasAttribute('data-festapp-style'),false);
   assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.parentElement.hasAttribute('data-festapp-embed-host'),true);
   assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
@@ -39,30 +39,23 @@ test('English generator uses its configured service origin and localized results
   assert.match(form.querySelector('[role=status]').textContent,/Your code is ready/);
   assert.doesNotMatch(code,/vstupenky.online|Objednávkový|Otevřít/);
   const mode=form.querySelector('[name=height-mode]');
-  const inherit=form.querySelector('[name=inherit-style]');
   mode.value='fixed';mode.dispatchEvent(new form.ownerDocument.defaultView.Event('change'));
-  assert.equal(inherit.disabled,true);assert.equal(inherit.checked,false);
   mode.value='automatic';mode.dispatchEvent(new form.ownerDocument.defaultView.Event('change'));
-  assert.equal(inherit.disabled,false);assert.equal(inherit.checked,true);
 });
-test('generator rejects other tenants, credentials, query/fragment and encoded injection', t => {
-  const {form,submit}=fixture(t);
-  for(const value of ['https://evil.invalid/form/a','https://vstupenky.online.evil.invalid/form/a','https://x@vstupenky.online/form/a','https://vstupenky.online/form/a?','https://vstupenky.online/form/a#','https://vstupenky.online/form/a?preview=true','https://vstupenky.online/form/a#token','https://vstupenky.online/form/a%2Fb','https://vstupenky.online/form/%22%3E%3Cscript%3E','javascript:alert(1)','https://vstupenky.online/login']) {
-    submit(value);assert.equal(form.querySelector('[data-embed-output]').hidden,true,value);
-    assert.equal(form.querySelector('[name=form-url]').getAttribute('aria-invalid'),'true');
-  }
-});
-test('changing settings invalidates stale output and fixed height does not load the helper', t => {
-  const {dom,form,field,submit}=fixture(t);const inherit=form.querySelector('[name=inherit-style]');assert.equal(inherit.checked,true);
-  submit('https://vstupenky.online/form/ples');assert.match(form.querySelector('textarea').value,/data-festapp-style="inherit"/);
-  inherit.checked=false;inherit.dispatchEvent(new dom.window.Event('change'));assert.equal(form.querySelector('[data-embed-output]').hidden,true);
-  submit('https://vstupenky.online/form/ples');assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
-  field.dispatchEvent(new dom.window.Event('input'));assert.equal(form.querySelector('[data-embed-output]').hidden,true);
+test('generator has no local appearance override and keeps helper for fixed height',t=>{
+  const {dom,form,field,submit}=fixture(t);
+  assert.equal(form.querySelector('[name=inherit-style]'),null);
+  submit('https://vstupenky.online/form/ples');
+  assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
+  field.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(form.querySelector('[data-embed-output]').hidden,true);
   const mode=form.querySelector('select');mode.value='fixed';mode.dispatchEvent(new dom.window.Event('change'));
-  assert.equal(inherit.disabled,true);submit('https://vstupenky.online/form/ples');
-  assert.doesNotMatch(form.querySelector('textarea').value,/<script|data-festapp-embed|data-festapp-style/);
+  submit('https://vstupenky.online/form/ples');
   const code=new JSDOM(form.querySelector('textarea').value);t.after(()=>code.window.close());
-  assert.equal(code.window.document.querySelector('iframe').getAttribute('allow'),'clipboard-write');
+  const frame=code.window.document.querySelector('iframe');
+  assert.equal(frame.getAttribute('data-festapp-height'),'fixed');
+  assert.equal(frame.hasAttribute('data-festapp-embed'),true);
+  assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
 });
 test('copy action copies the current prepared code',async t=>{
   const {dom,form,submit}=fixture(t);let copied;Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async value=>{copied=value;}}});

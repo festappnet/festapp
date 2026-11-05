@@ -75,7 +75,7 @@ BEGIN
     );
     v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
     SELECT create_ticket_order(v_input_data) INTO v_result;
-    PERFORM assert_eq((v_result->>'code')::int, 200, 'Setup: Order creation should succeed');
+    PERFORM assert_eq((v_result->>'code')::int, 200, 'Setup: Order creation should succeed: '||v_result::text);
     v_order_id := (v_result->'order'->>'id')::bigint;
 
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id=v_order_id;

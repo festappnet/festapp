@@ -8,7 +8,7 @@ const stored=async(db,id)=>(await db.query('select data from forms where id=$1',
 test('settings executor preserves unrelated metadata and shares UI snapshots, original versions and frozen retries',options,async t=>{
  const {db,f}=await setup(t);const made=await create(db,f);const formId=made.formId;
  await db.query(`update forms set data='{"private_owner":{"keep":true},"schedule":{"sale_preparation":true,"private_flag":7},"design":{"paper_texture":"pattern","presale_header":"event_and_date"}}' where id=$1`,[formId]);
- await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const settings={is_reminder_enabled:true,reminder_interval_seconds:0,communication_tone:'informal',sale_opening_notifications:{enabled:false,collection_paused:false},variable_symbol:{type:'sequence',starting_number:12345},payment_message:{type:'occasion_title'},payments:{bankEnabled:true},design:{presale_header:'event_and_date',theme_mode:'dark',is_card_design:true,primary_color:'#1255AA',secondary_color:'#FFAABBCC',font_family:'Noto Sans',countdown_style:'normal'},schedule:{start_time:'2030-10-27T01:30:00+02:00',end_time:'2030-10-27T01:30:00+01:00',enable_countdown:true,countdown_title:'Soon'}};
+ await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const settings={is_reminder_enabled:true,reminder_interval_seconds:0,communication_tone:'informal',sale_opening_notifications:{enabled:false,collection_paused:false},variable_symbol:{type:'sequence',starting_number:12345},payment_message:{type:'occasion_title'},payments:{bankEnabled:true},design:{embed_inherit_style:false,presale_header:'event_and_date',theme_mode:'dark',is_card_design:true,primary_color:'#1255AA',secondary_color:'#FFAABBCC',font_family:'Noto Sans',countdown_style:'normal'},schedule:{start_time:'2030-10-27T01:30:00+02:00',end_time:'2030-10-27T01:30:00+01:00',enable_countdown:true,countdown_title:'Soon'}};
  const args={occasionId:f.occasion,form:formPatch(made.authoring,{settings}),commandId:randomUUID()};
  const result=await ex.ops.invoke('forms.save',args);assert.equal(result.ok,true,JSON.stringify(result));const data=result.data.authoring.form.data;
  for(const [k,v] of Object.entries(settings))assert.deepEqual(typeof v==='object'?Object.fromEntries(Object.keys(v).map(key=>[key,data[k][key]])):data[k],v);
@@ -78,7 +78,17 @@ test('incomplete payment methods and foreign bank selection roll back settings a
 });
 
 for(const file of ['eshop/reminders/form_reminder_inheritance_test.sql','eshop/stripe/connections_test.sql']){
- test('existing settings consumer: '+file,options,async t=>{const{db}=await setup(t);await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));if(file.includes('reminder')){await db.query("select set_config('request.jwt.claim.role','service_role',true)");await db.query(await readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/helpers/canonical_blueprint_order_fixture.sql',import.meta.url),'utf8'));}await db.query(await readFile(new URL('../../../database/tests/'+file,import.meta.url),'utf8'));});
+ test('existing settings consumer: '+file,options,async t=>{
+  const{db}=await setup(t);
+  await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
+  if(file.includes('reminder')) await db.query("select set_config('request.jwt.claim.role','service_role',true)");
+  const sql=await readFile(new URL('../../../database/tests/'+file,import.meta.url),'utf8');
+  // Honor the same test-owned setup contract as the canonical SQL runner.
+  for(const [,source] of sql.matchAll(/^-- test-setup: (database\/[\w./-]+\.sql)$/gm)) {
+   await db.query(await readFile(new URL('../../../'+source,import.meta.url),'utf8'));
+  }
+  await db.query(sql);
+ });
 }
 
 test('MCP schemas and the private SQL settings owner expose the same supported key contract, including nested resets',options,async t=>{
@@ -157,4 +167,40 @@ test('MCP sale-opening settings use the actual campaign owner and keep workflow 
  await db.query('RESET ROLE');
  assert.deepEqual((await db.query('select id,phase from sale_opening_campaigns where form_id=$1',[made.formId])).rows[0],{id:campaign.id,phase:'cancelled'});
  assert.equal(Number((await db.query('select count(*) n from sale_opening_subscriptions where campaign_id=$1',[campaign.id])).rows[0].n),0);
+});
+
+test('embed appearance accepts only booleans, patches without losing design and resets',options,async t=>{
+ const {db}=await setup(t);
+ let data={design:{font_family:'Noto Sans',paper_texture:'keep'}};
+ for(const enabled of [false,true]) {
+  data=(await db.query('select apply_form_settings_internal($1,$2) value',[data,{design:{embed_inherit_style:enabled}}])).rows[0].value;
+  assert.equal(data.design.embed_inherit_style,enabled);
+  assert.equal(data.design.font_family,'Noto Sans');
+  assert.equal(data.design.paper_texture,'keep');
+ }
+ for(const invalid of ['false',0,{},[]]) await denied(db,'select apply_form_settings_internal($1,$2)',[data,{design:{embed_inherit_style:invalid}}],'22023');
+ data=(await db.query('select apply_form_settings_internal($1,$2) value',[data,{design:{embed_inherit_style:null}}])).rows[0].value;
+ assert.equal('embed_inherit_style' in data.design,false);
+});
+
+test('released full-metadata saves preserve an omitted embed preference and honor explicit changes',options,async t=>{
+ const {db,f}=await setup(t);const made=await create(db,f);
+ await db.query('SET LOCAL ROLE authenticated');
+ let result=await save(db,f,formPatch(made.authoring,{settings:{design:{embed_inherit_style:false}}}));
+ assert.equal(result.code,200,JSON.stringify(result));
+ for(const design of [false,[],{embed_inherit_style:'false'}]) {
+  await denied(db,'select update_form_client_sync_v1($1,$2)',[
+   {occasion:f.occasion,...formPatch(result.data.authoring,{data:{design}})},randomUUID()
+  ],'22023');
+  assert.equal((await stored(db,made.formId)).design.embed_inherit_style,false);
+ }
+ for(const [data,expected] of [[{},false],[{design:null},false],[{design:{font_family:'Noto Sans'}},false],
+     [{design:{embed_inherit_style:true}},true],[{design:{embed_inherit_style:false}},false],
+     [{design:{embed_inherit_style:null}},undefined]]) {
+  result=(await db.query('select update_form_client_sync_v1($1,$2) value',[
+    {occasion:f.occasion,...formPatch(result.data.authoring,{data})},randomUUID()
+  ])).rows[0].value;
+  assert.equal(result.code,200,JSON.stringify(result));
+  assert.equal(result.data.authoring.form.data.design?.embed_inherit_style,expected);
+ }
 });

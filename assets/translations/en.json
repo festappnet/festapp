@@ -558,10 +558,9 @@
     "embedHelp": "Paste the code into your website HTML. Automatic height requires an external script. If your website blocks it, use fixed height.",
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
-    "embedFixed": "Fixed height without script",
+    "embedFixed": "Fixed height",
     "embedInheritStyle": "Match website appearance",
-    "embedInheritStyleHelp": "Override the app font, background and colors for this embed only.",
-    "embedInheritStyleRequiresScript": "Choose automatic height to match your website’s appearance.",
+    "embedInheritStyleHelp": "Use the website font, background and colors in all embeds of this form. Save changes to apply them on the next page load. The seating map keeps its own appearance.",
     "productsAndPrices": "Products and prices"
   },
   "OrderGridColumns": {

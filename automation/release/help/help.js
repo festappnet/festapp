@@ -44,23 +44,14 @@
   };
   const urlInput = form.querySelector('[name="form-url"]');
   const mode = form.querySelector('[name="height-mode"]');
-  const inherit = form.querySelector('[name="inherit-style"]');
   const output = form.querySelector('[data-embed-output]');
   const code = output.querySelector('textarea');
   const status = form.querySelector('[role="status"]');
   const error = form.querySelector('[data-url-error]');
-  let inheritPreference = inherit.checked;
   const escape = text => text.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const invalidate = () => { output.hidden = true; status.textContent = ''; error.textContent = ''; urlInput.removeAttribute('aria-invalid'); };
   urlInput.addEventListener('input', invalidate);
-  mode.addEventListener('change', () => {
-    const fixed = mode.value === 'fixed';
-    if (fixed) inheritPreference = inherit.checked;
-    inherit.checked = fixed ? false : inheritPreference;
-    inherit.disabled = fixed;
-    invalidate();
-  });
-  inherit.addEventListener('change', () => { inheritPreference = inherit.checked; invalidate(); });
+  mode.addEventListener('change', invalidate);
   form.addEventListener('submit', event => {
     event.preventDefault(); invalidate();
     let url;
@@ -75,10 +66,10 @@
       urlInput.setAttribute('aria-invalid', 'true'); urlInput.focus({preventScroll: true}); return;
     }
     const automatic = mode.value === 'automatic';
-    const marker = automatic ? ' data-festapp-embed' + (inherit.checked ? ' data-festapp-style="inherit"' : '') : '';
+    const marker = ' data-festapp-embed' + (automatic ? '' : ' data-festapp-height="fixed"');
     const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" width="100%" height="800" style="border:0;max-width:100%" loading="lazy"></iframe>`;
     const link = `<p><a href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${text.link}</a></p>`;
-    code.value = automatic ? `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js" defer></script>` : frame + '\n' + link;
+    code.value = `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js" defer></script>`;
     output.hidden = false; output.querySelector('[data-form-link]').href = url.href;
     status.textContent = text.ready;
   });

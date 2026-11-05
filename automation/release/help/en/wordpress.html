@@ -2,10 +2,10 @@
 
 <h2 id="requirements">Before you begin</h2><p>Save your public form first. You need permission to save iframe and script markup. Copy the <a href="{{HELP_ROOT}}order-form/#save">saved public link</a> from Forms, then return to WordPress. If needed, <a href="{{HELP_ROOT}}order-form/">create and open the form for sales</a> first.<span class="guide-step-link">{{APP_LINK:forms}}</span></p>
 <h2 id="generate-code">Code to embed in WordPress</h2>
-<p>Copy the entire code. In both links, replace <code>YOUR-FORM</code> with the part after <code>/form/</code> in your saved public form link. This example uses automatic height and inherits your website’s appearance.</p>
+<p>Copy the entire code. In both links, replace <code>YOUR-FORM</code> with the part after <code>/form/</code> in your saved public form link. This example uses automatic height. Website appearance is controlled in the saved form’s Design settings.</p>
 <div class="help-code-example" data-code-example>
 <pre><code tabindex="0">&lt;div data-festapp-embed-host&gt;
-  &lt;iframe data-festapp-embed data-festapp-style="inherit"
+  &lt;iframe data-festapp-embed
     src="https://vstupenky.online/form/YOUR-FORM?embed=1"
     title="Order form" allow="clipboard-write"
     width="100%" height="800" style="border:0;max-width:100%"
@@ -19,5 +19,5 @@
 </div>
 
 <h2 id="html">Use WordPress without a plugin</h2><p>In the WordPress editor, add a <strong>Custom HTML</strong> block and paste the entire code. In newer WordPress versions, select the block and choose <strong>Edit code</strong>, then keep the <strong>HTML</strong> tab selected. Confirm your changes, save and check the published page. Your WordPress role or security settings may remove scripts; use fixed height when necessary.</p>
-<h2 id="updates">What updates automatically?</h2><p>The embedded form is served by the ticket service, so its current content and runtime load from there. Save changes to the block URL, height or inherited style with the WordPress page. For a missing or clipped form, use <a href="{{HELP_ROOT}}troubleshooting/">troubleshooting</a>.</p>
+<h2 id="updates">What updates automatically?</h2><p>The embedded form is served by the ticket service, so its current content and runtime load from there. Save changes to the block URL or height with the WordPress page. For a missing or clipped form, use <a href="{{HELP_ROOT}}troubleshooting/">troubleshooting</a>.</p>
 

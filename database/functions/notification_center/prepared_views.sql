@@ -35,7 +35,7 @@ DROP FUNCTION IF EXISTS public.notification_center_prepared_scope_member(public.
 CREATE OR REPLACE FUNCTION public.notification_center_prepared_scope_member(e public.notification_center_events,d public.notification_center_deliveries,p_group text,p_id text,p_after bigint,p_through bigint,p_capture_at timestamptz DEFAULT NULL,p_capture_read boolean DEFAULT NULL)
 RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT d.sequence>p_after AND d.sequence<=p_through AND CASE WHEN p_capture_at IS NULL THEN true WHEN p_group LIKE 'event:%' THEN true ELSE
-  EXISTS(SELECT 1 FROM public.notification_center_prepared_batch_at(e,d,p_capture_at) b WHERE b.batch_id=regexp_replace(p_id,':(read|unread)$','') AND b.is_read=p_capture_read) END
+  EXISTS(SELECT 1 FROM public.notification_center_prepared_batch_at(e,d,p_capture_at) b WHERE (b.batch_id=regexp_replace(p_id,':(read|unread)$','') OR (p_id=p_group||':history:read' AND p_capture_read)) AND b.is_read=p_capture_read) END
  AND CASE WHEN p_group LIKE 'event:%' THEN 'event:'||e.id=p_group
  ELSE 'occasion-kind:'||e.occasion||':'||e.kind=p_group END
  AND CASE WHEN p_id ~ ':self$' THEN coalesce(e.actor=d.recipient,false)
