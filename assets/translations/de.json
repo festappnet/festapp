@@ -2820,9 +2820,14 @@
     "presaleContent": "Inhalt vor dem Anmeldestart"
   },
   "PresaleContent": {
-    "page": "Seite vor dem Start",
-    "customize": "Aussehen und Inhalt bearbeiten",
-    "overview": "Zurück zur Übersicht",
+    "unavailableContent": "Inhalt bei geschlossenem Formular",
+    "unavailableHelp": "Vor der Öffnung und nach der Schließung.",
+    "beforeOpening": "Vor der Öffnung",
+    "afterClosing": "Nach der Schließung",
+    "settings": "Einstellungen",
+    "done": "Fertig",
+    "saveHint": "Speichern Sie Ihre Änderungen über Speichern im Formular.",
+
     "header": "Standardüberschrift",
     "countdown": "Countdown",
     "mobile": "Mobile Vorschau",
@@ -2839,7 +2844,6 @@
     "emailOn": "E-Mail-Benachrichtigungen aktiviert",
     "emailOff": "E-Mail-Benachrichtigungen deaktiviert",
     "emailPaused": "E-Mail-Erfassung pausiert",
-    "previewLabel": "Besuchervorschau",
     "collectionLabel": "E-Mail-Adressen für Benachrichtigungen sammeln",
     "collectionHint": "Besucher können sich für eine Benachrichtigung zum Anmeldestart eintragen.",
     "collectionPausedHint": "Neue E-Mail-Adressen werden nicht erfasst. Bereits Angemeldete werden weiterhin benachrichtigt.",

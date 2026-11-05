@@ -2822,9 +2822,14 @@
     "presaleContent": "Treść przed otwarciem zapisów"
   },
   "PresaleContent": {
-    "page": "Strona przed otwarciem",
-    "customize": "Edytuj wygląd i treść",
-    "overview": "Powrót do przeglądu",
+    "unavailableContent": "Treść zamkniętego formularza",
+    "unavailableHelp": "Przed otwarciem i po zamknięciu.",
+    "beforeOpening": "Przed otwarciem",
+    "afterClosing": "Po zamknięciu",
+    "settings": "Ustawienia",
+    "done": "Gotowe",
+    "saveHint": "Zapisz zmiany przyciskiem Zapisz w formularzu.",
+
     "header": "Standardowy nagłówek",
     "countdown": "Odliczanie",
     "mobile": "Podgląd mobilny",
@@ -2841,7 +2846,6 @@
     "emailOn": "Powiadomienia e-mail włączone",
     "emailOff": "Powiadomienia e-mail wyłączone",
     "emailPaused": "Zbieranie adresów wstrzymane",
-    "previewLabel": "Podgląd dla odwiedzających",
     "collectionLabel": "Zbieraj adresy do powiadomień",
     "collectionHint": "Odwiedzający mogą zapisać się na powiadomienie o otwarciu zapisów.",
     "collectionPausedHint": "Nie zbieramy nowych adresów. Dotychczasowi subskrybenci nadal otrzymają powiadomienie.",

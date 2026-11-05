@@ -2847,9 +2847,14 @@
     "presaleContent": "Obsah pred začiatkom prihlasovania"
   },
   "PresaleContent": {
-    "page": "Stránka pred otvorením",
-    "customize": "Upraviť vzhľad a obsah",
-    "overview": "Späť na prehľad",
+    "unavailableContent": "Obsah zatvoreného formulára",
+    "unavailableHelp": "Pred otvorením a po zatvorení.",
+    "beforeOpening": "Pred otvorením",
+    "afterClosing": "Po zatvorení",
+    "settings": "Nastavenia",
+    "done": "Hotovo",
+    "saveHint": "Zmeny uložíte tlačidlom Uložiť vo formulári.",
+
     "header": "Štandardná hlavička",
     "countdown": "Odpočet",
     "mobile": "Mobilný náhľad",
@@ -2866,7 +2871,6 @@
     "emailOn": "Upozornenie e-mailom zapnuté",
     "emailOff": "Upozornenie e-mailom vypnuté",
     "emailPaused": "Zber e-mailov pozastavený",
-    "previewLabel": "Náhľad pre návštevníka",
     "collectionLabel": "Zbierať e-maily na upozornenie",
     "collectionHint": "Návštevníci sa môžu prihlásiť na upozornenie o otvorení.",
     "collectionPausedHint": "Nové e-maily neprijímame. Skôr prihláseným upozornenie príde.",

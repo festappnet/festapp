@@ -578,7 +578,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Upozornění na začátek přihlašování'));
       await tester.pumpAndSettle();
-      expect(find.text('Stránka před otevřením'), findsOneWidget);
+      expect(find.text('Obsah zavřeného formuláře'), findsOneWidget);
       expect(find.text('Použít změny'), findsNothing);
       expect(form.definition.saleOpeningEnabled, isFalse);
       await tester.ensureVisible(find.text('Zapnout upozornění'));
@@ -593,7 +593,7 @@ void main() {
         tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
         isTrue,
       );
-      expect(find.text('Standardní hlavička'), findsNothing);
+      expect(find.text('Standardní hlavička'), findsOneWidget);
       expect(find.text('Použít změny'), findsNothing);
       expect(tester.takeException(), isNull);
     },

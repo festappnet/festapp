@@ -6,7 +6,8 @@ import 'package:festapp_core/time.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
-import 'package:fstapp/components/forms/views/presale_content_editor.dart';
+import 'package:fstapp/components/forms/views/form_unavailable_content_editor.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
@@ -72,14 +73,26 @@ class _PreviewState extends State<_Preview> {
   late String baseline = jsonEncode(form.toEditedJson());
   bool dark = false;
   @override
+  void initState() {
+    super.initState();
+    media.addListener(_draftChanged);
+  }
+
+  void _draftChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    media.removeListener(_draftChanged);
     media.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final dirty = jsonEncode(form.toEditedJson()) != baseline;
+    final dirty =
+        jsonEncode(form.toEditedJson()) != baseline || media.hasActiveDraft;
     return Theme(
       data: ThemeData(brightness: dark ? Brightness.dark : Brightness.light),
       child: Scaffold(
@@ -115,7 +128,18 @@ class _PreviewState extends State<_Preview> {
                     dirty ? 'Neuložené změny' : 'Beze změn',
                     key: const ValueKey('draft-status'),
                   ),
-                  PresaleContentEditor(
+                  FormUnavailableContentEditor(
+                    closedContent: EditableHtmlField(
+                      html:
+                          form.definition.headerOff ??
+                          '<p>Přihlašování je uzavřeno.</p>',
+                      coordinator: media,
+                      onChanged: (html) => setState(
+                        () => form.definition = form.definition.copyWith(
+                          headerOff: html,
+                        ),
+                      ),
+                    ),
                     form: form,
                     coordinator: media,
                     canEdit: true,
@@ -129,6 +153,7 @@ class _PreviewState extends State<_Preview> {
                     onPressed: dirty
                         ? () {
                             media.flush();
+                            media.markSaved();
                             setState(() {
                               form = FormEditorDraft.fromJson(form.toJson());
                               baseline = jsonEncode(form.toEditedJson());

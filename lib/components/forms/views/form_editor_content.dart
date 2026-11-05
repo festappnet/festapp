@@ -1,4 +1,4 @@
-import 'presale_content_editor.dart';
+import 'form_unavailable_content_editor.dart';
 import '../sale_opening_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../waitlist_strings.dart';
@@ -67,8 +67,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
   final _htmlSave = HtmlSaveCoordinator();
   final _snapshot = EditorSnapshot();
-  final _presaleKey = GlobalKey();
-  final _presaleSectionController = ExpansibleController();
+  final _presaleKey = GlobalKey<FormUnavailableContentEditorState>();
   final _draftRevision = ValueNotifier<int>(0);
   bool get _hasChanges =>
       _canEdit &&
@@ -119,7 +118,6 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   @override
   void dispose() {
-    _presaleSectionController.dispose();
     _draftRevision.dispose();
     _htmlSave.dispose();
     if (_prototype && !widget.embedded && !_prototypeSaved && _bundle != null) {
@@ -396,34 +394,22 @@ class _FormEditorContentState extends State<FormEditorContent>
                   )],
                       ),
                   const Divider(height: 24),
-                  PresaleContentEditor(
-                    key: _presaleKey,
-                    sectionController: _presaleSectionController,
-                    form: form,
+              FormUnavailableContentEditor(
+                key: _presaleKey,
+                form: form,
                 coordinator: _htmlSave,
-                          canEdit: _canEdit && !_prototype,
-                    onChanged: _draftChanged,
-              ),
-              const Divider(height: 24),
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                childrenPadding: EdgeInsets.zero,
-                title: Text(FormStrings.labelClosedMessage,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                initiallyExpanded: false,
-                shape: const Border(),
-                children: [
-                  _buildHtmlFieldPreview(
-                    FormStrings.labelMessageContent,
-                    form.definition.headerOff,
-                    (val) => setState(() => form.definition =
-                        form.definition.copyWith(headerOff: val)),
-                    helpText: FormStrings.helperClosedMessage,
-                    defaultText: FormStrings.reservationUnavailableMessage,
-                    showLabel: false,
-                    enabled: _canEdit,
-                  ),
-                ],
+                canEdit: _canEdit && !_prototype,
+                onChanged: _draftChanged,
+                closedContent: _buildHtmlFieldPreview(
+                  FormStrings.labelMessageContent,
+                  form.definition.headerOff,
+                  (val) => setState(() => form.definition =
+                      form.definition.copyWith(headerOff: val)),
+                  helpText: FormStrings.helperClosedMessage,
+                  defaultText: FormStrings.reservationUnavailableMessage,
+                  showLabel: false,
+                  enabled: _canEdit,
+                ),
               ),
             ],
           ],
@@ -620,7 +606,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   Future<void> _openSaleOpeningSettings() async {
     final target = _presaleKey.currentContext;
     if (target == null) return;
-    _presaleSectionController.expand();
+    _presaleKey.currentState?.openNotifications();
     await Scrollable.ensureVisible(target,
       duration: const Duration(milliseconds: 200));
   }

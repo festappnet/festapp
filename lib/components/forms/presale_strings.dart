@@ -1,10 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class PresaleStrings {
+  static String get unavailableContent =>
+      'PresaleContent.unavailableContent'.tr();
+  static String get unavailableHelp => 'PresaleContent.unavailableHelp'.tr();
+  static String get beforeOpening => 'PresaleContent.beforeOpening'.tr();
+  static String get afterClosing => 'PresaleContent.afterClosing'.tr();
+  static String get settings => 'PresaleContent.settings'.tr();
+  static String get done => 'PresaleContent.done'.tr();
+  static String get saveHint => 'PresaleContent.saveHint'.tr();
+
   static String get emailOn => 'PresaleContent.emailOn'.tr();
   static String get emailOff => 'PresaleContent.emailOff'.tr();
   static String get emailPaused => 'PresaleContent.emailPaused'.tr();
-  static String get previewLabel => 'PresaleContent.previewLabel'.tr();
   static String get collectionLabel => 'PresaleContent.collectionLabel'.tr();
   static String get collectionHint => 'PresaleContent.collectionHint'.tr();
   static String get collectionPausedHint =>
@@ -16,9 +24,6 @@ class PresaleStrings {
   static String get noArchive => 'PresaleContent.noArchive'.tr();
   static String get removed => 'PresaleContent.removed'.tr();
   static String get undo => 'PresaleContent.undo'.tr();
-  static String get page => 'PresaleContent.page'.tr();
-  static String get customize => 'PresaleContent.customize'.tr();
-  static String get overview => 'PresaleContent.overview'.tr();
   static String get header => 'PresaleContent.header'.tr();
   static String get countdown => 'PresaleContent.countdown'.tr();
   static String get mobile => 'PresaleContent.mobile'.tr();

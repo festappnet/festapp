@@ -16,6 +16,7 @@ import '../presale_content_draft.dart';
 import '../form_appearance_theme.dart';
 import '../presale_strings.dart';
 import '../sale_opening_strings.dart';
+import '../../_shared/common_strings.dart';
 import '../widgets_view/presale_content.dart';
 import 'sale_opening_settings.dart';
 
@@ -27,12 +28,14 @@ class PresaleContentEditor extends StatefulWidget {
     required this.form,
     required this.coordinator,
     this.loadSummary,
-    this.sectionController,
+    this.settingsController,
+    this.active = true,
     required this.canEdit,
     required this.onChanged,
   });
   final Future<Map<String, dynamic>> Function(int)? loadSummary;
-  final ExpansibleController? sectionController;
+  final ExpansibleController? settingsController;
+  final bool active;
   final FormEditorDraft form;
   final HtmlSaveCoordinator coordinator;
   final bool canEdit;
@@ -42,8 +45,8 @@ class PresaleContentEditor extends StatefulWidget {
 }
 
 class _PresaleContentEditorState extends State<PresaleContentEditor> {
-  bool sectionExpanded = false;
-  bool expanded = false;
+  bool editing = false;
+  bool settingsExpanded = false;
   bool mobile = false;
   bool _collectionEligible = false;
   late Future<Map<String, dynamic>> _summary;
@@ -148,6 +151,7 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
   @override
   void didUpdateWidget(covariant PresaleContentEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!widget.active) editor.focusNode.unfocus();
     if (oldWidget.form != widget.form) {
       oldWidget.coordinator.unregisterActive(this);
       editor.dispose();
@@ -192,10 +196,7 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
           key: const ValueKey('presale-preview-surface'),
           width: double.infinity,
           clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
           child: Theme(
             data: theme,
             child: Material(
@@ -251,145 +252,161 @@ class _PresaleContentEditorState extends State<PresaleContentEditor> {
             !terminal &&
             d.isOpen == true &&
             d.startTimeUtc?.isAfter(DateTime.now()) == true;
-        return ExpansionTile(
-          key: const ValueKey('presale-section'),
-          controller: widget.sectionController,
-          initiallyExpanded: false,
-          maintainState: true,
-          tilePadding: EdgeInsets.zero,
-          childrenPadding: const EdgeInsets.only(top: 12, bottom: 16),
-          shape: const Border(),
-          collapsedShape: const Border(),
-          onExpansionChanged: (value) {
-            setState(() => sectionExpanded = value);
-            if (!value) editor.focusNode.unfocus();
-          },
-          title: Text(
-            PresaleStrings.page,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            !d.saleOpeningEnabled || terminal
-                ? PresaleStrings.emailOff
-                : d.saleOpeningPaused
-                ? PresaleStrings.emailPaused
-                : PresaleStrings.emailOn,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ExcludeFocus(
-              excluding: !sectionExpanded,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    PresaleStrings.previewLabel,
-                    style: Theme.of(context).textTheme.bodySmall,
+            Offstage(
+              offstage: editing,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.withValues(alpha: .2)
+                      : Colors.grey.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white24
+                        : Colors.grey.withValues(alpha: .3),
                   ),
-                  const SizedBox(height: 8),
-                  _visitorPreview(theme),
-                  const SizedBox(height: 24),
-                  SaleOpeningSettings(
-                    key: ObjectKey(widget.form),
-                    form: widget.form,
-                    loadSummary: (_) {
-                      if (summary.hasError)
-                        setState(() => _summary = _fetchSummary());
-                      return _summary;
-                    },
-                    canEdit: widget.canEdit,
-                    onCollect: draft.collect,
-                    onPause: draft.pause,
-                    onEnd: draft.end,
-                    onChanged: () {
-                      widget.onChanged();
-                      setState(() {});
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      key: const ValueKey('presale-customize'),
-                      onPressed: () => setState(() => expanded = !expanded),
-                      icon: Icon(
-                        expanded ? Icons.expand_less : Icons.edit_outlined,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _visitorPreview(theme)),
+                    if (widget.canEdit)
+                      IconButton(
+                        key: const ValueKey('presale-edit-content'),
+                        tooltip: CommonStrings.editContent,
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => setState(() => editing = true),
                       ),
-                      label: Text(
-                        expanded
-                            ? PresaleStrings.overview
-                            : PresaleStrings.customize,
-                      ),
-                    ),
-                  ),
-                  Offstage(
-                    offstage: !expanded,
-                    child: ExcludeFocus(
-                      excluding: !expanded,
-                      child: TickerMode(
-                        enabled: sectionExpanded && expanded,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            DropdownButtonFormField<String>(
-                              initialValue: d.presaleHeader,
-                              decoration: InputDecoration(
-                                labelText: PresaleStrings.header,
-                              ),
-                              items: [
-                                for (final key in [
-                                  'event_and_date',
-                                  'date',
-                                  'none',
-                                ])
-                                  DropdownMenuItem(
-                                    value: key,
-                                    child: Text(
-                                      PresaleStrings.headerOption(key),
-                                    ),
-                                  ),
-                              ],
-                              onChanged: widget.canEdit
-                                  ? (value) => draft.header(value!)
-                                  : null,
-                            ),
-                            SwitchListTile(
-                              title: Text(PresaleStrings.countdown),
-                              value: d.enableCountdown,
-                              onChanged: widget.canEdit && d.startTime != null
-                                  ? draft.countdown
-                                  : null,
-                            ),
-                            Text(
-                              SaleOpeningStrings.dateChange,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            SwitchListTile(
-                              title: Text(PresaleStrings.mobile),
-                              value: mobile,
-                              onChanged: (value) =>
-                                  setState(() => mobile = value),
-                            ),
-                            if (widget.canEdit && d.id != null)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton(
-                                  onPressed: _recover,
-                                  child: Text(PresaleStrings.recover),
-                                ),
-                              ),
-                            RichHtmlEditor(
-                              controller: editor,
-                              enabled: widget.canEdit,
-                              textStyle: htmlTextStyle(context, fontSize: 24),
-                            ),
-                          ],
+                  ],
+                ),
+              ),
+            ),
+            Offstage(
+              offstage: !editing,
+              child: ExcludeFocus(
+                excluding: !widget.active || !editing,
+                child: TickerMode(
+                  enabled: widget.active && editing,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      RichHtmlEditor(
+                        controller: editor,
+                        enabled: widget.canEdit,
+                        textStyle: htmlTextStyle(context, fontSize: 24),
+                        toolbarActions: TextButton(
+                          key: const ValueKey('presale-edit-done'),
+                          onPressed: () {
+                            editor.focusNode.unfocus();
+                            setState(() => editing = false);
+                          },
+                          child: Text(PresaleStrings.done),
                         ),
                       ),
-                    ),
+                      Text(
+                        PresaleStrings.saveHint,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
+            ),
+            const SizedBox(height: 12),
+            ExpansionTile(
+              key: const ValueKey('presale-settings'),
+              controller: widget.settingsController,
+              initiallyExpanded: false,
+              maintainState: true,
+              tilePadding: EdgeInsets.zero,
+              shape: const Border(),
+              collapsedShape: const Border(),
+              onExpansionChanged: (value) =>
+                  setState(() => settingsExpanded = value),
+              title: Text(PresaleStrings.settings),
+              subtitle: Text(
+                !d.saleOpeningEnabled || terminal
+                    ? PresaleStrings.emailOff
+                    : d.saleOpeningPaused
+                    ? PresaleStrings.emailPaused
+                    : PresaleStrings.emailOn,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              children: [
+                ExcludeFocus(
+                  excluding: !widget.active || !settingsExpanded,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SaleOpeningSettings(
+                        key: ObjectKey(widget.form),
+                        form: widget.form,
+                        loadSummary: (_) {
+                          if (summary.hasError)
+                            setState(() => _summary = _fetchSummary());
+                          return _summary;
+                        },
+                        canEdit: widget.canEdit,
+                        onCollect: draft.collect,
+                        onPause: draft.pause,
+                        onEnd: draft.end,
+                        onChanged: () {
+                          widget.onChanged();
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        initialValue: d.presaleHeader,
+                        decoration: InputDecoration(
+                          labelText: PresaleStrings.header,
+                        ),
+                        items: [
+                          for (final key in ['event_and_date', 'date', 'none'])
+                            DropdownMenuItem(
+                              value: key,
+                              child: Text(PresaleStrings.headerOption(key)),
+                            ),
+                        ],
+                        onChanged: widget.canEdit
+                            ? (value) => draft.header(value!)
+                            : null,
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(PresaleStrings.countdown),
+                        value: d.enableCountdown,
+                        onChanged: widget.canEdit && d.startTime != null
+                            ? draft.countdown
+                            : null,
+                      ),
+                      Text(
+                        SaleOpeningStrings.dateChange,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(PresaleStrings.mobile),
+                        value: mobile,
+                        onChanged: (value) => setState(() => mobile = value),
+                      ),
+                      if (widget.canEdit && d.id != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: _recover,
+                            child: Text(PresaleStrings.recover),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         );

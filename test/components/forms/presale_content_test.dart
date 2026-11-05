@@ -10,7 +10,9 @@ import 'package:super_editor/super_editor.dart';
 import 'package:festapp_core/time.dart' as core_time;
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/presale_content_draft.dart';
-import 'package:fstapp/components/forms/views/presale_content_editor.dart';
+import 'package:fstapp/components/forms/views/form_unavailable_content_editor.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
+import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/forms/views/sale_opening_settings.dart';
 import 'package:fstapp/components/forms/widgets_view/presale_content.dart';
 import 'package:fstapp/components/forms/widgets_view/sale_opening_notification.dart';
@@ -221,7 +223,12 @@ void main() {
               builder: DependencyMaterialBridge.builder,
               home: Scaffold(
                 body: SingleChildScrollView(
-                  child: PresaleContentEditor(
+                  child: FormUnavailableContentEditor(
+                    closedContent: EditableHtmlField(
+                      html: f.definition.headerOff ?? '<p>Zavřeno</p>',
+                      onChanged: (html) =>
+                          f.definition = f.definition.copyWith(headerOff: html),
+                    ),
                     form: f,
                     coordinator: media,
                     canEdit: true,
@@ -236,29 +243,50 @@ void main() {
           expect(find.byType(RichHtmlEditorController), findsNothing);
           expect(find.byType(PresaleContent), findsNothing);
           expect(find.byType(SaleOpeningSettings), findsNothing);
-          await tester.tap(find.byKey(const ValueKey('presale-section')));
+          await tester.tap(
+            find.byKey(const ValueKey('form-unavailable-section')),
+          );
           await tester.pumpAndSettle();
           expect(find.byType(PresaleContent), findsOneWidget);
           expect(find.text('Standardní hlavička'), findsNothing);
           expect(jsonEncode(f.toEditedJson()), before);
           expect(media.hasActiveDraft, false);
+          expect(find.byType(RichHtmlEditor), findsNothing);
+          await tester.tap(find.byKey(const ValueKey('presale-edit-content')));
+          await tester.pumpAndSettle();
+          expect(find.byType(RichHtmlEditor), findsOneWidget);
+          expect(jsonEncode(f.toEditedJson()), before);
+          await tester.tap(find.text('Po uzavření'));
+          await tester.pumpAndSettle();
+          expect(find.byType(RichHtmlEditor), findsNothing);
+          expect(find.byType(EditableHtmlField), findsOneWidget);
+          await tester.tap(find.text('Před otevřením'));
+          await tester.pumpAndSettle();
+          expect(find.byType(RichHtmlEditor), findsOneWidget);
           await tester.ensureVisible(
-            find.byKey(const ValueKey('presale-customize')),
+            find.byKey(const ValueKey('presale-edit-done')),
           );
-          await tester.tap(find.byKey(const ValueKey('presale-customize')));
+          await tester.tap(find.byKey(const ValueKey('presale-edit-done')));
+          await tester.pumpAndSettle();
+          expect(find.byType(RichHtmlEditor), findsNothing);
+          expect(jsonEncode(f.toEditedJson()), before);
+          await tester.ensureVisible(
+            find.byKey(const ValueKey('presale-settings')),
+          );
+          await tester.tap(find.byKey(const ValueKey('presale-settings')));
           await tester.pump();
           expect(find.text('Standardní hlavička'), findsOneWidget);
           expect(jsonEncode(f.toEditedJson()), before);
           expect(media.hasActiveDraft, false);
           await tester.ensureVisible(
-            find.byKey(const ValueKey('presale-customize')),
+            find.byKey(const ValueKey('presale-settings')),
           );
-          await tester.tap(find.byKey(const ValueKey('presale-customize')));
+          await tester.tap(find.byKey(const ValueKey('presale-settings')));
           await tester.pump();
           expect(find.text('Standardní hlavička'), findsNothing);
           expect(jsonEncode(f.toEditedJson()), before);
-          await tester.ensureVisible(find.text('Stránka před otevřením'));
-          await tester.tap(find.text('Stránka před otevřením'));
+          await tester.ensureVisible(find.text('Obsah zavřeného formuláře'));
+          await tester.tap(find.text('Obsah zavřeného formuláře'));
           await tester.pumpAndSettle();
           expect(find.byType(PresaleContent), findsNothing);
           expect(find.byType(SaleOpeningSettings), findsNothing);
@@ -268,6 +296,76 @@ void main() {
         },
       );
     }
+  testWidgets('both page drafts survive switching, collapse and parent save', (
+    tester,
+  ) async {
+    final f = form();
+    final media = HtmlSaveCoordinator();
+    addTearDown(media.dispose);
+    await env().pumpWidget(
+      tester,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: FormUnavailableContentEditor(
+              form: f,
+              coordinator: media,
+              canEdit: true,
+              onChanged: () {},
+              loadSummary: (_) async => {},
+              closedContent: EditableHtmlField(
+                html: f.definition.headerOff,
+                coordinator: media,
+                onChanged: (html) =>
+                    f.definition = f.definition.copyWith(headerOff: html),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Obsah zavřeného formuláře'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('presale-edit-content')));
+    await tester.pumpAndSettle();
+    final presale = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
+    presale.appendHtml('<p>Nový text před otevřením</p>');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Po uzavření'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pumpAndSettle();
+    final closed = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .controller;
+    closed.appendHtml('<p>Nový text po uzavření</p>');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Obsah zavřeného formuláře'));
+    await tester.tap(find.text('Obsah zavřeného formuláře'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RichHtmlEditor), findsNothing);
+    expect(media.hasActiveDraft, isTrue);
+    await tester.tap(find.text('Obsah zavřeného formuláře'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
+      same(closed),
+    );
+    await tester.tap(find.text('Před otevřením'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor)).controller,
+      same(presale),
+    );
+    media.flush();
+    expect(f.definition.presaleContent, contains('Nový text před otevřením'));
+    expect(f.definition.headerOff, contains('Nový text po uzavření'));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   test('editing a migrated system title preserves authored text and Undo restores localization', () {
     final f = form();
     const original =
@@ -347,7 +445,12 @@ void main() {
             builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: SingleChildScrollView(
-                child: PresaleContentEditor(
+                child: FormUnavailableContentEditor(
+                  closedContent: EditableHtmlField(
+                    html: f.definition.headerOff ?? '<p>Zavřeno</p>',
+                    onChanged: (html) =>
+                        f.definition = f.definition.copyWith(headerOff: html),
+                  ),
                   form: f,
                   coordinator: media,
                   canEdit: true,
@@ -358,7 +461,7 @@ void main() {
             ),
           ),
         );
-        await tester.tap(find.text('Stránka před otevřením'));
+        await tester.tap(find.text('Obsah zavřeného formuláře'));
         await tester.pumpAndSettle();
         final title = find.text('Form');
         final paragraph = tester.renderObject<RenderParagraph>(title);
@@ -392,7 +495,12 @@ void main() {
           builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
-              child: PresaleContentEditor(
+              child: FormUnavailableContentEditor(
+                closedContent: EditableHtmlField(
+                  html: f.definition.headerOff ?? '<p>Zavřeno</p>',
+                  onChanged: (html) =>
+                      f.definition = f.definition.copyWith(headerOff: html),
+                ),
                 form: f,
                 coordinator: media,
                 canEdit: true,
@@ -409,7 +517,7 @@ void main() {
         'subscribers': {'active': 1},
       });
       await tester.pump();
-      await tester.tap(find.text('Stránka před otevřením'));
+      await tester.tap(find.text('Obsah zavřeného formuláře'));
       await tester.pumpAndSettle();
       expect(find.byType(SaleOpeningNotification), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
