@@ -8,7 +8,7 @@ import { EmbedBridge, revealEmbedStep, preserveCheckoutScroll } from '../../src/
 
 const envelope = (type, instance, values = {}) => ({ namespace: 'festapp-embed', protocol: 1, type, instance, ...values });
 const hostScript = readFileSync(new URL('../../public/embed.js', import.meta.url), 'utf8');
-function host(nativePrice = false) {
+function host(nativePrice = false, configure = () => {}) {
     const dom = new JSDOM('<iframe data-festapp-embed src="https://tickets.invalid/form/a?embed=1" height="800"></iframe><iframe data-festapp-embed src="https://other.invalid/form/b?embed=1" height="800"></iframe>', { url: 'https://host.invalid', runScripts: 'outside-only', pretendToBeVisual: true });
     if(nativePrice) dom.window.document.querySelectorAll('iframe').forEach(frame=>{
         const wrapper=dom.window.document.createElement('div');wrapper.dataset.festappEmbedHost='';frame.replaceWith(wrapper);wrapper.append(frame);
@@ -16,6 +16,7 @@ function host(nativePrice = false) {
     const frames = [...dom.window.document.querySelectorAll('iframe')];
     const sent = frames.map(() => []);
     frames.forEach((f, i) => { f.contentWindow.postMessage = (...args) => sent[i].push(args); });
+    configure(dom.window);
     dom.window.eval(hostScript);
     const message = (frame, origin, data, source = frame.contentWindow) => dom.window.dispatchEvent(new dom.window.MessageEvent('message', { source, origin, data }));
     return { dom, frames, sent, message };
@@ -524,4 +525,74 @@ test('host composites translucent ancestors over the dark page into an opaque ba
     assert.equal(theme.primary, 'rgb(255, 255, 255)');
     assert.equal(theme.buttonText, 'rgb(80, 80, 80)');
     dom.window.close();
+});
+
+test('native colors use a lazy detached canvas and preserve alpha over dark ancestors', () => {
+    let calls = 0;
+    const colors = new Map([
+        ['oklch(0.25 0.05 260)', [19,33,57,255]],
+        ['color(display-p3 0.1 0.2 0.3 / 0.5)', [15,52,79,128]],
+        ['rebeccapurple', [102,51,153,255]],
+    ]);
+    const {dom, sent} = host(true, win => {
+        win.CSS = {supports: (_, value) => colors.has(value)};
+        win.HTMLCanvasElement.prototype.getContext = function () {
+            calls++; assert.equal(this.width,1); assert.equal(this.height,1); assert.equal(this.isConnected,false);
+            return {fillStyle:'',clearRect(){},fillRect(){},getImageData(){return {data:colors.get(this.fillStyle)};}};
+        };
+        win.document.body.style.cssText='color:white;--wp--preset--color--primary:rebeccapurple';
+        const getStyle = win.getComputedStyle.bind(win);
+        win.getComputedStyle = node => {
+            const style=getStyle(node);
+            const value=node===win.document.body?'oklch(0.25 0.05 260)':node.hasAttribute('data-festapp-embed-host')?'color(display-p3 0.1 0.2 0.3 / 0.5)':null;
+            if(value) Object.defineProperty(style,'backgroundColor',{value});
+            return style;
+        };
+    });
+    assert.equal(sent[0][0][0].theme.background,'rgb(17, 43, 68)');
+    assert.equal(sent[0][0][0].theme.primary,'rgb(102, 51, 153)');
+    assert.equal(calls,1); dom.window.close();
+});
+
+test('unavailable native color normalization resets an existing host theme safely', () => {
+    for(const failure of ['no-support','no-context','readback']) {
+        const {dom,frames:[frame],sent,message}=host(false,win=>{
+            win.document.body.style.cssText='background:black;color:white';
+            if(failure!=='no-support') win.CSS={supports:()=>true};
+            win.HTMLCanvasElement.prototype.getContext=()=>{
+                if(failure==='no-context') return null;
+                if(failure==='no-support') throw Error('must not request canvas without CSS.supports');
+                return {fillStyle:'',clearRect(){},fillRect(){},getImageData(){throw Error('blocked');}};
+            };
+        });
+        assert.equal(sent[0][0][0].theme.background,'rgb(0, 0, 0)');
+        const getStyle=dom.window.getComputedStyle.bind(dom.window);
+        dom.window.getComputedStyle=node=>{
+            const style=getStyle(node);
+            if(node===dom.window.document.body) Object.defineProperty(style,'backgroundColor',{value:'oklch(0.25 0.05 260)'});
+            return style;
+        };
+        message(frame,'https://tickets.invalid',envelope('ready'));
+        assert.equal(sent[0].at(-1)[0].theme,null,failure); dom.window.close();
+    }
+});
+
+test('unresolved presets and unknown button ancestors retain the safe sampled fallback', () => {
+    let calls=0;
+    const {dom,sent}=host(false,win=>{
+        win.CSS={supports:()=>true};
+        win.HTMLCanvasElement.prototype.getContext=()=>{calls++;return null;};
+        win.document.body.style.cssText='background:white;color:black;--wp--preset--color--primary:var(--brand)';
+        const candidate=win.document.createElement('section');
+        candidate.innerHTML='<button style="background:black;color:white">Unknown</button>';
+        win.document.body.append(candidate);
+        const good=win.document.createElement('button');good.style.cssText='background:rgb(10,20,30);color:white';win.document.body.append(good);
+        const getStyle=win.getComputedStyle.bind(win);
+        win.getComputedStyle=node=>{
+            const style=getStyle(node);
+            if(node===candidate) Object.defineProperty(style,'backgroundColor',{value:'oklch(0.25 0.05 260)'});
+            return style;
+        };
+    });
+    assert.equal(sent[0][0][0].theme.primary,'rgb(10, 20, 30)');assert.equal(calls,1);dom.window.close();
 });

@@ -55,8 +55,31 @@
         for (const sheet of document.styleSheets) read(sheet, sheet.href || document.baseURI);
         return faces;
     };
-    // Computed sRGB colors and WordPress hex tokens. Unsupported color spaces
-    // fall back to a known pair instead of guessing their contrast.
+    // Keep common sRGB tokens cheap; let the browser normalize other CSS colors.
+    let colorContext;
+    const nativeColor = color => {
+        if (!color || /\b(?:var|env|currentcolor|inherit|initial|unset|revert|revert-layer)\b/i.test(color)) return null;
+        try {
+            if (!window.CSS?.supports?.('color', color)) return null;
+            if (colorContext === undefined) {
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = 1;
+                colorContext = canvas.getContext('2d', {willReadFrequently: true});
+            }
+            if (!colorContext) return null;
+            // Two sentinels distinguish rejected assignments from real colors.
+            colorContext.fillStyle = '#000000';
+            colorContext.fillStyle = color;
+            const first = colorContext.fillStyle;
+            colorContext.fillStyle = '#ffffff';
+            colorContext.fillStyle = color;
+            if (colorContext.fillStyle !== first) return null;
+            colorContext.clearRect(0, 0, 1, 1);
+            colorContext.fillRect(0, 0, 1, 1);
+            const pixel = colorContext.getImageData(0, 0, 1, 1).data;
+            return [pixel[0], pixel[1], pixel[2], pixel[3] / 255];
+        } catch { return null; }
+    };
     const rgba = value => {
         const color = (value || '').trim().toLowerCase();
         if (color === 'transparent') return [0, 0, 0, 0];
@@ -69,7 +92,7 @@
                 .concat(hex.length === 8 ? parseInt(hex.slice(6), 16) / 255 : 1);
         }
         const match = color.match(/^rgba?\(([^)]+)\)$/);
-        if (!match) return null;
+        if (!match) return nativeColor(color);
         const parts = match[1].trim().split(/[\s, /]+/);
         if (parts.length < 3 || parts.length > 4 || parts.some(p => !/^[+-]?(?:\d*\.)?\d+%?$/.test(p))) return null;
         return parts.slice(0, 3).map(p => Math.max(0, Math.min(255, parseFloat(p) * (p.endsWith('%') ? 2.55 : 1))))
@@ -81,7 +104,8 @@
         const layers = [];
         for (; node; node = node.parentElement) {
             const color = rgba(getComputedStyle(node).backgroundColor);
-            if (!color) continue;
+            if (!color) return null;
+            if (color[3] === 0) continue;
             layers.push(color);
             if (color[3] === 1) break;
         }
@@ -96,6 +120,7 @@
         const container = frame.parentElement;
         const style = getComputedStyle(container);
         const background = backgroundAt(container);
+        if (!background) return null;
         // Checkout projections are output, never a source of website appearance.
         const selector = ':is(button, .wp-element-button, .wp-block-button__link):not([data-festapp-embed-price] *)';
         let buttonFill, buttonText;
@@ -111,7 +136,9 @@
             const computed = getComputedStyle(button);
             const fill = rgba(computed.backgroundColor), text = rgba(computed.color);
             if (!fill || !text || !fill[3] || !text[3]) continue;
-            buttonFill = over(fill, backgroundAt(button.parentElement));
+            const buttonBackground = backgroundAt(button.parentElement);
+            if (!buttonBackground) continue;
+            buttonFill = over(fill, buttonBackground);
             buttonText = over(text, buttonFill);
             break;
         }
@@ -127,14 +154,14 @@
         return {fontFamily: style.fontFamily, text: style.color, background: cssColor(background), primary: cssColor(primary),
             buttonText: cssColor(foreground), fonts: fontFaces(style.fontFamily)};
     };
-    // null omits presentation for frequent scroll-only viewport messages.
+    // false omits presentation on scroll; null restores the service appearance.
     const send = (frame, record, type, theme = presentation(frame)) => {
         const viewportOffset = Math.max(0, Math.min(20000,
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
-        if (theme !== null) {
+        if (theme !== false) {
             record.theme = JSON.stringify(theme);
             data.theme = theme;
         }
@@ -269,7 +296,7 @@
         // Scroll is already synchronized by the browser. Another RAF adds a
         // full frame of lag before the cross-frame message can be painted.
         frames.forEach((record, frame) => {
-            if (event?.type === 'resize' || !record.priceLayer) send(frame, record, 'viewport', null);
+            if (event?.type === 'resize' || !record.priceLayer) send(frame, record, 'viewport', false);
         });
     };
     window.addEventListener('scroll', updateVisibleViewport, {passive: true, capture: true});

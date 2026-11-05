@@ -71,9 +71,13 @@ try {
                     res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main id="form-page-container"><div class="form-header"><h1>Weekend registration</h1><p><a href="#">https://example.invalid/RegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaks</a></p></div><form id="dynamic-form"><div style="height:2400px"></div><button type="submit">Continue</button></form></main><script type="module" src="/tests/fixtures/form_access/price_position.js"></script></body></html>');return;
                 }
                 if (req.url.startsWith('/__price_position_host')) {
-                    const native=new URL(req.url,'http://localhost').searchParams.get('native')==='1';
+                    const params=new URL(req.url,'http://localhost').searchParams;
+                    const native=params.get('native')==='1';
+                    const palette=params.get('palette');
+                    const colors=palette==='oklch' ? 'color:white;background:oklch(0.25 0.05 260)'
+                        : palette==='p3' ? 'color:white;background:color(display-p3 0.1 0.2 0.3)' : '';
                     res.setHeader('Content-Type','text/html');
-                    res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0}iframe{display:block;width:100%;border:0}header{height:300px}footer{height:600px}</style></head><body><header>Organizer website</header><div ${native?'data-festapp-embed-host':''}><iframe data-festapp-embed src="/form/price-position?embed=1" height="800" title="Registration"></iframe></div><footer>Footer</footer><script src="/embed.js"></script></body></html>`);return;
+                    res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;${colors}}iframe{display:block;width:100%;border:0}header{height:300px}footer{height:600px}</style></head><body><header>Organizer website</header><div ${native?'data-festapp-embed-host':''}><iframe data-festapp-embed src="/form/price-position?embed=1" height="800" title="Registration"></iframe></div><footer>Footer</footer><script src="/embed.js"></script></body></html>`);return;
                 }
                 if (req.url.startsWith('/form/account-access') || req.url === '/' || req.url.startsWith('/?')) {
                     res.setHeader('Content-Type', 'text/html'); res.end(shell); return;
@@ -174,6 +178,24 @@ try {
                 })()`);
             }
             console.log(`PASS: price position ${presentation} at ${width}px, down and up`);
+            await browser('close');
+        }
+    }
+    // Modern website palettes must retain their dark backdrop inside the frame.
+    for (const width of [390,1280]) {
+        for (const [palette,expected] of [['oklch',[19,33,57]],['p3',[15,52,79]]]) {
+            await openBrowser(`${origin}/__price_position_host?native=1&palette=${palette}`);
+            await browser('set','viewport',String(width),'844');
+            await browser('wait','--fn',`(() => {
+                const doc=document.querySelector('iframe')?.contentDocument;
+                if(doc?.documentElement.dataset.embedTheme!=='host')return false;
+                const computed=doc.defaultView.getComputedStyle(doc.documentElement).backgroundColor;
+                const channels=computed.match(/[\\d.]+/g)?.map(Number);
+                return channels && ${JSON.stringify(expected)}.every((v,i)=>Math.abs(v-channels[i])<=1)
+                    && doc.defaultView.getComputedStyle(doc.getElementById('form-page-container')).color==='rgb(255, 255, 255)'
+                    && doc.documentElement.scrollWidth<=doc.documentElement.clientWidth+1;
+            })()`);
+            console.log(`PASS: inherited ${palette} palette at ${width}px retains a readable backdrop`);
             await browser('close');
         }
     }

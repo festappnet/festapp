@@ -3,7 +3,7 @@
 BEGIN;
 DO $$
 DECLARE org bigint; oc bigint; oid bigint; viewer uuid:=gen_random_uuid(); hidden uuid:=gen_random_uuid();
- occasions bigint[]; orders bigint[]; slot integer; result jsonb; warm jsonb; started timestamptz; elapsed_ms numeric;
+ occasions bigint[]; orders bigint[]; result jsonb; warm jsonb; started timestamptz; elapsed_ms numeric;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Notification latency fixture') RETURNING id INTO org;
  INSERT INTO auth.users(id) VALUES(viewer),(hidden);
@@ -25,21 +25,28 @@ BEGIN
   occasions:=array_append(occasions,oc);orders:=array_append(orders,oid);
  END LOOP;
  oc:=occasions[1];
- -- Real publication and delivery, including 1000 sealed personal read batches.
- FOR i IN 1..2000 LOOP
-  slot:=1+(i%31);
-  PERFORM public.notification_center_publish_internal(org,occasions[slot],'order_created','latency:'||i,
-   jsonb_build_object('orderId',orders[slot],'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,now()-interval '1 day'+i*interval '1 millisecond');
- END LOOP;
- FOR i IN 1..40 LOOP
-  EXIT WHEN NOT EXISTS(SELECT 1 FROM public.notification_center_events WHERE organization=org AND projected_revision<attention_revision);
-  PERFORM public.project_notification_center(500);
- END LOOP;
- PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org),2000::bigint,'latency fixture delivers every event');
+ -- Seed delivered facts in bulk: producer/fanout contracts exercise publication
+ -- separately. This gate measures the real prepared read at production cardinality,
+ -- not 2000 repeated permission/fanout calls during fixture construction.
+ INSERT INTO public.notification_center_events(organization,occasion,kind,source_key,occurred_at,data,projected_revision)
+ SELECT org,occasions[1+(i%31)],'order_created','latency:'||i,
+  now()-interval '1 day'+i*interval '1 millisecond',
+  jsonb_build_object('orderId',orders[1+(i%31)],'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),1
+ FROM generate_series(1,2000) i;
+ INSERT INTO public.notification_center_recipients(event_id,recipient,processed_revision,eligible_revision,retry_revision)
+ SELECT id,viewer,1,1,1 FROM public.notification_center_events WHERE organization=org;
+ INSERT INTO public.notification_center_deliveries(event_id,recipient,organization,attention_revision,sequence,group_key)
+ SELECT id,viewer,org,1,row_number() OVER(ORDER BY occurred_at,id),
+  occasion||':order_created:'||(occurred_at AT TIME ZONE 'Europe/Prague')::date::text
+ FROM public.notification_center_events WHERE organization=org;
+ INSERT INTO public.notification_center_user_state(organization,recipient,last_delivery_sequence)
+ VALUES(org,viewer,2000);
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org),2000::bigint,'latency fixture retains every delivered event');
  INSERT INTO public.notification_center_read_batches(organization,recipient,group_key,after_sequence,through_sequence)
  SELECT org,viewer,'occasion-kind:'||e.occasion||':order_created',d.sequence-1,d.sequence
  FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
  WHERE d.organization=org AND recipient=viewer AND d.sequence%2=0;
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_read_batches WHERE organization=org),1000::bigint,'latency fixture retains sealed personal read batches');
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  FOR i IN 1..2 LOOP
   IF i=2 THEN
