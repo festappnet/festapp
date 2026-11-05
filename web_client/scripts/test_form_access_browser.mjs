@@ -17,6 +17,8 @@ const config = path.join(temporary, 'browser.json');
 await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false }));
 let browserIndex = 0;
 let session = `fa-${process.pid}`;
+let browserPhase = 'setup';
+const requests = [];
 async function browser(...args) {
     const { stdout } = await execute('agent-browser', ['--config', config, '--namespace', session,
         '--session', session, '--headed', 'false', '--allowed-domains', '127.0.0.1', '--json', ...args],
@@ -29,11 +31,18 @@ async function openBrowser(url) {
     await openIsolatedBrowser({
         open: async () => {
             session = `fa-${process.pid}-${++browserIndex}`;
-            await browser('open', url);
+            browserPhase = 'launch';
+            // Verify a ready, isolated browser before starting page navigation.
+            // A combined cold launch/navigation can otherwise hide which stage
+            // stalled, and prevents the existing empty-daemon recovery check.
+            await browser('open');
         },
         info: () => browser('session', 'info'),
         close: () => browser('close'),
     });
+    browserPhase = 'navigation';
+    await browser('open', url);
+    browserPhase = 'page assertions';
 }
 let server;
 try {
@@ -49,6 +58,13 @@ try {
     await new Promise((resolve, reject) => portProbe.close(error => error ? reject(error) : resolve()));
     server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true },
         plugins: [{ name: 'form-access-fixture', configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+                const record = { path: req.url.split('?')[0], state: 'pending' };
+                requests.push(record);
+                if (requests.length > 30) requests.shift();
+                res.once('finish', () => { record.state = res.statusCode; });
+                next();
+            });
             server.middlewares.use(async (req, res, next) => {
                 if (req.url.startsWith('/form/price-position')) {
                     res.setHeader('Content-Type','text/html');
@@ -163,6 +179,7 @@ try {
     await browser('wait', '--fn', 'JSON.parse(sessionStorage.getItem("festapp-google-attempt-v1")).returnPath === "/"');
     console.log('PASS: catalogue login - visible Google action and provider handoff');
 } catch (error) {
+    console.error('Browser fixture failure:', { phase: browserPhase, requests });
     console.error('Browser errors:', await browser('errors').catch(() => null));
     console.error('Browser snapshot:', await browser('snapshot', '-i').catch(() => null));
     throw error;
