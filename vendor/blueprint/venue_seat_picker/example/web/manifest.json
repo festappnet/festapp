@@ -1,11 +1,11 @@
 {
     "name": "Venue Layout Studio",
     "short_name": "Venue Layout",
-    "start_url": ".",
+    "start_url": "./?demo=1",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Interactive venue seat picker and editor demo for Flutter.",
+    "background_color": "#f3f5f8",
+    "theme_color": "#2563eb",
+    "description": "Create seating plans and try interactive seat selection with venue_seat_picker for Flutter.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

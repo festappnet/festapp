@@ -1,12 +1,74 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker_example/demo/bundle.dart';
+import 'package:venue_seat_picker_example/demo/text_host.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('concurrent prepared text retains live images and rejects immutable collisions', () {
+    final image = Object();
+    final current = <String, dynamic>{
+      'protocol': 2,
+      'images': {'image:one': image},
+      'textLayouts': {
+        'one': {'id': 'one'},
+      },
+    };
+    final merged = mergeDemoTextResources(current, {
+      'textLayouts': {
+        'two': {'id': 'two'},
+      },
+    });
+    expect((merged['images'] as Map)['image:one'], same(image));
+    expect((merged['textLayouts'] as Map).keys, containsAll(['one', 'two']));
+    expect(
+      mergeDemoTextResources(merged, {
+        'textLayouts': {
+          'two': {'id': 'two'},
+        },
+      }),
+      same(merged),
+    );
+    expect(
+      () => mergeDemoTextResources(merged, {
+        'textLayouts': {
+          'one': {'id': 'changed'},
+        },
+      }),
+      throwsFormatException,
+    );
+    expect(current['textLayouts'], {
+      'one': {'id': 'one'},
+    });
+  });
+  test(
+    'portable metadata retains supported templates outside the current gallery',
+    () async {
+      final resources = await loadLayoutFixtureResources();
+      for (final id in ['lounge', 'ball-classic']) {
+        expect(VenueLayoutTemplates.all.any((t) => t.id == id), isFalse);
+        final document = VenueLayoutTemplates.create(id);
+        final encoded = DemoBundle(document, resources, {
+          'template': id,
+        }).encode();
+        expect(
+          DemoBundle.decode(Uint8List.fromList(utf8.encode(encoded)))
+              .host['template'],
+          id,
+        );
+        expect(
+          () => DemoBundle(document, resources, {
+            'template': 'unknown-template',
+          }).encode(),
+          throwsFormatException,
+        );
+      }
+    },
+  );
   test(
     'portable bundle validates version and hashes before returning a draft',
     () async {
@@ -102,9 +164,9 @@ void main() {
       ]) {
         final malformed = jsonDecode(original) as Map<String, dynamic>;
         final item = (malformed['resources'] as List).first as Map;
-        final payload =
-            jsonDecode(utf8.decode(base64Decode(item['data'] as String)))
-                as Map;
+        final payload = jsonDecode(
+          utf8.decode(base64Decode(item['data'] as String)),
+        ) as Map;
         payload['assets'] = invalid;
         final bytes = utf8.encode(jsonEncode(payload));
         item['data'] = base64Encode(bytes);
@@ -134,9 +196,8 @@ void main() {
         throwsFormatException,
       );
       expect(
-        DemoBundle.decode(
-          Uint8List.fromList(utf8.encode(original)),
-        ).document.toJson(),
+        DemoBundle.decode(Uint8List.fromList(utf8.encode(original))).document
+            .toJson(),
         doc.toJson(),
       );
     },

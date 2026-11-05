@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +18,10 @@ void main() {
       );
       final fixture =
           jsonDecode(File('$dir/report.json').readAsStringSync()) as Map;
+      const cameraFile = String.fromEnvironment('QA_CAMERAS');
+      final cameras = cameraFile.isEmpty
+          ? null
+          : jsonDecode(File(cameraFile).readAsStringSync()) as Map;
       final out = Directory('$dir/raster')..createSync(recursive: true);
       final resources = Map<String, dynamic>.from(fixture['resources']);
       final images = <String, ui.Image>{};
@@ -44,6 +49,16 @@ void main() {
                   in motion['zoom'] != null
                       ? [motion['zoom']]
                       : [.5, 1.0, 2.0]) {
+                final name =
+                    '${f['name']}-${((motion['t'] as num) * 240).round()}-$width-$dpr-${(zoom as num).toStringAsFixed(1)}';
+                if (cameras != null && !cameras.containsKey(name)) continue;
+                final camera = cameras?[name] as Map?;
+                if (camera != null) {
+                  expect(camera['b'], 0);
+                  expect(camera['c'], 0);
+                  expect(camera['a'], closeTo(zoom.toDouble(), 1e-6));
+                  expect(camera['d'], closeTo(zoom.toDouble(), 1e-6));
+                }
                 final key = GlobalKey();
                 await tester.binding.setSurfaceSize(
                   Size(
@@ -63,8 +78,11 @@ void main() {
                             scene: Map<String, dynamic>.from(motion['scene']),
                             resources: resources,
                             selected: {},
-                            scale: (zoom as num).toDouble(),
-                            offset: Offset.zero,
+                            scale: (camera?['a'] as num? ?? zoom).toDouble(),
+                            offset: Offset(
+                              (camera?['e'] as num? ?? 0).toDouble(),
+                              (camera?['f'] as num? ?? 0).toDouble(),
+                            ),
                             canvasColor: Colors.white,
                             selectionColor: Colors.blue,
                           ),
@@ -83,11 +101,8 @@ void main() {
                 final bytes = (await tester.runAsync(
                   () => image.toByteData(format: ui.ImageByteFormat.png),
                 ))!;
-                final name =
-                    '${f['name']}-${((motion['t'] as num) * 240).round()}-$width-$dpr-$zoom';
-                File(
-                  '${out.path}/$name.png',
-                ).writeAsBytesSync(bytes.buffer.asUint8List());
+                File('${out.path}/$name.png')
+                    .writeAsBytesSync(bytes.buffer.asUint8List());
                 image.dispose();
               }
             }

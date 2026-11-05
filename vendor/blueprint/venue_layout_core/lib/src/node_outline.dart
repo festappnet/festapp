@@ -309,6 +309,36 @@ List<List<List<double>>>? _chairContours(LayoutNode node, LayoutNode? parent) {
   ];
 }
 
+/// Local cushion bounds, derived from the same contours as the chair outline.
+/// State symbols belong to the cushion, excluding the backrest and armrests.
+({double x, double y, double width, double height}) seatSurfaceBounds(
+  LayoutNode node, {
+  LayoutNode? parent,
+}) {
+  final contours = _chairContours(node, parent);
+  if (contours == null) {
+    return (x: 0, y: 0, width: node.width, height: node.height);
+  }
+  // Wooden chairs/stools emit their frame first; other styles emit the cushion.
+  final contour = chairStyle(node) == 'wood' && !_cushion(node, parent)
+      ? contours.last
+      : contours.first;
+  var left = double.infinity, top = double.infinity;
+  var right = double.negativeInfinity, bottom = double.negativeInfinity;
+  for (final point in contour) {
+    left = min(left, point[0]);
+    right = max(right, point[0]);
+    top = min(top, point[1]);
+    bottom = max(bottom, point[1]);
+  }
+  return (
+    x: (left + right) / 2,
+    y: (top + bottom) / 2,
+    width: right - left,
+    height: bottom - top,
+  );
+}
+
 /// Stitch seam inset into the tapered banquet seat, sharing its orientation.
 ScenePath banquetChairInlay(LayoutNode node, {LayoutNode? parent}) {
   final w = node.width / 2, h = node.height / 2;

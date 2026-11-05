@@ -56,6 +56,27 @@ void main() {
     expect(find.byKey(const ValueKey('layout-palette')), findsNothing);
   }
 
+  testWidgets(
+    'palette reopen preserves the visible filter and accepts a replacement',
+    (tester) async {
+      await open(tester, czech: true);
+      await choose(tester, 'Stůl', 'Stůl', czech: true);
+      await tester.tap(find.byKey(const ValueKey('layout-mobile-library')));
+      await tester.pumpAndSettle();
+      final field = find.widgetWithText(TextField, 'Hledat objekt');
+      final editable = find.descendant(
+        of: field,
+        matching: find.byType(EditableText),
+      );
+      expect(tester.widget<EditableText>(editable).controller.text, 'Stůl');
+      await tester.enterText(field, 'Text');
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(OutlinedButton, 'Text'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Stůl'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   for (final czech in [false, true]) {
     testWidgets(
       'mobile tap inserts one seat, selects it and supports undo (cs=$czech)',
@@ -107,7 +128,9 @@ void main() {
     expect(c.canUndo, isFalse);
   });
 
-  testWidgets('standing area starts larger with a readable label', (tester) async {
+  testWidgets('standing area starts larger with a readable label', (
+    tester,
+  ) async {
     final c = await open(tester);
     await choose(tester, 'Standing', 'Standing');
     final area = c.document.nodes.single;

@@ -12,6 +12,10 @@ try{
   const page=await context.newPage();
   page.on('pageerror',e=>failures.push(e.message));
   await page.goto(`${base}/flutter/`);
+  await page.getByRole('heading', {name: 'Flutter seat picker & seating plan editor', exact: true}).waitFor();
+  if (await page.getByRole('link', {name: 'Flutter package on pub.dev', exact: true}).getAttribute('href') !== 'https://pub.dev/packages/venue_seat_picker') throw new Error('Package backlink is missing');
+  results.push('Demo overview and pub.dev backlink are visible');
+  await page.getByRole('link', {name: 'Open interactive demo', exact: true}).click();
   await page.waitForSelector('flutter-view',{timeout:45000});
   await page.screenshot({path:path.join(report,'flutter.png')});results.push('Flutter loader created its view');
   await page.goto(`${base}/js/demo/`);
