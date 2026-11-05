@@ -28,12 +28,17 @@ class RichHtmlEditorController extends ChangeNotifier {
       required this.owner,
       this.profile = HtmlContentProfile.appContent,
       HtmlMediaDraft? media,
-      this.authoring})
+      this.authoring,
+    this.historyBinding,
+    this.allowEmbeddedInsertion = true,
+  })
       : originalHtml = initialHtml ?? '',
         media = media ?? HtmlMediaDraft(),
         _ownsMedia = media == null {
     _load(initialHtml);
   }
+  final HtmlHistoryBinding? historyBinding;
+  final bool allowEmbeddedInsertion;
   final HtmlMediaOwner owner;
   final List<HtmlEmbeddedBlock> embeddedBlocks;
   final HtmlContentProfile profile;
@@ -67,6 +72,7 @@ class RichHtmlEditorController extends ChangeNotifier {
   int revision = 0;
   int _generation = 0;
   bool _disposed = false;
+  final _invalidFuture = <CommandTransaction>{};
   String? _cachedHtml;
   late Set<String> _originalImageSources;
 
@@ -144,6 +150,55 @@ class RichHtmlEditorController extends ChangeNotifier {
               createdAt: request.createdAt);
         return null;
       });
+    // dev.52 retains its native redo stack after a new edit. Fence those native
+    // transaction identities here; do not introduce a second undo history.
+    editor.reactionPipeline.add(
+      FunctionalEditReaction(
+        modifyContent: (_, __, changes) {
+          if (changes.any((e) => e is DocumentEdit || e is _HtmlStateEvent)) {
+            _invalidFuture.addAll(editor.future);
+          }
+        },
+      ),
+    );
+    final binding = historyBinding;
+    if (binding != null) {
+      final state = _HtmlHistoryState(binding.initialState);
+      editor.context.put('html.externalDraft', state);
+      editor.requestHandlers.insert(
+        0,
+        (_, request) => request is _HtmlStateRequest
+            ? _HtmlStateCommand(request.value)
+            : null,
+      );
+      editor.reactionPipeline.add(
+        FunctionalEditReaction(
+          modifyContent: (context, dispatcher, changes) {
+            if (!changes.any((e) => e is DocumentEdit)) return;
+            _cachedHtml = null;
+            final next = binding.reconcile(html, state.value);
+            if (next != state.value)
+              dispatcher.execute([_HtmlStateRequest(next)]);
+          },
+        ),
+      );
+      var lastHtml = html;
+      var lastState = state.value;
+      final loadedHtml = html;
+      editor.addListener(
+        FunctionalEditListener((_) {
+          _cachedHtml = null;
+          if (lastHtml == html && lastState == state.value) return;
+          lastHtml = html;
+          lastState = state.value;
+          binding.publish(
+            html == loadedHtml ? originalHtml : html,
+            state.value,
+          );
+          notifyListeners();
+        }),
+      );
+    }
     editor.document.addListener(_changed);
   }
 
@@ -160,6 +215,7 @@ class RichHtmlEditorController extends ChangeNotifier {
     editor.document.removeListener(_changed);
     editor.dispose();
     _cachedHtml = null;
+    _invalidFuture.clear();
     _load(html);
     revision++;
     notifyListeners();
@@ -518,9 +574,14 @@ class RichHtmlEditorController extends ChangeNotifier {
     editor.execute([DeleteNodeRequest(nodeId: nodeId)]);
   }
 
-  bool insertEmbeddedBlock(HtmlEmbeddedBlock block) {
+  bool insertEmbeddedBlock(HtmlEmbeddedBlock block, {
+    String? afterNodeId,
+    bool atEnd = false,
+  }) {
     if (!embeddedBlocks.contains(block) || !canInsertAtomic(block.cssClass, embedded: true)) return false;
-    final anchor = editor.composer.selection?.extent.nodeId;
+    final anchor = atEnd
+        ? null
+        : afterNodeId ?? editor.composer.selection?.extent.nodeId;
     final index = anchor == null ? editor.document.nodeCount : editor.document.getNodeIndexById(anchor) + 1;
     final node = PreservedHtmlNode(id: Editor.createNodeId(), html: block.html);
     editor.execute([InsertNodeAtIndexRequest(nodeIndex: index, newNode: node),
@@ -542,6 +603,27 @@ class RichHtmlEditorController extends ChangeNotifier {
     ]);
   }
 
+  /// Runs external draft changes in the same native history item as HTML edits.
+  void transact(Object state, void Function() change) {
+    editor.startTransaction();
+    try {
+      editor.execute([_HtmlStateRequest(state)]);
+      change();
+    } finally {
+      editor.endTransaction();
+    }
+  }
+
+  void appendHtml(String html) {
+    final nodes = _pasteContent(normalizeHtmlContentStyles(html, profile))
+        .toList();
+    final start = editor.document.nodeCount;
+    editor.execute([
+      for (var i = 0; i < nodes.length; i++)
+        InsertNodeAtIndexRequest(nodeIndex: start + i, newNode: nodes[i]),
+    ]);
+  }
+
   void undo() {
     if (authoring == null) {
       editor.undo();
@@ -555,6 +637,8 @@ class RichHtmlEditorController extends ChangeNotifier {
   }
 
   void redo() {
+    if (editor.future.isNotEmpty && _invalidFuture.contains(editor.future.last))
+      return;
     if (authoring == null) {
       editor.redo();
       return;
@@ -1042,3 +1126,39 @@ class _AtomicActionTagReaction extends EditReaction {
     native.react(context, dispatcher, changes);
   }
 }
+/// Immutable external state participates in SuperEditor's own replay history.
+class HtmlHistoryBinding {
+  const HtmlHistoryBinding({
+    required this.initialState,
+    required this.reconcile,
+    required this.publish,
+  });
+  final Object initialState;
+  final Object Function(String html, Object state) reconcile;
+  final void Function(String html, Object state) publish;
+}
+
+class _HtmlHistoryState with Editable {
+  _HtmlHistoryState(this.initial) : value = initial;
+  final Object initial;
+  Object value;
+  @override
+  void reset() => value = initial;
+}
+
+class _HtmlStateRequest implements EditRequest {
+  _HtmlStateRequest(this.value);
+  final Object value;
+}
+
+class _HtmlStateCommand extends EditCommand {
+  _HtmlStateCommand(this.value);
+  final Object value;
+  @override
+  void execute(EditContext context, CommandExecutor executor) {
+    context.find<_HtmlHistoryState>('html.externalDraft').value = value;
+    executor.logChanges([_HtmlStateEvent()]);
+  }
+}
+
+class _HtmlStateEvent extends EditEvent {}

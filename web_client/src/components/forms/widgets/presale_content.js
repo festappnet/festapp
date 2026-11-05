@@ -6,15 +6,20 @@ import { saleOpeningText, renderSaleOpening } from '../sale_opening_notification
 
 // One document owns order. Hydration occurs only after the common sanitizer.
 export function renderPresaleContent(container, model, onFinished, {preview = false} = {}) {
-    if (!model.enableCountdown) CountdownWidget.waitForOpening(model.startTime, onFinished);
+    if (!preview && !model.enableCountdown) CountdownWidget.waitForOpening(model.startTime, onFinished);
     const doc = container.ownerDocument;
     const content = doc.createElement('div'); content.className = 'form-header form-presale-content';
-    content.innerHTML = sanitizeHtml(model.countdownTitle ?? `<p>${FormStrings.registrationStart}</p>`);
+    content.innerHTML = sanitizeHtml(model.presaleContent ?? model.countdownTitle ?? (model.enableCountdown ? `<p>${FormStrings.registrationStart}</p>` : ''));
     // The editor retains empty paragraphs and inactive countdown slots around blocks.
+    content.querySelectorAll('.form-presale-system-title').forEach(el => { el.textContent = FormStrings.registrationStart; });
+    content.querySelectorAll('.form-presale-legacy-secondary').forEach(el => {
+        el.style.textAlign = 'left'; el.style.fontSize = '18px';
+        el.style.margin = '12px'; el.style.lineHeight = '1.5';
+    });
     const notification = content.querySelector('div.html-editor-block.form-sale-opening-notification');
     const surrounding = content.cloneNode(true);
     surrounding.querySelectorAll('.form-sale-opening-notification, .form-countdown').forEach(slot => slot.remove());
-    if (!model.enableCountdown && notification && (model.saleOpeningNotification?.canSubscribe || preview) &&
+    if ((model.presaleHeader ?? (model.enableCountdown ? 'date' : 'none')) === 'none' && !model.enableCountdown && notification && (model.saleOpeningNotification?.canSubscribe || (preview && model.data?.sale_opening_notifications?.enabled && !model.data?.sale_opening_notifications?.collection_paused)) &&
         !surrounding.textContent.replace(/[\s\u200b]/gu, '') && !surrounding.querySelector('img,video,iframe,table,hr')) {
         content.classList.add('form-presale-subscription-only');
         content.replaceChildren(notification);
@@ -30,20 +35,25 @@ export function renderPresaleContent(container, model, onFinished, {preview = fa
         const slot = slots[0]; if (!slot) continue;
         if (type === 'form-countdown') {
             if (!model.enableCountdown) { slot.remove(); continue; }
-            CountdownWidget.render(slot, {...model, startTime: model.startTime, countdownTitle: ''}, onFinished);
+            CountdownWidget.render(slot, {...model, startTime: model.startTime, countdownTitle: ''}, preview ? () => {} : onFinished);
             slot.querySelector('.countdown-title')?.remove();
-        } else if (model.saleOpeningNotification?.canSubscribe || preview) renderSaleOpening(slot, model, {preview});
+        } else if (model.saleOpeningNotification?.canSubscribe || (preview && model.data?.sale_opening_notifications?.enabled && !model.data?.sale_opening_notifications?.collection_paused)) renderSaleOpening(slot, model, {preview});
         else slot.remove();
     }
     const date = doc.createElement('p');
     if (model.startTime) date.textContent = new Intl.DateTimeFormat(LocalizationService.currentLocale || undefined, {dateStyle: 'full', timeStyle: 'short', timeZone: model.saleOpeningNotification?.timeZone || 'Europe/Prague'}).format(model.startTime);
     const meaningful = content.textContent.replace(/[\s\u200b]/gu, '') || content.querySelector('input,button,img,video,iframe,table,hr,.countdown-widget');
-    if (!meaningful && !model.enableCountdown) {
+    const header = model.presaleHeader ?? (model.enableCountdown ? 'date' : 'none');
+    if (!meaningful && !model.enableCountdown && header === 'none') {
         const opening = doc.createElement('p');
         opening.className = 'form-scheduled-opening';
         opening.textContent = saleOpeningText('scheduledStart').replace('{date}', () => date.textContent);
         content.append(opening);
     }
-    if (model.enableCountdown) container.append(date);
+    if (header === 'event_and_date') {
+        const title = doc.createElement('h2'); title.textContent = model.occasionTitle || model.title || '';
+        container.append(title);
+    }
+    if (header !== 'none') container.append(date);
     container.append(content);
 }

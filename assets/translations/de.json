@@ -2818,5 +2818,23 @@
     "configuredStart": "Geplanter Beginn: {date}.",
     "waitingState": "Wir warten auf die tatsächliche Öffnung der Anmeldung.",
     "presaleContent": "Inhalt vor dem Anmeldestart"
+  },
+  "PresaleContent": {
+    "page": "Seite vor dem Start",
+    "customize": "Aussehen und Inhalt bearbeiten",
+    "overview": "Zurück zur Übersicht",
+    "header": "Standardüberschrift",
+    "countdown": "Countdown",
+    "mobile": "Mobile Vorschau",
+    "requiresStart": "Legen Sie zuerst den Anmeldestart fest.",
+    "event_and_date": "Veranstaltung und Termin",
+    "date": "Nur Termin",
+    "none": "Keine Überschrift",
+    "email": "E-Mail-Benachrichtigung",
+    "paused": "E-Mail-Erfassung pausiert",
+    "recover": "Frühere verborgene Inhalte wiederherstellen",
+    "noArchive": "Kein archivierter Inhalt verfügbar.",
+    "removed": "Block entfernt. E-Mail-Erfassung pausiert.",
+    "undo": "Rückgängig"
   }
 }

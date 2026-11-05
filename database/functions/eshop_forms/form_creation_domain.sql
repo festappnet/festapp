@@ -10,7 +10,7 @@ DECLARE
     new_product_type_id BIGINT;
     now TIMESTAMPTZ := NOW();
     payment_default text;
-    initial_data jsonb := '{"is_reminder_enabled": true}'::jsonb;
+    initial_data jsonb := '{"is_reminder_enabled": true,"design":{"presale_header":"event_and_date"}}'::jsonb;
 BEGIN
     SELECT org.data->>'DEFAULT_FORM_PAYMENT_METHOD' INTO payment_default
     FROM public.occasions o JOIN public.organizations org ON org.id=o.organization

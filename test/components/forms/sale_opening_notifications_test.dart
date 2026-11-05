@@ -16,7 +16,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/sale_opening_settings.dart';
-import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
+import 'package:fstapp/components/forms/widgets_view/presale_content.dart';
 import 'package:fstapp/components/forms/widgets_view/sale_opening_notification.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
@@ -265,7 +265,7 @@ void main() {
       MaterialApp(
         builder: DependencyMaterialBridge.builder,
         home: Scaffold(
-          body: CountdownContent(
+          body: PresaleContent(
             targetTime: DateTime.utc(2099, 1, 1, 12),
             onFinished: () {},
             showTimer: false,
@@ -296,7 +296,7 @@ void main() {
           builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
-              child: CountdownContent(
+              child: PresaleContent(
                 targetTime: DateTime.utc(2099, 1, 1, 12),
                 onFinished: () {},
                 showTimer: false,
@@ -324,7 +324,7 @@ void main() {
         MaterialApp(
           builder: DependencyMaterialBridge.builder,
           home: Scaffold(
-            body: CountdownContent(
+            body: PresaleContent(
               targetTime: DateTime.utc(2099, 1, 1, 12),
               onFinished: () {},
               showTimer: false,
@@ -526,7 +526,7 @@ void main() {
     },
   );
   testWidgets(
-    'overflow settings cancel independently and apply only to the parent draft',
+    'availability menu focuses the presale section and activation uses the parent draft',
     (tester) async {
       tester.view.physicalSize = const Size(1600, 1000);
       tester.view.devicePixelRatio = 1;
@@ -563,68 +563,23 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Zapnout upozornění'), findsNothing);
+      expect(find.text('Zapnout upozornění'), findsOneWidget);
       final menu = find.byKey(const ValueKey('form-availability-menu'));
       await tester.tap(menu);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Upozornění na začátek přihlašování'));
       await tester.pumpAndSettle();
-      expect(find.text('E-mail při otevření'), findsOneWidget);
+      expect(find.text('Stránka před otevřením'), findsOneWidget);
       expect(find.text('Použít změny'), findsNothing);
-      expect(find.text('Zavřít'), findsOneWidget);
-      expect(find.text('Zrušit'), findsNothing);
+      expect(form.definition.saleOpeningEnabled, isFalse);
+      await tester.ensureVisible(find.text('Zapnout upozornění'));
       await tester.tap(find.text('Zapnout upozornění'));
       await tester.pumpAndSettle();
-      expect(form.definition.saleOpeningEnabled, isFalse);
-      expect(find.text('Zavřít'), findsNothing);
-      expect(find.text('Použít změny'), findsOneWidget);
-      await tester.tap(find.text('Zrušit'));
-      await tester.pumpAndSettle();
-      expect(form.definition.saleOpeningEnabled, isFalse);
-      await tester.tap(menu);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Upozornění na začátek přihlašování'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Zapnout upozornění'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Použít změny'));
-      await tester.pumpAndSettle();
       expect(form.definition.saleOpeningEnabled, isTrue);
-      expect(
-        form.definition.countdownTitle,
-        contains('form-sale-opening-notification'),
-      );
-      expect(
-        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
-        isTrue,
-      );
-      expect(find.text('Zapnout upozornění'), findsNothing);
-      await tester.tap(menu);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Upozornění na začátek přihlašování'));
-      await tester.pumpAndSettle();
-      expect(
-        find.text('Změny se projeví po uložení formuláře.'),
-        findsOneWidget,
-      );
-      expect(find.text('Ukončit upozornění'), findsNothing);
+      expect(form.definition.presaleContent, contains('form-sale-opening-notification'));
+      expect(tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges, isTrue);
+      expect(find.text('Standardní hlavička'), findsNothing);
       expect(find.text('Použít změny'), findsNothing);
-      await tester.tap(find.text('Zavřít'));
-      await tester.pumpAndSettle();
-      expect(form.definition.saleOpeningEnabled, isTrue);
-      await tester.tap(menu);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Upozornění na začátek přihlašování'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Zrušit zapnutí'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Použít změny'));
-      await tester.pumpAndSettle();
-      expect(form.definition.saleOpeningEnabled, isFalse);
-      expect(
-        form.definition.countdownTitle ?? '',
-        isNot(contains('form-sale-opening-notification')),
-      );
       expect(tester.takeException(), isNull);
     },
   );

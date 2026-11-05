@@ -85,8 +85,6 @@ class FormDefinition {
   static const String metaEndTime = "end_time";
   static const String metaEnableCountdown = "enable_countdown";
   static const String metaCountdownStyle = "countdown_style";
-  static const String metaShowBeforeStartMessage = "show_before_start_message";
-  static const String metaBeforeStartMessage = "before_start_message";
   static const String metaCountdownTitle = "countdown_title";
   static const String metaPrimaryColor = "primary_color";
   static const String metaSecondaryColor = "secondary_color";
@@ -298,29 +296,20 @@ class FormDefinition {
     return copyWith(data: {...?data, metaSchedule: section});
   }
 
-  bool get showBeforeStartMessage =>
-      _scheduleData[metaShowBeforeStartMessage] == true;
+  /// One document; the historical wire name remains stable for released readers.
+  String? get presaleContent =>
+      countdownTitle;
 
-  FormDefinition withShowBeforeStartMessage(bool value) {
-    final section = Map<String, dynamic>.from(_scheduleData);
-    section[metaShowBeforeStartMessage] = value;
-    return copyWith(data: {...?data, metaSchedule: section});
-  }
-
-  String? get beforeStartMessage =>
-      _scheduleData[metaBeforeStartMessage] as String?;
-
-  FormDefinition withBeforeStartMessage(String? value) {
-    if (value == null && !_scheduleData.containsKey(metaBeforeStartMessage)) {
-      return this;
+  FormDefinition withPresaleContent(String? value) => withCountdownTitle(value);
+  String get presaleHeader =>
+      _designData['presale_header'] as String? ??
+      (enableCountdown ? 'date' : 'none');
+  FormDefinition withPresaleHeader(String value) {
+    if (!const ['event_and_date', 'date', 'none'].contains(value )) {
+      throw ArgumentError.value(value , 'presaleHeader') ;
     }
-    final section = Map<String, dynamic>.from(_scheduleData);
-    if (value == null) {
-      section.remove(metaBeforeStartMessage);
-    } else {
-      section[metaBeforeStartMessage] = value;
-    }
-    return copyWith(data: {...?data, metaSchedule: section});
+    return copyWith(data: {...?data, metaDesign: {..._designData, 'presale_header': value},
+      });
   }
 
   String get countdownStyle {

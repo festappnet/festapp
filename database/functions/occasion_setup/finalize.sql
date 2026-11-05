@@ -199,6 +199,8 @@ BEGIN
      'enable_countdown',coalesce((payload->>'saleCountdown')::boolean,false),
      'sale_preparation',sale_mode='preparation'));
   form_meta:=form_meta-'sale_opening_notifications';
+  form_meta:=jsonb_set(form_meta,'{design}',coalesce(nullif(form_meta->'design','null'),'{}')||
+    jsonb_build_object('presale_header',coalesce(form_meta#>>'{design,presale_header}','event_and_date')));
   IF coalesce((payload->>'saleOpeningNotifications')::boolean,false) THEN
    IF sale_mode<>'scheduled' THEN RAISE invalid_parameter_value USING MESSAGE='sale_opening_requires_scheduled_sale'; END IF;
    form_meta:=form_meta||'{"sale_opening_notifications":{"enabled":true,"collection_paused":false}}'::jsonb;
@@ -273,8 +275,10 @@ BEGIN
    old_types := old_types || jsonb_build_array(pt->'id');
    fields := fields || jsonb_build_array(field);
   END LOOP;
+  -- This form was born inside this same setup transaction. Its original form
+  -- baseline is zero; the setup revision/command still owns materialization.
   result := public.update_form_internal_v1((form_data-'id'-'fields'-'blueprint'-'bank_account') || jsonb_build_object(
-   'id',form_id,'occasion',new_id,'link',coalesce(form_link,(SELECT link FROM public.forms WHERE id=form_id)),
+   'expected_aggregate_version',0,'id',form_id,'occasion',new_id,'link',coalesce(form_link,(SELECT link FROM public.forms WHERE id=form_id)),
    'is_open',sale_mode<>'preparation','bank_account',selected_bank,'form_fields',fields));
   IF result->>'code'<>'200' THEN RAISE EXCEPTION '%',result; END IF;
   IF jsonb_array_length(old_types)>0 THEN

@@ -125,6 +125,7 @@ BEGIN
           RAISE invalid_parameter_value USING MESSAGE='choose settings patch or released metadata, not both'; END IF;
         SELECT data INTO form_metadata FROM public.forms WHERE id=form_id;
         previous_form_metadata:=form_metadata;
+        input_data:=public.guard_form_presale_write_internal(form_metadata,input_data);
         IF input_data ? 'settings' THEN
           form_metadata:=public.apply_form_settings_internal(form_metadata,input_data->'settings');
         ELSIF input_data ? 'data' THEN

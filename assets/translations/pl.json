@@ -2820,5 +2820,23 @@
     "configuredStart": "Ustawiony początek: {date}.",
     "waitingState": "Oczekiwanie na faktyczne otwarcie zapisów.",
     "presaleContent": "Treść przed otwarciem zapisów"
+  },
+  "PresaleContent": {
+    "page": "Strona przed otwarciem",
+    "customize": "Edytuj wygląd i treść",
+    "overview": "Powrót do przeglądu",
+    "header": "Standardowy nagłówek",
+    "countdown": "Odliczanie",
+    "mobile": "Podgląd mobilny",
+    "requiresStart": "Najpierw ustaw początek zapisów.",
+    "event_and_date": "Nazwa wydarzenia i termin",
+    "date": "Tylko termin",
+    "none": "Bez nagłówka",
+    "email": "Powiadomienie e-mail",
+    "paused": "Zbieranie adresów jest wstrzymane",
+    "recover": "Przywróć wcześniej ukrytą treść",
+    "noArchive": "Brak zarchiwizowanej treści.",
+    "removed": "Blok usunięty. Zbieranie adresów wstrzymane.",
+    "undo": "Cofnij"
   }
 }

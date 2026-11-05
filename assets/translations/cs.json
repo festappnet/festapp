@@ -4979,5 +4979,23 @@
     "configuredStart": "Nastavený začátek: {date}.",
     "waitingState": "Čekáme na skutečné otevření přihlašování.",
     "presaleContent": "Obsah před začátkem přihlašování"
+  },
+  "PresaleContent": {
+    "page": "Stránka před otevřením",
+    "customize": "Upravit vzhled a obsah",
+    "overview": "Zpět na přehled",
+    "header": "Standardní hlavička",
+    "countdown": "Odpočet",
+    "mobile": "Mobilní náhled",
+    "requiresStart": "Nejprve nastavte začátek přihlašování v dostupnosti.",
+    "event_and_date": "Název akce a termín",
+    "date": "Pouze termín",
+    "none": "Bez hlavičky",
+    "email": "Upozornění e-mailem",
+    "paused": "Sběr e-mailů je pozastavený",
+    "recover": "Obnovit dřívější skrytý obsah",
+    "noArchive": "Dřívější skrytý obsah není k dispozici.",
+    "removed": "Blok byl odebrán. Nový sběr e-mailů je pozastavený.",
+    "undo": "Vrátit"
   }
 }

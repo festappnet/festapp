@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "d19667313d4c6034b520ee7c556a077843b2deceff01b4d9f97dd32d2d76ffb9",
+  "sourceDigest": "3eb81235a50e354f7fa316974eb0837496d20560c3bb4bb2388446ea6002dc5d",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -5935,6 +5935,21 @@
                       {
                         "type": "object",
                         "properties": {
+                          "presale_header": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "event_and_date",
+                                  "date",
+                                  "none"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "theme_mode": {
                             "anyOf": [
                               {
@@ -6082,23 +6097,6 @@
                             "type": [
                               "boolean",
                               "null"
-                            ]
-                          },
-                          "show_before_start_message": {
-                            "type": [
-                              "boolean",
-                              "null"
-                            ]
-                          },
-                          "before_start_message": {
-                            "anyOf": [
-                              {
-                                "type": "string",
-                                "maxLength": 65536
-                              },
-                              {
-                                "type": "null"
-                              }
                             ]
                           },
                           "countdown_title": {

@@ -1,0 +1,72 @@
+[
+  {
+    "name": "heading without blocks",
+    "header": "event_and_date",
+    "timer": false,
+    "email": false,
+    "html": "",
+    "title": true,
+    "date": true,
+    "fallback": false
+  },
+  {
+    "name": "empty and no heading",
+    "header": "none",
+    "timer": false,
+    "email": false,
+    "html": "",
+    "title": false,
+    "date": false,
+    "fallback": true
+  },
+  {
+    "name": "paused email only",
+    "header": "none",
+    "timer": false,
+    "email": false,
+    "html": "<div class=\"html-editor-block form-sale-opening-notification\"></div>",
+    "title": false,
+    "date": false,
+    "fallback": true
+  },
+  {
+    "name": "email without timer",
+    "header": "date",
+    "timer": false,
+    "email": true,
+    "html": "<p>Úvod</p><div class=\"html-editor-block form-sale-opening-notification\"></div>",
+    "title": false,
+    "date": true,
+    "fallback": false
+  },
+  {
+    "name": "timer and email",
+    "header": "event_and_date",
+    "timer": true,
+    "email": true,
+    "html": "<div class=\"html-editor-block form-sale-opening-notification\"></div><p>Mezi</p><div class=\"html-editor-block form-countdown\"></div>",
+    "title": true,
+    "date": true,
+    "fallback": false
+  },
+  {
+    "name": "timer only",
+    "header": "none",
+    "timer": true,
+    "email": false,
+    "html": "<p>Text</p>",
+    "title": false,
+    "date": false,
+    "fallback": false
+  },
+  {
+    "name": "active campaign without a subscription slot",
+    "header": "none",
+    "timer": false,
+    "email": true,
+    "html": "",
+    "title": false,
+    "date": false,
+    "fallback": true
+  }
+]

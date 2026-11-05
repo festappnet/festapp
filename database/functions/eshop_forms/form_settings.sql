@@ -5,9 +5,9 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
  "payments":["bankEnabled","stripeConnectionId"],
- "design":["is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style"],
+ "design":["is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
  "sale_opening_notifications":["enabled","collection_paused"],
- "schedule":["start_time","end_time","enable_countdown","show_before_start_message","before_start_message","countdown_title"]}'::jsonb;
+ "schedule":["start_time","end_time","enable_countdown","countdown_title"]}'::jsonb;
 $$;
 
 CREATE OR REPLACE FUNCTION public.normalize_form_metadata_internal(p_data jsonb)
@@ -101,19 +101,21 @@ BEGIN
    k:=field.key;v:=field.value;path:=entry.key||'.'||k;
    IF NOT (spec->entry.key) ? k THEN RAISE invalid_parameter_value USING MESSAGE='unsupported form setting: '||path; END IF;
    IF v='null'::jsonb THEN section:=section-k;CONTINUE; END IF;
-   IF path IN ('payments.bankEnabled','design.is_card_design','schedule.enable_countdown','schedule.show_before_start_message','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
+   IF path IN ('payments.bankEnabled','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
    ELSIF path='variable_symbol.starting_number' THEN
     IF jsonb_typeof(v)<>'number' OR v::text !~ '^[0-9]{1,10}$' OR (v::text)::bigint NOT BETWEEN 1 AND 9999999999 THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid sequence starting number'; END IF;
    ELSE
     IF jsonb_typeof(v)<>'string' THEN RAISE invalid_parameter_value USING MESSAGE='invalid string setting: '||path; END IF;
-    IF length(v#>>'{}')>(CASE WHEN path IN ('schedule.before_start_message','schedule.countdown_title') THEN 65536 ELSE 128 END) THEN
+    IF length(v#>>'{}')>(CASE WHEN path IN ('schedule.countdown_title') THEN 65536 ELSE 128 END) THEN
      RAISE invalid_parameter_value USING MESSAGE='form setting too long: '||path; END IF;
     IF path='variable_symbol.type' AND v NOT IN ('"random"'::jsonb,'"sequence"'::jsonb) OR
        path='payment_message.type' AND v NOT IN ('"name_surname"'::jsonb,'"none"'::jsonb,'"occasion_title"'::jsonb) THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid setting mode: '||path; END IF;
-    IF path='design.theme_mode' AND v NOT IN ('"system"'::jsonb,'"light"'::jsonb,'"dark"'::jsonb) THEN
+    IF path='design.presale_header' AND v NOT IN ('"event_and_date"'::jsonb,'"date"'::jsonb,'"none"'::jsonb) THEN
+     RAISE invalid_parameter_value USING MESSAGE='invalid presale header'; END IF;
+    IF path='design.theme_mode'  AND v NOT IN ('"system"'::jsonb,'"light"'::jsonb,'"dark"'::jsonb) THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid form theme mode'; END IF;
     IF path='design.background_mode' AND v NOT IN ('"solid"'::jsonb,'"gradient"'::jsonb) THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid background mode'; END IF;

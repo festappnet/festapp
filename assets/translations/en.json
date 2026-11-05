@@ -4977,5 +4977,23 @@
     "configuredStart": "Configured opening: {date}.",
     "waitingState": "Waiting for registration to actually open.",
     "presaleContent": "Content before registration opens"
+  },
+  "PresaleContent": {
+    "page": "Page before opening",
+    "customize": "Edit appearance and content",
+    "overview": "Back to overview",
+    "header": "Standard heading",
+    "countdown": "Countdown",
+    "mobile": "Mobile preview",
+    "requiresStart": "Set the registration start in availability first.",
+    "event_and_date": "Event title and date",
+    "date": "Date only",
+    "none": "No heading",
+    "email": "Email notification",
+    "paused": "Email collection is paused",
+    "recover": "Restore previously hidden content",
+    "noArchive": "No archived content is available.",
+    "removed": "Block removed. New email collection is paused.",
+    "undo": "Undo"
   }
 }

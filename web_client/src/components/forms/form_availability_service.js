@@ -68,15 +68,9 @@ export class FormAvailabilityService {
         if (showPreview) return false;
 
         if (status === FormAvailabilityService.Status.BEFORE_START) {
-            if (formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe || formModel.data?.sale_opening_notifications?.enabled) {
+            if (formModel.presaleHeader !== 'none' || formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe || formModel.data?.sale_opening_notifications?.enabled) {
                 container.replaceChildren();
                 renderPresaleContent(container, formModel, context.onReload);
-                if (formModel.showBeforeStartMessage && formModel.beforeStartMessage) {
-                    const information = document.createElement('div');
-                    information.className = 'form-before-start-message form-header';
-                    information.innerHTML = sanitizeHtml(formModel.beforeStartMessage);
-                    container.appendChild(information);
-                }
                 return true; // Stop flow
             }
             // If countdown disabled, fall through to Not Available

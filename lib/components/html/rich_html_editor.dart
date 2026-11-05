@@ -837,7 +837,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               Icons.content_paste,
                                               HtmlStrings.paste,
                                               () => _async(controller.paste)),
-                                          for (final block in controller.embeddedBlocks)
+                                          for (final block in controller.embeddedBlocks.where((_) => controller.allowEmbeddedInsertion))
                                             _tool(Icons.widgets_outlined, block.label, () => controller.insertEmbeddedBlock(block),
                                               available: controller.canInsertAtomic(block.cssClass, embedded: true)),
                                           _tool(Icons.undo, HtmlStrings.undo,

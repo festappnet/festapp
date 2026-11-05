@@ -28,33 +28,28 @@ void main() {
     },
   );
 
-  test(
-    'pre-start presentation round trips and retains its draft when hidden',
-    () {
-      final original = FormDefinition(
-        data: {
-          'schedule': {'custom': 9, 'enable_countdown': true},
-        },
-      );
-      expect(original.showBeforeStartMessage, isFalse);
-      expect(original.beforeStartMessage, isNull);
-      final edited = original
-          .withBeforeStartMessage(
-            '<p>Informace</p><img src="https://example.test/hall.png">',
-          )
-          .withShowBeforeStartMessage(true);
-      final restored = FormDefinition.fromJson(jsonDecode(jsonEncode(edited)));
-      expect(restored.showBeforeStartMessage, isTrue);
-      expect(restored.beforeStartMessage, edited.beforeStartMessage);
-      expect(restored.data!['schedule']['custom'], 9);
-      expect(restored.enableCountdown, isTrue);
-      expect(original.beforeStartMessage, isNull);
-      final hidden = restored.withShowBeforeStartMessage(false);
-      expect(hidden.showBeforeStartMessage, isFalse);
-      expect(hidden.beforeStartMessage, restored.beforeStartMessage);
-      expect(hidden.withBeforeStartMessage(null).beforeStartMessage, isNull);
-    },
-  );
+  test('one presale document and explicit heading round trip', () {
+    final original = FormDefinition(
+      data: {
+        'schedule': {'custom': 9},
+      },
+    );
+    final edited = original
+        .withPresaleContent('<p>Informace</p>')
+        .withPresaleHeader('event_and_date');
+    final restored = FormDefinition.fromJson(jsonDecode(jsonEncode(edited)));
+    expect(restored.presaleContent, '<p>Informace</p>');
+    expect(
+      restored.data!['schedule']['countdown_title'],
+      restored.presaleContent,
+    );
+    expect(restored.presaleHeader, 'event_and_date');
+    expect(restored.data!['schedule']['custom'], 9);
+    expect(original.presaleContent, isNull);
+    expect(original.presaleHeader, 'none');
+    expect(original.withEnableCountdown(true).presaleHeader, 'date');
+    expect(() => original.withPresaleHeader('custom'), throwsArgumentError);
+  });
 
   test('form definition owns nested wire values and field options', () {
     final data = <String, dynamic>{

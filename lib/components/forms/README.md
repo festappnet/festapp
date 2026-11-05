@@ -42,19 +42,44 @@ remain outside this confirmation gate; manual web registration uses it.
 
 ## Before registration opens
 
-The countdown message can contain an atomic `div.html-editor-block.form-countdown`
-slot. The editor shows a live timer with up/down controls between editable text
-blocks; both public clients render the timer in that saved position. Titles
-without a slot retain their historical text-then-timer layout. The slot carries
-no date: the schedule remains the only source of the opening time.
+One HTML document in `schedule.countdown_title` owns the complete presale page.
+`presaleContent` is its application name, not another wire key. The visible
+**Stránka před otevřením** section previews the actual public `PresaleContent`.
+Customization is collapsed until explicitly opened; view changes never alter
+HTML, flags or the parent dirty state. The form's existing Save owns persistence,
+media preparation, original aggregate/product versions and command identity.
 
+`design.presale_header` is `event_and_date`, `date` or `none`. New forms use
+`event_and_date`; the heading reads the owning occasion title (form title as
+fallback) and the existing localized schedule. It never writes dates into HTML.
+Migrated forms explicitly retain `date` for countdowns and `none` otherwise.
+Both clients route a header-only page through BEFORE_START. Empty/inactive
+content without a heading falls back to the localized opening date.
 
-The schedule's optional `show_before_start_message` and `before_start_message`
-add rich information below an enabled countdown. Existing forms keep countdown-only
-behavior. The message uses the normal HTML editor and media-save coordinator, so
-organizers can publish text, images and a hall-plan image without enabling seat
-selection or registration. Hiding the message retains its draft. Manual closure
-still wins, and countdown completion reloads the current server bundle.
+`PresaleContentDraft` coordinates atomic timer/subscription slots and feature
+flags. Its immutable state participates in the common rich-text engine's native
+history, including Delete, Cut, text, paste and toolbar changes. Generic slot
+insertion is hidden in this domain. Inert pasted HTML cannot activate collection.
+Removal pauses new collection and Undo restores the exact prior state/position;
+ending the campaign remains explicit and irreversible. The availability menu
+focuses this same section instead of opening a second draft/dialog.
+
+The retired `before_start_message` document is converted once by the explicit
+operational converter, with a private archive under the form lock. It is never
+read by current public renderers or written by current UI/MCP. The named
+`form-presale-legacy-secondary` wrapper retains smaller, left-aligned secondary
+content; its formerly inert interactive markers remain inert. An implicit
+countdown is materialized at the end of the original primary fragment, before
+any secondary content. A named system-title paragraph retains localized system
+semantics for null legacy titles; intentional empty titles stay empty.
+
+The archive has no direct API-role grants or public metadata projection.
+`get_form_presale_archive` checks live form-author rights before returning only
+previously hidden secondary content. Recovery is an explicit draft edit in the
+expanded editor and uses the same Save/media owner. The installed-client ingress
+rejects meaningful retired fields and unversioned protected changes; omitted/null
+headings preserve the canonical key. See the [cutover runbook](../../../docs/plans/presale-content-editor-RESULT-2026-11-05.md)
+for size preflight, migration order and the separate production authorization.
 
 ## SQL RPCs
 
@@ -360,7 +385,7 @@ public readers hydrate once after sanitization and preserve content when the
 countdown is hidden. Personal action links use fragments, memory-only bootstrap
 capture and explicit POST unsubscription. A GET never unsubscribes.
 Subscribing activates immediately without a confirmation email. Disabling
-`enable_countdown` hides both the timer and its date while retaining the subscription slot.
+`enable_countdown` hides the timer; the explicit presale heading owns date visibility independently.
 
 The minute maintenance job uses live availability and regular/blueprint mode,
 with at most 100 new launch intents per tick. Collection pause preserves the

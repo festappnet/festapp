@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {convertLegacyPresale} from '../../scripts/presale_content_converter.mjs';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { FormModel } from '../../src/components/forms/form_models.js';
@@ -46,11 +47,12 @@ for (const enabled of [false, true]) {
                 before_start_message: '<h2>Hall plan</h2><img src="https://example.test/hall.png" onerror="alert(1)"><script>alert(1)</script><input name="email"><button>Register</button>',
             } },
         });
+        model.data = convertLegacyPresale(model.data).metadata;
         try {
             const host = document.querySelector('main');
             assert.equal(Availability.renderStatus(host, model, Availability.getStatus(model)), true);
             assert.ok(host.querySelector('.countdown-widget'));
-            const info = host.querySelector('.form-before-start-message');
+            const info = host.querySelector('.form-presale-legacy-secondary');
             assert.equal(!!info, enabled);
             if (enabled) {
                 assert.equal(info.querySelector('h2').textContent, 'Hall plan');

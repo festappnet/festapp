@@ -2845,5 +2845,23 @@
     "configuredStart": "Nastavený začiatok: {date}.",
     "waitingState": "Čakáme na skutočné otvorenie prihlasovania.",
     "presaleContent": "Obsah pred začiatkom prihlasovania"
+  },
+  "PresaleContent": {
+    "page": "Stránka pred otvorením",
+    "customize": "Upraviť vzhľad a obsah",
+    "overview": "Späť na prehľad",
+    "header": "Štandardná hlavička",
+    "countdown": "Odpočet",
+    "mobile": "Mobilný náhľad",
+    "requiresStart": "Najprv nastavte začiatok prihlasovania v dostupnosti.",
+    "event_and_date": "Názov akcie a termín",
+    "date": "Iba termín",
+    "none": "Bez hlavičky",
+    "email": "Upozornenie e-mailom",
+    "paused": "Zber e-mailov je pozastavený",
+    "recover": "Obnoviť predtým skrytý obsah",
+    "noArchive": "Skrytý obsah nie je k dispozícii.",
+    "removed": "Blok bol odstránený. Zber e-mailov je pozastavený.",
+    "undo": "Vrátiť"
   }
 }

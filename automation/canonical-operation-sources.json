@@ -377,6 +377,7 @@
     "sale_opening_notifications/commands.sql",
     "sale_opening_notifications/maintenance.sql",
     "sale_opening_notifications/email_context.sql",
-    "sale_opening_notifications/admin.sql"
+    "sale_opening_notifications/admin.sql",
+    "presale_content/archive.sql"
   ]
 }

@@ -27,7 +27,7 @@ import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'dart:async';
-import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
+import 'package:fstapp/components/forms/widgets_view/presale_content.dart';
 import 'package:fstapp/components/fonts/form_font_catalog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -696,7 +696,8 @@ class _FormPageState extends State<FormPage> {
     // Only allow preview if specifically requested AND user is editor
     bool showPreview = canPreview && isPreviewParam;
     bool showCountdown = isBeforeStart &&
-        ((form?.definition.enableCountdown ?? false) || (form?.definition.countdownTitle?.isNotEmpty ?? false) || (form?.definition.canSubscribeSaleOpening ?? false) || (form?.definition.saleOpeningEnabled ?? false)) &&
+        ((form?.definition.enableCountdown ?? false) || (form?.definition.countdownTitle?.isNotEmpty ?? false) || (form?.definition.canSubscribeSaleOpening ?? false) || (form?.definition.saleOpeningEnabled ?? false)||
+            (form?.definition.presaleHeader != 'none')) &&
         !showPreview;
 
     if (_isLoading) {
@@ -819,9 +820,11 @@ class _FormPageState extends State<FormPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CountdownContent(
+              PresaleContent(
                 targetTime: form!.definition.startTime!,
-                html: form!.definition.countdownTitle,
+                html: form!.definition.presaleContent,
+                header: form!.definition.presaleHeader,
+                eventTitle: form!.occasion?.title ?? form!.definition.title,
                 showTimer: form!.definition.enableCountdown,
                 canSubscribe: form!.definition.canSubscribeSaleOpening,
                 formLink: form!.definition.link ?? widget.formLink ?? '',
@@ -829,19 +832,6 @@ class _FormPageState extends State<FormPage> {
                 informal: form!.definition.communicationTone == 'informal',
                 onFinished: () {},
               ),
-              if (form!.definition.showBeforeStartMessage &&
-                  (form!.definition.beforeStartMessage?.trim().isNotEmpty ??
-                      false))
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: HtmlView(
-                      html: form!.definition.beforeStartMessage!,
-                      isSelectable: true,
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

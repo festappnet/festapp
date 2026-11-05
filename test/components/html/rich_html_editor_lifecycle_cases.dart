@@ -11,7 +11,7 @@ import 'dart:typed_data';
 
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/html/html_strings.dart';
-import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
+import 'package:fstapp/components/forms/widgets_view/presale_content.dart';
 import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 
 import 'package:image/image.dart' as test_image;
@@ -285,7 +285,7 @@ void main() {
         MaterialApp(
           builder: DependencyMaterialBridge.builder,
           home: Scaffold(
-            body: CountdownContent(
+            body: PresaleContent(
               targetTime: target,
               onFinished: () {},
               html: controller.html,

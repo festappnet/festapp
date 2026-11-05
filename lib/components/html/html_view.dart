@@ -142,6 +142,9 @@ class _HtmlViewState extends State<HtmlView> {
       textStyle:
           htmlTextStyle(context, fontSize: widget.fontSize, color: textColor),
       customStylesBuilder: (el) {
+        if (el.classes.contains('form-presale-legacy-secondary')) {
+          return {'text-align': 'left', 'font-size': '18px', 'margin': '12px', 'line-height': '1.5'};
+        }
         // Handle alignment classes from rich text editors like Quill.js
         if (el.attributes['class'] != null) {
           final classes = el.attributes['class']!.split(' ');

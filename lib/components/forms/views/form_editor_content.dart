@@ -1,6 +1,5 @@
-import 'dart:convert';
+import 'presale_content_editor.dart';
 import '../sale_opening_strings.dart';
-import 'sale_opening_settings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../waitlist_strings.dart';
 import 'form_capacity_settings.dart';
@@ -30,7 +29,6 @@ import 'package:easy_localization/easy_localization.dart';
 import '../form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import '../widgets_editor/form_fields_generator.dart';
-import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
 import 'package:fstapp/components/html/html_embedded_block.dart';
 
 const double kHiddenOpacity = 0.5;
@@ -69,7 +67,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     with TickerProviderStateMixin {
   final _htmlSave = HtmlSaveCoordinator();
   final _snapshot = EditorSnapshot();
-  FormDefinition? _pendingSaleOpeningBaseline;
+  final _presaleKey = GlobalKey();
   final _draftRevision = ValueNotifier<int>(0);
   bool get _hasChanges =>
       _canEdit &&
@@ -150,7 +148,6 @@ class _FormEditorContentState extends State<FormEditorContent>
     if (!mounted || link != _formLink) return;
     setState(() {
       _bundle = bundle;
-      _pendingSaleOpeningBaseline = null;
       _loadFailed = bundle == null;
       if (bundle != null) {
         _snapshot.accept(bundle.form.toEditedJson());
@@ -221,7 +218,6 @@ class _FormEditorContentState extends State<FormEditorContent>
           severity: ToastSeverity.Ok);
       setState(() {
         _bundle = _bundle!.afterSave(saved);
-        _pendingSaleOpeningBaseline = null;
         _snapshot.accept(saved.toEditedJson());
         _acceptRenderedDraft(_bundle!);
       });
@@ -395,83 +391,15 @@ class _FormEditorContentState extends State<FormEditorContent>
                             enabled: _canEdit),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    secondary: const Icon(Icons.timer_outlined),
-                    title: Text(FormStrings.labelCountdownTimer,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(
-                      form.definition.startTime == null
-                          ? FormStrings.requiresStartTime
-                          : FormStrings.countdownDescription,
-                      style: TextStyle(
-                          color: form.definition.startTime == null
-                              ? Colors.grey
-                              : null,
-                          fontSize: 12),
-                    ),
-                    value: form.definition.enableCountdown,
-                    onChanged: form.definition.startTime != null && _canEdit
-                        ? (val) => setState(() => form.definition =
-                            form.definition.withEnableCountdown(val))
-                        : null,
-                  ),
-                  if (form.definition.startTime != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                        borderRadius: BorderRadius.circular(8),
+                  )],
                       ),
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Column(
-                        children: [
-                          _buildHtmlFieldPreview(
-                            SaleOpeningStrings.text('presaleContent'),
-                            form.definition.enableCountdown ? countdownContent(form.definition.countdownTitle) : form.definition.countdownTitle ?? '',
-                            embeddedBlocks: [countdownBlock(
-                                form.definition.startTime!, () {}), saleOpeningPreviewBlock(enabled: form.definition.saleOpeningEnabled, paused: form.definition.saleOpeningPaused)],
-                            (val) => setState(() {
-                              final removed = (form.definition.countdownTitle?.contains('form-sale-opening-notification') ?? false) && !val.contains('form-sale-opening-notification');
-                              final removedCountdown = (form.definition.countdownTitle?.contains('form-countdown') ?? false) && !val.contains('form-countdown');
-                              form.definition = form.definition.withCountdownTitle(val);
-                              if (removedCountdown) form.definition = form.definition.withEnableCountdown(false);
-                              if (removed) form.definition = form.definition.withSaleOpening(paused: true);
-                            }),
-                            defaultText: FormStrings.registrationStart,
-                            showLabel: false,
-                            minimal: true,
-                            fontSize: 20,
-                            enabled: _canEdit,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(FormStrings.labelShowBeforeStartMessage),
-                      subtitle: Text(FormStrings.helperBeforeStartMessage),
-                      value: form.definition.showBeforeStartMessage,
-                      onChanged: _canEdit
-                          ? (value) => setState(() => form.definition =
-                              form.definition.withShowBeforeStartMessage(value))
-                          : null,
-                    ),
-                    if (form.definition.showBeforeStartMessage) ...[
-                      const SizedBox(height: 12),
-                      _buildHtmlFieldPreview(
-                        FormStrings.labelBeforeStartMessage,
-                        form.definition.beforeStartMessage,
-                        (value) => setState(() => form.definition =
-                            form.definition.withBeforeStartMessage(value)),
-                        enabled: _canEdit,
-                      ),
-                    ],
-                  ],
-                ],
+                  const Divider(height: 24),
+                  PresaleContentEditor(
+                    key: _presaleKey,
+                    form: form,
+                coordinator: _htmlSave,
+                          canEdit: _canEdit && !_prototype,
+                    onChanged: _draftChanged,
               ),
               const Divider(height: 24),
               ExpansionTile(
@@ -687,85 +615,9 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Future<void> _openSaleOpeningSettings() async {
-    if (_bundle == null) return;
-    final form = _bundle!.form;
-    final draft = FormEditorDraft.fromJson(
-      jsonDecode(jsonEncode(form.toJson())) as Map<String, dynamic>,
-    );
-    final before = jsonEncode(draft.toJson());
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, updateDialog) {
-          final changed = jsonEncode(draft.toJson()) != before;
-          return AppDialog(
-            child: SizedBox(
-              width: 560,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppDialogHeader(
-                      title: Text(SaleOpeningStrings.text('dialogTitle')),
-                    ),
-                    const SizedBox(height: 16),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        child: SaleOpeningSettings(
-                          form: draft,
-                          enableBaseline: _pendingSaleOpeningBaseline,
-                          canEdit: _canEdit,
-                          onChanged: () => updateDialog(() {}),
-                        ),
-                      ),
-                    ),
-                    const Divider(height: 32),
-                    if (changed || _hasChanges)
-                      Text(
-                        SaleOpeningStrings.text('saveHint'),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    const SizedBox(height: 12),
-                    AppDialogActions(
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(
-                            changed ? CommonStrings.cancel : CommonStrings.close,
-                          ),
-                        ),
-                        if (changed)
-                          FilledButton(
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            child: Text(SaleOpeningStrings.text('applyAction')),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-    if (result != true || !mounted) return;
-    if (!form.definition.saleOpeningEnabled && draft.definition.saleOpeningEnabled) {
-      _pendingSaleOpeningBaseline ??= form.definition;
-    }
-    setState(() {
-      form.definition = form.definition.copyWith(
-        data: {
-          ...?form.definition.data,
-          'sale_opening_notifications':
-              draft.definition.data?['sale_opening_notifications'],
-          'schedule': draft.definition.data?['schedule'],
-        },
-      );
-    });
-    _draftChanged();
+    final target = _presaleKey.currentContext;
+    if (target != null) await Scrollable.ensureVisible(
+      target, duration: const Duration(milliseconds: 200));
   }
 
   Future<void> _openPublicForm({bool preview = false}) async {

@@ -8,9 +8,9 @@ import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../models/form_editor_draft.dart';
+import '../presale_content_draft.dart';
 import '../models/form_presentation.dart';
 import '../sale_opening_strings.dart';
-import '../widgets_view/countdown_content.dart';
 import 'sale_opening_subscribers.dart';
 
 /// Changes only the supplied draft. The surrounding editor owns persistence.
@@ -22,7 +22,11 @@ class SaleOpeningSettings extends StatefulWidget {
     required this.onChanged,
     this.loadSummary,
     this.enableBaseline,
+  this.onCollect,
+    this.onPause,
+    this.onEnd,
   });
+  final VoidCallback? onCollect, onPause, onEnd;
   final FormEditorDraft form;
   final FormDefinition? enableBaseline;
   final bool canEdit;
@@ -57,20 +61,24 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
   }
 
   void _collect() {
-    final definition = widget.form.definition;
-    widget.form.definition = definition
-        .withSaleOpening(enabled: true, paused: false)
-        .withCountdownTitle(
-          insertSaleOpeningBlock(
-            definition.enableCountdown
-                ? countdownContent(definition.countdownTitle)
-                : definition.countdownTitle ?? '',
-          ),
+    if (widget.onCollect != null) {
+      widget.onCollect!();
+    widget.onChanged();
+      return;
+    }
+    widget.form.definition = PresaleContentDraft.collectDefinition(
+      widget.form.definition
+        ,
         );
     widget.onChanged();
   }
 
   void _pause() {
+    if (widget.onPause != null) {
+      widget.onPause!();
+      widget.onChanged();
+      return;
+    }
     widget.form.definition = widget.form.definition.withSaleOpening(
       paused: true,
     );
@@ -79,6 +87,11 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
 
   Future<void> _end() async {
     if (!initiallyEnabled) {
+      if (widget.onEnd != null) {
+        widget.onEnd!();
+        widget.onChanged();
+        return;
+      }
       widget.form.definition = initialDefinition;
       widget.onChanged();
       return;
@@ -107,10 +120,14 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
       );
       if (accepted != true || !mounted) return;
     }
-    widget.form.definition = widget.form.definition.withSaleOpening(
+    if (widget.onEnd != null) {
+      widget.onEnd!();
+    } else {
+      widget.form.definition = widget.form.definition.withSaleOpening(
       enabled: false,
       paused: false,
     );
+    }
     widget.onChanged();
   }
 

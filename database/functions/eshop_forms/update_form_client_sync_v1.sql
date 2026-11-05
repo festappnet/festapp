@@ -72,7 +72,7 @@ BEGIN
     ON opt.ticket=ou.ticket JOIN eshop.products p ON p.id=opt.product
   WHERE ou.occasion=v_occasion AND p.occasion=v_occasion;
   BEGIN
-    v_result:=public.update_form_internal_v1(p_form-'expected_aggregate_version'-'expected_product_versions'-'expected_product_type_versions');
+    v_result:=public.update_form_internal_v1(p_form-'expected_product_versions'-'expected_product_type_versions');
     IF coalesce((v_result->>'code')::integer,500)<>200 THEN
       RAISE SQLSTATE 'P0F01' USING MESSAGE='authoring domain rejected'; END IF;
   EXCEPTION WHEN SQLSTATE 'P0F01' THEN NULL;

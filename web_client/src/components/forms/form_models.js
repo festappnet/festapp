@@ -110,8 +110,6 @@ export class FormModel {
     static metaEnableCountdown = "enable_countdown";
     static metaCountdownStyle = "countdown_style";
     static metaCountdownTitle = "countdown_title";
-    static metaShowBeforeStartMessage = "show_before_start_message";
-    static metaBeforeStartMessage = "before_start_message";
     static metaPrimaryColor = "primary_color";
     static metaSecondaryColor = "secondary_color";
     static metaFontFamily = "font_family";
@@ -267,13 +265,8 @@ export class FormModel {
         return this._scheduleData[FormModel.metaCountdownTitle];
     }
     
-    get showBeforeStartMessage() {
-        return this._scheduleData[FormModel.metaShowBeforeStartMessage] === true;
-    }
-
-    get beforeStartMessage() {
-        return this._scheduleData[FormModel.metaBeforeStartMessage];
-    }
+    get presaleContent() { return this.countdownTitle; }
+    get presaleHeader() { return this._designData.presale_header ?? (this.enableCountdown ? 'date' : 'none'); }
 
     get isCardDesign() {
         return this._designData[FormModel.metaIsCardDesign] === true;

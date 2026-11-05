@@ -59,14 +59,13 @@ abstract final class FormMetadata {
       'theme_mode',
       'font_family',
       'countdown_style',
+      'presale_header',
     ],
     'sale_opening_notifications': ['enabled','collection_paused'],
     'schedule': [
       'start_time',
       'end_time',
       'enable_countdown',
-      'show_before_start_message',
-      'before_start_message',
       'countdown_title',
     ],
   };

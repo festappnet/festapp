@@ -42,8 +42,8 @@ HtmlEmbeddedBlock countdownBlock(
   ),
 );
 
-class CountdownContent extends StatelessWidget {
-  const CountdownContent({
+class PresaleContent extends StatelessWidget {
+  const PresaleContent({
     super.key,
     required this.targetTime,
     required this.onFinished,
@@ -53,6 +53,9 @@ class CountdownContent extends StatelessWidget {
     this.formLink = '',
     this.hasTickets = true,
     this.informal = false,
+    this.header,
+    this.eventTitle,
+    this.preview = false,
   });
   final DateTime targetTime;
   final VoidCallback onFinished;
@@ -62,23 +65,34 @@ class CountdownContent extends StatelessWidget {
   final bool canSubscribe;
   final String formLink;
   final bool hasTickets, informal;
+  final String? header;
+  String get effectiveHeader => header ?? (showTimer ? 'date' : 'none');
+  final String? eventTitle;
+  final bool preview;
 
   bool get _hasVisibleContent {
-    if (showTimer || canSubscribe) return true;
+    if (showTimer) return true;
+    final hasSubscription =
+        canSubscribe &&
+        parser
+                .parseFragment(html ?? '')
+                .querySelector(
+                  'div.html-editor-block.form-sale-opening-notification',
+                ) !=
+            null;
     final content = parser.parseFragment(html ?? '');
     for (final slot in content.querySelectorAll(
       '.html-editor-block.form-countdown, .html-editor-block.form-sale-opening-notification',
     )) {
       slot.remove();
     }
-    return (content.text ?? '')
-            .replaceAll(RegExp(r'[\s\u200b]'), '')
-            .isNotEmpty ||
+    return hasSubscription ||
+        (content.text ?? '').replaceAll(RegExp(r'[\s\u200b]'), '').isNotEmpty ||
         content.querySelector('img,video,iframe,table,hr') != null;
   }
 
   bool get _subscriptionOnly {
-    if (showTimer || !canSubscribe) return false;
+    if (effectiveHeader != 'none' || showTimer || !canSubscribe) return false;
     final content = parser.parseFragment(html ?? '');
     final hasNotification =
         content.querySelector(
@@ -110,7 +124,10 @@ class CountdownContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (!_hasVisibleContent)
+          if (effectiveHeader == 'event_and_date' &&
+              (eventTitle?.trim().isNotEmpty ?? false))
+            Text(eventTitle!, textAlign: TextAlign.center),
+          if (!_hasVisibleContent && effectiveHeader == 'none')
             Text(
               SaleOpeningStrings.scheduledStart(
                 LocaleDateTime.dateTimeCell(
@@ -119,7 +136,7 @@ class CountdownContent extends StatelessWidget {
                 ),
               ),
             ),
-          if (showTimer)
+          if (effectiveHeader != 'none')
             Text(
               LocaleDateTime.dateTimeCell(
                 targetTime,
@@ -128,7 +145,7 @@ class CountdownContent extends StatelessWidget {
             ),
           HtmlView(
             html:
-                '<div style="text-align: center;">${showTimer ? countdownContent(html) : html ?? ''}</div>',
+                '<div style="text-align: center;">${_singletonContent(showTimer ? countdownContent(html) : html ?? '')}</div>',
             fontSize: 24,
             embeddedBlocks: [
               showTimer
@@ -143,6 +160,7 @@ class CountdownContent extends StatelessWidget {
                 builder: (_) => canSubscribe
                     ? SaleOpeningNotification(
                         formLink: formLink,
+                        preview: preview,
                         hasTickets: hasTickets,
                         informal: informal,
                       )
@@ -191,3 +209,17 @@ HtmlEmbeddedBlock saleOpeningPreviewBlock({
           ),
         ),
 );
+
+String _singletonContent(String html) {
+  final root = parser.parseFragment(html);
+  for (final title in root.querySelectorAll('.form-presale-system-title')) {
+    title.text = FormStrings.registrationStart;
+  }
+  for (final type in ['form-countdown', 'form-sale-opening-notification']) {
+    for (final duplicate
+        in root.querySelectorAll('div.html-editor-block.$type').skip(1)) {
+      duplicate.remove();
+    }
+  }
+  return root.outerHtml;
+}
