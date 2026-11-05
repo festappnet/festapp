@@ -60,9 +60,16 @@ void main() {
         contextReads++;
         await contextGate?.future;
         data = context();
-      } else if (request.url.path.endsWith('/get_notification_center_badge')) {
+      } else if (request.url.path.endsWith(
+        '/get_notification_center_prepared_badge',
+      )) {
         badgeReads++;
-        data = {'timelineSupported': true, 'enabled': true, 'unread': true};
+        data = {
+          'viewSupported': true,
+          'state': 'ready',
+          'enabled': true,
+          'unread': true,
+        };
       } else {
         throw StateError('Unexpected request: ${request.url.path}');
       }

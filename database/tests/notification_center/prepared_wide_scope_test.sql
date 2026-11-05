@@ -1,4 +1,11 @@
 BEGIN;
+ALTER FUNCTION public.notification_center_prepared_display_key(uuid,integer,integer,text[]) RENAME TO notification_display_key_test_original;
+CREATE FUNCTION public.notification_center_prepared_display_key(p_token uuid,p_cursor integer,p_limit integer,p_scopes text[] DEFAULT NULL)
+RETURNS text LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $counter$
+BEGIN
+ PERFORM set_config('festapp_test.display_calls',(coalesce(nullif(current_setting('festapp_test.display_calls',true),''),'0')::integer+1)::text,true);
+ RETURN public.notification_display_key_test_original(p_token,p_cursor,p_limit,p_scopes);
+END $counter$;
 -- Count real canonical ACL invocations without requiring privileged profiling.
 -- The transaction restores the original function name and grants on rollback.
 ALTER FUNCTION public.notification_center_allowed(public.notification_center_events,uuid) RENAME TO notification_center_allowed_test_original;
@@ -31,7 +38,9 @@ BEGIN
  after_calls:=current_setting('festapp_test.notification_acl_calls')::bigint;before_calls:=0;
  PERFORM assert_eq(n,445::bigint,'representative wide organization has 445 live scopes');
  PERFORM assert_true(after_calls-before_calls<=1,'candidate discovery must not authorize three dummy events per occasion');
+ PERFORM set_config('festapp_test.display_calls','0',true);
  t:=clock_timestamp();v:=public.get_notification_center_view(org,NULL);ms:=extract(epoch FROM clock_timestamp()-t)*1000;
+ PERFORM assert_eq(current_setting('festapp_test.display_calls'),'1','one open computes its live display fingerprint once');
  PERFORM assert_eq(v->>'state','ready','wide organization opens ready');
  PERFORM assert_eq(jsonb_array_length(v->'items'),30,'wide organization opens thirty nonempty rows');
  PERFORM assert_true(ms<750,'wide organization opening must stay below the existing 750ms loading gate');

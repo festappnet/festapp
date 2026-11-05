@@ -38,6 +38,36 @@ Map<String, dynamic> ready({String token = tokenA, int count = 3}) => {
 };
 void main() {
   test(
+    'reopening hides retained private rows until the fresh open completes',
+    () async {
+      var opens = 0;
+      final response = Completer<dynamic>();
+      final c = NotificationCenterController(
+        read: (name, params) async {
+          if (name == 'get_notification_center_prepared_badge') return badge();
+          if (params['p_mode'] == 'close') return {};
+          return ++opens == 1 ? ready() : await response.future;
+        },
+      );
+      addTearDown(c.dispose);
+      c.configure(userId: 'u', organizationId: 1);
+      await c.open();
+      expect(c.hasReadyItems, true);
+      c.close();
+      final pending = c.open();
+      expect(c.loading, true);
+      expect(c.items, isEmpty);
+      response.complete(ready(token: tokenB, count: 2));
+      await pending;
+      expect(
+        c.failed,
+        false,
+        reason: 'fresh open should accept the completed response',
+      );
+      expect(c.items.single.data['activityCount'], 2);
+    },
+  );
+  test(
     'same-mode opens coalesce and only a confirmed open clears the badge',
     () async {
       final pending = Completer<dynamic>();

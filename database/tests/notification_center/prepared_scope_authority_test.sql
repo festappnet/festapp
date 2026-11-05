@@ -1,6 +1,13 @@
 BEGIN;
+ALTER FUNCTION public.notification_center_bank_admin(bigint,uuid) RENAME TO notification_bank_admin_test_original;
+CREATE FUNCTION public.notification_center_bank_admin(p_bank bigint,p_user uuid)
+RETURNS boolean LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $counter$
+BEGIN
+ PERFORM set_config('festapp_test.bank_calls',(coalesce(nullif(current_setting('festapp_test.bank_calls',true),''),'0')::integer+1)::text,true);
+ RETURN public.notification_bank_admin_test_original(p_bank,p_user);
+END $counter$;
 DO $$
-DECLARE org bigint;other_org bigint;un bigint;oc bigint;demo bigint;foreign_oc bigint;bank bigint;demo_bank bigint;conn bigint;
+DECLARE org bigint;other_org bigint;un bigint;oc bigint;demo bigint;foreign_oc bigint;bank bigint;demo_bank bigint;conn bigint;alias_bank bigint;foreign_bank bigint;foreign_unit bigint;
  users uuid[]:=ARRAY[gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid()];usr uuid;occasion_id bigint;kind text;affected bigint[];rights text[];e public.notification_center_events;expected boolean;actual boolean;checks integer:=0;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Oprávnění oznámení') RETURNING id INTO org;
@@ -25,9 +32,18 @@ BEGIN
  INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(bank,users[5],true),(bank,users[8],true),(bank,users[9],false);
  INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,provider,mode,state,manifest_sha256,bank_pull_at)
  VALUES(gen_random_uuid()::text,'festapp','123',bank,gen_random_uuid()::text,'FIO','api','connected',repeat('a',64),now()) RETURNING id INTO conn;
+ INSERT INTO eshop.bank_accounts(title,type) VALUES('Sdílený účet','FIO') RETURNING id INTO alias_bank;
+ INSERT INTO eshop.bank_accounts(title,type) VALUES('Účet jiného pořadatele','FIO') RETURNING id INTO foreign_bank;
+ INSERT INTO public.units(title,organization) VALUES('Jiný pořadatel',other_org) RETURNING id INTO foreign_unit;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,alias_bank),(un,demo_bank),(foreign_unit,foreign_bank);
+ INSERT INTO eshop.bank_sync_account_aliases(bank_account_id,connection_id) VALUES(alias_bank,conn),(demo_bank,conn),(foreign_bank,conn);
+ INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(alias_bank,users[9],true),(demo_bank,users[3],true),(foreign_bank,users[6],true);
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(un,users[3],true),(foreign_unit,users[6],true);
  FOREACH usr IN ARRAY users||ARRAY[NULL::uuid] LOOP
   PERFORM set_config('request.jwt.claim.sub',coalesce(usr::text,''),true);
+  PERFORM set_config('festapp_test.bank_calls','0',true);
   SELECT ARRAY(SELECT scope FROM public.notification_center_prepared_allowed_scopes(org,NULL,usr) ORDER BY scope) INTO rights;
+  PERFORM assert_true(current_setting('festapp_test.bank_calls')::bigint<=(SELECT count(*) FROM eshop.bank_account_users WHERE "user"=usr),'bank authority is evaluated at most once per user account during scope discovery');
   FOREACH occasion_id IN ARRAY ARRAY[oc,demo,foreign_oc,NULL::bigint] LOOP
    FOREACH kind IN ARRAY ARRAY['order_created','order_cancelled','waitlist_registered','offer_accepted','offer_declined','offer_expired','capacity_warning','capacity_full','sale_opened','occasion_joined','event_capacity_full','email_problem','bank_problem'] LOOP
     FOREACH affected SLICE 1 IN ARRAY ARRAY[ARRAY[oc],ARRAY[demo],ARRAY[foreign_oc]] LOOP

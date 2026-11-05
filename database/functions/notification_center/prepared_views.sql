@@ -131,7 +131,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  status AS MATERIALIZED(SELECT o.*,EXISTS(SELECT 1 FROM public.notification_center_view_rows r WHERE r.token=o.token
   AND (r.revision<>o.current_revision OR r.read_revision<>o.current_read_revision OR r.privacy_key<>o.current_privacy OR r.state='preparing')) preparing FROM owned o),
  rights AS MATERIALIZED(SELECT o.token,ARRAY(SELECT a.scope FROM public.notification_center_prepared_allowed_scopes(o.organization,o.current_occasion,o.recipient) a ORDER BY a.scope) scopes FROM status o WHERE NOT o.preparing),
- keyed AS(SELECT o.*,a.scopes,CASE WHEN o.preparing THEN NULL ELSE public.notification_center_prepared_display_key(o.token,p_cursor,p_limit,a.scopes) END display_key FROM status o LEFT JOIN rights a USING(token))
+ keyed AS MATERIALIZED(SELECT o.*,a.scopes,CASE WHEN o.preparing THEN NULL ELSE public.notification_center_prepared_display_key(o.token,p_cursor,p_limit,a.scopes) END display_key FROM status o LEFT JOIN rights a USING(token))
  SELECT jsonb_build_object('viewSupported',true,'state',CASE WHEN o.expires_at<=clock_timestamp() THEN 'expired' WHEN o.preparing THEN 'preparing' ELSE 'ready' END,
   'viewToken',o.token,'snapshot',o.snapshot,'snapshotAt',o.anchor,'snapshotDay',(o.anchor AT TIME ZONE o.timezone)::date,'timezone',o.timezone,
   'previousReadThrough',o.previous_seen,'acknowledged',o.acknowledged,'truncated',o.truncated,

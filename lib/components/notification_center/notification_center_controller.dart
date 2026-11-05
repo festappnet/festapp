@@ -326,6 +326,12 @@ class NotificationCenterController extends ChangeNotifier {
       }
     }
     _retainView = false;
+    // A new open must pass its current authorization gate before presenting
+    // private rows retained from the previous dialog.
+    if (!preparing) {
+      items = [];
+      _viewRevision = null;
+    }
     panelOpen = true;
     final generation = _generation, revision = ++_revision;
     loading = true;

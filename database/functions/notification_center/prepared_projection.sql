@@ -56,10 +56,13 @@ RETURNS TABLE(scope text,section integer) LANGUAGE sql STABLE SET search_path=pu
   LEFT JOIN members m ON m.occasion=oc.id
   LEFT JOIN public.demo_occasions d ON d.occasion=oc.id
   WHERE oc.organization=p_org),
- banks AS MATERIALIZED(SELECT DISTINCT c.id FROM eshop.bank_sync_connections c JOIN eshop.unit_bank_accounts uba
-  ON uba.bank_account=c.bank_account_id OR uba.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
-  JOIN public.units u ON u.id=uba.unit AND u.organization=p_org
-  WHERE public.notification_center_allowed(jsonb_populate_record(NULL::public.notification_center_events,jsonb_build_object('organization',p_org,'kind','bank_problem','data',jsonb_build_object('bankConnectionId',c.id),'affected_occasions','[]'::jsonb)),p_user))
+ bank_access AS MATERIALIZED(SELECT bu.bank_account FROM eshop.bank_account_users bu
+  WHERE bu."user"=p_user AND public.notification_center_bank_admin(bu.bank_account,p_user)
+   AND EXISTS(SELECT 1 FROM eshop.unit_bank_accounts uba JOIN public.units u ON u.id=uba.unit
+    WHERE uba.bank_account=bu.bank_account AND u.organization=p_org)),
+ banks AS MATERIALIZED(SELECT c.id FROM eshop.bank_sync_connections c WHERE EXISTS(
+  SELECT 1 FROM bank_access ba WHERE ba.bank_account=c.bank_account_id OR ba.bank_account IN(
+   SELECT alias.bank_account_id FROM eshop.bank_sync_account_aliases alias WHERE alias.connection_id=c.id)))
  SELECT 'orders:'||id,priority FROM occasions WHERE orders
  UNION ALL SELECT 'app:'||id,priority FROM occasions WHERE app
  UNION ALL SELECT 'email-admin:'||id,priority FROM occasions WHERE email
