@@ -17,7 +17,7 @@ import 'rich_html_editor_dialog.dart';
 class EditableHtmlField extends StatefulWidget {
   const EditableHtmlField({
     required this.html,
-    this.embeddedBlock,
+    this.embeddedBlocks = const [],
     required this.onChanged,
     this.owner = const HtmlMediaOwner.none(),
     this.profile = HtmlContentProfile.appContent,
@@ -37,7 +37,7 @@ class EditableHtmlField extends StatefulWidget {
   final VoidCallback? onCancel;
   final ValueChanged<RichHtmlEditorController?>? onDraftChanged;
   final String? html;
-  final HtmlEmbeddedBlock? embeddedBlock;
+  final List<HtmlEmbeddedBlock> embeddedBlocks;
   final String? placeholder;
   final ValueChanged<String> onChanged;
   final Future<void> Function(String)? onSave;
@@ -80,7 +80,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
         widget.onSave; // Freeze the entity/version writer for this session.
     _controller ??= RichHtmlEditorController(
       initialHtml: _activationHtml,
-      embeddedBlock: widget.embeddedBlock,
+      embeddedBlocks: widget.embeddedBlocks,
       owner: _coordinator == null && _writer == null
           ? const HtmlMediaOwner.none()
           : widget.owner,
@@ -251,7 +251,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
           Expanded(
             child: HtmlView(
               profile: widget.profile,
-              embeddedBlock: widget.embeddedBlock,
+              embeddedBlocks: widget.embeddedBlocks,
               html: (widget.html?.isNotEmpty ?? false)
                   ? widget.html!
                   : widget.placeholder ?? '',

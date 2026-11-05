@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
+  <script>
+    // Capture personal sale links before routing, resources or analytics.
+    (function () {
+      const target = new URL(window.location.href);
+      const fragment = new URLSearchParams(target.hash.slice(1));
+      if (!target.pathname.startsWith('/form/') || !fragment.has('sale_opening')) return;
+      const operation = fragment.get('sale_opening'), token = fragment.get('token');
+      const valid = operation === 'unsubscribe' && /^[a-f0-9]{64}$/.test(token || '') && fragment.getAll('token').length === 1;
+      window.__festappSaleOpeningLink = JSON.stringify(valid ? {operation,token} : {operation:'invalid'});
+      const meta = document.createElement('meta'); meta.name = 'referrer'; meta.content = 'no-referrer'; document.head.appendChild(meta);
+      window.history.replaceState(window.history.state, '', target.pathname + target.search);
+    })();
+  </script>
     <meta name="referrer" content="no-referrer">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -235,6 +248,7 @@
         @media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}
     </style>
 <noscript><style>#web-client-startup{display:none!important}</style></noscript>
+  <script src="/festapp_sale_opening_protection.js" defer></script>
 </head>
 <body>
     <div id="web-client-startup" role="status"

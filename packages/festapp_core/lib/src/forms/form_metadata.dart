@@ -60,6 +60,7 @@ abstract final class FormMetadata {
       'font_family',
       'countdown_style',
     ],
+    'sale_opening_notifications': ['enabled','collection_paused'],
     'schedule': [
       'start_time',
       'end_time',

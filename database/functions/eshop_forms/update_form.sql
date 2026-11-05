@@ -11,6 +11,7 @@ DECLARE
     result JSONB;
     availability_at timestamptz;
     form_metadata jsonb;
+    previous_form_metadata jsonb;
     availability_new boolean;
     deleted_fields BIGINT[];
     deleted_products BIGINT[];
@@ -123,11 +124,15 @@ BEGIN
         IF input_data ? 'settings' AND input_data ? 'data' THEN
           RAISE invalid_parameter_value USING MESSAGE='choose settings patch or released metadata, not both'; END IF;
         SELECT data INTO form_metadata FROM public.forms WHERE id=form_id;
+        previous_form_metadata:=form_metadata;
         IF input_data ? 'settings' THEN
           form_metadata:=public.apply_form_settings_internal(form_metadata,input_data->'settings');
         ELSIF input_data ? 'data' THEN
           -- Released full-metadata boundary, same settings owner/validation.
-          form_metadata:=public.normalize_form_metadata_internal(input_data->'data');
+          form_metadata:=public.normalize_form_metadata_internal(input_data->'data')
+            ||CASE WHEN NOT public.normalize_form_metadata_internal(input_data->'data') ? 'sale_opening_notifications'
+              AND public.normalize_form_metadata_internal(form_metadata) ? 'sale_opening_notifications'
+              THEN jsonb_build_object('sale_opening_notifications',public.normalize_form_metadata_internal(form_metadata)->'sale_opening_notifications') ELSE '{}'::jsonb END;
           form_metadata:=public.apply_form_settings_internal(form_metadata,
             public.form_settings_from_metadata_internal(form_metadata));
         END IF;
@@ -655,6 +660,8 @@ BEGIN
             'link', link_param,
             'form_fields', form_fields_data
         );
+
+        PERFORM public.sync_sale_opening_settings_internal(form_id,previous_form_metadata);
 
         IF availability_new THEN
           PERFORM public.notification_center_form_created_internal(form_id);

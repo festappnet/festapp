@@ -6,6 +6,7 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
  "payments":["bankEnabled","stripeConnectionId"],
  "design":["is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style"],
+ "sale_opening_notifications":["enabled","collection_paused"],
  "schedule":["start_time","end_time","enable_countdown","show_before_start_message","before_start_message","countdown_title"]}'::jsonb;
 $$;
 
@@ -51,6 +52,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE result jsonb:='{}'; d jsonb:=public.normalize_form_metadata_internal(p_data); spec record; k text; section jsonb;
 BEGIN
  FOR spec IN SELECT * FROM jsonb_each(public.form_settings_keys_internal()) LOOP
+  IF spec.key='sale_opening_notifications' AND NOT d ? spec.key THEN CONTINUE; END IF;
   IF spec.value='null'::jsonb OR NOT d ? spec.key OR d->spec.key='null'::jsonb THEN
    result:=result||jsonb_build_object(spec.key,coalesce(d->spec.key,'null'::jsonb));
   ELSE
@@ -99,7 +101,7 @@ BEGIN
    k:=field.key;v:=field.value;path:=entry.key||'.'||k;
    IF NOT (spec->entry.key) ? k THEN RAISE invalid_parameter_value USING MESSAGE='unsupported form setting: '||path; END IF;
    IF v='null'::jsonb THEN section:=section-k;CONTINUE; END IF;
-   IF path IN ('payments.bankEnabled','design.is_card_design','schedule.enable_countdown','schedule.show_before_start_message') THEN
+   IF path IN ('payments.bankEnabled','design.is_card_design','schedule.enable_countdown','schedule.show_before_start_message','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
    ELSIF path='variable_symbol.starting_number' THEN
     IF jsonb_typeof(v)<>'number' OR v::text !~ '^[0-9]{1,10}$' OR (v::text)::bigint NOT BETWEEN 1 AND 9999999999 THEN

@@ -237,3 +237,19 @@ Local stage-3 evidence and the exact cutover ledger are in
 Production requires the additive SQL migration before activating the new Flutter
 client, Edge action, MCP issuer and consent clients. Earlier grants never acquire
 the two new email-template scopes automatically.
+
+## Sale opening messages
+
+`sale_opening_opened` is the only sale-opening queue kind and inherited template
+code. Subscribing activates immediately and creates no email. Catalog visibility follows the
+notification setting in the stored scope. They use the current wrapper/banner,
+reply-to and the same production renderer as synthetic editor scenarios.
+Unsubscribe capabilities remain encrypted until rendering;
+these messages disable tracking and contain no order/payment/ticket blocks.
+The subject uses plain event text while the HTML substitutions escape it.
+
+Atomic HTML slots and block email variables share `HtmlAtomicBlock` presentation
+and the editor's selection/move/delete/history operations. Stored email blocks
+remain `{{code}}`, inline variables remain inline, and safe unknown HTML remains
+preserved content rather than a functional component. Generated preview scenarios
+cover the opening message in every supported language.

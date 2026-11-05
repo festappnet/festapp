@@ -1,3 +1,4 @@
+import 'package:fstapp/components/html/html_embedded_block.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:fstapp/components/html/html_document_codec.dart';
@@ -14,6 +15,54 @@ String fixture(String name) =>
     File('test/components/html/fixtures/$name.html').readAsStringSync();
 
 void main() {
+  for (final type in ['form-countdown', 'form-sale-opening-notification']) {
+    test('registered atomic $type moves, deletes, undoes and reloads in the same document', () {
+      final block = HtmlEmbeddedBlock(cssClass: type, builder: (_) => const SizedBox.shrink());
+      final controller = RichHtmlEditorController(initialHtml: '<p>Before</p>${block.html}<p>After</p>',
+        embeddedBlocks: [block], owner: const HtmlMediaOwner.none());
+      addTearDown(controller.dispose);
+      final node = controller.editor.document.whereType<PreservedHtmlNode>().single;
+      controller.selectAtomic(node);
+      expect(controller.editor.composer.selection?.extent.nodeId, node.id);
+      expect(controller.canInsertAtomic(type, embedded: true), isFalse);
+      controller.moveBlock(node.id, 1);
+      expect(controller.html, '<p>Before</p><p>After</p>${block.html}');
+      controller.removeAtomic(node.id);
+      expect(controller.html, isNot(contains(type)));
+      controller.undo();
+      expect(controller.html, contains(block.html));
+      final reloaded = RichHtmlEditorController(initialHtml: controller.html, embeddedBlocks: [block], owner: const HtmlMediaOwner.none());
+      addTearDown(reloaded.dispose);
+      expect(reloaded.html, controller.html);
+      controller.undo();
+      expect(controller.html, '<p>Before</p>${block.html}<p>After</p>');
+    });
+    test('registered atomic $type paste keeps one live instance and preserves draft text', () async {
+      final block = HtmlEmbeddedBlock(cssClass: type, builder: (_) => const SizedBox.shrink());
+      final controller = RichHtmlEditorController(initialHtml: '${block.html}<p>Text</p>',
+        embeddedBlocks: [block], owner: const HtmlMediaOwner.none());
+      addTearDown(controller.dispose);
+      final anchor = controller.editor.document.last as TextNode;
+      controller.editor.execute([ChangeSelectionRequest(DocumentSelection.collapsed(position:
+        DocumentPosition(nodeId: anchor.id,nodePosition: TextNodePosition(offset: anchor.text.length))),
+        SelectionChangeType.placeCaret,SelectionReason.userInteraction)]);
+      await controller.pasteHtml('${block.html}<p>Paste</p>${block.html}');
+      expect(controller.editor.document.whereType<PreservedHtmlNode>().length, 1);
+      expect(controller.html, contains('Text'));
+      expect(controller.html, contains('Paste'));
+      controller.undo();
+      expect(controller.html, '${block.html}<p>Text</p>');
+    });
+    test('registered atomic $type deduplicates without swallowing other content', () {
+      final block = HtmlEmbeddedBlock(cssClass: type, builder: (_) => const SizedBox.shrink());
+      final controller = RichHtmlEditorController(initialHtml: '<p>Intro</p>${block.html}<p>Middle</p>${block.html}<p>End</p>',
+        embeddedBlocks: [block], owner: const HtmlMediaOwner.none());
+      addTearDown(controller.dispose);
+      expect(controller.editor.document.whereType<PreservedHtmlNode>().length, 1);
+      expect(controller.html, '<p>Intro</p>${block.html}<p>Middle</p><p>End</p>');
+    });
+  }
+
   final policyCases = jsonDecode(
     File('shared/html/app-content-cases.json').readAsStringSync(),
   ) as List;

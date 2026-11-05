@@ -1,3 +1,4 @@
+import 'html_atomic_block.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:typed_data';
 
@@ -762,7 +763,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         HtmlView(
             profile: controller.profile,
             html: controller.html,
-            embeddedBlock: controller.embeddedBlock,
+            embeddedBlocks: controller.embeddedBlocks,
             imageBytesResolver: controller.media.previewBytes),
       ]);
     return LayoutBuilder(builder: (context, constraints) {
@@ -836,6 +837,9 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               Icons.content_paste,
                                               HtmlStrings.paste,
                                               () => _async(controller.paste)),
+                                          for (final block in controller.embeddedBlocks)
+                                            _tool(Icons.widgets_outlined, block.label, () => controller.insertEmbeddedBlock(block),
+                                              available: controller.canInsertAtomic(block.cssClass, embedded: true)),
                                           _tool(Icons.undo, HtmlStrings.undo,
                                               controller.undo),
                                           _tool(Icons.redo, HtmlStrings.redo,
@@ -1138,10 +1142,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                 })
                                                       ]),
                                               componentBuilders: [
-                                                _TemplateBlockBuilder(
-                                                    controller),
+                                                _AtomicBlockBuilder(controller),
                                                 _DraftImageBuilder(controller),
-                                                _PreservedBuilder(controller),
                                                 ...defaultComponentBuilders
                                               ],
                                               keyboardActions: [
@@ -1311,56 +1313,36 @@ class _AuthorizedImagePreviewState extends State<_AuthorizedImagePreview> {
       });
 }
 
-class _PreservedBuilder implements ComponentBuilder {
-  _PreservedBuilder(this.controller);
+/// Both persisted formats resolve into one atomic editor component. Unknown
+/// safe decorations remain preserved HTML, without functional controls.
+class _AtomicBlockBuilder implements ComponentBuilder {
+  _AtomicBlockBuilder(this.controller);
   final RichHtmlEditorController controller;
   @override
-  SingleColumnLayoutComponentViewModel? createViewModel(
-          Document document, DocumentNode node) =>
-      node is PreservedHtmlNode
-          ? HorizontalRuleComponentViewModel(
-              nodeId: node.id, caretColor: Colors.transparent)
-          : null;
+  SingleColumnLayoutComponentViewModel? createViewModel(Document document, DocumentNode node) =>
+    node is TemplateTokenBlock || node is PreservedHtmlNode
+      ? HorizontalRuleComponentViewModel(nodeId: node.id, caretColor: Colors.transparent) : null;
   @override
-  Widget? createComponent(SingleColumnDocumentComponentContext context,
-      SingleColumnLayoutComponentViewModel model) {
+  Widget? createComponent(SingleColumnDocumentComponentContext context, SingleColumnLayoutComponentViewModel model) {
     final node = controller.editor.document.getNodeById(model.nodeId);
-    if (node is! PreservedHtmlNode) return null;
-    final block = controller.embeddedBlock;
-    if (block != null && block.matches(node.html)) {
-      return BoxComponent(
-        key: context.componentKey,
-        child: AnimatedBuilder(
-            animation: controller,
-            builder: (buildContext, _) {
-              return Column(children: [
-                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  IconButton(
-                    tooltip: HtmlStrings.moveUp,
-                    onPressed: controller.canMoveBlock(node.id, -1)
-                        ? () => controller.moveBlock(node.id, -1)
-                        : null,
-                    icon: const Icon(Icons.arrow_upward),
-                  ),
-                  IconButton(
-                    tooltip: HtmlStrings.moveDown,
-                    onPressed: controller.canMoveBlock(node.id, 1)
-                        ? () => controller.moveBlock(node.id, 1)
-                        : null,
-                    icon: const Icon(Icons.arrow_downward),
-                  ),
-                ]),
-                block.builder(buildContext),
-              ]);
-            }),
-      );
+    if (node == null) return null;
+    final embedded = controller.embeddedBlockFor(node);
+    final entry = node is TemplateTokenBlock ? controller.authoring?.entry(node.code) : null;
+    if (embedded == null && node is! TemplateTokenBlock) {
+      return node is PreservedHtmlNode ? BoxComponent(key: context.componentKey,
+        child: HtmlView(profile: controller.profile, html: node.html, imageBytesResolver: controller.media.previewBytes)) : null;
     }
-    return BoxComponent(
-        key: context.componentKey,
-        child: HtmlView(
-            profile: controller.profile,
-            html: node.html,
-            imageBytesResolver: controller.media.previewBytes));
+    return BoxComponent(key: context.componentKey, child: AnimatedBuilder(animation: controller,
+      builder: (buildContext, _) => HtmlAtomicBlock(
+        label: embedded?.label ?? entry?.label ?? (node as TemplateTokenBlock).code,
+        description: embedded?.description ?? entry?.description ?? '',
+        selected: (model as HorizontalRuleComponentViewModel).selection != null,
+        onSelect: () => controller.selectAtomic(node),
+        onDelete: () => controller.removeAtomic(node.id),
+        onMoveUp: controller.canMoveBlock(node.id, -1) ? () => controller.moveBlock(node.id, -1) : null,
+        onMoveDown: controller.canMoveBlock(node.id, 1) ? () => controller.moveBlock(node.id, 1) : null,
+        child: embedded?.builder(buildContext) ?? controller.authoring!.preview(buildContext,
+          (node as TemplateTokenBlock).code, occurrence: () => _templateOccurrence(controller, node.code, node)) ?? Text(controller.authoring!.sampleLabel))));
   }
 }
 
@@ -1410,106 +1392,20 @@ int _templateOccurrence(RichHtmlEditorController controller, String code, Object
   return occurrence;
 }
 
-class _TemplateBlockBuilder extends ComponentBuilder {
-  _TemplateBlockBuilder(this.controller);
-  final RichHtmlEditorController controller;
-  @override
-  SingleColumnLayoutComponentViewModel? createViewModel(
-          Document document, DocumentNode node) =>
-      node is TemplateTokenBlock
-          ? HorizontalRuleComponentViewModel(
-              nodeId: node.id, caretColor: Colors.transparent)
-          : null;
-  @override
-  Widget? createComponent(SingleColumnDocumentComponentContext context,
-      SingleColumnLayoutComponentViewModel model) {
-    final node = controller.editor.document.getNodeById(model.nodeId);
-    if (node is! TemplateTokenBlock) return null;
-    final provider = controller.authoring!;
-    return BoxComponent(
-        key: context.componentKey,
-        child: _TemplateComponent(
-            provider: provider,
-            code: node.code,
-            occurrence: () => _templateOccurrence(controller, node.code, node),
-            selected: (model as HorizontalRuleComponentViewModel).selection != null,
-            onSelect: () {
-              controller.focusNode.requestFocus();
-              controller.editor.execute([
-                ChangeSelectionRequest(
-                    DocumentSelection(
-                      base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
-                      extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
-                    ),
-                    SelectionChangeType.placeCaret,
-                    SelectionReason.userInteraction),
-              ]);
-            },
-            onDelete: () => controller.editor
-                .execute([DeleteNodeRequest(nodeId: node.id)])));
-  }
-}
-
-/// Atomic document object: identity stays in the editor, content is only a sample.
-class _TemplateComponent extends StatefulWidget {
+/// Rich inline variables retain their text identity and use the same visual
+/// shell; only actual document blocks receive move/delete requests.
+class _TemplateComponent extends StatelessWidget {
   const _TemplateComponent({required this.provider, required this.code,
-    this.selected = false, this.onSelect, this.onDelete, this.occurrence});
+    this.selected = false, this.occurrence});
   final TemplateAuthoringProvider provider;
   final ValueGetter<int>? occurrence;
   final String code;
   final bool selected;
-  final VoidCallback? onSelect;
-  final VoidCallback? onDelete;
   @override
-  State<_TemplateComponent> createState() => _TemplateComponentState();
-}
-
-class _TemplateComponentState extends State<_TemplateComponent> {
-  bool _hovered = false;
-  bool _focused = false;
-  final _focus = FocusNode();
-  @override
-  void dispose() { _focus.dispose(); super.dispose(); }
-  void _showInfo() {
-    final entry = widget.provider.entry(widget.code);
-    showDialog<void>(context: context, builder: (context) => AppAlertDialog(
-      title: Text(entry?.label ?? widget.code),
-      content: Text('${entry?.description ?? ''}\n\n${widget.provider.sampleLabel} · {{${widget.code}}}'),
-      onClose: () => Navigator.pop(context)));
-  }
-  @override
-  Widget build(BuildContext context) {
-    final entry = widget.provider.entry(widget.code);
-    final colors = Theme.of(context).colorScheme;
-    final selected = _focused || widget.selected;
-    final active = _hovered || selected;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: Focus(focusNode: _focus,
-        onFocusChange: (value) => setState(() => _focused = value),
-        child: Semantics(label: '${entry?.label ?? widget.code}. ${entry?.description ?? ''}',
-          onLongPress: _showInfo,
-          child: GestureDetector(behavior: HitTestBehavior.translucent,
-            onTap: widget.onSelect ?? _focus.requestFocus,
-            child: Stack(children: [
-              widget.provider.preview(context, widget.code, occurrence: widget.occurrence) ?? Text(widget.provider.sampleLabel),
-              if (active) Positioned.fill(child: IgnorePointer(child: DecoratedBox(
-                decoration: BoxDecoration(border: Border.all(
-                  color: selected ? colors.primary : colors.primary.withValues(alpha: .7),
-                  width: selected ? 2 : 1.5))))),
-              if (active) Positioned(top: 0, right: 0,
-                child: Material(color: colors.surfaceContainerHigh, elevation: 2,
-                  borderRadius: BorderRadius.circular(6),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    IconButton(tooltip: '${entry?.label ?? widget.code}: ${entry?.description ?? ''}',
-                      onPressed: _showInfo, icon: const Icon(Icons.info_outline, size: 18)),
-                    if (widget.onDelete != null) IconButton(
-                      tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
-                      onPressed: widget.onDelete, icon: const Icon(Icons.close, size: 18)),
-                  ]))),
-            ])))));
-  }
+  Widget build(BuildContext context) => HtmlAtomicBlock(
+    label: provider.entry(code)?.label ?? code,
+    description: provider.entry(code)?.description ?? '', selected: selected,
+    child: provider.preview(context, code, occurrence: occurrence) ?? Text(provider.sampleLabel));
 }
 
 class _TemplateIosControls

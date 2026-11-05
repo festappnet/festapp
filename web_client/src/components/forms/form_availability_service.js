@@ -1,3 +1,4 @@
+import { renderPresaleContent } from './widgets/presale_content.js';
 import { sanitizeHtml } from '../../utils/html.js';
 import { WaitlistStrings } from './waitlist_strings.js';
 import { CountdownWidget } from './widgets/countdown_widget.js';
@@ -67,9 +68,9 @@ export class FormAvailabilityService {
         if (showPreview) return false;
 
         if (status === FormAvailabilityService.Status.BEFORE_START) {
-            if (formModel.enableCountdown) {
+            if (formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe) {
                 container.replaceChildren();
-                CountdownWidget.render(container, formModel, context.onReload);
+                renderPresaleContent(container, formModel, context.onReload);
                 if (formModel.showBeforeStartMessage && formModel.beforeStartMessage) {
                     const information = document.createElement('div');
                     information.className = 'form-before-start-message form-header';

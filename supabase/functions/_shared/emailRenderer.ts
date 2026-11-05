@@ -1,3 +1,4 @@
+import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
 import {
@@ -34,6 +35,7 @@ export type EmailRow = {
 export async function renderQueuedEmail(
   row: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
+  if (row.message_kind === "sale_opening_opened") return await renderSaleOpeningEmail(row);
   if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
     return await renderWaitlistEmail(row);
   }

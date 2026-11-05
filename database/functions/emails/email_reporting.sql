@@ -136,6 +136,7 @@ BEGIN
  public.email_reporting_state(m) state,tracking_policy,post_action_state,last_error FROM public.email_messages m
  WHERE organization=v_org AND (p_occasion IS NULL OR occasion=p_occasion OR (p_user IS NOT NULL AND occasion IS NULL))
  AND (p_user IS NULL OR recipient_user=p_user) AND (p_since IS NULL OR created_at>=p_since) AND (p_before IS NULL OR id<p_before) AND (p_order IS NULL OR order_id=p_order)
+ AND (m.message_kind NOT IN ('sale_opening_confirmation','sale_opening_opened') OR public.can_read_sale_opening_subscribers(m.occasion))
  AND (NOT coalesce(p_orders_only,false) OR order_id IS NOT NULL)
  AND (p_kind IS NULL OR message_kind=p_kind) AND (p_state IS NULL OR public.email_reporting_state(m)=p_state)
  ORDER BY id DESC LIMIT p_limit) x;
@@ -149,7 +150,7 @@ DECLARE m public.email_messages;
 BEGIN
  SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
  IF m.message_id IS NULL THEN RAISE EXCEPTION 'email_detail_not_available'; END IF;
- IF NOT coalesce(public.email_report_allowed(m.organization,m.occasion),false) THEN RAISE EXCEPTION 'email_read_denied'; END IF;
+ IF NOT (CASE WHEN m.message_kind IN ('sale_opening_confirmation','sale_opening_opened') THEN public.can_read_sale_opening_subscribers(m.occasion) ELSE coalesce(public.email_report_allowed(m.organization,m.occasion),false) END) THEN RAISE EXCEPTION 'email_read_denied'; END IF;
  RETURN jsonb_build_object('message',jsonb_build_object('id',m.message_id,'kind',m.message_kind,'recipient',m.recipient,'created_at',m.created_at,'state',public.email_reporting_state(m),'tracking_policy',m.tracking_policy,'opened_at',m.opened_at,'clicked_at',m.clicked_at,'post_action',m.post_action_state,'last_error',m.last_error,'provider_id',m.provider_message_id,'requested_by',m.data->>'requested_by'),
  'attempts',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',attempt_id,'state',state,'at',created_at,'error',error_code,'provider_id',provider_message_id) ORDER BY created_at),'[]') FROM public.email_attempts WHERE message_id=p_message),
  'events',(SELECT coalesce(jsonb_agg(jsonb_build_object('type',event_type,'at',provider_time) ORDER BY provider_time),'[]') FROM (SELECT event_type,provider_time FROM public.email_delivery_events WHERE message_id=p_message ORDER BY provider_time DESC LIMIT 100) e));

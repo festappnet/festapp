@@ -5,6 +5,7 @@ export function emailWorkerEnvironment(
 ): Array<[string, string]> {
   const control = ['bank-sync-manage', 'bank-sync-reconcile'].includes(service);
   return Object.entries(environment).filter(([name]) => {
+    if (name.startsWith('SALE_OPENING_TURNSTILE_')) return service === 'sale-opening-notifications';
     if (name === 'FESTAPP_MCP_TENANTS_JSON') return service === 'mcp-session-exchange';
     if (name === 'ASSET_CLEANUP_SERVICE_SECRET') return service === 'confirm-account-deletion';
     if (name === 'TICKET_FONT_SERVICE_SECRET') return ['download-ticket', 'preview-ticket-layout', 'process-email-queue'].includes(service);

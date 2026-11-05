@@ -70,6 +70,7 @@ BEGIN
     'services.write',manager,
     'participants.write',public.participant_manage_rule(manager,admin),
     'participants.contacts.read',public.participant_contacts_read_rule(editor,manager,coalesce(p_occasion_user.is_approver,false)),
+    'forms.sale_opening_subscribers.read',public.participant_contacts_read_rule(editor,manager,coalesce(p_occasion_user.is_approver,false)),
     'groups.assignments.write',public.group_assignments_write_rule(editor,manager,admin,unit_editor),
     'blueprints.write',public.blueprint_write_rule(editor,manager),
     'inventory.copy.target',public.inventory_copy_target_rule(order_writer,unit_manager),

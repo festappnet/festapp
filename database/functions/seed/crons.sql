@@ -23,6 +23,7 @@ BEGIN
       timeout_milliseconds:=360000)$$,p_project_url));
 
   PERFORM cron.schedule('festapp_canonical_notification_center_project','*/1 * * * *','SELECT public.maintain_notification_center(100)');
+  PERFORM cron.schedule('festapp_canonical_sale_opening_notifications','*/1 * * * *','SELECT public.maintain_sale_opening_notifications(100)');
   PERFORM cron.schedule('festapp_canonical_waitlist_expiry','*/1 * * * *','SELECT public.expire_waitlist_offers(100)');
   PERFORM cron.schedule('festapp_canonical_process_email_queue','*/1 * * * *','SELECT public.recover_email_delivery()');
 END;

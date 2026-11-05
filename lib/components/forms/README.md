@@ -342,3 +342,45 @@ The design editor saves this with its normal draft; it never changes the admin's
 personal theme. Both public clients apply the appearance locally to the form;
 JavaScript restores the personal preference and previous theme styles on exit.
 The forward migration is `20261031191700_form_design_theme_mode.sql`.
+
+## Sale opening notifications
+
+`database/functions/sale_opening_notifications/` owns one campaign per form,
+verified contact subscriptions and hashed purpose capabilities. These records
+never create an order, ticket, reservation or waitlist entry. Authoring stores
+only `data.sale_opening_notifications.enabled/collection_paused`; the existing
+schedule remains the sole clock and the form aggregate remains the sole settings
+writer. Released full saves preserve the new configuration when omitted.
+
+The presale HTML document (`schedule.countdown_title`) owns component order.
+`form-sale-opening-notification` and `form-countdown` are registered atomic HTML
+slots in the common HTML editor. Removing the subscription slot pauses collection;
+it does not revoke existing subscribers or silently reinsert the slot. Both
+public readers hydrate once after sanitization and preserve content when the
+countdown is hidden. Personal action links use fragments, memory-only bootstrap
+capture and explicit POST unsubscription. A GET never unsubscribes.
+Subscribing activates immediately without a confirmation email. Disabling
+`enable_countdown` hides both the timer and its date while retaining the subscription slot.
+
+The minute maintenance job uses live availability and regular/blueprint mode,
+with at most 100 new launch intents per tick. Collection pause preserves the
+notification commitment; ending cancels it even after fanout has completed.
+A first observed opening fixes a 24 hour window, bounded by the schedule end.
+The existing queue rechecks scope, subscriber version, expiry and availability
+at its final send fence. Unknown provider outcomes are never blindly replayed.
+
+Subscriber contact reads use `can_read_sale_opening_subscribers`, the same
+contact rule projected as `forms.sale_opening_subscribers.read`. Authoring rights
+alone do not grant PII. Pending contacts expire for verification after 24 hours
+and are removed within seven days; closed contacts and encrypted token sources
+are removed after 30 days by bounded retention sweeps, preserving anonymous totals.
+Unsubscribe capabilities have no separate calendar cutoff: campaign/subscription
+lifecycle and contact deletion revoke them, so moving a future start cannot
+remove the unsubscribe path. Queue audit/unknown outcomes retain the existing
+email retention policy.
+Form/occasion copies start disabled and never copy campaigns or contacts;
+aggregate deletion cascades their removal and makes old intents invalid.
+
+The additive migration installs the new cron inactive. Production activation,
+provider credentials and release are separate operations. See the
+[local execution evidence](../../../docs/plans/sale-opening-notifications-RESULT-2026-11-04.md).

@@ -13,10 +13,24 @@ import 'template_authoring.dart';
 /// HTML AST (including nested email tables) as the authoritative envelope.
 class HtmlEditorDocument {
   HtmlEditorDocument(String? html,
-      {Set<String> tokenCodes = const {}, Set<String> blockCodes = const {}}) {
+      {Set<String> tokenCodes = const {}, Set<String> blockCodes = const {},
+      Set<String> embeddedClasses = const {}}) {
     final draft = HtmlDocumentCodec.decode(html);
-    _original = draft.encode();
-    _template = draft.copyRoot();
+    final seen = <String>{};
+    final normalized = draft.copyRoot();
+    var changed = false;
+    void uniqueSlots(dom.Node node) {
+      for (final child in List<dom.Node>.of(node.nodes)) {
+        if (child is dom.Element && child.localName == 'div' && child.classes.contains('html-editor-block')) {
+          final types = embeddedClasses.where(child.classes.contains).toList();
+          if (types.isNotEmpty && !seen.add(types.first)) { child.remove(); changed = true; continue; }
+        }
+        uniqueSlots(child);
+      }
+    }
+    uniqueSlots(normalized);
+    _original = changed ? (normalized is dom.Document ? normalized.outerHtml : normalized.nodes.map((n) => n is dom.Element ? n.outerHtml : n.toString()).join()) : draft.encode();
+    _template = normalized;
     final nodes = <DocumentNode>[];
 
     void add(List<dom.Node> source, DocumentNode node, {dom.Element? wrapper}) {

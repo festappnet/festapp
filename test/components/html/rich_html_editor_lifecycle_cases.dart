@@ -261,7 +261,7 @@ void main() {
       final controller = RichHtmlEditorController(
         initialHtml: '<p>Before</p>$countdownBlockHtml<p>After</p>',
         owner: const HtmlMediaOwner.none(),
-        embeddedBlock: countdownBlock(target, () {}),
+        embeddedBlocks: [countdownBlock(target, () {})],
       );
       await tester.pumpWidget(
         MaterialApp(

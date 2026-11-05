@@ -37,5 +37,11 @@
     "selector": "p strong",
     "text": "bold",
     "absent": "b"
+  },
+  {
+    "name": "presale subscription slot stays inert under shared app content policy",
+    "html": "<p>Úvod</p><div class=\"html-editor-block form-sale-opening-notification\"></div><div class=\"html-editor-block form-countdown\"></div>",
+    "selector": "div.html-editor-block.form-sale-opening-notification",
+    "text": ""
   }
 ]

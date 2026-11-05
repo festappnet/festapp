@@ -44,6 +44,7 @@ export const AuthorizationCapabilities = {
     servicesWrite: 'services.write',
     participantsWrite: 'participants.write',
     participantsContactsRead: 'participants.contacts.read',
+    formsSaleOpeningSubscribersRead: 'forms.sale_opening_subscribers.read',
     groupsAssignmentsWrite: 'groups.assignments.write',
     blueprintsWrite: 'blueprints.write',
     inventoryCopyTarget: 'inventory.copy.target',

@@ -1,3 +1,6 @@
+import '../sale_opening_location_stub.dart' if (dart.library.js_interop) '../sale_opening_location_web.dart';
+import '../sale_opening_strings.dart';
+import '../widgets_view/sale_opening_notification.dart';
 import '../form_appearance_theme.dart';
 import 'package:fstapp/theme_config.dart';
 import '../payment_quote_refresh.dart';
@@ -112,11 +115,14 @@ class _FormPageState extends State<FormPage> {
   StreamSubscription<dynamic>? _popStateSubscription;
   bool _isClosingProgrammatically = false;
 
+  Timer? _saleOpeningTimer;
+  Map<String, String>? _saleOpeningScope;
   bool _dependenciesInitialized = false;
 
   @override
   void dispose() {
     _popStateSubscription?.cancel();
+    _saleOpeningTimer?.cancel();
     formSession?.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -139,6 +145,7 @@ class _FormPageState extends State<FormPage> {
           context.routeData.pendingChildren[0].params.getString("formLink");
     }
 
+    _saleOpeningScope = consumeSaleOpeningLocation();
     // Call loadData, but DO NOT await it.
     // `loadData` correctly sets _isLoading, and the `build` method
     // will show a CircularProgressIndicator. This is the correct pattern.
@@ -687,7 +694,7 @@ class _FormPageState extends State<FormPage> {
     // Only allow preview if specifically requested AND user is editor
     bool showPreview = canPreview && isPreviewParam;
     bool showCountdown = isBeforeStart &&
-        (form?.definition.enableCountdown ?? false) &&
+        ((form?.definition.enableCountdown ?? false) || (form?.definition.countdownTitle?.isNotEmpty ?? false) || (form?.definition.canSubscribeSaleOpening ?? false)) &&
         !showPreview;
 
     if (_isLoading) {
@@ -783,6 +790,15 @@ class _FormPageState extends State<FormPage> {
             ])),
       ))));
     }
+    if (_saleOpeningScope != null) {
+      final scope = _saleOpeningScope!;
+      return Scaffold(body: SingleChildScrollView(child: Padding(padding: const EdgeInsets.all(24),
+        child: Column(children: [
+          if (scope['operation'] == 'invalid') Text(SaleOpeningStrings.invalid)
+          else SaleOpeningNotification(formLink: widget.formLink ?? '', operation: scope['operation'], token: scope['token']),
+          TextButton(onPressed: () => setState(() => _saleOpeningScope = null), child: Text(form?.definition.title ?? widget.formLink ?? '')),
+        ]))));
+    }
     if (_formNotAvailable || (isClosed && !showPreview && !showCountdown)) {
       return Scaffold(
           body: SingleChildScrollView(
@@ -804,7 +820,12 @@ class _FormPageState extends State<FormPage> {
               CountdownContent(
                 targetTime: form!.definition.startTime!,
                 html: form!.definition.countdownTitle,
-                onFinished: loadData,
+                showTimer: form!.definition.enableCountdown,
+                canSubscribe: form!.definition.canSubscribeSaleOpening,
+                formLink: form!.definition.link ?? widget.formLink ?? '',
+                hasTickets: form!.definition.saleOpeningNotification?['hasTickets'] != false,
+                informal: form!.definition.communicationTone == 'informal',
+                onFinished: () {},
               ),
               if (form!.definition.showBeforeStartMessage &&
                   (form!.definition.beforeStartMessage?.trim().isNotEmpty ??
@@ -1465,6 +1486,11 @@ class _FormPageState extends State<FormPage> {
         return;
       }
 
+      _saleOpeningTimer?.cancel();
+      final starts = form!.definition.startTimeUtc;
+      if (form!.definition.isOpen == true && starts != null && starts.isAfter(DateTime.now())) {
+        _saleOpeningTimer = Timer(starts.difference(DateTime.now()), () { if (mounted) loadData(); });
+      }
       RouterService.canonicalizePublicLink(
           'form', widget.formLink, form!.definition.link);
       widget.formLink = form!.definition.link;

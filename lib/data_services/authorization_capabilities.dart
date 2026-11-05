@@ -44,6 +44,7 @@ abstract final class AuthorizationCapabilities {
   static const servicesWrite = 'services.write';
   static const participantsWrite = 'participants.write';
   static const participantsContactsRead = 'participants.contacts.read';
+  static const formsSaleOpeningSubscribersRead = 'forms.sale_opening_subscribers.read';
   static const groupsAssignmentsWrite = 'groups.assignments.write';
   static const blueprintsWrite = 'blueprints.write';
   static const inventoryCopyTarget = 'inventory.copy.target';
