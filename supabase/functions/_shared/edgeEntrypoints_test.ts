@@ -55,6 +55,7 @@ const optionEntrypoints = [
   "delete-order",
   "report-exchange-rates",
   "process-email-queue",
+  "sale-opening-notifications",
   "email-confirmation-status",
   "preview-ticket-layout",
   "occasion-setup-email-preview",
