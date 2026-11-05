@@ -44,8 +44,10 @@ sources=assembly['SOURCES']
 predecessor=assembly['PREDECESSOR']
 commands=['BEGIN; SET LOCAL ROLE postgres;']
 old_sources=[]
+affected=set()
 for source in sources:
  current=dict(definitions(Path('database/functions',source).read_text()))
+ affected.update(current)
  path='database/functions/'+source
  old=read_source(predecessor,path).decode() if path in source_paths(predecessor) else None
  previous=dict(definitions(old)) if old is not None else {}
@@ -64,9 +66,17 @@ commands.append(Path('supabase/migrations/20261101120000_blueprint_existing_admi
 commands.append(Path('supabase/migrations/20261101121500_occasion_copy_deletion.sql').read_text())
 commands.append(Path('supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql').read_text())
 commands.append(Path('supabase/migrations/20261101173000_seating_compatibility_admissions.sql').read_text())
+# This is a scoped downgrade in a current-head clone. Replay later migration
+# owners of downgraded functions; unrelated tenant data purges are not upgrades
+# of this fixture. Keep the final full-head parity assertion unchanged.
+# The restore owner owns retained tables (including later feature tables).
+commands.append('RESET ROLE;')
+for migration in sorted(Path('supabase/migrations').glob('*.sql')):
+ if migration.name[:14] > '20261101173000' and affected.intersection(dict(definitions(migration.read_text()))):
+  commands.append(migration.read_text())
 commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
 print(chr(10).join(commands))`;
-   const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8'});
+   const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8',maxBuffer:16*1024*1024});
    try { execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q'],{input:upgrade,stdio:['pipe','pipe','pipe']}); }
    catch(error) { throw new Error(error.stderr?.toString() || error.message); }
    await db.query(await readFile(new URL('../canonical_mutation_source_parity_test.sql',import.meta.url),'utf8'));

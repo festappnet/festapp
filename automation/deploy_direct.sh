@@ -38,6 +38,9 @@ done
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Required even for prebuilt uploads; failed or missing source CI blocks release.
+python3 automation/ci/release_gate.py
+
 # Load the CF token from a dotenv file if requested.
 if [ -n "$ENV_FILE" ]; then
   # shellcheck disable=SC1090
@@ -128,6 +131,9 @@ if [ ! -f build/web/_worker.js ]; then
   echo "ERROR: build/web/_worker.js missing — build did not complete." >&2
   exit 1
 fi
+
+# Recheck immediately before the irreversible upload (a rerun may have failed).
+python3 automation/ci/release_gate.py
 
 echo "Deploying build/web to Cloudflare Pages project '${PROJECT_NAME}'..."
 pnpm dlx wrangler@latest pages deploy build/web \

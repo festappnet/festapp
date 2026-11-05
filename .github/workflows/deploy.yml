@@ -9,7 +9,22 @@ on:
   workflow_dispatch:
 
 jobs:
+  source-ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require green CI for the exact canonical source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/release_gate.py
+
   tenant-drift:
+    needs: source-ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
