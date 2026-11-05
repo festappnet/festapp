@@ -7,7 +7,8 @@ BEGIN
  IF coalesce(p_input->>'email','')='' THEN RAISE EXCEPTION 'Email is required in input data.'; END IF;
  form_key:=(p_analysis#>>'{order_form,key}')::uuid;
  IF p_input->>'form_key' IS NOT NULL AND p_input->>'form_key' IS DISTINCT FROM form_key::text THEN
-  RAISE EXCEPTION 'The active order form changed. Reopen the order.'; END IF;
+  RAISE check_violation USING MESSAGE='BLUEPRINT_ORDER_FORM_CHANGED',
+   DETAIL='{"code":409,"reason":"BLUEPRINT_ORDER_FORM_CHANGED"}'; END IF;
  IF form_key IS NULL OR NOT EXISTS(SELECT 1 FROM public.forms f WHERE f.key=form_key
   AND f.blueprint=(SELECT blueprint FROM eshop.spots WHERE id=p_spots[1]))
   OR EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spots) AND blueprint IS DISTINCT FROM

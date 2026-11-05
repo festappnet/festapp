@@ -12,7 +12,15 @@ test('applied batch history refuses rewriting after the seat-order forward deepe
 });
 test('terminal seat-order forward follows batch and ACL prerequisites and reproduces canonical owners',()=>{
  const version='20261024023000';for(const parent of ['20261024020000','20261024021000'])assert(version>parent);
- for(const script of ['automation/assemble-seat-order-migration.py','automation/assemble-ticket-batches-migration.py','automation/generate_canonical_source_contract.py']){
+ for(const script of ['automation/assemble-seat-order-migration.py','automation/assemble-blueprint-recovery-migration.py','automation/assemble-ticket-batches-migration.py','automation/generate_canonical_source_contract.py']){
   const result=spawnSync('python3',[script,'--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
  }
+});
+
+test('installed seat-order history cannot be regenerated from newer canonical sources',()=>{
+ const file='supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql';
+ const before=readFileSync(file);
+ const result=spawnSync('python3',['automation/assemble-seat-order-migration.py'],{encoding:'utf8'});
+ assert.notEqual(result.status,0);assert.match(result.stderr,/immutable/);
+ assert.deepEqual(readFileSync(file),before);
 });

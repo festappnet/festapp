@@ -120,10 +120,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_order_affected_spots_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='48713ff32a8dd3abb7ced772cc492f13'),'current SQL source parity: public.blueprint_order_affected_spots_internal(bigint[])');
 -- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_order_conflicts_internal(jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='ec169b7291270ab4e54117d0fd684102'),'current SQL source parity: public.blueprint_order_conflicts_internal(jsonb,jsonb)');
--- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_order_input_internal(bigint[],jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='12f8d522320138889edab7d63dce8b39'),'current SQL source parity: public.blueprint_order_input_internal(bigint[],jsonb,jsonb)');
--- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_order_rejection_internal(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='4e5b7386f5abd07dd3f1aac95fdf6160'),'current SQL source parity: public.blueprint_order_rejection_internal(text,text)');
+-- supabase/migrations/20261105220000_blueprint_order_recovery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_order_input_internal(bigint[],jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='9e59d0d93913c97bbbf3df747ba2afd1'),'current SQL source parity: public.blueprint_order_input_internal(bigint[],jsonb,jsonb)');
+-- supabase/migrations/20261105220000_blueprint_order_recovery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_order_rejection_internal(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='e92dcc073ffcb2ad54549e9b48023b6c'),'current SQL source parity: public.blueprint_order_rejection_internal(text,text)');
 -- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_seat_order_quote_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='2faaadb9e52763f52e2cf589f44e2f22'),'current SQL source parity: public.blueprint_seat_order_quote_internal(jsonb)');
 -- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql

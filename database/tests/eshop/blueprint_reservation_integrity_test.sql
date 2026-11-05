@@ -67,6 +67,7 @@ BEGIN
  EXECUTE 'SET LOCAL ROLE authenticated';
  r:=public.replace_blueprint_order_client_sync_v1(ARRAY[sid],jsonb_build_object('email','editor-'||(f->>'occasion')||'@example.invalid','form_key',foreign_form),gen_random_uuid());
  PERFORM public.assert_eq(r->>'status','rejected','stale or foreign admin form key rejected');
+ PERFORM public.assert_eq(r#>>'{data,reason}','BLUEPRINT_ORDER_FORM_CHANGED','form rejection is a structured domain outcome');
  r:=public.replace_blueprint_order_client_sync_v1(ARRAY[sid],jsonb_build_object('email','editor-'||(f->>'occasion')||'@example.invalid','form',foreign_form,'ticket','[]'::jsonb,'ticket_fields',jsonb_build_object(sid::text,jsonb_build_array(jsonb_build_object(required_field::text,'Guest')))),gen_random_uuid());
  EXECUTE 'RESET ROLE';
  PERFORM public.assert_eq(r->>'status','applied','authenticated admin replace without public hold and required ticket fields');
