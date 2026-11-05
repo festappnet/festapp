@@ -1,6 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class SaleOpeningStrings {
+  static String configuredStart(String date) =>
+      'SaleOpening.configuredStart'.tr(namedArgs: {'date': date});
+  static String scheduledStart(String date) =>
+      'SaleOpening.scheduledStart'.tr(namedArgs: {'date': date});
   static String subscribed(String email) =>
       'SaleOpening.subscribed'.tr(namedArgs: {'email': email});
   static String get notifyShort => 'SaleOpening.notifyShort'.tr();

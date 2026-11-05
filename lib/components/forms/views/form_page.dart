@@ -1,3 +1,4 @@
+import '../form_opening_timer.dart';
 import '../sale_opening_location_stub.dart' if (dart.library.js_interop) '../sale_opening_location_web.dart';
 import '../sale_opening_strings.dart';
 import '../widgets_view/sale_opening_notification.dart';
@@ -96,6 +97,7 @@ class _FormPageState extends State<FormPage> {
   bool _refreshingChangedForm = false;
   bool _isLoading = false;
   bool _formNotAvailable = false;
+  int _formLoadGeneration = 0;
   bool _formLoadFailed = false;
   FormFontCatalog? _fonts;
   bool _fontLoadFailed = false;
@@ -115,7 +117,7 @@ class _FormPageState extends State<FormPage> {
   StreamSubscription<dynamic>? _popStateSubscription;
   bool _isClosingProgrammatically = false;
 
-  Timer? _saleOpeningTimer;
+  FormOpeningTimer? _saleOpeningTimer;
   Map<String, String>? _saleOpeningScope;
   bool _dependenciesInitialized = false;
 
@@ -679,11 +681,11 @@ class _FormPageState extends State<FormPage> {
       if (form!.definition.isOpen == false) {
         isClosed = true;
       } else if (form!.definition.startTime != null &&
-          now.isBefore(form!.definition.startTime!)) {
+          now.isBefore(form!.definition.startTimeUtc!)) {
         isClosed = true;
         isBeforeStart = true;
       } else if (form!.definition.endTime != null &&
-          now.isAfter(form!.definition.endTime!)) {
+          now.isAfter(form!.definition.endTimeUtc!)) {
         isClosed = true;
       }
     }
@@ -694,7 +696,7 @@ class _FormPageState extends State<FormPage> {
     // Only allow preview if specifically requested AND user is editor
     bool showPreview = canPreview && isPreviewParam;
     bool showCountdown = isBeforeStart &&
-        ((form?.definition.enableCountdown ?? false) || (form?.definition.countdownTitle?.isNotEmpty ?? false) || (form?.definition.canSubscribeSaleOpening ?? false)) &&
+        ((form?.definition.enableCountdown ?? false) || (form?.definition.countdownTitle?.isNotEmpty ?? false) || (form?.definition.canSubscribeSaleOpening ?? false) || (form?.definition.saleOpeningEnabled ?? false)) &&
         !showPreview;
 
     if (_isLoading) {
@@ -1423,6 +1425,8 @@ class _FormPageState extends State<FormPage> {
   }
 
   Future<void> loadData({bool continueOffer = false}) async {
+    if (!mounted) return;
+    final generation = ++_formLoadGeneration;
     setState(() {
       _isLoading = true;
       _fontLoadFailed = false;
@@ -1453,10 +1457,12 @@ class _FormPageState extends State<FormPage> {
         return;
       }
       if (_offerId != null || _waitlistOrderId != null) {
-        _offerBundle = await _waitlist.read(
+        final offerBundle = await _waitlist.read(
             token: _waitlistToken,
             offerId: _offerId,
             orderId: _waitlistOrderId);
+        if (!mounted || generation != _formLoadGeneration) return;
+        _offerBundle = offerBundle;
         final canonical = (_offerBundle!['form'] as Map?)?['link'] as String? ??
             _offerBundle!['formLink'] as String?;
         RouterService.canonicalizePublicLink(
@@ -1476,8 +1482,11 @@ class _FormPageState extends State<FormPage> {
         form = FormBundle.fromJson(
             Map<String, dynamic>.from(_offerBundle!['form']));
         unawaited(_resolveOverviewAccess());
-      } else
-        form = await DbForms.getFormFromLink(widget.formLink!);
+      } else {
+        final loaded = await DbForms.getFormFromLink(widget.formLink!);
+        if (!mounted || generation != _formLoadGeneration) return;
+        form = loaded;
+      }
       if (form == null) {
         setState(() {
           _isLoading = false;
@@ -1489,22 +1498,27 @@ class _FormPageState extends State<FormPage> {
       _saleOpeningTimer?.cancel();
       final starts = form!.definition.startTimeUtc;
       if (form!.definition.isOpen == true && starts != null && starts.isAfter(DateTime.now())) {
-        _saleOpeningTimer = Timer(starts.difference(DateTime.now()), () { if (mounted) loadData(); });
+        _saleOpeningTimer = FormOpeningTimer(starts, () { if (mounted) loadData(); });
       }
       RouterService.canonicalizePublicLink(
           'form', widget.formLink, form!.definition.link);
       widget.formLink = form!.definition.link;
-      if (widget.formLink != null)
+      if (widget.formLink != null) {
         await RightsService.updateAppData(
             formLink: widget.formLink, refreshOffline: false);
+      }
+      if (!mounted || generation != _formLoadGeneration) return;
 
       _fonts = null;
       if (form!.definition.fontFamily?.isNotEmpty == true) {
         try {
-          _fonts = await FormFontCatalog.load();
+          final fonts = await FormFontCatalog.load();
+          if (!mounted || generation != _formLoadGeneration) return;
+          _fonts = fonts;
           if (form!.definition.data?['design']?['background_mode'] != null)
             await _fonts!.ensureFamily(form!.definition.fontFamily!);
         } catch (error) {
+          if (!mounted || generation != _formLoadGeneration) return;
           AppLogger.error('Form font catalog loading failed: $error');
           if (mounted) {
             setState(() {
@@ -1515,7 +1529,7 @@ class _FormPageState extends State<FormPage> {
           return;
         }
       }
-      if (!mounted) return;
+      if (!mounted || generation != _formLoadGeneration) return;
 
       formHolder = FormHolder.fromDefinition(form!.definition);
       if (_offerBundle != null) {
@@ -1544,7 +1558,7 @@ class _FormPageState extends State<FormPage> {
               backend: Supabase.instance.client.rest.url,
               formKey: form!.definition.key!);
       final restoredCapability = await capabilityStore?.restore();
-      if (!mounted) return;
+      if (!mounted || generation != _formLoadGeneration) return;
       formHolder!.controller = FormHolderController(
           secret: restoredCapability?.secret ?? form!.definition.secret,
           blueprintId: form!.definition.blueprint,
@@ -1563,7 +1577,7 @@ class _FormPageState extends State<FormPage> {
         try {
           final source = await DbForms.getBlueprint(restoredController.secret!,
               restoredController.formKey!, restoredController.blueprintId!);
-          if (!mounted) return;
+          if (!mounted || generation != _formLoadGeneration) return;
           if (source?.layoutSnapshot == null)
             throw StateError('layout_unavailable');
           formSession!.updateSeats(
@@ -1580,6 +1594,7 @@ class _FormPageState extends State<FormPage> {
         _isLoading = false;
       });
     } catch (error, stack) {
+      if (!mounted || generation != _formLoadGeneration) return;
       AppLogger.error('Form loading failed: $error\n$stack');
       if (mounted) {
         setState(() {

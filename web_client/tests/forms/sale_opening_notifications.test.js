@@ -95,3 +95,16 @@ test('single opt-in succeeds directly and subscription-only layout has no automa
   assert.equal(host.querySelector('.sale-opening-status').textContent,'Jakmile se otevře přihlašování, pošleme Vám zprávu na jana@example.com.');
  }finally{CountdownWidget.stop();dom.window.close();}
 });
+
+test('future registration with paused subscription-only content shows its scheduled opening',()=>{
+ const dom=new JSDOM('<main></main>');globalThis.document=dom.window.document;
+ try{
+  const host=document.querySelector('main');
+  const model=new FormModel({link:'ples',is_open:true,registrationMode:'closed',saleOpeningNotification:{canSubscribe:false,reason:'paused'},data:{schedule:{start_time:'2099-01-01T12:00:00Z',enable_countdown:false,countdown_title:'<div class="html-editor-block form-sale-opening-notification"></div><p><br></p>'}}});
+  assert.equal(Availability.getStatus(model).status,'BEFORE_START');
+  Availability.renderStatus(host,model,Availability.getStatus(model));
+  assert.match(host.textContent,/Přihlašování se otevře/);
+  assert.match(host.textContent,/2099/);
+  assert.equal(host.querySelector('input,button'),null);
+ }finally{CountdownWidget.stop();dom.window.close();}
+});

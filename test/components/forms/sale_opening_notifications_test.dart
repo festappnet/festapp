@@ -1,3 +1,11 @@
+import 'package:fstapp/components/forms/views/form_editor_content.dart';
+import 'package:fstapp/components/forms/db_forms.dart';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:timezone/data/latest_all.dart' as timezones;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,6 +21,7 @@ import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
+  setUpAll(timezones.initializeTimeZones);
   WidgetEnvironmentFixture.register();
   final translations = jsonDecode(
     File('assets/translations/cs.json').readAsStringSync(),
@@ -102,12 +111,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<SwitchListTile>(find.byType(SwitchListTile).first)
-            .onChanged,
-        isNull,
-      );
+      expect(find.text('Zapnout upozornění'), findsNothing);
+      expect(find.textContaining('budouc'), findsWidgets);
       await env().pumpWidget(
         tester,
         MaterialApp(
@@ -178,7 +183,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(SwitchListTile).first);
+      await tester.tap(find.text('Zapnout upozornění'));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningEnabled, isTrue);
       expect(
@@ -186,7 +191,7 @@ void main() {
         contains('form-sale-opening-notification'),
       );
       final html = form.definition.countdownTitle;
-      await tester.tap(find.byType(SwitchListTile).at(1));
+      await tester.tap(find.text('Pozastavit sběr'));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningPaused, isTrue);
       expect(form.definition.countdownTitle, html);
@@ -223,4 +228,224 @@ void main() {
     expect(find.textContaining('2099'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'paused subscription-only content shows the planned opening instead of an empty page',
+    (tester) async {
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: CountdownContent(
+              targetTime: DateTime.utc(2099, 1, 1, 12),
+              onFinished: () {},
+              showTimer: false,
+              canSubscribe: false,
+              html: '$saleOpeningBlockHtml<p><br></p>',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Přihlašování se otevře'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'resuming collection restores a removed slot without duplicating it',
+    (tester) async {
+      final form = FormEditorDraft(
+        id: 1,
+        isOpen: true,
+        data: {
+          'schedule': {
+            'start_time': '2099-01-01T12:00:00Z',
+            'countdown_title': '<p>Úvod</p>',
+          },
+          'sale_opening_notifications': {
+            'enabled': true,
+            'collection_paused': true,
+          },
+        },
+      );
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => SaleOpeningSettings(
+                form: form,
+                canEdit: true,
+                loadSummary: (_) async => {
+                  'phase': 'armed',
+                  'subscribers': {'active': 7},
+                },
+                onChanged: () => setState(() {}),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Sběr je pozastavený'), findsOneWidget);
+      expect(find.text('Přihlášení zájemci: 7'), findsOneWidget);
+      expect(find.byType(SwitchListTile), findsNothing);
+      await tester.tap(find.text('Obnovit sběr'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningPaused, isFalse);
+      expect(
+        RegExp('form-sale-opening-notification')
+            .allMatches(form.definition.countdownTitle!)
+            .length,
+        1,
+      );
+      expect(find.text('Pozastavit sběr'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'overflow settings cancel independently and apply only to the parent draft',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.formsWrite: true,
+          AuthorizationCapabilities.ordersRead: true,
+        },
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final form = FormEditorDraft(
+        link: 'ples',
+        title: 'Podzimní ples',
+        isOpen: true,
+        data: {
+          'schedule': {'start_time': '2099-01-01T12:00:00Z'},
+        },
+      );
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormEditorContent(
+            formLink: 'ples',
+            loadBundle: (_) async => FormEditBundle(
+              form: form,
+              productTypes: [],
+              products: [],
+              availableBankAccounts: [],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Zapnout upozornění'), findsNothing);
+      final menu = find.byKey(const ValueKey('form-availability-menu'));
+      await tester.tap(menu);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upozornění na začátek přihlašování'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Zapnout upozornění'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isFalse);
+      await tester.tap(find.text('Zrušit'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isFalse);
+      await tester.tap(menu);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upozornění na začátek přihlašování'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Zapnout upozornění'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Použít změny'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isTrue);
+      expect(
+        form.definition.countdownTitle,
+        contains('form-sale-opening-notification'),
+      );
+      expect(
+        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
+        isTrue,
+      );
+      expect(find.text('Zapnout upozornění'), findsNothing);
+      await tester.tap(menu);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upozornění na začátek přihlašování'));
+      await tester.pumpAndSettle();
+      expect(find.text('Neuložené změny'), findsOneWidget);
+      expect(find.text('Ukončit upozornění'), findsNothing);
+      await tester.tap(find.text('Zrušit zapnutí'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Použít změny'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isFalse);
+      expect(form.definition.countdownTitle ?? '', isNot(contains('form-sale-opening-notification')));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets('missing or past start does not claim notifications are processing', (tester) async {
+    for (final start in [null, '2000-01-01T12:00:00Z']) {
+      final form = FormEditorDraft(isOpen: true, data: {
+        'sale_opening_notifications': {'enabled': true},
+        'schedule': {'start_time': start},
+      });
+      await env().pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: SaleOpeningSettings(form: form, canEdit: true, onChanged: () {})),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Upozornění se zpracovávají'), findsNothing);
+      if (start == null) {
+        expect(find.text('Nastavte budoucí začátek a otevřete formulář.'), findsWidgets);
+      } else {
+        expect(find.text('Čekáme na skutečné otevření přihlašování.'), findsOneWidget);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+  });
+  testWidgets(
+    'summary failure offers retry instead of misleading zero subscribers',
+    (tester) async {
+      var reads = 0;
+      final form = FormEditorDraft(
+        id: 1,
+        isOpen: true,
+        data: {
+          'schedule': {'start_time': '2099-01-01T12:00:00Z'},
+        },
+      );
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SaleOpeningSettings(
+              form: form,
+              canEdit: true,
+              onChanged: () {},
+              loadSummary: (_) async {
+                reads++;
+                if (reads == 1) throw StateError('offline');
+                return {'phase': 'armed'};
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Stav upozornění se nepodařilo načíst.'),
+        findsOneWidget,
+      );
+      expect(find.text('Přihlášení zájemci: 0'), findsNothing);
+      await tester.tap(find.text('Zkusit znovu'));
+      await tester.pumpAndSettle();
+      expect(reads, 2);
+      expect(find.text('Zapnout upozornění'), findsOneWidget);
+    },
+  );
 }
