@@ -259,7 +259,9 @@ A production rollout still requires separate authorization:
    secret check. Verify missing-secret rejection and protected RPC transport.
 3. Configure the selected backend origin with
    `configure_notification_center_worker(origin)`, then register recovery through
-   canonical `setup_crons(origin)`. Verify pg_net and the one-second wake job;
+   canonical `setup_crons(origin)` if pg_cron is in the application DB. The
+   canonical self-hosted host uses control-plane `postgres`; run the guarded
+   `install-notification-center.sh` production installer instead. Verify pg_net and the one-second wake job;
    do not replace it with minute-only history maintenance.
 4. Run bounded resumable projection/backfill calls and inspect
    `get_notification_center_projection_health(organization)` plus delivery health.
@@ -274,3 +276,9 @@ A production rollout still requires separate authorization:
 No production step in this list has been executed. The owned browser, Edge
 runtime, browser Supabase project and primary disposable DB project were stopped
 after verification. No development server was left running for this task.
+
+Release integration also adds the bounded prepared-retention retraction regression
+and a canonical control-plane scheduler installer. The fresh original migrations
+remain sealed; `20261105181000_notification_prepared_retention.sql` carries the
+maintenance correction forward. Actual rollout evidence is separate from this
+local implementation checkpoint.

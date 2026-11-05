@@ -294,7 +294,13 @@ projection and retained-view repair independently. A pg_net after-commit hint an
 one-second scheduled recovery wake it. Its request secret is mandatory, including
 when JWT verification is disabled at the Edge gateway. Configure with
 `configure_notification_center_worker(origin)` and the existing request-secret
-owner; `setup_crons` registers recovery only during an authorized rollout.
+owner; `setup_crons` registers recovery only during an authorized rollout when pg_cron
+is installed in the application database. The canonical self-hosted installation
+hosts pg_cron in control-plane `postgres`: use
+`automation/hetzner-supabase/runtime/install-notification-center.sh` there. It
+registers only the two notification jobs with `schedule_in_database`, preserving
+unrelated schedules. Minute retention retracts prepared memberships and pending
+source repair debt before a recovered old event is hard-deleted.
 
 The old daily/temporal/open/read/badge interfaces are retained solely for released
 clients and share canonical source/read owners. The modern Flutter route has no

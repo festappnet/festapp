@@ -391,6 +391,7 @@
     "notification_center/email.sql",
     "notification_center/bank.sql",
     "notification_center/capacity.sql",
-    "notification_center/deleted_entities.sql"
+    "notification_center/deleted_entities.sql",
+    "notification_center/maintenance.sql"
   ]
 }

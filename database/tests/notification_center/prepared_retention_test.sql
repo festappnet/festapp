@@ -1,0 +1,32 @@
+BEGIN;
+DO $$
+DECLARE org bigint;oc bigint;viewer uuid:=gen_random_uuid();ev uuid;v jsonb;token uuid;
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Prepared retention') RETURNING id INTO org;
+ INSERT INTO auth.users(id) VALUES(viewer);
+ INSERT INTO public.user_info(id,organization) VALUES(viewer,org);
+ INSERT INTO public.occasions(organization,title,link,start_time,end_time) VALUES(org,'Retention',gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(oc,viewer,true);
+ INSERT INTO public.notification_center_organizations(organization,initialized_at) VALUES(org,now()-interval '120 days');
+ ev:=public.notification_center_publish_internal(org,oc,'email_problem','retention:incident','{"reason":"hard_bounce"}',NULL,now()-interval '91 days');
+ PERFORM public.project_notification_center(500);
+ UPDATE public.notification_center_deliveries SET delivered_at=now()-interval '91 days' WHERE event_id=ev;
+ PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
+ v:=public.get_notification_center_view(org,oc);
+ FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
+ v:=public.get_notification_center_view(org,oc);token:=(v->>'viewToken')::uuid;
+ PERFORM assert_eq(v->>'state','ready','old active incident is eligible');
+ PERFORM assert_eq(jsonb_array_length(v->'items'),1,'old active incident has one maintained row');
+ PERFORM public.notification_center_prepared_invalidate(ev);
+ UPDATE public.notification_center_events SET status='recovered' WHERE id=ev;
+ PERFORM assert_eq((SELECT pending_events FROM public.notification_center_projection_scopes WHERE organization=org AND recipient=viewer),1,'recovery repair has not run');
+ PERFORM public.maintain_notification_center(100);
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.notification_center_events WHERE id=ev),'retention deletes the recovered old fact');
+ PERFORM assert_eq((SELECT pending_events FROM public.notification_center_projection_scopes WHERE organization=org AND recipient=viewer),0,'purge cannot strand source repair debt');
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_batch_summaries WHERE organization=org AND recipient=viewer),0::bigint,'purge retracts cached incident counts');
+ FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100);END LOOP;
+ v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>token);
+ PERFORM assert_eq(v->>'state','ready','retained view repairs after canonical retention');
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v->'items') x WHERE x->>'state'='ready'),'retained slot cannot show purged contact or count');
+END $$;
+ROLLBACK;

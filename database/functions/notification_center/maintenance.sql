@@ -75,7 +75,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.maintain_notification_center(p_limit integer DEFAULT 100) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE m record; maximum bigint; after_id bigint; processed integer:=0; projected integer; availability integer;
+DECLARE m record; maximum bigint; after_id bigint; processed integer:=0; projected integer; availability integer; purge_ids uuid[];
 BEGIN
  PERFORM public.notification_center_require_service();
  INSERT INTO public.notification_center_maintenance(name) VALUES('email') ON CONFLICT DO NOTHING;
@@ -96,9 +96,16 @@ BEGIN
  DELETE FROM public.notification_center_deliveries WHERE (event_id,recipient,attention_revision) IN (
   SELECT d.event_id,d.recipient,d.attention_revision FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
   WHERE d.delivered_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning')) LIMIT greatest(1,least(p_limit,500)));
- DELETE FROM public.notification_center_events WHERE id IN(SELECT e.id FROM public.notification_center_events e
+ SELECT array_agg(id) INTO purge_ids FROM (SELECT e.id FROM public.notification_center_events e
   WHERE e.occurred_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning'))
-  AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=e.id) AND e.projected_revision=e.attention_revision LIMIT greatest(1,least(p_limit,500)));
+  AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=e.id) AND e.projected_revision=e.attention_revision
+  LIMIT greatest(1,least(p_limit,500)) FOR UPDATE SKIP LOCKED) expired;
+ -- Retract derived counts and dirty-source debt before recipients cascade away.
+ -- A recovered long-running incident may still have an unprocessed repair.
+ IF cardinality(purge_ids)>0 THEN
+  PERFORM public.notification_center_prepared_delete_events(purge_ids);
+  DELETE FROM public.notification_center_events WHERE id=ANY(purge_ids);
+ END IF;
  RETURN jsonb_build_object('evaluated',processed,'projected',projected,'availabilityEvaluated',availability);
 END $$;
 REVOKE ALL ON FUNCTION public.maintain_notification_center(integer) FROM PUBLIC,anon,authenticated;
