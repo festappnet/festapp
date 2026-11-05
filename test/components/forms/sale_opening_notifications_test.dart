@@ -246,7 +246,7 @@ void main() {
         contains('form-sale-opening-notification'),
       );
       final html = form.definition.countdownTitle;
-      await tester.tap(find.text('Pozastavit sběr'));
+      await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningPaused, isTrue);
       expect(form.definition.countdownTitle, html);
@@ -387,12 +387,19 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('Sběr je pozastavený'), findsOneWidget);
-      expect(find.text('Přihlášení zájemci: 7'), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse,
+      );
+      expect(
+        find.textContaining('jen dříve přihlášení zájemci'),
+        findsOneWidget,
+      );
+      expect(find.text('Přihlášení zájemci: 7'), findsNothing);
       expect(find.text('Zájemci (7)'), findsOneWidget);
       expect(find.text('Upravit e-maily'), findsNothing);
-      expect(find.byType(SwitchListTile), findsNothing);
-      await tester.tap(find.text('Obnovit sběr'));
+      expect(find.text('Ukončit upozornění'), findsNothing);
+      await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningPaused, isFalse);
       expect(
@@ -401,7 +408,121 @@ void main() {
             .length,
         1,
       );
-      expect(find.text('Pozastavit sběr'), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isTrue,
+      );
+    },
+  );
+  testWidgets(
+    'pausing preserves delivery while permanent ending requires confirmation',
+    (tester) async {
+      final form = FormEditorDraft(
+        id: 1,
+        isOpen: true,
+        data: {
+          'schedule': {'start_time': '2099-01-01T12:00:00Z'},
+          'sale_opening_notifications': {'enabled': true},
+        },
+      );
+      await env().pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: StatefulBuilder(
+                builder: (context, setState) => SaleOpeningSettings(
+                  form: form,
+                  canEdit: true,
+                  loadSummary: (_) async => {'phase': 'armed'},
+                  onChanged: () => setState(() {}),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isTrue);
+      expect(form.definition.saleOpeningPaused, isTrue);
+      expect(find.text('Ukončit upozornění'), findsNothing);
+      await tester.tap(find.text('Trvale ukončit upozornění'));
+      await tester.pumpAndSettle();
+      final end = find.widgetWithText(TextButton, 'Ukončit upozornění');
+      await tester.ensureVisible(end);
+      await tester.tap(end);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Zrušit'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isTrue);
+      await tester.tap(end);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Ukončit upozornění'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isFalse);
+      expect(
+        find.text('Upozornění se ukončí po uložení formuláře.'),
+        findsOneWidget,
+      );
+    },
+  );
+  testWidgets(
+    'read-only and terminal states cannot change collection at narrow large-text sizes',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      for (final phase in ['armed', 'cancelled', 'completed']) {
+        await env().pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+              child: Scaffold(
+                body: SingleChildScrollView(
+                  child: SaleOpeningSettings(
+                    form: FormEditorDraft(
+                      id: 1,
+                      isOpen: true,
+                      data: {
+                        'schedule': {'start_time': '2099-01-01T12:00:00Z'},
+                        'sale_opening_notifications': {'enabled': true},
+                      },
+                    ),
+                    canEdit: phase != 'armed',
+                    loadSummary: (_) async => {
+                      'phase': phase,
+                      'subscribers': {'active': 0},
+                    },
+                    onChanged: () => fail('Collection must not change'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        if (phase == 'armed') {
+          expect(
+            tester
+                .widget<SwitchListTile>(find.byType(SwitchListTile))
+                .onChanged,
+            isNull,
+          );
+        } else {
+          expect(find.byType(SwitchListTile), findsNothing);
+          expect(find.text('Zapnout upozornění'), findsNothing);
+        }
+        expect(find.text('Trvale ukončit upozornění'), findsNothing);
+        expect(find.text('Přihlášení zájemci: 0'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
     },
   );
   testWidgets(
@@ -448,9 +569,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Upozornění na začátek přihlašování'));
       await tester.pumpAndSettle();
+      expect(find.text('E-mail při otevření'), findsOneWidget);
+      expect(find.text('Použít změny'), findsNothing);
+      expect(find.text('Zavřít'), findsOneWidget);
+      expect(find.text('Zrušit'), findsNothing);
       await tester.tap(find.text('Zapnout upozornění'));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningEnabled, isFalse);
+      expect(find.text('Zavřít'), findsNothing);
+      expect(find.text('Použít změny'), findsOneWidget);
       await tester.tap(find.text('Zrušit'));
       await tester.pumpAndSettle();
       expect(form.definition.saleOpeningEnabled, isFalse);
@@ -476,8 +603,19 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Upozornění na začátek přihlašování'));
       await tester.pumpAndSettle();
-      expect(find.text('Neuložené změny'), findsOneWidget);
+      expect(
+        find.text('Změny se projeví po uložení formuláře.'),
+        findsOneWidget,
+      );
       expect(find.text('Ukončit upozornění'), findsNothing);
+      expect(find.text('Použít změny'), findsNothing);
+      await tester.tap(find.text('Zavřít'));
+      await tester.pumpAndSettle();
+      expect(form.definition.saleOpeningEnabled, isTrue);
+      await tester.tap(menu);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Upozornění na začátek přihlašování'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Zrušit zapnutí'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Použít změny'));

@@ -708,7 +708,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AppDialogHeader(
-                      title: Text(SaleOpeningStrings.text('settingsTitle')),
+                      title: Text(SaleOpeningStrings.text('dialogTitle')),
                     ),
                     const SizedBox(height: 16),
                     Flexible(
@@ -722,28 +722,25 @@ class _FormEditorContentState extends State<FormEditorContent>
                       ),
                     ),
                     const Divider(height: 32),
-                    Text(
-                      SaleOpeningStrings.text('saveHint'),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
                     if (changed || _hasChanges)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(SaleOpeningStrings.text('unsavedChanges')),
+                      Text(
+                        SaleOpeningStrings.text('saveHint'),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     const SizedBox(height: 12),
                     AppDialogActions(
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(CommonStrings.cancel),
+                          child: Text(
+                            changed ? CommonStrings.cancel : CommonStrings.close,
+                          ),
                         ),
-                        FilledButton(
-                          onPressed: changed
-                              ? () => Navigator.pop(dialogContext, true)
-                              : null,
-                          child: Text(SaleOpeningStrings.text('applyAction')),
-                        ),
+                        if (changed)
+                          FilledButton(
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            child: Text(SaleOpeningStrings.text('applyAction')),
+                          ),
                       ],
                     ),
                   ],

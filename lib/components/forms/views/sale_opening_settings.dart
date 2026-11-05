@@ -95,6 +95,10 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
               child: Text(CommonStrings.cancel),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
               onPressed: () => Navigator.pop(dialogContext, true),
               child: Text(SaleOpeningStrings.end),
             ),
@@ -129,7 +133,9 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
       else if (phase == 'completed')
         status = SaleOpeningStrings.text('processedState');
       else if (!enabled)
-        status = SaleOpeningStrings.text('offState');
+        status = SaleOpeningStrings.text(
+          initiallyEnabled ? 'pendingEndState' : 'offState',
+        );
       else if (form.isOpen != true)
         status = SaleOpeningStrings.text('manualClosedState');
       else if (form.startTimeUtc == null)
@@ -158,6 +164,14 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
                   )
                 : SaleOpeningStrings.requiresStart,
           ),
+          if (loaded && enabled && !terminal && form.startTime != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                SaleOpeningStrings.dateChange,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           const SizedBox(height: 16),
           if (!loaded && !snapshot.hasError)
             const Center(
@@ -178,73 +192,90 @@ class _SaleOpeningSettingsState extends State<SaleOpeningSettings> {
               ),
             ),
           ] else ...[
-            Text(status, style: Theme.of(context).textTheme.titleMedium),
-            if (enabled && !terminal) ...[
-              const SizedBox(height: 8),
-              Text(SaleOpeningStrings.dateChange),
-            ],
-            if (!terminal && eligible && widget.canEdit) ...[
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: !enabled || form.saleOpeningPaused
-                    ? FilledButton(
-                        onPressed: _collect,
-                        child: Text(
-                          SaleOpeningStrings.text(
-                            enabled ? 'resumeAction' : 'enableAction',
-                          ),
-                        ),
-                      )
-                    : OutlinedButton(
-                        onPressed: _pause,
-                        child: Text(SaleOpeningStrings.pause),
-                      ),
+            if (enabled && eligible && !terminal) ...[
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(SaleOpeningStrings.text('collectionLabel')),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(SaleOpeningStrings.text('collectionHint')),
+                ),
+                value: !form.saleOpeningPaused,
+                onChanged: widget.canEdit
+                    ? (collect) => collect ? _collect() : _pause()
+                    : null,
               ),
-            ],
-            if (!enabled && !terminal && !future)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(SaleOpeningStrings.requiresStart),
-              ),
-            if (enabled && widget.form.definition.id != null) ...[
-              const Divider(height: 32),
-              Text(
-                '${SaleOpeningStrings.text('subscriberCount')}: ${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0}',
-              ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (RightsService.hasCapability(
-                    AuthorizationCapabilities.formsSaleOpeningSubscribersRead,
-                  ))
-                    TextButton(
-                      onPressed: () => showDialog<void>(
-                        context: context,
-                        builder: (_) => AppDialog(
-                          child: SaleOpeningSubscribers(formId: form.id!),
-                        ),
-                      ),
-                      child: Text(
-                        '${SaleOpeningStrings.subscribers} (${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0})',
-                      ),
+            ] else ...[
+              Text(status, style: Theme.of(context).textTheme.titleMedium),
+              if (!enabled && !terminal && eligible && widget.canEdit)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton(
+                      onPressed: _collect,
+                      child: Text(SaleOpeningStrings.text('enableAction')),
                     ),
-                ],
-              ),
-            ],
-            if (enabled && !terminal && widget.canEdit) ...[
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: _end,
-                  child: Text(
-                    initiallyEnabled
-                        ? SaleOpeningStrings.end
-                        : SaleOpeningStrings.text('undoEnable'),
                   ),
                 ),
-              ),
+            ],
+            if ((enabled || terminal) && form.id != null) ...[
+              const SizedBox(height: 16),
+              if (RightsService.hasCapability(
+                AuthorizationCapabilities.formsSaleOpeningSubscribersRead,
+              ))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    '${SaleOpeningStrings.subscribers} (${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0})',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => AppDialog(
+                      child: SaleOpeningSubscribers(formId: form.id!),
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '${SaleOpeningStrings.text('subscriberCount')}: ${(snapshot.data?['subscribers'] as Map?)?['active'] ?? 0}',
+                ),
+            ],
+            if (enabled && !terminal && widget.canEdit) ...[
+              const SizedBox(height: 8),
+              if (initiallyEnabled)
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: const EdgeInsets.only(bottom: 8),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+                  title: Text(
+                    SaleOpeningStrings.text('endDetails'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  children: [
+                    Text(SaleOpeningStrings.endConfirm),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                        onPressed: _end,
+                        child: Text(SaleOpeningStrings.end),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _end,
+                    child: Text(SaleOpeningStrings.text('undoEnable')),
+                  ),
+                ),
             ],
           ],
         ],
