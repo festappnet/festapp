@@ -21,7 +21,7 @@ test('public generator produces isolated service code without loading checkout',
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
-  assert.equal(frame.hasAttribute('data-festapp-style'),false);
+  assert.equal(frame.getAttribute('data-festapp-style'),'inherit');
   assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.parentElement.hasAttribute('data-festapp-embed-host'),true);
   assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
@@ -42,11 +42,14 @@ test('English generator uses its configured service origin and localized results
   mode.value='fixed';mode.dispatchEvent(new form.ownerDocument.defaultView.Event('change'));
   mode.value='automatic';mode.dispatchEvent(new form.ownerDocument.defaultView.Event('change'));
 });
-test('generator has no local appearance override and keeps helper for fixed height',t=>{
+test('generator puts appearance in copied code and keeps helper for fixed height',t=>{
   const {dom,form,field,submit}=fixture(t);
-  assert.equal(form.querySelector('[name=inherit-style]'),null);
+  const style=form.querySelector('[name=inherit-style]');
+  assert.equal(style.checked,true);
   submit('https://vstupenky.online/form/ples');
-  assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
+  assert.match(form.querySelector('textarea').value,/data-festapp-style="inherit"/);
+  style.checked=false;style.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(form.querySelector('[data-embed-output]').hidden,true);
   field.dispatchEvent(new dom.window.Event('input'));
   assert.equal(form.querySelector('[data-embed-output]').hidden,true);
   const mode=form.querySelector('select');mode.value='fixed';mode.dispatchEvent(new dom.window.Event('change'));
@@ -54,6 +57,7 @@ test('generator has no local appearance override and keeps helper for fixed heig
   const code=new JSDOM(form.querySelector('textarea').value);t.after(()=>code.window.close());
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.getAttribute('data-festapp-height'),'fixed');
+  assert.equal(frame.getAttribute('data-festapp-style'),'default');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
   assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
 });

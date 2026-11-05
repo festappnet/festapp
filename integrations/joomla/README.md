@@ -152,7 +152,7 @@ odeslání objednávky nebo výběru sedadla.
 
 ## Sdílené nastavení vzhledu
 
-Přebírání vzhledu webu nastavte ve Vzhledu uloženého formuláře v aplikaci.
+Vzhled konkrétního HTML vložení zvolte přímo v dialogu Vložit na vlastní web v aplikaci.
 Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
 vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
 Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou

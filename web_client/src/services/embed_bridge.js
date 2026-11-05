@@ -8,9 +8,14 @@ const viewport = value => Number.isFinite(value) && value >= 240 && value <= 400
 // The only wildcard message is a public, data-free readiness announcement.
 export class EmbedBridge {
     constructor(win = window) { this.win = win; this.theme = new EmbedTheme(win); }
-    // Form data is the sole authority. Host messages may arrive before it loads.
+    // Wait for form data; a validated per-iframe choice overrides its fallback.
     setInheritStyle(enabled) {
-        this.theme.setEnabled(enabled);
+        this.formInheritStyle = enabled;
+        this.syncStyle();
+    }
+    syncStyle() {
+        this.theme.setEnabled(typeof this.formInheritStyle === 'boolean' &&
+            (typeof this.styleOverride === 'boolean' ? this.styleOverride : this.formInheritStyle));
         this.syncPrice();
     }
     receiveTheme(theme) {
@@ -37,7 +42,8 @@ export class EmbedBridge {
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
-                this.syncPrice();
+                this.styleOverride = typeof data.inheritStyle === 'boolean' ? data.inheritStyle : null;
+                this.syncStyle();
                 this.setViewport(data.viewportHeight, data.viewportOffset);
                 if (data.theme !== undefined) { this.receiveTheme(data.theme); }
                 this.height = null;

@@ -555,12 +555,12 @@
     "embedAction": "Vložit na vlastní web",
     "embedTitle": "Objednávkový formulář",
     "embedFallback": "Otevřít objednávku v nové záložce",
-    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška vyžaduje povolený externí skript. Pokud jej váš web blokuje, použijte pevnou výšku.",
+    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška a převzetí vzhledu vyžadují povolený externí skript. Pokud jej web blokuje, použijte pevnou výšku a vlastní vzhled formuláře.",
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
-    "embedInheritStyleHelp": "Přebírá písmo, pozadí a barvy webu ve všech vloženích tohoto formuláře. Po uložení se změna projeví při dalším načtení stránky. Plánek sálu si ponechává vlastní vzhled.",
+    "embedInheritStyleHelp": "Přebírá písmo, pozadí a barvy webu. Bez zaškrtnutí zůstane vlastní vzhled formuláře. Volba platí pro tento kód; plánek sálu si ponechává vlastní vzhled.",
     "productsAndPrices": "Produkty a ceny"
   },
   "OrderGridColumns": {

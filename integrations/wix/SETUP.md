@@ -52,8 +52,8 @@ Do not publish a claim of verified compatibility until the matrix below passes.
    | `form-url` | empty | Canonical public service form URL |
    | `form-title` | `Prodej vstupenek - vstupenky.online` | Accessible iframe title |
 
-   Website appearance is controlled in the saved service form’s Design settings,
-   shared by every embed. Do not register a separate appearance property.
+   The native widget uses the saved service fallback. For a per-embed appearance
+   choice, use generated HTML from Embed on your website in the form administration.
 
    Wix widget properties bind to custom-element attributes. Use the settings
    panel for subsequent changes; no credentials or hidden order state are stored.

@@ -90,6 +90,10 @@
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
+        // An explicit choice belongs to this iframe; absent markup uses the
+        // saved fallback for already-installed CMS integrations.
+        if (frame.dataset.festappStyle === 'inherit') data.inheritStyle = true;
+        else if (frame.dataset.festappStyle === 'default') data.inheritStyle = false;
         if (includeTheme) {
             const theme = presentation(frame);
             record.theme = JSON.stringify(theme);

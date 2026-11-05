@@ -52,6 +52,7 @@
   const invalidate = () => { output.hidden = true; status.textContent = ''; error.textContent = ''; urlInput.removeAttribute('aria-invalid'); };
   urlInput.addEventListener('input', invalidate);
   mode.addEventListener('change', invalidate);
+  form.querySelector('[name="inherit-style"]').addEventListener('change', invalidate);
   form.addEventListener('submit', event => {
     event.preventDefault(); invalidate();
     let url;
@@ -66,7 +67,7 @@
       urlInput.setAttribute('aria-invalid', 'true'); urlInput.focus({preventScroll: true}); return;
     }
     const automatic = mode.value === 'automatic';
-    const marker = ' data-festapp-embed' + (automatic ? '' : ' data-festapp-height="fixed"');
+    const marker = ' data-festapp-embed data-festapp-style="' + (form.querySelector('[name="inherit-style"]').checked ? 'inherit' : 'default') + '"' + (automatic ? '' : ' data-festapp-height="fixed"');
     const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" width="100%" height="800" style="border:0;max-width:100%" loading="lazy"></iframe>`;
     const link = `<p><a href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${text.link}</a></p>`;
     code.value = `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js" defer></script>`;

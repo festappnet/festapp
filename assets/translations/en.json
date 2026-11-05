@@ -555,12 +555,12 @@
     "embedAction": "Embed on your website",
     "embedTitle": "Order form",
     "embedFallback": "Open order in a new tab",
-    "embedHelp": "Paste the code into your website HTML. Automatic height requires an external script. If your website blocks it, use fixed height.",
+    "embedHelp": "Paste the code into your website HTML. Automatic height and website appearance require an external script. If your website blocks it, use fixed height and the form appearance.",
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
     "embedFixed": "Fixed height",
     "embedInheritStyle": "Match website appearance",
-    "embedInheritStyleHelp": "Use the website font, background and colors in all embeds of this form. Save changes to apply them on the next page load. The seating map keeps its own appearance.",
+    "embedInheritStyleHelp": "Use the website font, background and colors. Uncheck to keep the form appearance. This choice applies to this embed code; the seating map keeps its own appearance.",
     "productsAndPrices": "Products and prices"
   },
   "OrderGridColumns": {

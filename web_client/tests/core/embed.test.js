@@ -149,6 +149,8 @@ test('host supplies appearance independently of legacy flags and preserves fixed
     const navButton=dom.window.document.createElement('button');navButton.style.backgroundColor='transparent';dom.window.document.body.append(navButton);
     frame.dataset.festappStyle = 'inherit'; frame.dataset.festappHeight = 'fixed';
     message(frame, 'https://tickets.invalid', envelope('ready'));
+    assert.equal(sent[0].at(-1)[0].inheritStyle,true);
+    assert.equal(sent[1].at(-1)[0].inheritStyle,undefined);
     const theme = sent[0].at(-1)[0].theme;
     assert.equal(theme.fontFamily, '"Site Serif", serif');
     assert.equal(theme.fonts[0].urls[0], 'https://host.invalid/fonts/site.woff2');
@@ -158,6 +160,9 @@ test('host supplies appearance independently of legacy flags and preserves fixed
     assert.ok(sent[1][0][0].theme);
     message(frame, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height:1500}));
     assert.equal(frame.style.height, '');
+    frame.dataset.festappStyle='default';
+    message(frame, 'https://tickets.invalid', envelope('ready'));
+    assert.equal(sent[0].at(-1)[0].inheritStyle,false);
     delete frame.dataset.festappStyle;
     await new Promise(resolve => dom.window.setTimeout(resolve, 50));
     assert.equal(sent[0].at(-1)[0].theme.fontFamily, theme.fontFamily);

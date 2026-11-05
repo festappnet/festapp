@@ -1,5 +1,9 @@
 # Form-owned embed appearance
 
+Superseded for the editor UI by the user correction on 2026-11-05: appearance is
+selected beside copied embed code, with explicit inherit/default markup. The
+saved field remains a compatibility fallback only; see embedded-checkout.md.
+
 Implement one owner: `forms.data.design.embed_inherit_style` (boolean, default true).
 The ordinary form save command, version checks and authoring permissions persist it.
 Public FormModel and Dart FormDefinition use the same default. Standalone forms and
