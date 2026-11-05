@@ -35,3 +35,28 @@ for (const [locale, preference] of [['cs','en'],['en','cs']]) {
         assert.equal(JSON.parse(browserStorage.getItem('flutter.locale')),preference);
     });
 }
+
+
+test('English public document works on a Czech-only tenant without enabling English in the app', async t => {
+    const previous = {document:Object.getOwnPropertyDescriptor(globalThis,'document'),navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),languages:AppConfig.supportedLanguages,locale:LocalizationService.currentLocale,translations:LocalizationService.translations,initialization:LocalizationService._initialization};
+    t.after(()=>{
+        for(const key of ['document','navigator']) {
+            if(previous[key]) Object.defineProperty(globalThis,key,previous[key]); else delete globalThis[key];
+        }
+        AppConfig.supportedLanguages=previous.languages;
+        LocalizationService.currentLocale=previous.locale;LocalizationService.translations=previous.translations;LocalizationService._initialization=previous.initialization;
+    });
+    Object.defineProperty(globalThis,'document',{configurable:true,value:{documentElement:{lang:'en'}}});
+    Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'cs-CZ'}});
+    AppConfig.supportedLanguages=['cs'];LocalizationService._initialization=null;
+    const fetched=[];
+    t.mock.method(globalThis,'fetch',async url=>{fetched.push(url);return Response.json({label:'English'});});
+    const preference=browserStorage.getItem('flutter.locale');
+    await LocalizationService.init({locale:'en',persist:false});
+    assert.deepEqual(fetched,['/assets/translations/en.json']);
+    assert.equal(LocalizationService.currentLocale,'en');
+    assert.equal(LocalizationService.tr('label'),'English');
+    assert.equal(browserStorage.getItem('flutter.locale'),preference);
+    await assert.rejects(LocalizationService.setLocale('en'),/Unsupported locale/);
+    await assert.rejects(LocalizationService.loadTranslations('xx',{persist:false}),/Unsupported locale/);
+});
