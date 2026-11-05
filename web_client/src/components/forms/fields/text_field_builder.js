@@ -61,28 +61,27 @@ export class TextFieldBuilder {
     }
 
     static _attachPhoneLogic(input, container, formModel) {
-            // Fallback default; organizations override via formModel.data.phone_prefixes (line 79).
-            if (!input.value && input.required) {
-                input.value = '+420';
-            }
+            const prefixes = Array.isArray(formModel?.data?.phone_prefixes) && formModel.data.phone_prefixes.length
+                ? formModel.data.phone_prefixes : ['+420', '+421'];
+            if (!input.value && input.required) input.value = prefixes[0];
             
             // Format +420 logic
-            const format = () => PhoneFormatter.formatInput(input);
+            const format = () => {
+                PhoneFormatter.formatInput(input);
+                const explicit = prefixes.find(prefix => input.value.replace(/\s/g, '').startsWith(prefix));
+                if (explicit) input.dataset.phonePrefix = explicit;
+                else if (input.value.startsWith('+')) delete input.dataset.phonePrefix;
+            };
             format(); 
 
             input.addEventListener('input', format);
             
-            input.pattern = "^\\+\\d{3} \\d{3} \\d{3} \\d{3}$";
+            input.pattern = String.raw`\+?(?:[\s\(\)\.\-]*[0-9]){8,15}[\s\(\)\.\-]*`;
             
             const badgesContainer = container.querySelector('.phone-badges-container');
             if (!badgesContainer) return;
 
-            // Default prefix chips; overridden by organization-level phone_prefixes config.
-            let prefixes = ['+420', '+421'];
-            if (formModel && formModel.data && formModel.data.phone_prefixes && Array.isArray(formModel.data.phone_prefixes) && formModel.data.phone_prefixes.length > 0) {
-                prefixes = formModel.data.phone_prefixes;
-            }
-            
+            if (!input.dataset.phonePrefix && prefixes.length === 1) input.dataset.phonePrefix = prefixes[0];
             const createChip = (label, prefix) => {
                 const chip = document.createElement('div');
                 chip.textContent = label;
@@ -103,6 +102,7 @@ export class TextFieldBuilder {
                 
                 chip.onmousedown = (e) => e.preventDefault();
                 chip.onclick = () => {
+                    input.dataset.phonePrefix = prefix;
                     let current = input.value;
                     let result = current;
                     

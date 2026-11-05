@@ -15,6 +15,7 @@ BEGIN
  VALUES(org,un,'Copy source','copy-source-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO oc;
  INSERT INTO public.forms(occasion,title,link,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds)
  VALUES(oc,'Limited registration','capacity-'||gen_random_uuid(),10,true,false,3600) RETURNING id INTO form_id;
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"gtm_container":"GTM-AB12","scripts":"<script>1</script>","enhanced_conversions":true}}'::jsonb WHERE id=form_id;
  INSERT INTO public.form_fields(form,type,title,"order") VALUES(form_id,'name','Name',0);
  INSERT INTO public.places(occasion,unit,title,is_hidden,coordinates,"order") VALUES(oc,un,'Private hall',true,'{"latLng":{"lat":50,"lng":14}}',7) RETURNING id INTO place_id;
  INSERT INTO public.role_info(occasion,title) VALUES(oc,'Eligible group') RETURNING id INTO role_id;
@@ -32,6 +33,8 @@ BEGIN
  SELECT x INTO source FROM jsonb_array_elements(public.get_occasion_setup_sources(un)) x WHERE (x#>>'{occasion,id}')::bigint=oc;
  PERFORM assert_eq((source#>>'{forms,0,participant_capacity}')::int,10,'Source preserves capacity');
  PERFORM assert_eq(source#>'{forms,0,waitlist_enabled}','true'::jsonb,'Source preserves waitlist');
+ PERFORM assert_false((source#>'{forms,0,data}') ? 'analytics','setup source omits measurement');
+ PERFORM assert_false(public.can_manage_form_measurement(oc),'setup actor is not an organization administrator');
  draft:=public.create_occasion_setup_draft(gen_random_uuid(),un);
  PERFORM assert_eq(jsonb_array_length(draft#>'{data,defaultConfiguration,forms}'),1,'App-supported wizard has canonical default form');
  -- Recover an older empty default snapshot without replacing the user's form.
@@ -47,11 +50,12 @@ BEGIN
  draft:=saved;
  draft:=public.save_occasion_setup_draft((draft->>'id')::uuid,(draft->>'revision')::bigint,
  jsonb_build_object('title','Configuration copy','link','config-copy-'||gen_random_uuid(),'sourceId',oc,
- 'start',now(),'end',now()+interval '1 day','formEnabled',true,'formDraft',(source->'forms'->0)-'link',
+ 'start',now(),'end',now()+interval '1 day','formEnabled',true,'formDraft',jsonb_set((source->'forms'->0)-'link','{data,analytics}','{"gtm_container":"GTM-AB12","scripts":"<script>1</script>","enhanced_conversions":true}'::jsonb),
  'sourceProgram',source->'program','copyProgram',true,'reviewConfirmed',true,'blueprintMode','Bez plánku'),5);
  response:=public.finalize_occasion_setup_draft((draft->>'id')::uuid,(draft->>'revision')::bigint,gen_random_uuid());
  target:=(response#>>'{data,occasionId}')::bigint;
  EXECUTE 'RESET ROLE';
+ PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.forms WHERE occasion=target AND data ? 'analytics'),'old or forged setup draft cannot copy measurement');
  PERFORM assert_eq((SELECT jsonb_build_array(participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds,is_open) FROM public.forms WHERE occasion=target),'[10,true,false,3600,false]'::jsonb,'Copied form keeps capacity and waitlist configuration closed');
  SELECT id,place INTO target_parent,target_place FROM public.events WHERE occasion=target AND title='Hidden parent';
  SELECT id INTO target_child FROM public.events WHERE occasion=target AND title='Child';

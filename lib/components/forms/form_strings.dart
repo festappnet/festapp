@@ -1,7 +1,19 @@
+import 'package:festapp_core/forms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get enhancedConversions => 'FeatureFormSettings.enhancedConversions'.tr();
+  static String get enhancedConversionsHelp => 'FeatureFormSettings.enhancedConversionsHelp'.tr();
+  static String get gtmContainer => 'FeatureFormSettings.gtmContainer'.tr();
+  static String get gtmHelp => 'FeatureFormSettings.gtmHelp'.tr();
+  static String get measurementTitle => 'FeatureFormSettings.measurementTitle'.tr();
+  static String get measurementScripts => 'FeatureFormSettings.measurementScripts'.tr();
+  static String get measurementScriptsHelp => 'FeatureFormSettings.measurementScriptsHelp'.tr();
+  static String get measurementScriptsTooLong =>
+      'FeatureFormSettings.measurementScriptsTooLong'
+          .tr(namedArgs: {'limit': '$formMeasurementScriptLimit'});
+  static String get gtmInvalid => 'FeatureFormSettings.gtmInvalid'.tr();
   static String appearanceLabel(String key) => 'OccasionSetup.ui.$key'.tr();
 
   static String emailSuffixWarning(String suffix, {bool informal = false}) =>

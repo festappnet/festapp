@@ -29,6 +29,7 @@ export const AuthorizationCapabilities = {
     navigationOccasionSettings: 'navigation.occasion_settings',
     formsCreate: 'forms.create',
     formsWrite: 'forms.write',
+    formsMeasurementWrite: 'forms.measurement.write',
     formsDelete: 'forms.delete',
     formsCatalogRead: 'forms.catalog.read',
     formsCopySource: 'forms.copy.source',

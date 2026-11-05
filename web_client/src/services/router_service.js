@@ -1,3 +1,4 @@
+import { publicFormAttributionSearch } from '../components/forms/form_datalayer.js';
 import { ACCOUNT_CONNECTIONS_PATH } from '../components/users/account_connections_links.js';
 import { isEmbed } from './embed_context.js';
 import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
@@ -383,7 +384,8 @@ export class RouterService {
              const hasSearch = window.location.search && (window.location.search.includes('?q=') || window.location.search.includes('&q='));
 
              if (!isEmbed() && !hasPreview && !hasSearch && !RouterService.hasPersonalOrderLink() && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
-                  window.history.replaceState(null, '', path);
+                  const attribution = publicFormAttributionSearch({pathname: path, search: query});
+                  window.history.replaceState(null, '', path + attribution);
                   RouterService._lastPath = path; // Sync tracker
              }
              if (fullUrl.includes('https://') && window.location.pathname.startsWith('/https:')) {

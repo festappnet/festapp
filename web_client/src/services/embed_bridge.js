@@ -1,3 +1,4 @@
+import { analyticsPayload } from '../components/forms/form_datalayer.js';
 import { isEmbed, applyEmbedContext } from './embed_context.js';
 import { EmbedTheme } from './embed_theme.js';
 
@@ -42,6 +43,11 @@ export class EmbedBridge {
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
+                this.dataLayer = data.dataLayer === true;
+                this.dataLayerUserData = this.dataLayer && data.dataLayerUserData === true;
+                const pending = this.pendingEvents || [];
+                this.pendingEvents = [];
+                if (this.dataLayer) for (const payload of pending) this.send('analytics', {payload: analyticsPayload(payload, {allowUserData: this.dataLayerUserData})});
                 this.styleOverride = typeof data.inheritStyle === 'boolean' ? data.inheritStyle : null;
                 this.syncStyle();
                 this.setViewport(data.viewportHeight, data.viewportOffset);
@@ -84,6 +90,15 @@ export class EmbedBridge {
     }
     send(type, values) {
         if (this.origin) this.win.parent.postMessage({ namespace, protocol: 1, instance: this.instance, type, ...values }, this.origin);
+    }
+    // The analytics owner and the host each independently whitelist payloads.
+    track(input) {
+        const payload = analyticsPayload(input, {allowUserData: this.dataLayerUserData === true});
+        if (!payload) return;
+        if (!this.origin) {
+            this.pendingEvents ??= [];
+            if (this.pendingEvents.length < 32) this.pendingEvents.push(payload);
+        } else if (this.dataLayer) this.send('analytics', {payload});
     }
     measure() {
         if (this.raf) return;

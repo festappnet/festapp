@@ -78,6 +78,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         _bankEnabled,
         _stripeConnectionId,
         _titleController.text,
+        _gtmController.text,
+        _scriptsController.text,
+        _enhancedConversions,
         _linkController.text,
         _deadlineDaysController.text,
         _deadlineInherited,
@@ -96,6 +99,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   FormEditorDraft? _form;
   String? _formLink;
 
+  final _gtmController = TextEditingController();
+  final _scriptsController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
   final TextEditingController _deadlineDaysController = TextEditingController();
@@ -109,6 +114,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String? _linkError;
   String? _savedLink;
   bool _isLoading = true;
+  bool get _canManageMeasurement => RightsService.hasCapability(
+      AuthorizationCapabilities.formsMeasurementWrite);
   bool get _canEdit => RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _hasChanges =>
       _canEdit && !_isLoading && _form != null && _snapshot.differs(_draft);
@@ -116,6 +123,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
   String _communicationTone = 'inherit';
+
+  bool _enhancedConversions = false;
 
   bool _bankEnabled = true,
       _stripeRecipientFailed = false,
@@ -139,6 +148,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _bankChanges.addListener(_bankConnectionChanged);
     for (final controller in [
       _titleController,
+      _gtmController,
+      _scriptsController,
       _linkController,
       _deadlineDaysController,
       _reminderDaysController,
@@ -166,6 +177,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _bankChanges.removeListener(_bankConnectionChanged);
     _bankSettingsLink.dispose();
     _titleController.dispose();
+    _gtmController.dispose();
+    _scriptsController.dispose();
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
     _deadlineDaysController.dispose();
@@ -242,6 +255,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         _loadStripeRecipient();
       }
 
+      final analytics = _form!.definition.data?['analytics'];
+      _gtmController.text = analytics is Map ? analytics['gtm_container'] as String? ?? '' : '';
+      _scriptsController.text = analytics is Map ? analytics['scripts'] as String? ?? '' : '';
+      _enhancedConversions = analytics is Map && analytics['enhanced_conversions'] == true;
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
       _linkController.text = _form!.definition.link ?? '';
@@ -378,6 +395,20 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       metadata.remove(FormMetadata.metaCommunicationTone);
     } else {
       metadata[FormMetadata.metaCommunicationTone] = _communicationTone;
+    }
+
+    if (_canManageMeasurement) {
+      final gtm = _gtmController.text.trim();
+      final scripts = _scriptsController.text;
+      if (gtm.isEmpty && scripts.isEmpty && !_enhancedConversions) {
+        metadata.remove('analytics');
+      } else {
+        metadata['analytics'] = {
+          if (gtm.isNotEmpty) 'gtm_container': gtm,
+          if (scripts.isNotEmpty) 'scripts': scripts,
+          if (_enhancedConversions) 'enhanced_conversions': true,
+        };
+      }
     }
 
     final days = int.tryParse(_deadlineDaysController.text);
@@ -1031,6 +1062,54 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    FormStrings.measurementTitle,
+                                    style: Theme.of(innerContext).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  TextFormField(
+                                    enabled: _canEdit && _canManageMeasurement,
+                                    controller: _gtmController,
+                                    maxLength: 36,
+                                    decoration: InputDecoration(
+                                      labelText: FormStrings.gtmContainer,
+                                      hintText: 'GTM-XXXX',
+                                      helperText: FormStrings.gtmHelp,
+                                      helperMaxLines: 5,
+                                      border: const OutlineInputBorder(),
+                                    ),
+                                    validator: (value) => value == null || value.trim().isEmpty ||
+                                            RegExp(r'^GTM-[A-Z0-9]{4,32}$').hasMatch(value.trim())
+                                        ? null
+                                        : FormStrings.gtmInvalid,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    enabled: _canEdit && _canManageMeasurement,
+                                    controller: _scriptsController,
+                                    minLines: 5,
+                                    maxLines: 10,
+                                    maxLength: formMeasurementScriptLimit,
+                                    decoration: InputDecoration(
+                                      labelText: FormStrings.measurementScripts,
+                                      helperText: FormStrings.measurementScriptsHelp,
+                                      helperMaxLines: 5,
+                                      counterText: '${_scriptsController.text.runes.length}/$formMeasurementScriptLimit',
+                                      border: const OutlineInputBorder(),
+                                    ),
+                                    validator: (value) => (value?.runes.length ?? 0) <= formMeasurementScriptLimit
+                                        ? null : FormStrings.measurementScriptsTooLong,
+                                  ),
+                                  SwitchListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(FormStrings.enhancedConversions),
+                                    subtitle: Text(FormStrings.enhancedConversionsHelp),
+                                    value: _enhancedConversions,
+                                    onChanged: _canEdit && _canManageMeasurement
+                                        ? (value) => setState(() => _enhancedConversions = value)
+                                        : null,
                                   ),
                                   const SizedBox(height: 24),
                                   const Divider(),

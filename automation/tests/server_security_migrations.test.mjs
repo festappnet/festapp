@@ -81,3 +81,15 @@ test('direct ACL declarations accept explicit function lists and reject a differ
  assert(!hasDirectRevoke(sql,'third'));
  assert(!hasDirectRevoke('REVOKE ALL ON TABLE public.first FROM PUBLIC; SELECT public.second(1);','second'));
 });
+
+test('form measurement predicate declares its scoped definer contract and exact client ACL',async()=>{
+ const {createHash}=await import('node:crypto');
+ const source='database/functions/user_permissions/form_measurement.sql';
+ const header=read(source).match(/CREATE OR REPLACE FUNCTION public\.can_manage_form_measurement\([\s\S]*?\bAS\s+\$\$/)[0];
+ const digest=createHash('sha256').update(header.replace(/\s+/g,' ').trim().toLowerCase()).digest('hex');
+ const contracts=JSON.parse(read('database/functions/security/definer_contracts.json'));
+ const manifest=JSON.parse(read('database/functions/security/server_security_acl_manifest.json'));
+ assert.deepEqual(contracts.declared[digest],{signature:'public.can_manage_form_measurement(bigint)',source});
+ assert.deepEqual(manifest.entrypoints['public.can_manage_form_measurement(bigint)'],{anon:false,authenticated:true,service_role:true});
+ assert.ok(manifest.reviewed_definer_sources.includes(source));
+});

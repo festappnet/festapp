@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Public forms expose the approved GA4 checkout funnel with final buyer prices, offer names, opt-in embed forwarding and administrator-controlled measurement. Enhanced conversions are off by default and require consent and privacy-policy decisions before activation.
+
 ## 2026_02 (0.19.24–0.19.29)
 
 - Self-registration: users sign up and get their own organization.

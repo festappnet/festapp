@@ -1,9 +1,17 @@
+import 'dart:convert';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/project_picker_widget.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'occasion_setup_strings.dart';
+
+Map<String, dynamic> copyOccasionSetupForm(Map source) {
+  final copy = Map<String, dynamic>.from(jsonDecode(jsonEncode(source)) as Map);
+  final data = copy['data'];
+  if (data is Map) data.remove('analytics');
+  return copy;
+}
 
 class OccasionSetupSourcePicker extends StatelessWidget {
   const OccasionSetupSourcePicker(

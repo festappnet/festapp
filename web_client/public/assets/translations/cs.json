@@ -377,6 +377,15 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "enhancedConversions": "Rozšířené konverze",
+    "enhancedConversionsHelp": "Předává kontaktní údaje do GTM pořadatele nebo hostiteli vloženého formuláře. Nezapínejte bez vyřešeného souhlasu a upravených zásad ochrany osobních údajů.",
+    "measurementTitle": "Měření",
+    "gtmContainer": "ID kontejneru Google Tag Manager",
+    "gtmHelp": "Kontejner se načte pouze na veřejném formuláři nepřihlášeným návštěvníkům. Nastavení může měnit administrátor organizace.",
+    "gtmInvalid": "Zadejte ID ve tvaru GTM-XXXX (velká písmena a číslice).",
+    "measurementScripts": "Vlastní měřicí skripty",
+    "measurementScriptsHelp": "Vložte kód s tagy <script>. Kód může číst údaje ve formuláři a měnit stránku. Vkládejte pouze důvěryhodné měření.",
+    "measurementScriptsTooLong": "Kód může obsahovat nejvýše {limit} znaků.",
     "invalidVariableSymbolPolicy": "Nastavte platnou strategii VS. U číselné řady zadejte celé počáteční číslo od 1 do 9999999999.",
     "repairVariableSymbolPolicy": "Opravit pokročilé nastavení VS",
     "labelShowBeforeStartMessage": "Zobrazit informace před zahájením",

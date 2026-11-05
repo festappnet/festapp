@@ -11,11 +11,13 @@ function browser(path = '/', overrides = {}) {
   const location = new URL('https://tenant.invalid' + path);
   location.assign = url => navigation.push(['assign', url]);
   location.replace = url => navigation.push(['replace', url]);
-  const window = { location, history: {
+  const emptyStorage={length:0,key:()=>null,getItem:()=>null};
+  const window = { location, localStorage:overrides.localStorage || emptyStorage, sessionStorage:overrides.sessionStorage || emptyStorage, history: {
     pushState: (...args) => history.push(['push', ...args]),
     replaceState: (...args) => history.push(['replace', ...args]),
   } };
   window.self = window.top = window;
+  if(overrides.saleOpening)window.__festappSaleOpeningLink = true;
   const navigator = {};
   const document = {
     currentScript: { dataset: { analyticsHost: location.hostname, analyticsToken: token } },
@@ -139,3 +141,12 @@ test('Pages owns public-only injection and suppresses automatic injection on eve
     assert.ok(!html.includes('data-cf-beacon'), 'shared document cannot contain an unconditional beacon');
   }
 });
+
+ test('a stored browser session prevents even the public beacon from loading',()=>{
+   assert.equal(browser('/form/public',{saleOpening:true}).added.length,0);
+   const session={length:1,key:()=> 'sb-project-auth-token',getItem:()=> 'present'};
+   assert.equal(browser('/form/public',{localStorage:session}).added.length,0);
+   assert.equal(browser('/form/public',{sessionStorage:session}).added.length,0);
+   const denied={get length(){throw new Error('blocked');}};
+   assert.equal(browser('/form/public',{localStorage:denied}).added.length,0);
+ });

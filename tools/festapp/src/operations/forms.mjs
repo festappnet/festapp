@@ -33,6 +33,8 @@ const settings=z.strictObject({
  design:reset(z.strictObject({embed_inherit_style:reset(z.boolean()),presale_header:reset(z.enum(['event_and_date','date','none'])),theme_mode:reset(z.enum(['system','light','dark'])),background_mode:reset(z.enum(['solid','gradient'])),is_card_design:reset(z.boolean()),primary_color:reset(z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)),
   secondary_color:reset(z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/)),font_family:reset(z.string().min(1).max(128).refine(v=>v.trim().length>0)),countdown_style:reset(z.string().min(1).max(128).refine(v=>v.trim().length>0))})),
  sale_opening_notifications:reset(z.strictObject({enabled:reset(z.boolean()),collection_paused:reset(z.boolean())})),
+ // Length and authorization stay server-owned: only organization administrators can change measurement.
+ analytics:reset(z.strictObject({gtm_container:reset(z.string().regex(/^GTM-[A-Z0-9]{4,32}$/)),scripts:reset(z.string()),enhanced_conversions:reset(z.boolean())})),
  schedule:reset(z.strictObject({start_time:reset(z.iso.datetime({offset:true})),end_time:reset(z.iso.datetime({offset:true})),
   enable_countdown:reset(z.boolean()),countdown_title:reset(z.string().max(65536))})),
 });

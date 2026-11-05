@@ -77,6 +77,19 @@ Map<String, dynamic> candidate() => {
     };
 
 void main() {
+  test('copied setup form strips all measurement settings without mutating source', () {
+    final source = <String, dynamic>{
+      'title': 'Letní koncert',
+      'data': {
+        'analytics': {'gtm_container': 'GTM-AB12', 'scripts': '<script>1</script>', 'enhanced_conversions': true},
+        'design': {'presale_header': 'none'},
+      },
+    };
+    final copy = copyOccasionSetupForm(source);
+    expect((copy['data'] as Map).containsKey('analytics'), isFalse);
+    expect((source['data'] as Map).containsKey('analytics'), isTrue);
+    expect((copy['data'] as Map)['design'], {'presale_header': 'none'});
+  });
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
   late TicketLayoutResources galleryResources;

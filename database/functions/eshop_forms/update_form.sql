@@ -12,6 +12,7 @@ DECLARE
     availability_at timestamptz;
     form_metadata jsonb;
     previous_form_metadata jsonb;
+    analytics_write_requested boolean;
     availability_new boolean;
     deleted_fields BIGINT[];
     deleted_products BIGINT[];
@@ -125,6 +126,11 @@ BEGIN
           RAISE invalid_parameter_value USING MESSAGE='choose settings patch or released metadata, not both'; END IF;
         SELECT data INTO form_metadata FROM public.forms WHERE id=form_id;
         previous_form_metadata:=form_metadata;
+        -- Preserve explicit reset intent before legacy presale ingress turns a
+        -- settings patch into a full metadata candidate with removed keys.
+        analytics_write_requested:=CASE WHEN input_data ? 'settings' THEN
+          coalesce((input_data->'settings') ? 'analytics',false) ELSE
+          public.normalize_form_metadata_internal(input_data->'data') ? 'analytics' END;
         input_data:=public.guard_form_presale_write_internal(form_metadata,input_data);
         IF input_data ? 'settings' THEN
           form_metadata:=public.apply_form_settings_internal(form_metadata,input_data->'settings');
@@ -144,9 +150,20 @@ BEGIN
               coalesce(nullif(form_metadata->'design','null'::jsonb),'{}'::jsonb) ||
               jsonb_build_object('embed_inherit_style',public.normalize_form_metadata_internal(previous_form_metadata)#>'{design,embed_inherit_style}'));
           END IF;
+          IF NOT analytics_write_requested AND NOT form_metadata ? 'analytics'
+            AND public.normalize_form_metadata_internal(previous_form_metadata) ? 'analytics' THEN
+            form_metadata:=form_metadata||jsonb_build_object('analytics',public.normalize_form_metadata_internal(previous_form_metadata)->'analytics');
+          END IF;
           form_metadata:=public.apply_form_settings_internal(form_metadata,
             public.form_settings_from_metadata_internal(form_metadata));
         END IF;
+
+        -- Both tags and arbitrary script code have the same authority. Bind the
+        -- permission to the stored form/occasion and compare after normalization,
+        -- so editor saves preserving these settings keep working.
+        IF form_metadata->'analytics' IS DISTINCT FROM public.normalize_form_metadata_internal(previous_form_metadata)->'analytics'
+          AND NOT public.can_manage_form_measurement(occasion_id) THEN
+          RAISE insufficient_privilege USING MESSAGE='organization administrator required to change form measurement'; END IF;
 
         -- Explicit removals are part of this save transaction, never inferred from
         -- omitted fields in partial/older-client payloads. Exceptions roll back the save.

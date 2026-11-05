@@ -50,9 +50,10 @@ Povolené typy a hodnoty:
 | Typ | Směr | Data |
 | --- | --- | --- |
 | ready | child -> parent | Žádná osobní ani obchodní data |
-| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku) |
+| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné dataLayer: true a dataLayerUserData: true |
 | viewport | parent -> child | Stejné ID a výška 240-4000 CSS px |
 | theme | parent -> child | Stejné ID a volitelná prezentace theme |
+| analytics | child -> parent | Whitelistovaný objekt payload, viz Datová vrstva hostitele |
 | resize | child -> parent | Konečná výška 240-20000 CSS px |
 | scroll-request | child -> parent | Konečné y 0-20000, volitelné block start/end/nearest a height 0-20000; host cíl omezuje na iframe |
 | scroll-save/scroll-restore/scroll-discard | child -> parent | Neosobní ID snapshotu vázané na konkrétní iframe; discard jej zruší bez posunu |
@@ -215,3 +216,125 @@ Servisní vydání se tak projeví při dalším načtení stránky bez reinstal
 pluginu. Již otevřený formulář se během vyplňování násilně neobnovuje.
 Změny WordPress nastavení, editoru nebo PHP vyžadují vydání pluginu.
 Protokol 1 musí zachovat kompatibilitu se staršími instalacemi.
+
+## Datová vrstva hostitele
+
+`init.dataLayer: true` se posílá pouze při atributu `data-festapp-datalayer`.
+Bez něj host dataLayer nevytváří a nic do něj nevkládá. Atribut nastavte před
+načtením iframe; hodnota `"false"` jej nevypne, k vypnutí jej odstraňte.
+Před handshake child drží nejvýše 32 objektů v paměti; vypnutý přenos je zahodí.
+Pozdější zapnutí nepřehrává historii.
+
+```html
+<iframe
+  data-festapp-embed
+  data-festapp-datalayer
+  src="https://vstupenky.online/form/letni-koncert?embed=1"
+  title="Vstupenky na letní koncert"
+  width="100%" height="800" style="border:0"
+></iframe>
+<script src="https://vstupenky.online/embed.js" defer></script>
+```
+
+Zpráva protokolu 1 obsahuje nový whitelistovaný objekt `payload`:
+
+```js
+{
+  namespace: 'festapp-embed', protocol: 1, instance: 'f_<instance>',
+  type: 'analytics',
+  payload: {
+    event: 'add_to_cart',
+    ecommerce: {
+      currency: 'CZK', value: 900,
+      items: [{ item_id: 'product_11', item_name: 'Vstupenka na letní koncert', price: 450, quantity: 2 }]
+    }
+  }
+}
+```
+
+Názvy jsou stejné jako na samostatném formuláři a nemají prefix `festapp_`:
+`page_view`, `view_item`, `add_to_cart`, `remove_from_cart`, `begin_checkout`,
+`add_payment_info`, `purchase`, `generate_lead`, `form_submit_error`. Přijímá se
+také základní vrstva bez eventu s `page_type`, `language`, pevným `user_type: 'b2c'`.
+Schválený funnel je `view_item` → `add_to_cart` → `begin_checkout` →
+`add_payment_info` → `purchase`.
+
+Host zachovává kontroly namespace, protocol, source, origin a instance.
+Payload znovu sestavuje, nekopíruje celý příchozí objekt. Ecommerce whitelist
+obsahuje jen `currency`, přepočtenou `value`, `items` s `item_id`, `item_name`,
+`price`, `quantity`, a u platby `payment_type`. Purchase vyžaduje veřejný
+`transaction_id` ve formátu `order_symbol`. Ceny jsou konečné částky kupujícího
+včetně případné DPH, `value = Σ(price × quantity)`. Rozpis DPH backend nemá,
+`tax` se neposílá. Neplatný povinný údaj odmítne celý payload; ostatní klíče
+se ignorují. Kompletní komentované pushe jsou v [form-datalayer.md](form-datalayer.md).
+
+### Volitelné osobní údaje pro rozšířené konverze
+
+Protokol může nově obsahovat **osobní údaje** pouze při splnění všech podmínek:
+
+1. Ve formuláři je zapnutý přepínač Rozšířené konverze, výchozí stav je vypnuto.
+2. Iframe má `data-festapp-datalayer`.
+3. Iframe má navíc samostatný `data-festapp-datalayer-user-data`.
+
+Bez vyřešeného consentu a upravených zásad ochrany osobních údajů tuto možnost
+nezapínejte. Zapnutí předává údaje hostiteli a jeho GTM. Dnešní
+`web/privacy/index.html` tvrdí, že obsah formulářů do měření neposíláme;
+před spuštěním je třeba text změnit. Tento PR jej nemění a CMP neimplementuje.
+Atributy ani přepínač nejsou souhlas návštěvníka.
+
+```html
+<!-- Pouze po vyřešení consentu, zásad a zapnutí přepínače formuláře. -->
+<iframe data-festapp-embed data-festapp-datalayer data-festapp-datalayer-user-data
+  src="https://vstupenky.online/form/letni-koncert?embed=1"
+  title="Vstupenky na letní koncert" width="100%" height="800" style="border:0"></iframe>
+<script src="https://vstupenky.online/embed.js" defer></script>
+```
+
+Host pro tyto atributy pošle `init.dataLayerUserData: true`; změna atributů
+vyvolá nové init. Child do jeho potvrzení žádné kontakty ani nezařadí do fronty.
+Odebrání atributu zastaví jejich vkládání do hostova dataLayer okamžitě; child
+se dozví nový stav následující zprávou. Odstranění atributu dříve předaná data
+ani historické položky fronty nemaže.
+
+`user_data` je vedle `ecommerce`, jen u `purchase` a `generate_lead`. Samostatný
+whitelist a normalizace povolují `email`, `phone_number`,
+`address.first_name`, `last_name`, `postal_code`, `country`. Host znovu použije stejný validátor e-mailu, ořízne mezery i neviditelné znaky
+na okrajích a převede jej na malá písmena. Telefon znovu ověří na E.164
+s 8 až 15 číslicemi bez omezení země,
+odstraní známé tituly a převede jména na malá písmena. Země je dvoupísmenný kód.
+Žádné další adresní pole, poznámky, odpovědi, údaje o sedadlech ani tokeny se
+nepřenášejí. Bez druhého atributu host `user_data` odstraní i z jinak platné zprávy.
+Prázdné hodnoty se vynechají a kontakty se nehashují.
+
+```js
+window.dataLayer.push({ ecommerce: null, user_data: null });
+window.dataLayer.push({
+  event: 'generate_lead', currency: 'CZK', value: 0, lead_source: 'waitlist',
+  user_data: { email: 'jana.novakova@example.com', phone_number: '+421905123456' }
+});
+window.dataLayer.push({ user_data: null }); // aktuální model nepředá kontakty dalším tagům
+```
+
+### Načítání, purchase a přechod ze starého kontraktu
+
+Iframe nevytváří vlastní dataLayer a nikdy nenačítá GTM ani vlastní skripty,
+i kdyby byly uložené v nastavení formuláře. Hostitel si GTM zajišťuje sám.
+Prezentace `price` pro cenový widget zůstává samostatným kanálem.
+
+Purchase označuje přijetí objednávky, nikoli potvrzení zaplacení převodem.
+Opakování brání první serverová odpověď mimo uložený replay receipt a příznak
+podle veřejného čísla v úložišti formuláře. Nedostupné úložiště, zavření stránky
+nebo ztracená první odpověď mohou konverzi vynechat. Nejde o účetní evidenci.
+
+Původní `festapp_form_view`, `festapp_form_start`, `festapp_form_review`,
+`festapp_form_submit_success`, `festapp_form_submit_error` se neposílají.
+Starší host očekávající `event` místo `payload` nové zprávy ignoruje; aktuální
+host ignoruje starý iframe posílající jen `event`. Při přechodu obnovte
+`embed.js` a upravte GTM triggery. Resize, scroll a další zprávy protokolu 1
+se nemění. Cross-domain linker ani sdílení consentu se nezapínají automaticky.
+Capability tokeny nikdy nepoužívejte jako analytický identifikátor.
+
+Přímý veřejný `/form/<slug>` používá tentýž kontrakt a může načíst administrátorem
+uložené GTM a skripty. Na sdíleném originu však zůstává riziko přístupu k session,
+formuláři a platebním capability. Doporučení před produkční aktivací a varianty
+rozhodnutí autora jsou v [bezpečnostní části](form-datalayer.md#administrace-načítání-a-bezpečnost).

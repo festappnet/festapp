@@ -231,6 +231,15 @@
     "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
   },
   "FeatureFormSettings": {
+    "enhancedConversions": "Rozšírené konverzie",
+    "enhancedConversionsHelp": "Odovzdáva kontaktné údaje do GTM organizátora alebo hostiteľovi vloženého formulára. Nezapínajte bez vyriešeného súhlasu a upravených zásad ochrany osobných údajov.",
+    "measurementTitle": "Meranie",
+    "gtmContainer": "ID kontajnera Google Tag Manager",
+    "gtmHelp": "Kontajner sa načíta iba na verejnom formulári neprihláseným návštevníkom. Nastavenie môže meniť administrátor organizácie.",
+    "gtmInvalid": "Zadajte ID v tvare GTM-XXXX (veľké písmená a číslice).",
+    "measurementScripts": "Vlastné meracie skripty",
+    "measurementScriptsHelp": "Vložte kód s tagmi <script>. Kód môže čítať údaje vo formulári a meniť stránku. Vkladajte iba dôveryhodné meranie.",
+    "measurementScriptsTooLong": "Kód môže obsahovať najviac {limit} znakov.",
     "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
     "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
     "labelBeforeStartMessage": "Informácie pred začiatkom",

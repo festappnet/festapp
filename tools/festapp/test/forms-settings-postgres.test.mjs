@@ -204,3 +204,14 @@ test('released full-metadata saves preserve an omitted embed preference and hono
   assert.equal(result.data.authoring.form.data.design?.embed_inherit_style,expected);
  }
 });
+
+test('measurement settings save through MCP for organization administrators and are denied otherwise',options,async t=>{
+ const{db,f}=await setup(t);const made=await create(db,f);const settings={analytics:{gtm_container:'GTM-AB12',enhanced_conversions:true}};
+ await db.query('RESET ROLE');await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,true)',[f.org,f.actor]);
+ await db.query('SET LOCAL ROLE authenticated');const saved=await save(db,f,formPatch(made.authoring,{settings}));assert.equal(saved.code,200,JSON.stringify(saved));
+ assert.deepEqual(saved.data.authoring.form.data.analytics,settings.analytics);await db.query('RESET ROLE');
+ await db.query('update organization_users set is_admin=false where organization=$1 and "user"=$2',[f.org,f.actor]);
+ await db.query('SET LOCAL ROLE authenticated');await db.query('SAVEPOINT denied_measurement');
+ await assert.rejects(save(db,f,formPatch(saved.data.authoring,{settings:{analytics:{gtm_container:'GTM-CD34'}}})),/organization administrator required/);
+ await db.query('ROLLBACK TO SAVEPOINT denied_measurement');await db.query('RESET ROLE');
+});

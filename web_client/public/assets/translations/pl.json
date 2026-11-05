@@ -231,6 +231,15 @@
     "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
   },
   "FeatureFormSettings": {
+    "enhancedConversions": "Konwersje rozszerzone",
+    "enhancedConversionsHelp": "Przekazuje dane kontaktowe do GTM organizatora lub gospodarza osadzonego formularza. Nie włączaj bez ustalenia zgody i aktualizacji polityki prywatności.",
+    "measurementTitle": "Pomiar",
+    "gtmContainer": "Identyfikator kontenera Google Tag Manager",
+    "gtmHelp": "Kontener jest ładowany tylko w publicznym formularzu dla niezalogowanych odwiedzających. Ustawienie może zmienić tylko administrator organizacji.",
+    "gtmInvalid": "Wpisz identyfikator w formacie GTM-XXXX (wielkie litery i cyfry).",
+    "measurementScripts": "Własne skrypty pomiarowe",
+    "measurementScriptsHelp": "Wklej kod ze znacznikami <script>. Kod może odczytywać dane formularza i zmieniać stronę. Dodawaj tylko zaufany kod pomiarowy.",
+    "measurementScriptsTooLong": "Kod może zawierać maksymalnie {limit} znaków.",
     "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
     "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
     "labelBeforeStartMessage": "Informacje przed rozpoczęciem zapisów",

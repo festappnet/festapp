@@ -1,6 +1,8 @@
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
+import { FormDataLayer, publicFormLocation, loadFormIntegrations } from './form_datalayer.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
+import { SupabaseService } from '../../services/supabase_service.js';
 import { OrganizationIdentityFooter } from './organization_identity_footer.js';
 import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, stopOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistLocation, waitlistRegistrationPayload } from './waitlist_commands.js';
@@ -57,6 +59,8 @@ export class FormPage extends Component {
     }
 
     clear() {
+        this.analytics?.dispose();
+        this.analytics = null;
         ThemeService.clearFormTheme();
         this.embedBridge?.destroy();
         this.embedBridge = null;
@@ -68,6 +72,7 @@ export class FormPage extends Component {
     }
 
     cleanup({ preserveEditButton = false } = {}) {
+        this.analytics?.cancelPending();
         CountdownWidget.stop();
         this.identityFooter?.clear();
         if (this.host) {
@@ -126,6 +131,9 @@ export class FormPage extends Component {
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
+        this.analytics?.dispose();
+        this.analytics = null;
+        this.analyticsEntryAllowed = publicFormLocation(window.location, {entry: true});
         this.currentLink = link;
         this.embedBridge?.setInheritStyle(null);
         this.saleOpeningScope ||= consumeSaleOpeningLocation(window.location, window.history);
@@ -575,10 +583,21 @@ export class FormPage extends Component {
                     // session.removeTicket() etc. No need to re-scrape.
                 } else {
                     session.handleInput(e, form);
+                    this.analytics?.observe(session);
                 }
             }
         });
 
+        if (!showPreview && !this.analytics) {
+            this.analytics = new FormDataLayer({model: formModel, bridge: this.embedBridge, entryAllowed: this.analyticsEntryAllowed});
+            this.analytics.view();
+            if (!formModel.demoSimulation && !formModel.offerBundle) loadFormIntegrations({settings: formModel.data?.analytics,
+                auth: SupabaseService._client?.auth, entryAllowed: this.analyticsEntryAllowed});
+        }
+        this.analytics?.observe(session);
+        session.addEventListener('state-changed', () => {
+            if (this.currentSession === session) this.analytics?.observe(session);
+        });
         if (formModel.registrationMode !== 'waitlist') new CurrencySelectorWidget(session, this.host);
         renderWaitlistControls(this, formModel);
         if (this.waitlistScope) this.attachOverview();
@@ -804,6 +823,7 @@ export class FormPage extends Component {
 
                  OrderPreview.show(form, formModel, priceData, (overlay, paymentType, paymentMethod, paymentQuote) => {
                      // On Confirm
+                     this.analytics?.payment(this.currentSession?.payload, paymentMethod, this.currentSession);
                      this._pendingPaymentType = paymentType || null;
                      this._pendingPaymentMethod = paymentMethod;
                      this._pendingPaymentQuote = paymentQuote;
@@ -811,6 +831,7 @@ export class FormPage extends Component {
                  }, () => {
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
                  }, precalculatedPayload);
+                 this.analytics?.review(precalculatedPayload, this.currentSession);
                  const previewContent = document.querySelector('#order-preview-overlay .order-preview-content');
                  if (previewContent && this.identityFooter) previewContent.append(this.identityFooter.host);
 
@@ -881,6 +902,7 @@ export class FormPage extends Component {
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
+        const analyticsContact = this.analytics?.contact?.(payload, form);
         const submittedSession = this.currentSession;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
@@ -900,7 +922,15 @@ export class FormPage extends Component {
             }).then(data => ({ success: true, data }))
             : FormNetwork.submitOrder(payload);
         });
+        let outcomeReported = false;
+        const reportOutcome = (success, data) => {
+            if (outcomeReported || formModel.demoSimulation) return;
+            outcomeReported = true;
+            if (success) this.analytics?.confirmed(data, formModel.registrationMode === 'waitlist', analyticsContact);
+            else this.analytics?.emit({event: 'form_submit_error'});
+        };
         request.then(async result => {
+             reportOutcome(result.success === true, result.data);
              // history.back() is asynchronous. Rendering the result before the
              // preview popstate arrives lets that stale event close the result.
              await previewHistoryClosed;
@@ -950,6 +980,7 @@ export class FormPage extends Component {
              this.showFullScreenResult(result.success, result.data, formModel);
 
         }).catch(async e => {
+             reportOutcome(false);
              await previewHistoryClosed;
 
              // Preserve the stable error UI without logging capability-bearing transport errors.

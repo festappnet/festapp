@@ -2828,6 +2828,11 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.can_manage_form_measurement(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -2849,7 +2854,8 @@
     "database/functions/organization_verification/notifications.sql",
     "database/functions/organization_verification/review_commands.sql",
     "database/functions/organization_verification/public_identity.sql",
-    "database/functions/organization_verification/profile_commands.sql"
+    "database/functions/organization_verification/profile_commands.sql",
+    "database/functions/user_permissions/form_measurement.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

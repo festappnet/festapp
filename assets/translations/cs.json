@@ -431,6 +431,15 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "enhancedConversions": "Rozšířené konverze",
+    "enhancedConversionsHelp": "Předává kontaktní údaje do GTM pořadatele nebo hostiteli vloženého formuláře. Nezapínejte bez vyřešeného souhlasu a upravených zásad ochrany osobních údajů.",
+    "measurementTitle": "Měření",
+    "gtmContainer": "ID kontejneru Google Tag Manager",
+    "gtmHelp": "Kontejner se načte pouze na veřejném formuláři nepřihlášeným návštěvníkům. Nastavení může měnit administrátor organizace.",
+    "gtmInvalid": "Zadejte ID ve tvaru GTM-XXXX (velká písmena a číslice).",
+    "measurementScripts": "Vlastní měřicí skripty",
+    "measurementScriptsHelp": "Vložte kód s tagy <script>. Kód může číst údaje ve formuláři a měnit stránku. Vkládejte pouze důvěryhodné měření.",
+    "measurementScriptsTooLong": "Kód může obsahovat nejvýše {limit} znaků.",
     "formAppearance": "Vzhled formuláře",
     "formAppearanceHint": "Zvolte vzhled formuláře pro návštěvníky. Volba Podle systému přebírá vzhled aplikace, a pokud není zvolený, nastavení zařízení.",
     "appearanceSystem": "Podle systému",

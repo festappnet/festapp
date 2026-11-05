@@ -27,6 +27,12 @@ BEGIN
   'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',p)))));
  result:=public.create_ticket_order_client_sync_v1(payload,command,client);
  PERFORM assert_eq(result#>>'{data,code}','200','canonical card create succeeds: '||result::text);
+ PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','fresh confirmed order alone receives analytics');
+ PERFORM assert_eq(result#>>'{data,analytics,ecommerce,transaction_id}',result#>>'{data,order,order_symbol}','analytics uses public order number');
+ PERFORM assert_eq(result#>>'{data,analytics,ecommerce,payment_type}','card','analytics describes payment method, not paid state');
+ PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1)),'analytics exposes the public offer name and final buyer price');
+ PERFORM assert_eq(result#>>'{data,analytics,ecommerce,value}','123.45','analytics value is the final charged line total');
+ PERFORM assert_true(NOT (result#>'{data,analytics,ecommerce}') ? 'tax','VAT is not invented without a backend breakdown');
  oid:=(result#>>'{data,order,id}')::bigint;
  SELECT payment_info INTO pi FROM eshop.orders WHERE id=oid;
  SELECT * INTO STRICT attempt FROM eshop.stripe_checkout_attempts WHERE order_id=oid;
@@ -45,6 +51,7 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,payment,method}','stripe','safe payment projection accompanies order');
  replay:=public.create_ticket_order_client_sync_v1(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(repeat('d',64))),command,client);
  PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'same command retains original order and source');
+ PERFORM assert_true(NOT (replay->'data') ? 'analytics','durable receipt replay cannot emit purchase again');
  PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_checkout_attempts WHERE order_id=oid),1::bigint,'replay cannot create another attempt');
 
  PERFORM public.attach_stripe_handoff_internal(oid,command,encode(extensions.digest(repeat('e',64),'sha256'),'hex'),false);

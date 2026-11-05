@@ -2778,6 +2778,10 @@
     "14b25c7deb8775357296859bbcd97c21638b450fc259123e7815bac1d3834dad": {
       "signature": "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)",
       "source": "database/functions/blueprint/seat_orders.sql"
+    },
+    "37883abdbc12591db06ea0a2ab73e1514e6c1586b3b01220779accbb7a587ada": {
+      "signature": "public.can_manage_form_measurement(bigint)",
+      "source": "database/functions/user_permissions/form_measurement.sql"
     }
   }
 }

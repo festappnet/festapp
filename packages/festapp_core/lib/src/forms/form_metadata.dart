@@ -51,6 +51,7 @@ abstract final class FormMetadata {
     'variable_symbol': ['type', 'starting_number'],
     'payment_message': ['type'],
     'payments': ['bankEnabled', 'stripeConnectionId'],
+    'analytics': ['gtm_container', 'scripts', 'enhanced_conversions'],
     'design': [
       'embed_inherit_style',
       'is_card_design',

@@ -400,6 +400,15 @@
     "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
   },
   "FeatureFormSettings": {
+    "enhancedConversions": "Erweiterte Conversions",
+    "enhancedConversionsHelp": "Übermittelt Kontaktdaten an den GTM des Veranstalters oder den Host des eingebetteten Formulars. Erst aktivieren, wenn Einwilligung und Datenschutzhinweise geklärt sind.",
+    "measurementTitle": "Messung",
+    "gtmContainer": "Google Tag Manager Container-ID",
+    "gtmHelp": "Der Container wird nur im öffentlichen Formular für abgemeldete Besucher geladen. Nur ein Organisationsadministrator kann diese Einstellung ändern.",
+    "gtmInvalid": "Geben Sie eine ID wie GTM-XXXX ein (Großbuchstaben und Ziffern).",
+    "measurementScripts": "Eigene Messskripte",
+    "measurementScriptsHelp": "Fügen Sie Code mit <script>-Tags ein. Der Code kann Formulareingaben lesen und die Seite ändern. Verwenden Sie nur vertrauenswürdigen Messcode.",
+    "measurementScriptsTooLong": "Der Code darf höchstens {limit} Zeichen enthalten.",
     "formAppearance": "Formulardarstellung",
     "formAppearanceHint": "Wählen Sie die Darstellung für Besucher. System übernimmt ihre Darstellungseinstellung in der App, andernfalls die des Geräts.",
     "appearanceSystem": "System",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "a684bc2f62b542825ae5605e4d274cc40870c81524c757f841d82a095fa36203",
+  "sourceDigest": "e85db38b07f4079f9905f7f42c6383ec8452b16e4ba021f3faad22327818b509",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -6057,6 +6057,42 @@
                             ]
                           },
                           "collection_paused": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "analytics": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "gtm_container": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "pattern": "^GTM-[A-Z0-9]{4,32}$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "scripts": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "enhanced_conversions": {
                             "type": [
                               "boolean",
                               "null"

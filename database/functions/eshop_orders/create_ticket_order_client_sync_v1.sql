@@ -57,12 +57,19 @@ BEGIN
   PERFORM public.enqueue_ticket_order_confirmation_v1(
     p_command_id,v_occasion,v_result,p_order->>'lang');
   IF p_context IS NOT NULL THEN v_result:=v_result||jsonb_build_object('adminQuote',p_context->'quote','paymentPreparationPolicy','leased_keep_pending'); END IF;
-  RETURN public.complete_profile_inventory_membership_mutation_v1(
+  v_result:=public.complete_profile_inventory_membership_mutation_v1(
     p_command_id,v_occasion,'inventory.order.create',jsonb_build_array(jsonb_build_object(
       'entityType','order','entityId',v_result#>>'{order,id}','operation','insert',
       'safeLabel','Ticket order','changedFields',jsonb_build_array(
         'tickets','products','allocations','membership'))),v_before_users,v_result,
     v_actor_kind);
+  -- The canonical receipt above contains no analytics. A replay (including a
+  -- retry after a lost response) cannot issue this first-response projection.
+  IF v_actor IS NULL AND p_context IS NULL THEN
+    v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(
+      public.form_purchase_datalayer_internal((v_result#>>'{data,order,id}')::bigint),'null'::jsonb));
+  END IF;
+  RETURN v_result;
 END; $$;
 REVOKE ALL ON FUNCTION public.create_ticket_order_command_internal(jsonb,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 

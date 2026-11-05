@@ -3,6 +3,110 @@
     if (window.__festappEmbedV1) return;
     window.__festappEmbedV1 = true;
     const namespace = 'festapp-embed';
+    function isValidEmail(value) {
+        if (typeof value !== 'string' || value.length > 254 || /\s/.test(value)) return false;
+        const parts = value.split('@');
+        if (parts.length !== 2) return false;
+        const [local, host] = parts;
+        const domain = host.split('.');
+        return local.length > 0 && local.length <= 64 &&
+            /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local) &&
+            !local.startsWith('.') && !local.endsWith('.') && !local.includes('..') &&
+            domain.length >= 2 && domain.every(label =>
+                /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(label)) &&
+            !/^[0-9]+$/.test(domain.at(-1));
+    }
+
+    function normalizeE164Phone(value, {defaultPrefix = null} = {}) {
+        if (typeof value !== 'string') return null;
+        const trimmed = value.replace(/^[\s\u200B-\u200D\u2060\u180E]+|[\s\u200B-\u200D\u2060\u180E]+$/gu, '');
+        if (!trimmed || trimmed.length > 100 || !/^[+\d\s().-]+$/.test(trimmed) || trimmed.includes('(0)')) return null;
+        let phone = trimmed.replace(/[\s().-]/g, '').replace(/^00/, '+');
+        if (!phone.startsWith('+')) {
+            if (/^\d{9}$/.test(phone) && ['+420', '+421'].includes(defaultPrefix)) phone = defaultPrefix + phone;
+            else if (/^(420|421)\d{9}$/.test(phone)) phone = '+' + phone;
+            else if (/^\+[1-9]\d{0,2}$/.test(defaultPrefix || '')) {
+                phone = phone.startsWith(defaultPrefix.slice(1)) && phone.length >= defaultPrefix.length + 6
+                    ? '+' + phone : defaultPrefix + phone;
+            }
+            else return null;
+        }
+        return /^\+[1-9]\d{7,14}$/.test(phone) ? phone : null;
+    }
+
+    const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase']);
+    const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
+    const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
+    const orderSymbol = value => typeof value === 'string' && /^([1-9][ACEFGHIJKLMNPQRUVWXY]){5}$/.test(value);
+    const pageTypes = ['product', 'checkout', 'confirmation'];
+
+    const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000-\u001f]/.test(value) ? value.trim().slice(0, limit) : '';
+    const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
+
+    function normalizeUserData(input, {phonePrefix = null} = {}) {
+        if (!input || typeof input !== 'object') return null;
+        const result = {};
+        const email = typeof input.email === 'string' ? input.email.replace(/^[\s\u200B-\u200D\u2060\u180E]+|[\s\u200B-\u200D\u2060\u180E]+$/gu, '').toLowerCase() : '';
+        if (isValidEmail(email)) result.email = email;
+        const phone = normalizeE164Phone(input.phone_number, {defaultPrefix: phonePrefix});
+        if (phone) result.phone_number = phone;
+        const address = {};
+        for (const key of ['first_name', 'last_name']) {
+            const name = textValue(input.address?.[key], 128).normalize('NFC').toLowerCase()
+                .replace(/^(?:(?:prof|doc|ing|arch|mgr|bc|mudr|judr|rndr|phdr|pharmdr|mvdr|thdr|paeddr|dr|mr|mrs|ms)\.?\s+)+/u, '')
+                .replace(/(?:[,\s]+(?:ph\.?d\.?|csc\.?|dis\.?))+$/u, '').trim().replace(/\s+/g, ' ');
+            if (name) address[key] = name;
+        }
+        const postal = textValue(input.address?.postal_code, 24);
+        if (postal && /^[\p{L}\p{N} -]+$/u.test(postal)) address.postal_code = postal;
+        const country = textValue(input.address?.country, 256).toUpperCase();
+        if (/^[A-Z]{2}$/.test(country)) address.country = country;
+        if (Object.keys(address).length) result.address = address;
+        return Object.keys(result).length ? result : null;
+    }
+
+    // Rebuild at both transport boundaries. Never spread form, order or message data.
+    function analyticsPayload(input, {allowUserData = false} = {}) {
+        if (!input || typeof input !== 'object') return null;
+        const withUserData = payload => {
+            const userData = allowUserData ? normalizeUserData(input.user_data) : null;
+            if (userData) payload.user_data = userData;
+            return payload;
+        };
+        if (!input.event) {
+            if (!pageTypes.includes(input.page_type)) return null;
+            const result = {page_type: input.page_type, user_type: 'b2c'};
+            if (typeof input.language === 'string' && /^[a-z]{2}$/.test(input.language)) result.language = input.language;
+            return result;
+        }
+        if (input.event === 'page_view' || input.event === 'form_submit_error') return {event: input.event};
+        if (input.event === 'generate_lead') {
+            if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0) return null;
+            return withUserData({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source});
+        }
+        const source = input.ecommerce;
+        if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) ||
+            !Array.isArray(source.items) || !source.items.length || source.items.length > 200) return null;
+        const items = [];
+        for (const item of source.items) {
+            const price = money(item?.price);
+            const name = textValue(item?.item_name);
+            if (!item || !productId(item.item_id) || !name || price === null || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 9999) return null;
+            items.push({item_id: item.item_id, item_name: name, price, quantity: item.quantity});
+        }
+        // Integer cents keep values such as 0.10 × 3 stable across both boundaries.
+        const ecommerce = {currency: source.currency, items, value: items.reduce((sum, item) => sum + Math.round(item.price * 100) * item.quantity, 0) / 100};
+        if (input.event === 'add_payment_info' || input.event === 'purchase') {
+            if (!['bank_transfer', 'card', 'free'].includes(source.payment_type)) return null;
+            ecommerce.payment_type = source.payment_type;
+        }
+        if (input.event === 'purchase') {
+            if (!orderSymbol(source.transaction_id)) return null;
+            ecommerce.transaction_id = source.transaction_id;
+        }
+        const result = {event: input.event, ecommerce};
+        return input.event === 'purchase' ? withUserData(result) : result;
+    }
     const frames = new Map();
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
     // The saved form owns appearance; the host only supplies presentation tokens.
@@ -89,6 +193,8 @@
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
+            dataLayer: frame.hasAttribute('data-festapp-datalayer'),
+            dataLayerUserData: frame.hasAttribute('data-festapp-datalayer') && frame.hasAttribute('data-festapp-datalayer-user-data'),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
         // An explicit choice belongs to this iframe; absent markup uses the
         // saved fallback for already-installed CMS integrations.
@@ -174,6 +280,17 @@
             if (new URL(frame.src, document.baseURI).origin !== record.origin) return;
             if (data.type === 'ready') { send(frame, record, 'init'); return; }
             if (data.instance !== record.instance) return;
+            if (data.type === 'analytics') {
+                if (frame.hasAttribute('data-festapp-datalayer')) {
+                    const payload = analyticsPayload(data.payload, {allowUserData: frame.hasAttribute('data-festapp-datalayer-user-data')});
+                    if (!payload) return;
+                    window.dataLayer = window.dataLayer || [];
+                    if (payload.ecommerce || payload.event === 'generate_lead') window.dataLayer.push({ecommerce: null, user_data: null});
+                    window.dataLayer.push(payload);
+                    if (['purchase', 'generate_lead'].includes(payload.event)) window.dataLayer.push({user_data: null});
+                }
+                return;
+            }
             if (data.type === 'price') { projectPrice(frame,record,data); return; }
             if (['scroll-save', 'scroll-restore', 'scroll-discard'].includes(data.type) &&
                 typeof data.snapshot === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(data.snapshot)) {
@@ -236,11 +353,16 @@
     window.visualViewport?.addEventListener('scroll', updateVisibleViewport, {passive: true});
     window.visualViewport?.addEventListener('resize', updateVisibleViewport, {passive: true});
     let themeRaf;
-    new MutationObserver(() => {
+    new MutationObserver((mutations = []) => {
         scan();
+        for (const mutation of mutations) {
+            if (['data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
+                send(mutation.target, frames.get(mutation.target), 'init', false);
+            }
+        }
         if (!themeRaf) themeRaf = requestAnimationFrame(() => { themeRaf = null; refreshThemes(); });
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true,
-        attributeFilter: ['class', 'style', 'src'] });
+        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
     document.fonts?.ready.then(refreshThemes);
     scan();
 })();

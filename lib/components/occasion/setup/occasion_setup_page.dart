@@ -547,7 +547,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final forms = source['forms'] as List;
     if (forms.isNotEmpty) {
       draft['sourceFormId'] = (forms.first as Map)['id'];
-      draft['formDraft'] = jsonDecode(jsonEncode(forms.first));
+      draft['formDraft'] = copyOccasionSetupForm(forms.first as Map);
       final sourcePayments =
           ((draft['formDraft'] as Map)['data'] as Map?)?['payments'];
       if (draft['paymentChoicesEnabled'] == true && sourcePayments is Map) {
