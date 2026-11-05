@@ -162,7 +162,7 @@ export async function runEditorFlows({root,out,base,guarded,report,attempt}){
    await importPortable(page,priced);assert.equal((await download(page)).host.prices[seat.id],350);
    await activate(page,button(page,'Zpět'));assert.deepEqual((await download(page)).host.prices,portable.host.prices);
    await activate(page,button(page,'Znovu'));assert.equal((await download(page)).host.prices[seat.id],350);
-   await activate(page,button(page,'Uložit plánek'));const saved=await download(page);
+   await save(page);const saved=await download(page);
    const js=await context.newPage();
    try{
     await js.goto(`${base}/web/demo/`);await js.waitForFunction(()=>!!window.venueDemo?.document);
