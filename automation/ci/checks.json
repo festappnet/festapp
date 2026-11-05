@@ -87,7 +87,7 @@
     "web-install": "cd web_client\npnpm install --frozen-lockfile",
     "web-startup": "bash automation/test_web_startup.sh",
     "renderer-install": "cd automation/release/platform_updates\npnpm install --frozen-lockfile",
-    "deploy-contract": "bash automation/tests/deploy_workflow.test.sh",
+    "deploy-contract": "bash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh",
     "wix-install": "pnpm --dir integrations/wix install --frozen-lockfile\npnpm --dir web_client install --frozen-lockfile\n",
     "wix-contract": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\n",
     "navigation-install": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get",

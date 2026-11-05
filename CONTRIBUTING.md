@@ -50,6 +50,36 @@ not a release attestation. The native mirror does not reproduce Ubuntu itself;
 required GitHub checks and existing release/live-version gates still apply.
 Android publishing and production deployment are separate authorized operations.
 
+### Required web release CI gate
+
+Before publishing shared changes, run the affected lanes from
+`automation/test_ci.sh`, not a substitute list of hand-picked tests. Before a
+web release, all eight jobs in `automation/ci/checks.json` must finish successfully
+in GitHub on the exact canonical `baseMainSha`. A failed baseline is still a
+blocked release; document and fix it before continuing. A successful build,
+local test receipt, another SHA, or a previous run does not replace this gate.
+
+After publishing main, inspect it before creating/pushing a tenant overlay:
+
+```bash
+python3 automation/ci/release_gate.py --source-sha <full-main-sha>
+```
+
+Path filters can omit jobs. If a required job is missing, dispatch its workflow
+from `automation/ci/checks.json` with `gh workflow run <workflow> --ref main`,
+checking that main still points to the intended SHA. Wait for completion and
+repeat the gate. Do not dispatch Deploy or treat a queued workflow as success.
+
+`automation/deploy_direct.sh` enforces the same gate before build and immediately
+before upload, including `--skip-build`. The manual GitHub Deploy fallback also
+requires it before tenant/build jobs. These entrypoints resolve the source from
+committed tenant metadata, require its ancestry and a clean tree including untracked source files,
+and reject tenant edits to the source-owned gate or required job contract.
+Unavailable GitHub access, missing, pending, skipped, cancelled or failed checks
+all block deployment. There is no bypass flag. The latest attempt of every job
+must pass; any additional failed GitHub Actions check also blocks release.
+
+
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
 and every web release build. Install its pinned runner with
 `pnpm add --global --allow-build=agent-browser agent-browser@0.39.4`.

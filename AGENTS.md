@@ -41,6 +41,13 @@ repository.
   build unless the user explicitly requests that execution path.
 - Preserve canonical main/tenant ancestry, drift checks, build verification and
   coherent live-version probes when deploying locally.
+- Before source publication, run affected canonical CI mirror lanes from
+  `automation/test_ci.sh`. Before creating/pushing a tenant overlay or deploying,
+  require all canonical GitHub CI jobs to succeed on its exact `baseMainSha`
+  using `automation/ci/release_gate.py`. Missing, pending, failed or skipped
+  checks block release, including pre-existing failures. Do not bypass the gate
+  or substitute targeted tests/build success. See `CONTRIBUTING.md`.
+
 
 ## JavaScript package manager
 
