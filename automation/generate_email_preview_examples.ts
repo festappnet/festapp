@@ -1,3 +1,4 @@
+import { saleOpeningSubstitutions } from '../supabase/functions/_shared/saleOpeningPresentation.ts';
 import { confirmationPaymentSubstitutions, updateBalanceReasoning, paidPaymentSubstitutions, reminderBalanceReasoning } from "../supabase/functions/_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../supabase/functions/_shared/orderOverview.ts";
 import { generateChangeOverview } from "../supabase/functions/_shared/changeOverview.ts";
@@ -39,6 +40,7 @@ const sources = [
     "utilities.ts",
     "changeOverview.ts",
     "emailActionLink.ts",
+    "saleOpeningPresentation.ts",
     "emailContentCompletion.ts",
     "translatePlatformLinks.ts",
     "translations/translations.cs.ts",
@@ -295,6 +297,17 @@ const moneyPattern = new RegExp(
     .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
   "g",
 );
+for (const locale of ['cs','en','sk','de','pl','uk']) {
+ for (const templateCode of ['sale_opening_opened']) {
+  for (const tone of ['formal','informal']) {
+  records.push({templateCode, scenario: 'standard', locale, tone,
+   values: saleOpeningSubstitutions(locale, locale === 'cs' ? 'Podzimní ples' : locale === 'sk' ? 'Jesenný ples' : locale === 'de' ? 'Herbstball' : locale === 'pl' ? 'Bal jesienny' : locale === 'uk' ? 'Осінній бал' : 'Autumn ball',
+    'https://example.invalid/form/preview',
+    'https://example.invalid/form/preview#sale_opening=unsubscribe&token=preview', {tone}),
+   richCodes: ['sale_opening_action','sale_opening_unsubscribe'], requiredLinks: []});
+  }
+ }
+}
 for (const record of records) {
   if (!String(record.templateCode).startsWith("TICKET")) continue;
   const zero = record.scenario === "zero";
@@ -475,7 +488,9 @@ const rawReferenceHtml =
   `<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Ukázky e-mailů</title><style>body{font:16px/1.5 sans-serif;margin:24px;color:#202020;background:#fff}article{max-width:720px;margin:0 auto 40px}a{pointer-events:none}h1{font-size:24px}</style><h1>Obsah e-mailu - ukázková data</h1>` +
   records.filter((r) => r.locale === "cs" && r.tone === "formal").map((r) => {
     const values = r.values as Record<string, string>;
-    const content = String(r.templateCode).startsWith("waitlist")
+    const content = String(r.templateCode).startsWith('sale_opening')
+      ? values.sale_opening_action + values.sale_opening_unsubscribe
+      : String(r.templateCode).startsWith("waitlist")
       ? [
         values.manage_waitlist_button,
         r.templateCode === "waitlist_offer" ? values.offer_button : "",

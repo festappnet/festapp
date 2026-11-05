@@ -1,0 +1,47 @@
+DO $$
+DECLARE org bigint; uid bigint; occ bigint; fid bigint; cid uuid; sid uuid; payload jsonb; message public.email_messages; result jsonb; hash text:=repeat('a',64); uh text:=repeat('b',64); slug text;
+BEGIN
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ INSERT INTO public.organizations(title,data) VALUES('Oznámení - fronta','{"DEFAULT_URL":"https://test.example"}') RETURNING id INTO org;
+ INSERT INTO public.units(title,organization) VALUES('Pořadatel',org) RETURNING id INTO uid;
+ INSERT INTO public.occasions(title,link,organization,unit,start_time,end_time) VALUES('Ples','sale-test-'||gen_random_uuid(),org,uid,now()+interval '2 days',now()+interval '3 days') RETURNING id INTO occ;
+ INSERT INTO public.forms(occasion,is_open,data) VALUES(occ,true,jsonb_build_object('schedule',jsonb_build_object('start_time',now()+interval '1 day'),'sale_opening_notifications','{"enabled":true}'::jsonb)) RETURNING id INTO fid;
+ slug:=public.reserve_public_link_internal('form',fid,NULL,true); UPDATE public.forms SET link=slug WHERE id=fid;
+ PERFORM public.sync_sale_opening_settings_internal(fid,NULL);
+ payload:=jsonb_build_object('formLink',slug,'email',' TEST+Sale@Example.com ','lang','cs',
+ 'unsubscribe',jsonb_build_object('hash',uh,'envelope',jsonb_build_object('v','1','ciphertext',repeat('y',48))));
+ PERFORM public.sale_opening_notification_command('subscribe',payload);
+ PERFORM public.sale_opening_notification_command('subscribe',payload);
+ SELECT id INTO cid FROM public.sale_opening_campaigns WHERE form_id=fid;
+ SELECT id INTO sid FROM public.sale_opening_subscriptions WHERE campaign_id=cid;
+ PERFORM assert_eq((SELECT count(*) FROM public.sale_opening_subscriptions WHERE campaign_id=cid),1::bigint,'Email normalization dedupes');
+ PERFORM assert_eq((SELECT state FROM public.sale_opening_subscriptions WHERE id=sid),'active','Button request activates immediately');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE occasion=occ),0::bigint,'No email is queued before opening');
+ PERFORM assert_eq((SELECT count(*) FROM public.sale_opening_capabilities WHERE subscription_id=sid),1::bigint,'Only unsubscribe capability exists');
+ BEGIN PERFORM public.sale_opening_notification_command('confirm',jsonb_build_object('tokenHash',uh)); RAISE EXCEPTION 'Removed confirm accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ PERFORM public.sale_opening_notification_command('unsubscribe',jsonb_build_object('tokenHash',uh));
+ payload:=jsonb_set(payload,'{unsubscribe,hash}',to_jsonb(repeat('e',64)));
+ PERFORM public.sale_opening_notification_command('subscribe',payload);
+ PERFORM assert_eq((SELECT state FROM public.sale_opening_subscriptions WHERE id=sid),'active','Resubscription activates immediately');
+ PERFORM assert_true((SELECT revoked_at IS NOT NULL FROM public.sale_opening_capabilities WHERE token_hash=uh),'Resubscription revokes old capability');
+ BEGIN PERFORM public.sale_opening_notification_command('unsubscribe',jsonb_build_object('tokenHash',uh)); RAISE EXCEPTION 'Old version accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ uh:=repeat('e',64);
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE occasion=occ),0::bigint,'Resubscription still queues no email');
+ UPDATE public.forms SET data=jsonb_set(data,'{schedule,start_time}',to_jsonb(now()-interval '1 minute')) WHERE id=fid;
+ PERFORM public.maintain_sale_opening_notifications(100);
+ PERFORM public.maintain_sale_opening_notifications(100);
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE data->>'subscription_id'=sid::text AND message_kind='sale_opening_opened'),1::bigint,'Repeated fanout creates one launch');
+ SELECT * INTO message FROM public.email_messages WHERE data->>'subscription_id'=sid::text AND message_kind='sale_opening_opened';
+ PERFORM assert_true(public.email_intent_valid(message),'Launch gate works with no order');
+ PERFORM assert_eq(message.admission_class,'ordinary','Launch uses ordinary admission');
+ PERFORM assert_eq(message.tracking_policy,'disabled','No tracking');
+ UPDATE public.forms SET is_open=false WHERE id=fid;
+ PERFORM assert_false(public.email_intent_valid(message),'Manual closure invalidates cached launch');
+ UPDATE public.forms SET is_open=true WHERE id=fid;
+ PERFORM assert_true(public.email_intent_valid(message),'Reopening retains original window');
+ BEGIN PERFORM public.sale_opening_notification_command('unsubscribe',jsonb_build_object('tokenHash',hash)); RAISE EXCEPTION 'Cross-purpose token accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ PERFORM public.sale_opening_notification_command('unsubscribe',jsonb_build_object('tokenHash',uh));
+ PERFORM public.sale_opening_notification_command('unsubscribe',jsonb_build_object('tokenHash',uh));
+ PERFORM assert_false(public.email_intent_valid(message),'Unsubscribe invalidates prepared snapshot');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.orders WHERE form=fid),0::bigint,'Subscriptions never produce orders');
+END $$;

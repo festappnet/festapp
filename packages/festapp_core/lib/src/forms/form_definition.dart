@@ -36,6 +36,7 @@ class FormDefinition {
   final int? waitlistOfferDurationSeconds;
   final FormCapacityModel? capacity;
   final String? registrationMode;
+  final Map<String, dynamic>? saleOpeningNotification;
   final Map<String, dynamic>? payments;
   bool get isWaitlist => registrationMode == 'waitlist';
   final int? id;
@@ -101,6 +102,7 @@ class FormDefinition {
     this.waitlistOfferDurationSeconds,
     this.capacity,
     this.registrationMode,
+    this.saleOpeningNotification,
     Map<String, dynamic>? payments,
     this.id,
     this.createdAt,
@@ -146,6 +148,7 @@ class FormDefinition {
           ? FormCapacityModel.fromJson(json['capacity'])
           : null,
       registrationMode: json['registrationMode'],
+      saleOpeningNotification: (json['saleOpeningNotification'] as Map?)?.cast<String, dynamic>(),
       payments: json['payments'] is Map
           ? (json['payments'] as Map).cast<String, dynamic>()
           : null,
@@ -269,6 +272,16 @@ class FormDefinition {
 
     return copyWith(data: {...?data, metaSchedule: section});
   }
+
+  bool get saleOpeningEnabled => (data?['sale_opening_notifications'] as Map?)?['enabled'] == true;
+  bool get saleOpeningPaused => (data?['sale_opening_notifications'] as Map?)?['collection_paused'] == true;
+  bool get canSubscribeSaleOpening => saleOpeningNotification?['canSubscribe'] == true;
+  FormDefinition withSaleOpening({bool? enabled, bool? paused}) => copyWith(data: {
+    ...?data, 'sale_opening_notifications': {
+      ...?(data?['sale_opening_notifications'] as Map?)?.cast<String, dynamic>(),
+      if (enabled != null) 'enabled': enabled,
+      if (paused != null) 'collection_paused': paused,
+    }});
 
   bool get enableCountdown {
     if (_scheduleData.containsKey(metaEnableCountdown)) {
@@ -513,6 +526,7 @@ class FormDefinition {
     Object? canDelete = _unchanged,
   }) => FormDefinition(
     demoSimulation: demoSimulation,
+    saleOpeningNotification: saleOpeningNotification,
     participantCapacity: identical(participantCapacity, _unchanged)
         ? this.participantCapacity
         : participantCapacity as int?,

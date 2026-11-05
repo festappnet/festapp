@@ -370,6 +370,13 @@
     "blueprint/seating_publication.sql",
     "blueprint/seating_transition_sync.sql",
     "blueprint/canonical_persistence.sql",
-    "eshop/get_tickets_with_details.sql"
+    "eshop/get_tickets_with_details.sql",
+    "sale_opening_notifications/settings.sql",
+    "sale_opening_notifications/permissions.sql",
+    "sale_opening_notifications/queue.sql",
+    "sale_opening_notifications/commands.sql",
+    "sale_opening_notifications/maintenance.sql",
+    "sale_opening_notifications/email_context.sql",
+    "sale_opening_notifications/admin.sql"
   ]
 }

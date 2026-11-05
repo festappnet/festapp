@@ -37,6 +37,8 @@ abstract final class EmailTemplateRules {
       'changeOverview',
       'order_overview_button',
       'manage_waitlist_button',
+      'sale_opening_action',
+      'sale_opening_unsubscribe',
       'offer_button',
     }.contains(code))
       return EmailValueKind.richBlock;

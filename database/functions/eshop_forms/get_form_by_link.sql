@@ -60,6 +60,7 @@ BEGIN
             'payments',public.form_payment_availability_internal(f.id),
             'capacity', public.get_form_capacity_snapshot_internal(f.id),
             'registrationMode',public.get_form_registration_mode_internal(f.id),
+            'saleOpeningNotification',public.get_sale_opening_projection_internal(f.id),
             'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
             'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
             'id', f.id,

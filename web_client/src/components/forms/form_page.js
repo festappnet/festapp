@@ -1,3 +1,4 @@
+import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
 import { OrganizationIdentityFooter } from './organization_identity_footer.js';
@@ -126,6 +127,7 @@ export class FormPage extends Component {
         window.scrollTo(0, 0);
 
         this.currentLink = link;
+        this.saleOpeningScope ||= consumeSaleOpeningLocation(window.location, window.history);
         if (isEmbed() && !this.embedBridge) {
             this.embedBridge = new EmbedBridge(); this.embedBridge.start();
             this.embedStep = event => this.embedBridge.scrollTo(event.detail.element, {block: event.detail.block});
@@ -241,6 +243,12 @@ export class FormPage extends Component {
             const canPreview = RightsService.canSeeReservations();
             const showPreview = canPreview && isPreviewParam;
 
+            if (this.saleOpeningScope) {
+                this.host.replaceChildren();
+                renderSaleOpening(this.host, formModel, {scope: this.saleOpeningScope});
+                const back = document.createElement('a'); back.href = `/form/${encodeURIComponent(formModel.link || link)}`;
+                back.textContent = formModel.title || link; this.host.append(back); return;
+            }
             const handled = FormAvailabilityService.renderStatus(this.host, formModel, statusResult, {
                 showPreview,
                 onReload: () => this.init(link, { forceReload: true })

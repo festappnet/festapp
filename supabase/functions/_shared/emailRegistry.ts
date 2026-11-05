@@ -1,4 +1,5 @@
 export const emailRegistry = {
+  sale_opening_opened: { code: "sale_opening_opened", sensitive: true },
   waitlist_confirmation: { code: "waitlist_confirmation", sensitive: true },
   waitlist_offer: { code: "waitlist_offer", sensitive: true },
   order_confirmation: { code: "TICKET_ORDER_CONFIRMATION", sensitive: false },

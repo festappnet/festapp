@@ -24,7 +24,7 @@ export 'html_media_service.dart' show HtmlMediaOwner, HtmlContentProfile;
 class RichHtmlEditorController extends ChangeNotifier {
   RichHtmlEditorController(
       {String? initialHtml,
-      this.embeddedBlock,
+      this.embeddedBlocks = const [],
       required this.owner,
       this.profile = HtmlContentProfile.appContent,
       HtmlMediaDraft? media,
@@ -35,7 +35,7 @@ class RichHtmlEditorController extends ChangeNotifier {
     _load(initialHtml);
   }
   final HtmlMediaOwner owner;
-  final HtmlEmbeddedBlock? embeddedBlock;
+  final List<HtmlEmbeddedBlock> embeddedBlocks;
   final HtmlContentProfile profile;
   final TemplateAuthoringProvider? authoring;
   ActionTagsPlugin? _tags;
@@ -88,6 +88,7 @@ class RichHtmlEditorController extends ChangeNotifier {
 
   void _load(String? value) {
     _codec = HtmlEditorDocument(normalizeHtmlContentStyles(value ?? '', profile),
+        embeddedClasses: embeddedBlocks.map((b) => b.cssClass).toSet(),
         tokenCodes: authoring?.codes ?? const {},
         blockCodes: authoring?.codes
                 .where((c) => authoring!.entry(c)?.block == true)
@@ -245,7 +246,7 @@ class RichHtmlEditorController extends ChangeNotifier {
       String? expectedText}) {
     final entry = authoring?.entry(code);
     if (entry == null ||
-        !entry.repeatable && (templateUsage[code] ?? 0) > 0 ||
+        !canInsertAtomic(code) ||
         !authoring!.search('', const {}).any((e) => e.code == code) ||
         expectedRevision != null && revision != expectedRevision) return false;
     var selection = replacement ?? editor.composer.selection;
@@ -494,6 +495,41 @@ class RichHtmlEditorController extends ChangeNotifier {
 
   void toggle(Attribution attribution) =>
       operations.toggleAttributionsOnSelection({attribution});
+  HtmlEmbeddedBlock? embeddedBlockFor(DocumentNode node) {
+    if (node is! PreservedHtmlNode) return null;
+    for (final block in embeddedBlocks) { if (block.matches(node.html)) return block; }
+    return null;
+  }
+
+  bool canInsertAtomic(String code, {bool embedded = false}) => embedded
+      ? !editor.document.any((node) => embeddedBlockFor(node)?.cssClass == code)
+      : authoring?.entry(code)?.repeatable == true || (templateUsage[code] ?? 0) == 0;
+
+  void selectAtomic(DocumentNode node) {
+    focusNode.requestFocus();
+    editor.execute([ChangeSelectionRequest(DocumentSelection(
+      base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
+      extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition)),
+      SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
+  }
+
+  void removeAtomic(String nodeId) {
+    focusNode.requestFocus();
+    editor.execute([DeleteNodeRequest(nodeId: nodeId)]);
+  }
+
+  bool insertEmbeddedBlock(HtmlEmbeddedBlock block) {
+    if (!embeddedBlocks.contains(block) || !canInsertAtomic(block.cssClass, embedded: true)) return false;
+    final anchor = editor.composer.selection?.extent.nodeId;
+    final index = anchor == null ? editor.document.nodeCount : editor.document.getNodeIndexById(anchor) + 1;
+    final node = PreservedHtmlNode(id: Editor.createNodeId(), html: block.html);
+    editor.execute([InsertNodeAtIndexRequest(nodeIndex: index, newNode: node),
+      ChangeSelectionRequest(DocumentSelection(base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
+       extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition)), SelectionChangeType.insertContent, SelectionReason.userInteraction)]);
+    focusNode.requestFocus();
+    return true;
+  }
+
   bool canMoveBlock(String nodeId, int offset) => _codec.canMoveNode(
       nodeId, editor.document.getNodeIndexById(nodeId) + offset);
 
@@ -668,12 +704,23 @@ class RichHtmlEditorController extends ChangeNotifier {
       ];
     }
     final fragment = html_parser.parseFragment(html);
+    var registered = false;
+    for (final block in embeddedBlocks) {
+      final slots = fragment.querySelectorAll('div.html-editor-block.${block.cssClass}');
+      if (slots.isEmpty) continue;
+      registered = true;
+      if (!canInsertAtomic(block.cssClass, embedded: true)) {
+        for (final slot in slots) { slot.remove(); }
+      }
+    }
+    if (registered) html = fragment.outerHtml;
     final complex = fragment.querySelector(
             'table,ul,ol,pre,img,hr,blockquote,h1,h2,h3,h4,h5,h6,p[style],p[class],div[style]') !=
         null;
-    if (complex && authoring == null)
+    if (complex && authoring == null && !registered)
       return [PreservedHtmlNode(id: Editor.createNodeId(), html: html)];
     final incoming = HtmlEditorDocument(html,
+        embeddedClasses: embeddedBlocks.map((b) => b.cssClass).toSet(),
         tokenCodes: authoring?.codes ?? const {},
         blockCodes: authoring?.codes
                 .where((c) => authoring!.entry(c)?.block == true)

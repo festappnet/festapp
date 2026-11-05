@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {resolveUpdates} from '../release/platform_updates/context.mjs';
 import {renderUpdate} from '../release/platform_updates/render.mjs';
@@ -64,4 +65,27 @@ test('incremental renderer removes published -> draft HTML/feed/sitemap entries 
  assert.ok(!fs.existsSync(path.join(built,'platform-updates-media/a.png')),'draft image must leave the deployable/offline bundle');
  assert.ok(!fs.existsSync(path.join(root,'web/organizers/updates/en/item')));assert.equal(JSON.parse(fs.readFileSync(path.join(root,'web/platform-updates.json'))).items.length,0);assert.ok(!fs.readFileSync(path.join(root,'web/organizer-pages.json'),'utf8').includes('/item'));
  fs.writeFileSync(config,'WEB_LINK=https://other.invalid\n');render();assert.ok(!fs.existsSync(path.join(root,'web/platform-updates.json')));assert.ok(!fs.existsSync(path.join(root,'web/organizers/updates')));
+});
+
+test('updates share the public brand and initialize the theme before rendering without the entry bundle', t => {
+ const f=fixture(t);f.add('item');
+ const context=resolveContext(readConfig(new URL('../project.conf',import.meta.url)),{updatesOptions:f.options});
+ for (const page of context.updates.pages) {
+  const html=renderUpdate(page,context);
+  assert.match(html,/<link rel="icon" href="\/favicon.ico">/);
+  assert.match(html,/src="\/brand-logo.svg"/);
+  assert.match(html,/class="brand-image brand-on-light" src="\/brand-logo-light.svg"/);
+  assert.match(html,new RegExp(page.locale==='en' ? 'Create your own event' : 'Založit akci zdarma'));
+  const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match=>match[1]);
+  assert.equal(scripts.length,2,'the shared theme must work before the account header loads');
+  for (const mode of ['light','dark']) {
+   const classes=new Set();
+   const document={documentElement:{style:{}},body:{style:{},dataset:{},classList:{toggle(name,on){if(on)classes.add(name);else classes.delete(name);}}}};
+   const sandbox={document,localStorage:{getItem:()=>mode},matchMedia:()=>({matches:mode!=='dark'})};
+   for (const script of scripts) vm.runInNewContext(script,sandbox);
+   assert.equal(classes.has('dark-mode'),mode==='dark');
+   assert.equal(document.body.dataset.publicTheme,'initialized');
+   assert.equal(document.body.style.colorScheme,mode);
+  }
+ }
 });

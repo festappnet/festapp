@@ -65,3 +65,11 @@ Deno.test('only the first-party MCP broker receives the protected tenant registr
     assertEquals(Object.fromEntries(emailWorkerEnvironment(service, environment)), { DEFAULT_EMAIL: 'sender' });
   }
 });
+
+Deno.test('only the subscription boundary receives Turnstile configuration', () => {
+  const environment = {SALE_OPENING_TURNSTILE_SITE_KEY:'public',SALE_OPENING_TURNSTILE_SECRET_KEY:'private',SALE_OPENING_TURNSTILE_HOSTNAMES:'vstupenky.online',DEFAULT_EMAIL:'sender'};
+  assertEquals(Object.fromEntries(emailWorkerEnvironment('sale-opening-notifications',environment)),environment);
+  for (const service of ['process-email-queue','auth-email-hook','unknown-function']) {
+    assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)),{DEFAULT_EMAIL:'sender'});
+  }
+});

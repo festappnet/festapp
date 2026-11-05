@@ -86,7 +86,7 @@ class HtmlWithAppLinksWidget extends HtmlWidget {
 class HtmlView extends StatefulWidget {
   final String html;
   final HtmlContentProfile profile;
-  final HtmlEmbeddedBlock? embeddedBlock;
+  final List<HtmlEmbeddedBlock> embeddedBlocks;
   final double fontSize;
   final bool isSelectable;
   final Color? color;
@@ -103,7 +103,7 @@ class HtmlView extends StatefulWidget {
     super.key,
     required this.html,
     this.profile = HtmlContentProfile.appContent,
-    this.embeddedBlock,
+    this.embeddedBlocks = const [],
     this.fontSize = 18,
     this.isSelectable = false,
     this.color,
@@ -134,6 +134,7 @@ class _HtmlViewState extends State<HtmlView> {
     final textColor = widget.color ?? ThemeConfig.defaultHtmlViewColor(context);
     final linkColor = colorToRgbString(ThemeConfig.htmlLinkColor(context));
 
+    final renderedEmbeddedBlocks = <String, Object>{};
     Widget content = HtmlWithAppLinksWidget(
       context,
       linkifyHtmlText(widget.html),
@@ -162,13 +163,17 @@ class _HtmlViewState extends State<HtmlView> {
               return {'list-style-type': 'disc'};
             }
         }
-        return null;
+    return null;
       },
       customWidgetBuilder: (el) {
-        final block = widget.embeddedBlock;
-        if (block != null &&
-            el.classes.contains('html-editor-block') &&
-            el.classes.contains(block.cssClass)) return block.builder(context);
+        for (final block in widget.embeddedBlocks) {
+          if (el.classes.contains('html-editor-block') && el.classes.contains(block.cssClass)) {
+            // Only the first slot owns a live widget and its listeners.
+            if (renderedEmbeddedBlocks.containsKey(block.cssClass) && !identical(renderedEmbeddedBlocks[block.cssClass], el)) return const SizedBox.shrink();
+            renderedEmbeddedBlocks[block.cssClass] = el;
+            return block.builder(context);
+          }
+        }
 
         if (el.localName == 'img') {
           final src = el.attributes['src'] ?? el.attributes['data-src'];

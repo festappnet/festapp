@@ -71,6 +71,16 @@ export class CountdownWidget {
         update(); // Immediate, after the interval exists so expiry can stop it.
     }
 
+    static waitForOpening(target, onFinished) {
+        CountdownWidget.stop();
+        if (!onFinished) return;
+        const check = () => {
+            if (new Date(target) <= new Date()) { CountdownWidget.stop(); onFinished(); }
+        };
+        CountdownWidget.timer = setInterval(check, 1000);
+        check();
+    }
+
     static stop() {
         if (CountdownWidget.timer) {
             clearInterval(CountdownWidget.timer);

@@ -1,14 +1,15 @@
-CREATE OR REPLACE FUNCTION public.queue_payment_reminders(p_occasion_id BIGINT, p_seconds_before_deadline BIGINT)
+CREATE OR REPLACE FUNCTION public.queue_payment_reminders_internal(p_occasion_id BIGINT, p_payment_info_id BIGINT)
 RETURNS VOID
 SET search_path = public, extensions AS $$
--- The interval argument is retained for callers; persisted form/occasion settings own scheduling.
+-- NULL payment scope is reserved for explicit occasion-wide settings changes.
+-- Checkout and deadline changes only replace reminders for their own payment.
 BEGIN
   IF public.is_demo_occasion(p_occasion_id) THEN RETURN; END IF;
 
   UPDATE public.email_messages SET workflow_state='cancelled',last_error='reminder_superseded',lease_token=NULL,lease_until=NULL
-  WHERE (occasion=p_occasion_id OR order_id IN (SELECT id FROM eshop.orders WHERE payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id))) AND message_kind='order_reminder' AND workflow_state IN ('pending','retry_wait','blocked','preparing');
+  WHERE ((p_payment_info_id IS NULL AND occasion=p_occasion_id) OR order_id IN (SELECT id FROM eshop.orders WHERE payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id AND (p_payment_info_id IS NULL OR payment_info=p_payment_info_id)))) AND message_kind='order_reminder' AND workflow_state IN ('pending','retry_wait','blocked','preparing');
   UPDATE eshop.payment_info pi SET email_reminder_version=email_reminder_version+1
-  WHERE EXISTS(SELECT 1 FROM eshop.orders o WHERE o.payment_info=pi.id AND o.occasion=p_occasion_id);
+  WHERE EXISTS(SELECT 1 FROM eshop.orders o WHERE o.payment_info=pi.id AND o.occasion=p_occasion_id AND (p_payment_info_id IS NULL OR pi.id=p_payment_info_id));
 
   PERFORM public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object(
       'order_id', o.id
@@ -26,7 +27,7 @@ BEGIN
 
   LEFT JOIN public.forms f ON f.id = o.form
   WHERE
-    (o.occasion=p_occasion_id OR o.payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id))
+    o.payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id AND (p_payment_info_id IS NULL OR payment_info=p_payment_info_id))
     AND o.state = 'ordered'
     AND pi.deadline IS NOT NULL
 
@@ -58,7 +59,7 @@ BEGIN
   ) form_settings ON TRUE
   LEFT JOIN public.forms f ON f.id = o.form
   WHERE
-    (o.occasion=p_occasion_id OR o.payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id))
+    o.payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id AND (p_payment_info_id IS NULL OR payment_info=p_payment_info_id))
     -- Schedule the balance reminder before deposit payment, as order creation always did.
     AND o.state IN ('ordered','paid')
     AND pi.deposit_amount IS NOT NULL
@@ -77,3 +78,11 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+
+REVOKE ALL ON FUNCTION public.queue_payment_reminders_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Preserve the published occasion-wide scheduling boundary and interval argument.
+CREATE OR REPLACE FUNCTION public.queue_payment_reminders(p_occasion_id BIGINT,p_seconds_before_deadline BIGINT)
+RETURNS void LANGUAGE sql SET search_path=public,extensions AS $$
+ SELECT public.queue_payment_reminders_internal(p_occasion_id,NULL);
+$$;

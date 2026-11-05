@@ -15,6 +15,7 @@ DECLARE
   v_actual_org bigint;
   is_app_supported boolean := false;
   show_waitlist_templates boolean := false;
+  show_sale_opening_templates boolean := false;
 BEGIN
   -- 1. Extract context values from the JSON parameter
   v_occ  := CASE
@@ -84,6 +85,9 @@ BEGIN
       AND f.waitlist_enabled IS TRUE
   ) INTO show_waitlist_templates;
 
+  SELECT EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+   WHERE o.organization=v_org AND (v_occ IS NULL OR o.id=v_occ) AND (v_unit IS NULL OR o.unit=v_unit)
+   AND coalesce((public.normalize_form_metadata_internal(f.data)#>>'{sale_opening_notifications,enabled}')::boolean,false)) INTO show_sale_opening_templates;
   -- 5. Retrieve email templates
   SELECT jsonb_agg(public.get_email_template_state_internal(
     jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org),result.code) ORDER BY result.code)
@@ -106,13 +110,14 @@ BEGIN
         et.code IN (
           'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_PAYMENT_DONE',
           'TICKET_ORDER_REMINDER', 'TICKET_ORDER_STORNO', 'TICKET_ORDER_UPDATE',
-          'waitlist_confirmation', 'waitlist_offer'
+          'waitlist_confirmation', 'waitlist_offer', 'sale_opening_opened'
         )
         OR (is_app_supported IS TRUE AND et.code IN (
           'SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
           'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE'
         ))
       )
+      AND (show_sale_opening_templates OR et.code NOT IN ('sale_opening_opened'))
       AND (show_waitlist_templates OR et.code NOT IN
         ('waitlist_confirmation', 'waitlist_offer'))
   ) result;

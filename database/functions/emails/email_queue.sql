@@ -26,7 +26,7 @@ BEGIN
  p_recipient:=public.normalize_order_email_contact(p_recipient);
  PERFORM public.check_occasion_writable(v_occ);
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
- IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer')
+ IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer','sale_opening_opened')
  OR p_dedupe IS NULL OR length(p_dedupe)>512 OR (p_recipient IS NOT NULL AND (length(p_recipient)>320 OR position('@' in p_recipient)=0)) THEN RAISE EXCEPTION 'invalid_email_intent'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org) OR
  (v_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=v_occ AND organization=v_org AND (NOT p_context ? 'unit' OR unit IS NOT DISTINCT FROM v_unit))) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
@@ -35,7 +35,7 @@ BEGIN
  -- Snapshot the tenant default only for new unlocalized domain intents. Existing
  -- messages, explicit locales and prepared/encrypted Auth content are untouched.
  IF NOT coalesce(p_data,'{}'::jsonb) ? 'lang' AND
-    (p_kind LIKE 'order_%' OR p_kind IN ('waitlist_confirmation','waitlist_offer')) AND
+    (p_kind LIKE 'order_%' OR p_kind IN ('waitlist_confirmation','waitlist_offer','sale_opening_opened')) AND
     (SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=v_org)='en' THEN
    p_data:=coalesce(p_data,'{}'::jsonb)||'{"lang":"en"}'::jsonb;
  END IF;
@@ -90,6 +90,10 @@ BEGIN
           (SELECT x.bank_account_id FROM eshop.bank_sync_account_aliases x WHERE x.connection_id=c.id)))) THEN RETURN false; END IF;
  END IF;
  IF p_message.message_kind='custom' AND p_message.code='ORDER_OVERVIEW' THEN RETURN false; END IF;
+ IF p_message.message_kind='sale_opening_confirmation' THEN RETURN false; END IF;
+ IF p_message.message_kind='sale_opening_opened' THEN
+  RETURN public.sale_opening_intent_valid_internal(p_message);
+ END IF;
  IF p_message.order_id IS NULL THEN
   IF p_message.recipient_user IS NOT NULL AND p_message.message_kind<>'deletion_complete' THEN
    IF p_message.message_kind<>'gotrue' AND public.get_user_delivery_email(p_message.recipient_user) IS DISTINCT FROM p_message.recipient THEN RETURN false; END IF;
@@ -233,6 +237,10 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_attempt public.email_attempts; v_row public.email_messages; v_cap public.email_capacity; v_rate numeric; v_daily numeric; v_used numeric; v_detail text; v_retry integer;
 BEGIN
  PERFORM public.require_service_role();
+ PERFORM 1 FROM public.forms f JOIN public.sale_opening_campaigns c ON c.form_id=f.id
+  JOIN public.email_messages m ON m.data->>'campaign_id'=c.id::text
+  JOIN public.email_attempts a ON a.message_id=m.message_id
+  WHERE a.attempt_id=p_attempt AND m.message_kind IN ('sale_opening_opened') FOR UPDATE OF f;
  SELECT * INTO v_cap FROM public.email_capacity FOR UPDATE;
  SELECT * INTO v_attempt FROM public.email_attempts WHERE attempt_id=p_attempt;
  SELECT * INTO v_row FROM public.email_messages WHERE message_id=v_attempt.message_id;
@@ -243,7 +251,7 @@ BEGIN
  IF v_attempt.state<>'preparing' THEN RETURN jsonb_build_object('disposition','replay','state',v_attempt.state); END IF;
  IF v_row.workflow_state<>'preparing' OR v_row.lease_until<=now() OR v_row.prepared IS NULL THEN RAISE EXCEPTION 'stale_email_attempt'; END IF;
  IF NOT public.email_intent_valid(v_row) OR EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN
-  UPDATE public.email_messages SET workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
+  UPDATE public.email_messages SET last_error=CASE WHEN v_row.message_kind='sale_opening_opened' THEN 'intent_invalid' ELSE last_error END,workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
   PERFORM public.notification_center_email_internal(v_row.message_id);
   RETURN jsonb_build_object('disposition','cancelled');
@@ -444,10 +452,13 @@ BEGIN
  WHERE expires_at<now() AND workflow_state IN ('pending','retry_wait','blocked','preparing');
  -- Erase sensitive body after terminal state/expiry; retain correlation and dedupe tombstones.
  UPDATE public.email_messages SET prepared=NULL,data=data-'ciphertext'
- WHERE message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue','deletion_confirm','deletion_complete')
+ WHERE message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue','deletion_confirm','deletion_complete','sale_opening_opened')
  AND (workflow_state IN ('accepted','dead','cancelled','suppressed','expired') OR expires_at<now()) AND prepared IS NOT NULL;
  UPDATE public.email_messages SET prepared=NULL,data=jsonb_build_object('command_id',data->'command_id')
  WHERE created_at<now()-interval '30 days' AND workflow_state IN ('accepted','dead','cancelled','suppressed','expired') AND prepared IS NOT NULL;
+ UPDATE public.email_messages SET recipient=NULL,prepared=NULL,data='{}'
+ WHERE message_kind IN ('sale_opening_opened') AND expires_at<now()-interval '30 days'
+ AND workflow_state NOT IN ('sending','unknown');
  DELETE FROM public.email_confirmation_receipts WHERE expires_at<now();
  DELETE FROM public.email_delivery_events WHERE received_at<now()-interval '90 days';
  PERFORM public.apply_email_post_actions();

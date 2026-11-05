@@ -7,6 +7,6 @@ BEGIN
  UPDATE eshop.payment_info SET deadline=p_new_deadline,data=coalesce(data,'{}')||'{"current_version_reminded":false}'::jsonb,
  email_reminder_version=email_reminder_version+1 WHERE id=p_payment_info_id;
  FOR o IN SELECT DISTINCT occ.id FROM eshop.orders ord JOIN public.occasions occ ON occ.id=ord.occasion WHERE ord.payment_info=p_payment_info_id LOOP
-  PERFORM public.queue_payment_reminders(o.id,0);
+  PERFORM public.queue_payment_reminders_internal(o.id,p_payment_info_id);
  END LOOP;
 END $$;

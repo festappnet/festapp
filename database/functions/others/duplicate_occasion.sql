@@ -346,7 +346,7 @@ BEGIN
 
     INSERT INTO public.forms
       (created_at, data, key, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off, updated_at, title, participant_capacity, waitlist_enabled, show_remaining_capacity, waitlist_offer_duration_seconds)
-    VALUES (now(), rec.data, uuid_generate_v4(), new_occ, rec.type,
+    VALUES (now(), public.normalize_form_metadata_internal(rec.data)-'sale_opening_notifications', uuid_generate_v4(), new_occ, rec.type,
             CASE WHEN v_demo THEN NULL WHEN v_source_unit = v_target_unit OR EXISTS (
               SELECT 1 FROM eshop.unit_bank_accounts uba
               WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)

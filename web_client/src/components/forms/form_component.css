@@ -823,3 +823,43 @@ body.dark-mode .surcharge-info {
 /* Explicit backgrounds use the original gentle form tint. Card layout stays
    controlled by the saved form design instead of forcing an extra page panel. */
 body[data-shared-appearance] { background: var(--form-background); }
+
+
+/* Compact presale opt-in, independent of the countdown's display typography. */
+.sale-opening-notification {
+    max-width: 480px;
+    margin: 12px auto;
+    font-size: 1rem;
+    text-align: left;
+}
+.sale-opening-form {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.sale-opening-email { flex: 2; min-width: 0; }
+.sale-opening-email .form-control {
+    height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--input-border, #999);
+    border-radius: 8px;
+    font-size: 16px;
+    line-height: 22px;
+}
+.sale-opening-email .form-control:focus {
+    outline: 2px solid var(--primary-color, #007bff);
+    outline-offset: 1px;
+}
+.sale-opening-form > .btn {
+    flex: 0 1 60%;
+    min-width: 0;
+    white-space: normal;
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 16px;
+    line-height: 24px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+.sale-opening-status { margin: 0; font-size: .875rem; }
+.sale-opening-status:not(:empty) { margin-top: 8px; }

@@ -67,3 +67,12 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
         assert.notEqual(BlueprintStrings.viewerMessages.confirmQuantity, 'FeatureBlueprint.viewer.confirmQuantity');
     });
 }
+
+for (const locale of ['cs','en','sk','de','pl','uk']) {
+ test(`published ${locale} sale notifications use the canonical dictionary`,async()=>{
+  const canonical=JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`,import.meta.url),'utf8'));
+  const published=JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`,import.meta.url),'utf8'));
+  assert.deepEqual(published.SaleOpening,canonical.SaleOpening);
+  assert.ok(published.SaleOpening.subscribe);
+ });
+}

@@ -3,8 +3,10 @@ import 'package:html/parser.dart' as parser;
 
 /// A domain-owned live widget stored as an atomic block in rich HTML.
 class HtmlEmbeddedBlock {
-  const HtmlEmbeddedBlock({required this.cssClass, required this.builder});
+  const HtmlEmbeddedBlock({required this.cssClass, required this.builder, this.label = '', this.description = ''});
   final String cssClass;
+  final String label;
+  final String description;
   final WidgetBuilder builder;
 
   String get html => '<div class="html-editor-block $cssClass"></div>';

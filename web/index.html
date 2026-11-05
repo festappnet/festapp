@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script>
+    // Capture personal sale links before routing, resources or analytics.
+    (function () {
+      const target = new URL(window.location.href);
+      const fragment = new URLSearchParams(target.hash.slice(1));
+      if (!target.pathname.startsWith('/form/') || !fragment.has('sale_opening')) return;
+      const operation = fragment.get('sale_opening'), token = fragment.get('token');
+      const valid = operation === 'unsubscribe' && /^[a-f0-9]{64}$/.test(token || '') && fragment.getAll('token').length === 1;
+      window.__festappSaleOpeningLink = JSON.stringify(valid ? {operation,token} : {operation:'invalid'});
+      const meta = document.createElement('meta'); meta.name = 'referrer'; meta.content = 'no-referrer'; document.head.appendChild(meta);
+      window.history.replaceState(window.history.state, '', target.pathname + target.search);
+    })();
+  </script>
   <!-- Inherit the hosting Referrer-Policy: maps identify their origin to tile
        providers, while sensitive auth callbacks retain no-referrer. -->
   <script>
@@ -407,14 +420,15 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.500+1007";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.501+1008";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
   <script src="festapp_flutter_bootstrap_guard.js" defer></script>
   <script src="festapp_pwa_bridge.js" defer></script>
   <script src="festapp_update_prompt.js" defer></script>
-<noscript><style>#loader-content{display:none!important}</style></noscript></head>
+<noscript><style>#loader-content{display:none!important}</style></noscript>  <script src="/festapp_sale_opening_protection.js" defer></script>
+</head>
 <body>
 
 <script>

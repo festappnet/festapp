@@ -71,6 +71,7 @@ BEGIN
     'services.write',manager,
     'participants.write',((manager) OR (admin)),
     'participants.contacts.read',((editor) OR (manager) OR (coalesce(p_occasion_user.is_approver,false))),
+    'forms.sale_opening_subscribers.read',((editor) OR (manager) OR (coalesce(p_occasion_user.is_approver,false))),
     'groups.assignments.write',((editor) OR (((manager)) OR ((admin)) OR ((unit_editor)))),
     'blueprints.write',((editor) OR (manager)),
     'inventory.copy.target',((order_writer) OR (unit_manager)),

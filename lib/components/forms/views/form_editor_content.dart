@@ -1,3 +1,5 @@
+import 'package:fstapp/app_config.dart';
+import 'sale_opening_settings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../waitlist_strings.dart';
 import 'form_capacity_settings.dart';
@@ -404,8 +406,12 @@ class _FormEditorContentState extends State<FormEditorContent>
                             form.definition.withEnableCountdown(val))
                         : null,
                   ),
-                  if (form.definition.enableCountdown &&
-                      form.definition.startTime != null) ...[
+                  SaleOpeningSettings(form: form, canEdit: _canEdit, onChanged: () => setState(() {}),
+                    onEditEmails: RightsService.currentOccasion()?.id == form.definition.occasionId &&
+                      RightsService.hasCapability(AuthorizationCapabilities.emailTemplatesOccasionRead)
+                      ? () => RouterService.navigate(context, '/${RightsService.currentOccasion()!.link}/${AppConfig.defaultAdministrationRoute}/email-templates')
+                      : null),
+                  if (form.definition.startTime != null) ...[
                     const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
@@ -417,11 +423,16 @@ class _FormEditorContentState extends State<FormEditorContent>
                         children: [
                           _buildHtmlFieldPreview(
                             FormStrings.labelCountdownMessage,
-                            countdownContent(form.definition.countdownTitle),
-                            embeddedBlock: countdownBlock(
-                                form.definition.startTime!, () {}),
-                            (val) => setState(() => form.definition =
-                                form.definition.withCountdownTitle(val)),
+                            form.definition.enableCountdown ? countdownContent(form.definition.countdownTitle) : form.definition.countdownTitle ?? '',
+                            embeddedBlocks: [countdownBlock(
+                                form.definition.startTime!, () {}), saleOpeningPreviewBlock()],
+                            (val) => setState(() {
+                              final removed = (form.definition.countdownTitle?.contains('form-sale-opening-notification') ?? false) && !val.contains('form-sale-opening-notification');
+                              final removedCountdown = (form.definition.countdownTitle?.contains('form-countdown') ?? false) && !val.contains('form-countdown');
+                              form.definition = form.definition.withCountdownTitle(val);
+                              if (removedCountdown) form.definition = form.definition.withEnableCountdown(false);
+                              if (removed) form.definition = form.definition.withSaleOpening(paused: true);
+                            }),
                             defaultText: FormStrings.registrationStart,
                             showLabel: false,
                             minimal: true,
@@ -606,7 +617,7 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   Widget _buildHtmlFieldPreview(
       String label, String? content, ValueChanged<String> onChanged,
-      {HtmlEmbeddedBlock? embeddedBlock,
+      {List<HtmlEmbeddedBlock> embeddedBlocks = const [],
       String? defaultText,
       String? helpText,
       bool showLabel = true,
@@ -653,7 +664,7 @@ class _FormEditorContentState extends State<FormEditorContent>
             padding: EdgeInsets.all(minimal ? 4 : 12),
             child: EditableHtmlField(
               html: content ?? '',
-              embeddedBlock: embeddedBlock,
+              embeddedBlocks: embeddedBlocks,
               placeholder: defaultText ?? FormStrings.notSet,
               enabled: enabled && !_prototype,
               fontSize: fontSize ?? 13,

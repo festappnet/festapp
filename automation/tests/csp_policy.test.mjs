@@ -67,3 +67,9 @@ test('analytics is allowed in the public response profiles and absent from priva
  await writeFile(path.join(dir,'csp-manifest.json'),JSON.stringify(manifest));
  await verifyManifest(dir);
 });
+
+test('Turnstile scripts are permitted only on the two public browser clients',async()=>{
+ const {scriptPolicy}=await import('../lib/csp_policy.mjs');
+ for (const profile of ['flutter','webclient']) assert.match(scriptPolicy(profile,[]),/https:\/\/challenges\.cloudflare\.com/);
+ assert.doesNotMatch(scriptPolicy('auth_bridge',[]),/challenges\.cloudflare\.com/);
+});
