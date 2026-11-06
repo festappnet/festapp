@@ -1,6 +1,6 @@
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
-import { FormDataLayer, hasBrowserSession } from './form_datalayer.js';
-import { publicFormLocation, documentEntryAllowed } from '../../utils/public_form_location.js';
+import { FormDataLayer } from './form_datalayer.js';
+import { publicFormLocation } from '../../utils/public_form_location.js';
 import { FormMeasurementRuntime } from './form_measurement_runtime.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
@@ -597,15 +597,16 @@ export class FormPage extends Component {
         });
 
         if (!showPreview && !this.analytics) {
+            let analytics;
             const runtime = new FormMeasurementRuntime({model:formModel,
                 campaign:() => this.embedBridge?.measurementCampaign || {},
-                canRun:() => this.analyticsEntryAllowed && documentEntryAllowed(window) && !formModel.demoSimulation && publicFormLocation(window.location) && !hasBrowserSession(window),
-                onReady:() => this.analytics?.view()});
+                canRun:() => analytics?.contextAllowed() === true,
+                onReady:() => analytics?.view()});
             this.measurementRuntime = runtime;
-            this.embedBridge?.setMeasurementRuntime(runtime);
-            const analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
+            analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
                 entryAllowed:this.analyticsEntryAllowed, refreshPolicy:() => DbForms.getMeasurementPolicy(formModel.link)});
-            if (!this.embedBridge && formModel.data?.analytics?.eligible === true && analytics.entryAllowed && !hasBrowserSession(window)) {
+            this.embedBridge?.setMeasurementRuntime(runtime);
+            if (!this.embedBridge && formModel.data?.analytics?.eligible === true && analytics.contextAllowed()) {
                 import('./form_measurement_cmp.js').then(({startMeasurementConsent}) => {
                     if (this.analytics !== analytics) return;
                     this.measurementCleanup = startMeasurementConsent({model:formModel,transport:runtime,host:this.host});

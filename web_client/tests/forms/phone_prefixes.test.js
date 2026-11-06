@@ -112,16 +112,3 @@ describe('TextFieldBuilder Phone Prefixes', () => {
         assert.ok(input.value.startsWith('+1'));
     });
 });
-
-
-it('uses the configured visible default and accepts formatted phones for any country',()=>{
-    const root=document.createElement('div');root.innerHTML='<input type="tel" required><div class="phone-badges-container"></div>';
-    const input=root.querySelector('input');
-    TextFieldBuilder._attachPhoneLogic(input,root,{data:{phone_prefixes:['+44']}});
-    assert.equal(input.value.trim(),'+44');assert.equal(input.dataset.phonePrefix,'+44');
-    for(const phone of ['+1 (415) 555-2671','+44 20 7946 0958','0044 20 7946 0958','+123456789012345']){
-        input.value=phone;input.dispatchEvent(new window.Event('input'));
-        assert.equal(input.checkValidity(),true,phone);
-        assert.equal(input.value.replace(/\D/g,'').length,phone.replace(/\D/g,'').length,phone);
-    }
-});

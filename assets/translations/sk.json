@@ -429,8 +429,6 @@
     "measurementUnitEnabled": "Povoliť meranie v tejto jednotke",
     "measurementOrganizationHelp": "Sprístupní nastavenie merania v jednotkách tejto organizácie. Vypnutie zastaví meranie všetkých ich formulárov a zachová nastavenia.",
     "measurementOrganizationEnabled": "Povoliť meranie formulárov",
-    "enhancedConversions": "Rozšírené konverzie",
-    "enhancedConversionsHelp": "Nedostupné. Prenos kontaktov vyžaduje samostatnú implementáciu súhlasu a účelu. Uložená príprava zostane zachovaná.",
     "measurementEnabled": "Povoliť meranie",
     "measurementDisabled": "Meranie tohto formulára je vypnuté.",
     "measurementOrganizationBlocked": "Požadované, blokované platformou pre túto organizáciu.",

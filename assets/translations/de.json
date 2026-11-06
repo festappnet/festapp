@@ -409,8 +409,6 @@
     "measurementUnitEnabled": "Messung für diesen Veranstalter erlauben",
     "measurementOrganizationHelp": "Gibt die Messeinstellungen für Veranstalter dieser Organisation frei. Beim Ausschalten wird die Messung aller ihrer Formulare beendet; die Einstellungen bleiben erhalten.",
     "measurementOrganizationEnabled": "Formularmessung erlauben",
-    "enhancedConversions": "Erweiterte Conversions",
-    "enhancedConversionsHelp": "Nicht verfügbar. Die Weitergabe von Kontakten erfordert eine gesonderte Umsetzung von Einwilligung und Zweck. Gespeicherte Vorbereitungen bleiben erhalten.",
     "measurementEnabled": "Messung aktivieren",
     "measurementDisabled": "Die Messung für dieses Formular ist ausgeschaltet.",
     "measurementOrganizationBlocked": "Angefordert, von der Plattform für diese Organisation gesperrt.",

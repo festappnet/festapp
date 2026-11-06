@@ -1,12 +1,9 @@
 import 'package:fstapp/services/decimal_input.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
-
 import '../payment_method_strings.dart';
-
 import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
-
 import 'form_variable_symbol_settings.dart';
 
 import 'package:flutter/foundation.dart';
@@ -116,8 +113,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   bool get _canManageMeasurement => RightsService.hasCapability(
         AuthorizationCapabilities.formsMeasurementWrite,
       );
-  bool get _canEdit =>
-      RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
+  bool get _canEdit => RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _hasChanges =>
       _canEdit && !_isLoading && _form != null && _snapshot.differs(_draft);
 
@@ -316,13 +312,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           : 'inherit';
 
       _deadlineInherited = _form!.definition.deadlineDurationSeconds == null;
-      _deadlineDaysController.text =
-          (_form!.definition.effectiveDeadlineDurationSeconds(
-                    occasionDefault: _formFeature.deadlineDurationSeconds,
-                  ) /
-                  86400)
-              .round()
-              .toString();
+      _deadlineDaysController.text = (_form!.definition
+                  .effectiveDeadlineDurationSeconds(
+                      occasionDefault: _formFeature.deadlineDurationSeconds) /
+              86400)
+          .round()
+          .toString();
     } else {
       _form = null;
     }
@@ -406,7 +401,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       metadata['payments'] = {
         'bankEnabled': _bankEnabled,
         if (_stripeConnectionId != null)
-          'stripeConnectionId': _stripeConnectionId,
+          'stripeConnectionId': _stripeConnectionId
       };
     }
 
@@ -467,9 +462,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       var errorMessage = e.toString().replaceFirst("Exception: ", "");
       if (errorMessage.contains('STRIPE_RECIPIENT_UNAVAILABLE'))
         errorMessage = PaymentMethodStrings.reason('recipient_changed');
-      final stripeReason = RegExp(
-        r'STRIPE_CONFIGURATION_UNSUPPORTED:\s*([a-z_]+)',
-      ).firstMatch(errorMessage)?.group(1);
+      final stripeReason =
+          RegExp(r'STRIPE_CONFIGURATION_UNSUPPORTED:\s*([a-z_]+)')
+              .firstMatch(errorMessage)
+              ?.group(1);
       if (stripeReason != null)
         errorMessage = PaymentMethodStrings.reason(stripeReason);
       for (final code in [
@@ -499,10 +495,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _deleteForm(BuildContext currentContext) async {
     if (!_canEdit) return;
     try {
-      await DbForms.deleteForm(
-        _form!.definition.id!,
-        expectedVersion: _form!.aggregateVersion,
-      );
+      await DbForms.deleteForm(_form!.definition.id!,
+          expectedVersion: _form!.aggregateVersion);
       if (!mounted) return;
       ToastHelper.Show(
         currentContext,
@@ -603,8 +597,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     final unitId = RightsService.currentUnit()?.id;
     final canManageAccounts = unitId != null &&
         RightsService.hasCapability(
-          AuthorizationCapabilities.bankAccountsUnitManage,
-        );
+            AuthorizationCapabilities.bankAccountsUnitManage);
 
     final guidance = missingCurrencies.isNotEmpty
         ? (canManageAccounts
@@ -747,10 +740,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     setState(() => _stripeRecipientLoading = true);
     try {
       final value = await (widget.loadStripeRecipient?.call(unit, occasion) ??
-          const SupabaseStripeConnectionApi().formRecipient(
-            unit,
-            occasion,
-          ));
+          const SupabaseStripeConnectionApi().formRecipient(unit, occasion));
       if (mounted && generation == _stripeReadGeneration)
         setState(() {
           _stripeRecipient = value;
@@ -774,26 +764,22 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       return _stripeRecipient!['unsupportedReason'];
     final products = _form!.relatedFields
         .where((field) => field.definition.isHidden != true)
-        .expand(
-          (field) => field.definition.productType?.products ?? <ProductModel>[],
-        )
+        .expand((field) =>
+            field.definition.productType?.products ?? <ProductModel>[])
         .where((product) => product.isHidden != true)
         .toList();
     final currencies = products.map((product) => product.currencyCode).toSet();
     if (currencies.length != 1 ||
         !{'CZK', 'EUR', 'PLN', 'USD', 'GBP'}.contains(currencies.single))
       return 'currency_unsupported';
-    if (products.any(
-      (product) =>
-          product.data?['deposit'] is Map &&
-          (num.tryParse(product.data!['deposit']['amount'].toString()) ?? 0) >
-              0,
-    )) return 'deposit_unsupported';
-    if (products.any(
-      (product) =>
-          product.data?['meta_surcharge'] is Map &&
-          (product.data!['meta_surcharge'] as Map).isNotEmpty,
-    )) return 'surcharge_unsupported';
+    if (products.any((product) =>
+        product.data?['deposit'] is Map &&
+        (num.tryParse(product.data!['deposit']['amount'].toString()) ?? 0) > 0))
+      return 'deposit_unsupported';
+    if (products.any((product) =>
+        product.data?['meta_surcharge'] is Map &&
+        (product.data!['meta_surcharge'] as Map).isNotEmpty))
+      return 'surcharge_unsupported';
     return null;
   }
 
@@ -812,102 +798,84 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         {'connected', 'restricted'}.contains(recipient?['state']) &&
         candidate != null &&
         compatibility == null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          PaymentMethodStrings.text('title'),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        if (_stripeRecipientLoading) const LinearProgressIndicator(),
-        if (_stripeRecipientFailed)
-          Text(PaymentMethodStrings.reason('unavailable'))
-        else if (recipient == null && _stripeRecipientLoaded)
-          Text(PaymentMethodStrings.reason('not_configured')),
-        if (compatibility != null)
-          Text(PaymentMethodStrings.reason(compatibility)),
-        PaymentMethodCards(
-          value: cardEnabled
-              ? (_bankEnabled
-                  ? FormPaymentMethod.both
-                  : FormPaymentMethod.stripe)
-              : (_bankEnabled ? FormPaymentMethod.bank : null),
-          canSelectStripe: cardEnabled || canSelect,
-          onChanged: (method) => setState(() {
-            _bankEnabled = method != FormPaymentMethod.stripe;
-            // Keep an explicitly configured recipient, including stale ones,
-            // until the editor chooses its replacement below.
-            _stripeConnectionId = method == FormPaymentMethod.bank
-                ? null
-                : (_stripeConnectionId ?? candidate);
-          }),
-        ),
-        const SizedBox(height: 16),
-        if (!_bankEnabled && !cardEnabled)
-          Text(PaymentMethodStrings.text('noMethodSelected')),
-        if (_bankEnabled) ...[
-          Text(
-            PaymentMethodStrings.text('bank'),
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 8),
-          _buildUsedBankAccounts(context),
-          const SizedBox(height: 16),
-        ],
-        Text(
-          PaymentMethodStrings.text('stripe'),
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text(PaymentMethodStrings.text('title'),
+          style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 12),
+      if (_stripeRecipientLoading) const LinearProgressIndicator(),
+      if (_stripeRecipientFailed)
+        Text(PaymentMethodStrings.reason('unavailable'))
+      else if (recipient == null && _stripeRecipientLoaded)
+        Text(PaymentMethodStrings.reason('not_configured')),
+      if (compatibility != null)
+        Text(PaymentMethodStrings.reason(compatibility)),
+      PaymentMethodCards(
+        value: cardEnabled
+            ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.stripe)
+            : (_bankEnabled ? FormPaymentMethod.bank : null),
+        canSelectStripe: cardEnabled || canSelect,
+        onChanged: (method) => setState(() {
+          _bankEnabled = method != FormPaymentMethod.stripe;
+          // Keep an explicitly configured recipient, including stale ones,
+          // until the editor chooses its replacement below.
+          _stripeConnectionId = method == FormPaymentMethod.bank
+              ? null
+              : (_stripeConnectionId ?? candidate);
+        }),
+      ),
+      const SizedBox(height: 16),
+      if (!_bankEnabled && !cardEnabled)
+        Text(PaymentMethodStrings.text('noMethodSelected')),
+      if (_bankEnabled) ...[
+        Text(PaymentMethodStrings.text('bank'),
+            style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
-        if (!_stripeRecipientLoaded || _stripeRecipientFailed)
-          TextButton(
+        _buildUsedBankAccounts(context),
+        const SizedBox(height: 16),
+      ],
+      Text(PaymentMethodStrings.text('stripe'),
+          style: Theme.of(context).textTheme.titleSmall),
+      const SizedBox(height: 8),
+      if (!_stripeRecipientLoaded || _stripeRecipientFailed)
+        TextButton(
             onPressed: _stripeRecipientLoading ? null : _loadStripeRecipient,
-            child: Text(PaymentMethodStrings.text('checkAccount')),
-          ),
-        if (cardEnabled &&
-            _stripeRecipientLoaded &&
-            (recipient == null || candidate != _stripeConnectionId))
-          Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
-        if (recipient != null) ...[
-          if (recipient['modelVerified'] != true)
-            Text(PaymentMethodStrings.reason('model_unverified')),
-          if (recipient['name'] is String)
-            Text(
-              !cardEnabled || candidate != _stripeConnectionId
-                  ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
-                  : PaymentMethodStrings.recipient(recipient['name']),
-            ),
-          if (recipient['paused'] == true)
-            Text(PaymentMethodStrings.reason('paused')),
-          if (recipient['chargesEnabled'] != true ||
-              recipient['cardPaymentsActive'] != true)
-            Text(PaymentMethodStrings.reason('stripe_restricted')),
-          if (cardEnabled && candidate != _stripeConnectionId) ...[
-            Text(PaymentMethodStrings.reason('recipient_changed')),
-            TextButton(
+            child: Text(PaymentMethodStrings.text('checkAccount'))),
+      if (cardEnabled &&
+          _stripeRecipientLoaded &&
+          (recipient == null || candidate != _stripeConnectionId))
+        Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
+      if (recipient != null) ...[
+        if (recipient['modelVerified'] != true)
+          Text(PaymentMethodStrings.reason('model_unverified')),
+        if (recipient['name'] is String)
+          Text(!cardEnabled || candidate != _stripeConnectionId
+              ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
+              : PaymentMethodStrings.recipient(recipient['name'])),
+        if (recipient['paused'] == true)
+          Text(PaymentMethodStrings.reason('paused')),
+        if (recipient['chargesEnabled'] != true ||
+            recipient['cardPaymentsActive'] != true)
+          Text(PaymentMethodStrings.reason('stripe_restricted')),
+        if (cardEnabled && candidate != _stripeConnectionId) ...[
+          Text(PaymentMethodStrings.reason('recipient_changed')),
+          TextButton(
               onPressed: canSelect
                   ? () => setState(() => _stripeConnectionId = candidate)
                   : null,
-              child: Text(PaymentMethodStrings.text('selectRecipient')),
-            ),
-          ],
+              child: Text(PaymentMethodStrings.text('selectRecipient'))),
         ],
-        if (cardEnabled) ...[
-          Text(PaymentMethodStrings.text('fullAmount')),
-          Text(PaymentMethodStrings.reservation(1860)),
-        ],
-        if (canConnect)
-          TextButton(
-            onPressed: () => pushRootPath(
-              context.router.root,
-              '/unit/$unit/edit/card-payments',
-            ),
-            child: Text(PaymentMethodStrings.text('setupStripe')),
-          ),
-        const SizedBox(height: 16),
       ],
-    );
+      if (cardEnabled) ...[
+        Text(PaymentMethodStrings.text('fullAmount')),
+        Text(PaymentMethodStrings.reservation(1860))
+      ],
+      if (canConnect)
+        TextButton(
+            onPressed: () => pushRootPath(
+                context.router.root, '/unit/$unit/edit/card-payments'),
+            child: Text(PaymentMethodStrings.text('setupStripe'))),
+      const SizedBox(height: 16),
+    ]);
   }
 
   @override
@@ -1064,18 +1032,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   TextFormField(
                                     enabled: _canEdit,
                                     controller: _deadlineDaysController,
-                                    onChanged: (value) => setState(
-                                      () => _deadlineInherited = value.isEmpty,
-                                    ),
+                                    onChanged: (value) => setState(() =>
+                                        _deadlineInherited = value.isEmpty),
                                     decoration: InputDecoration(
                                       labelText: FormStrings.labelDeadlineDays,
                                       suffixIcon: IconButton(
                                         tooltip: FormStrings.inheritDays(
-                                          (_formFeature
-                                                      .deadlineDurationSeconds ??
-                                                  604800) /
-                                              86400,
-                                        ),
+                                            (_formFeature
+                                                        .deadlineDurationSeconds ??
+                                                    604800) /
+                                                86400),
                                         icon: const Icon(Icons.restore),
                                         onPressed: () => setState(() {
                                           _deadlineInherited = true;
@@ -1131,7 +1097,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       Text(message),
                                     const SizedBox(height: 24),
                                     const Divider(),
-                                    const SizedBox(height: 16),
+                                  const SizedBox(height: 16),
                                   ],
                                   Text(
                                     FormStrings.paymentDetailsTitle,
@@ -1254,9 +1220,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         : null,
                                   ),
                                   const SizedBox(height: 48),
-                                  if (RightsService.hasCapability(
-                                    AuthorizationCapabilities.formsWrite,
-                                  ))
+                                  if (RightsService.hasCapability(AuthorizationCapabilities.formsWrite))
                                     Center(
                                       child: Tooltip(
                                         message: (_form?.definition.canDelete ??
@@ -1298,9 +1262,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       ),
       bottomNavigationBar: EditorActionBar(
         hasChanges: !_isLoading && _form != null && _snapshot.differs(_draft),
-        enabled: RightsService.hasCapability(
-          AuthorizationCapabilities.formsWrite,
-        ),
+        enabled: RightsService.hasCapability(AuthorizationCapabilities.formsWrite),
         onDiscard: _cancelEdit,
         onSave: () => _saveChanges(context),
       ),

@@ -240,8 +240,6 @@
     "measurementUnitEnabled": "Zezwól na pomiar dla tego organizatora",
     "measurementOrganizationHelp": "Udostępnia ustawienia pomiaru organizatorom w tej organizacji. Wyłączenie zatrzyma pomiar wszystkich ich formularzy i zachowa ustawienia.",
     "measurementOrganizationEnabled": "Zezwól na pomiar formularzy",
-    "enhancedConversions": "Konwersje rozszerzone",
-    "enhancedConversionsHelp": "Niedostępne. Przekazywanie kontaktów wymaga osobnego wdrożenia zgody i celu. Zapisane przygotowania pozostaną zachowane.",
     "measurementEnabled": "Włącz pomiar",
     "measurementDisabled": "Pomiar tego formularza jest wyłączony.",
     "measurementOrganizationBlocked": "Zażądano, platforma blokuje pomiar dla tej organizacji.",

@@ -21,7 +21,7 @@ test('every supported locale has complete measurement labels in both clients',()
     for(const locale of ['cs','en','sk','de','pl','uk']){
         const flutter=JSON.parse(read(`assets/translations/${locale}.json`)).FeatureFormSettings;
         const web=JSON.parse(read(`web_client/public/assets/translations/${locale}.json`)).FeatureFormSettings;
-        for(const key of ['measurementNoDestination','measurementReady','measurementEnabled','measurementDisabled','measurementOrganizationBlocked','measurementRuntimeBlocked','measurementAdvanced','enhancedConversions','enhancedConversionsHelp','measurementTitle','gtmContainer','gtmHelp','gtmInvalid','measurementScripts','measurementScriptsHelp','measurementScriptsTooLong']){
+        for(const key of ['measurementNoDestination','measurementReady','measurementEnabled','measurementDisabled','measurementOrganizationBlocked','measurementRuntimeBlocked','measurementAdvanced','measurementTitle','gtmContainer','gtmHelp','gtmInvalid','measurementScripts','measurementScriptsHelp','measurementScriptsTooLong']){
             assert.ok(flutter[key]?.length,`${locale}.${key}`);assert.equal(flutter[key],web[key]);
         }
     }

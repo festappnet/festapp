@@ -122,10 +122,6 @@ void main() {
           find.widgetWithText(TextFormField, FormStrings.measurementScripts),
           findsNothing,
         );
-        expect(
-          find.widgetWithText(SwitchListTile, FormStrings.enhancedConversions),
-          findsNothing,
-        );
         Future<void> save() async {
           await tester
               .widget<EditorActionBar>(find.byType(EditorActionBar))

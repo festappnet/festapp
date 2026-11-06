@@ -1,10 +1,8 @@
 import { analyticsPayload, currencies } from './form_measurement_contract.js';
-export { analyticsPayload } from './form_measurement_contract.js';
 import { AppConfig } from '../../app_config.js';
 import { browserStorage } from '../../services/browser_storage.js';
 
 import {publicFormLocation, documentEntryAllowed} from '../../utils/public_form_location.js';
-export {publicFormLocation, publicFormAttributionSearch} from '../../utils/public_form_location.js';
 
 export function hasBrowserSession(win) {
     try {

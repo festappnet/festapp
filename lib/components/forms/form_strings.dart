@@ -3,10 +3,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
-  static String get enhancedConversions =>
-      'FeatureFormSettings.enhancedConversions'.tr();
-  static String get enhancedConversionsHelp =>
-      'FeatureFormSettings.enhancedConversionsHelp'.tr();
   static String get gtmContainer => 'FeatureFormSettings.gtmContainer'.tr();
   static String get gtmHelp => 'FeatureFormSettings.gtmHelp'.tr();
   static String get measurementOrganizationEnabled =>
@@ -47,9 +43,8 @@ class FormStrings {
   static String appearanceLabel(String key) => 'OccasionSetup.ui.$key'.tr();
 
   static String emailSuffixWarning(String suffix, {bool informal = false}) =>
-      'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'.tr(
-        namedArgs: {'suffix': suffix},
-      );
+      'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'
+          .tr(namedArgs: {'suffix': suffix});
   static String get emailSuffixConfirm => 'EmailDomainSuffix.confirm'.tr();
 
   static String get productsAndPrices =>
@@ -86,12 +81,10 @@ class FormStrings {
   static String get nonNegativeDays =>
       'FeatureFormSettings.nonNegativeDays'.tr();
   static String inheritReminder(bool enabled) =>
-      'FeatureFormSettings.inheritReminder'.tr(
-        args: [enabled ? remindersOn : remindersOff],
-      );
-  static String inheritDays(num days) => 'FeatureFormSettings.inheritDays'.tr(
-        args: [days % 1 == 0 ? days.toInt().toString() : days.toString()],
-      );
+      'FeatureFormSettings.inheritReminder'
+          .tr(args: [enabled ? remindersOn : remindersOff]);
+  static String inheritDays(num days) => 'FeatureFormSettings.inheritDays'
+      .tr(args: [days % 1 == 0 ? days.toInt().toString() : days.toString()]);
 
   static String deletionReason(String? reason) =>
       'FormsFeature.deleteBlocked.${reason ?? 'unknown'}'.tr();
@@ -114,12 +107,11 @@ class FormStrings {
       'inventory',
       'shared',
       'primary_product',
-      'changed',
+      'changed'
     ]) {
       if (message.contains('FORM_DELETE_$reason')) {
-        return 'FormsFeature.deleteSaveFailed'.tr(
-          args: [deletionReason(reason)],
-        );
+        return 'FormsFeature.deleteSaveFailed'
+            .tr(args: [deletionReason(reason)]);
       }
     }
     return message.replaceFirst('Exception: ', '');
@@ -127,7 +119,7 @@ class FormStrings {
 
   static String get moreFonts => 'FeatureFormSettings.moreFonts'.tr();
   static String get fontSearchHint => 'FeatureFormSettings.fontSearchHint'.tr();
-  // Form Settings Feature
+// Form Settings Feature
   static String get formSettingsTitle => 'FeatureFormSettings.title'.tr();
   static String get formNotFound => 'FeatureFormSettings.formNotFound'.tr();
   static String get labelFormTitle => 'FeatureFormSettings.labelFormTitle'.tr();
@@ -282,13 +274,11 @@ class FormStrings {
   static String get formClosedMessage =>
       'FeatureFormSettings.formClosedMessage'.tr(); // "Form is CLOSED."
   static String scheduledWithTime(String time) =>
-      'FeatureFormSettings.scheduledWithTime'.tr(
-        namedArgs: {'time': time},
-      ); // "Scheduled (Starts: {time})"
+      'FeatureFormSettings.scheduledWithTime'
+          .tr(namedArgs: {'time': time}); // "Scheduled (Starts: {time})"
   static String endedWithTime(String time) =>
-      'FeatureFormSettings.endedWithTime'.tr(
-        namedArgs: {'time': time},
-      ); // "Ended (Closed: {time})"
+      'FeatureFormSettings.endedWithTime'
+          .tr(namedArgs: {'time': time}); // "Ended (Closed: {time})"
   static String get formOpenMessage => 'FeatureFormSettings.formOpenMessage'
       .tr(); // "Form is OPEN & accepting responses."
   static String get scheduleAndLimits =>
@@ -341,15 +331,14 @@ class FormStrings {
   static String get depositOnSite => 'OrderGridColumns.depositOnSite'.tr();
   static String get depositInfo => 'OrderGridColumns.depositInfo'.tr();
 
-  // --- FormsTab (Main Grid View) ---
+// --- FormsTab (Main Grid View) ---
   static String get formsTitle => 'FormsFeature.formsTitle'.tr(); // "Forms"
   static String get createNewForm =>
       'FormsFeature.createNewForm'.tr(); // "Create/Copy Form"
   // --- There are no forms for this event. Click '{createNew}' to add one.
   static String noFormsForEventPrompt(String createNew) =>
-      'FormsFeature.noFormsForEventPrompt'.tr(
-        namedArgs: {'createNew': createNew},
-      );
+      'FormsFeature.noFormsForEventPrompt'
+          .tr(namedArgs: {'createNew': createNew});
   static String get createCopy =>
       'FormsFeature.createCopy'.tr(); // "Create Copy"
   static String get statusOpen =>
@@ -364,12 +353,12 @@ class FormStrings {
   static String get cannotDeleteFormWithResponses =>
       'FormsFeature.cannotDeleteFormWithResponses'.tr();
 
-  // --- FormTab (The TabBar holder) ---
+// --- FormTab (The TabBar holder) ---
   static String get tabForm => 'FormsFeature.tabForm'.tr(); // "Form"
   static String get tabResponses =>
       'FormsFeature.tabResponses'.tr(); // "Responses" (can be reused)
 
-  // --- FormCreationHelper (Creation Dialog) ---
+// --- FormCreationHelper (Creation Dialog) ---
   static String get defaultFormTitle =>
       'FormsFeature.defaultFormTitle'.tr(); // "new-form"
   static String get formAvailableAt =>
@@ -377,7 +366,7 @@ class FormStrings {
   static String get formCreatedSuccess =>
       'FormsFeature.formCreatedSuccess'.tr(); // "Form created successfully!"
 
-  // --- FormEditorContent (Form Editor Tab) ---
+// --- FormEditorContent (Form Editor Tab) ---
   static String get formTurnedOff =>
       'FormsFeature.formTurnedOff'.tr(); // "This form is currently turned off"
   static String get editOffText =>
@@ -393,7 +382,7 @@ class FormStrings {
   static String get noFieldsAvailable =>
       'FormsFeature.noFieldsAvailable'.tr(); // "No fields available to add."
 
-  // --- Form Editor (Ticket Editor) ---
+// --- Form Editor (Ticket Editor) ---
   static String get addProductTypeTitle =>
       'FormsFeature.addProductTypeTitle'.tr();
   static String get createNewProductTypeOption =>
@@ -443,7 +432,7 @@ class FormStrings {
   static String get clearDefaultSelection =>
       'FormsFeature.clearDefaultSelection'.tr();
 
-  // --- Create/Copy Dialog (_CreateOrCopyFormDialog) ---
+// --- Create/Copy Dialog (_CreateOrCopyFormDialog) ---
   static String get createFormTitle =>
       'FormsFeature.createFormTitle'.tr(); // "Create a Form"
   static String get createNewBlankForm =>
@@ -458,11 +447,11 @@ class FormStrings {
       'FormsFeature.groupUpcoming'.tr(); // "Upcoming"
   static String get groupOther => 'FormsFeature.groupOther'.tr(); // "Other"
   static String numberOfResponsesTooltip(int count) =>
-      'FormsFeature.numberOfResponsesTooltip'.tr(
-        namedArgs: {'count': count.toString()},
-      ); // "Number of responses: {count}"
+      'FormsFeature.numberOfResponsesTooltip'.tr(namedArgs: {
+        'count': count.toString()
+      }); // "Number of responses: {count}"
 
-  // --- Field & Product Editors (widgets_editor) ---
+// --- Field & Product Editors (widgets_editor) ---
   static String get addProduct =>
       'FormsFeature.addProduct'.tr(); // "Add Product"
   static String get addDescription =>

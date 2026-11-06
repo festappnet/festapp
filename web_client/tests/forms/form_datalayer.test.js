@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {FormDataLayer, analyticsPayload, publicFormLocation} from '../../src/components/forms/form_datalayer.js';
+import {FormDataLayer} from '../../src/components/forms/form_datalayer.js';
+import {analyticsPayload} from '../../src/components/forms/form_measurement_contract.js';
+import {publicFormLocation} from '../../src/utils/public_form_location.js';
 const identity='c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44';
 const paid={item_id:'product_11',item_name:'Concert',price:100,quantity:2};
 const purchase={event:'purchase',ecommerce:{currency:'CZK',transaction_id:identity,payment_type:'bank_transfer',items:[paid]}};

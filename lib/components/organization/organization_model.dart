@@ -3,7 +3,11 @@ class PlatformModel {
   String? prompt;
   String? platform;
 
-  PlatformModel({this.link, this.prompt, this.platform});
+  PlatformModel({
+    this.link,
+    this.prompt,
+    this.platform,
+  });
 
   factory PlatformModel.fromJson(Map<String, dynamic> json) => PlatformModel(
         link: json['link'] as String?,
@@ -59,11 +63,8 @@ class OrganizationModel {
       title: json['title'] as String?,
       appName: json['APP_NAME'] as String?,
       platforms: json['PLATFORMS'] is List
-          ? List<PlatformModel>.from(
-              (json['PLATFORMS'] as List).map(
-                (x) => PlatformModel.fromJson(x as Map<String, dynamic>),
-              ),
-            )
+          ? List<PlatformModel>.from((json['PLATFORMS'] as List)
+              .map((x) => PlatformModel.fromJson(x as Map<String, dynamic>)))
           : [],
       defaultUrl: json['DEFAULT_URL'] as String?,
       defaultLanguage: json['DEFAULT_LANGUAGE'] as String?,

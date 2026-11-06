@@ -440,8 +440,6 @@
     "measurementUnitEnabled": "Allow measurement for this organizer",
     "measurementOrganizationHelp": "Makes measurement settings available to organizers in this organization. Turning this off stops measurement for all their forms and preserves settings.",
     "measurementOrganizationEnabled": "Allow form measurement",
-    "enhancedConversions": "Enhanced conversions",
-    "enhancedConversionsHelp": "Unavailable. Sharing contacts requires a separate consent and purpose implementation. Saved preparation is preserved.",
     "measurementEnabled": "Enable measurement",
     "measurementDisabled": "Measurement is disabled for this form.",
     "measurementOrganizationBlocked": "Requested, blocked by the platform for this organization.",

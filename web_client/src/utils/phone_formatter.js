@@ -1,23 +1,6 @@
-// Analytics and form consumers share this conservative, non-truncating E.164 adapter.
-export function normalizeE164Phone(value, {defaultPrefix = null} = {}) {
-    if (typeof value !== 'string') return null;
-    const trimmed = value.replace(/^[\s\u200B-\u200D\u2060\u180E]+|[\s\u200B-\u200D\u2060\u180E]+$/gu, '');
-    if (!trimmed || trimmed.length > 100 || !/^[+\d\s().-]+$/.test(trimmed) || trimmed.includes('(0)')) return null;
-    let phone = trimmed.replace(/[\s().-]/g, '').replace(/^00/, '+');
-    if (!phone.startsWith('+')) {
-        if (/^\d{9}$/.test(phone) && ['+420', '+421'].includes(defaultPrefix)) phone = defaultPrefix + phone;
-        else if (/^(420|421)\d{9}$/.test(phone)) phone = '+' + phone;
-        else if (/^\+[1-9]\d{0,2}$/.test(defaultPrefix || '')) {
-            phone = phone.startsWith(defaultPrefix.slice(1)) && phone.length >= defaultPrefix.length + 6
-                ? '+' + phone : defaultPrefix + phone;
-        }
-        else return null;
-    }
-    return /^\+[1-9]\d{7,14}$/.test(phone) ? phone : null;
-}
 
 export class PhoneFormatter {
-    static kMaxPhoneNumberLength = 15;
+    static kMaxPhoneNumberLength = 12;
 
     static formatInput(inputElement) {
         const oldValue = inputElement.value;
