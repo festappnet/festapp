@@ -2907,6 +2907,26 @@
     "e6e5f0eb2f101a172107a8d2967f6963fb34ad93eacfd60a7342ed0bb759c3d2": {
       "signature": "public.effective_form_metadata_internal(jsonb,jsonb)",
       "source": "database/functions/eshop_forms/get_effective_form_data.sql"
+    },
+    "b84582092ab0646dd60453f78c36aaffad058388e1ef7c7edeae04c22165919e": {
+      "signature": "public.configure_barion_sandbox_connection_internal(bigint,bigint,text,text,bigint[],boolean)",
+      "source": "database/functions/eshop_barion/connections.sql"
+    },
+    "62c9f34a1affda5d9c0503fa1119b59bc826301c838ad4128eceb33e0157fa34": {
+      "signature": "public.barion_runtime_internal(text,jsonb)",
+      "source": "database/functions/eshop_barion/runtime.sql"
+    },
+    "67825c8f41c4a673c20b3f730763a57523e3f8c478e4decb6b0c72fd59cf73c5": {
+      "signature": "public.defer_stripe_recovery_internal(uuid,uuid,integer)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "74126829c3cd38be74e14e2e09882674c504a8aec7e01afda9cedd986e9635b6": {
+      "signature": "public.request_payment_reconciliation(text)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "d7d22018d14a84f1ac181cd5559caba4e852080c9bfd53cb0b6bcf7ba18fcc7e": {
+      "signature": "public.get_setup_payment_options(uuid)",
+      "source": "database/functions/payment_providers/configuration.sql"
     }
   }
 }

@@ -558,6 +558,9 @@
       "behaviorTests": [
         "supabase/functions/_shared/payments/checkout_test.ts",
         "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "abusePolicy": [
+        "stripe.connect"
       ]
     },
     "payment-checkout": {
@@ -568,6 +571,10 @@
         "supabase/functions/_shared/payments/checkout_test.ts",
         "supabase/functions/_shared/stripe/payments_test.ts",
         "supabase/functions/_shared/barion/adapter_test.ts"
+      ],
+      "abusePolicy": [
+        "stripe.checkout",
+        "barion.checkout"
       ]
     },
     "payment-return": {
@@ -577,7 +584,8 @@
       "behaviorTests": [
         "supabase/functions/_shared/payments/checkout_test.ts",
         "supabase/functions/_shared/stripe/payments_test.ts"
-      ]
+      ],
+      "abusePolicy": []
     },
     "payment-webhook": {
       "smokeTests": [
@@ -587,7 +595,8 @@
         "supabase/functions/_shared/payments/checkout_test.ts",
         "supabase/functions/_shared/stripe/payments_test.ts",
         "supabase/functions/_shared/barion/adapter_test.ts"
-      ]
+      ],
+      "abusePolicy": []
     },
     "payment-reconcile": {
       "smokeTests": [
@@ -597,7 +606,8 @@
         "supabase/functions/_shared/payments/reconcileHandler_test.ts",
         "supabase/functions/_shared/payments/reconcile_test.ts",
         "supabase/functions/_shared/barion/adapter_test.ts"
-      ]
+      ],
+      "abusePolicy": []
     }
   },
   "excluded": {
