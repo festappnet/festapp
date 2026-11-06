@@ -10,5 +10,6 @@ const session=new EventTarget();
 session.formModel={blueprint:null,visibleFields:[],payments:{configured:{}}};
 session.currentState={totalPrice:1300,totalItems:1,currency:'CZK',metaSurchargeSums:{}};
 const bridge=new EmbedBridge();bridge.start();
+bridge.setInheritStyle(true);
 const widget=new PriceWidget(session,document.getElementById('form-page-container'));widget.render();
 window.addEventListener('pagehide',()=>{widget.destroy();bridge.destroy?.();});

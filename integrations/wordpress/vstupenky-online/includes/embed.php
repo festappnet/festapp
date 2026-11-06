@@ -116,7 +116,7 @@ function render( $attributes ) {
 	);
 	// phpcs:enable WordPress.WP.EnqueuedResourceParameters.MissingVersion
 	return sprintf(
-		'<div class="vstupenky-online" data-festapp-embed-host><iframe%s src="%s" title="%s" width="100%%" height="%d" style="border:0;max-width:100%%" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
+		'<div class="vstupenky-online" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
 		' data-festapp-embed' . ( ! $auto ? ' data-festapp-height="fixed"' : '' ),
 		esc_url( $valid['url'] . '?embed=1' ),
 		esc_attr( $title ),

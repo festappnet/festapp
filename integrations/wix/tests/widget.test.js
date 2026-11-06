@@ -93,6 +93,8 @@ test('live widgets isolate frames, reuse the canonical helper and preserve check
   assert.equal(frame.src, `${SERVICE_ORIGIN}/form/ukazka?embed=1`);
   assert.notEqual(frame, second.querySelector('iframe'));
   assert.ok(frame.parentElement.hasAttribute('data-festapp-embed-host'));
+  assert.equal(frame.hasAttribute('width'), false);
+  assert.equal(frame.style.width, '100%');
   element.setAttribute('form-title', '<script>not html</script>');
   element.setAttribute('inherit-style', 'false');
   assert.equal(element.querySelector('iframe'), frame);

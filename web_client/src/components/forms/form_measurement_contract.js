@@ -87,4 +87,3 @@ export function analyticsPayload(input) {
     const result = {event: input.event, ecommerce};
     return result;
 }
-

@@ -585,7 +585,7 @@
     "embedAutomatic": "Automatic height (recommended)",
     "embedFixed": "Fixed height",
     "embedInheritStyle": "Match website appearance",
-    "embedInheritStyleHelp": "Use the website font, background and colors. Uncheck to keep the form appearance. This choice applies to this embed code; the seating map keeps its own appearance.",
+    "embedInheritStyleHelp": "Use the website font, background and colors in all embeds of this form. Save changes to apply them on the next page load. The seating map keeps its own appearance.",
     "productsAndPrices": "Products and prices"
   },
   "OrderGridColumns": {

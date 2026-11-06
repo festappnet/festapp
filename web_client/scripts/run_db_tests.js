@@ -53,14 +53,22 @@ if (testFiles.length === 0) {
 
 console.log(`Found ${testFiles.length} test file(s) to execute.`);
 
+// Server deadlines cancel blocked SQL; the slightly longer client deadline also
+// bounds network stalls. Apply them to setup and retries as well as each test.
+const clientOptions = {
+  connectionString: DATABASE_URL,
+  ssl: DATABASE_URL.includes('supabase.com') ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 5000,
+  lock_timeout: 5000,
+  statement_timeout: 30000,
+  query_timeout: 35000,
+};
+
 async function runTest(file) {
-  const client = new Client({
-    connectionString: DATABASE_URL,
-    // Add SSL support if targeting remote Supabase
-    ssl: DATABASE_URL.includes('supabase.com') ? { rejectUnauthorized: false } : false
-  });
+  const client = new Client(clientOptions);
 
   const relativePath = path.relative(PROJECT_ROOT, file);
+  const started = performance.now();
   console.log(`\n▶ Running: ${relativePath}`);
 
   try {
@@ -104,15 +112,15 @@ async function runTest(file) {
 
     // Rollback (Always clean up)
     await client.query('ROLLBACK');
-    console.log(`  ✔ PASSED`);
+    console.log(`  ✔ PASSED (${Math.round(performance.now() - started)} ms): ${relativePath}`);
     return true;
 
   } catch (err) {
     // Attempt rollback regardless of error
     try { await client.query('ROLLBACK'); } catch (e) {}
     
-    console.error(`  ❌ FAILED`);
-    console.error(`  Error: ${err.message}`);
+    console.error(`  ❌ FAILED (${Math.round(performance.now() - started)} ms): ${relativePath}`);
+    console.error(`  Error: ${err.message} (${relativePath})`);
     if (err.where) console.error(`  Context: ${err.where}`);
     if (err.detail) console.error(`  Detail: ${err.detail}`);
     // Check for PostgreSQL error codes (e.g. 23505)
@@ -130,10 +138,7 @@ const CONCURRENCY = 5;
 async function runAll() {
   console.log('>>> Setup: Resetting Sequences (Global)...');
   // 1. Global Setup (Run Once)
-  const setupClient = new Client({
-    connectionString: DATABASE_URL,
-    ssl: DATABASE_URL.includes('supabase.com') ? { rejectUnauthorized: false } : false
-  });
+  const setupClient = new Client(clientOptions);
 
   try {
     await setupClient.connect();

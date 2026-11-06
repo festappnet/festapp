@@ -41,6 +41,8 @@ namespace {
                     check(str_contains($html, 'data-festapp-embed-host'), 'Shared host wrapper');
                     check(str_contains($html, '<iframe data-festapp-embed '), 'Shared protocol');
                     check(!str_contains($html, 'data-festapp-style'), 'No local appearance authority');
+                    check(str_contains($html, 'style="display:block;width:100%;max-width:100%;border:0"'), 'Responsive block iframe without baseline gap');
+                    check(!str_contains($html, 'width="100%"'), 'CSS is the only width owner');
                     check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed'), 'Height is independent of appearance');
                     check(str_contains($html, "$url?embed=1"), 'Saved public form address');
                     $count++;

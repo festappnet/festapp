@@ -143,7 +143,7 @@ export class FormPage extends Component {
         this.analytics = null;
         this.analyticsEntryAllowed = publicFormLocation(window.location, {entry: true});
         this.currentLink = link;
-        this.embedBridge?.setInheritStyle(null);
+        this.embedBridge?.setInheritStyle(false);
         this.saleOpeningScope ||= consumeSaleOpeningLocation(window.location, window.history);
         if (isEmbed() && !this.embedBridge) {
             this.embedBridge = new EmbedBridge(); this.embedBridge.start();

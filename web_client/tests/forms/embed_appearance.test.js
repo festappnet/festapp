@@ -6,7 +6,7 @@ register('../css_loader.mjs',import.meta.url);
 
 // Exercise the real page/bridge/theme chain. Only data transport, the base
 // service theme and unrelated status content are simulated.
-test('per-embed choice and saved fallback control appearance across both loading orders, navigation and stale responses',async t=>{
+test('saved form owns embed appearance across both loading orders, navigation and stale responses',async t=>{
     const dom=new JSDOM('<div id="page"></div>',{
         url:'https://tickets.invalid/form/on?embed=1',pretendToBeVisual:true
     });
@@ -44,18 +44,17 @@ test('per-embed choice and saved fallback control appearance across both loading
     }));
     const root=win.document.documentElement;
     const first=page.init('on');await requested;
-    message({inheritStyle:true});
-    assert.equal(root.dataset.embedTheme,undefined,'explicit style choice waits for form data');
+    message();
+    assert.equal(root.dataset.embedTheme,undefined,'host input cannot bypass pending form settings');
     finish(model('on',true));await first;
     assert.equal(root.dataset.embedTheme,'host');
-    message();
+    message({inheritStyle:false});
+    assert.equal(root.dataset.embedTheme,'host','legacy host flags cannot disable saved inheritance');
     await page.init('off');
     assert.equal(root.dataset.embedTheme,undefined);
     message();assert.equal(root.dataset.embedTheme,undefined,'host cannot override a disabled form');
-
-    message({inheritStyle:true});assert.equal(root.dataset.embedTheme,'host','checked choice overrides the saved fallback');
-    message({inheritStyle:false});assert.equal(root.dataset.embedTheme,undefined,'unchecked choice keeps form appearance');
-    message({inheritStyle:'true'});assert.equal(root.dataset.embedTheme,undefined,'invalid choice cannot enable inheritance');
+    message({inheritStyle:true});
+    assert.equal(root.dataset.embedTheme,undefined,'legacy host flags cannot enable a disabled form');
 
     requested=new Promise(resolve=>{started=resolve;});
     const stale=page.init('stale');await requested;

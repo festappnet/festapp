@@ -458,7 +458,7 @@
     "embedAutomatic": "Automatická výška (odporúčané)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Prispôsobiť vzhľad webu",
-    "embedInheritStyleHelp": "Preberá písmo, pozadie a farby webu. Bez zaškrtnutia zostane vlastný vzhľad formulára. Voľba platí pre tento kód; plán sály si ponechá vlastný vzhľad.",
+    "embedInheritStyleHelp": "Preberá písmo, pozadie a farby webu vo všetkých vloženiach tohto formulára. Po uložení sa zmena prejaví pri ďalšom načítaní stránky. Plán sály si ponecháva vlastný vzhľad.",
     "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
     "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
     "labelBeforeStartMessage": "Informácie pred začiatkom",

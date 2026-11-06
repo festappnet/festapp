@@ -3,6 +3,10 @@ html.festapp-embed, .festapp-embed body, .festapp-embed #app { min-height: 0; he
 .festapp-embed body { display: flow-root; padding: 0; }
 .festapp-embed user-header, .festapp-embed #feedback-fab { display: none !important; }
 .festapp-embed #form-page-container { transform: none !important; min-height: 0; padding-top: 8px; }
+/* Keep the heading below the price, including wrapped surcharge lines. */
+.festapp-embed body:has(#floating-price-widget) #form-page-container {
+    padding-top: calc(var(--embed-price-height, 48px) + 24px);
+}
 .festapp-embed .form-loading { min-height: 240px; }
 .festapp-embed .order-preview-overlay,
 .festapp-embed .fullscreen-result-overlay,
@@ -54,6 +58,7 @@ html.festapp-embed, .festapp-embed body, .festapp-embed #app { min-height: 0; he
     font-family: var(--embed-font-family);
     color: var(--embed-text);
 }
+.festapp-embed[data-embed-theme="host"],
 .festapp-embed[data-embed-theme="host"] body {
     background: var(--embed-background) !important;
 }
@@ -69,6 +74,10 @@ html.festapp-embed, .festapp-embed body, .festapp-embed #app { min-height: 0; he
 }
 .festapp-embed[data-embed-theme="host"] #form-page-container :is(input[type="radio"], input[type="checkbox"]) {
     accent-color: var(--embed-text);
+}
+/* Service dark mode uses an important rule for surcharge descriptions. */
+.festapp-embed[data-embed-theme="host"] .surcharge-info {
+    color: var(--embed-text) !important;
 }
 .festapp-embed[data-embed-theme="host"] .flatpickr-day.selected {
     color: var(--embed-button-text) !important;

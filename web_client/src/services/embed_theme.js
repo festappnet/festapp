@@ -10,7 +10,7 @@ export class EmbedTheme {
         this.enabled = false;
         this.presentation = null;
     }
-    // The bridge resolves the per-embed choice and saved fallback before enabling.
+    // Saved form settings and validated host input meet at this single owner.
     // Either may arrive first; invalid messages never replace valid input.
     setEnabled(enabled) {
         this.enabled = enabled === true;

@@ -41,10 +41,7 @@ export class PriceWidget {
         }
 
         if (shouldHide) {
-             if (this.element) {
-                 this.element.remove();
-                 this.element = null;
-             }
+             this._removeElement();
              publishEmbedPrice(null);
              this.updateSubmitButton(false);
              return;
@@ -89,6 +86,23 @@ export class PriceWidget {
                 animation: fadeIn 0.3s ease-out;
                 cursor: pointer;
             `;
+
+            if (isEmbed() && window.ResizeObserver) {
+                this._priceResizeObserver = new window.ResizeObserver(() => {
+                    if (this._priceResizeFrame) return;
+                    // Write layout outside ResizeObserver delivery to avoid a
+                    // resize feedback cycle with the iframe's height observer.
+                    this._priceResizeFrame = window.requestAnimationFrame(() => {
+                        this._priceResizeFrame = null;
+                        const height = Math.ceil(this.element?.getBoundingClientRect().height || 0);
+                        const style = document.documentElement.style;
+                        if (height > 0 && style.getPropertyValue('--embed-price-height') !== `${height}px`) {
+                            style.setProperty('--embed-price-height', `${height}px`);
+                        }
+                    });
+                });
+                this._priceResizeObserver.observe(this.element);
+            }
             
 
             // Use flexbox on container? No, container has form content.
@@ -166,7 +180,21 @@ export class PriceWidget {
     destroy() {
         publishEmbedPrice(null);
         this.session.removeEventListener('state-changed', this._onStateChange);
-        if (this.element) this.element.remove();
+        this._removeElement();
+    }
+
+    _removeElement() {
+        if (this._priceResizeFrame) {
+            window.cancelAnimationFrame(this._priceResizeFrame);
+            this._priceResizeFrame = null;
+        }
+        if (this._priceResizeObserver) {
+            this._priceResizeObserver.disconnect();
+            this._priceResizeObserver = null;
+            document.documentElement.style.removeProperty('--embed-price-height');
+        }
+        this.element?.remove();
+        this.element = null;
     }
 
     _resolveColor(colorString) {

@@ -32,4 +32,3 @@ export function documentEntryAllowed(win) {
     return (['/', '/events'].includes(original.pathname) || /^\/unit\/[1-9]\d*\/?$/.test(original.pathname)) &&
         publicFormLocation({pathname: '/form/entry', search: original.search, hash: original.hash}, {entry: true});
 }
-

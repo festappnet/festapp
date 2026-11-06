@@ -5,9 +5,17 @@ Zkopírujte kód do HTML bloku svého CMS. Při neuložené změně adresy se po
 poslední uložený odkaz. Nový formulář je nutné nejdříve uložit.
 
 Automatická výška používá iframe a externí `/embed.js` ze stejného tenantu.
-Pokud CMS zakazuje skripty, vypněte převzetí stylu a zvolte pevnou výšku: iframe má 800 px a vlastní
-posouvání. Výšku můžete v HTML upravit. Obě varianty obsahují odkaz pro otevření
+Pokud CMS zakazuje skripty, použijte pevnou výšku: iframe má 800 px a vlastní
+posouvání, bez automatické výšky a převzetí vzhledu webu. Výšku můžete v HTML
+upravit. Obě varianty obsahují odkaz pro otevření
 běžného formuláře v nové záložce. Pokud CMS zakazuje iframe, použijte tento odkaz.
+
+Generovaný kód obsahuje pouze hostitelský obal, responzivní iframe, záložní odkaz
+a externí `/embed.js` s `defer`. Nepotřebuje inline JavaScript, atribut
+`data-festapp-style` ani verzovací parametr `?v=appearance-1`. Převzetí vzhledu
+se nastavuje u formuláře. Iframe má `display:block`, aby pod ním nezůstávala
+mezera textového řádku; šířku řídí jeho hostitelský blok. Nepřidávejte další
+pevnou výšku do CSS, pokud chcete automatické přizpůsobení.
 
 Hostitelská CSP musí povolit tenant host v `frame-src` a u automatické varianty
 také v `script-src`. Host nemusí povolovat inline JavaScript. Nepřidávejte
@@ -121,18 +129,19 @@ po dokončení jej i vlastní disposable projekt zastavte.
 
 ## Volitelné převzetí vzhledu hostitele
 
-Volba je přímo v dialogu **Vložit na vlastní web** a v HTML generátoru.
-Zaškrtnutí generuje `data-festapp-style="inherit"`, vypnutí
-`data-festapp-style="default"`. Platí pouze pro konkrétní vložení; nemění
-uložený vzhled formuláře, ostatní vložení ani plánek sálu.
-Helper po ověření rodiče předá explicitní volbu do `EmbedBridge`. Prezentační
-tokeny se aplikují až po načtení formuláře a pouze při zapnutém dědění.
-Bez explicitního atributu zůstává kompatibilní fallback
-`forms.data.design.embed_inherit_style` (výchozí true), například pro existující
-CMS integrace. Tento fallback nemá samostatný přepínač ve Vzhledu formuláře.
-Samostatný formulář žádné styly hostitele nepřebírá.
+`forms.data.design.embed_inherit_style` je jediná uložená autorita (boolean,
+výchozí true). Nastavení se ukládá běžným form commandem ve Vzhledu formuláře.
+Host `/embed.js` pouze předává vypočtené prezentační tokeny. `EmbedBridge` předává ověřená data do `EmbedTheme`, který tokeny
+aplikuje až podle načteného FormModel; před načtením dat je prezentace vypnutá.
+Standalone formulář ani plánek se tím nemění. Změna se projeví při dalším načtení,
+nikoli nuceným restartem rozpracované objednávky.
 
-Pro vložení bez již načítaného helperu je potřeba doplnit `/embed.js`.
+HTML generátor, oba WordPress pluginy, oba Joomla moduly a Wix používají stejný
+helper bez vlastního přepínače vzhledu. Staré atributy `data-festapp-style` a
+uložené lokální volby doplňků nemají na novém helperu žádný účinek. Žádné
+přepisování HTML není potřeba u vložení, která již helper načítají. Historická
+vložení bez helperu (pevná výška s vypnutým děděním) potřebují jednou doplnit
+skript nebo aktualizovat doplněk; bez spolupráce hostitele nelze číst jeho CSS.
 `data-festapp-height="fixed"` zakazuje pouze automatický resize. Nové generátory
 načítají helper i při pevné výšce; při blokovaném JS zůstává rám/záložní odkaz.
 

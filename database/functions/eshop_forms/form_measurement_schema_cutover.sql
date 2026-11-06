@@ -30,4 +30,3 @@ DO $$ BEGIN
 END $$;
 ALTER TABLE IF EXISTS analytics.organization_policy DROP COLUMN IF EXISTS runtime_origin,
  DROP COLUMN IF EXISTS runtime_profile,DROP COLUMN IF EXISTS parent_origins,DROP COLUMN IF EXISTS collector_origins;
-
