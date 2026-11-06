@@ -187,20 +187,6 @@ class _FormDesignSettingsState extends State<FormDesignSettings> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SwitchListTile(
-            key: const ValueKey('form-embed-inherit-style'),
-            title: Text(FormStrings.embedInheritStyle),
-            subtitle: Text(FormStrings.embedInheritStyleHelp),
-            value: widget.form.definition.embedInheritStyle,
-            contentPadding: EdgeInsets.zero,
-            onChanged: widget.enabled
-                ? (value) => setState(() {
-                    widget.form.definition = widget.form.definition
-                        .withEmbedInheritStyle(value);
-                    widget.onChanged();
-                  })
-                : null,
-          ),
-          SwitchListTile(
             title: Text(FormStrings.labelCardDesign),
             subtitle: Text(FormStrings.subtitleCardDesign),
             value: widget.form.definition.isCardDesign,

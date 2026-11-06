@@ -17,6 +17,7 @@ import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/form_settings_content.dart';
+import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -39,129 +40,153 @@ void main() {
     ),
   );
 
-  for (final canMeasure in [true, false]) {
-    testWidgetsWithEnvironment(
-      () => _environment,
-      'form measurement owns only enabled and responds to permission loss ($canMeasure)',
-      (tester) async {
-        tester.view.physicalSize = const Size(1600, 4000);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        void rights(bool measurement) {
-          RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-            capabilities: {
-              AuthorizationCapabilities.formsWrite: true,
-              AuthorizationCapabilities.formsMeasurementWrite: measurement,
-              AuthorizationCapabilities.ordersWrite: true,
-              AuthorizationCapabilities.occasionsWrite: true,
-            },
-            occasionUser: OccasionUserModel(isEditor: true),
-            occasion: OccasionModel(
-              isOpen: true,
-              isHidden: false,
-              isPromoted: false,
-              features: [FormFeature(code: 'form')],
-            ),
-          );
-        }
-
-        rights(canMeasure);
-        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
-        final changes = ValueNotifier((accountId: 0, revision: 0));
-        addTearDown(changes.dispose);
-        final form = FormEditorDraft(
-          link: 'test',
-          title: 'Letní koncert',
-          data: {
-            'analytics': {'enabled': false},
-          },
-        );
-        form.definition = form.definition.copyWith(
-          measurementStatus: {
-            'organization_enabled': true,
-            'unit_enabled': true,
-            'runtime_supported': false,
-          },
-        );
-        final saved = <Map<String, dynamic>?>[];
-        await _environment.pumpWidget(
-          tester,
-          MaterialApp(
-            builder: DependencyMaterialBridge.builder,
-            home: FormSettingsContent(
-              bankConnectionChanges: changes,
-              formLink: 'test',
-              loadBundle: (_) async => FormEditBundle(
-                form: form,
-                productTypes: [],
-                products: [],
-                availableBankAccounts: [],
+  for (final unitEnabled in [true, false]) {
+    for (final canMeasure in [true, false]) {
+      testWidgetsWithEnvironment(
+        () => _environment,
+        'form measurement owns only enabled with unit=$unitEnabled and permission=$canMeasure',
+        (tester) async {
+          tester.view.physicalSize = const Size(1600, 4000);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          void rights(bool measurement) {
+            RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+              unit: UnitModel(
+                id: 7,
+                data: {'measurement_enabled': unitEnabled},
               ),
-              saveForm: (value) async {
-                saved.add(value.definition.data);
+              capabilities: {
+                AuthorizationCapabilities.formsWrite: true,
+                AuthorizationCapabilities.unitSettingsWrite: measurement,
+                AuthorizationCapabilities.formsMeasurementWrite: measurement,
+                AuthorizationCapabilities.ordersWrite: true,
+                AuthorizationCapabilities.occasionsWrite: true,
               },
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        final toggle = find.widgetWithText(
-          SwitchListTile,
-          FormStrings.measurementEnabled,
-        );
-        expect(tester.widget<SwitchListTile>(toggle).value, false);
-        expect(
-          tester.widget<SwitchListTile>(toggle).onChanged == null,
-          !canMeasure,
-        );
-        expect(
-          find.widgetWithText(TextFormField, FormStrings.gtmContainer),
-          findsNothing,
-        );
-        expect(
-          find.widgetWithText(TextFormField, FormStrings.measurementScripts),
-          findsNothing,
-        );
-        Future<void> save() async {
-          await tester
-              .widget<EditorActionBar>(find.byType(EditorActionBar))
-              .onSave();
-          await tester.pumpAndSettle();
-        }
+              occasionUser: OccasionUserModel(isEditor: true),
+              occasion: OccasionModel(
+                isOpen: true,
+                isHidden: false,
+                isPromoted: false,
+                features: [FormFeature(code: 'form')],
+              ),
+            );
+          }
 
-        if (canMeasure) {
-          await tester.ensureVisible(toggle);
-          await tester.tap(toggle);
+          rights(canMeasure);
+          addTearDown(
+            () => RightsService.occasionLinkModelNotifier.value = null,
+          );
+          final changes = ValueNotifier((accountId: 0, revision: 0));
+          addTearDown(changes.dispose);
+          final form = FormEditorDraft(
+            link: 'test',
+            title: 'Letní koncert',
+            data: {
+              'analytics': {'enabled': false},
+            },
+          );
+          form.definition = form.definition.copyWith(
+            measurementStatus: {
+              'organization_enabled': true,
+              'unit_enabled': unitEnabled,
+              'runtime_supported': false,
+            },
+          );
+          final saved = <Map<String, dynamic>?>[];
+          await _environment.pumpWidget(
+            tester,
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: FormSettingsContent(
+                bankConnectionChanges: changes,
+                formLink: 'test',
+                loadBundle: (_) async => FormEditBundle(
+                  form: form,
+                  productTypes: [],
+                  products: [],
+                  availableBankAccounts: [],
+                ),
+                saveForm: (value) async {
+                  saved.add(value.definition.data);
+                },
+              ),
+            ),
+          );
           await tester.pumpAndSettle();
+          final toggle = find.widgetWithText(
+            SwitchListTile,
+            FormStrings.measurementEnabled,
+          );
+          expect(tester.widget<SwitchListTile>(toggle).value, false);
           expect(
-            find.text(FormStrings.measurementRuntimeBlocked),
-            findsOneWidget,
+            find.text(FormStrings.measurementFormUnitBlocked),
+            unitEnabled ? findsNothing : findsOneWidget,
           );
-          await save();
-          expect(saved.last?['analytics'], {'enabled': true});
-          await tester.ensureVisible(toggle);
-          await tester.tap(toggle);
-          await tester.pumpAndSettle();
-          await save();
-          expect(saved.last?['analytics'], {'enabled': false});
-          rights(false);
-          await tester.pumpAndSettle();
-          expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
-          final title = find.widgetWithText(
-            TextFormField,
-            FormStrings.labelFormTitle,
+          expect(
+            find.text(FormStrings.measurementOpenUnitSettings),
+            canMeasure ? findsOneWidget : findsNothing,
           );
-          await tester.ensureVisible(title);
-          await tester.enterText(title, 'Podzimní koncert');
-          await save();
-          expect(saved.last?['analytics'], {'enabled': false});
-        }
-        expect(tester.takeException(), isNull);
-      },
-    );
+          expect(
+            find.text(FormStrings.measurementAskUnitManager),
+            canMeasure ? findsNothing : findsOneWidget,
+          );
+          expect(
+            tester.widget<SwitchListTile>(toggle).onChanged == null,
+            !canMeasure,
+          );
+          expect(
+            find.widgetWithText(TextFormField, FormStrings.gtmContainer),
+            findsNothing,
+          );
+          expect(
+            find.widgetWithText(TextFormField, FormStrings.measurementScripts),
+            findsNothing,
+          );
+          Future<void> save() async {
+            await tester
+                .widget<EditorActionBar>(find.byType(EditorActionBar))
+                .onSave();
+            await tester.pumpAndSettle();
+          }
+
+          if (canMeasure) {
+            await tester.ensureVisible(toggle);
+            await tester.tap(toggle);
+            await tester.pumpAndSettle();
+            expect(
+              find.text(FormStrings.measurementRuntimeBlocked),
+              findsOneWidget,
+            );
+            await save();
+            expect(saved.last?['analytics'], {'enabled': true});
+            expect(RightsService.currentUnit()?.data, {
+              'measurement_enabled': unitEnabled,
+            });
+            await tester.ensureVisible(toggle);
+            await tester.tap(toggle);
+            await tester.pumpAndSettle();
+            await save();
+            expect(saved.last?['analytics'], {'enabled': false});
+            rights(false);
+            await tester.pumpAndSettle();
+            expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
+            final title = find.widgetWithText(
+              TextFormField,
+              FormStrings.labelFormTitle,
+            );
+            await tester.ensureVisible(title);
+            await tester.enterText(title, 'Podzimní koncert');
+            await save();
+            expect(saved.last?['analytics'], {'enabled': false});
+          }
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
   }
 
-  for (final blocked in ['organization_enabled', 'unit_enabled']) {
+  for (final blocked in ['organization_enabled']) {
     testWidgetsWithEnvironment(
       () => _environment,
       'hidden measurement preserves form choice when $blocked is false',

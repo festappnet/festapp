@@ -400,6 +400,9 @@
     "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
   },
   "FeatureFormSettings": {
+    "measurementFormUnitBlocked": "Die Messung ist für diesen Veranstalter deaktiviert. Sie können die Einstellung für dieses Formular speichern. Die Messung kann erst nach der Aktivierung beim Veranstalter und Erfüllung der weiteren Voraussetzungen starten.",
+    "measurementOpenUnitSettings": "Messeinstellungen des Veranstalters öffnen",
+    "measurementAskUnitManager": "Bitten Sie die Verwaltung des Veranstalters, die Messung zu aktivieren und GTM oder Skripte einzurichten.",
     "measurementActivationHelp": "Das Speichern dieser Einstellungen startet die Messung noch nicht. Aktivieren Sie sie auch in den Einstellungen der einzelnen Formulare. Die Ausführung erfordert außerdem die Freigabe und Einrichtung durch die Plattform sowie die Einwilligung des Besuchers.",
     "measurementUnitDisabled": "Die Messung ist für diesen Veranstalter deaktiviert. Gespeicherte IDs und Skripte bleiben erhalten.",
     "measurementConsentDecline": "Ablehnen",

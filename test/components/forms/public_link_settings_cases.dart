@@ -46,33 +46,45 @@ void main() {
   test(
     'embed code uses tenant, escaped attributes and one public saved URL',
     () {
-      for (final automatic in [true, false]) {
-        final code = formEmbedCode(
-          tenantUrl: 'https://tenant.example/',
-          savedLink: 'Legacy &/č',
-          title: 'Order "tickets"',
-          fallbackLabel: 'Open <order>',
-          automatic: automatic,
-        );
-        expect(
-          code,
-          contains('https://tenant.example/form/Legacy%20%26%2F%C4%8D?embed=1'),
-        );
-        expect(code, contains('Order &quot;tickets&quot;'));
-        expect(code, contains('Open &lt;order&gt;'));
-        expect(code.contains('data-festapp-embed'), isTrue);
-        expect(code.contains('<script'), isTrue);
-        expect(code, contains('/embed.js" defer'));
-        expect(code, isNot(contains('data-festapp-style=')));
-        expect(code, isNot(contains('width="100%"')));
-        expect(
-          code,
-          contains('style="display:block;width:100%;max-width:100%;border:0"'),
-        );
-        expect(code, contains('allow="clipboard-write"'));
-        expect(code, contains('height="800"'));
-        expect(code, isNot(contains('sandbox')));
-        expect(code.contains('data-festapp-height="fixed"'), !automatic);
+      for (final inheritStyle in [true, false]) {
+        for (final automatic in [true, false]) {
+          final code = formEmbedCode(
+            tenantUrl: 'https://tenant.example/',
+            savedLink: 'Legacy &/č',
+            title: 'Order "tickets"',
+            fallbackLabel: 'Open <order>',
+            automatic: automatic,
+            inheritStyle: inheritStyle,
+          );
+          expect(
+            code,
+            contains(
+              'https://tenant.example/form/Legacy%20%26%2F%C4%8D?embed=1',
+            ),
+          );
+          expect(code, contains('Order &quot;tickets&quot;'));
+          expect(code, contains('Open &lt;order&gt;'));
+          expect(code.contains('data-festapp-embed'), isTrue);
+          expect(code.contains('<script'), isTrue);
+          expect(code, contains('/embed.js" defer'));
+          expect(
+            code,
+            contains(
+              'data-festapp-style="${inheritStyle ? 'inherit' : 'default'}"',
+            ),
+          );
+          expect(code, isNot(contains('width="100%"')));
+          expect(
+            code,
+            contains(
+              'style="display:block;width:100%;max-width:100%;border:0"',
+            ),
+          );
+          expect(code, contains('allow="clipboard-write"'));
+          expect(code, contains('height="800"'));
+          expect(code, isNot(contains('sandbox')));
+          expect(code.contains('data-festapp-height="fixed"'), !automatic);
+        }
       }
       expect(
         () => formEmbedCode(
@@ -88,7 +100,7 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => _environment,
-    'saved embed appearance preference edits the draft and respects read-only mode',
+    'design settings preserve the legacy fallback without an embed control',
     (tester) async {
       final form = FormEditorDraft();
       var changes = 0;
@@ -110,30 +122,24 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      final toggle = find.byKey(const ValueKey('form-embed-inherit-style'));
+      final before = jsonEncode(form.toEditedJson());
       await mount(true);
-      expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
-      await tester.tap(toggle);
-      await tester.pumpAndSettle();
-      expect(form.definition.embedInheritStyle, isFalse);
       expect(
-        form.toEditedJson()['settings']['design']['embed_inherit_style'],
-        false,
+        find.byKey(const ValueKey('form-embed-inherit-style')),
+        findsNothing,
       );
-      expect(changes, 1);
+      expect(find.text(FormStrings.embedInheritStyle), findsNothing);
+      expect(jsonEncode(form.toEditedJson()), before);
       await mount(false);
-      expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
-      expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
-      await tester.tap(toggle);
-      await tester.pumpAndSettle();
-      expect(form.definition.embedInheritStyle, isFalse);
-      expect(changes, 1);
+      expect(find.text(FormStrings.embedInheritStyle), findsNothing);
+      expect(jsonEncode(form.toEditedJson()), before);
+      expect(changes, 0);
     },
   );
 
   testWidgetsWithEnvironment(
     () => _environment,
-    'embed dialog uses saved appearance with helper in both height modes',
+    'embed dialog controls appearance locally in both height modes and resets on reopen',
     (tester) async {
       await _environment.pumpWidget(
         tester,
@@ -150,16 +156,23 @@ void main() {
           .widgetList<CopyButton>(find.byType(CopyButton))
           .singleWhere((button) => button.value.contains('<iframe'))
           .value;
-      expect(find.byType(CheckboxListTile), findsNothing);
-      expect(find.text(FormStrings.embedInheritStyle), findsNothing);
-      expect(copiedCode(), isNot(contains('data-festapp-style=')));
+      final toggle = find.byKey(const ValueKey('embed-inherit-style'));
+      expect(tester.widget<CheckboxListTile>(toggle).value, isTrue);
+      expect(copiedCode(), contains('data-festapp-style="inherit"'));
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(copiedCode(), contains('data-festapp-style="default"'));
       expect(copiedCode(), contains('/embed.js" defer'));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedFixed).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsNothing);
-      expect(copiedCode(), isNot(contains('data-festapp-style=')));
+      expect(tester.widget<CheckboxListTile>(toggle).value, isFalse);
+      expect(tester.widget<CheckboxListTile>(toggle).onChanged, isNotNull);
+      expect(copiedCode(), contains('data-festapp-style="default"'));
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(copiedCode(), contains('data-festapp-style="inherit"'));
       expect(copiedCode(), contains('/embed.js" defer'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
       expect(copiedCode(), contains('allow="clipboard-write"'));
@@ -167,9 +180,18 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedAutomatic).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsNothing);
-      expect(copiedCode(), isNot(contains('data-festapp-style=')));
+      expect(tester.widget<CheckboxListTile>(toggle).value, isTrue);
+      expect(copiedCode(), contains('data-festapp-style="inherit"'));
       expect(copiedCode(), isNot(contains('data-festapp-height="fixed"')));
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(copiedCode(), contains('data-festapp-style="default"'));
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.embedAction));
+      await tester.pumpAndSettle();
+      expect(tester.widget<CheckboxListTile>(toggle).value, isTrue);
+      expect(copiedCode(), contains('data-festapp-style="inherit"'));
     },
   );
 

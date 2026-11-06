@@ -12,6 +12,15 @@ hranice: [READINESS.md](READINESS.md).
 | mod_vstupenky_online | https://vstupenky.online |
 | mod_festapp_tickets | https://tickets.festapp.net |
 
+## Joomla Extensions Directory
+
+[Veřejný záznam vstupenky.online](https://extensions.joomla.org/extension/vstupenky-online/)
+obsahuje krátký popis služby a screenshoty českého rozhraní s ukázkovými daty.
+Český popis vyberte v **Full description > Language > Czech**; hlavní text
+vyžaduje katalog anglicky. ZIP je zdarma pod GPLv2 or later. Označení
+**Paid download** vychází z pravidla JED C2.4 pro integraci s placenou SaaS
+službou; cena služby se sjednává samostatně.
+
 ## Instalace a první zveřejnění
 
 1. V příslušné službě vytvořte účet pořadatele, akci a uložený veřejný formulář.

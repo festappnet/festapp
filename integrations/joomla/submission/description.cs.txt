@@ -1,0 +1,5 @@
+vstupenky.online je česká služba pro prodej vstupenek na plesy, koncerty a další akce. Nabízí výběr míst v plánku sálu, správu objednávek a plateb i kontrolu vstupenek při vstupu.
+
+Modulem Joomla vložíte prodejní formulář přímo na svůj web. Návštěvníci si vyberou vstupenky a objednají je na stránce Vaší akce. Vstupenky dostanou e-mailem a Vy spravujete prodej ve službě vstupenky.online.
+
+Modul je v češtině a ke stažení zdarma pod licencí GPLv2 or later. Vyžaduje účet pořadatele; navazující služba má vlastní obchodní podmínky a cenu sjednávanou samostatně.

@@ -260,7 +260,10 @@
     "labelShowPaymentQr": "Zobraziť QR platbu po objednávke",
     "helperShowPaymentQr": "Po dokončení objednávky zobrazí platobný QR kód a údaje priamo na potvrdzovacej obrazovke.",
     "measurementActivationHelp": "Uloženie nastavení samo meranie nespustí. Zapnite ho aj v nastaveniach jednotlivých formulárov. Spustenie vyžaduje schválenie a sprevádzkovanie merania platformou a súhlas návštevníka.",
-    "measurementUnitDisabled": "Meranie je pre tohto organizátora vypnuté. Uložené ID a skripty zostanú zachované."
+    "measurementUnitDisabled": "Meranie je pre tohto organizátora vypnuté. Uložené ID a skripty zostanú zachované.",
+    "measurementFormUnitBlocked": "Meranie je u organizátora vypnuté. Voľbu pre tento formulár môžete uložiť; meranie sa spustí až po povolení u organizátora a splnení ďalších podmienok.",
+    "measurementOpenUnitSettings": "Otvoriť nastavenia merania organizátora",
+    "measurementAskUnitManager": "O povolenie merania a nastavenie GTM či skriptov požiadajte správcu organizátora."
   },
   "FeatureTicket": {
     "scanCameraInstruction": "Namierte kameru na kód účastníka na overenie vstupu.",

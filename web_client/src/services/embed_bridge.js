@@ -9,9 +9,15 @@ const viewport = value => Number.isFinite(value) && value >= 240 && value <= 400
 // The only wildcard message is a public, data-free readiness announcement.
 export class EmbedBridge {
     constructor(win = window) { this.win = win; this.theme = new EmbedTheme(win); }
-    // Form data is the sole authority. Host messages may arrive before it loads.
+    // Older embeds use the saved form preference. Explicit embed markup owns
+    // its presentation choice; neither can render before form data is loaded.
     setInheritStyle(enabled) {
-        this.theme.setEnabled(enabled);
+        this.formInheritStyle = enabled === true;
+        this.applyStylePreference();
+    }
+    applyStylePreference() {
+        this.theme.setEnabled(this.formInheritStyle !== undefined &&
+            (this.styleMode ? this.styleMode === 'inherit' : this.formInheritStyle));
         this.syncPrice();
     }
     receiveTheme(theme) {
@@ -36,6 +42,8 @@ export class EmbedBridge {
             if (data.type === 'init' && viewport(data.viewportHeight)) {
                 if (this.consentId !== data.consentId) this.measurementRuntime?.setConsent(false);
                 this.origin = event.origin; this.instance = data.instance;
+                this.styleMode = ['inherit', 'default'].includes(data.styleMode) ? data.styleMode : undefined;
+                this.applyStylePreference();
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;

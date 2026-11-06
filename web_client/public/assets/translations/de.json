@@ -260,7 +260,10 @@
     "labelShowPaymentQr": "Zahlungs-QR nach Bestellung anzeigen",
     "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an.",
     "measurementActivationHelp": "Das Speichern dieser Einstellungen startet die Messung noch nicht. Aktivieren Sie sie auch in den Einstellungen der einzelnen Formulare. Die Ausführung erfordert außerdem die Freigabe und Einrichtung durch die Plattform sowie die Einwilligung des Besuchers.",
-    "measurementUnitDisabled": "Die Messung ist für diesen Veranstalter deaktiviert. Gespeicherte IDs und Skripte bleiben erhalten."
+    "measurementUnitDisabled": "Die Messung ist für diesen Veranstalter deaktiviert. Gespeicherte IDs und Skripte bleiben erhalten.",
+    "measurementFormUnitBlocked": "Die Messung ist für diesen Veranstalter deaktiviert. Sie können die Einstellung für dieses Formular speichern. Die Messung kann erst nach der Aktivierung beim Veranstalter und Erfüllung der weiteren Voraussetzungen starten.",
+    "measurementOpenUnitSettings": "Messeinstellungen des Veranstalters öffnen",
+    "measurementAskUnitManager": "Bitten Sie die Verwaltung des Veranstalters, die Messung zu aktivieren und GTM oder Skripte einzurichten."
   },
   "FeatureTicket": {
     "scanCameraInstruction": "Richten Sie die Kamera auf den Code des Teilnehmers, um den Eintritt zu überprüfen.",

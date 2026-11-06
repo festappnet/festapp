@@ -4,7 +4,7 @@
 
 Nový zdrojový balíček 1.0.2 používá výhradně homepage `https://vstupenky.online/`. Kontrola proti původně vydanému 1.0.1 potvrzuje změnu pouze URL a verze, nikoli runtime. Tento kandidát zatím nebyl nově publikován ani odeslán do katalogu; dřívější balíček a důkazy 1.0.1 zůstávají historicky platné. Před publikací je nutné splnit obvyklé release brány. Staré externí odkazy obsluhuje pouze přímé přesměrování na homepage.
 
-**Česká distribuce 1.0.1 je veřejně vydaná. Kritik ji schválil a všech pět CI kontrol prošlo. Podání do JED bylo přijato jako ID 17931 a čeká na redakční kontrolu.**
+**Česká distribuce 1.0.1 je veřejně vydaná. Kritik ji schválil a všech pět CI kontrol prošlo. Záznam JED ID 17931 je veřejně publikovaný; 2026-10-29 byl aktualizován krátký popis a tři schválené screenshoty.**
 Finální uživatelský soubor: [vstupenky.online.zip](dist/vstupenky.online.zip).
 Globální varianta 1.0.0 zůstává ověřovanou samostatnou distribucí, její veřejné
 vydání není v tomto kroku autorizováno.
@@ -130,6 +130,14 @@ formuláři JED. Vybrána kategorie Calendars & Events > Events, modul, GPLv2 or
 later a placená SaaS integrace s bezplatným ZIP downloadem, bez nepravdivého
 slibu trvale bezplatné služby. Produkční zákaznická akce nebyla použita jako demo.
 
-**Katalogové zveřejnění zatím není schválené.** Podání musí projít kontrolou
-specialistou JED; případné připomínky nebo oznámení o publikaci jsou další
-externí událostí. Nezaměňovat přijetí podání s veřejným záznamem v katalogu.
+**Zveřejnění a aktualizace katalogu ověřeny 2026-10-29 bez přihlášení.**
+[Veřejný záznam](https://extensions.joomla.org/extension/vstupenky-online/) uvádí
+verzi 1.0.1, krátký anglický popis, český překlad a tři uživatelem schválené
+screenshoty skutečného českého rozhraní s ukázkovými daty. Čeština se vybírá
+v části Full description > Language > Czech. Hlavní popis vyžaduje JED anglicky.
+[Důkaz aktualizace](evidence/jed-listing-update-2026-10-29.json) obsahuje potvrzení
+uložení, zdroje obrázků a veřejnou kontrolu. Původní receipt podání zůstává
+historickým dokladem. Kandidát modulu 1.0.2 tímto nebyl vydán.
+
+Paid download odpovídá pravidlu JED C2.4 pro bezplatný GPL modul napojený na
+placenou SaaS službu. ZIP je zdarma; navazující služba má vlastní obchodní podmínky.

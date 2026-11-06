@@ -5,15 +5,16 @@ Zkopírujte kód do HTML bloku svého CMS. Při neuložené změně adresy se po
 poslední uložený odkaz. Nový formulář je nutné nejdříve uložit.
 
 Automatická výška používá iframe a externí `/embed.js` ze stejného tenantu.
-Pokud CMS zakazuje skripty, použijte pevnou výšku: iframe má 800 px a vlastní
-posouvání, bez automatické výšky a převzetí vzhledu webu. Výšku můžete v HTML
-upravit. Obě varianty obsahují odkaz pro otevření
+Pevná výška ponechá iframe na 800 px s vlastním posouváním. Převzetí vzhledu
+funguje v obou režimech výšky, pokud CMS povoluje externí skript. Pokud jej
+zakazuje, zůstane pevná výška a vlastní vzhled formuláře. Výšku můžete v HTML upravit. Obě varianty obsahují odkaz pro otevření
 běžného formuláře v nové záložce. Pokud CMS zakazuje iframe, použijte tento odkaz.
 
 Generovaný kód obsahuje pouze hostitelský obal, responzivní iframe, záložní odkaz
-a externí `/embed.js` s `defer`. Nepotřebuje inline JavaScript, atribut
-`data-festapp-style` ani verzovací parametr `?v=appearance-1`. Převzetí vzhledu
-se nastavuje u formuláře. Iframe má `display:block`, aby pod ním nezůstávala
+a externí `/embed.js` s `defer`. Checkbox **Převzít vzhled z webu** v dialogu
+vedle kódu zapisuje do iframe `data-festapp-style="inherit"` nebo
+`data-festapp-style="default"`. Volba platí pro toto vložení, bez ukládání
+formuláře. Inline JavaScript ani verzovací parametr `?v=appearance-1` nejsou potřeba. Iframe má `display:block`, aby pod ním nezůstávala
 mezera textového řádku; šířku řídí jeho hostitelský blok. Nepřidávejte další
 pevnou výšku do CSS, pokud chcete automatické přizpůsobení.
 
@@ -129,19 +130,24 @@ po dokončení jej i vlastní disposable projekt zastavte.
 
 ## Volitelné převzetí vzhledu hostitele
 
-`forms.data.design.embed_inherit_style` je jediná uložená autorita (boolean,
-výchozí true). Nastavení se ukládá běžným form commandem ve Vzhledu formuláře.
-Host `/embed.js` pouze předává vypočtené prezentační tokeny. `EmbedBridge` předává ověřená data do `EmbedTheme`, který tokeny
-aplikuje až podle načteného FormModel; před načtením dat je prezentace vypnutá.
-Standalone formulář ani plánek se tím nemění. Změna se projeví při dalším načtení,
-nikoli nuceným restartem rozpracované objednávky.
+V dialogu **Vložit na vlastní web** vyberte, zda má toto vložení převzít vzhled
+hostitelského webu, nebo použít vlastní vzhled formuláře. Nový kód vždy obsahuje
+explicitní `data-festapp-style="inherit"` nebo `data-festapp-style="default"`.
+Tato volba má přednost před dříve uloženým nastavením a je nezávislá na výšce.
+V dialogu se nemění uložená data formuláře. Stejný formulář lze tedy vložit na
+dva weby s různou volbou vzhledu.
 
-HTML generátor, oba WordPress pluginy, oba Joomla moduly a Wix používají stejný
-helper bez vlastního přepínače vzhledu. Staré atributy `data-festapp-style` a
-uložené lokální volby doplňků nemají na novém helperu žádný účinek. Žádné
-přepisování HTML není potřeba u vložení, která již helper načítají. Historická
-vložení bez helperu (pevná výška s vypnutým děděním) potřebují jednou doplnit
-skript nebo aktualizovat doplněk; bez spolupráce hostitele nelze číst jeho CSS.
+`forms.data.design.embed_inherit_style` zůstává kompatibilním fallbackem pro
+existující vložení bez explicitního atributu (výchozí true). Duplicitní přepínač
+ve Vzhledu formuláře už editor nenabízí. Stávající CMS renderery, které explicitní
+volbu nevkládají, dál používají tento fallback.
+
+Host `/embed.js` předává ověřené prezentační tokeny a přesnou volbu `inherit/default`
+pro daný iframe. `EmbedBridge` zachovává kontrolu rodiče, originu a instance a
+zapne prezentaci až po načtení formuláře. Standalone formulář ani plánek se tím
+nemění. Změna kódu se projeví při dalším načtení vložení, nikoli nuceným restartem
+rozpracované objednávky. Historická vložení bez helperu potřebují jednou doplnit
+skript; bez spolupráce hostitele nelze číst jeho CSS.
 `data-festapp-height="fixed"` zakazuje pouze automatický resize. Nové generátory
 načítají helper i při pevné výšce; při blokovaném JS zůstává rám/záložní odkaz.
 

@@ -1,0 +1,102 @@
+{
+  "checkedAtUtc": "2026-10-29T15:17:23.717922+00:00",
+  "source": "https://api.docs.shoptet.com/_bundle/Shoptet%20API/openapi.json?download",
+  "specVersion": "e879ebd",
+  "sha256": "24b35bd296950ff5853c2da943c2be274c3dd5b6ab16a115b9713138b8bf09a9",
+  "pathCount": 218,
+  "shippingRequest": {
+    "path": "/api/shipping-request/{shippingRequestCode}/{shippingGuid}",
+    "methods": [
+      "get",
+      "put"
+    ],
+    "statusPath": "/api/shipping-request/{shippingRequestCode}/{shippingGuid}/status",
+    "cartFields": [
+      "price",
+      "currency",
+      "freeShipping"
+    ],
+    "itemFields": [
+      "productGuid",
+      "code",
+      "itemType",
+      "name",
+      "variantName",
+      "brand",
+      "weight",
+      "amount",
+      "amountUnit"
+    ],
+    "updateFields": [
+      "description",
+      "additionalText",
+      "price",
+      "currency",
+      "expires",
+      "deliveryAddress",
+      "trackingNumber",
+      "branchId",
+      "branchName"
+    ],
+    "requiredUpdateFields": [
+      "expires",
+      "trackingNumber"
+    ],
+    "responseFields": [
+      "verificationCode"
+    ]
+  },
+  "stockUpdate": {
+    "path": "/api/stocks/{stockId}/movements",
+    "method": "patch",
+    "documentedModes": [
+      "amountChange",
+      "quantity",
+      "realStock"
+    ]
+  },
+  "orderPayment": {
+    "paidType": [
+      "boolean",
+      "null"
+    ],
+    "transactionFields": [
+      "transactionId",
+      "price",
+      "status",
+      "creationTime",
+      "changeTime"
+    ]
+  },
+  "pathInventory": {
+    "containsPathWithReservation": false,
+    "cartRelatedPaths": [
+      "/api/abandoned-carts/snapshot"
+    ],
+    "interpretation": "Bounded public spec inventory, not proof that private or specially approved hooks do not exist."
+  },
+  "actions": {
+    "authenticatedApiCalls": false,
+    "holdsCreated": false,
+    "cartModified": false,
+    "formSubmitted": false,
+    "emailSent": false,
+    "paidAction": false
+  },
+  "competitorObservation": {
+    "urls": [
+      "https://531825.myshoptet.com/vstupenka-na-ples/",
+      "https://531825.myshoptet.com/vstupenky-ples-2026/"
+    ],
+    "mode": "isolated headless read-only navigation",
+    "seen": [
+      "product with seat selection button",
+      "separate hall selection demo page"
+    ],
+    "notProven": [
+      "backend oversell guarantees",
+      "shared external inventory",
+      "expiry races"
+    ]
+  }
+}

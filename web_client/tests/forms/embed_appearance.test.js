@@ -6,7 +6,7 @@ register('../css_loader.mjs',import.meta.url);
 
 // Exercise the real page/bridge/theme chain. Only data transport, the base
 // service theme and unrelated status content are simulated.
-test('saved form owns embed appearance across both loading orders, navigation and stale responses',async t=>{
+test('embed selection overrides legacy form appearance across loading orders, navigation and stale responses',async t=>{
     const dom=new JSDOM('<div id="page"></div>',{
         url:'https://tickets.invalid/form/on?embed=1',pretendToBeVisual:true
     });
@@ -55,6 +55,14 @@ test('saved form owns embed appearance across both loading orders, navigation an
     message();assert.equal(root.dataset.embedTheme,undefined,'host cannot override a disabled form');
     message({inheritStyle:true});
     assert.equal(root.dataset.embedTheme,undefined,'legacy host flags cannot enable a disabled form');
+    message({styleMode:'inherit'});
+    assert.equal(root.dataset.embedTheme,'host','explicit embed selection takes precedence over the saved fallback');
+    page.applyTheme(model('off',false));
+    assert.equal(root.dataset.embedTheme,'host','ordinary page theme application preserves the explicit selection');
+    message({styleMode:'default'});
+    assert.equal(root.dataset.embedTheme,undefined,'explicit default uses the form appearance');
+    message();
+    assert.equal(root.dataset.embedTheme,undefined,'embeds without explicit selection retain the saved fallback');
 
     requested=new Promise(resolve=>{started=resolve;});
     const stale=page.init('stale');await requested;

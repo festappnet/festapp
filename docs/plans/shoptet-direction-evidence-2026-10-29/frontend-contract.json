@@ -1,0 +1,64 @@
+{
+  "checkedAtUtc": "2026-10-29T15:28:24.330684+00:00",
+  "repository": "https://github.com/shoptet/templates-assets",
+  "commit": "3c10e28c25994039b86c5efd4401fb090b4dda20",
+  "commitDate": "2026-10-27T14:19:06Z",
+  "files": [
+    {
+      "path": "shared/js/libs/checkoutShared.js",
+      "gitBlobSha": "34702cd8423070810f1d78bc8d1847f67ca19d14",
+      "sha256": "f098cdba70ade49f987a5fda0c050f9d58322dbfefcfa8eceebbb72a2baf21c3"
+    },
+    {
+      "path": "shared/js/libs/checkout.js",
+      "gitBlobSha": "d5d1d2f03ad9c43d0033cb66a738cb75340df9d4",
+      "sha256": "b44aadd18eacbe6e6b3f9c477ac27cbe607ef7f2fa4674d544bbf3275fa8d2ad"
+    },
+    {
+      "path": "shared/js/libs/cartShared.js",
+      "gitBlobSha": "ec1b397b427ce0c2a963456de38f323b30cc65e6",
+      "sha256": "d4c3867a815c5ddfdac681a65c703490d05f41c8f77bb02daf472286676c673c"
+    },
+    {
+      "path": "00/js/libs/externalShippingOne.js",
+      "gitBlobSha": "037814e1ffaf5f204efcd673f69b9a8d9620c50a",
+      "sha256": "e388d95eea38322953e04149ba34cb19d037333410402dd6137d3ded356346b4"
+    }
+  ],
+  "findings": {
+    "verificationCodeIsWrittenToCheckoutInput": {
+      "path": "shared/js/libs/checkoutShared.js",
+      "lines": [
+        899,
+        916,
+        917
+      ]
+    },
+    "clientExpirationSchedulesInvalidation": {
+      "path": "shared/js/libs/checkoutShared.js",
+      "lines": [
+        882,
+        887,
+        908,
+        924,
+        945
+      ]
+    },
+    "demoCodeIsExampleNotProductionToken": {
+      "path": "00/js/libs/externalShippingOne.js",
+      "lines": [
+        16,
+        17
+      ]
+    },
+    "browserChangeIsNotProofOfBackendRevocation": true
+  },
+  "knownLimits": [
+    "Public frontend repository does not expose backend order admission or authoritative offer finality.",
+    "Browser invalidation clears presentation, but does not prove backend offer deletion.",
+    "Generic status response has no documented monotonic offer revision or terminal cancelled guarantee."
+  ],
+  "readOnly": true,
+  "sandboxMutationsPerformed": false,
+  "vendorMessagesSent": false
+}

@@ -431,6 +431,9 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "measurementFormUnitBlocked": "Měření je u pořadatele vypnuté. Volbu pro tento formulář můžete uložit; měření se spustí až po povolení u pořadatele a splnění dalších podmínek.",
+    "measurementOpenUnitSettings": "Otevřít nastavení měření pořadatele",
+    "measurementAskUnitManager": "O povolení měření a nastavení GTM či skriptů požádejte správce pořadatele.",
     "measurementActivationHelp": "Uložení nastavení samo měření nespustí. Zapněte je také v nastavení jednotlivých formulářů. Spuštění vyžaduje schválení a zprovoznění měření platformou a souhlas návštěvníka.",
     "measurementUnitDisabled": "Měření je pro tohoto pořadatele vypnuté. Uložené ID a skripty zůstanou zachovány.",
     "measurementConsentDecline": "Odmítnout",

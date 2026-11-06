@@ -1,5 +1,9 @@
 # Shoptet: partnerský doplněk pro prodej vstupenek
 
+Aktuální architekturu vlastní [společný Commerce Connector](../architecture/commerce-connectors.md) a jeho [realizační plán](commerce-connectors-plan-2026-10-29.md). Shoptet je první adaptér; tento starší průzkum zůstává podkladem, nikoli druhou implementační autoritou.
+
+Aktualizace směru 29. 10. 2026: [rozhodovací průzkum](shoptet-direction-plan-2026-10-29.md) je autoritou pro volbu kapacitního kontraktu. Nově doložený kandidát je zvlášť schvalované digitální doručení přes shipping-request. Starší předpoklady o rozsahu košíku a pořadí variant se řídí novými rozhodovacími branami. Trvá výslovný zákaz odesílání a podávání.
+
 ## Aktuální stav potvrzený vlastníkem - 2026-11-01
 
 Návrh pro Shoptet už byl odeslán podle výslovného potvrzení vlastníka. Čekáme na odpověď; další podání neposílat. Toto potvrzení nahrazuje starší záznamy o pouze připraveném a neodeslaném formuláři. Samostatný doklad o odeslání formuláře nebyl v této kontrole nalezen.
