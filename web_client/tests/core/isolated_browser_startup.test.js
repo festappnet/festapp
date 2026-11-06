@@ -44,6 +44,20 @@ test('navigation errors propagate without retrying page actions', async () => {
     assert.deepEqual(browser.calls, []);
 });
 
+test('timed out launch continues only after a healthy owned daemon is confirmed', async () => {
+    const browser = fixture([{ runtime: { pageCount: 1 } }]);
+    browser.open = async () => { browser.calls.push('open'); throw Object.assign(new Error('timed out'), { killed: true, signal: 'SIGTERM' }); };
+    await openIsolatedBrowser(browser);
+    assert.deepEqual(browser.calls, ['open', 'info']);
+});
+
+test('a non-timeout launch error remains fatal', async () => {
+    const browser = fixture([]);
+    browser.open = async () => { throw Object.assign(new Error('launch failed'), { killed: false, signal: 'SIGTERM' }); };
+    await assert.rejects(openIsolatedBrowser(browser), /launch failed/);
+    assert.deepEqual(browser.calls, []);
+});
+
 
 test('a launched browser without a page retries only startup before page assertions', async () => {
     const browser = fixture([{ runtime: { pageCount: 0 } }, { runtime: { pageCount: 1 } }]);

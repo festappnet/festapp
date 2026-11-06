@@ -4,7 +4,13 @@ import assert from 'node:assert/strict';
 // before exercising the page, with a fresh task-owned session; never retry UI assertions.
 export async function openIsolatedBrowser({ open, info, close, navigate, currentUrl, targetUrl }, attempts = 3) {
     for (let attempt = 0; attempt < attempts; attempt++) {
-        await open();
+        try {
+            await open();
+        } catch (error) {
+            // The owned CLI can time out after the daemon has already launched.
+            // Probe it below; all other launch failures remain fatal.
+            if (!(error.killed === true && error.signal === 'SIGTERM')) throw error;
+        }
         const session = await info();
         if (session.runtime != null && session.runtime.pageCount !== 0) {
             assert.equal(session.runtime.pageCount, 1, 'isolated local Chromium required');

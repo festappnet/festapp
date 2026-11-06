@@ -35,7 +35,7 @@ async function openBrowser(url) {
             // Verify a ready, isolated browser before starting page navigation.
             // A combined cold launch/navigation can otherwise hide which stage
             // stalled, and prevents the existing empty-daemon recovery check.
-            await browser('open');
+            await browser('open', new URL('/__browser_startup', url).href);
         },
         info: () => browser('session', 'info'),
         close: () => browser('close'),
@@ -67,6 +67,9 @@ try {
                 next();
             });
             server.middlewares.use(async (req, res, next) => {
+                if (req.url === '/__browser_startup') {
+                    res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Browser startup</title>'); return;
+                }
                 if (req.url.startsWith('/form/price-position')) {
                     res.setHeader('Content-Type','text/html');
                     res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main id="form-page-container"><div class="form-header"><h1>Weekend registration</h1><p><a href="#">https://example.invalid/RegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaksRegistrationCodeWithoutBreaks</a></p></div><form id="dynamic-form"><div style="height:2400px"></div><button type="submit">Continue</button></form></main><script type="module" src="/tests/fixtures/form_access/price_position.js"></script></body></html>');return;
