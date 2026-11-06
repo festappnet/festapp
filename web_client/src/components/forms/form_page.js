@@ -605,7 +605,7 @@ export class FormPage extends Component {
             this.measurementRuntime = runtime;
             analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
                 entryAllowed:this.analyticsEntryAllowed, refreshPolicy:() => DbForms.getMeasurementPolicy(formModel.link)});
-            this.embedBridge?.setMeasurementRuntime(runtime);
+            this.embedBridge?.setMeasurementRuntime(runtime, () => analytics.view());
             if (!this.embedBridge && formModel.data?.analytics?.eligible === true && analytics.contextAllowed()) {
                 import('./form_measurement_cmp.js').then(({startMeasurementConsent}) => {
                     if (this.analytics !== analytics) return;
@@ -859,6 +859,7 @@ export class FormPage extends Component {
                      this._pendingPaymentQuote = paymentQuote;
                      this.submitOrder(form, formModel, overlay || document.body);
                  }, () => {
+                     this.analytics?.page('product');
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
                  }, precalculatedPayload);
                  this.analytics?.review(precalculatedPayload, this.currentSession);

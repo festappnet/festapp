@@ -94,6 +94,11 @@
   },
   "FeatureFormSettings": {
     "embedInheritStyleHelp": "Використовує шрифт, тло та кольори Вашого сайту для цієї вбудованої форми. Виберіть налаштування перед копіюванням коду. План залу збереже власний вигляд.",
+    "measurementConsentTitle": "Вимірювання відвідуваності",
+    "measurementConsentAccept": "Прийняти",
+    "measurementConsentSave": "Зберегти",
+    "measurementConsentClose": "Закрити",
+    "measurementConsentPrivacy": "Політика конфіденційності",
     "measurementConsentDecline": "Відхилити",
     "measurementConsentChoices": "Налаштування згоди",
     "measurementConsentDescription": "За Вашою згодою організатор може вимірювати використання форми та завершені замовлення.",

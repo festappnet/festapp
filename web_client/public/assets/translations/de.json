@@ -232,6 +232,11 @@
   },
   "FeatureFormSettings": {
     "embedInheritStyleHelp": "Übernimmt Schrift, Hintergrund und Farben Ihrer Website für diese Einbettung. Wählen Sie die Einstellung, bevor Sie den Code kopieren. Der Saalplan behält sein eigenes Erscheinungsbild.",
+    "measurementConsentTitle": "Besucherstatistik",
+    "measurementConsentAccept": "Akzeptieren",
+    "measurementConsentSave": "Speichern",
+    "measurementConsentClose": "Schließen",
+    "measurementConsentPrivacy": "Datenschutzerklärung",
     "measurementConsentDecline": "Ablehnen",
     "measurementConsentChoices": "Einwilligungseinstellungen",
     "measurementConsentDescription": "Mit Ihrer Einwilligung kann der Veranstalter die Formularnutzung und abgeschlossene Bestellungen messen.",

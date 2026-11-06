@@ -1,4 +1,4 @@
-import {analyticsPayload, attributionContext, measurementId, measurementNamespace} from '../../../web_client/src/components/forms/form_measurement_contract.js';
+import {analyticsPayload, attributionContext, measurementPageLocation, measurementId, measurementNamespace} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
 const config = JSON.parse(document.getElementById('measurement-config').textContent);
 let instance;
@@ -21,6 +21,7 @@ window.addEventListener('message', event => {
         context = attributionContext(message.context);
         if (!context || new URL(context.page_location).origin !== config.parent_origin ||
             new URL(context.page_location).pathname.replace(/\/$/,'') !== '/form/' + config.form_link) return;
+        context.page_location = measurementPageLocation(context);
         instance = message.instance;
         dataLayer.push(context);
         // This profile requires the supplied GTM Consent Initialization template.

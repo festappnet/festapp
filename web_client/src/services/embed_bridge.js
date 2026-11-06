@@ -103,9 +103,10 @@ export class EmbedBridge {
         if (!this.measurementAllowed()) return null;
         return this.dataLayer === true ? `${this.origin}:${this.instance}:${this.consentId}` : this.measurementRuntime.measurementEpoch();
     }
-    setMeasurementRuntime(runtime) { this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
+    setMeasurementRuntime(runtime, onReady = () => {}) { this.onMeasurementReady = onReady; this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
     syncMeasurementRuntime() {
         this.measurementRuntime?.setConsent(this.dataLayer !== true && !!this.consentId && Date.now() < this.consentUntil, this.consentUntil);
+        if (this.dataLayer === true && this.measurementAllowed() && this.onMeasurementReady?.()) this.onMeasurementReady = null;
     }
     updatePolicy(expiresAt) { this.measurementRuntime?.updatePolicy(expiresAt); }
     revokeMeasurement() { this.consentId = null; this.consentUntil = 0; this.measurementRuntime?.setConsent(false); }

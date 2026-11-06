@@ -232,6 +232,11 @@
   },
   "FeatureFormSettings": {
     "embedInheritStyleHelp": "Pre toto vloženie použije písmo, pozadie a farby Vášho webu. Voľbu nastavte pred skopírovaním kódu. Plán sály si ponechá vlastný vzhľad.",
+    "measurementConsentTitle": "Meranie návštevnosti",
+    "measurementConsentAccept": "Prijať",
+    "measurementConsentSave": "Uložiť",
+    "measurementConsentClose": "Zavrieť",
+    "measurementConsentPrivacy": "Zásady ochrany osobných údajov",
     "measurementConsentDecline": "Odmietnuť",
     "measurementConsentChoices": "Nastavenia súhlasu",
     "measurementConsentDescription": "Po Vašom súhlase môže organizátor merať používanie formulára a dokončené objednávky.",

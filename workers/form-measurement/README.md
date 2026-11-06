@@ -48,3 +48,15 @@ organization/Unit/forms whose saved switches are already true. Apply the DB
 migration first, provision the Unit runtime with a unique project origin, verify
 its profile/config/consent matrix, then record the deployment and platform
 permission with revision, operator and reason. No bulk tenant rollout is implied.
+
+For GA4 in this cross-site frame, set `cookie_flags` to `SameSite=None;Secure`
+in the Google tag. Map `page_location` and `page_referrer` from dataLayer and
+turn off the duplicate automatic pageview. The validated form URL receives only
+allowlisted campaign query parameters; arbitrary query values and fragments
+are never forwarded. Include GA4 regional endpoints in collector origins:
+`https://region1.google-analytics.com`, `https://region1.analytics.google.com`
+and `https://www.google-analytics.com`, or CSP silently blocks their requests.
+GTM Preview does not work inside the runtime: it accepts only `form` and
+`parent` URL parameters and CSP forbids frames. Verify with GA4 Realtime or
+DebugView. Signed-in visitors are excluded from measurement and never see the
+consent notice; test in an incognito window.

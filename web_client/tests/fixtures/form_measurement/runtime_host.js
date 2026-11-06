@@ -9,7 +9,7 @@ window.runtime = new FormMeasurementRuntime({model,local:true,onReady:()=>{windo
 window.event = (name) => runtime.track(name === 'page_view' ? {event:name,email:'secret@example.com'} : {event:name,ecommerce:{currency:'CZK',items:[{item_id:'product_1',item_name:'Ticket',price:100,quantity:1,email:'secret@example.com'}],...(name==='purchase'?{payment_type:'card',transaction_id:'12345678-1234-4234-8234-123456789abc'}:{})}});
 if (new URLSearchParams(location.search).has('cmp')) {
     const {LocalizationService} = await import('../../../src/services/localization_service.js');
-    await LocalizationService.init({locale:'cs',persist:false});
+    await LocalizationService.init({locale:new URLSearchParams(location.search).get('lang') || 'cs',persist:false});
     const {startMeasurementConsent} = await import('../../../src/components/forms/form_measurement_cmp.js');
     window.cleanupCmp = startMeasurementConsent({model,transport:runtime,host:document.body});
 }

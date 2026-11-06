@@ -29,7 +29,7 @@
     function campaignContext(input) {
         const result = {};
         for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
-            if (typeof input?.[key] === 'string' && /^[a-zA-Z0-9_.~-]{1,256}$/.test(input[key])) result[key] = input[key];
+            if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !/[@\u0000-\u001f\u007f-\u009f]/.test(input[key])) result[key] = input[key];
         }
         return result;
     }
@@ -47,6 +47,15 @@
             }
             return {...result,...campaignContext(input)};
         } catch { return null; }
+    }
+
+    // Only validated public context and allowlisted campaign values reach tag URLs.
+    function measurementPageLocation(context) {
+        const verified = attributionContext(context);
+        if (!verified) return null;
+        const url = new URL(verified.page_location);
+        for (const [key, value] of Object.entries(campaignContext(verified))) url.searchParams.set(key, value);
+        return url.href;
     }
 
     const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000-\u001f]/.test(value) ? value.trim().slice(0, limit) : '';
