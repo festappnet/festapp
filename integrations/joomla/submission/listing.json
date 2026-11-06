@@ -33,9 +33,10 @@
     "cs-CZ": "description.cs.txt"
   },
   "screenshots": [
-    "screenshots/01-formular.jpg",
-    "screenshots/02-mista.png",
-    "screenshots/03-prodej.png"
+    "screenshots/01-formular-20261106.png",
+    "screenshots/02-mistenky-20261106.png",
+    "screenshots/03-mista-20261106.png"
   ],
-  "publication_evidence": "../evidence/jed-listing-update-2026-10-29.json"
+  "publication_evidence": "../evidence/jed-listing-update-2026-10-29.json",
+  "screenshot_evidence": "../evidence/catalog-screenshots-20261106.json"
 }

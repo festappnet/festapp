@@ -26,11 +26,13 @@ browser-extension file upload is unavailable. Verify the saved native app icon
 separately from local generation. Do not change a shared developer-company logo
 or another app's identity as part of this app-specific update.
 
-`gallery-published-desktop.png` and `gallery-summary.png` are unedited native
-1200x900 screenshots of the actual published Wix Studio host. The guarded local
-fixture uses Czech sample labels, a fictional buyer and reserved example.com;
-it explicitly states that no actual payment takes place. No production buyer,
-payment receipt or ticket QR is included. Both images are saved in Wix and were
-verified after reload; hashes and original CDN URLs are in
-[gallery evidence](../evidence/gallery-20261025.json). The desktop image also
-replaces the old development thumbnail in Add Elements.
+The current gallery source assets are `gallery-form-20261106.png` and
+`gallery-seats-20261106.png`, both 1200x900. They show the actual current
+standalone web client with a disposable, Czech Ples U Lípy example. They do
+not show a Wix editor or an embedded host, and no order was submitted. Capture
+provenance and hashes are in [the current evidence](../evidence/catalog-screenshots-20261106.json).
+
+The earlier `gallery-published-desktop.png` and `gallery-summary.png` are retained
+as historical evidence only. Their old checkout wording is obsolete; do not
+reuse them for the current gallery. Their original Wix CDN readback is documented
+in [the historical receipt](../evidence/gallery-20261025.json).
