@@ -30,7 +30,7 @@ BEGIN
     -- Update the organization record
     RETURN QUERY
     UPDATE organizations
-    SET 
+    SET
       title = COALESCE(update_organization_admin.title, organizations.title),
       data = organizations.data || update_organization_admin.data,
       phone_prefixes = COALESCE(
