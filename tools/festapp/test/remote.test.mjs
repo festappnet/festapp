@@ -68,12 +68,13 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false, handleFormPost } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false, handleFormPost, resources = [f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
-        code_challenge_method: 'S256', resource: f.config.resource, state: 'fixture-state' });
+        code_challenge_method: 'S256', state: 'fixture-state' });
+    for (const resource of resources) params.append('resource', resource);
     let r = await f.browser('/auth?' + params);
     assert.equal(r.status, 303);
     const location = r.headers.get('location');
@@ -183,12 +184,61 @@ test('native OAuth accepts only explicit IP loopback callbacks and honors an eph
     assert.equal((await f.browser('/auth?' + request)).status, 400);
 });
 
-test('tenant consent uses app access proof, an independent session and the original OAuth browser', async t => {
+for (const resourceCount of [0, 1, 2, 3]) test(`native OAuth with ${resourceCount} resource indicators completes MCP reads and refresh`, async t => {
+    const f = await setup(t, { native: true });
+    const clientId = 'codex-fixture';
+    const { tokens } = await connect(f, { clientId, callbackUri: 'http://127.0.0.1:51789/callback',
+        resources: Array(resourceCount).fill(f.config.resource) });
+    assert.equal((await f.provider.AccessToken.find(tokens.access_token)).aud, f.config.resource);
+    const refresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: clientId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource,
+    }) });
+    assert.equal(refresh.status, 200, await refresh.clone().text());
+    const next = await refresh.json();
+    assert.notEqual(next.refresh_token, tokens.refresh_token);
+    const client = new Client({ name: 'codex-resource-regression', version: '1' }, { versionNegotiation: { mode: { pin: '2026-07-28' } } });
+    t.after(() => client.close());
+    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: `Bearer ${next.access_token}` } },
+    }));
+    assert((await client.listTools()).tools.some(tool => tool.name === 'festapp_context_inspect'));
+    const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
+    assert.equal(result.structuredContent.ok, true);
+    const denied = await client.callTool({ name: 'festapp_ticket_layouts_inspect', arguments: { occasionId: 8 } });
+    assert.equal(denied.structuredContent.error.code, 'FORBIDDEN');
+});
+
+test('OAuth rejects foreign resource indicators before login or consent, including mixed repeated values', async t => {
+    const f = await setup(t, { native: true });
+    const target = f.config.resource;
+    for (const resources of [
+        ['https://foreign.example/mcp'], [target, 'https://foreign.example/mcp'],
+        ['https://foreign.example/mcp', target], [target, target + '/'],
+        [target, ''], [target, target + '#fragment'],
+    ]) {
+        const query = new URLSearchParams({ client_id: 'codex-fixture', response_type: 'code',
+            redirect_uri: 'http://127.0.0.1:51789/callback', scope: READ_SCOPE,
+            code_challenge: 'a'.repeat(43), code_challenge_method: 'S256' });
+        for (const resource of resources) query.append('resource', resource);
+        const response = await f.browser('/auth?' + query);
+        assert.equal(response.status, 303);
+        const callback = new URL(response.headers.get('location'));
+        assert.equal(callback.pathname, '/callback');
+        assert.equal(callback.searchParams.get('error'), 'invalid_target');
+        assert.equal(callback.searchParams.has('code'), false);
+    }
+    assert.equal(f.storage.values('Connect').length, 0);
+    assert.equal(f.storage.values('Delegation').length, 0);
+    assert.equal(f.calls.filter(call => call.url.pathname === '/auth/v1/token').length, 0);
+});
+
+for (const repeatResource of [false, true]) test(`tenant consent uses app access proof, an independent session and the original OAuth browser (repeated resource: ${repeatResource})`, async t => {
     const f = await setup(t, { tenant: true });
     const verifier = 'v'.repeat(43);
     const query = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
         redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
+    if (repeatResource) query.append('resource', f.config.resource);
     let r = await f.browser('/auth?' + query);
     const connectPath = r.headers.get('location');
     r = await f.browser(connectPath);
@@ -703,11 +753,20 @@ test('form scopes do not widen older grants and copy must consent both source an
  assert(!owner().allowedOperations.includes('forms.save'));assert.throws(()=>verifyPermissions(['festapp:forms:write'],MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:forms:read','festapp:forms:write']});assert(owner().allowedOperations.includes('forms.duplicate'));assert(owner().allowedOperations.includes('forms.paymentOptions'));
  const args={occasionId:7,sourceOccasionId:9,sourceFormId:42,locale:'cs',commandId:'00000000-0000-4000-8000-000000000099'};let calls=0;
- const client={rpc:async(name,p)=>{calls++;assert.equal(name,'manage_form');assert.equal(p.p_payload.source_occasion_id,9);assert.equal(p.p_payload.source_unit_id,null);
+ const client={rpc:async(name,p)=>{calls++;
+  if(name==='get_form_for_authoring') {
+   assert.equal(p.p_form,88);assert.equal(p.p_occasion,7);
+   return{error:null,data:{occasionId:7,authoring:{form:{id:88,measurement_status:{
+    requested_enabled:false,organization_allowed:false,organization_enabled:false,unit_enabled:false,
+    runtime_supported:true,eligible:false,blocked_reasons:['disabled'],policy_revision:0,
+    consent_required:true,enhanced_conversions_unavailable:true,
+   }}}}};
+  }
+  assert.equal(name,'manage_form');assert.equal(p.p_payload.source_occasion_id,9);assert.equal(p.p_payload.source_unit_id,null);
   return{error:null,data:{code:200,status:'applied',mutation:{commandId:args.commandId,receiptId:args.commandId},data:{occasionId:7,formId:88,authoring:{form:{id:88,occasion:7,aggregate_version:0},fields:[],productTypes:[],products:[],productVersions:{},productTypeVersions:{}}}}};}};
  await assert.rejects(invokeFormOperation(owner(),client,'forms.duplicate',args),e=>e.code==='FORBIDDEN');assert.equal(calls,0);
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:forms:read','festapp:forms:write'],access:{type:'occasions',occasionIds:[7,9]}});
- assert.equal((await invokeFormOperation(owner(),client,'forms.duplicate',args)).formId,88);assert.equal(calls,1);
+ assert.equal((await invokeFormOperation(owner(),client,'forms.duplicate',args)).formId,88);assert.equal(calls,2);
  token.scope=READ_SCOPE+' festapp:forms:read';assert(!owner().allowedOperations.includes('forms.save'));assert(!owner().allowedOperations.includes('forms.paymentOptions'));
 });
 

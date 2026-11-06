@@ -52,6 +52,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             resourceIndicators: { enabled: true,
                 defaultResource: () => config.resource,
                 useGrantedResource: () => true,
+                // Owns resource validation before consent and token issuance.
+                // The provider invokes this for every indicator, including repeats.
                 getResourceServerInfo: async (ctx, resource) => {
                     if (resource !== config.resource) throw new errors.InvalidTarget();
                     return { scope: (config.clients.find(c => c.id === ctx.oidc.client?.clientId)?.allowedScopes ?? [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES]).join(' '), audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
@@ -149,7 +151,6 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     const details = async req => {
         const d = await provider.interactionDetails(req, req.res);
         check(d.uid === req.params.uid && config.clients.some(c => c.id === d.params.client_id), 'FORBIDDEN');
-        check(d.params.resource === undefined || d.params.resource === config.resource, 'FORBIDDEN');
         check(String(d.params.scope ?? '').split(' ').includes(READ_SCOPE), 'FORBIDDEN');
         return d;
     };
