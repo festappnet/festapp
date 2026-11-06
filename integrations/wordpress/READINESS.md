@@ -1,3 +1,23 @@
+# vstupenky.online - publikovatelnost
+
+## Vydání 1.0.4 po schválení hostingu - 2026-11-06
+
+Hosting žádosti byl schválen po review 1.0.3. Publikovaný GitHub ZIP 1.0.4 má
+SHA-256 `6bb47d136cc978678a0b81e485e7d1dedd3c0a4a983e2fa69a56d50a06a80394` a pochází
+z kanonického mainu `70acaaea3b4ab6cac0458ab8e4178c2f8cbe54b5`.
+
+Před SVN publikací prošel Plugin Check 2.1.0 na WordPress 6.6/PHP 7.4.33:
+0 errors a 1 známý warning na `load_plugin_textdomain`, ponechaný pro samostatnou
+ZIP distribuci. WPCS 3.4.1: 0 errors, 0 warnings. Všech 12 kontrolovaných souborů
+nainstalovaného doplňku odpovídá vydanému ZIPu. Dříve ověřené kontrakty 1.0.4
+zůstávají platné; runtime kód se od nich nezměnil. Následná kontrola v izolovaném systémovém Chromu potvrdila Gutenberg
+false/save/reopen i true/save/reopen. Prázdný canvas byl omezením testovacího
+Chromia, bez změny runtime doplňku. Doklad: `catalog/source/PROVENANCE.txt`.
+
+Přesné vstupy a důkazy: `evidence/directory-readiness-20261106.json`.
+Skutečný stav veřejného vydání: `evidence/directory-release-20261106.json`.
+Následující říjnové záznamy jsou historické a nemění aktuální schválení.
+
 # vstupenky.online - kontrola publikovatelnosti
 
 ## Připravená oprava kanonického odkazu 1.0.2

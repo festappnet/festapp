@@ -1,0 +1,105 @@
+{
+  "operation": "WordPress.org catalog asset refresh; assets only",
+  "plugin": "vstupenky-online",
+  "version": "1.0.4",
+  "source_base": "1a1985285a79d547b41c39511f59d9ec790ae6dd",
+  "svn_revision": 3787773,
+  "svn_commit_time": "2026-11-06 12:21:13 +0100",
+  "manifest_path": "integrations/wordpress/evidence/catalog-assets-20261106.json",
+  "manifest_sha256": "d8b2988935c87e9e53674adc354cc6d9f0f3d99e9d2028a14d4518fccacbba9a",
+  "updated_paths": [
+    "assets/banner-1544x500.png",
+    "assets/banner-772x250.png",
+    "assets/icon-128x128.png",
+    "assets/icon-256x256.png",
+    "assets/screenshot-1.png",
+    "assets/screenshot-2.png",
+    "assets/screenshot-3.png",
+    "assets/screenshot-4.png",
+    "assets/screenshot-5.png"
+  ],
+  "public_assets": {
+    "icon-128x128.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/icon-128x128.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "1479cafcae9c95c48d107cc9d5cab4194bc1fbf12812fa397b177a86288f6680",
+      "matches_manifest": true
+    },
+    "icon-256x256.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/icon-256x256.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "95c1505b76275bf6362d69e7ba938dcd00dfe0f9eb00138c9f025eb4a3dea8d5",
+      "matches_manifest": true
+    },
+    "banner-772x250.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/banner-772x250.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "05e49efabf16a594d10ba652f62bedb8eb1cf21965c03c2f2186bc105769b2c0",
+      "matches_manifest": true
+    },
+    "banner-1544x500.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/banner-1544x500.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "6dd09918a4d0f10816bee06331385014100ff3f02ab44587be20c4f8bf5ca6f4",
+      "matches_manifest": true
+    },
+    "screenshot-1.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-1.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "52ed2d59174301762d831d1da930f8057f6f63f1efc401a412609fb31a865bf6",
+      "matches_manifest": true
+    },
+    "screenshot-2.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-2.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "516891b155fff37d87f6257bdc7a2b5e93f6d74f2a0f21ba8604a8071989d126",
+      "matches_manifest": true
+    },
+    "screenshot-3.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-3.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "493b9f13f672a5d33a856669ff1c1d5ef0d9c9da308c889dddc887816dc88b03",
+      "matches_manifest": true
+    },
+    "screenshot-4.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-4.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "6a84a8e0293395bce8471c3c47445cb0d20c1a2fc20356128086434cbc5b5d7b",
+      "matches_manifest": true
+    },
+    "screenshot-5.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-5.png?rev=3787773",
+      "http_status": 200,
+      "sha256": "a4f56486f54fafd2006322f5d2eab4a989fccf7bb21962f01c8826cf4d5629ff",
+      "matches_manifest": true
+    }
+  },
+  "directory_api": {
+    "url": "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=vstupenky-online",
+    "version": "1.0.4",
+    "download_link": "https://downloads.wordpress.org/plugin/vstupenky-online.1.0.4.zip",
+    "last_updated": "2026-11-06 10:41am GMT"
+  },
+  "public_page": {
+    "url": "https://wordpress.org/plugins/vstupenky-online/",
+    "http_status": 200,
+    "shows_version_1_0_4": true,
+    "shows_1_0_4_download_link": true
+  },
+  "official_download": {
+    "url": "https://downloads.wordpress.org/plugin/vstupenky-online.1.0.4.zip",
+    "http_status": 200,
+    "archive_sha256": "1186f4a9fb18e4debadca6cb142129a2a1d6c5c3b07ac693d72bdca6e351c0c4",
+    "plugin_file_count": 12,
+    "per_file_bytes_match_previously_approved_1_0_4_zip": true
+  },
+  "immutable_release_verification": {
+    "trunk_plugin_files": 12,
+    "trunk_matches_approved_zip": true,
+    "tag_1_0_4_plugin_files": 12,
+    "tag_1_0_4_matches_approved_zip": true,
+    "zip_version_1_0_4": true
+  },
+  "additional_validation": "Primary reports the previously known Chrome editor verification limitation resolved. All 9 final PNG dimensions and manifest hashes passed; global catalog PNGs remained unchanged; git diff --check passed; Impeccable detector findings []; final renders visually accepted.",
+  "limitations": "The API last_updated value remains the original release timestamp; only catalog assets changed. Public asset URLs with rev=3787773 returned fresh bytes matching the new manifest."
+}
