@@ -3025,6 +3025,46 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.get_customer_order_overview_internal(text,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_customer_order_overview(jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_customer_order_overview(text,bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.insert_manual_transaction(jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_bank_transaction_history(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_form_by_link(jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_form_by_link(text)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.can_read_bank_transactions(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {

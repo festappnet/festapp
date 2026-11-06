@@ -2927,6 +2927,38 @@
     "d7d22018d14a84f1ac181cd5559caba4e852080c9bfd53cb0b6bcf7ba18fcc7e": {
       "signature": "public.get_setup_payment_options(uuid)",
       "source": "database/functions/payment_providers/configuration.sql"
+    },
+    "0bb3bc664e6e44bc09c8bb061e163106c56ed6995bed640f87ecdd78c94cc21f": {
+      "signature": "public.get_customer_order_overview_internal(text,bigint)",
+      "source": "database/functions/eshop_waitlist/order_overview.sql"
+    },
+    "6be5947f84e4f8fe93ada5fec86235d13f2d2c32d9d011bb4eebdc9c8bc70d3b": {
+      "signature": "public.get_customer_order_overview(jsonb)",
+      "source": "database/functions/eshop_waitlist/order_overview.sql"
+    },
+    "b94c52953a6ce1ca6536bff1ec98381e3a4fb4226117a1b8346e50eab98738e2": {
+      "signature": "public.get_customer_order_overview(text,bigint)",
+      "source": "database/functions/eshop_waitlist/order_overview.sql"
+    },
+    "b28ad3612d8f920edca59546f27849b4bf84a6f17110d03b0315e925711a6a2f": {
+      "signature": "public.insert_manual_transaction(jsonb,uuid)",
+      "source": "database/functions/eshop_transactions/insert_manual_transaction.sql"
+    },
+    "7a22bfb468ab07f801369c0617d2c22bea287254538b0fd3051d0a6787bdcc53": {
+      "signature": "public.get_bank_transaction_history(bigint)",
+      "source": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql"
+    },
+    "3fb1ec78c0ba9b718da226ecd973c5e9f773e00bb512a1c0a564d5f17d58cb2a": {
+      "signature": "public.get_form_by_link(jsonb)",
+      "source": "database/functions/eshop_forms/get_form_by_link.sql"
+    },
+    "5b6f18b4adc054bbf86d2fdd3e0a38233e08658e9a5b6a56424b20c0246fa89d": {
+      "signature": "public.get_form_by_link(text)",
+      "source": "database/functions/eshop_forms/get_form_by_link.sql"
+    },
+    "b42ac5feef6032bf833d3b8b824dc5d9a6a5d07f0b6279e2a795a03f744b85f6": {
+      "signature": "public.can_read_bank_transactions(bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
     }
   }
 }

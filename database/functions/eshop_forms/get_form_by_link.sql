@@ -174,5 +174,5 @@ CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
 RETURNS json LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT public.get_form_by_link(jsonb_build_object('form_link',form_link));
 $$;
-REVOKE ALL ON FUNCTION public.get_form_by_link(jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_form_by_link(jsonb) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_form_by_link(jsonb),public.get_form_by_link(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_form_by_link(jsonb),public.get_form_by_link(text) TO anon,authenticated,service_role;

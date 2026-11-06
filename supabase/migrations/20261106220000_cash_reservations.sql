@@ -1594,8 +1594,8 @@ CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
 RETURNS json LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT public.get_form_by_link(jsonb_build_object('form_link',form_link));
 $$;
-REVOKE ALL ON FUNCTION public.get_form_by_link(jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_form_by_link(jsonb) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_form_by_link(jsonb),public.get_form_by_link(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_form_by_link(jsonb),public.get_form_by_link(text) TO anon,authenticated,service_role;
 
 -- SOURCE: eshop_forms/admin_form_orders.sql
 -- Administrative entrypoints delegate the same checkout and single receipt as
@@ -4192,8 +4192,7 @@ BEGIN
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview_internal(text,bigint) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(input_data jsonb)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -4214,9 +4213,8 @@ CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_ord
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT public.get_customer_order_overview(jsonb_build_object('token',p_token,'order_id',p_order_id));
 $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview(jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(jsonb) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview(jsonb),public.get_customer_order_overview(text,bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(jsonb),public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;
 
 -- SOURCE: eshop_payment_references/replay.sql
 -- Called only after the originating receipt's actor/hash checks. No new public

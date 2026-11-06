@@ -178,8 +178,7 @@ BEGIN
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview_internal(text,bigint) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(input_data jsonb)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -200,6 +199,5 @@ CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_ord
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT public.get_customer_order_overview(jsonb_build_object('token',p_token,'order_id',p_order_id));
 $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview(jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(jsonb) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview(jsonb),public.get_customer_order_overview(text,bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(jsonb),public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;
