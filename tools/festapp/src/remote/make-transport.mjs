@@ -8,7 +8,7 @@ export function makeDocumentation(config, catalog) {
     return {
         openapi: '3.1.0',
         info: { title: 'vstupenky.online - Make read API', version: '1.0.0',
-            description: 'Read-only order-summary projection. Explicit event consent expires after seven days; refresh does not extend consent. Lists are not a database snapshot.' },
+            description: 'Read-only order-summary projection. Explicit event consent lasts 7 days by default, or 30, 90 or 365 days when selected at consent; refresh does not extend consent. Lists are not a database snapshot.' },
         servers: [{ url: config.issuer + '/make/v1' }],
         'x-oauth-resource': config.resource,
         paths: Object.fromEntries(catalog.filter(d => MAKE_READ_OPERATIONS.includes(d.id)).map(d => [

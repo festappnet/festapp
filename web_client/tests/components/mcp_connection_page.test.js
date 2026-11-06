@@ -330,3 +330,70 @@ test('regional brand explanation is opt-in and absent for the global platform', 
     assert.match(regional.container.textContent, /vstupenky.online, který běží na společné platformě Festapp/);
     assert.match(regional.container.textContent, /Toto připojení platí pro vstupenky.online/);
 });
+
+for (const client of ['Desktop application', 'Browser application']) test(`replacement and device naming for ${client}`, async () => {
+    const connections = [
+        { id: 'latest', durationDays: 365, name: '<img src=x>', expiresAt: '2030-01-02T12:00:00Z', access: { units: [{ unitId: 2, canCreateOccasions: true }], occasionIds: [] }, permissions: ['festapp:orders:read'] },
+        { id: 'older', name: null, expiresAt: '2030-01-01T12:00:00Z', access: { units: [], occasionIds: [99] }, permissions: [] },
+    ];
+    const f = fixture({ invoke: async body => ({ data: body.operation === 'details' ?
+        { client, occasions: [{ id: 99, title: 'Concert' }], connections } : { resumeUrl: resume, issuer } }) });
+    await f.page.init();
+    assert.equal(f.container.querySelector('h2').textContent, client);
+    assert.equal(f.page.connection.connectionId, 'latest');
+    assert.equal(f.page.connection.durationDays, 7, 'replacing an annual connection still defaults to seven days');
+    assert.equal(f.container.querySelector('img'), null);
+    f.container.querySelector('[data-occasion="99"]').click();
+    assert.equal(f.page.canApprove, true);
+    const select = f.container.querySelector('[name=connectionId]'); select.value = 'older'; select.dispatchEvent(new window.Event('change'));
+    assert.equal(f.page.connection.connectionId, 'older');
+    f.container.querySelector('input[value="new"]').click();
+    assert.equal(f.page.canApprove, false, 'another device must have a name');
+    const name = f.container.querySelector('[data-connection-name]');
+    name.value = '   '; name.dispatchEvent(new window.Event('input')); assert.equal(f.page.canApprove, false);
+    name.value = 'Office laptop'; name.dispatchEvent(new window.Event('input')); assert.equal(f.page.canApprove, true);
+    await f.page.finish('approve');
+    assert.deepEqual(f.calls.at(-1).access.connection, { mode: 'new', name: 'Office laptop', durationDays: 7 });
+});
+
+test('first connection has optional name and no replacement choice', async () => {
+    const f = fixture({ invoke: async body => ({ data: body.operation === 'details' ?
+        { client: 'Application', occasions: [{ id: 99, title: 'Concert' }], connections: [] } : { resumeUrl: resume, issuer } }) });
+    await f.page.init(); assert.equal(f.container.querySelector('[name="connection-mode"]'), null);
+    assert.equal(f.container.querySelector('[data-connection-name]').required, false);
+    f.container.querySelector('[data-occasion="99"]').click(); assert.equal(f.page.canApprove, true);
+    await f.page.finish('approve');
+    assert.deepEqual(f.calls.at(-1).access.connection, { mode: 'new', name: '', durationDays: 7 });
+});
+
+for (const durationDays of [7, 30, 90, 365]) test(`duration ${durationDays} is selectable and sent in consent`, async () => {
+    const f = fixture({ invoke: async body => ({ data: body.operation === 'details' ?
+        { client: 'Registered application', occasions: [{ id: 99, title: 'Concert' }], connections: [] } : { resumeUrl: resume, issuer } }) });
+    await f.page.init();
+    const duration = f.container.querySelector('[name="durationDays"]');
+    assert.deepEqual([...duration.options].map(o => o.value), ['7', '30', '90', '365']);
+    assert.equal(duration.value, '7');
+    assert.equal(f.container.querySelector('[data-long-duration-hint]'), null);
+    duration.value = String(durationDays); duration.dispatchEvent(new window.Event('change'));
+    assert.equal(Boolean(f.container.querySelector('[data-long-duration-hint]')), durationDays === 365);
+    assert(!f.container.textContent.includes('Přístup platí 7 dní'));
+    f.container.querySelector('[data-occasion="99"]').click();
+    await f.page.finish('approve'); assert.equal(f.calls.at(-1).access.connection.durationDays, durationDays);
+});
+
+test('Czech and English duration copy describes the selected lifetime and revocation', async () => {
+    const { LocalizationService } = await import('../../src/services/localization_service.js');
+    const original = LocalizationService.translations;
+    try {
+        for (const locale of ['cs', 'en']) {
+            LocalizationService.translations = JSON.parse(readFileSync(new URL(`../../../assets/translations/${locale}.json`, import.meta.url)));
+            const f = fixture({ invoke: async () => ({ data: { client: 'Registered application', occasions: [{ id: 99, title: 'Concert' }], connections: [] } }) });
+            await f.page.init();
+            const select = f.container.querySelector('[name=durationDays]');
+            assert.equal(select.options[3].textContent, locale === 'cs' ? '1 rok' : '1 year');
+            select.value = '365'; select.dispatchEvent(new window.Event('change'));
+            assert.match(f.container.querySelector('[data-long-duration-hint]').textContent, locale === 'cs' ? /Kdykoli jej můžete odebrat/ : /revoke it at any time/);
+            assert.match(f.container.textContent, locale === 'cs' ? /Obnova tokenu ji neprodlužuje/ : /Token refresh does not extend it/);
+        }
+    } finally { LocalizationService.translations = original; }
+});

@@ -25,7 +25,7 @@ export function tenantConnections(app, { config, storage, brokerSecret, owner, a
                     .filter(g => owns(g, userId) && !g.revoked && g.expiresAt > Date.now())
                     .sort((a, b) => b.expiresAt - a.expiresAt || a.id.localeCompare(b.id))
                     .map(g => ({ id: g.id, client: config.clients.find(c => c.id === g.clientId)?.name ?? g.clientId,
-                        expiresAt: new Date(g.expiresAt).toISOString(), access: accessSelection(g.access),
+                        name: g.name || null, expiresAt: new Date(g.expiresAt).toISOString(), access: accessSelection(g.access),
                         permissions: MCP_SCOPES.filter(p => g.permissions?.includes(p)) }));
                 return res.json({ connections });
             }

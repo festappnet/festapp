@@ -96,7 +96,8 @@ This does not widen web-client redirects or enable dynamic registration.
 
 The browser logs into downstream Supabase normally. Explicit consent binds one
 new independent backend refresh session to one actor/client/tenant/profile and
-the selected access scope for seven days. The MCP token and the Supabase token
+the selected access scope for seven days by default, or 30, 90 or 365 days
+when explicitly selected at consent. The MCP token and the Supabase token
 remain separate. The adapter has no service-role key and never relays a supplied
 MCP bearer to Supabase. Existing SQL/RPC permissions remain the final domain
 authority. The OAuth grant narrows access; the stored ordinary Supabase session
@@ -397,3 +398,83 @@ Catalog administration uses the shared UI/MCP product boundary described in
 separate from order scopes. Existing delegations remain unchanged; a new consent
 is required before these tools appear. The issuer and tenant UI import the same
 functional permission registry from `packages/festapp_contracts`.
+
+
+## Reconnecting an application
+
+Consent lists active connections for the verified actor, registered OAuth client
+and exact backend profile. This behavior applies to every registered client;
+application names come from client registration. Replace is the default, with
+the newest connection selected. The user can inspect names, expiry, resource
+access and functional permissions, or choose New device. A separate device
+requires a nonblank name when another connection exists. First connections and
+replacement names are optional. Names are trimmed, limited to 80 characters and
+reject control characters; clients render them as text. Older unnamed grants
+fall back to their registered application name.
+
+The version 2 opaque `access` consent envelope can carry
+`connection: {mode: "replace", connectionId, name?}` or
+`connection: {mode: "new", name?}`. The Edge broker passes it unchanged. The issuer
+validates ownership at preparation, again at final consent, and before revoking.
+Missing choices retain the legacy independent-connection behavior. New grants
+contain only the new consent's access and permissions, without inheritance.
+
+Consent stores replacement intent on the new delegation. It does not revoke the
+old connection. In oidc-provider 9.12.2, `lib/actions/token.js` emits
+`grant.success` after the awaited grant handler, for both code and refresh
+exchanges. The synchronous listener explicitly handles only `authorization_code`
+and uses its AuthorizationCode entity's grant ID. It invokes canonical
+`storage.revoke` and the revocation audit after issuance. Cleanup exceptions are
+contained and audited as `replacement_failed`, preserving the token response;
+operators must investigate such an audit event (the old connection may remain
+active). There is no cleanup on approval, callback navigation, failed exchange
+or refresh. As with any OAuth response, issuance cannot prove delivery over the
+network; a client that loses the successful token response may need to reconnect.
+
+
+## Consent duration and downstream session lifetime
+
+Both consent adapters offer exactly 7 (default), 30, 90 and 365 days, independently
+of the registered OAuth client. `connection.durationDays` in the version 2 consent
+envelope accepts only these numeric values. Missing durations, missing connection
+choices and legacy membership-only consent remain seven days. Replacing a
+connection does not inherit its duration or extend any other delegation. A year
+is exactly 365 days from approval, not a calendar-year calculation.
+
+The new delegation stores `createdAt`, `durationDays` and the fixed `expiresAt`.
+That deadline remains the authority on every refresh and delegated invocation.
+The provider's Grant configuration supports up to 365 days; each new Grant gets
+an explicit lifetime matching the approved duration. RefreshToken TTL uses the
+remaining delegation lifetime, rounded up to seconds. Rotation never advances
+the delegation deadline. Access tokens remain five minutes and cannot outlive
+consent in use because DelegatedOwner also checks the deadline. Existing provider
+grants keep their persisted expirations; changing configuration does not extend
+them. Delegation storage follows its deadline, Binding survives it by one day,
+and revoked delegation markers remain until the original deadline. Creation-time
+ordering uses `createdAt`; only legacy records fall back to expiry minus their
+stored duration, or seven days when that duration is absent.
+
+The encrypted Backend store initially retains an unapproved session for ten
+minutes. Consent promotes it to the same fixed delegation deadline. Each later
+write uses the remaining time, including downstream refresh rotation, so it
+cannot introduce a sliding lifetime. A Binding that outlives its delegation
+also prevents backend writes from resurrecting an expired connection. There is
+no background keepalive. MCP OAuth token refresh neither contacts Supabase Auth
+nor rotates the downstream refresh token. `SessionOwner.authorized` performs
+that refresh under the connection lock when an MCP operation needs the ordinary
+session, persists the rotated token before further identity/permission checks,
+and preserves rotation even if the subsequent operation is denied.
+
+These local lifetimes do not override the backend Auth service's independent
+session timebox, inactivity timeout, revocation or credential validity. The
+repository's `supabase/config.toml` contains only commented session-timeout
+examples, and the checked-in production Auth overlay does not specify those
+limits. The live Auth configuration was not inspected; survival of a full year
+of inactivity cannot be established from this repository. If backend refresh
+returns an authentication failure (HTTP 400/401), SessionOwner reports
+AUTHENTICATION_REQUIRED; DelegatedOwner revokes the MCP connection, deletes its
+stored downstream credential and requires a fresh login/consent. A temporary
+backend/network error is not proof of session expiry and follows the existing
+upstream-error path. Selecting one year therefore allows access for up to that
+fixed deadline, subject to the backend session remaining valid; it is not a
+promise of a year without reauthorization.

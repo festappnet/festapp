@@ -69,7 +69,8 @@ export async function openRemoteStorage(root, key) {
                 if (grant) {
                     this.remove('Backend', grant.binding);
                     grant.revoked = true;
-                    this.put('Delegation', grantId, grant, 86400 * 7);
+                    // Retain the revoked marker through the original consent deadline.
+                    this.put('Delegation', grantId, grant, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
                 }
                 db.prepare('DELETE FROM records WHERE grant_id=?').run(digest(grantId));
             },

@@ -1,3 +1,4 @@
+import { activeConnections, verifyConnectionChoice } from './connection-choice.mjs';
 import { verifyConsent } from './consent.mjs';
 import express from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
@@ -68,13 +69,14 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         const client = config.clients.find(c => c.id === flow.clientId);
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
             ...(config.regionalPortal ? { regionalPortal: config.regionalPortal } : {}),
-            tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
-        const { selected, permissions } = verifyConsent(req.body.access, proof.available, flow.canRequestCreate === true, flow.requestedPermissions ?? []);
+            connections: activeConnections(storage, proof.userId, flow.clientId, config.profile.binding), tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
+        const { selected, permissions, connection } = verifyConsent(req.body.access, proof.available, flow.canRequestCreate === true, flow.requestedPermissions ?? []);
+        verifyConnectionChoice(connection, storage, proof.userId, flow.clientId, config.profile.binding);
         // Re-read after remote authorization so concurrent approval cannot fork a mint.
         check(read(request).flow.state === 'pending', 'FORBIDDEN');
         const lease = nonce();
         save(uid, { ...flow, state: 'preparing', lease, userId: proof.userId,
-            selected, permissions });
+            selected, permissions, connection });
         return res.json({ lease, userId: proof.userId, organizationId: config.profile.organizationId });
     });
     app.get('/connect/:uid/finish', async (req, res) => {
