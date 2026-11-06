@@ -163,7 +163,7 @@
     "slug": "ai-agenti",
     "title": "Jak připojit AI agenta přes MCP",
     "seoTitle": "Jak připojit AI agenta přes MCP",
-    "description": "Připojení AI asistenta k vstupenky.online: krátký prompt, postup pro Codex a ChatGPT, oprávnění a příklady práce s formuláři.",
+    "description": "Připojení AI asistenta k vstupenky.online: krátký prompt, obecný postup připojení přes MCP, oprávnění a příklady práce s formuláři.",
     "label": "AI agenti a MCP",
     "preview": "cs/ai-agenti/login"
   },

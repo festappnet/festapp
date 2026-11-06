@@ -23,6 +23,7 @@ test('public guides render crawlable linked documents, code generator without un
   assert.ok(html.includes(`rel="canonical" href="https://vstupenky.online/napoveda/${page.slug?page.slug+'/':''}"`));
   assert.match(html,/data-help-search/);assert.match(html,/assets\/search\.[a-f0-9]+\.js/);assert.match(html,/BreadcrumbList/);if(page.id.startsWith('category.'))assert.match(html,/ItemList/);
   assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{/);
+  if(page.id==='ai-agents') assert.doesNotMatch(html,/codex/i,'MCP guide metadata and body are client independent');
   if(page.id==='fio-token') {
    assert.equal((html.match(/<iframe /g)||[]).length,1);
    assert.match(html,/src="https:\/\/www\.youtube-nocookie\.com\/embed\/px9MCABSQbI"/);
@@ -91,6 +92,7 @@ test('public guides render crawlable linked documents, code generator without un
  for(const page of englishPages){
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
   assert.match(html,/<html lang="en">/);
+  if(page.id==='ai-agents') assert.doesNotMatch(html,/codex/i,'English MCP guide metadata and body are client independent');
   assert.doesNotMatch(html,/<title>[^<]*undefined/);
   if(page.id==='fio-token') assert.match(html,/www\.youtube-nocookie\.com\/embed\/px9MCABSQbI/);assert.match(html,/noindex,nofollow/);
   assert.doesNotMatch(html,/\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English preview has no Czech chrome or screenshot fallback');
