@@ -588,7 +588,7 @@
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
-    "embedInheritStyleHelp": "Přebírá písmo, pozadí a barvy webu ve všech vloženích tohoto formuláře. Po uložení se změna projeví při dalším načtení stránky. Plánek sálu si ponechává vlastní vzhled.",
+    "embedInheritStyleHelp": "Pro toto vložení použije písmo, pozadí a barvy Vašeho webu. Volbu nastavte před zkopírováním kódu. Plánek sálu si ponechá vlastní vzhled.",
     "productsAndPrices": "Produkty a ceny"
   },
   "OrderGridColumns": {

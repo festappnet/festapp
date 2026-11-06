@@ -231,6 +231,7 @@
     "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
   },
   "FeatureFormSettings": {
+    "embedInheritStyleHelp": "Übernimmt Schrift, Hintergrund und Farben Ihrer Website für diese Einbettung. Wählen Sie die Einstellung, bevor Sie den Code kopieren. Der Saalplan behält sein eigenes Erscheinungsbild.",
     "measurementConsentDecline": "Ablehnen",
     "measurementConsentChoices": "Einwilligungseinstellungen",
     "measurementConsentDescription": "Mit Ihrer Einwilligung kann der Veranstalter die Formularnutzung und abgeschlossene Bestellungen messen.",
