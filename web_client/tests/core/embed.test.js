@@ -137,7 +137,7 @@ test('revealing an embed step preserves native keyboard tab stops', () => {
     if(eventDescriptor)Object.defineProperty(globalThis,'CustomEvent',eventDescriptor);else delete globalThis.CustomEvent;
 });
 
-test('host supplies appearance independently of legacy flags and preserves fixed height', async () => {
+test('host supplies appearance and explicit mode independently of fixed height', async () => {
     const {dom, frames: [frame, other], sent, message} = host();
     const style = dom.window.document.createElement('style');
     style.textContent = '@font-face {font-family: "Site Serif"; src:url("fonts/site.woff2"); font-weight:700} body {font-family:"Site Serif", serif;color:rgb(20, 30, 40);background-color:rgb(250, 249, 245)}';
@@ -151,6 +151,7 @@ test('host supplies appearance independently of legacy flags and preserves fixed
     frame.dataset.festappStyle = 'inherit'; frame.dataset.festappHeight = 'fixed';
     message(frame, 'https://tickets.invalid', envelope('ready'));
     assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
+    assert.equal(sent[0].at(-1)[0].styleMode,'inherit');
     const theme = sent[0].at(-1)[0].theme;
     assert.equal(theme.fontFamily, '"Site Serif", serif');
     assert.equal(theme.fonts[0].urls[0], 'https://host.invalid/fonts/site.woff2');
@@ -163,9 +164,11 @@ test('host supplies appearance independently of legacy flags and preserves fixed
     frame.dataset.festappStyle = 'default';
     message(frame, 'https://tickets.invalid', envelope('ready'));
     assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
+    assert.equal(sent[0].at(-1)[0].styleMode,'default');
     delete frame.dataset.festappStyle;
     await new Promise(resolve => dom.window.setTimeout(resolve, 50));
-    assert.equal(sent[0].at(-1)[0].theme.fontFamily, theme.fontFamily);
+    assert.equal(sent[0].at(-1)[0].styleMode,undefined);
+    assert.equal(sent[0].findLast(([data])=>data.theme)?.[0].theme.fontFamily, theme.fontFamily);
     assert.ok(sent[1].at(-1)[0].theme);
     assert.equal(other.style.height, '');
     dom.window.close();
@@ -628,4 +631,57 @@ test('unresolved presets and unknown button ancestors retain the safe sampled fa
         };
     });
     assert.equal(sent[0][0][0].theme.primary,'rgb(10, 20, 30)');assert.equal(calls,1);dom.window.close();
+});
+
+test('explicit embed appearance is instance scoped and changes independently of height', async () => {
+    const {dom,frames:[a,b],sent}=host(false,win=>{
+        const [first,second]=win.document.querySelectorAll('iframe');
+        first.dataset.festappStyle='inherit';
+        second.dataset.festappStyle='default';
+        second.dataset.festappHeight='fixed';
+    });
+    try {
+        assert.equal(sent[0][0][0].styleMode,'inherit');
+        assert.equal(sent[1][0][0].styleMode,'default');
+        assert.equal(sent[1][0][0].autoHeight,false);
+        a.dataset.festappStyle='default';
+        await new Promise(resolve=>dom.window.requestAnimationFrame(resolve));
+        assert.equal(sent[0].at(-1)[0].styleMode,'default');
+        assert.equal(sent[1].at(-1)[0].styleMode,'default');
+        b.dataset.festappStyle='inherit';
+        await new Promise(resolve=>dom.window.requestAnimationFrame(resolve));
+        assert.equal(sent[1].at(-1)[0].styleMode,'inherit');
+        assert.equal(sent[1].at(-1)[0].autoHeight,false);
+    } finally { dom.window.close(); }
+});
+
+test('explicit appearance overrides the legacy form preference in either loading order and height mode',()=>{
+    for(const automatic of [true,false]) for(const formEnabled of [true,false])
+    for(const styleMode of ['inherit','default']) for(const formFirst of [true,false]) {
+        const dom=new JSDOM('<body>Checkout</body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+        const win=dom.window,previous={window:globalThis.window,document:globalThis.document};
+        Object.assign(globalThis,{window:win,document:win.document});
+        const parent={postMessage(){}};
+        Object.defineProperty(win,'parent',{value:parent});
+        win.ResizeObserver=class {observe(){} disconnect(){}};
+        win.CSS={supports:()=>true};
+        const bridge=new EmbedBridge(win); bridge.start();
+        const root=win.document.documentElement;
+        const message=(origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{
+            source:parent,origin,data:envelope('init','appearance',{viewportHeight:600,autoHeight:automatic,styleMode,
+                theme:{fontFamily:'serif',text:'black',background:'white',primary:'navy',buttonText:'white'}})
+        }));
+        try {
+            if(formFirst) bridge.setInheritStyle(formEnabled);
+            message();
+            if(!formFirst) {
+                assert.equal(root.dataset.embedTheme,undefined,'presentation waits for form data');
+                bridge.setInheritStyle(formEnabled);
+            }
+            assert.equal(root.dataset.embedTheme,styleMode==='inherit'?'host':undefined);
+            assert.equal(bridge.autoHeight,automatic);
+            bridge.setInheritStyle(!formEnabled);
+            assert.equal(root.dataset.embedTheme,styleMode==='inherit'?'host':undefined,'later form refresh preserves explicit embed choice');
+        } finally { bridge.destroy();win.close();Object.assign(globalThis,previous); }
+    }
 });

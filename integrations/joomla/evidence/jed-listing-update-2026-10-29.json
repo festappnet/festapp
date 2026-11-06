@@ -1,0 +1,61 @@
+{
+  "updated_at": "2026-10-29T15:02:55.403545+00:00",
+  "state": "PUBLISHED",
+  "extension_id": 17931,
+  "version": "1.0.1",
+  "public_listing_url": "https://extensions.joomla.org/extension/vstupenky-online/",
+  "update_receipt_url": "https://extensions.joomla.org/listing-updated/?extension_id=17931&core_title=vstupenky.online",
+  "confirmation_heading": "Listing Update Received",
+  "confirmation_text": "Your extension has been successfully updated.",
+  "approval": "User approved screenshot review gallery and Czech copy: okok tak to tam takhle dej",
+  "description_languages": {
+    "en-GB": "../submission/description.en.txt",
+    "cs-CZ": "../submission/description.cs.txt"
+  },
+  "main_description_language_requirement": "JED main description is validated as English; Czech is stored as an additional language and selectable under Full description.",
+  "screenshots": [
+    {
+      "file": "../submission/screenshots/01-formular.jpg",
+      "title": "Prodejní formulář",
+      "sha256": "6999932f54eb500c44e034a289363ea59c937cb30bfe0d6542c9a2636bfb4548"
+    },
+    {
+      "file": "../submission/screenshots/02-mista.png",
+      "title": "Výběr míst",
+      "sha256": "d5937ebf7e33d2c9f86ad4b98c276ae7d0f338bb1ad17364e5befe509b94a789"
+    },
+    {
+      "file": "../submission/screenshots/03-prodej.png",
+      "title": "Přehled prodeje",
+      "sha256": "fa124889b8f66b7f7c9a827188f8c8de0117c54d9d471b4953957512d354bb8a"
+    }
+  ],
+  "media_provenance": [
+    "automation/landing_capture/picker/README.md",
+    "automation/landing_capture/admin/orders.md"
+  ],
+  "media_boundary": "Existing genuine Czech service UI recordings with synthetic local data. Existing phone bezel retained. Public form is not a newly captured installed Joomla page. Dashboard belongs to external service.",
+  "anonymous_public_verification": {
+    "czech_visible": true,
+    "selected_language": "cs-CZ",
+    "old_technical_copy_visible": false,
+    "images": [
+      {
+        "alt": "main-image-1",
+        "url": "https://extensions.joomla.org/cache/fab_image/6ae35fc527e19_resizeDown1200px525px16.png?rand=92",
+        "loaded": true
+      },
+      {
+        "alt": "main-image-2",
+        "url": "https://extensions.joomla.org/cache/fab_image/6ae35fc608029_resizeDown1200px525px16.png?rand=53",
+        "loaded": true
+      },
+      {
+        "alt": "main-image-3",
+        "url": "https://extensions.joomla.org/cache/fab_image/6ae35fc44d684_resizeDown1200px525px16.jpg?rand=82",
+        "loaded": true
+      }
+    ]
+  },
+  "module_release_performed": false
+}

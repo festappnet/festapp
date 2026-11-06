@@ -420,6 +420,9 @@
     "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
   },
   "FeatureFormSettings": {
+    "measurementFormUnitBlocked": "Meranie je u organizátora vypnuté. Voľbu pre tento formulár môžete uložiť; meranie sa spustí až po povolení u organizátora a splnení ďalších podmienok.",
+    "measurementOpenUnitSettings": "Otvoriť nastavenia merania organizátora",
+    "measurementAskUnitManager": "O povolenie merania a nastavenie GTM či skriptov požiadajte správcu organizátora.",
     "measurementActivationHelp": "Uloženie nastavení samo meranie nespustí. Zapnite ho aj v nastaveniach jednotlivých formulárov. Spustenie vyžaduje schválenie a sprevádzkovanie merania platformou a súhlas návštevníka.",
     "measurementUnitDisabled": "Meranie je pre tohto organizátora vypnuté. Uložené ID a skripty zostanú zachované.",
     "measurementConsentDecline": "Odmietnuť",

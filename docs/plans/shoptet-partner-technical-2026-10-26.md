@@ -1,5 +1,9 @@
 # Shoptet: technická příloha plánu
 
+Aktuální architekturu vlastní [společný Commerce Connector](../architecture/commerce-connectors.md) a jeho [realizační plán](commerce-connectors-plan-2026-10-29.md). Shoptet je první adaptér; tento starší průzkum zůstává podkladem, nikoli druhou implementační autoritou.
+
+Aktualizace směru 29. 10. 2026: [rozhodovací průzkum](shoptet-direction-plan-2026-10-29.md) je autoritou pro volbu kapacitního kontraktu. Nově doložený kandidát je zvlášť schvalované digitální doručení přes shipping-request. Starší předpoklady o rozsahu košíku a pořadí variant se řídí novými rozhodovacími branami. Trvá výslovný zákaz odesílání a podávání.
+
 Součást [autoritativního plánu](shoptet-partner-onboarding-2026-10-26.md), 26. 10. 2026. Návrh kontraktů, nikoli popis již implementované integrace. Externí tvrzení vycházejí z níže uvedených primárních zdrojů; podporu na našem partnerském účtu dosud nemáme ověřenou.
 
 ## 1. Rozhodnutí o první verzi

@@ -18,8 +18,10 @@ visitor consent. Saving configuration or entering a GTM ID grants none of these.
   Form-level destination code and enhanced-conversion settings are rejected.
 
 Organization denial dominates every Unit and form. Unit denial dominates its
-forms. UI hides subordinate measurement controls when ancestor permissions are
-absent and preserves the stored subordinate choice. Public/catalog Unit readers
+forms. UI hides Unit and form measurement controls when organization permission
+is absent and preserves stored choices. With organization permission, form
+authors can save form intent even while Unit measurement is off; the editor
+explains the Unit block without changing Unit permission. Public/catalog Unit readers
 redact destination code; authorized Unit manager reads retain it. None of these
 administrative switches edits platform deployment policy.
 

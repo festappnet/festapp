@@ -1,5 +1,9 @@
 # Navázat: Shoptet partnerství a nativní prodej vstupenek
 
+Toto je historické zadání. Pro další práci je jedinou aktuální autoritou [Commerce Connectors execution prompt](commerce-connectors-EXECUTION-PROMPT-2026-10-29.md), který respektuje společné jádro pro další e-shopy a trvající zákaz odesílání.
+
+Aktualizace směru 29. 10. 2026: [rozhodovací průzkum](shoptet-direction-plan-2026-10-29.md) je autoritou pro volbu kapacitního kontraktu. Nově doložený kandidát je zvlášť schvalované digitální doručení přes shipping-request. Starší předpoklady o rozsahu košíku a pořadí variant se řídí novými rozhodovacími branami. Trvá výslovný zákaz odesílání a podávání.
+
 V repozitáři Festapp přečti platné AGENTS.md, CLAUDE.md a docs/architecture/ai_context.md. Pracuj v čistém izolovaném worktree a používej ověřování standard.
 
 Autoritativní plán je `docs/plans/shoptet-partner-onboarding-2026-10-26.md`; přečti jej celý včetně `docs/plans/shoptet-partner-technical-2026-10-26.md`. Text pro partnerský tým je `docs/plans/shoptet-partner-proposal-2026-10-26.md`.

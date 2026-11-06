@@ -8,14 +8,14 @@
     "shared/module.xml.in": "3a64e9d05d46941044c5cb162785a5629c3e0f1f0fe24adb07d6b9178e4c5463",
     "shared/services/provider.php.in": "94d8d25286d8aeffb1a865000108e2edf48ca5dee93f489e78f3cc7b9be1c146",
     "shared/src/Dispatcher/Dispatcher.php.in": "94c77b6cfae356fafd638a307c3d3124523f7b9bcb336dc17711db0679fc0847",
-    "shared/src/Helper/EmbedHelper.php.in": "92ab05e2b1a76a8e0ddd10ba60990383bc830bf22601ca63b21c49fe1564791e",
+    "shared/src/Helper/EmbedHelper.php.in": "43610a5bb68c25711b2a32e0c7b29476e1602acb631f5b9cfd1fac6ba7c4b965",
     "shared/src/Rule/PublicformRule.php.in": "5228d2a44cec2dfe88dedb61bd02da5a3e2996d5b542deec5b8a31078ccf9cb1",
     "shared/tmpl/default.php.in": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
   },
   "packages": {
     "mod_vstupenky_online-1.0.2.zip": {
-      "sha256": "85b6ce41f5fcdf709f966ec66156ef5a8bfa3c2a62b3f27d6f67e2a6b5561007",
-      "immutable": "artifacts/sha256/85b6ce41f5fcdf709f966ec66156ef5a8bfa3c2a62b3f27d6f67e2a6b5561007/mod_vstupenky_online-1.0.2.zip",
+      "sha256": "700be80f25518655a2a40cac378e2b8e38bc6bd7dfc3f148dc7bd6203852a2f7",
+      "immutable": "artifacts/sha256/700be80f25518655a2a40cac378e2b8e38bc6bd7dfc3f148dc7bd6203852a2f7/mod_vstupenky_online-1.0.2.zip",
       "files": {
         "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
         "language/cs-CZ/mod_vstupenky_online.ini": "049bbd8bbfab76628f07e254af4eb44d1985cd888bb2d46a05ded66933da6529",
@@ -25,14 +25,14 @@
         "mod_vstupenky_online.xml": "8743a1196fca45439598f689c9dfbf43d51cd20b0a0a1999a7443b2645b16e19",
         "services/provider.php": "8c5c9053d2add1b6931fc05ef7d7e82886679e3ecc91ccbfcf0acbf257f5a961",
         "src/Dispatcher/Dispatcher.php": "2d8e6616f9ae42310b7b3d142ac098e4b0c1f5082ef8efa8af7bca2ff1730b8e",
-        "src/Helper/EmbedHelper.php": "a7d04fa98253602959dca0464df6a855249a2a4a5b9eae42773fd88dc3c442f1",
+        "src/Helper/EmbedHelper.php": "f690d90422b2e772cf013125cd7d580db193a765249472927ff68effdb076bdc",
         "src/Rule/PublicformRule.php": "fe7d5a543cb1a4ac19a6da7d8deb4f53b53b6304b3a0536ae48e324965a5ad7d",
         "tmpl/default.php": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
       }
     },
     "mod_festapp_tickets-1.0.0.zip": {
-      "sha256": "e917807a5d0fd39133a7de0f48debfbafc830b615b0a61976d231d24f2feb66b",
-      "immutable": "artifacts/sha256/e917807a5d0fd39133a7de0f48debfbafc830b615b0a61976d231d24f2feb66b/mod_festapp_tickets-1.0.0.zip",
+      "sha256": "53a1254f89f6e0aff194441c9e320f132d283d8f03bb43bbe2d8236c393c3a91",
+      "immutable": "artifacts/sha256/53a1254f89f6e0aff194441c9e320f132d283d8f03bb43bbe2d8236c393c3a91/mod_festapp_tickets-1.0.0.zip",
       "files": {
         "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
         "language/cs-CZ/mod_festapp_tickets.ini": "78b30afaab7704caa81387d147248e839f0aeac8a82356c87635c7b927f3c41a",
@@ -42,7 +42,7 @@
         "mod_festapp_tickets.xml": "cbc959f2c6439a1f06fdb2ec149d8a6883c299c5679af4891fbe00d4b58aca33",
         "services/provider.php": "b70209d465a990f39c2c2845536e4f1b75c87019a37b44768396b20cec0fac25",
         "src/Dispatcher/Dispatcher.php": "281a42c0e0ea1c3926140ab8d581501e1f6a7f9592fb1257f08c01cf17bbaa7c",
-        "src/Helper/EmbedHelper.php": "26c70523b064e0d86883a6d9bd5af22f82cb359be6740c8433f66d7f0fad0e86",
+        "src/Helper/EmbedHelper.php": "b81acac6163679287d26bd78cd69f693e9c193974873e2ee46acb66a6f3cd870",
         "src/Rule/PublicformRule.php": "a7ea6a4be94cff894c245c59912f19636363d8f11e30503bb1584a411775dd98",
         "tmpl/default.php": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
       }

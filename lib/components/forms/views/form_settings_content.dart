@@ -133,20 +133,22 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   bool get _showMeasurement {
     final status = _form?.definition.measurementStatus;
-    return status?['organization_enabled'] == true &&
-        status?['unit_enabled'] == true;
+    return status?['organization_enabled'] == true;
   }
 
   List<String> get _measurementStatusMessages {
-    if (!_measurementEnabled) return [FormStrings.measurementDisabled];
     final status = _form?.definition.measurementStatus;
     final reasons = status?['blocked_reasons'];
     final messages = <String>[
-      if (status?['organization_allowed'] != true)
+      if (!_measurementEnabled) FormStrings.measurementDisabled,
+      if (status?['unit_enabled'] != true)
+        FormStrings.measurementFormUnitBlocked,
+      if (_measurementEnabled && status?['organization_allowed'] != true)
         FormStrings.measurementOrganizationBlocked,
-      if (status?['runtime_supported'] != true)
+      if (_measurementEnabled && status?['runtime_supported'] != true)
         FormStrings.measurementRuntimeBlocked,
-      if (reasons is List && reasons.contains('no_destination'))
+      if (_measurementEnabled &&
+          reasons is List && reasons.contains('no_destination'))
         FormStrings.measurementNoDestination,
     ];
     return messages.isEmpty ? [FormStrings.measurementReady] : messages;
@@ -1094,7 +1096,26 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     for (final message
                                         in _measurementStatusMessages)
-                                      Text(message),
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(message),
+                                      ),
+                                    if (RightsService.currentUnit()?.id != null &&
+                                        RightsService.hasCapability(
+                                          AuthorizationCapabilities.unitSettingsWrite,
+                                        ))
+                                      TextButton(
+                                        onPressed: () => pushRootPath(
+                                          context.router.root,
+                                          '/unit/${RightsService.currentUnit()!.id}/edit/settings',
+                                        ),
+                                        child: Text(FormStrings.measurementOpenUnitSettings),
+                                      )
+                                    else
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(FormStrings.measurementAskUnitManager),
+                                      ),
                                     const SizedBox(height: 24),
                                     const Divider(),
                                   const SizedBox(height: 16),

@@ -402,6 +402,9 @@
     "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
   },
   "FeatureFormSettings": {
+    "measurementFormUnitBlocked": "Pomiar jest wyłączony dla tego organizatora. Można zapisać ustawienie tego formularza. Pomiar będzie możliwy po włączeniu go dla organizatora i spełnieniu pozostałych warunków.",
+    "measurementOpenUnitSettings": "Otwórz ustawienia pomiaru organizatora",
+    "measurementAskUnitManager": "Proszę poprosić administratora organizatora o włączenie pomiaru i skonfigurowanie GTM lub skryptów.",
     "measurementActivationHelp": "Samo zapisanie ustawień nie uruchamia pomiaru. Proszę włączyć go także w ustawieniach poszczególnych formularzy. Uruchomienie wymaga zatwierdzenia i konfiguracji przez platformę oraz zgody odwiedzającego.",
     "measurementUnitDisabled": "Pomiar jest wyłączony dla tego organizatora. Zapisane identyfikatory i skrypty zostaną zachowane.",
     "measurementConsentDecline": "Odrzuć",

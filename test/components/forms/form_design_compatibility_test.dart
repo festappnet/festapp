@@ -112,10 +112,11 @@ void main() {
       final embedSwitch = find.byKey(
         const ValueKey('form-embed-inherit-style'),
       );
-      expect(embedSwitch, findsOneWidget);
-      expect(tester.widget<SwitchListTile>(embedSwitch).value, isTrue);
+      expect(embedSwitch, findsNothing);
+      expect(form.definition.embedInheritStyle, isTrue,
+          reason: 'Design edits preserve the fallback for existing embeds');
       await mount(false);
-      expect(tester.widget<SwitchListTile>(embedSwitch).onChanged, isNull);
+      expect(embedSwitch, findsNothing);
       expect(
         tester
             .widget<ChoiceChip>(find.byKey(const ValueKey('form-theme-dark')))

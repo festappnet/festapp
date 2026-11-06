@@ -1,0 +1,145 @@
+{
+  "checkedAtUtc": "2026-10-29T15:55:46.327230+00:00",
+  "baseRevision": "00f05276de8c07c186c9d884e59291666d7707d6",
+  "purpose": "Bounded candidate inventory for capacity_reservation_id rollout; text match is not proof of shared symbol semantics.",
+  "query": "rg -l secret_expiration_time database/functions",
+  "status": "candidate-inventory-not-implementation-verification",
+  "candidates": [
+    {
+      "file": "database/functions/blueprint/admin_seats.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/apply_seat_order_internal.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/apply_seat_swap_internal.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/availability.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/hold_release.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/projections.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/release_holds_command_internal.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/blueprint/save.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop/confirm_blueprint_order_change.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop/get_blueprint.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop/materialize_ticket_products_internal_v1.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop/select_spot.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop/ticketing_authoring_reads.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop_orders/delete_order.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop_orders/get_orders.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop_orders/internal_storno_tickets_221.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop_ticket_batches/create.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/eshop_ticket_batches/guards.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/adjust_spot_capacity_for_pool.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/apply_allocations.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/copy_resource_configuration.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/delete_inventory_pool_client_sync_v1.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/delete_resource_client_sync_v1.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/get_inventory_pools_by_occasion_link.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/inventory_catalog.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/is_product_dynamically_available.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/save_inventory_pool_internal.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/save_inventory_resource_internal.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/inventory/update_spots_assignments.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/occasion_setup/sale_status.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/others/duplicate_occasion.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    },
+    {
+      "file": "database/functions/public_links/legacy_readers.sql",
+      "requiredDisposition": "Semantically classify and update occupancy/claim maintenance, or retain with explicit non-capacity reason before activation."
+    }
+  ],
+  "additionalOwners": [
+    "product.maximum calculations",
+    "form participant_capacity calculations",
+    "financial/paid transition",
+    "payment deadlines/reminders",
+    "public projection allowlists",
+    "SQL function grants and inbound Edge route registry"
+  ]
+}

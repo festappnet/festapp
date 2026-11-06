@@ -1,5 +1,5 @@
 {
-  "status": "SUBMITTED_PENDING_JED_REVIEW",
+  "status": "PUBLISHED",
   "name": "vstupenky.online",
   "version": "1.0.1",
   "developer": "Festapp - Michael Bujnovský",
@@ -27,5 +27,15 @@
   "zip_sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
   "submission_instructions": "After account activation, open Submit Extension in JED, use these fields, upload the exact reviewed ZIP and existing logo, leave demo URL empty; record actual submission receipt/extension ID before claiming submitted. Catalog editorial approval remains external.",
   "extension_id": 17931,
-  "confirmation_url": "https://extensions.joomla.org/listing-submitted/?extension_id=17931&core_title=vstupenky.online"
+  "confirmation_url": "https://extensions.joomla.org/listing-submitted/?extension_id=17931&core_title=vstupenky.online",
+  "public_listing_url": "https://extensions.joomla.org/extension/vstupenky-online/",
+  "description_translations": {
+    "cs-CZ": "description.cs.txt"
+  },
+  "screenshots": [
+    "screenshots/01-formular.jpg",
+    "screenshots/02-mista.png",
+    "screenshots/03-prodej.png"
+  ],
+  "publication_evidence": "../evidence/jed-listing-update-2026-10-29.json"
 }

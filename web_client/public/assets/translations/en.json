@@ -525,7 +525,10 @@
     "embedFixed": "Fixed height without script",
     "productsAndPrices": "Products and prices",
     "measurementActivationHelp": "Saving these settings does not start measurement. Enable it in each form’s settings as well. Running measurement also requires platform approval and setup, and visitor consent.",
-    "measurementUnitDisabled": "Measurement is off for this organizer. Saved IDs and scripts are preserved."
+    "measurementUnitDisabled": "Measurement is off for this organizer. Saved IDs and scripts are preserved.",
+    "measurementFormUnitBlocked": "Measurement is off for this organizer. You can save this form’s preference; measurement can run only after it is enabled for the organizer and the other requirements are met.",
+    "measurementOpenUnitSettings": "Open organizer measurement settings",
+    "measurementAskUnitManager": "Ask the organizer’s manager to enable measurement and configure GTM or scripts."
   },
   "OrderGridColumns": {
     "id": "Id",
