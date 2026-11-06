@@ -310,9 +310,15 @@ IP loopback HTTP callbacks; the maintained provider permits a variable port,
 while the callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
-codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex --oauth-resource https://mcp.vstupenky.online/mcp
+codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex
 codex mcp login festapp --scopes festapp:ticket-layouts:read
 ```
+
+Codex discovers the resource from the MCP protected-resource metadata. Do not
+add `--oauth-resource`; if an older setup contains `oauth_resource`, remove that
+entry from this server’s Codex configuration and sign in again. The issuer
+validates each requested resource through `getResourceServerInfo`, including
+repeated values; any value other than the configured MCP resource is rejected.
 
 Complete the fresh browser login and occasion consent for this client. The
 native client uses the same scoped read handlers and separate OAuth grant.
