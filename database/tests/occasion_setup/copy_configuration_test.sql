@@ -34,7 +34,8 @@ BEGIN
  PERFORM assert_eq((source#>>'{forms,0,participant_capacity}')::int,10,'Source preserves capacity');
  PERFORM assert_eq(source#>'{forms,0,waitlist_enabled}','true'::jsonb,'Source preserves waitlist');
  PERFORM assert_false((source#>'{forms,0,data}') ? 'analytics','setup source omits measurement');
- PERFORM assert_false(public.can_manage_form_measurement(oc),'setup actor is not an organization administrator');
+ PERFORM assert_false(public.get_is_admin_on_occasion(oc),'setup actor is not an organization administrator');
+ PERFORM assert_true(public.can_manage_form_measurement(oc),'form author may change local measurement intent without copying Unit destinations');
  draft:=public.create_occasion_setup_draft(gen_random_uuid(),un);
  PERFORM assert_eq(jsonb_array_length(draft#>'{data,defaultConfiguration,forms}'),1,'App-supported wizard has canonical default form');
  -- Recover an older empty default snapshot without replacing the user's form.
