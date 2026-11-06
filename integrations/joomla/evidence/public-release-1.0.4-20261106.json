@@ -1,0 +1,27 @@
+{
+  "status": "published-and-publicly-verified",
+  "completedAtUtc": "2026-11-06T16:34:27.961297+00:00",
+  "product": "mod_vstupenky_online",
+  "version": "1.0.4",
+  "tag": "joomla-vstupenky-online-v1.0.4",
+  "sourceRevision": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
+  "artifact": {
+    "asset": "vstupenky.online.zip",
+    "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
+    "bytes": 17068,
+    "publicUrl": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.4/vstupenky.online.zip",
+    "publicReadbackSha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c"
+  },
+  "publicRelease": {
+    "url": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.4",
+    "assetCount": 1,
+    "releaseGatePublic": "PASS"
+  },
+  "updateFeed": {
+    "url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+    "sha256": "aeb9ebdfe2f5fe029ad72b1f08a1547fe85d6347b05425799e970de880ef1e7b",
+    "mainCommit": "673acc53d6269ae35e286811bfcc6ced9eca0b99",
+    "version": "1.0.4"
+  },
+  "jedListing": "not changed here; remains a separate browser-owned catalog task"
+}

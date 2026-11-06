@@ -1,0 +1,125 @@
+{
+  "status": "published-and-publicly-verified",
+  "completedAtUtc": "2026-11-06T16:32:13.807717+00:00",
+  "product": "vstupenky-online",
+  "version": "1.0.5",
+  "sourceRevision": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
+  "artifact": {
+    "candidateZipSha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+    "candidateZipFiles": 12,
+    "svnRevision": 3788326,
+    "svnPaths": [
+      "trunk/",
+      "tags/1.0.5/",
+      "assets/"
+    ],
+    "trunkAndTagFileCount": 12,
+    "trunkAndTagTreeSha256": "80db7aa1b76c4b3a768044afca2881c6523c4cefd6c597d1e15d48c8bbd74b75",
+    "assetCount": 9,
+    "assetTreeSha256": "a338c624e176d723df15e4236ea2ff9e144f60c4f34e12d24c6d79144be8d8b8",
+    "previousTag1_0_4": "unchanged"
+  },
+  "publicDirectory": {
+    "apiUrl": "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug=vstupenky-online&fields=version%2Cdownload_link",
+    "status": 200,
+    "version": "1.0.5",
+    "downloadUrl": "https://downloads.wordpress.org/plugin/vstupenky-online.1.0.5.zip",
+    "officialZipBytes": 30858,
+    "officialZipSha256": "fccf1025de64be005604194f6a885eb8e57e91c82c306947002e355dbc7f1765",
+    "officialZipFileCount": 12,
+    "all12OfficialFilesByteIdenticalToCandidate": true
+  },
+  "svnReadback": {
+    "trunkFiles": 12,
+    "tag1_0_5Files": 12,
+    "bothByteIdenticalToApprovedOfflineStage": true
+  },
+  "catalogAssets": [
+    {
+      "path": "banner-1544x500.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/banner-1544x500.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 31658,
+      "sha256": "6dd09918a4d0f10816bee06331385014100ff3f02ab44587be20c4f8bf5ca6f4",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "banner-772x250.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/banner-772x250.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 14493,
+      "sha256": "05e49efabf16a594d10ba652f62bedb8eb1cf21965c03c2f2186bc105769b2c0",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "icon-128x128.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/icon-128x128.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 1422,
+      "sha256": "1479cafcae9c95c48d107cc9d5cab4194bc1fbf12812fa397b177a86288f6680",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "icon-256x256.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/icon-256x256.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 2706,
+      "sha256": "95c1505b76275bf6362d69e7ba938dcd00dfe0f9eb00138c9f025eb4a3dea8d5",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "screenshot-1.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-1.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 249905,
+      "sha256": "e0207c15df2e7cdfe785b8e3f02818094eaa31efd7e56128bb3d5c4eff3093d9",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "screenshot-2.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-2.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 177639,
+      "sha256": "b7700a870d4baafc11eba00fc84bede8668ebc02a19c322ad150a8692d9ecb5b",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "screenshot-3.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-3.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 128233,
+      "sha256": "493b9f13f672a5d33a856669ff1c1d5ef0d9c9da308c889dddc887816dc88b03",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "screenshot-4.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-4.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 170246,
+      "sha256": "6a84a8e0293395bce8471c3c47445cb0d20c1a2fc20356128086434cbc5b5d7b",
+      "match": "candidate asset byte-identical"
+    },
+    {
+      "path": "screenshot-5.png",
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-5.png?rev=1.0.5",
+      "status": 200,
+      "bytes": 153294,
+      "sha256": "a4f56486f54fafd2006322f5d2eab4a989fccf7bb21962f01c8826cf4d5629ff",
+      "match": "candidate asset byte-identical"
+    }
+  ],
+  "centralRuntimeProof": {
+    "sourceRevision": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
+    "productionHead": "a0c1719",
+    "webVersion": "0.20.524+1031",
+    "publicForm": "hwnsne2t",
+    "runtimeHelperUrl": "https://vstupenky.online/embed.js",
+    "runtimeHelperDigestReported": "1e79ffcfce4ea452aa6f9360d632fd8a47e7ea8fb7c886654e7bf11f7515bcd5",
+    "screenshotSha256": {
+      "default": "d2f430054711d97401b0982c813a6778134de7654e7340078a442d31413ba1f8",
+      "legacyLoaded": "d2f430054711d97401b0982c813a6778134de7654e7340078a442d31413ba1f8"
+    },
+    "screenshotsByteIdentical": true,
+    "manualWordPressReviewOf1_0_5": "not claimed"
+  }
+}

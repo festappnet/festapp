@@ -1,0 +1,307 @@
+{
+  "completedAtUtc": "2026-11-06T16:20:17.407923+00:00",
+  "project": "festapp-wix",
+  "branch": "main",
+  "environment": "Production",
+  "previousDeployment": {
+    "id": "99db8441-0f7c-4fde-90b8-5563ceef1d2a",
+    "url": "https://99db8441.festapp-wix.pages.dev",
+    "source": "c236749"
+  },
+  "deployment": {
+    "id": "3cce97af-5d37-4eb8-b676-5d971b9d868e",
+    "url": "https://3cce97af.festapp-wix.pages.dev",
+    "stableUrl": "https://festapp-wix.pages.dev",
+    "source": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
+    "wranglerVersion": "4.132.0",
+    "manifestVersion": "0.1.2",
+    "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+    "tagName": "vstupenky-online-form"
+  },
+  "artifactZip": {
+    "path": "integrations/wix/artifacts/vstupenky-online-wix-0.1.2.zip",
+    "sha256": "5a3eb7f156e7306fc43b6a339bc34c2a0de0429d6faf9e7c0195323afb6b073e"
+  },
+  "manifestSha256": "862828a6291bbc12b6f33ab050cfc023dd664fc989d7f79ebe5c5a7402f248e2",
+  "assetSha256": {
+    "_headers": "6253c44a3a253e82198b4a87bf97d2856d2b440ddde7219a5b080fc56184cfb1",
+    "app-icon.png": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+    "brand-header.svg": "c0a3d15033946bc82ae744fff6c8c108becd3dfa863ecd6b1f17c767e5a5f967",
+    "brand-icon.svg": "19b3b81c578628684935eaea2fa228d1eb9bd1eb65f6bf91296a0f732360e417",
+    "help.html": "a2290ab7c9e2a1186696ec31665229989b5756c3e376c60d26ecc278d013de75",
+    "integration-guide.html": "4462c8d3fa98607fb76b13a7a7561440b47a412846f66645dd061c306c9a99e0",
+    "settings.css": "20218edd6830e7888d18ee15b556bbd8b02294a813ad6772775132293c407002",
+    "settings.html": "677f84615153cc78093f03592a3fd37e19ee5a8b4f05858726f9a41d9ed5d422",
+    "settings.js": "0a05e6580825325adda04902903a8ebe0b46fcfaf308b6bbf00f1fe8d9bf6ac2",
+    "widget.js": "59705b8ae2898eab7a0e11986312fa50070988bbbfbbb245bc33608d5feea27d"
+  },
+  "readbacks": [
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/app-icon.png",
+      "status": 200,
+      "resolvedPath": "app-icon.png",
+      "sha256": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+      "bytes": 30548,
+      "contentType": "image/png",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/brand-header.svg",
+      "status": 200,
+      "resolvedPath": "brand-header.svg",
+      "sha256": "c0a3d15033946bc82ae744fff6c8c108becd3dfa863ecd6b1f17c767e5a5f967",
+      "bytes": 21068,
+      "contentType": "image/svg+xml",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/brand-icon.svg",
+      "status": 200,
+      "resolvedPath": "brand-icon.svg",
+      "sha256": "19b3b81c578628684935eaea2fa228d1eb9bd1eb65f6bf91296a0f732360e417",
+      "bytes": 798,
+      "contentType": "image/svg+xml",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/help.html",
+      "status": 200,
+      "resolvedPath": "help.html",
+      "sha256": "a2290ab7c9e2a1186696ec31665229989b5756c3e376c60d26ecc278d013de75",
+      "bytes": 6985,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/integration-guide.html",
+      "status": 200,
+      "resolvedPath": "integration-guide.html",
+      "sha256": "4462c8d3fa98607fb76b13a7a7561440b47a412846f66645dd061c306c9a99e0",
+      "bytes": 7193,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/settings.css",
+      "status": 200,
+      "resolvedPath": "settings.css",
+      "sha256": "20218edd6830e7888d18ee15b556bbd8b02294a813ad6772775132293c407002",
+      "bytes": 1034,
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/settings.html",
+      "status": 200,
+      "resolvedPath": "settings.html",
+      "sha256": "677f84615153cc78093f03592a3fd37e19ee5a8b4f05858726f9a41d9ed5d422",
+      "bytes": 1769,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/settings.js",
+      "status": 200,
+      "resolvedPath": "settings.js",
+      "sha256": "0a05e6580825325adda04902903a8ebe0b46fcfaf308b6bbf00f1fe8d9bf6ac2",
+      "bytes": 221497,
+      "contentType": "application/javascript",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/widget.js",
+      "status": 200,
+      "resolvedPath": "widget.js",
+      "sha256": "59705b8ae2898eab7a0e11986312fa50070988bbbfbbb245bc33608d5feea27d",
+      "bytes": 39685,
+      "contentType": "application/javascript",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/manifest.json",
+      "status": 200,
+      "resolvedPath": "manifest.json",
+      "sha256": "862828a6291bbc12b6f33ab050cfc023dd664fc989d7f79ebe5c5a7402f248e2",
+      "bytes": 1085,
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/settings",
+      "status": 200,
+      "resolvedPath": "settings.html",
+      "sha256": "677f84615153cc78093f03592a3fd37e19ee5a8b4f05858726f9a41d9ed5d422",
+      "bytes": 1769,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://3cce97af.festapp-wix.pages.dev/help",
+      "status": 200,
+      "resolvedPath": "help.html",
+      "sha256": "a2290ab7c9e2a1186696ec31665229989b5756c3e376c60d26ecc278d013de75",
+      "bytes": 6985,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/app-icon.png",
+      "status": 200,
+      "resolvedPath": "app-icon.png",
+      "sha256": "4ac458d1bf13e7aa4a94694fb226d41b3b18664bf798313c41776e3327d80460",
+      "bytes": 30548,
+      "contentType": "image/png",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/brand-header.svg",
+      "status": 200,
+      "resolvedPath": "brand-header.svg",
+      "sha256": "c0a3d15033946bc82ae744fff6c8c108becd3dfa863ecd6b1f17c767e5a5f967",
+      "bytes": 21068,
+      "contentType": "image/svg+xml",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/brand-icon.svg",
+      "status": 200,
+      "resolvedPath": "brand-icon.svg",
+      "sha256": "19b3b81c578628684935eaea2fa228d1eb9bd1eb65f6bf91296a0f732360e417",
+      "bytes": 798,
+      "contentType": "image/svg+xml",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/help.html",
+      "status": 200,
+      "resolvedPath": "help.html",
+      "sha256": "a2290ab7c9e2a1186696ec31665229989b5756c3e376c60d26ecc278d013de75",
+      "bytes": 6985,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/integration-guide.html",
+      "status": 200,
+      "resolvedPath": "integration-guide.html",
+      "sha256": "4462c8d3fa98607fb76b13a7a7561440b47a412846f66645dd061c306c9a99e0",
+      "bytes": 7193,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/settings.css",
+      "status": 200,
+      "resolvedPath": "settings.css",
+      "sha256": "20218edd6830e7888d18ee15b556bbd8b02294a813ad6772775132293c407002",
+      "bytes": 1034,
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/settings.html",
+      "status": 200,
+      "resolvedPath": "settings.html",
+      "sha256": "677f84615153cc78093f03592a3fd37e19ee5a8b4f05858726f9a41d9ed5d422",
+      "bytes": 1769,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/settings.js",
+      "status": 200,
+      "resolvedPath": "settings.js",
+      "sha256": "0a05e6580825325adda04902903a8ebe0b46fcfaf308b6bbf00f1fe8d9bf6ac2",
+      "bytes": 221497,
+      "contentType": "application/javascript",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/widget.js",
+      "status": 200,
+      "resolvedPath": "widget.js",
+      "sha256": "59705b8ae2898eab7a0e11986312fa50070988bbbfbbb245bc33608d5feea27d",
+      "bytes": 39685,
+      "contentType": "application/javascript",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/manifest.json",
+      "status": 200,
+      "resolvedPath": "manifest.json",
+      "sha256": "862828a6291bbc12b6f33ab050cfc023dd664fc989d7f79ebe5c5a7402f248e2",
+      "bytes": 1085,
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/settings",
+      "status": 200,
+      "resolvedPath": "settings.html",
+      "sha256": "677f84615153cc78093f03592a3fd37e19ee5a8b4f05858726f9a41d9ed5d422",
+      "bytes": 1769,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    },
+    {
+      "url": "https://festapp-wix.pages.dev/help",
+      "status": 200,
+      "resolvedPath": "help.html",
+      "sha256": "a2290ab7c9e2a1186696ec31665229989b5756c3e376c60d26ecc278d013de75",
+      "bytes": 6985,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "nosniff": "nosniff",
+      "cors": "*"
+    }
+  ],
+  "headersConfig": "_headers is a Pages configuration file and returned 404 at both URLs; response headers validated on all public routes.",
+  "_headersStatus": 404,
+  "readbackPasses": 24
+}
