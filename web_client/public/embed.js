@@ -70,7 +70,7 @@
             if (typeof input.language === 'string' && /^[a-z]{2}$/.test(input.language)) result.language = input.language;
             return result;
         }
-        if (input.event === 'page_view' || input.event === 'form_submit_error') return {event: input.event};
+        if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
         if (input.event === 'generate_lead') {
             if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
             return ({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});

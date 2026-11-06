@@ -113,6 +113,8 @@ export class FormDataLayer {
         this.emit({page_type, language});
         if (!this.viewedPages.has(page_type) && this.emit({event: 'page_view'})) this.viewedPages.add(page_type);
     }
+    // First real visitor input after consent. Field names and values never leave.
+    started() { if (!this.formStarted && this.emit({event: 'form_start'})) this.formStarted = true; }
     groups(event, items, extra = {}) {
         for (const currency of new Set(items.map(item => item.currency))) {
             this.emit({event, ecommerce: {currency, items: items.filter(item => item.currency === currency), ...extra}});

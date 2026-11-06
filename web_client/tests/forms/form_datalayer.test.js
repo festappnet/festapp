@@ -133,3 +133,11 @@ test('view events retry failed sends and new frames get current context only',()
  layer.confirmed({ticketOrder:{analytics:purchase}});assert.equal(events(sent).filter(p=>p.event==='page_view').length,1,'confirmation is its own page_view');sent.length=0;layer.view();
  assert.deepEqual(sent,[{page_type:'confirmation',user_type:'b2c',language:'cs'}]);dom.window.close();
 });
+
+test('form_start waits for consent, fires once and carries no field data',()=>{
+ const {dom,layer,bridge,sent}=fixture({consent:false});
+ layer.started();assert.deepEqual(sent,[]);
+ bridge.measurementAllowed=()=>true;layer.started();layer.started();
+ assert.deepEqual(sent,[{event:'form_start'}]);
+ assert.deepEqual(analyticsPayload({event:'form_start',email:'private@example.com',field:'name'}),{event:'form_start'});dom.window.close();
+});

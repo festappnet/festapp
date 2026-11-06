@@ -591,6 +591,7 @@ export class FormPage extends Component {
                     // session.removeTicket() etc. No need to re-scrape.
                 } else {
                     session.handleInput(e, form);
+                    if (e.isTrusted) this.analytics?.started();
                     this.analytics?.observe(session);
                 }
             }
