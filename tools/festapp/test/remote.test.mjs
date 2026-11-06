@@ -208,6 +208,94 @@ for (const resourceCount of [0, 1, 2, 3]) test(`native OAuth with ${resourceCoun
     assert.equal(denied.structuredContent.error.code, 'FORBIDDEN');
 });
 
+for (const guide of ['automation/release/help/ai-agenti.html', 'automation/release/help/en/ai-agents.html', 'tools/festapp/README.md'])
+    test(`documented Codex login refreshes with the SDK's offline_access scope: ${guide}`, async t => {
+        const text = await readFile(new URL('../../../' + guide, import.meta.url), 'utf8');
+        const commands = [...text.matchAll(/codex mcp login \S+ --scopes ([^<\s]+)/g)];
+        assert(commands.length > 0);
+        for (const [index, command] of commands.entries()) await t.test(`login command ${index + 1}`, async t => {
+            const f = await setup(t, { native: true, tenant: true });
+            const scopes = command[1].split(',');
+            const permissions = scopes.filter(scope => MCP_SCOPES.includes(scope));
+            const clientId = 'codex-fixture', callbackUri = 'http://127.0.0.1:51789/callback', verifier = 'v'.repeat(43);
+            const query = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: callbackUri,
+                resource: f.config.resource, scope: scopes.join(' '), state: 'codex-scope-regression',
+                code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
+            let r = await f.browser('/auth?' + query);
+            assert.equal(r.status, 303);
+            r = await f.browser(r.headers.get('location'));
+            assert.equal(r.status, 303);
+            const request = new URL(r.headers.get('location')).searchParams.get('request');
+            const broker = (operation, extra = {}) => fetch(f.issuer + '/tenant-connection', {
+                method: 'POST', headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) },
+                body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
+                    organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }),
+            });
+            r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2,
+                selection: { type: 'occasions', occasionIds: [7] }, permissions } });
+            assert.equal(r.status, 200, await r.clone().text());
+            const prepared = await r.json();
+            r = await broker('complete', { lease: prepared.lease,
+                session: { access_token: supabaseToken, refresh_token: 'independent-codex-session' } });
+            assert.equal(r.status, 200, await r.clone().text());
+            r = await f.browser((await r.json()).resumeUrl);
+            let target = r.headers.get('location');
+            for (let i = 0; i < 8 && !target.startsWith(callbackUri + '?'); i++) {
+                r = await f.browser(target); target = r.headers.get('location');
+                assert(target, 'missing OAuth redirect');
+            }
+            const callback = new URL(target);
+            assert.equal(callback.searchParams.get('state'), 'codex-scope-regression');
+            r = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({ client_id: clientId,
+                grant_type: 'authorization_code', code: callback.searchParams.get('code'),
+                redirect_uri: callbackUri, code_verifier: verifier, resource: f.config.resource }) });
+            assert.equal(r.status, 200, await r.clone().text());
+            let tokens = await r.json();
+            const widened = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+                client_id: clientId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token,
+                resource: f.config.resource, scope: `${tokens.scope} offline_access festapp:history:delete`,
+            }) });
+            assert.equal(widened.status, 400);
+            assert.equal((await widened.json()).error, 'invalid_scope');
+            for (let rotation = 0; rotation < 2; rotation++) {
+                // RMCP 3.5.1 adds offline_access on refresh when discovery advertises it.
+                const scope = [...new Set([...tokens.scope.split(' '), 'offline_access'])].join(' ');
+                const refresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+                    client_id: clientId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token,
+                    resource: f.config.resource, scope,
+                }) });
+                assert.equal(refresh.status, 200, await refresh.clone().text());
+                const next = await refresh.json();
+                assert.notEqual(next.refresh_token, tokens.refresh_token);
+                assert(next.scope.split(' ').every(scope => scopes.includes(scope)));
+                tokens = next;
+            }
+            const client = new Client({ name: 'codex-refresh-regression', version: '1' });
+            t.after(() => client.close());
+            await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+                requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
+            }));
+            assert.equal((await client.callTool({ name: 'festapp_context_inspect', arguments: {} })).structuredContent.ok, true);
+            assert.deepEqual(f.storage.values('Delegation')[0].permissions, permissions);
+        });
+    });
+
+test('OAuth preserves explicit noninteractive prompts instead of forcing a consent UI', async t => {
+    const f = await setup(t, { native: true, tenant: true });
+    const query = new URLSearchParams({ client_id: 'codex-fixture', response_type: 'code',
+        redirect_uri: 'http://127.0.0.1:51789/callback', resource: f.config.resource,
+        scope: `${READ_SCOPE} offline_access`, prompt: 'none',
+        code_challenge: 'a'.repeat(43), code_challenge_method: 'S256' });
+    const r = await f.browser('/auth?' + query);
+    assert.equal(r.status, 303);
+    const callback = new URL(r.headers.get('location'));
+    assert.equal(callback.pathname, '/callback');
+    assert(['login_required', 'consent_required', 'interaction_required'].includes(callback.searchParams.get('error')));
+    assert.equal(callback.searchParams.has('code'), false);
+    assert.equal(f.storage.values('Connect').length, 0);
+    assert.equal(f.storage.values('Delegation').length, 0);
+});
+
 test('OAuth rejects foreign resource indicators before login or consent, including mixed repeated values', async t => {
     const f = await setup(t, { native: true });
     const target = f.config.resource;
@@ -292,6 +380,14 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     assert(tokens.access_token);
     assert(tokens.scope.split(' ').includes(CREATE_SCOPE));
     assert(MCP_SCOPES.every(scope => tokens.scope.split(' ').includes(scope)));
+    const refreshed = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: 'chatgpt-fixture',
+        resource: f.config.resource, scope: `${tokens.scope} offline_access`,
+    }) });
+    assert.equal(refreshed.status, 400);
+    assert.deepEqual(await refreshed.json(), { error: 'invalid_scope',
+        error_description: 'refresh token missing requested scope', scope: 'offline_access' });
+
     assert.deepEqual(f.storage.values('Delegation')[0].permissions, MCP_SCOPES);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal(f.storage.values('Delegation').length, 1);

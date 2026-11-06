@@ -55,13 +55,16 @@ const formMetadata={id,occasion:id,aggregate_version:version,
 const measurementStatus=z.strictObject({requested_enabled:z.boolean(),organization_allowed:z.boolean(),organization_enabled:z.boolean(),unit_enabled:z.boolean(),
  runtime_supported:z.boolean(),eligible:z.boolean(),blocked_reasons:z.array(z.enum(['disabled','organization_not_enabled','organization_disabled','unit_disabled','runtime_unavailable','no_destination'])),
  policy_revision:version,consent_required:z.literal(true),enhanced_conversions_unavailable:z.literal(true)});
-const formState=z.strictObject({...formMetadata,measurement_status:measurementStatus.optional(),data:z.json().optional(),header:text.optional(),header_off:text.optional(),
+const measurementStatusOrUnknown=measurementStatus.nullish().default(null);
+// The UI snapshot can gain internal fields independently. Project only the MCP
+// allowlist; unknown fields never reach the tool response. Missing status is unknown.
+const formState=z.object({...formMetadata,measurement_status:measurementStatusOrUnknown,data:z.json().optional(),header:text.optional(),header_off:text.optional(),
  bank_account:id.nullable().optional(),deadline_duration_seconds:z.number().int().nullable().optional(),can_delete:z.boolean().optional()});
 const summary=z.strictObject({...formMetadata,response_count:version.optional(),
  fields:z.array(z.strictObject({id,type:z.string().nullable(),is_ticket_field:z.boolean().nullable()})).optional()});
 const snapshot=z.strictObject({form:formState,
  fields:z.array(z.json()).max(500),productTypes:z.array(z.json()),products:z.array(z.json()),productVersions:versions,productTypeVersions:versions});
-const receipt=z.strictObject({measurement_status_is_historical:z.literal(true).optional(),current_measurement_status:measurementStatus.optional(),occasionId:id,formId:id,commandId:z.uuid(),status:z.enum(['applied','unchanged']),authoring:snapshot.nullable()});
+const receipt=z.strictObject({measurement_status_is_historical:z.literal(true).optional(),current_measurement_status:measurementStatus.nullable().optional(),occasionId:id,formId:id,commandId:z.uuid(),status:z.enum(['applied','unchanged']),authoring:snapshot.nullable()});
 const paymentOptions=z.strictObject({occasionId:id,formId:id,livemode:z.boolean(),
  bankAccounts:z.array(z.strictObject({id,account_number:z.string().nullable(),account_number_human_readable:z.string().nullable(),
   title:z.string().nullable(),supported_currencies:z.array(z.string()).nullable(),type:z.string().nullable(),bank_sync_warning:z.json().nullable()})).max(100),
@@ -150,7 +153,7 @@ export async function invokeFormOperation(owner,client,operation,args){
   // Never rewrite the durable receipt or present its saved policy as current.
   const live=await client.rpc('get_form_for_authoring',{...base,p_form:data.data.formId});
   upstream(live.error);check(live.data?.occasionId===args.occasionId && live.data.authoring?.form?.id===data.data.formId);
-  liveStatus=measurementStatus.parse(live.data.authoring.form.measurement_status);
+  liveStatus=measurementStatusOrUnknown.parse(live.data.authoring.form.measurement_status);
  }
  return formDataSchemas[operation].parse({...data.data,commandId:args.commandId,status:data.status,
   ...(data.data.authoring ? {measurement_status_is_historical:true,current_measurement_status:liveStatus} : {})});

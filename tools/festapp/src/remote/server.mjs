@@ -141,6 +141,16 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES] };
     for (const route of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'])
         app.get(route, (_req, res) => res.set('Access-Control-Allow-Origin', '*').json(metadata));
+    app.get('/auth', (req, _res, next) => {
+        // This issuer always requires explicit consent. Tell the provider before
+        // scope validation, otherwise it discards requested offline_access.
+        const url = new URL(req.url, config.issuer);
+        if (!url.searchParams.has('prompt')) {
+            url.searchParams.set('prompt', 'consent');
+            req.url = url.pathname + url.search;
+        }
+        next();
+    });
     // OAuth metadata can be discovered without assuming OIDC URL conventions.
     app.get('/.well-known/oauth-authorization-server', (req, res) => {
         req.url = '/.well-known/openid-configuration';

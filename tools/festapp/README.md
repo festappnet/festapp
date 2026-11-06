@@ -175,6 +175,11 @@ an original editor baseline.
 The new forward migration must be deployed before a live connection can expose
 E1. If deployment is absent or rolled back, the runtime contract fails closed.
 
+The form snapshot response projects an explicit allowlist of form properties;
+new internal UI fields are omitted from MCP output. Missing measurement status
+is `null` (unknown), including the authorized readback after a mutation. Known
+fields still undergo type validation; unknown properties are never forwarded.
+
 ## Verification and next wave
 
 ```sh
@@ -311,7 +316,7 @@ while the callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
 codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex
-codex mcp login festapp --scopes festapp:ticket-layouts:read
+codex mcp login festapp --scopes offline_access,festapp:ticket-layouts:read
 ```
 
 Codex discovers the resource from the MCP protected-resource metadata. Do not
@@ -319,6 +324,12 @@ add `--oauth-resource`; if an older setup contains `oauth_resource`, remove that
 entry from this server’s Codex configuration and sign in again. The issuer
 validates each requested resource through `getResourceServerInfo`, including
 repeated values; any value other than the configured MCP resource is rejected.
+
+Request `offline_access` during login: Codex 0.166.0 adds this scope when
+refreshing credentials if OAuth discovery advertises it. Refresh is a subset
+of the original grant; an older token without this scope must reconnect using
+the command above. Never discard the refresh scope check or silently widen an
+existing grant.
 
 Complete the fresh browser login and occasion consent for this client. The
 native client uses the same scoped read handlers and separate OAuth grant.
