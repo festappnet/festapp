@@ -118,6 +118,11 @@ void main() {
             SwitchListTile,
             FormStrings.measurementEnabled,
           );
+          expect(toggle, findsNothing);
+          final measurementSection = find.text(FormStrings.measurementTitle);
+          await tester.ensureVisible(measurementSection);
+          await tester.tap(measurementSection);
+          await tester.pumpAndSettle();
           expect(tester.widget<SwitchListTile>(toggle).value, false);
           expect(
             find.text(FormStrings.measurementFormUnitBlocked),

@@ -20,7 +20,9 @@ SELECT assert_eq(public.effective_form_metadata_internal('[null,{}]'::jsonb,'{"c
 RESET ROLE;
 SELECT assert_false(has_function_privilege('anon','public.get_effective_form_data(bigint)','EXECUTE'),'Anonymous callers cannot read private form settings');
 SELECT assert_false(has_function_privilege('authenticated','public.get_effective_form_data(bigint)','EXECUTE'),'Client callers cannot bypass checked form RPCs');
-SELECT assert_false(has_function_privilege('anon','public.normalize_form_metadata_internal(jsonb)','EXECUTE'),'Normalizer stays private to backend callers');
+SELECT assert_false(has_function_privilege('anon','public.normalize_form_metadata_internal(jsonb)','EXECUTE'),'Normalizer stays private to anonymous callers');
+SELECT assert_false(has_function_privilege('authenticated','public.normalize_form_metadata_internal(jsonb)','EXECUTE'),'Normalizer stays private to authenticated clients');
+SELECT assert_false(has_function_privilege('service_role','public.normalize_form_metadata_internal(jsonb)','EXECUTE'),'Worker calls the pure metadata boundary, not the underlying normalizer');
 SELECT assert_false(has_function_privilege('authenticated','public.effective_form_metadata_internal(jsonb,jsonb)','EXECUTE'),'Pure metadata helper is not exposed to clients');
 SELECT assert_false(has_function_privilege('service_role','public.form_measurement_runtime_internal(bigint)','EXECUTE'),'Email worker does not gain analytics helper access');
 ROLLBACK;
