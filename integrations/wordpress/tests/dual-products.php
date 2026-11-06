@@ -25,17 +25,19 @@ foreach ( $products as $i => $p ) {
  $styled = $a; $styled['inheritStyle'] = true;
  $styled_block = render_block( array( 'blockName' => $slug . '/ticket-form', 'attrs' => $styled, 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
  $styled_short = do_shortcode( '[' . $shortcode . ' url="' . $a['url'] . '" mode="fixed" height="240" inherit_style="true"]' );
- dual_assert( $styled_block === $styled_short && false !== strpos( $styled_short, 'data-festapp-style="inherit"' ) && false !== strpos( $styled_short, 'data-festapp-height="fixed"' ), 'opt-in style shares renderer and preserves fixed height' );
- dual_assert( false !== strpos( $short, 'data-festapp-style="inherit"' ), 'website appearance is the default' );
+ dual_assert( $styled_block === $styled_short && false === strpos( $styled_short, 'data-festapp-style' ) && false !== strpos( $styled_short, 'data-festapp-height="fixed"' ), 'legacy opt-in is inert through the shared renderer and preserves fixed height' );
+ dual_assert( false === strpos( $short, 'data-festapp-style' ), 'appearance remains controlled by the saved form setting' );
  $plain = $a; $plain['inheritStyle'] = false;
  $plain_block = render_block( array( 'blockName' => $slug . '/ticket-form', 'attrs' => $plain, 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
  $plain_short = do_shortcode( '[' . $shortcode . ' url="' . $a['url'] . '" mode="fixed" height="240" inherit_style="false"]' );
- dual_assert( $plain_block === $plain_short && false !== strpos( $plain_short, 'data-festapp-style="default"' ) && false !== strpos( $plain_short, 'data-festapp-height="fixed"' ), 'explicit opt-out matches block and shortcode and preserves fixed height' );
+ dual_assert( $plain_block === $plain_short && false === strpos( $plain_short, 'data-festapp-style' ) && false !== strpos( $plain_short, 'data-festapp-height="fixed"' ), 'legacy opt-out cannot override the saved form and preserves fixed height' );
  $render( array( 'url' => $origin . '/form/test' ) ); $render( array( 'url' => $origin . '/form/test' ) );
  $helpers = array_filter( wp_scripts()->queue, function( $h ) use ( $slug ) { return 0 === strpos( $h, $slug . '-helper-' ); } );
  dual_assert( 1 === count( $helpers ), 'one helper per product origin' );
  dual_assert( wp_script_is( $slug . '-editor', 'registered' ) && wp_style_is( $slug, 'registered' ), 'distinct script/style handles' );
+ $locale_switched = switch_to_locale( 'en_US' );
  wp_set_current_user( 1 ); ob_start(); call_user_func( $ns . '\\admin_page' ); $help = ob_get_clean();
+ if ( $locale_switched ) { restore_previous_locale(); }
  dual_assert( false !== strpos( $help, $origin . '/login' ) && false !== strpos( $help, '1. Prepare your form' ), 'first-account onboarding is present' );
  dual_assert( false === strpos( $help, '<iframe' ) && false === strpos( $help, '<script' ), 'local help never embeds a service admin' );
  wp_set_current_user( 0 ); ob_start(); call_user_func( $ns . '\\admin_page' ); $help = ob_get_clean(); dual_assert( '' === $help, 'anonymous help access denied' );

@@ -1,8 +1,8 @@
 # Form-owned embed appearance
 
-Superseded for the editor UI by the user correction on 2026-11-05: appearance is
-selected beside copied embed code, with explicit inherit/default markup. The
-saved field remains a compatibility fallback only; see embedded-checkout.md.
+Reinstated by explicit owner decision on 2026-11-06: remove every local override. The saved form is the only owner for all supported integrations. Publication is authorized for the regional vstupenky.online releases.
+
+The November 5 implementation notes below are historical. The November 6 cutover reuses the existing saved field and authoring permissions; no new schema migration is required. Fresh package verification and publication are tracked separately.
 
 Implement one owner: `forms.data.design.embed_inherit_style` (boolean, default true).
 The ordinary form save command, version checks and authoring permissions persist it.

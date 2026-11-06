@@ -3,6 +3,8 @@
 Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
 and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
 
+Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED; central-appearance runtime0.1.2 hosting remains a separate release. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
+
 Repository entry point: [all platform integrations](../README.md).
 
 Latest [continuation receipt](evidence/continuation-20261101.json), 2026-11-01:
@@ -193,10 +195,8 @@ Published Editor recovery preserved the checkout iframe and loaded one helper;
 14 regression tests pass. This does not resolve native Wix portal/install errors
 or qualify commercial submission.
 
-## Vzhled konkrétního vložení
+## Centrální vzhled formuláře
 
-Aktuální zdroj a nově sestavený balíček nabízí **Přizpůsobit vzhled webu** přímo v nativním nastavení vložení. Widget ukládá veřejnou vlastnost `inherit-style` jako řetězec `true` nebo `false`; Settings používá stav checkboxu a potvrzuje zápis zpětným čtením. Výchozí zapnutí se použije jen při chybějící hodnotě; existující vypnutí zůstává vypnuté. Uložte Settings konkrétního widgetu a publikujte web Wix. Registrace widgetu musí vlastnost podporovat; tento popis nedokládá provedení změny v Dashboardu.
+Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávněný editor ho nastaví ve Vzhledu formuláře a formulář uloží. Všechna vložení použijí tuto volbu při příštím načtení bez výměny HTML. Nativní doplněk ukládá odkaz a své nastavení výšky či názvu, nikoli vlastní volbu vzhledu. Staré uložené atributy jsou neúčinné a nové verze je negenerují. Helper zůstává v obou režimech výšky; plánek sálu se nepřebarvuje.
 
-Adaptér vždy emituje `data-festapp-style="inherit"` nebo `data-festapp-style="default"`. Společný `/embed.js` a `EmbedBridge`/`EmbedTheme` zůstávají jedinými vlastníky předání a použití vzhledu. Automatická a pevná výška jsou nezávislé; helper se načítá v obou režimech. Plánek sálu si ponechává vlastní vzhled.
-
-To není tvrzení o aktualizaci již nainstalovaných doplňků. Ovládání vyžaduje aktualizovaný balíček/hostované assets a jejich zapojení v CMS. Starší ruční HTML bez explicitního atributu dál používá kompatibilní nastavení formuláře; nové nativní vložení je vždy explicitní. Žádné nastavení vzhledu se tím globálně neukládá do formuláře.
+Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.

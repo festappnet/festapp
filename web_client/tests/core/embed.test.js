@@ -151,7 +151,7 @@ test('host supplies appearance and explicit mode independently of fixed height',
     frame.dataset.festappStyle = 'inherit'; frame.dataset.festappHeight = 'fixed';
     message(frame, 'https://tickets.invalid', envelope('ready'));
     assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
-    assert.equal(sent[0].at(-1)[0].styleMode,'inherit');
+    assert.equal(sent[0].at(-1)[0].styleMode,undefined);
     const theme = sent[0].at(-1)[0].theme;
     assert.equal(theme.fontFamily, '"Site Serif", serif');
     assert.equal(theme.fonts[0].urls[0], 'https://host.invalid/fonts/site.woff2');
@@ -164,7 +164,7 @@ test('host supplies appearance and explicit mode independently of fixed height',
     frame.dataset.festappStyle = 'default';
     message(frame, 'https://tickets.invalid', envelope('ready'));
     assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
-    assert.equal(sent[0].at(-1)[0].styleMode,'default');
+    assert.equal(sent[0].at(-1)[0].styleMode,undefined);
     delete frame.dataset.festappStyle;
     await new Promise(resolve => dom.window.setTimeout(resolve, 50));
     assert.equal(sent[0].at(-1)[0].styleMode,undefined);
@@ -633,7 +633,7 @@ test('unresolved presets and unknown button ancestors retain the safe sampled fa
     assert.equal(sent[0][0][0].theme.primary,'rgb(10, 20, 30)');assert.equal(calls,1);dom.window.close();
 });
 
-test('explicit embed appearance is instance scoped and changes independently of height', async () => {
+test('legacy host appearance flags never become protocol authority', async () => {
     const {dom,frames:[a,b],sent}=host(false,win=>{
         const [first,second]=win.document.querySelectorAll('iframe');
         first.dataset.festappStyle='inherit';
@@ -641,21 +641,21 @@ test('explicit embed appearance is instance scoped and changes independently of 
         second.dataset.festappHeight='fixed';
     });
     try {
-        assert.equal(sent[0][0][0].styleMode,'inherit');
-        assert.equal(sent[1][0][0].styleMode,'default');
+        assert.equal(sent[0][0][0].styleMode,undefined);
+        assert.equal(sent[1][0][0].styleMode,undefined);
         assert.equal(sent[1][0][0].autoHeight,false);
         a.dataset.festappStyle='default';
         await new Promise(resolve=>dom.window.requestAnimationFrame(resolve));
-        assert.equal(sent[0].at(-1)[0].styleMode,'default');
-        assert.equal(sent[1].at(-1)[0].styleMode,'default');
+        assert.equal(sent[0].at(-1)[0].styleMode,undefined);
+        assert.equal(sent[1].at(-1)[0].styleMode,undefined);
         b.dataset.festappStyle='inherit';
         await new Promise(resolve=>dom.window.requestAnimationFrame(resolve));
-        assert.equal(sent[1].at(-1)[0].styleMode,'inherit');
+        assert.equal(sent[1].at(-1)[0].styleMode,undefined);
         assert.equal(sent[1].at(-1)[0].autoHeight,false);
     } finally { dom.window.close(); }
 });
 
-test('explicit appearance overrides the legacy form preference in either loading order and height mode',()=>{
+test('saved form preference overrides hostile legacy markup in either loading order and height mode',()=>{
     for(const automatic of [true,false]) for(const formEnabled of [true,false])
     for(const styleMode of ['inherit','default']) for(const formFirst of [true,false]) {
         const dom=new JSDOM('<body>Checkout</body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
@@ -678,10 +678,10 @@ test('explicit appearance overrides the legacy form preference in either loading
                 assert.equal(root.dataset.embedTheme,undefined,'presentation waits for form data');
                 bridge.setInheritStyle(formEnabled);
             }
-            assert.equal(root.dataset.embedTheme,styleMode==='inherit'?'host':undefined);
+            assert.equal(root.dataset.embedTheme,formEnabled?'host':undefined);
             assert.equal(bridge.autoHeight,automatic);
             bridge.setInheritStyle(!formEnabled);
-            assert.equal(root.dataset.embedTheme,styleMode==='inherit'?'host':undefined,'later form refresh preserves explicit embed choice');
+            assert.equal(root.dataset.embedTheme,!formEnabled?'host':undefined,'later form load applies its saved choice');
         } finally { bridge.destroy();win.close();Object.assign(globalThis,previous); }
     }
 });

@@ -8,7 +8,7 @@ from cms import Fields, request, session, AUTH
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / '.private/browser.json'
-CONFIG.write_text(json.dumps({'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','ignoreHttpsErrors':True,'args':'--mute-audio\n--host-resolver-rules=MAP vstupenky.online 127.0.0.1:59803'}))
+CONFIG.write_text(json.dumps({'provider':None,'plugins':[],'autoConnect':False,'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','ignoreHttpsErrors':True,'args':'--mute-audio\n--host-resolver-rules=MAP vstupenky.online 127.0.0.1:59803'}))
 BROWSER = ['agent-browser','--config',str(CONFIG),'--headed','false','--session','festapp-joomla-20261026']
 
 
@@ -32,35 +32,41 @@ def ref(label):
     raise AssertionError('Missing control: '+label)
 
 
-def edit(params):
+def edit(params, article=False):
     admin = session()
     base = 'http://127.0.0.1:59916'
     seed = json.loads((ROOT / '.private/seed-6.json').read_text())
     fields = Fields(request(admin, base+'/administrator/')[1]).fields
     fields.update(username=AUTH['username'],passwd=AUTH['password'])
     request(admin,base+'/administrator/index.php',fields)
-    url = base+'/administrator/index.php?option=com_modules&task=module.edit&id='+str(seed['modules']['mod_vstupenky_online'])
+    module_id = seed['article_module'] if article else seed['modules']['mod_vstupenky_online']
+    url = base+'/administrator/index.php?option=com_modules&task=module.edit&id='+str(module_id)
     form = Fields(request(admin,url)[1])
     fields = form.fields
     fields.update({'task':'module.save', **{'jform[params]['+key+']':str(value) for key,value in params.items()}})
     request(admin,base+form.action,fields)
+    subprocess.run(['docker','exec','festapp-joomla-20261026-6','php','/tests/clear-cache.php'],check=True,capture_output=True)
 
 
 cases = []
 try:
     run('open','about:blank')
+    info = json.loads(run('session','info','--json'))['data']['runtime']
+    assert info['engine'] == 'chrome' and info['pageCount'] == 1 and info['browserLaunched']
+    edit({'url':'https://vstupenky.online/form/ples-u-lipy'})
+    edit({'url':'https://vstupenky.online/form/ples-u-lipy'}, article=True)
     # Block the untested international remote service before navigating any embed.
     run('network','route','https://tickets.festapp.net/**','--abort')
     run('set','viewport','320','740')
     run('open','http://127.0.0.1:59916/')
     run('wait','--fn','Array.from(document.querySelectorAll(".mod_vstupenky_online iframe")).every(f=>f.clientHeight!==800)')
-    ref('textbox "Email *"')
+    ref('textbox "E-mail *"')
     observed = js('({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,heights:Array.from(document.querySelectorAll(".mod_vstupenky_online iframe"),f=>f.clientHeight),helpers:Array.from(document.scripts).filter(s=>s.src==="https://vstupenky.online/embed.js").length})')
     assert observed['width'] == observed['scrollWidth'] == 320 and observed['helpers'] == 1
     cases.append({'case':'320px, real form, article/position auto height, one helper', **observed})
     run('press','Tab')
     assert js('document.activeElement !== document.body'), 'Keyboard focus'
-    edit({'url':'https://vstupenky.online/form/embedded-seats'})
+    edit({'url':'https://vstupenky.online/form/ples-u-lipy-mistenky'})
     run('open','http://127.0.0.1:59916/')
     run('click',ref('button "SEAT SELECTION"'))
     ref('button "Zoom in"')
@@ -75,7 +81,7 @@ try:
     run('focus','.mod_vstupenky_online a')
     assert js('document.activeElement.matches(".mod_vstupenky_online a") && document.activeElement.target==="_blank"')
     expected = js('document.activeElement.href')
-    assert expected in ['https://vstupenky.online/form/embedded-synthetic','https://vstupenky.online/form/embedded-seats']
+    assert expected in ['https://vstupenky.online/form/ples-u-lipy','https://vstupenky.online/form/ples-u-lipy-mistenky'], f'Unexpected fallback: {expected}'
     before_tabs = json.loads(run('tab','--json'))['data']['tabs']
     run('press','Enter')
     for _ in range(30):
@@ -95,6 +101,7 @@ except Exception:
     raise
 finally:
     edit({'url':'https://vstupenky.online/form/embedded-synthetic'})
+    edit({'url':'https://vstupenky.online/form/embedded-synthetic'}, article=True)
     run('close')
 (ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59941; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
 print('PASS mobile/keyboard/auto-height/seat-selector/blocked-helper browser checks')

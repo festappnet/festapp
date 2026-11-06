@@ -1132,13 +1132,12 @@
     {
       "id": "wordpress-directory-plugin-20261106",
       "locale": "cs",
-      "source": "WordPress.org vstupenky.online 1.0.4; system Google Chrome; isolated disposable WordPress7.1.3 and local canonical backend",
+      "source": "WordPress.org vstupenky.online candidate1.0.5; system Google Chrome; isolated disposable WordPress7.1.3 and localized Ples U Lípy data",
       "scenario": [
-        "Install/activate plugin in local WordPress; public directory install separately verified on WordPress6.6/PHP7.4.33",
-        "Open actual localized onboarding",
-        "Add native block with public saved form URL",
-        "Set appearance false, publish/reopen false, true/save/reopen true",
-        "Open actual published page, mobile forms and seat map; select one local seat without submitting an order"
+        "Open native Czech onboarding for plugin1.0.5",
+        "Add native block with saved public form URL, accessible title and automatic/fixed height",
+        "Verify no local appearance control, and the Open forms help action",
+        "Open published page, mobile layouts and seat map; one selected local seat, no submitted order"
       ],
       "mediaIds": [
         "cs/wordpress/01-get-started",
@@ -1147,12 +1146,12 @@
         "cs/wordpress/05-mobile-form",
         "cs/wordpress/06-seat-selection"
       ],
-      "provenance": "integrations/wordpress/catalog/source/PROVENANCE.txt",
+      "provenance": "integrations/wordpress/catalog/source/provenance-1.0.5.txt",
       "notVerified": [
         "No production order or payment submitted",
         "Mobile captures are Chrome, not Safari"
       ],
-      "catalogTranslation": "38 Czech readme suggestions Waiting; no claim of locale editor approval"
+      "catalogTranslation": "1.0.4 suggestions were Waiting; revised1.0.5 translation must follow new stable source, never claim approved"
     }
   ],
   "notVerified": [

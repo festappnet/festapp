@@ -30,11 +30,8 @@ foreach ( array( 'auto', 'fixed' ) as $mode ) {
 		$block = render_block( array( 'blockName' => 'vstupenky-online/ticket-form', 'attrs' => array( 'url' => $url, 'mode' => $mode, 'inheritStyle' => $inherit ), 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
 		$short = do_shortcode( '[vstupenky_online url="' . $url . '" mode="' . $mode . '" inherit_style="' . ( $inherit ? 'true' : 'false' ) . '"]' );
 		vo_assert( $block === $short, 'appearance uses one block/shortcode renderer' );
-		vo_assert( false !== strpos( $block, 'data-festapp-style="' . ( $inherit ? 'inherit' : 'default' ) . '"' ), 'per-embed appearance independent of height' );
+		vo_assert( false === strpos( $block, 'data-festapp-style' ), 'legacy appearance attributes are inert' );
 	}
-}
-foreach ( array( array(), null, 'unexpected', '"><script>bad</script>' ) as $value ) {
-	vo_assert( false === VstupenkyOnline\inherit_style_enabled( $value ), 'invalid appearance disables inheritance' );
 }
 
 VstupenkyOnline\render( array( 'url' => $url ) );

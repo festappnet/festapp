@@ -58,7 +58,7 @@ def session():
 
 def request(client, url, data=None):
     try:
-        with client.open(url, None if data is None else urllib.parse.urlencode(data).encode(), timeout=30) as r:
+        with client.open(url, None if data is None else urllib.parse.urlencode(data).encode(), timeout=120) as r:
             return r.status, r.read().decode()
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode()
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         save_url = base + form.action
         assert 'jform[params][url]' in fields and 'Start with vstupenky.online' in page
         assert '<iframe' not in page and not re.search(r'<script[^>]+src="https://(?:vstupenky.online|tickets.festapp.net)', page)
-        fields.update({'task':'module.apply', 'jform[title]':'Saved through Joomla', 'jform[params][url]':'https://vstupenky.online/form/embedded-synthetic','jform[params][cache]':'0','jform[params][height]':'800','jform[params][mode]':'auto','jform[params][inherit_style]':'1'})
+        fields.update({'task':'module.apply', 'jform[title]':'Saved through Joomla', 'jform[params][url]':'https://vstupenky.online/form/embedded-synthetic','jform[params][cache]':'0','jform[params][height]':'800','jform[params][mode]':'auto',})
         status, saved = request(admin, save_url, fields)
         _, reloaded = request(admin, edit)
         (ROOT / f'.private/save-{major}.html').write_text(saved)

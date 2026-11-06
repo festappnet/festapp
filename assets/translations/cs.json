@@ -588,8 +588,9 @@
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
-    "embedInheritStyleHelp": "Pro toto vložení použije písmo, pozadí a barvy Vašeho webu. Volbu nastavte před zkopírováním kódu. Plánek sálu si ponechá vlastní vzhled.",
-    "productsAndPrices": "Produkty a ceny"
+    "embedInheritStyleHelp": "Použije písmo, pozadí a barvy hostitelského webu pro všechna vložení tohoto formuláře. Změnu uložte s formulářem; projeví se při příštím načtení. Plánek sálu si ponechá vlastní vzhled.",
+    "productsAndPrices": "Produkty a ceny",
+    "embedOpenAppearance": "Upravit vzhled formuláře"
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -737,7 +738,7 @@
     "strict": "Přísný",
     "strictValidation": "Přísná validace",
     "validationMode": "Režim validace",
-    "tabDesign": "Design",
+    "tabDesign": "Vzhled",
     "textFieldType": "Text",
     "viewMore": "Zobrazit více",
     "deleteBlocked": {

@@ -5,5 +5,8 @@
   "sha256Artifact": "GitHub release ZIP; official WordPress ZIP has identical 12 plugin file bytes but is repacked",
   "directoryStatus": "published",
   "directoryUrl": "https://wordpress.org/plugins/vstupenky-online/",
-  "statusCheckedAt": "2026-11-06"
+  "statusCheckedAt": "2026-11-06",
+  "appearanceContract": "Saved form owns every embed; local overrides removed in the next package release",
+  "candidateVersion": "1.0.5",
+  "candidateSha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8"
 }

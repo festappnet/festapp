@@ -1,13 +1,12 @@
-Joomla modul pro vložení prodeje vstupenek přes uložený veřejný formulář vstupenky.online.
+# vstupenky.online pro Joomla 1.0.4
 
-- Instalace: nahrajte `vstupenky.online.zip` přes standardní instalátor Joomly, vytvořte nový modul vstupenky.online a vložte uloženou veřejnou `/form/slug` URL.
-- České i anglické nastavení; umístění do pozice šablony i článku přes `{loadmoduleid ID}`.
-- Automatická nebo pevná výška a záložní odkaz do nové záložky.
-- Verze 1.0.3 přidává přepínač převzetí vzhledu přímo do nastavení každého modulu. Volba se ukládá nezávisle na výšce a používá společné ovládání služby; uložené vypnutí zůstává zachováno.
-- Ověřeno Joomla 5.4.10/PHP 8.3.36 a Joomla 6.1.4/PHP 8.4.27. Update kanál cílí Joomla 5.4/6.1, PHP 8.3+.
-- Aktualizace přes standardní Joomla updater. Původní lokální 1.0.0 bez kanálu vyžaduje první ruční instalaci aktuálního vydání.
-- Objednávky, ceny, platby a odbavení zůstávají ve službě. Modul je GPL-2.0-or-later.
+Vzhled všech vložení nově řídí jedno uložené nastavení formuláře ve vstupenky.online. Lokální přepínač v modulu je odstraněný. Změna se projeví při příštím načtení webu bez výměny kódu; rozpracovaná objednávka se nepřepíná.
 
-[Návod a ověření](https://github.com/festappnet/festapp/tree/main/integrations/joomla) | [Podpora](https://vstupenky.online/support/) | [Podmínky](https://vstupenky.online/terms/) | [Soukromí](https://vstupenky.online/privacy/)
+- Odkaz, přístupný název, režim výšky a stávající objednávky zůstávají zachované. Staré lokální nastavení vzhledu se již nepoužívá.
+- V modulu je odkaz na Formuláře. Vyberte formulář, otevřete Vzhled a změnu uložte.
+- Helper funguje při automatické i pevné výšce. Plánek sálu si zachovává vlastní vzhled.
+- Ověřeno Joomla 5.4/PHP 8.3 a Joomla 6.1/PHP 8.4, včetně skutečné instalace a updateru.
 
-Toto vydání obsahuje pouze českou distribuci. Nejde o podání ani schválení v Joomla Extensions Directory.
+[Návod](https://vstupenky.online/napoveda/joomla/) | [Podpora](https://vstupenky.online/support/) | [Podmínky](https://vstupenky.online/terms/) | [Soukromí](https://vstupenky.online/privacy/)
+
+Vydání obsahuje českou distribuci. Aktualizace již zveřejněného záznamu v Joomla Extensions Directory je samostatný katalogový krok.

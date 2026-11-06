@@ -1,0 +1,14 @@
+{
+  "scope": "Read-only Wix app and component registry",
+  "appId": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "componentId": "feecfdef-ded1-4088-b02f-f4e2c0403300",
+  "componentRevision": "12",
+  "componentType": "CUSTOM_ELEMENT_WIDGET",
+  "tagName": "vstupenky-online-form",
+  "scriptUrl": "https://festapp-wix.pages.dev/widget.js",
+  "settingsUrl": "https://festapp-wix.pages.dev/settings",
+  "propertySchema": "No property or attribute schema returned by the component GET or component listing, and no property registration control found in the custom element dashboard form. inherit-style is absent from both readbacks.",
+  "appListReadback": {"fullVersion":"2.2.0","versionStatus":"PUBLISHED"},
+  "dashboardBanner": "Review completed. Your app has passed all checks and is published.",
+  "limits": "Neither registry status nor dashboard banner alone establishes public App Market availability. Existing per-instance values may remain stored and must be treated as inert; no deletion or writes performed."
+}

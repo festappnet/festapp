@@ -34,7 +34,7 @@ foreach ($products as [$element, $namespace, $origin]) {
             check(str_contains($html, 'data-festapp-embed-host'), 'Host wrapper');
             check(str_contains($html, 'data-festapp-embed '), 'Frame marker');
             check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed'), 'Fixed helper');
-            check(str_contains($html, 'data-festapp-style="' . ($inherit === 1 ? 'inherit' : 'default') . '"'), 'Appearance');
+            check(!str_contains($html, 'data-festapp-style'), 'Saved form exclusively owns appearance');
             check(!str_contains($html, '<script>') && str_contains($html, '&lt;script&gt;'), 'Escaped title');
             check(str_contains($html, '?embed=1') && str_contains($html, 'rel="noopener noreferrer"'), 'Embed and fallback');
         }
@@ -47,7 +47,7 @@ foreach ($products as [$element, $namespace, $origin]) {
     check((string)$xml->config->fields->fieldset[1]->field[0]['default'] === '0', 'Module cache disabled');
     $form = new Form($element);
     $form->load('<form>' . $xml->config->fields->asXML() . '</form>');
-    $accepted = $form->validate(new Registry(['params'=>['url'=>$url, 'mode'=>'auto','height'=>800,'inherit_style'=>1]]));
+    $accepted = $form->validate(new Registry(['params'=>['url'=>$url, 'mode'=>'auto','height'=>800]]));
     if (!$accepted) { foreach ($form->getErrors() as $error) { fwrite(STDERR, (string)$error . PHP_EOL); } }
     check($accepted, 'Actual Joomla form accepts saved URL');
     check(!$form->validate(new Registry(['params'=>['url'=>$origin.'/form/a?x=1']])), 'Actual Joomla rule rejects query');
@@ -55,7 +55,12 @@ foreach ($products as [$element, $namespace, $origin]) {
         $ini = JPATH_ROOT . '/modules/' . $element . '/language/' . $locale . '/' . $element . '.ini';
         check(is_file($ini), 'Installed translation');
         $strings = parse_ini_file($ini);
-        check(count($strings) === 20, 'All translated strings parse');
+        check(is_array($strings), 'Translation INI parses');
+        $prefix = strtoupper($element);
+        foreach (['START','ONBOARDING','CENTRAL_APPEARANCE','URL','URL_HELP','TITLE','TITLE_HELP','MODE','AUTO','FIXED','HEIGHT','CACHE','DEFAULT_TITLE','INVALID_URL','FALLBACK','DISCLOSURE','SERVICE','XML_DESCRIPTION'] as $key) {
+            check(isset($strings[$prefix . '_' . $key]) && $strings[$prefix . '_' . $key] !== '', 'Required translation: ' . $key);
+        }
+        check(!isset($strings[$prefix . '_INHERIT_STYLE']) && !isset($strings[$prefix . '_APPEARANCE']), 'No local appearance override translations');
         $language = \Joomla\CMS\Language\Language::getInstance($locale);
         check($language->load($element, JPATH_ROOT . '/modules/' . $element, $locale, true), 'Joomla loads product locale');
         check($language->_(strtoupper($element).'_START') === $strings[strtoupper($element).'_START'], 'Native localized onboarding');

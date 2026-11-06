@@ -7,7 +7,6 @@ String formEmbedCode({
   required String title,
   required String fallbackLabel,
   bool automatic = true,
-  bool inheritStyle = true,
 }) {
   if (savedLink.isEmpty) throw ArgumentError.value(savedLink, 'savedLink');
   final base = tenantUrl.replaceFirst(RegExp(r'/+$'), '');
@@ -15,7 +14,7 @@ String formEmbedCode({
   const escape = HtmlEscape(HtmlEscapeMode.attribute);
   final src = escape.convert('$publicUrl?embed=1');
   final marker =
-      ' data-festapp-embed data-festapp-style="${inheritStyle ? 'inherit' : 'default'}"${automatic ? '' : ' data-festapp-height="fixed"'}';
+      ' data-festapp-embed${automatic ? '' : ' data-festapp-height="fixed"'}';
   final frame =
       '<iframe$marker src="$src" title="${escape.convert(title)}" '
       'allow="clipboard-write" height="800" '

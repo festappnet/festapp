@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.4\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.5\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -15,19 +15,19 @@ msgstr ""
 msgid "After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor."
 msgstr ""
 
+msgid "Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes."
+msgstr ""
+
 msgid "Automatic"
 msgstr ""
 
-msgid "Automatic height and Match website appearance are enabled by default. Each block or shortcode has its own settings."
+msgid "Automatic height is enabled by default. Website appearance is controlled by the saved form setting in the service."
 msgstr ""
 
 msgid "Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr ""
 
 msgid "Check the public URL. The server accepts only an allowed form address."
-msgstr ""
-
-msgid "Choose Match website appearance for each block, or set inherit_style=\"false\" in its shortcode to keep the form appearance. Save and publish the page after changing it."
 msgstr ""
 
 msgid "Copy the public URL in the form https://vstupenky.online/form/saved-slug. Do not use a personal order link or administration URL."
@@ -78,10 +78,10 @@ msgstr ""
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr ""
 
-msgid "Match website appearance"
+msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr ""
 
-msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
+msgid "Open forms"
 msgstr ""
 
 msgid "Open the form in a new tab"
@@ -138,10 +138,10 @@ msgstr ""
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr ""
 
-msgid "Use the website font, background and colors for this block only. Save and publish the page to apply changes. The seating plan keeps its own appearance."
+msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
 msgstr ""
 
-msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
+msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
 msgstr ""
 
 msgid "vstupenky.online"

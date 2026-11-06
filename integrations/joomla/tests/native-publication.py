@@ -103,7 +103,7 @@ def inspect_article(html, title, mode, inherit):
     assert ('data-festapp-height' in frame) == (mode == 'fixed')
     if mode == 'fixed':
         assert frame['data-festapp-height'] == 'fixed'
-    assert frame['data-festapp-style'] == ('inherit' if inherit else 'default')
+    assert 'data-festapp-style' not in frame
     assert html.count('data-festapp-embed-host') == 1
 
 
@@ -138,7 +138,6 @@ def verify(major):
         'jform[params][iframe_title]': iframe_title,
         'jform[params][mode]': 'auto',
         'jform[params][height]': '800',
-        'jform[params][inherit_style]': '1',
     })
     created = Fields(saved)
     assert created.fields.get('jform[title]') == title, 'New module title missing after save'
@@ -170,14 +169,13 @@ def verify(major):
             for inherit in [0, 1]:
                 set_module(admin, base, module_id, {
                     'jform[params][mode]': mode,
-                    'jform[params][inherit_style]': str(inherit),
                 })
                 clear_cache(major)
                 for temperature in ['cold', 'warm']:
                     status, article = request(session(), article_url)
                     assert status == 200
                     inspect_article(article, iframe_title, mode, inherit)
-                    cases.append({'article_only': True, 'mode': mode, 'inherit_style': bool(inherit), 'cache': temperature, 'helpers': 1})
+                    cases.append({'article_only': True, 'mode': mode, 'legacy_override_ignored': True, 'cache': temperature, 'helpers': 1})
     finally:
         # Preserve the existing three-instance baseline for browser/lifecycle.
         try:

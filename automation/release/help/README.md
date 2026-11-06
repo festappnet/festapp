@@ -187,3 +187,5 @@ and pairing SQL; no new screenshot or live bank mutation is claimed.
 ## WordPress directory publication (2026-11-06)
 
 The Czech WordPress guide now installs the public plugin from the WordPress.org directory (publisher festappnet, version 1.0.4 or later), followed by native block setup, per-block appearance, standalone-link/mobile/seat checks and a separate Custom HTML alternative. Five actual Czech WordPress7.1.3 captures use the November6 Ples U Lípy fixture; provenance is in integrations/wordpress/catalog/source/PROVENANCE.txt. No English guide uses Czech captures. The catalog description translation is separate: all38 Czech strings were submitted as Waiting, not represented as approved or live.
+
+Appearance cutover: the saved form is the sole owner for HTML, WordPress, Joomla and Wix. Generators and native settings have no local control. Documentation links to the form Appearance tab; its change requires saving the form and applies on subsequent loads. Old HTML attributes are inert. November6 plugin1.0.4 captures containing local controls must be replaced before the central-contract release.

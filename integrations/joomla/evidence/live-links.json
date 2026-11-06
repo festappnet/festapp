@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-06T05:18:25.780889+00:00",
+  "checked_at": "2026-11-06T12:52:21.766244+00:00",
   "user_agent": "Festapp-Joomla-Release-Check/1.0 (+https://github.com/festappnet/festapp)",
   "checks": [
     {
@@ -7,7 +7,7 @@
       "final_url": "https://vstupenky.online/login",
       "status": 200,
       "bytes": 18478,
-      "sha256": "9dfc3643124e6f3b251e0c2ba0620067492384957d8a964df97f90b950c05462",
+      "sha256": "69286b5fe2cda4d2e2b2adee39d59b1bb4bb429cb5b695b8ce9ebc169d6358c7",
       "title": "Akce a plesy - vstupenky online | vstupenky.online",
       "expected_content": true
     },
@@ -52,7 +52,7 @@
       "final_url": "https://vstupenky.online/",
       "status": 200,
       "bytes": 236001,
-      "sha256": "04ce83615ff87f2edff2bc98bdc6b18ec6058da0d19e87bc3a1da8c28360a238",
+      "sha256": "7cfadd209cdb111913b70ba8a4022130391ce6122944143e1f40cf2858938966",
       "title": "Prodej vstupenek na akce | vstupenky.online",
       "expected_content": true
     },

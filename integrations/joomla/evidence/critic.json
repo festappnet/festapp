@@ -1,27 +1,48 @@
 {
   "status": "APPROVED",
-  "reviewed_at": "2026-11-06T05:19:10.912804+00:00",
-  "reviewer_role": "primary agent reviewing Astra implementation and Terra execution receipts; no independent review claimed",
-  "approval_scope": "Technical readiness of exact Czech Joomla 1.0.3 ZIP for owned GitHub distribution. No JED or global release.",
-  "zip_sha256": "063987a9208d43282a3cabf1a9a0ece974c1952bf9cb42712390a022934d6fca",
-  "verification_sha256": "722b165e8cf7043d2daf7a83f4ad90664669a7715c5c5910bc480927666b8c3a",
+  "reviewed_at": "2026-11-06T12:55:33.529549+00:00",
+  "reviewer_role": "Independent AI critic of the exact release; not a human review or an approval by Joomla Extensions Directory",
+  "approval_scope": "Technical readiness of the exact regional vstupenky.online Joomla 1.0.4 ZIP for owned GitHub distribution, public updater and update of its existing JED listing. No global Festapp Tickets publication, no publication performed, no JED acceptance claimed.",
+  "zip_sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
+  "verification_sha256": "77dc5cfcf5575a0136c89dd6d9331925dc6609c248696bfbf2c129886cf725ec",
   "unresolved_release_blockers": [],
+  "evidence_summary": {
+    "frozen_source_files": 34,
+    "frozen_evidence_files": 13,
+    "zip_files_matching_package_manifest_and_generated_build": 11,
+    "joomla_5_contract_assertions": 278,
+    "joomla_6_contract_assertions": 278,
+    "verified_cms": [
+      "Joomla 5.4.10 / PHP 8.3.36",
+      "Joomla 6.1.4 / PHP 8.4.27"
+    ],
+    "reviewed_checks": [
+      "Exact candidate ZIP and alias SHA-256, identity, manifest, regional release URL and update feed match",
+      "All current source and evidence hashes match the VERIFIED receipt",
+      "Native module save/reload, publication, article-only cold/warm auto/fixed paths and ignored legacy appearance preferences",
+      "Installed 11-file hashes, local native updater discovery/checksum/install/settings preservation, lifecycle and remaining-product rendering",
+      "Isolated 320px real form, seat selector, Escape, blocked-helper fallback; production smoke was read-only with zero orders/seats submitted"
+    ],
+    "boundary": "Existing execution receipts were reviewed; no browser, runtime, CMS, live writes or repeated full verification were performed by this critic."
+  },
   "findings_resolutions": [
     {
-      "finding": "Native controls had no per-instance appearance authority",
-      "resolution": "Joomla radio preserves0/1 and emits explicit canonical inherit/default through shared embed.js independently of height; no alternate style implementation."
+      "finding": "Previous release exposed local appearance overrides",
+      "resolution": "Packaged module manifest and helper have no local appearance field or data-festapp-style output. URL, title and height remain local; saved-form service setting owns appearance. Contracts cover both legacy values ignored."
     },
     {
-      "finding": "Stale native contract and browserfixture assumptions",
-      "resolution": "Final frozen 34 inputs and 13 receipts pass on Joomla 5/6 including real native save/reopen, cold/warm article matrix, map, updater and production read-only smoke. A fresh canonical backend on 59941 replaced the legacy test API without changing it."
+      "finding": "Guidance contradicted central appearance ownership and actual labels",
+      "resolution": "Central form Vzhled guidance, safe generic /events?help=forms links and corrected Joomla storage disclosure are packaged. Help says saved form applies on next load without replacing HTML or switching an active checkout."
     },
     {
-      "finding": "Old docs/downloads did not expose new native control",
-      "resolution": "CS/ENpublicguides link 1.0.3 and explain per-module scope, defaults, upgrade and independent height; source and documentation are sealed."
+      "finding": "Prior critic approved a different 1.0.3 ZIP",
+      "resolution": "This independent AI review binds the exact 1.0.4 ZIP and current VERIFIED receipt. Publication and public byte/updater verification remain separate steps."
     }
   ],
   "external_publication_prerequisites": [
-    "Publish exact reviewed source to canonical main under repository rules and pass CI for that exact commit.",
-    "Publish Czech GitHub ZIP and checksum andverify public bytes/feed; retain the owned Joomla environment for public updater readback."
+    "Primary must seal the current reviewed ZIP, verification, this receipt and final documentation through scripts/release-gate.py --seal.",
+    "Publish the exact reviewed source to canonical main and pass required CI for that commit.",
+    "Coordinate canonical saved-form appearance service rollout under the separately authorized tenant release; this receipt does not certify that rollout as already live.",
+    "Publish exact regional GitHub ZIP/checksum and public update feed, verify their bytes and native public updater behavior; update only the existing regional JED listing under authorized publication scope."
   ]
 }
