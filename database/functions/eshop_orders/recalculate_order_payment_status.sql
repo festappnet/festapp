@@ -67,6 +67,12 @@ BEGIN
         PERFORM public.enqueue_paid_order_tickets(p_order_id);
     END IF;
 
+    -- Cancellation above invalidates the old reminder version. Rebuild only this
+    -- payment's eligible reminders, including the balance after a paid deposit.
+    IF p_reason='product_edit' OR v_eligible IS DISTINCT FROM v_was_eligible THEN
+        PERFORM public.queue_payment_reminders_internal(v_order.occasion,v_payment.id);
+    END IF;
+
     PERFORM public.notification_center_order_state_internal(p_order_id);
     SELECT state,email_payment_version INTO v_final_state,v_final_version FROM eshop.orders WHERE id=p_order_id;
     RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_final_state,

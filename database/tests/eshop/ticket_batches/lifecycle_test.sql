@@ -1,4 +1,18 @@
 BEGIN;
+-- Check effective migration ACLs, including forwards replaying command definitions.
+DO $$
+DECLARE signature text;
+BEGIN
+ FOREACH signature IN ARRAY ARRAY[
+  'public.create_ticket_batch_client_sync_v1(bigint,text,jsonb,uuid,uuid)',
+  'public.sell_ticket_batch_items_client_sync_v1(uuid,bigint[],jsonb,boolean,uuid)',
+  'public.void_ticket_batch_items_client_sync_v1(uuid,bigint[],text,uuid)'
+ ] LOOP
+  ASSERT has_function_privilege('authenticated',signature,'EXECUTE'), signature || ' must remain callable by authenticated clients';
+  ASSERT NOT has_function_privilege('anon',signature,'EXECUTE'), signature || ' must not be anonymous';
+  ASSERT NOT has_function_privilege('service_role',signature,'EXECUTE'), signature || ' must retain the user-bound boundary';
+ END LOOP;
+END $$;
 CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN

@@ -65,7 +65,7 @@ CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql
  SELECT coalesce(array_agg(DISTINCT ticket ORDER BY ticket),'{}'::bigint[]) FROM eshop.order_product_ticket WHERE "order"=p_order;
 $$;
 DO $$
-DECLARE x jsonb; f bigint; source bigint; regular bigint; r jsonb; w jsonb; person bigint; remainder bigint; command uuid; target bigint; original_symbol text; original_sequence bigint; before_history bigint; price_id bigint; result_vs bigint;
+DECLARE x jsonb; f bigint; source bigint; regular bigint; r jsonb; w jsonb; person bigint; remainder bigint; command uuid; target bigint; original_symbol text; original_sequence bigint; before_history bigint; before_email_version bigint; price_id bigint; result_vs bigint;
 BEGIN
  FOR people IN 1..2 LOOP
   x:=pg_temp.fixture(1); f:=(x->>'form')::bigint;
@@ -90,10 +90,15 @@ BEGIN
    PERFORM assert_eq(r#>>'{data,code}','200'::text,'unoffered remainder not blocked');
   END IF;
   PERFORM set_config('request.jwt.claim.sub','',true);
+  SELECT email_payment_version INTO before_email_version FROM eshop.orders WHERE id=target;
   PERFORM public.abort_fakturoid_ticket_order_v1(target,command);
+  PERFORM assert_eq((SELECT email_payment_version FROM eshop.orders WHERE id=target),
+   before_email_version+CASE WHEN target=source THEN 1 ELSE 0 END,'abort advances only reusable order email version');
   SELECT count(*) INTO before_history FROM eshop.orders_history WHERE "order"=source;
   PERFORM public.abort_fakturoid_ticket_order_v1(target,command);
   PERFORM assert_eq((SELECT count(*) FROM eshop.orders_history WHERE "order"=source),before_history,'abort replay no history duplication');
+  PERFORM assert_eq((SELECT email_payment_version FROM eshop.orders WHERE id=target),
+   before_email_version+CASE WHEN target=source THEN 1 ELSE 0 END,'abort replay preserves email version');
   PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=source),'waitlisted'::text,'source restored');
   PERFORM assert_eq((SELECT order_symbol FROM eshop.orders WHERE id=source),original_symbol,'abort symbol preserved');
   PERFORM assert_eq((SELECT order_sequence FROM eshop.orders WHERE id=source),original_sequence,'abort sequence preserved');
@@ -108,7 +113,7 @@ BEGIN
   BEGIN PERFORM public.complete_fakturoid_ticket_order_v1(target,command,123456789); RAISE EXCEPTION 'late complete accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%Acceptance attempt aborted%' THEN RAISE; END IF; END;
   -- Retry needs a new command; complete is idempotent and does not double capacity.
   command:=gen_random_uuid(); r:=pg_temp.accept(x,w,ARRAY[person],command);
-  PERFORM assert_eq(r#>>'{data,code}','200'::text,'retry prepare'); target:=(r#>>'{data,order,id}')::bigint;
+  PERFORM assert_eq(r#>>'{data,code}','200'::text,'retry prepare: '||r::text); target:=(r#>>'{data,order,id}')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
   result_vs:=(r#>>'{data,order,payment_info,variable_symbol}')::bigint;
   PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,result_vs),result_vs,'invoice preserves application VS');
