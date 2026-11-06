@@ -1,5 +1,7 @@
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
-import { FormDataLayer, publicFormLocation, loadFormIntegrations } from './form_datalayer.js';
+import { FormDataLayer, hasBrowserSession } from './form_datalayer.js';
+import { publicFormLocation, documentEntryAllowed } from '../../utils/public_form_location.js';
+import { FormMeasurementRuntime } from './form_measurement_runtime.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
 import { SupabaseService } from '../../services/supabase_service.js';
@@ -59,6 +61,9 @@ export class FormPage extends Component {
     }
 
     clear() {
+        this.measurementAuthSubscription?.unsubscribe(); this.measurementAuthSubscription = null;
+        this.measurementCleanup?.(); this.measurementCleanup = null;
+        this.measurementRuntime?.destroy(); this.measurementRuntime = null;
         this.analytics?.dispose();
         this.analytics = null;
         ThemeService.clearFormTheme();
@@ -131,6 +136,9 @@ export class FormPage extends Component {
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
+        this.measurementAuthSubscription?.unsubscribe(); this.measurementAuthSubscription = null;
+        this.measurementCleanup?.(); this.measurementCleanup = null;
+        this.measurementRuntime?.destroy(); this.measurementRuntime = null;
         this.analytics?.dispose();
         this.analytics = null;
         this.analyticsEntryAllowed = publicFormLocation(window.location, {entry: true});
@@ -589,10 +597,31 @@ export class FormPage extends Component {
         });
 
         if (!showPreview && !this.analytics) {
-            this.analytics = new FormDataLayer({model: formModel, bridge: this.embedBridge, entryAllowed: this.analyticsEntryAllowed});
-            this.analytics.view();
-            if (!formModel.demoSimulation && !formModel.offerBundle) loadFormIntegrations({settings: formModel.data?.analytics,
-                auth: SupabaseService._client?.auth, entryAllowed: this.analyticsEntryAllowed});
+            const runtime = new FormMeasurementRuntime({model:formModel,
+                campaign:() => this.embedBridge?.measurementCampaign || {},
+                canRun:() => this.analyticsEntryAllowed && documentEntryAllowed(window) && !formModel.demoSimulation && publicFormLocation(window.location) && !hasBrowserSession(window),
+                onReady:() => this.analytics?.view()});
+            this.measurementRuntime = runtime;
+            this.embedBridge?.setMeasurementRuntime(runtime);
+            const analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
+                entryAllowed:this.analyticsEntryAllowed, refreshPolicy:() => DbForms.getMeasurementPolicy(formModel.link)});
+            if (!this.embedBridge && formModel.data?.analytics?.eligible === true && analytics.entryAllowed && !hasBrowserSession(window)) {
+                import('./form_measurement_cmp.js').then(({startMeasurementConsent}) => {
+                    if (this.analytics !== analytics) return;
+                    this.measurementCleanup = startMeasurementConsent({model:formModel,transport:runtime,host:this.host});
+                }).catch(() => runtime.setConsent(false));
+            }
+            try {
+                this.measurementAuthSubscription = SupabaseService.getClient().auth?.onAuthStateChange?.((_event, session) => {
+                    if (session) {
+                        runtime?.destroy();
+                        analytics.dispose();
+                        this.measurementCleanup?.(); this.measurementCleanup = null;
+                    }
+                })?.data?.subscription;
+            } catch { runtime?.destroy(); }
+            analytics.view();
+
         }
         this.analytics?.observe(session);
         session.addEventListener('state-changed', () => {
@@ -902,7 +931,6 @@ export class FormPage extends Component {
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
-        const analyticsContact = this.analytics?.contact?.(payload, form);
         const submittedSession = this.currentSession;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
@@ -926,7 +954,7 @@ export class FormPage extends Component {
         const reportOutcome = (success, data) => {
             if (outcomeReported || formModel.demoSimulation) return;
             outcomeReported = true;
-            if (success) this.analytics?.confirmed(data, formModel.registrationMode === 'waitlist', analyticsContact);
+            if (success) this.analytics?.confirmed(data);
             else this.analytics?.emit({event: 'form_submit_error'});
         };
         request.then(async result => {

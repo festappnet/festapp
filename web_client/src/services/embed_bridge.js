@@ -1,4 +1,4 @@
-import { analyticsPayload } from '../components/forms/form_datalayer.js';
+import { analyticsPayload, campaignContext } from '../components/forms/form_measurement_contract.js';
 import { isEmbed, applyEmbedContext } from './embed_context.js';
 import { EmbedTheme } from './embed_theme.js';
 
@@ -39,15 +39,17 @@ export class EmbedBridge {
                 data?.namespace !== namespace || data.protocol !== 1 || !validId(data.instance)) return;
             if (this.origin && (event.origin !== this.origin || data.instance !== this.instance)) return;
             if (data.type === 'init' && viewport(data.viewportHeight)) {
+                if (this.consentId !== data.consentId) this.measurementRuntime?.setConsent(false);
                 this.origin = event.origin; this.instance = data.instance;
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
                 this.dataLayer = data.dataLayer === true;
-                this.dataLayerUserData = this.dataLayer && data.dataLayerUserData === true;
-                const pending = this.pendingEvents || [];
-                this.pendingEvents = [];
-                if (this.dataLayer) for (const payload of pending) this.send('analytics', {payload: analyticsPayload(payload, {allowUserData: this.dataLayerUserData})});
+                // Host API must supply a current consent lease. Markup is only opt-in.
+                this.consentId = typeof data.consentId === 'string' ? data.consentId : null;
+                this.consentUntil = Number.isFinite(data.consentUntil) && data.consentUntil <= Date.now() + 60000 ? data.consentUntil : 0;
+                this.measurementCampaign = campaignContext(data.attribution);
+                this.syncMeasurementRuntime();
                 this.styleOverride = typeof data.inheritStyle === 'boolean' ? data.inheritStyle : null;
                 this.syncStyle();
                 this.setViewport(data.viewportHeight, data.viewportOffset);
@@ -91,14 +93,28 @@ export class EmbedBridge {
     send(type, values) {
         if (this.origin) this.win.parent.postMessage({ namespace, protocol: 1, instance: this.instance, type, ...values }, this.origin);
     }
-    // The analytics owner and the host each independently whitelist payloads.
+    measurementAllowed() {
+        return !!this.origin && !!this.consentId && Date.now() < this.consentUntil &&
+            (this.dataLayer === true || this.measurementRuntime?.measurementAllowed() === true);
+    }
+    measurementEpoch() {
+        if (!this.measurementAllowed()) return null;
+        return this.dataLayer === true ? `${this.origin}:${this.instance}:${this.consentId}` : this.measurementRuntime.measurementEpoch();
+    }
+    setMeasurementRuntime(runtime) { this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
+    syncMeasurementRuntime() {
+        this.measurementRuntime?.setConsent(this.dataLayer !== true && !!this.consentId && Date.now() < this.consentUntil, this.consentUntil);
+    }
+    updatePolicy(expiresAt) { this.measurementRuntime?.updatePolicy(expiresAt); }
+    revokeMeasurement() { this.consentId = null; this.consentUntil = 0; this.measurementRuntime?.setConsent(false); }
+    // No queue before consent or initialization. Every payload is revalidated.
     track(input) {
-        const payload = analyticsPayload(input, {allowUserData: this.dataLayerUserData === true});
-        if (!payload) return;
-        if (!this.origin) {
-            this.pendingEvents ??= [];
-            if (this.pendingEvents.length < 32) this.pendingEvents.push(payload);
-        } else if (this.dataLayer) this.send('analytics', {payload});
+        if (!this.measurementAllowed()) return false;
+        const payload = analyticsPayload(input);
+        if (!payload) return false;
+        if (this.dataLayer !== true) return this.measurementRuntime.track(payload);
+        this.send('analytics', {payload, consentId: this.consentId});
+        return true;
     }
     measure() {
         if (this.raf) return;
@@ -184,6 +200,7 @@ export class EmbedBridge {
         }
     }
     destroy() {
+        this.revokeMeasurement();
         this.win.removeEventListener('message', this.onMessage);
         this.win.removeEventListener('resize', this.onResize);
         this.win.removeEventListener('festapp-embed-price',this.onPrice);

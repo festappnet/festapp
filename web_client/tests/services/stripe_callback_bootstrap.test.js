@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 const source = fs.readFileSync(new URL('../../../web/index.html', import.meta.url), 'utf8');
-const bootstrap = source.match(/<script>([\s\S]*?)<\/script>/)[1];
+const bootstrap = [...source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+  .map(match => match[1]).find(script => script.includes('__festappStripeConnectCallback'));
+assert.ok(bootstrap, 'the real payment callback bootstrap must be present');
 for (const restored of [false, true]) {
   test(`A02 callback credentials removed before bootstrap, restored=${restored}`, () => {
     const callback = '/stripe/connect/callback?code=fixture_code&state=fixture_state&error_description=private&context=kept';

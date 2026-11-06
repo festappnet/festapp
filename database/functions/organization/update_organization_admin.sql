@@ -20,6 +20,11 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE = 'Google login setting must be boolean';
   END IF;
 
+  IF update_organization_admin.data ? 'FORM_MEASUREMENT_ENABLED'
+     AND jsonb_typeof(update_organization_admin.data->'FORM_MEASUREMENT_ENABLED') IS DISTINCT FROM 'boolean' THEN
+    RAISE invalid_parameter_value USING MESSAGE = 'Form measurement setting must be boolean';
+  END IF;
+
   -- Verify admin status
   IF public.can_manage_organization_settings(organization_id) THEN
     -- Update the organization record

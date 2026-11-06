@@ -154,16 +154,19 @@ BEGIN
             AND public.normalize_form_metadata_internal(previous_form_metadata) ? 'analytics' THEN
             form_metadata:=form_metadata||jsonb_build_object('analytics',public.normalize_form_metadata_internal(previous_form_metadata)->'analytics');
           END IF;
+          IF jsonb_typeof(form_metadata->'analytics')='object' THEN
+            form_metadata:=jsonb_set(form_metadata,'{analytics}',
+              coalesce(nullif(public.normalize_form_metadata_internal(previous_form_metadata)->'analytics','null'::jsonb),'{}'::jsonb) || (form_metadata->'analytics'));
+          END IF;
           form_metadata:=public.apply_form_settings_internal(form_metadata,
             public.form_settings_from_metadata_internal(form_metadata));
         END IF;
 
-        -- Both tags and arbitrary script code have the same authority. Bind the
-        -- permission to the stored form/occasion and compare after normalization,
-        -- so editor saves preserving these settings keep working.
+        -- Form writers can change only the boolean intent, never Unit destination code.
+        -- Bind permission to the stored form/occasion after normalization.
         IF form_metadata->'analytics' IS DISTINCT FROM public.normalize_form_metadata_internal(previous_form_metadata)->'analytics'
           AND NOT public.can_manage_form_measurement(occasion_id) THEN
-          RAISE insufficient_privilege USING MESSAGE='organization administrator required to change form measurement'; END IF;
+          RAISE insufficient_privilege USING MESSAGE='form author required to change measurement intent'; END IF;
 
         -- Explicit removals are part of this save transaction, never inferred from
         -- omitted fields in partial/older-client payloads. Exceptions roll back the save.

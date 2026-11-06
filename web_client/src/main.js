@@ -1,5 +1,3 @@
-// Capture the original analytics context before callbacks or router URL cleanup.
-import './components/forms/form_datalayer.js';
 import { isEmbed, applyEmbedContext } from './services/embed_context.js';
 import './embed.css';
 import { handleHelpAction } from './startup/help_action.js';

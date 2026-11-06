@@ -51,7 +51,7 @@ abstract final class FormMetadata {
     'variable_symbol': ['type', 'starting_number'],
     'payment_message': ['type'],
     'payments': ['bankEnabled', 'stripeConnectionId'],
-    'analytics': ['gtm_container', 'scripts', 'enhanced_conversions'],
+    'analytics': ['enabled'],
     'design': [
       'embed_inherit_style',
       'is_card_design',
@@ -63,7 +63,7 @@ abstract final class FormMetadata {
       'countdown_style',
       'presale_header',
     ],
-    'sale_opening_notifications': ['enabled','collection_paused'],
+    'sale_opening_notifications': ['enabled', 'collection_paused'],
     'schedule': [
       'start_time',
       'end_time',

@@ -38,6 +38,7 @@ class FormDefinition {
   final String? registrationMode;
   final Map<String, dynamic>? saleOpeningNotification;
   final Map<String, dynamic>? payments;
+  final Map<String, dynamic>? measurementStatus;
   bool get isWaitlist => registrationMode == 'waitlist';
   final int? id;
   final DateTime? createdAt;
@@ -93,6 +94,7 @@ class FormDefinition {
   static const String metaSchedule = "schedule";
 
   FormDefinition({
+    Map<String, dynamic>? measurementStatus,
     this.demoSimulation = false,
     this.participantCapacity,
     this.waitlistEnabled = false,
@@ -122,7 +124,10 @@ class FormDefinition {
     this.stats,
     this.isReminderEnabled,
     this.canDelete,
-  }) : payments = payments == null
+  }) : measurementStatus = measurementStatus == null
+           ? null
+           : freezeJsonValue(measurementStatus) as Map<String, dynamic>,
+       payments = payments == null
            ? null
            : freezeJsonValue(payments) as Map<String, dynamic>,
        data = data == null
@@ -137,6 +142,7 @@ class FormDefinition {
         : occasionData;
 
     return FormDefinition(
+      measurementStatus: (json['measurement_status'] as Map?)?.cast<String, dynamic>(),
       demoSimulation: json['demo_simulation'] == true,
       participantCapacity: json['participant_capacity'],
       waitlistEnabled: json['waitlist_enabled'] == true,
@@ -505,6 +511,7 @@ class FormDefinition {
   }
 
   FormDefinition copyWith({
+    Object? measurementStatus = _unchanged,
     Object? participantCapacity = _unchanged,
     Object? waitlistEnabled = _unchanged,
     Object? showRemainingCapacity = _unchanged,
@@ -533,6 +540,9 @@ class FormDefinition {
     Object? isReminderEnabled = _unchanged,
     Object? canDelete = _unchanged,
   }) => FormDefinition(
+    measurementStatus: identical(measurementStatus, _unchanged)
+        ? this.measurementStatus
+        : (measurementStatus as Map?)?.cast<String, dynamic>(),
     demoSimulation: demoSimulation,
     saleOpeningNotification: saleOpeningNotification,
     participantCapacity: identical(participantCapacity, _unchanged)

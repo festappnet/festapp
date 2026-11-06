@@ -151,15 +151,16 @@ test('real dataLayer emits purchase only after backend confirmation and survives
     FormNetwork.submitOrder=()=>new Promise(resolve=>{confirm=resolve;});
     const page=new FormPage('form-page-container');
     page.currentSession={payload:{form:'private',email:'private@example.test'},awaitPendingReservations:async()=>{},captureReservationCapability:()=>null,completeReservation:()=>{}};
-    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[]},session:()=>false});
+    const sent=[];
+    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[],data:{analytics:{enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60}}},bridge:{measurementEpoch:()=> 'fixture-lease',measurementAllowed:()=>true,track:p=>{sent.push(p);return true;}},session:()=>false});
     page.closePreview=()=>{};page.cleanup=()=>{};
     let finish;const finished=new Promise(resolve=>{finish=resolve;});let renders=0;
     page.showFullScreenResult=()=>{if(renders++===0)throw new Error('render failed');finish();};
     page.submitOrder(document.createElement('form'),{});
     await new Promise(resolve=>setImmediate(resolve));assert.equal(window.dataLayer,undefined);
-    confirm({success:true,data:{ticketOrder:{order:{payment_info:{amount:200}},analytics:{event:'purchase',ecommerce:{transaction_id:'1A2C3E4F5G',currency:'CZK',payment_type:'bank_transfer',items:[{item_id:'product_12',item_name:'Concert ticket',price:100,quantity:2}]}}}}});
+    confirm({success:true,data:{ticketOrder:{order:{payment_info:{amount:200}},analytics:{event:'purchase',ecommerce:{transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',payment_type:'bank_transfer',items:[{item_id:'product_12',item_name:'Concert ticket',price:100,quantity:2}]}}}}});
     await finished;
-    assert.deepEqual(window.dataLayer.filter(item=>item.event).map(item=>item.event),['page_view','purchase']);
-    assert.equal(JSON.stringify(window.dataLayer).includes('private'),false);
+    assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view','purchase']);
+    assert.equal(JSON.stringify(sent).includes('private'),false);
   }finally{FormNetwork.submitOrder=original;dom.window.close();}
 });

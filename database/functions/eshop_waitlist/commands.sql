@@ -57,7 +57,11 @@ BEGIN
   RETURN jsonb_build_object('code',409,'errorCode','COMMAND_PAYLOAD_CONFLICT');
  END;
  IF claim->>'disposition'='replay' THEN
-  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true); RETURN public.project_local_payment_reference_order_internal(claim->'response'); END IF;
+  result:=claim->'response';
+  IF p_actor IS NULL AND p_operation IN ('register','accept') THEN
+   result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' WHEN (result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+  END IF;
+  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true); RETURN public.project_local_payment_reference_order_internal(result); END IF;
  SELECT coalesce(array_agg("user"),'{}') INTO before_users FROM public.occasion_users WHERE occasion=occ;
  BEGIN
   PERFORM 1 FROM public.forms WHERE id=fid FOR UPDATE;
@@ -169,6 +173,10 @@ BEGIN
   result:=result||jsonb_build_object('adminQuote',p_payload#>'{administrativeApproval,quote}',
    'adminScope',p_payload#>'{administrativeApproval,scope}','paymentPreparationPolicy','leased_keep_pending'); END IF;
  result:=public.complete_profile_inventory_membership_mutation_v1(p_command_id,occ,'inventory.waitlist.'||p_operation,entity_changes,before_users,result,actor_kind);
+ IF p_actor IS NULL AND p_operation IN ('register','accept') THEN
+  PERFORM public.record_form_conversion_internal((result#>>'{data,order,id}')::bigint);
+  result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' WHEN (result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+ END IF;
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);
  RETURN result;
 END $$;

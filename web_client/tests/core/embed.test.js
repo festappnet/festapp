@@ -460,70 +460,36 @@ test('new child uses one native reveal with a legacy host for end and nearest al
     }
 });
 
-test('host requires opt-in, validates the envelope and reconstructs ecommerce from its whitelist', () => {
-    const {dom, frames:[a,b], sent, message} = host();
-    const id = sent[0][0][0].instance;
-    const payload={event:'purchase',user_data:{email:'private'},page_location:'private',ecommerce:{transaction_id:'1A2C3E4F5G',currency:'CZK',payment_type:'bank_transfer',value:999,token:'private',items:[{item_id:'product_12',quantity:2,price:99,item_name:'Concert ticket',seat:'private'}]}};
-    const emit=(extra={},origin='https://tickets.invalid',source=a.contentWindow)=>message(a,origin,envelope('analytics',id,{payload,...extra}),source);
-    emit();assert.equal(dom.window.dataLayer,undefined);
-    a.setAttribute('data-festapp-datalayer','');
-    message(a,'https://tickets.invalid',envelope('ready'));
-    assert.equal(sent[0].at(-1)[0].dataLayer,true);assert.equal(sent[1][0][0].dataLayer,false);
-    emit({instance:'wrong'});emit({protocol:2});emit({},'https://evil.invalid');emit({},'https://tickets.invalid',b.contentWindow);
-    emit({payload:{event:'purchase'}});assert.equal(dom.window.dataLayer,undefined);
-    emit();
-    assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[
-        {ecommerce:null,user_data:null},{event:'purchase',ecommerce:{currency:'CZK',items:[{item_id:'product_12',item_name:'Concert ticket',price:99,quantity:2}],value:198,payment_type:'bank_transfer',transaction_id:'1A2C3E4F5G'}},{user_data:null}]);
-    message(b,'https://other.invalid',envelope('analytics',sent[1][0][0].instance,{payload}));
-    a.removeAttribute('data-festapp-datalayer');emit();assert.equal(dom.window.dataLayer.length,3);
-    dom.window.close();
+test('host consent is bound to origin, source, instance and lease; revocation fences delayed events', () => {
+ const {dom,frames:[a,b],sent,message}=host();
+ const instance=sent[0][0][0].instance;
+ a.setAttribute('data-festapp-datalayer','');
+ const payload={event:'page_view',user_data:{email:'private'},token:'private'};
+ const emit=(extra={},origin='https://tickets.invalid',source=a.contentWindow)=>message(a,origin,envelope('analytics',instance,{payload,...extra}),source);
+ emit();assert.equal(dom.window.dataLayer,undefined);
+ dom.window.FestappEmbed.setMeasurementConsent(a,true);
+ const consentId=sent[0].at(-1)[0].consentId;
+ emit({consentId,instance:'wrong'});emit({consentId,protocol:2});emit({consentId},'https://evil.invalid');emit({consentId},'https://tickets.invalid',b.contentWindow);emit({consentId:'old'});
+ assert.equal(dom.window.dataLayer,undefined);
+ emit({consentId});assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[{event:'page_view'}]);
+ dom.window.FestappEmbed.setMeasurementConsent(a,false);emit({consentId});assert.equal(dom.window.dataLayer.length,1);
+ dom.window.FestappEmbed.setMeasurementConsent(a,true,0);emit({consentId:sent[0].at(-1)[0].consentId});assert.equal(dom.window.dataLayer.length,1);
+ dom.window.FestappEmbed.setMeasurementConsent(a,true);const next=sent[0].at(-1)[0].consentId;emit({consentId});assert.equal(dom.window.dataLayer.length,1);
+ emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);a.removeAttribute('data-festapp-datalayer');emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);
+ dom.window.close();
 });
 
-test('child flushes early payloads once after pinned opt-in, and stops after opt-out',()=>{
-    const dom=new JSDOM('<body></body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
-    const win=dom.window;globalThis.document=win.document;globalThis.window=win;
-    const sent=[];const parent={postMessage:(...args)=>sent.push(args)};
-    Object.defineProperty(win,'parent',{value:parent});win.ResizeObserver=class{observe(){}disconnect(){}};
-    const bridge=new EmbedBridge(win);bridge.start();
-    bridge.track({page_type:'product',language:'cs'});bridge.track({event:'page_view'});bridge.track({event:'purchase'});
-    assert.equal(sent.filter(([data])=>data.type==='analytics').length,0);
-    const init=data=>win.dispatchEvent(new win.MessageEvent('message',{source:parent,origin:'https://host.invalid',data:envelope('init','one',{viewportHeight:600,...data})}));
-    init({dataLayer:true});init({dataLayer:true});
-    bridge.track({event:'form_submit_error',message:'private'});
-    const events=sent.filter(([data])=>data.type==='analytics');
-    assert.deepEqual(events.map(([data])=>data.payload),[{page_type:'product',language:'cs',user_type:'b2c'},{event:'page_view'},{event:'form_submit_error'}]);
-    for(const [data,origin]of events){assert.equal(origin,'https://host.invalid');assert.equal(data.instance,'one');assert.deepEqual(Object.keys(data).sort(),['instance','namespace','payload','protocol','type']);}
-    init({});bridge.track({event:'page_view'});assert.equal(sent.filter(([data])=>data.type==='analytics').length,3);
-    bridge.destroy();win.close();delete globalThis.window;delete globalThis.document;
-});
-
-for(const dataLayer of [false,true]) for(const userData of [false,true]) test(`host user-data whitelist requires both attributes: analytics=${dataLayer}, contact=${userData}`,()=>{
-    const {dom,frames:[frame],sent,message}=host();
-    if(dataLayer)frame.setAttribute('data-festapp-datalayer','');
-    if(userData)frame.setAttribute('data-festapp-datalayer-user-data','');
-    const payload={event:'generate_lead',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:' JAN@EXAMPLE.TEST ',phone_number:'+421 905 123 456',address:{first_name:'Ing. Jan',last_name:'Novák',country:'cz',postal_code:'602 00',street:'private'},token:'private'}};
-    message(frame,'https://tickets.invalid',envelope('analytics',sent[0][0][0].instance,{payload}));
-    if(!dataLayer)assert.equal(dom.window.dataLayer,undefined);
-    else{
-        const result=dom.window.dataLayer.find(value=>value.event==='generate_lead');
-        assert.equal(Boolean(result.user_data),userData);
-        if(userData){
-            assert.deepEqual(JSON.parse(JSON.stringify(result.user_data)),{email:'jan@example.test',phone_number:'+421905123456',address:{first_name:'jan',last_name:'novák',postal_code:'602 00',country:'CZ'}});
-            assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer[0])),{ecommerce:null,user_data:null});
-        }
-        assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer.at(-1))),{user_data:null});
-    }
-    dom.window.close();
-});
-
-test('attribute changes update the child user-data opt-in and host filtering takes effect immediately',async()=>{
-    const {dom,frames:[frame],sent,message}=host();
-    frame.setAttribute('data-festapp-datalayer','');frame.setAttribute('data-festapp-datalayer-user-data','');
-    await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(sent[0].at(-1)[0].dataLayerUserData,true);
-    frame.removeAttribute('data-festapp-datalayer-user-data');
-    message(frame,'https://tickets.invalid',envelope('analytics',sent[0][0][0].instance,{payload:{event:'generate_lead',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:'jan@example.test'}}}));
-    assert.equal(dom.window.dataLayer.find(value=>value.event==='generate_lead').user_data,undefined);
-    await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(sent[0].at(-1)[0].dataLayerUserData,false);dom.window.close();
+test('child discards pre-consent payloads, checks pinned messages and strips contacts after consent',()=>{
+ const dom=new JSDOM('<body></body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+ const win=dom.window;globalThis.document=win.document;globalThis.window=win;
+ const sent=[];const parent={postMessage:(...args)=>sent.push(args)};
+ Object.defineProperty(win,'parent',{value:parent});win.ResizeObserver=class{observe(){}disconnect(){}};
+ const bridge=new EmbedBridge(win);bridge.start();bridge.track({event:'page_view'});
+ const init=(data={},source=parent,origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope('init','one',{viewportHeight:600,dataLayer:true,...data})}));
+ init();bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,0);
+ init({consentId:'lease',consentUntil:Date.now()+60000});bridge.track({event:'page_view',user_data:{email:'private'}});
+ assert.deepEqual(sent.filter(([d])=>d.type==='analytics').map(([d])=>d.payload),[{event:'page_view'}]);
+ init({consentId:'fake',consentUntil:Date.now()+60000},{},'https://evil.invalid');assert.equal(bridge.consentId,'lease');
+ init({consentId:null});bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,1);
+ bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;
 });

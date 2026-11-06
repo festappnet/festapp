@@ -19,7 +19,7 @@ test('form inspect rejects the wrong object and save does not accept arbitrary f
 
 test('settings input rejects arbitrary subkeys, lifecycle flags and timezone-free dates before RPC',async()=>{
  const f=fixture(null);
- for(const settings of [{unknown:true},{schedule:{sale_preparation:false}},{schedule:{start_time:'2030-01-01T00:00:00'}},{design:{background_mode:'pattern'}},{payments:{account_id:'acct_fake'}},{variable_symbol:{starting_number:10000000000}}]){
+ for(const settings of [{unknown:true},{analytics:{gtm_container:'GTM-AB12'}},{analytics:{scripts:'<script>old form configuration</script>'}},{analytics:{enhanced_conversions:true}},{schedule:{sale_preparation:false}},{schedule:{start_time:'2030-01-01T00:00:00'}},{design:{background_mode:'pattern'}},{payments:{account_id:'acct_fake'}},{variable_symbol:{starting_number:10000000000}}]){
   const result=await f.ops.invoke('forms.save',{occasionId:7,commandId:'00000000-0000-4000-8000-000000000099',form:{id:42,expected_aggregate_version:0,expected_product_versions:{},expected_product_type_versions:{},settings}});assert.equal(result.error.code,'INVALID_INPUT',JSON.stringify(result));
  }assert.equal(f.calls(),0);
 });

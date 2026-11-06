@@ -1,4 +1,4 @@
-import { publicFormAttributionSearch } from '../components/forms/form_datalayer.js';
+import { publicFormAttributionSearch } from '../utils/public_form_location.js';
 import { ACCOUNT_CONNECTIONS_PATH } from '../components/users/account_connections_links.js';
 import { isEmbed } from './embed_context.js';
 import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';

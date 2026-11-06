@@ -33,6 +33,9 @@ BEGIN
         v_result := jsonb_set(v_result, '{data,order,order_symbol}', to_jsonb(v_symbol));
       END IF;
     END IF;
+    IF v_actor IS NULL AND p_context IS NULL THEN
+      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,CASE WHEN (v_result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+    END IF;
     RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
   IF p_order ? 'checkoutOrigin' THEN
@@ -63,11 +66,12 @@ BEGIN
       'safeLabel','Ticket order','changedFields',jsonb_build_array(
         'tickets','products','allocations','membership'))),v_before_users,v_result,
     v_actor_kind);
-  -- The canonical receipt above contains no analytics. A replay (including a
-  -- retry after a lost response) cannot issue this first-response projection.
+  -- The receipt remains frozen; first response and authorized replay project the
+  -- same immutable facts, filtered through current stored form policy.
   IF v_actor IS NULL AND p_context IS NULL THEN
+    PERFORM public.record_form_conversion_internal((v_result#>>'{data,order,id}')::bigint);
     v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(
-      public.form_purchase_datalayer_internal((v_result#>>'{data,order,id}')::bigint),'null'::jsonb));
+      public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,CASE WHEN (v_result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
   END IF;
   RETURN v_result;
 END; $$;

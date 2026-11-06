@@ -55,7 +55,7 @@ BEGIN
     'navigation.occasion_settings',unit_editor OR p_demo_read,
     'forms.create',p_occasion IS NOT NULL AND form_author,
     'forms.write',p_occasion IS NOT NULL AND NOT p_demo AND form_author,
-    'forms.measurement.write',p_occasion IS NOT NULL AND public.form_measurement_write_rule(admin,p_demo),
+    'forms.measurement.write',p_occasion IS NOT NULL AND public.form_measurement_write_rule(form_author,p_demo),
     'forms.delete',p_occasion IS NOT NULL AND form_author,
     'forms.catalog.read',p_occasion IS NOT NULL AND public.form_catalog_read_rule(viewer,order_reader,form_author),
     'forms.copy.source',public.form_copy_source_rule(p_occasion_user.is_editor_view,p_unit_user.is_editor_view),

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Public forms expose the approved GA4 checkout funnel with final buyer prices, offer names, opt-in embed forwarding and administrator-controlled measurement. Enhanced conversions are off by default and require consent and privacy-policy decisions before activation.
+- Form measurement defaults off and separates saved UI/MCP configuration from platform permission and visitor consent. Same-origin scripts and contact export are removed. Authorized command retries retain stable conversion facts, including waitlist acceptance. Isolated GTM and a concrete consent adapter remain unverified and inactive.
 
 ## 2026_02 (0.19.24–0.19.29)
 

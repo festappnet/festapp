@@ -115,7 +115,7 @@ BEGIN
 
         default_unit := unit_id;
 
-        SELECT jsonb_build_object('id', u.id, 'title', u.title, 'data', u.data)
+        SELECT jsonb_build_object('id', u.id, 'title', u.title, 'data', public.form_measurement_unit_data_internal(u.id,u.data))
             INTO unit_json
         FROM units u
         WHERE u.id = default_unit;
@@ -265,7 +265,7 @@ BEGIN
 
     -- Fetch full unit details as a JSON object
     IF occasion_unit IS NOT NULL AND unit_json IS NULL THEN
-        SELECT jsonb_build_object('id', u.id, 'title', u.title, 'data', u.data)
+        SELECT jsonb_build_object('id', u.id, 'title', u.title, 'data', public.form_measurement_unit_data_internal(u.id,u.data))
           INTO unit_json
         FROM units u
         WHERE u.id = occasion_unit;
@@ -356,6 +356,7 @@ BEGIN
         'IS_REGISTRATION_ENABLED', (v_context_organization.data->>'IS_REGISTRATION_ENABLED')::boolean,
         'IS_UNIT_CREATION_ENABLED', (v_context_organization.data->>'IS_UNIT_CREATION_ENABLED')::boolean,
         'IS_APP_SUPPORTED', (v_context_organization.data->>'IS_APP_SUPPORTED')::boolean,
+        'FORM_MEASUREMENT_ENABLED', coalesce(v_context_organization.data->'FORM_MEASUREMENT_ENABLED'='true'::jsonb,false),
         'DEFAULT_UNIT', (v_context_organization.data->>'DEFAULT_UNIT')::int,
         'REPRESENTATIVE_OCCASION', (v_context_organization.data->>'REPRESENTATIVE_OCCASION')::int
     ) ELSE NULL END;

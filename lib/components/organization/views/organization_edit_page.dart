@@ -1,5 +1,8 @@
+import 'package:fstapp/components/forms/form_strings.dart';
+
 import '../../unit/verification/verification_queue.dart';
 import '../../unit/verification/verification_strings.dart';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/organization/db_organizations.dart';
@@ -47,6 +50,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
   // Flags
   bool _isRegistrationEnabled = false;
   bool _isGoogleLoginEnabled = false;
+  bool _formMeasurementEnabled = false;
   bool _isUnitCreationEnabled = false;
   bool _isAppSupported = false;
 
@@ -76,6 +80,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
 
         _isRegistrationEnabled = org.isRegistrationEnabled ?? false;
         _isGoogleLoginEnabled = org.isGoogleLoginEnabled ?? false;
+        _formMeasurementEnabled = org.formMeasurementEnabled == true;
         _isUnitCreationEnabled = org.isUnitCreationEnabled ?? false;
         _isAppSupported = org.isAppSupported ?? false;
 
@@ -83,8 +88,11 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.Show(context, "Failed to load organization data.",
-            severity: ToastSeverity.NotOk);
+        ToastHelper.Show(
+          context,
+          "Failed to load organization data.",
+          severity: ToastSeverity.NotOk,
+        );
       }
     } finally {
       if (mounted) {
@@ -111,10 +119,12 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
         defaultLanguage: _defaultLanguageController.text,
         oneSignalAppId: _oneSignalAppIdController.text,
         defaultUnit: int.tryParse(_defaultUnitController.text),
-        representativeOccasion:
-            int.tryParse(_representativeOccasionController.text),
+        representativeOccasion: int.tryParse(
+          _representativeOccasionController.text,
+        ),
         isRegistrationEnabled: _isRegistrationEnabled,
         isGoogleLoginEnabled: _isGoogleLoginEnabled,
+        formMeasurementEnabled: _formMeasurementEnabled,
         isUnitCreationEnabled: _isUnitCreationEnabled,
         isAppSupported: _isAppSupported,
         platforms: _platforms,
@@ -134,8 +144,11 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
       RightsService.updateOrganizationLocally(updatedOrg);
     } catch (e) {
       if (mounted) {
-        ToastHelper.Show(context, "Error saving: $e",
-            severity: ToastSeverity.NotOk);
+        ToastHelper.Show(
+          context,
+          "Error saving: $e",
+          severity: ToastSeverity.NotOk,
+        );
       }
     } finally {
       if (mounted) {
@@ -177,11 +190,11 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                     for (final report in [
                       (
                         slug: 'visits',
-                        label: AdministrationStrings.analyticsVisits
+                        label: AdministrationStrings.analyticsVisits,
                       ),
                       (
                         slug: 'page-views',
-                        label: AdministrationStrings.analyticsPages
+                        label: AdministrationStrings.analyticsPages,
                       ),
                     ])
                       TextButton.icon(
@@ -230,7 +243,8 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
-                        maxWidth: StylesConfig.formMaxWidth),
+                      maxWidth: StylesConfig.formMaxWidth,
+                    ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Form(
@@ -256,91 +270,139 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                               ),
                             ],
                             ListTile(
-                                leading: const Icon(Icons.verified_outlined),
-                                title: Text(VerificationStrings.text('queue')),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => VerificationQueue(
-                                            organizationId: orgId)))),
-                            Text("Organization Settings",
-                                style:
-                                    Theme.of(context).textTheme.headlineMedium),
+                              leading: const Icon(Icons.verified_outlined),
+                              title: Text(VerificationStrings.text('queue')),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      VerificationQueue(organizationId: orgId),
+                                ),
+                              ),
+                            ),
+                            Text(
+                              "Organization Settings",
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
                             const SizedBox(height: 24),
-                            _buildTextField(_titleController, "Title",
-                                required: true),
                             _buildTextField(
-                                _appNameController, "App Name (APP_NAME)",
-                                helper: "Brand identifier"),
-                            _buildTextField(_defaultUrlController,
-                                "Default URL (DEFAULT_URL)"),
-                            _buildTextField(_defaultLanguageController,
-                                "Default Language (DEFAULT_LANGUAGE)",
-                                helper: "e.g. cs, en"),
+                              _titleController,
+                              "Title",
+                              required: true,
+                            ),
+                            _buildTextField(
+                              _appNameController,
+                              "App Name (APP_NAME)",
+                              helper: "Brand identifier",
+                            ),
+                            _buildTextField(
+                              _defaultUrlController,
+                              "Default URL (DEFAULT_URL)",
+                            ),
+                            _buildTextField(
+                              _defaultLanguageController,
+                              "Default Language (DEFAULT_LANGUAGE)",
+                              helper: "e.g. cs, en",
+                            ),
                             _buildPrefixesSelector(context),
                             const SizedBox(height: 16),
-                            Text("IDs & References",
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Text(
+                              "IDs & References",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                             const SizedBox(height: 8),
-                            Row(children: [
-                              Expanded(
+                            Row(
+                              children: [
+                                Expanded(
                                   child: _buildTextField(
-                                      _defaultUnitController, "Default Unit ID",
-                                      isNumber: true)),
-                              const SizedBox(width: 16),
-                              Expanded(
+                                    _defaultUnitController,
+                                    "Default Unit ID",
+                                    isNumber: true,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
                                   child: _buildTextField(
-                                      _representativeOccasionController,
-                                      "Rep. Occasion ID",
-                                      isNumber: true)),
-                            ]),
+                                    _representativeOccasionController,
+                                    "Rep. Occasion ID",
+                                    isNumber: true,
+                                  ),
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 16),
-                            Text("OneSignal Configuration",
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Text(
+                              "OneSignal Configuration",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                             const SizedBox(height: 8),
                             _buildTextField(
-                                _oneSignalAppIdController, "OneSignal App ID"),
+                              _oneSignalAppIdController,
+                              "OneSignal App ID",
+                            ),
                             Text(
                               AdministrationStrings
                                   .oneSignalSecretManagedServerSide,
                             ),
                             const SizedBox(height: 16),
-                            Text("Feature Flags",
-                                style: Theme.of(context).textTheme.titleMedium),
+                            Text(
+                              "Feature Flags",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                             SwitchListTile(
                               title: const Text(
-                                  "App Supported (IS_APP_SUPPORTED)"),
+                                "App Supported (IS_APP_SUPPORTED)",
+                              ),
                               value: _isAppSupported,
                               onChanged: (val) =>
                                   setState(() => _isAppSupported = val),
                             ),
                             SwitchListTile(
                               title: const Text(
-                                  "Registration Enabled (IS_REGISTRATION_ENABLED)"),
+                                "Registration Enabled (IS_REGISTRATION_ENABLED)",
+                              ),
                               value: _isRegistrationEnabled,
                               onChanged: (val) =>
                                   setState(() => _isRegistrationEnabled = val),
                             ),
                             SwitchListTile(
                               title: Text(
-                                  AdministrationStrings.googleLoginEnabled),
+                                AdministrationStrings.googleLoginEnabled,
+                              ),
                               subtitle: Text(
-                                  AdministrationStrings.googleLoginDescription),
+                                AdministrationStrings.googleLoginDescription,
+                              ),
                               value: _isGoogleLoginEnabled,
                               onChanged: (val) =>
                                   setState(() => _isGoogleLoginEnabled = val),
                             ),
                             SwitchListTile(
+                              title: Text(
+                                FormStrings.measurementOrganizationEnabled,
+                              ),
+                              subtitle: Text(
+                                FormStrings.measurementOrganizationHelp,
+                              ),
+                              value: _formMeasurementEnabled,
+                              onChanged: _isSaving
+                                  ? null
+                                  : (value) => setState(
+                                        () => _formMeasurementEnabled = value,
+                                      ),
+                            ),
+                            SwitchListTile(
                               title: const Text(
-                                  "Manual Unit Creation (IS_UNIT_CREATION_ENABLED)"),
+                                "Manual Unit Creation (IS_UNIT_CREATION_ENABLED)",
+                              ),
                               value: _isUnitCreationEnabled,
                               onChanged: (val) =>
                                   setState(() => _isUnitCreationEnabled = val),
                             ),
                             const SizedBox(height: 24),
-                            Text("Platforms",
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall),
+                            Text(
+                              "Platforms",
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
                             const SizedBox(height: 8),
                             _buildPlatformsEditor(),
                             const SizedBox(height: 32),
@@ -354,7 +416,9 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                                           width: 20,
                                           height: 20,
                                           child: CircularProgressIndicator(
-                                              strokeWidth: 2))
+                                            strokeWidth: 2,
+                                          ),
+                                        )
                                       : const Text("Save Changes"),
                                 ),
                               ],
@@ -371,8 +435,13 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,
-      {bool required = false, String? helper, bool isNumber = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
+    bool required = false,
+    String? helper,
+    bool isNumber = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
@@ -409,7 +478,8 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                         child: TextFormField(
                           initialValue: platform.platform,
                           decoration: const InputDecoration(
-                              labelText: "Platform (e.g. web, ios, droid)"),
+                            labelText: "Platform (e.g. web, ios, droid)",
+                          ),
                           onChanged: (val) => platform.platform = val,
                         ),
                       ),
@@ -430,8 +500,9 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                   ),
                   TextFormField(
                     initialValue: platform.prompt,
-                    decoration:
-                        const InputDecoration(labelText: "Prompt / Version"),
+                    decoration: const InputDecoration(
+                      labelText: "Prompt / Version",
+                    ),
                     onChanged: (val) => platform.prompt = val,
                   ),
                 ],
@@ -442,8 +513,9 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
         OutlinedButton.icon(
           onPressed: () {
             setState(() {
-              _platforms
-                  .add(PlatformModel(platform: "web", link: "", prompt: ""));
+              _platforms.add(
+                PlatformModel(platform: "web", link: "", prompt: ""),
+              );
             });
           },
           icon: const Icon(Icons.add),
@@ -466,8 +538,10 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Phone Prefixes (PHONE_PREFIXES)",
-              style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            "Phone Prefixes (PHONE_PREFIXES)",
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 8),
           InkWell(
             onTap: () {
@@ -495,9 +569,11 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                             selected.remove(country);
                           }
                         });
-                        setState(() => _phonePrefixesController.text = selected
-                            .map((country) => country.split(' ').last)
-                            .join(', '));
+                        setState(
+                          () => _phonePrefixesController.text = selected
+                              .map((country) => country.split(' ').last)
+                              .join(', '),
+                        );
                       },
                     ),
                   ),
@@ -514,8 +590,10 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                 children: [
                   Expanded(
                     child: currentPrefixes.isEmpty
-                        ? const Text("Select prefixes...",
-                            style: TextStyle(color: Colors.grey))
+                        ? const Text(
+                            "Select prefixes...",
+                            style: TextStyle(color: Colors.grey),
+                          )
                         : Wrap(
                             spacing: 8.0,
                             runSpacing: 4.0,
@@ -540,8 +618,10 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text("Select supported phone prefixes for this organization.",
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const Text(
+            "Select supported phone prefixes for this organization.",
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ],
       ),
     );

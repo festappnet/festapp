@@ -1,7 +1,6 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
 
@@ -40,6 +39,211 @@ void main() {
     ),
   );
 
+  for (final canMeasure in [true, false]) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'form measurement owns only enabled and responds to permission loss ($canMeasure)',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 4000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        void rights(bool measurement) {
+          RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+            capabilities: {
+              AuthorizationCapabilities.formsWrite: true,
+              AuthorizationCapabilities.formsMeasurementWrite: measurement,
+              AuthorizationCapabilities.ordersWrite: true,
+              AuthorizationCapabilities.occasionsWrite: true,
+            },
+            occasionUser: OccasionUserModel(isEditor: true),
+            occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [FormFeature(code: 'form')],
+            ),
+          );
+        }
+
+        rights(canMeasure);
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final changes = ValueNotifier((accountId: 0, revision: 0));
+        addTearDown(changes.dispose);
+        final form = FormEditorDraft(
+          link: 'test',
+          title: 'Letní koncert',
+          data: {
+            'analytics': {'enabled': false},
+          },
+        );
+        form.definition = form.definition.copyWith(
+          measurementStatus: {
+            'organization_enabled': true,
+            'unit_enabled': true,
+            'runtime_supported': false,
+          },
+        );
+        final saved = <Map<String, dynamic>?>[];
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: FormSettingsContent(
+              bankConnectionChanges: changes,
+              formLink: 'test',
+              loadBundle: (_) async => FormEditBundle(
+                form: form,
+                productTypes: [],
+                products: [],
+                availableBankAccounts: [],
+              ),
+              saveForm: (value) async {
+                saved.add(value.definition.data);
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final toggle = find.widgetWithText(
+          SwitchListTile,
+          FormStrings.measurementEnabled,
+        );
+        expect(tester.widget<SwitchListTile>(toggle).value, false);
+        expect(
+          tester.widget<SwitchListTile>(toggle).onChanged == null,
+          !canMeasure,
+        );
+        expect(
+          find.widgetWithText(TextFormField, FormStrings.gtmContainer),
+          findsNothing,
+        );
+        expect(
+          find.widgetWithText(TextFormField, FormStrings.measurementScripts),
+          findsNothing,
+        );
+        expect(
+          find.widgetWithText(SwitchListTile, FormStrings.enhancedConversions),
+          findsNothing,
+        );
+        Future<void> save() async {
+          await tester
+              .widget<EditorActionBar>(find.byType(EditorActionBar))
+              .onSave();
+          await tester.pumpAndSettle();
+        }
+
+        if (canMeasure) {
+          await tester.ensureVisible(toggle);
+          await tester.tap(toggle);
+          await tester.pumpAndSettle();
+          expect(
+            find.text(FormStrings.measurementRuntimeBlocked),
+            findsOneWidget,
+          );
+          await save();
+          expect(saved.last?['analytics'], {'enabled': true});
+          await tester.ensureVisible(toggle);
+          await tester.tap(toggle);
+          await tester.pumpAndSettle();
+          await save();
+          expect(saved.last?['analytics'], {'enabled': false});
+          rights(false);
+          await tester.pumpAndSettle();
+          expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
+          final title = find.widgetWithText(
+            TextFormField,
+            FormStrings.labelFormTitle,
+          );
+          await tester.ensureVisible(title);
+          await tester.enterText(title, 'Podzimní koncert');
+          await save();
+          expect(saved.last?['analytics'], {'enabled': false});
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final blocked in ['organization_enabled', 'unit_enabled']) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'hidden measurement preserves form choice when $blocked is false',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 4000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          capabilities: {
+            AuthorizationCapabilities.formsWrite: true,
+            AuthorizationCapabilities.formsMeasurementWrite: true,
+          },
+          occasionUser: OccasionUserModel(isEditor: true),
+          occasion: OccasionModel(
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+            features: [FormFeature(code: 'form')],
+          ),
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final changes = ValueNotifier((accountId: 0, revision: 0));
+        addTearDown(changes.dispose);
+        final form = FormEditorDraft(
+          link: 'test',
+          title: 'Letní koncert',
+          data: {
+            'analytics': {'enabled': true},
+          },
+        );
+        form.definition = form.definition.copyWith(
+          measurementStatus: {
+            'organization_enabled': true,
+            'unit_enabled': true,
+            blocked: false,
+          },
+        );
+        Map<String, dynamic>? saved;
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: FormSettingsContent(
+              bankConnectionChanges: changes,
+              formLink: 'test',
+              loadBundle: (_) async => FormEditBundle(
+                form: form,
+                productTypes: [],
+                products: [],
+                availableBankAccounts: [],
+              ),
+              saveForm: (value) async {
+                saved = value.definition.data;
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.widgetWithText(SwitchListTile, FormStrings.measurementEnabled),
+          findsNothing,
+        );
+        final title = find.widgetWithText(
+          TextFormField,
+          FormStrings.labelFormTitle,
+        );
+        await tester.enterText(title, 'Podzimní koncert');
+        await tester
+            .widget<EditorActionBar>(find.byType(EditorActionBar))
+            .onSave();
+        await tester.pumpAndSettle();
+        expect(saved?['analytics'], {'enabled': true});
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   for (final override in [null, false, true]) {
     testWidgetsWithEnvironment(
       () => _environment,
@@ -51,7 +255,7 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
           capabilities: {
-          AuthorizationCapabilities.formsWrite: true,
+            AuthorizationCapabilities.formsWrite: true,
             AuthorizationCapabilities.ordersWrite: true,
             AuthorizationCapabilities.occasionsWrite: true,
           },
