@@ -1,0 +1,88 @@
+{
+  "status": "deployed_and_verified",
+  "tenant": "festapptickets",
+  "organization": 3,
+  "webOrigin": "https://vstupenky.online",
+  "sourceSha": "b41ee44490f7fa3321e3e2654138caadc9e38730",
+  "previousProductionSha": "a9eb67d9977d8d2fd35737da66f6fd61fad00fd3",
+  "expectedVersion": "0.20.513+1020",
+  "localVerification": {
+    "initialLanes": [
+      "web-startup",
+      "client-contract",
+      "seat-checkout",
+      "ticket-preview-and-delivery"
+    ],
+    "correctiveLanes": [
+      "web-startup",
+      "seat-checkout"
+    ],
+    "sqlFiles": 35,
+    "flutterTests": 46,
+    "edgeTests": 78,
+    "correctiveSqlRegressionPassed": true
+  },
+  "backend": {
+    "backupLabel": "20261101-050839F_20261105-104202D",
+    "backupArchiveCheckPassed": true,
+    "installedMigrations": [
+      "20261105070000",
+      "20261105110000",
+      "20261105120000",
+      "20261105181000"
+    ],
+    "functionsSourceSha": "b3a59a79344df1951fdab42cb2e1e39aa627593d",
+    "functionsTreeIdenticalToFinalSource": true,
+    "functionsTree": "9604c270ce85ce730be0f83bff141a5b85a01e79",
+    "functionsArchiveSha256": "4d42efb3e7f4784a530fe716f12987668faed3d13b18e0d7739a6a977cde87e7",
+    "runtimePolicySha256": "0f5e2c01b5b3638d05041b6adc0f4a7dba28d301793ede69dfc6db5a5ed87a23",
+    "emailRestoredToPriorUnpausedState": true,
+    "workerMissingSecretHttp": 401,
+    "workerProtectedHttp": 200,
+    "preparedScopes": 49,
+    "failedScopes": 0,
+    "pendingRepairs": 0,
+    "scheduler": {
+      "location": "control-plane postgres",
+      "wakeSchedule": "1 second",
+      "maintenanceSchedule": "*/1 * * * *",
+      "bothJobsActive": true,
+      "bothJobRunsSucceeded": true,
+      "unrelatedJobsChanged": false
+    },
+    "preExistingLedgerGapsNotApplied": [
+      "20260910070000",
+      "20260910073000",
+      "20261007130000",
+      "20261018102000",
+      "20261018103000",
+      "20261101140500"
+    ],
+    "allFinalHealthChecksPassed": true
+  },
+  "productionPublication": {
+    "mode": "local-build-direct-pages",
+    "otherTenantsReleased": false,
+    "originalDirtyCheckoutPreserved": true,
+    "notes": "Normal authorized administrator pushes were accepted by GitHub using the configured admin exception to the PR requirement; branch protection settings were not modified."
+  },
+  "updatedAt": "2026-11-05T11:24:50.588258+00:00",
+  "finalSourceReleaseGate": {
+    "sourceSha": "b41ee44490f7fa3321e3e2654138caadc9e38730",
+    "requiredJobsPassed": 8
+  },
+  "version": "0.20.513+1020",
+  "tenantSha": "ff45c0bb6c3af1d137d65f900a4d8630b141661f",
+  "deploymentUrl": "https://24f94cb0.vstupenkyonline.pages.dev",
+  "liveVerification": {
+    "command": "automation/verify_web_deployment.mjs",
+    "expectedVersion": "0.20.513+1020",
+    "consecutiveCoherentVersionAssetLegalProbes": 3,
+    "passed": true
+  },
+  "remoteHeadsVerifiedAfterDeploy": {
+    "main": "b41ee44490f7fa3321e3e2654138caadc9e38730",
+    "prod/festapptickets": "ff45c0bb6c3af1d137d65f900a4d8630b141661f"
+  },
+  "tenantWorktreeClean": true
+}

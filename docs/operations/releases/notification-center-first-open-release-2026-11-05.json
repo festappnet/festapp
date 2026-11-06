@@ -1,0 +1,199 @@
+{
+  "sourceSha": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+  "migrationVersion": "20261105213000",
+  "migrationSha256": "a46859b59b870d0e7b78027917b630be08c58acea1589e2ad57bec115faaaf22",
+  "localCI": {
+    "head": "726bfeed875c9b8eb15cc4cad515d403c95ea2a4",
+    "dirty": false,
+    "platform": "darwin",
+    "jobs": [
+      {
+        "name": "seat-checkout",
+        "seconds": 76.06,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/seat-checkout.log"
+      },
+      {
+        "name": "ticket-preview-and-delivery",
+        "seconds": 42.14,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/ticket-preview-and-delivery.log"
+      }
+    ],
+    "complete": true,
+    "seconds": 118.2
+  },
+  "sqlFilesPassed": 38,
+  "flutterTestsPassed": 51,
+  "nodeTestsPassed": 5,
+  "publicRpcPostApply": {
+    "rpc": "get_notification_center_view",
+    "role": "authenticated",
+    "organization": 3,
+    "committed": false,
+    "samples": [
+      {
+        "durationMs": 161.9,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 131.3,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 134.0,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 127.0,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 126.4,
+        "state": "ready",
+        "rows": 30
+      }
+    ]
+  },
+  "browser": {
+    "source_sha": "726bfeed875c9b8eb15cc4cad515d403c95ea2a4",
+    "migration_sha256": "a46859b59b870d0e7b78027917b630be08c58acea1589e2ad57bec115faaaf22",
+    "fixture": {
+      "occasions": 111,
+      "allowed_scopes": 445,
+      "delivery_sequences": 124,
+      "current_occasion": 1
+    },
+    "normal_local": {
+      "first_click_to_fresh_row_ms": 94.4,
+      "second_click_to_fresh_row_ms": 95.2,
+      "first_open_rpc_ms": 66.5,
+      "second_open_rpc_ms": 62.6,
+      "response_state": "ready",
+      "response_items": 30
+    },
+    "controlled_privacy_delay": {
+      "delay_ms": 1200,
+      "frames_observed": 109,
+      "old_title_seen": false,
+      "fresh_title_seen": true,
+      "response_release_ms": 1266.6
+    },
+    "limits": [
+      "loopback local network; no production click measurement",
+      "local backend activation selects legacy get_app_config_v218",
+      "occasion-admin scope with current occasion 1, not null unit context",
+      "controlled response delay is correctness evidence, not latency measurement"
+    ]
+  },
+  "webRelease": {
+    "status": "deployed_and_verified",
+    "sourceSha": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+    "tenantSha": "74cf39bd7d1bf5aa53f5ae43deb7663418e05589",
+    "version": "0.20.514+1021",
+    "origin": "https://vstupenky.online",
+    "deploymentUrl": "https://e8762427.vstupenkyonline.pages.dev",
+    "consecutiveCoherentProbes": 3,
+    "exactSourceGitHubJobsPassed": 8,
+    "operatorReceipt": "/tmp/festapp-bell-open-latency-deployment-20261105/receipt.json",
+    "operatorEvidence": {
+      "completed_at_utc": "2026-11-05 17:48:14 UTC",
+      "database": {
+        "archive_check_passed": true,
+        "backup_label": "20261101-050839F_20261105-171428D",
+        "function_acl_readback": {
+          "get_notification_center_prepared_badge": {
+            "anon_execute": false,
+            "authenticated_execute": true
+          },
+          "get_notification_center_view": {
+            "anon_execute": false,
+            "authenticated_execute": true
+          }
+        },
+        "ledger_source_sha256": "a46859b59b870d0e7b78027917b630be08c58acea1589e2ad57bec115faaaf22",
+        "migration_name": "notification_open_work",
+        "migration_version": "20261105213000",
+        "source_sha256": "a46859b59b870d0e7b78027917b630be08c58acea1589e2ad57bec115faaaf22"
+      },
+      "final_remote_heads": {
+        "main": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+        "prod/festapptickets": "74cf39bd7d1bf5aa53f5ae43deb7663418e05589"
+      },
+      "gates": {
+        "github_exact_source_sha": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+        "github_required_jobs": 8,
+        "github_status": "passed",
+        "local_bundle_verification": "passed",
+        "protected_manifest_preflight": "passed",
+        "tenant_drift": "passed"
+      },
+      "notes": [
+        "Only prod/festapptickets was pushed or deployed.",
+        "No Functions restart or additional tenant operation was performed."
+      ],
+      "scope": {
+        "domain": "https://vstupenky.online",
+        "organization": 3,
+        "production_branch": "prod/festapptickets",
+        "tenant": "festapptickets"
+      },
+      "source": {
+        "main_sha": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+        "tenant_base_main_sha": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+        "tenant_sha": "74cf39bd7d1bf5aa53f5ae43deb7663418e05589",
+        "tenant_version": "0.20.514+1021"
+      },
+      "tenant_tree_clean": true,
+      "web": {
+        "branch_tag": "prod/festapptickets",
+        "cloudflare_project": "vstupenkyonline",
+        "deployment_url": "https://e8762427.vstupenkyonline.pages.dev",
+        "live_verification": "0.20.514+1021; 3 consecutive probes passed"
+      }
+    }
+  },
+  "localWebStartupCI": {
+    "head": "726bfeed875c9b8eb15cc4cad515d403c95ea2a4",
+    "dirty": false,
+    "platform": "darwin",
+    "jobs": [
+      {
+        "name": "web-startup",
+        "seconds": 16.89,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/web-startup.log"
+      }
+    ],
+    "complete": true,
+    "seconds": 16.89
+  },
+  "implementationSourceSha": "726bfeed875c9b8eb15cc4cad515d403c95ea2a4",
+  "migrationAppliedFromSourceSha": "726bfeed875c9b8eb15cc4cad515d403c95ea2a4",
+  "unchangedProductInputs": {
+    "base": "726bfeed875c9b8eb15cc4cad515d403c95ea2a4",
+    "head": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+    "onlyDelta": [
+      "web_client/scripts/test_form_access_browser.mjs"
+    ]
+  },
+  "finalLocalWebStartupCI": {
+    "head": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+    "dirty": false,
+    "platform": "darwin",
+    "jobs": [
+      {
+        "name": "web-startup",
+        "seconds": 16.55,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/web-startup.log"
+      }
+    ],
+    "complete": true,
+    "seconds": 16.55
+  }
+}
