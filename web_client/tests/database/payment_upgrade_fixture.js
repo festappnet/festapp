@@ -64,8 +64,9 @@ for statement in statements(frozen):
   if body is not None:previous[signature]=statement
 changed={signature for signature,body in definitions(hardening) if body is not None}
 for signature in sorted(changed-previous.keys()):print('DROP FUNCTION IF EXISTS '+signature+' CASCADE;')
-for signature,statement in previous.items():
- if signature in changed:print(statement)
+# Restore all frozen owners, including ones changed by later cash/integration
+# migrations. Otherwise this purported predecessor mixes release contracts.
+for statement in previous.values():print(statement)
 `],{cwd:root,encoding:'utf8',maxBuffer:8*1024*1024});
    await db.query('ALTER TABLE eshop.payment_info DROP CONSTRAINT payment_info_registered_method, DROP CONSTRAINT payment_info_stripe_connection_identity');
    await db.query(sql);

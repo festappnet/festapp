@@ -1,9 +1,10 @@
 -- test-setup: database/tests/helpers/payment_lifecycle_fixture.sql
 DO $$
 DECLARE x jsonb:=pg_temp.payment_fixture(); y jsonb:=pg_temp.payment_fixture();
- un bigint; cash_payment bigint; cash_order bigint; ticket bigint; payload jsonb; movement jsonb;
- response jsonb; original jsonb; command uuid:=gen_random_uuid(); amount text; invalid jsonb;
+ other_form_key uuid; un bigint; cash_payment bigint; cash_order bigint; ticket bigint; payload jsonb; movement jsonb;
+ response jsonb; original jsonb; method text; command uuid:=gen_random_uuid(); amount text; invalid jsonb;
 BEGIN
+ SELECT key INTO other_form_key FROM public.forms WHERE id=(y->>'form')::bigint;
  PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
  SELECT unit INTO un FROM public.occasions WHERE id=(x->>'occasion')::bigint;
  UPDATE public.forms SET data='{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}',bank_account=NULL WHERE id=(x->>'form')::bigint;
@@ -21,6 +22,23 @@ BEGIN
  cash_order:=(response#>>'{data,order,id}')::bigint;
  SELECT payment_info INTO cash_payment FROM eshop.orders WHERE id=cash_order;
  SELECT DISTINCT opt.ticket INTO ticket FROM eshop.order_product_ticket opt WHERE opt."order"=cash_order;
+ -- Free reservations obey the same method selection before later repricing.
+ UPDATE eshop.products SET price=0 WHERE id=(x->>'product')::bigint;
+ SET LOCAL ROLE authenticated;
+ FOREACH method IN ARRAY ARRAY['bank','stripe'] LOOP
+  response:=public.create_ticket_order_client_sync_v1(payload||jsonb_build_object('payment_method',method),gen_random_uuid(),gen_random_uuid());
+  PERFORM assert_eq(response->>'status','rejected','free cash-only form refuses spoofed '||method);
+ END LOOP;
+ response:=public.create_ticket_order_client_sync_v1(payload-'payment_method',gen_random_uuid(),gen_random_uuid());
+ RESET ROLE;
+ PERFORM assert_eq(response->>'status','applied','free cash reservation can infer its configured method');
+ UPDATE eshop.products SET price=1000 WHERE id=(x->>'product')::bigint;
+ UPDATE eshop.products SET price=0 WHERE id=(y->>'product')::bigint;
+ SET LOCAL ROLE authenticated;
+ response:=public.create_ticket_order_client_sync_v1(payload||jsonb_build_object('form',other_form_key,
+  'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',y->'product'))))),gen_random_uuid(),gen_random_uuid());
+ RESET ROLE;
+ PERFORM assert_eq(response->>'status','rejected','free bank form refuses spoofed cash');
  movement:=jsonb_build_object('amount','250.50','currency','CZK','unitId',un,'paymentInfoId',cash_payment,'receivedAt',now(),'note','Pokladna');
  SET LOCAL ROLE authenticated;
  FOREACH amount IN ARRAY ARRAY['0','0.00','NaN','Infinity','-Infinity','1.001','1e2','250,50','100000000.00'] LOOP

@@ -230,12 +230,19 @@ BEGIN
         -- services added after the form was saved. Never bypass mandatory invoicing.
         PERFORM public.validate_form_payment_configuration_internal(form_id);
         v_payment_method:=coalesce(input_data->>'payment_method',CASE WHEN form_data#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END);
+        IF NOT public.payment_method_registered_internal(v_payment_method) THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
+        -- Selection exclusivity applies to free orders too; repricing must retain
+        -- a method that the form actually offered. Online readiness and recipient
+        -- changes remain owned by the provider's locked initialization below.
+        IF coalesce(form_data#>'{payments,cashEnabled}'='true'::jsonb,false)
+             IS DISTINCT FROM (v_payment_method='cash') THEN
+          RAISE EXCEPTION 'PAYMENT_METHOD_UNAVAILABLE'; END IF;
         v_payment_policy:=public.resolve_form_payment_policy_internal(form_id,v_payment_method);
         PERFORM public.check_payment_client_capabilities_internal(v_payment_policy,v_payment_method,input_data->'client_capabilities');
-        IF calculated_price>0 AND NOT (public.form_payment_availability_internal(form_id)->'available' ? v_payment_method) THEN
+        IF calculated_price>0 AND NOT public.payment_method_is_online_internal(v_payment_method)
+          AND NOT (public.form_payment_availability_internal(form_id)->'available' ? v_payment_method) THEN
           RAISE EXCEPTION 'PAYMENT_METHOD_UNAVAILABLE'; END IF;
         IF v_payment_method='cash' THEN v_total_deposit:=0; END IF;
-        IF NOT public.payment_method_registered_internal(v_payment_method) THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
         IF calculated_price=0 THEN
           bank_account_id:=NULL;
           INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method) VALUES(0,first_currency_code,now,v_payment_method) RETURNING id INTO payment_info_id;

@@ -22,7 +22,7 @@ BEGIN
   PERFORM assert_false(has_function_privilege('anon','public.get_occasion_setup_draft(uuid)','EXECUTE'),'Single read is private');
   PERFORM assert_true(d->'data' ? 'defaultConfiguration','Draft is initialized by the canonical creator');
   PERFORM assert_eq(d->'data'->'formDraft'->>'title','Registration','Canonical form title');
-  PERFORM assert_eq((d->'data'->'formDraft'->>'deadline_duration_seconds')::int,604800,'Canonical deadline');
+  PERFORM assert_true(d#>>'{data,formDraft,deadline_duration_seconds}' IS NULL,'New canonical form inherits the occasion deadline');
   PERFORM assert_eq(d->'data'->'formDraft'->'fields'->0->>'type','email','Canonical first field');
   PERFORM assert_true((d->'data'->'formDraft'->'fields'->0->>'is_required')::boolean,'Canonical email is required');
   PERFORM assert_eq(d->'data'->'formDraft'->'fields'->1->>'type','ticket','Canonical ticket field');
@@ -40,6 +40,7 @@ BEGIN
   BEGIN PERFORM public.get_occasion_setup_drafts(foreign_unit); RAISE EXCEPTION 'foreign unit read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.create_occasion_setup_draft(gen_random_uuid(),foreign_unit); RAISE EXCEPTION 'foreign unit write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   EXECUTE 'RESET ROLE';
+  PERFORM assert_eq(public.resolve_payment_policy_internal(d#>'{data,formDraft,data}',NULL,'{}','bank')->>'durationSeconds','604800','Inherited default still resolves to one week');
   PERFORM assert_eq((SELECT count(*) FROM public.occasions),initial_count,'Drafts never create public occasions');
   PERFORM assert_eq((SELECT count(*) FROM public.forms),initial_forms,'Provisional forms are rolled back');
   PERFORM assert_eq((SELECT count(*) FROM eshop.products),initial_products,'Provisional products are rolled back');
