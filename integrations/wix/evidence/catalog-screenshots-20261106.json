@@ -11,7 +11,7 @@
   "edits": "Unmodified browser screenshots, no painting",
   "scope": "Catalog source assets; standalone form UI, not a capture of the CMS editor or an embedded host. Local example data; no purchase or order.",
   "supersedes_historical_assets": "gallery-20261025.json",
-  "publication": "Source assets only; consult separate publication receipt for external listing state.",
+  "publication": "market-listing-light-gallery-20261106.json",
   "images": {
     "integrations/wix/media/gallery-form-20261106.png": {
       "source_artifact": "form.png",

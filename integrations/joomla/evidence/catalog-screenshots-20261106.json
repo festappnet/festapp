@@ -11,7 +11,7 @@
   "edits": "Unmodified browser screenshots, no painting",
   "scope": "Catalog source assets; standalone form UI, not a capture of the CMS editor or an embedded host. Local example data; no purchase or order.",
   "supersedes_historical_assets": "jed-listing-update-2026-10-29.json",
-  "publication": "Source assets only; consult separate publication receipt for external listing state.",
+  "publication": "jed-light-gallery-20261106.json",
   "images": {
     "integrations/joomla/submission/screenshots/01-formular-20261106.png": {
       "source_artifact": "joomla-form.png",

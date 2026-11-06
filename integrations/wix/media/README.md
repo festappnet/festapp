@@ -41,3 +41,7 @@ The current pair and central-appearance listing text were published and read bac
 on the public App Market on November 6, 2026. Native version 2.2 and pricing
 were retained; the invalid optional historical promotional banner was removed.
 See [the publication receipt](../evidence/market-listing-update-20261106.json).
+
+The current gallery was recaptured and republished in light mode. See the
+[light gallery readback](../evidence/market-listing-light-gallery-20261106.json);
+the earlier November 6 publication receipt retains the superseded dark gallery IDs.
