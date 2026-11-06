@@ -2995,6 +2995,11 @@
       "anon": false,
       "authenticated": true,
       "service_role": true
+    },
+    "public.effective_form_metadata_internal(jsonb,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -3017,7 +3022,8 @@
     "database/functions/organization_verification/review_commands.sql",
     "database/functions/organization_verification/public_identity.sql",
     "database/functions/organization_verification/profile_commands.sql",
-    "database/functions/user_permissions/form_measurement.sql"
+    "database/functions/user_permissions/form_measurement.sql",
+    "database/functions/eshop_forms/get_effective_form_data.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

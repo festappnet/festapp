@@ -2903,6 +2903,10 @@
     "bfc4c403a2f77689ec489cec73d8583836c1ce5f85ff6efe3e316e192b5ae1e4": {
       "signature": "public.publish_seating_transitions(uuid,uuid[],text,uuid)",
       "source": "database/functions/blueprint/seating_publication.sql"
+    },
+    "e6e5f0eb2f101a172107a8d2967f6963fb34ad93eacfd60a7342ed0bb759c3d2": {
+      "signature": "public.effective_form_metadata_internal(jsonb,jsonb)",
+      "source": "database/functions/eshop_forms/get_effective_form_data.sql"
     }
   }
 }
