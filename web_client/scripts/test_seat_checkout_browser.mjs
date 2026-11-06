@@ -40,7 +40,7 @@ try {
     const setup = await db.query(await readFile(path.join(root, 'tests/fixtures/seat_checkout/setup.sql'), 'utf8'));
     fixture = setup.at(-1).rows[0].fixture;
     const rpc = {
-        get_form_by_link: ['SELECT public.get_form_by_link($1) AS result', a => [a.form_link]],
+        get_form_by_link: ['SELECT public.get_form_by_link($1::jsonb) AS result', a => [a.input_data]],
         get_blueprint: ['SELECT public.get_blueprint($1,$2,$3) AS result', a => [a.my_secret, a.form_key, a.blueprint_id]],
         select_spot: ['SELECT public.select_spot($1,$2,$3,$4) AS result', a => [a.form_key, a.secret_id, a.spot_id, a.selecting]],
         'send-ticket-order': ['SELECT public.create_ticket_order_client_sync_v1($1,$2,$3) AS result', a => [a.orderDetails, a.commandId, a.clientId]],
