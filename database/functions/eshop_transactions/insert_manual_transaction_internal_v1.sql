@@ -32,7 +32,7 @@ BEGIN
     SELECT ba.id INTO v_account_id
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
-    WHERE uba.unit = p_unit_id 
+    WHERE uba.unit = p_unit_id
       AND ba.type = 'CASH'
       AND p_currency = ANY(ba.supported_currencies)
     ORDER BY ba.id LIMIT 1;

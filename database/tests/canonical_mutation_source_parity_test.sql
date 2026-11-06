@@ -1191,7 +1191,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261106220000_cash_reservations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.insert_manual_transaction(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='c723551d9d559f85a703d0742b005d70'),'current SQL source parity: public.insert_manual_transaction(jsonb,uuid)');
 -- supabase/migrations/20261106220000_cash_reservations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.insert_manual_transaction_internal_v1(numeric,text,bigint,text,timestamp with time zone,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='779b575745928e42d3a32c9729580ff3'),'current SQL source parity: public.insert_manual_transaction_internal_v1(numeric,text,bigint,text,timestamp with time zone,text,bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.insert_manual_transaction_internal_v1(numeric,text,bigint,text,timestamp with time zone,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='82b6e4f81faf29e967e352f0a0f6b0e0'),'current SQL source parity: public.insert_manual_transaction_internal_v1(numeric,text,bigint,text,timestamp with time zone,text,bigint)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.inventory_copy_target_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='604bd24712dc418a35616de6d38e0578'),'current SQL source parity: public.inventory_copy_target_rule(boolean,boolean)');
 -- supabase/migrations/20261023200000_inventory_authoring_commands.sql

@@ -1777,7 +1777,7 @@ BEGIN
     SELECT ba.id INTO v_account_id
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
-    WHERE uba.unit = p_unit_id 
+    WHERE uba.unit = p_unit_id
       AND ba.type = 'CASH'
       AND p_currency = ANY(ba.supported_currencies)
     ORDER BY ba.id LIMIT 1;
@@ -4370,7 +4370,7 @@ BEGIN
           (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz END as token_expiry_date,
         ba.supported_currencies,
         ARRAY(
-            SELECT u.title 
+            SELECT u.title
             FROM eshop.unit_bank_accounts uba
             JOIN public.units u ON uba.unit = u.id
             WHERE uba.bank_account = ba.id

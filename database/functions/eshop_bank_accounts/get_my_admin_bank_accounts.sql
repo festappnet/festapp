@@ -34,7 +34,7 @@ BEGIN
           (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz END as token_expiry_date,
         ba.supported_currencies,
         ARRAY(
-            SELECT u.title 
+            SELECT u.title
             FROM eshop.unit_bank_accounts uba
             JOIN public.units u ON uba.unit = u.id
             WHERE uba.bank_account = ba.id
