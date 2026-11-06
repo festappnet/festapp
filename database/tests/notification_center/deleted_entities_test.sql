@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 -- test-setup: database/functions/notification_center/deleted_entities.sql
 -- test-setup: database/functions/groups/remove_occasion_user_domain.sql
 -- test-setup: database/functions/eshop_orders/delete_order.sql
@@ -48,7 +49,7 @@ BEGIN
  PERFORM assert_eq((result->>'code')::int,200,'real participant deletion succeeds');
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.notification_center_events WHERE organization=org AND occasion=oc AND kind='occasion_joined' AND data->>'userId'=member::text),'deleted application has no notification');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='occasion_joined'),2::bigint,'another member and same member in other occasion remain');
- result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague');
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_eq((SELECT (i#>>'{data,eventCount}')::int FROM jsonb_array_elements(result->'items') i
   WHERE i->>'kind'='occasion_joined' AND (i->>'occasionId')::bigint=oc),1,'rendered participant group recounts after deletion');
  result:=public.delete_order_client_sync_v1(ord,gen_random_uuid());

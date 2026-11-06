@@ -5,9 +5,8 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'models/order_admin_detail.dart';
 import 'order_blueprint_cache.dart';
 import 'order_commands.dart';
+import 'order_contact_controller.dart';
 import 'order_detail_strings.dart';
-
-import 'package:festapp_core/forms.dart';
 
 /// One identity, generation and contact draft across every detail tab.
 class OrderDetailController extends ChangeNotifier {
@@ -19,20 +18,35 @@ class OrderDetailController extends ChangeNotifier {
     OrderBlueprintCache? blueprints,
   }) : _blueprints = blueprints ?? OrderBlueprintCache(),
        _commands = commands,
+       _hasInjectedRead = read != null,
        _read =
            read ??
            ((name, args) => Supabase.instance.client.rpc(name, params: args)) {
-    email.addListener(_draftChanged);
+    contact.addListener(_draftChanged);
     note.addListener(_draftChanged);
     RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
   }
   final int orderId, occasionId;
   final OrderCommands? _commands;
+  final bool _hasInjectedRead;
   final OrderBlueprintCache _blueprints;
   final Future<dynamic> Function(String, Map<String, dynamic>) _read;
-  final email = TextEditingController(), note = TextEditingController();
+  late final contact = OrderContactController(
+    orderId: orderId,
+    occasionId: occasionId,
+    commands: _commands ?? (_hasInjectedRead ? null : SupabaseOrderCommands(Supabase.instance.client)),
+    read: _read,
+    validContext: () => validContext,
+    loadSnapshot: () async {
+      if (!await load()) throw StateError('Refresh failed');
+      return {'order': detail!.order, 'emailSummary': detail!.emailSummary};
+    },
+  );
+  TextEditingController get email => contact.email;
+  final note = TextEditingController();
   OrderAdminDetail? detail;
-  bool loading = true, stale = false, busy = false;
+  bool loading = true, stale = false, _busy = false;
+  bool get busy => _busy || contact.busy;
   bool _disposed = false;
   int _generation = 0;
   String? error;
@@ -60,8 +74,7 @@ class OrderDetailController extends ChangeNotifier {
 
   int get dirtyInlineDraftCount =>
       _inlineDrafts.values.where((draft) => draft.isDirty()).length;
-  bool get _emailDirty =>
-      detail != null && email.text != (detail!.order['data']?['email'] ?? '');
+  bool get _emailDirty => contact.dirty;
   int get dirtyDraftCount => dirtyInlineDraftCount + (_emailDirty ? 1 : 0);
 
   /// One user action, using the existing owners. A confirmed draft is cleaned
@@ -75,31 +88,15 @@ class OrderDetailController extends ChangeNotifier {
         .toList();
     setBusy(true);
     try {
+      await contact.ensureNoPending();
       if (_emailDirty) {
         if (!detail!.canWrite ||
             !detail!.model.allows('edit') ||
-            !EmailAddress.isValid(email.text.trim())) {
+            !contact.validEmail) {
           throw StateError(OrderDetailStrings.text('responses_unavailable'));
         }
-        final order = detail!.order;
-        final result =
-            await (_commands ?? SupabaseOrderCommands(Supabase.instance.client))
-                .repairEmail(
-                  orderId: orderId,
-                  expectedEmail: order['data']?['email'] ?? '',
-                  expectedState: order['state'],
-                  expectedPaymentVersion:
-                      (order['email_payment_version'] as num).toInt(),
-                  expectedPaymentFingerprint:
-                      order['email_payment_fingerprint'] as String,
-                  email: email.text.trim(),
-                  resend: false,
-                );
-        if (result['code'] != 200) {
-          await load();
-          throw StateError(OrderDetailStrings.text('responses_changed'));
-        }
-        if (!await load(acceptSavedContact: true))
+        await contact.save(resend: false);
+        if (contact.stale || stale || !validContext)
           throw StateError(OrderDetailStrings.text('udaje_nejsou_aktualni'));
       }
       for (final entry in pending) {
@@ -121,7 +118,7 @@ class OrderDetailController extends ChangeNotifier {
 
   bool get dirty =>
       detail != null &&
-      (email.text != (detail!.order['data']?['email'] ?? '') ||
+      (contact.dirty ||
           note.text != (detail!.order['note_hidden'] ?? '') ||
           _inlineDrafts.values.any((draft) => draft.isDirty()));
 
@@ -129,7 +126,7 @@ class OrderDetailController extends ChangeNotifier {
   /// uncertain command is independent and is never removed by this operation.
   void discardDraft() {
     if (busy || detail == null) return;
-    email.text = detail!.order['data']?['email']?.toString() ?? '';
+    contact.discard();
     note.text = detail!.order['note_hidden']?.toString() ?? '';
     for (final draft in _inlineDrafts.values.toList()) {
       draft.discard();
@@ -153,12 +150,9 @@ class OrderDetailController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> load({bool acceptSavedContact = false}) async {
+  Future<bool> load() async {
     final generation = ++_generation;
-    final keepEmail =
-        detail != null &&
-        email.text != (detail!.order['data']?['email'] ?? '') &&
-        !acceptSavedContact;
+    final keepEmail = detail != null && contact.dirty;
     final keepNote =
         detail != null && note.text != (detail!.order['note_hidden'] ?? '');
     loading = detail == null;
@@ -175,9 +169,11 @@ class OrderDetailController extends ChangeNotifier {
       if (result['code'] != 200) throw StateError('Order unavailable');
       detail = OrderAdminDetail(detailMap(result['data']));
       _previews.clear();
-      if (!keepEmail) {
-        email.text = detail!.order['data']?['email']?.toString() ?? '';
-      }
+      contact.acceptSnapshot(
+        detail!.order,
+        detail!.emailSummary,
+        acceptSavedContact: !keepEmail,
+      );
       if (!keepNote) note.text = detail!.order['note_hidden']?.toString() ?? '';
       loading = false;
       stale = false;
@@ -240,7 +236,8 @@ class OrderDetailController extends ChangeNotifier {
 
   void setBusy(bool value) {
     if (_disposed) return;
-    busy = value;
+    _busy = value;
+    contact.hostBusy = value;
     if (!_disposed) notifyListeners();
   }
 
@@ -250,7 +247,8 @@ class OrderDetailController extends ChangeNotifier {
     _inlineDrafts.clear();
     _generation++;
     RightsService.occasionLinkModelNotifier.removeListener(_contextChanged);
-    email.dispose();
+    contact.removeListener(_draftChanged);
+    contact.dispose();
     note.dispose();
     super.dispose();
   }

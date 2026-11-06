@@ -180,3 +180,14 @@ test('selected seat satisfies the saved required field without changing reservat
     assert.equal(session.payload.ticket[0].spot, 42);
     assert.deepEqual(session.payload.ticket[0].fields.find(field => field[17]), {17:42});
 });
+
+test('passive reservation observation never invokes recovery; submission retains its recovery path', async () => {
+    const session=new FormSession({key:'form',secret:'secret',visibleFields:[]});
+    session._reservationUnresolved=true;
+    let recoveries=0;
+    session.recoverReservations=async()=>{recoveries++;session._reservationUnresolved=false;};
+    await assert.rejects(session.awaitPendingReservations({recover:false}),/reservation_state_unknown/);
+    assert.equal(recoveries,0);
+    await session.awaitPendingReservations();
+    assert.equal(recoveries,1);
+});

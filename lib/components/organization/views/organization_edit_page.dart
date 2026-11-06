@@ -1,3 +1,5 @@
+import 'package:fstapp/components/forms/form_strings.dart';
+
 import '../../unit/verification/verification_queue.dart';
 import '../../unit/verification/verification_strings.dart';
 import 'package:auto_route/auto_route.dart';
@@ -47,6 +49,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
   // Flags
   bool _isRegistrationEnabled = false;
   bool _isGoogleLoginEnabled = false;
+  bool _formMeasurementEnabled = false;
   bool _isUnitCreationEnabled = false;
   bool _isAppSupported = false;
 
@@ -76,6 +79,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
 
         _isRegistrationEnabled = org.isRegistrationEnabled ?? false;
         _isGoogleLoginEnabled = org.isGoogleLoginEnabled ?? false;
+        _formMeasurementEnabled = org.formMeasurementEnabled == true;
         _isUnitCreationEnabled = org.isUnitCreationEnabled ?? false;
         _isAppSupported = org.isAppSupported ?? false;
 
@@ -115,6 +119,7 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
             int.tryParse(_representativeOccasionController.text),
         isRegistrationEnabled: _isRegistrationEnabled,
         isGoogleLoginEnabled: _isGoogleLoginEnabled,
+        formMeasurementEnabled: _formMeasurementEnabled,
         isUnitCreationEnabled: _isUnitCreationEnabled,
         isAppSupported: _isAppSupported,
         platforms: _platforms,
@@ -329,6 +334,20 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                               value: _isGoogleLoginEnabled,
                               onChanged: (val) =>
                                   setState(() => _isGoogleLoginEnabled = val),
+                            ),
+                            SwitchListTile(
+                              title: Text(
+                                FormStrings.measurementOrganizationEnabled,
+                              ),
+                              subtitle: Text(
+                                FormStrings.measurementOrganizationHelp,
+                              ),
+                              value: _formMeasurementEnabled,
+                              onChanged: _isSaving
+                                  ? null
+                                  : (value) => setState(
+                                        () => _formMeasurementEnabled = value,
+                                      ),
                             ),
                             SwitchListTile(
                               title: const Text(

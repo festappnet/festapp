@@ -1,46 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Interactive venue seat picker and editor demo for Flutter.">
-
-  <!-- iOS meta tags & icons -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flutter Seat Picker &amp; Seating Plan Editor Demo | Venue Layout</title>
+  <meta name="description" content="Try venue_seat_picker for Flutter: create seating plans with tables and curved rows, explore venue templates, and preview interactive seat selection in your browser.">
+  <meta name="google-site-verification" content="e8H8Id9QgsncOLnl4SheLmhiJ9Ugyl2oZhmHbjwi_ec">
+  <link rel="canonical" href="https://festappnet.github.io/venue_seat_picker/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="Venue Layout">
+  <meta property="og:title" content="Flutter Seat Picker & Seating Plan Editor Demo">
+  <meta property="og:description" content="Build a venue, arrange tables and rows, and try interactive seat selection with venue_seat_picker for Flutter.">
+  <meta property="og:url" content="https://festappnet.github.io/venue_seat_picker/">
+  <meta property="og:image" content="https://festappnet.github.io/venue_seat_picker/images/template-library.png">
+  <meta property="og:image:alt" content="Editable seating plans for halls, theatres, conferences and transport">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#2563eb">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Venue Layout">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>Venue Layout Studio</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "venue_seat_picker",
+    "alternateName": "Venue Layout",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Flutter, Web",
+    "description": "A seating-plan editor, viewer and interactive seat picker for Flutter and the web, with venue templates and portable JSON layouts.",
+    "url": "https://festappnet.github.io/venue_seat_picker/",
+    "downloadUrl": "https://pub.dev/packages/venue_seat_picker",
+    "codeRepository": "https://github.com/festappnet/venue_seat_picker",
+    "license": "https://github.com/festappnet/venue_seat_picker/blob/main/LICENSE",
+    "isAccessibleForFree": true,
+    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+    "author": {"@type": "Organization", "name": "Festapp", "url": "https://festapp.net"}
+  }
+  </script>
+  <style>
+    @font-face { font-family: Roboto; src: url('fonts/Roboto.ttf') format('truetype'); font-display: swap; font-weight: 100 900; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #182230; background: #f8fafc; font: 16px/1.65 Roboto, sans-serif; }
+    [hidden] { display: none !important; }
+    ::selection { color: #182230; background: #dbeafe; }
+    a { color: #1d4ed8; text-underline-offset: .2em; }
+    a:hover { color: #1e40af; }
+    a:focus-visible { outline: 3px solid #2563eb; outline-offset: 5px; }
+    .shell { max-width: 1120px; margin: auto; padding: 0 32px; }
+    .site-header { border-bottom: 1px solid #dfe4eb; background: #fff; }
+    .site-header .shell { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { color: #182230; font-size: 18px; font-weight: 700; text-decoration: none; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; }
+    nav a { font-size: 14px; }
+    .intro { padding-top: 64px; padding-bottom: 40px; }
+    h1 { max-width: 20ch; font-size: clamp(32px, 4.5vw, 52px); line-height: 1.12; letter-spacing: -.025em; margin: 0 0 24px; text-wrap: balance; }
+    h2 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; }
+    p { max-width: 70ch; margin: 0 0 20px; }
+    .lead { font-size: 19px; color: #475467; }
+    .actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin: 28px 0 16px; }
+    .button { display: inline-block; padding: 12px 20px; border-radius: 6px; background: #2563eb; color: #fff; font-weight: 700; text-decoration: none; }
+    .button:hover { color: #fff; background: #1d4ed8; }
+    .note { font-size: 14px; color: #475467; }
+    .preview { display: block; width: 100%; height: auto; border: 1px solid #dfe4eb; border-radius: 8px; background: #fff; }
+    figure { margin: 0 0 48px; }
+    figcaption { color: #475467; font-size: 14px; margin-top: 10px; }
+    .details { padding-top: 40px; padding-bottom: 40px; border-top: 1px solid #dfe4eb; }
+    ul, ol { max-width: 70ch; padding-left: 24px; }
+    li { margin-bottom: 10px; }
+    code { font-size: .95em; overflow-wrap: anywhere; }
+    pre { padding: 18px 20px; border: 1px solid #dfe4eb; border-radius: 6px; background: #fff; overflow-x: auto; }
+    footer { border-top: 1px solid #dfe4eb; padding: 24px 0; font-size: 14px; }
+    .demo-mode { background: #f3f5f8; }
+    #demo-loading { padding: 32px; }
+    @media (max-width: 600px) {
+      .shell { padding-left: 20px; padding-right: 20px; }
+      .site-header .shell { padding-top: 16px; padding-bottom: 16px; align-items: flex-start; flex-direction: column; gap: 8px; }
+      nav { gap: 18px; }
+      .intro { padding-top: 40px; }
+      .lead { font-size: 17px; }
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="overview">
+    <header class="site-header">
+      <div class="shell">
+        <a class="brand" href="./">Venue Layout</a>
+        <nav aria-label="Package links">
+          <a href="https://pub.dev/packages/venue_seat_picker">Flutter package on pub.dev</a>
+          <a href="https://github.com/festappnet/venue_seat_picker">GitHub &amp; docs</a>
+        </nav>
+      </div>
+    </header>
+    <main class="shell">
+      <section class="intro" aria-labelledby="intro-title">
+        <h1 id="intro-title">Flutter seat picker &amp; seating plan editor</h1>
+        <p class="lead">Build the room. Pick the seat. Try <code>venue_seat_picker</code>, a seating-plan editor, viewer and interactive seat picker for Flutter and the web.</p>
+        <p>Arrange tables and chairs, shape curved rows, or start with a ready-made venue. Use the same portable plan in your editor and customer booking interface.</p>
+        <div class="actions">
+          <a class="button" href="?demo=1">Open interactive demo</a>
+          <a href="js/demo/">Try the JavaScript seat picker</a>
+        </div>
+        <p class="note">No sign-in required. The demo uses sample data and does not create reservations or payments. The editor demo currently opens in Czech.</p>
+      </section>
+      <figure>
+        <a href="?demo=1" aria-label="Open the seating plan editor demo">
+          <img class="preview" src="images/template-library.png" alt="Venue Layout template gallery showing editable halls, theatres, conference rooms, buses and train carriages" width="1600" height="1310" fetchpriority="high">
+        </a>
+        <figcaption>Start with an editable venue template, then adapt its tables, rows and seating to your event.</figcaption>
+      </figure>
+      <section class="details" aria-labelledby="features-title">
+        <h2 id="features-title">What you can try</h2>
+        <ul>
+          <li><strong>Design a seating plan:</strong> place tables, chairs, curved rows, standing areas and custom furniture.</li>
+          <li><strong>Edit an entire venue:</strong> drag and drop, copy objects, select groups, change styles and undo changes.</li>
+          <li><strong>Explore templates:</strong> halls, theatres, conferences, lounges, buses and train carriages.</li>
+          <li><strong>Preview seat selection:</strong> zoom into the plan and try the customer picker in Flutter or JavaScript.</li>
+          <li><strong>Bring your own application:</strong> portable JSON layouts, themes and host-supplied availability and prices.</li>
+        </ul>
+        <p>The package supplies the plan and selection interface. Your application manages reservation locks, live availability, orders and payments.</p>
+      </section>
+      <section class="details" aria-labelledby="steps-title">
+        <h2 id="steps-title">Try the demo</h2>
+        <ol>
+          <li>Open the editor and choose a venue template.</li>
+          <li>Move a table, adjust its chairs or add a row of seats.</li>
+          <li>Switch to preview to explore the seating plan as a guest.</li>
+        </ol>
+        <p>For integration examples and the API reference, visit <a href="https://pub.dev/packages/venue_seat_picker">venue_seat_picker on pub.dev</a> or read the <a href="https://github.com/festappnet/venue_seat_picker#readme">project documentation</a>.</p>
+        <pre aria-label="Install the Flutter package"><code>flutter pub add venue_seat_picker</code></pre>
+        <p>For a JavaScript website, see <a href="https://www.npmjs.com/package/@festapp/venue-layout">@festapp/venue-layout on npm</a>.</p>
+      </section>
+    </main>
+    <footer><div class="shell">Built for <a href="https://festapp.net">Festapp</a>. Open source under the <a href="https://github.com/festappnet/venue_seat_picker/blob/main/LICENSE">MIT license</a>.</div></footer>
+  </div>
+  <div id="demo-loading" role="status" hidden>
+    <p>Loading Venue Layout Studio...</p>
+    <p><a href="./">Back to the demo overview</a> · <a href="https://pub.dev/packages/venue_seat_picker">Flutter package on pub.dev</a></p>
+    <noscript>Enable JavaScript to use the interactive editor.</noscript>
+  </div>
+  <script>
+    const parameters = new URLSearchParams(window.location.search);
+    if (parameters.has('demo') || parameters.has('fromPreview')) {
+      document.getElementById('overview').hidden = true;
+      document.getElementById('demo-loading').hidden = false;
+      document.body.classList.add('demo-mode');
+      globalThis.venueLayoutTextReady = import(new URL('layout_text_host.js', document.baseURI));
+      const bootstrap = document.createElement('script');
+      bootstrap.src = 'flutter_bootstrap.js';
+      bootstrap.async = true;
+      bootstrap.onerror = () => {
+        document.querySelector('#demo-loading p').textContent = 'The editor could not load. Reload this page to try again.';
+      };
+      document.body.append(bootstrap);
+    }
+  </script>
 </body>
 </html>

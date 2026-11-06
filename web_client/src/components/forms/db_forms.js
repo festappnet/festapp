@@ -44,6 +44,13 @@ export class DbForms {
         return null;
     }
 
+    static async getMeasurementPolicy(link) {
+        const {data, error} = await SupabaseService.getClient().rpc('get_form_measurement_policy', {p_form_link:link})
+            .abortSignal(AbortSignal.timeout(8000));
+        if (error) throw new Error('Measurement policy unavailable');
+        return data;
+    }
+
     static async getBlueprint(secret, formKey, blueprintId) {
         const client = SupabaseService.getClient();
         if (!client) throw new Error("Supabase client not initialized");

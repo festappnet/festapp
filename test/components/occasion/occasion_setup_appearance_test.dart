@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'setup_email_preview_coordinator_cases.dart' as preview_reliability;
 import 'setup_payment_configuration_cases.dart' as payment_configuration;
 import 'package:fstapp/components/occasion/setup/occasion_setup_form_preview.dart';
@@ -12,6 +13,10 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart'
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
   group('preview reliability', preview_reliability.main);
   group('payment configuration', payment_configuration.main);
   Map<String, dynamic> draft(
@@ -40,8 +45,8 @@ void main() {
         File('supabase/functions/_shared/ticket-assets/font-catalog.json')
             .readAsStringSync());
     final ids = {for (final face in catalog['fonts']) face['id']};
-    expect(OccasionSetupAppearance.fonts.length, greaterThan(1800));
-    for (final entry in OccasionSetupAppearance.fonts.entries) {
+    expect(setupFontIds.length, greaterThan(1800));
+    for (final entry in setupFontIds.entries) {
       expect(ids, contains(entry.value));
       final appearance = {
         ...OccasionSetupAppearance.presets[1],
@@ -50,7 +55,7 @@ void main() {
         'fontFamily': entry.key
       };
       final data = draft();
-      OccasionSetupAppearance.apply(data, appearance);
+      OccasionSetupAppearance.apply(data, appearance, fonts: setupFontIds);
       expect(data['formDraft']['data']['design']['font_family'], entry.key);
       expect(data['ticketDraft']['layout']['templates']['wide']['fontId'],
           entry.value);
@@ -64,17 +69,17 @@ void main() {
     final data = draft();
     for (final preset in OccasionSetupAppearance.presets) {
       OccasionSetupAppearance.apply(data,
-          OccasionSetupAppearance.selectPreset(data, preset['id']));
+          OccasionSetupAppearance.selectPreset(data, preset['id']), fonts: setupFontIds);
       expect(OccasionSetupAppearance.read(data)['gradient'], false);
       expect(data['formDraft']['data']['design']['background_mode'], 'solid');
       expect(data['ticketDraft']['layout']['templates']['wide'].containsKey('canvasGradient'), false);
     }
     OccasionSetupAppearance.apply(data, {
       ...OccasionSetupAppearance.read(data), 'gradient': true,
-    });
+    }, fonts: setupFontIds);
     for (final preset in OccasionSetupAppearance.presets) {
       OccasionSetupAppearance.apply(data,
-          OccasionSetupAppearance.selectPreset(data, preset['id']));
+          OccasionSetupAppearance.selectPreset(data, preset['id']), fonts: setupFontIds);
       expect(OccasionSetupAppearance.read(data)['gradient'], true);
       expect(data['formDraft']['data']['design']['background_mode'], 'gradient');
       expect(data['ticketDraft']['layout']['templates']['wide']['canvasGradient'],
@@ -83,9 +88,9 @@ void main() {
   });
   test('font-only edits keep a fresh theme solid and dormant secondary has no effect', () {
     final data = draft();
-    for (final font in OccasionSetupAppearance.fonts.keys) {
+    for (final font in setupFontIds.keys) {
       final appearance = {...OccasionSetupAppearance.read(data), 'id': 'custom', 'fontFamily': font};
-      OccasionSetupAppearance.apply(data, appearance);
+      OccasionSetupAppearance.apply(data, appearance, fonts: setupFontIds);
       expect(OccasionSetupAppearance.read(data)['gradient'], false);
       expect(data['formDraft']['data']['design']['font_family'], font);
     }
@@ -197,7 +202,7 @@ void main() {
       () {
     final d = draft();
     OccasionSetupAppearance.apply(
-        d, {...OccasionSetupAppearance.presets[1], 'gradient': true});
+        d, {...OccasionSetupAppearance.presets[1], 'gradient': true}, fonts: setupFontIds);
     final layout =
         Map<String, dynamic>.from((d['ticketDraft'] as Map)['layout']);
     validateTicketLayout(layout);
@@ -206,7 +211,7 @@ void main() {
     expect(template.toJson()['canvasGradient'], ['14284B', 'A87F28']);
     final box = Map.of((raw['elements'] as List).first['box']);
     OccasionSetupAppearance.apply(
-        d, {...OccasionSetupAppearance.presets[2], 'id': 'custom'});
+        d, {...OccasionSetupAppearance.presets[2], 'id': 'custom'}, fonts: setupFontIds);
     final updated = (((d['ticketDraft'] as Map)['layout'] as Map)['templates']
         as Map)['wide'] as Map;
     expect((updated['elements'] as List).first['box'], box);
@@ -241,7 +246,7 @@ void main() {
       ...OccasionSetupAppearance.presets.first,
       'primary': 'FFFFFF',
       'secondary': 'EEEEEE'
-    });
+    }, fonts: setupFontIds);
     final template =
         (data['ticketDraft'] as Map)['layout']['templates']['wide'];
     expect(

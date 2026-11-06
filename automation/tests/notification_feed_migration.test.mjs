@@ -40,3 +40,18 @@ test('default output cannot rewrite a published migration after source changes',
   assert.deepEqual(readFileSync(output),before);
  } finally {rmSync(dir,{recursive:true});}
 });
+
+test('assembled prerequisite rejects a missing canonical scope owner', {skip: !process.env.DATABASE_URL}, async()=>{
+ const {createRequire}=await import('node:module');
+ const {assertLocalDatabaseUrl,assertDisposableDatabase}=await import('../../web_client/tests/database/disposable_database.js');
+ assertLocalDatabaseUrl(process.env.DATABASE_URL);
+ const {Client}=createRequire(new URL('../../web_client/package.json',import.meta.url))('pg');
+ const db=new Client({connectionString:process.env.DATABASE_URL});await db.connect();
+ try{
+  await assertDisposableDatabase(db);await db.query('BEGIN');
+  const manifest=JSON.parse(readFileSync(join(root,'automation/notification-center-feed-manifest.json'),'utf8'));
+  const guard=readFileSync(join(root,manifest.output),'utf8').match(/DO \$\$ BEGIN[\s\S]*?END \$\$;/)[0];
+  await db.query('ALTER FUNCTION public.notification_center_prepared_scope(bigint,jsonb) RENAME TO notification_scope_missing_fixture');
+  await assert.rejects(db.query(guard), /notification_feed_prerequisites_missing/);
+ }finally{await db.query('ROLLBACK');await db.end();}
+});

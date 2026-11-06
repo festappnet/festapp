@@ -4,7 +4,8 @@ LANGUAGE sql
 STABLE
 SET search_path = public, extensions
 AS $$
-    SELECT COALESCE(f.data, '{}'::jsonb) || jsonb_build_object(
+    SELECT (public.normalize_form_metadata_internal(f.data)-'analytics') || jsonb_build_object(
+        'analytics',public.form_measurement_runtime_internal(f.id),
         'communication_tone',
         CASE
             WHEN f.data->>'communication_tone' IN ('formal', 'informal')
@@ -21,5 +22,4 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.get_effective_form_data(bigint)
-FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_effective_form_data(bigint) TO service_role;
+FROM PUBLIC, anon, authenticated, service_role;

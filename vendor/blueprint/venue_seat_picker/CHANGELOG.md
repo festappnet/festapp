@@ -1,5 +1,15 @@
 ## 0.4.6
 
+- Prepare edited and saved text resources independently so labels can be resized or restyled without losing save/export support.
+
+- Keep the object filter visible and editable when reopening the palette.
+
+- Keep readable-seat focus, overview toggling and painter-only highlight pulses in the canonical viewer API used by Festapp.
+
+- Prepare new demo labels with the canonical text engine before saving, exporting or opening a customer preview.
+- Open the promised sample hall, retain supported portable templates outside the gallery and keep mobile save/preview controls reachable.
+- Exercise current Czech editor journeys and compare Flutter/browser rasters with captured camera transforms and scoped paint accounting.
+
 - Use the same 8-pixel margin for selecting and starting interactions with every editor object, including arrows, images and saved presets.
 - Keep architectural decoration selectable by its outline without capturing empty-space navigation or marquee selection.
 - Require core 0.2.5 for rendered arrowhead and thick-stroke hit geometry; preserve existing SDK and dependency compatibility.

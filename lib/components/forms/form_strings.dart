@@ -1,7 +1,45 @@
+import 'package:festapp_core/forms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get gtmContainer => 'FeatureFormSettings.gtmContainer'.tr();
+  static String get gtmHelp => 'FeatureFormSettings.gtmHelp'.tr();
+  static String get measurementOrganizationEnabled =>
+      'FeatureFormSettings.measurementOrganizationEnabled'.tr();
+  static String get measurementOrganizationHelp =>
+      'FeatureFormSettings.measurementOrganizationHelp'.tr();
+  static String get measurementUnitEnabled =>
+      'FeatureFormSettings.measurementUnitEnabled'.tr();
+  static String get measurementUnitHelp =>
+      'FeatureFormSettings.measurementUnitHelp'.tr();
+  static String get measurementFormHelp =>
+      'FeatureFormSettings.measurementFormHelp'.tr();
+  static String get measurementEnabled =>
+      'FeatureFormSettings.measurementEnabled'.tr();
+  static String get measurementDisabled =>
+      'FeatureFormSettings.measurementDisabled'.tr();
+  static String get measurementOrganizationBlocked =>
+      'FeatureFormSettings.measurementOrganizationBlocked'.tr();
+  static String get measurementRuntimeBlocked =>
+      'FeatureFormSettings.measurementRuntimeBlocked'.tr();
+  static String get measurementAdvanced =>
+      'FeatureFormSettings.measurementAdvanced'.tr();
+  static String get measurementNoDestination =>
+      'FeatureFormSettings.measurementNoDestination'.tr();
+  static String get measurementReady =>
+      'FeatureFormSettings.measurementReady'.tr();
+  static String get measurementTitle =>
+      'FeatureFormSettings.measurementTitle'.tr();
+  static String get measurementScripts =>
+      'FeatureFormSettings.measurementScripts'.tr();
+  static String get measurementScriptsHelp =>
+      'FeatureFormSettings.measurementScriptsHelp'.tr();
+  static String get measurementScriptsTooLong =>
+      'FeatureFormSettings.measurementScriptsTooLong'.tr(
+        namedArgs: {'limit': '$formMeasurementScriptLimit'},
+      );
+  static String get gtmInvalid => 'FeatureFormSettings.gtmInvalid'.tr();
   static String appearanceLabel(String key) => 'OccasionSetup.ui.$key'.tr();
 
   static String emailSuffixWarning(String suffix, {bool informal = false}) =>

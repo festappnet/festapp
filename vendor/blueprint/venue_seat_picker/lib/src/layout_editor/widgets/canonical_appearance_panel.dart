@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'layout_style.dart';
+import 'appearance_controls.dart';
 import 'layout_font_size_control.dart';
 import 'layout_floor_style.dart';
 
@@ -325,18 +326,8 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
           values = resolved.values,
           label = resolved.label;
       final enabled =
-              !c.readOnly && !c.saving && (widget.global || !node.locked),
-          media = {'image', 'vector'}.contains(target.kind);
-      final openPath =
-          target.kind == 'shape' &&
-          const {
-            'line',
-            'polyline',
-            'arrow',
-          }.contains(target.properties['shape']);
-      final labelVisible =
-          scope == 'document' ||
-          (!media && target.kind != 'group' && target.kind != 'seat');
+          !c.readOnly && !c.saving && (widget.global || !node.locked);
+      final controls = AppearanceControls(target, scope: scope);
       bool owns(List<String> path) => path.length == 1
           ? declaration.containsKey(path.single)
           : (declaration['label'] as Map?)?.containsKey(path.last) == true;
@@ -600,11 +591,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
-          if (scope != 'document' &&
-              target.kind != 'group' &&
-              !media &&
-              target.kind != 'text' &&
-              !openPath) ...[
+          if (controls.construction)
             choice(
               'Material',
               ['material'],
@@ -612,17 +599,16 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               (canonicalVisualFields['material']!['enum'] as List)
                   .cast<String>(),
             ),
-            if (target.kind == 'seat')
-              choice(
-                'Chair style',
-                ['seatStyle'],
-                values['seatStyle'] as String,
-                (canonicalVisualFields['seatStyle']!['enum'] as List)
-                    .cast<String>(),
-              ),
-            colorRow('Fill color', 'fill'),
-          ],
-          if (openPath) ...[
+          if (controls.chairStyle)
+            choice(
+              'Chair style',
+              ['seatStyle'],
+              values['seatStyle'] as String,
+              (canonicalVisualFields['seatStyle']!['enum'] as List)
+                  .cast<String>(),
+            ),
+          if (controls.fill) colorRow('Fill color', 'fill'),
+          if (controls.openPath) ...[
             colorRow('Outline color', 'stroke'),
             row(
               'Outline style',
@@ -683,7 +669,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               1000000000,
             ),
           ],
-          if (labelVisible)
+          if (controls.text)
             ExpansionTile(
               minTileHeight: 44,
               key: ValueKey('text-style:$scope:$kind:${node.id}'),
@@ -932,7 +918,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             children: [
-              if (labelVisible) ...[
+              if (controls.text) ...[
                 choice(
                   'Direction',
                   ['label', 'direction'],
@@ -946,7 +932,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                   .8,
                   3,
                 ),
-                if (target.kind != 'text')
+                if (controls.labelOrientation)
                   choice(
                     'Label orientation',
                     ['label', 'orientation'],
@@ -954,10 +940,10 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                     ['object', 'screen'],
                   ),
               ],
-              if (scope != 'document' && target.kind != 'group') ...[
+              if (controls.opacity) ...[
                 number('Opacity', ['opacity'], values['opacity'] as num, 0, 1),
-                if (!media && target.kind != 'text') ...[
-                  if (!openPath) ...[
+                if (controls.outline) ...[
+                  if (!controls.openPath) ...[
                     colorRow('Outline color', 'stroke'),
                     row(
                       'Outline style',
@@ -1031,13 +1017,14 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                       1000000000,
                     ),
                   ],
-                  number(
-                    'Corner radius',
-                    ['cornerRadius'],
-                    values['cornerRadius'] as num,
-                    0,
-                    1000000000,
-                  ),
+                  if (controls.cornerRadius)
+                    number(
+                      'Corner radius',
+                      ['cornerRadius'],
+                      values['cornerRadius'] as num,
+                      0,
+                      1000000000,
+                    ),
                 ],
               ],
             ],
@@ -1168,13 +1155,20 @@ Future<void> showCanonicalAppearanceDialog(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const LayoutText('Style family'),
-              const SizedBox(height: 12),
-              LayoutMaterialFamilies(
-                controller: controller,
-                nodeId: global ? null : nodeId,
-              ),
-              const SizedBox(height: 16),
+              if (AppearanceControls(
+                controller.document.nodes
+                    .where((n) => n.id == nodeId)
+                    .firstOrNull,
+                scope: global ? 'document' : 'node',
+              ).familyPresets) ...[
+                const LayoutText('Style family'),
+                const SizedBox(height: 12),
+                LayoutMaterialFamilies(
+                  controller: controller,
+                  nodeId: global ? null : nodeId,
+                ),
+                const SizedBox(height: 16),
+              ],
               const LayoutText('Color palette'),
               const SizedBox(height: 8),
               LayoutStylePresets(

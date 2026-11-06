@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -42,6 +43,10 @@ Map<String, dynamic> _previewContext(String subject) => {
     };
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
   late EmailPreviewExamples examples;
@@ -139,7 +144,7 @@ void main() {
       'formDraft': <String, dynamic>{'data': <String, dynamic>{}}
     };
     OccasionSetupAppearance.apply(
-        draft, Map.of(OccasionSetupAppearance.presets.first));
+        draft, Map.of(OccasionSetupAppearance.presets.first), fonts: setupFontIds);
     expect(jsonEncode(draft['ticketDraft']), before);
   });
 

@@ -65,6 +65,8 @@ BEGIN
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,2,'storno repairs exact frozen count');
  PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),2,'storno repairs selected orders');
+ PERFORM pg_temp.adopt_public_link_fixtures();
+ PERFORM public.get_orders_tab_data((SELECT link FROM public.occasions WHERE id=oc),scope||jsonb_build_object('markRead',true));
  PERFORM assert_eq((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=colleague),0::bigint,'another recipient is never acknowledged');
 END $$;
 ROLLBACK;

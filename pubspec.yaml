@@ -175,6 +175,7 @@ flutter:
         - asset: fonts/Gill Sans Bold.otf
           weight: 700
   assets:
+    - automation/tickets/setup-appearance-fonts.json
     - assets/email_templates/preview_examples.json
     - supabase/functions/_shared/ticket-assets/
     - supabase/functions/_shared/ticket-assets/backgrounds/

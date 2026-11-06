@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:crypto/crypto.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
@@ -195,9 +196,17 @@ class DemoBundle {
     if (revision != null && (revision is! int || revision < 0)) {
       throw const FormatException('Invalid demo revision');
     }
-    if (host['template'] != null &&
-        !VenueLayoutTemplates.all.any((t) => t.id == host['template'])) {
-      throw const FormatException('Unknown demo template');
+    if (host['template'] != null) {
+      if (host['template'] is! String) {
+        throw const FormatException('Unknown demo template');
+      }
+      try {
+        // Gallery recommendations may change while existing portable files
+        // retain any template still supported by the canonical catalog.
+        VenueLayoutTemplates.byId(host['template'] as String);
+      } on ArgumentError {
+        throw const FormatException('Unknown demo template');
+      }
     }
     void prices(Object? value, VenueLayoutDocument layout) {
       if (value == null) return;

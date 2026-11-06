@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -19,6 +20,10 @@ import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_canvas.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
   WidgetEnvironmentFixture.register();
   final environment = WidgetEnvironmentFixture(
     locale: const Locale('cs'),
@@ -64,7 +69,7 @@ void main() {
           (p) => p['id'] == vector[0],
         );
         expect(
-          OccasionSetupAppearance.themeColor(vector[1], appearance),
+          OccasionSetupAppearance.themeColor(vector[1], {...appearance, 'gradient': true}),
           vector[2],
           reason: '$vector',
         );
@@ -75,8 +80,7 @@ void main() {
             entry.value,
             appearance,
             decorated: true,
-            composition: entry.key,
-          );
+            composition: entry.key, fonts: setupFontIds);
           validateTicketLayout({
             'schemaVersion': 3,
             'templates': {'wide': styled, 'named': styled},
@@ -121,13 +125,12 @@ void main() {
       },
     };
     for (final appearance in OccasionSetupAppearance.presets) {
-      OccasionSetupAppearance.apply(draft, Map.of(appearance));
+      OccasionSetupAppearance.apply(draft, Map.of(appearance), fonts: setupFontIds);
       final expected = OccasionSetupAppearance.styledTemplate(
         source,
         appearance,
         decorated: true,
-        composition: 'concert_stub',
-      );
+        composition: 'concert_stub', fonts: setupFontIds);
       expect(draft['ticketDraft']['layout']['templates']['wide'], expected);
       expect(
         draft['ticketDraft']['background'],
@@ -197,7 +200,7 @@ void main() {
             },
           },
         };
-        OccasionSetupAppearance.apply(draft, appearance);
+        OccasionSetupAppearance.apply(draft, appearance, fonts: setupFontIds);
         expect(draft['ticketDraft']['background'], url);
       }
     },
@@ -220,8 +223,7 @@ void main() {
               scene['source'],
               appearance,
               decorated: true,
-              composition: scene['key'],
-            ),
+              composition: scene['key'], fonts: setupFontIds),
           );
           expect(actual.toJson(), expected.toJson(), reason: scene['name']);
           final r = await TicketLayoutService(
@@ -313,8 +315,7 @@ void main() {
               templates['concert_stub']!,
               OccasionSetupAppearance.presets[1],
               decorated: true,
-              composition: 'concert_stub',
-            ),
+              composition: 'concert_stub', fonts: setupFontIds),
           ),
         ),
       );
@@ -359,6 +360,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: OccasionSetupTicketGallery(
+                    fontIds: setupFontIds,
                 appearance: Map.of(OccasionSetupAppearance.presets[1]),
                 loadResources: () async => ready,
                 onSelected: (selected) => choice = selected,

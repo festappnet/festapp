@@ -5,6 +5,7 @@ import '../support/fixtures/localization_log_fixture.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
@@ -26,7 +27,7 @@ void main() {
     expect((await completion.future).continueNavigation, isFalse,
         reason: 'The legacy OrganizationPage must never mount in the browser.');
     router.dispose();
-  });
+  }, skip: !AppConfig.isAppSupported);
 
   // This suite intentionally uses untranslated key fallback (no catalog).
   setUp(() {

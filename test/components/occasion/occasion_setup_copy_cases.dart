@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_ticket_gallery.dart';
 import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
@@ -77,6 +78,23 @@ Map<String, dynamic> candidate() => {
     };
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
+  test('copied setup form strips all measurement settings without mutating source', () {
+    final source = <String, dynamic>{
+      'title': 'Letní koncert',
+      'data': {
+        'analytics': {'gtm_container': 'GTM-AB12', 'scripts': '<script>1</script>', 'enhanced_conversions': true},
+        'design': {'presale_header': 'none'},
+      },
+    };
+    final copy = copyOccasionSetupForm(source);
+    expect((copy['data'] as Map).containsKey('analytics'), isFalse);
+    expect((source['data'] as Map).containsKey('analytics'), isTrue);
+    expect((copy['data'] as Map)['design'], {'presale_header': 'none'});
+  });
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
   late TicketLayoutResources galleryResources;
@@ -123,6 +141,7 @@ void main() {
             home: Scaffold(
                 body: SingleChildScrollView(
                     child: OccasionSetupTicketGallery(
+                    fontIds: setupFontIds,
                         appearance: const {
               'id': 'custom',
               'preserveSource': true

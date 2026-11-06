@@ -358,8 +358,6 @@
     "authoring/lifecycle.sql",
     "authoring/order_deletion.sql",
     "notification_center/order_selection.sql",
-    "notification_center/read_state.sql",
-    "notification_center/daily_overview.sql",
     "notification_center/center_policy.sql",
     "eshop_orders/operator_orders.sql",
     "blueprint/seating_transition_schema.sql",
@@ -380,6 +378,7 @@
     "sale_opening_notifications/admin.sql",
     "presale_content/archive.sql",
     "notification_center/subject_visibility.sql",
+    "notification_center/shared.sql",
     "notification_center/core.sql",
     "notification_center/delivery_operations.sql",
     "notification_center/prepared_projection.sql",
@@ -392,6 +391,10 @@
     "notification_center/bank.sql",
     "notification_center/capacity.sql",
     "notification_center/deleted_entities.sql",
-    "notification_center/maintenance.sql"
+    "notification_center/maintenance.sql",
+    "eshop_forms/form_measurement_policy.sql",
+    "eshop_forms/form_datalayer.sql",
+    "eshop_forms/form_measurement_runtime.sql",
+    "notification_center/serving_contraction.sql"
   ]
 }

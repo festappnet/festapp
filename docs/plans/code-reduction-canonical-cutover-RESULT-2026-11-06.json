@@ -1,0 +1,666 @@
+{
+  "sourceBase": "92ee5c61165cb214b2164ab424b46ef82d5047b1",
+  "includedPRs": {
+    "733": "0185c3a68eae5f2068253d10bf1f081c6af645b0",
+    "734": "4334fc5d75992c5b1ea25e60c65b3582d2df8cf7",
+    "736": "d9ec8522924e636cd014e46260429baab2684654"
+  },
+  "measurement": "Physical text lines against origin/main plus the three explicitly included PR diffs; PR additions excluded. Not executable LOC or binary size.",
+  "categories": {
+    "handwritten_runtime": {
+      "before": 7548,
+      "after": 7160,
+      "net": -388,
+      "files": 27
+    },
+    "config_contracts": {
+      "before": 7557,
+      "after": 8016,
+      "net": 459,
+      "files": 7
+    },
+    "tests": {
+      "before": 4841,
+      "after": 4755,
+      "net": -86,
+      "files": 40
+    },
+    "generated_test_contract": {
+      "before": 1991,
+      "after": 1973,
+      "net": -18,
+      "files": 1
+    },
+    "generated_dart_data": {
+      "before": 3787,
+      "after": 0,
+      "net": -3787,
+      "files": 1
+    },
+    "generated_forward_migration": {
+      "before": 0,
+      "after": 513,
+      "net": 513,
+      "files": 1
+    }
+  },
+  "files": [
+    {
+      "path": "automation/assemble-notification-center-migration.py",
+      "category": "handwritten_runtime",
+      "beforeLines": 52,
+      "afterLines": 52
+    },
+    {
+      "path": "automation/canonical-operation-sources.json",
+      "category": "config_contracts",
+      "beforeLines": 400,
+      "afterLines": 400
+    },
+    {
+      "path": "automation/ci/checks.json",
+      "category": "config_contracts",
+      "beforeLines": 114,
+      "afterLines": 114
+    },
+    {
+      "path": "automation/client_test_classification.json",
+      "category": "config_contracts",
+      "beforeLines": 1110,
+      "afterLines": 1278
+    },
+    {
+      "path": "automation/generate_setup_appearance_fonts.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 36,
+      "afterLines": 32
+    },
+    {
+      "path": "automation/notification-center-feed-manifest.json",
+      "category": "config_contracts",
+      "beforeLines": 73,
+      "afterLines": 80
+    },
+    {
+      "path": "automation/notification-center/benchmark.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 88,
+      "afterLines": 81
+    },
+    {
+      "path": "automation/notification-center/benchmark_support.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 0,
+      "afterLines": 59
+    },
+    {
+      "path": "automation/notification-center/benchmark_support.test.mjs",
+      "category": "tests",
+      "beforeLines": 0,
+      "afterLines": 52
+    },
+    {
+      "path": "automation/notification-center/maintenance_benchmark.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 0,
+      "afterLines": 82
+    },
+    {
+      "path": "automation/notification-center/prepared_benchmark.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 119,
+      "afterLines": 0
+    },
+    {
+      "path": "automation/notification-center/prepared_maintenance.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 119,
+      "afterLines": 0
+    },
+    {
+      "path": "automation/notification-center/prepared_sustained.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 63,
+      "afterLines": 0
+    },
+    {
+      "path": "automation/notification-center/sustained.mjs",
+      "category": "handwritten_runtime",
+      "beforeLines": 54,
+      "afterLines": 60
+    },
+    {
+      "path": "automation/tests/notification_feed_migration.test.mjs",
+      "category": "tests",
+      "beforeLines": 42,
+      "afterLines": 57
+    },
+    {
+      "path": "database/functions/eshop_orders/get_orders_tab_data.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 54,
+      "afterLines": 54
+    },
+    {
+      "path": "database/functions/notification_center/center_policy.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 51,
+      "afterLines": 34
+    },
+    {
+      "path": "database/functions/notification_center/core.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 421,
+      "afterLines": 253
+    },
+    {
+      "path": "database/functions/notification_center/daily_overview.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 123,
+      "afterLines": 0
+    },
+    {
+      "path": "database/functions/notification_center/order_selection.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 45,
+      "afterLines": 34
+    },
+    {
+      "path": "database/functions/notification_center/overview.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 45,
+      "afterLines": 0
+    },
+    {
+      "path": "database/functions/notification_center/read_state.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 85,
+      "afterLines": 0
+    },
+    {
+      "path": "database/functions/notification_center/serving_contraction.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 0,
+      "afterLines": 18
+    },
+    {
+      "path": "database/functions/notification_center/shared.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 0,
+      "afterLines": 97
+    },
+    {
+      "path": "database/functions/notification_center/temporal_feed.sql",
+      "category": "handwritten_runtime",
+      "beforeLines": 136,
+      "afterLines": 0
+    },
+    {
+      "path": "database/functions/security/definer_contracts.json",
+      "category": "config_contracts",
+      "beforeLines": 2787,
+      "afterLines": 2908
+    },
+    {
+      "path": "database/functions/security/server_security_acl_manifest.json",
+      "category": "config_contracts",
+      "beforeLines": 2863,
+      "afterLines": 3025
+    },
+    {
+      "path": "database/tests/canonical_mutation_source_parity_test.sql",
+      "category": "generated_test_contract",
+      "beforeLines": 1991,
+      "afterLines": 1973
+    },
+    {
+      "path": "database/tests/helpers/prepared_notification_view.sql",
+      "category": "tests",
+      "beforeLines": 0,
+      "afterLines": 28
+    },
+    {
+      "path": "database/tests/notification_center/administration_visibility_test.sql",
+      "category": "tests",
+      "beforeLines": 48,
+      "afterLines": 49
+    },
+    {
+      "path": "database/tests/notification_center/app_activity_test.sql",
+      "category": "tests",
+      "beforeLines": 103,
+      "afterLines": 102
+    },
+    {
+      "path": "database/tests/notification_center/bank_sources_test.sql",
+      "category": "tests",
+      "beforeLines": 100,
+      "afterLines": 101
+    },
+    {
+      "path": "database/tests/notification_center/cancelled_new_orders_test.sql",
+      "category": "tests",
+      "beforeLines": 58,
+      "afterLines": 62
+    },
+    {
+      "path": "database/tests/notification_center/contract_test.sql",
+      "category": "tests",
+      "beforeLines": 49,
+      "afterLines": 50
+    },
+    {
+      "path": "database/tests/notification_center/current_participants_test.sql",
+      "category": "tests",
+      "beforeLines": 47,
+      "afterLines": 50
+    },
+    {
+      "path": "database/tests/notification_center/daily_overview_test.sql",
+      "category": "tests",
+      "beforeLines": 132,
+      "afterLines": 0
+    },
+    {
+      "path": "database/tests/notification_center/deleted_entities_test.sql",
+      "category": "tests",
+      "beforeLines": 74,
+      "afterLines": 75
+    },
+    {
+      "path": "database/tests/notification_center/email_sources_test.sql",
+      "category": "tests",
+      "beforeLines": 125,
+      "afterLines": 126
+    },
+    {
+      "path": "database/tests/notification_center/feed_test.sql",
+      "category": "tests",
+      "beforeLines": 51,
+      "afterLines": 0
+    },
+    {
+      "path": "database/tests/notification_center/form_availability_save_test.sql",
+      "category": "tests",
+      "beforeLines": 53,
+      "afterLines": 54
+    },
+    {
+      "path": "database/tests/notification_center/hidden_participants_test.sql",
+      "category": "tests",
+      "beforeLines": 40,
+      "afterLines": 40
+    },
+    {
+      "path": "database/tests/notification_center/legacy_place_totals_test.sql",
+      "category": "tests",
+      "beforeLines": 77,
+      "afterLines": 77
+    },
+    {
+      "path": "database/tests/notification_center/lifecycle_test.sql",
+      "category": "tests",
+      "beforeLines": 88,
+      "afterLines": 77
+    },
+    {
+      "path": "database/tests/notification_center/overview_test.sql",
+      "category": "tests",
+      "beforeLines": 66,
+      "afterLines": 0
+    },
+    {
+      "path": "database/tests/notification_center/prepared_history_test.sql",
+      "category": "tests",
+      "beforeLines": 63,
+      "afterLines": 64
+    },
+    {
+      "path": "database/tests/notification_center/prepared_orders_test.sql",
+      "category": "tests",
+      "beforeLines": 70,
+      "afterLines": 72
+    },
+    {
+      "path": "database/tests/notification_center/presentation_test.sql",
+      "category": "tests",
+      "beforeLines": 50,
+      "afterLines": 51
+    },
+    {
+      "path": "database/tests/notification_center/producers_test.sql",
+      "category": "tests",
+      "beforeLines": 185,
+      "afterLines": 186
+    },
+    {
+      "path": "database/tests/notification_center/projection_lifecycle_test.sql",
+      "category": "tests",
+      "beforeLines": 49,
+      "afterLines": 44
+    },
+    {
+      "path": "database/tests/notification_center/read_batches_test.sql",
+      "category": "tests",
+      "beforeLines": 84,
+      "afterLines": 0
+    },
+    {
+      "path": "database/tests/notification_center/read_cursor_concurrency.test.mjs",
+      "category": "tests",
+      "beforeLines": 172,
+      "afterLines": 174
+    },
+    {
+      "path": "database/tests/notification_center/scalability_contract_test.sql",
+      "category": "tests",
+      "beforeLines": 66,
+      "afterLines": 0
+    },
+    {
+      "path": "database/tests/notification_center/serving_contraction_test.sql",
+      "category": "tests",
+      "beforeLines": 0,
+      "afterLines": 25
+    },
+    {
+      "path": "database/tests/notification_center/temporal_feed_test.sql",
+      "category": "tests",
+      "beforeLines": 83,
+      "afterLines": 0
+    },
+    {
+      "path": "lib/components/eshop/order_contact_controller.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 0,
+      "afterLines": 338
+    },
+    {
+      "path": "lib/components/eshop/order_detail_controller.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 257,
+      "afterLines": 255
+    },
+    {
+      "path": "lib/components/eshop/views/order_detail_view.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 1418,
+      "afterLines": 1410
+    },
+    {
+      "path": "lib/components/eshop/views/order_email_repair_dialog.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 751,
+      "afterLines": 540
+    },
+    {
+      "path": "lib/components/fonts/ticket_font_catalog.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 46,
+      "afterLines": 85
+    },
+    {
+      "path": "lib/components/occasion/setup/occasion_setup_appearance.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 258,
+      "afterLines": 282
+    },
+    {
+      "path": "lib/components/occasion/setup/occasion_setup_font_ids.dart",
+      "category": "generated_dart_data",
+      "beforeLines": 3787,
+      "afterLines": 0
+    },
+    {
+      "path": "lib/components/occasion/setup/occasion_setup_page.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 3025,
+      "afterLines": 3090
+    },
+    {
+      "path": "lib/components/occasion/setup/occasion_setup_ticket_gallery.dart",
+      "category": "handwritten_runtime",
+      "beforeLines": 302,
+      "afterLines": 304
+    },
+    {
+      "path": "pubspec.yaml",
+      "category": "config_contracts",
+      "beforeLines": 210,
+      "afterLines": 211
+    },
+    {
+      "path": "supabase/migrations/20261106110000_notification_canonical_orders.sql",
+      "category": "generated_forward_migration",
+      "beforeLines": 0,
+      "afterLines": 513
+    },
+    {
+      "path": "test/components/eshop/order_detail_save_changes_test.dart",
+      "category": "tests",
+      "beforeLines": 168,
+      "afterLines": 327
+    },
+    {
+      "path": "test/components/eshop/order_detail_scroll_storage_test.dart",
+      "category": "tests",
+      "beforeLines": 84,
+      "afterLines": 108
+    },
+    {
+      "path": "test/components/eshop/order_detail_viewer_test.dart",
+      "category": "tests",
+      "beforeLines": 472,
+      "afterLines": 461
+    },
+    {
+      "path": "test/components/forms/appearance_palettes_test.dart",
+      "category": "tests",
+      "beforeLines": 90,
+      "afterLines": 95
+    },
+    {
+      "path": "test/components/occasion/occasion_setup_appearance_test.dart",
+      "category": "tests",
+      "beforeLines": 253,
+      "afterLines": 258
+    },
+    {
+      "path": "test/components/occasion/occasion_setup_copy_cases.dart",
+      "category": "tests",
+      "beforeLines": 311,
+      "afterLines": 317
+    },
+    {
+      "path": "test/components/occasion/occasion_setup_preview_performance_test.dart",
+      "category": "tests",
+      "beforeLines": 215,
+      "afterLines": 221
+    },
+    {
+      "path": "test/components/occasion/occasion_setup_ticket_gallery_test.dart",
+      "category": "tests",
+      "beforeLines": 168,
+      "afterLines": 175
+    },
+    {
+      "path": "test/components/occasion/occasion_setup_ticket_matrix_test.dart",
+      "category": "tests",
+      "beforeLines": 452,
+      "afterLines": 454
+    },
+    {
+      "path": "test/components/occasion/setup_font_catalog_test.dart",
+      "category": "tests",
+      "beforeLines": 0,
+      "afterLines": 65
+    },
+    {
+      "path": "test/components/occasion/ticket_email_delivery_test.dart",
+      "category": "tests",
+      "beforeLines": 403,
+      "afterLines": 408
+    },
+    {
+      "path": "tools/festapp/test/seat-orders-postgres.test.mjs",
+      "category": "tests",
+      "beforeLines": 250,
+      "afterLines": 250
+    }
+  ],
+  "schemaFreshEqualsImmediatePredecessorUpgrade": true,
+  "schemaCatalogDigests": {
+    "columns": "292f6aa5768b7556868e586c473414ed",
+    "indexes": "264ab187427bd59a14e472fa51db4449",
+    "functions": "d99261018acdbc204098bffdb0a2db21",
+    "constraints": "ca4fc6ba71c797caaec7508f1e57e759",
+    "retiredSignatures": 0
+  },
+  "migration": {
+    "path": "supabase/migrations/20261106110000_notification_canonical_orders.sql",
+    "sha256": "0f4661444fe63ecbbc768b2f8deda3f759c1b2d2d4f6680f6183bf60b39b0794",
+    "productionApplied": false
+  },
+  "checks": {
+    "notificationSqlAndSourceParity": {
+      "passed": 34,
+      "failed": 0
+    },
+    "notificationConcurrency": {
+      "passed": 14,
+      "failed": 0
+    },
+    "assemblerAndPreparedProtocol": {
+      "passed": 6,
+      "failed": 0
+    },
+    "benchmarkSupport": {
+      "passed": 5,
+      "failed": 0
+    },
+    "ciContract": {
+      "passed": 6,
+      "failed": 0
+    },
+    "latestContactWidgets": {
+      "passed": 30,
+      "failed": 0
+    },
+    "contactRebind": {
+      "passed": 2,
+      "failed": 0
+    },
+    "latestContactSave": {
+      "passed": 7,
+      "failed": 0
+    },
+    "setupFontProjection": {
+      "orderedPairs": 1892,
+      "sqlBytesUnchanged": true,
+      "missingAssetAndInvalidCatalogRetry": true
+    },
+    "dartAnalyzer": {
+      "errors": 0,
+      "warnings": 0,
+      "styleInfosRetained": true
+    }
+  },
+  "wave1DisposableSmoke": {
+    "benchmarkEvents": 3,
+    "benchmarkDeliveries": 3,
+    "maintenanceEvents": 1000,
+    "maintenanceRecipients": 5,
+    "sustainedDeliveries": 12000,
+    "sustainedPending": 0,
+    "sustainedStatus": "complete",
+    "note": "Measured during wave 1 before serving contraction; final SQL behavior separately covered by fresh/upgrade and canonical suites."
+  },
+  "remainingPublicationGates": [
+    "Before later source publication, run the affected canonical CI mirror lanes; before deployment, the exact source SHA must satisfy all required GitHub checks. No publication or deployment was requested."
+  ],
+  "mobilePushChanged": false,
+  "committed": false,
+  "pushed": false,
+  "productionDeployed": false,
+  "initialReductionCategories": {
+    "handwritten_runtime": {
+      "before": 7548,
+      "after": 7160,
+      "net": -388,
+      "files": 27
+    },
+    "config_contracts": {
+      "before": 7557,
+      "after": 7473,
+      "net": -84,
+      "files": 7
+    },
+    "tests": {
+      "before": 4369,
+      "after": 4294,
+      "net": -75,
+      "files": 39
+    },
+    "generated_test_contract": {
+      "before": 1991,
+      "after": 1973,
+      "net": -18,
+      "files": 1
+    },
+    "generated_dart_data": {
+      "before": 3787,
+      "after": 0,
+      "net": -3787,
+      "files": 1
+    },
+    "generated_forward_migration": {
+      "before": 0,
+      "after": 513,
+      "net": 513,
+      "files": 1
+    }
+  },
+  "initialLocalBlockers": [
+    "Existing architecture guard: 23 unclassified Flutter roots and one private venue SDK fixture import in unchanged order_detail_viewer_test.dart.",
+    "Existing undeclared definer preview_ticket_seat_assignment in unchanged database/functions/blueprint/seating_assignment.sql."
+  ],
+  "resolvedLocalBlockers": {
+    "classification": {
+      "registeredRoots": 23,
+      "guard": "PASS",
+      "guardWeakened": false
+    },
+    "privateSdkImport": {
+      "test": "test/components/eshop/order_detail_viewer_test.dart",
+      "resolution": "Use VenueLayoutViewer and existing shared layout-canvas fixture; no vendor export or production change.",
+      "passed": 11
+    },
+    "definerInventory": {
+      "exactHeadersDeclared": 43,
+      "runtimeRoleChecks": 129,
+      "mismatches": 0,
+      "headerTestsPassed": 8,
+      "sqlBodiesChanged": false,
+      "databaseGrantsChanged": false,
+      "providerServiceRoleDefaultsPreserved": true
+    },
+    "registeredFlutterSuites": {
+      "passed": 188,
+      "skippedInAppMode": 2,
+      "failed": 0
+    },
+    "ticketingVariant": {
+      "passed": 3,
+      "failed": 0,
+      "note": "Runs both app-mode-skipped navigation cases with FESTAPP_APP_SUPPORTED=false."
+    },
+    "viewerAnalyzer": {
+      "issues": 0
+    },
+    "ciCommandContract": {
+      "passed": 6,
+      "failed": 0
+    },
+    "additionalTestsDeleted": 0
+  }
+}

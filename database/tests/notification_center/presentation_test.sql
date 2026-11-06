@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 DO $$
 DECLARE org bigint; oc bigint; f bigint; oid bigint; tid bigint; viewer uuid:=gen_random_uuid(); result jsonb;
@@ -17,34 +18,34 @@ BEGIN
  PERFORM public.notification_center_order_internal(oid,'order_created','created',NULL);
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
- result:=public.get_notification_center_feed(org,oc);
- PERFORM assert_eq(result#>>'{items,0,data,contact,email}',' customer@example.invalid ','authorized live email is available to formatter');
- PERFORM assert_eq((result#>>'{items,0,data,count}')::int,2,'exact creation identity count');
- PERFORM assert_true((result#>>'{items,0,data,formContext,allowsMultiple}')::boolean,'configured multiple context');
+ result:=pg_temp.prepared_notification_view(org,oc);
+ PERFORM assert_eq(result#>>'{items,0,data,previewContacts,0,email}',' customer@example.invalid ','authorized live email is available to formatter');
+ PERFORM assert_eq((result#>>'{items,0,data,placeCount}')::int,2,'exact creation identity count');
+ PERFORM assert_true((result#>>'{items,0,data,allowsMultiple}')::boolean,'configured multiple context');
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.notification_center_events WHERE organization=org AND data::text LIKE '%customer@example.invalid%'),'contact absent from event log');
  UPDATE public.form_fields SET data='{"max_tickets":1}' WHERE form=f;
  UPDATE eshop.tickets SET state='storno' WHERE id=tid;
- result:=public.get_notification_center_feed(org,oc);
- PERFORM assert_eq((result#>>'{items,0,data,count}')::int,2,'later partial storno does not rewrite historical count');
+ result:=pg_temp.prepared_notification_view(org,oc);
+ PERFORM assert_eq((result#>>'{items,0,data,placeCount}')::int,2,'later partial storno does not rewrite historical count');
  UPDATE eshop.orders SET data='{}' WHERE id=oid;
- result:=public.get_notification_center_feed(org,oc);
- PERFORM assert_true((result#>'{items,0,data,contact,email}')='null'::jsonb,'missing contact has no identifier fallback');
+ result:=pg_temp.prepared_notification_view(org,oc);
+ PERFORM assert_true((result#>'{items,0,data,previewContacts,0,email}')='null'::jsonb,'missing contact has no identifier fallback');
  -- Legacy rows lack a captured form context; hydrate only the missing fact.
  UPDATE public.form_fields SET data='{"max_tickets":2}' WHERE form=f;
  PERFORM public.notification_center_publish_internal(org,oc,'order_cancelled','legacy-single-place',
   jsonb_build_object('orderId',oid,'count',1),NULL);
  PERFORM public.project_notification_center(500);
- SELECT x INTO result FROM jsonb_array_elements(public.get_notification_center_feed(org,oc)->'items') x
+ SELECT x INTO result FROM jsonb_array_elements(pg_temp.prepared_notification_view(org,oc)->'items') x
   WHERE x->>'kind'='order_cancelled';
- PERFORM assert_eq((result#>>'{data,count}')::int,1,'one cancelled place stays an exact count');
- PERFORM assert_true((result#>>'{data,formContext,allowsMultiple}')::boolean,'legacy multi-place form displays even one place');
+ PERFORM assert_eq((result#>>'{data,placeCount}')::int,1,'one cancelled place stays an exact count');
+ PERFORM assert_true((result#>>'{data,allowsMultiple}')::boolean,'legacy multi-place form displays even one place');
  UPDATE public.form_fields SET data='{"max_tickets":"invalid legacy metadata"}' WHERE form=f;
  PERFORM public.notification_center_order_internal(oid,'order_created','legacy-metadata',NULL);
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),3::bigint,'legacy invalid metadata never breaks order publication');
- result:=public.open_notification_center(org,oc);
+ result:=pg_temp.prepared_notification_view(org,oc,'open');
  PERFORM assert_eq((result->>'previousReadThrough')::bigint,0::bigint,'first open returns pre-ack watermark');
- PERFORM assert_true((result->>'readThrough')::bigint>0,'first open acknowledges the snapshot');
- result:=public.open_notification_center(org,oc);
- PERFORM assert_eq((result->>'previousReadThrough')::bigint,(result->>'readThrough')::bigint,'second open does not label the acknowledged snapshot new');
+ PERFORM assert_true((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer)>0,'first open acknowledges the snapshot');
+ result:=pg_temp.prepared_notification_view(org,oc,'open');
+ PERFORM assert_eq((result->>'previousReadThrough')::bigint,(SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer),'second open does not label the acknowledged snapshot new');
 END $$;
 ROLLBACK;

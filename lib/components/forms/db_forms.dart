@@ -233,7 +233,14 @@ class DbForms {
 
   static Future<FormEditorDraft> updateForm(FormEditorDraft form) async {
     final response = await _commands.save(form.toEditedJson());
-    return FormEditBundle.fromSave(form, response).form;
+    final saved = FormEditBundle.fromSave(form, response).form;
+    // Receipt metadata is historical. Refresh only the read-only live policy,
+    // with current reader authorization, without changing acknowledged versions.
+    final current = await getFormForEdit(saved.definition.link!);
+    saved.definition = saved.definition.copyWith(
+      measurementStatus: current?.form.definition.measurementStatus,
+    );
+    return saved;
   }
 
   static Future<void> deleteForm(

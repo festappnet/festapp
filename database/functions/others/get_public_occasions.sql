@@ -103,7 +103,7 @@ BEGIN
       'created_at', u.created_at,
       'title', u.title,
       'organization', u.organization,
-      'data', u.data,
+      'data', public.form_measurement_unit_data_internal(u.id,u.data),
       'features', u.features,
       'occasions', (
          SELECT COALESCE(

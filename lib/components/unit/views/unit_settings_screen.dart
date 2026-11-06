@@ -1,3 +1,4 @@
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -54,6 +55,13 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   late TextEditingController _replyToEmailController;
   String? _selectedTimezone;
   String _communicationTone = 'formal';
+  bool _measurementEnabled = false;
+  final _measurementGtmController = TextEditingController();
+  final _measurementScriptsController = TextEditingController();
+  bool get _showMeasurement =>
+      RightsService.occasionLinkModel?.organization?.formMeasurementEnabled ==
+      true;
+
   List<String> _allTimezones = [];
   String _versionInfo = "";
 
@@ -77,10 +85,19 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
     _replyToEmailController.dispose();
+    _measurementGtmController.dispose();
+    _measurementScriptsController.dispose();
     super.dispose();
   }
 
   void _onRightsChanged() {
+    if (mounted) {
+      setState(
+        () => _canEdit = RightsService.hasCapability(
+          AuthorizationCapabilities.unitSettingsWrite,
+        ),
+      );
+    }
     if (RightsService.currentUnit()?.id == widget.unit.id) {
       _checkDeleteConstraints();
     }
@@ -177,6 +194,11 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
             ? 'informal'
             : 'formal';
 
+    _measurementEnabled = _unit.data?['measurement_enabled'] == true;
+    _measurementGtmController.text =
+        _unit.data?['measurement_gtm_container'] as String? ?? '';
+    _measurementScriptsController.text =
+        _unit.data?['measurement_scripts'] as String? ?? '';
     _allTimezones = TimeHelper.getAvailableTimezoneNames();
     _selectedTimezone = _unit.data?[dataTimezone] as String? ?? tz.local.name;
 
@@ -189,13 +211,16 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
+    if (!RightsService.hasCapability(
+      AuthorizationCapabilities.unitSettingsWrite,
+    )) {
+      return;
+    }
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
       _isSaving = true;
     });
-
-    _formKey.currentState!.save();
 
     _formKey.currentState!.save();
 
@@ -211,6 +236,21 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
     _unit.data![dataTimezone] = _selectedTimezone;
     _unit.data![Tb.units.data_communication_tone] = _communicationTone;
+    if (_showMeasurement) {
+      _unit.data!['measurement_enabled'] = _measurementEnabled;
+      final gtm = _measurementGtmController.text.trim();
+      final scripts = _measurementScriptsController.text;
+      if (gtm.isEmpty) {
+        _unit.data!.remove('measurement_gtm_container');
+      } else {
+        _unit.data!['measurement_gtm_container'] = gtm;
+      }
+      if (scripts.isEmpty) {
+        _unit.data!.remove('measurement_scripts');
+      } else {
+        _unit.data!['measurement_scripts'] = scripts;
+      }
+    }
 
     try {
       await DbUnits.updateUnit(_unit);
@@ -350,6 +390,72 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         ]),
                       ),
                       const SizedBox(height: 24),
+                      if (_showMeasurement) ...[
+                        Text(
+                          FormStrings.measurementTitle,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(FormStrings.measurementUnitEnabled),
+                          subtitle: Text(FormStrings.measurementUnitHelp),
+                          value: _measurementEnabled,
+                          onChanged: _canEdit && !_isSaving
+                              ? (value) => setState(
+                                    () => _measurementEnabled = value,
+                                  )
+                              : null,
+                        ),
+                        if (_measurementEnabled) ...[
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _measurementGtmController,
+                            enabled: _canEdit && !_isSaving,
+                            maxLength: 36,
+                            decoration: InputDecoration(
+                              labelText: FormStrings.gtmContainer,
+                              hintText: 'GTM-XXXX',
+                              helperText: FormStrings.gtmHelp,
+                              helperMaxLines: 4,
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (value) => value == null ||
+                                    value.trim().isEmpty ||
+                                    RegExp(r'^GTM-[A-Z0-9]{4,32}$')
+                                        .hasMatch(value.trim())
+                                ? null
+                                : FormStrings.gtmInvalid,
+                          ),
+                          const SizedBox(height: 16),
+                          ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            title: Text(FormStrings.measurementAdvanced),
+                            children: [
+                              TextFormField(
+                                controller: _measurementScriptsController,
+                                enabled: _canEdit && !_isSaving,
+                                minLines: 5,
+                                maxLines: 10,
+                                maxLength: formMeasurementScriptLimit,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.measurementScripts,
+                                  helperText:
+                                      FormStrings.measurementScriptsHelp,
+                                  helperMaxLines: 5,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                validator: (value) => (value?.runes.length ??
+                                            0) <=
+                                        formMeasurementScriptLimit
+                                    ? null
+                                    : FormStrings.measurementScriptsTooLong,
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                      ],
                       DropdownButtonFormField<String>(
                         initialValue: _communicationTone,
                         decoration: InputDecoration(

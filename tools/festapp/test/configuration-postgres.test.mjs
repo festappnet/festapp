@@ -136,3 +136,14 @@ test('concurrent move outside organizer consent rejects reads and rolls back a v
   }finally{for(const db of [worker,mover,admin]){await db.query('ROLLBACK');await db.end();}}
  }
 });
+
+test('Unit manager owns the shared measurement destination and disabling preserves its configuration',options,async t=>{
+ const {db,f}=await setup(t);
+ const configured=await save(db,f,{settings:{measurement_enabled:true,measurement_gtm_container:'GTM-AB12',measurement_scripts:'window.measurementFixture = true;'}},0,randomUUID(),'unit');
+ assert.equal(configured.code,200,JSON.stringify(configured));
+ const off=await save(db,f,{settings:{measurement_enabled:false}},1,randomUUID(),'unit');assert.equal(off.code,200,JSON.stringify(off));
+ assert.equal(off.data.configuration.settings.measurement_gtm_container,'GTM-AB12');assert.equal(off.data.configuration.settings.measurement_scripts,'window.measurementFixture = true;');
+ assert.equal(off.data.configuration.settings.measurement_enabled,false);
+ await db.query('update unit_users set is_manager=false where unit=$1 and "user"=$2',[f.unit,f.actor]);
+ await denied(db,'select save_configuration_settings($1,$2,$3,$4,$5,$6,$7)',['unit',f.unit,f.org,f.unit,2,randomUUID(),{settings:{measurement_gtm_container:'GTM-CD34'}}]);
+});

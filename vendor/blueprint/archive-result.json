@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "401e34ee175f856db6314b9ee51782ec8aaa1c9d",
+  "sourceCommit": "56ae50c2d333a3e7e6c9610e9083a2d3226a00a7",
   "passed": true,
   "coreSourceByteEquivalent": true,
   "pubSelectedCoreAndWrapper": true,
@@ -10,8 +10,8 @@
   "requiredNpmFiles": {
     "src/index.js": "471a6a9992bc1e4f63f3bdae046b867cd04b27703db10bcfb661b00b740dafeb",
     "src/index.d.ts": "183da0fad404867a2e93a44de9e2a32a784b8897f962704def864e7a45814dc6",
-    "dist/venue_layout_kernel.js": "72382c155086147af0bb3f5ce113f7ec279a49ba32a2eb83980f2101c17470dd",
-    "dist/manifest.json": "00720b27aafd8881be29acb7c9c9a48fd6349f6d895cb292cd20617642ffaa47",
+    "dist/venue_layout_kernel.js": "2c816e2804d8ffc6114c18ef066a4a229b00c0636b776c2b8d7661166dbf5ed0",
+    "dist/manifest.json": "42173458cf2a97e3b559562e6debbd66ce4b6654c45a0ae6d10242b51ff4c2e0",
     "demo/index.html": "8929aa17a489ed8dca2748bda2f723e4887f1dd62ebfc60c9d108d0b497ae0cb",
     "LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
     "assets/layout_fonts/fixtures.json": "d92619359e31da7c24fc06e6259533977dbf48b899dc63a5332b24f93c53860b",

@@ -1,8 +1,10 @@
 import 'package:fstapp/components/_shared/appearance_palettes.dart';
-import 'occasion_setup_font_ids.dart';
+
 import 'occasion_setup_strings.dart';
+
 import 'dart:convert';
 import 'dart:math' as math;
+
 import 'package:flutter/painting.dart';
 
 import '../../ticket_layout/models/ticket_layout.dart';
@@ -11,9 +13,9 @@ import '../../ticket_layout/ticket_theme_color.dart';
 /// Concrete values persist with the draft; a preset is only an editing shortcut.
 class OccasionSetupAppearance {
   static Map<String, String> get ticketCompositions => {
-        'silk_light': OccasionSetupStrings.ui('silk_light'),
-        'silk_dark': OccasionSetupStrings.ui('silk_dark'),
-      };
+    'silk_light': OccasionSetupStrings.ui('silk_light'),
+    'silk_dark': OccasionSetupStrings.ui('silk_dark'),
+  };
   static const themedArtwork = {
     'concert_stub',
     'festival_poster',
@@ -42,22 +44,27 @@ class OccasionSetupAppearance {
 
   // Same luminance-preserving palette as ticketThemePalette.js. Recoloring ink
   // and paper together preserves each original design's contrast and structure.
-  static String themeColor(String hex, Map appearance) =>
-      ticketThemeColor(hex, appearance['primary'],
-          appearance['gradient'] == true ? appearance['secondary'] : appearance['primary']);
+  static String themeColor(String hex, Map appearance) => ticketThemeColor(
+    hex,
+    appearance['primary'],
+    appearance['gradient'] == true
+        ? appearance['secondary']
+        : appearance['primary'],
+  );
 
-  static const fonts = occasionSetupFontIds;
   static List<Map<String, dynamic>> get presets => [
-        for (final palette in AppearancePalettes.all.where((p) => p.fontFamily != null))
-          {
-            'id': palette.id,
-            'label': palette.label,
-            'primary': palette.primaryHex,
-            'secondary': palette.secondaryHex,
-            'gradient': false,
-            'fontFamily': palette.fontFamily,
-          },
-      ];
+    for (final palette in AppearancePalettes.all.where(
+      (p) => p.fontFamily != null,
+    ))
+      {
+        'id': palette.id,
+        'label': palette.label,
+        'primary': palette.primaryHex,
+        'secondary': palette.secondaryHex,
+        'gradient': false,
+        'fontFamily': palette.fontFamily,
+      },
+  ];
 
   /// Color choices retain the independently selected font and color mode.
   static Map<String, dynamic> selectPreset(Map data, String id) {
@@ -110,19 +117,20 @@ class OccasionSetupAppearance {
     return text.length == 8 ? text.substring(2) : text;
   }
 
-  static bool valid(Map a) =>
+  static bool valid(Map a, {required Map<String, String>? fonts}) =>
       RegExp(r'^[A-Fa-f0-9]{6}$').hasMatch(a['primary'] as String? ?? '') &&
       RegExp(r'^[A-Fa-f0-9]{6}$').hasMatch(a['secondary'] as String? ?? '') &&
       ((a['preserveSource'] == true && a['id'] == 'custom') ||
-          fonts.containsKey(a['fontFamily'])) &&
+          (fonts != null && fonts.containsKey(a['fontFamily']))) &&
       a['gradient'] is bool;
 
   static void apply(
     Map<String, dynamic> data,
-    Map<String, dynamic> appearance,
-  ) {
+    Map<String, dynamic> appearance, {
+    required Map<String, String> fonts,
+  }) {
     appearance = Map.of(appearance)..remove('preserveSource');
-    if (!valid(appearance))
+    if (!valid(appearance, fonts: fonts))
       throw const FormatException('Unsupported appearance');
     data['appearance'] = Map.of(appearance);
     final form = data['formDraft'] as Map;
@@ -147,25 +155,37 @@ class OccasionSetupAppearance {
           };
     for (final entry in (layout['templates'] as Map).entries.toList()) {
       layout['templates'][entry.key] = styledTemplate(
-          data['ticketTemplateSource'] is Map
-              ? data['ticketTemplateSource'] as Map
-              : entry.value as Map,
-          appearance,
-          decorated: data['ticketTemplateId'] != null,
-          composition: data['ticketTemplateId'] as String?);
+        data['ticketTemplateSource'] is Map
+            ? data['ticketTemplateSource'] as Map
+            : entry.value as Map,
+        appearance,
+        decorated: data['ticketTemplateId'] != null,
+        composition: data['ticketTemplateId'] as String?,
+        fonts: fonts,
+      );
     }
-    final background =
-        ticketBackground(data['ticketTemplateId'] as String? ?? '', appearance);
+    final background = ticketBackground(
+      data['ticketTemplateId'] as String? ?? '',
+      appearance,
+    );
     if (background != null) feature['background'] = background;
     feature['layout'] = layout;
     data['ticketDraft'] = feature;
   }
 
-  static Map<String, dynamic> styledTemplate(Map raw, Map appearance,
-      {bool decorated = false, String? composition}) {
+  static Map<String, dynamic> styledTemplate(
+    Map raw,
+    Map appearance, {
+    required Map<String, String> fonts,
+    bool decorated = false,
+    String? composition,
+  }) {
     final t = Map<String, dynamic>.from(jsonDecode(jsonEncode(raw)));
     final fontId = fonts[appearance['fontFamily']];
-    if (fontId == null) return t;
+    if (fontId == null) {
+      if (appearance['id'] == 'custom' && appearance['preserveSource'] == true) return t;
+      throw const FormatException('Unsupported appearance font');
+    }
     final colors = <String>[appearance['primary'], appearance['secondary']];
     if (decorated) {
       String color(String hex) => themeColor(hex, appearance);
@@ -181,10 +201,13 @@ class OccasionSetupAppearance {
         (e['style'] as Map).remove('fontId');
         e['style']['color'] = e['binding'] == 'qr'
             ? '000000'
-            : themeColor(e['style']['color'],
-                {'primary': '222222', 'secondary': '222222'});
+            : themeColor(e['style']['color'], {
+                'primary': '222222',
+                'secondary': '222222',
+              });
         if (['silk_light', 'ball_silk'].contains(composition) &&
-            e['binding'] != 'qr') e['style']['color'] = '222222';
+            e['binding'] != 'qr')
+          e['style']['color'] = '222222';
         if (composition == 'silk_dark' && e['binding'] != 'qr')
           e['style']['color'] = 'F5F5F5';
       }
@@ -194,10 +217,12 @@ class OccasionSetupAppearance {
         .take(appearance['gradient'] == true ? 2 : 1)
         .map((hex) => Color(int.parse('ff$hex', radix: 16)).computeLuminance())
         .toList();
-    final whiteContrast =
-        luminance.map((l) => 1.05 / (l + .05)).reduce(math.min);
-    final blackContrast =
-        luminance.map((l) => (l + .05) / .05).reduce(math.min);
+    final whiteContrast = luminance
+        .map((l) => 1.05 / (l + .05))
+        .reduce(math.min);
+    final blackContrast = luminance
+        .map((l) => (l + .05) / .05)
+        .reduce(math.min);
     final foreground = blackContrast > whiteContrast ? '000000' : 'FFFFFF';
     t['fontId'] = fontId;
     t['canvasColor'] = colors.first;
@@ -228,21 +253,20 @@ class OccasionSetupAppearance {
       double h,
       double size, {
       int lines = 1,
-    }) =>
-        {
-          'id': binding,
-          'binding': binding,
-          'box': {'x': x, 'y': y, 'width': w, 'height': h},
-          'visible': true,
-          'locked': false,
-          'style': {
-            'fontSize': size,
-            'minFontSize': 6,
-            'maxLines': lines,
-            'color': binding == 'qr' ? '000000' : 'FFFFFF',
-            'align': 'left',
-          },
-        };
+    }) => {
+      'id': binding,
+      'binding': binding,
+      'box': {'x': x, 'y': y, 'width': w, 'height': h},
+      'visible': true,
+      'locked': false,
+      'style': {
+        'fontSize': size,
+        'minFontSize': 6,
+        'maxLines': lines,
+        'color': binding == 'qr' ? '000000' : 'FFFFFF',
+        'align': 'left',
+      },
+    };
     return {
       'page': {'width': 595.28, 'height': 841.89},
       'ticketArea': {'x': 0, 'y': 0, 'width': 595.28, 'height': 250.0},

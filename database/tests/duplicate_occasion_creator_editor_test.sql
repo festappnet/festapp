@@ -57,6 +57,7 @@ BEGIN
   INSERT INTO public.forms(occasion, blueprint, title, link)
   VALUES (v_source, v_blueprint, 'Tickets', 'copy-form-' || gen_random_uuid()::text)
   RETURNING id INTO v_form;
+  UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"gtm_container":"GTM-AB12","scripts":"<script>window.test=1</script>"}}'::jsonb WHERE id=v_form;
   INSERT INTO public.form_fields(form, product_type, title, type)
   VALUES (v_form, v_product_type, 'Ticket', 'ticket');
 
@@ -67,6 +68,7 @@ BEGIN
   v_result := public.duplicate_occasion_client_sync_v1(
     v_source, gen_random_uuid());
   v_copy := (v_result #>> '{data,occasionId}')::bigint;
+  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.forms WHERE occasion=v_copy AND data ? 'analytics'),'occasion copy omits measurement code');
 
   PERFORM assert_eq(v_result->>'status', 'applied', 'copy command applies');
   PERFORM assert_true(v_copy IS NOT NULL, 'copy is created');

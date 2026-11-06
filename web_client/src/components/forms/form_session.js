@@ -562,14 +562,14 @@ export class FormSession extends EventTarget {
         this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
     }
 
-    async awaitPendingReservations() {
+    async awaitPendingReservations({ recover = true } = {}) {
         // A new operation can join while the previous queue settles.
         let queue;
         do { queue = this._spotQueue; await queue; } while (queue !== this._spotQueue);
         const seats = () => this.state.tickets.filter(ticket => ticket.spot).map(ticket => String(ticket.spot)).sort();
         const expired = () => this.reservationExpiresAt && Date.parse(this.reservationExpiresAt) <= Date.now() && seats().length > 0;
         if (this._reservationUnresolved || expired()) {
-            if (!this.recoverReservations) throw new Error(this._reservationUnresolved ? 'reservation_state_unknown' : 'reservation_expired');
+            if (!recover || !this.recoverReservations) throw new Error(this._reservationUnresolved ? 'reservation_state_unknown' : 'reservation_expired');
             const reviewedSeats = JSON.stringify(seats());
             // Retry only the authoritative read. A lost write response must never
             // cause us to replay a hold/release or submit an unverified selection.

@@ -480,7 +480,7 @@ test('RouterService.handleInitialLoad', async (t) => {
         assert.equal(handled, false);
     });
 
-    await t.test('should sanitize incoming URL with query params on load', async () => {
+    await t.test('preserves approved attribution on a public form before mount', async () => {
         AppConfig.isAppSupported = false; // Web Client mode
 
         global.window.location.pathname = '/form/slug';
@@ -500,7 +500,7 @@ test('RouterService.handleInitialLoad', async (t) => {
             // Even if it failed to load component (css), it should have sanitized BEFORE loading
         }
 
-        assert.strictEqual(replacedPath, '/form/slug'); // Should receive clean path
+        assert.strictEqual(replacedPath, '/form/slug?fbclid=IwAR2...'); // Attribution remains visible when GTM starts
     });
 
     await t.test('should strict hash from URL in handleInitialLoad', async () => {

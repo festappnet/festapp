@@ -4,13 +4,15 @@ import {randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');
+import {assertLocalDatabaseUrl,assertDisposableDatabase} from '../../../web_client/tests/database/disposable_database.js';
 const url=new URL(process.env.BLUEPRINT_DATABASE_URL??'');
-assert.equal(url.hostname,'127.0.0.1');assert(['59722','59822'].includes(url.port));
+assertLocalDatabaseUrl(url.href);
+
 const a=new Client({connectionString:url.href}),b=new Client({connectionString:url.href});
 try{
  await Promise.all([a.connect(),b.connect()]);
  const marker=(await a.query('select project from festapp_test_support.disposable_environment where singleton')).rows[0].project;
- assert.equal(marker,url.port==='59822'?'festapp-blueprint-1000-fresh-20261020':'festapp-blueprint-1000-e2e-20261020');
+ await assertDisposableDatabase(a);
  for(const c of [a,b])await c.query("set statement_timeout='10s';set lock_timeout='5s'");
  await a.query(readFileSync(new URL('../blueprint/fixtures.sql',import.meta.url),'utf8'));
  const f=(await a.query('select public.blueprint_test_fixture_internal() f')).rows[0].f;

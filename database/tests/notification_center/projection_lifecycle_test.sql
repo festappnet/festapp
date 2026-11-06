@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 DO $$
 DECLARE org bigint; oc bigint; oc2 bigint; actor uuid:=gen_random_uuid(); late_user uuid:=gen_random_uuid();
@@ -23,20 +24,14 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org),4::bigint,'bounded fanout eventually catches up');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org AND recipient=late_user),0::bigint,'new rights do not gain historical recipient snapshot');
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
- page:=public.open_notification_center(org,oc,1);snap:=(page->>'snapshot')::bigint;
- PERFORM assert_eq(page#>>'{groups,0,occasionId}',oc::text,'current event has priority over newer other events');
- cursor:=page->'nextCursor';
- PERFORM assert_true(cursor<>'null'::jsonb,'page exposes a stable cursor');
- page:=public.get_notification_center_page(org,oc,10,snap,cursor);
- PERFORM assert_eq(jsonb_array_length(page->'groups'),3,'remaining groups page without duplicates');
- PERFORM assert_eq((SELECT count(DISTINCT group_key) FROM public.notification_center_deliveries WHERE organization=org),4::bigint,'days and kinds separate groups');
+ PERFORM pg_temp.prepared_notification_view(org,oc,'open');
  -- Removing a real configured limit recovers the old episode without adding attention.
  PERFORM public.notification_center_capacity_transition_internal(org,oc,'form:remove-limit','{"limit":10,"remainingPublic":1}');
  PERFORM public.notification_center_capacity_transition_internal(org,oc,'form:remove-limit','{"limit":10,"remainingPublic":0}');
  PERFORM public.notification_center_capacity_transition_internal(org,oc,'form:remove-limit','{"limit":null,"remainingPublic":null}');
  PERFORM assert_eq((SELECT status FROM public.notification_center_events WHERE organization=org AND source_key='form:remove-limit:episode:1'),'recovered'::text,'removed limit recovers capacity episode');
  -- Personal read covers groups/pages never expanded by this device.
- PERFORM assert_false((public.get_notification_center_badge(org)->>'unread')::boolean,'open acknowledged every delivered page');
+ PERFORM assert_eq((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=actor),4::bigint,'open acknowledges its full snapshot, not later publications');
  UPDATE public.notification_center_events SET occurred_at=clock_timestamp()-interval '100 days' WHERE id IN(first_event,issue);
  UPDATE public.notification_center_deliveries SET delivered_at=clock_timestamp()-interval '100 days' WHERE event_id IN(first_event,issue);
  PERFORM public.maintain_notification_center(100);

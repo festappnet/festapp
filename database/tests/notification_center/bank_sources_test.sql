@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
 DO $$
@@ -40,12 +41,12 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org AND recipient=admin),1::bigint,'account admin receives issue');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_recipients r JOIN public.notification_center_events e ON e.id=r.event_id WHERE e.organization=org AND r.recipient=outsider),0::bigint,'unrelated tenant has no snapshot');
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
- item:=public.open_notification_center(org)#>'{groups,0,items,0}';
+ item:=pg_temp.prepared_notification_view(org)#>'{items,0}';
  PERFORM assert_false((item->'data') ? 'bankAccountId','organizer cannot see bank settings target');
  PERFORM assert_false((item->'data') ? 'bankConnectionId','no internal mapping in DTO');
  PERFORM assert_eq(jsonb_array_length(item#>'{data,affectedOccasions}'),1,'safe exact affected event');
  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
- item:=public.open_notification_center(org)#>'{groups,0,items,0}';
+ item:=pg_temp.prepared_notification_view(org)#>'{items,0}';
  PERFORM assert_eq((item#>>'{data,bankAccountId}')::bigint,account,'bank admin gets authorized detail target');
  -- Recovery requires a new successful pull; storing a token isn't sufficient.
  UPDATE public.notification_center_bank_health SET next_at='-infinity' WHERE connection_id=conn;

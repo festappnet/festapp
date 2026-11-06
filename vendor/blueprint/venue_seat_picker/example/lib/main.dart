@@ -2,15 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+
 import 'package:crypto/crypto.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
+
 import 'demo/bundle.dart';
 import 'demo/image_header.dart';
 import 'demo/storage.dart';
 import 'demo/studio_theme.dart';
 import 'demo/demo_strings.dart';
+import 'demo/text_host.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -155,8 +158,7 @@ class _ExamplePageState extends State<ExamplePage> {
           status = 'Demo - sample data';
         }
       } catch (_) {
-        status =
-            'Uložený plánek se nepodařilo obnovit. Můžete otevřít plánek ze souboru.';
+        status = 'Uložený plánek se nepodařilo obnovit. Můžete otevřít plánek ze souboru.';
       }
       resources = await _decodeImages(resources);
       doc = localizeLayoutDefaultLabels(doc, demoText);
@@ -289,7 +291,7 @@ class _ExamplePageState extends State<ExamplePage> {
         'width': image.width,
         'height': image.height,
       };
-      final candidateResources = <String, dynamic>{
+      var candidateResources = <String, dynamic>{
         ...resources,
         'assets': assets,
         'images': {...resources['images'] as Map? ?? {}, ref: image},
@@ -303,7 +305,16 @@ class _ExamplePageState extends State<ExamplePage> {
       final candidate = controller.document.copyWith(
         background: {...placement, 'assetRef': ref},
       );
-      // Keep export available even if a later source would exceed the portable budget.
+      // Validate the same snapshot and immutable resources that will be applied.
+      final beforePreparation = controller.document;
+      candidateResources = await prepareDemoText(
+        candidate,
+        candidateResources,
+        baseline: baseline,
+      );
+      if (!mounted || !identical(controller.document, beforePreparation)) {
+        return;
+      }
       DemoBundle(candidate, candidateResources, bundle.host).encode();
       if (!controller.apply(candidate, label: 'Import background')) {
         throw StateError(controller.error ?? 'Background change rejected');
@@ -363,6 +374,28 @@ class _ExamplePageState extends State<ExamplePage> {
     }
   }
 
+  Future<Map<String, dynamic>?> _prepareText(
+    VenueLayoutDocument snapshot,
+  ) async {
+    final before = resources;
+    final prepared = await prepareDemoText(
+      snapshot,
+      before,
+      baseline: baseline,
+    );
+    // A late preparation cannot overwrite a newer draft. Concurrent completed
+    // resources merge immutably, preserving any independently loaded images.
+    if (!mounted || !identical(controller.document, snapshot)) {
+      return null;
+    }
+    final merged = mergeDemoTextResources(resources, prepared);
+    if (!identical(merged, resources)) {
+      resources = merged;
+      controller.setResources(merged);
+    }
+    return merged;
+  }
+
   void _changed() {
     if (!mounted) return;
     final nodeIds = controller.document.nodes.map((n) => n.id).toSet();
@@ -375,15 +408,20 @@ class _ExamplePageState extends State<ExamplePage> {
       if (controller.gestureActive || controller.saving) return;
       try {
         if (storageFailure) throw StateError('Simulated storage full');
-        await writeDraft(bundle.encode());
+        final snapshot = controller.document;
+        final host = bundle.host;
+        final prepared = await _prepareText(snapshot);
+        if (prepared == null || controller.saving || controller.gestureActive) {
+          return;
+        }
+        await writeDraft(DemoBundle(snapshot, prepared, host).encode());
         if (mounted && controller.placementWarningIds.isEmpty) {
           setState(() => status = 'Draft saved on this device');
         }
       } catch (_) {
         if (mounted) {
           setState(
-            () => status =
-                'Automatické ukládání se nezdařilo. Exportujte plánek do souboru, abyste zachovali změny.',
+            () => status = 'Automatické ukládání se nezdařilo. Exportujte plánek do souboru, abyste zachovali změny.',
           );
         }
       }
@@ -408,16 +446,18 @@ class _ExamplePageState extends State<ExamplePage> {
       await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Replace unsaved draft?'),
-              content: const Text('Save or export first to keep your changes.'),
+              title: Text(demoText('Replace unsaved draft?')),
+              content: Text(
+                demoText('Save or export first to keep your changes.'),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Keep editing'),
+                  child: Text(demoText('Keep editing')),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Replace'),
+                  child: Text(demoText('Replace')),
                 ),
               ],
             ),
@@ -446,14 +486,14 @@ class _ExamplePageState extends State<ExamplePage> {
     controller.beginGesture();
     prices.values = {};
     if (!controller.preview(
-      VenueLayoutTemplates.create(VenueLayoutTemplates.defaultId),
+      VenueLayoutTemplates.create('ball-classic', localize: demoText),
     )) {
       controller.cancelGesture();
       return;
     }
     controller.commitGesture();
     setState(() {
-      template = VenueLayoutTemplates.defaultId;
+      template = 'ball-classic';
       selected = {};
       quantities = {};
       preview = false;
@@ -482,23 +522,16 @@ class _ExamplePageState extends State<ExamplePage> {
       );
       return;
     }
-    final issues =
-        compileScene(controller.document, resources: resources)['issues']
-            as List;
-    if (issues.isNotEmpty) {
-      setState(
-        () => status =
-            'Cannot save: ${issues.first['reason']}. Fix the highlighted resource or text issue.',
-      );
-      return;
-    }
     controller.saving = true;
     setState(() {});
     final snapshot = controller.document;
     final priceSnapshot = Map<String, dynamic>.from(prices.values);
     final nextRevision = revision + 1;
     try {
-      final portable = DemoBundle(snapshot, resources, {
+      debounce?.cancel();
+      final prepared = await _prepareText(snapshot);
+      if (prepared == null) return;
+      final portable = DemoBundle(snapshot, prepared, {
         'prices': priceSnapshot,
         'template': template,
         'revision': nextRevision,
@@ -523,8 +556,7 @@ class _ExamplePageState extends State<ExamplePage> {
     } catch (_) {
       if (mounted) {
         setState(
-          () => status =
-              'Plánek se nepodařilo uložit. Změny máte stále otevřené; exportujte je do souboru.',
+          () => status = 'Plánek se nepodařilo uložit. Změny máte stále otevřené; exportujte je do souboru.',
         );
       }
     } finally {
@@ -557,6 +589,8 @@ class _ExamplePageState extends State<ExamplePage> {
 
   Future<void> _export({bool geometry = false}) async {
     try {
+      final snapshot = controller.document;
+      if (!geometry && await _prepareText(snapshot) == null) return;
       final text = geometry
           ? jsonEncode(controller.document.toJson())
           : bundle.encode();
@@ -583,6 +617,7 @@ class _ExamplePageState extends State<ExamplePage> {
 
   Future<void> _webPreview() async {
     try {
+      if (await _prepareText(controller.document) == null) return;
       FocusManager.instance.primaryFocus?.unfocus();
       await WidgetsBinding.instance.endOfFrame;
       if (controller.gestureActive || controller.saving) return;
@@ -749,33 +784,49 @@ class _ExamplePageState extends State<ExamplePage> {
               padding: const EdgeInsets.only(right: 14),
               child: Text(
                 '${controller.document.nodes.where((n) => n.kind == 'seat').length} míst k sezení',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xff667085)),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: const Color(0xff667085)),
               ),
             ),
-          TextButton.icon(
-            onPressed: controller.saving ? null : _webPreview,
-            icon: const Icon(Icons.open_in_browser, size: 18),
-            label: const Text('Webový náhled'),
-          ),
-          TextButton.icon(
-            onPressed: () => setState(() => preview = !preview),
-            icon: Icon(
-              preview ? Icons.edit_outlined : Icons.visibility_outlined,
-              size: 18,
+          if (!compact)
+            TextButton.icon(
+              onPressed: controller.saving ? null : _webPreview,
+              icon: const Icon(Icons.open_in_browser, size: 18),
+              label: const Text('Webový náhled'),
             ),
-            label: Text(preview ? 'Zpět do editoru' : 'Náhled'),
-          ),
+          if (compact)
+            IconButton(
+              tooltip: preview ? 'Zpět do editoru' : 'Náhled',
+              onPressed: () => setState(() => preview = !preview),
+              icon: Icon(
+                preview ? Icons.edit_outlined : Icons.visibility_outlined,
+              ),
+            )
+          else
+            TextButton.icon(
+              onPressed: () => setState(() => preview = !preview),
+              icon: Icon(
+                preview ? Icons.edit_outlined : Icons.visibility_outlined,
+                size: 18,
+              ),
+              label: Text(preview ? 'Zpět do editoru' : 'Náhled'),
+            ),
           const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: controller.saving || _savePreparing ? null : _save,
-            icon: Icon(
-              controller.saving ? Icons.hourglass_top : Icons.check,
-              size: 17,
+          if (compact)
+            IconButton(
+              tooltip: controller.saving ? 'Ukládání…' : 'Uložit plánek',
+              onPressed: controller.saving || _savePreparing ? null : _save,
+              icon: Icon(controller.saving ? Icons.hourglass_top : Icons.check),
+            )
+          else
+            FilledButton.icon(
+              onPressed: controller.saving || _savePreparing ? null : _save,
+              icon: Icon(
+                controller.saving ? Icons.hourglass_top : Icons.check,
+                size: 17,
+              ),
+              label: Text(controller.saving ? 'Ukládání…' : 'Uložit plánek'),
             ),
-            label: Text(controller.saving ? 'Ukládání…' : 'Uložit plánek'),
-          ),
           const SizedBox(width: 8),
           PopupMenuButton<String>(
             tooltip: demoText('Files and diagnostics'),
@@ -783,6 +834,8 @@ class _ExamplePageState extends State<ExamplePage> {
             onSelected: (value) {
               if (controller.saving) return;
               switch (value) {
+                case 'webPreview':
+                  _webPreview();
                 case 'background':
                   _background();
                 case 'export':
@@ -800,6 +853,11 @@ class _ExamplePageState extends State<ExamplePage> {
               }
             },
             itemBuilder: (_) => [
+              if (compact)
+                const PopupMenuItem(
+                  value: 'webPreview',
+                  child: Text('Webový náhled'),
+                ),
               const PopupMenuItem(
                 value: 'demo',
                 child: Text('Otevřít ukázkový sál (72 míst)'),
@@ -964,8 +1022,7 @@ class _ExamplePageState extends State<ExamplePage> {
     await slow;
     if (mounted) {
       setState(
-        () => status =
-            'Font race simulated: stale result ignored; draft and current resources preserved.',
+        () => status = 'Font race simulated: stale result ignored; draft and current resources preserved.',
       );
     }
   }

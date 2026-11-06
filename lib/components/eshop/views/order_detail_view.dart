@@ -196,8 +196,8 @@ class _OrderDetailViewState extends State<OrderDetailView>
 
   OrderDetailController get c => widget.controller;
   OrderAdminDetail get d => c.detail!;
-  Future<void> _refresh({bool contact = false}) async {
-    final ok = await c.load(acceptSavedContact: contact);
+  Future<void> _refresh() async {
+    final ok = await c.load();
     if (mounted) setState(() => _revision++);
     try {
       await widget.onChanged();
@@ -306,19 +306,11 @@ class _OrderDetailViewState extends State<OrderDetailView>
           OrderEmailContactEditor(
             orderId: c.orderId,
             occasionId: c.occasionId,
-            emailController: c.email,
-            revision: _revision,
+            controller: c.contact,
+            onChanged: widget.onChanged,
             canWrite: !c.stale && d.canWrite && d.model.allows('edit'),
             sourceMessageId: widget.messageId,
-            onBusyChanged: c.setBusy,
-            externalBusy: c.busy,
             showSaveOnlyAction: false,
-            loadContext: () async => {
-              'order': d.order,
-              'emailSummary': d.emailSummary,
-            },
-            onChanged: () => _refresh(contact: true),
-            onConflict: () => _refresh(),
           ),
       ],
     ),

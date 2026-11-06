@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:fstapp/services/launch_url_service.dart';
+
 import 'package:fstapp/components/mcp/mcp_connection_page.dart';
 import 'package:fstapp/components/navigation/platform_route_parser.dart';
 import 'package:flutter/foundation.dart';
@@ -703,16 +706,28 @@ class RoutingObserver extends AutoRouteObserver {
   void didChangeTabRoute(TabPageRoute route, TabPageRoute previousRoute) {}
 }
 
-/// This guard checks if the app is supported when landing on the root '/'.
-/// If the app is supported, it redirects to the appropriate unit or occasion.
-/// If not, it allows the user to see the OrganizationPage at '/'.
+/// Redirects app-specific landings and hands the web catalogue to webclient.
 class InitialRedirectGuard extends AutoRouteGuard {
+  InitialRedirectGuard({VoidCallback? openWebHome})
+      : _openWebHome = openWebHome ??
+            (kIsWeb && AppConfig.isWebclientSupported
+                ? () {
+                    unawaited(LaunchUrlService.openExternalUrl('/',
+                        inCurrentWindow: true));
+                  }
+                : null);
+
+  final VoidCallback? _openWebHome;
+
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
     final redirectPath = AppRouter.getDefaultLink();
 
     if (redirectPath != "/") {
       router.replacePath(redirectPath);
+    } else if (_openWebHome != null) {
+      resolver.next(false);
+      _openWebHome();
     } else {
       resolver.next(true);
     }

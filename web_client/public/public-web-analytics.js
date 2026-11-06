@@ -10,9 +10,21 @@
     // excluded, including legacy hash routes that the server cannot inspect.
     const publicQuery = key => /^(utm_(source|medium|campaign|term|content)|gclid|fbclid|q|lang)$/.test(key);
     if (!/^[a-f0-9]{32}$/.test(token || '') || current.hostname !== host ||
-        current.protocol !== 'https:' || window.self !== window.top ||
+        current.protocol !== 'https:' || window.self !== window.top || window.__festappSaleOpeningLink ||
         !publicPath(current.pathname) || current.hash ||
         [...current.searchParams.keys()].some(key => !publicQuery(key))) return;
+
+    // A signed-in visitor's browser stores Festapp credentials on this origin.
+    // Check presence only, and fail closed when storage cannot be inspected.
+    try {
+        for (const storage of [window.localStorage, window.sessionStorage]) {
+            if (!storage) return;
+            for (let i = 0; i < storage.length; i++) {
+                const key = storage.key(i);
+                if ((key === 'refresh' || /^sb-.*-auth-token/.test(key)) && storage.getItem(key)) return;
+            }
+        }
+    } catch { return; }
 
     // The provider includes referrer paths in its payload. Only accept an
     // origin-only external referrer or another public page on this same site.

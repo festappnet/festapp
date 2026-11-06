@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 CREATE FUNCTION pg_temp.assert_prepared_families(p_org bigint,p_oc bigint,p_user uuid)
 RETURNS void LANGUAGE plpgsql AS $$
@@ -54,12 +55,10 @@ BEGIN
  END LOOP;
  FOR n IN 1..5 LOOP PERFORM public.project_notification_center(500); END LOOP;
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
- response:=public.open_notification_center(org,oc);
- PERFORM assert_eq(jsonb_array_length(response->'groups'),2,'100 joins and full workshop use two groups');
- PERFORM assert_eq((SELECT (g->>'count')::int FROM jsonb_array_elements(response->'groups') g WHERE g->>'kind'='occasion_joined'),100,'membership group has full count');
- PERFORM assert_eq((SELECT jsonb_array_length(g->'items') FROM jsonb_array_elements(response->'groups') g WHERE g->>'kind'='occasion_joined'),5,'first response hydrates at most five members');
+ response:=pg_temp.prepared_notification_view(org,oc);
+ PERFORM assert_eq(jsonb_array_length(response->'items'),2,'100 joins and full workshop use two groups');
+ PERFORM assert_eq((SELECT (g#>>'{data,eventCount}')::int FROM jsonb_array_elements(response->'items') g WHERE g->>'kind'='occasion_joined'),100,'membership group has full count');
  snapshot:=(response->>'snapshot')::bigint;
- PERFORM assert_eq(jsonb_array_length(public.get_notification_center_group(org,(SELECT g->>'key' FROM jsonb_array_elements(response->'groups') g WHERE g->>'kind'='occasion_joined'),snapshot,NULL,20)->'items'),20,'expanded group is paginated');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id WHERE e.organization=org AND d.recipient=orders_only),0::bigint,'order-only viewer gets no app participant data');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id WHERE e.organization=org AND d.recipient=tenant_admin),101::bigint,'tenant administrator receives app events without occasion membership');
  PERFORM public.set_notification_center_muted(org,oc,true);
@@ -97,7 +96,7 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND data->>'eventId'=ev::text),0::bigint,'unlimited events never become full');
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
  UPDATE public.occasion_users SET is_editor=false WHERE occasion=oc AND "user"=editor;
- BEGIN PERFORM public.open_notification_center(org,oc); RAISE EXCEPTION 'revoked app editor retained access'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM assert_eq(pg_temp.prepared_notification_view(org,oc)->>'state','denied','revoked app editor retained access');
  PERFORM pg_temp.assert_prepared_families(org,oc,tenant_admin);
 END $$;
 ROLLBACK;

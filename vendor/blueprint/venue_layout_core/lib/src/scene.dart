@@ -831,13 +831,22 @@ Map<String, dynamic> _compileScene(
     if (selected ||
         pending ||
         (status == 'occupied' && state['stateMarker'] != 'none')) {
-      final markerWidth =
-          n.width *
-          (selected && n.kind == 'seat' ? layoutSelectedSeatScale : 1);
-      final markerHeight =
-          n.height *
-          (selected && n.kind == 'seat' ? layoutSelectedSeatScale : 1);
-      final unit = min(markerWidth, markerHeight) * .7 / 24;
+      final surface = n.kind == 'seat'
+          ? seatSurfaceBounds(n.copyWith(properties: props), parent: parent)
+          : (x: 0.0, y: 0.0, width: n.width, height: n.height);
+      final scale = selected && n.kind == 'seat'
+          ? layoutSelectedSeatScale
+          : 1.0;
+      final center = transformPoint(
+        matrix,
+        surface.x * scale,
+        surface.y * scale,
+      );
+      final markerMatrix = selected && n.kind == 'seat'
+          // Selected checks stay upright, at the transformed cushion center.
+          ? <num>[1, 0, 0, 1, center[0], center[1]]
+          : <num>[...matrix.take(4), center[0], center[1]];
+      final unit = min(surface.width, surface.height) * scale * .7 / 24;
       final statePath = selected
           ? <List<dynamic>>[
               ['M', -7 * unit, 0],
@@ -861,9 +870,7 @@ Map<String, dynamic> _compileScene(
         'id': '${n.id}:state',
         'nodeId': n.id,
         'kind': 'state',
-        'matrix': selected && n.kind == 'seat'
-            ? [1, 0, 0, 1, matrix[4], matrix[5]]
-            : matrix,
+        'matrix': markerMatrix,
         'path': _qpath(statePath),
         'fill': '#00000000',
         'stroke': selected ? '#FFFFFFFF' : '#444444FF',

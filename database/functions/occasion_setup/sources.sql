@@ -7,7 +7,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path = public, extensions AS $$
       'start_time',o.start_time,'end_time',o.end_time,'description',o.description,
       'data',o.data,'features',o.features,'is_open',false,'is_hidden',true),
     'forms', COALESCE((SELECT jsonb_agg(jsonb_build_object(
-      'id',f.id,'title',f.title,'link',f.link,'type',f.type,'data',f.data,'header',f.header,
+      'id',f.id,'title',f.title,'link',f.link,'type',f.type,'data',public.normalize_form_metadata_internal(f.data)-'analytics','header',f.header,
       'header_off',f.header_off,'deadline_duration_seconds',f.deadline_duration_seconds,
       'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
       'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,

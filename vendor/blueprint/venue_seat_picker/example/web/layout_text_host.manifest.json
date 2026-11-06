@@ -1,0 +1,32 @@
+{
+  "entry": "automation/blueprint/browser_text_host.ts",
+  "engineOwner": "Festapp canonical whole-text engine",
+  "sources": {
+    "automation/blueprint/browser_text_host.ts": "0f4ed39131f37b8506550c71b17939c66936a5bb21425c5fb06e384cb67455b0",
+    "supabase/functions/_shared/layout-text-policy.json": "6cb7f209534ad26733cefaca9c54f56f91f5523d7b2331b538ee1f47cffd2b26",
+    "supabase/functions/_shared/layoutTextPreparation.ts": "2a45a22555b18c1c8d49da608592fb7b4068ca79657ea9fd33cbdc24b1175152",
+    "supabase/functions/_shared/layoutTextResources.ts": "0b164c2e12cb62395314ac4fb660392bb607a1a06856de30cc5208675a962172",
+    "supabase/functions/_shared/layoutTextShaper.ts": "d9875354a60cc8c95fed97e6e2350416d0340a9f79ca6c66849b6cf6b6b9dd59",
+    "supabase/functions/_shared/ticket-assets/font-catalog.json": "914f98ed06598750f89375e4aadc09b92048903769dc2f06314b783d67c4086a",
+    "supabase/functions/_shared/ticketFonts.ts": "bdafb973304077f06afb11ac7cde7d1e3c2a8806333de6f61abde7bcd6730d2b",
+    "supabase/functions/_shared/ticketPreparedFont.ts": "38c60a22399a4889827688b657ce318869c6d6dd48d8e1aaba0ae9ff6b353ea0",
+    "supabase/functions/_shared/ticketText.ts": "f6f5528b65521f26a0f23d6a8258c829eb20af798f3228e2cc4e8d441d125f93",
+    "supabase/functions/_shared/vendor/harfbuzzjs/LICENSE": "5d09767b2cc476f08028b56d9384dc45061c5a3e90f9ad966e44addc8d26c8b1",
+    "supabase/functions/_shared/vendor/harfbuzzjs/README.md": "5ea9b6e0ff4200eb883a8c32c149851ccdbd4654b3537b4461fc4084894e19b4",
+    "supabase/functions/_shared/vendor/harfbuzzjs/harfbuzz.js": "ba43463df44851fd58211ef8c19aa7956965390857727ae867b70dc7b3682de1",
+    "supabase/functions/_shared/vendor/harfbuzzjs/harfbuzz.wasm.json": "6ef771de39ca7e19af1835cc2b8f99215b383e41b3f2073f7f54927bfd449322",
+    "supabase/functions/_shared/vendor/harfbuzzjs/index.d.mts": "98fac693c4050ef4794a8a79e9097a3e00c96024fbfc29d3e28e778f4940b065",
+    "supabase/functions/_shared/vendor/harfbuzzjs/index.mjs": "48bcdbc281a6e91ed4fa1d090994d2ac3ed8637e678e522f660f62cb3da34287",
+    "supabase/functions/_shared/vendor/harfbuzzjs/upstream-sha256.json": "d507b4e79cf8f898ce38b208de427906b4ca3a51e23c47910219473ae37f8e36",
+    "supabase/functions/_shared/vendor/unicode-properties/LICENSE": "43439dbd4f43837aadab215cdbe5a422cc6323a50c4ea84d8d6bbc3671666a1d",
+    "supabase/functions/_shared/vendor/unicode-properties/README.md": "d222b60dbe29537e3281b115650531add8e4761ac457be299231f0025476c21c",
+    "supabase/functions/_shared/vendor/unicode-properties/binaryTrie.browser.js": "2d5b64c7d99ae5c0993183e02f14020893101682a703ac25116ff693673e16df",
+    "supabase/functions/_shared/vendor/unicode-properties/data.base64.trie.js": "2077a4f742204bc7d42a7b02055e4133e65490445700bdf1d1b7539216cb8594",
+    "supabase/functions/_shared/vendor/unicode-properties/data.js": "3e3c49a4c6058d5bf16c71c8c022d86a909500771af2a2d5c36d95aef67a0cd5",
+    "supabase/functions/_shared/vendor/unicode-properties/index.js": "f8690231084038ed3cba2f9c07a21d4a12fd6a021b0cbca8893cad9b08b14cb2",
+    "supabase/functions/_shared/vendor/unicode-properties/upstream-sha256.json": "cca55f050672cb2380310da3fa472860c2a83004cfab4f03a2c132bc6438063c",
+    "supabase/functions/deno.lock": "7e4eb4cf44b136006bf76d02d6508f8ccd16bfe19d9170d13ccb739b1f9b90c1"
+  },
+  "bundleSha256": "b3a307a841697d79660a83edc083c210a9cc6cc852a2e70794f0aa9bdfac2282",
+  "thirdPartyNoticesSha256": "04e6a29af0782244e06fface38ebc9732a1cef88fce4d07e15d76c4a137a2ea1"
+}

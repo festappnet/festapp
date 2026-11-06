@@ -1,5 +1,5 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 -- test-setup: database/functions/notification_center/center_policy.sql
--- test-setup: database/functions/notification_center/daily_overview.sql
 -- test-setup: database/functions/notification_center/order_selection.sql
 BEGIN;
 DO $$
@@ -23,35 +23,39 @@ BEGIN
   jsonb_build_object('orderId',cancelled_order,'count',5,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,anchor);
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
- result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague');
- scope:=jsonb_build_object('id','occasion-kind:'||oc||':order_created','organization',org,
-  'snapshot',result->'snapshot','snapshotAt',result->'snapshotAt','timezone','Europe/Prague');
+ result:=pg_temp.prepared_notification_view(org,oc,p_keep_view=>true);
+ scope:=jsonb_build_object('id',result#>>'{items,0,id}','organization',org,'viewToken',result->>'viewToken');
  -- Cancel after the panel snapshot, deliberately leaving the old event projection unchanged.
  UPDATE eshop.orders SET state='storno' WHERE id=cancelled_order;
+ PERFORM public.notification_center_order_state_internal(cancelled_order);
+ result:=pg_temp.prepared_notification_view(org,oc,p_mode=>'refresh',p_view=>(scope->>'viewToken')::uuid,p_keep_view=>true);
  SET LOCAL ROLE authenticated;
  selected:=public.notification_center_order_selection(oc,scope);
- result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague');
+ result:=pg_temp.prepared_notification_view(org,oc);
  RESET ROLE;
  PERFORM assert_eq(selected,jsonb_build_array(active_order),'a previously opened new-order group excludes a now cancelled order');
  PERFORM assert_eq((result#>>'{items,0,data,activityCount}')::int,1,'cancelled orders do not count as new orders');
  PERFORM assert_eq((result#>>'{items,0,data,placeCount}')::int,2,'cancelled places do not count in new-order totals');
  PERFORM assert_eq(jsonb_array_length(result#>'{items,0,data,previewContacts}'),1,'cancelled buyers are omitted from the preview');
  UPDATE eshop.orders SET state='storno' WHERE id=active_order;
- PERFORM assert_false((public.get_notification_center_badge(org)->>'unread')::boolean,'cancelled new-order activity cannot leave a phantom unread badge');
+ PERFORM public.notification_center_order_state_internal(active_order);
+ PERFORM assert_false((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'cancelled new-order activity cannot leave a phantom unread badge');
  UPDATE eshop.orders SET state='ordered' WHERE id=active_order;
+ PERFORM public.notification_center_order_state_internal(active_order);
  PERFORM public.notification_center_publish_internal(org,oc,'order_cancelled','cancel:cancelled',
   jsonb_build_object('orderId',cancelled_order,'count',5,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,anchor);
  PERFORM public.project_notification_center(500);
- scope:=scope||jsonb_build_object('id','occasion-kind:'||oc||':order_cancelled','snapshot',
-  (SELECT last_delivery_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer));
+ result:=pg_temp.prepared_notification_view(org,oc,p_keep_view=>true);
+ SELECT jsonb_build_object('id',x->>'id','organization',org,'viewToken',result->>'viewToken') INTO scope FROM jsonb_array_elements(result->'items') x WHERE x->>'kind'='order_cancelled';
  SET LOCAL ROLE authenticated;
  selected:=public.notification_center_order_selection(oc,scope);
- result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague');
+ result:=pg_temp.prepared_notification_view(org,oc);
  RESET ROLE;
  PERFORM assert_eq(selected,jsonb_build_array(cancelled_order),'cancelled-order groups retain their own selection');
  PERFORM assert_eq(jsonb_array_length(result->'items'),2,'new and cancelled categories remain separate');
  UPDATE eshop.orders SET state='storno' WHERE id=active_order;
- result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague');
+ PERFORM public.notification_center_order_state_internal(active_order);
+ result:=pg_temp.prepared_notification_view(org,oc,p_keep_view=>true);
  PERFORM assert_eq(jsonb_array_length(result->'items'),1,'an empty new-order category disappears');
  PERFORM assert_eq(result#>>'{items,0,kind}','order_cancelled','cancelled notifications remain available');
 END $$;

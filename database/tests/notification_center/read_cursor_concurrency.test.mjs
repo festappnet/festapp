@@ -36,55 +36,57 @@ async function personalState(c,f){
   seen_through_sequence::int seen,read_through_sequence::int read
   FROM public.notification_center_user_state WHERE organization=$1 AND recipient=$2`,[f.org,f.user])).rows[0];
 }
-for(const [variant,openSql] of [
- ['legacy','SELECT public.open_notification_center($1) result'],
- ['daily','SELECT public.get_notification_center_daily_overview($1,NULL,p_open=>true) result'],
-]){
- test(`${variant}: delivery after open snapshot stays unseen and unread; sequence commits atomically`,async()=>{
-  const setup=await connect(),reader=await connect(),writer=await connect();
-  try{
-   const f=await fixture(setup);await actor(reader,f);
-   const opened=(await reader.query(openSql,[f.org])).rows[0].result;
-   assert.equal(opened.snapshot,1);
-   await writer.query('BEGIN');
-   await writer.query("SELECT public.notification_center_publish_internal($1,$2,'order_created','second')",[f.org,f.oc]);
-   const deferred=(await writer.query('SELECT public.project_notification_center(500) processed')).rows[0].processed;
-   assert.equal(deferred,0,'hot personal state defers work without waiting or advancing recipient progress');
-   await writer.query('COMMIT');await reader.query('COMMIT');
-   for(let i=0;i<30;i++){
-    await writer.query('SELECT public.project_notification_center(500)');
-    if((await personalState(setup,f)).last===2)break;
-    await new Promise(resolve=>setTimeout(resolve,50));
-   }
-   await actor(reader,f);
-   const badge=(await reader.query('SELECT public.get_notification_center_badge($1) result',[f.org])).rows[0].result;
-   assert.deepEqual({unread:badge.unread,last:badge.lastSequence,read:badge.readThrough},{unread:true,last:2,read:0});
-   await reader.query('COMMIT');
-   assert.deepEqual(await personalState(setup,f),{last:2,seen:1,read:0},'opening sees only its snapshot and never reads either batch');
-  }finally{for(const c of [reader,writer]){await c.query('ROLLBACK');await c.end();}await setup.end();}
- });
- test(`${variant}: concurrent opens never lower seen watermark or read notifications`,async()=>{
-  const setup=await connect(),a=await connect(),b=await connect();
-  try{
-   const f=await fixture(setup);
-   await setup.query('BEGIN');
-   await setup.query("SELECT public.notification_center_publish_internal($1,$2,'order_created','second')",[f.org,f.oc]);
-   await setup.query('SELECT public.project_notification_center(500)');
-   await actor(a,f);const pid=(await a.query('SELECT pg_backend_pid() pid')).rows[0].pid;
-   const first=a.query(openSql,[f.org]);
-   await blocked(b,pid);await setup.query('COMMIT');assert.equal((await first).rows[0].result.snapshot,2);
-   await actor(b,f);const pidB=(await b.query('SELECT pg_backend_pid() pid')).rows[0].pid;
-   const second=b.query(openSql,[f.org]);
-   await blocked(setup,pidB);await a.query('COMMIT');assert.equal((await second).rows[0].result.snapshot,2);await b.query('COMMIT');
-   assert.deepEqual(await personalState(setup,f),{last:2,seen:2,read:0});
-   await actor(a,f);
-   const overview=(await a.query('SELECT public.get_notification_center_daily_overview($1,NULL) result',[f.org])).rows[0].result;
-   assert.equal(overview.items.length,1);
-   assert.equal(overview.items[0].isRead,false,'both open calls must leave the aggregate unread');
-   await a.query('COMMIT');
-  }finally{for(const c of [setup,a,b]){await c.query('ROLLBACK');await c.end();}}
- });
+async function warm(c,f){
+ await c.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[f.user]);
+ for(let i=0;i<40;i++){
+  const v=(await c.query("SELECT public.get_notification_center_view($1,$2,p_mode=>'preview') result",[f.org,f.oc])).rows[0].result;
+  if(v.state==='ready'){
+   await c.query("SELECT public.get_notification_center_view($1,$2,p_mode=>'close',p_view=>$3)",[f.org,f.oc,v.viewToken]);return;
+  }
+  await c.query('SELECT public.prepare_notification_center(100)');
+ }
+ throw Error('Prepared scope not ready');
 }
+test('prepared: delivery after open snapshot stays unseen and unread; sequence commits atomically',async()=>{
+ const setup=await connect(),reader=await connect(),writer=await connect();
+ try{
+  const f=await fixture(setup);await warm(setup,f);await actor(reader,f);
+  const opened=(await reader.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result;
+  assert.equal(opened.state,'ready');assert.equal(opened.snapshot,1);
+  await writer.query('BEGIN');
+  const writerPid=(await writer.query('SELECT pg_backend_pid() pid')).rows[0].pid;
+  const publishing=writer.query("SELECT public.notification_center_publish_internal($1,$2,'order_created','second')",[f.org,f.oc]);
+  await blocked(setup,writerPid);
+  await reader.query('COMMIT');await publishing;
+  await writer.query('SELECT public.project_notification_center(500)');
+  await writer.query('COMMIT');
+  for(let i=0;i<30;i++){
+   await writer.query('SELECT public.project_notification_center(500)');
+   if((await personalState(setup,f)).last===2)break;
+   await new Promise(resolve=>setTimeout(resolve,50));
+  }
+  assert.deepEqual(await personalState(setup,f),{last:2,seen:1,read:0});
+  await actor(reader,f);
+  const badge=(await reader.query('SELECT public.get_notification_center_prepared_badge($1) result',[f.org])).rows[0].result;
+  assert.equal(badge.unread,true);await reader.query('COMMIT');
+ }finally{for(const c of [setup,reader,writer]){await c.query('ROLLBACK');await c.end();}}
+});
+test('prepared: simultaneous open defers without lowering the seen watermark or marking read',async()=>{
+ const setup=await connect(),a=await connect(),b=await connect();
+ try{
+  const f=await fixture(setup);await warm(setup,f);
+  await actor(a,f);
+  const first=(await a.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result;
+  assert.equal(first.state,'ready');
+  await actor(b,f);
+  const second=(await b.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result;
+  assert.equal(second.state,'preparing');await b.query('COMMIT');await a.query('COMMIT');
+  await actor(b,f);
+  const retried=(await b.query('SELECT public.get_notification_center_view($1,$2) result',[f.org,f.oc])).rows[0].result;
+  assert.equal(retried.state,'ready');assert.equal(retried.items[0].isRead,false);await b.query('COMMIT');
+  assert.deepEqual(await personalState(setup,f),{last:1,seen:1,read:0});
+ }finally{for(const c of [setup,a,b]){await c.query('ROLLBACK');await c.end();}}
+});
 test('initialization serializes with producers even before the collection row exists',async()=>{
  const setup=await connect(),activation=await connect(),producer=await connect();
  try{

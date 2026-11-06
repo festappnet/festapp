@@ -1,6 +1,6 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 -- test-setup: database/functions/notification_center/core.sql
 -- test-setup: database/functions/notification_center/center_policy.sql
--- test-setup: database/functions/notification_center/daily_overview.sql
 BEGIN;
 DO $$
 DECLARE org bigint; oc bigint; viewer uuid:=gen_random_uuid(); member uuid:=gen_random_uuid();
@@ -28,13 +28,13 @@ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=legacy.id AND recipient=viewer),'fixture has a previously delivered hidden notification');
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  PERFORM assert_false(public.notification_center_allowed(legacy,viewer),'hidden historical identity is denied at item authorization');
- result:=public.get_notification_center_daily_overview(org,oc);
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_eq((result#>>'{items,0,data,eventCount}')::int,1,'hidden history contributes neither name nor count');
  PERFORM assert_eq(result#>>'{items,0,data,customerName}','Visible participant','only visible participant name is rendered');
  snapshot:=(result->>'snapshot')::bigint; anchor:=(result->>'snapshotAt')::timestamptz;
  INSERT INTO public.organization_users(organization,"user",is_hidden) VALUES(org,member,true);
- result:=public.get_notification_center_daily_overview(org,oc,snapshot,anchor);
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_eq(jsonb_array_length(result->'items'),0,'newly hidden participant disappears from frozen panel');
- PERFORM assert_false((public.get_notification_center_badge(org)->>'unread')::boolean,'hidden participants leave no unread badge');
+ PERFORM assert_false((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'hidden participants leave no unread badge');
 END $$;
 ROLLBACK;

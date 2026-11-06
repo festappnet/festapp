@@ -80,10 +80,10 @@ void main() {
         }, principalBinding: 'synthetic-swap-recovery-actor'),
         readRpc: (_, __) async => throw StateError(
             'Never preview the inverse while the first result is unknown'));
-    await expectLater(
-        reopened.recoverSwap(
+    expect(
+        await reopened.recoverSwap(
             occasionId: 1, organizationId: 3, unitId: 7, blueprintId: 2),
-        throwsA(isA<BlueprintCommandRejection>()));
+        isFalse);
     expect(calls, hasLength(2),
         reason: 'A different map cannot resume this intent');
     expect(

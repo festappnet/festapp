@@ -443,8 +443,9 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
     if (event is PointerScrollEvent &&
         widget.wheelZoomRequiresModifier &&
         !HardwareKeyboard.instance.isControlPressed &&
-        !HardwareKeyboard.instance.isMetaPressed)
+        !HardwareKeyboard.instance.isMetaPressed) {
       return;
+    }
     GestureBinding.instance.pointerSignalResolver.register(event, (signal) {
       if (signal is PointerScaleEvent) {
         _moveCamera(signal.localPosition, Offset.zero, signal.scale);

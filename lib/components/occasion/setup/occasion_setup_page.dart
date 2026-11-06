@@ -1,3 +1,4 @@
+import '../../fonts/ticket_font_catalog.dart';
 import 'occasion_setup_review_row.dart';
 
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -231,15 +232,52 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     _data.remove('bankAccountConfirmed');
     _data.remove('configureScanning');
     OccasionSetupStory.normalize(_data, AppConfig.isAppSupported);
-    if (_data['appearance'] == null &&
-        _data['sourceId'] == null &&
-        _data['formOrigin'] == null)
-      OccasionSetupAppearance.apply(_data, OccasionSetupAppearance.read(_data));
+    _setupFontsFuture = _loadSetupFonts();
+    _setupFontsFuture.ignore();
     _linkController = TextEditingController(text: _data['link'] as String);
     _loadSources();
     _refreshVerification();
     _save();
   }
+
+  Map<String, String>? _setupFontIds;
+  late Future<void> _setupFontsFuture;
+  int _fontRequest = 0;
+  Future<void> _loadSetupFonts() async {
+    final request = ++_fontRequest;
+    final fonts = await TicketFontCatalog.loadSetupFonts();
+    if (!mounted || request != _fontRequest) return;
+    setState(() {
+      _setupFontIds = fonts;
+      if (_data['appearance'] == null &&
+          _data['sourceId'] == null &&
+          _data['formOrigin'] == null) {
+        OccasionSetupAppearance.apply(
+          _data,
+          OccasionSetupAppearance.read(_data),
+          fonts: fonts,
+        );
+        _save();
+      }
+    });
+  }
+
+  Widget _withSetupFonts(Widget Function() child) => FutureBuilder<void>(
+    future: _setupFontsFuture,
+    builder: (context, snapshot) {
+      if (snapshot.hasError)
+        return TextButton(
+          onPressed: () =>
+              setState(() => _setupFontsFuture = _loadSetupFonts()),
+          child: Text(
+            OccasionSetupStrings.ui('fonts_could_not_be_loaded_retry'),
+          ),
+        );
+      if (_setupFontIds == null)
+        return const Center(child: CircularProgressIndicator());
+      return child();
+    },
+  );
 
   Future<void> _refreshVerification() =>
       _verificationRefresh ??= _loadVerification().whenComplete(() {
@@ -325,6 +363,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   Future<void> _selectSource(int? id) async {
     final request = ++_sourceRequest;
     if (id == null) {
+      try {
+        if (_setupFontIds == null) {
+          _setupFontsFuture = _loadSetupFonts();
+          _setupFontsFuture.ignore();
+        }
+        await _setupFontsFuture;
+      } catch (_) {
+        if (mounted) setState(() => _sourceError = OccasionSetupStrings.ui('fonts_could_not_be_loaded_retry'));
+        return;
+      }
+      if (!mounted || request != _sourceRequest) return;
       _selectedSource = null;
       _change((d) => _applySource(d, null), changesConfiguration: true);
       setState(() {
@@ -521,6 +570,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       OccasionSetupAppearance.apply(
         draft,
         Map<String, dynamic>.from(OccasionSetupAppearance.presets.first),
+        fonts: _setupFontIds!,
       );
       return;
     }
@@ -547,7 +597,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final forms = source['forms'] as List;
     if (forms.isNotEmpty) {
       draft['sourceFormId'] = (forms.first as Map)['id'];
-      draft['formDraft'] = jsonDecode(jsonEncode(forms.first));
+      draft['formDraft'] = copyOccasionSetupForm(forms.first as Map);
       final sourcePayments =
           ((draft['formDraft'] as Map)['data'] as Map?)?['payments'];
       if (draft['paymentChoicesEnabled'] == true && sourcePayments is Map) {
@@ -1006,7 +1056,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           (d['ticketDraft'] as Map?)?['layout'] is Map;
     if (q.key == 'appearance')
       return d['appearance'] is Map &&
-          OccasionSetupAppearance.valid(d['appearance'] as Map);
+          OccasionSetupAppearance.valid(
+            d['appearance'] as Map,
+            fonts: _setupFontIds,
+          );
     if (q.key == 'review')
       return d['reviewed'] == true && d['reviewConfirmed'] == true;
     if (q.optional) return true;
@@ -2393,115 +2446,126 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         ),
       );
 
-  Widget _ticketChoices(Map<String, dynamic> d) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(OccasionSetupStrings.ui('use_tickets')),
-        subtitle: Text(
-          OccasionSetupStrings.ui(
-            'participants_receive_a_ticket_with_an_admission_qr_code',
+  Widget _ticketChoices(Map<String, dynamic> d) => _withSetupFonts(
+    () => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(OccasionSetupStrings.ui('use_tickets')),
+          subtitle: Text(
+            OccasionSetupStrings.ui(
+              'participants_receive_a_ticket_with_an_admission_qr_code',
+            ),
           ),
+          value: OccasionSetupStory.hasTickets(d),
+          onChanged: (enabled) => _change((x) {
+            _inlineFormBundle = null;
+            OccasionSetupStory.setTicketsEnabled(x, enabled);
+            if (enabled && x['ticketDraft'] is! Map) {
+              OccasionSetupAppearance.apply(
+                x,
+                OccasionSetupAppearance.read(x),
+                fonts: _setupFontIds!,
+              );
+            }
+            _ticketFeature = null;
+            _editEpoch++;
+          }, changesConfiguration: true),
         ),
-        value: OccasionSetupStory.hasTickets(d),
-        onChanged: (enabled) => _change((x) {
-          _inlineFormBundle = null;
-          OccasionSetupStory.setTicketsEnabled(x, enabled);
-          if (enabled && x['ticketDraft'] is! Map) {
-            OccasionSetupAppearance.apply(x, OccasionSetupAppearance.read(x));
-          }
-          _ticketFeature = null;
-          _editEpoch++;
-        }, changesConfiguration: true),
-      ),
-      if (OccasionSetupStory.hasTickets(d)) ...[
-        const SizedBox(height: 20),
-        if (_ticketDraftFeature(d).deliveryMode.includesPdf)
-          OccasionSetupTicketGallery(
-            key: ValueKey('ticket-gallery-$_editEpoch'),
-            selectedId: d['ticketTemplateId'] as String?,
-            currentTemplate:
-                ((d['ticketDraft'] as Map?)?['layout']
-                        as Map?)?['templates']?[_ticketDraftFeature(d)
-                                .ticketType ==
-                            'named'
-                        ? 'named'
-                        : 'wide'] ==
-                    null
-                ? null
-                : Map<String, dynamic>.from(
-                    ((d['ticketDraft'] as Map)['layout']
-                        as Map)['templates'][_ticketDraftFeature(d)
-                                .ticketType ==
-                            'named'
-                        ? 'named'
-                        : 'wide'],
-                  ),
-            appearance: OccasionSetupAppearance.read(d),
-            loadResources: () async {
-              if (!await _flush())
-                throw StateError('Koncept se nepodařilo uložit');
-              final service = TicketLayoutService()
-                  .forSetupDraft(
-                    _stored.id,
-                    _stored.unit,
-                    revision: _stored.revision,
-                  )
-                  .withPreviewOccasion(
-                    TicketPreviewOccasion(
-                      title: d['title'] as String,
-                      startTime: DateTime.tryParse(d['start'] as String),
-                      endTime: DateTime.tryParse(d['end'] as String),
-                      placeName: d['placeName'] as String?,
-                    ),
-                  );
-              final resources = await service.resolve(
-                0,
-                _ticketDraftFeature(d).ticketType == 'named' ? 'named' : 'wide',
-                (d['ticketDraft'] as Map?)?['layout'] == null
-                    ? null
-                    : Map<String, dynamic>.from(
-                        (d['ticketDraft'] as Map)['layout'],
-                      ),
-                _ticketDraftFeature(d).ticketBackground,
-              );
-              final sharedFont = OccasionSetupAppearance
-                  .fonts[OccasionSetupAppearance.read(d)['fontFamily']];
-              if (sharedFont != null &&
-                  !resources.fonts.containsKey(sharedFont)) {
-                resources.fonts[sharedFont] = await service.fontForSetupDraft(
-                  _stored.id,
-                  sharedFont,
-                );
-              }
-              return resources;
-            },
-            onSelected: (selection) => _change((x) {
-              final feature = Map<String, dynamic>.from(
-                x['ticketDraft'] as Map? ??
-                    {'code': 'ticket', 'is_enabled': true},
-              );
-              feature['layout'] = {
-                'schemaVersion': 3,
-                'templates': {
-                  _ticketDraftFeature(x).ticketType == 'named'
+        if (OccasionSetupStory.hasTickets(d)) ...[
+          const SizedBox(height: 20),
+          if (_ticketDraftFeature(d).deliveryMode.includesPdf)
+            OccasionSetupTicketGallery(
+              fontIds: _setupFontIds!,
+              key: ValueKey('ticket-gallery-$_editEpoch'),
+              selectedId: d['ticketTemplateId'] as String?,
+              currentTemplate:
+                  ((d['ticketDraft'] as Map?)?['layout']
+                          as Map?)?['templates']?[_ticketDraftFeature(d)
+                                  .ticketType ==
+                              'named'
                           ? 'named'
-                          : 'wide':
-                      selection.value,
-                },
-              };
-              feature['background'] = selection.background;
-              x['ticketDraft'] = feature;
-              x['ticketTemplateId'] = selection.key;
-              x['ticketTemplateSource'] = selection.source;
-              _ticketFeature = null;
-            }, changesConfiguration: true),
-          ),
-        const SizedBox(height: 20),
-        _ticketSettings(d),
+                          : 'wide'] ==
+                      null
+                  ? null
+                  : Map<String, dynamic>.from(
+                      ((d['ticketDraft'] as Map)['layout']
+                          as Map)['templates'][_ticketDraftFeature(d)
+                                  .ticketType ==
+                              'named'
+                          ? 'named'
+                          : 'wide'],
+                    ),
+              appearance: OccasionSetupAppearance.read(d),
+              loadResources: () async {
+                if (!await _flush())
+                  throw StateError('Koncept se nepodařilo uložit');
+                final service = TicketLayoutService()
+                    .forSetupDraft(
+                      _stored.id,
+                      _stored.unit,
+                      revision: _stored.revision,
+                    )
+                    .withPreviewOccasion(
+                      TicketPreviewOccasion(
+                        title: d['title'] as String,
+                        startTime: DateTime.tryParse(d['start'] as String),
+                        endTime: DateTime.tryParse(d['end'] as String),
+                        placeName: d['placeName'] as String?,
+                      ),
+                    );
+                final resources = await service.resolve(
+                  0,
+                  _ticketDraftFeature(d).ticketType == 'named'
+                      ? 'named'
+                      : 'wide',
+                  (d['ticketDraft'] as Map?)?['layout'] == null
+                      ? null
+                      : Map<String, dynamic>.from(
+                          (d['ticketDraft'] as Map)['layout'],
+                        ),
+                  _ticketDraftFeature(d).ticketBackground,
+                );
+                final sharedFont =
+                    _setupFontIds![OccasionSetupAppearance.read(
+                      d,
+                    )['fontFamily']];
+                if (sharedFont != null &&
+                    !resources.fonts.containsKey(sharedFont)) {
+                  resources.fonts[sharedFont] = await service.fontForSetupDraft(
+                    _stored.id,
+                    sharedFont,
+                  );
+                }
+                return resources;
+              },
+              onSelected: (selection) => _change((x) {
+                final feature = Map<String, dynamic>.from(
+                  x['ticketDraft'] as Map? ??
+                      {'code': 'ticket', 'is_enabled': true},
+                );
+                feature['layout'] = {
+                  'schemaVersion': 3,
+                  'templates': {
+                    _ticketDraftFeature(x).ticketType == 'named'
+                            ? 'named'
+                            : 'wide':
+                        selection.value,
+                  },
+                };
+                feature['background'] = selection.background;
+                x['ticketDraft'] = feature;
+                x['ticketTemplateId'] = selection.key;
+                x['ticketTemplateSource'] = selection.source;
+                _ticketFeature = null;
+              }, changesConfiguration: true),
+            ),
+          const SizedBox(height: 20),
+          _ticketSettings(d),
+        ],
       ],
-    ],
+    ),
   );
 
   Widget _ticketSettings(Map<String, dynamic> d) {
@@ -2780,24 +2844,25 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   late Future<FormFontCatalog> _appearanceFonts = _loadAppearanceFonts();
 
-  Widget _appearanceSettings(Map<String, dynamic> d) =>
-      FutureBuilder<FormFontCatalog>(
-        future: _appearanceFonts,
-        builder: (context, snapshot) {
-          if (snapshot.hasError)
-            return TextButton(
-              onPressed: () => setState(() {
-                _appearanceFonts = _loadAppearanceFonts();
-              }),
-              child: Text(
-                OccasionSetupStrings.ui('fonts_could_not_be_loaded_retry'),
-              ),
-            );
-          if (!snapshot.hasData)
-            return const Center(child: CircularProgressIndicator());
-          return _loadedAppearanceSettings(d, snapshot.data!);
-        },
-      );
+  Widget _appearanceSettings(Map<String, dynamic> d) => _withSetupFonts(
+    () => FutureBuilder<FormFontCatalog>(
+      future: _appearanceFonts,
+      builder: (context, snapshot) {
+        if (snapshot.hasError)
+          return TextButton(
+            onPressed: () => setState(() {
+              _appearanceFonts = _loadAppearanceFonts();
+            }),
+            child: Text(
+              OccasionSetupStrings.ui('fonts_could_not_be_loaded_retry'),
+            ),
+          );
+        if (!snapshot.hasData)
+          return const Center(child: CircularProgressIndicator());
+        return _loadedAppearanceSettings(d, snapshot.data!);
+      },
+    ),
+  );
 
   Widget _loadedAppearanceSettings(
     Map<String, dynamic> d,
@@ -2808,7 +2873,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     String hex(Color c) =>
         c.toARGB32().toRadixString(16).substring(2).toUpperCase();
     void apply(Map<String, dynamic> next) {
-      if (!OccasionSetupAppearance.fonts.containsKey(next['fontFamily'])) {
+      if (!_setupFontIds!.containsKey(next['fontFamily'])) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -2821,7 +2886,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         return;
       }
       _change(
-        (x) => OccasionSetupAppearance.apply(x, next),
+        (x) => OccasionSetupAppearance.apply(x, next, fonts: _setupFontIds!),
         changesConfiguration: true,
       );
       setState(() {
@@ -2844,7 +2909,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           : base.copyWith(fontFamily: family),
       fontFamily: a['fontFamily'] as String,
       fontFamilies: {
-        ...OccasionSetupAppearance.fonts.keys.where(catalog.families.contains),
+        ..._setupFontIds!.keys.where(catalog.families.contains),
         a['fontFamily'] as String,
       }.toList(),
       onFontChanged: (v) => custom('fontFamily', v),

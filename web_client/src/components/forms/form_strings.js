@@ -12,6 +12,10 @@ export class FormStrings {
     static get currencySelectLabel() { return LocalizationService.tr('FormsFeature.inWhatCurrency'); }
 
     // Form Settings Feature
+    static get measurementConsentDecline() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDecline'); }
+    static get measurementConsentService() { return LocalizationService.tr('FeatureFormSettings.measurementConsentService'); }
+    static get measurementConsentDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDescription'); }
+    static get measurementConsentChoices() { return LocalizationService.tr('FeatureFormSettings.measurementConsentChoices'); }
     static get formSettingsTitle() { return LocalizationService.tr('FeatureFormSettings.title'); }
     static get formNotFound() { return LocalizationService.tr('FeatureFormSettings.formNotFound'); }
     static get loadFailed() { return LocalizationService.tr('FeatureFormSettings.loadFailed', {}, 'The form could not be loaded. Check your connection and try again.'); }
