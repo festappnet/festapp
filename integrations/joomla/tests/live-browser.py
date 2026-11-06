@@ -14,7 +14,7 @@ spec = importlib.util.spec_from_file_location('native_publication', ROOT / 'test
 native = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(native)
 config = ROOT / '.private/live-browser.json'
-config.write_text(json.dumps({'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','contentBoundaries':True}))
+config.write_text(json.dumps({'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','contentBoundaries':True,'args':'--mute-audio'}))
 BROWSER = ['agent-browser','--config',str(config),'--headed','false','--session','festapp-joomla-live-20261026']
 
 
@@ -65,11 +65,11 @@ try:
     assert 'textbox' in run('snapshot','-i'), 'Live public form did not load'
     observed = js('({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,frameCount:document.querySelectorAll("iframe").length,height:document.querySelector("iframe").clientHeight,src:document.querySelector("iframe").src,helperCount:Array.from(document.scripts).filter(s=>s.src==="https://vstupenky.online/embed.js").length})')
     assert observed['width'] == observed['scrollWidth'] == 320 and observed['frameCount'] == observed['helperCount'] == 1
-    run('click',ref('button "SEAT SELECTION"'))
+    run('click',ref('button "VÝBĚR MÍSTA"'))
     run('wait','--load','networkidle')
-    assert 'button "Zoom in"' in run('snapshot','-i'), 'Live seat map did not appear'
+    assert 'button "Přiblížit"' in run('snapshot','-i'), 'Live seat map did not appear'
     run('press','Escape')
-    assert 'button "Zoom in"' not in run('snapshot','-i'), 'Live seat map did not close'
+    assert 'button "Přiblížit"' not in run('snapshot','-i'), 'Live seat map did not close'
     checks.append({'installed_module_real_production_form':True,'auto_height_mobile':observed,'seat_map_open_and_escape':True,'orders_submitted':0,'seats_selected':0})
 finally:
     native.set_article(admin,base,seed['article'],original_article)

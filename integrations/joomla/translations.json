@@ -16,8 +16,9 @@
     "FALLBACK": "Open the form in a new tab",
     "SERVICE": "External service and privacy",
     "DISCLOSURE": "Only visitors to a public page load the external form; this administrator page does not. Orders, payments, emails and admission remain in @@NAME@@. Joomla stores the public URL and appearance settings, without service credentials or buyer orders. Appearance sharing may load website fonts inside the iframe. Review your website privacy notice and CSP. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Service offer</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Terms</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Privacy</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Support</a>",
-    "CACHE": "Module output caching is disabled so Joomla always registers the service helper. The helper loads in both height modes; saved form settings control website appearance. The public link also works if the helper is blocked.",
-    "APPEARANCE": "Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page."
+    "CACHE": "Module output caching is disabled so Joomla always registers the service helper. It loads in both height modes; this module’s appearance setting controls inheritance. The public link also works if the helper is blocked.",
+    "APPEARANCE": "Use the website font, background and colors for this module only. Save the module after changing it and check the published page. The seating plan keeps its own appearance.",
+    "INHERIT_STYLE": "Match website appearance"
   },
   "cs-CZ": {
     "XML_DESCRIPTION": "Zveřejněte prodej vstupenek přes uložený veřejný formulář @@NAME@@. Vyžaduje samostatný účet pořadatele.",
@@ -36,7 +37,8 @@
     "FALLBACK": "Otevřít formulář v nové záložce",
     "SERVICE": "Externí služba a soukromí",
     "DISCLOSURE": "Externí formulář načítají jen návštěvníci veřejné stránky; tato administrace jej nenačítá. Objednávky, platby, e-maily a odbavení zůstávají v @@NAME@@. Joomla ukládá veřejnou URL a vzhled, nikoli přihlašovací údaje služby či objednávky kupujících. Převzetí vzhledu může načíst fonty webu uvnitř iframe. Zohledněte službu v informacích o soukromí a CSP webu. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Nabídka služby</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Podmínky</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Soukromí</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Podpora</a>",
-    "CACHE": "Cache výstupu modulu je vypnutá, aby Joomla vždy zaregistrovala skript služby. Skript se načítá při automatické i pevné výšce. Veřejný odkaz funguje i při blokovaném skriptu.",
-    "APPEARANCE": "Přebírání vzhledu webu nastavte ve vzhledu uloženého formuláře. Změny platí pro všechna vložení po opětovném načtení stránky."
+    "CACHE": "Cache výstupu modulu je vypnutá, aby Joomla vždy načetla pomocný skript služby. Ten se načítá v obou režimech výšky; vzhled řídí volba tohoto modulu. Veřejný odkaz funguje i při zablokování skriptu.",
+    "APPEARANCE": "Použije písmo, pozadí a barvy webu pouze pro tento modul. Po změně modul uložte a ověřte zveřejněnou stránku. Plánek sálu si ponechá vlastní vzhled.",
+    "INHERIT_STYLE": "Přizpůsobit vzhled webu"
   }
 }

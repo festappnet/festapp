@@ -30,7 +30,7 @@ foreach ( $products as $i => $p ) {
  $plain = $a; $plain['inheritStyle'] = false;
  $plain_block = render_block( array( 'blockName' => $slug . '/ticket-form', 'attrs' => $plain, 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
  $plain_short = do_shortcode( '[' . $shortcode . ' url="' . $a['url'] . '" mode="fixed" height="240" inherit_style="false"]' );
- dual_assert( $plain_block === $plain_short && false === strpos( $plain_short, ' data-festapp-embed ' ), 'explicit opt-out matches block and shortcode without helper' );
+ dual_assert( $plain_block === $plain_short && false !== strpos( $plain_short, 'data-festapp-style="default"' ) && false !== strpos( $plain_short, 'data-festapp-height="fixed"' ), 'explicit opt-out matches block and shortcode and preserves fixed height' );
  $render( array( 'url' => $origin . '/form/test' ) ); $render( array( 'url' => $origin . '/form/test' ) );
  $helpers = array_filter( wp_scripts()->queue, function( $h ) use ( $slug ) { return 0 === strpos( $h, $slug . '-helper-' ); } );
  dual_assert( 1 === count( $helpers ), 'one helper per product origin' );

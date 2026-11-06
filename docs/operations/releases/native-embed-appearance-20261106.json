@@ -1,0 +1,39 @@
+{
+  "status": "source-validated-native-adapters",
+  "base_main": "75028d756356d0e8f218921d412fd8357e00d527",
+  "contract": "data-festapp-style=inherit|default; embed.js and EmbedTheme own presentation",
+  "defaults": "missing=true; existing false preserved; malformed values=default",
+  "wordpress": {
+    "version": "1.0.4",
+    "installed_contracts": [
+      "WP7.1.3/PHP8.5.12:51 assertions",
+      "WP6.6/PHP7.4.33:51 assertions"
+    ],
+    "additional_contracts": "WP7.1.3:37 tester +48 dual-product assertions",
+    "metadata": "4 tests passed",
+    "browser_limit": "Gutenberg canvas blank in isolated WP7 check; no save/reopen claim"
+  },
+  "wix": {
+    "version": "0.1.1",
+    "tests": {
+      "pass": 48,
+      "skip": 4,
+      "fail": 0
+    },
+    "checks": "build and public-assets package passed; checkbox save/readback and iframe identity covered",
+    "native_editor": "pending deployed assets and actual save/reopen"
+  },
+  "joomla": {
+    "version": "1.0.3",
+    "proof": "VERIFIED: 34 source inputs and 13 receipts; Joomla 5.4.10/PHP 8.3.36 and 6.1.4/PHP 8.4.27, 202 assertions each; native save/reopen, cold/warm mode/style matrix, browser map, updater and read-only production smoke passed"
+  },
+  "local_backend": {
+    "project": "festapp-native-embed-20261106",
+    "api_port": 59941,
+    "db_port": 59942,
+    "isolation": "fresh own Docker project; existing59821 unchanged",
+    "bootstrap": "canonical baseline/bootstrap/referenceSeed, automation/local_db/reference_tenants.sql, upgrade-local as local extension admin, supabase/seed.sql, owned synthetic embedded fixture with reference tenants retained",
+    "fixture_scope": "no purchase or seat selected"
+  },
+  "publication": "pending exact canonical main CI and final release authorization already provided in session; marketplace submissions excluded"
+}

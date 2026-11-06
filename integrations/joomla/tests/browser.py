@@ -8,7 +8,7 @@ from cms import Fields, request, session, AUTH
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / '.private/browser.json'
-CONFIG.write_text(json.dumps({'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','ignoreHttpsErrors':True,'args':'--host-resolver-rules=MAP vstupenky.online 127.0.0.1:59803'}))
+CONFIG.write_text(json.dumps({'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','ignoreHttpsErrors':True,'args':'--mute-audio\n--host-resolver-rules=MAP vstupenky.online 127.0.0.1:59803'}))
 BROWSER = ['agent-browser','--config',str(CONFIG),'--headed','false','--session','festapp-joomla-20261026']
 
 
@@ -96,5 +96,5 @@ except Exception:
 finally:
     edit({'url':'https://vstupenky.online/form/embedded-synthetic'})
     run('close')
-(ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to existing disposable HTTPS fixture on 59803 and backend on 59821; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
+(ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59941; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
 print('PASS mobile/keyboard/auto-height/seat-selector/blocked-helper browser checks')

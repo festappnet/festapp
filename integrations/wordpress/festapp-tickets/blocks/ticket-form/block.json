@@ -28,6 +28,10 @@
     "height": {
       "type": "number",
       "default": 800
+    },
+    "inheritStyle": {
+      "type": "boolean",
+      "default": true
     }
   },
   "supports": {

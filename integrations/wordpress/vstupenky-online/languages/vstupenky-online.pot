@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.3\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.4\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -12,19 +12,22 @@ msgstr ""
 msgid "3. Preview and publish"
 msgstr ""
 
-msgid "After publication, visitors connect to vstupenky.online and enter data directly into the service. Automatic height loads its /embed.js. The remote form is not loaded in the editor."
+msgid "After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor."
 msgstr ""
 
 msgid "Automatic"
 msgstr ""
 
-msgid "Automatic height is enabled. Website appearance is controlled in the saved form design settings."
+msgid "Automatic height and Match website appearance are enabled by default. Each block or shortcode has its own settings."
 msgstr ""
 
-msgid "Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
+msgid "Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr ""
 
 msgid "Check the public URL. The server accepts only an allowed form address."
+msgstr ""
+
+msgid "Choose Match website appearance for each block, or set inherit_style=\"false\" in its shortcode to keep the form appearance. Save and publish the page after changing it."
 msgstr ""
 
 msgid "Copy the public URL in the form https://vstupenky.online/form/saved-slug. Do not use a personal order link or administration URL."
@@ -75,6 +78,9 @@ msgstr ""
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr ""
 
+msgid "Match website appearance"
+msgstr ""
+
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr ""
 
@@ -120,7 +126,7 @@ msgstr ""
 msgid "The form is not configured. Enter a saved public https://vstupenky.online/form/ URL without extra parameters."
 msgstr ""
 
-msgid "The published form connects to vstupenky.online. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Automatic height also loads /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form."
+msgid "The published form connects to vstupenky.online. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form."
 msgstr ""
 
 msgid "Ticket sales - vstupenky.online"
@@ -132,10 +138,10 @@ msgstr ""
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr ""
 
-msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
+msgid "Use the website font, background and colors for this block only. Save and publish the page to apply changes. The seating plan keeps its own appearance."
 msgstr ""
 
-msgid "Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page."
+msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
 msgstr ""
 
 msgid "vstupenky.online"

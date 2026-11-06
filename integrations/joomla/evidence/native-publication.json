@@ -2,8 +2,8 @@
   "checks": [
     {
       "joomla_major": 5,
-      "new_module_id": 129,
-      "article_id": 3,
+      "new_module_id": 131,
+      "article_id": 4,
       "baseline_restored": true,
       "cases": [
         "native New/type selection/save/publish/template position/all-menu assignment/public readback",
@@ -40,14 +40,14 @@
           "mode": "fixed",
           "inherit_style": false,
           "cache": "cold",
-          "helpers": 0
+          "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
           "inherit_style": false,
           "cache": "warm",
-          "helpers": 0
+          "helpers": 1
         },
         {
           "article_only": true,
@@ -67,8 +67,8 @@
     },
     {
       "joomla_major": 6,
-      "new_module_id": 127,
-      "article_id": 3,
+      "new_module_id": 131,
+      "article_id": 4,
       "baseline_restored": true,
       "cases": [
         "native New/type selection/save/publish/template position/all-menu assignment/public readback",
@@ -105,14 +105,14 @@
           "mode": "fixed",
           "inherit_style": false,
           "cache": "cold",
-          "helpers": 0
+          "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
           "inherit_style": false,
           "cache": "warm",
-          "helpers": 0
+          "helpers": 1
         },
         {
           "article_only": true,

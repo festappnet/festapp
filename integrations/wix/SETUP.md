@@ -51,9 +51,16 @@ Do not publish a claim of verified compatibility until the matrix below passes.
    | --- | --- | --- |
    | `form-url` | empty | Canonical public service form URL |
    | `form-title` | `Prodej vstupenek - vstupenky.online` | Accessible iframe title |
+   | `inherit-style` | `true` | Per-widget appearance preference, serialized `true` / `false` |
 
-   The native widget uses the saved service fallback. For a per-embed appearance
-   choice, use generated HTML from Embed on your website in the form administration.
+   The updated native Settings panel saves Match website appearance for this widget.
+   Existing registrations must support the public `inherit-style` property; do not
+   reset an existing `false` value to the initial default. Updating source/assets
+   alone does not prove that the Dashboard registration was updated. Verify the
+   actual property and save/reopen readback before claiming it is available.
+   The renderer emits explicit `data-festapp-style="inherit"` or `"default"` and
+   updates presentation without replacing the checkout iframe. Nested Wix frames
+   can expose only their accessible surrounding styles, not all outer-site CSS.
 
    Wix widget properties bind to custom-element attributes. Use the settings
    panel for subsequent changes; no credentials or hidden order state are stored.

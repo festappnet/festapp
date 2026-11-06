@@ -1,13 +1,13 @@
 {
-  "checked_at": "2026-10-26T08:47:04.998833+00:00",
+  "checked_at": "2026-11-06T05:18:25.780889+00:00",
   "user_agent": "Festapp-Joomla-Release-Check/1.0 (+https://github.com/festappnet/festapp)",
   "checks": [
     {
       "url": "https://vstupenky.online/login",
       "final_url": "https://vstupenky.online/login",
       "status": 200,
-      "bytes": 13296,
-      "sha256": "012ee0bb62c765549b02666a46701424b4abdaa12b84efd29eb58c878c84d982",
+      "bytes": 18478,
+      "sha256": "9dfc3643124e6f3b251e0c2ba0620067492384957d8a964df97f90b950c05462",
       "title": "Akce a plesy - vstupenky online | vstupenky.online",
       "expected_content": true
     },
@@ -24,8 +24,8 @@
       "url": "https://vstupenky.online/privacy/",
       "final_url": "https://vstupenky.online/privacy/",
       "status": 200,
-      "bytes": 12173,
-      "sha256": "c4b7354aeb9ef9441530f34ca29ad572daffb8cff49ad3556e0f81add77dae94",
+      "bytes": 13913,
+      "sha256": "b296120d84db8875954bbbfd684ea1fd57f29a369e979f4cd46d7aba4ae7776b",
       "title": "Ochrana osobních údajů | vstupenky.online",
       "expected_content": true
     },
@@ -48,11 +48,11 @@
       "expected_content": true
     },
     {
-      "url": "https://vstupenky.online/pro-poradatele",
+      "url": "https://vstupenky.online/",
       "final_url": "https://vstupenky.online/",
       "status": 200,
-      "bytes": 234776,
-      "sha256": "b6c143dc39ac6f397b12705d5524cf6e95483b1121e7a6336d1162b8469faa89",
+      "bytes": 236001,
+      "sha256": "04ce83615ff87f2edff2bc98bdc6b18ec6058da0d19e87bc3a1da8c28360a238",
       "title": "Prodej vstupenek na akce | vstupenky.online",
       "expected_content": true
     },
@@ -60,8 +60,8 @@
       "url": "https://vstupenky.online/embed.js",
       "final_url": "https://vstupenky.online/embed.js",
       "status": 200,
-      "bytes": 16126,
-      "sha256": "5afa6651760a77a1fdd6acf47e9de51e993b6586102486e44e0edd819e483ed5",
+      "bytes": 29524,
+      "sha256": "ad3331209d7aa2cd18eefcf284514835b5a9befec62b4a82380279d883a7b826",
       "title": null,
       "expected_content": true
     }

@@ -34,7 +34,7 @@ foreach ($products as [$element, $namespace, $origin]) {
             check(str_contains($html, 'data-festapp-embed-host'), 'Host wrapper');
             check(str_contains($html, 'data-festapp-embed '), 'Frame marker');
             check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed'), 'Fixed helper');
-            check(!str_contains($html, 'data-festapp-style'), 'Appearance');
+            check(str_contains($html, 'data-festapp-style="' . ($inherit === 1 ? 'inherit' : 'default') . '"'), 'Appearance');
             check(!str_contains($html, '<script>') && str_contains($html, '&lt;script&gt;'), 'Escaped title');
             check(str_contains($html, '?embed=1') && str_contains($html, 'rel="noopener noreferrer"'), 'Embed and fallback');
         }
@@ -55,7 +55,7 @@ foreach ($products as [$element, $namespace, $origin]) {
         $ini = JPATH_ROOT . '/modules/' . $element . '/language/' . $locale . '/' . $element . '.ini';
         check(is_file($ini), 'Installed translation');
         $strings = parse_ini_file($ini);
-        check(count($strings) === 19, 'All translated strings parse');
+        check(count($strings) === 20, 'All translated strings parse');
         $language = \Joomla\CMS\Language\Language::getInstance($locale);
         check($language->load($element, JPATH_ROOT . '/modules/' . $element, $locale, true), 'Joomla loads product locale');
         check($language->_(strtoupper($element).'_START') === $strings[strtoupper($element).'_START'], 'Native localized onboarding');

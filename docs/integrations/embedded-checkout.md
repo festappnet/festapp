@@ -139,8 +139,28 @@ dva weby s různou volbou vzhledu.
 
 `forms.data.design.embed_inherit_style` zůstává kompatibilním fallbackem pro
 existující vložení bez explicitního atributu (výchozí true). Duplicitní přepínač
-ve Vzhledu formuláře už editor nenabízí. Stávající CMS renderery, které explicitní
-volbu nevkládají, dál používají tento fallback.
+ve Vzhledu formuláře už editor nenabízí. Starší externí HTML a dosud
+neaktualizované CMS instalace bez explicitního atributu dál používají tento fallback.
+
+Aktuální nativní adaptéry WordPress/Joomla/Wix vždy zapisují explicitní volbu:
+
+| Adaptér | Uložené nastavení konkrétní instance | Ovládání |
+| --- | --- | --- |
+| WordPress blok | `inheritStyle` boolean | Přizpůsobit vzhled webu |
+| WordPress shortcode | `inherit_style="true"` / `"false"` | Stejný PHP normalizační helper jako blok |
+| Joomla modul | `inherit_style` nativní `1` / `0` | Přizpůsobit vzhled webu |
+| Wix widget | `inherit-style` řetězec `true` / `false` | Checkbox v Settings, zápis s readback |
+
+Chybějící hodnota je zapnutá; explicitní vypnutí zůstává zachované. Neplatná
+hodnota nezapíná dědění. Každý adaptér převádí pouze svůj nativní formát na
+`data-festapp-style="inherit"` / `"default"`; nespravuje další theme engine.
+Po změně je třeba uložit konkrétní blok/modul/widget, publikovat stránku a podle
+CMS obnovit cache. Volba se neukládá do formuláře a neovlivňuje jiné instance.
+Wix při změně pouze appearance nemění identitu ani `src` existujícího iframe.
+Registrace Wix musí podporovat veřejnou property; zdrojová změna nedokládá
+provedenou registraci ani aktualizaci cizích instalací. Ovládání vyžaduje nový
+balíček nebo hostované assets, ne pouze vydání backendu. Vnořené rámy mohou
+zpřístupnit pouze vzhled bezprostředního hostitele, ne celé vnější stránky.
 
 Host `/embed.js` předává ověřené prezentační tokeny a přesnou volbu `inherit/default`
 pro daný iframe. `EmbedBridge` zachovává kontrolu rodiče, originu a instance a

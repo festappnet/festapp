@@ -22,10 +22,12 @@
                     help: __('Describe this form for visitors using screen readers. This does not rename the event.', 'festapp-tickets')}),
                 el(components.SelectControl, {label: __('Form height', 'festapp-tickets'), value: a.mode,
                     options: [{label: __('Automatic', 'festapp-tickets'), value: 'auto'}, {label: __('Fixed', 'festapp-tickets'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
-                el('p', null, __('Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page.', 'festapp-tickets')),
+                el(components.ToggleControl, {label: __('Match website appearance', 'festapp-tickets'), checked: a.inheritStyle === undefined ? true : a.inheritStyle === true,
+                    onChange: (inheritStyle) => props.setAttributes({inheritStyle}),
+                    help: __('Use the website font, background and colors for this block only. Save and publish the page to apply changes. The seating plan keeps its own appearance.', 'festapp-tickets')}),
 
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', 'festapp-tickets') : __('Fallback height without the helper (px)', 'festapp-tickets'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
-                el('p', null, __('After publication, visitors connect to Festapp Tickets and enter data directly into the service. Automatic height loads its /embed.js. The remote form is not loaded in the editor.', 'festapp-tickets')),
+                el('p', null, __('After publication, visitors connect to Festapp Tickets and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor.', 'festapp-tickets')),
                 el('p', null, el('a', {href: 'https://tickets.festapp.net/privacy/', target: '_blank', rel: 'noopener noreferrer'}, __('Service privacy policy', 'festapp-tickets')))
             );
         },
