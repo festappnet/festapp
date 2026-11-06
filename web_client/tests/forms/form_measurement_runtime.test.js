@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {runtimeSource} from '../../../workers/form-measurement/src/runtime_source.mjs';
 import {serveMeasurement} from '../../../workers/form-measurement/src/worker.mjs';
 import {FormMeasurementRuntime} from '../../src/components/forms/form_measurement_runtime.js';
 import {bindKlaroConsent} from '../../src/components/forms/form_measurement_consent.js';
 import {attributionContext,measurementPageLocation,campaignContext,measurementOrigin} from '../../src/components/forms/form_measurement_contract.js';
+import {publicFormLocation,publicFormAttributionSearch} from '../../src/utils/public_form_location.js';
 const runtime='https://festival-measurement.pages.dev',parent='https://tickets.example';
 const policy={enabled:true,organization_allowed:true,privacy_url:"https://organizer.example/privacy",eligible:true,runtime_supported:true,organization:1,unit:2,runtime_origin:runtime,valid_for_seconds:60,policy_revision:1,configuration_revision:'one'};
 const config={organization:1,unit:2,form_id:3,form_link:'summer',runtime_origin:runtime,parent_origin:parent,profile:'gtm-v1',ancestor_origins:[parent],collector_origins:['https://www.google-analytics.com'],policy,gtm_container:'GTM-W9WRHWT9',scripts:'</script><script>window.test=1</script>'};
@@ -94,6 +96,23 @@ test('campaign URLs preserve human labels while excluding contacts, controls and
  assert.equal(location.searchParams.get('utm_campaign'),input.utm_campaign);
  assert.deepEqual([...location.searchParams.keys()],['utm_source','utm_campaign']);
  assert.equal(measurementPageLocation({...input,page_location:input.page_location+'?token=private'}),null);
+});
+
+test('Google app, Sklik, TikTok and Microsoft click IDs pass every attribution gate with the shared validation',()=>{
+ const ids={gbraid:'gb_1',wbraid:'wb_1',sznclid:'szn.1',ttclid:'tt-1',msclkid:'0123456789abcdef'};
+ const search='?'+new URLSearchParams(ids);
+ assert.deepEqual(campaignContext({...ids,token:'private'}),ids);
+ for(const key of Object.keys(ids)){
+  assert.deepEqual(campaignContext({[key]:'x'.repeat(256)}),{[key]:'x'.repeat(256)});
+  for(const value of ['x'.repeat(257),'','mail@example.test','a\nb','a\u007fb',7])assert.deepEqual(campaignContext({[key]:value}),{},key);
+ }
+ const context=attributionContext({page_location:parent+'/form/summer',...ids});
+ assert.deepEqual(context,{page_location:parent+'/form/summer',...ids});
+ assert.deepEqual(Object.fromEntries(new URL(measurementPageLocation(context)).searchParams),ids);
+ assert.equal(publicFormLocation(new URL(parent+'/form/summer'+search),{entry:true}),true);
+ assert.equal(publicFormAttributionSearch(new URL(parent+'/form/summer'+search+'&token=private')),search);
+ const embed=readFileSync(new URL('../../public/embed.js',import.meta.url),'utf8');
+ for(const key of Object.keys(ids)){assert.ok(embed.includes(`'${key}'`),key);assert.ok(runtimeSource.includes(`"${key}"`),key);}
 });
 
 test('real runtime bootstrap validates the bare form URL before exposing a campaign URL',()=>{

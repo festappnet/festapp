@@ -45,7 +45,7 @@ export class BlueprintLayoutAdapter {
                     : selected ? SeatStates.SELECTED_BY_ME : spot.state || SeatStates.AVAILABLE,
                 product: binding.productId, priceLabel, productModel: product && {
                     id: product.id, title: product.title, price: product.price,
-                    currency_code: product.currency_code,
+                    currency_code: product.currency_code, type_title: product.type_title,
                     isAvailable: product.isAvailable, is_dynamically_available: product.is_dynamically_available,
                     is_available_dynamic_capacity: product.is_available_dynamic_capacity,
                 },

@@ -1560,8 +1560,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.reception_use_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='99350a72fb204f5160cb72714b85882c'),'current SQL source parity: public.reception_use_rule(boolean,boolean,boolean,boolean)');
 -- supabase/migrations/20261007120000_canonical_activity_mutations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.record_account_deletion_sync_v1(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0fd53dbee4bb8da3a57359a7b212a384'),'current SQL source parity: public.record_account_deletion_sync_v1(uuid,bigint)');
--- supabase/migrations/20261106220000_unit_measurement_privacy_url.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.record_form_conversion_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='84fccdfe747b6f53689a4df4ce5af8ce'),'current SQL source parity: public.record_form_conversion_internal(bigint)');
+-- supabase/migrations/20261106230000_form_measurement_item_fields.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.record_form_conversion_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='babf5675b316a3551c735874d0205885'),'current SQL source parity: public.record_form_conversion_internal(bigint)');
 -- supabase/migrations/20261027190000_finance_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.record_occasion_media_step(uuid,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='058a763e64a4ffdeb1336925955e77bf'),'current SQL source parity: public.record_occasion_media_step(uuid,integer)');
 -- supabase/migrations/20261027160000_blueprint_authoring.sql

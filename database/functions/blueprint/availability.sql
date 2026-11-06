@@ -40,13 +40,14 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 CREATE OR REPLACE FUNCTION public.blueprint_form_product_catalog_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'title',p.title,'price',p.price,
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'title',p.title,'type_title',pt.title,'price',p.price,
   'currency_code',p.currency_code,'maximum',p.maximum,
   'ordered_count',(SELECT count(*) FROM eshop.order_product_ticket opt WHERE opt.product=p.id),
   'is_dynamically_available',public.is_product_dynamically_available(p.id),
   'isAvailable',(availability.value->>'available')::bigint>0 AND public.is_product_dynamically_available(p.id)
  ) ORDER BY p.id),'[]'::jsonb)
  FROM public.blueprint_form_products_internal(p_form) offered JOIN eshop.products p ON p.id=offered.product
+ LEFT JOIN eshop.product_types pt ON pt.id=p.product_type
  CROSS JOIN LATERAL (SELECT public.blueprint_product_availability_internal(p.id) AS value) availability
  WHERE NOT p.is_hidden
 $$;

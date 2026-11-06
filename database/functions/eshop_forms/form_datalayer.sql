@@ -15,7 +15,7 @@ DROP FUNCTION IF EXISTS public.form_purchase_datalayer_internal(bigint);
 -- Products come from the finalizer's charged-price snapshot, not today's catalog.
 CREATE OR REPLACE FUNCTION public.record_form_conversion_internal(p_order bigint)
 RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; s jsonb; items jsonb; total numeric; payload jsonb; identity uuid:=gen_random_uuid();
+DECLARE o eshop.orders; s jsonb; items jsonb; total numeric; payload jsonb; identity uuid:=gen_random_uuid(); brand text;
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  s:=public.form_measurement_status_internal(o.form);
@@ -24,9 +24,12 @@ BEGIN
   payload:=jsonb_build_object('event','generate_lead','event_id',identity,'currency',coalesce(nullif(trim(o.currency_code),''),'CZK'),
    'value',0,'lead_source',CASE WHEN o.state='waitlisted' THEN 'waitlist' ELSE 'free_registration' END);
  ELSIF o.price>0 AND trim(o.currency_code) ~ '^[A-Z]{3}$' THEN
-  SELECT jsonb_agg(jsonb_build_object('item_id','product_'||x.id,'item_name',x.title,'price',x.price,'quantity',x.quantity) ORDER BY x.id,x.price),
+  SELECT title INTO brand FROM public.occasions WHERE id=o.occasion;
+  -- Labels stay out of the grouping: they cannot split a line or change the total.
+  SELECT jsonb_agg(jsonb_build_object('item_id','product_'||x.id,'item_name',x.title,'price',x.price,'quantity',x.quantity)||
+    jsonb_strip_nulls(jsonb_build_object('item_category',nullif(left(btrim(x.category),100),''),'item_brand',nullif(left(btrim(brand),100),''))) ORDER BY x.id,x.price),
    sum(x.price*x.quantity) INTO items,total
-  FROM (SELECT p->>'id' id,p->>'title' title,(p->>'price')::numeric price,count(*) quantity
+  FROM (SELECT p->>'id' id,p->>'title' title,(p->>'price')::numeric price,count(*) quantity,min(p->>'type_title') category
    FROM jsonb_array_elements(o.data->'tickets') t CROSS JOIN LATERAL jsonb_array_elements(t->'products') p
    GROUP BY p->>'id',p->>'title',(p->>'price')::numeric) x;
   IF jsonb_array_length(items) BETWEEN 1 AND 200 AND total=o.price THEN

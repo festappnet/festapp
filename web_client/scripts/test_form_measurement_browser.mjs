@@ -89,9 +89,9 @@ try {
  await run(`await call('confirmed',${JSON.stringify(grantedPurchase)}); await call('confirmed',${JSON.stringify(grantedLead)});return true`); await pause();
  events=await run('return dataLayer'); assert.ok(events.some(e=>e.event==='purchase')&&events.some(e=>e.event==='generate_lead'),'new conversions delivered after grant');
  await clear();
- const payload={event:'purchase',email:'private@example.test',phone:'123',user_data:{email:'private@example.test'},ecommerce:{currency:'CZK',transaction_id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',payment_type:'card',email:'private@example.test',items:[{item_id:'product_1',item_name:'Ticket',price:10,quantity:1,email:'private@example.test',phone:'123'}]}};
+ const payload={event:'purchase',email:'private@example.test',phone:'123',user_data:{email:'private@example.test'},ecommerce:{currency:'CZK',transaction_id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',payment_type:'card',email:'private@example.test',items:[{item_id:'product_1',item_name:'Ticket',item_category:'Tickets',item_brand:'Summer',price:10,quantity:1,email:'private@example.test',phone:'123'}]}};
  await run(`await call('raw',${JSON.stringify(payload)}); return true`); await pause(); events=await run('return dataLayer');
- assert.ok(events.some(e=>e.event==='purchase')); assert.ok(!JSON.stringify(events).includes('private@example.test')&&!JSON.stringify(events).includes('123'),'contact fields stripped');
+ assert.ok(events.some(e=>e.event==='purchase')); assert.deepEqual(events.find(e=>e.event==='purchase').ecommerce.items,[{item_id:'product_1',item_name:'Ticket',price:10,quantity:1,item_category:'Tickets',item_brand:'Summer'}]); assert.ok(!JSON.stringify(events).includes('private@example.test')&&!JSON.stringify(events).includes('123'),'contact fields stripped');
  await clear(); state=await run("return await call('state')");
  const envelope={namespace:'festapp-embed',protocol:1,type:'analytics',instance:state.instance,consentId:state.consentId,payload:{event:'page_view'}};
  await run(`window.dispatchEvent(new MessageEvent('message',{origin:'http://127.0.0.1:1',source:document.querySelector('iframe').contentWindow,data:${JSON.stringify(envelope)}}));window.dispatchEvent(new MessageEvent('message',{origin:${JSON.stringify(childOrigin)},source:window,data:${JSON.stringify(envelope)}})); return true`);

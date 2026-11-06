@@ -8,11 +8,11 @@ const identity='c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44';
 const paid={item_id:'product_11',item_name:'Concert',price:100,quantity:2};
 const purchase={event:'purchase',ecommerce:{currency:'CZK',transaction_id:identity,payment_type:'bank_transfer',items:[paid]}};
 const policy={enabled:true,organization_allowed:true,runtime_supported:true,privacy_url:"https://organizer.example/privacy",eligible:true,valid_for_seconds:60};
-function fixture({analytics=policy,url='https://tickets.test/form/summer?embed=1',consent=true,session=false}={}) {
+function fixture({analytics=policy,url='https://tickets.test/form/summer?embed=1',consent=true,session=false,occasionTitle,productTypeData}={}) {
  const dom=new JSDOM('<html lang="cs"><body></body></html>',{url});
  const sent=[];let allowed=consent;
  const bridge={measurementEpoch:()=>bridge.measurementAllowed()?'fixture-lease':null,measurementAllowed:()=>allowed,track:p=>{sent.push(p);return true;},revokeMeasurement:()=>{allowed=false;}};
- const model={data:{analytics},visibleFields:[{id:4,type:'product_type',options:[{id:11,title:'Concert',price:100,currency:'CZK'},{id:12,title:'Free',price:0,currency:'CZK'}]}]};
+ const model={data:{analytics},occasionTitle,visibleFields:[{id:4,type:'product_type',productTypeData,options:[{id:11,title:'Concert',price:100,currency:'CZK'},{id:12,title:'Free',price:0,currency:'CZK'}]}]};
  return {dom,sent,bridge,layer:new FormDataLayer({win:dom.window,model,bridge,session:()=>session})};
 }
 const events=sent=>sent.filter(p=>p.event);
@@ -54,6 +54,36 @@ for(const url of ['https://tickets.test/admin','https://tickets.test/form/summer
 test('session, demo and all contact paths fail closed',()=>{
  const {dom,layer,sent}=fixture({session:true});layer.view();assert.deepEqual(sent,[]);assert.equal(layer.contact,undefined);
  layer.session=()=>false;layer.model.demoSimulation=true;layer.view();assert.deepEqual(sent,[]);dom.window.close();
+});
+test('every browser event carries product type and occasion labels, including seat and area products',()=>{
+ const {dom,layer,sent}=fixture({occasionTitle:'Letní fest',productTypeData:{title:'Vstupenky'}});
+ const labels={item_category:'Vstupenky',item_brand:'Letní fest'};
+ layer.view();layer.update({fields:[{4:11}]});layer.review({fields:[{4:11}]});layer.payment({fields:[{4:11}]},'bank');
+ for(const event of ['view_item','add_to_cart','begin_checkout','add_payment_info']){
+  const item=events(sent).find(p=>p.event===event).ecommerce.items[0];assert.deepEqual({item_category:item.item_category,item_brand:item.item_brand},labels,event);
+ }
+ const seat={id:21,title:'Sedadlo',price:50,currency_code:'CZK',type_title:'Sezení'};
+ const session={spotModels:new Map([['7',{productModel:seat}]]),state:{tickets:[{},{_blueprintProduct:{...seat,id:22,title:'Stání',type_title:'Stání'}}]}};
+ layer.update({ticket:[{spot:7},{fields:[{product_type:22}]}]},session);
+ const added=events(sent).filter(p=>p.event==='add_to_cart').at(-1).ecommerce.items;
+ assert.deepEqual(added.map(item=>[item.item_id,item.item_category,item.item_brand]),[['product_21','Sezení','Letní fest'],['product_22','Stání','Letní fest']]);
+ layer.update({ticket:[{spot:7}]},{spotModels:new Map([['7',{productModel:{...seat,type_title:undefined}}]])});
+ assert.equal(layer.catalog.get('21').item_category,'Sezení','a sparse seat model keeps the known catalog label');
+ dom.window.close();
+});
+test('item labels are optional, bounded, contact-free and never change item identity or value',()=>{
+ const label=(item_category,item_brand)=>({...paid,item_category,item_brand});
+ const payload=item=>analyticsPayload({...purchase,ecommerce:{...purchase.ecommerce,items:[item]}}).ecommerce;
+ assert.deepEqual(analyticsPayload(purchase).ecommerce.items,[paid],'stored facts without labels remain valid and unchanged');
+ assert.deepEqual(payload(label('  VIP  ','Letní fest')).items,[{...paid,item_category:'VIP',item_brand:'Letní fest'}]);
+ assert.equal(payload(label('x'.repeat(101),'y'.repeat(100))).items[0].item_category,'x'.repeat(100));
+ assert.equal(payload(label('x'.repeat(101),'y'.repeat(100))).items[0].item_brand,'y'.repeat(100));
+ for(const unsafe of ['mail@example.test','a\nb','a\u007fb','a\u0085b','   ','',7,null,{title:'x'},['x']]){
+  const result=payload(label(unsafe,unsafe));
+  assert.deepEqual(result.items,[paid],JSON.stringify(unsafe));assert.equal(result.value,200);
+ }
+ const extra=payload({...paid,item_variant:'L',coupon:'SECRET',discount:50,affiliation:'Organizer',item_list_name:'x'}).items[0];
+ assert.deepEqual(extra,paid,'fields without a verified Festapp source are not forwarded');
 });
 test('shared payload contract strips secrets and contacts, validates identities and cents',()=>{
  const dirty={...purchase,user_data:{email:'secret'},token:'secret',ecommerce:{...purchase.ecommerce,value:999,url:'secret',items:[{...paid,email:'secret'}]}};

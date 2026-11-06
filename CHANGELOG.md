@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Form measurement passes `gbraid`, `wbraid`, `sznclid`, `ttclid` and `msclkid` next to UTM, `gclid` and `fbclid`, and adds optional `item_category` (product type) and `item_brand` (occasion) to items in browser events and the server `purchase`. Value calculation and recorded conversion facts are unchanged.
+
 - Measurement requires an organizer HTTPS privacy policy URL. Without it, tags, conversion recording/export and the consent notice remain disabled; partial configuration can still be saved outside the unit settings screen, which requires the URL and warns measurement managers while it is missing.
 
 - Fix form measurement consent, lifecycle view deduplication, delayed embed consent and GA4 campaign attribution. Add the `form_start` event.

@@ -6,7 +6,7 @@ window.diagnostics=[];window.addEventListener('message',e=>{if(e.origin===origin
 window.observed=[]; window.addEventListener('message',e=>{if(e.origin===origin && Array.isArray(e.data?.fixtureMeasurement)) window.observed.push(...e.data.fixtureMeasurement);});
 window.model = {link:'test',data:{analytics:{privacy_url:"https://organizer.example/privacy",eligible:true,runtime_supported:true,runtime_origin:origin,organization:1,unit:2,configuration_revision:1,policy_revision:1,valid_for_seconds:60}}};
 window.runtime = new FormMeasurementRuntime({model,local:true,onReady:()=>{window.ready=true;}});
-window.event = (name) => runtime.track(name === 'page_view' ? {event:name,email:'secret@example.com'} : {event:name,ecommerce:{currency:'CZK',items:[{item_id:'product_1',item_name:'Ticket',price:100,quantity:1,email:'secret@example.com'}],...(name==='purchase'?{payment_type:'card',transaction_id:'12345678-1234-4234-8234-123456789abc'}:{})}});
+window.event = (name) => runtime.track(name === 'page_view' ? {event:name,email:'secret@example.com'} : {event:name,ecommerce:{currency:'CZK',items:[{item_id:'product_1',item_name:'Ticket',item_category:'Tickets',item_brand:'Summer',price:100,quantity:1,email:'secret@example.com'}],...(name==='purchase'?{payment_type:'card',transaction_id:'12345678-1234-4234-8234-123456789abc'}:{})}});
 if (new URLSearchParams(location.search).has('cmp')) {
     const {LocalizationService} = await import('../../../src/services/localization_service.js');
     await LocalizationService.init({locale:new URLSearchParams(location.search).get('lang') || 'cs',persist:false});

@@ -34,7 +34,7 @@ function browser(path = '/', overrides = {}) {
 }
 
 test('public pages load one manual beacon without SPA tracking or persistent storage', () => {
-  for (const path of ['/', '/events', '/unit/12', '/form/public', '/form/public?utm_source=google']) {
+  for (const path of ['/', '/events', '/unit/12', '/form/public', '/form/public?utm_source=google', '/form/public?gbraid=a&wbraid=b&sznclid=c&ttclid=d&msclkid=e']) {
     const result = browser(path);
     assert.equal(result.added.length, 1, path);
     assert.deepEqual(JSON.parse(result.added[0].dataset.cfBeacon), { token, spa: false });

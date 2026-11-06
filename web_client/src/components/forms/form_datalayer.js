@@ -17,6 +17,10 @@ export function hasBrowserSession(win) {
     } catch { return true; }
 }
 
+// Public catalog labels only: the product type and the occasion it belongs to.
+const catalogItem = (product, currency, item_category, item_brand) => ({item_id: `product_${product.id}`, item_name: product.title,
+    price: Number(product.price), quantity: 1, currency, item_category, item_brand});
+
 export class FormDataLayer {
     constructor({win = window, model, bridge, entryAllowed, session = hasBrowserSession, refreshPolicy}) {
         this.win = win; this.model = model; this.bridge = bridge; this.session = session;
@@ -51,7 +55,7 @@ export class FormDataLayer {
                         if (!/^[1-9]\d{0,15}$/.test(String(product.id))) continue;
                         const currency = product.currency || product.currency_code;
                         if (!currencies(currency)) continue;
-                        this.catalog.set(String(product.id), {item_id: `product_${product.id}`, item_name: product.title, price: Number(product.price), quantity: 1, currency});
+                        this.catalog.set(String(product.id), catalogItem(product, currency, field.productTypeData?.title, model.occasionTitle));
                     }
                 }
                 visit(field.subFields);
@@ -146,7 +150,8 @@ export class FormDataLayer {
             if (product && /^[1-9]\d{0,15}$/.test(String(product.id))) {
                 const currency = product.currency_code || product.currencyCode || product.currency || session?.state?.currency;
                 if (currencies(currency)) {
-                    this.catalog.set(String(product.id), {item_id: `product_${product.id}`, item_name: product.title, price: Number(product.price), quantity: 1, currency});
+                    this.catalog.set(String(product.id), catalogItem(product, currency,
+                        product.type_title ?? this.catalog.get(String(product.id))?.item_category, this.model.occasionTitle));
                     if (ticket.spot) add(product.id);
                 }
             }

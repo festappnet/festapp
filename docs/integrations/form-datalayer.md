@@ -107,7 +107,11 @@ are rejected even when the corresponding timer has not run yet.
 
 The runtime validates a canonical public form URL without query/hash and a
 referrer origin only, then adds only allowlisted campaign parameters to the
-`page_location` query sent to dataLayer. Campaign/click values use one bounded allowlist. Host
+`page_location` query sent to dataLayer. Campaign/click values use one bounded allowlist
+(`campaignKeys` in the shared contract): `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`,
+`utm_content`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `sznclid`, `ttclid` and `msclkid`. Each value
+has 1 to 256 characters, without controls or `@`. Any other query parameter keeps a standalone form
+outside measurement. Host
 campaign data is separately rebuilt during the pinned embed handshake; the raw
 host URL, unknown query values and capability URLs are never forwarded.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
@@ -145,6 +149,22 @@ returns the same immutable facts under current stored gates; the browser
 suppresses duplicate callbacks within its lifecycle. Free registration/waitlist
 use distinct lead identities, including later paid waitlist acceptance.
 
+Items carry `item_id`, `item_name`, `price` and `quantity`. Two optional public catalog labels
+are added when they exist, in browser events and in the server `purchase`:
+
+- `item_category`: the product type title. Browser events read it from the form catalog or the
+  seat/area product catalog, `purchase` from `type_title` in the finalizer's snapshot.
+- `item_brand`: the occasion title. GA4 `affiliation` means the supplying company or store, so
+  the event belongs in the brand of what is sold. One Unit runtime is one organizer, and a Unit
+  title can be a natural person's name, so no organizer value is exported.
+
+Labels are limited to 100 characters. A label with controls or `@` is omitted while the item
+remains. They never affect `value` or the `total=o.price` check, and they do not split a charged
+line. Conversion facts recorded earlier stay immutable without these labels and remain valid.
+`item_variant`, `coupon` and `discount` are not exported. Festapp has no variant, discount code or
+voucher entity. A product is the selected option, a seat section is not known consistently in the
+cart, and the negative `meta_surcharge` is informational and does not change the charged price.
+
 The forward migration relocates the earlier public tables into `analytics` and
 moves unambiguous legacy form destination configuration to Unit. It preflights
 conflicts and enhanced-conversion preparation without logging code; ambiguity
@@ -171,7 +191,9 @@ allowlisted campaign query parameters; arbitrary query values and fragments
 are never forwarded. Include GA4 regional endpoints in collector origins:
 `https://region1.google-analytics.com`, `https://region1.analytics.google.com`
 and `https://www.google-analytics.com`, or CSP silently blocks their requests.
-GTM Preview does not work inside the runtime: it accepts only `form` and
-`parent` URL parameters and CSP forbids frames. Verify with GA4 Realtime or
-DebugView. Signed-in visitors are excluded from measurement and never see the
+GTM Preview cannot reach the runtime without the Tag Assistant Chrome extension,
+because Tag Assistant only pings the window it opened. Try it with the extension
+in a clean Chrome profile, keeping Tag Assistant in a separate window: hiding the
+form tab destroys the frame. The form accepts `gtm_debug` and does not forward it.
+This path is not verified live yet. GA4 Realtime and DebugView always work. Signed-in visitors are excluded from measurement and never see the
 consent notice; test in an incognito window.

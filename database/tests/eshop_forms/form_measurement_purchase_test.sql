@@ -35,7 +35,7 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','confirmed requested order receives immutable analytics facts');
  PERFORM assert_true(result#>>'{data,analytics,ecommerce,transaction_id}'<>result#>>'{data,order,order_symbol}','analytics identity is not an order capability');
  PERFORM assert_eq(result#>>'{data,analytics,ecommerce,payment_type}','card','analytics describes payment method, not paid state');
- PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1)),'analytics exposes the public offer name and final buyer price');
+ PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1,'item_category','Card tickets','item_brand','Card order')),'analytics exposes the public offer name and final buyer price');
  PERFORM assert_eq(result#>>'{data,analytics,ecommerce,value}','123.45','analytics value is the final charged line total');
  PERFORM assert_true(NOT (result#>'{data,analytics,ecommerce}') ? 'tax','VAT is not invented without a backend breakdown');
  oid:=(result#>>'{data,order,id}')::bigint;
