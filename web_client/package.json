@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
-    "test": "node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node --test tests/**/*.test.js",
+    "test": "node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node --test --test-concurrency=1 tests/**/*.test.js",
     "test:measurement-browser": "node scripts/test_form_measurement_browser.mjs",
     "test:form-interaction-browser": "node scripts/test_form_interaction_browser.mjs",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",

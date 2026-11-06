@@ -7,7 +7,7 @@ BEGIN
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Editor event',org,u,'stripe-editor-'||extensions.gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO oc;
  INSERT INTO auth.users(id,email) VALUES(actor,actor||'@stripe.invalid');
  INSERT INTO public.user_info(id,organization) VALUES(actor,org);
- INSERT INTO public.occasion_users(occasion,"user",is_editor_order) VALUES(oc,actor,true);
+ INSERT INTO public.occasion_users(occasion,"user",is_editor) VALUES(oc,actor,true);
  INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,model_verified,business_name)
  VALUES(org,u,'acct_editorFixture',false,'connected',true,'Verified organizer') RETURNING id INTO conn;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);

@@ -15,6 +15,7 @@ import 'package:fstapp/components/unit/verification/unit_legal_profile.dart';
 import 'package:fstapp/components/unit/verification/unit_legal_profile_section.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
 
 class _AresLookup extends AresLookupService {
   _AresLookup(this.callback);
@@ -166,10 +167,14 @@ void main() {
       final db = DbUnitVerification(
         rpc: (name, params) async {
           calls.add({'name': name, ...params});
-          return {
+          final result = {
             'code': 409,
             'profile': {...identity, 'status': 'pending'},
           };
+          return name == 'manage_unit_agenda'
+              ? commandResponseFixture(params['p_command_id'],
+                  status: 'conflict', code: 409, data: result)
+              : result;
         },
       );
       final p = UnitLegalProfile.fromJson({
@@ -183,9 +188,11 @@ void main() {
       });
       expect(result.code, 409);
       expect(calls, hasLength(1));
-      expect(calls.single['p_expected_revision'], 3);
+      expect(calls.single['name'], 'manage_unit_agenda');
+      expect(calls.single['p_action'], 'legal.save');
+      expect(calls.single['p_payload']['expectedRevision'], 3);
       expect(
-        (calls.single['p_profile'] as Map).keys,
+        (calls.single['p_payload']['profile'] as Map).keys,
         unorderedEquals(UnitLegalProfile.fields),
       );
       await db.review(p, 'approve', source: 'Checked registry and authority');
@@ -265,14 +272,20 @@ void main() {
       final db = DbUnitVerification(
         rpc: (name, params) async {
           calls.add(name);
-          return {
-            'code': name == 'save_unit_legal_profile' ? 409 : 200,
+          final saving = name == 'manage_unit_agenda';
+          if (saving) expect(params['p_action'], 'legal.save');
+          final result = {
+            'code': saving ? 409 : 200,
             'profile': {
               ...identity,
-              'revision': name == 'save_unit_legal_profile' ? 4 : 3,
+              'revision': saving ? 4 : 3,
               'status': 'unverified',
             },
           };
+          return saving
+              ? commandResponseFixture(params['p_command_id'],
+                  status: 'conflict', code: 409, data: result)
+              : result;
         },
       );
       await env().pumpWidget(
@@ -301,7 +314,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Local draft'), findsOneWidget);
       expect(find.text('conflict'), findsOneWidget);
-      expect(calls.where((v) => v == 'save_unit_legal_profile'), hasLength(1));
+      expect(calls.where((v) => v == 'manage_unit_agenda'), hasLength(1));
       expect(calls, isNot(contains('submit_unit_verification')));
     },
   );

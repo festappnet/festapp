@@ -152,11 +152,17 @@ void main() {
   ]) {
     for (final hasIssue in [false, true]) {
       testWidgets(
-        'email typo hint requires a current delivery issue: $hasIssue',
+        '${view.name}: email typo hint requires a current delivery issue: $hasIssue',
         (tester) async {
+          tester.view.physicalSize = view.size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
           await open(
             tester,
             hasIssue ? [delivery('failed', 'order_confirmation', 'dead')] : [],
+            dark: view.dark,
+            scale: view.scale,
           );
           expect(
             find.text(

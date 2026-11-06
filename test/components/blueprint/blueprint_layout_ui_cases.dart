@@ -989,7 +989,16 @@ void main() {
     await tester.pumpAndSettle();
     final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
     await tester.ensureVisible(action);
-    await tester.tap(action);
+    // Cancellation recovery uses the same durable journal as hold release.
+    // Let its filesystem/HTTP continuation run outside the fake clock.
+    await tester.runAsync(() => tester.tap(action));
+    for (var attempt = 0;
+        attempt < 10 && find.text('Reviewed ticket seat').evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
     await tester.pumpAndSettle();
     expect(find.text('Reviewed ticket seat'), findsOneWidget);
     expect(find.textContaining('51'), findsWidgets);
@@ -999,6 +1008,17 @@ void main() {
     expect(source.spots!.first.orderProductTicket, 101);
     expect(cancellations, isEmpty);
     expect(tester.takeException(), isNull);
+    final startOrder = find.byKey(const ValueKey('blueprint-start-order'));
+    // Dialog dismissal must also finish the real async command lifecycle before
+    // another selection/operation can be accepted by the reservation workspace.
+    for (var attempt = 0;
+        attempt < 10 && tester.widget<TextButton>(startOrder).onPressed == null;
+        attempt++) {
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(tester.widget<TextButton>(startOrder).onPressed, isNotNull);
     tester
         .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
         .onViewSelectionChanged!({for (final seat in seats) seat.id});

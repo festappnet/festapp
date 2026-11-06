@@ -50,7 +50,8 @@ BEGIN
  RESET ROLE;
  PERFORM assert_eq(jsonb_array_length(result#>'{data,orders}'),3,'form filter excludes the other form');
  PERFORM assert_eq(jsonb_array_length(result#>'{data,orders_history}'),3,'history uses the same form filter');
- PERFORM assert_eq(result#>'{data,orders,0,data,note}',NULL::jsonb,'compact current data remains compact');
+ PERFORM assert_eq(result#>>'{data,orders,0,data,note}','Full details'::text,'compact current data includes the canonical editable note');
+ PERFORM assert_true(NOT (result#>'{data,orders,0,data}' ? 'tickets'),'compact current data does not expand ticket answer snapshots');
  UPDATE public.occasion_users SET is_editor_order_view=false WHERE "user"=actor;
  SET LOCAL ROLE authenticated;
  result := public.get_orders('history-'||suffix,NULL,'{"include_orders_history":true}');

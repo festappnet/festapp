@@ -215,16 +215,18 @@ void main() {
       httpClient: MockClient((request) async {
         final isOrders = request.url.path.endsWith('/get_orders_tab_data');
         if (bellEntry &&
-            (request.url.path.endsWith('/get_notification_center_badge') ||
+            (request.url.path.endsWith('/get_notification_center_prepared_badge') ||
                 request.url.path.endsWith(
-                  '/get_notification_center_daily_overview',
+                  '/get_notification_center_view',
                 ))) {
           final overview = request.url.path.endsWith(
-            '/get_notification_center_daily_overview',
+            '/get_notification_center_view',
           );
           return http.Response(
             jsonEncode({
               'enabled': true,
+              'viewSupported': true,
+              'state': 'ready',
               'feedSupported': true,
               'timelineSupported': true,
               'dailySupported': true,
@@ -232,6 +234,8 @@ void main() {
               'lastSequence': 7,
               'readThrough': 0,
               if (overview) ...{
+                'viewToken': '00000000-0000-4000-8000-000000000007',
+                'acknowledged': true,
                 'snapshot': 7,
                 'snapshotAt': DateTime.now().toUtc().toIso8601String(),
                 'previousReadThrough': 0,

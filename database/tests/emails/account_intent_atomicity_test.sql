@@ -4,7 +4,7 @@ DO $$ DECLARE u uuid;old_token uuid:=gen_random_uuid();new_token uuid:=gen_rando
  BEGIN
   PERFORM public.enqueue_account_email('reset_token',jsonb_build_object('user_id',u,'token',new_token),'{"organization":1}','invalid-recipient','{"v":"1"}',repeat('a',64),'atomic-rollback','RESET_PASSWORD',now()+interval '1 hour');
   RAISE EXCEPTION 'invalid enqueue succeeded';
- EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'invalid_email_intent' THEN RAISE;END IF;END;
+ EXCEPTION WHEN invalid_parameter_value THEN IF SQLERRM<>'invalid_email_contact' THEN RAISE;END IF;END;
  PERFORM assert_eq((SELECT token::text FROM public.user_reset_token WHERE "user"=u),old_token::text,'failed enqueue rolls back proof rotation');
  r:=public.enqueue_account_email('reset_token',jsonb_build_object('user_id',u,'token',new_token),'{"organization":1}','atomic@example.invalid','{"v":"1"}',repeat('a',64),'atomic-first','RESET_PASSWORD',now()+interval '1 hour');
  UPDATE public.email_messages SET workflow_state='unknown' WHERE message_id=(r->>'message_id')::uuid;

@@ -91,7 +91,7 @@ void main() {
   setUp(() {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       occasionUser: OccasionUserModel(isEditor: true),
-      capabilities: const {'occasions.write': true},
+      capabilities: const {'occasions.write': true, 'forms.write': true},
       occasion: OccasionModel(
         isOpen: true,
         isHidden: false,

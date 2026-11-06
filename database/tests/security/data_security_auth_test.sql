@@ -44,8 +44,10 @@ BEGIN
  response:=public.create_user_from_registration(org,'not-public@test.local','12345678','{}');
  PERFORM assert_eq((response->>'code')::int,403,'manager cannot reopen public registration');
  SET LOCAL ROLE authenticated;
- response:=public.update_unit_user(jsonb_build_object('unit',target_unit,'data',jsonb_build_object('email','foreign@test.local')));
- IF response->>'code'<>'403' THEN RAISE EXCEPTION 'occasion manager acquired unit-wide creation'; END IF;
+ BEGIN
+  PERFORM public.update_unit_user(jsonb_build_object('unit',target_unit,'data',jsonb_build_object('email','foreign@test.local')));
+  RAISE EXCEPTION 'occasion manager acquired unit-wide creation';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.create_user_in_organization_with_data_ws(org,'bypass@test.local','12345678','{}');
  RAISE EXCEPTION 'internal writer callable'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  RESET ROLE;

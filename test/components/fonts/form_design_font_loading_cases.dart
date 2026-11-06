@@ -66,7 +66,8 @@ void main() {
         ),
       );
       expect(find.byType(FontFamilyPicker), findsNothing);
-      expect(find.text(FormStrings.customColors), findsOneWidget);
+      expect(find.byKey(const ValueKey('form-theme-system')), findsOneWidget);
+      expect(find.text(FormStrings.typography), findsOneWidget);
       first.completeError(StateError('temporary network failure'));
       await tester.pump();
       expect(find.text(FormStrings.fontLoadFailed), findsOneWidget);

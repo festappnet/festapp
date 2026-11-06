@@ -60,6 +60,6 @@ BEGIN
  -- The legacy facade delegates exactly once, preserving its void shape.
  PERFORM public.swap_spot_tickets(a,b);ASSERT (SELECT order_product_ticket=opt FROM eshop.spots WHERE id=a);
  ASSERT NOT has_function_privilege('authenticated','public.update_spot_assignments_internal_v1(jsonb)','EXECUTE');
- ASSERT NOT has_function_privilege('authenticated','public.swap_spot_tickets_internal_v1(bigint,bigint)','EXECUTE');
+ ASSERT to_regprocedure('public.swap_spot_tickets_internal_v1(bigint,bigint)') IS NULL,'retired internal swap cannot restore an obsolete mutation path';
  ASSERT NOT has_function_privilege('authenticated','public._swap_spots_update_ticket(bigint,bigint,bigint)','EXECUTE');
 END $$;

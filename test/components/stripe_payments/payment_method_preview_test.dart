@@ -168,6 +168,8 @@ void main() {
     });
     final saved = draft.toEditedJson();
     expect(saved.containsKey('payments'), isFalse);
-    expect(saved['data']['payments']['stripeConnectionId'], connection);
+    expect(saved.containsKey('data'), isFalse);
+    expect(saved['settings']['payments']['stripeConnectionId'], connection);
+    expect(saved['settings']['payments']['bankEnabled'], isFalse);
   });
 }

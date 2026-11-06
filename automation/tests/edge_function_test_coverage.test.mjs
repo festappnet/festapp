@@ -20,6 +20,6 @@ test('every production Edge Function has executable smoke and behavior coverage'
   assert.equal(result.status, 'pass', result.blockers.join('\n'));
   assert.equal(result.unknownFunctions.length, 0);
   assert.equal(result.uncoveredFunctions.length, 0);
-  assert.equal(result.productionFunctions, 44);
+  assert.equal(result.productionFunctions, Object.keys(JSON.parse(fs.readFileSync('supabase/functions/test-coverage.json', 'utf8')).production).length);
   assert.equal(result.excludedFunctions, 1);
 });

@@ -1,5 +1,12 @@
 {
   "flutter_roots": {
+    "test/components/unit/unit_measurement_settings_test.dart": {
+      "kind": "environment",
+      "reason": "Localized organizer measurement settings exercise Flutter widget rendering, expansion, saved configuration preservation and permission-dependent editability.",
+      "sources": [
+        "test/components/unit/unit_measurement_settings_test.dart"
+      ]
+    },
     "test/services/deferred_external_url_test.dart": {
       "kind": "adapter",
       "reason": "Browser URL launch orchestration reserves a tab before asynchronous access resolution and handles blocked windows and failed requests.",

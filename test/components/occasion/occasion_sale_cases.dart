@@ -226,6 +226,7 @@ void main() {
       OccasionSaleForm(
           id: 1,
           isOpen: open,
+          hasTickets: true,
           mode: mode,
           hasAvailability: available,
           start: start,
@@ -292,7 +293,10 @@ void main() {
           ...data,
           'saleEnd': now.add(const Duration(days: 3)).toIso8601String()
         }, now),
-        isFalse);
+        isTrue, reason: 'Explicit sale end is independent of the occasion end');
+    expect(
+        OccasionSetupSales.valid({...data, 'saleEnd': now.toIso8601String()}, now),
+        isFalse, reason: 'Scheduled sale must start before its own end');
     expect(
         OccasionSetupSales.valid(
             {...data, 'saleStart': now.toIso8601String()}, now),

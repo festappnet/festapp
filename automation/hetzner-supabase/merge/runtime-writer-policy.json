@@ -436,6 +436,16 @@
         "cloudflare-cache-write"
       ],
       "mutates_authority": false
+    },
+    "form-measurement": {
+      "entrypoint": "workers/form-measurement/src/worker.mjs",
+      "deployment_contract": "workers/form-measurement/README.md",
+      "trigger": "public-http",
+      "effects": [
+        "canonical-database-config-read",
+        "sandboxed-measurement-runtime"
+      ],
+      "mutates_authority": false
     }
   },
   "canonical_function_security": {

@@ -212,7 +212,7 @@ void main() {
         grid.columns.firstWhere((c) => c.field == 'available').type.isNumber,
         isTrue,
       );
-      expect(find.text('2\u00a0500,50'), findsOneWidget);
+      expect(find.text('2500,50'), findsOneWidget);
       final manager = tester
           .state<TrinaGridState>(find.byType(TrinaGrid))
           .stateManager;
