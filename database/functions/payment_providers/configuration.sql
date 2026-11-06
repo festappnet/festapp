@@ -13,11 +13,13 @@ BEGIN
  END LOOP;
  saved:=saved||jsonb_build_object('bankEnabled',coalesce(saved->'bankEnabled','true'),'providerConnections',connections);
  IF p_input IS NULL THEN RETURN saved; END IF;
- incoming:=coalesce(nullif(p_input,'null'),'{}');
+ -- SQL NULL normalizes saved data; explicit JSON null resets inheritance.
+ incoming:=CASE WHEN p_input='null'::jsonb THEN '{"bankEnabled":true,"providerConnections":{}}'::jsonb ELSE p_input END;
+ IF incoming->'bankEnabled'='null'::jsonb THEN incoming:=jsonb_set(incoming,'{bankEnabled}','true'); END IF;
  IF jsonb_typeof(incoming)<>'object' OR EXISTS(SELECT 1 FROM jsonb_object_keys(incoming) k WHERE k NOT IN ('bankEnabled','providerConnections','stripeConnectionId'))
   OR (incoming ? 'bankEnabled' AND jsonb_typeof(incoming->'bankEnabled')<>'boolean') THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
  IF incoming ? 'providerConnections' THEN
-  connections:=incoming->'providerConnections';
+  connections:=coalesce(nullif(incoming->'providerConnections','null'::jsonb),'{}'::jsonb);
   IF jsonb_typeof(connections) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
   IF incoming ? 'stripeConnectionId' AND incoming->>'stripeConnectionId' IS DISTINCT FROM connections->>'stripe' THEN RAISE EXCEPTION 'PAYMENT_RECIPIENT_CONFLICT'; END IF;
  ELSE

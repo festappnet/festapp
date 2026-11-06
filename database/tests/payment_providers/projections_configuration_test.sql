@@ -54,6 +54,18 @@ BEGIN
  PERFORM assert_eq(public.merge_form_payments_internal(saved,NULL),public.merge_form_payments_internal(public.merge_form_payments_internal(saved,NULL),NULL),'normalization is idempotent');
  value:=public.merge_form_payments_internal(saved,'{"bankEnabled":true,"providerConnections":{}}');
  PERFORM assert_eq(value->'providerConnections','{}'::jsonb,'modern revisioned snapshot can explicitly remove all bindings');
+ -- Released nullable patches reset to inheritance, unlike SQL NULL normalization.
+ PERFORM assert_eq(public.merge_form_payments_internal(saved,NULL)->'bankEnabled','false'::jsonb,'SQL NULL preserves saved disabled bank');
+ PERFORM assert_eq(public.merge_form_payments_internal(saved,'null'::jsonb),'{"bankEnabled":true,"providerConnections":{}}'::jsonb,'whole JSON null resets bank and every provider');
+ value:=public.merge_form_payments_internal(saved,'{"bankEnabled":null}');
+ PERFORM assert_eq(value->'bankEnabled','true'::jsonb,'nested bank null resets default');
+ PERFORM assert_eq(value#>>'{providerConnections,aaa_gateway}',recipient_id,'bank reset retains unrelated provider under released alias semantics');
+ value:=public.merge_form_payments_internal(saved,'{"providerConnections":null}');
+ PERFORM assert_eq(value,'{"bankEnabled":false,"providerConnections":{}}'::jsonb,'provider map null clears bindings without changing bank');
+ value:=public.apply_form_settings_internal(jsonb_build_object('payments',saved),'{"payments":{"bankEnabled":null}}');
+ PERFORM assert_eq(value#>'{payments,bankEnabled}','true'::jsonb,'public settings merge preserves nested nullable contract');
+ value:=public.apply_form_settings_internal(jsonb_build_object('payments',saved),'{"payments":null}');
+ PERFORM assert_eq(value->'payments','{"bankEnabled":true,"providerConnections":{}}'::jsonb,'public settings merge resets whole nullable payment configuration');
  BEGIN
   PERFORM public.merge_form_payments_internal(saved,jsonb_build_object('stripeConnectionId','22345678-1234-4234-8234-123456789abc','providerConnections',jsonb_build_object('stripe',recipient_id)));
   RAISE EXCEPTION 'conflicting recipient accepted';

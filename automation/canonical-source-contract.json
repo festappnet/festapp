@@ -106,7 +106,8 @@
     "public.operator_order_facts_internal_v1(bigint)",
     "public.operator_order_summary_internal_v1(bigint)",
     "public.operator_order_snapshot_internal_v1(bigint,boolean)",
-    "public.get_operator_order_summaries_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)"
+    "public.get_operator_order_summaries_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)",
+    "public.merge_form_payments_internal(jsonb,jsonb)"
   ],
   "retiredSignatures": [
     "public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)",
