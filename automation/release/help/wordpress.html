@@ -2,10 +2,10 @@
 
 <h2 id="formular">Připravte veřejný odkaz formuláře</h2><p>Ve <strong>Formulářích</strong> otevřete formulář své akce a zkopírujte <a href="/napoveda/prodejni-formular/#ulozeni">Současný uložený odkaz</a>. Nemáte-li formulář, nejprve ho <a href="/napoveda/prodejni-formular/">připravte a otevřete pro prodej</a>. S odkazem se vraťte do WordPressu.<span class="guide-step-link">{{APP_LINK:forms}}</span></p>
 <h2 id="priprava-kodu">Kód pro vložení do WordPressu</h2>
-<p>Zkopírujte celý kód. V obou odkazech nahraďte <code>VAS-FORMULAR</code> částí za <code>/form/</code> z veřejného odkazu svého formuláře. Ukázka používá automatickou výšku a přizpůsobuje vzhled Vašemu webu.</p>
+<p>Zkopírujte celý kód. V obou odkazech nahraďte <code>VAS-FORMULAR</code> částí za <code>/form/</code> z veřejného odkazu svého formuláře. Ukázka používá automatickou výšku a přizpůsobuje vzhled Vašemu webu. Pokud chcete zachovat vlastní vzhled formuláře, připravte si kód v <a href="/napoveda/vlozeni-na-web/#priprava-kodu">generátoru</a> s vypnutou volbou <strong>Přizpůsobit vzhled webu</strong>.</p>
 <div class="help-code-example" data-code-example>
 <pre><code tabindex="0">&lt;div data-festapp-embed-host&gt;
-  &lt;iframe data-festapp-embed
+  &lt;iframe data-festapp-embed data-festapp-style="inherit"
     src="https://vstupenky.online/form/VAS-FORMULAR?embed=1"
     title="Objednávkový formulář" allow="clipboard-write"
     width="100%" height="800" style="border:0;max-width:100%"
@@ -22,4 +22,4 @@
 <ol><li>V editoru WordPressu přidejte blok <strong>Vlastní HTML</strong>. Pokud jej nemůžete najít, ověřte oprávnění účtu nebo omezení hostingu.</li><li>Vložte celý kód. V novějších verzích WordPressu otevřete u vybraného bloku volbu <strong>Upravit kód</strong>; v dialogu ponechte vybranou kartu <strong>HTML</strong>. Potom změny potvrďte, uložte stránku a publikujte ji.</li><li>Otevřete veřejnou stránku v anonymním okně. Pokud WordPress při uložení odstranil <code>iframe</code> nebo <code>script</code>, požádejte správce webu o povolení této cesty.</li></ol>
 <p>Pokud váš web nepovoluje vlastní vložený obsah, můžete místo toho přidat běžné tlačítko s veřejným odkazem na formulář.</p>
 <h2 id="aktualizace">Co se aktualizuje automaticky</h2>
-<p>Vložený formulář se načítá ze živé služby. Změny služby se projeví při dalším načtení stránky; již rozepsanou objednávku vydání samo nepřeruší. Změnu odkazu nebo výšky bloku uložíte ve WordPressu spolu se stránkou. Přebírání vzhledu webu nastavte ve Vzhledu formuláře v administraci vstupenky.online. Když se formulář nezobrazuje nebo se ořezává, pokračujte podle <a href="/napoveda/reseni-potizi/">řešení potíží s vložením</a>.</p>
+<p>Vložený formulář se načítá ze živé služby. Změny služby se projeví při dalším načtení stránky; již rozepsanou objednávku vydání samo nepřeruší. Změnu odkazu nebo výšky bloku uložíte ve WordPressu spolu se stránkou. Změna volby <strong>Přizpůsobit vzhled webu</strong> v generátoru platí pro konkrétní vložení: nahraďte HTML v bloku a znovu publikujte stránku. Nejde o nastavení, které by se ukládalo do formuláře. Když se formulář nezobrazuje nebo se ořezává, pokračujte podle <a href="/napoveda/reseni-potizi/">řešení potíží s vložením</a>.</p>

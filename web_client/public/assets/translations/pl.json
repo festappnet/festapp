@@ -231,6 +231,7 @@
     "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
   },
   "FeatureFormSettings": {
+    "embedInheritStyleHelp": "Używa czcionki, tła i kolorów Państwa witryny w tym osadzeniu. Proszę wybrać ustawienie przed skopiowaniem kodu. Plan sali zachowa własny wygląd.",
     "measurementConsentDecline": "Odrzuć",
     "measurementConsentChoices": "Ustawienia zgody",
     "measurementConsentDescription": "Za Państwa zgodą organizator może mierzyć korzystanie z formularza i ukończone zamówienia.",
