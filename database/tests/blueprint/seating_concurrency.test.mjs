@@ -71,9 +71,15 @@ commands.append(Path('supabase/migrations/20261101173000_seating_compatibility_a
 # of this fixture. Keep the final full-head parity assertion unchanged.
 # The restore owner owns retained tables (including later feature tables).
 commands.append('RESET ROLE;')
+# Current-head clones already contain later schema and private helpers. Select
+# final owners so a superseded migration cannot downgrade their signatures.
+final_owners={}
 for migration in sorted(Path('supabase/migrations').glob('*.sql')):
- if migration.name[:14] > '20261101173000' and affected.intersection(dict(definitions(migration.read_text()))):
-  commands.append(migration.read_text())
+ if migration.name[:14] > '20261101173000':
+  for signature,body in definitions(migration.read_text()):
+   if signature in affected and body is not None:final_owners[signature]=migration
+for migration in sorted(set(final_owners.values())):
+ commands.append(migration.read_text())
 commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
 print(chr(10).join(commands))`;
    const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8',maxBuffer:16*1024*1024});
