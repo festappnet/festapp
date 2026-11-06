@@ -39,6 +39,24 @@
     "measurement_enabled": {
       "type": "boolean"
     },
+    "measurement_consent_layout": {
+      "type": "string",
+      "enum": [
+        "bar",
+        "modal"
+      ],
+      "nullable": true
+    },
+    "measurement_consent_title": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 80
+    },
+    "measurement_consent_text": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 500
+    },
     "measurement_gtm_container": {
       "type": "string",
       "nullable": true,

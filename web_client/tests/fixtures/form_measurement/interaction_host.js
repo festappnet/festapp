@@ -25,7 +25,7 @@ window.resetFixture = ({consent = true, restored = false} = {}) => {
     }
     window.sent = [];
     window.allowed = consent;
-    const bridge = {measurementEpoch: () => window.allowed ? 'fixture-lease' : null,
+    const bridge = {measurementAllowed: () => window.allowed === true,
         track: payload => { window.sent.push(payload); return true; }, revokeMeasurement: () => {}};
     layer = new FormDataLayer({model, bridge, entryAllowed: true, session: () => false});
     FormRenderer.render(document.querySelector('main'), session, model, false, {

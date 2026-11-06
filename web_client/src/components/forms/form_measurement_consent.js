@@ -1,25 +1,24 @@
 // The same saved-choice adapter is used by standalone Klaro and embedding hosts.
-// A changed draft is never a grant. Renewal preserves the transport's epoch.
-export function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} = {}) {
+// It only reports the saved choice; a changed draft is never reported as a grant.
+export function bindKlaroConsent(manager, setConsent) {
     let disposed = false;
+    const saved = service => manager.confirmed === true && manager.savedConsents?.[service] === true &&
+        manager.getConsent(service) === true;
     const sync = () => {
-        let granted = false;
+        const granted = {analytics: false, marketing: false};
         try {
-            granted = manager.confirmed === true && manager.savedConsents?.analytics === true &&
-                manager.getConsent('analytics') === true && !win.document.hidden;
-        } catch { /* Missing/broken CMP remains denied. */ }
+            granted.analytics = saved('analytics');
+            // Optional: a host manager without this service grants analytics only.
+            granted.marketing = saved('marketing');
+        } catch { granted.analytics = granted.marketing = false; /* Missing/broken CMP remains denied. */ }
         if (!disposed) setConsent(granted);
     };
     const watcher = {update: sync};
     manager.watch(watcher);
-    win.document.addEventListener('visibilitychange', sync);
-    const timer = win.setInterval(sync, interval);
     sync();
     return () => {
         disposed = true;
-        win.clearInterval(timer);
         manager.unwatch(watcher);
-        win.document.removeEventListener('visibilitychange', sync);
         setConsent(false);
     };
 }

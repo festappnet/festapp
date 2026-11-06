@@ -463,38 +463,74 @@ test('new child uses one native reveal with a legacy host for end and nearest al
     }
 });
 
-test('host consent is bound to origin, source, instance and lease; revocation fences delayed events', () => {
+test('host transport is bound to origin, source, instance and opt-in, and needs no consent', () => {
  const {dom,frames:[a,b],sent,message}=host();
  const instance=sent[0][0][0].instance;
- a.setAttribute('data-festapp-datalayer','');
  const payload={event:'page_view',user_data:{email:'private'},token:'private'};
  const emit=(extra={},origin='https://tickets.invalid',source=a.contentWindow)=>message(a,origin,envelope('analytics',instance,{payload,...extra}),source);
- emit();assert.equal(dom.window.dataLayer,undefined);
- dom.window.FestappEmbed.setMeasurementConsent(a,true);
- const consentId=sent[0].at(-1)[0].consentId;
- emit({consentId,instance:'wrong'});emit({consentId,protocol:2});emit({consentId},'https://evil.invalid');emit({consentId},'https://tickets.invalid',b.contentWindow);emit({consentId:'old'});
+ emit();assert.equal(dom.window.dataLayer,undefined,'no opt-in');
+ a.setAttribute('data-festapp-datalayer','');
+ emit({instance:'wrong'});emit({protocol:2});emit({},'https://evil.invalid');emit({},'https://tickets.invalid',b.contentWindow);
  assert.equal(dom.window.dataLayer,undefined);
- emit({consentId});assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[{event:'page_view'}]);
- dom.window.FestappEmbed.setMeasurementConsent(a,false);emit({consentId});assert.equal(dom.window.dataLayer.length,1);
- dom.window.FestappEmbed.setMeasurementConsent(a,true,0);emit({consentId:sent[0].at(-1)[0].consentId});assert.equal(dom.window.dataLayer.length,1);
- dom.window.FestappEmbed.setMeasurementConsent(a,true);const next=sent[0].at(-1)[0].consentId;emit({consentId});assert.equal(dom.window.dataLayer.length,1);
- emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);a.removeAttribute('data-festapp-datalayer');emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);
+ emit();assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[{event:'page_view'}]);
+ dom.window.FestappEmbed.setMeasurementConsent(a,false);emit();assert.equal(dom.window.dataLayer.length,2,'refusal stops nothing');
+ a.removeAttribute('data-festapp-datalayer');emit();assert.equal(dom.window.dataLayer.length,2);
  dom.window.close();
 });
 
-test('child discards pre-consent payloads, checks pinned messages and strips contacts after consent',()=>{
+test('host only reports purposes; a boolean stays analytics only', () => {
+ const {dom,frames:[a],sent}=host();const api=dom.window.FestappEmbed,last=()=>sent[0].at(-1)[0],plain=value=>value&&{...value};
+ assert.equal(sent[0][0][0].consent,null,'no signal from the host');
+ api.setMeasurementConsent(a,true);assert.deepEqual(plain(last().consent),{analytics:true,marketing:false});
+ api.setMeasurementConsent(a,{analytics:false,marketing:true});assert.deepEqual(plain(last().consent),{analytics:false,marketing:true});
+ for(const denied of [false,{},{analytics:'true'}]) {api.setMeasurementConsent(a,denied);assert.deepEqual(plain(last().consent),{analytics:false,marketing:false});}
+ assert.equal('consentId' in last(),false);assert.equal('consentUntil' in last(),false);dom.window.close();
+});
+
+test('connectKlaro reports analytics and optional marketing from saved choices', () => {
+ const {dom,frames:[a],sent}=host();const last=()=>sent[0].at(-1)[0],plain=value=>value&&{...value};let watcher;
+ const manager={confirmed:true,savedConsents:{analytics:true},getConsent:name=>manager.savedConsents[name]===true,watch:value=>watcher=value,unwatch(){}};
+ const stop=dom.window.FestappEmbed.connectKlaro(a,manager);assert.deepEqual(plain(last().consent),{analytics:true,marketing:false});
+ manager.savedConsents.marketing=true;watcher.update();assert.deepEqual(plain(last().consent),{analytics:true,marketing:true});
+ stop();assert.deepEqual(plain(last().consent),{analytics:false,marketing:false});dom.window.close();
+});
+
+test('host dataLayer gets contact under any choice, rebuilt, and clears it after the event', () => {
+ const {dom,frames:[a],sent,message}=host();const instance=sent[0][0][0].instance,contact={email:'visitor@example.test',phone_number:'+420601234567'};
+ a.setAttribute('data-festapp-datalayer','');
+ const payload={event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',email:'private@example.test',user_data:{...contact,first_name:'private@example.test'}};
+ message(a,'https://tickets.invalid',envelope('analytics',instance,{payload}),a.contentWindow);
+ assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)).find(entry=>entry.event==='generate_lead').user_data,contact);
+ assert.equal(JSON.stringify(dom.window.dataLayer).includes('private@example.test'),false);
+ assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer.at(-1))),{user_data:null});dom.window.close();
+});
+
+function child(){
  const dom=new JSDOM('<body></body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
  const win=dom.window;globalThis.document=win.document;globalThis.window=win;
- const sent=[];const parent={postMessage:(...args)=>sent.push(args)};
+ const sent=[],calls=[];const parent={postMessage:(...args)=>sent.push(args)};
  Object.defineProperty(win,'parent',{value:parent});win.ResizeObserver=class{observe(){}disconnect(){}};
- const bridge=new EmbedBridge(win);bridge.start();bridge.track({event:'page_view'});
- const init=(data={},source=parent,origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope('init','one',{viewportHeight:600,dataLayer:true,...data})}));
- init();bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,0);
- init({consentId:'lease',consentUntil:Date.now()+60000});bridge.track({event:'page_view',user_data:{email:'private'}});
- assert.deepEqual(sent.filter(([d])=>d.type==='analytics').map(([d])=>d.payload),[{event:'page_view'}]);
- init({consentId:'fake',consentUntil:Date.now()+60000},{},'https://evil.invalid');assert.equal(bridge.consentId,'lease');
- init({consentId:null});bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,1);
- bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;
+ const bridge=new EmbedBridge(win);bridge.start();
+ const runtime={setConsent:value=>calls.push(value),start:()=>calls.push('start'),stop:()=>calls.push('stop'),revokeMeasurement(){},measurementAllowed:()=>false,track:()=>false};
+ bridge.setMeasurementRuntime(runtime);
+ const init=(data={},source=parent,origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope('init','one',{viewportHeight:600,...data})}));
+ return{dom,win,sent,calls,bridge,init,done(){bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;}};
+}
+
+test('child starts the frame after the handshake with denied state and passes later choices on',()=>{
+ const {calls,init,bridge,done}=child();
+ assert.equal(calls.includes('start'),false,'the transport is unknown before the host answers');
+ init();assert.ok(calls.includes('start'));assert.deepEqual(bridge.consent,{analytics:false,marketing:false});
+ calls.length=0;init({consent:{analytics:true,marketing:true}});assert.deepEqual(calls[0],{analytics:true,marketing:true});assert.equal(calls.includes('stop'),false);
+ calls.length=0;init({consentId:'earlier-embed-js'});assert.deepEqual(calls[0],{analytics:true,marketing:false},'an earlier embed.js lease meant analytics');done();
+});
+
+test('child uses host transport without loading the frame, and a page without the helper still runs the frame',async()=>{
+ const first=child();first.init({dataLayer:true});assert.ok(first.calls.includes('stop'));assert.equal(first.calls.includes('start'),false);
+ first.bridge.track({event:'page_view',user_data:{email:'private'}});
+ assert.deepEqual(first.sent.filter(([d])=>d.type==='analytics').map(([d])=>d.payload),[{event:'page_view'}]);
+ first.init({dataLayer:true},{},'https://evil.invalid');first.init({dataLayer:false},first.win,'https://host.invalid');assert.equal(first.bridge.dataLayer,true,'forged init ignored');first.done();
+ const second=child();await new Promise(resolve=>second.win.setTimeout(resolve,5200));assert.ok(second.calls.includes('start'));second.done();
 });
 
 test('host refreshes changed appearance while scroll messages omit presentation', async () => {

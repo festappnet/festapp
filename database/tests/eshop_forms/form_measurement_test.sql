@@ -16,6 +16,16 @@ BEGIN
  rejected:=false;
  BEGIN PERFORM public.validate_configuration_value_internal_v1('"bad"'::jsonb,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_gtm_container}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
  PERFORM assert_true(rejected,'Unit GTM validator owns destination format');
+ PERFORM public.validate_configuration_value_internal_v1('"modal"'::jsonb,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_layout}');
+ rejected:=false;
+ BEGIN PERFORM public.validate_configuration_value_internal_v1('"popup"'::jsonb,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_layout}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'notice layout accepts only bar or modal');
+ rejected:=false;
+ BEGIN PERFORM public.validate_configuration_value_internal_v1(to_jsonb(repeat('x',81)),public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_title}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'notice title is limited to 80 characters');
+ rejected:=false;
+ BEGIN PERFORM public.validate_configuration_value_internal_v1(to_jsonb(repeat('x',501)),public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_text}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'notice text is limited to 500 characters');
 END $$;
 
 DO $$

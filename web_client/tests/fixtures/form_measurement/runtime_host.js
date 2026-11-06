@@ -1,5 +1,6 @@
 import {FormMeasurementRuntime} from '../../../src/components/forms/form_measurement_runtime.js';
 const origin = new URLSearchParams(location.search).get('runtime');
+window.consentDefaults=[];window.addEventListener('message',e=>{if(e.origin===origin && Array.isArray(e.data?.fixtureDefault)){window.consentDefaults.push(e.data.fixtureDefault);window.frameSearch=e.data.fixtureSearch;}});
 window.consentReceipts=[];window.addEventListener('message',e=>{if(e.origin===origin && e.source===runtime.frame?.contentWindow && e.data?.fixtureConsent)window.consentReceipts.push(e.data.fixtureConsent)});
 window.gtmReceipts=[]; window.addEventListener('message',e=>{if(e.origin===origin && e.source===runtime.frame?.contentWindow && e.data?.namespace==='festapp-test-gtm') window.gtmReceipts.push(e.data)});
 window.diagnostics=[];window.addEventListener('message',e=>{if(e.origin===origin && (e.data?.fixtureViolation || e.data?.fixtureScript || 'fixtureGtm' in (e.data||{}))) window.diagnostics.push(e.data)});

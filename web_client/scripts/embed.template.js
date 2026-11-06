@@ -6,9 +6,8 @@
     /* MEASUREMENT_CONTRACT */
     /* MEASUREMENT_CONSENT */
     const frames = new Map();
-    // Integration seam only: a real CMP adapter must call this after checking
-    // the visitor's purpose-specific consent, renew within 60s, and revoke it.
-    // HTML attributes never grant consent. Klaro binds only its saved choice.
+    // Reports the visitor's choice to the form. It starts and stops nothing:
+    // measurement runs anyway and tags evaluate this state through Consent Mode.
     window.FestappEmbed = Object.freeze({
         connectKlaro(frame, manager) {
             const record = frames.get(frame);
@@ -17,12 +16,11 @@
             record.consentDispose = bindKlaroConsent(manager, granted => window.FestappEmbed.setMeasurementConsent(frame, granted));
             return record.consentDispose;
         },
-        setMeasurementConsent(frame, granted, ttlSeconds = 60) {
+        // granted is {analytics, marketing}; a boolean keeps the analytics-only API.
+        setMeasurementConsent(frame, granted) {
             const record = frames.get(frame);
             if (!record) return false;
-            record.consentId = granted === true
-                ? (record.consentId && Date.now() < record.consentUntil ? record.consentId : `c_${crypto.randomUUID()}`) : null;
-            record.consentUntil = granted === true ? Date.now() + Math.min(60, Math.max(0, Number(ttlSeconds) || 0)) * 1000 : 0;
+            record.consent = measurementConsent(granted);
             send(frame, record, 'init', false);
             return true;
         }
@@ -184,7 +182,7 @@
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
-            consentId: record.consentId || null, consentUntil: record.consentUntil || 0,
+            consent: record.consent || null,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
         if (theme !== false) {
@@ -268,7 +266,7 @@
             if (data.type === 'ready') { send(frame, record, 'init'); return; }
             if (data.instance !== record.instance) return;
             if (data.type === 'analytics') {
-                if (frame.hasAttribute('data-festapp-datalayer') && record.consentId && data.consentId === record.consentId && Date.now() < record.consentUntil) {
+                if (frame.hasAttribute('data-festapp-datalayer')) {
                     const payload = analyticsPayload(data.payload);
                     if (!payload) return;
                     window.dataLayer = window.dataLayer || [];

@@ -152,7 +152,7 @@ test('real dataLayer emits purchase only after backend confirmation and survives
     const page=new FormPage('form-page-container');
     page.currentSession={payload:{form:'private',email:'private@example.test'},awaitPendingReservations:async()=>{},captureReservationCapability:()=>null,completeReservation:()=>{}};
     const sent=[];
-    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[],data:{analytics:{enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60}}},bridge:{measurementEpoch:()=> 'fixture-lease',measurementAllowed:()=>true,track:p=>{sent.push(p);return true;}},session:()=>false});
+    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[],data:{analytics:{enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60}}},bridge:{measurementAllowed:()=>true,measurementEpoch:()=> 'fixture-lease',measurementAllowed:()=>true,track:p=>{sent.push(p);return true;}},session:()=>false});
     page.closePreview=()=>{};page.cleanup=()=>{};
     let finish;const finished=new Promise(resolve=>{finish=resolve;});let renders=0;
     page.showFullScreenResult=()=>{if(renders++===0)throw new Error('render failed');finish();};

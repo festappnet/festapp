@@ -170,3 +170,10 @@ test('Unit privacy URL round trip preserves omission and clears null',options,as
  const cleared=await save(db,f,{settings:{measurement_privacy_url:null}},current.aggregateVersion,randomUUID(),'unit');
  assert.equal(cleared.data.configuration.settings.measurement_privacy_url,undefined);
 });
+
+test('Unit consent notice settings share the bounded contract',()=>{
+ const schema=configurationDescriptors.find(d=>d.id==='units.settings.save').input;
+ const parse=settings=>schema.safeParse({unitId:1,commandId:randomUUID(),expectedVersion:0,changes:{settings}}).success;
+ for(const value of [{measurement_consent_layout:'bar'},{measurement_consent_layout:'modal'},{measurement_consent_layout:null},{measurement_consent_title:'x'.repeat(80)},{measurement_consent_title:null},{measurement_consent_text:'x'.repeat(500)},{measurement_consent_text:null}]) assert.equal(parse(value),true,JSON.stringify(value));
+ for(const value of [{measurement_consent_layout:'popup'},{measurement_consent_title:'x'.repeat(81)},{measurement_consent_text:'x'.repeat(501)},{measurement_consent_color:'#000'},{measurement_enhanced_conversions:true}]) assert.equal(parse(value),false,JSON.stringify(value).slice(0,60));
+});

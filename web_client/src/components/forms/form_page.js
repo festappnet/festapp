@@ -608,20 +608,17 @@ export class FormPage extends Component {
             analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
                 entryAllowed:this.analyticsEntryAllowed, refreshPolicy:() => DbForms.getMeasurementPolicy(formModel.link)});
             this.embedBridge?.setMeasurementRuntime(runtime, () => analytics.view());
-            if (!this.embedBridge && formModel.data?.analytics?.eligible === true && analytics.contextAllowed()) {
-                import('./form_measurement_cmp.js').then(({startMeasurementConsent}) => {
+            if (!this.embedBridge && formModel.data?.analytics?.eligible === true) {
+                analytics.visitorReady().then(async allowed => {
+                    if (!allowed || this.analytics !== analytics) return;
+                    const {startMeasurementConsent} = await import('./form_measurement_cmp.js');
                     if (this.analytics !== analytics) return;
                     this.measurementCleanup = startMeasurementConsent({model:formModel,transport:runtime,host:this.host});
-                }).catch(() => runtime.setConsent(false));
+                }).catch(() => { if (analytics.contextAllowed()) runtime.start(); });
             }
             try {
-                this.measurementAuthSubscription = SupabaseService.getClient().auth?.onAuthStateChange?.((_event, session) => {
-                    if (session) {
-                        runtime?.destroy();
-                        analytics.dispose();
-                        this.measurementCleanup?.(); this.measurementCleanup = null;
-                    }
-                })?.data?.subscription;
+                this.measurementAuthSubscription = SupabaseService.getClient().auth?.onAuthStateChange?.((_event, session) =>
+                    analytics.authChanged(session?.user?.id ?? null))?.data?.subscription;
             } catch { runtime?.destroy(); }
             analytics.view();
 
@@ -950,10 +947,11 @@ export class FormPage extends Component {
             : FormNetwork.submitOrder(payload);
         });
         let outcomeReported = false;
+        const measurementContact = this.analytics?.contact?.(payload);
         const reportOutcome = (success, data) => {
             if (outcomeReported || formModel.demoSimulation) return;
             outcomeReported = true;
-            if (success) this.analytics?.confirmed(data);
+            if (success) this.analytics?.confirmed(data, measurementContact);
             else this.analytics?.emit({event: 'form_submit_error'});
         };
         request.then(async result => {

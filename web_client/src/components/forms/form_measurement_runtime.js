@@ -1,4 +1,4 @@
-import {analyticsPayload, attributionContext, measurementId, measurementNamespace, measurementOrigin} from './form_measurement_contract.js';
+import {analyticsPayload, attributionContext, measurementConsent, measurementId, measurementNamespace, measurementOrigin} from './form_measurement_contract.js';
 
 // Implements the same small transport seam as EmbedBridge. No funnel, queue,
 // configuration scripts or privileged backend client lives in this document.
@@ -9,12 +9,13 @@ export class FormMeasurementRuntime {
         this.campaign = campaign;
         this.scope = JSON.stringify([model.data?.analytics?.organization,model.data?.analytics?.unit]);
         this.policyUntil = Date.now() + Math.min(60, Math.max(0, Number(model.data?.analytics?.valid_for_seconds) || 0)) * 1000;
+        this.consent = measurementConsent(false);
         this.onMessage = event => {
             if (!this.frame || event.source !== this.frame.contentWindow || event.origin !== this.origin ||
                 event.data?.namespace !== measurementNamespace || event.data.protocol !== 1) return;
             if (!this.hasLiveFrame()) { this.revokeMeasurement(); return; }
             if (event.data.type === 'ready' && !this.ready) {
-                this.send('init', {context: this.context});
+                this.send('init', {context: this.context, consent: this.consent});
             } else if (event.data.type === 'ack' && event.data.instance === this.instance && !this.ready) {
                 this.win.clearTimeout(this.handshake);
                 this.ready = true;
@@ -26,11 +27,14 @@ export class FormMeasurementRuntime {
         for (const event of ['hashchange','popstate','storage']) win.addEventListener(event,this.onContext);
     }
     safeContext() { try { return this.canRun() === true; } catch { return false; } }
-    setConsent(granted, expiresAt = Date.now() + 60000) {
-        if (this.frame && Date.now() >= this.consentUntil) this.revokeMeasurement();
-        this.consentUntil = granted === true && Number.isFinite(expiresAt) ? Math.min(expiresAt,Date.now()+60000) : 0;
-        if (granted !== true) this.revokeMeasurement();
-        else this.updatePolicy();
+    start() { this.running = true; this.updatePolicy(); }
+    stop() { this.running = false; this.revokeMeasurement(); }
+    // Consent never starts or stops the frame. The container evaluates it through Consent Mode.
+    setConsent(granted) {
+        const next = measurementConsent(granted);
+        if (next.analytics === this.consent.analytics && next.marketing === this.consent.marketing) return;
+        this.consent = next;
+        this.send('consent', {consent: next});
     }
     updatePolicy(expiresAt) {
         if (Number.isFinite(expiresAt)) this.policyUntil = expiresAt;
@@ -42,11 +46,13 @@ export class FormMeasurementRuntime {
         const origin = measurementOrigin(policy?.runtime_origin, this.local);
         const key = JSON.stringify([origin, policy?.organization, policy?.configuration_revision, policy?.policy_revision, policy?.runtime_revision]);
         if (this.frame && this.key !== key) this.revokeMeasurement();
-        if (!origin || origin === this.win.location.origin || policy?.eligible !== true ||
-            Date.now() >= Math.min(this.consentUntil || 0, this.policyUntil) || this.win.document.hidden || this.disposed || !this.safeContext()) {
+        if (!this.running || !origin || origin === this.win.location.origin || policy?.eligible !== true ||
+            Date.now() >= this.policyUntil || this.disposed || !this.safeContext()) {
             this.revokeMeasurement(); return;
         }
         if (this.frame) { this.armExpiry(); return; }
+        // An origin outside frame-ancestors never answers; do not reload it on every renewal.
+        if (key === this.unreachable) return;
         const input = {...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign()};
         input.page_location = new URL('/form/' + this.model.link,this.win.location.origin).href;
         input.page_referrer = this.win.document.referrer;
@@ -64,13 +70,16 @@ export class FormMeasurementRuntime {
         url.searchParams.set('parent', this.win.location.origin);
         frame.src = url.href;
         this.win.document.body.append(frame);
-        this.handshake = this.win.setTimeout(() => { if (!this.ready) this.revokeMeasurement(); },8000);
+        this.handshake = this.win.setTimeout(() => { if (!this.ready) { this.unreachable = key; this.revokeMeasurement(); } },8000);
         // The parent owns expiry; tenant code cannot keep its frame alive.
         this.armExpiry();
     }
     armExpiry() {
         this.win.clearTimeout(this.expiry);
-        this.expiry = this.win.setTimeout(() => this.revokeMeasurement(),Math.max(0,Math.min(this.consentUntil,this.policyUntil)-Date.now()));
+        // Background timers are throttled, so renewal can lag in a hidden tab. Sends are
+        // already blocked by policyUntil, and returning renews or removes the frame.
+        // Reloading it here would run the container twice for one visit.
+        this.expiry = this.win.setTimeout(() => { if (!this.win.document.hidden) this.revokeMeasurement(); },Math.max(0,this.policyUntil-Date.now()));
     }
     send(type, extra) {
         if (!this.hasLiveFrame()) return false;
@@ -82,9 +91,8 @@ export class FormMeasurementRuntime {
             return true;
         } catch { return false; }
     }
-    measurementEpoch() { return this.measurementAllowed() ? this.instance : null; }
     hasLiveFrame() {
-        return !this.disposed && this.frame?.isConnected === true && Date.now() < Math.min(this.consentUntil, this.policyUntil) && !this.win.document.hidden && this.safeContext();
+        return !this.disposed && this.frame?.isConnected === true && Date.now() < this.policyUntil && this.safeContext();
     }
     measurementAllowed() {
         return this.ready === true && this.hasLiveFrame();
@@ -102,7 +110,7 @@ export class FormMeasurementRuntime {
         this.frame?.remove(); this.frame = null; this.instance = null;
     }
     destroy() {
-        this.disposed = true; this.consentUntil = 0; this.revokeMeasurement();
+        this.disposed = true; this.revokeMeasurement();
         this.win.removeEventListener('message', this.onMessage);
         for (const event of ['hashchange','popstate','storage']) this.win.removeEventListener(event,this.onContext);
     }

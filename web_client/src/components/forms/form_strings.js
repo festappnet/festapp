@@ -19,6 +19,9 @@ export class FormStrings {
     static get measurementConsentPrivacy() { return LocalizationService.tr('FeatureFormSettings.measurementConsentPrivacy'); }
     static get measurementConsentDecline() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDecline'); }
     static get measurementConsentService() { return LocalizationService.tr('FeatureFormSettings.measurementConsentService'); }
+    static get measurementConsentAnalyticsDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAnalyticsDescription'); }
+    static get measurementConsentMarketing() { return LocalizationService.tr('FeatureFormSettings.measurementConsentMarketing'); }
+    static get measurementConsentMarketingDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentMarketingDescription'); }
     static get measurementConsentDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDescription'); }
     static get measurementConsentChoices() { return LocalizationService.tr('FeatureFormSettings.measurementConsentChoices'); }
     static get formSettingsTitle() { return LocalizationService.tr('FeatureFormSettings.title'); }

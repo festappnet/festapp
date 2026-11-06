@@ -12,7 +12,7 @@ window.addEventListener('message', e => {
  const {id,action,arg}=e.data;
  let result;
  try {
-  if(action==='state') result={allowed:bridge.measurementAllowed(),instance:bridge.instance,consentId:bridge.consentId,enabled:layer.enabled()};
+  if(action==='state') result={allowed:bridge.measurementAllowed(),instance:bridge.instance,consent:bridge.consent,enabled:layer.enabled()};
   if(action==='view') result=layer.view();
   if(action==='update') result=layer.update(cart);
   if(action==='confirmed') result=layer.confirmed({ticketOrder:{analytics:arg}});

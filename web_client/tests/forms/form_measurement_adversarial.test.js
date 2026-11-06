@@ -20,28 +20,28 @@ function setup(t){
  return{dom,runtime,model,send,callbacks:()=>callbacks,unsafe:()=>safe=false};
 }
 
-test('detaching a ready iframe invalidates sends and the next lease creates a fresh browsing context',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);f.send('ready');f.send('ack');
+test('detaching a ready iframe invalidates sends and the next renewal creates a fresh browsing context',t=>{
+ const f=setup(t),r=f.runtime;r.start();f.send('ready');f.send('ack');
  const old=r.frame,oldWindow=old.contentWindow,oldInstance=r.instance;
  old.remove();assert.equal(r.measurementAllowed(),false);assert.equal(r.track({event:'page_view'}),false);
- r.setConsent(true);assert.notEqual(r.frame,old);assert.equal(r.frame.isConnected,true);
+ r.updatePolicy();assert.notEqual(r.frame,old);assert.equal(r.frame.isConnected,true);
  f.send('ack',{source:oldWindow,instance:oldInstance});assert.equal(r.measurementAllowed(),false);
  f.send('ready');f.send('ack');assert.equal(r.measurementAllowed(),true);
 });
 
 test('a detached frame cannot finish its pending handshake',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);const source=r.frame.contentWindow,instance=r.instance;r.frame.remove();
+ const f=setup(t),r=f.runtime;r.start();const source=r.frame.contentWindow,instance=r.instance;r.frame.remove();
  f.send('ack',{source,instance});assert.equal(f.callbacks(),0);assert.equal(r.measurementAllowed(),false);
 });
 
-test('expired consent drops an ACK even when its expiry timer has not run yet',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);const source=r.frame.contentWindow,instance=r.instance;
- r.consentUntil=Date.now()-1;f.send('ack',{source,instance});
+test('expired policy drops an ACK even when its expiry timer has not run yet',t=>{
+ const f=setup(t),r=f.runtime;r.start();const source=r.frame.contentWindow,instance=r.instance;
+ r.policyUntil=Date.now()-1;f.send('ack',{source,instance});
  assert.equal(f.callbacks(),0);assert.equal(r.frame,null);assert.equal(r.measurementAllowed(),false);
 });
 
 test('an unsafe document cannot finish an earlier valid handshake',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);f.unsafe();f.send('ack');
+ const f=setup(t),r=f.runtime;r.start();f.unsafe();f.send('ack');
  assert.equal(f.callbacks(),0);assert.equal(r.frame,null);
 });
 
@@ -107,9 +107,23 @@ test('extreme cart mutations never export totals outside exact integer-cent arit
  }
 });
 
-test('a real postMessage failure is a failed send and does not consume the current consent epoch',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);f.send('ready');f.send('ack');const epoch=r.measurementEpoch();
+test('a real postMessage failure is a failed send and keeps the frame',t=>{
+ const f=setup(t),r=f.runtime;r.start();f.send('ready');f.send('ack');const instance=r.instance;
  const target=r.frame.contentWindow,send=target.postMessage;target.postMessage=()=>{throw new DOMException('closed transport','DataCloneError')};
- assert.equal(r.track({event:'page_view'}),false);assert.equal(r.measurementEpoch(),epoch);
+ assert.equal(r.track({event:'page_view'}),false);assert.equal(r.instance,instance);
  target.postMessage=send;assert.equal(r.track({event:'page_view'}),true);
+});
+
+test('seeded contact mutation: only a valid e-mail and E.164 phone leave, only on the two conversions',()=>{
+ const next=generator(73307),secret='PRIVATE_SENTINEL_734',ecommerce={currency:'CZK',transaction_id:'11111111-1111-4111-8111-111111111111',payment_type:'card',items:[{item_id:'product_1',item_name:'Koncert',price:10,quantity:1}]};
+ const lead={event:'generate_lead',event_id:'11111111-1111-4111-8111-111111111111',currency:'CZK',value:0,lead_source:'waitlist'};
+ const hostile=[secret,secret+'@',secret+'@x',' '+secret+'@example.test',secret+'@example.test\n',secret+'@'+'x'.repeat(260)+'.cz','+'+secret,'+0123456789','<img src=x onerror=alert(1)>@example.test'.replace('@',' @'),{toString:()=>secret},[secret],null];
+ for(let i=0;i<1500;i++){
+  const pick=hostile[Math.floor(next()*hostile.length)],user_data={email:pick,phone_number:pick,phone:secret,name:secret,sha256_email_address:secret,__proto__:{email:secret}};
+  for(const input of [{event:'purchase',ecommerce,user_data},{...lead,user_data}]){
+   assert.equal(JSON.stringify(analyticsPayload(input)).includes(secret),false,JSON.stringify(pick));
+  }
+  for(const event of ['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','page_view','form_start','form_submit_error'])
+   assert.equal(analyticsPayload({event,ecommerce,user_data:{email:'visitor@example.test',phone_number:'+420601234567'}})?.user_data,undefined,event);
+ }
 });

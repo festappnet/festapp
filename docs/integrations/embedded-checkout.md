@@ -216,23 +216,21 @@ Protokol 1 musí zachovat kompatibilitu se staršími instalacemi.
 
 ## Datová vrstva hostitele
 
-Měření je ve výchozím stavu vypnuté. `data-festapp-datalayer` je pouze souhlas
-hostitele s integrací, nikoli souhlas návštěvníka. Předání událostí vyžaduje
-uložené `analytics.enabled=true`, povolení organizace, podporované prostředí,
-bezpečný veřejný kontext a aktuální souhlas pro daný účel.
+Měření je ve výchozím stavu vypnuté. `data-festapp-datalayer` zapne hostitelský
+přenos. Předání událostí vyžaduje uložené `analytics.enabled=true`, povolení
+organizace, podporované prostředí a bezpečný veřejný kontext. Souhlas návštěvníka
+podmínkou není: události přijdou i bez něj a tagy hostitele řídí jeho Consent Mode.
 
 Společný whitelist se do `public/embed.js` generuje příkazem
 `pnpm --dir web_client exec node scripts/build_embed.mjs`. Hostitel i iframe
-payload nezávisle validují. Parametry zprávy se vážou na origin, okno, instanci a
-aktuální souhlasovou lease. Před souhlasem se události neukládají do fronty.
-Odvolání souhlasu a vypršení lease zastaví další předávání; staré zprávy nelze
-znovu odeslat po novém udělení souhlasu.
+payload nezávisle validují. Zprávy se vážou na origin, okno a instanci. Události
+se neukládají do fronty.
 
-`window.FestappEmbed.setMeasurementConsent(frame, granted, ttlSeconds)` je pouze
-rozhraní pro budoucí konkrétní souhlasový adaptér. Žádný CMP adaptér zde není
-ověřený ani automaticky nainstalovaný. Lease platí nejvýše 60 sekund. Samotné HTML
-atributy měření nespustí. Kontakty jsou vždy blokované, včetně starého atributu
-`data-festapp-datalayer-user-data`.
+`window.FestappEmbed.setMeasurementConsent(frame, granted)` přijímá
+`{analytics, marketing}`; boolean dál znamená jen analytics. Volbu jen předá, nic
+nespouští ani nezastavuje. `purchase` a `generate_lead` nesou čitelný e-mail a
+telefon v `user_data`, jen pro origin schválený u jednotky. Vidí je všechny tagy na
+stránce hostitele. Starý atribut `data-festapp-datalayer-user-data` nic nezapíná.
 
 Izolované GTM zatím není ověřené a runtime vrací `runtime_supported=false`.
 Skripty pořadatele se do hlavní aplikace nevkládají. Konfiguraci lze uložit při
@@ -242,8 +240,9 @@ MCP příklady a zbývající podmínky aktivace popisuje
 ## Měření a souhlas
 
 Výchozí vložený formulář používá konfiguraci měření své jednotky v odděleném
-runtime. Hostitel předává potvrzený souhlas přes ověřený iframe kanál. Samotné
-vložení iframe nebo vyplnění GTM ID měření nezapíná.
+runtime. Ten běží po načtení i bez souhlasu; hostitel předává jen uloženou volbu
+přes ověřený iframe kanál. Bez signálu od hostitele platí denied. Vyhodnocuje ji
+kontejner pořadatele přes Consent Mode.
 
 Po načtení helperu a připravení skutečného Klaro manageru připojte uloženou volbu:
 
@@ -252,17 +251,18 @@ const formular = document.querySelector('iframe[data-festapp-embed]');
 const odpojit = FestappEmbed.connectKlaro(formular, klaro.getManager(klaroConfig));
 ```
 
-Klaro konfigurace hostitele musí obsahovat službu `analytics`. Adaptér vyžaduje
-potvrzenou uloženou volbu, obnovuje krátkou platnost souhlasu a při odvolání
-zničí vnořený runtime. Funkce `odpojit()` odstraní vazbu a souhlas odvolá.
+Klaro konfigurace hostitele musí obsahovat službu `analytics`, volitelně i
+`marketing` pro reklamu. Adaptér předává jen potvrzenou uloženou volbu a runtime
+nezastavuje. Funkce `odpojit()` odstraní vazbu a předá denied.
 Povolené hostitelské originy musí být součástí schváleného seznamu předků runtime;
 neznámý host měření nespustí, formulář tím není zablokovaný.
 
 Atribut `data-festapp-datalayer` výslovně volí měření v hostitelském dokumentu:
 události pak dostává pouze jeho dataLayer a GTM, nikoli současně kontejner
-jednotky. Bez tohoto atributu je cílem runtime jednotky. Kontakty se nepředávají
-v žádné variantě, ani přes starý atribut `data-festapp-datalayer-user-data`.
+jednotky. Bez tohoto atributu je cílem runtime jednotky. Události projdou při
+kterémkoli uděleném účelu, tagy hostitele řídí jeho vlastní Consent Mode.
+Podmínky pro kontakt popisuje část Datová vrstva hostitele.
 
 Předávají se pouze povolené hodnoty kampaně, nikdy celá URL hostitele. Důvěra
-je svázaná se zdrojovým oknem, originem, instancí a platností souhlasu. Podrobný
+je svázaná se zdrojovým oknem, originem a instancí. Podrobný
 kontrakt a podporovanou matici popisuje [měření formulářů](form-datalayer.md).

@@ -860,7 +860,7 @@ test('form scopes do not widen older grants and copy must consent both source an
    return{error:null,data:{occasionId:7,authoring:{form:{id:88,measurement_status:{
     requested_enabled:false,organization_allowed:false,organization_enabled:false,unit_enabled:false,
     runtime_supported:true,eligible:false,blocked_reasons:['disabled'],policy_revision:0,
-    consent_required:true,enhanced_conversions_unavailable:true,
+    consent_required:true,enhanced_conversions_unavailable:false,
    }}}}};
   }
   assert.equal(name,'manage_form');assert.equal(p.p_payload.source_occasion_id,9);assert.equal(p.p_payload.source_unit_id,null);

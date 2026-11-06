@@ -1,4 +1,4 @@
-import { analyticsPayload, campaignContext } from '../components/forms/form_measurement_contract.js';
+import { analyticsPayload, campaignContext, measurementConsent } from '../components/forms/form_measurement_contract.js';
 import { isEmbed, applyEmbedContext } from './embed_context.js';
 import { EmbedTheme } from './embed_theme.js';
 
@@ -38,16 +38,15 @@ export class EmbedBridge {
                 data?.namespace !== namespace || data.protocol !== 1 || !validId(data.instance)) return;
             if (this.origin && (event.origin !== this.origin || data.instance !== this.instance)) return;
             if (data.type === 'init' && viewport(data.viewportHeight)) {
-                if (this.consentId !== data.consentId) this.measurementRuntime?.setConsent(false);
                 this.origin = event.origin; this.instance = data.instance;
                 this.applyStylePreference();
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
                 this.dataLayer = data.dataLayer === true;
-                // Host API must supply a current consent lease. Markup is only opt-in.
-                this.consentId = typeof data.consentId === 'string' ? data.consentId : null;
-                this.consentUntil = Number.isFinite(data.consentUntil) && data.consentUntil <= Date.now() + 60000 ? data.consentUntil : 0;
+                // State only; nothing here starts or stops measurement. An earlier embed.js
+                // sends a lease id without purposes, which meant analytics.
+                this.consent = measurementConsent(data.consent ?? typeof data.consentId === 'string');
                 this.measurementCampaign = campaignContext(data.attribution);
                 this.syncMeasurementRuntime();
                 this.syncPrice();
@@ -78,6 +77,8 @@ export class EmbedBridge {
         this.ready = () => {
             if (!this.origin) this.win.parent.postMessage({ namespace, protocol: 1, type: 'ready' }, '*');
             if (++attempts >= 10 || this.origin) this.win.clearInterval(this.timer);
+            // A page without the helper never answers. The frame then runs with denied state.
+            if (attempts >= 10 && !this.origin) { this.hostAbsent = true; this.syncMeasurementRuntime(); }
         };
         this.ready();
         this.timer = this.win.setInterval(this.ready, 500);
@@ -93,27 +94,29 @@ export class EmbedBridge {
         if (this.origin) this.win.parent.postMessage({ namespace, protocol: 1, instance: this.instance, type, ...values }, this.origin);
     }
     measurementAllowed() {
-        return !!this.origin && !!this.consentId && Date.now() < this.consentUntil &&
-            (this.dataLayer === true || this.measurementRuntime?.measurementAllowed() === true);
+        return this.dataLayer === true ? !!this.origin : this.measurementRuntime?.measurementAllowed() === true;
     }
-    measurementEpoch() {
-        if (!this.measurementAllowed()) return null;
-        return this.dataLayer === true ? `${this.origin}:${this.instance}:${this.consentId}` : this.measurementRuntime.measurementEpoch();
-    }
+    dataLayerHost() { return this.dataLayer === true ? this.origin : null; }
     setMeasurementRuntime(runtime, onReady = () => {}) { this.onMeasurementReady = onReady; this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
+    // The transport is known only after the host answers, so the frame waits for that
+    // handshake: host transport must not also run the Unit container.
     syncMeasurementRuntime() {
-        this.measurementRuntime?.setConsent(this.dataLayer !== true && !!this.consentId && Date.now() < this.consentUntil, this.consentUntil);
-        if (this.dataLayer === true && this.measurementAllowed() && this.onMeasurementReady?.()) this.onMeasurementReady = null;
+        const runtime = this.measurementRuntime;
+        runtime?.setConsent(this.consent);
+        if (this.dataLayer === true) {
+            runtime?.stop();
+            if (this.measurementAllowed() && this.onMeasurementReady?.()) this.onMeasurementReady = null;
+        } else if (this.origin || this.hostAbsent) runtime?.start();
     }
     updatePolicy(expiresAt) { this.measurementRuntime?.updatePolicy(expiresAt); }
-    revokeMeasurement() { this.consentId = null; this.consentUntil = 0; this.measurementRuntime?.setConsent(false); }
-    // No queue before consent or initialization. Every payload is revalidated.
+    revokeMeasurement() { this.measurementRuntime?.revokeMeasurement(); }
+    // No queue before initialization. Every payload is revalidated.
     track(input) {
         if (!this.measurementAllowed()) return false;
         const payload = analyticsPayload(input);
         if (!payload) return false;
         if (this.dataLayer !== true) return this.measurementRuntime.track(payload);
-        this.send('analytics', {payload, consentId: this.consentId});
+        this.send('analytics', {payload});
         return true;
     }
     measure() {

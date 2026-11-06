@@ -32,6 +32,11 @@ void main() {
       addTearDown(gtm.dispose);
       addTearDown(scripts.dispose);
       bool enabled = false;
+      String layout = 'bar';
+      final consentTitle = TextEditingController();
+      final consentText = TextEditingController();
+      addTearDown(consentTitle.dispose);
+      addTearDown(consentText.dispose);
       await fixture.pumpWidget(
         tester,
         MaterialApp(
@@ -43,6 +48,11 @@ void main() {
                 builder: (context, setState) => Form(
                   child: UnitMeasurementSettings(
                     enabled: enabled,
+                    consentLayout: layout,
+                    consentTitleController: consentTitle,
+                    consentTextController: consentText,
+                    onConsentLayoutChanged: (value) =>
+                        setState(() => layout = value),
                     canEdit: canEdit,
                     gtmController: gtm,
                     scriptsController: scripts,
@@ -91,10 +101,44 @@ void main() {
           FormStrings.measurementPrivacyUrlInvalid,
         );
       }
-      final toggle = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+      final enabledSwitch = find.widgetWithText(
+        SwitchListTile,
+        FormStrings.measurementUnitEnabled,
+      );
+      expect(
+        find.text(FormStrings.measurementConsentLayoutBar),
+        findsOneWidget,
+        reason: 'bar is the default layout',
+      );
+      for (final controller in [consentTitle, consentText]) {
+        final field = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextFormField && widget.controller == controller,
+        );
+        expect(tester.widget<TextFormField>(field).enabled, canEdit);
+      }
+      expect(
+        find.textContaining('FeatureFormSettings.measurementConsentTitle'),
+        findsNothing,
+      );
+      expect(
+        find.text(FormStrings.measurementConsentCustomTextHelp),
+        findsOneWidget,
+      );
+      final toggle = tester.widget<SwitchListTile>(enabledSwitch);
       expect(toggle.onChanged == null, !canEdit);
       if (canEdit) {
-        await tester.tap(find.byType(SwitchListTile));
+        final dropdown = find.text(FormStrings.measurementConsentLayoutBar);
+        await tester.ensureVisible(dropdown);
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.text(FormStrings.measurementConsentLayoutModal).last,
+        );
+        await tester.pumpAndSettle();
+        expect(layout, 'modal');
+        await tester.ensureVisible(enabledSwitch);
+        await tester.tap(enabledSwitch);
         await tester.pumpAndSettle();
         expect(enabled, isTrue);
         final enabledPrivacyField = tester.widget<TextFormField>(privacyField);
@@ -106,7 +150,7 @@ void main() {
         scripts.text = '<script>/* saved */</script>';
         expect(enabledPrivacyField.validator!(''), FormStrings.measurementPrivacyUrlRequired);
         gtm.text = 'GTM-ABCD';
-        await tester.tap(find.byType(SwitchListTile));
+        await tester.tap(enabledSwitch);
         await tester.pumpAndSettle();
         expect(enabled, isFalse);
         expect(tester.widget<TextFormField>(privacyField).validator!(''), isNull);
@@ -143,6 +187,10 @@ void main() {
       final privacy = TextEditingController(text: url);
       final scripts = TextEditingController();
       final tile = ExpansibleController();
+      final consentTitle = TextEditingController();
+      final consentText = TextEditingController();
+      addTearDown(consentTitle.dispose);
+      addTearDown(consentText.dispose);
       addTearDown(gtm.dispose);
       addTearDown(privacy.dispose);
       addTearDown(scripts.dispose);
@@ -159,6 +207,10 @@ void main() {
                 key: form,
                 child: UnitMeasurementSettings(
                   enabled: enabled,
+                  consentLayout: 'bar',
+                  consentTitleController: consentTitle,
+                  consentTextController: consentText,
+                  onConsentLayoutChanged: (_) {},
                   canEdit: canEdit,
                   gtmController: gtm,
                   scriptsController: scripts,

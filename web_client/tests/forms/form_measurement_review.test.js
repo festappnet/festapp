@@ -54,9 +54,9 @@ test('all approved ecommerce events carry the final price, offer name and recomp
 });
 
 
-test('measurement owner has no script insertion, history interception, Auth subscription or contact export',()=>{
+test('measurement owner has no script insertion, history interception or Auth subscription',()=>{
  const source=readFileSync(new URL('../../src/components/forms/form_datalayer.js',import.meta.url),'utf8');
- for(const retired of ['loadFormIntegrations','installFormIntegrationGuard','integrationDocuments','navigateWithFormReturnContext',"createElement('script')",'onAuthStateChange','history.replaceState','user_data']) assert(!source.includes(retired),retired);
+ for(const retired of ['loadFormIntegrations','installFormIntegrationGuard','integrationDocuments','navigateWithFormReturnContext',"createElement('script')",'onAuthStateChange','history.replaceState']) assert(!source.includes(retired),retired);
 });
 
 test('ad and linker parameters keep measurement on while capability parameters stay blocked',()=>{

@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Form measurement passes `gbraid`, `wbraid`, `sznclid`, `ttclid` and `msclkid` next to UTM, `gclid` and `fbclid`, and adds optional `item_category` (product type) and `item_brand` (occasion) to items in browser events and the server `purchase`. Value calculation and recorded conversion facts are unchanged.
+- Form measurement no longer waits for visitor consent: on eligible forms the frame loads GTM and organizer scripts at once, and the notice only passes the choice to Google Consent Mode, with analytics and advertising as separate purposes and everything denied until a choice. Containers no longer need the consent template. `purchase` and `generate_lead` carry the readable e-mail and phone in dataLayer; the organizer is responsible for their use. Signed-in visitors are measured, except organization administrators and managers of the owning Unit.
+- The consent notice follows the form design and has two layouts, a bottom bar (default) or a centered window, and an optional custom plain-text title and text on the Unit.
 
 - Measurement requires an organizer HTTPS privacy policy URL. Without it, tags, conversion recording/export and the consent notice remain disabled; partial configuration can still be saved outside the unit settings screen, which requires the URL and warns measurement managers while it is missing.
 

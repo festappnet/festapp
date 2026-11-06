@@ -1,5 +1,7 @@
 import { analyticsPayload, currencies } from './form_measurement_contract.js';
 import { AppConfig } from '../../app_config.js';
+import { isValidEmail } from '../../logic/email_address.js';
+import { normalizeE164Phone } from '../../utils/phone_formatter.js';
 import { browserStorage } from '../../services/browser_storage.js';
 
 import {publicFormLocation, documentEntryAllowed} from '../../utils/public_form_location.js';
@@ -30,20 +32,14 @@ export class FormDataLayer {
         this.viewedPages = new Set();
         this.viewedCurrencies = new Set();
         this.conversions = new Set();
-        this.conversionEpochs = new Map();
         this.policyExpiresAt = Date.now() + Math.min(60, Math.max(0, Number(model.data?.analytics?.valid_for_seconds) || 0)) * 1000;
         this.refreshPolicy = refreshPolicy;
         this.policyGeneration = 0;
-        this.onVisibility = () => {
-            this.policyGeneration++;
-            this.policyExpiresAt = 0;
-            if (this.refreshPolicy) this.model.data.analytics = {...this.model.data.analytics, eligible:false};
-            this.bridge?.revokeMeasurement?.();
-            if (!this.win.document.hidden) this.renewPolicy();
-        };
+        // Hiding keeps the frame, so the container does not run twice for one visit.
+        // Returning rechecks policy and context, which removes the frame when they failed.
+        this.onVisibility = () => { if (!this.win.document.hidden) this.renewPolicy(); };
         win.document.addEventListener?.('visibilitychange', this.onVisibility);
-        this.onPageShow = event => { if (event.persisted) this.onVisibility(); };
-        win.addEventListener?.('pagehide', this.onVisibility);
+        this.onPageShow = event => { if (event.persisted) this.renewPolicy(); };
         win.addEventListener?.('pageshow', this.onPageShow);
         this.catalog = new Map(); this.fields = new Map();
         const visit = fields => {
@@ -62,14 +58,16 @@ export class FormDataLayer {
             }
         };
         visit(model.visibleFields || model.relatedFields);
-        if (refreshPolicy && model.data?.analytics?.eligible === true && this.contextAllowed())
+        if (refreshPolicy && model.data?.analytics?.eligible === true && this.publicContext()) {
             this.policyTimer = win.setInterval(() => this.renewPolicy(), 20000);
+            if (this.session(win)) this.renewPolicy();
+        }
     }
     cancelPending() { this.observation = (this.observation || 0) + 1; }
-    dispose() { this.cancelPending(); this.disposed = true; this.policyGeneration++; this.win.clearInterval(this.policyTimer); this.bridge?.revokeMeasurement?.(); this.win.document.removeEventListener?.('visibilitychange', this.onVisibility); this.win.removeEventListener?.('pagehide', this.onVisibility); this.win.removeEventListener?.('pageshow', this.onPageShow); }
+    dispose() { this.cancelPending(); this.disposed = true; this.policyGeneration++; this.win.clearInterval(this.policyTimer); this.bridge?.revokeMeasurement?.(); this.win.document.removeEventListener?.('visibilitychange', this.onVisibility); this.win.removeEventListener?.('pageshow', this.onPageShow); }
     async renewPolicy() {
-        if (!this.refreshPolicy || this.disposed || this.renewing || this.win.document.hidden) return;
-        if (!this.contextAllowed()) { this.bridge?.revokeMeasurement?.(); return; }
+        if (!this.refreshPolicy || this.disposed || this.renewing || this.staff) return;
+        if (!this.publicContext()) { this.bridge?.revokeMeasurement?.(); return; }
         const generation = this.policyGeneration;
         this.renewing = true;
         try {
@@ -77,9 +75,12 @@ export class FormDataLayer {
             if (this.disposed || generation !== this.policyGeneration) return;
             if (!policy || policy.enabled !== true || policy.organization_allowed !== true || policy.eligible !== true || policy.runtime_supported !== true)
                 throw Error('measurement unavailable');
+            const blocked = !this.enabled();
             this.model.data.analytics = policy;
             this.policyExpiresAt = Date.now() + Math.min(60, Math.max(0, Number(policy.valid_for_seconds) || 0)) * 1000;
+            if (policy.visitor_role === 'staff') { this.stopForStaff(); return; }
             this.bridge?.updatePolicy?.(this.policyExpiresAt);
+            if (blocked) this.view(); // A verified visitor's frame may report ready before this.
         } catch {
             if (!this.disposed && generation === this.policyGeneration) {
                 this.policyExpiresAt = 0;
@@ -88,21 +89,75 @@ export class FormDataLayer {
             }
         } finally { this.renewing = false; }
     }
-    contextAllowed() {
-        try { return !this.disposed && this.entryAllowed && !this.model.demoSimulation &&
-            publicFormLocation(this.win.location) && !this.session(this.win); }
+    publicContext() {
+        try { return !this.disposed && this.entryAllowed && !this.model.demoSimulation && publicFormLocation(this.win.location); }
         catch { return false; }
     }
-    measurementEpoch() {
+    // A signed-in visitor counts only after the server named the role for this form.
+    // Anything else, including a session the server did not see, stays unmeasured.
+    visitorAllowed() {
+        const role = this.model.data?.analytics?.visitor_role;
+        return !this.staff && role !== 'staff' && (!this.session(this.win) || role === 'visitor');
+    }
+    contextAllowed() {
+        try { return this.publicContext() && this.visitorAllowed(); }
+        catch { return false; }
+    }
+    // Resolves once it is known whether this visitor may be measured.
+    async visitorReady() {
+        if (this.publicContext() && this.session(this.win)) await this.renewPolicy();
+        return this.contextAllowed();
+    }
+    stopForStaff() {
+        this.staff = true;
+        this.win.clearInterval(this.policyTimer);
+        this.bridge?.revokeMeasurement?.();
+    }
+    // Sign-in during a visit: nothing is sent until the server names the new role.
+    authChanged(userId = null) {
+        if (this.authUser === undefined) { this.authUser = userId; return; }
+        if (this.authUser === userId) return;
+        this.authUser = userId;
+        this.model.data.analytics = {...this.model.data.analytics, visitor_role:undefined};
+        this.bridge?.revokeMeasurement?.();
+        this.policyGeneration++;
+        this.renewing = false;
+        this.renewPolicy();
+    }
+    enabled() {
         try {
             const policy = this.model.data?.analytics;
             if (this.disposed || policy?.enabled !== true || policy.organization_allowed !== true ||
-                policy.runtime_supported !== true || policy.eligible !== true || Date.now() >= this.policyExpiresAt ||
-                !this.contextAllowed()) { this.bridge?.revokeMeasurement?.(); return null; }
-            return this.bridge?.measurementEpoch?.() ?? null;
+                policy.runtime_supported !== true || policy.eligible !== true ||
+                !this.contextAllowed()) { this.bridge?.revokeMeasurement?.(); return false; }
+            // Expiry only pauses sends here. The transport owns removing its frame.
+            return Date.now() < this.policyExpiresAt && this.bridge?.measurementAllowed?.() === true;
+        } catch { return false; }
+    }
+    // The host transport hands contact to the embedding page. Any site can embed a
+    // public form and opt in, so that page must be one the organizer approved.
+    contactAllowed() {
+        const host = this.bridge?.dataLayerHost?.();
+        const approved = this.model.data?.analytics?.approved_hosts;
+        return !host || (Array.isArray(approved) && approved.includes(host));
+    }
+    // Normalized as Google requires: e-mail trimmed and lowercased, phone in E.164.
+    // A value that cannot be normalized safely is left out rather than guessed.
+    // Runs inside order submission, so no failure here may reach the caller.
+    contact(payload) {
+        try {
+            if (!this.enabled() || !this.contactAllowed()) return null;
+            const answer = type => {
+                const field = (this.model.visibleFields || this.model.relatedFields)?.find(item => item.type === type);
+                const id = String(field?.id);
+                return payload?.fields?.find(entry => Object.hasOwn(entry, id))?.[id];
+            };
+            const email = String(answer('email') ?? '').trim().toLowerCase();
+            const prefixes = this.model.data?.phone_prefixes;
+            const phone = normalizeE164Phone(answer('phone'), {defaultPrefix: Array.isArray(prefixes) && prefixes.length === 1 ? prefixes[0] : null});
+            return {email: isValidEmail(email) ? email : null, phone_number: phone};
         } catch { return null; }
     }
-    enabled() { return this.measurementEpoch() !== null; }
     emit(input) {
         if (!this.enabled()) return false;
         const payload = analyticsPayload(input);
@@ -117,7 +172,7 @@ export class FormDataLayer {
         this.emit({page_type, language});
         if (!this.viewedPages.has(page_type) && this.emit({event: 'page_view'})) this.viewedPages.add(page_type);
     }
-    // First real visitor input after consent. Field names and values never leave.
+    // First real visitor input. Field names and values never leave.
     started() { if (!this.formStarted && this.emit({event: 'form_start'})) this.formStarted = true; }
     groups(event, items, extra = {}) {
         for (const currency of new Set(items.map(item => item.currency))) {
@@ -170,11 +225,10 @@ export class FormDataLayer {
     }
     observe(session) {
         const version = this.observation = (this.observation || 0) + 1;
-        const epoch = this.measurementEpoch();
         Promise.resolve().then(() => session.awaitPendingReservations?.({recover: false})).then(() => {
             if (version !== this.observation) return;
-            if (epoch !== null && epoch === this.measurementEpoch()) this.update(session.payload, session);
-            else this.previous = this.cart(session.payload, session); // Baseline only; no replay across consent grants.
+            if (this.enabled()) this.update(session.payload, session);
+            else this.previous = this.cart(session.payload, session); // Baseline only until the transport is ready.
         }).catch(() => {}); // Failed reservations never become successful cart changes.
     }
     review(payload, session) {
@@ -186,15 +240,13 @@ export class FormDataLayer {
         const items = this.cart(payload, session);
         this.groups('add_payment_info', items, {payment_type: items.every(item => item.price === 0) ? 'free' : method === 'stripe' ? 'card' : 'bank_transfer'});
     }
-    confirmed(data) {
+    confirmed(data, contact = null) {
         this.pageType = 'confirmation';
         const conversion = analyticsPayload(data?.ticketOrder?.analytics);
         if (!conversion || !['purchase', 'generate_lead'].includes(conversion.event)) return;
         const identity = conversion.ecommerce?.transaction_id || conversion.event_id;
-        const epoch = this.measurementEpoch();
-        if (!this.conversionEpochs.has(identity)) this.conversionEpochs.set(identity, epoch);
-        if (epoch === null || this.conversionEpochs.get(identity) !== epoch || this.conversions.has(identity)) return;
+        if (!this.enabled() || this.conversions.has(identity)) return;
         this.page('confirmation');
-        if (this.emit(conversion)) this.conversions.add(identity);
+        if (this.emit(contact && this.contactAllowed() ? {...conversion, user_data: contact} : conversion)) this.conversions.add(identity);
     }
 }

@@ -4,15 +4,23 @@
     if (window.__festappEmbedV1) return;
     window.__festappEmbedV1 = true;
     const namespace = 'festapp-embed';
-    // Pure, contact-free contract. Every receiver rebuilds the payload independently.
+    // Pure contract. Every receiver rebuilds the payload independently.
     const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase']);
     const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
     const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
     const eventIdentity = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+    const contactEmail = value => typeof value === 'string' && value.length <= 254 && /^[^\s@\u0000-\u001f\u007f]+@[^\s@\u0000-\u001f\u007f]+\.[^\s@\u0000-\u001f\u007f]+$/.test(value);
+    const contactPhone = value => typeof value === 'string' && /^\+[1-9]\d{7,14}$/.test(value);
     const pageTypes = ['product', 'checkout', 'confirmation'];
 
     const measurementNamespace = 'festapp-measurement';
     const measurementId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+
+    // Saved purposes. A boolean is the earlier API: true grants analytics only.
+    function measurementConsent(input) {
+        if (input === true) return {analytics: true, marketing: false};
+        return {analytics: input?.analytics === true, marketing: input?.marketing === true};
+    }
 
     // Pages project hostnames are separate sites on the Public Suffix List. A
     // shared workers.dev account or sibling custom domains are not this profile.
@@ -69,9 +77,21 @@
     const itemLabel = value => typeof value === 'string' && !unsafeText.test(value) ? value.trim().slice(0, 100) : '';
     const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
-    // Rebuild at both transport boundaries. Never spread form, order or message data.
+    // Only these two bounded fields pass. Anything else, or a malformed value, is left out.
+    function contactUserData(input) {
+        const result = {};
+        if (contactEmail(input?.email)) result.email = input.email;
+        if (contactPhone(input?.phone_number)) result.phone_number = input.phone_number;
+        return Object.keys(result).length ? result : null;
+    }
+
+    // Rebuild at every transport boundary. Never spread form, order or message data.
     function analyticsPayload(input) {
         if (!input || typeof input !== 'object') return null;
+        const withUserData = payload => {
+            const user_data = contactUserData(input.user_data);
+            return user_data ? {...payload, user_data} : payload;
+        };
         if (!input.event) {
             if (!pageTypes.includes(input.page_type)) return null;
             const result = {page_type: input.page_type, user_type: 'b2c'};
@@ -81,7 +101,7 @@
         if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
         if (input.event === 'generate_lead') {
             if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
-            return ({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
+            return withUserData({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
         }
         const source = input.ecommerce;
         if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) ||
@@ -113,39 +133,37 @@
             ecommerce.transaction_id = source.transaction_id;
         }
         const result = {event: input.event, ecommerce};
-        return result;
+        return input.event === 'purchase' ? withUserData(result) : result;
     }
 
 // The same saved-choice adapter is used by standalone Klaro and embedding hosts.
-// A changed draft is never a grant. Renewal preserves the transport's epoch.
-function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} = {}) {
+// It only reports the saved choice; a changed draft is never reported as a grant.
+function bindKlaroConsent(manager, setConsent) {
     let disposed = false;
+    const saved = service => manager.confirmed === true && manager.savedConsents?.[service] === true &&
+        manager.getConsent(service) === true;
     const sync = () => {
-        let granted = false;
+        const granted = {analytics: false, marketing: false};
         try {
-            granted = manager.confirmed === true && manager.savedConsents?.analytics === true &&
-                manager.getConsent('analytics') === true && !win.document.hidden;
-        } catch { /* Missing/broken CMP remains denied. */ }
+            granted.analytics = saved('analytics');
+            // Optional: a host manager without this service grants analytics only.
+            granted.marketing = saved('marketing');
+        } catch { granted.analytics = granted.marketing = false; /* Missing/broken CMP remains denied. */ }
         if (!disposed) setConsent(granted);
     };
     const watcher = {update: sync};
     manager.watch(watcher);
-    win.document.addEventListener('visibilitychange', sync);
-    const timer = win.setInterval(sync, interval);
     sync();
     return () => {
         disposed = true;
-        win.clearInterval(timer);
         manager.unwatch(watcher);
-        win.document.removeEventListener('visibilitychange', sync);
         setConsent(false);
     };
 }
 
     const frames = new Map();
-    // Integration seam only: a real CMP adapter must call this after checking
-    // the visitor's purpose-specific consent, renew within 60s, and revoke it.
-    // HTML attributes never grant consent. Klaro binds only its saved choice.
+    // Reports the visitor's choice to the form. It starts and stops nothing:
+    // measurement runs anyway and tags evaluate this state through Consent Mode.
     window.FestappEmbed = Object.freeze({
         connectKlaro(frame, manager) {
             const record = frames.get(frame);
@@ -154,12 +172,11 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
             record.consentDispose = bindKlaroConsent(manager, granted => window.FestappEmbed.setMeasurementConsent(frame, granted));
             return record.consentDispose;
         },
-        setMeasurementConsent(frame, granted, ttlSeconds = 60) {
+        // granted is {analytics, marketing}; a boolean keeps the analytics-only API.
+        setMeasurementConsent(frame, granted) {
             const record = frames.get(frame);
             if (!record) return false;
-            record.consentId = granted === true
-                ? (record.consentId && Date.now() < record.consentUntil ? record.consentId : `c_${crypto.randomUUID()}`) : null;
-            record.consentUntil = granted === true ? Date.now() + Math.min(60, Math.max(0, Number(ttlSeconds) || 0)) * 1000 : 0;
+            record.consent = measurementConsent(granted);
             send(frame, record, 'init', false);
             return true;
         }
@@ -321,7 +338,7 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
-            consentId: record.consentId || null, consentUntil: record.consentUntil || 0,
+            consent: record.consent || null,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
         if (theme !== false) {
@@ -405,7 +422,7 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
             if (data.type === 'ready') { send(frame, record, 'init'); return; }
             if (data.instance !== record.instance) return;
             if (data.type === 'analytics') {
-                if (frame.hasAttribute('data-festapp-datalayer') && record.consentId && data.consentId === record.consentId && Date.now() < record.consentUntil) {
+                if (frame.hasAttribute('data-festapp-datalayer')) {
                     const payload = analyticsPayload(data.payload);
                     if (!payload) return;
                     window.dataLayer = window.dataLayer || [];

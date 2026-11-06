@@ -59,7 +59,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  ) SELECT jsonb_build_object('requested_enabled',requested,'organization_allowed',allowed,
   'organization_enabled',organization_enabled,'unit_enabled',unit_enabled,
   'runtime_supported',supported,'eligible',requested AND allowed AND organization_enabled AND unit_enabled AND destination AND supported AND privacy_policy_valid,
-  'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',true,
+  'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',false,
   'blocked_reasons',to_jsonb(array_remove(ARRAY[
    CASE WHEN NOT requested THEN 'disabled' END,
    CASE WHEN NOT allowed THEN 'organization_not_enabled' END,
@@ -80,6 +80,9 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'runtime_supported',s->'runtime_supported','eligible',s->'eligible','organization',o.organization,'unit',u.id,
   'runtime_origin',CASE WHEN s->'eligible'='true'::jsonb THEN r.runtime_origin END,
   'privacy_url',CASE WHEN s->'eligible'='true'::jsonb THEN u.data->>'measurement_privacy_url' END,
+  'consent_notice',CASE WHEN s->'eligible'='true'::jsonb THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
+   'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
+  'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
   'configuration_revision',md5(jsonb_build_array(u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_enabled',org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')::text),
   'runtime_revision',coalesce(r.revision,0),'policy_revision',s->'policy_revision','valid_for_seconds',60,'consent_required',true)

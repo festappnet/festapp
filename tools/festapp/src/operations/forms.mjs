@@ -56,7 +56,7 @@ const formMetadata={id,occasion:id,aggregate_version:version,
  waitlist_offer_duration_seconds:z.number().int().nullable().optional(),capacity:z.json().optional(),registrationMode:z.string().nullable().optional()};
 const measurementStatus=z.strictObject({requested_enabled:z.boolean(),organization_allowed:z.boolean(),organization_enabled:z.boolean(),unit_enabled:z.boolean(),
  runtime_supported:z.boolean(),eligible:z.boolean(),blocked_reasons:z.array(z.enum(['disabled','organization_not_enabled','organization_disabled','unit_disabled','runtime_unavailable','no_destination','no_privacy_policy'])),
- policy_revision:version,consent_required:z.literal(true),enhanced_conversions_unavailable:z.literal(true)});
+ policy_revision:version,consent_required:z.literal(true),enhanced_conversions_unavailable:z.boolean()});
 const measurementStatusOrUnknown=measurementStatus.nullish().default(null);
 // The UI snapshot can gain internal fields independently. Project only the MCP
 // allowlist; unknown fields never reach the tool response. Missing status is unknown.

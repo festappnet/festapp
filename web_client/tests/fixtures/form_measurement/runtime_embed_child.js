@@ -10,7 +10,7 @@ window.addEventListener('message',e=>{
  if(e.origin===window.fixtureRuntime && e.source===runtime.frame?.contentWindow && e.data?.nestedReceipt) parent.postMessage(e.data,window.fixtureHost);
  if(e.source!==parent || e.origin!==window.fixtureHost || !e.data?.testCall)return;
  const {id,action}=e.data; let result;
- if(action==='state') result={allowed:bridge.measurementAllowed(),ready:runtime.ready===true,hasFrame:!!runtime.frame,consentUntil:bridge.consentUntil};
+ if(action==='state') result={allowed:bridge.measurementAllowed(),ready:runtime.ready===true,hasFrame:!!runtime.frame,instance:runtime.instance,consent:runtime.consent};
  if(action==='view') result=layer.view();
  parent.postMessage({testReply:true,id,result},window.fixtureHost);
 });

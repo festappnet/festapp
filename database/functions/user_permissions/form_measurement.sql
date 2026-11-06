@@ -22,6 +22,17 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.can_read_public_form_measurement(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Who is asking, from the caller's JWT. Administrators of the organization and managers
+-- of the Unit that owns the form are not measured; the browser cannot decide this itself.
+CREATE OR REPLACE FUNCTION public.form_measurement_visitor_role_internal(p_form bigint)
+RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT CASE WHEN auth.uid() IS NULL THEN 'anonymous'
+  WHEN EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion WHERE f.id=p_form
+   AND (public.can_manage_organization_settings(o.organization) OR public.can_manage_unit_configuration(o.unit))) THEN 'staff'
+  ELSE 'visitor' END;
+$$;
+REVOKE ALL ON FUNCTION public.form_measurement_visitor_role_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.can_read_form_measurement_runtime(p_form bigint,p_organization bigint,p_unit bigint,p_runtime_origin text,p_parent_origin text)
 RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT auth.role()='service_role' AND public.can_read_public_form_measurement(p_form) AND

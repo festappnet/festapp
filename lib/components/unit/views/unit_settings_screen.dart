@@ -56,6 +56,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   String? _selectedTimezone;
   String _communicationTone = 'formal';
   bool _measurementEnabled = false;
+  String _measurementConsentLayout = 'bar';
+  final _measurementConsentTitleController = TextEditingController();
+  final _measurementConsentTextController = TextEditingController();
   final _measurementPrivacyUrlController = TextEditingController();
   final _measurementTileController = ExpansibleController();
   final _measurementGtmController = TextEditingController();
@@ -89,6 +92,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _replyToEmailController.dispose();
     _measurementGtmController.dispose();
     _measurementPrivacyUrlController.dispose();
+    _measurementConsentTitleController.dispose();
+    _measurementConsentTextController.dispose();
     _measurementTileController.dispose();
     _measurementScriptsController.dispose();
     super.dispose();
@@ -199,6 +204,12 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
             : 'formal';
 
     _measurementEnabled = _unit.data?['measurement_enabled'] == true;
+    _measurementConsentLayout =
+        _unit.data?['measurement_consent_layout'] == 'modal' ? 'modal' : 'bar';
+    _measurementConsentTitleController.text =
+        _unit.data?['measurement_consent_title'] as String? ?? '';
+    _measurementConsentTextController.text =
+        _unit.data?['measurement_consent_text'] as String? ?? '';
     _measurementPrivacyUrlController.text =
         _unit.data?['measurement_privacy_url'] as String? ?? '';
     _measurementGtmController.text =
@@ -249,6 +260,18 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _unit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
       _unit.data!['measurement_enabled'] = _measurementEnabled;
+      _unit.data!['measurement_consent_layout'] = _measurementConsentLayout;
+      for (final (key, controller) in [
+        ('measurement_consent_title', _measurementConsentTitleController),
+        ('measurement_consent_text', _measurementConsentTextController),
+      ]) {
+        final text = controller.text.trim();
+        if (text.isEmpty) {
+          _unit.data!.remove(key);
+        } else {
+          _unit.data![key] = text;
+        }
+      }
       final privacyUrl = _measurementPrivacyUrlController.text.trim();
       if (privacyUrl.isEmpty) {
         _unit.data!.remove('measurement_privacy_url');
@@ -606,6 +629,11 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                 if (_organizationMeasurementEnabled) ...[
                   UnitMeasurementSettings(
                     enabled: _measurementEnabled,
+                    consentLayout: _measurementConsentLayout,
+                    consentTitleController: _measurementConsentTitleController,
+                    consentTextController: _measurementConsentTextController,
+                    onConsentLayoutChanged: (value) =>
+                        setState(() => _measurementConsentLayout = value),
                     canEdit: _canEdit && !_isSaving,
                     privacyUrlController: _measurementPrivacyUrlController,
                     controller: _measurementTileController,
