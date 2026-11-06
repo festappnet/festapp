@@ -7,9 +7,9 @@ import {JSDOM} from 'jsdom';
 const bundle = await build({stdin:{contents:`
 import {startMeasurementConsent} from './src/components/forms/form_measurement_cmp.js';
 import {LocalizationService} from './src/services/localization_service.js';
-window.startFixture = (translations, transport) => {
+window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy') => {
  LocalizationService.translations = translations;
- return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2}}},transport,host:document.querySelector('main')});
+ return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2,privacy_url}}},transport,host:document.querySelector('main')});
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,30));
 for (const lang of ['cs','sk','en','de','pl','uk']) test(`actual Klaro first choice and saved settings in ${lang}`,async()=>{
@@ -61,4 +61,29 @@ test('CMP cleanup before choosing restores scroll, and storage failure fails clo
    assert.equal(win.document.querySelector('#festapp-measurement-consent'),null);
   } finally {win.close();}
  }
+});
+
+for (const value of ['https://organizer.example/privacy?lang=cs', '', null,
+ 'javascript:alert(1)', 'data:text/plain,x', 'http://example.com', '/privacy',
+ 'https://user:pass@example.com', 'https://@example.com', 'https://example.com:99999',
+ 'https://example.com/' + 'x'.repeat(2048)]) test(`CMP privacy link: ${value?.slice(0,60)}`, async () => {
+ const dom = new JSDOM('<html lang="en"><body><main></main></body></html>', {
+  url:'https://tickets.example/form/summer',runScripts:'outside-only',pretendToBeVisual:true});
+ try {
+  dom.window.eval(bundle.outputFiles[0].text);
+  const grants=[];
+  const cleanup = dom.window.startFixture(JSON.parse(readFileSync(new URL('../../../assets/translations/en.json', import.meta.url))), {setConsent(value){grants.push(value);}}, value);
+  await settle();
+  if (value === 'https://organizer.example/privacy?lang=cs') {
+   assert.equal(dom.window.document.querySelector('#festapp-measurement-consent a').getAttribute('href'),value);
+  } else {
+   assert.equal(dom.window.document.querySelector('#festapp-measurement-consent'),null);
+   assert.equal(dom.window.document.querySelector('main').children.length,0);
+   assert.equal(dom.window.document.querySelector('iframe'),null);
+   assert.equal(dom.window.document.body.style.overflow,'');
+   assert.equal(dom.window.document.documentElement.style.overflow,'');
+   assert.deepEqual(grants,[false]);
+  }
+  cleanup();
+ } finally { dom.window.close(); }
 });

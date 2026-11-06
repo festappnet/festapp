@@ -1,6 +1,6 @@
 import { EmbedBridge } from '/src/services/embed_bridge.js';
 import { FormDataLayer } from '/src/components/forms/form_datalayer.js';
-const policy = {enabled:true, organization_allowed:true, runtime_supported:true, eligible:true, valid_for_seconds:60};
+const policy = {enabled:true, organization_allowed:true, runtime_supported:true, privacy_url:"https://organizer.example/privacy",eligible:true, valid_for_seconds:60};
 const model = {data:{analytics:policy}, visibleFields:[{id:1,type:'product_type',options:[{id:1,title:'Ticket',price:10,currency:'CZK'}]}]};
 if (location.search.includes('token=')) history.replaceState(null, '', '/form/test?embed=1');
 const bridge = new EmbedBridge(); bridge.start();

@@ -1,7 +1,7 @@
 import {EmbedBridge} from '../../../src/services/embed_bridge.js';
 import {FormDataLayer} from '../../../src/components/forms/form_datalayer.js';
 import {FormMeasurementRuntime} from '../../../src/components/forms/form_measurement_runtime.js';
-const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60,organization:1,unit:2,runtime_origin:window.fixtureRuntime};
+const policy={enabled:true,organization_allowed:true,runtime_supported:true,privacy_url:"https://organizer.example/privacy",eligible:true,valid_for_seconds:60,organization:1,unit:2,runtime_origin:window.fixtureRuntime};
 const model={link:'test',data:{analytics:policy},visibleFields:[]};
 const bridge=new EmbedBridge(); bridge.start();
 const runtime=new FormMeasurementRuntime({model,local:true,campaign:()=>bridge.measurementCampaign || {}}); bridge.setMeasurementRuntime(runtime);

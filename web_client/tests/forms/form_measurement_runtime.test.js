@@ -7,7 +7,7 @@ import {FormMeasurementRuntime} from '../../src/components/forms/form_measuremen
 import {bindKlaroConsent} from '../../src/components/forms/form_measurement_consent.js';
 import {attributionContext,measurementPageLocation,campaignContext,measurementOrigin} from '../../src/components/forms/form_measurement_contract.js';
 const runtime='https://festival-measurement.pages.dev',parent='https://tickets.example';
-const policy={enabled:true,organization_allowed:true,eligible:true,runtime_supported:true,organization:1,unit:2,runtime_origin:runtime,valid_for_seconds:60,policy_revision:1,configuration_revision:'one'};
+const policy={enabled:true,organization_allowed:true,privacy_url:"https://organizer.example/privacy",eligible:true,runtime_supported:true,organization:1,unit:2,runtime_origin:runtime,valid_for_seconds:60,policy_revision:1,configuration_revision:'one'};
 const config={organization:1,unit:2,form_id:3,form_link:'summer',runtime_origin:runtime,parent_origin:parent,profile:'gtm-v1',ancestor_origins:[parent],collector_origins:['https://www.google-analytics.com'],policy,gtm_container:'GTM-W9WRHWT9',scripts:'</script><script>window.test=1</script>'};
 const request=new Request(runtime+'/runtime?form=summer&parent='+encodeURIComponent(parent));
 const env={ORGANIZATION_ID:1,UNIT_ID:2};

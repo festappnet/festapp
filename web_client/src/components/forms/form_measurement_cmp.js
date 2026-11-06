@@ -3,9 +3,23 @@ import {bindKlaroConsent} from './form_measurement_consent.js';
 import {FormStrings} from './form_strings.js';
 import {AppConfig} from '../../app_config.js';
 
+function privacyUrl(value) {
+    if (typeof value !== 'string' || value.length > 2048 || !/^https:\/\//.test(value) || /[\s\\\x00-\x1f\x7f]/.test(value)) return null;
+    try {
+        const url = new URL(value);
+        return url.protocol === 'https:' && url.hostname && !url.username && !url.password
+            && !value.slice(8).split(/[/?#]/)[0].includes('@') ? value : null;
+    } catch { return null; }
+}
+
 export function startMeasurementConsent({win = window, model, transport, host}) {
     const policy = model.data?.analytics;
     if (!Number.isSafeInteger(policy?.organization) || !Number.isSafeInteger(policy?.unit)) return () => {};
+    const privacy = privacyUrl(policy.privacy_url);
+    if (!privacy) {
+        try { transport.setConsent(false); } catch { /* Measurement cannot block checkout. */ }
+        return () => {};
+    }
     const lang = win.document.documentElement.lang?.slice(0,2) || AppConfig.defaultLanguage;
     const config = {
         version:1, elementID:'festapp-measurement-consent',
@@ -16,7 +30,7 @@ export function startMeasurementConsent({win = window, model, transport, host}) 
         // notice itself has no close action or backdrop dismissal.
         noticeAsModal:true, mustConsent:false, acceptAll:true, hideLearnMore:true,
         disablePoweredBy:true, showNoticeTitle:true, groupByPurpose:false,
-        privacyPolicy:AppConfig.privacyUrl,
+        privacyPolicy:privacy,
         translations:{[lang]:{
             ok:FormStrings.measurementConsentAccept, acceptAll:FormStrings.measurementConsentAccept,
             acceptSelected:FormStrings.measurementConsentSave, save:FormStrings.measurementConsentSave,

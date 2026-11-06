@@ -107,7 +107,7 @@ try {
  await run("await call('view');return true"); await empty('visibility blocks sends');
  await run("await call('dispose');return true"); await grant();
  await run("await call('view');return true"); await empty('dispose blocks sends');
- const base={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60};
+ const base={enabled:true,organization_allowed:true,runtime_supported:true,privacy_url:"https://organizer.example/privacy",eligible:true,valid_for_seconds:60};
  for(const key of ['enabled','organization_allowed','runtime_supported','eligible','valid_for_seconds']) {
   const policy={...base}; delete policy[key];
   await run(`await call('policy',${JSON.stringify(policy)});return true`); await grant();

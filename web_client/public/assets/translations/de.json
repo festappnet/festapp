@@ -253,6 +253,11 @@
     "measurementAdvanced": "Eigene Skripte (erweitert)",
     "measurementNoDestination": "Für diesen Veranstalter ist kein Messziel eingerichtet.",
     "measurementReady": "Bereit. Die Ausführung erfordert weiterhin die Einwilligung des Besuchers.",
+    "measurementPrivacyUrlRequired": "Geben Sie einen Link zur Datenschutzerklärung ein. Ohne diesen Link startet die Messung nicht.",
+    "measurementNoPrivacyPolicy": "Die Messung ist nicht aktiv, weil der Veranstalter keinen Link zur Datenschutzerklärung angegeben hat.",
+    "measurementPrivacyUrl": "Link zur Datenschutzerklärung",
+    "measurementPrivacyUrlHelp": "Ohne diesen Link werden GTM und Skripte nicht ausgeführt und der Einwilligungshinweis wird nicht angezeigt.",
+    "measurementPrivacyUrlInvalid": "Geben Sie einen vollständigen Link ein, der mit https:// beginnt",
     "measurementTitle": "Messung",
     "gtmContainer": "Google Tag Manager Container-ID",
     "gtmHelp": "Geben Sie die Container-ID ein, nicht den vollständigen Installationscode. Sie wird nach der Einwilligung des Besuchers für die aktivierten Formulare dieses Veranstalters verwendet.",
@@ -265,11 +270,11 @@
     "labelBeforeStartMessage": "Informationen vor Anmeldestart",
     "labelShowPaymentQr": "Zahlungs-QR nach Bestellung anzeigen",
     "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an.",
-    "measurementActivationHelp": "Das Speichern dieser Einstellungen startet die Messung noch nicht. Aktivieren Sie sie auch in den Einstellungen der einzelnen Formulare. Die Ausführung erfordert außerdem die Freigabe und Einrichtung durch die Plattform sowie die Einwilligung des Besuchers.",
+    "measurementActivationHelp": "Das Speichern dieser Einstellungen startet die Messung noch nicht. Aktivieren Sie sie auch in den Einstellungen der einzelnen Formulare. Die Ausführung erfordert außerdem einen Link zur Datenschutzerklärung, die Freigabe und Einrichtung durch die Plattform sowie die Einwilligung des Besuchers.",
     "measurementUnitDisabled": "Die Messung ist für diesen Veranstalter deaktiviert. Gespeicherte IDs und Skripte bleiben erhalten.",
     "measurementFormUnitBlocked": "Die Messung ist für diesen Veranstalter deaktiviert. Sie können die Einstellung für dieses Formular speichern. Die Messung kann erst nach der Aktivierung beim Veranstalter und Erfüllung der weiteren Voraussetzungen starten.",
     "measurementOpenUnitSettings": "Messeinstellungen des Veranstalters öffnen",
-    "measurementAskUnitManager": "Bitten Sie die Verwaltung des Veranstalters, die Messung zu aktivieren und GTM oder Skripte einzurichten."
+    "measurementAskUnitManager": "Bitten Sie die Verwaltung des Veranstalters, die Messung zu aktivieren, GTM oder Skripte einzurichten und den Link zur Datenschutzerklärung zu ergänzen."
   },
   "FeatureTicket": {
     "scanCameraInstruction": "Richten Sie die Kamera auf den Code des Teilnehmers, um den Eintritt zu überprüfen.",

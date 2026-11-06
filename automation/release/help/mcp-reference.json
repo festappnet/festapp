@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "170ad594c78f2483be2770b54a26944afc8fb73ec032309fe0dfbaf53b839956",
+  "sourceDigest": "8bd12afb82f2c078380eae2b8d6bd013d693533c44d18f3a8d327c9ca1e310ee",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -15716,7 +15716,7 @@
     {
       "id": "units.settings.inspect",
       "name": "festapp_units_settings_inspect",
-      "description": "Read organizer title, default Reply-To, communication tone, timezone, measurement enablement, GTM container, scripts and original aggregate version. Requires consent for this whole organizer and its live manager role; occasion-only consent is insufficient.",
+      "description": "Read organizer title, default Reply-To, communication tone, timezone, measurement enablement, GTM container, privacy policy URL, scripts and original aggregate version. Requires consent for this whole organizer and its live manager role; occasion-only consent is insufficient.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read"
@@ -15744,7 +15744,7 @@
     {
       "id": "units.settings.save",
       "name": "festapp_units_settings_save",
-      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned measurement configuration with explicit organizer consent and live manager authorization. Measurement configuration uses measurement_enabled, measurement_gtm_container and measurement_scripts; disabling preserves destinations. Organization and per-form flags remain separate gates. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
+      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned measurement configuration with explicit organizer consent and live manager authorization. Measurement configuration uses measurement_enabled, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -15842,6 +15842,18 @@
                       {
                         "type": "string",
                         "maxLength": 5000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "measurement_privacy_url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "pattern": "^(https:\\/\\/[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?([/?#][^\\s\\\\]*)?)?$"
                       },
                       {
                         "type": "null"

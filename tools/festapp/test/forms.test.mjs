@@ -73,3 +73,12 @@ test('form mutation readback defaults a missing measurement status to unknown',a
  assert.equal(result.measurement_status_is_historical,true);
  assert.deepEqual(calls,['manage_form','get_form_for_authoring']);
 });
+
+test('form inspect accepts the canonical no_privacy_policy measurement block',async()=>{
+ const measurement_status={requested_enabled:true,organization_allowed:true,organization_enabled:true,unit_enabled:true,
+  runtime_supported:true,eligible:false,blocked_reasons:['no_privacy_policy'],policy_revision:1,consent_required:true,enhanced_conversions_unavailable:true};
+ const f=fixture({occasionId:7,authoring:{...state,form:{...state.form,measurement_status}}});
+ const result=await f.ops.invoke('forms.inspect',{occasionId:7,formId:42});
+ assert.equal(result.ok,true,JSON.stringify(result));
+ assert.deepEqual(result.data.authoring.form.measurement_status.blocked_reasons,['no_privacy_policy']);
+});

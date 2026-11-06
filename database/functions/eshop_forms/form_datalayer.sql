@@ -5,7 +5,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT c.payload FROM analytics.conversion_facts c
  JOIN eshop.orders o ON o.id=c."order"
  CROSS JOIN LATERAL (SELECT public.form_measurement_status_internal(o.form) s) policy
- WHERE c."order"=p_order AND c.kind=p_kind AND s->'requested_enabled'='true'::jsonb AND s->'organization_allowed'='true'::jsonb AND s->'organization_enabled'='true'::jsonb AND s->'unit_enabled'='true'::jsonb;
+ WHERE c."order"=p_order AND c.kind=p_kind AND s->'requested_enabled'='true'::jsonb AND s->'organization_allowed'='true'::jsonb AND s->'organization_enabled'='true'::jsonb AND s->'unit_enabled'='true'::jsonb AND NOT (s->'blocked_reasons' @> '["no_privacy_policy"]'::jsonb);
 $$;
 REVOKE ALL ON FUNCTION public.form_conversion_datalayer_internal(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -19,7 +19,7 @@ DECLARE o eshop.orders; s jsonb; items jsonb; total numeric; payload jsonb; iden
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  s:=public.form_measurement_status_internal(o.form);
- IF s->'requested_enabled' IS DISTINCT FROM 'true'::jsonb OR s->'organization_allowed' IS DISTINCT FROM 'true'::jsonb OR s->'organization_enabled' IS DISTINCT FROM 'true'::jsonb OR s->'unit_enabled' IS DISTINCT FROM 'true'::jsonb THEN RETURN; END IF;
+ IF s->'requested_enabled' IS DISTINCT FROM 'true'::jsonb OR s->'organization_allowed' IS DISTINCT FROM 'true'::jsonb OR s->'organization_enabled' IS DISTINCT FROM 'true'::jsonb OR s->'unit_enabled' IS DISTINCT FROM 'true'::jsonb OR coalesce(s->'blocked_reasons' @> '["no_privacy_policy"]'::jsonb,true) THEN RETURN; END IF;
  IF o.state='waitlisted' OR o.price=0 THEN
   payload:=jsonb_build_object('event','generate_lead','event_id',identity,'currency',coalesce(nullif(trim(o.currency_code),''),'CZK'),
    'value',0,'lead_source',CASE WHEN o.state='waitlisted' THEN 'waitlist' ELSE 'free_registration' END);

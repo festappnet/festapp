@@ -16,6 +16,7 @@ Protected `analytics.unit_runtime` holds the canonical runtime origin, `gtm-v1` 
 approved parent/ancestor and collector origins plus revision/operator/reason. Unique
 runtime origins prevent Units sharing a Pages cookie site. Administrator
 organization/Unit/form switches never authorize changing that deployment policy.
+A valid organizer HTTPS privacy policy URL is required alongside the existing platform, organization, Unit, form and visitor-consent gates, including host dataLayer transport. Without it, no consent notice, runtime frame or measurement conversion is produced.
 No runtime publication or organization activation is part of a local build.
 
 The dedicated runtime intentionally permits inline scripts (including GTM Custom

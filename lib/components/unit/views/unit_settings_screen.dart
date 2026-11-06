@@ -56,6 +56,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   String? _selectedTimezone;
   String _communicationTone = 'formal';
   bool _measurementEnabled = false;
+  final _measurementPrivacyUrlController = TextEditingController();
+  final _measurementTileController = ExpansibleController();
   final _measurementGtmController = TextEditingController();
   final _measurementScriptsController = TextEditingController();
   bool get _organizationMeasurementEnabled =>
@@ -86,6 +88,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
     _replyToEmailController.dispose();
     _measurementGtmController.dispose();
+    _measurementPrivacyUrlController.dispose();
+    _measurementTileController.dispose();
     _measurementScriptsController.dispose();
     super.dispose();
   }
@@ -195,6 +199,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
             : 'formal';
 
     _measurementEnabled = _unit.data?['measurement_enabled'] == true;
+    _measurementPrivacyUrlController.text =
+        _unit.data?['measurement_privacy_url'] as String? ?? '';
     _measurementGtmController.text =
         _unit.data?['measurement_gtm_container'] as String? ?? '';
     _measurementScriptsController.text =
@@ -216,7 +222,12 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     )) {
       return;
     }
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      if (_organizationMeasurementEnabled) {
+        _measurementTileController.expand();
+      }
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -238,6 +249,12 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _unit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
       _unit.data!['measurement_enabled'] = _measurementEnabled;
+      final privacyUrl = _measurementPrivacyUrlController.text.trim();
+      if (privacyUrl.isEmpty) {
+        _unit.data!.remove('measurement_privacy_url');
+      } else {
+        _unit.data!['measurement_privacy_url'] = privacyUrl;
+      }
       final gtm = _measurementGtmController.text.trim();
       final scripts = _measurementScriptsController.text;
       if (gtm.isEmpty) {
@@ -590,6 +607,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                   UnitMeasurementSettings(
                     enabled: _measurementEnabled,
                     canEdit: _canEdit && !_isSaving,
+                    privacyUrlController: _measurementPrivacyUrlController,
+                    controller: _measurementTileController,
                     gtmController: _measurementGtmController,
                     scriptsController: _measurementScriptsController,
                     onEnabledChanged: (value) =>

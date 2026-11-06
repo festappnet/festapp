@@ -2,8 +2,8 @@
 
 Measurement is off by default. The effective permission is the conjunction of
 platform permission, organization permission, Unit permission, form intent,
-a supported Unit runtime deployment, a safe public browser context, and saved
-visitor consent. Saving configuration or entering a GTM ID grants none of these.
+a supported Unit runtime deployment, a safe public browser context, a valid
+organizer HTTPS privacy policy URL, and saved visitor consent. Saving configuration or entering a GTM ID grants none of these.
 
 ## Configuration and ownership
 
@@ -27,11 +27,13 @@ administrative switches edits platform deployment policy.
 
 Form MCP example: `forms.save` with `settings.analytics.enabled`. Unit MCP uses
 `units.settings.save` with `changes.settings.measurement_enabled`,
-`measurement_gtm_container`, and `measurement_scripts`. Omission preserves a
+`measurement_gtm_container`, `measurement_privacy_url`, and `measurement_scripts`. Omission preserves a
 value. Nullable Unit destination fields clear with null; form `enabled:null`
 resets to off, `analytics:null` clears form intent. Copies reset form intent;
 there is no copied per-form destination. The canonical Unit configuration JSON
 also owns the script-length limit used by generated Dart/JS constants.
+
+Units store nullable `measurement_privacy_url` as an absolute HTTPS URL without credentials (maximum 2048 characters). A valid URL is required for measurement, conversion recording/export and the consent notice, including host dataLayer transport; partial configuration can still be saved, and changing a valid URL does not replace the runtime frame.
 
 ## Database authority
 

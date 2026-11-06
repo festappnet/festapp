@@ -40,6 +40,16 @@ class FormStrings {
       'FeatureFormSettings.measurementNoDestination'.tr();
   static String get measurementReady =>
       'FeatureFormSettings.measurementReady'.tr();
+  static String get measurementPrivacyUrlRequired =>
+      'FeatureFormSettings.measurementPrivacyUrlRequired'.tr();
+  static String get measurementNoPrivacyPolicy =>
+      'FeatureFormSettings.measurementNoPrivacyPolicy'.tr();
+  static String get measurementPrivacyUrl =>
+      'FeatureFormSettings.measurementPrivacyUrl'.tr();
+  static String get measurementPrivacyUrlHelp =>
+      'FeatureFormSettings.measurementPrivacyUrlHelp'.tr();
+  static String get measurementPrivacyUrlInvalid =>
+      'FeatureFormSettings.measurementPrivacyUrlInvalid'.tr();
   static String get measurementTitle =>
       'FeatureFormSettings.measurementTitle'.tr();
   static String get measurementScripts =>

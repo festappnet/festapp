@@ -7,7 +7,7 @@ import {publicFormLocation} from '../../src/utils/public_form_location.js';
 const identity='c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44';
 const paid={item_id:'product_11',item_name:'Concert',price:100,quantity:2};
 const purchase={event:'purchase',ecommerce:{currency:'CZK',transaction_id:identity,payment_type:'bank_transfer',items:[paid]}};
-const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60};
+const policy={enabled:true,organization_allowed:true,runtime_supported:true,privacy_url:"https://organizer.example/privacy",eligible:true,valid_for_seconds:60};
 function fixture({analytics=policy,url='https://tickets.test/form/summer?embed=1',consent=true,session=false}={}) {
  const dom=new JSDOM('<html lang="cs"><body></body></html>',{url});
  const sent=[];let allowed=consent;
@@ -140,4 +140,14 @@ test('form_start waits for consent, fires once and carries no field data',()=>{
  bridge.measurementAllowed=()=>true;layer.started();layer.started();
  assert.deepEqual(sent,[{event:'form_start'}]);
  assert.deepEqual(analyticsPayload({event:'form_start',email:'private@example.com',field:'name'}),{event:'form_start'});dom.window.close();
+});
+
+test('host dataLayer transport respects SQL no_privacy_policy denial even with visitor consent',()=>{
+ const {dom,layer,sent}=fixture({analytics:{...policy,eligible:false,privacy_url:null,blocked_reasons:['no_privacy_policy']}});
+ try {
+  layer.view();
+  layer.confirmed({ticketOrder:{analytics:purchase}});
+  assert.equal(layer.enabled(),false);
+  assert.deepEqual(sent,[]);
+ } finally {layer.dispose();dom.window.close();}
 });

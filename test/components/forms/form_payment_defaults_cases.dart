@@ -272,6 +272,80 @@ void main() {
     );
   }
 
+  for (final (name, manager, formOn, unitOn, reasons, warned) in [
+    ('missing link', true, true, true, ['no_privacy_policy'], true),
+    ('form editor only', false, true, true, ['no_privacy_policy'], false),
+    ('form off', true, false, true, ['disabled', 'no_privacy_policy'], false),
+    ('unit off', true, true, false, ['unit_disabled', 'no_privacy_policy'], false),
+    ('no destination', true, true, true, ['no_destination', 'no_privacy_policy'], false),
+    ('link present', true, true, true, <String>[], false),
+  ]) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'collapsed measurement privacy warning: $name',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 4000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          capabilities: {
+            AuthorizationCapabilities.formsWrite: true,
+            AuthorizationCapabilities.unitSettingsWrite: manager,
+            AuthorizationCapabilities.formsMeasurementWrite: manager,
+          },
+          occasionUser: OccasionUserModel(isEditor: true),
+          occasion: OccasionModel(
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+            features: [FormFeature(code: 'form')],
+          ),
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final changes = ValueNotifier((accountId: 0, revision: 0));
+        addTearDown(changes.dispose);
+        final form = FormEditorDraft(
+          link: 'test',
+          title: 'Letní koncert',
+          data: {
+            'analytics': {'enabled': formOn},
+          },
+        );
+        form.definition = form.definition.copyWith(
+          measurementStatus: {
+            'organization_enabled': true,
+            'unit_enabled': unitOn,
+            'blocked_reasons': reasons,
+          },
+        );
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: FormSettingsContent(
+              bankConnectionChanges: changes,
+              formLink: 'test',
+              loadBundle: (_) async => FormEditBundle(
+                form: form,
+                productTypes: [],
+                products: [],
+                availableBankAccounts: [],
+              ),
+              saveForm: (_) async {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text(FormStrings.measurementNoPrivacyPolicy),
+          warned ? findsOneWidget : findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   for (final override in [null, false, true]) {
     testWidgetsWithEnvironment(
       () => _environment,

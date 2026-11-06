@@ -9,7 +9,7 @@ const origin='https://unit-measurement.pages.dev',host='https://tickets.example'
 function setup(t){
  const dom=new JSDOM('<body></body>',{url:host+'/form/summer',pretendToBeVisual:true});
  let callbacks=0,safe=true;
- const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,organization:1,unit:2,
+ const policy={enabled:true,organization_allowed:true,runtime_supported:true,privacy_url:"https://organizer.example/privacy",eligible:true,organization:1,unit:2,
   runtime_origin:origin,valid_for_seconds:60,policy_revision:1,configuration_revision:'one'};
  const model={link:'summer',data:{analytics:policy}};
  const runtime=new FormMeasurementRuntime({win:dom.window,model,canRun:()=>safe,onReady:()=>callbacks++});

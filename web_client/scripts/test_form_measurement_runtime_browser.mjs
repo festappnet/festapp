@@ -50,6 +50,20 @@ try {
   await browser('screenshot',path.join(root,`node_modules/.cache/lista-${lang}.png`));
   await run('cleanupCmp()');assert.equal(await run('document.body.style.overflow'),'');
  }
+ for (const privacy of ['https://organizer.example/privacy', '', 'javascript:alert(1)', 'https://user:pass@example.com']) {
+  await run("document.cookie='festapp-measurement-1-2=; Max-Age=0; path=/'");
+  await browser('open',url+'&cmp=1&privacy='+encodeURIComponent(privacy));
+  await browser('wait','--fn','!!window.cleanupCmp');
+  if (privacy==='https://organizer.example/privacy') {
+   assert.equal(await run('document.querySelector(".cookie-modal-notice a").getAttribute("href")'),privacy);
+  } else {
+   assert.equal(await run('document.querySelector("#festapp-measurement-consent, .btn-text, iframe")'),null);
+   assert.equal(await run('document.body.style.overflow'),'');
+   assert.equal(await run('runtime.measurementAllowed()'),false);
+  }
+  await run('cleanupCmp()');
+ }
+ console.log('PASS: consent privacy URL uses organizer HTTPS link and rejects unsafe links');
  await browser('open',url+'&cmp=1'); await browser('wait','--fn','!!window.cleanupCmp && !!document.querySelector(".cookie-modal-notice")'); assert.equal(await run('document.querySelectorAll("iframe").length'),0); await run('document.querySelector(".cookie-modal-notice .cm-btn-success").click()'); await browser('wait','--fn','window.ready === true'); assert.equal(await run('runtime.measurementAllowed()'),true); await browser('reload'); await browser('wait','--fn','!!window.cleanupCmp && runtime.measurementAllowed()'); assert.equal(await run('!!document.querySelector(".cookie-modal, .cookie-notice")'),false,'saved choice restores without opening consent UI'); await run('document.querySelector(".btn-text").click()'); await browser('wait','--fn','!!document.querySelector(".cm-list-input")'); await run('document.querySelector(".cm-list-input").click();document.querySelector(".cm-btn-accept").click()'); await browser('wait','--fn','!runtime.frame'); assert.equal(await run('runtime.measurementAllowed()'),false); console.log('PASS: actual Klaro UI grant, quiet saved-choice restore, reopened preferences and revoke');
  }
 } finally {if(!process.argv.includes('--serve'))try{await browser('close')}catch{} if(host)await host.close();if(server)await new Promise(resolve=>server.close(resolve));await rm(temp,{recursive:true,force:true});}
