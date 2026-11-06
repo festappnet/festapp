@@ -1,3 +1,33 @@
+# vstupenky.online - WordPress.org vydání
+
+## Schválený hosting - 2026-11-06
+
+WordPress.org schválil hosting po kontrole verze 1.0.3. Účet vydavatele je
+`festappnet`, přidělený slug `vstupenky-online` a SVN repozitář
+`https://plugins.svn.wordpress.org/vstupenky-online/`. Nová žádost není potřeba;
+reviewer nežádá další opravy ani odpověď na schvalovací e-mail.
+
+Aktuální hotové vydání **1.0.4** obsahuje nativní volbu vzhledu a zachovává
+opravené `Requires at least: 6.6`. Zdroj i GitHub ZIP jsou v kanonickém mainu.
+Veřejné katalogové vydání proběhlo přes SVN v revizi 3787697.
+Aktuální výsledek a veřejné readbacky zaznamenává
+`evidence/directory-release-20261106.json`.
+
+Před publikací se porovnává přesný ZIP se zdroji, `trunk`, `tags/1.0.4` a devíti
+katalogovými assets. `scripts/verify-submission.py --product vstupenky-online
+--submit-ready` musí projít proti aktuálnímu technickému sealu. Publikuje se
+pouze česká distribuce, bez vnitřního RELEASE.json, testů či přístupových údajů.
+Neměnit již vydané tagy. Po commitu ověřit veřejnou stránku, katalogové API,
+stažitelný ZIP a jeho souborové hashe. Zpoždění indexace vyhledávání není totéž
+co neúspěšné vydání.
+
+SVN má samostatné aplikační heslo uložené v šifrované macOS Klíčence. Pracovní
+kopie smí být jen mode 0600; nesmí jít do repozitáře, argumentů procesů nebo logů.
+Používat `--password-from-stdin --no-auth-cache`. iCloud synchronizace není
+potvrzena, lokální Klíčenka byla ověřena zpětným načtením.
+
+## Historické podání a review před schválením
+
 # vstupenky.online - podklady pro WordPress.org
 
 **Review 2026-10-27:** WordPress.org vyžádal shodné `Requires at least: 6.6`

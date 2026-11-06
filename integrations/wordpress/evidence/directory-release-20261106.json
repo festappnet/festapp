@@ -1,0 +1,97 @@
+{
+  "publisher": "festappnet",
+  "plugin": "vstupenky-online",
+  "version": "1.0.4",
+  "source_commit": "70acaaea3b4ab6cac0458ab8e4178c2f8cbe54b5",
+  "svn_revision": 3787697,
+  "svn_url": "https://plugins.svn.wordpress.org/vstupenky-online",
+  "commit_scope": "trunk, tags/1.0.4, 9 catalog assets",
+  "approved_zip_sha256": "6bb47d136cc978678a0b81e485e7d1dedd3c0a4a983e2fa69a56d50a06a80394",
+  "public_download_sha256": "1186f4a9fb18e4debadca6cb142129a2a1d6c5c3b07ac693d72bdca6e351c0c4",
+  "public_download_file_bytes_match_approved_zip": true,
+  "public_file_count": 12,
+  "api": {
+    "url": "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=vstupenky-online",
+    "version": "1.0.4",
+    "download_link": "https://downloads.wordpress.org/plugin/vstupenky-online.1.0.4.zip",
+    "last_updated": "2026-11-06 10:41am GMT"
+  },
+  "public_page": "https://wordpress.org/plugins/vstupenky-online/",
+  "assets": {
+    "banner-1544x500.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/banner-1544x500.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "381e408e999db89251c6bfca2814008b148158f79e05c8410052792b20653feb",
+      "matches_svn": true
+    },
+    "banner-772x250.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/banner-772x250.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "f7d6ed51deedcaf275cc2f3172ce6595ed5c3c25f6267467fadc6e3328a3737f",
+      "matches_svn": true
+    },
+    "icon-128x128.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/icon-128x128.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "78f93e675ad82b181b72c5a79ab98d0c76bad1417662c9e5d13549ea3dbf5489",
+      "matches_svn": true
+    },
+    "icon-256x256.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/icon-256x256.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "fb1de0797b492e47015a1fbc05a077f1e7a75ea4a009ab80a8cc52bff7b3eb66",
+      "matches_svn": true
+    },
+    "screenshot-1.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-1.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "b97e131b5cb2cb2e7b47baafd4ccbd10beeb14c25243ab9f3c5396f4c9946780",
+      "matches_svn": true
+    },
+    "screenshot-2.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-2.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "d07312773505a6ab7a8d8f68745d3a72ec13d9b62a3e232cfd09fc45d72627ca",
+      "matches_svn": true
+    },
+    "screenshot-3.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-3.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "458143893c983b0024083c048f06d7940ee75bbc8b253e5af940b0e3b6ca4c5a",
+      "matches_svn": true
+    },
+    "screenshot-4.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-4.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "40fe34918f090254c57b69015d44a066afa37bbed9a4057e5a1ae5a6e47b9a71",
+      "matches_svn": true
+    },
+    "screenshot-5.png": {
+      "url": "https://ps.w.org/vstupenky-online/assets/screenshot-5.png?rev=3787697",
+      "http_status": 200,
+      "sha256": "8b0944cef7c3518d44d561c2fc2ad2f726858b1b0f7f3e9c702857581efefef4",
+      "matches_svn": true
+    }
+  },
+  "verification_scope": "SVN trunk/tag exports each contain 12 plugin files; public directory download matches all 12 approved ZIP file hashes; all 9 public asset bytes match staged assets.",
+  "caveat": "Gutenberg editor browser canvas was not independently verified; no claim is made for that check.",
+  "verified_at_utc": "2026-11-06T10:45:47.418510+00:00",
+  "catalog_install": {
+    "wordpress": "6.6",
+    "php": "7.4.33",
+    "command": "wp plugin install vstupenky-online --force --activate",
+    "version": "1.0.4",
+    "status": "active",
+    "success": true
+  },
+  "credential_storage": {
+    "store": "encrypted macOS login Keychain",
+    "server": "plugins.svn.wordpress.org",
+    "account": "festappnet",
+    "label": "WordPress.org SVN - festappnet",
+    "readback_verified": true,
+    "synchronizable": false,
+    "icloud_limitation": "CLI process lacks required entitlement for synchronizable storage; no iCloud sync claim",
+    "temporary_copies_removed": true
+  }
+}

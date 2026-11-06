@@ -1,5 +1,18 @@
 # vstupenky.online a Festapp Tickets pro WordPress
 
+Oficiální české vydání **1.0.4** je dostupné v
+[katalogu WordPress.org](https://wordpress.org/plugins/vstupenky-online/).
+SVN revize 3787697 obsahuje trunk, neměnný tag 1.0.4 a katalogové obrázky;
+veřejný ZIP odpovídá všemi 12 soubory připravenému vydání a instalace přímo
+z katalogu prošla na WordPress 6.6/PHP 7.4.33. [Publikační důkaz](evidence/directory-release-20261106.json).
+
+Katalogová grafika byla následně obnovena v SVN revizi **3787773**: kanonické
+V logo, oba bannery a pět skutečných českých screenshotů. Všech devět veřejných
+obrázků odpovídá schváleným hashům. Doplněk zůstává 1.0.4, bez změny ZIPu či
+vydaného tagu. [Důkaz aktualizace](evidence/catalog-refresh-20261106.json) a
+[lokální přehled](catalog/preview.html).
+Globální varianta se tímto krokem nevydává.
+
 [Zkušenosti z review](REVIEW-LESSONS.md) zaznamenávají přehlédnutá pravidla a jejich
 prevenci. Sémantiku minimální WP verze hlídá generátor i ověření zapečetěného ZIPu;
 regresní případy lze spustit `python3 scripts/test_metadata_contract.py`.

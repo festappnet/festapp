@@ -1,0 +1,17 @@
+{
+  "scope": "WordPress.org assets-only; trunk and tag 1.0.4 immutable",
+  "plugin": "vstupenky-online",
+  "version": "1.0.4",
+  "source_base": "1a1985285a79d547b41c39511f59d9ec790ae6dd",
+  "files": {
+    "icon-128x128.png": "1479cafcae9c95c48d107cc9d5cab4194bc1fbf12812fa397b177a86288f6680",
+    "icon-256x256.png": "95c1505b76275bf6362d69e7ba938dcd00dfe0f9eb00138c9f025eb4a3dea8d5",
+    "banner-772x250.png": "05e49efabf16a594d10ba652f62bedb8eb1cf21965c03c2f2186bc105769b2c0",
+    "banner-1544x500.png": "6dd09918a4d0f10816bee06331385014100ff3f02ab44587be20c4f8bf5ca6f4",
+    "screenshot-1.png": "52ed2d59174301762d831d1da930f8057f6f63f1efc401a412609fb31a865bf6",
+    "screenshot-2.png": "516891b155fff37d87f6257bdc7a2b5e93f6d74f2a0f21ba8604a8071989d126",
+    "screenshot-3.png": "493b9f13f672a5d33a856669ff1c1d5ef0d9c9da308c889dddc887816dc88b03",
+    "screenshot-4.png": "6a84a8e0293395bce8471c3c47445cb0d20c1a2fc20356128086434cbc5b5d7b",
+    "screenshot-5.png": "a4f56486f54fafd2006322f5d2eab4a989fccf7bb21962f01c8826cf4d5629ff"
+  }
+}
