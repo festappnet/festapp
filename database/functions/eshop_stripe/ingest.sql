@@ -46,6 +46,7 @@ BEGIN
    OR p_event->>'type' IS DISTINCT FROM 'festapp.reconcile' OR p_facts->'movements'<>'[]'::jsonb OR p_facts->'disputes'<>'[]'::jsonb))
   OR (a.session_id IS NOT NULL AND a.session_id<>p_facts->>'sessionId')
   OR (a.payment_intent_id IS NOT NULL AND a.payment_intent_id IS DISTINCT FROM p_facts->>'paymentIntentId')
+  OR p_facts->>'sessionStatus' IS NULL OR p_facts->>'sessionStatus' NOT IN ('open','complete','expired')
   OR jsonb_typeof(p_facts->'movements') IS DISTINCT FROM 'array' OR jsonb_array_length(p_facts->'movements')>501
   OR jsonb_typeof(p_facts->'disputes') IS DISTINCT FROM 'array' OR jsonb_array_length(p_facts->'disputes')>100 THEN
   RAISE EXCEPTION 'STRIPE_FACT_IDENTITY_INVALID'; END IF;
@@ -74,7 +75,7 @@ BEGIN
  END LOOP;
  FOR fact IN SELECT value FROM jsonb_array_elements(p_facts->'disputes') LOOP
   IF fact->>'providerId' IS NULL OR fact->>'providerId' !~ '^(dp|du)_[A-Za-z0-9]+$'
-   OR (fact->>'amountMinor')::bigint NOT BETWEEN 1 AND a.amount_minor OR fact->>'currency' IS DISTINCT FROM a.currency
+   OR (fact->>'amountMinor') IS NULL OR (fact->>'amountMinor')::numeric<>trunc((fact->>'amountMinor')::numeric) OR (fact->>'amountMinor')::bigint NOT BETWEEN 1 AND a.amount_minor OR fact->>'currency' IS DISTINCT FROM a.currency
    OR fact->>'status' IS NULL OR fact->>'status' NOT IN ('warning_needs_response','warning_under_review','warning_closed','needs_response','under_review','won','lost') THEN
    RAISE EXCEPTION 'STRIPE_DISPUTE_INVALID'; END IF;
   SELECT * INTO d FROM eshop.stripe_disputes WHERE connection_id=c.id AND provider_id=fact->>'providerId';
@@ -84,68 +85,16 @@ BEGIN
   VALUES(c.id,fact->>'providerId',a.id,(fact->>'amountMinor')::bigint,fact->>'status',observed)
   ON CONFLICT(connection_id,provider_id) DO UPDATE SET status=excluded.status,observed_at=excluded.observed_at;
  END LOOP;
- PERFORM public.refresh_payment_info_totals_internal(pi.id);
- SELECT * INTO STRICT totals FROM public.payment_financial_totals_internal(pi.id);
- SELECT coalesce(sum(amount_minor) FILTER(WHERE kind='payment'),0)/100.0,
-  coalesce(sum(amount_minor) FILTER(WHERE kind='refund'),0)/100.0 INTO card_received,card_refunded
- FROM eshop.stripe_payment_movements WHERE attempt_id=a.id;
- IF card_received*100>a.amount_minor OR card_refunded>card_received THEN RAISE EXCEPTION 'STRIPE_TOTALS_INVALID'; END IF;
- -- Actual provider money must survive a historical/manual overpayment. Hold
- -- admission and delivery for explicit resolution instead of rejecting the fact.
- financial_conflict:=totals.gross_received>pi.amount OR totals.external_received<>0;
- IF financial_conflict AND NOT EXISTS(SELECT 1 FROM eshop.stripe_admission_decisions WHERE attempt_id=a.id AND reason='financial_conflict') THEN
-  UPDATE eshop.stripe_checkout_attempts SET state='action_required' WHERE id=a.id;
-  INSERT INTO eshop.stripe_admission_decisions(attempt_id,reason,provider_revision) VALUES(a.id,'financial_conflict',p_event->>'id');
-  UPDATE eshop.orders SET email_payment_version=email_payment_version+1 WHERE id=o.id;
-  PERFORM public.cancel_order_email_intents(o.id);
-  changed:=true;
- END IF;
  UPDATE eshop.stripe_checkout_attempts SET session_id=p_facts->>'sessionId',payment_intent_id=p_facts->>'paymentIntentId',refund_cursor=p_facts->>'refundCursor',
-  session_lookup_cursor=NULL,session_lookup_found=NULL
- WHERE id=a.id;
- SELECT min(occurred_at) INTO payment_time FROM eshop.stripe_payment_movements WHERE attempt_id=a.id AND kind='payment';
- IF card_received>=pi.amount AND card_refunded<pi.amount AND NOT financial_conflict AND p_facts->>'refundCursor' IS NULL THEN
-  IF o.state IN ('ordered','created') AND payment_time<=a.reservation_expires_at THEN
-   transition:=public.update_order_and_tickets_to_paid(o.id);
-   IF transition->>'code' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'STRIPE_PAID_TRANSITION_FAILED'; END IF;
-   changed:=true;
-  ELSIF o.state NOT IN ('paid','sent') THEN
-   UPDATE eshop.stripe_checkout_attempts SET state='action_required' WHERE id=a.id;
-   IF NOT EXISTS(SELECT 1 FROM eshop.stripe_admission_decisions WHERE attempt_id=a.id AND reason='late_payment') THEN
-    INSERT INTO eshop.stripe_admission_decisions(attempt_id,reason,provider_revision) VALUES(a.id,'late_payment',p_event->>'id');
-   END IF;
-  END IF;
-  UPDATE eshop.stripe_checkout_attempts SET state=CASE WHEN state='action_required' THEN state ELSE 'paid' END WHERE id=a.id;
- END IF;
- IF card_refunded>=pi.amount AND card_received>0 THEN
-  IF NOT EXISTS(SELECT 1 FROM eshop.stripe_admission_decisions WHERE attempt_id=a.id AND reason='full_refund') THEN
-   SELECT array_agg(t.id) INTO cancelled FROM public.get_order_tickets_internal(o.id) person JOIN eshop.tickets t ON t.id=person.id
-    WHERE coalesce(t.state,'') NOT IN ('used','storno');
-   PERFORM public.internal_storno_tickets_221(cancelled);
-   INSERT INTO eshop.stripe_admission_decisions(attempt_id,reason,ticket_ids,provider_revision) VALUES(a.id,'full_refund',coalesce(cancelled,'{}'),p_event->>'id');
-   UPDATE eshop.orders SET state='storno',email_payment_version=email_payment_version+1,updated_at=clock_timestamp() WHERE id=o.id;
-   PERFORM public.cancel_order_email_intents(o.id);
-   changed:=true;
-  END IF;
- ELSIF totals.gross_received=0 AND p_facts->>'sessionStatus'='expired' AND o.state='ordered' THEN
-  SELECT array_agg(t.id) INTO cancelled FROM public.get_order_tickets_internal(o.id) person JOIN eshop.tickets t ON t.id=person.id WHERE coalesce(t.state,'') NOT IN ('used','storno');
-  PERFORM public.internal_storno_tickets_221(cancelled);
-  UPDATE eshop.orders SET state='expired',email_payment_version=email_payment_version+1,updated_at=clock_timestamp() WHERE id=o.id;
-  UPDATE eshop.stripe_checkout_attempts SET state='expired' WHERE id=a.id;
-  PERFORM public.cancel_order_email_intents(o.id);
-  changed:=true;
- END IF;
- projection:=public.stripe_order_payment_projection_internal(o.id);
- IF projection->>'admissionState' IS DISTINCT FROM before_projection->>'admissionState' AND
-  (projection->>'status'='disputed' OR before_projection->>'status'='disputed'
-   OR projection->'reconciliationPending'='true'::jsonb OR before_projection->'reconciliationPending'='true'::jsonb) THEN
-  UPDATE eshop.orders SET email_payment_version=email_payment_version+1 WHERE id=o.id;
-  INSERT INTO eshop.stripe_admission_decisions(attempt_id,reason,provider_revision)
-  VALUES(a.id,CASE WHEN projection->>'status'='disputed' THEN 'dispute_hold' WHEN before_projection->>'status'='disputed' THEN 'dispute_release'
-   WHEN projection->'reconciliationPending'='true'::jsonb THEN 'reconciliation_hold' ELSE 'reconciliation_release' END,p_event->>'id');
-  IF projection->>'admissionState'='valid' THEN PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
-  changed:=true;
- END IF;
+  session_lookup_cursor=NULL,session_lookup_found=NULL WHERE id=a.id;
+ BEGIN
+  transition:=public.apply_provider_payment_effects_internal('stripe',a.id,p_event->>'id',before_projection,p_facts->>'sessionStatus'='expired');
+ EXCEPTION WHEN raise_exception THEN
+  -- Retained service RPC diagnostic; domain behavior still has one owner.
+  IF SQLERRM='PAYMENT_PAID_TRANSITION_FAILED' THEN RAISE EXCEPTION 'STRIPE_PAID_TRANSITION_FAILED'; END IF;
+  RAISE;
+ END;
+ projection:=transition->'payment';changed:=changed OR (transition->>'changed')::boolean;
  UPDATE eshop.stripe_checkout_attempts SET last_synced_at=observed,lease_token=NULL,lease_expires_at=NULL,reconcile_failures=0,
   next_reconcile_at=clock_timestamp()+CASE WHEN refund_cursor IS NOT NULL THEN interval '10 seconds' WHEN state IN ('paid','action_required') THEN interval '1 day' ELSE interval '2 minutes' END WHERE id=a.id;
  v_receipt:=public.complete_profile_inventory_membership_mutation_v1(command,o.occasion,'inventory.order.stripe_sync',

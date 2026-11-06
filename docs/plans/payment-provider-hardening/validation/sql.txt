@@ -1,0 +1,13 @@
+
+▶ Running: database/tests/eshop/stripe/connection_status_test.sql
+
+▶ Running: database/tests/eshop/stripe/admission_test.sql
+  ✔ PASSED
+  ✔ PASSED
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED
+  ✔ PASSED
+
+==================================================
+SUMMARY: 39 Passed, 0 Failed
+==================================================

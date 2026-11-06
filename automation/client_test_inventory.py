@@ -75,9 +75,24 @@ def main():
     manifest = json.loads(MANIFEST.read_text())
     expected = Counter({tuple(row[:3]): row[3] for row in manifest["cases"]})
     actual = cases(sorted(Path(location).glob("*.jsonl")), manifest["moves"])
-    missing, added = expected - actual, actual - expected
-    # New behavior cases are allowed; duplicate executions of existing cases are not.
-    duplicates = {key: count for key, count in actual.items() if count > 1}
+    # Optional fixture cases may gain coverage when their environment is present.
+    # The reverse is never compatible: a runnable baseline must still execute.
+    compatible = actual.copy()
+    for (source, name, skipped), count in expected.items():
+        if not skipped:
+            continue
+        runnable = (source, name, False)
+        optional = (source, name, True)
+        gained = min(max(0, count - compatible[optional]),
+                     max(0, compatible[runnable] - expected[runnable]))
+        compatible[runnable] -= gained
+        compatible[optional] += gained
+    missing, added = expected - compatible, compatible - expected
+    # A skipped and runnable registration of the same case is also a duplicate.
+    registrations = Counter()
+    for (source, name, _skipped), count in actual.items():
+        registrations[(source, name)] += count
+    duplicates = {key: count for key, count in registrations.items() if count > 1}
     if missing or duplicates:
         print(f"Inventory FAILED: {len(missing)} missing, {len(duplicates)} duplicated", file=sys.stderr)
         for key in list(missing)[:15]:

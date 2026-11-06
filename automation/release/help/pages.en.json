@@ -132,17 +132,17 @@
     "category": "integrations",
     "slug": "wordpress",
     "title": "Sell tickets on WordPress",
-    "seoTitle": "WordPress ticket sales with a Custom HTML embed",
-    "description": "Generate the HTML embed, add it to a WordPress Custom HTML block and check the published form.",
+    "seoTitle": "WordPress ticket sales with the vstupenky.online plugin",
+    "description": "Install the official vstupenky.online plugin, insert a public ticket form and configure its appearance. Includes the Custom HTML alternative.",
     "label": "WordPress",
-    "preview": "en/wordpress/03-custom-html"
+    "preview": "en/embed/01-generated-code"
   },
   {
     "id": "joomla",
     "category": "integrations",
     "slug": "joomla",
     "label": "Joomla",
-    "preview": "en/joomla/02-module",
+    "preview": "en/joomla/03-article",
     "title": "Add ticket sales to Joomla",
     "seoTitle": "Joomla ticket module: installation and article embedding",
     "description": "Install the vstupenky.online module in Joomla 5 or 6, configure your public form URL and display ticket sales in an article or template position."

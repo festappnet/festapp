@@ -1,0 +1,207 @@
+{
+  "status": "deployed and live version verified",
+  "sourceMain": "2079959f5da7b5607aa039f89f8a040318974845",
+  "previousMain": "90551967ed7c230c2fb6eb07acdb44ae790aa710",
+  "sourceWorktree": "/tmp/festapp-complete-release-20261105",
+  "sourceTree": "0af33fd27898123350b52c18cbd10a19c2a481a3",
+  "scope": "prod/festapptickets, vstupenky.online, organization3 only",
+  "sourceSnapshot": {
+    "base": "25d119683",
+    "featureTree": "fea8c09eaea518d9b91a0dbe74bd56a731c67ea1",
+    "capturedFeaturePaths": 88,
+    "changedSinceCapture": 0
+  },
+  "validation": {
+    "localReleaseJobsPassed": 8,
+    "exactSourceGithubReleaseJobsPassed": 8,
+    "localEvidence": "/tmp/festapp-complete-release-evidence-20261105",
+    "extraBroadSuites": "failed; see extra-broad-failures.json and extra-full-client.log; not a claim that all repository tests pass"
+  },
+  "backend": {
+    "backup": "20261101-050839F_20261105-183707D",
+    "migrations": [
+      "20261105223000_form_embed_appearance.sql",
+      "20261105230000_notification_read_history_compaction.sql"
+    ],
+    "transactionPreservedReadReceiptsAndWatermarks": true,
+    "readOrdinarySummaryRowsBeforeAfter": [
+      112,
+      34
+    ],
+    "eligibleMemberSummaryMismatches": 0
+  },
+  "workspaceCaution": "Original checkout remains on old a312 main with the user changes preserved. Feature edits were transferred by a three-way patch to canonical main, preserving current presale changes. Do not deploy the original unmerged 183000 form migration or stage/push the original dirty checkout wholesale.",
+  "finalRelease": {
+    "completed_at_utc": "2026-11-05T18:54:43Z",
+    "target": {
+      "tenant": "festapptickets",
+      "production_branch": "prod/festapptickets",
+      "domain": "https://vstupenky.online",
+      "pages_deployment": "https://ee20033e.vstupenkyonline.pages.dev",
+      "organization_id": 3,
+      "backend_host": "festapp-supabase-rehearsal-01",
+      "backend_database": "festapp_rehearsal_20260909220601"
+    },
+    "source": {
+      "main_sha": "2079959f5da7b5607aa039f89f8a040318974845",
+      "tenant_sha": "5b6e786ffcfdab4d8dd6cea3a537a300f003ad77",
+      "required_exact_source_github_checks": "8/8 passed",
+      "tenant_drift_check": "passed",
+      "tenant_tree_clean": true,
+      "final_remote_main": "2079959f5da7b5607aa039f89f8a040318974845",
+      "final_remote_prod_festapptickets": "5b6e786ffcfdab4d8dd6cea3a537a300f003ad77"
+    },
+    "release": {
+      "version": "0.20.515+1022",
+      "local_build": "passed",
+      "bundle_verification": "passed",
+      "direct_upload": "passed",
+      "live_version_probes": "3 consecutive coherent probes passed",
+      "build_log": "/tmp/festapp-complete-tenant-build-20261105.log",
+      "deploy_log": "/tmp/festapp-complete-tenant-deploy-20261105.log"
+    },
+    "database": {
+      "backup_label": "20261101-050839F_20261105-183707D",
+      "backup_archive_verification": "passed",
+      "atomic_sql_artifact": "/tmp/festapp-complete-release-sql-20261105/apply.sql",
+      "atomic_sql_sha256": "556a07883fc028f9b1240abbe23d43aedc39ee3b4d8a7b45fad6a75b0ecc8d84",
+      "migrations": [
+        {
+          "version": "20261105223000",
+          "name": "form_embed_appearance",
+          "source_sha256": "67ced41b6139deb1f1dfc202b3558e855607180be9c6facac1142f603fb42de4",
+          "ledger_source_match": true
+        },
+        {
+          "version": "20261105230000",
+          "name": "notification_read_history_compaction",
+          "source_sha256": "e9ac7d8b80489344357288453fc640821b719a5093b3850bd865520fbfac1121",
+          "ledger_source_match": true
+        }
+      ],
+      "read_history_and_user_watermark_transaction_fingerprints": "unchanged",
+      "org3_projection": {
+        "scopes_ready": 49,
+        "pending_or_privacy_debt_or_quarantine": 0,
+        "summaries": 87,
+        "eligible_member_summary_mismatches": 0,
+        "eligible_orphan_members": 0,
+        "duplicate_read_ordinary_summaries": 0
+      },
+      "rpc_and_helper_acl_checks": "passed"
+    }
+  },
+  "extraBroadValidation": {
+    "scope": "Extra broad repository checks, outside the eight-job release contract",
+    "worktree": "/tmp/festapp-complete-release-20261105",
+    "results": {
+      "web": {
+        "lanes": [
+          {
+            "name": "web",
+            "status": "FAIL",
+            "exitCode": 1,
+            "seconds": 19.455397874990012
+          }
+        ],
+        "selected": [
+          "web"
+        ],
+        "seconds": 19.45610150002176,
+        "success": false,
+        "complete": true
+      },
+      "db": {
+        "lanes": [
+          {
+            "name": "db",
+            "status": "FAIL",
+            "exitCode": 1,
+            "seconds": 57.5858860409935
+          },
+          {
+            "name": "deno",
+            "status": "FAIL",
+            "exitCode": 1,
+            "seconds": 27.35118016699562
+          }
+        ],
+        "selected": [
+          "db",
+          "deno"
+        ],
+        "seconds": 84.94410433300072,
+        "success": false,
+        "complete": true
+      },
+      "extra": {
+        "lanes": [
+          {
+            "name": "web",
+            "status": "FAIL",
+            "exitCode": 124,
+            "seconds": 60.050722417014185
+          },
+          {
+            "name": "deno",
+            "status": "FAIL",
+            "exitCode": 1,
+            "seconds": 32.12405929202214
+          },
+          {
+            "name": "integration",
+            "status": "PASS",
+            "exitCode": 0,
+            "seconds": 0.6596520419698209
+          },
+          {
+            "name": "automation",
+            "status": "FAIL",
+            "exitCode": 1,
+            "seconds": 31.359472540963907
+          }
+        ],
+        "selected": [
+          "automation",
+          "deno",
+          "integration",
+          "web"
+        ],
+        "seconds": 124.20293324999511,
+        "success": false,
+        "complete": true
+      }
+    },
+    "sqlFailures": [
+      "database/tests/demo_occasions_test.sql",
+      "database/tests/client_sync_v1_contract_test.sql",
+      "database/tests/security/data_security_reads_test.sql",
+      "database/tests/security/data_security_auth_test.sql",
+      "database/tests/notification_center/open_latency_test.sql",
+      "database/tests/eshop_orders/waitlist_fakturoid_recovery_test.sql",
+      "database/tests/eshop_orders/orders_history_bundle_test.sql",
+      "database/tests/eshop/ticketing_delete_versions_test.sql",
+      "database/tests/eshop/spot_assignment_boundaries_test.sql",
+      "database/tests/eshop/cash_account_priority_test.sql",
+      "database/tests/eshop/blueprint_reservation_integrity_test.sql",
+      "database/tests/eshop/blueprint_authoring_test.sql",
+      "database/tests/eshop/ticket_batches/lifecycle_test.sql",
+      "database/tests/eshop/stripe/form_recipient_test.sql",
+      "database/tests/eshop/orders/update_ticket_products_ws_test.sql",
+      "database/tests/eshop/integration/full_deposit_flow_test.sql",
+      "database/tests/emails/account_intent_atomicity_test.sql",
+      "database/tests/blueprint/copy_setup_test.sql"
+    ],
+    "note": "The changed notification full-page latency fixture has since been corrected and passed focused validation. Other broad failures require separate diagnosis; this receipt is not a passing-test claim."
+  },
+  "extraFullClient": {
+    "status": "blocked before executing tests",
+    "log": "/tmp/festapp-complete-full-client.log",
+    "reason": "Pre-existing private SDK fixture import and unclassified Flutter roots in the all-client contract."
+  },
+  "resources": {
+    "ownedExtraDatabase59632": "stopped",
+    "localCIMirrorDatabase55442": "stopped",
+    "userForwardPorts": "preserved"
+  }
+}

@@ -24,8 +24,8 @@ BEGIN
       || 'Ručně evidováno: ' || (item->>'manual_received') || E'\n'
       || 'Ostatní příjmy: ' || (item->>'other_received') || E'\n';
     IF item ? 'stripe_received' THEN
-      result:=result||'Z toho přijato přes Stripe: '||(item->>'stripe_received')||E'\n'
-       ||'Z toho vráceno přes Stripe: '||(item->>'stripe_refunded')||E'\n'
+      result:=result||'Z toho přijato platební bránou: '||(item->>'stripe_received')||E'\n'
+       ||'Z toho vráceno platební bránou: '||(item->>'stripe_refunded')||E'\n'
        ||'Částka ve sporu (není vratka): '||(item->>'disputed')||E'\n'
        ||'Dostupné po odečtení sporů: '||(item->>'available_after_disputes')||E'\n';
     END IF;

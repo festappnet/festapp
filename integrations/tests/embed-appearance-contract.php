@@ -44,7 +44,7 @@ namespace {
                 foreach ($outputs as $html) {
                     check(str_contains($html, 'data-festapp-embed-host'), 'Shared host wrapper');
                     check(str_contains($html, '<iframe data-festapp-embed '), 'Shared protocol');
-                    check(str_contains($html, 'data-festapp-style="' . ($inheritStyle ? 'inherit' : 'default') . '"'), 'Every native adapter emits the same explicit appearance contract');
+                    check(!str_contains($html, 'data-festapp-style'), 'Saved form exclusively owns appearance');
                     check(str_contains($html, 'style="display:block;width:100%;max-width:100%;border:0"'), 'Responsive block iframe without baseline gap');
                     check(!str_contains($html, 'width="100%"'), 'CSS is the only width owner');
                     check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed'), 'Height is independent of appearance');
@@ -56,13 +56,13 @@ namespace {
         foreach ([$wordpress(['url' => "$origin/form/ples-2027"]),
                   $shortcode(['url' => "$origin/form/ples-2027"]),
                   $joomla::render(['url' => "$origin/form/ples-2027"])] as $html) {
-            check(str_contains($html, 'data-festapp-style="inherit"'), 'Missing native preference defaults to inherit');
+            check(!str_contains($html, 'data-festapp-style'), 'Saved form owns appearance even with stale adapter input');
         }
         foreach (['<script>alert(1)</script>', ['invalid']] as $invalid) {
             foreach ([$wordpress(['url' => "$origin/form/ples-2027", 'inheritStyle' => $invalid]),
                       $shortcode(['url' => "$origin/form/ples-2027", 'inherit_style' => $invalid]),
                       $joomla::render(['url' => "$origin/form/ples-2027", 'inherit_style' => $invalid])] as $html) {
-                check(str_contains($html, 'data-festapp-style="default"'), 'Invalid preference fails closed without another rendering path');
+                check(!str_contains($html, 'data-festapp-style'), 'Saved form owns appearance even with stale adapter input');
                 check(!str_contains($html, 'alert(1)'), 'Preference input is never rendered as markup');
             }
         }

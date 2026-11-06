@@ -12,10 +12,10 @@ BEGIN
   RAISE check_violation USING MESSAGE='BLUEPRINT_SEAT_PROTECTED'; END IF;
  analysis:=public.analyze_new_order_spots(p_spot_ids);
  details:=public.blueprint_order_input_internal(p_spot_ids,p_input_data,analysis);
- IF p_input_data->>'payment_method'='stripe' OR EXISTS(
+ IF p_input_data->>'payment_method'<>'bank' OR EXISTS(
   SELECT 1 FROM eshop.spots s JOIN eshop.order_product_ticket i ON i.id=s.order_product_ticket
   JOIN eshop.orders o ON o.id=i."order" JOIN eshop.payment_info p ON p.id=o.payment_info
-  WHERE s.id=ANY(p_spot_ids) AND p.payment_method='stripe') THEN RAISE EXCEPTION 'STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
+  WHERE s.id=ANY(p_spot_ids) AND p.payment_method<>'bank') THEN RAISE EXCEPTION 'STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT x."order" FROM eshop.spots s
   JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spot_ids)));
  PERFORM 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) ORDER BY id FOR UPDATE;

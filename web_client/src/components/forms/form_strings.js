@@ -12,6 +12,11 @@ export class FormStrings {
     static get currencySelectLabel() { return LocalizationService.tr('FormsFeature.inWhatCurrency'); }
 
     // Form Settings Feature
+    static get measurementConsentTitle() { return LocalizationService.tr('FeatureFormSettings.measurementConsentTitle'); }
+    static get measurementConsentAccept() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAccept'); }
+    static get measurementConsentSave() { return LocalizationService.tr('FeatureFormSettings.measurementConsentSave'); }
+    static get measurementConsentClose() { return LocalizationService.tr('FeatureFormSettings.measurementConsentClose'); }
+    static get measurementConsentPrivacy() { return LocalizationService.tr('FeatureFormSettings.measurementConsentPrivacy'); }
     static get measurementConsentDecline() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDecline'); }
     static get measurementConsentService() { return LocalizationService.tr('FeatureFormSettings.measurementConsentService'); }
     static get measurementConsentDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDescription'); }

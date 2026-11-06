@@ -1,0 +1,1 @@
+{"project_id_filter":"festapp-payment-provider-hardening","backup":false,"message":"Stopped supabase local development setup."}

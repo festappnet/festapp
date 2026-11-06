@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/forms.dart';
 import '../payment_method_strings.dart';
@@ -29,25 +30,25 @@ class PaymentMethodPicker extends StatelessWidget {
             onChanged: (value) {
               if (value != null) onChanged(value);
             },
-            title: Text(PaymentMethodStrings.text(method)),
+            title: Text(PaymentMethodStrings.text(paymentConnectors.get(method)?.labelKey ?? method)),
             contentPadding: EdgeInsets.zero,
           )
       else if (methods.length == 1 && !implicitBank)
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(PaymentMethodStrings.text(methods.single))),
-      if (selected == 'stripe') ...[
-        if (options.recipientName?.isNotEmpty == true)
-          Text(PaymentMethodStrings.recipient(options.recipientName!)),
+            child: Text(PaymentMethodStrings.text(paymentConnectors.get(methods.single)?.labelKey ?? methods.single))),
+      if (paymentConnectors.contains(selected)) ...[
+        if (options.providers[selected]?.recipientName?.isNotEmpty == true)
+          Text(PaymentMethodStrings.recipient(options.providers[selected]!.recipientName!)),
         Text(PaymentMethodStrings.text('fullAmount')),
         Text(PaymentMethodStrings.reservation(options.reservationSeconds)),
-        Text(PaymentMethodStrings.text('stripeHint')),
+        Text(PaymentMethodStrings.text(paymentConnectors.get(selected)!.hintKey)),
       ],
-      if (options.stripeConfigured && !methods.contains('stripe'))
+      if (options.cardConfigured && !methods.any(paymentConnectors.contains))
         Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-                PaymentMethodStrings.reason(options.stripeReasonFor(surface)))),
+                PaymentMethodStrings.reason(options.cardReasonFor(surface)))),
       if (methods.isEmpty)
         Semantics(
             liveRegion: true,

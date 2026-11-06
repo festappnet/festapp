@@ -8,6 +8,7 @@ import '../../support/fixtures/localization_log_fixture.dart';
 
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui' show PointerDeviceKind;
 
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/html/html_strings.dart';
@@ -275,9 +276,17 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(CountdownWidget), findsOneWidget);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await tester.ensureVisible(find.byType(CountdownWidget));
+      await mouse.moveTo(tester.getCenter(find.byType(CountdownWidget)));
+      await tester.pump();
       await tester.tap(find.byTooltip(HtmlStrings.moveUp));
       await tester.pump();
       expect(controller.html, startsWith(countdownBlockHtml));
+      await mouse.moveTo(tester.getCenter(find.byType(CountdownWidget)));
+      await tester.pump();
       await tester.tap(find.byTooltip(HtmlStrings.moveDown));
       await tester.pump();
       expect(controller.html, '<p>Before</p>$countdownBlockHtml<p>After</p>');

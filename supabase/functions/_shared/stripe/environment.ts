@@ -101,6 +101,7 @@ export function stripePaymentDependencies(): StripePaymentsDependencies {
       if (error) {
         if(error.message==='INVALID_CAPABILITY')throw new StripeBoundaryError('invalid_capability');
         if(error.code==='PT429')throw new StripeBoundaryError('payment_rate_limited',true);
+        if(error.message==='STRIPE_SYNC_LEASE_INVALID')throw new StripeBoundaryError('payment_lease_lost',true);
         throw new Error("stripe_action_rejected");
       }
       return data;

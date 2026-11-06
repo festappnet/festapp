@@ -1,0 +1,244 @@
+{
+  "status": "deployed and verified",
+  "frontend": {
+    "completed_at_utc": "2026-11-05T19:58:49Z",
+    "target": {
+      "tenant": "festapptickets",
+      "production_branch": "prod/festapptickets",
+      "domain": "https://vstupenky.online",
+      "organization_id": 3,
+      "pages_deployment": "https://21cf24dc.vstupenkyonline.pages.dev"
+    },
+    "source": {
+      "main_sha": "68ac931c54ac2c0f7867dfbe31e2e6de1d237db4",
+      "tenant_sha": "09384519d765337b596f2ca963af771cff40f6f4",
+      "required_exact_source_github_checks": "8/8 passed",
+      "tenant_drift_check": "passed",
+      "tenant_tree_clean": true,
+      "final_remote_main": "68ac931c54ac2c0f7867dfbe31e2e6de1d237db4",
+      "final_remote_prod_festapptickets": "09384519d765337b596f2ca963af771cff40f6f4"
+    },
+    "release": {
+      "version": "0.20.517+1024",
+      "manifest_preflight": "passed",
+      "local_build": "passed",
+      "bundle_verification": "passed",
+      "direct_upload": "passed",
+      "live_version_probes": "3 consecutive coherent probes passed",
+      "database_migrations": "none; no database changes",
+      "build_log": "/tmp/festapp-appearance-cache-pin-517-build-20261105.log",
+      "deploy_log": "/tmp/festapp-appearance-cache-pin-517-deploy-20261105.log"
+    },
+    "pinned_embed_helper": {
+      "url": "https://vstupenky.online/embed.js?v=appearance-1",
+      "local_sha256": "9fe20c1b918dd628ffc721658ed067c277fc80b46ac3111fcf7b1380d68fd788",
+      "live_sha256": "9fe20c1b918dd628ffc721658ed067c277fc80b46ac3111fcf7b1380d68fd788",
+      "bytes_match": true,
+      "inherit_style_mapping": "inherit -> inheritStyle=true; default -> inheritStyle=false",
+      "cache_control": "max-age=14400, must-revalidate",
+      "headers_path": "/tmp/festapp-appearance-cache-pin-517-embed-headers-20261105.txt"
+    }
+  },
+  "backend": {
+    "captured_at_utc": "2026-11-05T20:20:00Z",
+    "target": {
+      "host": "festapp-supabase-rehearsal-01",
+      "database": "festapp_rehearsal_20260909220601",
+      "organization_id": 3,
+      "tenant": "festapptickets"
+    },
+    "backup": {
+      "label": "20261101-050839F_20261105-200259D",
+      "type": "diff",
+      "archive_check_passed": true,
+      "protected_receipt_owner": "root",
+      "protected_receipt_mode": "0600"
+    },
+    "migration": {
+      "main_sha": "5934dd76d815125518b8a2f06af960ddb51d8c7a",
+      "version": "20261105233000",
+      "name": "notification_order_visibility",
+      "source_sha256": "a15bd1cf35dfec7938ed69e5ffdeffce05967ced6a2adf5bfd212ce2a83dc88f",
+      "atomic_apply_artifact": "/tmp/festapp-order-visibility-233-20261105/apply.sql",
+      "atomic_apply_sha256": "4f86e739e38b0d0c107694a97f36f9771e84b0727050914315f2b7e6b2eb3d63",
+      "ledger_readback_source_sha256": "a15bd1cf35dfec7938ed69e5ffdeffce05967ced6a2adf5bfd212ce2a83dc88f",
+      "prerequisite_230000_sha256": "e9ac7d8b80489344357288453fc640821b719a5093b3850bd865520fbfac1121",
+      "status": "committed",
+      "apply_log": "/tmp/festapp-order-visibility-233-20261105/apply.log"
+    },
+    "unchanged_read_state": {
+      "read_batches_rows_before_after": 115,
+      "read_batches_sha256_before_after": "51133a1b0e4531249b17b03738d404ac452f7db32cd5acd638da21dfbd80728e",
+      "user_state_rows_before_after": 50,
+      "user_state_sha256_before_after": "1df1b03b5773348b3b297999283426e336129507ed9d9c069594332d9b78695b",
+      "last_delivery_sum_before_after": 994,
+      "read_through_sum_before_after": 88,
+      "seen_through_sum_before_after": 501,
+      "view_read_revision_sum_before_after": 4
+    },
+    "projection_health": {
+      "org3_scopes": 49,
+      "ready_and_delivery_initialized": 49,
+      "pending_delivery": 0,
+      "pending_events": 0,
+      "pending_groups": 0,
+      "privacy_pending": 0,
+      "scopes_with_debt": 0,
+      "other_organization_scopes": 0
+    },
+    "source_and_acl": {
+      "order_activity_internal_prosrc_sha256": "dfe2afe5ed685f279aa8da910c066b1b12f534b8a761feaa3d693e8ca152d9ce",
+      "subject_visible_internal_prosrc_sha256": "4a70c89d4d2c1948d2bba73f9a83cea895e6125387015b4fdb33fa5580dfd37d",
+      "prepared_batch_at_prosrc_sha256": "1f06fecbd214107b0a21096e6a56543b4ba999ccdd343b3201d166986c799ee4",
+      "order_created_activity_and_visibility": true,
+      "hidden_member_occasion_join_suppressed": true,
+      "hidden_member_count": 1,
+      "prepared_and_internal_helpers_checked": 30,
+      "prepared_and_internal_helpers_exposed_to_public_anon_authenticated_service_role": 0,
+      "public_notification_apis": "authenticated-only"
+    },
+    "reported_order": {
+      "order_symbol": "9K2I6H5J6Q",
+      "initial_exact_row_found": true,
+      "initial_org3": true,
+      "initial_state": "ordered",
+      "initial_created_at": "2026-11-05T19:32:38.445079Z",
+      "initial_hidden_contact_match": true,
+      "initial_subject_visible_before_migration": false,
+      "initial_order_created_event_count": 0,
+      "current_unfiltered_exact_symbol_row_count": 0,
+      "replay_status": "SKIPPED_USER_CONFIRMED_DELETED; no replay, no order recreation",
+      "user_confirmed_test_order_deleted": true,
+      "no_business_order_created": true
+    },
+    "reviewed_replay_artifact_not_executed": {
+      "path": "/tmp/festapp-order-visibility-233-20261105/replay-reviewed.sql",
+      "sha256": "ddda3697375972459258a5e318b600e6724babce2e1a578a6e16f03b2a910a91"
+    },
+    "current_web_release": {
+      "tenant_sha": "09384519d765337b596f2ca963af771cff40f6f4",
+      "version": "0.20.517+1024",
+      "web_build_or_upload_performed": false,
+      "cache_pin_release_receipt": "/tmp/festapp-cache-pin-517-release-20261105.json",
+      "current_frontend_unchanged": true
+    }
+  },
+  "checkboxValidation": {
+    "source": "17690742f1f1e57f24f12a61955727d3ee88a30d",
+    "previousMain": "2079959f5da7b5607aa039f89f8a040318974845",
+    "scope": "Per-embed appearance choice beside copied code; no global Form Design control; no SQL migration",
+    "localAffectedCI": {
+      "head": "2079959f5da7b5607aa039f89f8a040318974845",
+      "dirty": true,
+      "platform": "darwin",
+      "jobs": [
+        {
+          "name": "wix-checkout-compatibility",
+          "seconds": 9.17,
+          "exitCode": 0,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/wix-checkout-compatibility.log"
+        },
+        {
+          "name": "ticket-preview-and-delivery",
+          "seconds": 43.42,
+          "exitCode": 0,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/ticket-preview-and-delivery.log"
+        }
+      ],
+      "complete": true,
+      "seconds": 52.58
+    },
+    "focusedTests": {
+      "javascript": 27,
+      "flutter": 19
+    },
+    "realBrowser": {
+      "cases": [
+        {
+          "after": "host",
+          "before": null,
+          "height": 1300,
+          "id": "inherit-auto",
+          "ok": true,
+          "override": true
+        },
+        {
+          "after": null,
+          "before": null,
+          "height": 1300,
+          "id": "default-auto",
+          "ok": true,
+          "override": false
+        },
+        {
+          "after": "host",
+          "before": null,
+          "height": 800,
+          "id": "inherit-fixed",
+          "ok": true,
+          "override": true
+        },
+        {
+          "after": null,
+          "before": null,
+          "height": 800,
+          "id": "default-fixed",
+          "ok": true,
+          "override": false
+        },
+        {
+          "after": "host",
+          "before": null,
+          "height": 1300,
+          "id": "fallback-auto",
+          "ok": true,
+          "override": null
+        }
+      ],
+      "passed": true
+    },
+    "implementationSource": "f04f9ea0facada3ee70ea619f58aad9874e09875",
+    "generatedReference": "Regenerated sourceDigest via canonical docs:generate; docs:check passed"
+  },
+  "backendValidation": {
+    "sourceMain": "5934dd76d815125518b8a2f06af960ddb51d8c7a",
+    "migration": "20261105233000_notification_order_visibility.sql",
+    "migrationSha256": "a15bd1cf35dfec7938ed69e5ffdeffce05967ced6a2adf5bfd212ce2a83dc88f",
+    "localAffectedCI": {
+      "head": "68ac931c54ac2c0f7867dfbe31e2e6de1d237db4",
+      "dirty": true,
+      "platform": "darwin",
+      "jobs": [
+        {
+          "name": "seat-checkout",
+          "seconds": 71.87,
+          "exitCode": 0,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/seat-checkout.log"
+        },
+        {
+          "name": "client-contract",
+          "seconds": 41.21,
+          "exitCode": 0,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/client-contract.log"
+        }
+      ],
+      "complete": true,
+      "seconds": 113.09
+    },
+    "notificationSQLTestsPassed": 38,
+    "redEvidence": "/tmp/festapp-hidden-order-red.log",
+    "greenEvidence": "/tmp/festapp-hidden-order-suite.log",
+    "realForwardMigration": "passed with sslmode=disable on marked disposable59632",
+    "canonicalSourceParity": "passed",
+    "approvedPolicy": "User confirmed hidden membership excludes participant enrollment, never orders",
+    "frontend": "unchanged; production517 compatible"
+  },
+  "cachePin": "/embed.js?v=appearance-1 avoids the previous unversioned browser cache",
+  "confirmedPolicy": "Hidden membership suppresses participant enrollment, never authorized order notifications. Prepared own order activity requires explicit read.",
+  "reportedOrderReplay": "SKIPPED_USER_CONFIRMED_DELETED; no order recreation",
+  "sourceWorktree": "/tmp/festapp-complete-release-20261105",
+  "sourceHead": "5934dd76d815125518b8a2f06af960ddb51d8c7a",
+  "compatibleBackendOnlyRelease": "Only SQL/tests/docs changed after frontend source68ac931; no second Flutter build needed.",
+  "cleanup": "Owned disposable DB59632 and CI DB55442 stopped; Terra isolated browser/server closed; user57421 and SSHforwards preserved.",
+  "workspaceCaution": "Original checkout remains dirty on old main. Do not stage or deploy it wholesale; canonical source is the published main and the clean isolated worktree."
+}

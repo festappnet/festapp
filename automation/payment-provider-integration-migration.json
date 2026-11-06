@@ -1,0 +1,15 @@
+{
+  "migration": "20261106200000_payment_provider_canonical_integration.sql",
+  "sources": [
+    "eshop_forms/duplicate_form_to_occasion.sql",
+    "eshop_forms/form_creation_domain.sql",
+    "eshop_forms/form_settings.sql",
+    "eshop_forms/update_form.sql",
+    "eshop_forms/update_form_client_sync_v1.sql",
+    "eshop_orders/create_ticket_order_client_sync_v1.sql",
+    "eshop_orders/recalculate_order_payment_status.sql",
+    "eshop_waitlist/commands.sql",
+    "occasion_setup/finalize.sql",
+    "others/get_app_config.sql"
+  ]
+}

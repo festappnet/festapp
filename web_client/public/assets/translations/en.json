@@ -378,6 +378,11 @@
   },
   "FeatureFormSettings": {
     "embedInheritStyleHelp": "Uses your website’s font, background and colors for this embed. Choose this setting before copying the code. The seating plan keeps its own appearance.",
+    "measurementConsentTitle": "Visitor analytics",
+    "measurementConsentAccept": "Accept",
+    "measurementConsentSave": "Save",
+    "measurementConsentClose": "Close",
+    "measurementConsentPrivacy": "Privacy policy",
     "measurementConsentDecline": "Decline",
     "measurementConsentChoices": "Consent settings",
     "measurementConsentDescription": "With your consent, the organizer can measure form usage and completed orders.",

@@ -23,7 +23,7 @@ BEGIN
     SELECT * INTO v_payment FROM eshop.payment_info WHERE id=v_order.payment_info FOR UPDATE;
     v_was_eligible := coalesce(v_order.state IN ('paid','sent'),false);
     -- Provider facts and non-admission shells retain their existing owners.
-    IF v_payment.id IS NULL OR v_payment.payment_method='stripe'
+    IF v_payment.id IS NULL OR v_payment.payment_method<>'bank'
        OR v_order.state NOT IN ('created','ordered','expired','paid','sent') THEN
         RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_order.state,
             'eligibility_changed',false,'email_payment_version',v_order.email_payment_version);
@@ -65,6 +65,12 @@ BEGIN
         -- An eligible paid order needs the edited content at its final version.
         -- Already sent admission stays sent; used/cancelled tickets stay intact.
         PERFORM public.enqueue_paid_order_tickets(p_order_id);
+    END IF;
+
+    -- Cancellation above invalidates the old reminder version. Rebuild only this
+    -- payment's eligible reminders, including the balance after a paid deposit.
+    IF p_reason='product_edit' OR v_eligible IS DISTINCT FROM v_was_eligible THEN
+        PERFORM public.queue_payment_reminders_internal(v_order.occasion,v_payment.id);
     END IF;
 
     PERFORM public.notification_center_order_state_internal(p_order_id);

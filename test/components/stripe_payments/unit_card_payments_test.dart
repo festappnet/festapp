@@ -1,3 +1,5 @@
+import 'package:festapp_core/payments.dart';
+
 import '../../support/fixtures/local_app_storage_fixture.dart';
 import '../../support/fixtures/client_command_response_fixture.dart';
 
@@ -12,12 +14,12 @@ import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
+import 'package:fstapp/components/payments/payment_connection_api.dart';
 import 'package:fstapp/components/stripe_payments/unit_card_payments_page.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
 
-class FakeConnectionApi implements StripeConnectionApi {
+class FakeConnectionApi implements PaymentConnectionApi {
   final calls = <int>[];
   Map<String, dynamic>? connection;
   Completer<Map<String, dynamic>?>? pending;
@@ -88,7 +90,7 @@ void main() {
     translations: catalog,
   );
   Widget page(
-    StripeConnectionApi api, {
+    PaymentConnectionApi api, {
     bool canManage = true,
     bool connectSupported = true,
     int unit = 1,
@@ -141,16 +143,23 @@ void main() {
         }),
       );
       addTearDown(client.dispose);
-      await SupabaseStripeConnectionApi(client: client).pause(8, true);
+      await SupabasePaymentConnectionApi(
+        client: client,
+        connector: stripePaymentConnector,
+      ).pause(8, true);
       const connection = '00000000-0000-4000-8000-000000000001';
       expect(
-        (await SupabaseStripeConnectionApi(client: client)
-            .disconnect(8, connection))['disconnected'],
+        (await SupabasePaymentConnectionApi(
+          client: client,
+          connector: stripePaymentConnector,
+        ).disconnect(8, connection))['disconnected'],
         false,
       );
       expect(
-        (await SupabaseStripeConnectionApi(client: client)
-            .disconnect(8, connection))['disconnected'],
+        (await SupabasePaymentConnectionApi(
+          client: client,
+          connector: stripePaymentConnector,
+        ).disconnect(8, connection))['disconnected'],
         true,
       );
       expect(disconnectIds[0], disconnectIds[1]);
@@ -164,8 +173,12 @@ void main() {
         'https://fixture.invalid',
         'fixture',
         httpClient: MockClient((request) async {
-          expect(request.url.path, '/functions/v1/stripe-connect');
-          expect(jsonDecode(request.body), {'unitId': 8, 'action': 'status'});
+          expect(request.url.path, '/functions/v1/payment-connect');
+          expect(jsonDecode(request.body), {
+            'unitId': 8,
+            'action': 'status',
+            'provider': 'stripe',
+          });
           return http.Response(
             '{"error":"stripe_not_configured"}',
             status,
@@ -174,10 +187,13 @@ void main() {
         }),
       );
       addTearDown(client.dispose);
-      final api = SupabaseStripeConnectionApi(client: client);
+      final api = SupabasePaymentConnectionApi(
+        client: client,
+        connector: stripePaymentConnector,
+      );
       await expectLater(
         api.status(8),
-        throwsA(isA<StripeNotConfiguredException>()),
+        throwsA(isA<PaymentNotConfiguredException>()),
       );
       status = 401;
       await expectLater(api.status(8), throwsA(isA<FunctionException>()));
@@ -187,7 +203,7 @@ void main() {
     'unconfigured overview explains setup and can recover after reload',
     (tester) async {
       final api = FakeConnectionApi()
-        ..statusError = const StripeNotConfiguredException();
+        ..statusError = const PaymentNotConfiguredException();
       final env = environment();
       await env.pumpWidget(tester, page(api, unit: 8));
       await tester.pumpAndSettle();

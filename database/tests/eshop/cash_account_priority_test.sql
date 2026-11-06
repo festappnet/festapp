@@ -22,19 +22,11 @@ DECLARE
     input_json JSONB;
     last_pi_id BIGINT;
     assigned_ba_id BIGINT;
+    actor UUID;
 BEGIN
-    -- 0. Mock Auth and Permissions (BYPASS CHECKS)
-    -- Instead of trying to satisfy complex auth logic, we mock the check functions
-    -- This isolates the test to validation of logic, not auth
-
-    -- Mock check_is_editor_order_view_via_form_link (void, throws if fail)
-    EXECUTE 'DROP FUNCTION IF EXISTS public.check_is_editor_order_view_via_form_link(text)';
-    EXECUTE 'CREATE OR REPLACE FUNCTION public.check_is_editor_order_view_via_form_link(form_link text) RETURNS void AS ''BEGIN END;'' LANGUAGE plpgsql';
-
-    -- Mock get_is_editor_order_on_occasion (returns boolean)
-    EXECUTE 'DROP FUNCTION IF EXISTS public.get_is_editor_order_on_occasion(bigint)';
-    EXECUTE 'CREATE OR REPLACE FUNCTION public.get_is_editor_order_on_occasion(occasion_id bigint) RETURNS boolean AS ''BEGIN RETURN true; END;'' LANGUAGE plpgsql';
-
+    -- Exercise real authorization with an occasion form editor.
+    PERFORM public.create_user_for_test('cash-priority-editor','cash-priority@example.invalid');
+    actor:=public.get_user_id('cash-priority-editor');
     -- 1. Setup Data
 
     -- Create Organization
@@ -45,6 +37,12 @@ BEGIN
 
     -- Create Occasion
     INSERT INTO occasions (organization, unit, title, is_open, start_time, end_time, link) VALUES ((SELECT organization FROM public.units WHERE id=last_unit_id), last_unit_id, 'Test Occasion', true, now(), now() + interval '1 year', 'test-occasion-link') RETURNING id INTO last_occasion_id;
+
+    UPDATE public.user_info SET organization=last_org_id WHERE id=actor;
+    INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_order,is_editor_order_view)
+    VALUES(last_occasion_id,actor,true,true,true);
+    PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+    PERFORM set_config('request.jwt.claim.role','authenticated',true);
 
     -- Create Form
     INSERT INTO forms (occasion, title, is_open, link)

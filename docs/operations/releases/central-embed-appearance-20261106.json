@@ -1,0 +1,58 @@
+{
+  "state": "validated implementation; main merge only; deployment deferred by owner",
+  "canonical_owner": "forms.data.design.embed_inherit_style",
+  "scope": [
+    "HTML generator and embed dialog",
+    "public help generator",
+    "WordPress regional and global source",
+    "Joomla regional and global source",
+    "Wix hosted widget/settings"
+  ],
+  "production_scope": "vstupenky.online tenant only; regional CMS releases; no other tenant deployment",
+  "invariants": [
+    "Only an authorized form editor persists the choice",
+    "Explicit host styleMode and stale CMS/HTML appearance properties are inert",
+    "Saved preference applies on next page load without replacing code",
+    "No forced reload or polling during an active checkout",
+    "Height remains independent; helper loads in both modes",
+    "Standalone form and seat colors retain own appearance"
+  ],
+  "ui": [
+    "Form Appearance switch uses ordinary save/read-only state",
+    "Embed dialog links directly to current saved form Design route",
+    "General help/native links reuse authenticated forms help intent"
+  ],
+  "candidate_versions": {
+    "wordpress": "1.0.5",
+    "joomla": "1.0.4",
+    "wix": "0.1.2"
+  },
+  "wordpress_zip_sha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+  "joomla_zip_sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
+  "validation": {
+    "embed_core_and_real_form_page": 34,
+    "help_generator": 4,
+    "flutter_selected_widget_tests": 4,
+    "native_wp_joomla_stub_renderer_cases": 24,
+    "wix_tests_pass": 47,
+    "wix_tests_skip": 4,
+    "help_pages_tests": 2,
+    "real_browser": "Czech WP1.0.5 editor/onboarding and generator, no checkbox; desktop1440/mobile390 no overflow; screenshot metadata matched",
+    "joomla_full_release_gate": "VERIFIED + independent AI critic + reviewed seal; 34source/13evidence hashes, 278 assertions each CMS5/6, native publication, installed bytes, updater, lifecycle and browser",
+    "wordpress_matrix": "Final1.0.5: WPCS0/0 both products; all6 PHP syntax files on both engines;47 regional contracts each engine; PluginCheck0errors/1knownwarning each product/engine. Additional tester37/coexistence48/locales/lifecycle/production gate on pre-format candidate272;541 nonwhitespace PHP tokens identical.",
+    "wordpress_readiness": "directory-readiness-central-20261106.json: exact final ZIP/stage integrity PASS; full submit-ready awaits main merge and verified central web rollout",
+    "joomla_verified_receipt": "integrations/joomla/evidence/verification.json",
+    "joomla_critic_receipt": "integrations/joomla/evidence/critic.json"
+  },
+  "external_state": "No central-contract release is claimed yet. Existing releases remain immutable. New stable-readme translation awaits the1.0.5 source.",
+  "wix_zip_sha256": "5a3eb7f156e7306fc43b6a339bc34c2a0de0429d6faf9e7c0195323afb6b073e",
+  "deployment_authorization": "Owner explicitly deferred all deployment/publication to another session; do not deploy from this task.",
+  "joomla_stable_feed": {
+    "version": "1.0.3",
+    "sha256": "39e7086097f83b52ec7a73e8f891649c3a391e55bd0fbf8901471e30cb7317d7",
+    "policy": "Keep the currently published feed on main until an actual1.0.4 release; stage-release.py restores the verified1.0.4 candidate immediately before publication.",
+    "candidate_feed": "docs/operations/releases/central-embed-appearance-20261106-candidate-feed.xml",
+    "candidate_sha256": "aeb9ebdfe2f5fe029ad72b1f08a1547fe85d6347b05425799e970de880ef1e7b",
+    "verification_note": "The verification/critic/seal bind the staged1.0.4 feed. The main-only state intentionally retains the1.0.3 public feed; release gate must fail until the identical candidate feed is re-staged."
+  }
+}

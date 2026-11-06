@@ -4,7 +4,7 @@ import {createServer as httpServer} from 'node:http';
 import {createServer} from 'vite';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {mkdtemp,writeFile,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {serveMeasurement} from '../../workers/form-measurement/src/worker.mjs';
@@ -28,10 +28,28 @@ try {
  assert.equal(await run('runtime.frame.getAttribute("sandbox")'),'allow-scripts allow-same-origin');
  assert.equal(await run('(()=>{try{return !!runtime.frame.contentWindow.document}catch(e){return false}})()'),false);
  for(const event of ['page_view','view_item','purchase'])assert.equal(await run(`window.event('${event}')`),true);
- if(previewAuth) { await browser('wait','--fn',"window.gtmReceipts?.length >= 3 || window.diagnostics?.some(x=>x.fixtureGtm !== undefined)"); const report=await run('({receipts:window.gtmReceipts,diagnostics:window.diagnostics})'); assert.equal(report.receipts.length,3,'GTM diagnostic tag receipts: '+JSON.stringify(report.diagnostics)); await browser('wait','--fn','consentReceipts.length >= 3'); assert.deepEqual(await run('consentReceipts[0]'),{analytics:true,ad_storage:false,ad_user_data:false,ad_personalization:false}); console.log('PASS: Google consent API analytics granted, advertising denied'); assert.deepEqual(report.receipts.map(x=>x.event),['page_view','view_item','purchase']); for(const receipt of report.receipts){assert.equal(receipt.page_location,`${parent}/form/test`);assert.equal(receipt.gclid,'synthetic123');} console.log('PASS: unpublished GTM preview diagnostic tag fired for three events'); }
- await browser('wait','--fn',"window.observed?.some(x=>x.event==='purchase')"); const layer=await run('window.observed');assert.ok(layer.some(x=>x.event==='purchase'));assert.equal(JSON.stringify(layer).includes('secret@example.com'),false);assert.equal(JSON.stringify(layer).includes('private@example.com'),false); const page=layer.find(x=>x.event==='page_view'); assert.equal(page.page_location,`${parent}/form/test`);assert.equal(page.gclid,'synthetic123');
+ if(previewAuth) { await browser('wait','--fn',"window.gtmReceipts?.length >= 3 || window.diagnostics?.some(x=>x.fixtureGtm !== undefined)"); const report=await run('({receipts:window.gtmReceipts,diagnostics:window.diagnostics})'); assert.equal(report.receipts.length,3,'GTM diagnostic tag receipts: '+JSON.stringify(report.diagnostics)); await browser('wait','--fn','consentReceipts.length >= 3'); assert.deepEqual(await run('consentReceipts[0]'),{analytics:true,ad_storage:false,ad_user_data:false,ad_personalization:false}); console.log('PASS: Google consent API analytics granted, advertising denied'); assert.deepEqual(report.receipts.map(x=>x.event),['page_view','view_item','purchase']); for(const receipt of report.receipts){assert.equal(receipt.page_location,`${parent}/form/test?gclid=synthetic123`);assert.equal(receipt.gclid,'synthetic123');} console.log('PASS: unpublished GTM preview diagnostic tag fired for three events'); }
+ await browser('wait','--fn',"window.observed?.some(x=>x.event==='purchase')"); const layer=await run('window.observed');assert.ok(layer.some(x=>x.event==='purchase'));assert.equal(JSON.stringify(layer).includes('secret@example.com'),false);assert.equal(JSON.stringify(layer).includes('private@example.com'),false); const page=layer.find(x=>x.event==='page_view'); assert.equal(page.page_location,`${parent}/form/test?gclid=synthetic123`);assert.equal(page.gclid,'synthetic123');
  await run('runtime.setConsent(false)');assert.equal(await run('document.querySelectorAll("iframe").length'),0);assert.equal(await run("window.event('page_view')"),false); await run('model.data.analytics.eligible=false;runtime.setConsent(true)');assert.equal(await run('document.querySelectorAll("iframe").length'),0);
  console.log('PASS: isolated runtime consent gate, cross-origin sandbox, event projection, PII stripping, revoke and policy denial');
- await browser('open',url+'&cmp=1'); await browser('wait','--fn','!!window.cleanupCmp && !!document.querySelector(".cm-list-input")'); assert.equal(await run('document.querySelectorAll("iframe").length'),0); await run('document.querySelector(".cm-list-input").click();document.querySelector(".cm-btn-accept").click()'); await browser('wait','--fn','window.ready === true'); assert.equal(await run('runtime.measurementAllowed()'),true); await browser('reload'); await browser('wait','--fn','!!window.cleanupCmp && runtime.measurementAllowed()'); assert.equal(await run('!!document.querySelector(".cookie-modal, .cookie-notice")'),false,'saved choice restores without opening consent UI'); await run('document.querySelector(".btn-text").click()'); await browser('wait','--fn','!!document.querySelector(".cm-list-input")'); await run('document.querySelector(".cm-list-input").click();document.querySelector(".cm-btn-accept").click()'); await browser('wait','--fn','!runtime.frame'); assert.equal(await run('runtime.measurementAllowed()'),false); console.log('PASS: actual Klaro UI grant, quiet saved-choice restore, reopened preferences and revoke');
+ await mkdir(path.join(root,'node_modules/.cache'),{recursive:true});
+ for (const lang of ['cs','en']) {
+  await run("document.cookie='festapp-measurement-1-2=; Max-Age=0; path=/'");
+  await browser('open',url+'&cmp=1&lang='+lang);
+  await browser('wait','--fn','!!document.querySelector(".cookie-modal-notice")');
+  const notice=await run(`(()=>{
+   const node=document.querySelector('.cookie-modal-notice');
+   return {text:node.innerText,buttons:[...node.querySelectorAll('button')].map(b=>b.innerText),
+    inputs:node.querySelectorAll('input').length,close:node.querySelectorAll('.hide').length,
+    overflow:document.body.style.overflow};
+  })()`);
+  console.log(JSON.stringify({lang,...notice}));
+  assert(!/<tr-|počítače/.test(notice.text));
+  assert.deepEqual(notice.buttons,lang==='cs'?['Odmítnout','Přijmout']:['Decline','Accept']);
+  assert.equal(notice.inputs,0);assert.equal(notice.close,0);assert.equal(notice.overflow,'hidden');
+  await browser('screenshot',path.join(root,`node_modules/.cache/lista-${lang}.png`));
+  await run('cleanupCmp()');assert.equal(await run('document.body.style.overflow'),'');
+ }
+ await browser('open',url+'&cmp=1'); await browser('wait','--fn','!!window.cleanupCmp && !!document.querySelector(".cookie-modal-notice")'); assert.equal(await run('document.querySelectorAll("iframe").length'),0); await run('document.querySelector(".cookie-modal-notice .cm-btn-success").click()'); await browser('wait','--fn','window.ready === true'); assert.equal(await run('runtime.measurementAllowed()'),true); await browser('reload'); await browser('wait','--fn','!!window.cleanupCmp && runtime.measurementAllowed()'); assert.equal(await run('!!document.querySelector(".cookie-modal, .cookie-notice")'),false,'saved choice restores without opening consent UI'); await run('document.querySelector(".btn-text").click()'); await browser('wait','--fn','!!document.querySelector(".cm-list-input")'); await run('document.querySelector(".cm-list-input").click();document.querySelector(".cm-btn-accept").click()'); await browser('wait','--fn','!runtime.frame'); assert.equal(await run('runtime.measurementAllowed()'),false); console.log('PASS: actual Klaro UI grant, quiet saved-choice restore, reopened preferences and revoke');
  }
 } finally {if(!process.argv.includes('--serve'))try{await browser('close')}catch{} if(host)await host.close();if(server)await new Promise(resolve=>server.close(resolve));await rm(temp,{recursive:true,force:true});}

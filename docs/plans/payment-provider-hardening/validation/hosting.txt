@@ -1,0 +1,5 @@
+ℹ tests 19
+ℹ pass 18
+ℹ fail 1
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+Only failure was payment-reconcile coverage mapping; corrected manifest and the 2-test coverage rerun passed. Other 17 hosting tests retained.

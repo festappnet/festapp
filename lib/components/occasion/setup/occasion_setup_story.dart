@@ -1,3 +1,5 @@
+import 'package:festapp_core/payments.dart';
+
 /// Questions are stored inside the existing stable draft steps. Optional
 /// questions never participate in the event's completion requirements.
 class OccasionSetupQuestion {
@@ -9,6 +11,7 @@ class OccasionSetupQuestion {
 
 class OccasionSetupStory {
   static void normalize(Map<String, dynamic> data, bool appSupported) {
+    FormPaymentConfiguration.normalizeDraft(data);
     data.remove('eventKind');
     data.remove('eventKindNeedsConfirmation');
     if (data['storyQuestion'] == 'kind') {
@@ -89,8 +92,12 @@ class OccasionSetupStory {
     return currencies;
   }
 
-  static bool paymentSetupReady(Map<String, dynamic> data) =>
-      data['paymentMethod'] == 'stripe' || paymentAccountReady(data);
+  static bool paymentSetupReady(Map<String, dynamic> data) {
+    final config = FormPaymentConfiguration.fromJson(data['payments'] as Map?);
+    return data['paymentRepairRequired'] != true &&
+        config.connections.keys.every(paymentConnectors.contains) &&
+        (config.bankEnabled ? paymentAccountReady(data) : config.connections.isNotEmpty);
+  }
 
   static bool paymentAccountReady(Map<String, dynamic> data) =>
       data['bankAccountId'] is int &&

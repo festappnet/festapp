@@ -1,7 +1,7 @@
 import 'package:fstapp/widgets/brand_loading_indicator.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:intl/intl.dart' show Intl;
-import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
+import 'package:fstapp/components/payments/payment_link_service.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
     show VenueLayoutLocalizations;
 import 'package:fstapp/startup/startup_language.dart';
@@ -70,14 +70,14 @@ Future<void> startApplication({Future<void> Function()? initialize}) async {
     // A missing native link/storage plugin must not block existing sign-in.
   }
   try {
-    await StripePaymentLinkService.initialize().timeout(
+    await PaymentLinkService.initialize().timeout(
       const Duration(seconds: 3),
     );
   } catch (_) {
     // Missing native link support must not block startup. Never log link data.
   }
   final initialRoute =
-      StripePaymentLinkService.inbox.pendingRoute ??
+      PaymentLinkService.inbox.pendingRoute ??
       (GoogleAuthService.hasCallback
           ? "/login"
           : kIsWeb
@@ -110,8 +110,8 @@ NotificationReconnectCoordinator? _notificationReconnectCoordinator;
 String nativeInitialRoute(String value) {
   final uri = Uri.tryParse(value);
   if (uri == null) return '/';
-  final stripeRoute = StripePaymentLinkInbox.routeForPath(uri.path);
-  if (stripeRoute != null) return stripeRoute;
+  final paymentRoute = PaymentLinkInbox.routeForPath(uri.path);
+  if (paymentRoute != null) return paymentRoute;
   return value;
 }
 
@@ -132,7 +132,7 @@ String initialRouteForUri(Uri uri) {
 }
 
 bool isUnitAdminStartupRoute(Uri uri) {
-  if (StripePaymentLinkInbox.routeForPath(uri.path) != null ||
+  if (PaymentLinkInbox.routeForPath(uri.path) != null ||
       uri.path == '/stripe/connect/callback' ||
       uri.path == '/app/stripe/connect/callback')
     return true;
@@ -554,7 +554,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      StripePaymentLinkService.attachNavigator((path) async {
+      PaymentLinkService.attachNavigator((path) async {
         if (!mounted || RouterService.router.currentPath == path) return;
         if (await RetainedDraftGuard.instance.confirmPath(
           RouterService.router,
@@ -568,29 +568,29 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
-    StripePaymentLinkService.detachNavigator();
+    PaymentLinkService.detachNavigator();
     super.dispose();
   }
 
   Future<DeepLink> _resolveDeepLink(PlatformDeepLink platformDeepLink) async {
-    if (StripePaymentLinkService.isNativeMobile) {
-      final stripeRoute = StripePaymentLinkInbox.routeForPath(
+    if (PaymentLinkService.isNativeMobile) {
+      final paymentRoute = PaymentLinkInbox.routeForPath(
         platformDeepLink.uri.path,
       );
-      if (stripeRoute != null) {
-        StripePaymentLinkService.capture(platformDeepLink.uri);
+      if (paymentRoute != null) {
+        PaymentLinkService.capture(platformDeepLink.uri);
         if (!platformDeepLink.initial &&
-            RouterService.router.currentPath == stripeRoute) {
+            RouterService.router.currentPath == paymentRoute) {
           return DeepLink.none;
         }
         if (!platformDeepLink.initial &&
             !await RetainedDraftGuard.instance.confirmPath(
               RouterService.router,
-              Uri.parse(stripeRoute),
+              Uri.parse(paymentRoute),
             )) {
           return DeepLink.none;
         }
-        return DeepLink.path(stripeRoute, includePrefixMatches: false);
+        return DeepLink.path(paymentRoute, includePrefixMatches: false);
       }
     }
     if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {

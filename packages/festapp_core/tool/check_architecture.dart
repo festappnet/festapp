@@ -26,9 +26,9 @@ class ArchitectureGuard {
   final _visited = <String>{};
   late final Directory core = Directory('${root.path}/packages/festapp_core');
   late final Map<String, Uri> packages = _packages();
-  static const modules = {'sync', 'forms', 'eshop', 'program', 'map', 'time'};
+  static const modules = {'sync', 'forms', 'eshop', 'program', 'map', 'time', 'payments'};
   static const edges = {
-    'forms': {'eshop', 'json_values'},
+    'forms': {'eshop', 'json_values', 'payments'},
     'program': {'map', 'json_values', 'time'},
     'eshop': {'json_values', 'time', 'formatting'},
     'email_templates': {'formatting'},

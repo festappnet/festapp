@@ -2,6 +2,7 @@ import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_no
 import { FormDataLayer } from './form_datalayer.js';
 import { publicFormLocation } from '../../utils/public_form_location.js';
 import { FormMeasurementRuntime } from './form_measurement_runtime.js';
+import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
 import { SupabaseService } from '../../services/supabase_service.js';
@@ -581,6 +582,7 @@ export class FormPage extends Component {
         if (formModel.registrationMode !== 'waitlist') this.currentPriceWidget = new PriceWidget(session, this.host);
         FormRenderer.render(this.host, session, formModel, showPreview, {
             onSubmit: (form, model) => this.validateAndSubmit(form, model),
+            onInteraction: () => this.analytics?.started(),
             onInput: (e, form, model) => {
                 if (e.type === 'input') FormValidator.handleInputValidation(e, form, session);
 
@@ -605,7 +607,7 @@ export class FormPage extends Component {
             this.measurementRuntime = runtime;
             analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
                 entryAllowed:this.analyticsEntryAllowed, refreshPolicy:() => DbForms.getMeasurementPolicy(formModel.link)});
-            this.embedBridge?.setMeasurementRuntime(runtime);
+            this.embedBridge?.setMeasurementRuntime(runtime, () => analytics.view());
             if (!this.embedBridge && formModel.data?.analytics?.eligible === true && analytics.contextAllowed()) {
                 import('./form_measurement_cmp.js').then(({startMeasurementConsent}) => {
                     if (this.analytics !== analytics) return;
@@ -859,6 +861,7 @@ export class FormPage extends Component {
                      this._pendingPaymentQuote = paymentQuote;
                      this.submitOrder(form, formModel, overlay || document.body);
                  }, () => {
+                     this.analytics?.page('product');
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
                  }, precalculatedPayload);
                  this.analytics?.review(precalculatedPayload, this.currentSession);
@@ -922,13 +925,8 @@ export class FormPage extends Component {
 
         // 4. Submit via Network
         if(this._pendingPaymentMethod){
-            if(this._pendingPaymentMethod==='stripe'){
-                payload.payment_method='stripe';
-                payload.payment_type='full';
-                payload.expected_payment_amount_minor=this._pendingPaymentQuote.amountMinor;
-                payload.expected_payment_currency=this._pendingPaymentQuote.currency;
-                payload.stripe_connection_id=this._pendingPaymentQuote.connectionId;
-                payload.payment_surface=this._pendingPaymentQuote.surface;
+            if(isCardPaymentMethod(this._pendingPaymentMethod)){
+                Object.assign(payload, paymentConnectors.get(this._pendingPaymentMethod).quote(payload, this._pendingPaymentQuote));
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }

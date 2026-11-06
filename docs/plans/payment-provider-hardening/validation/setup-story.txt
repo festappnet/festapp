@@ -1,0 +1,13 @@
+00:00 +12: story appSupported=false verified organizer skips verification without moving other questions
+00:00 +13: story appSupported=false optional verification does not introduce a required persisted step
+00:00 +14: team invitations are optional for every journey
+00:00 +15: dependent questions follow paid products and actual ticket field
+00:00 +16: dependent steps exclude dormant setup without changing persisted IDs
+00:00 +17: inactive payments resume at the next applicable question
+00:00 +18: active price waves require future dates and existing product targets
+00:00 +19: scanner is absent and old questions resume safely
+00:00 +20: paid app events have a dedicated payments question before blueprint
+00:00 +21: payment readiness requires a verified account and derives currency context
+00:00 +22: communication applies to free forms and completes the shared form step
+00:00 +23: completed active questions reach 100% after explicit review
+00:00 +24: All tests passed!

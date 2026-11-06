@@ -55,3 +55,11 @@
 /app/stripe/return
   Cache-Control: no-store
   Referrer-Policy: no-referrer
+
+/payments/*
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/app/payments/*
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer

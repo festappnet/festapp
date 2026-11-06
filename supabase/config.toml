@@ -338,6 +338,18 @@ verify_jwt = true
 [functions.stripe-connect-callback]
 verify_jwt = true
 
+[functions.payment-connect]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.payment-checkout]
+verify_jwt = false
+
+[functions.payment-return]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
@@ -365,4 +377,7 @@ static_files = ["./functions/_shared/ticket-assets/*.ttf", "./functions/_shared/
 verify_jwt = false
 
 [functions.process-notification-center]
+verify_jwt = false
+
+[functions.payment-reconcile]
 verify_jwt = false

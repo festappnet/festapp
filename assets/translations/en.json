@@ -436,6 +436,11 @@
     "measurementAskUnitManager": "Ask the organizer’s manager to enable measurement and configure GTM or scripts.",
     "measurementActivationHelp": "Saving these settings does not start measurement. Enable it in each form’s settings as well. Running measurement also requires platform approval and setup, and visitor consent.",
     "measurementUnitDisabled": "Measurement is off for this organizer. Saved IDs and scripts are preserved.",
+    "measurementConsentTitle": "Visitor analytics",
+    "measurementConsentAccept": "Accept",
+    "measurementConsentSave": "Save",
+    "measurementConsentClose": "Close",
+    "measurementConsentPrivacy": "Privacy policy",
     "measurementConsentDecline": "Decline",
     "measurementConsentChoices": "Consent settings",
     "measurementConsentDescription": "With your consent, the organizer can measure form usage and completed orders.",
@@ -588,8 +593,9 @@
     "embedAutomatic": "Automatic height (recommended)",
     "embedFixed": "Fixed height",
     "embedInheritStyle": "Match website appearance",
-    "embedInheritStyleHelp": "Uses your website’s font, background and colors for this embed. Choose this setting before copying the code. The seating plan keeps its own appearance.",
-    "productsAndPrices": "Products and prices"
+    "embedInheritStyleHelp": "Use the host website font, background and colors for every embed of this form. Save the form to apply this choice on subsequent page loads. The seating plan keeps its own appearance.",
+    "productsAndPrices": "Products and prices",
+    "embedOpenAppearance": "Edit form appearance"
   },
   "OrderGridColumns": {
     "id": "Id",

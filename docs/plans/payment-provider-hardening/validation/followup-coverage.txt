@@ -1,0 +1,10 @@
+✔ Deno discovery includes both repository test naming conventions (11.965084ms)
+✔ every production Edge Function has executable smoke and behavior coverage (4.654875ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 100.055041

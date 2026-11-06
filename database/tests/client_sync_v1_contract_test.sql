@@ -96,10 +96,14 @@ BEGIN
   PERFORM assert_true(v_missing IS NULL,'all client_sync_v1 RPCs exist in public');
   PERFORM assert_true(pg_get_functiondef(
       'public.get_client_commits_v1(bigint,timestamptz,uuid,integer,jsonb)'::regprocedure)
+      LIKE '%get_client_commits_scoped_internal_v1(p_occasion,p_before_time,p_before_id,p_limit,p_filters,true,true)%',
+    'audit facade delegates pagination and scope to the canonical owner');
+  PERFORM assert_true(pg_get_functiondef(
+      'public.get_client_commits_scoped_internal_v1(bigint,timestamptz,uuid,integer,jsonb,boolean,boolean)'::regprocedure)
       LIKE '%LEAST(GREATEST(p_limit,1),501)%',
     'commit audit supports a 500-row page plus next-page probe');
   PERFORM assert_true(pg_get_functiondef(
-      'public.get_client_commits_v1(bigint,timestamptz,uuid,integer,jsonb)'::regprocedure)
+      'public.get_client_commits_scoped_internal_v1(bigint,timestamptz,uuid,integer,jsonb,boolean,boolean)'::regprocedure)
       LIKE '%s.can_occasion AND c.occasion=p_occasion%',
     'occasion audit permission cannot expose sibling occasion commits');
   PERFORM assert_true(pg_get_functiondef(
@@ -355,13 +359,13 @@ BEGIN
       AND column_name='expired_at'),
     'receipt compaction has a permanent tombstone timestamp');
   PERFORM assert_true(pg_get_functiondef(
-    'public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)'::regprocedure)
+    'public.apply_occasion_settings_intent_internal_v1(bigint,jsonb)'::regprocedure)
       LIKE '%client_sync_v1 before hiding%',
     'ordinary occasion save cannot hide an enabled sync scope');
   PERFORM assert_true(pg_get_functiondef(
     'public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)'::regprocedure)
-      LIKE '%can_edit_occasion%',
-    'occasion save accepts the unit editor role used by occasion settings');
+      LIKE '%save_occasion_domain_command_internal_v1%',
+    'occasion save delegates to the domain owner that authorizes unit editors');
   PERFORM assert_true(pg_get_functiondef(
     'public.save_occasion_domain_command_internal_v1(bigint,uuid,bigint,jsonb)'::regprocedure)
       LIKE '%can_edit_occasion%',

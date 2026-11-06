@@ -439,7 +439,9 @@ void main() {
     expect(
         find.textContaining('EmailDelivery.recovery.conflict'), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
-        'server@example.invalid');
+        'new@example.invalid');
+    expect(reads, greaterThanOrEqualTo(4), reason: 'Conflict refreshes both order and delivery summary');
+    expect(requests, 1, reason: 'A refreshed conflict never retries the draft automatically');
     expect(sent['p_source_message'], 'source');
     expect(sent['p_resend'], true);
   });

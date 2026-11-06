@@ -48,3 +48,6 @@ organization/Unit/forms whose saved switches are already true. Apply the DB
 migration first, provision the Unit runtime with a unique project origin, verify
 its profile/config/consent matrix, then record the deployment and platform
 permission with revision, operator and reason. No bulk tenant rollout is implied.
+
+See the [form measurement integration guide](../../docs/integrations/form-datalayer.md)
+for GA4 cookie flags, collector origins, event mapping and verification limits.

@@ -44,7 +44,7 @@ BEGIN
   IF NOT FOUND OR auth.uid() IS NULL OR public.can_create_occasion(d.unit) IS NOT TRUE THEN
     RAISE insufficient_privilege USING MESSAGE='Draft access denied';
   END IF;
-  RETURN to_jsonb(d);
+  RETURN jsonb_set(to_jsonb(d),'{data}',public.normalize_setup_payments_internal(d.data));
 END $$;
 REVOKE ALL ON FUNCTION public.get_occasion_setup_draft(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_draft(uuid) TO authenticated;
@@ -115,14 +115,14 @@ BEGIN
     END IF;
     configuration := public.build_occasion_setup_configuration(p_unit,p_id);
     UPDATE public.occasion_setup_drafts SET data =
-      jsonb_build_object('defaultConfiguration',configuration,
+      public.normalize_setup_payments_internal(jsonb_build_object('defaultConfiguration',configuration,
         'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true,
-        'paymentMethod',CASE WHEN (SELECT data->>'DEFAULT_FORM_PAYMENT_METHOD' FROM public.organizations WHERE id=d.organization)='stripe' THEN 'stripe' ELSE NULL END,
-        'paymentChoicesEnabled',public.stripe_unit_feature_enabled_internal(d.unit))
-      || d.data WHERE id = p_id RETURNING * INTO d;
+        'paymentMethod',(SELECT CASE WHEN public.payment_method_registered_internal(data->>'DEFAULT_FORM_PAYMENT_METHOD') AND data->>'DEFAULT_FORM_PAYMENT_METHOD'<>'bank' THEN data->>'DEFAULT_FORM_PAYMENT_METHOD' END FROM public.organizations WHERE id=d.organization),
+        'paymentChoicesEnabled',EXISTS(SELECT 1 FROM jsonb_each(public.provider_unit_features_internal(d.unit)) x WHERE x.value='true'::jsonb))
+      || d.data) WHERE id = p_id RETURNING * INTO d;
     PERFORM public.admit_occasion_draft_v1(auth.uid(),p_unit,d.organization,octet_length(d.data::text),false,false,policy);
   END IF;
-  RETURN to_jsonb(d);
+  RETURN jsonb_set(to_jsonb(d),'{data}',public.normalize_setup_payments_internal(d.data));
 END $$;
 
 CREATE OR REPLACE FUNCTION public.initialize_occasion_setup_draft_defaults(p_id uuid, p_expected_revision bigint)
@@ -135,7 +135,7 @@ BEGIN
   END IF;
   IF d.data ? 'finalizedOccasion' OR
      (jsonb_typeof(d.data#>'{defaultConfiguration,forms}')='array' AND
-      jsonb_array_length(d.data#>'{defaultConfiguration,forms}')>0) THEN RETURN to_jsonb(d); END IF;
+      jsonb_array_length(d.data#>'{defaultConfiguration,forms}')>0) THEN RETURN jsonb_set(to_jsonb(d),'{data}',public.normalize_setup_payments_internal(d.data)); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
     RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = 'PT409';
   END IF;
@@ -143,14 +143,14 @@ BEGIN
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,0,false,true,policy);
   configuration := public.build_occasion_setup_configuration(d.unit,p_id);
   UPDATE public.occasion_setup_drafts SET data =
-    jsonb_build_object('defaultConfiguration',configuration,
+    public.normalize_setup_payments_internal(jsonb_build_object('defaultConfiguration',configuration,
       'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true,
-        'paymentMethod',CASE WHEN (SELECT data->>'DEFAULT_FORM_PAYMENT_METHOD' FROM public.organizations WHERE id=d.organization)='stripe' THEN 'stripe' ELSE NULL END,
-        'paymentChoicesEnabled',public.stripe_unit_feature_enabled_internal(d.unit))
-    || (d.data-'defaultConfiguration'), revision = revision+1, updated_at=now()
+        'paymentMethod',(SELECT CASE WHEN public.payment_method_registered_internal(data->>'DEFAULT_FORM_PAYMENT_METHOD') AND data->>'DEFAULT_FORM_PAYMENT_METHOD'<>'bank' THEN data->>'DEFAULT_FORM_PAYMENT_METHOD' END FROM public.organizations WHERE id=d.organization),
+        'paymentChoicesEnabled',EXISTS(SELECT 1 FROM jsonb_each(public.provider_unit_features_internal(d.unit)) x WHERE x.value='true'::jsonb))
+    || (d.data-'defaultConfiguration')), revision = revision+1, updated_at=now()
     WHERE id=p_id RETURNING * INTO d;
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(d.data::text),false,false,policy);
-  RETURN to_jsonb(d);
+  RETURN jsonb_set(to_jsonb(d),'{data}',public.normalize_setup_payments_internal(d.data));
 END $$;
 REVOKE ALL ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) TO authenticated;
@@ -164,7 +164,7 @@ BEGIN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
-  p_data := p_data - 'finalizedOccasion' - 'finalizeResponse';
+  p_data := public.normalize_setup_payments_internal(p_data - 'finalizedOccasion' - 'finalizeResponse');
   IF p_data IS NULL OR jsonb_typeof(p_data) <> 'object' OR octet_length(p_data::text) > 262144 OR p_step IS NULL OR p_step NOT BETWEEN 0 AND 6 THEN
     RAISE EXCEPTION 'Invalid draft' USING ERRCODE = '22023'; END IF;
   IF jsonb_typeof(p_data->'ticketDraft')='object' AND NOT ((p_data->'ticketDraft') ? 'delivery_mode')
@@ -183,13 +183,13 @@ BEGIN
         (SELECT title FROM public.occasions WHERE id=(p_data->>'sourceId')::bigint),p_data->>'copy_locale')));
     END IF;
   END IF;
-  IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN RETURN to_jsonb(d); END IF;
+  IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN RETURN jsonb_set(to_jsonb(d),'{data}',public.normalize_setup_payments_internal(d.data)); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
     RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = 'PT409'; END IF;
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(p_data::text),false,false);
   UPDATE public.occasion_setup_drafts SET data = p_data, current_step = p_step,
     revision = revision + 1, updated_at = now() WHERE id = p_id RETURNING * INTO d;
-  RETURN to_jsonb(d);
+  RETURN jsonb_set(to_jsonb(d),'{data}',public.normalize_setup_payments_internal(d.data));
 END $$;
 
 CREATE OR REPLACE FUNCTION public.delete_occasion_setup_draft(p_id uuid, p_unit bigint, p_expected_revision bigint)

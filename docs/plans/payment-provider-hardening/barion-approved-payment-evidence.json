@@ -1,0 +1,127 @@
+{
+  "attemptId": "23399c05-88e6-4e11-91a7-f128093614d0",
+  "caseId": "czk-enabled-card-smoke-20261106",
+  "disposition": "remote_created",
+  "notifications": 1,
+  "initialStatus": "Prepared",
+  "createdAt": "2026-11-06T12:17:27.047Z",
+  "dispatchedAt": "2026-11-06T12:18:38.894Z",
+  "observations": [
+    {
+      "observedAt": "2026-11-06T12:18:39.431Z",
+      "state": {
+        "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+        "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+        "PaymentType": "Immediate",
+        "Status": "Prepared",
+        "Total": 1,
+        "Currency": "CZK",
+        "FundingSource": null,
+        "CompletedAt": null,
+        "Transactions": [
+          {
+            "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+            "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "TransactionTime": "2026-11-06T12:18:39.279Z",
+            "Total": 1,
+            "Currency": "CZK",
+            "Status": "Prepared",
+            "TransactionType": "Unspecified",
+            "RelatedId": null
+          }
+        ]
+      }
+    },
+    {
+      "observedAt": "2026-11-06T12:21:27.201Z",
+      "state": {
+        "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+        "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+        "PaymentType": "Immediate",
+        "Status": "Succeeded",
+        "Total": 1,
+        "Currency": "CZK",
+        "FundingSource": "BankCard",
+        "CompletedAt": "2026-11-06T12:21:26.363Z",
+        "Transactions": [
+          {
+            "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+            "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "TransactionTime": "2026-11-06T12:18:39.279Z",
+            "Total": 1,
+            "Currency": "CZK",
+            "Status": "Succeeded",
+            "TransactionType": "CardPayment",
+            "RelatedId": null
+          },
+          {
+            "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+            "POSTransactionId": null,
+            "TransactionTime": "2026-11-06T12:21:26.351Z",
+            "Total": 0.01,
+            "Currency": "CZK",
+            "Status": "Reserved",
+            "TransactionType": "CardProcessingFee",
+            "RelatedId": null
+          }
+        ]
+      }
+    },
+    {
+      "observedAt": "2026-11-06T12:21:49.415Z",
+      "state": {
+        "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+        "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+        "PaymentType": "Immediate",
+        "Status": "Succeeded",
+        "Total": 1,
+        "Currency": "CZK",
+        "FundingSource": "BankCard",
+        "CompletedAt": "2026-11-06T12:21:26.363Z",
+        "Transactions": [
+          {
+            "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+            "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "TransactionTime": "2026-11-06T12:18:39.279Z",
+            "Total": 1,
+            "Currency": "CZK",
+            "Status": "Succeeded",
+            "TransactionType": "CardPayment",
+            "RelatedId": null
+          },
+          {
+            "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+            "POSTransactionId": null,
+            "TransactionTime": "2026-11-06T12:21:26.351Z",
+            "Total": 0.01,
+            "Currency": "CZK",
+            "Status": "Reserved",
+            "TransactionType": "CardProcessingFee",
+            "RelatedId": null
+          }
+        ]
+      }
+    }
+  ],
+  "independentOf": "56026796-f5f9-4efd-83c9-bdae4db8f522",
+  "previousOutcomeRemainsUnresolved": true,
+  "probeSourceSha256": "08dd93dd6cd31f7aba8900792cfe789adc53b8701e2dd85bb3ddbf11f927981f",
+  "shopId": "4df06591ac0e4369998e24783d09cfaf",
+  "sandboxOnly": true,
+  "applicationConnectorRegistered": false,
+  "sources": {
+    "supabase/functions/_shared/barion/provider.ts": "8ddf963d3c4ba7c4e0ee758f8a26336da97627a1cb61ae314a9b84a153acaa62",
+    "supabase/functions/_shared/barion/provider_test.ts": "b574b070e0834f6a2e4b3f0f2ba1bd3806ccf4e9299649f02a491a17e878426e",
+    "automation/payments/barion_sandbox_probe.mjs": "08dd93dd6cd31f7aba8900792cfe789adc53b8701e2dd85bb3ddbf11f927981f",
+    "automation/payments/sandbox_intent.mjs": "e48a16c999a0bbfec027892e6b4bbafd8d5852b985f6fc33e55d2cace3ad6f54",
+    "automation/payments/sandbox_intent.test.mjs": "84880df6470fa96d91c8f251c6b97673e73b8adb70032296c0e2388544054dca"
+  },
+  "validation": {
+    "denoBarion": 8,
+    "denoStripe": 38,
+    "intentGuard": 3,
+    "denoCheck": "passed"
+  },
+  "credentialStorage": "encrypted local macOS login Keychain; iCloud synchronization unverified",
+  "cleanup": "operator tunnel/server and isolated buyer browser stopped; merchant session preserved"
+}

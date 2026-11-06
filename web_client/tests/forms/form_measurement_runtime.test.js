@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
+import {runtimeSource} from '../../../workers/form-measurement/src/runtime_source.mjs';
 import {serveMeasurement} from '../../../workers/form-measurement/src/worker.mjs';
 import {FormMeasurementRuntime} from '../../src/components/forms/form_measurement_runtime.js';
 import {bindKlaroConsent} from '../../src/components/forms/form_measurement_consent.js';
-import {attributionContext,measurementOrigin} from '../../src/components/forms/form_measurement_contract.js';
+import {attributionContext,measurementPageLocation,campaignContext,measurementOrigin} from '../../src/components/forms/form_measurement_contract.js';
 const runtime='https://festival-measurement.pages.dev',parent='https://tickets.example';
 const policy={enabled:true,organization_allowed:true,eligible:true,runtime_supported:true,organization:1,unit:2,runtime_origin:runtime,valid_for_seconds:60,policy_revision:1,configuration_revision:'one'};
 const config={organization:1,unit:2,form_id:3,form_link:'summer',runtime_origin:runtime,parent_origin:parent,profile:'gtm-v1',ancestor_origins:[parent],collector_origins:['https://www.google-analytics.com'],policy,gtm_container:'GTM-W9WRHWT9',scripts:'</script><script>window.test=1</script>'};
@@ -83,4 +84,30 @@ test('an organizer scope move cannot recycle consent saved for the previous Unit
  const f=fixture(),t=f.transport;t.setConsent(true);f.message('ack');assert.equal(t.measurementAllowed(),true);
  f.model.data.analytics.unit=99;t.updatePolicy();assert.equal(t.frame,null);
  t.setConsent(true);assert.equal(t.frame,null);assert.equal(t.measurementAllowed(),false);f.dom.window.close();
+});
+
+test('campaign URLs preserve human labels while excluding contacts, controls and unknown parameters',()=>{
+ const input={page_location:parent+'/form/summer',utm_source:'Letní kampaň + A|B',utm_campaign:'ž'.repeat(256),utm_content:'x'.repeat(257),utm_term:'mail@example.test',gclid:'a\u007fb',fbclid:'a\nb',token:'private'};
+ assert.deepEqual(campaignContext(input),{utm_source:input.utm_source,utm_campaign:input.utm_campaign});
+ const location=new URL(measurementPageLocation(input));
+ assert.equal(location.searchParams.get('utm_source'),input.utm_source);
+ assert.equal(location.searchParams.get('utm_campaign'),input.utm_campaign);
+ assert.deepEqual([...location.searchParams.keys()],['utm_source','utm_campaign']);
+ assert.equal(measurementPageLocation({...input,page_location:input.page_location+'?token=private'}),null);
+});
+
+test('real runtime bootstrap validates the bare form URL before exposing a campaign URL',()=>{
+ for(const suffix of ['', '?token=private']) {
+  const dom=new JSDOM('<body><script id="measurement-config" type="application/json"></script></body>',{url:runtime+'/runtime',runScripts:'outside-only'});
+  const win=dom.window;
+  win.document.querySelector('#measurement-config').textContent=JSON.stringify({parent_origin:parent,form_link:'summer'});
+  win.eval(runtimeSource);
+  win.dispatchEvent(new win.MessageEvent('message',{source:win.parent,origin:parent,data:{namespace:'festapp-measurement',protocol:1,instance:'valid_instance',type:'init',context:{page_location:parent+'/form/summer'+suffix,utm_source:'Letní + akce',token:'private'}}}));
+  if(suffix)assert.deepEqual(Array.from(win.dataLayer),[]);
+  else {
+   assert.equal(win.dataLayer[0].page_location,parent+'/form/summer?utm_source=Letn%C3%AD+%2B+akce');
+   assert.equal(win.dataLayer[0].token,undefined);
+  }
+  win.close();
+ }
 });

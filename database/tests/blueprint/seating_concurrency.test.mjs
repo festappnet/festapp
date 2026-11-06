@@ -37,7 +37,7 @@ test('seating public commands: actual two-connection serial outcomes and permiss
    const program=`import runpy,sys,subprocess
 from pathlib import Path
 sys.path.insert(0,'automation')
-from generate_canonical_source_contract import definitions
+from generate_canonical_source_contract import definitions, statements
 from historical_inputs import read_source, source_paths
 assembly=runpy.run_path('automation/assemble-seating-transition-migration.py')
 sources=assembly['SOURCES']
@@ -66,20 +66,50 @@ commands.append(Path('supabase/migrations/20261101120000_blueprint_existing_admi
 commands.append(Path('supabase/migrations/20261101121500_occasion_copy_deletion.sql').read_text())
 commands.append(Path('supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql').read_text())
 commands.append(Path('supabase/migrations/20261101173000_seating_compatibility_admissions.sql').read_text())
-# This is a scoped downgrade in a current-head clone. Replay later migration
-# owners of downgraded functions; unrelated tenant data purges are not upgrades
-# of this fixture. Keep the final full-head parity assertion unchanged.
-# The restore owner owns retained tables (including later feature tables).
-commands.append('RESET ROLE;')
-# Current-head clones already contain later schema and private helpers. Select
-# final owners so a superseded migration cannot downgrade their signatures.
+# This fixture downgrades selected functions inside a current-head clone.
+# Restore only their final definitions, never whole later schema/data migrations.
+# Preserve the clone's exact canonical ACLs, including absent PUBLIC/API grants.
+# Include every function touched by the predecessor replay, not only source-list owners.
+for sql in commands[1:]:affected.update(signature for signature,body in definitions(sql))
+quoted=','.join("to_regprocedure('"+signature.replace("'","''")+"')" for signature in sorted(affected))
+commands.insert(1,"CREATE TEMP TABLE seating_canonical_acl ON COMMIT DROP AS SELECT p.oid::regprocedure::text signature, coalesce(p.proacl,acldefault('f',p.proowner)) acl FROM pg_proc p WHERE p.oid=ANY(ARRAY["+quoted+"]);" )
 final_owners={}
 for migration in sorted(Path('supabase/migrations').glob('*.sql')):
  if migration.name[:14] > '20261101173000':
-  for signature,body in definitions(migration.read_text()):
-   if signature in affected and body is not None:final_owners[signature]=migration
-for migration in sorted(set(final_owners.values())):
- commands.append(migration.read_text())
+  for index,statement in enumerate(statements(migration.read_text())):
+   for signature,body in definitions(statement):
+    if signature not in affected:continue
+    if isinstance(body,tuple):raise ValueError('Explicit rename handling required: '+signature)
+    sql=statement if body is not None else 'DROP FUNCTION IF EXISTS '+signature+';'
+    final_owners[signature]=(migration.name,index,sql)
+commands.append('SET LOCAL ROLE postgres;')
+commands.extend(value[2] for value in sorted(final_owners.values()))
+commands.append("""DO $acl$
+DECLARE saved record; permission record; target regprocedure; recipient text;
+BEGIN
+ FOR saved IN SELECT * FROM seating_canonical_acl LOOP
+  target:=to_regprocedure(saved.signature);
+  IF target IS NULL THEN RAISE EXCEPTION 'Canonical function missing: %',saved.signature; END IF;
+  FOR permission IN SELECT a.* FROM pg_proc p,
+   LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=target LOOP
+   recipient:=CASE WHEN permission.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(permission.grantee)) END;
+   EXECUTE format('REVOKE ALL ON FUNCTION %s FROM %s',target,recipient);
+  END LOOP;
+  FOR permission IN SELECT * FROM aclexplode(saved.acl) LOOP
+   recipient:=CASE WHEN permission.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(permission.grantee)) END;
+   EXECUTE format('GRANT %s ON FUNCTION %s TO %s%s',permission.privilege_type,target,recipient,
+    CASE WHEN permission.is_grantable THEN ' WITH GRANT OPTION' ELSE '' END);
+  END LOOP;
+  IF EXISTS(
+   (SELECT grantor,grantee,privilege_type,is_grantable FROM aclexplode(saved.acl)
+    EXCEPT SELECT a.* FROM pg_proc p,LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=target)
+   UNION ALL
+   (SELECT a.* FROM pg_proc p,LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=target
+    EXCEPT SELECT grantor,grantee,privilege_type,is_grantable FROM aclexplode(saved.acl))) THEN
+   RAISE EXCEPTION 'Canonical ACL changed: %',saved.signature;
+  END IF;
+ END LOOP;
+END $acl$;""")
 commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
 print(chr(10).join(commands))`;
    const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8',maxBuffer:16*1024*1024});

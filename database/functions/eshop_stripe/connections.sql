@@ -93,14 +93,15 @@ BEGIN
  IF current_connection IS NOT NULL AND current_connection IS DISTINCT FROM c.id THEN
   FOR occasion_scope IN SELECT DISTINCT form.occasion FROM public.forms form JOIN public.occasions occasion ON occasion.id=form.occasion
    WHERE occasion.unit=f.unit_id AND occasion.organization=f.organization_id
-    AND form.data#>>'{payments,stripeConnectionId}'=current_connection::text ORDER BY form.occasion LOOP
+    AND public.payment_provider_connection_internal(form.data->'payments','stripe')=current_connection ORDER BY form.occasion LOOP
    mutation:=substr(encode(extensions.digest(f.id::text||':forms:'||occasion_scope::text,'sha256'),'hex'),1,32)::uuid;
    PERFORM public.begin_anonymous_client_mutation_v1(mutation,'inventory.form.stripe_recipient',occasion_scope,mutation,
     encode(extensions.digest(f.id::text||':'||c.id::text||':'||occasion_scope::text,'sha256'),'hex'));
    SELECT coalesce(array_agg(ou."user"),'{}'::uuid[]) INTO members FROM public.occasion_users ou WHERE ou.occasion=occasion_scope;
    WITH updated AS (
-    UPDATE public.forms SET data=jsonb_set(data,'{payments,stripeConnectionId}',to_jsonb(c.id::text)),updated_at=clock_timestamp()
-     WHERE occasion=occasion_scope AND data#>>'{payments,stripeConnectionId}'=current_connection::text RETURNING id
+    UPDATE public.forms SET data=jsonb_set(data,'{payments}',public.merge_form_payments_internal(data->'payments',NULL)||jsonb_build_object('providerConnections',
+      coalesce(public.merge_form_payments_internal(data->'payments',NULL)->'providerConnections','{}')||jsonb_build_object('stripe',c.id))),updated_at=clock_timestamp()
+     WHERE occasion=occasion_scope AND public.payment_provider_connection_internal(data->'payments','stripe')=current_connection RETURNING id
    ), versions AS (
     INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
      SELECT 'form','occasion',occasion_scope,id::text,1 FROM updated

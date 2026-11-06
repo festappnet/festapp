@@ -107,3 +107,17 @@ for signature,body,path in functions:
   assert not re.search(r'\b'+re.escape(name.removeprefix('public.'))+r'\s*\(',body,re.I),(path,signature,name)
 `], {stdio:'pipe'});
 });
+
+ test('ticket batch ACL restoration uses the canonical access owner', () => {
+  const access = read('database/functions/eshop_ticket_batches/access.sql');
+  const migration = read('supabase/migrations/20261106143000_restore_ticket_batch_client_access.sql');
+  assert.equal(migration.slice(migration.indexOf('-- Apply after')), access);
+ });
+
+test('payment lifecycle retains recovery history and provider-aware reconciliation', () => {
+  const recovery = read('database/functions/eshop_waitlist/fakturoid_recovery.sql');
+  const historical = read('supabase/migrations/20261106144000_restore_payment_email_lifecycle.sql');
+  assert.ok(historical.endsWith(recovery));
+  execFileSync('python3', ['automation/assemble-payment-provider-integration-migration.py', '--check']);
+  execFileSync('python3', ['automation/assemble-payment-provider-hardening-migration.py', '--check']);
+});

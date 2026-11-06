@@ -14,7 +14,10 @@ BEGIN
  PERFORM public.internal_storno_tickets_221(a.ticket_ids);
  DELETE FROM eshop.order_product_ticket WHERE "order"=a.target_order_id AND ticket=ANY(a.ticket_ids);
  IF a.conversion='in_place' THEN
-  UPDATE eshop.orders SET state='waitlisted',price=NULL,payment_info=NULL,data=a.previous_order_data->'data',updated_at=clock_timestamp() WHERE id=a.target_order_id;
+  -- The restored order may be accepted again with a new confirmation payload.
+  -- Keep the cancelled attempt immutable and allocate a new email identity once.
+  UPDATE eshop.orders SET state='waitlisted',price=NULL,payment_info=NULL,data=a.previous_order_data->'data',
+   email_payment_version=email_payment_version+1,updated_at=clock_timestamp() WHERE id=a.target_order_id;
  ELSE
   UPDATE eshop.orders SET state='storno',price=0,payment_info=NULL,updated_at=clock_timestamp() WHERE id=a.target_order_id;
  END IF;

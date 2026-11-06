@@ -9,11 +9,11 @@
  *   5. Auth failures: no token, fake token, missing fields
  *   6. Delete by unauthorized user is rejected
  *
- * Environment (reads from ../../.env.local or env vars):
+ * Environment (explicit disposable-local fixture variables only):
  *   DATABASE_URL     - Direct PostgreSQL connection (for test user creation)
  *   SUPABASE_URL     - Supabase project URL
  *
- * Also uses the anon key from the project's AppConfig.
+ * SUPABASE_ANON_KEY - anon key issued by the matching local Auth service.
  *
  * The test creates a temporary user via direct DB insert, signs in via
  * Supabase Auth to get a JWT, runs all tests, then cleans up everything.
@@ -21,67 +21,22 @@
  * Run: pnpm run test:integration
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 
-// ─── Config ──────────────────────────────────────────────────────
+import {startLocalUploadRuntime} from './local-upload-runtime';
 
-// Load a simple KEY=VALUE file (used for .env.local and automation/project.conf).
-function loadKeyValueFile(path: string): Record<string, string> {
-  const vars: Record<string, string> = {};
-  try {
-    const content = readFileSync(path, 'utf-8');
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const eqIdx = trimmed.indexOf('=');
-      if (eqIdx === -1) continue;
-      const key = trimmed.slice(0, eqIdx).trim();
-      let value = trimmed.slice(eqIdx + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
-      vars[key] = value;
-    }
-  } catch {
-    // file not found — fall back to other sources
-  }
-  return vars;
+// The test fails closed without its real, marked disposable backend. No remote
+// Worker or production configuration is read, and no test is silently skipped.
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const DATABASE_URL = process.env.DATABASE_URL || '';
+const ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const WORKER_URL = 'https://image-api.festapp.net';
+const PUBLIC_ORIGIN = 'https://img.festapp.net';
+const PROJECT_ID = 'default';
+let OCCASION_ID = '';
+let localFixture: Awaited<ReturnType<typeof startLocalUploadRuntime>>;
+function fetch(input: string | URL, init?: RequestInit) {
+  return localFixture.fetch(input, init);
 }
-
-const envLocal = loadKeyValueFile(resolve(__dirname, '../../../../.env.local'));
-const projectConf = loadKeyValueFile(
-  resolve(__dirname, '../../../../automation/project.conf')
-);
-const env = (key: string) =>
-  process.env[key] || envLocal[key] || projectConf[key] || '';
-
-const WORKER_URL = process.env.TEST_WORKER_URL || projectConf.IMAGE_API_URL || 'https://image-api.festapp.net';
-const PROJECT_ID = process.env.TEST_IMAGE_PROJECT_ID || projectConf.IMAGE_PROJECT_ID || 'default';
-const PUBLIC_ORIGIN = PROJECT_ID === 'a' ? 'https://a.img.festapp.net' : 'https://img.festapp.net';
-const SUPABASE_URL = env('SUPABASE_URL');
-const DATABASE_URL = env('DATABASE_URL');
-const ANON_KEY = env('SUPABASE_ANON_KEY');
-// OCCASION_ID is auto-discovered from DB in beforeAll if not provided.
-let OCCASION_ID = process.env.TEST_OCCASION_ID || '';
-
-function isLocalDatabase(databaseUrl: string): boolean {
-  try {
-    const hostname = new URL(databaseUrl).hostname;
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-  } catch {
-    return false;
-  }
-}
-
-// The remote worker validates JWTs against the configured Supabase project.
-// A user inserted into the isolated local database can never authenticate
-// there, so keep this remote integration test out of local schema test runs.
-const skip =
-  !SUPABASE_URL || !DATABASE_URL || !ANON_KEY || isLocalDatabase(DATABASE_URL);
 
 // Minimal valid JPEG (1x1 pixel, 107 bytes)
 const MINIMAL_JPEG = new Uint8Array([
@@ -154,10 +109,10 @@ async function createTestUser(): Promise<{ id: string; jwt: string }> {
 
     // 5. Ensure user_info record exists (trigger may or may not create it)
     await pool.query(
-      `INSERT INTO public.user_info (id, name, surname, sex)
-       VALUES ($1, 'Integration', 'Test', 'male')
+      `INSERT INTO public.user_info (id, name, surname, sex, organization)
+       VALUES ($1, 'Integration', 'Test', 'male', $2)
        ON CONFLICT (id) DO NOTHING`,
-      [userId]
+      [userId, localFixture.organization]
     );
 
     // 6. Grant editor permission on the test occasion
@@ -198,7 +153,7 @@ async function deleteTestUser(userId: string): Promise<void> {
   try {
     // Clean up in reverse dependency order
     await pool.query(
-      `DELETE FROM public.images WHERE link LIKE '%integration-test%' OR link LIKE '%test-small%' OR link LIKE '%test-large%' OR link LIKE '%test-delete%' OR link LIKE '%duplicate-name%'`
+      'DELETE FROM public.images WHERE occasion=$1', [OCCASION_ID]
     );
     await pool.query(
       `DELETE FROM public.occasion_users WHERE "user" = $1`,
@@ -291,28 +246,12 @@ async function deleteKey(key: string, jwt?: string): Promise<Response> {
 
 // ─── Test Suite ──────────────────────────────────────────────────
 
-describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
+describe('Upload, Compress, Auth & Cleanup', () => {
   const uploadedKeys: string[] = [];
 
   beforeAll(async () => {
-    if (skip) return;
-    if (!OCCASION_ID) {
-      const pool = await getPool();
-      try {
-        const result = await pool.query(
-          'SELECT id FROM public.occasions ORDER BY id LIMIT 1'
-        );
-        if (result.rows.length === 0) {
-          throw new Error(
-            'No occasions found in DB — set TEST_OCCASION_ID env to a valid occasion id.'
-          );
-        }
-        OCCASION_ID = String(result.rows[0].id);
-        console.log(`Auto-discovered TEST_OCCASION_ID: ${OCCASION_ID}`);
-      } finally {
-        await pool.end();
-      }
-    }
+    localFixture = await startLocalUploadRuntime(DATABASE_URL, SUPABASE_URL, ANON_KEY);
+    OCCASION_ID = String(localFixture.occasion);
     const { id, jwt } = await createTestUser();
     testUserId = id;
     testJwt = jwt;
@@ -331,6 +270,7 @@ describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
       await deleteTestUser(testUserId);
       console.log(`Test user deleted: ${TEST_EMAIL}`);
     }
+    await localFixture?.dispose();
   }, 30_000);
 
   // ── Auth failures ─────────────────────────────────────────────
@@ -429,9 +369,7 @@ describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
     let inputSize: number;
 
     it('uploads and compresses a real photo', async () => {
-      const imgResp = await fetch('https://picsum.photos/2000/3000.jpg');
-      expect(imgResp.ok).toBe(true);
-      const buf = await imgResp.arrayBuffer();
+      const buf = await localFixture.photo();
       inputSize = buf.byteLength;
 
       const resp = await uploadFile(
@@ -548,15 +486,8 @@ describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
 
   describe('Private file access', () => {
     const privateKey = `private/test-private-${Date.now()}.jpg`;
-    // Public origin (e.g. https://a.img.festapp.net) discovered from the upload
-    // response. Routes to the bucket matching the project's SUPABASE_URL.
+    // The real worker determines the public host; the fixture routes it locally.
     let publicOrigin: string = WORKER_URL;
-    // Worker's serve-private.ts currently verifies JWTs against env.SUPABASE_URL
-    // (the default project) only. When running against a non-default instance
-    // (subdomain other than img.festapp.net), the editor-permission RPC always
-    // fails because the JWT issuer doesn't match. Skip the editor-auth checks
-    // in that case; they require a worker code change + per-instance anon keys.
-    let crossInstance = false;
 
     it('uploads to private/ path', async () => {
       const formData = new FormData();
@@ -573,7 +504,6 @@ describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
       expect(resp.status).toBe(200);
       const json = (await resp.json()) as { url: string };
       publicOrigin = new URL(json.url).origin;
-      crossInstance = false;
       uploadedKeys.push(privateKey);
     });
 
@@ -582,8 +512,7 @@ describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
       expect(resp.status).toBe(401);
     });
 
-    it('allows authenticated editor request to private/ (200)', async (ctx) => {
-      if (crossInstance) ctx.skip();
+    it('allows authenticated editor request to private/ (200)', async () => {
       const resp = await fetch(`${publicOrigin}/${privateKey}?projectId=${PROJECT_ID}`, {
         headers: { Authorization: `Bearer ${testJwt}` },
       });
@@ -591,8 +520,7 @@ describe.skipIf(skip)('Upload, Compress, Auth & Cleanup', () => {
       expect(resp.headers.get('content-type')).toMatch(/^image\//);
     });
 
-    it('returns 404 for non-existent private file', async (ctx) => {
-      if (crossInstance) ctx.skip();
+    it('returns 404 for non-existent private file', async () => {
       const resp = await fetch(`${publicOrigin}/private/nonexistent-${Date.now()}.jpg?projectId=${PROJECT_ID}`, {
         headers: { Authorization: `Bearer ${testJwt}` },
       });

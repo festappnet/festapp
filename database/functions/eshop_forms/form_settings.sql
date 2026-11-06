@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.form_settings_keys_internal()
 RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
- "payments":["bankEnabled","stripeConnectionId"],
+ "payments":["bankEnabled","stripeConnectionId","providerConnections"],
  "analytics":["enabled"],
  "design":["embed_inherit_style","is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
  "sale_opening_notifications":["enabled","collection_paused"],
@@ -53,10 +53,11 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE result jsonb:='{}'; d jsonb:=public.normalize_form_metadata_internal(p_data); spec record; k text; section jsonb;
 BEGIN
  FOR spec IN SELECT * FROM jsonb_each(public.form_settings_keys_internal()) LOOP
-  IF spec.key IN ('sale_opening_notifications','analytics') AND NOT d ? spec.key THEN CONTINUE; END IF;
+  IF spec.key IN ('payments','sale_opening_notifications','analytics') AND NOT d ? spec.key THEN CONTINUE; END IF;
   IF spec.value='null'::jsonb OR NOT d ? spec.key OR d->spec.key='null'::jsonb THEN
    result:=result||jsonb_build_object(spec.key,coalesce(d->spec.key,'null'::jsonb));
   ELSE
+   IF spec.key='payments' THEN result:=result||jsonb_build_object(spec.key,d->spec.key); CONTINUE; END IF;
    IF jsonb_typeof(d->spec.key)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid form settings section: '||spec.key; END IF;
    section:='{}';
    FOR k IN SELECT jsonb_array_elements_text(spec.value) LOOP
@@ -98,6 +99,10 @@ BEGIN
   END IF;
   IF entry.value<>'null'::jsonb AND jsonb_typeof(entry.value)<>'object' THEN
    RAISE invalid_parameter_value USING MESSAGE='invalid form settings section: '||entry.key; END IF;
+  IF entry.key='payments' THEN
+   result:=jsonb_set(result,'{payments}',public.merge_form_payments_internal(result->'payments',entry.value));
+   CONTINUE;
+  END IF;
   section:=coalesce(nullif(result->entry.key,'null'::jsonb),'{}'::jsonb);
   IF jsonb_typeof(section)<>'object' THEN section:='{}'; END IF;
   FOR field IN
@@ -109,6 +114,11 @@ BEGIN
    IF v='null'::jsonb THEN section:=section-k;CONTINUE; END IF;
    IF path IN ('analytics.enabled','payments.bankEnabled','design.embed_inherit_style','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
+   ELSIF path='payments.providerConnections' THEN
+    IF jsonb_typeof(v)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid provider connections'; END IF;
+    IF EXISTS(SELECT 1 FROM jsonb_each(v) x WHERE jsonb_typeof(x.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=x.key AND handler IS NOT NULL)) THEN
+     RAISE invalid_parameter_value USING MESSAGE='unknown payment provider'; END IF;
+    PERFORM (x.value#>>'{}')::uuid FROM jsonb_each(v) x;
    ELSIF path='variable_symbol.starting_number' THEN
     IF jsonb_typeof(v)<>'number' OR v::text !~ '^[0-9]{1,10}$' OR (v::text)::bigint NOT BETWEEN 1 AND 9999999999 THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid sequence starting number'; END IF;

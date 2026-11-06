@@ -103,8 +103,9 @@ are rejected even when the corresponding timer has not run yet.
 
 ## Attribution and GTM profile
 
-The runtime receives a canonical public form URL with no query/hash and a
-referrer origin only. Campaign/click values use one bounded allowlist. Host
+The runtime validates a canonical public form URL without query/hash and a
+referrer origin only, then adds only allowlisted campaign parameters to the
+`page_location` query sent to dataLayer. Campaign/click values use one bounded allowlist. Host
 campaign data is separately rebuilt during the pinned embed handshake; the raw
 host URL, unknown query values and capability URLs are never forwarded.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
@@ -125,6 +126,15 @@ popups/nested-frame tags, Ads/enhanced contact export and cross-reload exactly-o
 delivery are outside this profile. Contacts are always stripped.
 
 ## Conversions and migration
+
+`form_start` is sent once per form load on the first visitor answer change or
+ticket/seat action after consent. It carries no field names or values. Merely
+focusing or leaving a field, opening the seat picker, rendering defaults and
+restoring a draft do not count. Pre-consent actions are not replayed.
+This event is independent of the scheduled sale-opening time (`start_time`)
+and its countdown. GA4's automatic form-interaction event uses a session-level
+scope and cannot observe the form from our isolated runtime. Map the supplied
+event once in GTM; do not add another collector for the same interaction.
 
 `purchase` means an accepted paid-price order, not proof of payment. Finalizer
 snapshots own charged prices/items/currency. Client receivers reject totals
@@ -151,3 +161,15 @@ GTM consent template are in `workers/form-measurement/README.md`.
 Implementation and local verification do not publish a runtime, migrate a live
 database, enable an organization/Unit, or publish a GTM workspace. Those steps
 remain unperformed; no domain purchase or setup was requested.
+
+For GA4 in this cross-site frame, set `cookie_flags` to `SameSite=None;Secure`
+in the Google tag. Map `page_location` and `page_referrer` from dataLayer and
+turn off the duplicate automatic pageview. The validated form URL receives only
+allowlisted campaign query parameters; arbitrary query values and fragments
+are never forwarded. Include GA4 regional endpoints in collector origins:
+`https://region1.google-analytics.com`, `https://region1.analytics.google.com`
+and `https://www.google-analytics.com`, or CSP silently blocks their requests.
+GTM Preview does not work inside the runtime: it accepts only `form` and
+`parent` URL parameters and CSP forbids frames. Verify with GA4 Realtime or
+DebugView. Signed-in visitors are excluded from measurement and never see the
+consent notice; test in an incognito window.

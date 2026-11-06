@@ -35,7 +35,7 @@ export class TicketFieldBuilder {
          }
     }
 
-    static create(field, formModel, session) {
+    static create(field, formModel, session, onInteraction) {
     
         const container = document.createElement('div');
         container.className = 'form-field-container ticket-field';
@@ -96,7 +96,7 @@ export class TicketFieldBuilder {
                 } else {
 
                 }
-                const subComp = FormFieldBuilder.createFormField(scopedDef, formModel);
+                const subComp = FormFieldBuilder.createFormField(scopedDef, formModel, undefined, onInteraction);
 
                 
                 // --- Robustness: Attach Data Attributes ---
@@ -257,7 +257,7 @@ export class TicketFieldBuilder {
                 removeBtn.setAttribute('aria-label', CommonStrings.remove);
                 removeBtn.innerHTML = '<i class="material-icons">close</i>';
                 
-                removeBtn.onclick = async () => {
+                removeBtn.onclick = async (event) => {
                     // API Deselection handled by FormSession.removeTicket
                     
                     // --- STATE INVERSION: Call Session ---
@@ -265,6 +265,7 @@ export class TicketFieldBuilder {
                         // Find current index in DOM (safe fallback)
                         const currentIdx = Array.from(listContainer.children).indexOf(ticketItem);
                         session.removeTicket(currentIdx);
+                        if (event.isTrusted) onInteraction?.();
                     }
                     
                     ticketItem.remove();
@@ -405,7 +406,7 @@ export class TicketFieldBuilder {
                         
                         // Resolve module cycle by accessing namespace at runtime
                         const FormFieldBuilder = FormFieldBuilderModule.FormFieldBuilder;
-                        const subComp = FormFieldBuilder.createFormField(scopedDef, formModel);
+                        const subComp = FormFieldBuilder.createFormField(scopedDef, formModel, undefined, onInteraction);
                         
                         // --- Robustness: Attach Data Attributes ---
                         const inputs = subComp.querySelectorAll('input, select, textarea');
@@ -535,7 +536,7 @@ export class TicketFieldBuilder {
                 existingBtn.onclick = () => {
                      import('../../blueprint/blueprint_selector.js').then(({ BlueprintSelector }) => {
                          const selector = new BlueprintSelector();
-                         selector.open(session, field, container.selectedSeats || []);
+                         selector.open(session, field, container.selectedSeats || [], onInteraction);
                      });
                 };
                 
@@ -549,9 +550,12 @@ export class TicketFieldBuilder {
                 addBtn.className = 'btn btn-secondary btn-sm btn-add-ticket';
                 addBtn.textContent = `+ ${FormStrings.addTicket}`;
                 
-                addBtn.onclick = () => {
+                addBtn.onclick = (event) => {
                      // --- STATE INVERSION: Call Session ---
-                     if (session) session.addTicket(); // Add dummy/empty ticket
+                     if (session) {
+                         session.addTicket();
+                         if (event.isTrusted) onInteraction?.();
+                     }
                 };
                 if (!formModel.offerBundle) container.appendChild(addBtn);
                 

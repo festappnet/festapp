@@ -1,4 +1,4 @@
-import {PROPERTIES, HELP_URL, DEFAULT_TITLE, settingsFrom, inheritStyle} from './config.js';
+import {PROPERTIES, HELP_URL, DEFAULT_TITLE, settingsFrom} from './config.js';
 
 export async function saveSettings(api, values) {
   const settings = settingsFrom(values);
@@ -30,8 +30,7 @@ export async function initSettings(document, api) {
     for (const name of PROPERTIES) {
       const value = await api.getProp(name);
       const input = form.elements.namedItem(name);
-      if (name === 'inherit-style') input.checked = inheritStyle(value);
-      else input.value = value || (name === 'form-title' ? DEFAULT_TITLE : '');
+      input.value = value || (name === 'form-title' ? DEFAULT_TITLE : '');
     }
     ready = true;
     status.textContent = '';
@@ -51,7 +50,6 @@ export async function initSettings(document, api) {
       await saveSettings(api, {
         'form-url': form.elements.namedItem('form-url').value,
         'form-title': form.elements.namedItem('form-title').value,
-        'inherit-style': form.elements.namedItem('inherit-style').checked,
       });
       status.textContent = 'Uloženo. Formulář ověřte na zveřejněném webu.';
     } catch (error) { status.textContent = error.message || 'Nastavení nelze uložit. Zkuste to znovu.'; }

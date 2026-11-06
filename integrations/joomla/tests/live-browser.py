@@ -14,7 +14,7 @@ spec = importlib.util.spec_from_file_location('native_publication', ROOT / 'test
 native = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(native)
 config = ROOT / '.private/live-browser.json'
-config.write_text(json.dumps({'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','contentBoundaries':True,'args':'--mute-audio'}))
+config.write_text(json.dumps({'provider':None,'plugins':[],'autoConnect':False,'executablePath':'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','contentBoundaries':True,'args':'--mute-audio'}))
 BROWSER = ['agent-browser','--config',str(config),'--headed','false','--session','festapp-joomla-live-20261026']
 
 
@@ -50,12 +50,15 @@ original_article = article.fields['jform[articletext]'].strip()
 native.save_form(admin,base,article,'article.cancel',{})
 checks = []
 try:
+    run('open','about:blank')
+    info = json.loads(run('session','info','--json'))['data']['runtime']
+    assert info['engine'] == 'chrome' and info['pageCount'] == 1 and info['browserLaunched']
     for path, heading in [('/terms/','Poskytovatel systému'),('/privacy/','Kdo odpovídá za vaše údaje'),('/support/','Kontakt')]:
         run('open','https://vstupenky.online'+path)
         run('wait','--load','networkidle')
         assert heading in run('snapshot','-i'), 'Public legal/support content missing'
         checks.append({'path':path,'rendered':True})
-    native.set_module(admin,base,module_id,{'jform[params][url]':'https://vstupenky.online/form/country_bal_vetrkovice','jform[params][mode]':'auto','jform[params][inherit_style]':'1'})
+    native.set_module(admin,base,module_id,{'jform[params][url]':'https://vstupenky.online/form/country_bal_vetrkovice','jform[params][mode]':'auto',})
     native.set_article(admin,base,seed['article'],'<p>Live embed smoke</p>{loadmoduleid '+str(module_id)+'}')
     native.clear_cache(6)
     run('set','viewport','320','740')

@@ -1,6 +1,6 @@
 # Vydání českého Joomla modulu
 
-Rozsah: **vstupenky.online 1.0.3**, soubor `vstupenky.online.zip`.
+Rozsah: **vstupenky.online 1.0.4**, soubor `vstupenky.online.zip`.
 Globální varianta není předmětem veřejného vydání. GitHub release a Joomla
 Extensions Directory jsou samostatné distribuční kroky.
 

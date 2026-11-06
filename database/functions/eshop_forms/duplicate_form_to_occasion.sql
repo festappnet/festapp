@@ -64,7 +64,7 @@ BEGIN
     SELECT
         public.copy_occasion_title_internal(title,p_locale),
         CASE WHEN source_unit_id IS DISTINCT FROM (SELECT unit FROM public.occasions WHERE id=target_occasion_id)
-          THEN public.normalize_form_metadata_internal(data) #- '{payments,stripeConnectionId}' ELSE public.normalize_form_metadata_internal(data) END - 'sale_opening_notifications' - 'analytics',
+          THEN public.strip_form_payment_connections_internal(public.normalize_form_metadata_internal(data)) ELSE public.normalize_form_metadata_internal(data) END - 'sale_opening_notifications' - 'analytics',
         target_occasion_id,
         type,
         bank_account,

@@ -16,10 +16,14 @@ END $$;
 -- Setup Bank Account
 INSERT INTO eshop.bank_accounts (id, title, account_number, type, supported_currencies)
 VALUES (7000, 'Test Bank', '1234/5678', 'FIO', ARRAY['CZK']);
+INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(777,7000);
 
 -- Setup Occasion
-INSERT INTO occasions (id, unit, title, link, start_time, end_time)
-VALUES (777, 777, 'UpdateTest Occasion', 'update-test', now(), now() + interval '1 day');
+INSERT INTO occasions (id, unit, organization, title, link, start_time, end_time)
+VALUES (777, 777, 777, 'UpdateTest Occasion', 'update-test', now(), now() + interval '1 day');
+
+-- A real bank checkout binds its form before a free order gains a balance.
+INSERT INTO public.forms(id,occasion,link) VALUES(777,777,'update-products-form');
 
 -- Setup Product Types
 INSERT INTO eshop.product_types (id, title, occasion) VALUES (701, 'Test Type', 777);
@@ -52,8 +56,8 @@ BEGIN
     INSERT INTO eshop.payment_info (variable_symbol, amount, currency_code, bank_account, created_at, paid)
     VALUES (777777, 0.0, 'CZK', 7000, now(), 0.0) RETURNING id INTO v_payment_info_id;
 
-    INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, payment_info, state, price, currency_code, created_at)
-    VALUES (public.next_order_sequence(777), public.generate_order_symbol(), 777, v_payment_info_id, 'created', 0.0, 'CZK', now()) RETURNING id INTO v_order_id;
+    INSERT INTO eshop.orders (order_sequence, order_symbol, occasion, form, payment_info, state, price, currency_code, created_at)
+    VALUES (public.next_order_sequence(777), public.generate_order_symbol(), 777, 777, v_payment_info_id, 'created', 0.0, 'CZK', now()) RETURNING id INTO v_order_id;
 
     -- Create a Ticket (No order_id in table, linked via order_product_ticket? Or maybe schema in test was wrong?
     -- Checked function: uses "SELECT form FROM eshop.orders WHERE id = (SELECT order FROM eshop.order_product_ticket WHERE ticket = v_ticket_id LIMIT 1)"

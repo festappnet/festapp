@@ -1,0 +1,2 @@
+00:21 +94 -3: Some tests failed.
+Initial run: 94 passed; 3 assertions required canonical provider-map expectations. The 8-test affected rerun passed all three corrected cases.

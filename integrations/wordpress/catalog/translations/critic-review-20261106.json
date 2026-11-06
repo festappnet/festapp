@@ -1,0 +1,13 @@
+{
+  "reviewer": "independent AI critic /root/wordpress_description_critic",
+  "verdict": "suitable for WordPress catalog after corrections",
+  "human_language_review": false,
+  "corrections": [
+    "Distinguish fixed/default 240-4000px from automatic content height",
+    "Restore form identifier stripped from English GlotPress source",
+    "Distinguish no global WP options from persisted block attributes",
+    "Use shortcode consistently with native UI and simplify guide wording"
+  ],
+  "submission_policy": "Waiting suggestions; no assertion of human review; locale editor retains approval",
+  "po_sha256": "bf2242c0049b56e148007f561903759ba8c265e9e55aa9699bdd790292b90ef4"
+}

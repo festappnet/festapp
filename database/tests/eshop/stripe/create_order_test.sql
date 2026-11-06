@@ -271,7 +271,7 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  result:=public.complete_stripe_connection_flow_internal((flow->>'flowId')::uuid,(flow->>'lease')::uuid,
   jsonb_build_object('accountId','acct_createReplacement','modelVerified',true,'ready',true,'chargesEnabled',true,'cardPaymentsActive',true));
- PERFORM assert_eq((SELECT data#>>'{payments,stripeConnectionId}' FROM public.forms WHERE id=f),result->>'connectionId','future orders use the verified replacement');
+ PERFORM assert_eq((SELECT data#>>'{payments,providerConnections,stripe}' FROM public.forms WHERE id=f),result->>'connectionId','future orders use the verified replacement');
  PERFORM assert_eq((SELECT jsonb_agg(jsonb_build_array(id,connection_id,amount_minor,currency,idempotency_key,session_id,payment_intent_id) ORDER BY id)
   FROM eshop.stripe_checkout_attempts WHERE unit_id=u),original_attempts,'replacement preserves every existing attempt identity');
 

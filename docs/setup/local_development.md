@@ -63,6 +63,20 @@ Each SQL test runs in a transaction and rolls back its fixture data. The runner
 may reset sequences, which is why it must target the dedicated local database,
 never production.
 
+The complete image Worker integration suite also needs local GoTrue and
+PostgREST connected to that same marked disposable database. Supply its
+`SUPABASE_URL`, `SUPABASE_ANON_KEY` and `DATABASE_URL`, and set
+`IMAGE_LIFECYCLE_DATABASE_URL` to the same database before running
+`pnpm --dir workers/image-worker run test:integration`. Missing or remote
+fixtures fail instead of silently skipping. The suite runs the actual Worker
+in workerd with local R2, native Images processing and a real rate limiter.
+Backend requests are routed to local Auth/REST; Cloudflare cache-purge requests
+invalidate the local Cache API. No production Worker, R2 bucket or user is used.
+
+Web test files run sequentially because their disposable database cleanup and
+schema locks are shared. Each concurrency test still opens its own simultaneous
+SQL connections to prove the transaction races.
+
 ## Migration rules
 
 - Active migrations use one unique `YYYYMMDDHHMMSS_name.sql` filename in

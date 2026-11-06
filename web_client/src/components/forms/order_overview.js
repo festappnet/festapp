@@ -1,3 +1,4 @@
+import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { formatDisplayNumber } from '../../utils/formatters.js';
 import { renderCardPaymentStatus, formatCardMoney } from './card_payment_status.js';
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
@@ -32,7 +33,7 @@ function fact(list, label, value) {
 }
 function renderOrderState(host, order, includeReference = true, hasTickets = false, onRefresh = null) {
     const payment = order.payment;
-    if (payment?.method === 'stripe') {
+    if (isCardPaymentMethod(payment?.method)) {
         const statusHost = line(host, 'section', '');
         if (includeReference) line(statusHost, 'p', `${overviewText('orderReference')} ${order.symbol}`);
         renderCardPaymentStatus(statusHost, { ...payment, currency: order.currency }, { onRefresh });
@@ -141,9 +142,9 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         renderOverviewCustomer(card, order.answers, `order:${order.id}`);
         renderAdmissions(card, data.people.filter(person => String(person.currentOrderId) === String(order.id)), order);
         const total = line(card, 'dl', ''); total.className = 'overview-order-total';
-        fact(total, overviewText('total'), (order.payment?.method === 'stripe' ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
+        fact(total, overviewText('total'), (isCardPaymentMethod(order.payment?.method) ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
         const payment = order.payment;
-        if (payment?.method !== 'stripe' && payment) {
+        if (!isCardPaymentMethod(payment?.method) && payment) {
             if (payment.totalOutstanding > 0 || payment.returned > 0 || payment.overpaid > 0) {
                 const amounts = line(card, 'dl', ''); amounts.className = 'overview-amounts';
                 fact(amounts, overviewText('received'), money(payment.received, order.currency));

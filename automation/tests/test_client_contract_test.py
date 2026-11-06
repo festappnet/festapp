@@ -54,6 +54,11 @@ print(json.dumps({'type':'done','success':not fail,'time':1}))
 sys.exit(1 if fail else 0)
 ''')
         fake.chmod(0o755)
+        # The shell wrapper configures font assets before starting the runner.
+        # Stub this unrelated setup in the isolated runner contract fixture.
+        node = binary / "node"
+        node.write_text("#!/bin/sh\nexit 0\n")
+        node.chmod(0o755)
         self.env = {**os.environ, "PATH": str(binary) + os.pathsep + os.environ["PATH"],
                     "CALLS": str(self.root / "calls"), "FESTAPP_CLIENT_RESULTS": str(self.root / "results")}
 
@@ -127,7 +132,7 @@ sys.exit(1 if fail else 0)
         binary = self.root / 'only-system-tools'
         binary.mkdir()
         for name, target in [('bash', shutil.which('bash')), ('python3', sys.executable),
-                             ('dirname', shutil.which('dirname'))]:
+                             ('dirname', shutil.which('dirname')), ('node', self.root / 'bin/node')]:
             (binary / name).symlink_to(target)
         result = subprocess.run([str(binary / 'bash'), str(self.root / 'automation/test_client.sh')],
                                 env={**self.env, 'PATH': str(binary)}, capture_output=True, text=True)
@@ -149,6 +154,22 @@ sys.exit(1 if fail else 0)
         events.write_text(json.dumps(event) + '\n')
         self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
         events.write_text((json.dumps(event) + '\n') * 2)
+        self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
+
+    def test_inventory_allows_executing_optional_case_but_rejects_new_skip(self):
+        source = 'test/example_cases.dart'
+        manifest = self.root / 'automation/client_test_inventory.json'
+        results = self.root / 'inventory-results'
+        results.mkdir()
+        events = results / 'flutter.jsonl'
+        event = {'type': 'testStart', 'test': {'name': 'case', 'url': str(self.root / source), 'metadata': {'skip': False}}}
+        command = [sys.executable, str(self.root / 'automation/client_test_inventory.py'), 'check', str(results)]
+        manifest.write_text(json.dumps({'moves': {}, 'cases': [[source, 'case', True, 1]]}))
+        events.write_text(json.dumps(event) + '\n')
+        self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
+        manifest.write_text(json.dumps({'moves': {}, 'cases': [[source, 'case', False, 1]]}))
+        event['test']['metadata']['skip'] = True
+        events.write_text(json.dumps(event) + '\n')
         self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
 
     def test_grouped_inventory_preserves_multiple_physical_origins(self):

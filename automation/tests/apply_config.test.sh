@@ -54,6 +54,8 @@ mkdir -p "$TMP_ROOT/automation" \
 
 cp "$PROJECT_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/apply_config.sh"
 cp "$PROJECT_ROOT/automation/configure_brand_assets.py" "$TMP_ROOT/automation/configure_brand_assets.py"
+mkdir -p "$TMP_ROOT/assets/brand"
+cp -R "$PROJECT_ROOT/assets/brand/vstupenky-online" "$TMP_ROOT/assets/brand/"
 cp "$PROJECT_ROOT/automation/google-auth-links.py" "$TMP_ROOT/automation/google-auth-links.py"
 cp "$PROJECT_ROOT/automation/configure_fonts.js" "$TMP_ROOT/automation/configure_fonts.js"
 mkdir -p "$TMP_ROOT/automation/fonts"
@@ -61,6 +63,7 @@ mkdir -p "$TMP_ROOT/automation/fonts"
 touch "$TMP_ROOT/automation/fonts/Futura-Regular.ttf"
 cp "$PROJECT_ROOT/automation/hetzner-supabase/merge/source-registry.json" \
    "$TMP_ROOT/automation/hetzner-supabase/merge/source-registry.json"
+cp "$PROJECT_ROOT/automation/lib/font_cap_height.cjs" "$TMP_ROOT/automation/lib/font_cap_height.cjs"
 cp "$PROJECT_ROOT/automation/lib/csp_policy.mjs" "$TMP_ROOT/automation/lib/csp_policy.mjs"
 cp "$PROJECT_ROOT/automation/lib/web_headers.template" "$TMP_ROOT/automation/lib/web_headers.template"
 cp "$PROJECT_ROOT/automation/lib/supabase_client_config.mjs" "$TMP_ROOT/automation/lib/supabase_client_config.mjs"
@@ -71,6 +74,7 @@ cp "$PROJECT_ROOT/automation/release/render_legal_pages.mjs" "$TMP_ROOT/automati
 cp "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" "$TMP_ROOT/automation/release/render_organizer_page.mjs"
 cp "$PROJECT_ROOT/automation/release/render_help_pages.mjs" "$TMP_ROOT/automation/release/render_help_pages.mjs"
 mkdir -p "$TMP_ROOT/automation/release/help" "$TMP_ROOT/web_client/src/services"
+cp "$PROJECT_ROOT/automation/release/help/mcp_reference.mjs" "$TMP_ROOT/automation/release/help/mcp_reference.mjs"
 cp "$PROJECT_ROOT/automation/release/help/search_index.mjs" "$TMP_ROOT/automation/release/help/search_index.mjs"
 cp "$PROJECT_ROOT/web_client/src/services/help_action_routes.js" "$TMP_ROOT/web_client/src/services/help_action_routes.js"
 cp -R "$PROJECT_ROOT/automation/release/organizers" "$TMP_ROOT/automation/release/organizers"
@@ -561,7 +565,7 @@ fi
 # Ticket motion is opt-in and resets when returning to a normal tenant.
 cp "$FIXTURE_CONF" "$TMP_ROOT/automation/tickets.conf"
 printf '\nWEB_LOADING_STYLE=vstupenky-outline\nWEB_LOADING_ANIMATION_ASSET=assets/icons/fstapplogo.svg\nWEB_LOADING_DARK_ANIMATION_ASSET=assets/icons/fstapplogo.dark.svg\nWEB_LOADING_BACKGROUND=#19243b\n' >> "$TMP_ROOT/automation/tickets.conf"
-bash "$TMP_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/tickets.conf" > "$TMP_ROOT/ticket-brand.log" 2>&1
+bash "$TMP_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/tickets.conf" > "$TMP_ROOT/ticket-brand.log" 2>&1 || { cat "$TMP_ROOT/ticket-brand.log"; exit 1; }
 assert_contains "$TMP_ROOT/web/index.html" 'data-loading-style="vstupenky-outline"'
 assert_contains "$TMP_ROOT/web_client/index.html" 'data-loading-style="vstupenky-outline"'
 assert_contains "$TMP_ROOT/lib/app_config.dart" "static const String loadingStyle = 'vstupenky-outline';"

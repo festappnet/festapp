@@ -1,0 +1,13 @@
+✔ ordinary pay result keeps its existing controller and has no handoff link (15.355125ms)
+✔ A06 unavailable methods never silently select bank and unverified iframe excludes card (1.277792ms)
+✔ A06/A24 one method is a summary; two methods have a labelled choice and independent full-payment hint (68.427875ms)
+✔ A07 recipient shown in the preview is a detached snapshot and names are text (8.196083ms)
+✔ QR-only checkout keeps bank selected without displaying an unnecessary method section (13.505208ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 690.7235

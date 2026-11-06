@@ -1,0 +1,41 @@
+{
+  "state": "READY_FOR_WORDPRESS_ORG_PUBLICATION",
+  "prepared_at": "2026-11-06T10:39:13.000061+00:00",
+  "source_main": "70acaaea3b4ab6cac0458ab8e4178c2f8cbe54b5",
+  "plugin": "vstupenky-online",
+  "version": "1.0.4",
+  "zip_sha256": "6bb47d136cc978678a0b81e485e7d1dedd3c0a4a983e2fa69a56d50a06a80394",
+  "hosting_approval": {
+    "approved": true,
+    "reviewed_version": "1.0.3",
+    "email_message_ids": [
+      "1a1b04d1e5f5f580",
+      "1a1b04cc38300f07"
+    ],
+    "approved_at_utc": "2026-11-06T09:59:00Z",
+    "publisher": "festappnet",
+    "repository": "https://plugins.svn.wordpress.org/vstupenky-online/"
+  },
+  "checks": {
+    "plugin_check": {
+      "version": "2.1.0",
+      "wordpress": "6.6",
+      "php": "7.4.33",
+      "errors": 0,
+      "warnings": 1,
+      "warning": "load_plugin_textdomain kept for standalone ZIP translation loading; already documented in reviewed1.0.3"
+    },
+    "wpcs": {
+      "version": "3.4.1",
+      "errors": 0,
+      "warnings": 0
+    },
+    "installed_release_files_matched": 12,
+    "prior_contracts": "Unchanged1.0.4 sources retain real51 assertions on both supported WP/PHP environments,37 tester and48 coexistence assertions; metadata4/4",
+    "gutenberg_ui": "Not claimed; isolated editor canvas blank"
+  },
+  "production_service_fixes_deployed": true,
+  "publication_authorization": "User requested finishing WordPress emails and required actions on2026-11-06; scope Czech plugin directory release only",
+  "credential_storage": "Encrypted macOS login Keychain, readback verified; iCloud synchronizable storage denied to CLI process, no sync claim. Temporary0600 working copy only.",
+  "remaining_external_gates": []
+}

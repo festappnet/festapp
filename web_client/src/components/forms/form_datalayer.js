@@ -22,6 +22,9 @@ export class FormDataLayer {
         this.win = win; this.model = model; this.bridge = bridge; this.session = session;
         this.entryAllowed = (entryAllowed ?? publicFormLocation(win.location, {entry: true})) && documentEntryAllowed(win);
         this.previous = [];
+        this.pageType = 'product';
+        this.viewedPages = new Set();
+        this.viewedCurrencies = new Set();
         this.conversions = new Set();
         this.conversionEpochs = new Map();
         this.policyExpiresAt = Date.now() + Math.min(60, Math.max(0, Number(model.data?.analytics?.valid_for_seconds) || 0)) * 1000;
@@ -105,19 +108,26 @@ export class FormDataLayer {
     }
 
     page(page_type) {
+        this.pageType = page_type;
         const language = this.win.document.documentElement.lang?.slice(0, 2);
         this.emit({page_type, language});
-        this.emit({event: 'page_view'});
+        if (!this.viewedPages.has(page_type) && this.emit({event: 'page_view'})) this.viewedPages.add(page_type);
     }
+    // First real visitor input after consent. Field names and values never leave.
+    started() { if (!this.formStarted && this.emit({event: 'form_start'})) this.formStarted = true; }
     groups(event, items, extra = {}) {
         for (const currency of new Set(items.map(item => item.currency))) {
             this.emit({event, ecommerce: {currency, items: items.filter(item => item.currency === currency), ...extra}});
         }
     }
     view() {
-        this.page('product');
+        this.page(this.pageType);
         const items = [...this.catalog.values()];
-        this.groups('view_item', items);
+        for (const currency of new Set(items.map(item => item.currency))) {
+            if (!this.viewedCurrencies.has(currency) && this.emit({event:'view_item', ecommerce:{currency, items:items.filter(item => item.currency === currency)}}))
+                this.viewedCurrencies.add(currency);
+        }
+        return this.viewedPages.size > 0;
     }
     cart(payload = {}, session) {
         const selected = new Map();
@@ -172,6 +182,7 @@ export class FormDataLayer {
         this.groups('add_payment_info', items, {payment_type: items.every(item => item.price === 0) ? 'free' : method === 'stripe' ? 'card' : 'bank_transfer'});
     }
     confirmed(data) {
+        this.pageType = 'confirmation';
         const conversion = analyticsPayload(data?.ticketOrder?.analytics);
         if (!conversion || !['purchase', 'generate_lead'].includes(conversion.event)) return;
         const identity = conversion.ecommerce?.transaction_id || conversion.event_id;

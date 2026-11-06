@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -319,7 +320,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
     payment: d.payment,
     total: d.order['price'],
     currencyCode: d.order['currency_code'] ?? 'CZK',
-    isCard: d.order['payment_method'] == 'stripe',
+    isCard: paymentConnectors.contains(d.order['payment_method']),
     onOverdueTap: () => widget.onTab('payments'),
   );
   bool get _issuesTickets =>
@@ -937,9 +938,9 @@ class _OrderDetailViewState extends State<OrderDetailView>
         showDetails: d.bankPaymentDetails.isEmpty,
         payment: d.payment,
         currencyCode: d.order['currency_code'] ?? 'CZK',
-        isCard: d.order['payment_method'] == 'stripe',
+        isCard: paymentConnectors.contains(d.order['payment_method']),
       ),
-      if (d.order['payment_method'] == 'stripe')
+      if (paymentConnectors.contains(d.order['payment_method']))
         CardPaymentStatus(payment: d.payment, onRefresh: () => c.load()),
       if (d.payment['status'] == 'unknown')
         Text(OrderDetailStrings.text('platebni_stav_nelze_spolehlive_urcit')),

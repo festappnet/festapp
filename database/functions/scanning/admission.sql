@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION public.scanner_admit_ticket_internal(p_ticket bigint)
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.check_ticket_is_mutable(p_ticket);
- IF NOT public.stripe_ticket_admission_allowed_internal(p_ticket) THEN RAISE EXCEPTION 'stripe_admission_hold'; END IF;
+ IF NOT public.provider_ticket_admission_allowed_internal(p_ticket) THEN RAISE EXCEPTION 'stripe_admission_hold'; END IF;
  IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=p_ticket AND state='used') THEN RAISE EXCEPTION 'already_used'; END IF;
  UPDATE eshop.tickets SET state='used',updated_at=clock_timestamp() WHERE id=p_ticket;
 END $$;

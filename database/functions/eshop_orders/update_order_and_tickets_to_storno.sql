@@ -19,7 +19,7 @@ BEGIN
     -- Card finances and admission are resolved by provider facts and the
     -- audited refund decision, never by resetting an order's original price.
     IF EXISTS(SELECT 1 FROM eshop.payment_info pi
-      WHERE pi.id=v_order.payment_info AND pi.payment_method='stripe') THEN
+      WHERE pi.id=v_order.payment_info AND pi.payment_method<>'bank') THEN
         RAISE EXCEPTION 'STRIPE_USE_REFUND_ADMISSION_DECISION';
     END IF;
     PERFORM public.cancel_order_email_intents(order_id);

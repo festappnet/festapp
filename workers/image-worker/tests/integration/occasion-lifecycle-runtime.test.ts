@@ -9,11 +9,11 @@ import {readFileSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
 
 const databaseUrl = process.env.IMAGE_LIFECYCLE_DATABASE_URL;
-if (databaseUrl && !['localhost', '127.0.0.1', '::1', '[::1]'].includes(new URL(databaseUrl).hostname)) {
+if (!databaseUrl || !['localhost', '127.0.0.1', '::1', '[::1]'].includes(new URL(databaseUrl).hostname)) {
   throw new Error('IMAGE_LIFECYCLE_DATABASE_URL must select a disposable local database');
 }
 
-describe.skipIf(!databaseUrl)('occasion copy/media/delete across workerd and SQL', () => {
+describe('occasion copy/media/delete across workerd and SQL', () => {
   const db = new Client({connectionString: databaseUrl});
   let runtime: Miniflare;
   let org: number, unit: number, source: number;
@@ -31,6 +31,8 @@ describe.skipIf(!databaseUrl)('occasion copy/media/delete across workerd and SQL
   };
   beforeAll(async () => {
     await db.connect();
+    const marker = await db.query('SELECT project FROM festapp_test_support.disposable_environment');
+    expect(marker.rows[0]?.project).toMatch(/^festapp-/);
     await db.query('BEGIN');
     await db.query(readFileSync('../../database/tests/helpers/assertions.sql', 'utf8'));
     // Exercise the final canonical deletion owner without changing the local baseline.

@@ -4,11 +4,11 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connect_callback_page.dart';
-import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
+import 'package:fstapp/components/payments/payment_connection_api.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connection_callback_owner.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 
-class CallbackApi implements StripeConnectionApi {
+class CallbackApi implements PaymentConnectionApi {
   final calls = <Map<String, String>>[];
   Map<String, dynamic> result = {'connected': true, 'unitId': 1};
   bool fail = false;

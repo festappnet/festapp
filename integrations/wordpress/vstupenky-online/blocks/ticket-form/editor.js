@@ -22,10 +22,8 @@
                     help: __('Describe this form for visitors using screen readers. This does not rename the event.', 'vstupenky-online')}),
                 el(components.SelectControl, {label: __('Form height', 'vstupenky-online'), value: a.mode,
                     options: [{label: __('Automatic', 'vstupenky-online'), value: 'auto'}, {label: __('Fixed', 'vstupenky-online'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
-                el(components.ToggleControl, {label: __('Match website appearance', 'vstupenky-online'), checked: a.inheritStyle === undefined ? true : a.inheritStyle === true,
-                    onChange: (inheritStyle) => props.setAttributes({inheritStyle}),
-                    help: __('Use the website font, background and colors for this block only. Save and publish the page to apply changes. The seating plan keeps its own appearance.', 'vstupenky-online')}),
 
+                el('p', null, __('Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes.', 'vstupenky-online'), ' ', el('a', {href:'https://vstupenky.online/events?help=forms',target:'_blank',rel:'noopener noreferrer'}, __('Open forms', 'vstupenky-online'))),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', 'vstupenky-online') : __('Fallback height without the helper (px)', 'vstupenky-online'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor.', 'vstupenky-online')),
                 el('p', null, el('a', {href: 'https://vstupenky.online/privacy/', target: '_blank', rel: 'noopener noreferrer'}, __('Service privacy policy', 'vstupenky-online')))

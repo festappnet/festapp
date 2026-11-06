@@ -1,0 +1,111 @@
+{
+  "head": "a31277e3c3d761ed37d6425a1f2a731584b92e8d",
+  "branch": "main",
+  "uncommittedWorkspacePreserved": true,
+  "sources": {
+    ".github/workflows/seat-checkout-regressions.yml": "e1253c62058a54e70a02ea54f8e3a5e3099ad6aa1f50714a328ba1a1eb19e717",
+    "automation/assemble-barion-sandbox-migration.py": "42f85b8aefcd7d2abd5f142b04c12270d04fcad475f18090d9216bcaad5b6cea",
+    "automation/barion-sandbox-migration.json": "e8c6508677cc753424cf039dccb15dab6de4a8c3dc914d28413a48bf8a41cc5b",
+    "automation/ci/checks.json": "62737882bb5a594427b6d459da68bab46b419195f71063f65e503c23d001fdfc",
+    "automation/hetzner-supabase/merge/runtime-writer-policy.json": "63ba3152ee5353c4a373c4d95a80d8b21b16ed0816e5cd77cb332dd1260b0310",
+    "automation/payments/README.md": "fe42dea566636583d47ec74c27f499f5a3e97bc117119b67d97ee556d4f8e6c3",
+    "automation/payments/barion_sandbox_apply.mjs": "75a9461d52e2abe0eaa02759216a6d5b3013e03e7381d1c8ede2907e16c8cbb3",
+    "automation/payments/barion_sandbox_observe.mjs": "5c12701db0e2d33088860351b11569eeb2f214f01508df4f87d11aa20385a651",
+    "automation/payments/barion_sandbox_probe.mjs": "f1d48b960beb4ee84a458fadec0664ed90c64dcc490dbe3365c02f7c4fd6cf9a",
+    "automation/payments/disposable_psql.mjs": "06100ee75e23a9097e86ef2960d600628f76354d137b68a0478333d48154f7c1",
+    "automation/payments/sandbox_intent.mjs": "b9035d4e4949448d7a44bf224290ae4c7920b4a7ebeadcd30e5a0031b6f341c7",
+    "automation/payments/sandbox_intent.test.mjs": "57386d3972e1c0f8475454d20b250adb33b38653474733b80b752443072fb8b6",
+    "database/functions/abuse/policy.sql": "ee15e7fa1e36afd1353723a274c399de9b7deaf6db050c394b75d86361098a45",
+    "database/functions/eshop_barion/connections.sql": "aa2f3ac5456fdac46e9ab6fd0670f7dbca9fe9ef6ac256425f5623f848fee88f",
+    "database/functions/eshop_barion/provider.sql": "a24b25485057eb45ffc1fa7ecaf9fa994b01db080ef70556336c5b750294e1d7",
+    "database/functions/eshop_barion/runtime.sql": "33772393dbb6287135061ad47558c000aac56b36477298c8ce9f476c6a964a03",
+    "database/functions/eshop_barion/schema.sql": "bda1a2973cfe5a889750466aa7a7ddcb173005cf66cfa11ddfbafc42f1ea8117",
+    "database/functions/payment_providers/effects.sql": "5515e6e0769197073c12f51f0d57abcba06583a97cdb594667f5bfb0f13cf3ff",
+    "database/functions/payment_providers/financial_facts.sql": "bc5375e63ef10626447b5f7710c60bd42e258b4a634cc2d672f0401e3ffa4d7d",
+    "packages/festapp_core/lib/payments.dart": "d7b515f231d7c429c62c43424df8226fcb9946803a53dc8cc3bfca1cb09aa114",
+    "packages/festapp_core/lib/src/payments/connector.dart": "010714872dc9cbe87c6fe42912b1584bdbe2f78ffcb3ec71450f839ecedeac9d",
+    "packages/festapp_core/lib/src/payments/connectors/barion.dart": "49e57a87e1522516b64d58d8c6d291b0673ebe473afb017c402be647ee36e46d",
+    "packages/festapp_core/lib/src/payments/registry.dart": "c1c74dac73b63d74d58e6b4d413a6aa027db7a33a116f20d42b1cdd538595a4f",
+    "packages/festapp_core/test/payments/connector_test.dart": "d6141bb4f825527d7aa1a175eb9ab4a3ef9b53418ca376d05feea9c92a51b82e",
+    "supabase/functions/_shared/barion/adapter.ts": "eb0cabf59feb706e7c8217bd9b683ec8bd61c600818e45cfc24deb2425a7abc5",
+    "supabase/functions/_shared/barion/adapter_test.ts": "8efbff8d2bdeff8ec1a226308c7e6c49daf24641e2541929fcdb82d747a692c8",
+    "supabase/functions/_shared/barion/environment.ts": "8c8950e9d08f0f8acc98fdb8d4c638cf06c5bf275eafb6a74a5d17cf63924ccb",
+    "supabase/functions/_shared/barion/facts.ts": "5c17df8c427f051596d082dce8c76000c0dd192c00f5dc2b0dd725eead7798d4",
+    "supabase/functions/_shared/barion/fixtures/expired.json": "13baafe3f2fb34acffe14f61102c36ec5b5cb1d629e91f568a6da62aabba35db",
+    "supabase/functions/_shared/barion/fixtures/full-refund.json": "a2d29e50accad5ede458d8d516f9f0fe3a3c1acaacb9d3a80f83e1a6fb5a1bd8",
+    "supabase/functions/_shared/barion/fixtures/partial-refund.json": "da971029cb679be0e3080df4338ca3a08f518850aba787d087addd313f828f33",
+    "supabase/functions/_shared/barion/fixtures/succeeded.json": "d5b497b930dda52ff13a3a7cc6c1251c7c817c531c1b25924d61b56633f39e0b",
+    "supabase/functions/_shared/barion/provider.ts": "2ff5fb5f3ef6b26f10847873f4e57d0e284d526d2b822ab4305d24dc57175e56",
+    "supabase/functions/_shared/barion/provider_test.ts": "feecbfc8783fbb5c683e269a515495f78209aeded0780495db28952de46c44b0",
+    "supabase/functions/_shared/barion/sql_test.ts": "146329c9a42fc926d22b3a350360e4c412988deb2c18e48cd0b9d7cecdf050cf",
+    "supabase/functions/_shared/payments/checkout.ts": "4f6d10d1cb3ccd294c5c3b59bb54e7e13572aa3b51e34379c6dc37f16d0ce614",
+    "supabase/functions/_shared/payments/contracts.ts": "56323aefa202c07c4fbab18241d4f3009e99d2fc95d31364ca763d1b92c856c9",
+    "supabase/functions/_shared/payments/paySource.ts": "8a7a633bfc5fdcde7a08393dea832e134fdbe3f32e6968e4ebf1bb9e6fd91d4e",
+    "supabase/functions/_shared/payments/runtime.ts": "532d8466e01910d18e1bb724b5a204453771636b786f770ae1b48b0c8a474e11",
+    "supabase/functions/_shared/stripe/paySource.ts": "f485ffe04401a08248cef8dcae06aee6b1c3ef54b141cb17863a5d32e002b455",
+    "supabase/functions/test-coverage.json": "81d1cc28a20b68d8bb69056f5daac84f1f7d58720de5ed02c71ae8152d8f9a4e",
+    "supabase/migrations/20261106180000_barion_sandbox_connector.sql": "9c5dbacf7997544ac5224391c02053d5b861fdec65278d77a76fa24d2187cb9e",
+    "web_client/src/components/forms/connectors/barion.js": "9afa265e8d91979cf1ccac3f2178c102e59924217d7b9abe11986e50e0ee8130",
+    "web_client/src/components/forms/payment_connector_registry.js": "ee248e5045ec114ca6ea211605bf52ddd487beba32fd81df60e3a4388be8421b",
+    "web_client/tests/database/barion_concurrency.test.js": "c8351061bfd8ed316cc85c1da386c31444db1948b88569273529c258a0328cea",
+    "web_client/tests/database/barion_upgrade.test.js": "c47419279fd41f8ac1583e944c311ad1d6e9bcf15081b9206588ae36e5258361",
+    "web_client/tests/forms/barion_connector.test.js": "a44e05349436ea3e84ee7c2cb88822f6d4f7a55849e8339d5d8afd5866cab7b0"
+  },
+  "validation": {
+    "deno": {
+      "passed": 97,
+      "failed": 0,
+      "skipped": 0
+    },
+    "webGuardCoverage": {
+      "passed": 17,
+      "failed": 0
+    },
+    "dartCore": {
+      "passed": 7,
+      "failed": 0
+    },
+    "sqlFiles": 16,
+    "upgrade": {
+      "passed": 1,
+      "skipped": 0
+    },
+    "concurrency": {
+      "passed": 1,
+      "skipped": 0
+    },
+    "fresh": "passed",
+    "types": "passed",
+    "ciContract": {
+      "passed": 6
+    },
+    "inventory": {
+      "status": "pass",
+      "productionFunctions": 50,
+      "excludedFunctions": 1,
+      "discoveredTests": 119,
+      "unknownFunctions": [],
+      "uncoveredFunctions": [],
+      "blockers": []
+    }
+  },
+  "logSha256": {
+    "deno": "9ba469dcad18ffde2ad90e9173de84541b042de1901299859de5dc4f2db423bc",
+    "web-guards-coverage": "97cbfc69ca248549bf8fc6108e9c1ec9be773c44a6200b7f83e5a5e7a80b36d5",
+    "core": "e13103e958d3f00a384df4ca4b0d6ec4ae91fb780b2b32f423bba57ad01b717e",
+    "sql-regression": "1948e87b0e13e547134db9f509fc2dea6ad75aca2c18092dba500be70c6130a8",
+    "upgrade": "976ce25be1df78794d1281b5ab64eec4cae0373bd0de84c9956680e896b67c3d",
+    "concurrency": "58c2e4639db2064787b70db5e060ec3f331601dec1fb0eb1eda409543d7184c8",
+    "fresh": "fa6809ba81e954a064a7eb69063ebc762407652ea69bd7c8a83b74acea47a572",
+    "types": "193f772dc62b6e2d2faf0e294777c742ecbdbcdb9367d222d4aeb68742db3e6f",
+    "ci-contract": "4ffdd725226db752db4d95add57dfc407634c4ea81731d78ef09c6869db68c15",
+    "stop": "80109ed0da2f5f88fbb010780f06141055c7e46ab78a209ba7b4e92afa04032c"
+  },
+  "cleanup": {
+    "disposableProject": "festapp-payment-provider-hardening",
+    "stoppedWithoutBackup": true,
+    "isolatedBuyerBrowser": "closed",
+    "temporaryCallbackTunnels": "stopped",
+    "productionChanged": false
+  }
+}

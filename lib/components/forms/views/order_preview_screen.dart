@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
@@ -198,15 +199,14 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                                                 _quotedCurrency;
                                             widget.formHolder
                                                     .paymentConnectionId =
-                                                _paymentOptions
-                                                    .stripeConnectionId;
+                                                _paymentOptions.providers[_paymentMethod]?.connectionId;
                                             widget.onSendPressed();
                                           },
                                     child: Text(
                                         widget.totalPrice <= 0
                                             ? PaymentMethodStrings.text(
                                                 'finishFree')
-                                            : _paymentMethod == 'stripe'
+                                            : paymentConnectors.contains(_paymentMethod)
                                                 ? PaymentMethodStrings.text(
                                                     'orderAndPay')
                                                 : PublicOrderStrings
@@ -337,7 +337,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                   products.fold(0, (sum, product) => sum + product.price);
               s = value.toString();
               priceText =
-                  '+ ${Utilities.formatPrice(context, sectionPrice, currencyCode: _quotedCurrency, decimalDigits: _paymentOptions.stripeConfigured ? null : 0)}';
+                  '+ ${Utilities.formatPrice(context, sectionPrice, currencyCode: _quotedCurrency, decimalDigits: _paymentOptions.cardConfigured ? null : 0)}';
               final metaTexts = products
                   .map((p) =>
                       OptionFieldHelper.buildMetaSurchargeText(context, p))
@@ -452,7 +452,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                 Utilities.formatPrice(context, widget.totalPrice,
                     currencyCode: _quotedCurrency,
                     decimalDigits:
-                        _paymentOptions.stripeConfigured ? null : 0)),
+                        _paymentOptions.cardConfigured ? null : 0)),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 16 * OrderPreviewScreen.fontSizeFactor,
                   fontWeight: FontWeight.bold,
@@ -548,7 +548,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
           groupValue: _paymentType,
           onChanged: (v) => setState(() => _paymentType = v!),
           title: Text(
-            '${PublicOrderStrings.payWithDeposit} (${Utilities.formatPrice(context, depositTotal, currencyCode: currencyCode, decimalDigits: _paymentOptions.stripeConfigured ? null : 0)})',
+            '${PublicOrderStrings.payWithDeposit} (${Utilities.formatPrice(context, depositTotal, currencyCode: currencyCode, decimalDigits: _paymentOptions.cardConfigured ? null : 0)})',
             style: TextStyle(fontSize: 14 * OrderPreviewScreen.fontSizeFactor),
           ),
           subtitle: Text(
@@ -566,7 +566,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
           groupValue: _paymentType,
           onChanged: (v) => setState(() => _paymentType = v!),
           title: Text(
-            '${PublicOrderStrings.payFullAmount} (${Utilities.formatPrice(context, widget.totalPrice, currencyCode: currencyCode, decimalDigits: _paymentOptions.stripeConfigured ? null : 0)})',
+            '${PublicOrderStrings.payFullAmount} (${Utilities.formatPrice(context, widget.totalPrice, currencyCode: currencyCode, decimalDigits: _paymentOptions.cardConfigured ? null : 0)})',
             style: TextStyle(fontSize: 14 * OrderPreviewScreen.fontSizeFactor),
           ),
           dense: true,

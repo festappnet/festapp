@@ -1,3 +1,23 @@
+# vstupenky.online - publikovatelnost
+
+## Vydání 1.0.4 po schválení hostingu - 2026-11-06
+
+Hosting žádosti byl schválen po review 1.0.3. Publikovaný GitHub ZIP 1.0.4 má
+SHA-256 `6bb47d136cc978678a0b81e485e7d1dedd3c0a4a983e2fa69a56d50a06a80394` a pochází
+z kanonického mainu `70acaaea3b4ab6cac0458ab8e4178c2f8cbe54b5`.
+
+Před SVN publikací prošel Plugin Check 2.1.0 na WordPress 6.6/PHP 7.4.33:
+0 errors a 1 známý warning na `load_plugin_textdomain`, ponechaný pro samostatnou
+ZIP distribuci. WPCS 3.4.1: 0 errors, 0 warnings. Všech 12 kontrolovaných souborů
+nainstalovaného doplňku odpovídá vydanému ZIPu. Dříve ověřené kontrakty 1.0.4
+zůstávají platné; runtime kód se od nich nezměnil. Následná kontrola v izolovaném systémovém Chromu potvrdila Gutenberg
+false/save/reopen i true/save/reopen. Prázdný canvas byl omezením testovacího
+Chromia, bez změny runtime doplňku. Doklad: `catalog/source/PROVENANCE.txt`.
+
+Přesné vstupy a důkazy: `evidence/directory-readiness-20261106.json`.
+Skutečný stav veřejného vydání: `evidence/directory-release-20261106.json`.
+Následující říjnové záznamy jsou historické a nemění aktuální schválení.
+
 # vstupenky.online - kontrola publikovatelnosti
 
 ## Připravená oprava kanonického odkazu 1.0.2
@@ -113,3 +133,42 @@ je shodný s main 1.0.2; změněny jsou metadata a release/cache version.
 ZIP byl ověřeným podáním nahrán do původní žádosti, reviewer dostal odpověď
 ve stejném vlákně. Nejde o schválení ani veřejné katalogové vydání.
 Důkazy: `evidence/review-response-20261027.json`.
+
+## Český plugin 1.0.5 - centrální vzhled formuláře
+
+Finální kandidát `dist/vstupenky-online-1.0.5.zip` má SHA-256
+`da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8`.
+ZIP obsahuje přesně 12 souborů; všechny odpovídají package-input manifestu.
+Lokální stage `dist/wordpress-org-draft/` obsahuje 12 trunk souborů, 12 tagu
+1.0.5 a 9 katalogových PNG. Všech 33 souborů odpovídá RELEASE manifestu a
+trunk bajty odpovídají ZIPu. Původní tag 1.0.4 zůstává neměnný; SVN commit
+tohoto kandidáta zatím proveden nebyl.
+
+- Skutečný WordPress kontrakt: 47 assertions na WP 7.1.3/PHP 8.5.12 a znovu
+  na WP 6.6/PHP 7.4.33, instalovaný finální český ZIP.
+- WPCS 3.4.1: 0 errors a 0 warnings pro oba připravené balíčky. `php -l`:
+  všech šest PHP souborů bez syntax chyb na PHP 8.5.12 i 7.4.33.
+- Plugin Check 2.1.0 s CLI bootstrapem: oba balíčky, obě sestavy, 0 errors a
+  jeden známý warning pro `load_plugin_textdomain`, zachovaný kvůli překladům
+  v samostatném ZIPu.
+- Další kontrakty na kandidátu SHA-256 `27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65`:
+  37 tester assertions, 48 coexistence/security assertions, české PHP a editor
+  katalogy, životní cyklus a produkční origin gate na obou sestavách. Finální
+  ZIP změnil pouze WPCS formátovací whitespace v PHP šabloně. Token streamy
+  před a po této změně jsou při vynechání `T_WHITESPACE` totožné, 541 tokenů;
+  finální kandidát navíc prošel 47 skutečnými kontrakty na obou sestavách.
+- Izolovaná nativní Gutenberg/onboarding vizuální kontrola na dřívějším
+  runtime-identickém kandidátu prošla: bez lokálního appearance override a s
+  odkazem na formuláře. Finální recapture provenance je v
+  `catalog/source/provenance-1.0.5.txt`. Kontrola nezasahovala produkci.
+
+Manuální WordPress.org review verze 1.0.5 se netvrdí. Dřívější hosting approval
+byl pro verzi 1.0.3; veřejný tag 1.0.4 se nepřepisuje. Kandidát 1.0.5 je
+technicky ověřený, ale centrální-only rollout není dokončen: současný live
+bridge fallback je s novým nativním adaptérem kompatibilní, protože adaptér
+neposílá `styleMode`; vynucení centrálního nastavení pro starý HTML/CMS embed
+čeká na nový web/runtime cutover. Chybí také merge zdrojového cutoveru do main.
+Proto tento technický receipt neoznačuje celý rollout jako nasazený ani není
+SVN publikací. Úplné výsledky a nezavřené rollout brány jsou v
+`evidence/directory-readiness-central-20261106.json`; archivní 1.0.4 approval
+zůstává zachovaný mimo pracovní release stage.

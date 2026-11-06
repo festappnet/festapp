@@ -17,6 +17,9 @@
 /app/stripe/return /flutter.html 200
 /stripe/connect/callback /flutter.html 200
 
+/payments/* /flutter.html 200
+/app/payments/* /flutter.html 200
+
 # Fallback (Flutter)
 # Any other route not matched above falls back to Flutter
 /*       /flutter.html  200

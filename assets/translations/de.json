@@ -405,6 +405,11 @@
     "measurementAskUnitManager": "Bitten Sie die Verwaltung des Veranstalters, die Messung zu aktivieren und GTM oder Skripte einzurichten.",
     "measurementActivationHelp": "Das Speichern dieser Einstellungen startet die Messung noch nicht. Aktivieren Sie sie auch in den Einstellungen der einzelnen Formulare. Die Ausführung erfordert außerdem die Freigabe und Einrichtung durch die Plattform sowie die Einwilligung des Besuchers.",
     "measurementUnitDisabled": "Die Messung ist für diesen Veranstalter deaktiviert. Gespeicherte IDs und Skripte bleiben erhalten.",
+    "measurementConsentTitle": "Besucherstatistik",
+    "measurementConsentAccept": "Akzeptieren",
+    "measurementConsentSave": "Speichern",
+    "measurementConsentClose": "Schließen",
+    "measurementConsentPrivacy": "Datenschutzerklärung",
     "measurementConsentDecline": "Ablehnen",
     "measurementConsentChoices": "Einwilligungseinstellungen",
     "measurementConsentDescription": "Mit Ihrer Einwilligung kann der Veranstalter die Formularnutzung und abgeschlossene Bestellungen messen.",
@@ -441,7 +446,7 @@
     "embedAutomatic": "Automatische Höhe (empfohlen)",
     "embedFixed": "Feste Höhe",
     "embedInheritStyle": "Darstellung an Website anpassen",
-    "embedInheritStyleHelp": "Übernimmt Schrift, Hintergrund und Farben Ihrer Website für diese Einbettung. Wählen Sie die Einstellung, bevor Sie den Code kopieren. Der Saalplan behält sein eigenes Erscheinungsbild.",
+    "embedInheritStyleHelp": "Verwendet Schrift, Hintergrund und Farben der einbettenden Website für alle Einbettungen dieses Formulars. Speichern Sie das Formular; die Änderung gilt beim nächsten Laden. Der Saalplan behält sein eigenes Aussehen.",
     "labelShowBeforeStartMessage": "Informationen vor Anmeldestart anzeigen",
     "helperBeforeStartMessage": "Unter dem Countdown können Sie Informationen zur Veranstaltung, Bilder oder einen Saalplan veröffentlichen. Die Anmeldung öffnet erst zum festgelegten Zeitpunkt.",
     "labelBeforeStartMessage": "Informationen vor Anmeldestart",
@@ -461,7 +466,8 @@
     "savedPublicLink": "Aktuell gespeicherter Link",
     "publicLinkPreview": "Vorschau des ungespeicherten Links",
     "automaticPublicLink": "Ein kurzer Link wird beim Speichern erstellt. Sie können einen eigenen Adressnamen eingeben.",
-    "publicLinkHistoryHelp": "Bisherige Adressen funktionieren weiterhin."
+    "publicLinkHistoryHelp": "Bisherige Adressen funktionieren weiterhin.",
+    "embedOpenAppearance": "Formulargestaltung öffnen"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Vorgenerierte Tickets",

@@ -413,6 +413,7 @@ Deno.test("SES signs an encoded email identity using the AWS double-escaped cano
 });
 
 Deno.test("a preparation timeout keeps its permit until the renderer stops", async () => {
+  let now = 0;
   let release!: (
     value: { prepared: unknown; postAction: Record<string, unknown> },
   ) => void;
@@ -435,12 +436,12 @@ Deno.test("a preparation timeout keeps its permit until the renderer stops", asy
       if (name === "finish_email_attempt") finished = true;
       return null;
     },
-    prepare: () => work,
+    prepare: () => { now = 6; return work; },
     seal: async (value) => value,
     send: async () => {
       throw Error("timed-out work must not send");
     },
-    now: Date.now,
+    now: () => now,
   }, 5);
   await new Promise((resolve) => setTimeout(resolve, 15));
   assertEquals(

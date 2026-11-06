@@ -23,7 +23,7 @@ export function measurementOrigin(value, local = false) {
 export function campaignContext(input) {
     const result = {};
     for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
-        if (typeof input?.[key] === 'string' && /^[a-zA-Z0-9_.~-]{1,256}$/.test(input[key])) result[key] = input[key];
+        if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !/[@\u0000-\u001f\u007f-\u009f]/.test(input[key])) result[key] = input[key];
     }
     return result;
 }
@@ -43,6 +43,15 @@ export function attributionContext(input) {
     } catch { return null; }
 }
 
+// Only validated public context and allowlisted campaign values reach tag URLs.
+export function measurementPageLocation(context) {
+    const verified = attributionContext(context);
+    if (!verified) return null;
+    const url = new URL(verified.page_location);
+    for (const [key, value] of Object.entries(campaignContext(verified))) url.searchParams.set(key, value);
+    return url.href;
+}
+
 const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000-\u001f]/.test(value) ? value.trim().slice(0, limit) : '';
 const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
@@ -55,7 +64,7 @@ export function analyticsPayload(input) {
         if (typeof input.language === 'string' && /^[a-z]{2}$/.test(input.language)) result.language = input.language;
         return result;
     }
-    if (input.event === 'page_view' || input.event === 'form_submit_error') return {event: input.event};
+    if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
     if (input.event === 'generate_lead') {
         if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
         return ({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});

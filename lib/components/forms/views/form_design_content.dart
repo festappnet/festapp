@@ -37,6 +37,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
   bool _isLoading = true;
   final _snapshot = EditorSnapshot();
   Object get _draft => [
+    _form?.definition.embedInheritStyle,
     _form?.definition.isCardDesign,
     _form?.definition.primaryColor,
     _form?.definition.secondaryColor,

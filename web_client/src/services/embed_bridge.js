@@ -9,15 +9,13 @@ const viewport = value => Number.isFinite(value) && value >= 240 && value <= 400
 // The only wildcard message is a public, data-free readiness announcement.
 export class EmbedBridge {
     constructor(win = window) { this.win = win; this.theme = new EmbedTheme(win); }
-    // Older embeds use the saved form preference. Explicit embed markup owns
-    // its presentation choice; neither can render before form data is loaded.
+    // The saved form is the only owner. Host markup cannot override it.
     setInheritStyle(enabled) {
         this.formInheritStyle = enabled === true;
         this.applyStylePreference();
     }
     applyStylePreference() {
-        this.theme.setEnabled(this.formInheritStyle !== undefined &&
-            (this.styleMode ? this.styleMode === 'inherit' : this.formInheritStyle));
+        this.theme.setEnabled(this.formInheritStyle === true);
         this.syncPrice();
     }
     receiveTheme(theme) {
@@ -42,7 +40,6 @@ export class EmbedBridge {
             if (data.type === 'init' && viewport(data.viewportHeight)) {
                 if (this.consentId !== data.consentId) this.measurementRuntime?.setConsent(false);
                 this.origin = event.origin; this.instance = data.instance;
-                this.styleMode = ['inherit', 'default'].includes(data.styleMode) ? data.styleMode : undefined;
                 this.applyStylePreference();
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
@@ -103,9 +100,10 @@ export class EmbedBridge {
         if (!this.measurementAllowed()) return null;
         return this.dataLayer === true ? `${this.origin}:${this.instance}:${this.consentId}` : this.measurementRuntime.measurementEpoch();
     }
-    setMeasurementRuntime(runtime) { this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
+    setMeasurementRuntime(runtime, onReady = () => {}) { this.onMeasurementReady = onReady; this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
     syncMeasurementRuntime() {
         this.measurementRuntime?.setConsent(this.dataLayer !== true && !!this.consentId && Date.now() < this.consentUntil, this.consentUntil);
+        if (this.dataLayer === true && this.measurementAllowed() && this.onMeasurementReady?.()) this.onMeasurementReady = null;
     }
     updatePolicy(expiresAt) { this.measurementRuntime?.updatePolicy(expiresAt); }
     revokeMeasurement() { this.consentId = null; this.consentUntil = 0; this.measurementRuntime?.setConsent(false); }

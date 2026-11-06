@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "sourceMainSha": "52a70b868a14cd0af709f969cb59e98c297ea737",
+  "sourceFile": "supabase/migrations/20261105190000_notification_prepared_scope_discovery.sql",
+  "database": "festapp_rehearsal_20260909220601",
+  "organization": 3,
+  "migrationVersion": "20261105190000",
+  "migrationName": "notification_prepared_scope_discovery",
+  "sourceSha256": "47aeb72e259c91e066af92773b15b7a422d60a1dcf62b1de183fb8d73d61edd6",
+  "bodySha256": "e5da8ecab08eba579b068660b8cc2ed2870ff565fc218225befee56850d4d724",
+  "removedOuterWrapperLines": [
+    3,
+    614
+  ],
+  "artifactSha256": "d5551e0efb8e6f64c9d1acc1e595631de553e958e3306a898034801c65b301d4",
+  "advisoryLock": 5831290471283,
+  "lockTimeout": "5s",
+  "statementTimeout": "180s",
+  "prerequisites": [
+    "20261105120000",
+    "20261105181000"
+  ],
+  "migrationAbsentGuarded": true,
+  "backup": {
+    "label": "20261101-050839F_20261105-122839D",
+    "type": "diff",
+    "archiveCheckPassed": true,
+    "receiptMode": "0600",
+    "receiptOwner": "root"
+  },
+  "appliedAtUtc": "2026-11-05T12:33:22Z",
+  "applyStatus": "committed",
+  "ledgerReadback": {
+    "version": "20261105190000",
+    "name": "notification_prepared_scope_discovery",
+    "statementsSourceSha256": "47aeb72e259c91e066af92773b15b7a422d60a1dcf62b1de183fb8d73d61edd6",
+    "matchesCanonicalSource": true
+  },
+  "privateHelperAcl": {
+    "helperCount": 27,
+    "publicExecute": 0,
+    "anonExecute": 0,
+    "authenticatedExecute": 0
+  },
+  "organization3Health": {
+    "scopes": 49,
+    "backfilling": 0,
+    "failed": 0,
+    "pendingDelivery": 0,
+    "pendingSourceRepairs": 0,
+    "pendingReadRepairs": 0,
+    "privacyRepairs": 0,
+    "expiryDebt": 0,
+    "failedViewRows": 0
+  },
+  "controlPlaneSchedules": [
+    {
+      "name": "festapp_canonical_notification_center_wake",
+      "database": "festapp_rehearsal_20260909220601",
+      "schedule": "1 second",
+      "active": true
+    },
+    {
+      "name": "festapp_canonical_notification_center_project",
+      "database": "festapp_rehearsal_20260909220601",
+      "schedule": "*/1 * * * *",
+      "active": true
+    }
+  ],
+  "publicRpcProbe": {
+    "samplesMs": [
+      271.9,
+      264.4,
+      224.0,
+      220.8,
+      211.9
+    ],
+    "readyRowsEach": 30,
+    "committedViewSeenReadChanges": false
+  }
+}

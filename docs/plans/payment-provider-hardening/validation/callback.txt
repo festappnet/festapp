@@ -1,0 +1,13 @@
+✔ A02 callback credentials removed before bootstrap, restored=true (7.362208ms)
+✔ A02 callback capture does not consume unrelated login or foreign redirects (5.764875ms)
+✔ A08/A11 pay and return scopes are captured separately before analytics with safe browser Back recovery (14.315875ms)
+✔ A20 handoff is captured as its own single-use scope and never restored from pay history (16.834583ms)
+✔ generic payment bootstrap binds private scopes and browser history to a provider (10.6245ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 580.514416

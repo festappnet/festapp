@@ -36,11 +36,11 @@ BEGIN
  legacy_cmd:=gen_random_uuid();result:=public.delete_form_client_sync_v1(form_b,legacy_cmd);ASSERT result->>'status'='applied';ASSERT public.delete_form_client_sync_v1(form_b,legacy_cmd)=result;
  UPDATE public.client_mutation_receipts SET status='expired',response=NULL,expired_at=clock_timestamp() WHERE command_id=cmd;
  ASSERT public.delete_form_client_sync_v1(form_a,cmd,1)->>'code'='410';
- INSERT INTO public.forms(occasion,title,link) VALUES(oc,'Attach blueprint',gen_random_uuid()::text) RETURNING id INTO form_c;
+ INSERT INTO public.forms(occasion,title,link) VALUES(oc,'Seating requires explicit publication',gen_random_uuid()::text) RETURNING id INTO form_c;
  payload:=jsonb_build_object('id',oc,'title','Ticketing delete','organization',org,'unit',un,'features','[{"code":"blueprint","is_enabled":true}]'::jsonb);
  ASSERT public.save_occasion_client_sync_v1(oc,gen_random_uuid(),0,payload)->>'status'='applied';
- ASSERT (SELECT blueprint IS NOT NULL FROM public.forms WHERE id=form_c);
- ASSERT public.update_form_client_sync_v1(jsonb_build_object('id',form_c,'occasion',oc,'expected_aggregate_version',0),gen_random_uuid())->>'status'='conflict','occasion feature attachment invalidates the original form draft';
+ ASSERT (SELECT blueprint IS NULL FROM public.forms WHERE id=form_c),'enabling the feature cannot publish a seating configuration';
+ ASSERT public.update_form_client_sync_v1(jsonb_build_object('id',form_c,'occasion',oc,'expected_aggregate_version',0),gen_random_uuid())->>'status'='applied','a feature-only change leaves the unbound form draft current';
  ASSERT NOT has_table_privilege('authenticated','public.forms','UPDATE');
  ASSERT NOT has_table_privilege('authenticated','eshop.spots','UPDATE');
  ASSERT NOT has_function_privilege('service_role','public.update_product_internal_v1(jsonb)','EXECUTE');

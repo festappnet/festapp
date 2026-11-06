@@ -1,0 +1,33 @@
+{
+  "createdAt": "2026-11-06T11:47:07.660285+00:00",
+  "head": "a31277e3c3d761ed37d6425a1f2a731584b92e8d",
+  "environment": "sandbox",
+  "accountProof": {
+    "operation": "read_only_account_probe",
+    "httpStatus": 401,
+    "providerCode": "ShopIsInDraftState",
+    "code": "barion_remote_rejected"
+  },
+  "firstStart": {
+    "command": "1f5b1e02-9a01-4eca-9bff-67377ddfe7bd",
+    "disposition": "unresolved",
+    "paymentIdKnown": false,
+    "automaticallyRetried": false
+  },
+  "credentialStorage": {
+    "kind": "encrypted macOS login Keychain",
+    "posKeyService": "festapp-barion-sandbox-poskey",
+    "payeeService": "festapp-barion-sandbox-payee",
+    "account": "festapp-sandbox",
+    "icloudSyncVerified": false
+  },
+  "inputs": {
+    "supabase/functions/_shared/barion/provider.ts": "fa7108377077616518efdc7626283ec61a695fcbb89ae5663ab6f00909943bf9",
+    "supabase/functions/_shared/barion/provider_test.ts": "a4bc5a4001b80a813ea62a86d0606d781d759d89e0b4b3cd267789bf50d5f4a6",
+    "automation/payments/barion_sandbox_probe.mjs": "e3c4f327de5db23e6a9fdde7f31d210e96246f51fd2959be0e388071a6f818c4",
+    "automation/payments/README.md": "075212daf95ebe581514fba04d691a3d62dad852b5a64794674c9f9617ea94f9"
+  },
+  "productionRegistered": false,
+  "productionApplied": false,
+  "realSandboxPaymentAcceptance": false
+}

@@ -156,7 +156,7 @@ BEGIN
  ELSIF p_action='record_payment' THEN
    IF NOT (p_changes ?& ARRAY['amount','currency','receivedAt']) OR p_changes - ARRAY['amount','currency','receivedAt','note']::text[]<>'{}'::jsonb
      OR jsonb_typeof(p_changes->'amount') IS DISTINCT FROM 'string' OR jsonb_typeof(p_changes->'currency') IS DISTINCT FROM 'string' OR jsonb_typeof(p_changes->'receivedAt') IS DISTINCT FROM 'string'
-     OR v_pi.id IS NULL OR v_pi.payment_method='stripe' OR (p_changes->>'currency') IS DISTINCT FROM trim(v_order.currency_code)
+     OR v_pi.id IS NULL OR v_pi.payment_method<>'bank' OR (p_changes->>'currency') IS DISTINCT FROM trim(v_order.currency_code)
      OR (p_changes->>'amount') !~ '^[0-9]{1,8}(\.[0-9]{1,2})?$' OR (p_changes->>'amount')::numeric<=0 THEN
      RAISE invalid_parameter_value USING MESSAGE='manual payment unavailable'; END IF;
    PERFORM public.insert_manual_transaction((p_changes->>'amount')::double precision,p_changes->>'currency',v_unit::int,v_pi.variable_symbol::text,

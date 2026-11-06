@@ -424,6 +424,7 @@ void main() {
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
       var reads = 0;
       final savedVersions = <int>[];
+      final savedEmbedStyles = <bool>[];
       await _environment.pumpWidget(
         tester,
         MaterialApp(
@@ -445,6 +446,7 @@ void main() {
             },
             saveForm: (draft) async {
               savedVersions.add(draft.aggregateVersion);
+              savedEmbedStyles.add(draft.definition.embedInheritStyle);
               return FormEditorDraft(
                 aggregateVersion: draft.aggregateVersion + 1,
               )..definition = draft.definition;
@@ -454,7 +456,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       for (var i = 0; i < 2; i++) {
-        await tester.tap(find.byType(Switch).first);
+        await tester.tap(find.byKey(const ValueKey('form-embed-inherit-style')));
         await tester.pumpAndSettle();
         final save = find.widgetWithText(FilledButton, 'Common.save'.tr());
         await tester.tap(save);
@@ -462,6 +464,7 @@ void main() {
         expect(tester.widget<FilledButton>(save).onPressed, isNull);
       }
       expect(savedVersions, [3, 4]);
+      expect(savedEmbedStyles, [false, true]);
       expect(reads, 1);
     },
   );
@@ -529,7 +532,9 @@ void main() {
         expect(tester.widget<FilledButton>(save).onPressed, isNull);
         Future<void> edit() async {
           if (design) {
-            await tester.tap(find.byType(SwitchListTile).first);
+            await tester.tap(
+              find.byKey(const ValueKey('form-embed-inherit-style')),
+            );
           } else {
             await tester.enterText(
               find.widgetWithText(TextFormField, 'Original title'),
@@ -562,9 +567,11 @@ void main() {
         if (design) {
           expect(
             tester
-                .widget<SwitchListTile>(find.byType(SwitchListTile).first)
+                .widget<SwitchListTile>(
+                  find.byKey(const ValueKey('form-embed-inherit-style')),
+                )
                 .value,
-            false,
+            true,
           );
         } else {
           expect(

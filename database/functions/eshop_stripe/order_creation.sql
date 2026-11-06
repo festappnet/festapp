@@ -13,10 +13,10 @@ BEGIN
  INSERT INTO eshop.stripe_checkout_attempts(id,order_id,payment_info_id,organization_id,unit_id,connection_id,livemode,
   amount_minor,currency,order_revision,idempotency_key,created_at,reservation_expires_at,return_base_url,checkout_locale)
  VALUES(attempt,o.id,pi.id,c.organization_id,c.unit_id,c.id,c.livemode,
-  (pi.amount*100)::bigint,pi.currency_code,1,'festapp:checkout:'||attempt,stamp,stamp+interval '31 minutes',
+  (pi.amount*100)::bigint,pi.currency_code,1,'festapp:checkout:'||attempt,stamp,stamp+make_interval(secs=>(public.payment_sale_policy_internal()->>'reservationSeconds')::integer),
   (SELECT rtrim(data->>'DEFAULT_URL','/')||'/stripe/return' FROM public.organizations WHERE id=c.organization_id),
   (SELECT CASE WHEN data->>'DEFAULT_LANGUAGE' IN ('cs','en','de','pl','sk') THEN data->>'DEFAULT_LANGUAGE' ELSE 'en' END FROM public.organizations WHERE id=c.organization_id));
- UPDATE eshop.payment_info SET deadline=stamp+interval '31 minutes' WHERE id=pi.id;
+ UPDATE eshop.payment_info SET deadline=stamp+make_interval(secs=>(public.payment_sale_policy_internal()->>'reservationSeconds')::integer) WHERE id=pi.id;
  RETURN attempt;
 END $$;
 REVOKE ALL ON FUNCTION public.create_stripe_order_attempt_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
@@ -60,6 +60,7 @@ BEGIN
   WHEN a.state='action_required' OR (totals.gross_received>=pi.amount AND o.state NOT IN ('paid','sent')) THEN 'action_required'
   WHEN card_refunded>0 THEN 'partially_refunded'
   WHEN totals.gross_received>=pi.amount AND o.state IN ('paid','sent') THEN 'paid'
+  WHEN a.state='uncertain' AND a.session_id IS NULL AND a.reservation_expires_at<=clock_timestamp() THEN 'pending'
   WHEN a.state='expired' OR a.reservation_expires_at<=clock_timestamp() OR o.state IN ('expired','storno') THEN 'expired'
   WHEN a.state IN ('uncertain','preparing') THEN 'preparing' ELSE 'open' END;
  admission:=CASE WHEN totals.disputed>0 OR status IN ('refunded','action_required') THEN 'hold'
@@ -69,7 +70,7 @@ BEGIN
  RETURN jsonb_build_object('method','stripe','status',status,'amount',pi.amount::text,'received',totals.gross_received::numeric(30,2)::text,
   'returned',totals.refunded::numeric(30,2)::text,'currency',trim(pi.currency_code),'admissionState',admission,'deliveryState',coalesce(delivery,'not_requested'),
   'orderState',o.state,'reservationExpiresAt',a.reservation_expires_at,'serverNow',clock_timestamp(),
-  'lastSyncedAt',a.last_synced_at,'reconciliationPending',a.refund_cursor IS NOT NULL OR a.session_lookup_cursor IS NOT NULL,'reconciliationFailures',a.reconcile_failures,
+  'lastSyncedAt',a.last_synced_at,'reconciliationPending',a.refund_cursor IS NOT NULL OR a.session_lookup_cursor IS NOT NULL OR (a.state='uncertain' AND a.session_id IS NULL),'reconciliationFailures',a.reconcile_failures,
   'allowedActions',CASE WHEN status IN ('open','preparing') AND NOT coalesce(a.lease_expires_at>clock_timestamp(),false) THEN jsonb_build_array('refresh','pay') ELSE jsonb_build_array('refresh') END);
 END $$;
 REVOKE ALL ON FUNCTION public.stripe_order_payment_projection_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;

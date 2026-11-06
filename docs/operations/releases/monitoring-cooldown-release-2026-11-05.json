@@ -1,0 +1,22 @@
+{
+  "sourceSha": "3a2779cefdea06eb7a881f328bce2e4e45235290",
+  "worker": "festapp-monitoring",
+  "versionId": "f105c68f-9ae0-4c2d-98e0-25008e1e9d2a",
+  "deploymentCompletedAtUtc": "2026-11-05T16:29:17.181Z",
+  "cron": "* * * * *",
+  "authAccount": "84b32318ac235bf6738bdf1c8caa0795",
+  "postDeploySchedulerRuns": [
+    {
+      "startedAtEpochMs": 1793896185941,
+      "finishedAtEpochMs": 1793896187286,
+      "healthy": true,
+      "error": null
+    },
+    {
+      "startedAtEpochMs": 1793896245600,
+      "finishedAtEpochMs": 1793896251071,
+      "healthy": true,
+      "error": null
+    }
+  ]
+}

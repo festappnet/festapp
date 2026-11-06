@@ -34,7 +34,7 @@ void main() {
       (settings['schedule'] as Map).containsKey('sale_preparation'),
       isFalse,
     );
-    expect((settings['design'] as Map).containsKey('background_mode'), isFalse);
+    expect((settings['design'] as Map)['background_mode'], 'pattern');
     expect((settings['schedule'] as Map)['start_time'], '2030-01-01T00:00:00Z');
     expect((settings['schedule'] as Map).containsKey('end_time'), isTrue);
     expect((settings['schedule'] as Map)['end_time'], isNull);

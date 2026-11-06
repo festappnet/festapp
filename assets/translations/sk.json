@@ -425,6 +425,11 @@
     "measurementAskUnitManager": "O povolenie merania a nastavenie GTM či skriptov požiadajte správcu organizátora.",
     "measurementActivationHelp": "Uloženie nastavení samo meranie nespustí. Zapnite ho aj v nastaveniach jednotlivých formulárov. Spustenie vyžaduje schválenie a sprevádzkovanie merania platformou a súhlas návštevníka.",
     "measurementUnitDisabled": "Meranie je pre tohto organizátora vypnuté. Uložené ID a skripty zostanú zachované.",
+    "measurementConsentTitle": "Meranie návštevnosti",
+    "measurementConsentAccept": "Prijať",
+    "measurementConsentSave": "Uložiť",
+    "measurementConsentClose": "Zavrieť",
+    "measurementConsentPrivacy": "Zásady ochrany osobných údajov",
     "measurementConsentDecline": "Odmietnuť",
     "measurementConsentChoices": "Nastavenia súhlasu",
     "measurementConsentDescription": "Po Vašom súhlase môže organizátor merať používanie formulára a dokončené objednávky.",
@@ -461,7 +466,7 @@
     "embedAutomatic": "Automatická výška (odporúčané)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Prispôsobiť vzhľad webu",
-    "embedInheritStyleHelp": "Pre toto vloženie použije písmo, pozadie a farby Vášho webu. Voľbu nastavte pred skopírovaním kódu. Plán sály si ponechá vlastný vzhľad.",
+    "embedInheritStyleHelp": "Použije písmo, pozadie a farby hostiteľského webu pre všetky vloženia tohto formulára. Zmenu uložte s formulárom; prejaví sa pri ďalšom načítaní. Plán sály si ponechá vlastný vzhľad.",
     "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
     "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
     "labelBeforeStartMessage": "Informácie pred začiatkom",
@@ -481,7 +486,8 @@
     "savedPublicLink": "Aktuálny uložený odkaz",
     "publicLinkPreview": "Náhľad neuloženého odkazu",
     "automaticPublicLink": "Krátky odkaz sa vytvorí po uložení. Názov adresy môžete zadať ručne.",
-    "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať."
+    "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať.",
+    "embedOpenAppearance": "Upraviť vzhľad formulára"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Predgenerované vstupenky",

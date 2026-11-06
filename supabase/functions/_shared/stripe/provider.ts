@@ -1,12 +1,16 @@
 /** Provider boundary only. SQL owns amounts, recipients, capabilities and states.
  * No environment reads, hidden retries, OAuth account creation or money mutations.
  */
-export class StripeBoundaryError extends Error {
-  constructor(
-    public readonly code: string,
-    public readonly retryable = false,
-  ) {
-    super(code);
+import {
+  type CheckoutSnapshot,
+  PaymentError,
+  record,
+} from "../payments/contracts.ts";
+export { type CheckoutSnapshot, record } from "../payments/contracts.ts";
+
+export class StripeBoundaryError extends PaymentError {
+  constructor(code: string, retryable = false) {
+    super(code, retryable);
     this.name = "StripeBoundaryError";
   }
 }
@@ -80,24 +84,6 @@ export function accountReadiness(
     ready: modelVerified && chargesEnabled && cardPaymentsActive,
   };
 }
-export function record(value: unknown): Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
-export type CheckoutSnapshot = Readonly<{
-  attemptId: string;
-  accountId: string;
-  livemode: boolean;
-  amountMinor: number;
-  currency: string;
-  orderReference: string;
-  expiresAt: number;
-  createdAt: number;
-  idempotencyKey: string;
-  returnUrl?: string;
-  locale?: "auto" | "cs" | "en" | "de" | "pl" | "sk";
-}>;
 export type ProviderOptions = {
   secretKey: string;
   livemode: boolean;
@@ -243,7 +229,9 @@ export class StripeProvider {
       fail("reservation_checkout_window_invalid");
     }
     if (s.expiresAt <= now) fail("reservation_expired");
-    if (s.locale && !["auto", "cs", "en", "de", "pl", "sk"].includes(s.locale)) fail("checkout_locale_invalid");
+    if (
+      s.locale && !["auto", "cs", "en", "de", "pl", "sk"].includes(s.locale)
+    ) fail("checkout_locale_invalid");
     const body = new URLSearchParams({
       ...(s.locale && s.locale !== "auto" ? { locale: s.locale } : {}),
       mode: "payment",

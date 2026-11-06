@@ -1,0 +1,31 @@
+{
+  "createdAt": "2026-11-06T11:13:09.349375+00:00",
+  "head": "a31277e3c3d761ed37d6425a1f2a731584b92e8d",
+  "verification": "standard",
+  "previousReceipt": {
+    "path": "result-inputs.json",
+    "sha256": "0e3043b320beca8782bd67bed63ea22f3d2a681d8854e980e5a3d13ba7c9882e"
+  },
+  "inputs": {
+    "supabase/functions/_shared/payments/reconcile.ts": "19b0972b44bb0b6850f39b9b019334d3e925190efdb9fc1c9a5a931d43e991f2",
+    "supabase/functions/_shared/payments/reconcile_test.ts": "f6ef2d2957eff7be888e7166b569b5507a3528f796f0200a5abf5cc2cf583911",
+    "supabase/functions/test-coverage.json": "0919eeac7c9201258cf71b0a0fc68e929b4edd640927fc604f7c0f5a392d0368"
+  },
+  "changedPreviousInputs": [
+    "supabase/functions/_shared/payments/reconcile.ts",
+    "supabase/functions/test-coverage.json"
+  ],
+  "validation": {
+    "deno": {
+      "sha256": "a5e74f9803c8c5b4ff5a36dd3c4d695c905f3539d876afcb01038e0a8e41f4f5",
+      "summary": "validation/followup-deno.txt"
+    },
+    "coverage": {
+      "sha256": "60e1cd3f0edd9ae515f122ff95bfcc3b9271c7287997ced1caa02bbbf1a0e859",
+      "summary": "validation/followup-coverage.txt"
+    }
+  },
+  "productionApplied": false,
+  "committed": false,
+  "pushed": false
+}

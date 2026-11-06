@@ -966,6 +966,117 @@
         "supabase/functions/wix-checkout-context/handler_test.ts"
       ],
       "reason": "Body and provider I/O are bounded; Wix validates the exact app identity before the service-only issuer signs tenant/form-bound provenance. This route writes no order, grants no access and creates no financial claim."
+    },
+    {
+      "name": "process-notification-center",
+      "path": "supabase/functions/process-notification-center/index.ts",
+      "policies": [],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/_shared/notificationDispatcher_test.ts"
+      ],
+      "reason": "Internal authenticated dispatcher processes notification work under the existing canonical queue and provider contracts.",
+      "budgetDisposition": "bounded-authenticated-protocol"
+    },
+    {
+      "name": "sale-opening-notifications",
+      "path": "supabase/functions/sale-opening-notifications/index.ts",
+      "policies": [
+        "explicit-opt-in",
+        "turnstile-form-binding"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/sale-opening-notifications/protection_test.ts"
+      ],
+      "reason": "The public subscription boundary requires explicit consent and form-bound Turnstile verification before processing."
+    },
+    {
+      "name": "payment-connect",
+      "path": "supabase/functions/payment-connect/index.ts",
+      "policies": [
+        "stripe.connect"
+      ],
+      "budgetDisposition": "sql-enforced",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "reason": "SQL admits the existing Stripe connection flow after user authorization; unsupported provider onboarding fails closed without creating credentials or accessing account state."
+    },
+    {
+      "name": "payment-checkout",
+      "path": "supabase/functions/payment-checkout/index.ts",
+      "policies": [
+        "stripe.checkout",
+        "barion.checkout"
+      ],
+      "budgetDisposition": "sql-enforced",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts",
+        "supabase/functions/_shared/barion/adapter_test.ts"
+      ],
+      "reason": "Provider-specific SQL validates the scoped capability and charges actor, unit and organization budgets before acquiring a bounded checkout lease or dispatching remote work."
+    },
+    {
+      "name": "payment-return",
+      "path": "supabase/functions/payment-return/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "reason": "The selected provider validates a stored, expiring return capability before exposing its bounded payment projection; routing information never authenticates the request."
+    },
+    {
+      "name": "payment-webhook",
+      "path": "supabase/functions/payment-webhook/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts",
+        "supabase/functions/_shared/barion/adapter_test.ts"
+      ],
+      "reason": "Stripe verifies signed original request bytes; Barion notifications only coalesce bounded reconciliation scheduling and never establish financial facts. Authenticated provider reads own those facts."
+    },
+    {
+      "name": "payment-reconcile",
+      "path": "supabase/functions/payment-reconcile/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/payments/reconcileHandler_test.ts",
+        "supabase/functions/_shared/payments/reconcile_test.ts",
+        "supabase/functions/_shared/barion/adapter_test.ts"
+      ],
+      "reason": "A machine request secret is authorized before constructing providers or performing external I/O. Independent bounded provider queues and leases constrain each reconciliation sweep."
     }
   ],
   "workers": [

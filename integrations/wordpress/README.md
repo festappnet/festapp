@@ -1,5 +1,18 @@
 # vstupenky.online a Festapp Tickets pro WordPress
 
+Oficiální české vydání **1.0.4** je dostupné v
+[katalogu WordPress.org](https://wordpress.org/plugins/vstupenky-online/).
+SVN revize 3787697 obsahuje trunk, neměnný tag 1.0.4 a katalogové obrázky;
+veřejný ZIP odpovídá všemi 12 soubory připravenému vydání a instalace přímo
+z katalogu prošla na WordPress 6.6/PHP 7.4.33. [Publikační důkaz](evidence/directory-release-20261106.json).
+
+Katalogová grafika byla následně obnovena v SVN revizi **3787773**: kanonické
+V logo, oba bannery a pět skutečných českých screenshotů. Všech devět veřejných
+obrázků odpovídá schváleným hashům. Doplněk zůstává 1.0.4, bez změny ZIPu či
+vydaného tagu. [Důkaz aktualizace](evidence/catalog-refresh-20261106.json) a
+[lokální přehled](catalog/preview.html).
+Globální varianta se tímto krokem nevydává.
+
 [Zkušenosti z review](REVIEW-LESSONS.md) zaznamenávají přehlédnutá pravidla a jejich
 prevenci. Sémantiku minimální WP verze hlídá generátor i ověření zapečetěného ZIPu;
 regresní případy lze spustit `python3 scripts/test_metadata_contract.py`.
@@ -147,13 +160,12 @@ pnpm run backend:stop
 
 `backend:stop --no-backup` odstraní vlastní disposable data. ZIPy a veřejné důkazy zůstávají. HAR, přihlašovací údaje, capability a raw queue capture patří pouze do ignorované `.private/` s režimem 0600, nikdy do ZIP/SVN. Nepoužívejte globální Docker stop/prune ani globální browser close. Stav úklidu: `evidence/cleanup.json`.
 
-## Vzhled konkrétního vložení
+## Centrální vzhled formuláře
 
-Aktuální zdroj a nově sestavený balíček nabízí **Přizpůsobit vzhled webu** přímo v nativním nastavení vložení. Blok ukládá boolean `inheritStyle`; shortcode přijímá `inherit_style="true"` nebo `inherit_style="false"` přes tentýž normalizační helper. Výchozí zapnutí se použije jen při chybějící hodnotě; existující vypnutí zůstává vypnuté. Uložte a publikujte stránku WordPressu a případně obnovte její cache.
+Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávněný editor ho nastaví ve Vzhledu formuláře a formulář uloží. Všechna vložení použijí tuto volbu při příštím načtení bez výměny HTML. Nativní doplněk ukládá odkaz a své nastavení výšky či názvu, nikoli vlastní volbu vzhledu. Staré uložené atributy jsou neúčinné a nové verze je negenerují. Helper zůstává v obou režimech výšky; plánek sálu se nepřebarvuje.
 
-Adaptér vždy emituje `data-festapp-style="inherit"` nebo `data-festapp-style="default"`. Společný `/embed.js` a `EmbedBridge`/`EmbedTheme` zůstávají jedinými vlastníky předání a použití vzhledu. Automatická a pevná výška jsou nezávislé; helper se načítá v obou režimech. Plánek sálu si ponechává vlastní vzhled.
+Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.
 
-To není tvrzení o aktualizaci již nainstalovaných doplňků. Ovládání vyžaduje aktualizovaný balíček/hostované assets a jejich zapojení v CMS. Starší ruční HTML bez explicitního atributu dál používá kompatibilní nastavení formuláře; nové nativní vložení je vždy explicitní. Žádné nastavení vzhledu se tím globálně neukládá do formuláře.
 
 ## Český balíček pro přímou instalaci
 

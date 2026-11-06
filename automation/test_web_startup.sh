@@ -29,5 +29,8 @@ node --test \
   tests/forms/order_editor_button_lifecycle.test.js \
   tests/core/google_auth_service.test.js
 
+# Real Chromium covers visitor intent independently of synthetic session updates.
+pnpm run test:form-interaction-browser
+
 # Real Chromium must see the form and account actions, including hidden ancestors.
 node scripts/test_form_access_browser.mjs

@@ -6,6 +6,7 @@ BEGIN
  PERFORM create_user_for_test('ds_stranger','ds_stranger@test.local');stranger:=get_user_id('ds_stranger');
  PERFORM create_user_for_test('ds_editor','ds_editor@test.local');editor:=get_user_id('ds_editor');
  INSERT INTO public.organizations(title) VALUES('DS target') RETURNING id INTO org;
+ UPDATE public.user_info SET organization=org WHERE id IN (member,stranger,editor);
  INSERT INTO public.units(organization,title) VALUES(org,'DS unit') RETURNING id INTO unit_id;
  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time,is_open,is_hidden,data)
  VALUES(org,unit_id,'Secret occasion',gen_random_uuid()::text,now(),now()+interval '1 day',true,true,'{"secret":"private"}') RETURNING id INTO o;

@@ -1,0 +1,13 @@
+A07/A13 reject changed server snapshot, environment and unsafe redirect before dispatch ... ok (285µs)
+A13 provider response must match account-scoped immutable Session snapshot ... ok (339µs)
+A10 return status and checkout.session.completed do not constitute payment confirmation ... ok (56µs)
+A25 rate limits and 5xx are retryable; errors never reveal raw provider details ... ok (332µs)
+A13 raw signature, rotation, replay tolerance and environment validation ... ok (833µs)
+A13 correctly signed malformed facts are rejected before ingestion ... ok (266µs)
+A09 timeout replay keeps original Session expiry after the 30 minute creation window ... ok (124µs)
+A16/A25 refund recovery is account-scoped, bounded and keeps a provider cursor ... ok (186µs)
+loopback return origins are confined to sandbox and cannot enter live configuration ... ok (123µs)
+tenant Checkout locale is explicit while legacy attempts preserve their original body ... ok (115µs)
+
+ok | 148 passed | 0 failed (1s)
+

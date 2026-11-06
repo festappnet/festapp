@@ -407,6 +407,11 @@
     "measurementAskUnitManager": "Proszę poprosić administratora organizatora o włączenie pomiaru i skonfigurowanie GTM lub skryptów.",
     "measurementActivationHelp": "Samo zapisanie ustawień nie uruchamia pomiaru. Proszę włączyć go także w ustawieniach poszczególnych formularzy. Uruchomienie wymaga zatwierdzenia i konfiguracji przez platformę oraz zgody odwiedzającego.",
     "measurementUnitDisabled": "Pomiar jest wyłączony dla tego organizatora. Zapisane identyfikatory i skrypty zostaną zachowane.",
+    "measurementConsentTitle": "Pomiar odwiedzin",
+    "measurementConsentAccept": "Akceptuję",
+    "measurementConsentSave": "Zapisz",
+    "measurementConsentClose": "Zamknij",
+    "measurementConsentPrivacy": "Polityka prywatności",
     "measurementConsentDecline": "Odrzuć",
     "measurementConsentChoices": "Ustawienia zgody",
     "measurementConsentDescription": "Za Państwa zgodą organizator może mierzyć korzystanie z formularza i ukończone zamówienia.",
@@ -443,7 +448,7 @@
     "embedAutomatic": "Automatyczna wysokość (zalecana)",
     "embedFixed": "Stała wysokość",
     "embedInheritStyle": "Dopasuj wygląd do strony",
-    "embedInheritStyleHelp": "Używa czcionki, tła i kolorów Państwa witryny w tym osadzeniu. Proszę wybrać ustawienie przed skopiowaniem kodu. Plan sali zachowa własny wygląd.",
+    "embedInheritStyleHelp": "Używa czcionki, tła i kolorów strony dla wszystkich osadzeń tego formularza. Zapisz formularz, aby zastosować zmianę przy następnym wczytaniu. Plan sali zachowuje własny wygląd.",
     "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
     "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
     "labelBeforeStartMessage": "Informacje przed rozpoczęciem zapisów",
@@ -463,7 +468,8 @@
     "savedPublicLink": "Aktualny zapisany link",
     "publicLinkPreview": "Podgląd niezapisanego linku",
     "automaticPublicLink": "Krótki link powstanie po zapisaniu. Możesz wpisać własną nazwę adresu.",
-    "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać."
+    "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać.",
+    "embedOpenAppearance": "Zmień wygląd formularza"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Wstępnie wygenerowane bilety",

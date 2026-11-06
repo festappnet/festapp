@@ -29,7 +29,7 @@
     function campaignContext(input) {
         const result = {};
         for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
-            if (typeof input?.[key] === 'string' && /^[a-zA-Z0-9_.~-]{1,256}$/.test(input[key])) result[key] = input[key];
+            if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !/[@\u0000-\u001f\u007f-\u009f]/.test(input[key])) result[key] = input[key];
         }
         return result;
     }
@@ -49,6 +49,15 @@
         } catch { return null; }
     }
 
+    // Only validated public context and allowlisted campaign values reach tag URLs.
+    function measurementPageLocation(context) {
+        const verified = attributionContext(context);
+        if (!verified) return null;
+        const url = new URL(verified.page_location);
+        for (const [key, value] of Object.entries(campaignContext(verified))) url.searchParams.set(key, value);
+        return url.href;
+    }
+
     const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000-\u001f]/.test(value) ? value.trim().slice(0, limit) : '';
     const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
@@ -61,7 +70,7 @@
             if (typeof input.language === 'string' && /^[a-z]{2}$/.test(input.language)) result.language = input.language;
             return result;
         }
-        if (input.event === 'page_view' || input.event === 'form_submit_error') return {event: input.event};
+        if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
         if (input.event === 'generate_lead') {
             if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
             return ({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
@@ -298,7 +307,6 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
-            styleMode: ['inherit', 'default'].includes(frame.dataset.festappStyle) ? frame.dataset.festappStyle : undefined,
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
             consentId: record.consentId || null, consentUntil: record.consentUntil || 0,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
@@ -459,13 +467,13 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
     new MutationObserver((mutations = []) => {
         scan();
         for (const mutation of mutations) {
-            if (['data-festapp-style', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
+            if (['data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
                 send(mutation.target, frames.get(mutation.target), 'init', false);
             }
         }
         if (!themeRaf) themeRaf = requestAnimationFrame(() => { themeRaf = null; refreshThemes(); });
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true,
-        attributeFilter: ['class', 'style', 'src', 'data-festapp-style', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
+        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
     document.fonts?.ready.then(refreshThemes);
     scan();
 })();

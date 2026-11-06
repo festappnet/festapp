@@ -7,10 +7,10 @@ root = pathlib.Path(root)
 url = urlparse(web_link)
 if url.scheme != 'https' or not url.hostname or url.path not in ('', '/') or url.username or url.password or url.query or url.fragment:
     raise SystemExit('Google auth App Links require a canonical HTTPS web origin')
-payment_paths = ['/stripe/pay', '/stripe/return', '/app/stripe/pay', '/app/stripe/return']
+payment_paths = ['/stripe/pay', '/stripe/return', '/app/stripe/pay', '/app/stripe/return', '/payments/*', '/app/payments/*']
 link_paths = ['/app/google-auth', *payment_paths]
 port_attribute = f' android:port="{url.port}"' if url.port and url.port != 443 else ''
-android_data = '\n'.join(f'                <data android:scheme="https" android:host="{url.hostname}"{port_attribute} android:path="{path}" />' for path in link_paths)
+android_data = '\n'.join(f'                <data android:scheme="https" android:host="{url.hostname}"{port_attribute} android:{"pathPrefix" if path.endswith("*") else "path"}="{path[:-1] if path.endswith("*") else path}" />' for path in link_paths)
 prints = [v.strip().upper() for v in fingerprints.split(',') if v.strip()]
 if any(not re.fullmatch(r'(?:[0-9A-F]{2}:){31}[0-9A-F]{2}', v) for v in prints):
     raise SystemExit('Invalid public Android SHA-256 signing certificate fingerprint')

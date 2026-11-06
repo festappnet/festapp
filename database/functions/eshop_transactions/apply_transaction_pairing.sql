@@ -67,7 +67,7 @@ BEGIN
   IF p_payment_info_id IS NOT NULL THEN
     SELECT * INTO v_target FROM eshop.payment_info WHERE id = p_payment_info_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_PAYMENT_INFO_NOT_FOUND'; END IF;
-    IF v_target.payment_method='stripe' THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF v_target.payment_method<>'bank' THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
     IF upper(trim(v_transaction.currency::text)) <> upper(trim(v_target.currency_code::text)) THEN
       RAISE EXCEPTION 'PAIRING_CURRENCY_MISMATCH';
     END IF;

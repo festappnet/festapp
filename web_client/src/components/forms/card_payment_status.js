@@ -1,3 +1,4 @@
+import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { formatDisplayNumber } from '../../utils/formatters.js';
 import { LocalizationService } from '../../services/localization_service.js';
 export const cardPaymentText = key => LocalizationService.tr(`CardPayments.${key}`);
@@ -12,7 +13,7 @@ export function cardPaymentState(payment) {
     return states.has(payment?.status) ? payment.status : 'unknown';
 }
 export function canContinueCardPayment(payment) {
-    return payment?.method === 'stripe' && payable.has(cardPaymentState(payment)) &&
+    return isCardPaymentMethod(payment?.method) && payable.has(cardPaymentState(payment)) &&
         payment.admissionState !== 'hold' && payment.admissionState !== 'revoked' &&
         Array.isArray(payment.allowedActions) && payment.allowedActions.includes('pay');
 }

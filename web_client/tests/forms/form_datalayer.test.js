@@ -119,3 +119,25 @@ test('disabled and private forms do not create a measurement policy polling time
   assert.equal(timers,0);layer.dispose();dom.window.close();
  }
 });
+
+test('view events retry failed sends and new frames get current context only',()=>{
+ const {dom,layer,bridge,sent}=fixture();
+ bridge.track=()=>false;layer.view();assert.equal(layer.viewedPages.size,0);assert.equal(layer.viewedCurrencies.size,0);
+ bridge.track=p=>{sent.push(p);return p.event!=='view_item';};layer.view();
+ assert.deepEqual([...layer.viewedPages],['product']);assert.equal(layer.viewedCurrencies.size,0);
+ sent.length=0;bridge.track=p=>{sent.push(p);return true;};layer.view();layer.view();
+ assert.deepEqual(events(sent).map(p=>p.event),['view_item']);
+ layer.review({fields:[{4:11}]});assert.equal(events(sent).filter(p=>p.event==='page_view').length,1,'checkout is its own page_view');sent.length=0;layer.view();
+ assert.deepEqual(sent,[{page_type:'checkout',user_type:'b2c',language:'cs'}]);
+ layer.page('product');layer.review({fields:[{4:11}]});assert.equal(events(sent).filter(p=>p.event==='page_view').length,0,'back and repeated review add no page_view');
+ layer.confirmed({ticketOrder:{analytics:purchase}});assert.equal(events(sent).filter(p=>p.event==='page_view').length,1,'confirmation is its own page_view');sent.length=0;layer.view();
+ assert.deepEqual(sent,[{page_type:'confirmation',user_type:'b2c',language:'cs'}]);dom.window.close();
+});
+
+test('form_start waits for consent, fires once and carries no field data',()=>{
+ const {dom,layer,bridge,sent}=fixture({consent:false});
+ layer.started();assert.deepEqual(sent,[]);
+ bridge.measurementAllowed=()=>true;layer.started();layer.started();
+ assert.deepEqual(sent,[{event:'form_start'}]);
+ assert.deepEqual(analyticsPayload({event:'form_start',email:'private@example.com',field:'name'}),{event:'form_start'});dom.window.close();
+});

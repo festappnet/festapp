@@ -1,3 +1,33 @@
+# vstupenky.online - WordPress.org vydání
+
+## Schválený hosting - 2026-11-06
+
+WordPress.org schválil hosting po kontrole verze 1.0.3. Účet vydavatele je
+`festappnet`, přidělený slug `vstupenky-online` a SVN repozitář
+`https://plugins.svn.wordpress.org/vstupenky-online/`. Nová žádost není potřeba;
+reviewer nežádá další opravy ani odpověď na schvalovací e-mail.
+
+Aktuální hotové vydání **1.0.4** obsahuje nativní volbu vzhledu a zachovává
+opravené `Requires at least: 6.6`. Zdroj i GitHub ZIP jsou v kanonickém mainu.
+Veřejné katalogové vydání proběhlo přes SVN v revizi 3787697.
+Aktuální výsledek a veřejné readbacky zaznamenává
+`evidence/directory-release-20261106.json`.
+
+Před publikací se porovnává přesný ZIP se zdroji, `trunk`, `tags/1.0.4` a devíti
+katalogovými assets. `scripts/verify-submission.py --product vstupenky-online
+--submit-ready` musí projít proti aktuálnímu technickému sealu. Publikuje se
+pouze česká distribuce, bez vnitřního RELEASE.json, testů či přístupových údajů.
+Neměnit již vydané tagy. Po commitu ověřit veřejnou stránku, katalogové API,
+stažitelný ZIP a jeho souborové hashe. Zpoždění indexace vyhledávání není totéž
+co neúspěšné vydání.
+
+SVN má samostatné aplikační heslo uložené v šifrované macOS Klíčence. Pracovní
+kopie smí být jen mode 0600; nesmí jít do repozitáře, argumentů procesů nebo logů.
+Používat `--password-from-stdin --no-auth-cache`. iCloud synchronizace není
+potvrzena, lokální Klíčenka byla ověřena zpětným načtením.
+
+## Historické podání a review před schválením
+
 # vstupenky.online - podklady pro WordPress.org
 
 **Review 2026-10-27:** WordPress.org vyžádal shodné `Requires at least: 6.6`
@@ -61,3 +91,26 @@ Podání k review není veřejné vydání. Po přijetí ověřit skutečně př
 a SVN repozitář, připravit diff a v autorizovaném veřejném vydání publikovat
 ověřené trunk/tag/assets. Nakonec ověřit instalaci z katalogu a veřejnou stránku.
 Schválení, rezervaci slugu ani datum vydání nelze předem slíbit.
+
+## Český update 1.0.5 - lokální release příprava
+
+Aktualizace existujícího `vstupenky-online` má finální ZIP SHA-256
+`da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8`.
+`dist/wordpress-org-draft/` je offline návrh pro trunk, tag `1.0.5` a devět
+schválených katalogových PNG. Jde o přesný stage pro český plugin. Připravený
+`festapp-tickets` 1.0.1 není součástí tohoto stage ani tohoto veřejného vydání.
+
+Kandidát prošel artifact-bound WordPress kontrakty na obou podporovaných
+WordPress/PHP sestavách, WPCS, PHP syntax a Plugin Check; podrobnosti a známý
+překladový warning jsou v `READINESS.md` a
+`evidence/directory-readiness-central-20261106.json`. Stage zůstává lokální:
+žádný nový SVN commit ani veřejná změna adresáře nebyla provedena. Stávající
+tag 1.0.4 je historický a immutable.
+
+Zbývají oddělené rollout podmínky: merge central-cutover zdroje do main a
+nasazení web/runtime změny, která sjednotí i staré HTML/CMS embedy na uložené
+centrální nastavení. Až poté lze tento technický kandidát znovu ověřit proti
+konkrétnímu main SHA a pokračovat autorizovaným SVN commitem. Manuální review
+WordPress.org pro 1.0.5 se zde netvrdí. Kandidátní technický seal je
+`dist/APPROVAL.json`; výsledek plain integrity check a záměrně otevřené
+`--submit-ready` brány jsou zaznamenány v `evidence/directory-readiness-central-20261106.json`.

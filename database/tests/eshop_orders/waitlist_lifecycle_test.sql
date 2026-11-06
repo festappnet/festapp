@@ -17,8 +17,8 @@ BEGIN
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Admission',pt,100,'CZK',oc) RETURNING id INTO prod;
  INSERT INTO form_fields(form,product_type,type) VALUES(f,pt,'product_type');
- SELECT id INTO actor FROM auth.users ORDER BY id LIMIT 1;
- IF actor IS NULL THEN RAISE EXCEPTION 'Bootstrap auth user required'; END IF;
+ SELECT u.id INTO actor FROM auth.users u JOIN public.user_info profile ON profile.id=u.id ORDER BY u.id LIMIT 1;
+ IF actor IS NULL THEN RAISE EXCEPTION 'Bootstrap auth user with profile required'; END IF;
  INSERT INTO occasion_users(occasion,"user",is_editor_order,is_editor_order_view,is_editor) VALUES(oc,actor,true,true,true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);

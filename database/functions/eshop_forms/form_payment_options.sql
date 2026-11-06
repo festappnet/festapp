@@ -20,8 +20,7 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='foreign form or missing Stripe environment'; END IF;
  result:=jsonb_build_object('occasionId',p_occasion,'formId',p_form,'livemode',p_livemode,
   'bankAccounts',public.get_form_bank_accounts_internal(p_unit),
-  'stripeRecipient',public.get_form_stripe_recipient(p_unit,p_occasion,p_livemode),
-  'availability',public.form_payment_availability_internal(p_form));
+  'availability',public.form_payment_availability_internal(p_form))||public.provider_form_editor_fields_internal(p_unit,p_occasion,p_livemode);
  IF octet_length(result::text)>1048576 OR jsonb_array_length(result->'bankAccounts')>100 THEN
   RAISE program_limit_exceeded USING MESSAGE='form payment options too large'; END IF;
  RETURN result;

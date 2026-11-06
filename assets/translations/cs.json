@@ -436,6 +436,11 @@
     "measurementAskUnitManager": "O povolení měření a nastavení GTM či skriptů požádejte správce pořadatele.",
     "measurementActivationHelp": "Uložení nastavení samo měření nespustí. Zapněte je také v nastavení jednotlivých formulářů. Spuštění vyžaduje schválení a zprovoznění měření platformou a souhlas návštěvníka.",
     "measurementUnitDisabled": "Měření je pro tohoto pořadatele vypnuté. Uložené ID a skripty zůstanou zachovány.",
+    "measurementConsentTitle": "Měření návštěvnosti",
+    "measurementConsentAccept": "Přijmout",
+    "measurementConsentSave": "Uložit",
+    "measurementConsentClose": "Zavřít",
+    "measurementConsentPrivacy": "Zásady ochrany osobních údajů",
     "measurementConsentDecline": "Odmítnout",
     "measurementConsentChoices": "Nastavení souhlasu",
     "measurementConsentDescription": "Po Vašem souhlasu může pořadatel měřit používání formuláře a dokončené objednávky.",
@@ -588,8 +593,9 @@
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
-    "embedInheritStyleHelp": "Pro toto vložení použije písmo, pozadí a barvy Vašeho webu. Volbu nastavte před zkopírováním kódu. Plánek sálu si ponechá vlastní vzhled.",
-    "productsAndPrices": "Produkty a ceny"
+    "embedInheritStyleHelp": "Použije písmo, pozadí a barvy hostitelského webu pro všechna vložení tohoto formuláře. Změnu uložte s formulářem; projeví se při příštím načtení. Plánek sálu si ponechá vlastní vzhled.",
+    "productsAndPrices": "Produkty a ceny",
+    "embedOpenAppearance": "Upravit vzhled formuláře"
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -737,7 +743,7 @@
     "strict": "Přísný",
     "strictValidation": "Přísná validace",
     "validationMode": "Režim validace",
-    "tabDesign": "Design",
+    "tabDesign": "Vzhled",
     "textFieldType": "Text",
     "viewMore": "Zobrazit více",
     "deleteBlocked": {

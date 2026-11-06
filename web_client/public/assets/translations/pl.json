@@ -232,6 +232,11 @@
   },
   "FeatureFormSettings": {
     "embedInheritStyleHelp": "Używa czcionki, tła i kolorów Państwa witryny w tym osadzeniu. Proszę wybrać ustawienie przed skopiowaniem kodu. Plan sali zachowa własny wygląd.",
+    "measurementConsentTitle": "Pomiar odwiedzin",
+    "measurementConsentAccept": "Akceptuję",
+    "measurementConsentSave": "Zapisz",
+    "measurementConsentClose": "Zamknij",
+    "measurementConsentPrivacy": "Polityka prywatności",
     "measurementConsentDecline": "Odrzuć",
     "measurementConsentChoices": "Ustawienia zgody",
     "measurementConsentDescription": "Za Państwa zgodą organizator może mierzyć korzystanie z formularza i ukończone zamówienia.",

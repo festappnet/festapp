@@ -1,0 +1,668 @@
+{
+  "sandboxOnly": true,
+  "productionActivated": false,
+  "noRealMoney": true,
+  "cases": [
+    {
+      "attemptId": "23399c05-88e6-4e11-91a7-f128093614d0",
+      "caseId": "czk-enabled-card-smoke-20261106",
+      "disposition": "remote_created",
+      "createdAt": "2026-11-06T12:17:27.047Z",
+      "dispatchedAt": "2026-11-06T12:18:38.894Z",
+      "initialStatus": "Prepared",
+      "notifications": 1,
+      "observations": [
+        {
+          "observedAt": "2026-11-06T12:18:39.431Z",
+          "state": {
+            "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "PaymentType": "Immediate",
+            "Status": "Prepared",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": null,
+            "CompletedAt": null,
+            "Transactions": [
+              {
+                "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+                "TransactionTime": "2026-11-06T12:18:39.279Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Prepared",
+                "TransactionType": "Unspecified",
+                "RelatedId": null
+              }
+            ]
+          }
+        },
+        {
+          "observedAt": "2026-11-06T12:21:27.201Z",
+          "state": {
+            "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "PaymentType": "Immediate",
+            "Status": "Succeeded",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": "BankCard",
+            "CompletedAt": "2026-11-06T12:21:26.363Z",
+            "Transactions": [
+              {
+                "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+                "TransactionTime": "2026-11-06T12:18:39.279Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardPayment",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": null,
+                "TransactionTime": "2026-11-06T12:21:26.351Z",
+                "Total": 0.01,
+                "Currency": "CZK",
+                "Status": "Reserved",
+                "TransactionType": "CardProcessingFee",
+                "RelatedId": null
+              }
+            ]
+          }
+        },
+        {
+          "observedAt": "2026-11-06T12:21:49.415Z",
+          "state": {
+            "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "PaymentType": "Immediate",
+            "Status": "Succeeded",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": "BankCard",
+            "CompletedAt": "2026-11-06T12:21:26.363Z",
+            "Transactions": [
+              {
+                "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+                "TransactionTime": "2026-11-06T12:18:39.279Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardPayment",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": null,
+                "TransactionTime": "2026-11-06T12:21:26.351Z",
+                "Total": 0.01,
+                "Currency": "CZK",
+                "Status": "Reserved",
+                "TransactionType": "CardProcessingFee",
+                "RelatedId": null
+              }
+            ]
+          }
+        }
+      ],
+      "snapshot": {
+        "attemptId": "23399c05-88e6-4e11-91a7-f128093614d0",
+        "accountId": "4df06591ac0e4369998e24783d09cfaf",
+        "livemode": false,
+        "amountMinor": 100,
+        "currency": "CZK",
+        "createdAt": 1793967518,
+        "expiresAt": 1793969378
+      },
+      "applicationProof": {
+        "attemptId": "23399c05-88e6-4e11-91a7-f128093614d0",
+        "paymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+        "observedAt": "2026-11-06T12:55:56.289Z",
+        "payment": {
+          "amount": "1.00",
+          "method": "barion",
+          "status": "refunded",
+          "currency": "CZK",
+          "received": "1.00",
+          "returned": "1.00",
+          "serverNow": "2026-11-06T12:55:56.324174+00:00",
+          "orderState": "storno",
+          "lastSyncedAt": "2026-11-06T12:55:56.302227+00:00",
+          "deliveryState": "not_requested",
+          "admissionState": "hold",
+          "allowedActions": [
+            "refresh"
+          ],
+          "reservationExpiresAt": "2026-11-06T12:49:38+00:00",
+          "reconciliationPending": false,
+          "reconciliationFailures": 0
+        },
+        "disposableOutcome": {
+          "orderState": "storno",
+          "paid": 1,
+          "returned": 1,
+          "ticketState": "storno"
+        },
+        "rolledBack": true
+      },
+      "additionalReadbacks": [
+        {
+          "state": {
+            "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "Status": "Succeeded",
+            "Currency": "CZK",
+            "Total": 0.5,
+            "PaymentType": "Immediate",
+            "CompletedAt": "2026-11-06T12:21:26.363Z",
+            "Transactions": [
+              {
+                "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+                "TransactionTime": "2026-11-06T12:18:39.279Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardPayment",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": null,
+                "TransactionTime": "2026-11-06T12:21:26.351Z",
+                "Total": 0.01,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardProcessingFee",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "672959e9ddd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "666d3c4e-8576-4de5-855d-d2c8e38f918c",
+                "TransactionTime": "2026-11-06T12:30:59.311Z",
+                "Total": 0.5,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "RefundToBankCard",
+                "RelatedId": "31a7fa31dcd9f1118c35001dd8b71cc5"
+              }
+            ]
+          },
+          "facts": {
+            "checkoutId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "paymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "checkoutStatus": "complete",
+            "movements": [
+              {
+                "providerId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "kind": "payment",
+                "amountMinor": 100,
+                "currency": "CZK",
+                "occurredAt": 1793967686
+              },
+              {
+                "providerId": "672959e9ddd9f1118c35001dd8b71cc5",
+                "kind": "refund",
+                "amountMinor": 50,
+                "currency": "CZK",
+                "occurredAt": 1793968259
+              }
+            ],
+            "disputes": [],
+            "connectorState": {
+              "financialHold": null
+            }
+          }
+        },
+        {
+          "state": {
+            "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+            "Status": "Succeeded",
+            "Currency": "CZK",
+            "Total": 0,
+            "PaymentType": "Immediate",
+            "CompletedAt": "2026-11-06T12:21:26.363Z",
+            "Transactions": [
+              {
+                "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+                "TransactionTime": "2026-11-06T12:18:39.279Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardPayment",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+                "POSTransactionId": null,
+                "TransactionTime": "2026-11-06T12:21:26.351Z",
+                "Total": 0.01,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardProcessingFee",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "672959e9ddd9f1118c35001dd8b71cc5",
+                "POSTransactionId": "666d3c4e-8576-4de5-855d-d2c8e38f918c",
+                "TransactionTime": "2026-11-06T12:30:59.311Z",
+                "Total": 0.5,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "RefundToBankCard",
+                "RelatedId": "31a7fa31dcd9f1118c35001dd8b71cc5"
+              },
+              {
+                "TransactionId": "bfff7275ded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "7a82565d-acda-48aa-b399-f1379eb0e7cd",
+                "TransactionTime": "2026-11-06T12:34:51.168Z",
+                "Total": 0.5,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "RefundToBankCard",
+                "RelatedId": "31a7fa31dcd9f1118c35001dd8b71cc5"
+              }
+            ]
+          },
+          "facts": {
+            "checkoutId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "paymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+            "checkoutStatus": "complete",
+            "movements": [
+              {
+                "providerId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+                "kind": "payment",
+                "amountMinor": 100,
+                "currency": "CZK",
+                "occurredAt": 1793967686
+              },
+              {
+                "providerId": "672959e9ddd9f1118c35001dd8b71cc5",
+                "kind": "refund",
+                "amountMinor": 50,
+                "currency": "CZK",
+                "occurredAt": 1793968259
+              },
+              {
+                "providerId": "bfff7275ded9f1118c35001dd8b71cc5",
+                "kind": "refund",
+                "amountMinor": 50,
+                "currency": "CZK",
+                "occurredAt": 1793968491
+              }
+            ],
+            "disputes": [],
+            "connectorState": {
+              "financialHold": null
+            }
+          }
+        }
+      ],
+      "refundIntents": [
+        {
+          "command": "666d3c4e-8576-4de5-855d-d2c8e38f918c",
+          "amountMinor": 50,
+          "paymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+          "state": "accepted",
+          "createdAt": "2026-11-06T12:30:59.158Z"
+        },
+        {
+          "command": "7a82565d-acda-48aa-b399-f1379eb0e7cd",
+          "amountMinor": 50,
+          "paymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+          "state": "accepted",
+          "createdAt": "2026-11-06T12:34:50.968Z"
+        },
+        {
+          "command": "eb80f6ad-4570-413b-b876-eac906c68451",
+          "amountMinor": 50,
+          "paymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+          "state": "uncertain",
+          "createdAt": "2026-11-06T12:31:14.970Z",
+          "error": "barion_remote_rejected",
+          "httpStatus": 400,
+          "providerCode": "TooLowBalanceToMakeRefund"
+        }
+      ]
+    },
+    {
+      "attemptId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+      "caseId": "decline-then-success-20261106",
+      "disposition": "remote_created",
+      "createdAt": "2026-11-06T12:31:43.832Z",
+      "dispatchedAt": "2026-11-06T12:31:58.510Z",
+      "initialStatus": "Prepared",
+      "notifications": 1,
+      "observations": [
+        {
+          "observedAt": "2026-11-06T12:31:59.124Z",
+          "state": {
+            "PaymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+            "PaymentType": "Immediate",
+            "Status": "Prepared",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": null,
+            "CompletedAt": null,
+            "Transactions": [
+              {
+                "TransactionId": "d26bb80eded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+                "TransactionTime": "2026-11-06T12:31:58.809Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Prepared",
+                "TransactionType": "Unspecified",
+                "RelatedId": null
+              }
+            ]
+          }
+        },
+        {
+          "observedAt": "2026-11-06T12:33:49.675Z",
+          "state": {
+            "PaymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+            "PaymentType": "Immediate",
+            "Status": "Succeeded",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": "BankCard",
+            "CompletedAt": "2026-11-06T12:33:48.739Z",
+            "Transactions": [
+              {
+                "TransactionId": "d26bb80eded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+                "TransactionTime": "2026-11-06T12:31:58.809Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardPayment",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "e1ca674eded9f1118c35001dd8b71cc5",
+                "POSTransactionId": null,
+                "TransactionTime": "2026-11-06T12:33:48.698Z",
+                "Total": 0.01,
+                "Currency": "CZK",
+                "Status": "Reserved",
+                "TransactionType": "CardProcessingFee",
+                "RelatedId": null
+              }
+            ]
+          }
+        }
+      ],
+      "snapshot": {
+        "attemptId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+        "accountId": "4df06591ac0e4369998e24783d09cfaf",
+        "livemode": false,
+        "amountMinor": 100,
+        "currency": "CZK",
+        "createdAt": 1793968318,
+        "expiresAt": 1793970178
+      },
+      "applicationProof": {
+        "attemptId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+        "paymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+        "observedAt": "2026-11-06T12:55:56.712Z",
+        "payment": {
+          "amount": "1.00",
+          "method": "barion",
+          "status": "paid",
+          "currency": "CZK",
+          "received": "1.00",
+          "returned": "0.00",
+          "serverNow": "2026-11-06T12:55:56.747519+00:00",
+          "orderState": "paid",
+          "lastSyncedAt": "2026-11-06T12:55:56.735879+00:00",
+          "deliveryState": "not_requested",
+          "admissionState": "valid",
+          "allowedActions": [
+            "refresh"
+          ],
+          "reservationExpiresAt": "2026-11-06T13:02:58+00:00",
+          "reconciliationPending": false,
+          "reconciliationFailures": 0
+        },
+        "disposableOutcome": {
+          "orderState": "paid",
+          "paid": 1,
+          "returned": 0,
+          "ticketState": "paid"
+        },
+        "rolledBack": true
+      },
+      "additionalReadbacks": [
+        {
+          "state": {
+            "PaymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+            "Status": "Prepared",
+            "Currency": "CZK",
+            "Total": 1,
+            "PaymentType": "Immediate",
+            "CompletedAt": null,
+            "Transactions": [
+              {
+                "TransactionId": "d26bb80eded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+                "TransactionTime": "2026-11-06T12:31:58.809Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Prepared",
+                "TransactionType": "Unspecified",
+                "RelatedId": null
+              }
+            ]
+          },
+          "facts": {
+            "checkoutId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "paymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "checkoutStatus": "open",
+            "movements": [],
+            "disputes": [],
+            "connectorState": {
+              "financialHold": null
+            }
+          }
+        },
+        {
+          "state": {
+            "PaymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+            "Status": "Succeeded",
+            "Currency": "CZK",
+            "Total": 1,
+            "PaymentType": "Immediate",
+            "CompletedAt": "2026-11-06T12:33:48.739Z",
+            "Transactions": [
+              {
+                "TransactionId": "d26bb80eded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "3ddad911-0dd4-45b8-8a1f-271a9a21c523",
+                "TransactionTime": "2026-11-06T12:31:58.809Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardPayment",
+                "RelatedId": null
+              },
+              {
+                "TransactionId": "e1ca674eded9f1118c35001dd8b71cc5",
+                "POSTransactionId": null,
+                "TransactionTime": "2026-11-06T12:33:48.698Z",
+                "Total": 0.01,
+                "Currency": "CZK",
+                "Status": "Succeeded",
+                "TransactionType": "CardProcessingFee",
+                "RelatedId": null
+              }
+            ]
+          },
+          "facts": {
+            "checkoutId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "paymentId": "d16bb80eded9f1118c35001dd8b71cc5",
+            "checkoutStatus": "complete",
+            "movements": [
+              {
+                "providerId": "d26bb80eded9f1118c35001dd8b71cc5",
+                "kind": "payment",
+                "amountMinor": 100,
+                "currency": "CZK",
+                "occurredAt": 1793968428
+              }
+            ],
+            "disputes": [],
+            "connectorState": {
+              "financialHold": null
+            }
+          }
+        }
+      ],
+      "refundIntents": []
+    },
+    {
+      "attemptId": "597fe855-892a-4199-8ae8-4122aace1542",
+      "caseId": "expiry-one-minute-20261106",
+      "disposition": "remote_created",
+      "createdAt": "2026-11-06T12:36:56.537Z",
+      "dispatchedAt": "2026-11-06T12:38:04.155Z",
+      "initialStatus": "Prepared",
+      "notifications": 1,
+      "observations": [
+        {
+          "observedAt": "2026-11-06T12:38:04.892Z",
+          "state": {
+            "PaymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "597fe855-892a-4199-8ae8-4122aace1542",
+            "PaymentType": "Immediate",
+            "Status": "Prepared",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": null,
+            "CompletedAt": null,
+            "Transactions": [
+              {
+                "TransactionId": "bb18b1e8ded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "597fe855-892a-4199-8ae8-4122aace1542",
+                "TransactionTime": "2026-11-06T12:38:04.501Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Prepared",
+                "TransactionType": "Unspecified",
+                "RelatedId": null
+              }
+            ]
+          }
+        },
+        {
+          "observedAt": "2026-11-06T12:39:11.708Z",
+          "state": {
+            "PaymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "597fe855-892a-4199-8ae8-4122aace1542",
+            "PaymentType": "Immediate",
+            "Status": "Prepared",
+            "Total": 1,
+            "Currency": "CZK",
+            "FundingSource": null,
+            "CompletedAt": null,
+            "Transactions": [
+              {
+                "TransactionId": "bb18b1e8ded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "597fe855-892a-4199-8ae8-4122aace1542",
+                "TransactionTime": "2026-11-06T12:38:04.501Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Prepared",
+                "TransactionType": "Unspecified",
+                "RelatedId": null
+              }
+            ]
+          }
+        },
+        {
+          "observedAt": "2026-11-06T12:39:29.124Z",
+          "state": {
+            "PaymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+            "PaymentRequestId": "597fe855-892a-4199-8ae8-4122aace1542",
+            "PaymentType": "Immediate",
+            "Status": "Expired",
+            "Total": 0,
+            "Currency": "CZK",
+            "FundingSource": null,
+            "CompletedAt": "2026-11-06T12:39:28.604Z",
+            "Transactions": [
+              {
+                "TransactionId": "bb18b1e8ded9f1118c35001dd8b71cc5",
+                "POSTransactionId": "597fe855-892a-4199-8ae8-4122aace1542",
+                "TransactionTime": "2026-11-06T12:38:04.501Z",
+                "Total": 1,
+                "Currency": "CZK",
+                "Status": "Expired",
+                "TransactionType": "Unspecified",
+                "RelatedId": null
+              }
+            ]
+          }
+        }
+      ],
+      "snapshot": {
+        "attemptId": "597fe855-892a-4199-8ae8-4122aace1542",
+        "accountId": "4df06591ac0e4369998e24783d09cfaf",
+        "livemode": false,
+        "amountMinor": 100,
+        "currency": "CZK",
+        "createdAt": 1793968684,
+        "expiresAt": 1793968744
+      },
+      "applicationProof": {
+        "attemptId": "597fe855-892a-4199-8ae8-4122aace1542",
+        "paymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+        "observedAt": "2026-11-06T12:55:57.108Z",
+        "payment": {
+          "amount": "1.00",
+          "method": "barion",
+          "status": "expired",
+          "currency": "CZK",
+          "received": "0.00",
+          "returned": "0.00",
+          "serverNow": "2026-11-06T12:55:57.143257+00:00",
+          "orderState": "expired",
+          "lastSyncedAt": "2026-11-06T12:55:57.125363+00:00",
+          "deliveryState": "not_requested",
+          "admissionState": "pending",
+          "allowedActions": [
+            "refresh"
+          ],
+          "reservationExpiresAt": "2026-11-06T12:39:04+00:00",
+          "reconciliationPending": false,
+          "reconciliationFailures": 0
+        },
+        "disposableOutcome": {
+          "orderState": "expired",
+          "paid": 0,
+          "returned": 0,
+          "ticketState": "storno"
+        },
+        "rolledBack": true
+      },
+      "additionalReadbacks": [],
+      "refundIntents": []
+    }
+  ],
+  "invalidAuthentication": {
+    "operation": "invalid_auth_read",
+    "paymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+    "httpStatus": 401,
+    "providerCode": "AuthenticationFailed",
+    "observedAt": "2026-11-06T12:47:26.298Z"
+  },
+  "scope": "Actual sandbox API reads through Barion adapter/common recovery engine and real disposable SQL owner; local effects rolled back. Original unknown Start remains unresolved."
+}

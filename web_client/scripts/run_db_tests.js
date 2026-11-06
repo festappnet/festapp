@@ -75,6 +75,12 @@ async function runTest(file) {
     // Listen for notices (RAISE NOTICE)
     client.on('notice', (msg) => console.log(`  [NOTICE] ${msg.message}`));
 
+    // Notification fixtures exercise one global projector transaction lease.
+    // Serialize this fixture family across connections, preserving concurrency
+    // within the dedicated multi-connection tests and other independent suites.
+    if (relativePath.startsWith('database/tests/notification_center/')) {
+      await client.query('SELECT pg_advisory_lock(5831290471284)');
+    }
     // Start Transaction
     await client.query('BEGIN');
 
@@ -91,7 +97,7 @@ async function runTest(file) {
         console.warn("  WARNING: assertions.sql not found. Some tests may fail.");
     }
 
-    if (relativePath.startsWith('database/tests/scanning/') || ['database/tests/eshop/stripe/admission_test.sql','database/tests/eshop/stripe/refund_decisions_test.sql'].includes(relativePath)) {
+    if (relativePath.startsWith('database/tests/payment_providers/') || relativePath.startsWith('database/tests/scanning/') || ['database/tests/eshop/stripe/admission_test.sql','database/tests/eshop/stripe/refund_decisions_test.sql'].includes(relativePath)) {
       await client.query(fs.readFileSync(path.join(TESTS_DIR, 'scanning/fixture.sql'), 'utf8'));
     }
 

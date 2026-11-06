@@ -1,0 +1,51 @@
+{
+  "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+  "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+  "Status": "Succeeded",
+  "Currency": "CZK",
+  "Total": 0,
+  "PaymentType": "Immediate",
+  "CompletedAt": "2026-11-06T12:21:26.363Z",
+  "Transactions": [
+    {
+      "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+      "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+      "TransactionTime": "2026-11-06T12:18:39.279Z",
+      "Total": 1,
+      "Currency": "CZK",
+      "Status": "Succeeded",
+      "TransactionType": "CardPayment",
+      "RelatedId": null
+    },
+    {
+      "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+      "POSTransactionId": null,
+      "TransactionTime": "2026-11-06T12:21:26.351Z",
+      "Total": 0.01,
+      "Currency": "CZK",
+      "Status": "Succeeded",
+      "TransactionType": "CardProcessingFee",
+      "RelatedId": null
+    },
+    {
+      "TransactionId": "672959e9ddd9f1118c35001dd8b71cc5",
+      "POSTransactionId": "666d3c4e-8576-4de5-855d-d2c8e38f918c",
+      "TransactionTime": "2026-11-06T12:30:59.311Z",
+      "Total": 0.5,
+      "Currency": "CZK",
+      "Status": "Succeeded",
+      "TransactionType": "RefundToBankCard",
+      "RelatedId": "31a7fa31dcd9f1118c35001dd8b71cc5"
+    },
+    {
+      "TransactionId": "bfff7275ded9f1118c35001dd8b71cc5",
+      "POSTransactionId": "7a82565d-acda-48aa-b399-f1379eb0e7cd",
+      "TransactionTime": "2026-11-06T12:34:51.168Z",
+      "Total": 0.5,
+      "Currency": "CZK",
+      "Status": "Succeeded",
+      "TransactionType": "RefundToBankCard",
+      "RelatedId": "31a7fa31dcd9f1118c35001dd8b71cc5"
+    }
+  ]
+}

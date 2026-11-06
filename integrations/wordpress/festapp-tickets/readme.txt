@@ -4,7 +4,7 @@ Tags: tickets, events, registration, embed, forms
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,16 +22,13 @@ Shortcode:
 Fixed height:
 [festapp_tickets url="https://tickets.festapp.net/form/saved-slug" mode="fixed" height="800"]
 
-Keep the form appearance for this embed:
-[festapp_tickets url="https://tickets.festapp.net/form/saved-slug" inherit_style="false"]
+Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance.
 
-Choose Match website appearance for each block, or set inherit_style="false" in its shortcode to keep the form appearance. Save and publish the page after changing it. The shared /embed.js helper loads in both height modes. Custom fonts must permit cross-origin loading. The seat map keeps its own appearance.
-
-Height is limited to 240-4000 pixels. Automatic mode uses the existing service helper. A standalone form link remains available without the helper. Multiple forms can appear on one page. Event settings, inventory, order processing, payments, ticket delivery and admission remain owned by Festapp Tickets. The plugin does not implement any payment gateway. Embedded payment methods and browser compatibility require verification for the particular event; card gateways and bank-app handoffs are not guaranteed.
+Fixed and fallback height is limited to 240-4000 pixels. Automatic height follows the form content. Automatic mode uses the existing service helper. A standalone form link remains available without the helper. Multiple forms can appear on one page. Event settings, inventory, order processing, payments, ticket delivery and admission remain owned by Festapp Tickets. The plugin does not implement any payment gateway. Embedded payment methods and browser compatibility require verification for the particular event; card gateways and bank-app handoffs are not guaranteed.
 
 = External service and privacy =
 
-On a published page with a configured form, the visitor's browser connects to https://tickets.festapp.net to load /form/<saved-slug>?embed=1. Both height modes also load https://tickets.festapp.net/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. Customer contact details, order identifiers, payment instructions, authentication secrets and order submissions are not passed to WordPress.
+On a published page with a configured form, the visitor's browser connects to https://tickets.festapp.net to load /form/saved-slug?embed=1. Both height modes also load https://tickets.festapp.net/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. Customer contact details, order identifiers, payment instructions, authentication secrets and order submissions are not passed to WordPress.
 
 The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The WordPress plugin does not add analytics or tracking pixels. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
 
@@ -48,7 +45,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In Plugins > Add New > Upload Plugin, upload festapp-tickets-1.0.0.zip and activate it.
+1. In Plugins > Add New > Upload Plugin, upload festapp-tickets-1.0.1.zip and activate it.
 2. Click Get started in the plugin list, or open Settings > Festapp Tickets, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
@@ -80,10 +77,10 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
-= 1.0.0 =
-* Clearly identify the WordPress appearance option as a local override of the app appearance.
+= 1.0.1 =
+* Control embedded appearance only through the saved form setting; remove local overrides.
 
 == Upgrade Notice ==
 
-= 1.0.0 =
-No database migration. Existing block and shortcode settings are retained.
+= 1.0.1 =
+No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.

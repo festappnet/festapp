@@ -470,8 +470,8 @@ for (const name of ["stripe-connect", "stripe-connect-callback", "stripe-checkou
     assertEquals((await response.json()).error, "stripe_not_configured");
   });
 }
-Deno.test("stripe-reconcile registers and rejects non-POST requests before runtime access", async () => {
-  const handler = await loadHandler("stripe-reconcile");
+for (const name of ["stripe-reconcile", "payment-reconcile"]) Deno.test(`${name} registers and rejects non-POST requests before runtime access`, async () => {
+  const handler = await loadHandler(name);
   const response = await handler(new Request("https://edge-test.invalid"));
   assertEquals(response.status, 405);
 });
@@ -501,4 +501,20 @@ Deno.test("batch export requires authorization and rejects unknown formats befor
   assertEquals(unauthenticated.status,401);
   const invalid = await handler(new Request("https://edge-test.invalid", {method:"POST",headers:{Authorization:"Bearer invalid"},body}));
   assertEquals(invalid.status,400);
+});
+
+for (const name of ['payment-connect','payment-checkout','payment-return']) {
+  Deno.test(`${name} registers, preflights and rejects an uninstalled connector before provider work`,async()=>{
+    const handler=await loadHandler(name);
+    const preflight=await handler(new Request('https://edge-test.invalid/'+name,{method:'OPTIONS'}));
+    assertEquals(preflight.status,204);
+    const response=await handler(new Request('https://edge-test.invalid/'+name,{method:'POST',body:JSON.stringify({provider:'uninstalled',token:'a'.repeat(64)})}));
+    assertEquals(response.status,400);
+    assertEquals((await response.json()).error,'payment_connector_unavailable');
+  });
+}
+Deno.test('payment-webhook rejects unsafe methods and uninstalled providers without accepting their events',async()=>{
+  const handler=await loadHandler('payment-webhook');
+  assertEquals((await handler(new Request('https://edge-test.invalid/payment-webhook',{method:'GET'}))).status,405);
+  assertEquals((await handler(new Request('https://edge-test.invalid/payment-webhook?provider=uninstalled',{method:'POST',body:'{}'}))).status,503);
 });

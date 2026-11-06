@@ -108,8 +108,8 @@ for (const paid of [0, 500, 1000, 1200]) {
   Deno.test(`Paid presenter selects canonical text for ${paid}/1000`, () => {
     const actual = paidPaymentSubstitutions(1000, paid, "CZK", [], "cs", "formal");
     const expected = paid >= 1000
-      ? csTranslations.depositFullyPaid("1 000 Kč", "formal")
-      : csTranslations.depositPaid(`${paid} Kč`, `${1000 - paid === 1000 ? '1 000' : 1000 - paid} Kč`, "na místě", "formal");
+      ? csTranslations.depositFullyPaid("1000 Kč", "formal")
+      : csTranslations.depositPaid(`${paid} Kč`, `${1000 - paid} Kč`, "na místě", "formal");
     assertEquals(actual.balanceReasoning, expected);
   });
 }

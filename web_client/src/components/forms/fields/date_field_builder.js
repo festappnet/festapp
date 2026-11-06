@@ -7,7 +7,7 @@ import { FormStrings } from '../form_strings.js';
 import { LocalizationService } from '../../../services/localization_service.js';
 
 export class DateFieldBuilder {
-    static create(field, formModel) {
+    static create(field, formModel, onInteraction) {
         const container = document.createElement('div');
         container.className = 'form-field-container';
         if (field.isHidden) container.style.display = 'none';
@@ -183,7 +183,7 @@ export class DateFieldBuilder {
                 },
                 maxDate: maxDateObj || 'today',
                 defaultDate: input.value || undefined,
-                onChange: () => { if (validateAge) validateAge(); },
+                onChange: () => { if (validateAge) validateAge(); onInteraction?.(); },
                 onClose: () => { if (validateAge) validateAge(); },
         });
 

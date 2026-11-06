@@ -1,14 +1,14 @@
 {
   "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-  "blocks/ticket-form/block.json": "ecabfb6f6d286bd446639f67459864b7b4e4a6f760fdad7d179f5fdfe6fc9a28",
-  "blocks/ticket-form/editor.js": "3695b394323a315470620f3ce6076331c47a2535dc8016cb2cad92e74861a934",
+  "blocks/ticket-form/block.json": "bf9846c8e68896f2dce70946fd1127c7243f5b50654d9d0d4327bf1ce2245b06",
+  "blocks/ticket-form/editor.js": "6f8e53d366ee5230d9bd9dfeb84cdd59a454b8b53915b9920279e5e6475983b8",
   "blocks/ticket-form/style.css": "81fcaba306e27593cd3adb8eac4387a8487fa136733d8025fd79d47ce83b3a09",
-  "festapp-tickets.php": "04032a28fcdd324b2b4a0fefc08964715e3fab6db611e90eb5b124028d2f3332",
-  "includes/admin.php": "abd4bb6316f870900768794b243c30e6bc0e11987bf489c171a773b2e4f5f12e",
-  "includes/embed.php": "a0a0e2fb4747fbbbba4b4b4e14763887049d7d915b725e55ee12d6156542e4b1",
-  "languages/festapp-tickets-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "949615a1291ac6b75607d9ec6375dd9a6086c72b8bb572677b16fed350164c77",
-  "languages/festapp-tickets-cs_CZ.mo": "eefe7caa67d941008a038b5ece7eb3d63790585ce16a68f52c77025584d91a27",
-  "languages/festapp-tickets-cs_CZ.po": "36d3a3593176ab9c792ca2d4a38f47f741743b5a8223e21e5f65642306b210b5",
-  "languages/festapp-tickets.pot": "35eb47b97a12ee8e92bd8ff4bc437b2e3226d8a9726a88c814c014cf03535180",
-  "readme.txt": "0a46c56d66147cf4ebd8dab60a2019994054304a63a8a2efd78dc79ae94f71b2"
+  "festapp-tickets.php": "517de3ac08a2dcec4faa60ecd41c8427a19ea212c35939820c6c073626a27c05",
+  "includes/admin.php": "42e5d436fd3ee7ad51c3e7d855fc7048fb70ede7a652f5d1ffc5ac4167b7d9a8",
+  "includes/embed.php": "e704b3f8b2111867d88e07135195603836a6b04dae2cd2b7de21fe7f95b89667",
+  "languages/festapp-tickets-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "2e2c58867a5c9a54e5bc8ef341bd85a9dc73bbaa908f3e499745278713c5718a",
+  "languages/festapp-tickets-cs_CZ.mo": "75748268f6a0578ba22960c6b6c5059a6478c2d45c2ed4d9c53ea76d3945153c",
+  "languages/festapp-tickets-cs_CZ.po": "cf07ed536ca19da49a1b75bb7bc2312ebbc8ca7de23a48abbd78958acc79474e",
+  "languages/festapp-tickets.pot": "5fcf2c9f2cb208074462c45998f3333753faf866e8eac556b52782ca1cdb2ab1",
+  "readme.txt": "40d96e0d0909b1d4ea388e1ce5cb60d5ce10768a4b1eedd04cff81fee4a558e0"
 }

@@ -12,11 +12,11 @@ BEGIN
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order_id]);
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order_id FOR UPDATE;
  SELECT * INTO STRICT pi FROM eshop.payment_info WHERE id=o.payment_info FOR UPDATE;
- IF pi.payment_method NOT IN ('bank','stripe') OR pi.payment_method IS NULL THEN
+ IF NOT public.payment_method_registered_internal(pi.payment_method) OR pi.payment_method IS NULL THEN
    RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
  IF pi.amount IS DISTINCT FROM o.price OR pi.currency_code IS DISTINCT FROM o.currency_code THEN
    RAISE EXCEPTION 'PAYMENT_ORDER_AMOUNT_MISMATCH'; END IF;
- IF pi.payment_method='stripe' AND (pi.bank_account IS NOT NULL
+ IF pi.payment_method<>'bank' AND (pi.bank_account IS NOT NULL
    OR pi.variable_symbol IS NOT NULL OR pi.creditor_reference IS NOT NULL) THEN
    RAISE EXCEPTION 'STRIPE_BANK_INSTRUCTIONS_FORBIDDEN'; END IF;
  -- Stripe creates references/attempts through its provider lifecycle. Bank

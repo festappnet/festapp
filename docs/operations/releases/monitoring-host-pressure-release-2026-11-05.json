@@ -1,0 +1,125 @@
+{
+  "backup": {
+    "archive_check_passed": true,
+    "label": "20261101-050839F_20261105-162436D",
+    "metadata_owner_mode": "root:0600",
+    "metadata_path": "/var/lib/festapp-pgbackrest/last-backup.json"
+  },
+  "cron": {
+    "active": true,
+    "database": "festapp_rehearsal_20260909220601",
+    "name": "festapp_canonical_notification_center_wake",
+    "schedule": "1 second"
+  },
+  "host_post_swap_snapshot": {
+    "MemAvailable_kB": 598168,
+    "SwapFree_kB": 1836320,
+    "SwapTotal_kB": 2097148,
+    "memory_psi_full_avg10_pct": 0.73,
+    "root_free_bytes": 6248574976
+  },
+  "host_pre_swap": {
+    "MemAvailable_kB": 274412,
+    "SwapTotal_kB": 0,
+    "memory_psi_full_avg10_pct": 2.75
+  },
+  "idle_wake_samples": [
+    {
+      "due_scopes": 0,
+      "pending_events": 0,
+      "views": 0,
+      "wake_next_at": "2026-11-05T16:30:06.496691+00:00"
+    },
+    {
+      "due_scopes": 0,
+      "pending_events": 0,
+      "views": 0,
+      "wake_next_at": "2026-11-05T16:30:06.496691+00:00"
+    }
+  ],
+  "migration_readback": {
+    "prerequisite_1900_sha256": "47aeb72e259c91e066af92773b15b7a422d60a1dcf62b1de183fb8d73d61edd6",
+    "wake_execute_anon": false,
+    "wake_execute_authenticated": false,
+    "wake_execute_service_role": true
+  },
+  "source": {
+    "apply_artifact": "/tmp/festapp-monitoring-pressure-sql-20261105/apply.sql",
+    "apply_artifact_sha256": "2964d63be642ddad845d6b934509dc54a99cfe417f7a1670e39267f31bee0bc5",
+    "ledger_source_sha256": "304fe6a93881a104a2556b69829cdbd3d17a2533706380f4ea2ac7defbaa9e88",
+    "main_sha": "f652f6c7612a4366f1697c7857b040ef59fd7687",
+    "migration": "supabase/migrations/20261105203000_notification_idle_wake.sql",
+    "migration_sha256": "304fe6a93881a104a2556b69829cdbd3d17a2533706380f4ea2ac7defbaa9e88",
+    "migration_version": "20261105203000"
+  },
+  "swap": {
+    "active": true,
+    "bytes": 2147483648,
+    "installation_metadata": "/var/lib/festapp-swap/installation.json",
+    "installer": "automation/hetzner-supabase/runtime/install-host-swap.py",
+    "installer_sha256": "cfae4d12645dce91ea1ad71994bcc5b7d7c0057bc310c0cf47f712b2e399a9ce",
+    "monitoring_thresholds_changed": false,
+    "protected_rollback_evidence": [
+      "/var/lib/festapp-swap/fstab-before-1793896236629660721",
+      "/var/lib/festapp-swap/swappiness-before-1793896236629660721"
+    ],
+    "service_restart": false,
+    "staged_owner_mode": "root:0600",
+    "staged_path": "/root/festapp-install-host-swap.py",
+    "swappiness": 10
+  },
+  "target": {
+    "database": "festapp_rehearsal_20260909220601",
+    "host": "festapp-supabase-rehearsal-01",
+    "organization": 3
+  },
+  "publicRpcAfterMemoryChange": {
+    "rpc": "get_notification_center_view",
+    "role": "authenticated",
+    "organization": 3,
+    "committed": false,
+    "samples": [
+      {
+        "durationMs": 473.5,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 220.2,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 216.5,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 216.3,
+        "state": "ready",
+        "rows": 30
+      },
+      {
+        "durationMs": 213.4,
+        "state": "ready",
+        "rows": 30
+      }
+    ]
+  },
+  "finalMonitoringIncidents": [
+    {
+      "id": "6d5925ec-632a-477c-b24b-5f0314d5ccc9",
+      "state": "resolved",
+      "count": 106,
+      "last_failure": 1793896139192,
+      "resolved_at": 1793896500426
+    },
+    {
+      "id": "c5025970-4a1b-4fa0-804a-8819c5114230",
+      "state": "open",
+      "count": 7,
+      "last_failure": 1793895778164,
+      "resolved_at": null
+    }
+  ]
+}

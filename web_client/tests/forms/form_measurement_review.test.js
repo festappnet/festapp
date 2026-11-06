@@ -19,13 +19,13 @@ test('Stripe departure retains payment history, navigates only once, and Back re
         controller.openPrepared('https://checkout.stripe.com/c/pay/cs_test_same_order');
         assert.deepEqual(navigation,[['stripe','https://checkout.stripe.com/c/pay/cs_test_same_order']]);
         assert.equal(win.location.pathname,'/stripe/pay');assert.equal(win.location.hash,'');
-        assert.deepEqual(win.history.state.festappStripePayment,{kind:'pay',token});assert.equal(preparations,0);
+        assert.deepEqual(win.history.state.festappPayment,{provider:'stripe',kind:'pay',token});assert.equal(preparations,0);
         const restored=dom(win.location.href,{runScripts:'outside-only'});
         restored.window.history.replaceState(win.history.state,'',win.location.href);
         const shell=readFileSync(new URL('../../../web/index.html',import.meta.url),'utf8');
-        const capture=[...shell.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].find(match=>match[1].includes('festappStripePaymentLink'))[1];
+        const capture=[...shell.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].find(match=>match[1].includes('festappPaymentLink'))[1];
         restored.window.eval(capture);
-        assert.deepEqual(JSON.parse(restored.window.__festappStripePaymentLink),{kind:'pay',token});
+        assert.deepEqual(JSON.parse(restored.window.__festappPaymentLink),{provider:'stripe',kind:'pay',token});
         restored.window.close();controller.dispose();
     }finally{Object.assign(globalThis,previous);page.window.close();}
 });

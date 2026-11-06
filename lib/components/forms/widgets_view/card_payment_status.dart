@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -28,7 +29,7 @@ class CardPaymentStatus extends StatefulWidget {
       ? payment['status'] as String
       : 'unknown';
   static bool canContinue(Map payment) =>
-      payment['method'] == 'stripe' &&
+      paymentConnectors.contains(payment['method']) &&
       {'open', 'declined', 'preparing'}.contains(stateOf(payment)) &&
       !{'hold', 'revoked'}.contains(payment['admissionState']) &&
       payment['allowedActions'] is List &&

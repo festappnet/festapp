@@ -1,3 +1,4 @@
+import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { revealEmbedStep, preserveCheckoutScroll } from '../../services/embed_bridge.js';
 import { formFieldTitle } from './form_field_labels.js';
@@ -54,7 +55,7 @@ export class OrderPreview {
         let paymentChoice = {selected:null};
         if (data.registrationMode !== 'waitlist' && !presentation.submitLabel && data.totalPrice > 0) paymentChoice = renderPaymentMethodPicker(overlay.querySelector('[data-payment-methods]'),paymentOptions,method=>{
             paymentSubmit.disabled = !method;
-            paymentSubmit.textContent = method === 'stripe' ? paymentMethodText('orderAndPay') : PublicOrderStrings.getSubmitButton(data.hasTickets,data.tone);
+            paymentSubmit.textContent = isCardPaymentMethod(method) ? paymentMethodText('orderAndPay') : PublicOrderStrings.getSubmitButton(data.hasTickets,data.tone);
         });
         else if (data.registrationMode !== 'waitlist' && !presentation.submitLabel) {paymentSubmit.textContent = paymentMethodText('finishFree');overlay.querySelector('[data-payment-methods]').hidden=true;}
 
@@ -156,7 +157,7 @@ export class OrderPreview {
                  const selectedRadio = overlay.querySelector('input[name="payment_type"]:checked');
                  const paymentType = selectedRadio ? selectedRadio.value : null;
                  if (onConfirm && (data.totalPrice <= 0 || paymentChoice.selected)) onConfirm(overlay, paymentType, paymentChoice.selected || 'bank',{
-                     amountMinor:Math.round(data.totalPrice*100),currency:data.currency,connectionId:paymentOptions.recipient?.connectionId,surface:isEmbed()?'embed':'web',
+                     amountMinor:Math.round(data.totalPrice*100),currency:data.currency,connectionId:paymentOptions.providers[paymentChoice.selected]?.recipient?.connectionId,surface:isEmbed()?'embed':'web',
                  });
             };
         }
@@ -322,7 +323,7 @@ export class OrderPreview {
         
         // We use passed pricing data to display logic properly
         const totalPriceData = priceData;
-        const cardPricing = formModel.payments?.configured?.stripe === true;
+        const cardPricing = paymentConnectors.values().some(connector => connector.availability(formModel.payments ?? {}, isEmbed() ? 'embed' : 'web').configured);
 
         const personalInfo = [];
 

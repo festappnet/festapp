@@ -6,8 +6,8 @@ import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { formatCurrency, formatDatetime } from "../_shared/utilities.ts";
 import { translations } from "../_shared/translations/translations.ts";
 import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
-import { openStripePaySource } from "../_shared/stripe/paySource.ts";
-import { stripeConfirmationBalance } from "../_shared/stripe/email.ts";
+import { paymentRegistry } from "../_shared/payments/runtime.ts";
+import { paymentConfirmationBalance } from "../_shared/payments/email.ts";
 
 type Attachment = {
   filename: string;
@@ -74,25 +74,24 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
   const attachments: Attachment[] = [];
-  if (paymentInfo.payment_method === "stripe") {
-    const { data: source, error } = await supabaseAdmin.rpc(
-      "get_stripe_order_pay_source_internal",
-      { p_order: order.id, p_command: task.data.command_id },
-    );
-    if (error) throw new Error("stripe_email_source_unavailable");
-    const payable = ["open", "preparing"].includes(source?.payment?.status);
-    const secrets = payable ? await openStripePaySource(source) : undefined;
+  if (paymentRegistry.has(paymentInfo.payment_method)) {
+    const binding=paymentRegistry.resolve(paymentInfo.payment_method);
+    if (!binding.order) throw new Error("payment_email_not_configured");
+    const source=await binding.order.readSource(order.id,task.data.command_id);
+    const sourcePayment=(source as {payment?:{status?:string}})?.payment;
+    const payable=["open","preparing"].includes(sourcePayment?.status ?? "");
+    const secrets=payable ? await binding.openSource(source) : undefined;
     return {
       subs: {
         occasionTitle: occasion.title,
         orderSymbol: order.order_symbol,
-        balanceReasoning: stripeConfirmationBalance(
+        balanceReasoning: paymentConfirmationBalance(
           source,
           secrets,
           lang,
           formatCurrency(paymentInfo.amount, paymentInfo.currency_code, 2),
           formatDatetime(paymentInfo.deadline, lang) ?? "",
-          JSON.parse(Deno.env.get("STRIPE_ALLOWED_ORIGINS") ?? "[]"),
+          { providerId: binding.connector.id, providerName: binding.connector.displayName, payPath: binding.routes.payPath, allowedOrigins: binding.allowedOrigins },
         ),
         price: paymentInfo.amount,
         currencyCode: paymentInfo.currency_code,

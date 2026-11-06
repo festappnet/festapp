@@ -8,11 +8,14 @@ const out=Deno.args[0];if(!out?.startsWith('/'))throw Error('Absolute evidence d
 await Deno.mkdir(out,{recursive:true});
 const occasion={id:7,organization:1,title:'Příliš žluťoučký kůň - Slavnostní večer',start_time:'2026-10-22T18:00:00Z',data:{place_name:'Kulturní dům, Žďár'}};
 const products={types:new Map(),products:new Map()};
+const gallery=ticketGallery();
+const representative='ball_silk';
+if(!gallery[representative])throw Error('Missing representative ticket preset: '+representative);
 const cases=[];
-for(const [key,template] of Object.entries(ticketGallery())){
+for(const [key,template] of Object.entries(gallery)){
  const background=galleryBackgrounds[key]??null;
  const resources=await loadLayoutResources(occasion,{ticket_type:'wide',layout:{schemaVersion:3,templates:{wide:template}},background});
- for(const scenario of key==='classic'?['normal','long','missing']:['normal']){
+ for(const scenario of key===representative?['normal','long','missing']:['normal']){
   const name=`${key}-${scenario}`;
   const data=sampleData(scenario,occasion,products,template);
   const pdf=await generateTicketPdf(data,resources,template,'wide',true);

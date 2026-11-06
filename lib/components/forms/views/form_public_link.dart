@@ -86,7 +86,13 @@ class PublicLink extends StatelessWidget {
 class FormPublicLink extends StatelessWidget {
   final String link;
   final String? savedLink;
-  const FormPublicLink({super.key, required this.link, this.savedLink});
+  final VoidCallback? onOpenAppearance;
+  const FormPublicLink({
+    super.key,
+    required this.link,
+    this.savedLink,
+    this.onOpenAppearance,
+  });
 
   @override
   Widget build(BuildContext context) => Column(
@@ -99,7 +105,10 @@ class FormPublicLink extends StatelessWidget {
           label: Text(FormStrings.embedAction),
           onPressed: () => showDialog<void>(
             context: context,
-            builder: (_) => _EmbedDialog(savedLink: savedLink!),
+            builder: (_) => _EmbedDialog(
+              savedLink: savedLink!,
+              onOpenAppearance: onOpenAppearance,
+            ),
           ),
         )
       else
@@ -110,7 +119,8 @@ class FormPublicLink extends StatelessWidget {
 
 class _EmbedDialog extends StatefulWidget {
   final String savedLink;
-  const _EmbedDialog({required this.savedLink});
+  final VoidCallback? onOpenAppearance;
+  const _EmbedDialog({required this.savedLink, this.onOpenAppearance});
 
   @override
   State<_EmbedDialog> createState() => _EmbedDialogState();
@@ -118,7 +128,6 @@ class _EmbedDialog extends StatefulWidget {
 
 class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
-  bool inheritStyle = true;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +137,6 @@ class _EmbedDialogState extends State<_EmbedDialog> {
       title: FormStrings.embedTitle,
       fallbackLabel: FormStrings.embedFallback,
       automatic: automatic,
-      inheritStyle: inheritStyle,
     );
     return AppAlertDialog(
       title: Text(FormStrings.embedAction),
@@ -140,6 +148,17 @@ class _EmbedDialogState extends State<_EmbedDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(FormStrings.embedHelp),
+              Text(FormStrings.embedInheritStyleHelp),
+              if (widget.onOpenAppearance != null)
+                TextButton.icon(
+                  key: const ValueKey('embed-open-appearance'),
+                  icon: const Icon(Icons.palette_outlined),
+                  label: Text(FormStrings.embedOpenAppearance),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    widget.onOpenAppearance!();
+                  },
+                ),
               const SizedBox(height: 12),
               DropdownButton<bool>(
                 value: automatic,
@@ -156,18 +175,6 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                 ],
                 onChanged: (value) {
                   if (value != null) setState(() => automatic = value);
-                },
-              ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                key: const ValueKey('embed-inherit-style'),
-                title: Text(FormStrings.embedInheritStyle),
-                subtitle: Text(FormStrings.embedInheritStyleHelp),
-                value: inheritStyle,
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: (value) {
-                  if (value != null) setState(() => inheritStyle = value);
                 },
               ),
               const SizedBox(height: 12),

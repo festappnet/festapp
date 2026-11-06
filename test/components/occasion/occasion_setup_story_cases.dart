@@ -3,6 +3,21 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_story.dart';
 
 void main() {
+  test('saved provider identity controls setup readiness without a default gateway', () {
+    final unknown = <String,dynamic>{'payments': {'bankEnabled': false, 'providerConnections': {'uninstalled': 'recipient'}}};
+    OccasionSetupStory.normalize(unknown, true);
+    expect(OccasionSetupStory.paymentSetupReady(unknown), false);
+    expect((unknown['payments'] as Map)['providerConnections'], {'uninstalled': 'recipient'});
+    final ambiguous = <String,dynamic>{'paymentMethod': 'both', 'bankAccountId': 1, 'bankAccountFingerprint': 'verified'};
+    OccasionSetupStory.normalize(ambiguous, true);
+    expect(OccasionSetupStory.paymentSetupReady(ambiguous), false);
+    expect(ambiguous.containsKey('paymentMethod'), false);
+    final selected = <String,dynamic>{'paymentMethod': 'both', 'bankAccountId': 1, 'bankAccountFingerprint': 'verified',
+      'formDraft': <String,dynamic>{'data': {'payments': {'stripeConnectionId': 'saved-recipient'}}}};
+    OccasionSetupStory.normalize(selected, true);
+    expect(OccasionSetupStory.paymentSetupReady(selected), true);
+    expect(selected['payments']['providerConnections']['stripe'], 'saved-recipient');
+  });
   test('active invalid prices never become a free order; hidden drafts survive',
       () {
     final product = <String, dynamic>{'price': 0};

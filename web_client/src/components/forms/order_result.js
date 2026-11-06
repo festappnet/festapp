@@ -1,3 +1,4 @@
+import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { FormStrings } from './form_strings.js';
 import { overviewText } from './order_overview.js';
 import { WaitlistStrings } from './waitlist_strings.js';
@@ -13,7 +14,7 @@ export class OrderResult {
     static render(container, success, resultData, formModel, onClose, paymentActions = {}) {
         container._orderDeliveryObserver?.stop();
         if (formModel.demoSimulation) resultData = {};
-        if (success && resultData?.payment?.method === 'stripe') {
+        if (success && isCardPaymentMethod(resultData?.payment?.method)) {
             container.replaceChildren();
             const statusHost = document.createElement('section');
             const symbol = document.createElement('p');
@@ -28,7 +29,7 @@ export class OrderResult {
                     const url = new URL(access.url);
                     if (typeof access.token === 'string' && /^[a-f0-9]{64}$/.test(access.token) && url.protocol === 'https:' &&
                         url.origin === window.location.origin && !url.username && !url.password &&
-                        !url.search && url.pathname.endsWith('/stripe/pay') && url.hash === `#handoff=${access.token}`) {
+                        !url.search && url.pathname.endsWith(paymentConnectors.get(resultData.payment.method).payPath) && url.hash === `#handoff=${access.token}`) {
                         const link = document.createElement('a');
                         link.href = url.toString();
                         link.target = '_blank';

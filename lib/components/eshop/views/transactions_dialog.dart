@@ -47,7 +47,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   bool get _canEdit =>
       !RightsService.isDemoReadOnly &&
       !_isLoading &&
-      _payment?.isStripe != true &&
+      _payment?.isProvider != true &&
       OrderModel.canChangePaymentInState(_orderState);
 
   @override

@@ -55,3 +55,27 @@ test('shared V2 selector preserves embedded query and restores focus without ano
     assert.equal(document.activeElement.id, 'before');
     assert.equal(steps.length, 1);
 });
+
+test('seat and quantity intent notify interaction, but opening and presentation updates do not', async t => {
+    t.mock.method(DbForms, 'getBlueprint', async () => ({layout: emptyLayout, products: [], spots: [], seatBindings: []}));
+    let interactions = 0;
+    const selector = new BlueprintSelector();
+    t.after(() => selector.close?.());
+    await selector.open({formModel: {key: 'form', secret: 'secret', blueprint: 1}}, null, [], () => interactions++);
+    assert.equal(interactions, 0, 'opening and initial reconciliation are silent');
+    selector.adapter.onPresentationChanged({});
+    selector.adapter.onCapacityChanged({});
+    assert.equal(interactions, 0, 'passive reservation refresh is silent');
+
+    // These are the real callbacks supplied to the viewer and capacity controls.
+    const options = selector.capacityControls.options;
+    let finishReservation;
+    t.mock.method(selector.adapter, 'requestSelection', () => new Promise(resolve => {finishReservation = resolve;}));
+    const pending = options.onSelectionRequested(['seat-1'], true);
+    assert.equal(interactions, 1, 'visitor intent counts before reservation completes');
+    finishReservation({accepted: false});
+    await pending;
+    t.mock.method(selector.adapter, 'requestQuantity', async () => ({accepted: true}));
+    await options.onQuantityRequested('standing-1', 2);
+    assert.equal(interactions, 2);
+});

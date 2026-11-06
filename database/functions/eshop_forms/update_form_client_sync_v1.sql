@@ -33,6 +33,9 @@ BEGIN
     SELECT version INTO v_version FROM public.client_aggregate_versions
     WHERE aggregate_type='form' AND scope_type='occasion' AND scope_id=v_occasion AND aggregate_id=v_form::text FOR UPDATE;
   ELSE v_version:=0; END IF;
+  IF (p_form#>'{settings,payments}' ? 'providerConnections' OR p_form#>'{data,payments}' ? 'providerConnections')
+    AND NOT p_form ? 'expected_aggregate_version' THEN
+    RAISE invalid_parameter_value USING MESSAGE='modern payment snapshot requires original form revision'; END IF;
   -- Missing baseline remains an installed-client adapter, explicitly not MCP-ready.
   v_expected:=CASE WHEN p_form ? 'expected_aggregate_version' THEN (p_form->>'expected_aggregate_version')::bigint ELSE v_version END;
   IF v_expected IS DISTINCT FROM v_version THEN

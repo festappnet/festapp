@@ -58,8 +58,13 @@ echo
 echo "--- configure_version.js stamps __FESTAPP_BUILD_VERSION__ ---"
 
 mkdir -p "$TMP_ROOT/automation" "$TMP_ROOT/web" "$TMP_ROOT/web_client/src"
+mkdir -p "$TMP_ROOT/automation/lib"
+cp "$PROJECT_ROOT/automation/lib/startup_theme.cjs" "$TMP_ROOT/automation/lib/startup_theme.cjs"
 cp "$PROJECT_ROOT/automation/configure_version.js" "$TMP_ROOT/automation/configure_version.js"
 cp "$PROJECT_ROOT/web/index.html"                  "$TMP_ROOT/web/index.html"
+cp "$PROJECT_ROOT/web_client/index.html" "$TMP_ROOT/web_client/index.html"
+mkdir -p "$TMP_ROOT/web_client/src/services"
+cp "$PROJECT_ROOT/web_client/src/services/theme_preference.js" "$TMP_ROOT/web_client/src/services/theme_preference.js"
 # Minimal pubspec + package.json so the earlier steps of the script do not warn-fail.
 printf 'name: festapp\nversion: 0.0.0+1\n' > "$TMP_ROOT/pubspec.yaml"
 printf '{\n  "name": "web_client",\n  "version": "0.0.0"\n}\n' > "$TMP_ROOT/web_client/package.json"
@@ -224,9 +229,21 @@ printf '<title>Delete | %s</title>%s<h1>Smazání účtu</h1><a href="/privacy/c
   "$CONFIG_APP_NAME" "$LEGAL_NAV" "$DELETE_ACCOUNT_ORIGIN" "$DELETE_ACCOUNT_KEY" \
   > "$BUILD_DIR/delete-account/index.html"
 # The fixture follows the production order: final HTML, CSP manifest, Worker stamp.
-mkdir -p "$BUILD_DIR/organizers-media"
-printf 'fixture media' > "$BUILD_DIR/organizers-media/fixture.webp"
-printf '<!doctype html><title>Organizer fixture</title><img src="/organizers-media/fixture.webp">\n' > "$BUILD_DIR/organizers-page"
+cat > "$TMP_ROOT/marketing-fixture.mjs" <<'MARKETING'
+import fs from "node:fs";
+import path from "node:path";
+const {readConfig, resolveContext, publicManifest, marketingMedia} = await import(process.argv[4]);
+const [build, config] = process.argv.slice(2), context = resolveContext(readConfig(config));
+const escape = value => String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+fs.writeFileSync(path.join(build, "organizer-pages.json"), JSON.stringify(publicManifest(context)));
+for (const page of context.pages) {
+  const file = path.join(build, page.asset); fs.mkdirSync(path.dirname(file), {recursive:true});
+  fs.writeFileSync(file, `<html lang="${page.locale ?? context.locale}"><title>${escape(page.title)}</title><link rel="canonical" href="${page.canonical}"><h1>${escape(page.heading ?? page.title)}</h1>${page.id === "home" ? `<img src="${marketingMedia(context)[0]}">` : ""}</html>`);
+}
+for (const media of marketingMedia(context)) { const file = path.join(build,new URL(media,context.origin).pathname); fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,"fixture media"); }
+if (context.updates) fs.writeFileSync(path.join(build,"platform-updates.json"), JSON.stringify(context.updates.feed));
+MARKETING
+node "$TMP_ROOT/marketing-fixture.mjs" "$BUILD_DIR" "$PROJECT_ROOT/automation/project.conf" "$PROJECT_ROOT/automation/release/organizers/context.mjs"
 refresh_csp_fixture() {
   node "$PROJECT_ROOT/automation/generate_csp_policy.mjs" "$BUILD_DIR" cloudflare
   node --input-type=module - "$BUILD_DIR" <<'CSP'

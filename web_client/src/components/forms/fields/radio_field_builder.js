@@ -2,7 +2,7 @@ import { FormStrings } from '../form_strings.js';
 import { OptionBuilderHelper } from './option_builder_helper.js';
 
 export class RadioFieldBuilder {
-    static create(field, formModel) {
+    static create(field, formModel, onInteraction) {
         const container = document.createElement('div');
         container.className = 'form-field-container radio-field';
 
@@ -57,7 +57,7 @@ export class RadioFieldBuilder {
              clearBtn.style.display = 'inline-block';
         }
 
-        clearBtn.onclick = () => {
+        clearBtn.onclick = (event) => {
             const radios = container.querySelectorAll(`input[type="radio"][name="${field.id}"]`);
             radios.forEach(r => r.checked = false);
             clearBtn.style.display = 'none';
@@ -65,6 +65,7 @@ export class RadioFieldBuilder {
             container.setAttribute('name', field.id);
             container.name = String(field.id);
             container.value = null;
+            if (event.isTrusted) onInteraction?.();
 
             container.dispatchEvent(new Event('input', { bubbles: true }));
             container.dispatchEvent(new Event('change', { bubbles: true }));

@@ -1,4 +1,6 @@
-import { openEmail, sealEmail } from "../emailPayload.ts";
+import { preparePaymentSource, openPaymentSource } from "../payments/paySource.ts";
+import { PaymentError } from "../payments/contracts.ts";
+import { openEmail } from "../emailPayload.ts";
 import { record, StripeBoundaryError } from "./provider.ts";
 const encoder = new TextEncoder();
 const hex = (bytes: Uint8Array) =>
@@ -25,35 +27,14 @@ export function stripePrivatePayUrl(
   url.hash = "pay=" + token;
   return url.toString();
 }
-export async function prepareStripePaySource(seal = sealEmail) {
-  const secrets: PaymentSecrets = {
-    payToken: hex(crypto.getRandomValues(new Uint8Array(32))),
-    returnHandle: hex(crypto.getRandomValues(new Uint8Array(32))),
-  };
-  return {
-    tokenHash: await hash(secrets.payToken),
-    returnHash: await hash(secrets.returnHandle),
-    contentHash: await hash(JSON.stringify(secrets)),
-    sealed: await seal(secrets),
-  };
-}
+export const prepareStripePaySource = preparePaymentSource;
 export async function openStripePaySource(value: unknown, open = openEmail) {
-  const source = record(value);
-  const secrets = record(
-    await open(record(source.sealed) as Record<string, string>),
-  );
-  if (
-    typeof secrets.payToken !== "string" ||
-    !/^[a-f0-9]{64}$/.test(secrets.payToken) ||
-    typeof secrets.returnHandle !== "string" ||
-    !/^[a-f0-9]{64}$/.test(secrets.returnHandle) ||
-    secrets.payToken === secrets.returnHandle ||
-    await hash(secrets.payToken) !== source.tokenHash ||
-    await hash(JSON.stringify(secrets)) !== source.contentHash
-  ) {
-    throw new StripeBoundaryError("stripe_payment_source_invalid");
+  try { return await openPaymentSource(value, open); }
+  catch (error) {
+    if (error instanceof PaymentError && error.code === "payment_source_invalid")
+      throw new StripeBoundaryError("stripe_payment_source_invalid");
+    throw error;
   }
-  return secrets as PaymentSecrets;
 }
 
 // One deterministic, scope-separated bearer for replay of the same creation.

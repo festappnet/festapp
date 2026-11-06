@@ -1,0 +1,20 @@
+{
+  "scope": "Local main only, as explicitly clarified by user. No remote merge, push or deployment.",
+  "parent": "a31277e3c3d761ed37d6425a1f2a731584b92e8d",
+  "branch": "main",
+  "helperWorktreeRemoved": "/tmp/festapp-payment-provider-publish",
+  "paymentFilesCommitted": 278,
+  "sharedFilesWithOtherWorkLeftUncommitted": [
+    "lib/components/forms/views/form_page.dart",
+    "lib/components/occasion/setup/occasion_setup_page.dart",
+    "packages/festapp_core/lib/src/forms/form_metadata.dart",
+    "web_client/src/components/forms/form_page.js"
+  ],
+  "otherWorkingFilesUnchanged": 705,
+  "concurrentOutsideScopeEditsPreservedUntracked": [
+    "docs/plans/cash-only-reservations-EXECUTION-PROMPT-2026-11-06.md",
+    "docs/plans/cash-only-reservations-plan-2026-11-06.md"
+  ],
+  "validation": "Previously passing 97 payment tests, 16 SQL suites, real sandbox/common SQL proofs, upgrade/concurrency, 17 web/guard and 7 Dart core tests retained. Staged shared Dart caller syntax and all three migration assemblers checked. No full release/deploy gate claimed.",
+  "history": "Frozen exact migration/source/archive/log bytes retained, including preexisting whitespace. Active source whitespace check passed."
+}

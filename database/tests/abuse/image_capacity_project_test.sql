@@ -1,5 +1,5 @@
 DO $$
-DECLARE actor uuid; org bigint; un bigint; org2 bigint; un2 bigint; occ bigint; policy jsonb; scopes jsonb;
+DECLARE actor uuid; org bigint; un bigint; org2 bigint; un2 bigint; occ bigint; policy jsonb; scopes jsonb; existing_global_bytes numeric;
 BEGIN
  PERFORM create_user_for_test('image-capacity','image-capacity@test.invalid');actor:=get_user_id('image-capacity');
  INSERT INTO public.organizations(title) VALUES('Default capacity') RETURNING id INTO org;
@@ -17,7 +17,10 @@ BEGIN
  PERFORM assert_true(public.get_image_project_access_v1('default'),'legacy project shared read retained');
  PERFORM assert_false(public.get_image_project_access_v1('a'),'other project private objects remain inaccessible');
  EXECUTE 'RESET ROLE';
- UPDATE public.abuse_policy_rules SET base_limit=10 WHERE rule_key='image.storage.global.bytes';
+ -- Real local image integration may already own non-expiring global capacity.
+ -- Reserve exactly ten additional bytes without deleting its allocation.
+ SELECT coalesce(sum(amount),0) INTO existing_global_bytes FROM public.abuse_budget_usage WHERE rule_key='image.storage.global.bytes';
+ UPDATE public.abuse_policy_rules SET base_limit=existing_global_bytes+10 WHERE rule_key='image.storage.global.bytes';
  EXECUTE 'SET LOCAL ROLE authenticated';
  PERFORM public.admit_image_storage_v1(6,NULL,un);
  EXECUTE 'RESET ROLE';
@@ -27,7 +30,7 @@ BEGIN
  BEGIN
   PERFORM public.abuse_charge_v1(policy,scopes,'{"image.storage.unit.bytes":5,"image.storage.organization.bytes":5,"image.storage.global.bytes":5}');
   RAISE EXCEPTION 'global storage allocation reset'; EXCEPTION WHEN SQLSTATE 'PT429' THEN NULL; END;
- PERFORM assert_eq((SELECT sum(amount) FROM public.abuse_budget_usage WHERE rule_key='image.storage.global.bytes'),6::numeric,'failed reservation does not partially charge');
+ PERFORM assert_eq((SELECT sum(amount) FROM public.abuse_budget_usage WHERE rule_key='image.storage.global.bytes'),existing_global_bytes+6,'failed reservation does not partially charge');
  PERFORM assert_true((SELECT bool_and(expires_at='infinity'::timestamptz AND bucket_at='epoch'::timestamptz) FROM public.abuse_budget_usage WHERE rule_key LIKE 'image.storage.%'),'capacity never expires');
  PERFORM assert_false(has_table_privilege('authenticated','public.image_project_imports','UPDATE'),'client cannot reassign project');
 END $$;

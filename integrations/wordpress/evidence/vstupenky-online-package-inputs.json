@@ -1,14 +1,14 @@
 {
   "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-  "blocks/ticket-form/block.json": "6a223a8985e204f4e2f9af23853707757a57b30a1fdfa1a1f2686b337e10bdfb",
-  "blocks/ticket-form/editor.js": "c14962fb0a76cc2ce88b40f1a02fcff6ed586194e4966e5bf11f9f0851dadb5f",
+  "blocks/ticket-form/block.json": "7cb5923ce7fe905569a5e8da84ca523f5acead7ad5553c6b9cacaa04d4261a26",
+  "blocks/ticket-form/editor.js": "5f383c4ba08bbd9b337aa58d73abc6c0a61adbbcdc28cd45548bcb074570e3a0",
   "blocks/ticket-form/style.css": "28fca64ee334efbf98f947d7c7ff52cb2cfa64cb0f0925ef27b31fbf6d89a727",
-  "includes/admin.php": "6775f7a3ae0ab15f86bf994fa03a2a17dafc4ebb97a75dd410b19b3160150940",
-  "includes/embed.php": "e1ca52311bbea66f24b9c3379bb7acc19bde4b418a04c4ea3385a1cd0872b606",
-  "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "c9e4da40044eb01bed1ced199ce65b902a270c3e1168447824eef695400d8695",
-  "languages/vstupenky-online-cs_CZ.mo": "5afcfb04762c99cb923ef9a449a38dd1fffb40dbd9589390ab14bde13d53a4ec",
-  "languages/vstupenky-online-cs_CZ.po": "3825821349ee919fb6052299d20c76902364b9b3360b79398346a01591d040a4",
-  "languages/vstupenky-online.pot": "bed4965bdecc12872861da87241d6b13c14860561d576978b7b1db32023699c8",
-  "readme.txt": "f76dd5ed440bb311d71599f1eac97cbbe89a553378e75f9e8e5e9115a73b1f9e",
-  "vstupenky-online.php": "96bc0a433fa464842ae59a32aaa13a4c1f5e1012c28306d48ba09ba3551594d5"
+  "includes/admin.php": "0cf49ed4c186b750dd9dcee3697aea16969776bba2d44900d726ac06deab524f",
+  "includes/embed.php": "cf449c04886d0f9f4e83fe26ad9d010b50e35b75afb90a1b45284da060db0e77",
+  "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "add5f5c9c16a017a4e4efa61c906af726554e909630f6513a02314bd12fd62b4",
+  "languages/vstupenky-online-cs_CZ.mo": "75033f7305e7113e28862c67f988a2eff642da40277132b30f21060158935833",
+  "languages/vstupenky-online-cs_CZ.po": "16c3f4d47b01f2223f12792750a222a9916ca0fc9264ebf3891cd501df914a1f",
+  "languages/vstupenky-online.pot": "eb0cee16cdd5d0b3c189e7550ca669966d0095b8dca672f079612449655bb418",
+  "readme.txt": "9088b68022b586af7ee964aecbe4b705cb90bdbaa502c0e7720033355bd52be0",
+  "vstupenky-online.php": "ff160fbed0c8a219963dcc21598072d0ea6becfbc06c593fdd9569221ca543c0"
 }

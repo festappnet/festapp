@@ -1,0 +1,28 @@
+{
+  "scope": "Public form URLs and per-embed appearance in WordPress, Joomla, Wix and shared HTML embed",
+  "result": "Superseded by explicit central-only contract: only saved form setting controls appearance",
+  "checks": {
+    "adapter_url_validation": "Fixed product origin and public /form/ slug; rejects admin URLs, arbitrary origins, query/hash injection",
+    "host_messages": "iframe source, exact origin and random instance match",
+    "child_messages": "actual parent window, HTTP(S) origin pinned by initialization, protocol/instance checks",
+    "theme": "Bounded allowlisted presentation properties validated with CSS.supports; bounded HTTP(S) font resources; no arbitrary CSS/script/markup",
+    "persistence": "EmbedTheme only updates current document styles/fonts; no RPC/database writes",
+    "form_authorization": "update_form_internal_v1 requires service role or can_author_forms(occasion), binds stored form to occasion"
+  },
+  "behavior_limit": "Host appearance overrides have been removed. The actual parent can supply only bounded presentation; the saved form controls whether it is applied. This does not impose a host-domain embedding allowlist.",
+  "validation": {
+    "command": "pnpm exec node --test tests/core/embed.test.js tests/forms/embed_appearance.test.js",
+    "passed": 34,
+    "failed": 0
+  },
+  "source_files": [
+    "web_client/public/embed.js",
+    "web_client/src/services/embed_bridge.js",
+    "web_client/src/services/embed_theme.js",
+    "integrations/wordpress/shared/embed.php.in",
+    "integrations/joomla/shared/src/Helper/EmbedHelper.php.in",
+    "integrations/wix/src/config.js",
+    "integrations/wix/src/element.js",
+    "database/functions/eshop_forms/update_form.sql"
+  ]
+}

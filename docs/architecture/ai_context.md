@@ -265,3 +265,23 @@ Schema 2 retains its existing `mbtiles` asset role and absent/null
 `RasterMapSurface` with network tiles.
 There is no standalone package/style URL downloader or renderer rollback flag.
 See [offline map tooling](../../automation/offline-map/README.md).
+
+## Payment provider connectors
+
+Online payments use a shared engine and explicit provider registries across SQL,
+Edge Functions, Dart and the web client. Stripe is an installed connector. See
+[payment provider ownership and extension contract](payment-providers.md) before
+changing checkout, settlement, provider onboarding or form payment settings.
+
+
+Payment hardening keeps canonical `bankEnabled`/`providerConnections`, provider
+namespaces and a single `apply_provider_payment_effects_internal` SQL authority
+for online financial consequences. The generic machine entrypoint is
+`payment-reconcile`; Stripe names remain bounded external adapters. Empty lookup
+is unresolved, independently of elapsed inventory reservations. Connector
+migration history is frozen; changes use the hardening forward assembler.
+See the [local hardening receipt](../plans/payment-provider-hardening/RESULT-2026-11-06.md)
+for validation and unperformed production gates. Barion is now registered as a
+sandbox-only connector with real payment/refund/expiry proof; its production
+sales and marketplace activation remain closed. See the
+[Barion integration receipt](../plans/payment-provider-hardening/BARION-INTEGRATION-RESULT-2026-11-06.md).

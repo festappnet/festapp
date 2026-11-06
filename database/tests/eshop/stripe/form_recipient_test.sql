@@ -12,6 +12,10 @@ BEGIN
  VALUES(org,u,'acct_editorFixture',false,'connected',true,'Verified organizer') RETURNING id INTO conn;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ BEGIN
+  PERFORM public.get_form_stripe_recipient(u,oc,false);RAISE EXCEPTION 'order-only editor accessed form authoring';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ UPDATE public.occasion_users SET is_editor=true WHERE occasion=oc AND "user"=actor;
  value:=public.get_form_stripe_recipient(u,oc,false);
  PERFORM assert_eq(value->>'connectionId',conn::text,'form editor can choose the connected recipient');
  PERFORM assert_true(NOT(value ? 'accountId') AND NOT(value ? 'dashboardUrl'),'editor projection does not grant account management');
