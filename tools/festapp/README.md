@@ -310,7 +310,7 @@ IP loopback HTTP callbacks; the maintained provider permits a variable port,
 while the callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
-codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex --oauth-resource https://mcp.vstupenky.online/mcp
+codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex
 codex mcp login festapp --scopes festapp:ticket-layouts:read
 ```
 
