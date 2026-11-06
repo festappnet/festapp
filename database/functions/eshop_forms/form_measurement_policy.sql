@@ -40,7 +40,7 @@ REVOKE ALL ON FUNCTION public.form_measurement_unit_data_internal(bigint,jsonb) 
 -- Single status owner. Configuration belongs to Unit; forms contain only intent.
 CREATE OR REPLACE FUNCTION public.form_measurement_status_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- WITH scope AS (
+ WITH scope AS MATERIALIZED (
   SELECT coalesce(public.normalize_form_metadata_internal(f.data)#>'{analytics,enabled}'='true'::jsonb,false) requested,
    coalesce(org.data->'FORM_MEASUREMENT_ENABLED'='true'::jsonb,false) organization_enabled,
    coalesce(u.data->'measurement_enabled'='true'::jsonb,false) unit_enabled,
@@ -70,6 +70,9 @@ REVOKE ALL ON FUNCTION public.form_measurement_status_internal(bigint) FROM PUBL
 
 CREATE OR REPLACE FUNCTION public.form_measurement_runtime_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ WITH status AS MATERIALIZED (
+  SELECT public.form_measurement_status_internal(p_form) AS s
+ )
  SELECT jsonb_build_object('enabled',s->'requested_enabled','organization_allowed',s->'organization_allowed',
   'runtime_supported',s->'runtime_supported','eligible',s->'eligible','organization',o.organization,'unit',u.id,
   'runtime_origin',CASE WHEN s->'eligible'='true'::jsonb THEN r.runtime_origin END,
@@ -81,7 +84,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  JOIN public.organizations org ON org.id=o.organization
  LEFT JOIN analytics.organization_policy p ON p.organization=o.organization
   LEFT JOIN analytics.unit_runtime r ON r.unit=u.id
- CROSS JOIN LATERAL (SELECT public.form_measurement_status_internal(f.id) s) status
+ CROSS JOIN status
  WHERE f.id=p_form;
 $$;
 REVOKE ALL ON FUNCTION public.form_measurement_runtime_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;

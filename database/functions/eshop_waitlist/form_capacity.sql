@@ -18,9 +18,9 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
 $$;
 CREATE OR REPLACE FUNCTION public.get_form_registration_mode_internal(p_form bigint,p_at timestamptz DEFAULT clock_timestamp())
 RETURNS text LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE f public.forms; d jsonb; c jsonb;
+DECLARE f public.forms; c jsonb;
 BEGIN
- SELECT * INTO f FROM public.forms WHERE id=p_form; d:=public.get_effective_form_data(p_form);
+ SELECT * INTO f FROM public.forms WHERE id=p_form;
  IF NOT (public.get_form_availability_snapshot_internal(p_form,p_at)->>'isWindowOpen')::boolean THEN RETURN 'closed'; END IF;
  IF f.blueprint IS NOT NULL AND EXISTS (
   SELECT 1 FROM public.occasions o WHERE o.id=f.occasion

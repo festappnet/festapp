@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Assemble the form measurement migration from its canonical SQL owners."""
 import argparse
+import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,13 +51,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    expected = render()
-    schema, expected_schema = schema_snapshot()
     if args.check:
-        if TARGET.read_text() != expected:
-            raise SystemExit('Form measurement migration differs from canonical SQL')
+        if hashlib.sha256(TARGET.read_bytes()).hexdigest() != 'ac69c944fdf1c111e026301a98923ab4977748c2c847eecfa4fcf8602a099b93':
+            raise SystemExit('Applied form measurement migration changed')
+        from generate_canonical_source_contract import render as current_contract, TARGET as contract_target
+        if contract_target.read_text() != current_contract():
+            raise SystemExit('Current canonical source parity is stale')
+        schema, expected_schema = schema_snapshot()
         if schema.read_text() != expected_schema:
             raise SystemExit('Measurement schema snapshot differs from canonical owner')
     else:
-        TARGET.write_text(expected)
-        schema.write_text(expected_schema)
+        raise SystemExit('Applied form measurement migration is immutable; author a forward migration')

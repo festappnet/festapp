@@ -10,10 +10,14 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,ext
 $$;
 CREATE OR REPLACE FUNCTION public.get_form_availability_snapshot_internal(p_form bigint,p_at timestamptz DEFAULT clock_timestamp())
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT public.get_form_availability_from_config_internal(jsonb_build_object('manualOpen',f.is_open,
+ WITH form_config AS MATERIALIZED (
+  SELECT f.is_open,public.get_effective_form_data(f.id) AS d
+  FROM public.forms f WHERE f.id=p_form
+ )
+ SELECT public.get_form_availability_from_config_internal(jsonb_build_object('manualOpen',is_open,
  'startAt',nullif(coalesce(d#>>'{schedule,start_time}',d->>'start_time'),'')::timestamptz,
  'endAt',nullif(coalesce(d#>>'{schedule,end_time}',d->>'end_time'),'')::timestamptz),p_at)
- FROM public.forms f CROSS JOIN LATERAL (SELECT public.get_effective_form_data(f.id) d) data WHERE f.id=p_form;
+ FROM form_config;
 $$;
 REVOKE ALL ON FUNCTION public.get_form_availability_from_config_internal(jsonb,timestamptz),
  public.get_form_availability_snapshot_internal(bigint,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
