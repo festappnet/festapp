@@ -3,6 +3,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get measurementUnitDisabled =>
+      'FeatureFormSettings.measurementUnitDisabled'.tr();
+  static String get measurementActivationHelp =>
+      'FeatureFormSettings.measurementActivationHelp'.tr();
   static String get gtmContainer => 'FeatureFormSettings.gtmContainer'.tr();
   static String get gtmHelp => 'FeatureFormSettings.gtmHelp'.tr();
   static String get measurementOrganizationEnabled =>
