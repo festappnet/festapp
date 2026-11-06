@@ -127,8 +127,16 @@ delivery are outside this profile. Contacts are always stripped.
 
 ## Conversions and migration
 
-`form_start` is sent once per form load on the first real visitor input after
-consent. It carries no field names or values. `purchase` means an accepted paid-price order, not proof of payment. Finalizer
+`form_start` is sent once per form load on the first visitor answer change or
+ticket/seat action after consent. It carries no field names or values. Merely
+focusing or leaving a field, opening the seat picker, rendering defaults and
+restoring a draft do not count. Pre-consent actions are not replayed.
+This event is independent of the scheduled sale-opening time (`start_time`)
+and its countdown. GA4's automatic form-interaction event uses a session-level
+scope and cannot observe the form from our isolated runtime. Map the supplied
+event once in GTM; do not add another collector for the same interaction.
+
+`purchase` means an accepted paid-price order, not proof of payment. Finalizer
 snapshots own charged prices/items/currency. Client receivers reject totals
 that cannot be represented with exact, safe integer-cent arithmetic. Existing authorized command replay
 returns the same immutable facts under current stored gates; the browser

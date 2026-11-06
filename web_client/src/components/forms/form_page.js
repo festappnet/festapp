@@ -581,6 +581,7 @@ export class FormPage extends Component {
         if (formModel.registrationMode !== 'waitlist') this.currentPriceWidget = new PriceWidget(session, this.host);
         FormRenderer.render(this.host, session, formModel, showPreview, {
             onSubmit: (form, model) => this.validateAndSubmit(form, model),
+            onInteraction: () => this.analytics?.started(),
             onInput: (e, form, model) => {
                 if (e.type === 'input') FormValidator.handleInputValidation(e, form, session);
 
@@ -591,7 +592,6 @@ export class FormPage extends Component {
                     // session.removeTicket() etc. No need to re-scrape.
                 } else {
                     session.handleInput(e, form);
-                    if (e.isTrusted) this.analytics?.started();
                     this.analytics?.observe(session);
                 }
             }

@@ -9,7 +9,7 @@ import { FormStrings } from '../form_strings.js';
 
 export class FormFieldBuilder {
 
-    static createFormField(field, formModel, session) {
+    static createFormField(field, formModel, session, onInteraction) {
         const waitingProduct = formModel.registrationMode === 'waitlist' &&
             (['product_type', 'spot'].includes(field.type) || field.productTypeId || field.data?.product_dependent);
         if (waitingProduct) field = { ...field, isRequired: false, value: null, data: { ...field.data, default_value: null } };
@@ -44,10 +44,10 @@ export class FormFieldBuilder {
                          field.options.unshift({ id: '', title: FormStrings.notSpecifiedLabel });
                      }
                 }
-                fieldComponent = RadioFieldBuilder.create(field, formModel);
+                fieldComponent = RadioFieldBuilder.create(field, formModel, onInteraction);
                 break;
             case 'select_one':
-                fieldComponent = RadioFieldBuilder.create(field, formModel);
+                fieldComponent = RadioFieldBuilder.create(field, formModel, onInteraction);
                 break;
             case 'select_many':
                 fieldComponent = CheckBoxFieldBuilder.create(field, formModel);
@@ -56,23 +56,23 @@ export class FormFieldBuilder {
                  if (field.data && field.data.selection_type === 'select_many') {
                      fieldComponent = CheckBoxFieldBuilder.create(field, formModel);
                  } else {
-                     fieldComponent = RadioFieldBuilder.create(field, formModel);
+                     fieldComponent = RadioFieldBuilder.create(field, formModel, onInteraction);
                  }
                  break;
             case 'spot':
                 // Simple fallback: If options exist, use Radio, else Text (hidden id?)
                 // Usually spots are handled via UI map, but for basic data flow:
                 if (field.options && field.options.length > 0) {
-                    fieldComponent = RadioFieldBuilder.create(field, formModel);
+                    fieldComponent = RadioFieldBuilder.create(field, formModel, onInteraction);
                 } else {
                     fieldComponent = TextFieldBuilder.create(field, formModel);
                 }
                 break;
             case 'ticket':
-                fieldComponent = TicketFieldBuilder.create(field, formModel, session);
+                fieldComponent = TicketFieldBuilder.create(field, formModel, session, onInteraction);
                 break;
             case 'birth_date':
-                fieldComponent = DateFieldBuilder.create(field, formModel);
+                fieldComponent = DateFieldBuilder.create(field, formModel, onInteraction);
                 break;
             default:
                 console.warn(`Field type ${field.type} not supported yet.`);

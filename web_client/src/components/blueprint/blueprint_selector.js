@@ -60,7 +60,7 @@ export class BlueprintSelector {
         content.appendChild(controls);
     }
 
-    async open(session, field, initialSeats = []) {
+    async open(session, field, initialSeats = [], onInteraction) {
         this.close?.();
         const previousFocus = document.activeElement;
         const restoreScroll = preserveCheckoutScroll();
@@ -174,12 +174,14 @@ export class BlueprintSelector {
                 options.messages = BlueprintStrings.viewerMessages;
                 const select = options.onSelectionRequested;
                 options.onSelectionRequested = async (ids, selecting) => {
+                    onInteraction?.();
                     pending++; refreshActions();
                     try { return await select(ids, selecting); }
                     finally { pending--; if (!closed) refreshActions(); }
                 };
                 const quantity = options.onQuantityRequested;
                 if (quantity) options.onQuantityRequested = async (id, count) => {
+                    onInteraction?.();
                     pending++; refreshActions();
                     try { return await quantity(id, count); }
                     finally { pending--; if (!closed) refreshActions(); }

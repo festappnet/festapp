@@ -11,6 +11,7 @@
     "start": "pnpm run dev",
     "test": "node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node --test tests/**/*.test.js",
     "test:measurement-browser": "node scripts/test_form_measurement_browser.mjs",
+    "test:form-interaction-browser": "node scripts/test_form_interaction_browser.mjs",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
     "test:seat-checkout-browser": "node scripts/test_seat_checkout_browser.mjs",
     "test:form-access-browser": "node scripts/test_form_access_browser.mjs",

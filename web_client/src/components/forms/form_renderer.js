@@ -36,7 +36,7 @@ export class FormRenderer {
         (formModel.displayFields || formModel.visibleFields).forEach(field => {
             const definition = session?.state?.fields?.has(String(field.id))
                 ? { ...field, value: session.state.fields.get(String(field.id)) } : field;
-            const fieldComponent = FormFieldBuilder.createFormField(definition, formModel, session);
+            const fieldComponent = FormFieldBuilder.createFormField(definition, formModel, session, callbacks.onInteraction);
             fieldsContainer.appendChild(fieldComponent);
         });
         
@@ -66,6 +66,8 @@ export class FormRenderer {
 
         const updateHandler = (e) => {
             if(callbacks.onInput) callbacks.onInput(e, form, formModel);
+            // Blur also synchronizes email state, but does not change an answer.
+            if (e.isTrusted && (e.type === 'input' || e.type === 'change')) callbacks.onInteraction?.();
         };
         form.addEventListener('input', updateHandler);
         form.addEventListener('blur', e => {
