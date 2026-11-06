@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-11-06T17:07:08.301626+00:00",
+  "captured_at_utc": "2026-11-06T17:40:16.619194+00:00",
   "source_commit": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
   "rendering": "Actual frozen web client served by local Vite, not CMS editor or native integration UI",
   "fixture": "Existing disposable festapp-native-embed-20261106 (marker verified); Czech Ples U Lípy, Spolek U Lípy; locale cs; no order submitted",
@@ -14,14 +14,15 @@
   "publication": "Source assets only; consult separate publication receipt for external listing state.",
   "images": {
     "integrations/wix/media/gallery-form-20261106.png": {
-      "source_artifact": "form-cs-1200x900.png",
-      "sha256": "716024ca7469b8230fd447a8034b24b5a165803ef619ab14561568f6de8e118d",
+      "source_artifact": "form.png",
+      "sha256": "fed5e782ef441109198284dd7077cf73c0f4c5276d3dd247ae8b1abfaf506fd5",
       "dimensions": "1200x900"
     },
     "integrations/wix/media/gallery-seats-20261106.png": {
-      "source_artifact": "seats-cs-1200x900.png",
-      "sha256": "d69da90349da432737bd03be981c40b18c33c3584b8980ae029e6b60a9048f9f",
+      "source_artifact": "seats.png",
+      "sha256": "7ef5055e9598760cc96a167dfab349b4b792469a4dc89d6805d8adb0c792dffa",
       "dimensions": "1200x900"
     }
-  }
+  },
+  "color_scheme": "light, native browser prefers-color-scheme emulation; no image alteration"
 }

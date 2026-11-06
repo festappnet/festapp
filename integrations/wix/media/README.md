@@ -27,7 +27,7 @@ separately from local generation. Do not change a shared developer-company logo
 or another app's identity as part of this app-specific update.
 
 The current gallery source assets are `gallery-form-20261106.png` and
-`gallery-seats-20261106.png`, both 1200x900. They show the actual current
+`gallery-seats-20261106.png`, both 1200x900, captured in light mode. They show the actual current
 standalone web client with a disposable, Czech Ples U Lípy example. They do
 not show a Wix editor or an embedded host, and no order was submitted. Capture
 provenance and hashes are in [the current evidence](../evidence/catalog-screenshots-20261106.json).

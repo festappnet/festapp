@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-11-06T17:07:08.301626+00:00",
+  "captured_at_utc": "2026-11-06T17:40:16.619194+00:00",
   "source_commit": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
   "rendering": "Actual frozen web client served by local Vite, not CMS editor or native integration UI",
   "fixture": "Existing disposable festapp-native-embed-20261106 (marker verified); Czech Ples U Lípy, Spolek U Lípy; locale cs; no order submitted",
@@ -14,19 +14,20 @@
   "publication": "Source assets only; consult separate publication receipt for external listing state.",
   "images": {
     "integrations/joomla/submission/screenshots/01-formular-20261106.png": {
-      "source_artifact": "joomla-form-1600x700.png",
-      "sha256": "2903384b374478920df3af9d60505aa65d0a8c458f507c2bc4127c327474ab7f",
+      "source_artifact": "joomla-form.png",
+      "sha256": "32a79f26490aa027128894ffb32267709c39e8f68cd874d6869b287b479b521c",
       "dimensions": "1600x700"
     },
     "integrations/joomla/submission/screenshots/02-mistenky-20261106.png": {
-      "source_artifact": "joomla-seated-form-1600x700.png",
-      "sha256": "7a8428380c0bb292d3c409c2a200137ca7304506134fb0e9699870915935b489",
+      "source_artifact": "joomla-seated-form.png",
+      "sha256": "a43d7b10017d8d2b5b0a9e2b20faf5266acb4d4443e2d464bd6b000acdb1923f",
       "dimensions": "1600x700"
     },
     "integrations/joomla/submission/screenshots/03-mista-20261106.png": {
-      "source_artifact": "joomla-seats-1600x700.png",
-      "sha256": "29c975ad35c7c84242db6fd314a87e5c850bdffb59c7b26c286e86020e94e4e7",
+      "source_artifact": "joomla-seats.png",
+      "sha256": "3ab94313a79b8bef6bcf646351acf5d38fb0219809f99e1dc749cf205d6ac0c3",
       "dimensions": "1600x700"
     }
-  }
+  },
+  "color_scheme": "light, native browser prefers-color-scheme emulation; no image alteration"
 }
