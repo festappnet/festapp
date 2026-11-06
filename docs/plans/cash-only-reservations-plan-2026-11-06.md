@@ -587,3 +587,11 @@ Přesné příkazy, digest a omezení browser důkazu: [uložený receipt](../de
 Opravy testovacích vstupů zachovaly finanční a autorizační assertions: explicitní cash úhrada má skutečnou objednávku; dostupnost banky má skutečně nakonfigurovaný účet; pozitivní přesun ručního pohybu používá dvě objednávky ve stejné jednotce/organizaci a samostatný negativní případ prokazuje zákaz cizí jednotky. Worker send fence se ověřuje jeho skutečnou service rolí nad reálně zařazenou upomínkou, bez odeslání. Žádný z požadovaných výsledků nebyl dosažen skipem či oslabením ochrany.
 
 Produkční SQL, skutečné platby, externí odesílání, commit, push ani nasazení tato implementační relace neprováděla. Případná produkční aktivace nadále vyžaduje samostatné vydání a jeho platné repository gates.
+
+### Následné sjednocení a autorizované vydání
+
+Uživatel následně výslovně rozšířil rozsah o publikaci main, nasazení a sjednocení worktrees. Vybraný produkční tenant je `prod/festapptickets` / vstupenky.online; jiné tenantové větve se nevydávají. Původní výše uvedené výsledky zůstávají lokálními důkazy, nikoli potvrzením nasazení.
+
+- 24 vedlejších worktrees bylo porovnáno s main a odstraněno po ověřené externí archivaci lokálních souborů a binárních diffů. Všechny HEADy mají zachované refs pod `refs/archive/worktree-unification-20261106/`; původní větve se nemažou. Archiv: `/Users/miakh/source/festapp-worktree-archives/2026-11-06`. Starší sdílené kandidáty již main obsahuje ve výsledné nebo následně opravené podobě; tenantové overlaye se nepřenášejí do sdíleného zdroje.
+- Úplný klientský běh ověřil Core a adaptéry, Flutter odhalil zastaralé očekávání skrytého celého výběru a současně chybějící online feature guard. Editor nyní vždy nabízí bank/cash, online volby i načítání příjemce respektují původní viditelnost. Uložený binding se pouhým otevřením nemění. Cílených 15 editorových testů prošlo; nový kontrakt je součástí kanonického CI.
+- Před publikací zbývají povinné CI mirror lanes; před produkčními kroky všechny GitHub joby na přesném publikovaném main SHA, následně overlay/drift/build a oddělené SQL/Edge/MCP kroky. Stav nasazení se vykáže podle skutečných receipts.

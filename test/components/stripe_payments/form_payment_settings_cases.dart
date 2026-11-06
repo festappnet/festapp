@@ -164,7 +164,7 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => _environment,
-    'normal form settings hide cards and avoid Stripe reads while retaining saved configuration',
+    'normal form settings expose cash without Stripe reads or configuration changes',
     (tester) async {
       var reads = 0;
       await _environment.pumpWidget(
@@ -186,7 +186,13 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(PaymentMethodCards), findsNothing);
+      expect(find.byType(PaymentMethodCards), findsOneWidget);
+      expect(find.byKey(const ValueKey('payment-method-cash')), findsOneWidget);
+      expect(find.byKey(const ValueKey('payment-method-bank')), findsOneWidget);
+      expect(find.byKey(const ValueKey('payment-method-online')), findsNothing);
+      expect(find.byKey(const ValueKey('payment-method-both')), findsNothing);
+      expect(tester.widget<PaymentMethodCards>(find.byType(PaymentMethodCards)).value,
+          FormPaymentMethod.bank);
       expect(reads, 0);
       expect(_actions(tester).hasChanges, isFalse);
     },

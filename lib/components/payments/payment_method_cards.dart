@@ -11,10 +11,12 @@ class PaymentMethodCards extends StatelessWidget {
     required this.canSelectOnline,
     required this.onChanged,
     this.onlineFirst = false,
+    this.showOnline = true,
     this.onlineTitle,
   });
 
   final bool onlineFirst;
+  final bool showOnline;
   final String? onlineTitle;
   final FormPaymentMethod? value;
   final bool canSelectOnline;
@@ -42,7 +44,8 @@ class PaymentMethodCards extends StatelessWidget {
                       FormPaymentMethod.cash,
                     ]
                   : FormPaymentMethod.values))
-            SizedBox(width: width, child: _card(context, method)),
+            if (showOnline || method == FormPaymentMethod.bank || method == FormPaymentMethod.cash)
+              SizedBox(width: width, child: _card(context, method)),
         ],
       );
     },

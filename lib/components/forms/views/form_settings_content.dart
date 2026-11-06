@@ -83,6 +83,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _providers.firstWhere((p) => p.connector.id == _providerId);
   String? _providerId;
   Map<String, dynamic> _savedPayments = {};
+  bool get _onlinePaymentsVisible =>
+      widget.showCardPayments ?? _providers.any((provider) => provider.visible());
   String _deadlineMode = 'inherit';
   bool _cashEnabled = false;
   bool _paymentSelectionChanged = false;
@@ -802,6 +804,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   }
 
   Future<void> _loadPaymentRecipient() async {
+    if (!_onlinePaymentsVisible) return;
     final generation = ++_paymentReadGeneration;
     final unit = _form?.occasionModel?.unit,
         occasion = _form?.definition.occasionId;
@@ -870,7 +873,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         unit != null &&
         unit == RightsService.currentUnit()?.id &&
         _provider.canManage();
-    final cardEnabled = _paymentConnectionId != null;
+    final cardEnabled = _onlinePaymentsVisible && _paymentConnectionId != null;
     final compatibility = _draftCardCompatibility;
     final canSelect =
         recipient?['modelVerified'] == true &&
@@ -885,7 +888,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
-        if (_providers.length > 1)
+        if (_onlinePaymentsVisible && _providers.length > 1)
           DropdownButton<String>(
             value: _providerId,
             items: [
@@ -899,14 +902,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
               if (id != null) _selectPaymentProvider(id);
             },
           ),
-        if (!_cashEnabled && _paymentRecipientLoading) const LinearProgressIndicator(),
-        if (!_cashEnabled && _paymentRecipientFailed)
+        if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientLoading) const LinearProgressIndicator(),
+        if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientFailed)
           Text(PaymentMethodStrings.reason('unavailable'))
-        else if (!_cashEnabled && recipient == null && _paymentRecipientLoaded)
+        else if (_onlinePaymentsVisible && !_cashEnabled && recipient == null && _paymentRecipientLoaded)
           Text(PaymentMethodStrings.reason('not_configured')),
-        if (!_cashEnabled && compatibility != null)
+        if (_onlinePaymentsVisible && !_cashEnabled && compatibility != null)
           Text(PaymentMethodStrings.reason(compatibility)),
         PaymentMethodCards(
+          showOnline: _onlinePaymentsVisible,
           value: _cashEnabled ? FormPaymentMethod.cash : cardEnabled
               ? (_bankEnabled
                     ? FormPaymentMethod.both
@@ -943,7 +947,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           _buildUsedBankAccounts(context),
           const SizedBox(height: 16),
         ],
-        if (!_cashEnabled) ...[
+        if (_onlinePaymentsVisible && !_cashEnabled) ...[
         Text(
           PaymentMethodStrings.text(_provider.titleKey),
           style: Theme.of(context).textTheme.titleSmall,
