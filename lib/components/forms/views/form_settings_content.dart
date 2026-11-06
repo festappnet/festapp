@@ -83,12 +83,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _providers.firstWhere((p) => p.connector.id == _providerId);
   String? _providerId;
   Map<String, dynamic> _savedPayments = {};
-  bool get _paymentsVisible =>
-      widget.showCardPayments ?? _providers.any((p) => p.visible());
-  bool _deadlineInherited = true;
+  String _deadlineMode = 'inherit';
+  bool _cashEnabled = false;
+  bool _paymentSelectionChanged = false;
+  final _cashInstructionsController = TextEditingController();
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
     _bankEnabled,
+    _cashEnabled,
+    _cashInstructionsController.text,
+    _deadlineMode,
     _paymentConnectionId,
     _savedPayments,
     _providerId,
@@ -96,7 +100,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _measurementEnabled,
     _linkController.text,
     _deadlineDaysController.text,
-    _deadlineInherited,
     _startingNumberController.text,
     _reminderMode,
     _reminderDaysController.text,
@@ -188,6 +191,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     for (final controller in [
       _titleController,
       _linkController,
+      _cashInstructionsController,
       _deadlineDaysController,
       _reminderDaysController,
       _startingNumberController,
@@ -218,6 +222,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
     _deadlineDaysController.dispose();
+    _cashInstructionsController.dispose();
     _reminderDaysController.dispose();
     _startingNumberController.dispose();
     _linkNotifier.dispose();
@@ -278,6 +283,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _form = form;
       final payments = _form!.definition.data?['payments'];
       _bankEnabled = payments is! Map || payments['bankEnabled'] != false;
+      _cashEnabled = payments is Map && payments['cashEnabled'] == true;
+      _cashInstructionsController.text = payments is Map ? payments['cashInstructions'] as String? ?? '' : '';
+      _deadlineMode = _form!.definition.data?['payment_deadline']?['mode'] as String? ?? (_form!.definition.deadlineDurationSeconds == null ? 'inherit' : 'custom');
       _savedPayments = Map<String, dynamic>.from(
         payments is Map ? payments : {},
       );
@@ -294,9 +302,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentRecipientFailed = false;
       _paymentRecipientLoaded = false;
       _paymentRecipientLoading = false;
-      if (_paymentsVisible) {
-        _loadPaymentRecipient();
-      }
+      if (!_cashEnabled) _loadPaymentRecipient();
 
       final analytics = _form!.definition.data?['analytics'];
       _measurementEnabled = analytics is Map && analytics['enabled'] == true;
@@ -343,7 +349,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           ? savedTone as String
           : 'inherit';
 
-      _deadlineInherited = _form!.definition.deadlineDurationSeconds == null;
       _deadlineDaysController.text =
           (_form!.definition.effectiveDeadlineDurationSeconds(
                     occasionDefault: _formFeature.deadlineDurationSeconds,
@@ -432,7 +437,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         !_bankEnabled ||
         _paymentConnectionId != null) {
       _capturePaymentConfiguration();
-      metadata['payments'] = {..._savedPayments, 'bankEnabled': _bankEnabled};
+      metadata['payments'] = {..._savedPayments, 'bankEnabled': _bankEnabled, 'cashEnabled': _cashEnabled, 'cashInstructions': _cashInstructionsController.text, if (_cashEnabled) 'providerConnections': <String,String>{}};
     }
 
     if (_communicationTone == 'inherit') {
@@ -445,10 +450,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       metadata['analytics'] = {'enabled': _measurementEnabled};
     }
 
+    metadata['payment_deadline'] = {'mode': _cashEnabled ? 'none' : _deadlineMode};
     final days = int.tryParse(_deadlineDaysController.text);
     _form!.definition = _form!.definition.copyWith(
       data: metadata,
-      deadlineDurationSeconds: !_deadlineInherited && days != null && days >= 0
+      deadlineDurationSeconds: !_cashEnabled && _deadlineMode == 'custom' && days != null && days >= 0
           ? days * 86400
           : null,
     );
@@ -457,7 +463,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (widget.saveForm != null) {
         await widget.saveForm!(_form!);
       } else {
-        _form = await DbForms.updateForm(_form!);
+        _form = await DbForms.updateForm(_form!, paymentSelectionChanged: _paymentSelectionChanged);
       }
       _savedLink = _form!.definition.link;
       if (!mounted) return;
@@ -893,15 +899,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
               if (id != null) _selectPaymentProvider(id);
             },
           ),
-        if (_paymentRecipientLoading) const LinearProgressIndicator(),
-        if (_paymentRecipientFailed)
+        if (!_cashEnabled && _paymentRecipientLoading) const LinearProgressIndicator(),
+        if (!_cashEnabled && _paymentRecipientFailed)
           Text(PaymentMethodStrings.reason('unavailable'))
-        else if (recipient == null && _paymentRecipientLoaded)
+        else if (!_cashEnabled && recipient == null && _paymentRecipientLoaded)
           Text(PaymentMethodStrings.reason('not_configured')),
-        if (compatibility != null)
+        if (!_cashEnabled && compatibility != null)
           Text(PaymentMethodStrings.reason(compatibility)),
         PaymentMethodCards(
-          value: cardEnabled
+          value: _cashEnabled ? FormPaymentMethod.cash : cardEnabled
               ? (_bankEnabled
                     ? FormPaymentMethod.both
                     : FormPaymentMethod.online)
@@ -909,16 +915,24 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           canSelectOnline: cardEnabled || canSelect,
           onlineTitle: PaymentMethodStrings.text(_provider.titleKey),
           onChanged: (method) => setState(() {
-            _bankEnabled = method != FormPaymentMethod.online;
+            _paymentSelectionChanged = true;
+            _cashEnabled = method == FormPaymentMethod.cash;
+            _bankEnabled = method == FormPaymentMethod.bank || method == FormPaymentMethod.both;
+            if (_cashEnabled) { _deadlineMode = 'none'; _savedPayments['providerConnections'] = <String,String>{}; }
             // Keep an explicitly configured recipient, including stale ones,
             // until the editor chooses its replacement below.
-            _paymentConnectionId = method == FormPaymentMethod.bank
+            _paymentConnectionId = method == FormPaymentMethod.bank || method == FormPaymentMethod.cash
                 ? null
                 : (_paymentConnectionId ?? candidate);
           }),
         ),
+        if (_cashEnabled) ...[
+          TextFormField(controller: _cashInstructionsController, onChanged: (_) => setState(() => _paymentSelectionChanged = true), maxLength: 1000, maxLines: 3,
+            decoration: InputDecoration(labelText: PaymentMethodStrings.text('cashInstructions'), hintText: PaymentMethodStrings.text('cashInstructionsDefault'))),
+          Text(PaymentMethodStrings.text('cashDeadlineHelp')),
+        ],
         const SizedBox(height: 16),
-        if (!_bankEnabled && !cardEnabled)
+        if (!_cashEnabled && !_bankEnabled && !cardEnabled)
           Text(PaymentMethodStrings.text('noMethodSelected')),
         if (_bankEnabled) ...[
           Text(
@@ -929,6 +943,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           _buildUsedBankAccounts(context),
           const SizedBox(height: 16),
         ],
+        if (!_cashEnabled) ...[
         Text(
           PaymentMethodStrings.text(_provider.titleKey),
           style: Theme.of(context).textTheme.titleSmall,
@@ -983,6 +998,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                 pushRootPath(context.router.root, _provider.settingsPath(unit)),
             child: Text(PaymentMethodStrings.text(_provider.setupKey)),
           ),
+        ],
         const SizedBox(height: 16),
       ],
     );
@@ -1151,12 +1167,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                 },
                               ),
                               const SizedBox(height: 24),
-                              TextFormField(
+                              DropdownButtonFormField<String>(
+                                key: const ValueKey('form-payment-deadline-mode'),
+                                initialValue: _cashEnabled ? 'none' : _deadlineMode,
+                                items: [for (final mode in ['inherit', 'custom', 'none']) DropdownMenuItem(value: mode, child: Text(PaymentMethodStrings.text({'inherit':'deadlineInherit','custom':'deadlineCustom','none':'deadlineNone'}[mode]!)))],
+                                onChanged: !_canEdit || _cashEnabled ? null : (mode) => setState(() { _deadlineMode = mode!; _paymentSelectionChanged = true; }),
+                              ),
+                              if (!_cashEnabled && _deadlineMode == 'custom') TextFormField(
                                 enabled: _canEdit,
                                 controller: _deadlineDaysController,
-                                onChanged: (value) => setState(
-                                  () => _deadlineInherited = value.isEmpty,
-                                ),
+                                onChanged: (_) => setState(() => _paymentSelectionChanged = true),
+                                validator: (value) => _deadlineMode == 'custom' && (int.tryParse(value ?? '') == null)
+                                  ? CommonStrings.fieldCannotBeEmpty : null,
                                 decoration: InputDecoration(
                                   labelText: FormStrings.labelDeadlineDays,
                                   suffixIcon: IconButton(
@@ -1166,14 +1188,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           86400,
                                     ),
                                     icon: const Icon(Icons.restore),
-                                    onPressed: () => setState(() {
-                                      _deadlineInherited = true;
-                                      _deadlineDaysController.text =
-                                          ((_formFeature.deadlineDurationSeconds ??
-                                                      604800) /
-                                                  86400)
-                                              .round()
-                                              .toString();
+                                    onPressed: !_canEdit ? null : () => setState(() {
+                                      _deadlineMode = 'inherit';
+                                      _paymentSelectionChanged = true;
                                     }),
                                   ),
                                   border: const OutlineInputBorder(),
@@ -1261,9 +1278,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     .titleLarge,
                               ),
                               const SizedBox(height: 24),
-                              ((_paymentsVisible)
-                                  ? _buildPaymentMethods(innerContext)
-                                  : _buildUsedBankAccounts(innerContext)),
+                              _buildPaymentMethods(innerContext),
                               const SizedBox(height: 16),
                               FormVariableSymbolSettings(
                                 value: {

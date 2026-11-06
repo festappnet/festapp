@@ -233,3 +233,21 @@ Deno.test("preview respects the canonical wrapper without an inherited image", a
   assert(!preview.html.includes("inherited.webp"));
   assert(preview.inheritedEmailBanner.endsWith("inherited.webp"));
 });
+
+Deno.test('cash draft preview hydrates the real confirmation helper without bank or date fallbacks',async()=>{
+ const paymentInfo={payment_method:'cash',deadline:null,data:{payment_policy:{mode:'none',cashInstructions:'Zaplaťte u vstupu.'}}};
+ const sample=previewOrder(context.title,'formal',{sampleProducts:context.sampleProducts,paymentInfo});
+ assert(sample.payment_info.deadline===null);assert(sample.payment_info.account_number===null);
+ assert(sample.payment_info.variable_symbol===null);
+ const rendered=await renderDraftPreview({...context,paymentInfo});
+ assert(rendered.html.includes('Zaplaťte u vstupu.'));
+ assert(!rendered.html.includes(defaults.iban));assert(!rendered.html.includes(defaults.variableSymbol));
+ assert(rendered.previewContext.deadline===null);
+ assert(rendered.authoringContext.paymentAccounts.length===0);
+});
+Deno.test('bank none draft preview retains bank instructions with explicit null date',async()=>{
+ const paymentInfo={payment_method:'bank',deadline:null,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',data:{payment_policy:{mode:'none'}}};
+ const rendered=await renderDraftPreview({...context,paymentInfo});
+ assert(rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));assert(rendered.previewContext.deadline===null);
+ assert(!rendered.html.includes(defaults.deadline));
+});

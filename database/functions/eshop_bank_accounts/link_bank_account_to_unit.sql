@@ -38,7 +38,7 @@ BEGIN
                 SELECT unnest(ba.supported_currencies) as curr
                 FROM eshop.unit_bank_accounts uba
                 JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
-                WHERE uba.unit = p_unit_id AND uba.bank_account != p_bank_account_id
+                WHERE uba.unit = p_unit_id AND uba.bank_account != p_bank_account_id AND ba.type IS DISTINCT FROM 'CASH'
             ),
             LostCurrencies AS (
                 SELECT curr FROM TargetAcc
@@ -55,6 +55,7 @@ BEGIN
                 JOIN eshop.products p2 ON ff.product_type = p2.product_type
                 WHERE o.unit = p_unit_id
                   AND f.is_open = true
+                  AND coalesce(f.data#>'{payments,bankEnabled}','true'::jsonb)='true'::jsonb
                   -- AND p.is_hidden = false -- Removed is_hidden check? Original SQL had it. Let's keep it tight.
                   AND p.currency_code IN (SELECT curr FROM LostCurrencies)
             )

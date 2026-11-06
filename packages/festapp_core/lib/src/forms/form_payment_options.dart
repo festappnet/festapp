@@ -3,10 +3,11 @@ import '../../payments.dart';
 /// Server availability is independent from the saved form configuration.
 /// An explicit empty list never falls back to bank payment.
 class FormPaymentOptions {
-  FormPaymentOptions._(this.available, this.providers, this.reservationSeconds);
+  FormPaymentOptions._(this.available, this.providers, this.reservationSeconds, [this.cashInstructions = '']);
   final List<String> available;
   final Map<String, ProviderPaymentOptions> providers;
   final int reservationSeconds;
+  final String cashInstructions;
   bool get cardConfigured => providers.values.any((p) => p.configured);
   // Released Stripe-only accessors are an explicit compatibility adapter.
   String? get connectionId => providers['stripe']?.connectionId;
@@ -63,7 +64,7 @@ class FormPaymentOptions {
         value['available'] is List
             ? (value['available'] as List)
                   .whereType<String>()
-                  .where((id) => id == 'bank'
+                  .where((id) => id == 'cash' ? value['cash'] is Map && value['cash']['available'] == true : id == 'bank'
                       ? (value['bank'] is! Map || value['bank']['available'] == true)
                       : registry!.contains(id) && (value['providers'] is! Map ||
                           (value['providers'][id] is Map && value['providers'][id]['available'] == true)))
@@ -72,12 +73,13 @@ class FormPaymentOptions {
       ),
       Map.unmodifiable(providers),
       seconds is int && seconds > 0 && seconds <= 86400 ? seconds : 1860,
+      value['cash'] is Map ? value['cash']['instructions'] as String? ?? '' : '',
     );
   }
   List<String> availableFor(String surface) => List.unmodifiable(
     available.where(
       (method) =>
-          method == 'bank' ||
+          method == 'cash' || method == 'bank' ||
           (providers[method]?.connectionId != null &&
               providers[method]!.supportedSurfaces.contains(surface)),
     ),

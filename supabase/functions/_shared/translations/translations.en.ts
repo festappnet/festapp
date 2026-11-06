@@ -107,14 +107,16 @@ export const enTranslations = {
   depositRequired: (
     depositAmount: string,
     remainingAmount: string,
-    depositDeadline: string,
+    depositDeadline: string | null,
     accountNumber: string,
     iban: string | null,
     variableSymbol: string,
     _tone: Tone
   ) => {
     const isOnSite = depositDeadline === 'on site' || depositDeadline === 'na místě';
-    const deadlineText = isOnSite
+    const deadlineText = depositDeadline == null
+      ? `the remaining balance is ${bold(remainingAmount)}`
+      : isOnSite
       ? `the remaining surcharge of ${bold(remainingAmount)} is to be paid on site`
       : `the remaining surcharge of ${bold(remainingAmount)} is due by ${bold(depositDeadline)}`;
 

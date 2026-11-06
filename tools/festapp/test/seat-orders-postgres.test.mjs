@@ -248,3 +248,17 @@ test('current printed-batch guards reject approved replacement and swap atomical
  await s.db.query('ROLLBACK TO SAVEPOINT legacy_swap_printed');await s.db.query('RELEASE SAVEPOINT legacy_swap_printed');
  assert.deepEqual(await state(s),before,'neither new nor released paths may alter printed ticket allocations, money, history or notices');
 });
+
+test('cash seat replacement preserves the shared quote, snapshot and atomic receipt',options,async t=>{
+ const s=await paidAtomicSwap(t);await s.db.query('RESET ROLE');
+ await s.db.query(`update forms set bank_account=null,data='{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}' where key=$1`,[s.fx.formKey]);
+ await s.db.query('SET LOCAL ROLE authenticated');
+ const input={email:'cash-seat@example.invalid',form_key:s.fx.formKey,client_capabilities:['cash_reservations','no_payment_deadline']};
+ const p=await preview(s,[s.first],input);assert.equal(p.code,200,JSON.stringify(p));
+ assert.equal(p.quote.newOrder.paymentMethod,'cash');assert.equal(p.quote.newOrder.paymentPolicy.mode,'none');
+ const command=randomUUID(),done=await apply(s,p,input,command,true);assert.equal(done.status,'applied',JSON.stringify(done));
+ const replay=await apply(s,p,input,command,true);assert.equal(replay.data.order.id,done.data.order.id);
+ await s.db.query('RESET ROLE');
+ const payment=(await s.db.query('select p.* from eshop.orders o join eshop.payment_info p on p.id=o.payment_info where o.id=$1',[done.data.order.id])).rows[0];
+ assert.equal(payment.payment_method,'cash');assert.equal(payment.bank_account,null);assert.equal(payment.deadline,null);
+});

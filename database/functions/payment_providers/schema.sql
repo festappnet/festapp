@@ -4,12 +4,12 @@ CREATE TABLE eshop.payment_providers (
  handler regprocedure,
  source_field text UNIQUE,
  legacy_connection_field text UNIQUE,
- CHECK((provider_key='bank' AND handler IS NULL AND source_field IS NULL)
-    OR (provider_key<>'bank' AND handler IS NOT NULL AND source_field IS NOT NULL))
+ CHECK((provider_key IN ('bank','cash') AND handler IS NULL AND source_field IS NULL)
+    OR (provider_key NOT IN ('bank','cash') AND handler IS NOT NULL AND source_field IS NOT NULL))
 );
 ALTER TABLE eshop.payment_providers ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON eshop.payment_providers FROM PUBLIC,anon,authenticated,service_role;
-INSERT INTO eshop.payment_providers(provider_key) VALUES('bank');
+INSERT INTO eshop.payment_providers(provider_key) VALUES('bank'),('cash');
 -- The existing Stripe connection column belongs to that connector. Other
 -- connectors may have their own typed storage without changing payment_info.
 ALTER TABLE eshop.payment_info DROP CONSTRAINT payment_info_payment_method_check;

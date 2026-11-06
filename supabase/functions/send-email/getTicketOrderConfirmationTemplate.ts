@@ -1,3 +1,4 @@
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
@@ -146,7 +147,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       commandId: String(task.data.command_id),
     });
     if (invoice.attachment) attachments.push(invoice.attachment);
-  } else if (paymentInfo.amount > 0) {
+  } else if (isBankPaymentInfo(paymentInfo) && paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }

@@ -1,7 +1,7 @@
 // Pure confirmation content. Producers own identity, attachments and delivery.
 import { confirmationPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import { generateFullOrder } from "./orderOverview.ts";
-import { paymentReferenceValue } from "./paymentPresentation.ts";
+import { isBankPaymentInfo, hasNoPaymentDeadline, paymentReferenceValue } from "./paymentPresentation.ts";
 import { formatDatetime, formatIBAN } from "./utilities.ts";
 import { type Tone, translations } from "./translations/translations.ts";
 
@@ -34,9 +34,9 @@ export function confirmationSubstitutions(
     iban: formatIBAN(paymentInfo.account_number),
     // Free registrations have no payment reference; preserve one if already set.
     variableSymbol: paymentReferenceValue(paymentInfo, {
-      required: Number(paymentInfo.amount) > 0,
+      required: Number(paymentInfo.amount) > 0 && isBankPaymentInfo(paymentInfo),
     }),
-    deadline: formatDatetime(paymentInfo.deadline, lang),
+    deadline: hasNoPaymentDeadline(paymentInfo) ? null : formatDatetime(paymentInfo.deadline, lang),
     fullOrder: generateFullOrder(
       order.data,
       order.data.tickets,

@@ -11,12 +11,14 @@ BEGIN
   IF legacy IS NOT NULL THEN connections:=connections||jsonb_build_object(r.provider_key,legacy); END IF;
   saved:=saved-r.legacy_connection_field;
  END LOOP;
- saved:=saved||jsonb_build_object('bankEnabled',coalesce(saved->'bankEnabled','true'),'providerConnections',connections);
- IF p_input IS NULL THEN RETURN saved; END IF;
+ saved:=saved||jsonb_build_object('bankEnabled',coalesce(saved->'bankEnabled','true'),'providerConnections',connections,'cashEnabled',coalesce(saved->'cashEnabled','false'),'cashInstructions',coalesce(saved->'cashInstructions','""'::jsonb));
+ IF p_input IS NULL THEN p_input:=saved; END IF;
  -- SQL NULL normalizes saved data; explicit JSON null resets inheritance.
- incoming:=CASE WHEN p_input='null'::jsonb THEN '{"bankEnabled":true,"providerConnections":{}}'::jsonb ELSE p_input END;
+ incoming:=CASE WHEN p_input='null'::jsonb THEN '{"bankEnabled":true,"providerConnections":{},"cashEnabled":false,"cashInstructions":""}'::jsonb ELSE p_input END;
+ IF incoming->'cashEnabled'='null'::jsonb THEN incoming:=jsonb_set(incoming,'{cashEnabled}','false'); END IF;
+ IF incoming->'cashInstructions'='null'::jsonb THEN incoming:=jsonb_set(incoming,'{cashInstructions}','""'); END IF;
  IF incoming->'bankEnabled'='null'::jsonb THEN incoming:=jsonb_set(incoming,'{bankEnabled}','true'); END IF;
- IF jsonb_typeof(incoming)<>'object' OR EXISTS(SELECT 1 FROM jsonb_object_keys(incoming) k WHERE k NOT IN ('bankEnabled','providerConnections','stripeConnectionId'))
+ IF jsonb_typeof(incoming)<>'object' OR EXISTS(SELECT 1 FROM jsonb_object_keys(incoming) k WHERE k NOT IN ('bankEnabled','providerConnections','stripeConnectionId','cashEnabled','cashInstructions'))
   OR (incoming ? 'bankEnabled' AND jsonb_typeof(incoming->'bankEnabled')<>'boolean') THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
  IF incoming ? 'providerConnections' THEN
   connections:=coalesce(nullif(incoming->'providerConnections','null'::jsonb),'{}'::jsonb);
@@ -31,7 +33,14 @@ BEGIN
   IF jsonb_typeof(r.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=r.key AND handler IS NOT NULL) THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
   PERFORM (r.value#>>'{}')::uuid;
  END LOOP;
- RETURN jsonb_build_object('bankEnabled',coalesce(incoming->'bankEnabled',saved->'bankEnabled'),'providerConnections',connections);
+ saved:=jsonb_build_object('bankEnabled',coalesce(incoming->'bankEnabled',saved->'bankEnabled'),'providerConnections',connections,
+  'cashEnabled',coalesce(incoming->'cashEnabled',saved->'cashEnabled','false'),
+  'cashInstructions',coalesce(incoming->'cashInstructions',saved->'cashInstructions','""'::jsonb));
+ IF jsonb_typeof(saved->'cashEnabled')<>'boolean' OR jsonb_typeof(saved->'cashInstructions')<>'string'
+  OR length(saved->>'cashInstructions')>1000 THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
+ IF saved->'cashEnabled'='true'::jsonb AND (saved->'bankEnabled'<>'false'::jsonb OR connections<>'{}'::jsonb) THEN
+  RAISE EXCEPTION 'CASH_PAYMENT_COMBINATION_UNSUPPORTED'; END IF;
+ RETURN saved;
 END $$;
 -- Legacy draft translation uses saved recipient evidence, never a registry default.
 CREATE OR REPLACE FUNCTION public.normalize_setup_payments_internal(p_data jsonb)
@@ -40,7 +49,8 @@ DECLARE config jsonb; method text:=p_data->>'paymentMethod'; result jsonb:=p_dat
 BEGIN
  config:=public.merge_form_payments_internal(coalesce(p_data->'payments',p_data#>'{formDraft,data,payments}'),NULL);
  IF method IS NOT NULL THEN
-  IF method='bank' THEN config:='{"bankEnabled":true,"providerConnections":{}}';
+  IF method='cash' THEN config:='{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}}';
+  ELSIF method='bank' THEN config:='{"bankEnabled":true,"providerConnections":{}}';
   ELSE
    connections:=config->'providerConnections';
    IF method<>'both' THEN connections:=CASE WHEN connections ? method THEN jsonb_build_object(method,connections->method) ELSE '{}'::jsonb END; END IF;

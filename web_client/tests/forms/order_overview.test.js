@@ -44,7 +44,7 @@ test('view transport calls only read RPC; resolver remains a separate POST', asy
     const calls = [];
     const client = { rpc: async (name, params) => { calls.push({ name, params }); return { data: fixture() }; } };
     const commands = new WaitlistCommands(client); await commands.overview({ token: 'view', orderId: 1 });
-    assert.equal(calls[0].name, 'get_customer_order_overview'); assert.deepEqual(calls[0].params, { p_token: 'view', p_order_id: 1 });
+    assert.equal(calls[0].name, 'get_customer_order_overview'); assert.deepEqual(calls[0].params, { input_data: {token:'view', order_id:1, client_capabilities:['cash_reservations','no_payment_deadline']} });
     assert.equal(commands.pending.size, 0);
 });
 
@@ -343,4 +343,13 @@ test('standing tickets display the saved area name beside the unchanged product 
     assert.equal(seating.querySelector('vip'),null);
     assert.match(host.textContent,/Místo/);
     assert.match(host.textContent,/500,00/);
+});
+
+test('cash overview preserves remaining balance and instructions with no bank or deadline facts',t=>{
+ const host=setup(t),data=fixture();
+ data.orders[0].payment={method:'cash',status:'partially_paid',received:250.50,totalOutstanding:749.50,dueNow:749.50,returned:0,overpaid:0,instructionsAvailable:true,dueAt:null,instructions:{cashInstructions:'U vstupu <script>unsafe</script>'}};
+ renderOrderOverview(host,data);
+ assert.match(host.textContent,/U vstupu <script>/);assert.match(host.textContent,/749,50/);
+ assert.equal(host.querySelector('script'),null);assert.equal(host.querySelector('.overview-state-deadline'),null);
+ assert.equal(host.querySelector('.result-payment-qr'),null);assert.doesNotMatch(host.textContent,/123\/0100|VS:|IBAN/);
 });

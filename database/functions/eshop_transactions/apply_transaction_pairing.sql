@@ -67,7 +67,16 @@ BEGIN
   IF p_payment_info_id IS NOT NULL THEN
     SELECT * INTO v_target FROM eshop.payment_info WHERE id = p_payment_info_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_PAYMENT_INFO_NOT_FOUND'; END IF;
-    IF v_target.payment_method<>'bank' THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF public.payment_method_is_online_internal(v_target.payment_method) THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF v_target.payment_method='cash' AND NOT EXISTS(SELECT 1 FROM eshop.bank_accounts b
+      WHERE b.id=v_transaction.bank_account_id AND b.type='CASH' AND v_transaction.transaction_type='manual') THEN
+      RAISE EXCEPTION 'CASH_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF v_transaction.transaction_type='manual' THEN
+      IF NOT EXISTS(SELECT 1 FROM eshop.unit_bank_accounts link JOIN public.occasions oc ON oc.unit=link.unit
+        JOIN eshop.orders o ON o.occasion=oc.id JOIN eshop.bank_accounts b ON b.id=link.bank_account
+        WHERE o.payment_info=v_target.id AND b.id=v_transaction.bank_account_id ) THEN
+        RAISE EXCEPTION 'CASH_ORDER_SCOPE_MISMATCH'; END IF;
+    END IF;
     IF upper(trim(v_transaction.currency::text)) <> upper(trim(v_target.currency_code::text)) THEN
       RAISE EXCEPTION 'PAIRING_CURRENCY_MISMATCH';
     END IF;

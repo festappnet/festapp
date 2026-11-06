@@ -8,16 +8,21 @@ import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
+
 import 'dart:async';
 
+import '../../forms/payment_method_strings.dart';
+
 class SearchTransactionsDialog extends StatefulWidget {
-  final int paymentInfoId;
+  final int? paymentInfoId;
   final int bankAccount;
+  final bool readOnly;
 
   const SearchTransactionsDialog({
     super.key,
     required this.paymentInfoId,
     required this.bankAccount,
+    this.readOnly = false,
   });
 
   @override
@@ -29,6 +34,7 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
   List<TransactionModel> _availableTransactions = [];
   List<TransactionModel> _filteredTransactions = [];
   bool _isLoading = true;
+  bool _loadFailed = false;
   Timer? _debounce;
   final _searchController = TextEditingController();
 
@@ -55,48 +61,48 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
       _isLoading = true;
     });
 
-    final transactions =
-        await DbEshop.getTransactionsForOrderAllAvailable(widget.paymentInfoId);
-
-    if (transactions != null) {
-      if (mounted) {
-        setState(() {
-          _availableTransactions = transactions;
-          _filteredTransactions = transactions;
-          _isLoading = false;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _availableTransactions = [];
-          _filteredTransactions = [];
-          _isLoading = false;
-        });
-      }
+    try {
+      final transactions = await DbEshop.getTransactionsForOrderAllAvailable(
+        widget.paymentInfoId,
+        historyAccountId: widget.readOnly ? widget.bankAccount : null,
+      );
+      if (!mounted) return;
+      setState(() {
+        _availableTransactions = transactions ?? [];
+        _filteredTransactions = _availableTransactions;
+        _isLoading = false;
+        _loadFailed = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadFailed = true;
+      });
     }
   }
 
   void _filterTransactions(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      List<TransactionModel> filtered =
-          _availableTransactions.where((transaction) {
+      List<TransactionModel> filtered = _availableTransactions.where((
+        transaction,
+      ) {
         bool matches = false;
 
         String normalizedQuery = query.toLowerCase();
 
         if (transaction.messageForRecipient != null &&
-            transaction.messageForRecipient!
-                .toLowerCase()
-                .contains(normalizedQuery)) {
+            transaction.messageForRecipient!.toLowerCase().contains(
+              normalizedQuery,
+            )) {
           matches = true;
         }
 
         if (transaction.counterAccount != null &&
-            transaction.counterAccount!
-                .toLowerCase()
-                .contains(normalizedQuery)) {
+            transaction.counterAccount!.toLowerCase().contains(
+              normalizedQuery,
+            )) {
           matches = true;
         }
 
@@ -106,9 +112,9 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
         }
 
         if (transaction.counterAccountName != null &&
-            transaction.counterAccountName!
-                .toLowerCase()
-                .contains(normalizedQuery)) {
+            transaction.counterAccountName!.toLowerCase().contains(
+              normalizedQuery,
+            )) {
           matches = true;
         }
 
@@ -157,7 +163,7 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
       await DbEshop.addTransactionToPaymentInfoWithSecurity(
         context,
         transaction.id!,
-        widget.paymentInfoId,
+        widget.paymentInfoId!,
       );
 
       ToastHelper.Show(context, OrdersStrings.transactionAddedSuccess);
@@ -169,7 +175,11 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
   Widget build(BuildContext context) {
     return AppAlertDialog(
       onClose: () => Navigator.of(context).pop(),
-      title: Text(OrdersStrings.searchUnpairedTransactions),
+      title: Text(
+        widget.readOnly
+            ? PaymentMethodStrings.text('bankHistory')
+            : OrdersStrings.searchUnpairedTransactions,
+      ),
       content: SizedBox(
         width: 400,
         height: 500,
@@ -191,139 +201,158 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
             Expanded(
               child: _isLoading
                   ? Center(child: CircularProgressIndicator())
+                  : _loadFailed
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(CommonStrings.unexpectedError),
+                          TextButton(
+                            onPressed: _fetchAvailableTransactions,
+                            child: Text(CommonStrings.retry),
+                          ),
+                        ],
+                      ),
+                    )
                   : _filteredTransactions.isEmpty
-                      ? Center(
-                          child:
-                              Text(OrdersStrings.noUnpairedTransactionsFound))
-                      : SelectionArea(
-                          child: ListView.builder(
-                            itemCount: _filteredTransactions.length,
-                            itemBuilder: (context, index) {
-                              final transaction = _filteredTransactions[index];
-                              final counterAccountName =
-                                  transaction.counterAccountName ??
-                                      transaction.performedBy ??
-                                      OrdersStrings.notAvailable;
+                  ? Center(
+                      child: Text(
+                        widget.readOnly
+                            ? OrdersStrings.noTransactionsFound
+                            : OrdersStrings.noUnpairedTransactionsFound,
+                      ),
+                    )
+                  : SelectionArea(
+                      child: ListView.builder(
+                        itemCount: _filteredTransactions.length,
+                        itemBuilder: (context, index) {
+                          final transaction = _filteredTransactions[index];
+                          final counterAccountName =
+                              transaction.counterAccountName ??
+                              transaction.performedBy ??
+                              OrdersStrings.notAvailable;
 
-                              return Card(
-                                margin: EdgeInsets.symmetric(vertical: 4),
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: InkWell(
-                                  onTap: () => _selectTransaction(transaction),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 4),
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: InkWell(
+                              onTap: widget.readOnly
+                                  ? null
+                                  : () => _selectTransaction(transaction),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              Utilities.formatPrice(
-                                                context,
-                                                transaction.amount!,
-                                                currencyCode:
-                                                    transaction.currency!,
-                                                decimalDigits: 2,
-                                              ),
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            if (transaction.transactionType ==
-                                                'manual')
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.payments,
-                                                      size: 18,
-                                                      color:
-                                                          ThemeConfig.grey700(
-                                                              context)),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    OrdersStrings
-                                                        .transactionTypeCash,
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 15,
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            else if (counterAccountName
-                                                .isNotEmpty)
-                                              Flexible(
-                                                child: Text(
-                                                  counterAccountName,
-                                                  style: TextStyle(
-                                                    fontStyle: FontStyle.italic,
-                                                    color: ThemeConfig.grey600(
-                                                        context),
-                                                    fontSize: 14,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                        Text(
+                                          Utilities.formatPrice(
+                                            context,
+                                            transaction.amount!,
+                                            currencyCode: transaction.currency!,
+                                            decimalDigits: 2,
+                                          ),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        if (transaction.transactionType ==
+                                            'manual')
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.payments,
+                                                size: 18,
+                                                color: ThemeConfig.grey700(
+                                                  context,
                                                 ),
                                               ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          DateFormat.yMMMd(
-                                                  context.locale.languageCode)
-                                              .format(transaction.date!),
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color:
-                                                  ThemeConfig.grey800(context)),
-                                        ),
-                                        if (transaction
-                                            .formattedBankAccount.isNotEmpty)
-                                          Text(
-                                            transaction.formattedBankAccount,
-                                            style: TextStyle(
-                                                fontSize: 12,
+                                              SizedBox(width: 8),
+                                              Text(
+                                                OrdersStrings
+                                                    .transactionTypeCash,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        else if (counterAccountName.isNotEmpty)
+                                          Flexible(
+                                            child: Text(
+                                              counterAccountName,
+                                              style: TextStyle(
+                                                fontStyle: FontStyle.italic,
                                                 color: ThemeConfig.grey600(
-                                                    context)),
-                                          ),
-                                        if (transaction.vs != null &&
-                                            transaction.vs!.isNotEmpty)
-                                          Text(
-                                            '${OrdersStrings.variableSymbol}: ${transaction.vs!}',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: ThemeConfig.grey600(
-                                                    context)),
-                                          ),
-                                        if (transaction.messageForRecipient !=
-                                                null &&
-                                            transaction.messageForRecipient!
-                                                .isNotEmpty)
-                                          Text(
-                                            '${OrdersStrings.message}: ${transaction.messageForRecipient!}',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: ThemeConfig.grey600(
-                                                    context)),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                                  context,
+                                                ),
+                                                fontSize: 14,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                       ],
                                     ),
-                                  ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      DateFormat.yMMMd(
+                                        context.locale.languageCode,
+                                      ).format(transaction.date!),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: ThemeConfig.grey800(context),
+                                      ),
+                                    ),
+                                    if (transaction
+                                        .formattedBankAccount
+                                        .isNotEmpty)
+                                      Text(
+                                        transaction.formattedBankAccount,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: ThemeConfig.grey600(context),
+                                        ),
+                                      ),
+                                    if (transaction.vs != null &&
+                                        transaction.vs!.isNotEmpty)
+                                      Text(
+                                        '${OrdersStrings.variableSymbol}: ${transaction.vs!}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: ThemeConfig.grey600(context),
+                                        ),
+                                      ),
+                                    if (transaction.messageForRecipient !=
+                                            null &&
+                                        transaction
+                                            .messageForRecipient!
+                                            .isNotEmpty)
+                                      Text(
+                                        '${OrdersStrings.message}: ${transaction.messageForRecipient!}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: ThemeConfig.grey600(context),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                        ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),

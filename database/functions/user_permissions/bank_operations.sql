@@ -15,6 +15,15 @@ $$;
 REVOKE ALL ON FUNCTION public.get_is_admin_on_bank_account(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_is_admin_on_bank_account(bigint) TO authenticated,service_role;
 
+-- Personal bank-statement read authority is independent of a live unit link.
+-- Order read access alone never grants this operation.
+CREATE OR REPLACE FUNCTION public.can_read_bank_transactions(p_bank_account bigint)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_is_admin_on_bank_account(p_bank_account);
+$$;
+REVOKE ALL ON FUNCTION public.can_read_bank_transactions(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.can_read_bank_transactions(bigint) TO authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.can_manage_bank_account(p_bank_account bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT public.bank_account_write_rule(public.get_is_admin_on_bank_account(p_bank_account),

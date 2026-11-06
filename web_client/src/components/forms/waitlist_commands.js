@@ -41,7 +41,7 @@ export class WaitlistCommands {
         return data;
     }
     async overview(scope) {
-        const { data, error } = await this.client.rpc('get_customer_order_overview', { p_token: scope.token, p_order_id: scope.orderId });
+        const { data, error } = await this.client.rpc('get_customer_order_overview', { input_data: {token: scope.token, order_id: scope.orderId, client_capabilities:['cash_reservations','no_payment_deadline']} });
         if (error) throw new Error('OVERVIEW_LOAD_FAILED');
         if ([403, 404, 410].includes(data?.code)) throw new Error('OVERVIEW_UNAVAILABLE');
         if (data?.code !== 200) throw new Error('OVERVIEW_LOAD_FAILED');

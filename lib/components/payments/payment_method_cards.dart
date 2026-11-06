@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/payment_method_strings.dart';
 
 /// The form's saved payment policy, independent of temporary availability.
-enum FormPaymentMethod { bank, online, both }
+enum FormPaymentMethod { bank, online, both, cash }
 
 class PaymentMethodCards extends StatelessWidget {
   const PaymentMethodCards({
@@ -39,6 +39,7 @@ class PaymentMethodCards extends StatelessWidget {
                       FormPaymentMethod.online,
                       FormPaymentMethod.bank,
                       FormPaymentMethod.both,
+                      FormPaymentMethod.cash,
                     ]
                   : FormPaymentMethod.values))
             SizedBox(width: width, child: _card(context, method)),
@@ -51,15 +52,17 @@ class PaymentMethodCards extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final selected = value == method;
-    final enabled = method == FormPaymentMethod.bank || canSelectOnline;
+    final enabled = method == FormPaymentMethod.cash || method == FormPaymentMethod.bank || canSelectOnline;
     final title = method == FormPaymentMethod.online && onlineTitle != null
         ? onlineTitle!
         : PaymentMethodStrings.text(switch (method) {
+            FormPaymentMethod.cash => 'cash',
             FormPaymentMethod.bank => 'onlyBank',
             FormPaymentMethod.online => 'onlyStripe',
             FormPaymentMethod.both => 'bothMethods',
           });
     final description = PaymentMethodStrings.text(switch (method) {
+      FormPaymentMethod.cash => 'cashDescription',
       FormPaymentMethod.bank => 'bankDescription',
       FormPaymentMethod.online => 'stripeDescription',
       FormPaymentMethod.both => 'bothDescription',
@@ -96,6 +99,7 @@ class PaymentMethodCards extends StatelessWidget {
                     children: [
                       Icon(
                         switch (method) {
+                          FormPaymentMethod.cash => Icons.payments_outlined,
                           FormPaymentMethod.bank =>
                             Icons.account_balance_outlined,
                           FormPaymentMethod.online =>

@@ -11,19 +11,19 @@ CREATE OR REPLACE FUNCTION public.form_order_input_internal(p_form bigint,p_inpu
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 BEGIN
  IF jsonb_typeof(p_input) IS DISTINCT FROM 'object' OR octet_length(p_input::text)>1048576
-  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_input) k WHERE k NOT IN ('email','fields','ticket','lang','form','payment_method'))
+  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_input) k WHERE k NOT IN ('email','fields','ticket','lang','form','payment_method','client_capabilities'))
   OR jsonb_typeof(p_input->'ticket') IS DISTINCT FROM 'array' OR jsonb_array_length(p_input->'ticket') NOT BETWEEN 1 AND 1000
   OR nullif(p_input->>'email','') IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='invalid administrative order'; END IF;
  IF p_input ? 'form' AND p_input->>'form' IS DISTINCT FROM (SELECT key::text FROM public.forms WHERE id=p_form) THEN
   RAISE insufficient_privilege USING MESSAGE='foreign order form key'; END IF;
- IF p_input ? 'payment_method' AND p_input->>'payment_method' IS DISTINCT FROM 'bank' THEN
+ IF p_input ? 'payment_method' AND public.payment_method_is_online_internal(p_input->>'payment_method') THEN
   RAISE invalid_parameter_value USING MESSAGE='administrative card payment unsupported'; END IF;
- RETURN p_input||jsonb_build_object('form',(SELECT key FROM public.forms WHERE id=p_form),'payment_method','bank');
+ RETURN p_input||jsonb_build_object('form',(SELECT key FROM public.forms WHERE id=p_form),'client_capabilities','["cash_reservations","no_payment_deadline"]'::jsonb);
 END $$;
 CREATE OR REPLACE FUNCTION public.form_order_quote_internal(p_order bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('newOrder',jsonb_build_object('amount',o.price::text,'currencyCode',o.currency_code,
-  'state',o.state,'paymentMethod',p.payment_method,'bankAccountId',p.bank_account,
+  'state',o.state,'paymentMethod',p.payment_method,'paymentPolicy',p.data->'payment_policy','bankAccountId',p.bank_account,
   'bankAccountNumber',ba.account_number,'bankAccountDisplay',ba.account_number_human_readable,
   'ticketCount',(SELECT count(DISTINCT ticket) FROM eshop.order_product_ticket WHERE "order"=o.id)))
  FROM eshop.orders o LEFT JOIN eshop.payment_info p ON p.id=o.payment_info LEFT JOIN eshop.bank_accounts ba ON ba.id=p.bank_account WHERE o.id=p_order;

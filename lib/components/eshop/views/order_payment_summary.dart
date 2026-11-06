@@ -1,3 +1,4 @@
+import '../../forms/payment_method_strings.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../services/payment_deadline.dart';
@@ -136,6 +137,13 @@ class OrderPaymentSummary extends StatelessWidget {
             showDetails: false,
             onTap: onOverdueTap,
           ),
+          if (payment['method'] == 'cash') ...[
+            Text(PaymentMethodStrings.text('cash')),
+            if (payment['instructionsAvailable'] == true)
+              Text(payment['instructions']?['cashInstructions']?.toString().isNotEmpty == true
+                ? payment['instructions']['cashInstructions'] as String
+                : PaymentMethodStrings.text('cashInstructionsDefault')),
+          ],
           if (hint != null)
             Padding(padding: const EdgeInsets.only(top: 6), child: Text(hint)),
           if (returned != null && returned > 0) fact('vraceno', returned),

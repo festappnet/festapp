@@ -322,7 +322,7 @@ Deno.serve(async (req) => {
       );
     }
     if (
-      !paymentRegistry.has(order?.payment_info?.payment_method) &&
+      order?.payment_info?.payment_method === 'bank' &&
       Number(order?.payment_info?.amount) > 0
     ) {
       const preparation = await prepareFakturoidTicketOrder({
@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentInfo = ticketOrder.order?.payment_info;
-    const payment = !paymentRegistry.has(paymentInfo?.payment_method) && paymentInfo &&
+    const payment = paymentInfo?.payment_method === 'bank' && paymentInfo &&
         Number(paymentInfo.amount) > 0
       ? presentPayment(paymentInfo)
       : null;
@@ -403,6 +403,7 @@ Deno.serve(async (req) => {
           }
           : {
             ticketOrder,
+            payment: ticketOrder.payment,
             payment_qr: paymentQr,
             code: 200,
             delivery: "queued",

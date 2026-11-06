@@ -1,3 +1,5 @@
+import 'package:fstapp/components/payments/payment_method_cards.dart';
+import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -388,10 +390,10 @@ void main() {
           TextFormField,
           FormStrings.labelReminderInterval,
         );
-        final deadline = find.widgetWithText(
-          TextFormField,
-          FormStrings.labelDeadlineDays,
-        );
+        final deadlineMode = find.byKey(const ValueKey('form-payment-deadline-mode'));
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('custom');
+        await tester.pumpAndSettle();
+        final deadline = find.widgetWithText(TextFormField, FormStrings.labelDeadlineDays);
         await tester.enterText(interval, '2');
         await tester.enterText(deadline, '4');
         await tester
@@ -410,7 +412,14 @@ void main() {
         await tester.pumpAndSettle();
         expect(form.definition.deadlineDurationSeconds, 0);
         await tester.enterText(interval, '');
-        await tester.enterText(deadline, '');
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('none');
+        await tester.pumpAndSettle();
+        await tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+        await tester.pumpAndSettle();
+        expect(form.definition.deadlineDurationSeconds, isNull);
+        expect(form.definition.data?['payment_deadline'], {'mode':'none'});
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('inherit');
+        await tester.pumpAndSettle();
         await tester
             .widget<EditorActionBar>(find.byType(EditorActionBar))
             .onSave();
@@ -422,6 +431,18 @@ void main() {
           isFalse,
         );
         expect(form.definition.deadlineDurationSeconds, isNull);
+        if (override == null) {
+          tester.widget<PaymentMethodCards>(find.byType(PaymentMethodCards)).onChanged(FormPaymentMethod.cash);
+          await tester.pumpAndSettle();
+          await tester.enterText(find.widgetWithText(TextFormField, PaymentMethodStrings.text('cashInstructions')), 'Uhraďte u vstupu.');
+          await tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+          await tester.pumpAndSettle();
+          final settings = form.toEditedJson()['settings'] as Map;
+          expect(settings['payments'], {'bankEnabled':false,'cashEnabled':true,'cashInstructions':'Uhraďte u vstupu.','providerConnections':<String,String>{}});
+          expect(settings['payment_deadline'], {'mode':'none'});
+          expect(form.definition.deadlineDurationSeconds, isNull);
+          expect(find.text(PaymentMethodStrings.reason('not_configured')), findsNothing);
+        }
         await _environment.pumpWidget(tester, const SizedBox.shrink());
         await tester.pump(const Duration(seconds: 4));
       },

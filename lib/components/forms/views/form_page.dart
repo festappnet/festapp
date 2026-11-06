@@ -557,6 +557,7 @@ class _FormPageState extends State<FormPage> {
     }
     if (paymentConnectors.contains(formHolder!.paymentMethod)) {
       data['payment_method'] = formHolder!.paymentMethod;
+      data['client_capabilities'] = ['cash_reservations', 'no_payment_deadline'];
       data['payment_type'] = 'full';
       data['expected_payment_amount_minor'] = formHolder!.paymentAmountMinor;
       data['expected_payment_currency'] = formHolder!.paymentCurrency;

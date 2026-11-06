@@ -1,4 +1,5 @@
 import 'package:festapp_core/payments.dart';
+import '../payment_method_strings.dart';
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
@@ -156,8 +157,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                     ]))));
   }
 
-  List<Widget> _payment(Map payment, dynamic currency) => payment['method'] ==
-          'stripe'
+  List<Widget> _payment(Map payment, dynamic currency) => paymentConnectors.contains(payment['method'])
       ? [
           CardPaymentStatus(payment: {
             ...payment.cast<String, dynamic>(),
@@ -177,11 +177,15 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
           if (payment['instructionsAvailable'] == true) ...[
             paragraph(
                 '${text('dueNow')}: ${money(payment['dueNow'], currency)}'),
-            paragraph(
-                '${text('dueAt')}: ${payment['dueAt'] ?? text('onSite')}'),
+            if (payment['dueAt'] != null) paragraph('${text('dueAt')}: ${payment['dueAt']}'),
             if (payment['overdue'] == true) paragraph(text('overdue')),
-            paragraph('${text('account')}: ${payment['publicAccount']}'),
-            paragraph('${payment['referenceKind']}: ${payment['reference']}'),
+            if (payment['method'] == 'cash') ...[
+              paragraph(PaymentMethodStrings.text('payOnSite')),
+              paragraph(payment['instructions']?['cashInstructions']?.toString().isNotEmpty == true ? payment['instructions']['cashInstructions'] : PaymentMethodStrings.text('cashInstructionsDefault')),
+            ] else ...[
+              paragraph('${text('account')}: ${payment['publicAccount']}'),
+              paragraph('${payment['referenceKind']}: ${payment['reference']}'),
+            ],
           ],
         ];
 }

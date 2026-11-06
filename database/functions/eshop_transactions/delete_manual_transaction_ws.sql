@@ -8,21 +8,16 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 DECLARE
-  v_bank_account_id bigint;
-  v_occasion_id bigint;
+  v_unit_id bigint;
 BEGIN
-  SELECT pi.bank_account, o.occasion INTO v_bank_account_id, v_occasion_id
-  FROM eshop.payment_info pi
-  JOIN eshop.orders o ON o.payment_info = pi.id
-  WHERE pi.id = p_payment_info_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'PAYMENT_INFO_NOT_FOUND'; END IF;
-  PERFORM public.check_is_admin_for_bank_account(v_bank_account_id);
-  PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
-  IF NOT EXISTS (SELECT 1 FROM eshop.transactions t
-    WHERE t.id = p_transaction_id AND t.payment_info = p_payment_info_id
-      AND t.transaction_type = 'manual') THEN
-    RAISE EXCEPTION 'MANUAL_TRANSACTION_PAIRING_MISMATCH';
-  END IF;
+  SELECT oc.unit INTO v_unit_id
+  FROM eshop.transactions t JOIN eshop.bank_accounts b ON b.id=t.bank_account_id AND upper(b.type)='CASH'
+  JOIN eshop.orders o ON o.payment_info=t.payment_info JOIN public.occasions oc ON oc.id=o.occasion
+  JOIN eshop.unit_bank_accounts l ON l.bank_account=b.id AND l.unit=oc.unit
+  WHERE t.id=p_transaction_id AND t.payment_info=p_payment_info_id AND t.transaction_type='manual';
+  IF NOT FOUND THEN RAISE EXCEPTION 'MANUAL_TRANSACTION_PAIRING_MISMATCH'; END IF;
+  IF NOT public.can_manage_unit_bank_accounts(v_unit_id) THEN
+    RAISE insufficient_privilege USING MESSAGE='Cash correction requires unit manager'; END IF;
 
   PERFORM public.apply_transaction_pairing(
     p_transaction_id, NULL, 'manual_delete_unlink', 'user'

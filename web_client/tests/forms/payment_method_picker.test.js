@@ -26,3 +26,11 @@ test('QR-only checkout keeps bank selected without displaying an unnecessary met
   host.replaceChildren();renderPaymentMethodPicker(host,formPaymentOptions(options()),()=>{});
   assert.equal(host.hidden,false);assert.equal(host.querySelectorAll('input[type=radio]').length,2);
 });
+test('cash is a builtin summary with safe instructions and no online reservation hint',t=>{
+  const host=setup(t);const selected=[];
+  const options=formPaymentOptions({available:['cash'],cash:{available:true,instructions:'U vstupu <script>unsafe</script>'},bank:{available:false},providers:{},deadlinePolicy:{mode:'none'}});
+  renderPaymentMethodPicker(host,options,value=>selected.push(value));
+  assert.deepEqual(selected,['cash']);assert.equal(host.hidden,false);
+  assert.match(host.textContent,/Pouze hotově/);assert.match(host.textContent,/U vstupu <script>/);
+  assert.equal(host.querySelector('script'),null);assert.doesNotMatch(host.textContent,/31 minut/);
+});

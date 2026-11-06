@@ -9,9 +9,22 @@ DECLARE
     v_new_transaction_id bigint;
     v_payment_info_id bigint;
     v_candidate_ids bigint[];
+    v_order eshop.orders;
+    v_unit bigint;
 BEGIN
     -- Check permissions (must be Unit Manager)
     PERFORM public.check_is_manager_on_unit(p_unit_id);
+    IF p_amount IS NULL OR p_amount=0 OR p_amount::text IN ('NaN','Infinity','-Infinity') OR p_amount*100<>trunc(p_amount*100)
+       OR p_currency IS NULL OR p_currency NOT IN ('CZK','EUR','PLN','USD','GBP') OR p_date IS NULL THEN
+      RAISE EXCEPTION 'CASH_AMOUNT_INVALID'; END IF;
+    IF p_payment_info_id IS NOT NULL THEN
+      SELECT * INTO STRICT v_order FROM eshop.orders WHERE payment_info=p_payment_info_id;
+      PERFORM public.lock_order_capacity_scope_internal(ARRAY[v_order.id]);
+      SELECT unit INTO v_unit FROM public.occasions WHERE id=v_order.occasion;
+      IF v_unit IS DISTINCT FROM p_unit_id OR trim(v_order.currency_code) IS DISTINCT FROM p_currency THEN
+        RAISE EXCEPTION 'CASH_ORDER_SCOPE_MISMATCH'; END IF;
+      PERFORM public.check_order_is_mutable(v_order.id);
+    END IF;
     v_date := p_date;
     PERFORM pg_advisory_xact_lock(hashtextextended('cash-account:'||p_unit_id||':'||p_currency,79103));
 

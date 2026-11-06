@@ -52,7 +52,8 @@ abstract final class FormMetadata {
     'communication_tone': null,
     'variable_symbol': ['type', 'starting_number'],
     'payment_message': ['type'],
-    'payments': ['bankEnabled', 'providerConnections'],
+    'payments': ['bankEnabled', 'providerConnections', 'cashEnabled', 'cashInstructions'],
+    'payment_deadline': ['mode'],
     'analytics': ['enabled'],
     'design': [
       'embed_inherit_style',

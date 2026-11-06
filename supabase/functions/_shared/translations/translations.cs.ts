@@ -120,14 +120,16 @@ export const csTranslations = {
   depositRequired: (
     depositAmount: string,
     remainingAmount: string,
-    depositDeadline: string,
+    depositDeadline: string | null,
     accountNumber: string,
     iban: string | null,
     variableSymbol: string,
     tone: Tone
   ) => {
     const isOnSite = depositDeadline === 'na místě' || depositDeadline === 'on site';
-    const deadlineText = isOnSite
+    const deadlineText = depositDeadline == null
+      ? `zbývající doplatek činí ${bold(remainingAmount)}`
+      : isOnSite
       ? `zbývající doplatek ve výši ${bold(remainingAmount)} ${tone === 'formal' ? 'uhradíte' : 'uhradíš'} na místě`
       : `zbývající doplatek ve výši ${bold(remainingAmount)} ${tone === 'formal' ? 'uhraďte' : 'uhraď'} nejpozději ${bold(depositDeadline)}`;
 

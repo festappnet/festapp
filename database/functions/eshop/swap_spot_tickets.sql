@@ -154,7 +154,7 @@ BEGIN
 
     -- Update payment info
     IF price_delta <> 0 THEN
-        IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=ord.payment_info AND payment_method<>'bank') THEN
+        IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=ord.payment_info AND public.payment_method_is_online_internal(payment_method)) THEN
             RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
         UPDATE eshop.payment_info SET amount = amount + price_delta WHERE id = ord.payment_info;
     END IF;

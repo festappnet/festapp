@@ -413,3 +413,21 @@ aggregate deletion cascades their removal and makes old intents invalid.
 The additive migration installs the new cron inactive. Production activation,
 provider credentials and release are separate operations. See the
 [local execution evidence](../../../docs/plans/sale-opening-notifications-RESULT-2026-11-04.md).
+
+## Cash reservations and deadline policy
+
+The existing per-form payment picker stores one canonical `data.payments` choice.
+Cash-only means `cashEnabled=true`, `bankEnabled=false`, no provider bindings;
+`cashInstructions` is plain text (up to 1000 characters). SQL rejects mixed cash
+methods and mandatory Fakturoid invoicing. A missing account never selects cash.
+`payment_deadline.mode` is `inherit`, `custom` or `none`; only
+`deadline_duration_seconds` stores a custom duration, including zero.
+
+The versioned form command owns normalization and `payment_selection_intent:
+'replace'`. Modern editors declare explicit selection changes; omitted fields
+are retained and conflicting older full saves fail with
+`PAYMENT_CLIENT_UPDATE_REQUIRED`. Public form/order reads and checkout declare
+`cash_reservations` and `no_payment_deadline` in `client_capabilities`. Released
+RPC signatures delegate to those readers with no capabilities and refuse new
+unsupported instructions. Setup, MCP, duplication and waitlist conversion use
+the same settings/finalization owners. See the [payment contract](../eshop/README.md#cash-payments-and-payment-deadlines).

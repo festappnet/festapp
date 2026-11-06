@@ -15,7 +15,9 @@ BEGIN
     SELECT org.data->>'DEFAULT_FORM_PAYMENT_METHOD' INTO payment_default
     FROM public.occasions o JOIN public.organizations org ON org.id=o.organization
     WHERE o.id=p_occasion_id;
-    IF payment_default<>'bank' AND public.payment_method_registered_internal(payment_default) THEN
+    IF payment_default='cash' THEN
+      initial_data := initial_data || '{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}'::jsonb;
+    ELSIF public.payment_method_is_online_internal(payment_default) THEN
       -- A closed draft can await Connect without inventing a recipient or bank.
       initial_data := initial_data || '{"payments":{"bankEnabled":false}}'::jsonb;
     END IF;
@@ -38,7 +40,7 @@ BEGIN
         p_occasion_id,
         now,
         now,
-        604800, -- Default to 7 days
+        NULL, -- New forms inherit the occasion policy; legacy stored durations stay custom.
         initial_data
     )
     RETURNING to_jsonb(public.forms.*) INTO new_form;

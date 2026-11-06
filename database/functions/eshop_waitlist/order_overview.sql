@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.customer_order_payment_internal(p_order bigint
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH facts AS (
  SELECT o.*,p.payment_method,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
- p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
+ p.data->'payment_policy' payment_policy,p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
  b.account_number,b.account_number_human_readable,
  coalesce(nullif(trim(b.creditor_name),''),(SELECT left(trim(regexp_replace(org.title,'[[:space:][:cntrl:]]+',' ','g')),70) FROM public.occasions occ JOIN public.organizations org ON org.id=occ.organization WHERE occ.id=o.occasion)) creditor_name,
  CASE WHEN o.state='preparing_payment' THEN 'preparing'
@@ -21,13 +21,13 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  due AS (SELECT *,greatest(amount-received,0) outstanding,
  CASE WHEN deposit_amount>received THEN greatest(deposit_amount-received,0) ELSE greatest(amount-received,0) END due_now,
  CASE WHEN deposit_amount>received THEN deposit_deadline ELSE deadline END due_at FROM facts)
- SELECT CASE WHEN payment_method<>'bank' THEN public.provider_order_payment_projection_internal(p_order) ELSE jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
+ SELECT CASE WHEN public.payment_method_is_online_internal(payment_method) THEN public.provider_order_payment_projection_internal(p_order) ELSE jsonb_build_object('method',payment_method,'deadlinePolicy',payment_policy->>'mode','instructions',jsonb_build_object('cashInstructions',payment_policy->>'cashInstructions'),'currency',trim(currency_code),'paid',received,'remaining',outstanding,'status',status,'amount',amount,'received',received,'returned',returned,
  'totalOutstanding',outstanding,'overpaid',greatest(received-amount,0),'depositAmount',deposit_amount,
  'depositDeadline',deposit_deadline,'finalDeadline',deadline,
  'dueNow',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN due_now ELSE 0 END,
  'dueAt',due_at,'overdue',coalesce(due_at<statement_timestamp() AND due_now>0,false),
- 'instructionsAvailable',status IN ('unpaid','partially_paid','deposit_paid') AND account_number IS NOT NULL
-  AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END,
+ 'instructionsAvailable',status IN ('unpaid','partially_paid','deposit_paid') AND (payment_method='cash' OR account_number IS NOT NULL)
+  AND (payment_method='cash' OR CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END),
  'reference',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN
   CASE WHEN currency_code='EUR' THEN creditor_reference ELSE variable_symbol::text END END,
  'qrPayment',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') AND due_now>0 AND account_number IS NOT NULL
@@ -79,7 +79,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
 $$;
 REVOKE ALL ON FUNCTION public.customer_order_answers_internal(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)
+CREATE OR REPLACE FUNCTION public.get_customer_order_overview_internal(p_token text,p_order_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE root eshop.orders; cap eshop.waitlist_capabilities; occ public.occasions; f public.forms;
  ids bigint[]; result jsonb;
@@ -178,5 +178,28 @@ BEGIN
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_customer_order_overview_internal(text,bigint) TO anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.get_customer_order_overview(input_data jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb; p record;
+BEGIN
+ result:=public.get_customer_order_overview_internal(input_data->>'token',(input_data->>'order_id')::bigint);
+ IF result->>'code'='200' THEN
+  FOR p IN SELECT pi.data->'payment_policy' policy,pi.payment_method method FROM eshop.orders o
+   JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id IN(SELECT (x->>'id')::bigint FROM jsonb_array_elements(result->'orders') x) LOOP
+   PERFORM public.check_payment_client_capabilities_internal(p.policy,p.method,input_data->'client_capabilities');
+  END LOOP;
+ END IF;
+ RETURN result;
+EXCEPTION WHEN raise_exception THEN
+ IF left(SQLERRM,1)='{' THEN RETURN SQLERRM::jsonb; END IF; RAISE;
+END $$;
+CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_customer_order_overview(jsonb_build_object('token',p_token,'order_id',p_order_id));
+$$;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview_internal(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_customer_order_overview(jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(jsonb) TO anon,authenticated,service_role;

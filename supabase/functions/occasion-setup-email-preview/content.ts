@@ -1,3 +1,4 @@
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { ticketEmailSubstitutions } from "../_shared/ticketEmail.ts";
 import {
   escapeTicketText,
@@ -58,14 +59,14 @@ export function previewOrder(
     payment_info: {
       amount,
       currency_code: currency,
-      deadline,
-      account_number: configuration?.paymentInfo?.account_number ||
-        defaults.iban,
+      payment_method: configuration?.paymentInfo?.payment_method ?? 'bank',
+      data: configuration?.paymentInfo?.data,
+      deadline: configuration?.paymentInfo && Object.hasOwn(configuration.paymentInfo, 'deadline') ? configuration.paymentInfo.deadline : deadline,
+      account_number: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number || defaults.iban : null,
       account_number_human_readable:
-        configuration?.paymentInfo?.account_number_human_readable ||
-        configuration?.paymentInfo?.account_number || defaults.accountNumber,
-      variable_symbol: defaults.variableSymbol,
-      creditor_reference: "RF18539007547034",
+        isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number_human_readable || configuration?.paymentInfo?.account_number || defaults.accountNumber : null,
+      variable_symbol: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? defaults.variableSymbol : null,
+      creditor_reference: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? "RF18539007547034" : null,
     },
     data: {
       tickets: [{
@@ -190,7 +191,7 @@ export async function renderDraftPreview(context: any) {
     authoringContext: {
       senderAddress: prepared.from,
       wrapperHtml: context.resolved?.wrapper?.html,
-      paymentAccounts: context.paymentInfo
+      paymentAccounts: context.paymentInfo && isBankPaymentInfo(context.paymentInfo)
         ? [{
           accountNumber: context.paymentInfo.account_number_human_readable ||
             context.paymentInfo.account_number,

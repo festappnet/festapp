@@ -184,3 +184,30 @@ A confirmed command remains confirmed if cache activation or readback fails.
 
 Local review setup and actual evidence are recorded in
 [`order-detail-local-review.md`](../../../docs/plans/evidence/order-detail-local-review.md).
+
+## Cash payments and payment deadlines
+
+`payment_providers/registry.sql` classifies builtin bank/cash and installed
+online connectors. `payment_policy.sql` resolves a policy once during checkout;
+`payment_info.data.payment_policy` stores its metadata and cash instructions.
+Existing method/amount/deadline/bank columns remain authoritative. New timed
+orders preserve their absolute deadline on repricing. `none` clears ordinary
+and deposit deadlines and fences both queued and dispatched reminders. Only
+historical rows without a snapshot retain the old repricing deadline behavior.
+
+Cash checkout reserves capacity as an unpaid order and creates no bank reference
+or online attempt. Confirmation never records money. Actual cash uses the
+existing exact numeric ledger and the receipted `insert_manual_transaction`
+command; unit/currency, lifecycle locks, pairing and paid transitions stay with
+their existing SQL owners. The order operator command can update
+`paymentDeadline` to an ISO instant or null, retaining its revision/receipt and
+history. Cash cannot acquire a deadline.
+
+`get_transactions_for_order` reads attached movements by order access and
+projects allowed cash, bank setup, pairing and personal-history actions. Wider
+statements require the existing account-admin read right through
+`get_bank_transaction_history`; disconnection preserves membership/history but
+removes bank write rights. CASH movements remain correctable by the actual
+unit manager. The shared cash dialog keeps its draft during nested setup and
+history navigation. The transaction foreign key restricts account deletion
+instead of cascading away financial facts.

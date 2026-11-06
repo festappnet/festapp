@@ -74,3 +74,19 @@ Deno.test("payable confirmations still require the correct payment reference", (
     "EUR_REFERENCE_REQUIRED",
   );
 });
+
+for (const currency of ['CZK','EUR']) {
+  Deno.test(`cash ${currency} confirmation renders safely without bank reference`, async () => {
+    const value = order(currency, 250.50);
+    Object.assign(value.payment_info, {payment_method:'cash', data:{payment_policy:{mode:'none',cashInstructions:'U vstupu <script>alert(1)</script>'}}});
+    const subs = confirmationSubstitutions(value);
+    assertEquals(subs.variableSymbol,'');
+    assertEquals(subs.deadline,null);
+    assertStringIncludes(subs.balanceReasoning,'Rezervace potvrzena');
+    assertStringIncludes(subs.balanceReasoning,'&lt;script&gt;');
+    assertEquals(subs.balanceReasoning.includes('<script>'),false);
+    const email = await renderEmail({to:'test@example.invalid',context:{organization:3,unit:11},substitutions:subs},async()=>({template:{id:1,subject:'Rezervace',html:'<p>{{balanceReasoning}}</p>'}}));
+    assertEquals(email.attachments.length,0);
+    assertEquals(email.html.includes('VS_REQUIRED'),false);
+  });
+}

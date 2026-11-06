@@ -237,7 +237,7 @@ BEGIN
  RAISE NOTICE 'PASS overview scope, partial/full, payment matrix, ticket refresh, expiry and revocation';
 END $$;
 DO $$
-DECLARE x jsonb:=pg_temp.fixture(NULL); o eshop.orders; first_source jsonb; replay jsonb; token text:=repeat('e',64);
+DECLARE x jsonb:=pg_temp.fixture(NULL); o eshop.orders; first_source jsonb; replay jsonb; payment_before eshop.payment_info; token text:=repeat('e',64);
  delivery jsonb:=jsonb_build_object('tokenHash',encode(extensions.digest(token,'sha256'),'hex'),'contentHash',repeat('f',64),'sealed',jsonb_build_object('ciphertext','synthetic'));
 BEGIN
  PERFORM public.create_ticket_order_internal_v1(pg_temp.checkout(x));
@@ -248,6 +248,26 @@ BEGIN
  replay:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery);
  PERFORM assert_eq(replay->'source',first_source->'source','ordinary email retry preserves exact source');
  PERFORM assert_eq(public.get_customer_order_overview(token,o.id)->>'code','200'::text,'ordinary order has public overview');
+ -- Exercise both released RPC signatures with the same genuinely issued view capability.
+ SELECT * INTO STRICT payment_before FROM eshop.payment_info WHERE id=o.payment_info;
+ UPDATE eshop.payment_info SET data=coalesce(data,'{}')||'{"payment_policy":{"mode":"none"}}',deadline=NULL,deposit_deadline=NULL WHERE id=o.payment_info;
+ SET LOCAL ROLE anon;
+ PERFORM assert_eq(public.get_customer_order_overview(token,o.id)->>'errorCode','PAYMENT_CLIENT_UPDATE_REQUIRED','legacy overview refuses bank none');
+ replay:=public.get_customer_order_overview(jsonb_build_object('token',token,'order_id',o.id,'client_capabilities','["no_payment_deadline","cash_reservations"]'::jsonb));
+ RESET ROLE;
+ PERFORM assert_eq(replay->>'code','200','capable anonymous reader accepts bank none');
+ UPDATE eshop.payment_info SET payment_method='cash',bank_account=NULL,variable_symbol=NULL,creditor_reference=NULL,
+  data='{"payment_policy":{"mode":"none","cashInstructions":"U vstupu"}}' WHERE id=o.payment_info;
+ SET LOCAL ROLE anon;
+ PERFORM assert_eq(public.get_customer_order_overview(token,o.id)->>'errorCode','PAYMENT_CLIENT_UPDATE_REQUIRED','legacy overview refuses cash');
+ replay:=public.get_customer_order_overview(jsonb_build_object('token',token,'order_id',o.id,'client_capabilities','["no_payment_deadline","cash_reservations"]'::jsonb));
+ RESET ROLE;
+ PERFORM assert_eq(replay->>'code','200','capable anonymous reader accepts cash');
+ PERFORM assert_true(NOT has_function_privilege('anon','public.get_customer_order_overview_internal(text,bigint)','EXECUTE'),'anonymous reader cannot bypass capability fence');
+ UPDATE eshop.payment_info SET payment_method=payment_before.payment_method,bank_account=payment_before.bank_account,
+  variable_symbol=payment_before.variable_symbol,creditor_reference=payment_before.creditor_reference,
+  data=payment_before.data,deadline=payment_before.deadline,deposit_deadline=payment_before.deposit_deadline WHERE id=o.payment_info;
+
  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_all_email_templates(jsonb_build_object('occasion',x->'occasion'))) t WHERE t->>'code'='ORDER_OVERVIEW'),'no standalone template card');
  PERFORM assert_true(NOT public.email_intent_valid(jsonb_populate_record(NULL::public.email_messages,jsonb_build_object('message_kind','custom','code','ORDER_OVERVIEW','occasion',x->'occasion'))),'retired email rejected even without an order');
  PERFORM assert_true(to_regprocedure('public.enqueue_order_overview_reissue_v1(bigint,uuid,uuid,jsonb,text)') IS NULL,'standalone email producer removed');

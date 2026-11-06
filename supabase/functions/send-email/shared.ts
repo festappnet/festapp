@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { AuthError, authorizeRequest } from "../_shared/auth.ts";
-import { normalizeEpcCreditorName } from "../_shared/paymentPresentation.ts";
+import { isBankPaymentInfo, normalizeEpcCreditorName } from "../_shared/paymentPresentation.ts";
 
 /**
  * Fetches comprehensive order details from Supabase and performs authorization.
@@ -48,7 +48,7 @@ export async function getBaseOrderData(
 
   // Older EUR accounts may have no account-specific payee. Use the same
   // organization fallback as the order-creation response for later emails.
-  if (order.currency_code === "EUR" && !bank_account?.creditor_name?.trim()) {
+  if (isBankPaymentInfo(payment_info) && order.currency_code === "EUR" && !bank_account?.creditor_name?.trim()) {
     const { data: organization, error: organizationError } = await supabaseAdmin
       .from("organizations")
       .select("title")

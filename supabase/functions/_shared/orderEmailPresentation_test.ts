@@ -197,3 +197,24 @@ Deno.test("generated confirmation examples retain canonical zero text and deposi
     }
   }
 });
+
+Deno.test('cash confirmation, updates and paid notices share saved instructions without bank facts', () => {
+  const info={payment_method:'cash',amount:800,currency_code:'CZK',data:{payment_policy:{mode:'none',cashInstructions:'Uhraďte u vstupu.'}}};
+  for(const lang of ['cs','en']) {
+    const texts=[presentation.confirmationPaymentSubstitutions(info,[],lang,'formal').balanceReasoning,
+      presentation.updateBalanceReasoning(800,250.50,'CZK',null as any,info,lang,'formal'),
+      presentation.paidPaymentSubstitutions(800,250.50,'CZK',[],lang,'formal',info).balanceReasoning];
+    for(const text of texts) { assertStringIncludes(text,'Uhraďte u vstupu.'); assertEquals(/IBAN|QR|VS_REQUIRED|undefined|null/.test(text),false); }
+  }
+});
+Deno.test('bank none keeps deposit amounts but never inherits feature deadline text',()=>{
+  const info={payment_method:'bank',amount:800,deposit_amount:300,currency_code:'CZK',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',variable_symbol:123,data:{payment_policy:{mode:'none'}}};
+  const features=[{code:'deposit',deposit_deadline_days:7}];
+  for(const lang of ['cs','en']) {
+    const text=presentation.confirmationPaymentSubstitutions(info,features,lang,'formal').balanceReasoning;
+    assertStringIncludes(text,formatCurrency(300,'CZK'));
+    assertEquals(/7 |nejpozději|due by|days before|undefined|null/.test(text),false);
+    const paid=presentation.paidPaymentSubstitutions(800,300,'CZK',features,lang,'formal',info).balanceReasoning;
+    assertEquals(/7 |nejpozději|due by|days before|undefined|null/.test(paid),false);
+  }
+});

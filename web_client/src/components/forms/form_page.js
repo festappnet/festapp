@@ -915,7 +915,7 @@ export class FormPage extends Component {
         const loader = this.showFullScreenLoader();
 
         // 3. Prepare Data
-        const payload = this.currentSession ? this.currentSession.payload : FormDataReader.getPayload(form, formModel);
+        const payload = {...(this.currentSession ? this.currentSession.payload : FormDataReader.getPayload(form, formModel)), client_capabilities:['cash_reservations','no_payment_deadline']};
 
         // Inject payment_type if deposit option was selected
         if (this._pendingPaymentType) {

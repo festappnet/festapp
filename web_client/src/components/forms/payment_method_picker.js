@@ -9,6 +9,7 @@ export function renderPaymentMethodPicker(host,options,onChanged) {
     const line=value=>{const p=document.createElement('p');p.textContent=value;detail.append(p);};
     const changed=()=>{
         detail.replaceChildren();
+        if(state.selected==='cash') line(options.cashInstructions || text('cashInstructionsDefault'));
         if(isCardPaymentMethod(state.selected)){
             const recipient=options.providers[state.selected]?.recipient;
             if(recipient?.name)line(paymentMethodRecipient(recipient.name));

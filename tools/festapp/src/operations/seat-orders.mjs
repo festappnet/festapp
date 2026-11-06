@@ -11,7 +11,7 @@ const confirmation={...selection,actorId:z.uuid(),inputData,targetSpotIds:ids,af
 const product=z.strictObject({productId:id,title:z.string().nullable(),amount:decimalAmount.nullable(),currencyCode:currencyCode.nullable()});
 const conflictOrders=z.array(z.strictObject({orderId:id,selectedTicketCount:z.number().int().positive().max(1000),stateAfter:z.string().nullable(),customer:z.strictObject({email:z.string().nullable(),name:z.string().nullable(),surname:z.string().nullable()}),tickets:z.array(z.strictObject({ticketId:id,selectedSpotIds:ids,ticketSymbol:z.string().nullable(),ticketAmount:decimalAmount.nullable(),products:z.array(product).max(1000)})).max(1000)})).max(1000);
 const newProduct=z.strictObject({spotId:id,productId:id,title:z.string().nullable(),amount:decimalAmount,currencyCode});
-const newOrder=z.strictObject({amount:decimalAmount,currencyCode,state:z.string().min(1).max(64),paymentMethod:z.literal('bank'),ticketCount:z.number().int().positive().max(1000)});
+const newOrder=z.strictObject({amount:decimalAmount,currencyCode,state:z.string().min(1).max(64),paymentMethod:z.enum(['bank','cash']),paymentPolicy:z.strictObject({mode:z.enum(['none','custom']),cashInstructions:z.string().max(1000).optional()}).optional(),ticketCount:z.number().int().positive().max(1000)});
 const quoteBase={spotIds:ids,affectedSpotIds:ids,releasedSpotIds:z.array(id).max(1000),blueprints,formKey:z.uuid(),orders:z.array(orderAmountChangeSchema).max(1000)};
 const state=z.enum(['available','selected','ordered','used']);
 const quote=z.strictObject({...quoteBase,seats:z.array(z.strictObject({spotId:id,blueprintId:id.nullable(),blueprintTitle:z.string().nullable(),title:z.string().nullable(),stateBefore:state,stateAfter:state,previousOrderId:id.nullable(),previousTicketId:id.nullable(),productId:id.nullable(),productTitle:z.string().nullable()})).max(1000),newOrder:newOrder.extend({products:z.array(newProduct).max(20000)})}).refine(v=>{
@@ -37,10 +37,11 @@ export const seatOrderDescriptors=[
 ];
 export async function invokeSeatOrderOperation(owner,client,operation,args,context){
  const scope=await owner.delegatedContext(client,args.occasionId),write=operation==='seats.create_order';
+ const paymentInput=args.inputData==null?null:{...args.inputData,client_capabilities:['cash_reservations','no_payment_deadline']};
  if(write){check(typeof owner.profile.binding==='string'&&owner.profile.binding.length>0,'AUTHENTICATION_REQUIRED');check(args.actorId===context.userId,'FORBIDDEN');}
  let data,error;
- if(!write)({data,error}=await client.rpc('preview_blueprint_seat_order',{p_occasion:args.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_blueprint:args.blueprintId,p_spots:args.spotIds,p_input:args.inputData??null,p_editor:false}));
- else ({data,error}=await client.functions.invoke('send-ticket-order',{body:{commandId:args.commandId,clientId:owner.profile.binding,replacement:{spotIds:args.spotIds,inputData:args.inputData,confirmation:{actorId:args.actorId,occasionId:args.occasionId,organizationId:scope.organizationId,unitId:scope.unitId,blueprintId:args.blueprintId,targetSpotIds:args.targetSpotIds,affectedSpotIds:args.affectedSpotIds,blueprints:args.blueprints,confirmationHash:args.confirmationHash,editor:false}}}}));
+ if(!write)({data,error}=await client.rpc('preview_blueprint_seat_order',{p_occasion:args.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_blueprint:args.blueprintId,p_spots:args.spotIds,p_input:paymentInput,p_editor:false}));
+ else ({data,error}=await client.functions.invoke('send-ticket-order',{body:{commandId:args.commandId,clientId:owner.profile.binding,replacement:{spotIds:args.spotIds,inputData:paymentInput,confirmation:{actorId:args.actorId,occasionId:args.occasionId,organizationId:scope.organizationId,unitId:scope.unitId,blueprintId:args.blueprintId,targetSpotIds:args.targetSpotIds,affectedSpotIds:args.affectedSpotIds,blueprints:args.blueprints,confirmationHash:args.confirmationHash,editor:false}}}}));
  if(['40001','40P01'].includes(error?.code??data?.errorCode))throw new OperationError('TEMPORARY_CONCURRENCY_RETRY_SAME_COMMAND',true);
  if(write){data=commandEdgeResponse({data,error},args.commandId);error=null;}
  if(['22023','23514','54000'].includes(error?.code??data?.errorCode))throw new OperationError('SEAT_ORDER_REJECTED_NEW_PREVIEW_REQUIRED');

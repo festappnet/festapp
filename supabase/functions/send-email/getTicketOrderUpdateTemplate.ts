@@ -1,7 +1,7 @@
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
-import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { getBaseOrderData } from "./shared.ts";
 import { translations } from "../_shared/translations/translations.ts";
 import { generateChangeOverview } from "../_shared/changeOverview.ts";
@@ -48,7 +48,7 @@ export async function getTicketOrderUpdateTemplate(
     orderPrice, amountPaid, currency, bank_account, payment_info, lang, tone,
   );
 
-  if (orderPrice !== 0 && balance > 0) {
+  if (isBankPaymentInfo(payment_info) && orderPrice !== 0 && balance > 0) {
     // 4. Generate Payment QR Code if there is a balance
     try {
       const qrPaymentData = {

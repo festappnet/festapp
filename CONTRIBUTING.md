@@ -107,6 +107,11 @@ skips inside individual tests retain their own test-runner semantics.
 A JSON summary is written under `FESTAPP_ALL_RESULTS` (a fresh temporary directory
 by default). The web lane retains its 60-second timeout and executes `pnpm test`;
 timeout and interruption terminate the owned process group, including descendants.
+The web runner discovers all `tests/**/*.test.js` files recursively. Independent
+web files run in four isolated Node processes; `tests/database/` runs afterward
+with one process to preserve shared disposable-database fixture ordering. Both
+batches run even when the first fails, and either failure makes the command
+nonzero. Generated embed, measurement and email-TLD checks still run first.
 Use pnpm 11.24.0 for JavaScript packages; install with
 `pnpm install --frozen-lockfile` in the package directory.
 
@@ -174,6 +179,8 @@ is accepted; other positive values are rejected under the workstation policy.
 Run only one Flutter task across the workstation at a time.
 Small compatible suites share an engine through `registerClientSuites`; verify
 both normal and `FESTAPP_FIXTURE_ORDER=reverse` group orders when changing them.
+For the measured local performance changes and remaining limits, see
+[`docs/development/local-test-performance-2026-11-06.md`](docs/development/local-test-performance-2026-11-06.md).
 
 Small suites in the same feature share a `<feature>_unit_test.dart` or
 `<feature>_widget_test.dart` entrypoint to avoid starting a Flutter engine for

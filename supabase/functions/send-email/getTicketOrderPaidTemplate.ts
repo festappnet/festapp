@@ -1,7 +1,7 @@
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
-import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { getBaseOrderData } from "./shared.ts";
 import type { Tone } from "../_shared/translations/translations.ts";
 
@@ -43,10 +43,10 @@ export async function getTicketOrderPaidTemplate(
   const currency = order.currency_code || "CZK";
 
   const paymentPresentation = paidPaymentSubstitutions(
-    totalAmount, amountPaid, currency, occasion.features || [], lang, tone,
+    totalAmount, amountPaid, currency, occasion.features || [], lang, tone, payment_info,
   );
 
-  if (!(amountPaid >= totalAmount)) {
+  if (isBankPaymentInfo(payment_info) && !(amountPaid >= totalAmount)) {
     const remainingAmount = totalAmount - amountPaid;
     // QR code for remaining amount
     try {

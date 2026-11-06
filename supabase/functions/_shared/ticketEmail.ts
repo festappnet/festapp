@@ -14,6 +14,7 @@ export function ticketEmailSubstitutions(data: any, requestedLanguage = "cs") {
       occasion.features ?? [],
       lang,
       form_data?.communication_tone === "informal" ? "informal" : "formal",
+      payment_info,
     ),
     fullOrder: generateFullOrder(
       order.data,

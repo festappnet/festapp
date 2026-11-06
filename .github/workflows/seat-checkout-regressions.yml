@@ -26,7 +26,7 @@ on:
       - 'lib/components/occasion/setup/**'
       - 'lib/components/fonts/**'
       - 'lib/components/forms/**'
-      - 'test/components/forms/form_appearance_theme_test.dart'
+      - 'test/components/forms/form_appearance_theme_cases.dart'
       - 'test/components/occasion/occasion_setup*'
       - 'automation/generate_setup_appearance_fonts.mjs'
       - 'automation/tickets/setup-appearance-fonts.json'

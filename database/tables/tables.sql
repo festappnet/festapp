@@ -400,7 +400,7 @@ create table if not exists eshop.transactions (
 
   CONSTRAINT transactions_pkey PRIMARY KEY (id),
   CONSTRAINT transactions_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.user_info (id),
-  CONSTRAINT transactions_bank_account_fkey FOREIGN KEY (bank_account_id) REFERENCES eshop.bank_accounts (id) ON DELETE CASCADE,
+  CONSTRAINT transactions_bank_account_fkey FOREIGN KEY (bank_account_id) REFERENCES eshop.bank_accounts (id) ON DELETE RESTRICT,
   CONSTRAINT transactions_payment_info_fkey FOREIGN KEY (payment_info) REFERENCES eshop.payment_info (id)
 ) TABLESPACE pg_default;
 

@@ -1,9 +1,18 @@
+import 'package:fstapp/services/storage_helper.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
+import 'dart:async';
+
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
+
 import '../../support/fixtures/widget_environment_fixture.dart';
+
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
+
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,52 +45,78 @@ void main() {
   WidgetEnvironmentFixture.register();
   TestWidgetsFlutterBinding.ensureInitialized();
   final payments = <Map<String, dynamic>>[];
+  late Directory storage;
+  final previousPaths = PathProviderPlatform.instance;
+  late Completer<void> recorded;
   setUpAll(() async {
+    storage = await Directory.systemTemp.createTemp('festapp-cash-widget-');
+    PathProviderPlatform.instance = _CashDocuments(storage.path);
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await Supabase.initialize(
       url: 'https://fixture.invalid',
       publishableKey: 'fixture',
       authOptions: const FlutterAuthClientOptions(
-          autoRefreshToken: false, localStorage: EmptyLocalStorage()),
+        autoRefreshToken: false,
+        localStorage: EmptyLocalStorage(),
+      ),
       httpClient: MockClient((request) async {
         final endpoint = request.url.path.split('/').last;
         final payload = jsonDecode(request.body) as Map<String, dynamic>;
         if (endpoint == 'get_transactions_for_order') {
           expect(payload['order_id'], 5);
           return http.Response(
-              jsonEncode({
-                'order_state': 'sent',
-                'transactions': [],
-                'payment_info': {
-                  'id': 55,
-                  'bank_account': 99,
-                  'amount': 1900,
-                  'paid': 1900,
-                  'currency_code': 'CZK'
-                },
-              }),
-              200,
-              request: request,
-              headers: {'content-type': 'application/json'});
+            jsonEncode({
+              'order_state': 'sent',
+              'transactions': [],
+              'actions': {
+                'canAddCash': true,
+                'canConfigureBank': true,
+                'unitId': 9,
+                'bankState': 'configured',
+              },
+              'payment_info': {
+                'id': 55,
+                'bank_account': 99,
+                'amount': 1900,
+                'paid': 1900,
+                'currency_code': 'CZK',
+              },
+            }),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
         }
         if (endpoint == 'insert_manual_transaction') {
           payments.add(payload);
-          return http.Response('null', 200,
-              request: request, headers: {'content-type': 'application/json'});
+          if (!recorded.isCompleted) recorded.complete();
+          return http.Response(
+            '{"code":200}',
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
         }
         throw StateError('Unexpected fixture request: ${request.url.path}');
       }),
     );
   });
-  tearDownAll(() => Supabase.instance.dispose());
+  tearDownAll(() async {
+    await Supabase.instance.dispose();
+    await StorageHelper.closeDatabase('default.db');
+    PathProviderPlatform.instance = previousPaths;
+    await storage.delete(recursive: true);
+  });
   setUp(() {
     payments.clear();
+    recorded = Completer<void>();
     _environment = WidgetEnvironmentFixture(
-        locale: const Locale('cs'),
-        translations:
-            jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-                as Map<String, dynamic>);
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
     final previous = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       capabilities: {AuthorizationCapabilities.ordersWrite: true},
@@ -90,108 +125,158 @@ void main() {
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
   });
 
-  Future<void> grid(WidgetTester tester, OrderModel order,
-      {Future<void> Function()? refresh}) async {
+  Future<void> grid(
+    WidgetTester tester,
+    OrderModel order, {
+    Future<void> Function()? refresh,
+  }) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await _environment.pumpWidget(
-        tester,
-        EasyLocalization(
-            supportedLocales: const [Locale('cs')],
-            path: 'unused',
-            assetLoader: _Translations(),
-            child: Builder(
-                builder: (localized) => MaterialApp(builder: DependencyMaterialBridge.builder,
-                    locale: localized.locale,
-                    supportedLocales: localized.supportedLocales,
-                    localizationsDelegates: [...localized.localizationDelegates, ...GlobalMaterialLocalizations.delegates],
-                    home: Scaffold(
-                        body: Builder(
-                            builder: (context) => TrinaGrid(
-                                  columns:
-                                      EshopColumns.generateColumns(context, [
-                                    EshopColumnIds.PAYMENT_INFO_PAID
-                                  ], data: {
-                                    'unitId': 9,
-                                    EshopColumnIds.PAYMENT_INFO_PAID: refresh,
-                                  }),
-                                  rows: [order.toTrinaRow(context)],
-                                )))))));
+      tester,
+      EasyLocalization(
+        supportedLocales: const [Locale('cs')],
+        path: 'unused',
+        assetLoader: _Translations(),
+        child: Builder(
+          builder: (localized) => MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            locale: localized.locale,
+            supportedLocales: localized.supportedLocales,
+            localizationsDelegates: [
+              ...localized.localizationDelegates,
+              ...GlobalMaterialLocalizations.delegates,
+            ],
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TrinaGrid(
+                  columns: EshopColumns.generateColumns(
+                    context,
+                    [EshopColumnIds.PAYMENT_INFO_PAID],
+                    data: {
+                      'unitId': 9,
+                      EshopColumnIds.PAYMENT_INFO_PAID: refresh,
+                    },
+                  ),
+                  rows: [order.toTrinaRow(context)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
   Finder plus() => find
       .ancestor(
-          of: find.byIcon(Icons.add_circle_outline),
-          matching: find.byType(InkWell))
+        of: find.byIcon(Icons.add_circle_outline),
+        matching: find.byType(InkWell),
+      )
       .first;
   OrderModel paidOrder(String state, {Set<String>? actions}) {
     final order = OrderModel(
-        id: 5,
-        state: state,
-        price: 1900,
-        paymentInfo: 55,
-        currencyCode: 'CZK',
-        allowedActions: actions);
-    order.paymentInfoModel =
-        PaymentInfoModel(id: 55, amount: 1900, paid: 1900, currencyCode: 'CZK');
+      id: 5,
+      state: state,
+      price: 1900,
+      paymentInfo: 55,
+      currencyCode: 'CZK',
+      allowedActions: actions,
+    );
+    order.paymentInfoModel = PaymentInfoModel(
+      id: 55,
+      amount: 1900,
+      paid: 1900,
+      currencyCode: 'CZK',
+    );
     return order;
   }
 
-  testWidgetsWithEnvironment(() => _environment,
-      'fully paid sent order opens actual cash dialog and submits an additional payment',
-      (tester) async {
-    final order = paidOrder('sent', actions: {'view', 'edit', 'send'});
-    var refreshed = 0;
-    await grid(tester, order, refresh: () async {
-      refreshed++;
-    });
-    expect(tester.widget<InkWell>(plus()).onTap, isNotNull);
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
-    await tester.pumpAndSettle();
-    expect(find.byType(AddCashPaymentDialog), findsOneWidget);
-    await tester.enterText(find.byType(TextFormField).first, '500');
-    await tester
-        .tap(find.widgetWithText(ElevatedButton, OrdersStrings.addPayment));
-    await tester.pumpAndSettle();
-    expect(payments, hasLength(1));
-    expect(payments.single['p_amount'], 500);
-    expect(payments.single['p_payment_info_id'], 55);
-    expect(payments.single['p_unit_id'], 9);
-    expect(payments.single['p_currency'], 'CZK');
-    expect(refreshed, 1);
-    expect(order.state, 'sent');
-    expect(order.allows('paid'), isFalse,
-        reason: 'Adding cash is separate from marking an order paid');
-    expect(find.byType(AddCashPaymentDialog), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'fully paid sent order opens actual cash dialog and submits an additional payment',
+    (tester) async {
+      final order = paidOrder('sent', actions: {'view', 'edit', 'send'});
+      var refreshed = 0;
+      await grid(
+        tester,
+        order,
+        refresh: () async {
+          refreshed++;
+        },
+      );
+      expect(tester.widget<InkWell>(plus()).onTap, isNotNull);
+      await tester.tap(find.byIcon(Icons.add_circle_outline));
+      await tester.pumpAndSettle();
+      expect(find.byType(AddCashPaymentDialog), findsOneWidget);
+      await tester.enterText(find.byType(TextFormField).first, '500');
+      await tester.runAsync(() async {
+        await tester.tap(
+          find.widgetWithText(ElevatedButton, OrdersStrings.addPayment),
+        );
+        await recorded.future.timeout(const Duration(seconds: 10));
+        // Let PostgREST finish its real async response before returning to the fake clock.
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      await tester.pumpAndSettle();
+      expect(payments, hasLength(1));
+      expect(payments.single['input_data']['amount'], '500');
+      expect(payments.single['input_data']['paymentInfoId'], 55);
+      expect(payments.single['input_data']['unitId'], 9);
+      expect(payments.single['input_data']['currency'], 'CZK');
+      expect(refreshed, 1);
+      expect(order.state, 'sent');
+      expect(
+        order.allows('paid'),
+        isFalse,
+        reason: 'Adding cash is separate from marking an order paid',
+      );
+      expect(find.byType(AddCashPaymentDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   for (final state in ['waitlisted', 'preparing_payment', 'storno']) {
-    testWidgetsWithEnvironment(() => _environment,
-        '$state remains protected even with editor role and edit metadata',
-        (tester) async {
-      await grid(tester, paidOrder(state, actions: {'view', 'edit', 'paid'}));
-      expect(tester.widget<InkWell>(plus()).onTap, isNull);
-      expect(payments, isEmpty);
-    });
+    testWidgetsWithEnvironment(
+      () => _environment,
+      '$state remains protected even with editor role and edit metadata',
+      (tester) async {
+        await grid(tester, paidOrder(state, actions: {'view', 'edit', 'paid'}));
+        expect(tester.widget<InkWell>(plus()).onTap, isNull);
+        expect(payments, isEmpty);
+      },
+    );
   }
   testWidgetsWithEnvironment(
-      () => _environment, 'read-only viewer cannot add payment to sent order',
-      (tester) async {
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-      occasionUser: OccasionUserModel.fromJson({'is_editor_order_view': true}),
-    );
-    await grid(tester, paidOrder('sent', actions: {'view', 'edit', 'send'}));
-    expect(tester.widget<InkWell>(plus()).onTap, isNull);
-    expect(payments, isEmpty);
-  });
-  testWidgetsWithEnvironment(() => _environment,
-      'missing edit capability remains protected for an editor',
-      (tester) async {
-    await grid(tester, paidOrder('sent', actions: {'view', 'send'}));
-    expect(tester.widget<InkWell>(plus()).onTap, isNull);
-  });
+    () => _environment,
+    'read-only viewer cannot add payment to sent order',
+    (tester) async {
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasionUser: OccasionUserModel.fromJson({
+          'is_editor_order_view': true,
+        }),
+      );
+      await grid(tester, paidOrder('sent', actions: {'view', 'edit', 'send'}));
+      expect(tester.widget<InkWell>(plus()).onTap, isNull);
+      expect(payments, isEmpty);
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'missing edit capability remains protected for an editor',
+    (tester) async {
+      await grid(tester, paidOrder('sent', actions: {'view', 'send'}));
+      expect(tester.widget<InkWell>(plus()).onTap, isNull);
+    },
+  );
+}
+
+class _CashDocuments extends PathProviderPlatform {
+  _CashDocuments(this.path);
+  final String path;
+  @override
+  Future<String?> getApplicationDocumentsPath() async => path;
 }

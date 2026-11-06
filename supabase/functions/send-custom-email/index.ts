@@ -44,9 +44,9 @@ Deno.serve(async (req) => {
         sourceTemplates:async(auth,id)=>{
           const {data,error}=await createUserClient(auth).rpc('get_entity_email_templates',{p_entity_type:'occasion',p_entity_id:id});return error?null:data;
         },
-        bank:async(auth,id,accountId)=>{
-          const {data,error}=await createUserClient(auth).rpc('get_occasion_setup_bank_accounts',{p_id:id});
-          return error?null:data?.accounts?.find((a:any)=>a.id===accountId)?.display??null;
+        paymentInfo:async(auth,id,revision)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_occasion_setup_email_preview',{p_id:id,p_expected_revision:revision});
+          return error?null:data?.paymentInfo??null;
         },
       },corsHeaders);
     }

@@ -18,6 +18,11 @@ CREATE OR REPLACE FUNCTION public.payment_method_registered_internal(p_method te
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=p_method);
 $$;
+CREATE OR REPLACE FUNCTION public.payment_method_is_online_internal(p_method text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT public.payment_method_registered_internal(p_method) AND p_method NOT IN ('bank','cash');
+$$;
+REVOKE ALL ON FUNCTION public.payment_method_is_online_internal(text) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.strip_payment_sources_internal(p_input jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT p_input-coalesce((SELECT array_agg(source_field) FROM eshop.payment_providers WHERE source_field IS NOT NULL),'{}'::text[]);
@@ -27,7 +32,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,ex
 DECLARE method text; result jsonb;
 BEGIN
  SELECT p.payment_method INTO method FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info WHERE o.id=p_order;
- IF method IS NULL OR method='bank' THEN RETURN NULL; END IF;
+ IF NOT public.payment_method_is_online_internal(method) THEN RETURN NULL; END IF;
  result:=public.payment_provider_call_internal(method,'projection',jsonb_build_object('orderId',p_order));
  IF result->>'method' IS DISTINCT FROM method THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_IDENTITY_MISMATCH'; END IF;
  RETURN result;
@@ -37,19 +42,19 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions
 DECLARE method text; field text;
 BEGIN
  SELECT p.payment_method INTO method FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info WHERE o.id=p_order;
- IF method IS NULL OR method='bank' THEN RETURN; END IF;
+ IF NOT public.payment_method_is_online_internal(method) THEN RETURN; END IF;
  SELECT source_field INTO STRICT field FROM eshop.payment_providers WHERE provider_key=method;
  PERFORM public.payment_provider_call_internal(method,'attach_source',jsonb_build_object('orderId',p_order,'commandId',p_command,'source',p_input->field));
 END $$;
 CREATE OR REPLACE FUNCTION public.provider_ticket_requires_online_internal(p_ticket bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders o ON o.id=x."order"
- JOIN eshop.payment_info p ON p.id=o.payment_info WHERE x.ticket=p_ticket AND p.payment_method<>'bank');
+ JOIN eshop.payment_info p ON p.id=o.payment_info WHERE x.ticket=p_ticket AND public.payment_method_is_online_internal(p.payment_method));
 $$;
 CREATE OR REPLACE FUNCTION public.provider_ticket_admission_allowed_internal(p_ticket bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders o ON o.id=x."order"
- JOIN eshop.payment_info p ON p.id=o.payment_info WHERE x.ticket=p_ticket AND p.payment_method<>'bank'
+ JOIN eshop.payment_info p ON p.id=o.payment_info WHERE x.ticket=p_ticket AND public.payment_method_is_online_internal(p.payment_method)
  AND public.provider_order_payment_projection_internal(o.id)->>'admissionState' IS DISTINCT FROM 'valid');
 $$;
 CREATE OR REPLACE FUNCTION public.provider_paid_guard_internal(p_order bigint)
@@ -57,7 +62,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,ex
 DECLARE method text;
 BEGIN
  SELECT p.payment_method INTO method FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info WHERE o.id=p_order;
- IF method IS NULL OR method='bank' THEN RETURN NULL; END IF;
+ IF NOT public.payment_method_is_online_internal(method) THEN RETURN NULL; END IF;
  RETURN public.payment_provider_call_internal(method,'paid_guard',jsonb_build_object('orderId',p_order));
 END $$;
 CREATE OR REPLACE FUNCTION public.provider_payment_movements_internal(p_payment bigint)
@@ -66,7 +71,7 @@ LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE method text; rows jsonb;
 BEGIN
  SELECT p.payment_method INTO method FROM eshop.payment_info p WHERE p.id=p_payment;
- IF method IS NULL OR method='bank' THEN RETURN; END IF;
+ IF NOT public.payment_method_is_online_internal(method) THEN RETURN; END IF;
  rows:=public.payment_provider_call_internal(method,'movements',jsonb_build_object('paymentId',p_payment));
  RETURN QUERY SELECT * FROM jsonb_to_recordset(rows) AS x(kind text,amount_minor bigint,currency text,occurred_at timestamptz);
 END $$;
@@ -119,11 +124,19 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,ext
 $$;
 CREATE OR REPLACE FUNCTION public.form_payment_availability_internal(p_form bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE r record; current jsonb; providers jsonb:='{}'; available jsonb:='[]'; config jsonb; bank boolean; configured boolean; enabled boolean;
+DECLARE r record; current jsonb; providers jsonb:='{}'; available jsonb:='[]'; config jsonb; bank boolean; cash boolean; configured boolean; enabled boolean;
 BEGIN
  SELECT data->'payments' INTO config FROM public.forms WHERE id=p_form;
  bank:=FOUND AND coalesce(config->'bankEnabled','true'::jsonb)='true'::jsonb;
+ cash:=config->'cashEnabled'='true'::jsonb;
+ bank:=bank AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+   JOIN eshop.unit_bank_accounts link ON link.unit=o.unit JOIN eshop.bank_accounts b ON b.id=link.bank_account
+   WHERE f.id=p_form AND (f.bank_account IS NULL OR f.bank_account=b.id) AND b.type IS DISTINCT FROM 'CASH'
+   AND NOT EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type
+    WHERE ff.form=f.id AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false)
+    AND p.price>0 AND NOT coalesce(b.supported_currencies,'{}'::text[]) @> ARRAY[trim(p.currency_code)]));
  IF bank THEN available:=jsonb_build_array('bank'); END IF;
+ IF cash THEN available:=jsonb_build_array('cash'); END IF;
  FOR r IN SELECT provider_key,legacy_connection_field FROM eshop.payment_providers WHERE handler IS NOT NULL ORDER BY provider_key LOOP
   configured:=nullif(config#>>ARRAY['providerConnections',r.provider_key],'') IS NOT NULL OR nullif(config->>r.legacy_connection_field,'') IS NOT NULL;
   BEGIN
@@ -144,7 +157,7 @@ BEGIN
   IF enabled THEN available:=available||jsonb_build_array(r.provider_key); END IF;
  END LOOP;
  -- Only this Stripe compatibility boundary projects released mobile root fields.
- RETURN jsonb_build_object('bank',jsonb_build_object('configured',bank,'available',bank),'available',available,'providers',providers,
+ RETURN jsonb_build_object('cash',jsonb_build_object('configured',coalesce(cash,false),'available',coalesce(cash,false),'instructions',config->>'cashInstructions'), 'deadlinePolicy',public.resolve_form_payment_policy_internal(p_form,CASE WHEN cash THEN 'cash' ELSE 'bank' END), 'bank',jsonb_build_object('configured',bank,'available',bank),'available',available,'providers',providers,
   'policy',public.payment_sale_policy_internal(),'reservationSeconds',public.payment_sale_policy_internal()->'reservationSeconds',
   'configured',jsonb_build_object('bank',bank,'stripe',coalesce(providers#>'{stripe,configured}','false')),
   'stripeUnavailableReason',providers#>'{stripe,reason,code}','recipient',providers#>'{stripe,recipient}',
@@ -157,8 +170,13 @@ BEGIN
  SELECT data->'payments' INTO config FROM public.forms WHERE id=p_form;
  IF config IS NULL THEN RETURN; END IF;
  IF jsonb_typeof(config)<>'object' OR EXISTS(SELECT 1 FROM jsonb_object_keys(config) k
-  WHERE k NOT IN ('bankEnabled','providerConnections') AND NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE legacy_connection_field=k))
+  WHERE k NOT IN ('bankEnabled','providerConnections','cashEnabled','cashInstructions') AND NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE legacy_connection_field=k))
   OR (config ? 'bankEnabled' AND jsonb_typeof(config->'bankEnabled')<>'boolean') THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
+ config:=public.merge_form_payments_internal(config,NULL);
+ IF config->'cashEnabled'='true'::jsonb AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+   JOIN eshop.external_services e ON e.unit=o.unit AND e.type='FAKTUROID' WHERE f.id=p_form) THEN
+  RAISE EXCEPTION 'CASH_FAKTUROID_UNSUPPORTED: Cash reservations cannot use mandatory Fakturoid invoicing'; END IF;
+ PERFORM public.resolve_form_payment_policy_internal(p_form,CASE WHEN config->'cashEnabled'='true'::jsonb THEN 'cash' ELSE 'bank' END);
  connections:=coalesce(config->'providerConnections','{}'::jsonb);
  IF jsonb_typeof(connections)<>'object' THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
  FOR entry IN SELECT * FROM jsonb_each(connections) LOOP
@@ -166,7 +184,7 @@ BEGIN
    RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
   PERFORM (entry.value#>>'{}')::uuid;
  END LOOP;
- IF config->'bankEnabled'='false'::jsonb
+ IF config->'bankEnabled'='false'::jsonb AND config->'cashEnabled'<>'true'::jsonb
   AND NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE handler IS NOT NULL AND public.payment_provider_connection_internal(config,provider_key) IS NOT NULL)
   AND EXISTS(SELECT 1 FROM public.forms f JOIN public.form_fields ff ON ff.form=f.id JOIN eshop.products p ON p.product_type=ff.product_type
    WHERE f.id=p_form AND f.is_open AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false) AND p.price>0) THEN

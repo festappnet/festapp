@@ -25,10 +25,11 @@ void main() {
                 as Map<String, dynamic>);
   });
   setUp(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-            const MethodChannel('PonnamKarthik/fluttertoast'),
-            (_) async => true);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const channel = MethodChannel('PonnamKarthik/fluttertoast');
+    messenger.setMockMethodCallHandler(channel, (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
   });
   test('a failed provider read is never replaced by empty content', () async {
     final file = ImportFile(name: 'failed.csv',

@@ -2648,6 +2648,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   Future<void> _setSetupPaymentMethod(FormPaymentMethod method) async {
     final generation = ++_setupPaymentGeneration;
     final provider = _setupProvider(_data);
+    if (method == FormPaymentMethod.cash) {
+      _change((x) {
+        x['payments'] = const FormPaymentConfiguration(bankEnabled: false, cashEnabled: true).toJson();
+        x.remove('paymentRepairRequired');
+      }, changesConfiguration: true);
+      return;
+    }
     if (method == FormPaymentMethod.bank) {
       _change((x) {
         x['payments'] = const FormPaymentConfiguration().toJson();
@@ -2740,9 +2747,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           child: Text(FormStrings.repairVariableSymbolPolicy),
         ),
       ],
-      if (d['paymentChoicesEnabled'] == true) ...[
+      if (d['paymentChoicesEnabled'] == true || !_setupHasOnline(d)) ...[
         PaymentMethodCards(
-          value: _setupHasOnline(d)
+          value: _setupPayments(d).cashEnabled ? FormPaymentMethod.cash : _setupHasOnline(d)
               ? (_setupOnlineOnly(d)
                     ? FormPaymentMethod.online
                     : FormPaymentMethod.both)

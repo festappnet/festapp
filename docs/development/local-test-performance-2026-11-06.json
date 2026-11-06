@@ -1,0 +1,280 @@
+{
+  "date": "2026-11-06",
+  "head": "d47667c9fa879a6c4efc1044e838b16e17ee2245",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "method": {
+    "flutterConcurrency": 1,
+    "webConcurrency": 4,
+    "databaseConcurrency": 1,
+    "dependenciesResolvedDuringRun": false,
+    "cache": "Existing caches retained; selected Flutter runs follow the complete baseline. No controlled cold-cache claim.",
+    "fullClientRuns": "One before and one after. Baseline overlapped web measurements; use selected-case medians for the isolated grouping comparison.",
+    "scope": "Local client and Node suites only; no database provisioning, CI mirror, browser, deployment or production writes."
+  },
+  "web": {
+    "before": {
+      "seconds": 49.496519457999966,
+      "exitCode": 1
+    },
+    "afterRuns": [
+      {
+        "seconds": 15.99562375000096,
+        "exitCode": 1
+      },
+      {
+        "seconds": 16.449553958009346,
+        "exitCode": 1
+      },
+      {
+        "seconds": 16.757334125009947,
+        "exitCode": 1
+      }
+    ],
+    "afterMedianSeconds": 16.449553958009346,
+    "originalTests": 1034,
+    "addedRunnerContractTests": 3,
+    "originalNamesUnchanged": true,
+    "preexistingFailures": [
+      "Barion concurrency: DATABASE_URL unset",
+      "Barion upgrade: DATABASE_URL unset",
+      "Provider upgrade: DATABASE_URL unset"
+    ],
+    "nameComparison": "Default reporter case/suite names compared as multisets across all three runs; normalized absolute versus relative file paths and excluded exactly the three added runner tests."
+  },
+  "selectedFlutter": {
+    "beforeRuns": [
+      {
+        "seconds": 15.36221024999395,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-before-selected-1.jsonl"
+      },
+      {
+        "seconds": 18.07641862500168,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-before-selected-2.jsonl"
+      },
+      {
+        "seconds": 14.606827124996926,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-before-selected-3.jsonl"
+      }
+    ],
+    "afterRuns": [
+      {
+        "seconds": 7.811283707997063,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-after-selected-1.jsonl",
+        "reverse": false
+      },
+      {
+        "seconds": 7.361054082997725,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-after-selected-2.jsonl",
+        "reverse": false
+      },
+      {
+        "seconds": 7.148147250001784,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-after-selected-3.jsonl",
+        "reverse": false
+      },
+      {
+        "seconds": 7.055311417003395,
+        "exitCode": 0,
+        "events": "/tmp/festapp-tests-20261106-after-selected-4.jsonl",
+        "reverse": true
+      }
+    ],
+    "beforeMedianSeconds": 15.36221024999395,
+    "afterMedianSeconds": 7.361054082997725,
+    "semanticCases": 55,
+    "identicalSemanticCases": true,
+    "movedSourceFilesByteIdentical": true,
+    "rootsBefore": 10,
+    "rootsAfter": 3,
+    "reversePassed": true
+  },
+  "fullClient": {
+    "before": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 6.455846708005993,
+        "testSeconds": 5.441,
+        "cases": 266,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 44
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 14.89087895800185,
+        "testSeconds": 12.606,
+        "cases": 95,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 296.7509311670001,
+        "testSeconds": 294.788,
+        "cases": 2450,
+        "skipped": 3,
+        "failed": 0,
+        "suites": 133
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 311.89229625000735
+    },
+    "after": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 4.53189129200473,
+        "testSeconds": 4.013,
+        "cases": 266,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 44
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 12.843306374998065,
+        "testSeconds": 12.181,
+        "cases": 95,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 259.20803529099794,
+        "testSeconds": 257.899,
+        "cases": 2450,
+        "skipped": 3,
+        "failed": 0,
+        "suites": 126
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 272.29490145899763
+    },
+    "identicalSemanticCases": true,
+    "semanticCases": 2811,
+    "semanticInventorySha256": "e7703283a46ed68e276f07e4c591b8974974f4e9905500c1fd4aa031b00e31d6"
+  },
+  "ciContract": {
+    "passed": true,
+    "tests": 6,
+    "python": "Existing festapp-ci/python virtual environment (system Python lacks PyYAML)."
+  },
+  "complete": true,
+  "followup100s": {
+    "targetSeconds": 100,
+    "status": "not met; concurrency decision and final validation pending",
+    "groupedRoots": 84,
+    "newSessions": 9,
+    "classifiedRoots": 52,
+    "semanticCases": 2811,
+    "semanticCasesIdentical": true,
+    "caseChanges": "Only editor_file_drop_region toast mock teardown; all assertions retained.",
+    "trial": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 5.029657166000106,
+        "testSeconds": 4.148,
+        "cases": 266,
+        "skipped": 0,
+        "failed": 2,
+        "suites": 44
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 13.180376916003297,
+        "testSeconds": 12.366,
+        "cases": 95,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 184.5256897090003,
+        "testSeconds": 183.203,
+        "cases": 2450,
+        "skipped": 3,
+        "failed": 7,
+        "suites": 51
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": false,
+      "seconds": 197.96679920899624
+    },
+    "isolatedInspectorExperiment": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 8.809195207999437,
+        "testSeconds": 5.474,
+        "cases": 266,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 44
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 17.581324457991286,
+        "testSeconds": 12.714,
+        "cases": 95,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 194.44921795900154,
+        "testSeconds": 191.733,
+        "cases": 2450,
+        "skipped": 3,
+        "failed": 2,
+        "suites": 51
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": false,
+      "seconds": 212.24692179200065
+    },
+    "experimentalInspectorFlagAdopted": false,
+    "fixtureLeakFixedAfterTrials": true,
+    "isolatedCheckout": "/tmp/festapp-tests-100s-worktree",
+    "ciContractTestsPassed": 6,
+    "fullNormalAndReverseAfterFix": "pending",
+    "twoWorkersAuthorized": false
+  }
+}

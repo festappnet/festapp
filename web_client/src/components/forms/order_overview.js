@@ -3,6 +3,7 @@ import { formatDisplayNumber } from '../../utils/formatters.js';
 import { renderCardPaymentStatus, formatCardMoney } from './card_payment_status.js';
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { PublicOrderStrings } from './public_order_strings.js';
+import {paymentMethodText} from './payment_method_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
 import { LocalizationService } from '../../services/localization_service.js';
@@ -154,7 +155,10 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
             if (payment.instructionsAvailable) {
                 const instructions = line(card, 'dl', ''); instructions.className = 'overview-payment-details';
                 let paymentTarget = instructions;
-                if (payment.qrPayment && payment.dueNow > 0) {
+                if (payment.method==='cash') {
+                    fact(instructions,paymentMethodText('payOnSite'),money(payment.dueNow,order.currency));
+                    line(instructions,'p',payment.instructions?.cashInstructions || paymentMethodText('cashInstructionsDefault'));
+                } else if (payment.qrPayment && payment.dueNow > 0) {
                     const paymentHost = line(card, 'div', '');
                     let presentation;
                     try { presentation = presentPayment(payment.qrPayment); } catch { /* Manual bank details remain available if QR data is invalid. */ }

@@ -551,6 +551,7 @@ class DbOrders {
 
   static Future<void> insertManualTransaction({
     required double amount,
+    String? exactAmount,
     required String currency,
     required int unitId,
     required String? variableSymbol,
@@ -558,6 +559,20 @@ class DbOrders {
     String? note,
     int? paymentInfoId,
   }) async {
+    if (paymentInfoId != null) {
+      final payload = {'amount': exactAmount ?? amount.toStringAsFixed(2), 'currency': currency,
+        'unitId': unitId, 'paymentInfoId': paymentInfoId, 'receivedAt': date.toUtc().toIso8601String(), 'note': note};
+      final commandId = await ClientCommandIdentity.claimIntent('orders.cash.record', payload,
+        principalBinding: _supabase.auth.currentUser?.id);
+      final result = await _supabase.rpc('insert_manual_transaction', params: {'input_data': payload, 'p_command_id': commandId});
+      if (result['code'] != 200) throw StateError('CASH_PAYMENT_REJECTED');
+      final principal = _supabase.auth.currentUser?.id;
+      if (principal != null) {
+        await ClientCommandIdentity.completeIntent('orders.cash.record', payload,
+          commandId: commandId, principalBinding: principal);
+      }
+      return;
+    }
     final params = {
       'p_amount': amount,
       'p_currency': currency,

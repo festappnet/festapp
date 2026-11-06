@@ -6,12 +6,15 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 
+import '../../forms/payment_method_strings.dart';
+
 class AddCashPaymentDialog extends StatefulWidget {
   final int unitId;
   final String currency;
   final String variableSymbol;
   final int paymentInfoId;
-  final bool canManageBankTransactions;
+  final Widget? bankOptions;
+  final bool canSubmit;
 
   const AddCashPaymentDialog({
     super.key,
@@ -19,7 +22,8 @@ class AddCashPaymentDialog extends StatefulWidget {
     required this.currency,
     required this.variableSymbol,
     required this.paymentInfoId,
-    this.canManageBankTransactions = false,
+    this.bankOptions,
+    this.canSubmit = true,
   });
 
   @override
@@ -38,7 +42,9 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
     super.initState();
     _amountController = TextEditingController(text: "0");
     _amountController.selection = TextSelection(
-        baseOffset: 0, extentOffset: _amountController.text.length);
+      baseOffset: 0,
+      extentOffset: _amountController.text.length,
+    );
     _noteController = TextEditingController();
   }
 
@@ -50,18 +56,22 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isSaving || !widget.canSubmit || !_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final double amount =
-          double.parse(_amountController.text.replaceAll(',', '.'));
+      final double amount = double.parse(
+        _amountController.text.replaceAll(',', '.'),
+      );
 
       await DbOrders.insertManualTransaction(
         amount: amount,
+        exactAmount: _amountController.text.replaceAll(',', '.'),
         currency: widget.currency,
         unitId: widget.unitId,
         variableSymbol: null,
@@ -108,22 +118,31 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
                   suffixText: widget.currency,
                   hintText: "0",
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
                 inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,.-]')),
                 ],
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return CommonStrings.fieldCannotBeEmpty;
-                  if (double.tryParse(value.replaceAll(',', '.')) == null)
-                    return "Invalid number";
-                  if (double.parse(value.replaceAll(',', '.')) == 0)
-                    return "Amount cannot be 0";
+                  }
+                  if (!RegExp(r'^-?[0-9]{1,8}([,.][0-9]{1,2})?$')
+                      .hasMatch(value)) {
+                    return PaymentMethodStrings.text('cashAmountInvalid');
+                  }
+                  if (double.parse(value.replaceAll(',', '.')) == 0) {
+                    return PaymentMethodStrings.text('cashAmountInvalid');
+                  }
                   return null;
                 },
+                onChanged: (_) => setState(() {}),
                 onTap: () => _amountController.selection = TextSelection(
-                    baseOffset: 0,
-                    extentOffset: _amountController.value.text.length),
+                  baseOffset: 0,
+                  extentOffset: _amountController.value.text.length,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
@@ -136,6 +155,8 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
                   ),
                 ),
               ),
+              if (_amountController.text.startsWith('-'))
+                Text(PaymentMethodStrings.text('cashAdjustmentHelp')),
               const SizedBox(height: 16),
               ExpansionTile(
                 title: Text(
@@ -165,49 +186,24 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
                       decoration: InputDecoration(
                         labelText: CommonStrings.date,
                       ),
-                      child: Text(DateFormat.yMd(
-                              Localizations.localeOf(context).toString())
-                          .format(_selectedDate)),
+                      child: Text(
+                        DateFormat.yMd(
+                          Localizations.localeOf(context).toString(),
+                        ).format(_selectedDate),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _noteController,
-                    decoration: InputDecoration(
-                      labelText: CommonStrings.note,
-                    ),
+                    decoration: InputDecoration(labelText: CommonStrings.note),
                     maxLines: 1,
                   ),
                 ],
               ),
-              if (widget.canManageBankTransactions) ...[
+              if (widget.bankOptions != null) ...[
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(CommonStrings.or.toUpperCase(),
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-                  child: Center(
-                    child: TextButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop('SWITCH_TO_CASHLESS');
-                      },
-                      icon: Icon(Icons.account_balance, size: 18),
-                      label: Text(OrdersStrings.findAndLinkTransaction),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ),
-                ),
+                widget.bankOptions!,
               ],
             ],
           ),
@@ -219,12 +215,13 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
           child: Text(CommonStrings.cancel),
         ),
         ElevatedButton(
-          onPressed: _isSaving ? null : _submit,
+          onPressed: _isSaving || !widget.canSubmit ? null : _submit,
           child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : Text(OrdersStrings.addPayment),
         ),
       ],

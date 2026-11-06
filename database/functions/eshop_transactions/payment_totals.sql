@@ -10,7 +10,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
   abs(coalesce(sum(t.amount) FILTER(WHERE t.transaction_type='return'),0)) returned,
   coalesce(bool_or(t.currency IS DISTINCT FROM p.currency_code),false) invalid
   FROM p JOIN eshop.transactions t ON t.payment_info=p.id),
- provider_raw AS (SELECT CASE WHEN payment_method='bank' THEN '{}'::jsonb
+ provider_raw AS (SELECT CASE WHEN NOT public.payment_method_is_online_internal(payment_method) THEN '{}'::jsonb
    ELSE public.provider_financial_totals_internal(payment_method,id) END facts FROM p),
  provider AS (SELECT coalesce((facts->>'received')::numeric,0) received,
   coalesce((facts->>'returned')::numeric,0) returned,coalesce((facts->>'invalid')::boolean,false) invalid FROM provider_raw),

@@ -43,7 +43,7 @@ BEGIN
           CONTINUE;
         END IF;
         PERFORM public.check_order_is_mutable(v_order_id);
-        IF EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=v_order_id AND pi.payment_method<>'bank') THEN
+        IF EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=v_order_id AND public.payment_method_is_online_internal(pi.payment_method)) THEN
             RAISE EXCEPTION 'STRIPE_USE_REFUND_ADMISSION_DECISION'; END IF;
 
         -- Serialize cancellations on the same order before counting survivors.

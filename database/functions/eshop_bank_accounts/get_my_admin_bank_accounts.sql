@@ -46,7 +46,7 @@ BEGIN
     FROM eshop.bank_accounts ba
     JOIN eshop.bank_account_users bau ON ba.id = bau.bank_account
     WHERE bau."user" = auth.uid() AND bau.is_admin = true
-    AND ba.type != 'cash'
+    AND upper(ba.type) <> 'CASH'
     ORDER BY ba.title;
 END;
 $$;

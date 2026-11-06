@@ -99,3 +99,21 @@ test('new entrypoints and extracted command cores retain their explicit authenti
  const serviceFunctions=['execute_admin_waitlist_command_client_sync_v1(jsonb,text,jsonb,uuid,uuid,uuid,jsonb)','preview_admin_waitlist_acceptance(jsonb,jsonb,uuid)'];
  for(const signature of [...publicFunctions,...serviceFunctions])for(const role of ['anon','authenticated','service_role'])assert.equal((await db.query("select has_function_privilege($1,$2,'EXECUTE') allowed",[role,'public.'+signature])).rows[0].allowed,role===(publicFunctions.includes(signature)?'authenticated':'service_role'),role+' '+signature);
 });
+
+test('cash administration uses one real quote and finalizer without a receiving bank',options,async t=>{
+ const s=await fixture(t),{db,f,made}=s;
+ const saved=await save(db,f,formPatch(made.authoring,{payment_selection_intent:'replace',bank_account:null,
+  settings:{payments:{bankEnabled:false,cashEnabled:true,cashInstructions:'U vstupu',providerConnections:{}},payment_deadline:{mode:'none'}}}));
+ assert.equal(saved.code,200,JSON.stringify(saved));
+ await db.query('update eshop.products set price=125.50 where id=$1',[made.authoring.products[0].id]);
+ await db.query('SET LOCAL ROLE authenticated');const ops=executor(s),args={occasionId:f.occasion,formId:made.formId,input:input(s)};
+ const p=await ops.invoke('forms.previewOrder',args);assert.equal(p.ok,true,JSON.stringify(p));
+ assert.equal(p.data.quote.newOrder.paymentMethod,'cash');assert.equal(p.data.quote.newOrder.bankAccountId,null);
+ assert.deepEqual(p.data.quote.newOrder.paymentPolicy,{mode:'none',cashInstructions:'U vstupu'});
+ const command={...args,actorId:f.actor,confirmationHash:p.data.confirmationHash,commandId:randomUUID()};
+ const done=await ops.invoke('forms.createOrder',command);assert.equal(done.ok,true,JSON.stringify(done));
+ assert.equal((await ops.invoke('forms.createOrder',command)).data.orderId,done.data.orderId);
+ await db.query('RESET ROLE');
+ const pi=(await db.query('select p.* from eshop.orders o join eshop.payment_info p on p.id=o.payment_info where o.id=$1',[done.data.orderId])).rows[0];
+ assert.equal(pi.payment_method,'cash');assert.equal(pi.bank_account,null);assert.equal(pi.deadline,null);assert.equal(Number(pi.paid??0),0);
+});

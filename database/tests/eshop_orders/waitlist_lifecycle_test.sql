@@ -138,4 +138,23 @@ BEGIN
  PERFORM assert_eq((SELECT order_sequence FROM eshop.orders WHERE id=source),seq,'source sequence preserved');
  RAISE NOTICE 'PASS split/person swap/replay/remaining/decline tail/expiry no cron';
 END $$;
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(1); registered jsonb; offer jsonb; result jsonb; ids bigint[]; oid bigint;
+BEGIN
+ UPDATE public.forms SET data='{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}',bank_account=NULL WHERE id=(x->>'form')::bigint;
+ result:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)||'{"client_capabilities":["cash_reservations","no_payment_deadline"]}'::jsonb);
+ PERFORM assert_eq(result->>'code','200','cash fills capacity: '||result::text);
+ oid:=(result#>>'{order,id}')::bigint;
+ registered:=pg_temp.register(x,1);
+ PERFORM public.update_order_and_tickets_to_storno_221(oid);
+ ids:=pg_temp.ticket_ids((registered->>'order')::bigint);
+ offer:=pg_temp.offer(x,(registered->>'order')::bigint,1);
+ result:=public.execute_waitlist_command_client_sync_v1('accept',jsonb_build_object('offerId',offer->'id','ticketIds',to_jsonb(ids),
+  'orderDetails',pg_temp.checkout(x,ids)||'{"client_capabilities":["cash_reservations","no_payment_deadline"]}'::jsonb),gen_random_uuid(),gen_random_uuid(),(x->>'actor')::uuid);
+ PERFORM assert_eq(result->>'code','200','cash offer uses shared finalizer: '||result::text);
+ oid:=(result#>>'{data,order,id}')::bigint;
+ PERFORM assert_eq(pg_temp.ticket_ids(oid),ids,'cash acceptance retains waiting ticket identity');
+ PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'ordered','cash acceptance is reservation, not payment');
+ PERFORM assert_true((SELECT payment_method='cash' AND bank_account IS NULL AND deadline IS NULL FROM eshop.payment_info WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=oid)),'cash offer snapshot without bank/deadline');
+END $$;
 ROLLBACK;
