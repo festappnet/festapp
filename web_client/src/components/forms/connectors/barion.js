@@ -1,7 +1,7 @@
 /** Sandbox browser protocol. Public availability remains server-owned. */
 export const barionPaymentConnector = Object.freeze({
     id: 'barion', payPath: '/payments/barion/pay', returnPath: '/payments/barion/return',
-    historyKey: 'festappPayment:barion', labelKey: 'card', hintKey: 'cardHint',
+    historyKey: 'festappPayment', labelKey: 'card', hintKey: 'cardHint',
     quote(order, quote) {
         return {...order, payment_method: this.id, payment_type: 'full',
             payment_connection_id: quote.connectionId, payment_surface: quote.surface,

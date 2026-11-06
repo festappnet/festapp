@@ -3,6 +3,7 @@ import { isEmbed } from '../../../services/embed_context.js';
 import { ColorUtils } from '../../../utils/color_utils.js';
 import { formatPrice } from '../../../utils/formatters.js';
 import { LocalizationService } from '../../../services/localization_service.js';
+import { formPaymentOptions } from '../form_payment_options.js';
 import { FormHelper } from '../form_helper.js';
 
 export class PriceWidget {
@@ -127,7 +128,7 @@ export class PriceWidget {
         }
 
         const locale = LocalizationService.currentLocale;
-        const formattedPrice = formatPrice(totalPrice, currency, this.session.formModel.payments?.configured?.stripe ? 2 : 0, locale);
+        const formattedPrice = formatPrice(totalPrice, currency, formPaymentOptions(this.session.formModel.payments).cardConfigured ? 2 : 0, locale);
 
         // Per-currency meta surcharge lines (visual-only, NOT added to totalPrice).
         // Negative amounts (slevy) render with "−".
