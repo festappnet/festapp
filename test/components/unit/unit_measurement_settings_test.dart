@@ -52,6 +52,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.text(FormStrings.measurementTitle), findsOneWidget);
+      expect(find.text(FormStrings.gtmContainer), findsNothing);
+      expect(find.byType(SwitchListTile), findsNothing);
+      await tester.tap(find.text(FormStrings.measurementTitle));
+      await tester.pumpAndSettle();
       expect(find.text(FormStrings.gtmContainer), findsOneWidget);
       expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
       final gtmField = find.byWidgetPredicate(
@@ -70,8 +75,8 @@ void main() {
         expect(gtm.text, 'GTM-ABCD');
         expect(scripts.text, '<script>/* saved */</script>');
       }
-      await tester.ensureVisible(find.byType(ExpansionTile));
-      await tester.tap(find.byType(ExpansionTile));
+      await tester.ensureVisible(find.text(FormStrings.measurementAdvanced));
+      await tester.tap(find.text(FormStrings.measurementAdvanced));
       await tester.pumpAndSettle();
       final scriptField = find.byWidgetPredicate(
         (widget) => widget is TextFormField && widget.controller == scripts,

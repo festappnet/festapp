@@ -1071,54 +1071,61 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   ),
                                   const SizedBox(height: 24),
                                   if (_showMeasurement) ...[
-                                    Text(
-                                      FormStrings.measurementTitle,
-                                      style: Theme.of(innerContext)
-                                          .textTheme
-                                          .titleLarge,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    SwitchListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title:
-                                          Text(FormStrings.measurementEnabled),
-                                      subtitle: Text(
-                                        FormStrings.measurementFormHelp,
+                                    ExpansionTile(
+                                      initiallyExpanded: false,
+                                      tilePadding: EdgeInsets.zero,
+                                      expandedCrossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      title: Text(
+                                        FormStrings.measurementTitle,
+                                        style: Theme.of(innerContext)
+                                            .textTheme
+                                            .titleLarge,
                                       ),
-                                      value: _measurementEnabled,
-                                      onChanged: _canEdit &&
-                                              _canManageMeasurement
-                                          ? (value) => setState(
-                                                () =>
-                                                    _measurementEnabled = value,
-                                              )
-                                          : null,
-                                    ),
-                                    for (final message
-                                        in _measurementStatusMessages)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(message),
-                                      ),
-                                    if (RightsService.currentUnit()?.id != null &&
-                                        RightsService.hasCapability(
-                                          AuthorizationCapabilities.unitSettingsWrite,
-                                        ))
-                                      TextButton(
-                                        onPressed: () => pushRootPath(
-                                          context.router.root,
-                                          '/unit/${RightsService.currentUnit()!.id}/edit/settings',
+                                      children: [
+                                        SwitchListTile(
+                                          contentPadding: EdgeInsets.zero,
+                                          title:
+                                              Text(FormStrings.measurementEnabled),
+                                          subtitle: Text(
+                                            FormStrings.measurementFormHelp,
+                                          ),
+                                          value: _measurementEnabled,
+                                          onChanged: _canEdit &&
+                                                  _canManageMeasurement
+                                              ? (value) => setState(
+                                                    () =>
+                                                        _measurementEnabled = value,
+                                                  )
+                                              : null,
                                         ),
-                                        child: Text(FormStrings.measurementOpenUnitSettings),
-                                      )
-                                    else
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(FormStrings.measurementAskUnitManager),
-                                      ),
+                                        for (final message
+                                            in _measurementStatusMessages)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 8),
+                                            child: Text(message),
+                                          ),
+                                        if (RightsService.currentUnit()?.id != null &&
+                                            RightsService.hasCapability(
+                                              AuthorizationCapabilities.unitSettingsWrite,
+                                            ))
+                                          TextButton(
+                                            onPressed: () => pushRootPath(
+                                              context.router.root,
+                                              '/unit/${RightsService.currentUnit()!.id}/edit/settings',
+                                            ),
+                                            child: Text(FormStrings.measurementOpenUnitSettings),
+                                          )
+                                        else
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 8),
+                                            child: Text(FormStrings.measurementAskUnitManager),
+                                          ),
+                                      ],
+                                    ),
                                     const SizedBox(height: 24),
                                     const Divider(),
-                                  const SizedBox(height: 16),
+                                    const SizedBox(height: 16),
                                   ],
                                   Text(
                                     FormStrings.paymentDetailsTitle,

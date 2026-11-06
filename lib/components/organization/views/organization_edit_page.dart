@@ -335,19 +335,25 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                               onChanged: (val) =>
                                   setState(() => _isGoogleLoginEnabled = val),
                             ),
-                            SwitchListTile(
-                              title: Text(
-                                FormStrings.measurementOrganizationEnabled,
-                              ),
-                              subtitle: Text(
-                                FormStrings.measurementOrganizationHelp,
-                              ),
-                              value: _formMeasurementEnabled,
-                              onChanged: _isSaving
-                                  ? null
-                                  : (value) => setState(
-                                        () => _formMeasurementEnabled = value,
-                                      ),
+                            ExpansionTile(
+                              initiallyExpanded: false,
+                              title: Text(FormStrings.measurementTitle),
+                              children: [
+                                SwitchListTile(
+                                  title: Text(
+                                    FormStrings.measurementOrganizationEnabled,
+                                  ),
+                                  subtitle: Text(
+                                    FormStrings.measurementOrganizationHelp,
+                                  ),
+                                  value: _formMeasurementEnabled,
+                                  onChanged: _isSaving
+                                      ? null
+                                      : (value) => setState(
+                                            () => _formMeasurementEnabled = value,
+                                          ),
+                                ),
+                              ],
                             ),
                             SwitchListTile(
                               title: const Text(
