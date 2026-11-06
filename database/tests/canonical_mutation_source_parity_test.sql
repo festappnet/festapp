@@ -1356,8 +1356,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_check_context(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='4e3a366c8df1a20064c0e6802b0002a4'),'current SQL source parity: public.notification_center_check_context(bigint,bigint)');
 -- supabase/migrations/20261105120000_notification_center_prepared_views.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_dto(public.notification_center_events,public.notification_center_deliveries)') AND md5(btrim(prosrc,E' \n\r\t'))='725f19a970b82083b3f6436d13a1fa40'),'current SQL source parity: public.notification_center_dto(public.notification_center_events,public.notification_center_deliveries)');
--- supabase/migrations/20261105120000_notification_center_prepared_views.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_email_internal(uuid,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='5b3141000bb56ae7ff82904524523993'),'current SQL source parity: public.notification_center_email_internal(uuid,timestamp with time zone)');
+-- supabase/migrations/20261106010000_notification_order_email_recovery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_email_internal(uuid,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='3a9055665c1dc9cdb08f15582eaa43f9'),'current SQL source parity: public.notification_center_email_internal(uuid,timestamp with time zone)');
 -- supabase/migrations/20261105120000_notification_center_prepared_views.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_form_capacity_internal(bigint,uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e739b02c3858742b050fb4d68b977de0'),'current SQL source parity: public.notification_center_form_capacity_internal(bigint,uuid,uuid)');
 -- supabase/migrations/20261105120000_notification_center_prepared_views.sql
@@ -1436,6 +1436,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_publish_internal(bigint,bigint,text,text,jsonb,uuid,timestamp with time zone,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='cdadcbcc3f7846e5847aab4f5e35f9b3'),'current SQL source parity: public.notification_center_publish_internal(bigint,bigint,text,text,jsonb,uuid,timestamp with time zone,bigint[])');
 -- supabase/migrations/20261105120000_notification_center_prepared_views.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_purge_deleted_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9613285c40471a4ee7471f935de3ebc7'),'current SQL source parity: public.notification_center_purge_deleted_internal(bigint)');
+-- supabase/migrations/20261106010000_notification_order_email_recovery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_reconcile_order_email_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b880d25e2c3091623a5ed9c741f815ec'),'current SQL source parity: public.notification_center_reconcile_order_email_internal(bigint)');
 -- supabase/migrations/20261105120000_notification_center_prepared_views.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_require_service()') AND md5(btrim(prosrc,E' \n\r\t'))='db958a38837131921aedff11cfa02d22'),'current SQL source parity: public.notification_center_require_service()');
 -- supabase/migrations/20261105120000_notification_center_prepared_views.sql
