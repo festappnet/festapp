@@ -1,4 +1,4 @@
-# vstupenky.online - Wix release preparation
+# vstupenky.online - Wix runtime and releases
 
 Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
 and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
@@ -20,12 +20,15 @@ The full internal procedure and experiment ledger are in
 vendor escalation as the current diagnosis: the SDK did eventually supply its
 token, after our original wall-clock deadline.
 
-Native configuration/profile 2.1 is restored and up to date, with zero native
-checklist blockers. App Market submission is still not performed. Stable Pages
-hosting now serves source `d07a41b560c3daee5ea8e9b1b011a68022dfc69e`, deployed
-as `50713e1a`. Both [help](https://festapp-wix.pages.dev/help) and the
-[technical guide](https://festapp-wix.pages.dev/integration-guide) are live.
-See the [production receipt](../../docs/operations/releases/wix-runtime-20261101.json).
+Native appearance runtime **0.1.1** is published from canonical main
+`c23674966e4a1c55a8de1ffdb472fe9ad359fa52`. Exact public assets, native Settings
+save/reopen and restoration of the original value are recorded in the
+[November 6 release receipt](../../docs/operations/releases/native-embed-appearance-20261106.json).
+App Market submission remains separate and was not performed.
+
+The [November 1 production receipt](../../docs/operations/releases/wix-runtime-20261101.json)
+records the earlier source `d07a41b560c3daee5ea8e9b1b011a68022dfc69e` and deployment
+`50713e1a`; it is retained as history and rollback evidence.
 
 The canonical origin, service-fee source and delivery journal were deployed in
 [the October 28 foundation release](../../docs/operations/releases/festapptickets-wix-foundation-2026-10-28.json).

@@ -1,16 +1,23 @@
 # Joomla vstupenky.online - stav vydání
 
-## Kandidát 1.0.3 - 2026-11-06
+## Veřejné vydání 1.0.3 - 2026-11-06
 
-Aktuální kandidát přidává nativní přepínač převzetí vzhledu pro každý modul.
-Obě výšky používají společný helper a explicitní `data-festapp-style="inherit|default"`.
-Uložená vypnutá volba zůstává vypnutá; chybějící volba je výchozí zapnutá.
-Zahrnuje také opravu kanonické homepage z nevydaného kandidáta 1.0.2.
+Český balíček 1.0.3 je veřejně vydaný. Každý modul má nativní přepínač
+převzetí vzhledu; obě výšky používají společný helper a explicitní
+`data-festapp-style="inherit|default"`. Uložené vypnutí zůstává zachováno.
+Zahrnuta je také oprava kanonické homepage z nevydaného kandidáta 1.0.2.
 
-Úplné ověření 1.0.3 prošlo na Joomla 5.4.10/PHP 8.3.36 a Joomla 6.1.4/PHP 8.4.27: 202 kontraktových assertions na každé řadě, nativní uložení a opětovné otevření, čtyři kombinace vzhledu/výšky se studenou i zahřátou cache, skutečný browser, updater a živý formulář. Primární agent zkontroloval implementaci a důkazy Terra; nezávislá revize se netvrdí. Veřejná publikace je samostatný následující krok. Rozhodují aktuální
-`evidence/verification.json`, `evidence/critic.json`, `dist/RELEASE.json` a
-`evidence/public-release.json`; historické schválení 1.0.1 není schválením 1.0.3.
-Globální varianta se veřejně nevydává.
+Úplné ověření prošlo na Joomla 5.4.10/PHP 8.3.36 a Joomla 6.1.4/PHP 8.4.27:
+202 kontraktových assertions na každé řadě, nativní uložení a opětovné otevření,
+studená i zahřátá cache, browser, plánek a updater. Primární agent zkontroloval
+implementaci a důkazy Terra; nezávislá revize se netvrdí.
+
+Veřejný ZIP i feed odpovídají ověřenému SHA-256. Obě skutečné Joomly následně
+nainstalovaly veřejný ZIP a ověřily feed i stažení přes nativní Update API a
+InstallerHelper, bez syntetického snížení verze. Aktuální publikační důkaz je
+v [release receiptu](../../docs/operations/releases/native-embed-appearance-20261106.json).
+Historické publikované důkazy 1.0.1 zůstávají zachované. Globální distribuce ani
+nové podání do JED nebyly součástí tohoto vydání.
 
 ## Historický záznam vydání 1.0.1 a kandidáta 1.0.2
 

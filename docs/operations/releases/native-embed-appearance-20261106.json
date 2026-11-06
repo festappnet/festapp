@@ -1,17 +1,20 @@
 {
-  "status": "source-validated-native-adapters",
+  "status": "published-and-verified",
   "base_main": "75028d756356d0e8f218921d412fd8357e00d527",
   "contract": "data-festapp-style=inherit|default; embed.js and EmbedTheme own presentation",
   "defaults": "missing=true; existing false preserved; malformed values=default",
   "wordpress": {
     "version": "1.0.4",
     "installed_contracts": [
-      "WP7.1.3/PHP8.5.12:51 assertions",
-      "WP6.6/PHP7.4.33:51 assertions"
+      "WP 7.1.3/PHP8.5.12:51 assertions",
+      "WP 6.6/PHP7.4.33:51 assertions"
     ],
     "additional_contracts": "WP7.1.3:37 tester +48 dual-product assertions",
     "metadata": "4 tests passed",
-    "browser_limit": "Gutenberg canvas blank in isolated WP7 check; no save/reopen claim"
+    "browser_limit": "Gutenberg canvas remained blank in isolated WP 6.6 and WP 7 checks; native browser save/reopen is not claimed",
+    "release_url": "https://github.com/festappnet/festapp/releases/tag/wordpress-vstupenky-online-v1.0.4",
+    "zip_sha256": "6bb47d136cc978678a0b81e485e7d1dedd3c0a4a983e2fa69a56d50a06a80394",
+    "public_zip_and_sidecar_verified": true
   },
   "wix": {
     "version": "0.1.1",
@@ -21,11 +24,22 @@
       "fail": 0
     },
     "checks": "build and public-assets package passed; checkbox save/readback and iframe identity covered",
-    "native_editor": "pending deployed assets and actual save/reopen"
+    "native_editor": "Fresh owned Editor: false -> true -> saved status -> close/reopen true -> restore false -> saved status -> close/reopen false. No site publish or registration changes.",
+    "deployment_id": "99db8441-0f7c-4fde-90b8-5563ceef1d2a",
+    "url": "https://festapp-wix.pages.dev",
+    "unique_url": "https://99db8441.festapp-wix.pages.dev",
+    "manifest_sha256": "7debc7d53750439d5695c4e80bb9c570a248133e12406e0f285dd20478612a88",
+    "widget_sha256": "e2cf7026faf0b8c9657a72b4838190a40705d6a5da5f28425a1511434114f2f3",
+    "public_assets_verified": "All 9 served assets and manifest match at unique and stable URLs; MIME, cache control, nosniff, JavaScript CORS and settings alias passed",
+    "iframe_byte_identity": "Stable assets were hashed directly; actual framed revision is inferred from fresh navigation and distinctive new copy because the cross-origin frame did not expose response bodies"
   },
   "joomla": {
     "version": "1.0.3",
-    "proof": "VERIFIED: 34 source inputs and 13 receipts; Joomla 5.4.10/PHP 8.3.36 and 6.1.4/PHP 8.4.27, 202 assertions each; native save/reopen, cold/warm mode/style matrix, browser map, updater and read-only production smoke passed"
+    "proof": "VERIFIED: 34 source inputs and 13 receipts; Joomla 5.4.10/PHP 8.3.36 and 6.1.4/PHP 8.4.27, 202 assertions each; native save/reopen, cold/warm mode/style matrix, browser map, updater and read-only production smoke passed",
+    "release_url": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.3",
+    "zip_sha256": "063987a9208d43282a3cabf1a9a0ece974c1952bf9cb42712390a022934d6fca",
+    "public_zip_and_update_feed_verified": true,
+    "public_cms_readback": "Joomla 5.4.10 and 6.1.4 installed the actual public ZIP, registered the public update feed, parsed it with the native Update API and downloaded matching bytes with InstallerHelper; no synthetic downgrade"
   },
   "local_backend": {
     "project": "festapp-native-embed-20261106",
@@ -33,7 +47,47 @@
     "db_port": 59942,
     "isolation": "fresh own Docker project; existing59821 unchanged",
     "bootstrap": "canonical baseline/bootstrap/referenceSeed, automation/local_db/reference_tenants.sql, upgrade-local as local extension admin, supabase/seed.sql, owned synthetic embedded fixture with reference tenants retained",
-    "fixture_scope": "no purchase or seat selected"
+    "fixture_scope": "no purchase or seat selected",
+    "cleanup": "Task-owned CMS, frontend and fresh backend stopped; shared backend on 59821 and unrelated projects preserved"
   },
-  "publication": "pending exact canonical main CI and final release authorization already provided in session; marketplace submissions excluded"
+  "publication": {
+    "scope": "Czech tenant, existing Wix static host and Czech plugin ZIPs only",
+    "repository_latest_unchanged": true,
+    "plugin_installations": "Existing WordPress/Joomla installations require an upgrade; publishing assets does not replace customer installations",
+    "marketplace_or_billing_changes": false,
+    "stripe_refactor": "Excluded; unrelated work preserved"
+  },
+  "checked_at_utc": "2026-11-06T06:09:56.001852+00:00",
+  "source_main": "c23674966e4a1c55a8de1ffdb472fe9ad359fa52",
+  "pull_request": 743,
+  "ci": {
+    "source_main": "c23674966e4a1c55a8de1ffdb472fe9ad359fa52",
+    "required_jobs_passed": 8,
+    "exact_source_gate": "automation/ci/release_gate.py --source-sha c23674966e4a1c55a8de1ffdb472fe9ad359fa52"
+  },
+  "app": {
+    "tenant": "festapptickets",
+    "branch": "prod/festapptickets",
+    "commit": "7946e1e4b24eb3afb540f5bba805bee10c047ea9",
+    "version": "0.20.521+1028",
+    "deployment_id": "e373a744-0298-4cda-84a2-5d21965002f7",
+    "url": "https://vstupenky.online",
+    "unique_url": "https://e373a744.vstupenkyonline.pages.dev",
+    "coherent_live_probes": 3,
+    "local_and_live_bundle_sha256": "0329cabcd66549d1e6698d6d46306e4fc35741daea658a791f3a80fc6c49a077",
+    "build_checks": [
+      "canonical image preflight",
+      "pinned Flutter 3.47.7 and web client build",
+      "PWA budget",
+      "verify_web_build"
+    ],
+    "public_help_browser": "Czech WordPress/Joomla guides show versions 1.0.4/1.0.3 and native controls; Wix guide does not require property registration",
+    "existing_chrome_cache": {
+      "loaded_version": "0.20.520+1027",
+      "worker_state": "Older active worker and newer installed/waiting worker were observed",
+      "scope": "Server0.20.521 bytes are verified; current dialog copy was not verified in the existing authenticated Chrome profile",
+      "actions": "No cookies, storage or global worker state changed. Synthetic shortcut did not reload; alternate browser connection did not own the target, so no action was taken.",
+      "user_action": "A real hard refresh (Cmd+Shift+R) is needed to load the new page in that profile"
+    }
+  }
 }
