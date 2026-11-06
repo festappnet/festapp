@@ -28,7 +28,7 @@ test('submitting the real preview never restores its old scroll over the confirm
     RouterService.goBackProgrammatically = () => setTimeout(() => window.dispatchEvent(new window.PopStateEvent('popstate')), 0);
     RouterService.pushOverlayState = () => {};
     const page = new FormPage('form-page-container');
-    page.currentSession = {payload: {form: 'test'}};
+    page.currentSession = {payload: {form: 'test'}, awaitPendingReservations:async()=>{}, captureReservationCapability:()=>null, completeReservation:()=>{}};
     page.cleanup = () => {};
     page.renderForm = () => {};
     const form = document.querySelector('form');
@@ -77,7 +77,7 @@ test('a successful fast submission keeps its confirmation visible after closing 
     RouterService.pushOverlayState = () => {};
 
     const page = new FormPage('form-page-container');
-    page.currentSession = { payload: { form: 'test' } };
+    page.currentSession = { payload: { form: 'test' }, awaitPendingReservations:async()=>{}, captureReservationCapability:()=>null, completeReservation:()=>{} };
     page.cleanup = () => {};
     page.renderForm = () => {};
 
@@ -98,4 +98,69 @@ test('a successful fast submission keeps its confirmation visible after closing 
     RouterService.pushOverlayState = originalPushOverlayState;
     dom.window.close();
   }
+});
+
+for (const scenario of ['success', 'server-error', 'transport-error', 'demo', 'render-error']) {
+  test(`analytics outcome follows the server response: ${scenario}`, async () => {
+    const dom = new JSDOM('<body><div id="form-page-container"></div></body>', {url:'https://example.test/form/test?embed=1'});
+    global.window=dom.window; global.document=dom.window.document;
+    global.HTMLElement=dom.window.HTMLElement; global.CustomEvent=dom.window.CustomEvent;
+    window.scrollTo=()=>{};
+    const [{FormPage},{FormNetwork}] = await Promise.all([
+      import('../../src/components/forms/form_page.js'), import('../../src/components/forms/form_network.js')]);
+    const original=FormNetwork.submitOrder;
+    try {
+      let resolveRequest, rejectRequest;
+      FormNetwork.submitOrder=()=>new Promise((resolve,reject)=>{resolveRequest=resolve;rejectRequest=reject;});
+      const page=new FormPage('form-page-container');
+      const events=[];
+      page.analytics={confirmed:()=>events.push('confirmed'),emit:payload=>events.push(payload.event)};
+      page.currentSession={payload:{form:'test'}, awaitPendingReservations:async()=>{}, captureReservationCapability:()=>null, completeReservation:()=>{}};
+      page.cleanup=()=>{};
+      page.closePreview=()=>{};
+      let finish;
+      const finished=new Promise(resolve=>{finish=resolve;});
+      let renders=0;
+      page.showFullScreenResult=()=>{
+        if(scenario==='render-error' && renders++===0) throw new Error('Rendering failed after commit');
+        finish();
+      };
+      page.submitOrder(document.createElement('form'), {demoSimulation:scenario==='demo'});
+      await new Promise(resolve=>setImmediate(resolve));
+      assert.deepEqual(events,[], 'no success on click or while request is pending');
+      if(scenario==='transport-error') rejectRequest(new Error('Unknown outcome'));
+      else if(scenario!=='demo') resolveRequest({success:scenario!=='server-error',data:{code:scenario==='server-error'?400:200}});
+      await Promise.race([finished,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Result timeout')),1500))]);
+      assert.deepEqual(events, scenario==='demo'?[]:[['server-error','transport-error'].includes(scenario)?'form_submit_error':'confirmed']);
+    } finally {
+      FormNetwork.submitOrder=original;
+      dom.window.close();
+    }
+  });
+}
+
+test('real dataLayer emits purchase only after backend confirmation and survives a result-render failure', async () => {
+  const dom=new JSDOM('<body><div id="form-page-container"></div></body>',{url:'https://example.test/form/summer'});
+  global.window=dom.window;global.document=dom.window.document;global.HTMLElement=dom.window.HTMLElement;global.CustomEvent=dom.window.CustomEvent;
+  window.scrollTo=()=>{};
+  const [{FormPage},{FormNetwork},{FormDataLayer}]=await Promise.all([
+    import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js'),import('../../src/components/forms/form_datalayer.js')]);
+  const original=FormNetwork.submitOrder;
+  try{
+    let confirm;
+    FormNetwork.submitOrder=()=>new Promise(resolve=>{confirm=resolve;});
+    const page=new FormPage('form-page-container');
+    page.currentSession={payload:{form:'private',email:'private@example.test'},awaitPendingReservations:async()=>{},captureReservationCapability:()=>null,completeReservation:()=>{}};
+    const sent=[];
+    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[],data:{analytics:{enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60}}},bridge:{measurementEpoch:()=> 'fixture-lease',measurementAllowed:()=>true,track:p=>{sent.push(p);return true;}},session:()=>false});
+    page.closePreview=()=>{};page.cleanup=()=>{};
+    let finish;const finished=new Promise(resolve=>{finish=resolve;});let renders=0;
+    page.showFullScreenResult=()=>{if(renders++===0)throw new Error('render failed');finish();};
+    page.submitOrder(document.createElement('form'),{});
+    await new Promise(resolve=>setImmediate(resolve));assert.equal(window.dataLayer,undefined);
+    confirm({success:true,data:{ticketOrder:{order:{payment_info:{amount:200}},analytics:{event:'purchase',ecommerce:{transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',payment_type:'bank_transfer',items:[{item_id:'product_12',item_name:'Concert ticket',price:100,quantity:2}]}}}}});
+    await finished;
+    assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view','purchase']);
+    assert.equal(JSON.stringify(sent).includes('private'),false);
+  }finally{FormNetwork.submitOrder=original;dom.window.close();}
 });

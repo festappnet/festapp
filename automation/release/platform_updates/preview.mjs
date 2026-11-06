@@ -11,6 +11,12 @@ const context=resolveContext(readConfig(arg('--config',path.join(root,'automatio
 if (!context.updates) throw new Error('This tenant has no platform updates capability');
 const css=fs.readFileSync(path.join(root,'automation/release/organizers/page.css'),'utf8');
 const filename=page=>`${page.locale}-${page.updateId??'index'}.html`;
+fs.mkdirSync(output,{recursive:true});
+for (const asset of context.updates.assets) {
+  const local=path.join(output,asset.slice(1));
+  fs.mkdirSync(path.dirname(local),{recursive:true});
+  fs.copyFileSync(path.join(root,'web',asset),local);
+}
 const outputs=context.updates.pages.map(page=>{
   let html=renderUpdate(page,context,{css});
   for (const other of context.updates.pages) {
@@ -21,9 +27,10 @@ const outputs=context.updates.pages.map(page=>{
   for (const asset of context.updates.assets) {
     const extension=path.extname(asset).slice(1).replace('jpg','jpeg');
     html=html.replaceAll(`src="${asset}"`,`src="data:image/${extension};base64,${fs.readFileSync(path.join(root,'web',asset)).toString('base64')}"`);
+    html=html.replaceAll(`href="${asset}"`,`href="${pathToFileURL(path.join(output,asset.slice(1))).href}"`);
   }
+  html=html.replace(/href="(\/[^\"]*)"/g,(_,href)=>`href="${new URL(href,context.origin).href}"`);
   return {name:filename(page),html};
 });
-fs.mkdirSync(output,{recursive:true});
 for (const {name,html} of outputs) fs.writeFileSync(path.join(output,name),html);
 console.log(path.join(output,'cs-index.html'));

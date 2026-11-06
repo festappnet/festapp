@@ -1,3 +1,4 @@
+import {pathToFileURL} from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -35,6 +36,7 @@ test('safe Markdown, alt text and repository assets are validated before renderi
  for(const input of ['<script>alert(1)</script>','[bad](javascript:alert(1))','[bad](file:///etc/passwd)','![Alt](/platform-updates-media/missing.png)','![](/platform-updates-media/a.png)']) {fs.writeFileSync(body,input);assert.throws(f.resolve,/cs.md:/,input);}
  fs.mkdirSync(path.join(f.dir,'platform-updates-media'));fs.writeFileSync(path.join(f.dir,'platform-updates-media/a.png'),'image');fs.writeFileSync(body,'# Heading\n\n![An image](/platform-updates-media/a.png)\n\n[Link](https://example.org/?a=1&b=2)');
  const u=f.resolve();assert.deepEqual(u.assets,['/platform-updates-media/a.png']);assert.match(u.items[0].translations.cs.html,/<h2>Heading/);assert.match(u.items[0].translations.cs.html,/alt="An image"/);
+ assert.match(u.items[0].translations.cs.html,/<a class="update-image-link" href="\/platform-updates-media\/a.png" target="_blank" rel="noopener noreferrer" title="Zvětšit snímek"><img/);
 });
 test('single resolved registry excludes updates on profiles without explicit capability',t=>{
  const f=fixture(t);f.add('item');const config=readConfig(new URL('../project.conf',import.meta.url));const context=resolveContext(config,{updatesOptions:f.options});
@@ -72,6 +74,7 @@ test('incremental renderer removes published -> draft HTML/feed/sitemap entries 
  assert.ok(fs.existsSync(path.join(built,assetRoot,'media/a.png')));
  assert.ok(updateHtml.includes(`src="${assetRoot}runtime/landing.js"`));
  assert.ok(updateHtml.includes(`src="${assetRoot}media/a.png"`));
+ assert.ok(updateHtml.includes(`href="${assetRoot}media/a.png"`));
  render(buildArgs);
  assert.ok(fs.readFileSync(path.join(built,'organizers/updates/cs/item'),'utf8').includes(assetRoot),'same build retains its namespace');
  fs.appendFileSync(index,'<!-- next release -->');render(buildArgs);
@@ -80,6 +83,15 @@ test('incremental renderer removes published -> draft HTML/feed/sitemap entries 
  assert.ok(!fs.existsSync(path.join(built,assetRoot)),'obsolete generated namespace is removed');
  assert.doesNotMatch(updateHtml,/src="\/(?:brand-|web-assets\/|platform-updates-media\/)/);
  assert.ok(fs.existsSync(path.join(built,'platform-updates-media/a.png')));
+ const preview=path.join(root,'preview');
+ const previewRun=spawnSync(process.execPath,[path.join(root,'automation/release/platform_updates/preview.mjs'),'--config',config,'--output',preview],{encoding:'utf8'});
+ assert.equal(previewRun.status,0,previewRun.stderr);
+ const previewHtml=fs.readFileSync(path.join(preview,'cs-item.html'),'utf8');
+ assert.match(previewHtml,/src="data:image\/png;base64,/);
+ assert.ok(previewHtml.includes(`href="${pathToFileURL(path.join(preview,'platform-updates-media/a.png')).href}"`));
+ assert.ok(fs.existsSync(path.join(preview,'platform-updates-media/a.png')));
+ assert.ok(previewHtml.includes(`href="${pathToFileURL(path.join(preview,'cs-index.html')).href}"`));
+ assert.doesNotMatch(previewHtml,/href="\/(?!\/)/);
  const meta=path.join(root,'content/platform-updates/item/meta.json');const m=JSON.parse(fs.readFileSync(meta));m.status='draft';fs.writeFileSync(meta,JSON.stringify(m));render();render(buildArgs);
  assert.ok(!fs.existsSync(path.join(built,'co-je-nove/_assets/media/a.png')));
  assert.ok(!fs.existsSync(path.join(built,'platform-updates-media/a.png')),'draft image must leave the deployable/offline bundle');

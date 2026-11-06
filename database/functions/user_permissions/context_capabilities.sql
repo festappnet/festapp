@@ -56,6 +56,7 @@ BEGIN
     'navigation.occasion_settings',unit_editor OR p_demo_read,
     'forms.create',p_occasion IS NOT NULL AND form_author,
     'forms.write',p_occasion IS NOT NULL AND NOT p_demo AND form_author,
+    'forms.measurement.write',p_occasion IS NOT NULL AND (coalesce((form_author),false) AND NOT coalesce((p_demo),true)),
     'forms.delete',p_occasion IS NOT NULL AND form_author,
     'forms.catalog.read',p_occasion IS NOT NULL AND ((viewer) OR (order_reader) OR (form_author)),
     'forms.copy.source',(coalesce((p_occasion_user.is_editor_view),false) OR coalesce((p_unit_user.is_editor_view),false)),

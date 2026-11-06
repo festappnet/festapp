@@ -1,312 +1,101 @@
 # Organization notification center
 
-A private personal projection, outside public sync, news/push delivery, the
-outbound email queue and BankSync. Only trusted explicit domain owners publish;
-there are no application triggers, second queues or client-side publishers.
+A private personal projection, outside public sync, news/mobile push delivery,
+the outbound email queue and BankSync. Trusted explicit domain owners publish;
+there are no application triggers, parallel queues or client publishers.
 
-## Canonical collection boundary
+## Canonical serving and read ownership
 
-The published `20261024235000_notification_center_canonical_availability.sql`
-retired activation/tenant rollout in favor of `notification_center_organizations`
-and `initialize_notification_center_internal`. Organization creation initializes
-collection once under `notification-center-organization:<id>`. Repeat
-initialization is silent and does not reset personal history. No activation
-setter, enabled column or compatibility activation helper is recreated.
-A local 2026-10-24 release receipt establishes this prerequisite and a released
-grouped client. See the [feed implementation record](../../../docs/plans/notification-center-feed-plan-2026-10-26.md).
+`get_notification_center_view` owns open/preview/page/refresh/close/close_all.
+`get_notification_center_prepared_badge` reports readiness and unread state.
+Settings, muting and `mark_notification_center_view_item_read` retain their
+existing typed contracts. Every read checks current organization/context rights
+and private subject visibility. No client receives direct projection-table grants.
 
-## Publication, projection and acknowledgment
+Only a successful open advances the seen watermark. Preparing, denied, preview,
+pagination and refresh cannot acknowledge new arrivals. View tokens bind the
+user, organization, occasion, snapshot, captured slots and sequence envelopes.
+New deliveries require a new view; privacy/source repairs can redact an existing
+slot until its exact captured membership is ready again. Quotas never evict a
+live view silently.
 
-Publication captures eligible recipients. Hidden membership suppresses participant
-enrollment, while order and waitlist activity remains visible to authorized order
-readers, including hidden buyers. Order-related delivery incidents follow the
-same boundary; unrelated hidden personal email remains private. Prepared views
-require explicit read receipts for own order activity too. The exclusive projector lease, bounded per-recipient revision work and
-personal state row lock retain their original ownership. Delivery allocation
-and explicit `open_notification_center` serialize on that same personal row;
-only open advances the acknowledgment watermark. Pagination, badge, mute and
-known-ID hydration are read-only with respect to acknowledgment.
+Order selection accepts only a server-issued view token and item ID. It reads
+all eligible captured members, independently of the three contact previews or
+page size, and applies live order/privacy authority. `get_orders_tab_data`
+intersects those IDs with its independently authorized order response and calls
+the canonical view read owner after successful selection. Failure rolls back
+read state. The client closes its view only after a successful orders response.
 
-All private projection tables have RLS and no client grants. Every read rechecks
-organization/context and current event-specific rights before private DTO
-hydration. The canonical bank account and program administration permission
-rules remain intact. Email reporting retains its cancellation/recovery policy.
+`shared.sql` owns classification, DTO hydration and receipt batching. Exact
+captured ticket counts, safe form context and retained same-occasion ticket
+identities remain their existing owners. Contacts are hydrated live from the
+authorized order and are never copied into event-log payloads.
 
-## Item feed and external serialization
+Read receipts preserve both sequence bounds, gaps, reverse-tab retry and imported
+baselines. `read_through_sequence`, read batches, `:legacy`/`:self` identities,
+group keys and their indexes remain valid persisted history. The serving
+contraction deletes functions, not that history or its source facts.
 
-`get_notification_center_feed` uses `notification_center_visible_internal` to
-select the last delivered event revision at or below the personal snapshot.
-Ordering is section ascending, historical event time descending, UUID descending.
-A base64 JSON cursor validates organization, snapshot and occasion context plus
-the exact sort tuple. Limits count items; no group preview limit truncates a page.
-A late delivery of an older event is excluded from an already open snapshot.
+## Publication, projection and workers
 
-`open_notification_center` adds `feedSupported`, `feedItems`, `feedNextCursor`;
-the badge advertises capability without acknowledging. The published grouped
-page/group RPCs and `groups/nextCursor` fields are external legacy serializers
-over the same authorized selector. They are retained for the released grouped
-client, never called by the new Flutter. Retirement requires a separate release
-inventory and forward contraction of those RPCs, group columns and indexes.
+Publication captures eligible recipients. Hidden membership suppresses personal
+participant enrollment; authorized order/waitlist activity and its delivery
+incidents remain visible for hidden buyers. Unrelated hidden personal email stays
+private. Own order actions require explicit prepared read receipts too.
 
-Order contacts are hydrated from the authorized current order in the same tenant
-and occasion. They are absent from the event log. Creation/waitlist counts are
-captured from distinct actual ticket identities; cancellation/offer producers
-supply their actual affected counts. Safe configured multiple-ticket context is
-captured at publication, never inferred from remaining capacity or price.
+Collection initializes once under `notification-center-organization:<id>`.
+Repeated initialization is silent and never resets personal history or fabricates
+notifications. Delivery allocation, worker leases, user-state locks and source
+invalidation remain existing owners. Source rollback rolls notification intents
+back in the same transaction.
 
-## Form availability
+Projection/backfill and retained-view repair execute as separate bounded commits.
+Indexed authorized scope aliases select at most 100 frozen slots. Opening does
+not aggregate historical deliveries. Idle scopes sleep until expiry or explicit
+source invalidation; service-only health/retry/pause expose no contact payloads.
 
-`eshop_forms/form_availability.sql` owns the manual/time gate and preserves the
-existing effective schedule precedence and inclusive end. Registration mode
-calls it before its unchanged blueprint/capacity/waitlist decisions. Capacity
-recovery never means a form opening and never adds a second unread episode.
+The protected `process-notification-center` Edge worker dispatches delivery,
+projection and view repair independently. Its request secret is mandatory.
+After-commit hints and scheduled recovery use the existing wake owner. Production
+cron registration remains an authorized operation through
+`automation/hetzner-supabase/runtime/install-notification-center.sh`; no rollout
+or worker configuration is performed by the local code reduction.
 
-Availability source keys are `form-availability:<id>`; capacity keys stay
-`form:<id>`. Before-save draining consumes overdue OLD schedule boundaries;
-only then does the same reducer compare the successful new configuration at the
-same captured instant. Counter and event commit atomically. A missed start and
-end produce both historical transitions at their configured times. End is due
-one microsecond after its inclusive boundary. Manual changes outside a valid
-window do not falsely open a form.
+## Form availability and domain policy
 
-Lock order is organization gate, domain form/product/inventory locks, source,
-then event/recipient snapshot. Existing save/delete/occasion command owners take
-the gate before their form locks. Maintenance skips locked forms and rotates a
-bounded cursor so a busy early form does not starve later due forms. It uses the
-existing maintenance cron and separate family budgets; email, bank and projector
-owners remain unchanged.
+`eshop_forms/form_availability.sql` owns manual/time opening, effective schedule
+precedence and the inclusive end. Registration checks this before its existing
+blueprint/capacity/waitlist rules. Capacity recovery is not a form opening.
+Availability keys use `form-availability:<id>`; capacity keys use `form:<id>`.
+Before-save draining consumes overdue old boundaries before comparing the new
+configuration at the same captured instant. Missed start/end transitions retain
+their configured times; end is due one microsecond after its inclusive boundary.
 
-Initialization, upgrade, create, copy and same-transaction wizard authoring take
-a silent baseline. A creation transaction marker prevents a later step of that
-same authoring command from fabricating an opening. Deletion retires due state
-without a close event. Existing events retain their historical facts and time.
+Lock order is organization gate, domain locks, source and recipient snapshot.
+Maintenance skips locked forms and rotates a bounded cursor. Create/copy/setup
+establish a silent baseline; deletion retires source state without a fake close.
+Existing domain and e-mail send guards, provider fencing and bank-account rules
+remain unchanged. Recovered bank episodes cannot produce duplicate actionable
+incidents.
 
-## Migration and verification
+## Local contraction and verification
 
-The explicit forward manifest is
-`automation/notification-center-feed-manifest.json`; the assembler verifies
-historical prerequisite digests and canonical table parity. It never regenerates
-applied history. Only the new delta is generated. The restored 2026-10-24
-prerequisite files are byte-for-byte copies of their published Git source.
+`automation/notification-center-feed-manifest.json` and its assembler own the
+new forward migration. Historical migration bytes remain immutable and may
+create older functions before the final contraction explicitly drops their exact
+signatures. No CASCADE or persistent compatibility trigger is used. Current
+canonical sources, grants and security inventories cannot reinstall those APIs.
+`serving_contraction_test.sql` verifies absence of all retired overloads.
 
-Actual SQL, concurrency, Flutter, clean/upgrade rehearsal and isolated full-app
-receipts live in the [execution evidence](../../../docs/plans/notification-center-feed-evidence-2026-10-26/README.md).
-Local implementation is separate from production migration and release.
+The Slunovrat exception concerns messages pushed to Android/iPhone from the news
+workflow. That separate delivery path is unchanged. The user explicitly allowed
+retiring old editor/admin-center APIs; this does not authorize production rollout
+or propagation to a tenant branch.
 
-## Temporal order history (2026-10-26 follow-up)
-
-`get_notification_center_timeline` combines recent individual entries and older
-order-action counts per occasion and calendar period. The client constructs
-contiguous day/week UTC intervals using its local calendar, anchored at
-`open_notification_center.snapshotAt` down to `oldestOrderAt`. The server validates
-coverage/non-overlap and binds its keyset cursor to recipient, organization,
-occasion, snapshot, anchor and calendar. Private DTO/contact hydration happens
-only for actual page rows. No new projection table or delivery system is added.
-
-`get_notification_center_timeline_group` pages all mixed order kinds in one period;
-`get_notification_center_timeline_group_updates` rechecks full counts under live
-permissions. Neither pagination nor expansion acknowledges. Forms and other
-non-order events never enter these groups. All readers share the existing
-latest-delivered-revision selector and current event-specific authorization.
-
-The single-place label uses captured configured multi-place context when present.
-Older events missing context/count hydrate only those missing fields from the
-authorized live order/form; captured counts and configuration are never rewritten.
-`order_context.sql` is the shared owner used by publication and legacy hydration.
-The new forward migration is `20261026150000_notification_center_order_periods.sql`;
-all previous migration bytes, including the flat feed, are sealed prerequisites.
-
-## Category overview and one-request operations (2026-10-28)
-
-The previously released client uses `get_notification_center_daily_overview`; the installed
-RPC name remains stable while the grouping is now per occasion and kind across
-all dates. One RPC returns complete order counts, place totals, at most three
-recent authorized contacts, pagination and the unread badge. All non-error
-occasion events are rolled up; email and bank incidents stay separate. Each
-row's date is the most recent occurrence, converted using the validated display
-timezone and PostgreSQL `AT TIME ZONE`. Canonical IDs are `occasion-kind:<id>:<kind>`
-and do not contain a date. Cursor context binds recipient, organization,
-occasion, snapshot, anchor instant and zone. The current grouping migration is
-`20261028013000_notification_category_rollups.sql`.
-
-`p_open=true` locks the existing personal state row, captures its pre-read watermark
-and delivery snapshot, includes occasion preferences and acknowledges only after
-all data succeeds, within the same transaction. A failed request never confirms
-unseen data. Other operations share the same selector without acknowledging.
-Known-ID refresh accepts at most 10,000 IDs and returns only those IDs in one RPC;
-normal pages remain bounded to 200 overview rows. Revocation removes summaries
-and contact previews together. The closed-panel badge RPC remains an independent
-cheap eligibility/sequence check, without aggregation or contact hydration.
-
-Place totals use captured positive historical event counts only and appear only
-when every group member has a known count and multiple places are meaningful.
-Unknown values suppress the complete total; current order size never rewrites a
-historical multi-order sum. Single-place application flows omit redundant totals.
-The earlier overview RPC remains for already released clients. The forward-only
-migration is `20261027220000_notification_center_daily_overview.sql`.
-
-Group totals retain captured counts and form context. Missing legacy fields are hydrated in batches from the authorized same-occasion orders, retained distinct ticket identities and distinct form contexts, matching the individual DTO contract. Multi-place applicability is returned even when the exact total is unavailable; clients show an explicit unavailable label rather than silently omitting places or inventing zero. No additional client RPC is needed.
-
-Category rollups group all non-error events by occasion and kind across dates; email and bank incidents stay independent. The latest event supplies time/context, while all authorized delivered order activities in the frozen snapshot contribute counts and the latest three contact previews. Canonical IDs omit dates. The existing RPC name remains installed-client compatible; old day IDs accepted during loaded-row refresh resolve to one rollup under the first caller alias, never restore day grouping. New opens/pages use canonical occasion-kind IDs. Group selection uses the same entire category and snapshot.
-
-## Seen, active and bounded history (2026-10-28)
-
-The center is a recent-activity overview, not a task-resolution queue. A successful
-open acknowledges the personal organization delivery snapshot; it does not alter
-orders, resolve delivery/bank problems, or delete history. Read labels/dots keep
-the pre-open watermark during that visit. Failed opens do not acknowledge.
-
-Ordinary activity is limited to the30 days preceding the frozen snapshot anchor.
-Email and bank incidents are eligible regardless of age until their source status
-is recovered/resolved; viewing or clicking is not resolution. The same private
-policy controls badge eligibility, overview rows and selected order membership.
-The center returns at most100 latest relevant items (complete category counts,
-not100 member events), exposes truncation explicitly and terminates pagination.
-Older records remain available in their authoritative order/email histories.
-
-Selection scope is captured before dismissing the notification overlay and
-includes snapshotAt. Native grid readiness is awaited without a two-second render
-deadline, and controller replacement remounts its own grid state. Automatic clean
-refresh preserves checked model IDs, including selections made while fetch was
-in flight, while existing filters still clear hidden selection.
-
-
-## Personal read batches (2026-10-28)
-
-`read_state.sql` owns the server classification and per-recipient closed batch
-receipts. The legacy `read_through_sequence` remains a frozen transition baseline;
-`seen_through_sequence` advances when the center opens. Opening does not read the
-items. Own `order_created`/`order_cancelled` activity is history, never new for its
-actor, while eligible colleagues still receive it as unread.
-
-Batch IDs end in `:batch:<afterSequence>` and remain stable when reading seals
-the bounded receipt. Legacy history and own activity use
-`:legacy`/`:self`. The server returns `isRead`/`isSeen` and precise sequence bounds.
-Counts, contact previews and selected orders use the same eligible batch. The
-existing orders RPC records an explicit `markRead` within its successful
-transaction, not a per-order client request. Errors remain separate incidents;
-reading never resolves them. New arrivals beyond the captured bound remain new.
-
-Migration `20261028130000_notification_personal_read_batches.sql` installs the
-schema/helpers and producer, overview, badge, selector and orders RPC changes
-before the Flutter release. No historical customer-event backfill is required.
-
-## Deleted applications and orders
-
-Hard deletion removes the matching `occasion_joined` or order notifications in
-its existing domain command transaction. Order deletion also removes email
-problem attention and email source observations before deleting the messages.
-Recipient and delivery rows cascade, so summaries, contact previews and badges
-all derive from the remaining events. Cancellation alone retains its history.
-The service-only `notification_center_purge_deleted_internal(organization)`
-repairs historical orphan attention for one explicitly selected tenant; it
-never deletes an application, order, live message or another tenant's history.
-
-## Current source and immutable history
-
-The forward manifest now targets
-`20261031120000_notification_center_source_alignment.sql`, including the shared
-current-membership policy for participant attention. The prior personal-batch,
-deleted-entity and current-participant migrations are sealed prerequisites with
-verified digests. The assembler checks current canonical SQL against the new
-forward output and refuses to replace any differing existing output, including
-its default destination. Historical migrations are never regenerated after a
-source change; advance the manifest to a new forward migration instead.
-
-## Subject lookup cost
-
-`subject_visibility.sql` checks hidden membership before opening payload-specific
-identity, order or email lookups. Keep those lookups in separate conditional
-statements: combining them into one OR initializes unrelated subplans per event
-and makes opening a long personal history expensive. The private predicates,
-tenant bindings and current hidden-member rules remain authoritative.
-`open_latency_test.sql` exercises 2000 real deliveries and 1000 sealed read
-batches with and without hidden members; `subject_visibility_test.sql` covers
-identity, contact, email and tenant isolation. Forward migration
-`20261105070000_notification_subject_lookup_performance.sql` installs the lookup
-change without touching delivery, read receipts or acknowledgment semantics.
-
-## Bounded delivery drain (local 2026-11-05)
-
-The forward migration `20261105110000_notification_center_delivery_draining.sql`
-keeps the single global transaction lease. Delivery rotates an organization
-cursor, shares its recipient budget between tenants, and checks a 250ms soft
-transaction budget between work items. It acquires personal state before event
-and recipient locks and skips busy rows. Deferral never advances processed
-revision. Source capture immediately completes a revision with no eligible work.
-The pending index includes the deterministic event-ID tie breaker.
-
-Each failed recipient revision rolls back its sequence and delivery together.
-The existing recipient row stores revision-scoped exponential backoff with jitter,
-SQLSTATE only, and quarantine after five failures. A newer eligible revision is
-independent of the previous revision's quarantine. Service-only
-`get_notification_center_delivery_health()` reports bounded tenant backlog and
-last-run metrics; `retry_notification_center_delivery(organization,event,user)`
-explicitly re-enables one failed item. No failure is silently certified ready.
-
-`setup_crons` defines a separate one-second delivery recovery job, with a 2s
-statement timeout. Minute maintenance remains an independent legacy call and
-must not be used as the high-throughput loop. Applying the migration only replaces
-`setup_crons`; registration on an authorized target remains an explicit release
-step. No live schedule has been changed.
-
-For disposable local measurements, run
-`NOTIFICATION_CENTER_DATABASE_URL=... node automation/notification-center/drain.mjs`.
-The CLI verifies localhost and the disposable database marker, and commits each
-SQL call independently. It stops on an idle/deferred pass; later recovery retries
-remaining durable work. It is deliberately not a production access tool.
-
-The later local prepared-view implementation below supersedes this delivery-only
-checkpoint. The sealed delivery migration remains a prerequisite.
-
-
-## Prepared personal views (2026-11-05)
-
-Canonical sources are `prepared_schema`, `prepared_projection`, `prepared_worker`,
-`prepared_views`, `prepared_wake`, and `prepared_operations`. The forward migration
-is `20261105120000_notification_center_prepared_views.sql`; the manifest preserves
-its sealed delivery prerequisite. No generic application triggers or second queue
-are used. Delivered facts, receipts and canonical source transitions own updates.
-
-Per-recipient membership and exact/unknown aggregate deltas are maintained off the
-opening path. Indexed scope aliases select the top 101 candidates per authorized
-scope, then merge at most 100 frozen slots. Contacts stay live and bounded to three
-references per row. Opening does not aggregate personal history. Hidden identities
-are checked in a coherent SQL snapshot; repairs redact payloads until ready.
-Role checks precede live display facts. Only the current bank episode is actionable,
-so retained obsolete deliveries cannot produce a second read/unread alert.
-
-`get_notification_center_view` supports open/preview/page/refresh/close/close_all.
-Token rows freeze batch classification, position, timestamp and the eligible
-sequence envelope at capture. New deliveries and newly eligible members outside
-that envelope require a new view. A captured member hidden and unhidden within the
-range can return to its original slot. No new slot is inserted into an old view.
-Read receipts are immutable unique ranges `(organization,recipient,group,after,
-through)`, preserving inherited gapped receipts and multi-tab reverse retries.
-
-Projection and view repairs run as separate committed, bounded calls under the
-existing single-writer lease. Idle scopes sleep until their next expiry; source
-writes queue work and active reads detect hidden-identity changes. Backfill is
-resumable. Every prepared foreign-key cascade has a leading lookup index;
-member/event and subject/event repair do not scan an entire recipient history
-for each removed contribution. SQLSTATE-only retry/backoff and quarantine never certify a failed scope
-ready. Service-only health/retry/pause operations expose no contact payloads.
-
-The protected Edge worker `process-notification-center` dispatches delivery,
-projection and retained-view repair independently. A pg_net after-commit hint and
-one-second scheduled recovery wake it. Its request secret is mandatory, including
-when JWT verification is disabled at the Edge gateway. Configure with
-`configure_notification_center_worker(origin)` and the existing request-secret
-owner; `setup_crons` registers recovery only during an authorized rollout when pg_cron
-is installed in the application database. The canonical self-hosted installation
-hosts pg_cron in control-plane `postgres`: use
-`automation/hetzner-supabase/runtime/install-notification-center.sh` there. It
-registers only the two notification jobs with `schedule_in_database`, preserving
-unrelated schedules. Minute retention retracts prepared memberships and pending
-source repair debt before a recovered old event is hard-deleted.
-
-The old daily/temporal/open/read/badge interfaces are retained solely for released
-clients and share canonical source/read owners. The modern Flutter route has no
-fallback. Retire that boundary only after installed-client usage evidence permits
-it. See the dated execution result and modern measurement receipt for validation,
-readiness costs and rollout sequencing. No production operation was performed.
+Current measurement commands are `automation/notification-center/benchmark.mjs`,
+`sustained.mjs` and `maintenance_benchmark.mjs`, with guarded disposable connection
+and fixture lifecycle in `benchmark_support.mjs`. Set `NOTIFICATION_BENCH_SMOKE=1`
+for the benchmark's nonempty three-order smoke. Sustained and maintenance append
+to its receipt. Prefix receipts now produce compacted read history plus unread
+activity, rather than thirty presentation rows. These SQL timings are not a
+production-capacity or browser-latency claim.

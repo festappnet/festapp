@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
@@ -80,5 +81,28 @@ void main() {
       );
       expect(find.byType(TextField), findsOneWidget);
     },
-  );
+  );  testWidgets('contact host ignores late reads after switching order identity', (tester) async {
+    final logs=LocalizationLogFixture.install(expectedMissingCatalog:true);
+    addTearDown(logs.dispose);
+    final oldRead=Completer<Map<String,dynamic>>();
+    Map<String,dynamic> history(int id)=>{'code':200,'data':{'order':{
+      'id':id,'occasion':7,'state':'sent','data':{'name':'Buyer $id','email':'buyer$id@example.invalid'},
+    }}};
+    Widget host(int id)=>MaterialApp(builder:DependencyMaterialBridge.builder,
+      home:Scaffold(body:OrderEmailContactEditor(
+        key:const ValueKey('same-contact-host'),orderId:id,occasionId:7,canWrite:false,
+        read:(name,args)async=>name=='get_order_history'
+          ? (id==4?await oldRead.future:history(id)):<String,dynamic>{},
+      )));
+    await tester.pumpWidget(host(4));
+    await tester.pumpWidget(host(5));
+    await tester.pumpAndSettle();
+    expect(find.text('Buyer 5'),findsOneWidget);
+    oldRead.complete(history(4));
+    await tester.pumpAndSettle();
+    expect(find.text('Buyer 5'),findsOneWidget);
+    expect(find.text('Buyer 4'),findsNothing);
+    expect(tester.takeException(),isNull);
+  });
+
 }

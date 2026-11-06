@@ -104,9 +104,16 @@ void main() {
   late LocalAppStorageFixture commandStorage;
   setUpAll(() async {
     commandStorage = await LocalAppStorageFixture.open();
-    backend = await RootSupabaseFixture.open((request) =>
-        pickerResponse?.call(request) ??
-        (throw StateError('Unexpected UI fixture request')));
+    backend = await RootSupabaseFixture.open((request) {
+      // These cases use a published plan, not a seating configuration.
+      if (request.url.path.endsWith('/rpc/get_seating_workspace')) {
+        return http.Response(jsonEncode({'code': 200, 'data': {
+          'status': 'published', 'forms': [], 'transitions': [],
+        }}), 200, headers: {'content-type': 'application/json'}, request: request);
+      }
+      return pickerResponse?.call(request) ??
+          (throw StateError('Unexpected UI fixture request'));
+    });
     // Resolve asset I/O before widget fake-async zones can cache a pending read.
     await TicketFontCatalog.loadFamilies();
   });

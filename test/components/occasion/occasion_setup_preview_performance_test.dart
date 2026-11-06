@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -20,6 +21,10 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
   WidgetEnvironmentFixture.register();
   setUpAll(() async {
     await (FontLoader('Futura')
@@ -100,6 +105,7 @@ void main() {
             valueListenable: rebuild,
             builder: (context, value, _) => SingleChildScrollView(
                 child: OccasionSetupTicketGallery(
+                    fontIds: setupFontIds,
               loadResources: () async => resources,
               appearance: Map.of(OccasionSetupAppearance.presets.first),
               onSelected: (_) {},
@@ -144,7 +150,7 @@ void main() {
       await tester.runAsync(() async {
         final bundled =
             (await TicketPreviewAssets.shared.manifest)['fonts'] as Map;
-        for (final entry in OccasionSetupAppearance.fonts.entries) {
+        for (final entry in setupFontIds.entries) {
           if (bundled.containsKey(entry.value)) {
             fonts[entry.key] = await TicketLayoutService().font(0, entry.value);
           }
@@ -169,7 +175,7 @@ void main() {
                   child: OccasionSetupAppearancePanel(
                     onPresetSelected: (_) {},
                     fontFamily: 'Roboto',
-                    fontFamilies: OccasionSetupAppearance.fonts.keys.toList(),
+                    fontFamilies: setupFontIds.keys.toList(),
                     onFontChanged: (_) {},
                     fontStyle: (family, base) => base.copyWith(
                         fontFamily: fonts[family]?.loaderName ??

@@ -46,7 +46,7 @@ export async function installCurrentMigrationOwners(db,migrations){
   const sql=await readFile(new URL('supabase/migrations/'+migration,root),'utf8');
   for(const [,name] of sql.matchAll(/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+public\.(\w+)\s*\(/gi))requested.add(name);
  }
- await installCurrentSql(db,['user_permissions/member_visibility.sql','notification_center/subject_visibility.sql']);
+ await installCurrentSql(db,['users/member_visibility.sql','notification_center/subject_visibility.sql']);
  const files=(await canonicalOwners).filter(entry=>[...entry.names].some(name=>requested.has(name))).map(entry=>entry.file);
  assert(files.length>0,'Historical migration must resolve to current canonical SQL owners');
  await installCurrentSql(db,files);

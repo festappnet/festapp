@@ -11,6 +11,8 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  INSERT INTO public.organizations(title,data) VALUES('Stripe create tenant','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Card receiver',org) RETURNING id INTO u;
+ UPDATE public.organizations SET data=data||'{"FORM_MEASUREMENT_ENABLED":true}'::jsonb WHERE id=org;
+ UPDATE public.units SET data=coalesce(data,'{}')||'{"measurement_enabled":true}'::jsonb WHERE id=u;
  INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Card order',org,u,'stripe-create-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
@@ -19,6 +21,8 @@ BEGIN
  INSERT INTO eshop.stripe_runtime_policy(organization_id,livemode,new_payments_enabled,online_admission_verified,reservation_policy_verified,dispute_policy_accepted,supported_surfaces)
  VALUES(org,false,true,true,true,true,ARRAY['web']);
  INSERT INTO public.forms(occasion,data,is_open,key) VALUES(occ,jsonb_build_object('payments',jsonb_build_object('bankEnabled',false,'stripeConnectionId',conn)),true,extensions.gen_random_uuid()) RETURNING id INTO f;
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'test','disposable conversion fixture');
+ UPDATE public.forms SET data=data||'{"analytics":{"enabled":true}}'::jsonb WHERE id=f;
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Card tickets','spot') RETURNING id INTO pt;
  INSERT INTO eshop.products(product_type,occasion,title,price,currency_code,is_hidden) VALUES(pt,occ,'Card ticket',123.45,'CZK',false) RETURNING id INTO p;
  INSERT INTO public.form_fields(form,product_type,type) VALUES(f,pt,'product_type');
@@ -27,6 +31,12 @@ BEGIN
   'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',p)))));
  result:=public.create_ticket_order_client_sync_v1(payload,command,client);
  PERFORM assert_eq(result#>>'{data,code}','200','canonical card create succeeds: '||result::text);
+ PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','confirmed requested order receives immutable analytics facts');
+ PERFORM assert_true(result#>>'{data,analytics,ecommerce,transaction_id}'<>result#>>'{data,order,order_symbol}','analytics identity is not an order capability');
+ PERFORM assert_eq(result#>>'{data,analytics,ecommerce,payment_type}','card','analytics describes payment method, not paid state');
+ PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1)),'analytics exposes the public offer name and final buyer price');
+ PERFORM assert_eq(result#>>'{data,analytics,ecommerce,value}','123.45','analytics value is the final charged line total');
+ PERFORM assert_true(NOT (result#>'{data,analytics,ecommerce}') ? 'tax','VAT is not invented without a backend breakdown');
  oid:=(result#>>'{data,order,id}')::bigint;
  SELECT payment_info INTO pi FROM eshop.orders WHERE id=oid;
  SELECT * INTO STRICT attempt FROM eshop.stripe_checkout_attempts WHERE order_id=oid;
@@ -45,6 +55,17 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,payment,method}','stripe','safe payment projection accompanies order');
  replay:=public.create_ticket_order_client_sync_v1(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(repeat('d',64))),command,client);
  PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'same command retains original order and source');
+ PERFORM assert_eq(replay#>'{data,analytics}',result#>'{data,analytics}','lost first response recovers the same authorized conversion');
+ UPDATE eshop.orders SET price=0 WHERE id=oid;
+ replay:=public.create_ticket_order_client_sync_v1(payload,command,client);
+ PERFORM assert_eq(replay#>'{data,analytics}',result#>'{data,analytics}','later order edits cannot change the original command conversion');
+ UPDATE eshop.orders SET price=123.45 WHERE id=oid;
+ UPDATE eshop.products SET price=999 WHERE id=p;
+ PERFORM assert_eq(public.form_conversion_datalayer_internal(oid,'purchase'),result#>'{data,analytics}','later catalog prices do not rewrite conversion facts');
+ UPDATE analytics.organization_policy SET enabled=false,revision=2 WHERE organization=org;
+ PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'live policy revocation blocks replay projection');
+ UPDATE analytics.organization_policy SET enabled=true,revision=3 WHERE organization=org;
+ UPDATE eshop.products SET price=123.45 WHERE id=p;
  PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_checkout_attempts WHERE order_id=oid),1::bigint,'replay cannot create another attempt');
 
  PERFORM public.attach_stripe_handoff_internal(oid,command,encode(extensions.digest(repeat('e',64),'sha256'),'hex'),false);

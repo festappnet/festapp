@@ -23,6 +23,7 @@ BEGIN
  SELECT value INTO row FROM jsonb_array_elements(v->'items') WHERE value->>'isRead'='false';
  PERFORM assert_eq((row#>>'{data,activityCount}')::int,5,'old unread holes remain exactly counted');
  scope:=jsonb_build_object('viewToken',v->>'viewToken','id',row->>'id','organization',org);
+ BEGIN PERFORM public.notification_center_order_selection(oc,jsonb_build_object('organization',org,'id',scope->>'id')); RAISE EXCEPTION 'tokenless scope accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),5,'selection includes captured holes and excludes captured read singletons');
  PERFORM assert_true(public.mark_notification_center_view_item_read(org,scope),'modern read seals all captured holes without changing older receipts');
  PERFORM assert_true(public.mark_notification_center_view_item_read(org,scope),'repeat read is idempotent');

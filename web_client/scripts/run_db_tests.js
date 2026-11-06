@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { selectSqlTests } from './db_test_selection.mjs';
 const { Client } = pg;
 import fs from 'fs';
 import path from 'path';
@@ -41,10 +42,7 @@ const args = process.argv.slice(2);
 const filters = args.filter(arg => !arg.startsWith('-'));
 
 const allTestFiles = globSync(path.join(TESTS_DIR, '**/*_test.sql'));
-const testFiles = allTestFiles.filter((file) => {
-  if (filters.length === 0) return true;
-  return filters.some(filter => file.includes(filter));
-});
+const testFiles = selectSqlTests(allTestFiles, filters, PROJECT_ROOT);
 
 if (testFiles.length === 0) {
   console.log("No test files found matching criteria.");

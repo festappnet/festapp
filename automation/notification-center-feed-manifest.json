@@ -1,6 +1,6 @@
 {
-  "name": "notification-order-email-recovery-2026-11-06",
-  "output": "supabase/migrations/20261106010000_notification_order_email_recovery.sql",
+  "name": "notification-canonical-serving-2026-11-06",
+  "output": "supabase/migrations/20261106110000_notification_canonical_orders.sql",
   "prerequisites": [
     "20261021100000_canonical_authorization.sql",
     "20261024010000_organization_notification_center.sql",
@@ -32,10 +32,16 @@
     "20261105203000_notification_idle_wake.sql",
     "20261105213000_notification_open_work.sql",
     "20261105230000_notification_read_history_compaction.sql",
-    "20261105233000_notification_order_visibility.sql"
+    "20261105233000_notification_order_visibility.sql",
+    "20261106010000_notification_order_email_recovery.sql"
   ],
   "sources": [
-    "notification_center/email.sql"
+    "notification_center/shared.sql",
+    "notification_center/core.sql",
+    "notification_center/center_policy.sql",
+    "notification_center/order_selection.sql",
+    "eshop_orders/get_orders_tab_data.sql",
+    "notification_center/serving_contraction.sql"
   ],
   "prerequisiteSha256": {
     "20261021100000_canonical_authorization.sql": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c",
@@ -68,6 +74,7 @@
     "20261105203000_notification_idle_wake.sql": "304fe6a93881a104a2556b69829cdbd3d17a2533706380f4ea2ac7defbaa9e88",
     "20261105213000_notification_open_work.sql": "a46859b59b870d0e7b78027917b630be08c58acea1589e2ad57bec115faaaf22",
     "20261105230000_notification_read_history_compaction.sql": "e9ac7d8b80489344357288453fc640821b719a5093b3850bd865520fbfac1121",
-    "20261105233000_notification_order_visibility.sql": "a15bd1cf35dfec7938ed69e5ffdeffce05967ced6a2adf5bfd212ce2a83dc88f"
+    "20261105233000_notification_order_visibility.sql": "a15bd1cf35dfec7938ed69e5ffdeffce05967ced6a2adf5bfd212ce2a83dc88f",
+    "20261106010000_notification_order_email_recovery.sql": "492aaf031b90dd9d43338b65f3df475691330ed8b5c39e1aa79f8dbec56574be"
   }
 }

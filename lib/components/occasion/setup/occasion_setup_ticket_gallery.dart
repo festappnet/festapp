@@ -25,11 +25,13 @@ class OccasionSetupTicketGallery extends StatefulWidget {
       {super.key,
       required this.loadResources,
       required this.appearance,
+      required this.fontIds,
       required this.onSelected,
       this.selectedId,
       this.currentTemplate});
   final Future<TicketLayoutResources> Function() loadResources;
   final Map<String, dynamic> appearance;
+  final Map<String, String> fontIds;
   final ValueChanged<OccasionSetupTicketChoice> onSelected;
   final String? selectedId;
   final Map<String, dynamic>? currentTemplate;
@@ -184,7 +186,7 @@ class _OccasionSetupTicketGalleryState
         ? entry.value.toJson()
         : OccasionSetupAppearance.styledTemplate(
             entry.value.toJson(), widget.appearance,
-            decorated: decorated, composition: entry.key);
+            decorated: decorated, composition: entry.key, fonts: widget.fontIds);
     final previous = _controllers[entry.key];
     final signature = jsonEncode(raw);
     final controller =

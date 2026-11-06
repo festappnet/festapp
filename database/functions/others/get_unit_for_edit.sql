@@ -15,7 +15,7 @@ BEGIN
     SELECT jsonb_build_object(
         'id', id,
         'title', title,
-        'data', data,
+        'data', public.form_measurement_unit_data_internal(unit_id,data),
         'features', features,
         'organization', organization,
         'aggregate_version', coalesce((SELECT v.version FROM public.client_aggregate_versions v

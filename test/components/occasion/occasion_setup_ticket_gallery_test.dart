@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -15,6 +16,10 @@ import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 import 'package:fstapp/components/ticket_layout/ticket_text.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
   WidgetEnvironmentFixture.register();
   final environment = WidgetEnvironmentFixture(
     locale: const Locale('cs'),
@@ -44,6 +49,7 @@ void main() {
                 Expanded(
                   child: SingleChildScrollView(
                     child: OccasionSetupTicketGallery(
+                    fontIds: setupFontIds,
                       appearance: Map.of(OccasionSetupAppearance.presets.first),
                       loadResources: () async {
                         update(() => status = 'saved');
@@ -108,6 +114,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: OccasionSetupTicketGallery(
+                    fontIds: setupFontIds,
                 appearance: {...OccasionSetupAppearance.presets[1], 'gradient': true},
                 currentTemplate: template.toJson(),
                 loadResources: () async {

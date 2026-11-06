@@ -29,7 +29,7 @@ test('seating public commands: actual two-connection serial outcomes and permiss
   await admin.query(`CREATE DATABASE ${cloneName} TEMPLATE template0`);
   const restoreUrl=new URL(cloneUrl);restoreUrl.username='supabase_admin';
   execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-f',`${kit}/snapshot.sql`],{stdio:'pipe'});
-  execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-c',`GRANT ALL ON ALL TABLES IN SCHEMA public,eshop TO postgres; GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop TO postgres; DO $fix$ DECLARE r record; BEGIN FOR r IN SELECT p.oid::regprocedure f FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind IN ('f','w') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass AND d.objid=p.oid AND d.deptype='e') LOOP EXECUTE format('ALTER FUNCTION %s OWNER TO postgres',r.f); END LOOP; END $fix$;`],{stdio:'pipe'});
+  execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-c',`GRANT USAGE ON SCHEMA analytics TO postgres; GRANT ALL ON ALL TABLES IN SCHEMA public,eshop,analytics TO postgres; GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop,analytics TO postgres; DO $fix$ DECLARE r record; BEGIN FOR r IN SELECT p.oid::regprocedure f FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind IN ('f','w') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass AND d.objid=p.oid AND d.deptype='e') LOOP EXECUTE format('ALTER FUNCTION %s OWNER TO postgres',r.f); END LOOP; END $fix$;`],{stdio:'pipe'});
   [db,left,right]=await Promise.all([connect(cloneUrl.href),connect(cloneUrl.href),connect(cloneUrl.href)]);
   for(const source of ['database/tests/helpers/assertions.sql','database/tests/blueprint/fixtures.sql','database/tests/blueprint/seating_fixture.sql'])await db.query(await readFile(new URL(`../../../${source}`,import.meta.url),'utf8'));
   await right.query('SET ROLE authenticated');
@@ -71,9 +71,15 @@ commands.append(Path('supabase/migrations/20261101173000_seating_compatibility_a
 # of this fixture. Keep the final full-head parity assertion unchanged.
 # The restore owner owns retained tables (including later feature tables).
 commands.append('RESET ROLE;')
+# Current-head clones already contain later schema and private helpers. Select
+# final owners so a superseded migration cannot downgrade their signatures.
+final_owners={}
 for migration in sorted(Path('supabase/migrations').glob('*.sql')):
- if migration.name[:14] > '20261101173000' and affected.intersection(dict(definitions(migration.read_text()))):
-  commands.append(migration.read_text())
+ if migration.name[:14] > '20261101173000':
+  for signature,body in definitions(migration.read_text()):
+   if signature in affected and body is not None:final_owners[signature]=migration
+for migration in sorted(set(final_owners.values())):
+ commands.append(migration.read_text())
 commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
 print(chr(10).join(commands))`;
    const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8',maxBuffer:16*1024*1024});

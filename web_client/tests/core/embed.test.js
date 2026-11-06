@@ -460,6 +460,39 @@ test('new child uses one native reveal with a legacy host for end and nearest al
     }
 });
 
+test('host consent is bound to origin, source, instance and lease; revocation fences delayed events', () => {
+ const {dom,frames:[a,b],sent,message}=host();
+ const instance=sent[0][0][0].instance;
+ a.setAttribute('data-festapp-datalayer','');
+ const payload={event:'page_view',user_data:{email:'private'},token:'private'};
+ const emit=(extra={},origin='https://tickets.invalid',source=a.contentWindow)=>message(a,origin,envelope('analytics',instance,{payload,...extra}),source);
+ emit();assert.equal(dom.window.dataLayer,undefined);
+ dom.window.FestappEmbed.setMeasurementConsent(a,true);
+ const consentId=sent[0].at(-1)[0].consentId;
+ emit({consentId,instance:'wrong'});emit({consentId,protocol:2});emit({consentId},'https://evil.invalid');emit({consentId},'https://tickets.invalid',b.contentWindow);emit({consentId:'old'});
+ assert.equal(dom.window.dataLayer,undefined);
+ emit({consentId});assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[{event:'page_view'}]);
+ dom.window.FestappEmbed.setMeasurementConsent(a,false);emit({consentId});assert.equal(dom.window.dataLayer.length,1);
+ dom.window.FestappEmbed.setMeasurementConsent(a,true,0);emit({consentId:sent[0].at(-1)[0].consentId});assert.equal(dom.window.dataLayer.length,1);
+ dom.window.FestappEmbed.setMeasurementConsent(a,true);const next=sent[0].at(-1)[0].consentId;emit({consentId});assert.equal(dom.window.dataLayer.length,1);
+ emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);a.removeAttribute('data-festapp-datalayer');emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);
+ dom.window.close();
+});
+
+test('child discards pre-consent payloads, checks pinned messages and strips contacts after consent',()=>{
+ const dom=new JSDOM('<body></body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+ const win=dom.window;globalThis.document=win.document;globalThis.window=win;
+ const sent=[];const parent={postMessage:(...args)=>sent.push(args)};
+ Object.defineProperty(win,'parent',{value:parent});win.ResizeObserver=class{observe(){}disconnect(){}};
+ const bridge=new EmbedBridge(win);bridge.start();bridge.track({event:'page_view'});
+ const init=(data={},source=parent,origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope('init','one',{viewportHeight:600,dataLayer:true,...data})}));
+ init();bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,0);
+ init({consentId:'lease',consentUntil:Date.now()+60000});bridge.track({event:'page_view',user_data:{email:'private'}});
+ assert.deepEqual(sent.filter(([d])=>d.type==='analytics').map(([d])=>d.payload),[{event:'page_view'}]);
+ init({consentId:'fake',consentUntil:Date.now()+60000},{},'https://evil.invalid');assert.equal(bridge.consentId,'lease');
+ init({consentId:null});bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,1);
+ bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;
+});
 
 test('host refreshes changed appearance while scroll messages omit presentation', async () => {
     const {dom, sent} = host();

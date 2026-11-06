@@ -1,8 +1,8 @@
+import '../../support/fixtures/layout_canvas_fixture.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
-import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -212,11 +212,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final painter = tester
-            .widgetList<CustomPaint>(find.byType(CustomPaint))
-            .map((w) => w.painter)
-            .whereType<LayoutScenePainter>()
-            .single;
+        final painter = layoutPainter(tester);
         final zoom = painter.camera!.value.entry(0, 0);
         final pixels = seatSize * painter.scale * zoom;
         if (seatSize == 80 || seatSize == 0) {
@@ -281,14 +277,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      double zoom() => tester
-          .widgetList<CustomPaint>(find.byType(CustomPaint))
-          .map((w) => w.painter)
-          .whereType<LayoutScenePainter>()
-          .single
-          .camera!
-          .value
-          .entry(0, 0);
+      double zoom() => layoutPainter(tester).camera.value.entry(0, 0) as double;
       final focused = zoom();
       expect(focused, greaterThan(1));
       await tester.tap(find.byTooltip('Fit plan'));
@@ -332,18 +321,18 @@ void main() {
               body: SizedBox(
                 width: 600,
                 height: 300,
-                child: LayoutSceneSurface(
+                child: VenueLayoutViewer(
                   document: document,
                   focusRevision: revision,
                   focusNodeIds: focus,
                   focusMaxZoomFactor: 1.6,
-                  onViewportScaleChanged: (value) => scale = value,
                 ),
               ),
             ),
           ),
         );
         await tester.pumpAndSettle();
+        scale = layoutPainter(tester).camera.value.entry(0, 0) as double;
       }
 
       await show(1, {});

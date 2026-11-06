@@ -57,6 +57,7 @@ class VenueLayoutEditor extends StatefulWidget {
     this.globalFontPickerBuilder,
     this.inlineTextStyleBuilder,
   });
+
   /// Explicit host navigation only. Selection changes never request a camera fit.
   final Set<String> focusNodeIds, highlightedNodeIds;
   final int? focusRevision;
@@ -161,7 +162,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
   int? _dragFrameCallback;
   final Map<String, VenueLayoutDocument> _previews = {};
   final Map<String, VenueLayoutDocument> _themedPreviews = {};
-  String _librarySearch = '';
+  final _librarySearchController = TextEditingController();
+  String get _librarySearch => _librarySearchController.text;
   final List<List<double>> _pathPoints = [];
   String? _pathId;
   String? _drawId;
@@ -289,6 +291,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
   void dispose() {
     FocusManager.instance.removeEarlyKeyEventHandler(_globalHistoryKey);
     _globalStyleOpen.dispose();
+    _librarySearchController.dispose();
     _discardDragPreview();
     _stopPaste();
     _paletteFeedbackState.dispose();
@@ -2275,8 +2278,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
             child: LayoutText(
               'Objects',
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           Padding(
@@ -2285,19 +2289,21 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
               onChoose != null
                   ? 'Tap an object to add it. Drawing tools continue on the plan.'
                   : 'Drag onto the plan, or click to place',
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: colors.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: TextField(
+              controller: _librarySearchController,
               decoration: InputDecoration(
                 labelText: VenueLayoutStrings.text(context, 'Find object'),
                 prefixIcon: const Icon(Icons.search, size: 18),
                 isDense: true,
               ),
-              onChanged: onSearch ?? (v) => setState(() => _librarySearch = v),
+              onChanged: onSearch ?? (_) => setState(() {}),
             ),
           ),
           Expanded(
@@ -3081,8 +3087,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                 ? widget.libraryOverride ??
                       _buildPalette(
                         onChoose: (kind) => Navigator.pop(context, kind),
-                        onSearch: (value) =>
-                            setSheetState(() => _librarySearch = value),
+                        onSearch: (value) => setSheetState(() {}),
                       )
                 : _inspector(),
           ),
@@ -3347,8 +3352,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               isScrollControlled: true,
                                               builder: (context) => SizedBox(
                                                 height:
-                                                    MediaQuery.sizeOf(context)
-                                                        .height *
+                                                    MediaQuery.sizeOf(
+                                                      context,
+                                                    ).height *
                                                     .8,
                                                 child: AnimatedBuilder(
                                                   animation: Listenable.merge([
@@ -3376,9 +3382,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               : !_canEdit
                                               ? 'Read only'
                                               : 'Saved',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelMedium,
                                         ),
                                       ),
                                   ],
@@ -3408,8 +3414,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               isScrollControlled: true,
                                               builder: (context) => SizedBox(
                                                 height:
-                                                    MediaQuery.sizeOf(context)
-                                                        .height *
+                                                    MediaQuery.sizeOf(
+                                                      context,
+                                                    ).height *
                                                     .8,
                                                 child: AnimatedBuilder(
                                                   animation: Listenable.merge([
@@ -3492,9 +3499,24 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               widget.nativeTextPreview,
                                           key: ValueKey(_templateViewport),
                                           document: c.document,
-                                          focusNodeIds: widget.focusNodeIds.where((id) => c.document.nodes.any((node) => node.id == id)).toSet(),
-                                          focusRevision: widget.focusNodeIds.isEmpty || widget.focusNodeIds.any((id) => c.document.nodes.any((node) => node.id == id))
-                                              ? widget.focusRevision : null,
+                                          focusNodeIds: widget.focusNodeIds
+                                              .where(
+                                                (id) => c.document.nodes.any(
+                                                  (node) => node.id == id,
+                                                ),
+                                              )
+                                              .toSet(),
+                                          focusRevision:
+                                              widget.focusNodeIds.isEmpty ||
+                                                  widget.focusNodeIds.any(
+                                                    (id) =>
+                                                        c.document.nodes.any(
+                                                          (node) =>
+                                                              node.id == id,
+                                                        ),
+                                                  )
+                                              ? widget.focusRevision
+                                              : null,
                                           backgroundSelected:
                                               _canEdit && _editingBackground,
                                           canvasSelected:
@@ -3548,7 +3570,11 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               ? null
                                               : widget.viewSelectableIds,
                                           highlightedIds: {
-                                            ...widget.highlightedNodeIds.where((id) => c.document.nodes.any((node) => node.id == id)),
+                                            ...widget.highlightedNodeIds.where(
+                                              (id) => c.document.nodes.any(
+                                                (node) => node.id == id,
+                                              ),
+                                            ),
                                             ...c.hoveredIds,
                                             ?_seatTargetId,
                                           },
@@ -3673,9 +3699,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surface,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surface,
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 12,

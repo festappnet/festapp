@@ -2,19 +2,16 @@ import pg from 'pg';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFileSync} from 'node:fs';
+import {assertLocalDatabaseUrl,assertDisposableDatabase} from '../tests/database/disposable_database.js';
 const url=new URL(process.env.BLUEPRINT_DATABASE_URL??'');
+assertLocalDatabaseUrl(url.href);
 assert(['127.0.0.1','localhost'].includes(url.hostname),'task disposable localhost required');
 const clients=[new pg.Client({connectionString:url.href}),new pg.Client({connectionString:url.href})];
 const [a,b]=clients; let checks=0;
 try {
  await Promise.all(clients.map(c=>c.connect()));
  const marker=(await a.query('select project from festapp_test_support.disposable_environment')).rows[0]?.project;
- assert(
-  (marker==='festapp-blueprint-b-20261019' && url.port==='59432') ||
-  (marker==='festapp-blueprint-b-e2e-20261019' && url.port==='59522') ||
-  (marker==='festapp-blueprint-1000-e2e-20261020' && url.port==='59722') ||
-  (marker==='festapp-blueprint-mcp-closure-fresh-20261020' && url.port==='60922'),
-  'owned task database marker and port');
+ await assertDisposableDatabase(a);
  for(const c of clients)await c.query("SET statement_timeout='12s'; SET lock_timeout='6s'");
  await a.query(readFileSync(new URL('../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));
  const fixture=async()=>{
@@ -76,8 +73,8 @@ try {
  // Reverse swaps use the same scope and deterministic row lock ordering.
  {
   const f=await fixture();await a.query('begin');
-  await a.query('select public.swap_spot_tickets_internal_v1($1,$2)',[f.bindings[0].spotId,f.bindings[1].spotId]);
-  await blockedThenCommit(()=>b.query('select public.swap_spot_tickets_internal_v1($1,$2)',[f.bindings[1].spotId,f.bindings[0].spotId]),()=>{});
+  await a.query('select public.swap_spot_tickets_client_sync_v1($1,$2,$3)',[f.bindings[0].spotId,f.bindings[1].spotId,randomUUID()]);
+  await blockedThenCommit(()=>b.query('select public.swap_spot_tickets_client_sync_v1($1,$2,$3)',[f.bindings[1].spotId,f.bindings[0].spotId,randomUUID()]),()=>{});
  }
  // Hold versus swap: swap rechecks the committed hold under the shared lock.
  {
@@ -221,7 +218,7 @@ try {
   assert.equal(sold.code,200,JSON.stringify(sold));
   const ticket=sold.data.order.data.tickets[0].id;
   const start=()=>action==='swap'
-   ?b.query('select public.swap_spot_tickets_internal_v1($1,$2)',[f.bindings[0].spotId,f.bindings[1].spotId])
+   ?b.query('select public.swap_spot_tickets_client_sync_v1($1,$2,$3)',[f.bindings[0].spotId,f.bindings[1].spotId,randomUUID()])
    :action==='storno'?b.query('select public.internal_storno_tickets_221($1)',[[ticket]])
    :b.query('select public.replace_blueprint_order_client_sync_v1($1,$2,$3) r',[[f.bindings[0].spotId],{email:`race-${f.occasion}@example.invalid`},randomUUID()]);
   await blockedThenCommit(start,async r=>{
@@ -241,11 +238,21 @@ try {
   const secondProduct=(await a.query("insert into eshop.products(occasion,product_type,title,price,currency_code,is_hidden) select occasion,product_type,'Other standing offer',100,'CZK',false from eshop.products where id=$1 returning id",[f.product])).rows[0].id;
   await a.query('insert into eshop.product_inventory_contexts(product,inventory_context,quantity) values($1,$3,1),($2,$3,1)',[f.product,secondProduct,context]);
   await a.query('select public.adjust_spot_capacity_for_pool($1)',[pool]);
+  // The addressed product becomes a real standing offer. The other product
+  // shares its inventory context without duplicating the canonical area.
+  const areas=[f.product].map((productId,i)=>({id:randomUUID(),productId,x:400+i*150}));
+  f.request.layout.nodes.push(...areas.map(area=>({id:area.id,kind:'capacityArea',width:100,height:100,transform:{x:area.x,y:400,rotation:0}})));
+  f.request.seatChanges=[];
+  f.request.areaBindingChanges=areas.map(area=>({nodeId:area.id,productId:area.productId,inventoryContextId:context,operation:'upsert'}));
+  f.request.textResourceIds=(await a.query('select public.blueprint_text_resource_ids_internal($1,$2) ids',[f.request.layout,f.occasion])).rows[0].ids;
+  const bound=(await a.query('select public.update_blueprint_client_sync_v1($1,$2) r',[f.request,randomUUID()])).rows[0].r;
+  assert.equal(bound.status,'applied',JSON.stringify(bound));
   const second=(await a.query("insert into public.forms(occasion,blueprint,title,is_open,type) values($1,$2,'Standing second form',true,'ticket') returning id,key",[f.occasion,f.blueprint])).rows[0];
   await a.query('insert into public.form_fields(form,product_type,type,is_ticket_field,is_hidden) select $1,product_type,type,is_ticket_field,is_hidden from public.form_fields where form=$2',[second.id,f.form]);
   for(const c of clients)await c.query("select set_config('request.jwt.claim.sub','',false)");
   await a.query('begin');
-  const order=(form,product)=>({form,email:`standing-${f.occasion}@example.invalid`,ticket:[{fields:[{product_type:product}]}]});
+  const fieldByForm=new Map((await a.query("select form,id from public.form_fields where form=any($1::bigint[]) and type='product_type'",[[f.form,second.id]])).rows.map(row=>[String(row.form),row.id]));
+  const order=(form,product)=>({form,email:`standing-${f.occasion}@example.invalid`,ticket:[{fields:[{[fieldByForm.get(String(form===f.formKey?f.form:second.id))]:product}]}]});
   const first=(await a.query('select public.create_ticket_order_client_sync_v1($1,$2,$3) r',[order(f.formKey,f.product),randomUUID(),randomUUID()])).rows[0].r;
   assert.equal(first.code,200,JSON.stringify(first));
   await blockedThenCommit(()=>b.query('select public.create_ticket_order_client_sync_v1($1,$2,$3) r',[order(second.key,secondProduct),randomUUID(),randomUUID()]),async r=>{

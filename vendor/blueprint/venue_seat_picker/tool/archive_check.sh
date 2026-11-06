@@ -81,14 +81,16 @@ assert json.loads((previous/'archive-result.json').read_text())['passed']
 def contents(path):
  with tarfile.open(path) as archive:
   return {m.name:hashlib.sha256(archive.extractfile(m).read()).hexdigest() for m in archive.getmembers() if m.isfile()}
+toolChanges={}
 for name in ['venue_layout_core.tar.gz','venue_seat_picker.tar.gz']:
  currentFiles,previousFiles=contents(current/name),contents(previous/name)
  changed={f for f in currentFiles.keys()|previousFiles.keys() if currentFiles.get(f)!=previousFiles.get(f)}
- # The archive verification shell script is distributed tooling, not a Dart
- # import, Flutter asset or dependency. Every compiled input must be identical.
- assert changed <= {'tool/archive_check.sh'},f'Changed Flutter build input: {name}: {changed}'
+ # These two standalone verification tools are not Dart imports, Flutter
+ # assets or dependencies. Every compiled input must remain byte-identical.
+ assert changed <= {'tool/archive_check.sh','tool/qa_editor_flows.mjs'},f'Changed Flutter build input: {name}: {changed}'
+ toolChanges[name]=sorted(changed)
 assert (previous/'flutter/main.dart.js').is_file()
-(current/'example-build-reuse.json').write_text(json.dumps({'from':str(previous),'identicalFlutterBuildInputs':True,'distributionOnlyException':'tool/archive_check.sh','mainDartJsSha256':hashlib.sha256((previous/'flutter/main.dart.js').read_bytes()).hexdigest()},indent=2)+'\n')
+(current/'example-build-reuse.json').write_text(json.dumps({'from':str(previous),'identicalFlutterBuildInputs':True,'distributionOnlyChanges':toolChanges,'mainDartJsSha256':hashlib.sha256((previous/'flutter/main.dart.js').read_bytes()).hexdigest()},indent=2)+'\n')
 PYREUSE
   mkdir -p "$WORK/wrapper/example/build/web"
   cp -R "$BLUEPRINT_REUSE_ARCHIVE/flutter/." "$WORK/wrapper/example/build/web/"

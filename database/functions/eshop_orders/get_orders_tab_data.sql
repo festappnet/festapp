@@ -35,7 +35,7 @@ BEGIN
       WHERE (o->>'id')::bigint IN (SELECT value::bigint FROM jsonb_array_elements_text(v_notification_ids));
     END IF;
     IF p_notification_group->>'markRead'='true' THEN
-      PERFORM public.mark_notification_center_item_read(
+      PERFORM public.mark_notification_center_view_item_read(
         (p_notification_group->>'organization')::bigint,p_notification_group);
     END IF;
     -- No orders means no delivery status. Do not resolve an ambiguous event slug.

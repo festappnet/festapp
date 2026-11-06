@@ -35,6 +35,20 @@
     "timezone": {
       "type": "timezone",
       "nullable": true
+    },
+    "measurement_enabled": {
+      "type": "boolean"
+    },
+    "measurement_gtm_container": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 36,
+      "pattern": "^GTM-[A-Z0-9]{4,32}$"
+    },
+    "measurement_scripts": {
+      "type": "string",
+      "nullable": true,
+      "maxLength": 5000
     }
   },
   "features": {

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Form measurement defaults off and separates saved UI/MCP configuration from platform permission and visitor consent. Same-origin scripts and contact export are removed. Authorized command retries retain stable conversion facts, including waitlist acceptance. Isolated GTM and a concrete consent adapter remain unverified and inactive.
+
 ## 2026_02 (0.19.24–0.19.29)
 
 - Self-registration: users sign up and get their own organization.

@@ -1859,3 +1859,45 @@ ALTER TABLE public.sale_opening_campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sale_opening_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sale_opening_capabilities ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.sale_opening_campaigns,public.sale_opening_subscriptions,public.sale_opening_capabilities FROM PUBLIC,anon,authenticated,service_role;
+
+-- Form measurement protected schema: generated from eshop_forms/form_measurement_policy.sql.
+CREATE SCHEMA IF NOT EXISTS analytics;
+REVOKE ALL ON SCHEMA analytics FROM PUBLIC,anon,authenticated,service_role;
+
+-- Platform deployment permission is distinct from administrator-owned switches.
+CREATE TABLE IF NOT EXISTS analytics.organization_policy (
+ organization bigint PRIMARY KEY REFERENCES public.organizations(id) ON DELETE CASCADE,
+ enabled boolean NOT NULL DEFAULT false,
+ revision bigint NOT NULL CHECK(revision>0),
+ changed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ operator text NOT NULL CHECK(length(btrim(operator))>0),
+ reason text NOT NULL CHECK(length(btrim(reason))>0)
+);
+-- Runtime code is authored by Unit managers, so each Unit has its own site.
+CREATE TABLE IF NOT EXISTS analytics.unit_runtime (
+ unit bigint PRIMARY KEY REFERENCES public.units(id) ON DELETE CASCADE,
+ runtime_origin text NOT NULL UNIQUE CHECK(runtime_origin ~ '^https://[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\.pages\.dev$'),
+ runtime_profile text NOT NULL CHECK(runtime_profile='gtm-v1'),
+ parent_origins text[] NOT NULL CHECK(cardinality(parent_origins)>0),
+ collector_origins text[] NOT NULL DEFAULT '{}',
+ revision bigint NOT NULL CHECK(revision>0),
+ changed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ operator text NOT NULL CHECK(length(btrim(operator))>0),
+ reason text NOT NULL CHECK(length(btrim(reason))>0)
+);
+ALTER TABLE analytics.unit_runtime ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.unit_runtime FROM PUBLIC,anon,authenticated,service_role;
+
+ALTER TABLE analytics.organization_policy ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.organization_policy FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE TABLE IF NOT EXISTS analytics.conversion_facts (
+ "order" bigint NOT NULL REFERENCES eshop.orders(id) ON DELETE CASCADE,
+ kind text NOT NULL CHECK(kind IN ('purchase','waitlist','free_registration')),
+ PRIMARY KEY("order",kind),
+ event_id uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+ payload jsonb NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+ALTER TABLE analytics.conversion_facts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.conversion_facts FROM PUBLIC,anon,authenticated,service_role;

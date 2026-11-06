@@ -3,6 +3,46 @@ import 'package:festapp_core/forms.dart';
 
 void main() {
   test(
+    'measurement settings serialize independently from read-only policy',
+    () {
+      final loaded = FormDefinition.fromJson({
+        'data': {
+          'analytics': {'enabled': false},
+        },
+        'measurement_status': {
+          'organization_allowed': false,
+          'policy_revision': 2,
+        },
+      });
+      expect(loaded.measurementStatus?['organization_allowed'], false);
+      expect(
+        loaded.copyWith(title: 'Concert').measurementStatus,
+        loaded.measurementStatus,
+      );
+      expect(
+        () => loaded.measurementStatus!['organization_allowed'] = true,
+        throwsUnsupportedError,
+      );
+      expect(loaded.toJson().containsKey('measurement_status'), false);
+      for (final enabled in [false, true]) {
+        final changed = loaded.copyWith(
+          data: {
+            'analytics': {'enabled': enabled, 'gtm_container': 'GTM-AB12'},
+          },
+        );
+        final patch = FormMetadata.authoringSettingsSnapshot(
+          changed.data,
+        )['analytics'];
+        expect(patch['enabled'], enabled);
+        expect(patch, {'enabled': enabled});
+      }
+      expect(FormMetadata.authoringSettingsSnapshot(loaded.data)['analytics'], {
+        'enabled': false,
+      });
+    },
+  );
+
+  test(
     'embed preference defaults on, persists both values and preserves design',
     () {
       final original = FormDefinition(

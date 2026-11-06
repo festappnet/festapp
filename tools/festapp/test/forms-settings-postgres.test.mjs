@@ -204,3 +204,32 @@ test('released full-metadata saves preserve an omitted embed preference and hono
   assert.equal(result.data.authoring.form.data.design?.embed_inherit_style,expected);
  }
 });
+
+test('form authors toggle intent but cannot supply Unit destination settings',options,async t=>{
+ const{db,f}=await setup(t);const made=await create(db,f);await db.query('SET LOCAL ROLE authenticated');
+ const saved=await save(db,f,formPatch(made.authoring,{settings:{analytics:{enabled:true}}}));assert.equal(saved.code,200,JSON.stringify(saved));
+ assert.deepEqual(saved.data.authoring.form.data.analytics,{enabled:true});
+ await denied(db,'select apply_form_settings_internal($1,$2)',['{}',{analytics:{gtm_container:'GTM-AB12'}}]);
+ await db.query('SAVEPOINT unsupported');
+ await assert.rejects(save(db,f,formPatch(saved.data.authoring,{settings:{analytics:{gtm_container:'GTM-CD34'}}})),/unsupported form setting/);
+ await db.query('ROLLBACK TO SAVEPOINT unsupported');await db.query('RESET ROLE');
+});
+
+test('measurement save separates request, platform policy, historical receipt and current authorized status',options,async t=>{
+ const {db,f}=await setup(t);const made=await create(db,f);const ex=executor(db,f);
+ await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,true) on conflict(organization,"user") do update set is_admin=true',[f.org,f.actor]);
+ await db.query('SET LOCAL ROLE authenticated');
+ const invoke=async(snapshot,analytics,extra={})=>ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(snapshot,{...extra,settings:{analytics}})});
+ const configured=await invoke(made.authoring,{enabled:false});assert.equal(configured.ok,true,JSON.stringify(configured));
+ assert.equal(configured.data.current_measurement_status.requested_enabled,false);assert.equal(configured.data.current_measurement_status.organization_allowed,false);
+ const args={occasionId:f.occasion,commandId:randomUUID(),form:formPatch(configured.data.authoring,{settings:{analytics:{enabled:true}}})};
+ const enabled=await ex.ops.invoke('forms.save',args);assert.equal(enabled.ok,true,JSON.stringify(enabled));assert.equal(enabled.data.measurement_status_is_historical,true);
+ assert.equal(enabled.data.current_measurement_status.requested_enabled,true);assert.equal(enabled.data.current_measurement_status.eligible,false);
+ await db.query('RESET ROLE');await db.query("insert into analytics.organization_policy(organization,enabled,revision,operator,reason) values($1,true,2,'fixture','local test')",[f.org]);await db.query('SET LOCAL ROLE authenticated');
+ const replay=await ex.ops.invoke('forms.save',args);assert.equal(replay.ok,true,JSON.stringify(replay));assert.deepEqual(replay.data.authoring,enabled.data.authoring);
+ assert.equal(replay.data.authoring.form.measurement_status.organization_allowed,false);assert.equal(replay.data.current_measurement_status.organization_allowed,true);assert.equal(replay.data.current_measurement_status.policy_revision,2);
+ const off=await invoke(replay.data.authoring,{enabled:false});assert.equal(off.ok,true,JSON.stringify(off));assert.equal(off.data.authoring.form.data.analytics.gtm_container,undefined);
+ const reset=await invoke(off.data.authoring,{enabled:null});assert.equal(reset.ok,true,JSON.stringify(reset));assert.equal(reset.data.current_measurement_status.requested_enabled,false);
+ const cleared=await invoke(reset.data.authoring,null);assert.equal(cleared.ok,true,JSON.stringify(cleared));assert.equal(cleared.data.authoring.form.data.analytics,undefined);
+ await denied(db,"insert into analytics.organization_policy(organization,enabled,revision,operator,reason) values($1,true,1,'bad','bad')",[f.org+1]);
+});

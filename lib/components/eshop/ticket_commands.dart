@@ -134,7 +134,7 @@ class SupabaseTicketCommands implements TicketCommands {
       required int blueprintId}) async {
     if (_transport.principalBinding == null) return null;
     final pending = await _transport.pendingIntent('cancel_blueprint_tickets',
-        {'p_occasion': occasionId, 'p_unit': unitId});
+        {'p_occasion': occasionId, 'p_unit': unitId, 'p_blueprint': blueprintId});
     if (pending == null) return null;
     final request = jsonDecode(pending.requestJson) as Map;
     if (request['p_organization'] != organizationId ||
@@ -260,6 +260,7 @@ class SupabaseTicketCommands implements TicketCommands {
     final pending = await _transport.pendingIntent('swap_blueprint_seats', {
       'p_occasion': occasionId,
       'p_unit': unitId,
+      'p_blueprint': blueprintId,
     });
     if (pending == null) return false;
     final request = jsonDecode(pending.requestJson) as Map;

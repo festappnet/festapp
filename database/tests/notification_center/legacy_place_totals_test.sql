@@ -1,5 +1,5 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 -- test-setup: database/functions/notification_center/center_policy.sql
--- test-setup: database/functions/notification_center/daily_overview.sql
 -- test-setup: database/functions/notification_center/order_selection.sql
 BEGIN;
 DO $$
@@ -49,7 +49,7 @@ BEGIN
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  SET LOCAL ROLE authenticated;
- result:=public.get_notification_center_daily_overview(org,oc,p_timezone=>'Europe/Prague',p_open=>true);
+ result:=pg_temp.prepared_notification_view(org,oc,p_keep_view=>true);
  RESET ROLE;
  snap:=(result->>'snapshot')::bigint;
  SELECT x INTO created FROM jsonb_array_elements(result->'items') x WHERE x->>'kind'='order_created';
@@ -59,18 +59,18 @@ BEGIN
  PERFORM assert_true((cancelled#>>'{data,allowsMultiple}')::boolean,'legacy multi-ticket form retains place-count applicability');
  PERFORM assert_eq((created#>>'{data,activityCount}')::int,4,'different dates form one complete category');
  PERFORM assert_true((SELECT x#>'{data,placeCount}' IS NULL AND (x#>>'{data,allowsMultiple}')::boolean
-  FROM jsonb_array_elements(result->'items') x WHERE x->>'day'='2026-10-23'),'unknown count is explicit, never invented as zero');
+  FROM jsonb_array_elements(result->'items') x WHERE x->>'kind'='offer_declined'),'unknown count is explicit, never invented as zero');
  SET LOCAL ROLE authenticated;
- ids:=public.notification_center_order_selection(oc,jsonb_build_object('id',created->>'id','organization',org,'snapshot',snap,'timezone','Europe/Prague','snapshotAt',result->>'snapshotAt'));
+ ids:=public.notification_center_order_selection(oc,jsonb_build_object('id',created->>'id','organization',org,'viewToken',result->>'viewToken'));
  RESET ROLE;
  PERFORM assert_eq(jsonb_array_length(ids),4,'new-order click selects the complete cross-day group');
  PERFORM assert_true(ids @> jsonb_build_array(first_order,second_order),'selected IDs are exact order identities');
  SET LOCAL ROLE authenticated;
- ids:=public.notification_center_order_selection(oc,jsonb_build_object('id',cancelled->>'id','organization',org,'snapshot',snap,'timezone','Europe/Prague','snapshotAt',result->>'snapshotAt'));
+ ids:=public.notification_center_order_selection(oc,jsonb_build_object('id',cancelled->>'id','organization',org,'viewToken',result->>'viewToken'));
  RESET ROLE;
  PERFORM assert_eq(jsonb_array_length(ids),2,'cancelled-order click selects the complete group too');
  UPDATE eshop.tickets SET state='storno' WHERE occasion=oc;
- result:=public.get_notification_center_daily_overview(org,oc,snap,p_timezone=>'Europe/Prague');
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_eq((SELECT (x#>>'{data,placeCount}')::int FROM jsonb_array_elements(result->'items') x
   WHERE x->>'kind'='order_cancelled'),5,'cancellation does not erase retained ticket totals');
 END $$;

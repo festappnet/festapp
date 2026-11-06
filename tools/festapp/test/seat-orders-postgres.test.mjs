@@ -194,7 +194,7 @@ test('current main notification producers roll back with the seat-order quote an
  const s=await paidAtomicSwap(t);await bank(s);await s.db.query('RESET ROLE');
  // Install current authored owners in this transaction only. Never run cron
  // registration or a BEGIN/COMMIT-wrapped migration inside another fixture.
- const sources=['notification_center/schema.sql','notification_center/core.sql','notification_center/orders.sql',
+ const sources=['notification_center/schema.sql','notification_center/core.sql','notification_center/shared.sql','notification_center/orders.sql',
   'notification_center/capacity.sql','notification_center/email.sql','eshop/create_ticket_order.sql','eshop/materialize_ticket_products_internal_v1.sql',
   'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql',
   'eshop_orders/recalculate_order_payment_status.sql','inventory/apply_allocations.sql',

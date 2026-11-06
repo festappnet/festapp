@@ -33,8 +33,11 @@ BEGIN
   result:=public.update_form_internal_v1(payload||jsonb_build_object('title','Přihláška','form_fields',jsonb_build_array(
     jsonb_build_object('type','select_one','data',jsonb_build_object('options',jsonb_build_array(jsonb_build_object('value','Ranní skupina')))))));
   PERFORM assert_eq(result->>'code','200','valid choice saves');
+  -- Copying must not let an editor publish another administrator's code.
+  UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"gtm_container":"GTM-AB12","scripts":"<script>window.test=1</script>"}}'::jsonb WHERE id=f;
   result:=public.duplicate_form_to_occasion_client_sync_v1(f,link,cmd,'cs');
   copied:=(result#>>'{data,formId}')::bigint;
+  PERFORM assert_false((SELECT data ? 'analytics' FROM public.forms WHERE id=copied),'form copy omits measurement code');
   PERFORM assert_eq((SELECT title FROM public.forms WHERE id=copied),'Přihláška (kopie)','Czech copy title');
   PERFORM assert_eq(public.duplicate_form_to_occasion_client_sync_v1(f,link,cmd,'cs')#>>'{data,formId}',copied::text,'copy replay keeps identity');
   result:=public.duplicate_form_to_occasion_client_sync_v1(f,link,gen_random_uuid());

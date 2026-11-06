@@ -26,6 +26,45 @@ class TicketFontCatalog {
     }
   }
 
+  static const _selectionPath =
+      'automation/tickets/setup-appearance-fonts.json';
+  static Future<Map<String, String>>? _setupFuture;
+
+  /// Policy first, then immutable Google default faces in catalog order.
+  static Future<Map<String, String>> loadSetupFonts() =>
+      _setupFuture ??= _readSetupFonts();
+
+  static Future<Map<String, String>> _readSetupFonts() async {
+    try {
+      final selection = Map<String, String>.from(
+        jsonDecode(await rootBundle.loadString(_selectionPath)) as Map,
+      );
+      final catalog = await _data();
+      final faces = (catalog['fonts'] as List).cast<Map>();
+      final defaults = (catalog['defaultFaceIds'] as List).toSet();
+      for (final face in faces) {
+        if (face['source'] == 'google' && defaults.contains(face['id'])) {
+          selection.putIfAbsent(
+            face['family'] as String,
+            () => face['id'] as String,
+          );
+        }
+      }
+      final byId = {for (final face in faces) face['id']: face};
+      for (final entry in selection.entries) {
+        final family = byId[entry.value]?['family'];
+        if (family != entry.key && family != '${entry.key} (legacy)') {
+          throw FormatException('Unknown immutable face for ${entry.key}');
+        }
+      }
+      return Map.unmodifiable(selection);
+    } catch (_) {
+      _setupFuture = null;
+      rootBundle.evict(_selectionPath);
+      rethrow;
+    }
+  }
+
   /// Ticket Editor keeps its historical default face choices. Additional real
   /// faces belong to the same catalog and are selected through family manifests.
   static Future<List<Map<String, dynamic>>> load() async {

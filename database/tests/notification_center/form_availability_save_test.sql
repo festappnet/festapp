@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 DO $$
 DECLARE org bigint; un bigint; oc bigint; f bigint; editor uuid:=gen_random_uuid(); viewer uuid:=gen_random_uuid();
@@ -47,7 +48,7 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),n,'same-transaction wizard authoring stays a silent creation baseline');
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
- result:=public.open_notification_center(org,oc);
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_true(jsonb_array_length(result->'feedItems')>=4,'save to personal projection to feed');
 END $$;
 ROLLBACK;

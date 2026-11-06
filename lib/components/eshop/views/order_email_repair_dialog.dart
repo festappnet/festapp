@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -8,9 +7,9 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../order_commands.dart';
+import '../order_contact_controller.dart';
 
 class OrderEmailContactEditor extends StatefulWidget {
   const OrderEmailContactEditor({
@@ -22,24 +21,15 @@ class OrderEmailContactEditor extends StatefulWidget {
     this.commands,
     this.canWrite,
     this.onChanged,
-    this.onConflict,
-    this.emailController,
-    this.loadContext,
-    this.onBusyChanged,
+    this.controller,
     this.hostBuilder,
-    this.externalBusy = false,
     this.showSaveOnlyAction = true,
-    this.revision = 0,
     this.onShowOrder,
   });
   final Widget Function(Widget body, List<Widget> actions, bool busy)?
   hostBuilder;
-  final bool externalBusy;
+  final OrderContactController? controller;
   final bool showSaveOnlyAction;
-  final int revision;
-  final TextEditingController? emailController;
-  final Future<Map<String, dynamic>> Function()? loadContext;
-  final ValueChanged<bool>? onBusyChanged;
   final VoidCallback? onShowOrder;
   final int orderId;
   final int occasionId;
@@ -48,288 +38,86 @@ class OrderEmailContactEditor extends StatefulWidget {
   final OrderCommands? commands;
   final bool? canWrite;
   final Future<void> Function()? onChanged;
-  final Future<void> Function()? onConflict;
   @override
   State<OrderEmailContactEditor> createState() =>
       _OrderEmailContactEditorState();
 }
 
 class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
-  late final _email = widget.emailController ?? TextEditingController();
+  late OrderContactController _contact =
+      widget.controller ??
+      OrderContactController(
+        orderId: widget.orderId,
+        occasionId: widget.occasionId,
+        read: widget.read,
+        commands: widget.commands,
+        onChanged: widget.onChanged,
+      );
   final _emailFocus = FocusNode();
   bool _emailTouched = false;
-  late final OrderCommands _commands =
-      widget.commands ?? SupabaseOrderCommands(Supabase.instance.client);
-  Map<String, dynamic>? _order, _summary;
-  bool _busy = false, _loading = true, _stale = false;
-  bool get _locked => _busy || widget.externalBusy;
-  String? _feedback, _selectedMessage;
-  int _generation = 0;
-  ClientCommandIntent? _pendingContact;
-  bool get _sameContext =>
-      mounted &&
-      (widget.read != null ||
-          RightsService.currentOccasionId() == widget.occasionId);
+  String? _selectedMessage;
+  TextEditingController get _email => _contact.email;
+  Map<String, dynamic>? get _order => _contact.order;
+  Map<String, dynamic>? get _summary => _contact.summary;
+  bool get _busy => _contact.busy;
+  bool get _locked => _contact.busy || _contact.hostBusy;
+  bool get _loading => _contact.loading;
+  bool get _stale => _contact.stale;
+  String? get _feedback => _contact.feedback;
   String t(String key) => EmailDeliveryStrings.recovery(key);
-  Future<dynamic> _read(String name, Map<String, dynamic> args) =>
-      widget.read?.call(name, args) ??
-      Supabase.instance.client.rpc(name, params: args);
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _save(bool resend, OrderEmailIssue? issue) async {
+    try {
+      await _contact.save(resend: resend, issue: issue);
+      if (mounted && widget.controller != null) await widget.onChanged?.call();
+    } catch (_) {
+      /* controller reports outcome */
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
+    _contact.addListener(_changed);
     _emailFocus.addListener(() {
       if (mounted)
         setState(() {
           if (!_emailFocus.hasFocus) _emailTouched = true;
         });
     });
-    _load();
+    if (widget.controller == null) _contact.load();
   }
 
   @override
   void didUpdateWidget(covariant OrderEmailContactEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.revision != oldWidget.revision && !_busy) _load();
+    if (oldWidget.controller == widget.controller && oldWidget.orderId == widget.orderId && oldWidget.occasionId == widget.occasionId) return;
+    _contact.removeListener(_changed);
+    if (oldWidget.controller == null) _contact.dispose();
+    _contact = widget.controller ?? OrderContactController(
+      orderId: widget.orderId, occasionId: widget.occasionId,
+      read: widget.read, commands: widget.commands, onChanged: widget.onChanged,
+    );
+    _contact.addListener(_changed);
+    _selectedMessage = null;
+    _emailTouched = false;
+    if (widget.controller == null) _contact.load();
   }
 
-  void _contextChanged() {
-    if (_sameContext) return;
-    _generation++;
-    _order = null;
-    _summary = null;
-    if (mounted) setState(() {});
+  Future<void> _recover() async {
+    await _contact.recover();
+    if (mounted && widget.controller != null) await widget.onChanged?.call();
   }
 
   @override
   void dispose() {
-    RightsService.occasionLinkModelNotifier.removeListener(_contextChanged);
-    _generation++;
+    _contact.removeListener(_changed);
+    if (widget.controller == null) _contact.dispose();
     _emailFocus.dispose();
-    if (widget.emailController == null) _email.dispose();
     super.dispose();
-  }
-
-  Future<void> _load() async {
-    final generation = ++_generation;
-    try {
-      final loaded = await widget.loadContext?.call();
-      final history = loaded == null
-          ? await _read('get_order_history', {'order_id': widget.orderId})
-          : {
-              'code': 200,
-              'data': {'order': loaded['order']},
-            };
-      if (history['code'] != 200 ||
-          history['data']['order']['occasion'] != widget.occasionId) {
-        throw StateError('order unavailable');
-      }
-      final summary =
-          loaded?['emailSummary'] ??
-          await _read('get_order_email_summary', {'p_order': widget.orderId});
-      if (!_sameContext || generation != _generation) return;
-      setState(() {
-        _order = Map<String, dynamic>.from(history['data']['order']);
-        _summary = Map<String, dynamic>.from(summary);
-        if (widget.emailController == null)
-          _email.text = _order!['data']['email']?.toString() ?? '';
-        _loading = false;
-        _stale = false;
-      });
-      if (widget.read == null || widget.commands != null) {
-        try {
-          await _findPending();
-        } catch (_) {
-          /* Storage failure does not invalidate a successful read. */
-        }
-      }
-    } catch (_) {
-      if (!_sameContext || generation != _generation) return;
-      setState(() {
-        _loading = false;
-        _stale = true;
-        _feedback = t('unavailable');
-      });
-    }
-  }
-
-  Future<void> _findPending() async {
-    final commands = _commands;
-    if (commands is! RecoverableOrderContactCommands) return;
-    final pending = await (commands as RecoverableOrderContactCommands)
-        .pendingContact(widget.orderId);
-    if (_sameContext) setState(() => _pendingContact = pending);
-  }
-
-  Future<void> _recoverContact() async {
-    final commands = _commands;
-    final pending = _pendingContact;
-    if (commands is! RecoverableOrderContactCommands ||
-        pending == null ||
-        _locked)
-      return;
-    setState(() => _busy = true);
-    widget.onBusyChanged?.call(true);
-    try {
-      final result = await (commands as RecoverableOrderContactCommands)
-          .recoverContact(pending);
-      if (!_sameContext) return;
-      final sending = result['data']?['sendingRequested'] == true;
-      final outcome = sending ? await _sendOutcome(result) : null;
-      if (!_sameContext) return;
-      var refreshed = true;
-      try {
-        if (result['code'] == 409) {
-          await widget.onConflict?.call();
-        } else {
-          await widget.onChanged?.call();
-        }
-      } catch (_) {
-        refreshed = false;
-      }
-      await _load();
-      await _findPending();
-      if (_sameContext)
-        setState(
-          () => _feedback =
-              sending && result['code'] == 200 && refreshed && !_stale
-              ? _sentFeedback(outcome)
-              : t(
-                  !refreshed
-                      ? 'stale'
-                      : result['code'] == 409
-                      ? 'conflict'
-                      : 'saved',
-                ),
-        );
-    } catch (_) {
-      if (_sameContext) setState(() => _feedback = t('failed'));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-      widget.onBusyChanged?.call(false);
-    }
-  }
-
-  // Reuse the bounded reporting reader: one newest row, exact receipt identity,
-  // at most four reads over five seconds. Never fetch history bodies or resend.
-  Future<String?> _sendOutcome(Map<String, dynamic> result) async {
-    final data = result['data'];
-    final intent = data is Map ? data['intent'] : null;
-    final id = intent is Map ? intent['message_id'] : null;
-    if (id is! String || result['code'] != 200) return null;
-    try {
-      for (final wait in [
-        Duration.zero,
-        const Duration(seconds: 1),
-        const Duration(seconds: 2),
-        const Duration(seconds: 2),
-      ]) {
-        if (!_sameContext) return null;
-        if (wait != Duration.zero) await Future<void>.delayed(wait);
-        if (!_sameContext) return null;
-        final rows = await _read('get_email_delivery_page', {
-          'p_occasion': widget.occasionId,
-          'p_order': widget.orderId,
-          'p_kind': _order!['state'] == 'ordered'
-              ? 'order_confirmation'
-              : 'order_tickets',
-          'p_limit': 1,
-        }).timeout(const Duration(seconds: 2));
-        if (!_sameContext || rows is! List || rows.length != 1) return null;
-        final row = rows.single;
-        if (row is! Map || row['message_id'] != id) return null;
-        final state = row['state'];
-        if (state is! String) return null;
-        if (!const {'pending', 'preparing', 'sending'}.contains(state)) {
-          return state;
-        }
-      }
-    } catch (_) {
-      // A reporting failure cannot undo a confirmed enqueue or trigger a retry.
-    }
-    return null;
-  }
-
-  String? _sentFeedback(String? outcome) =>
-      const {'accepted', 'delivery', 'open', 'click'}.contains(outcome)
-      ? null
-      : outcome == null
-      ? t('queued')
-      : EmailDeliveryStrings.state(outcome);
-
-  Future<void> _save(bool resend, OrderEmailIssue? issue) async {
-    if (_locked ||
-        _order == null ||
-        !_sameContext ||
-        !EmailAddress.isValid(_email.text.trim()))
-      return;
-    setState(() {
-      _busy = true;
-      widget.onBusyChanged?.call(true);
-      _feedback = null;
-    });
-    try {
-      final result = await _commands.repairEmail(
-        orderId: widget.orderId,
-        expectedEmail: _order!['data']['email'] ?? '',
-        expectedState: _order!['state'],
-        expectedPaymentFingerprint:
-            _order!['email_payment_fingerprint'] as String,
-        expectedPaymentVersion: (_order!['email_payment_version'] as num)
-            .toInt(),
-        email: _email.text,
-        sourceMessageId: issue?.messageId,
-        resend: resend,
-      );
-      if (!_sameContext) return;
-      final outcome = resend ? await _sendOutcome(result) : null;
-      if (!_sameContext) return;
-      // Command result and refresh outcome are separate. Never retry a confirmed command.
-      var refreshed = true;
-      try {
-        if (result['code'] == 409) {
-          await widget.onConflict?.call();
-        } else {
-          await widget.onChanged?.call();
-        }
-      } catch (_) {
-        refreshed = false;
-      }
-      await _load();
-      if (!_sameContext) return;
-      setState(
-        () =>
-            _feedback = resend && result['code'] == 200 && refreshed && !_stale
-            ? _sentFeedback(outcome)
-            : t(
-                result['code'] == 409
-                    ? 'conflict'
-                    : !refreshed || _stale
-                    ? 'stale'
-                    : 'saved',
-              ),
-      );
-      OrderEmailIssue.changes.value++;
-    } catch (error) {
-      try {
-        await _findPending();
-      } catch (_) {
-        /* Original intent remains retained. */
-      }
-      if (_sameContext) {
-        setState(
-          () => _feedback = t(
-            error is PostgrestException &&
-                    error.message.contains('email_recipient_suppressed')
-                ? 'blocked'
-                : 'failed',
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-      widget.onBusyChanged?.call(false);
-    }
   }
 
   @override
@@ -618,12 +406,12 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
             ],
           ),
         ],
-        if (_pendingContact != null) ...[
+        if (_contact.pendingContact != null) ...[
           Text(
-            '${t('pendingContact')}: ${jsonDecode(_pendingContact!.requestJson)['p_email']}',
+            '${t('pendingContact')}: ${jsonDecode(_contact.pendingContact!.requestJson)['p_email']}',
           ),
           TextButton(
-            onPressed: _locked ? null : _recoverContact,
+            onPressed: _locked ? null : _recover,
             child: Text(t('recoverContact')),
           ),
         ],
@@ -634,7 +422,7 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
           ),
         if (_stale)
           TextButton(
-            onPressed: _locked ? null : _load,
+            onPressed: _locked ? null : _contact.load,
             child: Text(t('reload')),
           ),
       ],
@@ -643,7 +431,8 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
       if (writable) ...[
         if (widget.showSaveOnlyAction)
           FilledButton(
-            onPressed: _locked || _pendingContact != null || !valid || !changed
+            onPressed:
+                _locked || _contact.pendingContact != null || !valid || !changed
                 ? null
                 : () => _save(false, selected),
             child: Text(t('saveOnly')),
@@ -651,7 +440,7 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
         OutlinedButton(
           onPressed:
               _locked ||
-                  _pendingContact != null ||
+                  _contact.pendingContact != null ||
                   !valid ||
                   uncertain ||
                   recipientBlocked ||
@@ -692,7 +481,7 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
   }
 }
 
-/// Compatibility host for other authorized callers, sharing the same editor.
+/// Standalone host for authorized callers, sharing the contact session.
 class OrderEmailRepairDialog extends StatelessWidget {
   const OrderEmailRepairDialog({
     super.key,

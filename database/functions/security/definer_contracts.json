@@ -1297,31 +1297,8 @@
       "signature": "public.project_notification_center(integer)",
       "source": "database/functions/notification_center/core.sql"
     },
-    "863f5cf480cd4d16b5e522bd52a244f2ab5b1b106b2ef78a324850fbe86d5152": {
-      "signature": "public.get_notification_center_badge(bigint)",
-      "source": "database/functions/notification_center/core.sql",
-      "additionalSources": [
-        "database/functions/notification_center/center_policy.sql"
-      ]
-    },
-    "979bc5653debc38b276ecca45b582ec1e1e027d50aea879034f05ee46b37dc47": {
-      "signature": "public.get_notification_center_group(bigint,text,bigint,bigint,integer)",
-      "source": "database/functions/notification_center/core.sql"
-    },
-    "f9f9e18fc0a29fee348e0466a547d623ba9d8cb333e21a17c8908f4f8b40a7f6": {
-      "signature": "public.get_notification_center_page(bigint,bigint,integer,bigint,jsonb)",
-      "source": "database/functions/notification_center/core.sql"
-    },
-    "c3b2872fef713156de0ba0d85bc7875b6c57212a7da482e51026cefe51392d12": {
-      "signature": "public.open_notification_center(bigint,bigint,integer)",
-      "source": "database/functions/notification_center/core.sql"
-    },
     "fb999e11d6b84de24afc39762fd01237aaeffae19537f77804b449dfdeb2f92a": {
       "signature": "public.set_notification_center_muted(bigint,bigint,boolean)",
-      "source": "database/functions/notification_center/core.sql"
-    },
-    "09ca6e35bab266c6ad69753894eb88903877a50489747894a7ae21c42f80c68f": {
-      "signature": "public.get_notification_center_updates(bigint,bigint,uuid[])",
       "source": "database/functions/notification_center/core.sql"
     },
     "31e37ee6c9013ca94cebab1d0b003360b3084b96d80f559acb9c53fca6c14538": {
@@ -2415,37 +2392,9 @@
       "signature": "public.get_waitlist_offer_proposal(bigint)",
       "source": "database/functions/eshop_waitlist/offers.sql"
     },
-    "4f93de1cf9e1dd85a04a5331b06802322553da77debc76464aa926f20e30bf7c": {
-      "signature": "public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer)",
-      "source": "database/functions/notification_center/core.sql"
-    },
-    "7b5b2bfd7f6580364293294aa78c227bb82653e017258fb367e810bc963259df": {
-      "signature": "public.get_notification_center_timeline(bigint,bigint,bigint,timestamp with time zone,jsonb,jsonb,integer)",
-      "source": "database/functions/notification_center/temporal_feed.sql"
-    },
-    "7702a61f42af0939d742824049f484e3221920e0d35f12456e69f2df29d86777": {
-      "signature": "public.get_notification_center_timeline_group(bigint,bigint,bigint,timestamp with time zone,bigint,jsonb,jsonb,integer)",
-      "source": "database/functions/notification_center/temporal_feed.sql"
-    },
-    "a0e1125a38c1db6fd4422d26b07a668d93489f6029ca6e67cf3e343efc2ddffe": {
-      "signature": "public.get_notification_center_timeline_group_updates(bigint,bigint,bigint,timestamp with time zone,jsonb)",
-      "source": "database/functions/notification_center/temporal_feed.sql"
-    },
     "bfb74f972b64977ab865f1e13f5795be9a125e9e61e2135773c490617cece6eb": {
       "signature": "public.notification_center_order_selection(bigint,jsonb)",
       "source": "database/functions/notification_center/order_selection.sql"
-    },
-    "001f9760bee8cd181f6f29fcdfe870613bfdefe5bd29b97767dde94330a8cf04": {
-      "signature": "public.get_notification_center_overview(bigint,bigint,bigint,jsonb,integer,text[])",
-      "source": "database/functions/notification_center/overview.sql"
-    },
-    "84ca8f4982de8611ba0171c9208a5673da34e8d021b1618d728b39475f15a8c6": {
-      "signature": "public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)",
-      "source": "database/functions/notification_center/daily_overview.sql"
-    },
-    "e50349da27c2a33954abe6376156240883d191b5973cd60fbdb35f568838c053": {
-      "signature": "public.mark_notification_center_item_read(bigint,jsonb)",
-      "source": "database/functions/notification_center/read_state.sql"
     },
     "6c310c682bd8ac642bb91460943b71b71389f9a073999306316db88bbd004f5c": {
       "signature": "public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)",
@@ -2778,6 +2727,182 @@
     "14b25c7deb8775357296859bbcd97c21638b450fc259123e7815bac1d3834dad": {
       "signature": "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)",
       "source": "database/functions/blueprint/seat_orders.sql"
+    },
+    "37883abdbc12591db06ea0a2ab73e1514e6c1586b3b01220779accbb7a587ada": {
+      "signature": "public.can_manage_form_measurement(bigint)",
+      "source": "database/functions/user_permissions/form_measurement.sql"
+    },
+    "f9f5afefce3f225148965b27723bca3883ad1b1ab1b822a7e31a4115ccd3f9aa": {
+      "signature": "public.get_order_admin_detail(bigint,bigint)",
+      "source": "database/functions/eshop_orders/get_order_admin_detail.sql"
+    },
+    "3473d909e05cc17e931f08de409e9fe9fe8bcff78df9cafd6e52067fa0bf72ed": {
+      "signature": "public.get_order_blueprint_view(bigint,bigint,bigint,text,bigint)",
+      "source": "database/functions/eshop_orders/get_order_blueprint_view.sql"
+    },
+    "1ebc7730a4bbcf93a12dbd5c740d0117b28145cbfa0934ba1f41e130dc7682d5": {
+      "signature": "public.update_order_detail_responses(bigint,bigint,jsonb,jsonb)",
+      "source": "database/functions/eshop_orders/update_order_detail_responses.sql"
+    },
+    "2ede2806152cf56944471175fb88bbeb35275e4c0be3e7c50f27bf085e41b83a": {
+      "signature": "public.sale_opening_notification_command(text,jsonb)",
+      "source": "database/functions/sale_opening_notifications/commands.sql"
+    },
+    "172cc8b21f1efb71f9a335a701ef49b5e064240ccc5afe6d9704f2fecbf4efed": {
+      "signature": "public.get_sale_opening_email_context(uuid)",
+      "source": "database/functions/sale_opening_notifications/email_context.sql"
+    },
+    "314671e55cee4ec6ea7057a43a099a98a664b2fe6d6184533763756c392e2bf6": {
+      "signature": "public.get_sale_opening_summary(bigint)",
+      "source": "database/functions/sale_opening_notifications/admin.sql"
+    },
+    "905729da79a18e35dc28c40be9a2660fa3f43718f6afdbad3b32fcdf9a99cc99": {
+      "signature": "public.get_sale_opening_subscribers(bigint,uuid,integer)",
+      "source": "database/functions/sale_opening_notifications/admin.sql"
+    },
+    "805dda549623a1358257457bbaf41fe80fb67760bbe1a5864fe6fd64230bbd27": {
+      "signature": "public.maintain_sale_opening_notifications(integer)",
+      "source": "database/functions/sale_opening_notifications/maintenance.sql"
+    },
+    "dd7d1928992f8c6fa19b97fc0ee5405764750cdcc10ee6aa47b9e5f39a1e4881": {
+      "signature": "public.can_read_sale_opening_subscribers(bigint)",
+      "source": "database/functions/sale_opening_notifications/permissions.sql"
+    },
+    "62b9a02e0acbd1385cc84bccddf449d1cde9ad32829e11e5a6540828f62af11d": {
+      "signature": "public.prepare_notification_center(integer)",
+      "source": "database/functions/notification_center/prepared_worker.sql"
+    },
+    "464d052765c61e075858caa09cc0671ad6290aab4373a65340e24b7ea89253fd": {
+      "signature": "public.prepare_notification_center_views(integer)",
+      "source": "database/functions/notification_center/prepared_worker.sql"
+    },
+    "81b4be669558123b91ed8ae482c4e9d83e1f4f31cc762bac8f6055b2eb90b182": {
+      "signature": "public.get_notification_center_view(bigint,bigint,text,uuid,integer,integer,text,text)",
+      "source": "database/functions/notification_center/prepared_views.sql"
+    },
+    "379f30ed810d6c6959073d733f032451cfe7ad8b272499393056fab42e7507bb": {
+      "signature": "public.get_notification_center_prepared_badge(bigint)",
+      "source": "database/functions/notification_center/prepared_views.sql"
+    },
+    "fd9cd77aac12c0a426ac1d54bec376ed8228be60b91bb6750e83ddd063260da6": {
+      "signature": "public.mark_notification_center_view_item_read(bigint,jsonb)",
+      "source": "database/functions/notification_center/prepared_views.sql"
+    },
+    "d90d48097004d326d4efd4226ea532bf10f424d2476a4d6850b628488e76f992": {
+      "signature": "public.get_notification_center_settings(bigint,bigint,integer)",
+      "source": "database/functions/notification_center/prepared_views.sql"
+    },
+    "08585d1d58b15e17171b6d0582ab26a7d8ba50ef33d6767461654a0a2a0d0022": {
+      "signature": "public.get_notification_center_projection_health(bigint)",
+      "source": "database/functions/notification_center/prepared_operations.sql"
+    },
+    "1dccaa7d07cde0d4adac010f795725070de4e1c292baff548f69143b26aa30e3": {
+      "signature": "public.retry_notification_center_projection(bigint,uuid,integer)",
+      "source": "database/functions/notification_center/prepared_operations.sql"
+    },
+    "97d6e814e89eab22174ef359489a003ed8364f63d06d7b8fcb12df8e8ae3a5c8": {
+      "signature": "public.set_notification_center_prepared_paused(bigint,boolean)",
+      "source": "database/functions/notification_center/prepared_operations.sql"
+    },
+    "2819459b1620720f1b5e4cfd6b0ee1cad6a6a0c2f41442497d864e35e8cfb15d": {
+      "signature": "public.wake_notification_center()",
+      "source": "database/functions/notification_center/prepared_wake.sql"
+    },
+    "d41716ad12fefa0725b670924c6ef4dcbf5dfd0b24db74a3044cbd38bf01cb9a": {
+      "signature": "public.configure_notification_center_worker(text)",
+      "source": "database/functions/notification_center/prepared_wake.sql"
+    },
+    "8674064b97f1a439bad53c8fa281cbc13710bad06777c6c21095ee9de96e2703": {
+      "signature": "public.get_notification_center_delivery_health()",
+      "source": "database/functions/notification_center/delivery_operations.sql"
+    },
+    "b1a86aae5329325b2f63cc9e4aa9cdbfd9dfb291eee4bb437cab8485b78a5232": {
+      "signature": "public.retry_notification_center_delivery(bigint,uuid,uuid)",
+      "source": "database/functions/notification_center/delivery_operations.sql"
+    },
+    "bb6a842333f9e2b543859648fc3fc1aac4ff278b2066061880a390dc5351a9fd": {
+      "signature": "public.get_form_presale_archive(bigint)",
+      "source": "database/functions/presale_content/archive.sql"
+    },
+    "977d03c8a0f7ef5c82b685f0083b6c47326516890945bbb71c6c684d723c0c2b": {
+      "signature": "public.convert_form_presale_content(bigint,bigint,text,text,uuid)",
+      "source": "database/functions/presale_content/archive.sql"
+    },
+    "8afa2753c2d5beddfd0330a890b90e3b1f99463c4e15f639ac2477ca63cd5a9e": {
+      "signature": "public.record_bank_sync_health(bigint,bigint,timestamp with time zone,text,boolean,boolean,boolean,bigint)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_health.sql"
+    },
+    "ad592cc9f9a88c34bcd9b91befb6910fa9dd7afd52b8a9a156f03c540795cf46": {
+      "signature": "public.update_bank_sync_connection_metadata(bigint,text,timestamp with time zone,text,bigint,text)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_manage.sql"
+    },
+    "c327d66cc21407ed8736c96ff17cf0958e75fb41a60d54c81d7c80f064610549": {
+      "signature": "public.begin_bank_sync_observation(bigint)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_manage.sql"
+    },
+    "e7903b511b1f34eb6dbeb2310715baca623f008130dc3a2f70852020b2b051cd": {
+      "signature": "public.record_bank_sync_pull(bigint,timestamp with time zone,text,bigint)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_manage.sql"
+    },
+    "c7e689212f72232aa7d12a1c490e9b7d6fb017dd91c4560051368d5d7d2c5c2f": {
+      "signature": "public.get_form_measurement_policy(text)",
+      "source": "database/functions/eshop_forms/form_measurement_runtime.sql"
+    },
+    "51bf7b3bfd59d1cc4de429aede756fed8ebd76cfc4665f3f3ac9a0230aa5bb6a": {
+      "signature": "public.get_form_measurement_runtime_config(text,bigint,bigint,text,text)",
+      "source": "database/functions/eshop_forms/form_measurement_runtime.sql"
+    },
+    "5829e6076af78f642b38b3cd3471682faa0903a9093e476f7d1e7d1f90730274": {
+      "signature": "public.recover_form_save_client_sync_v1(jsonb,uuid)",
+      "source": "database/functions/eshop_forms/recover_form_save_client_sync_v1.sql"
+    },
+    "f7edaa05d427681fe0904cb4cb2fb400ffd944c2fb2962cedbd452492b085262": {
+      "signature": "public.can_read_seating_status(bigint)",
+      "source": "database/functions/user_permissions/seating_transition_operations.sql"
+    },
+    "49f28786f42a1fcfd28bfca12fbf150aa3440c844fd4fb115d878f956f536ef1": {
+      "signature": "public.can_assign_existing_admissions(bigint)",
+      "source": "database/functions/user_permissions/seating_transition_operations.sql"
+    },
+    "8b1f0f3cb68a99f5d53090335dfff18c0a60a2f15093edb1eb0996d73920f8fd": {
+      "signature": "public.get_blueprint_for_edit(text,bigint)",
+      "source": "database/functions/eshop/get_blueprint_for_edit.sql"
+    },
+    "6507df59b6d4f9af16c327682229cd2841d034c40883882bff9d3bc5aa80ea57": {
+      "signature": "public.get_blueprint_for_edit(text)",
+      "source": "database/functions/eshop/get_blueprint_for_edit.sql"
+    },
+    "0e876954292b464268f1331328feb4c465cb305e289bff2b826f3b85df8be9d2": {
+      "signature": "public.get_seating_workspace(bigint,bigint)",
+      "source": "database/functions/blueprint/seating_transition_context.sql"
+    },
+    "33601e971ea5cc22e7100fc88138165646206c1c1ef01f69b75daa9e1341c402": {
+      "signature": "public.get_seating_transition_context(uuid,text,text,bigint,integer)",
+      "source": "database/functions/blueprint/seating_transition_context.sql"
+    },
+    "3a77bad29feb7b1cdaaa8cdf78f346bbb2d5689ba4738f6118644d0b3dd621a4": {
+      "signature": "public.preview_ticket_seat_assignment(uuid,jsonb)",
+      "source": "database/functions/blueprint/seating_assignment.sql"
+    },
+    "b4698e7462c785731bcfe86d0d70c35f0f9dbad84a78d90a61d0c5c8dd7ad18d": {
+      "signature": "public.set_ticket_seat_assignments(uuid,jsonb,text,uuid)",
+      "source": "database/functions/blueprint/seating_assignment.sql"
+    },
+    "e60795f95bdff40113ceed5d2a962fa090f9c457e0409cf2661c5d5971ee4bbc": {
+      "signature": "public.start_seating_configuration(bigint,bigint,uuid)",
+      "source": "database/functions/blueprint/seating_transition_lifecycle.sql"
+    },
+    "1ad321accc1f9dcc851d1af973a68b2b4bef762d48a85b16552285c4acd4ca37": {
+      "signature": "public.cancel_seating_configuration(uuid,bigint,uuid)",
+      "source": "database/functions/blueprint/seating_transition_lifecycle.sql"
+    },
+    "40ae0959cdaeca3f52b366307a28de3603d32a2037687bbd33b1346ad3324c02": {
+      "signature": "public.preview_seating_publication(uuid)",
+      "source": "database/functions/blueprint/seating_publication.sql"
+    },
+    "bfc4c403a2f77689ec489cec73d8583836c1ce5f85ff6efe3e316e192b5ae1e4": {
+      "signature": "public.publish_seating_transitions(uuid,uuid[],text,uuid)",
+      "source": "database/functions/blueprint/seating_publication.sql"
     }
   }
 }

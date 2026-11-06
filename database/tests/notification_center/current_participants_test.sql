@@ -1,5 +1,5 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 -- test-setup: database/functions/notification_center/center_policy.sql
--- test-setup: database/functions/notification_center/daily_overview.sql
 BEGIN;
 DO $$
 DECLARE org bigint; oc bigint; viewer uuid:=gen_random_uuid(); first_member uuid:=gen_random_uuid();
@@ -20,28 +20,31 @@ BEGIN
   jsonb_build_object('userId',last_member),NULL,clock_timestamp());
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
- result:=public.get_notification_center_daily_overview(org,oc);
+ result:=pg_temp.prepared_notification_view(org,oc);
  item:=result->'items'->0;
  PERFORM assert_eq((item#>>'{data,eventCount}')::int,2,'both current participants contribute to the group');
- PERFORM assert_true((public.get_notification_center_badge(org)->>'unread')::boolean,'current joins create a badge');
+ PERFORM assert_true((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'current joins create a badge');
  snapshot:=(result->>'snapshot')::bigint; anchor:=(result->>'snapshotAt')::timestamptz;
  -- The latest participant leaves: a frozen panel must remove their name and count.
  DELETE FROM public.occasion_users WHERE occasion=oc AND "user"=last_member;
- result:=public.get_notification_center_daily_overview(org,oc,snapshot,anchor);
+ PERFORM public.notification_center_prepared_invalidate(id) FROM public.notification_center_events WHERE organization=org;
+ result:=pg_temp.prepared_notification_view(org,oc);
  item:=result->'items'->0;
  PERFORM assert_eq((item#>>'{data,eventCount}')::int,1,'removed participant is excluded from the frozen group count');
  PERFORM assert_eq(item#>>'{data,customerName}','Removed participant','preview switches to the remaining member');
  -- Previously read history must follow the same live membership rule.
  UPDATE public.notification_center_user_state SET read_through_sequence=snapshot
  WHERE organization=org AND recipient=viewer;
- result:=public.get_notification_center_daily_overview(org,oc,snapshot,anchor);
+ UPDATE public.notification_center_projection_scopes SET phase='clear_members' WHERE organization=org AND recipient=viewer;
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_true((result->'items'->0->>'isRead')::boolean,'remaining membership is read history');
  DELETE FROM public.occasion_users WHERE occasion=oc AND "user"=first_member;
- result:=public.get_notification_center_daily_overview(org,oc,snapshot,anchor);
+ PERFORM public.notification_center_prepared_invalidate(id) FROM public.notification_center_events WHERE organization=org;
+ result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_eq(jsonb_array_length(result->'items'),0,'empty participant group disappears from read history');
  UPDATE public.notification_center_user_state SET read_through_sequence=0,seen_through_sequence=0
  WHERE organization=org AND recipient=viewer;
- PERFORM assert_false((public.get_notification_center_badge(org)->>'unread')::boolean,'removed participants leave no phantom badge');
+ PERFORM assert_false((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'removed participants leave no phantom badge');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org),2::bigint,'filtering preserves historical event records');
 END $$;
 ROLLBACK;

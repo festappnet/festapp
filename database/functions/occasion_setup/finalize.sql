@@ -171,6 +171,8 @@ BEGIN
  VALUES(new_id,auth.uid(),true,true,true,true,true);
  form_data := payload->'formDraft';
  IF form_data IS NOT NULL AND form_data<>'null'::jsonb AND coalesce((payload->>'formEnabled')::boolean,true) THEN
+  -- Saved and released drafts may still contain source measurement settings.
+  form_data:=jsonb_set(form_data,'{data}',public.normalize_form_metadata_internal(form_data->'data')-'analytics');
   IF communication_new THEN
    -- Semantic choices override legacy source metadata. Inherited values stay
    -- absent so reply/tone remain live unit defaults; reminder defaults above

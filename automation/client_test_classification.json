@@ -1105,6 +1105,174 @@
       "sources": [
         "test/browser/browser_preference_store_test.dart"
       ]
+    },
+    "test/components/occasion/setup_font_catalog_test.dart": {
+      "kind": "adapter",
+      "reason": "Bundled asset reader failure/retry and offline SQL font identity parity require Flutter rootBundle binary messenger isolation.",
+      "sources": [
+        "test/components/occasion/setup_font_catalog_test.dart"
+      ]
+    },
+    "test/components/email_delivery/email_delivery_legend_timeline_test.dart": {
+      "kind": "environment",
+      "reason": "Localized email audit timeline and real icon tooltip rendering use Material delegates, bundled fonts and optional rendered captures.",
+      "sources": [
+        "test/components/email_delivery/email_delivery_legend_timeline_test.dart"
+      ]
+    },
+    "test/components/forms/sale_opening_notifications_test.dart": {
+      "kind": "environment",
+      "reason": "Public opt-in and editor controls exercise localized widgets, parent drafts, rights/context singletons and asynchronous subscription state.",
+      "sources": [
+        "test/components/forms/sale_opening_notifications_test.dart"
+      ]
+    },
+    "test/components/forms/presale_content_test.dart": {
+      "kind": "environment",
+      "reason": "Presale rich-editor history, embedded blocks, locale/theme inheritance and public preview mounting require the real Flutter editing and rendering environment.",
+      "sources": [
+        "test/components/forms/presale_content_test.dart"
+      ]
+    },
+    "test/components/forms/form_appearance_theme_test.dart": {
+      "kind": "widget",
+      "reason": "Theme propagation, system brightness and selected-control contrast are tested through mounted Material widgets.",
+      "sources": [
+        "test/components/forms/form_appearance_theme_test.dart"
+      ]
+    },
+    "test/components/forms/form_opening_timer_test.dart": {
+      "kind": "widget",
+      "reason": "Browser-safe long timers and cancellation use the widget tester clock to verify bounded waits and one reload at the exact target.",
+      "sources": [
+        "test/components/forms/form_opening_timer_test.dart"
+      ]
+    },
+    "test/components/notification_center/notification_center_prepared_test.dart": {
+      "kind": "adapter",
+      "reason": "The Flutter ChangeNotifier controller owns prepared RPC requests, foreground timers, retained private rows and view-lease lifetimes.",
+      "sources": [
+        "test/components/notification_center/notification_center_prepared_test.dart"
+      ]
+    },
+    "test/components/bank_accounts/bank_failure_diagnostic_test.dart": {
+      "kind": "widget",
+      "reason": "Recovery/grace diagnostics and readonly bank controls render real Material dialogs and must retain the last failure.",
+      "sources": [
+        "test/components/bank_accounts/bank_failure_diagnostic_test.dart"
+      ]
+    },
+    "test/components/navigation/ticketing_catalog_boundary_test.dart": {
+      "kind": "environment",
+      "reason": "Generated AutoRoute navigation, app configuration and catalog back-stack isolation require the mounted router and platform localization bridge.",
+      "sources": [
+        "test/components/navigation/ticketing_catalog_boundary_test.dart"
+      ]
+    },
+    "test/components/eshop/async_download_button_test.dart": {
+      "kind": "environment",
+      "reason": "Localized download buttons exercise single-flight async actions, disposal and retry through real focusable Material controls.",
+      "sources": [
+        "test/components/eshop/async_download_button_test.dart"
+      ]
+    },
+    "test/components/eshop/order_payment_summary_test.dart": {
+      "kind": "environment",
+      "reason": "Localized payment summaries render partial debt, refunds, cancelled balances and exact server deadlines under the application theme.",
+      "sources": [
+        "test/components/eshop/order_payment_summary_test.dart"
+      ]
+    },
+    "test/components/eshop/order_detail_answers_test.dart": {
+      "kind": "environment",
+      "reason": "The configured answer projection is rendered with form metadata and Flutter localization delegates.",
+      "sources": [
+        "test/components/eshop/order_detail_answers_test.dart"
+      ]
+    },
+    "test/components/eshop/order_detail_split_pane_test.dart": {
+      "kind": "environment",
+      "reason": "Responsive overlays, modal stacking, persisted divider width and retained widget state require Flutter layout and pointer dispatch.",
+      "sources": [
+        "test/components/eshop/order_detail_split_pane_test.dart"
+      ]
+    },
+    "test/components/eshop/order_detail_viewer_test.dart": {
+      "kind": "widget",
+      "reason": "Public venue viewer focus, camera limits, hit testing, wheel gestures and repaint-only emphasis require the rendering engine.",
+      "sources": [
+        "test/components/eshop/order_detail_viewer_test.dart"
+      ]
+    },
+    "test/components/eshop/order_detail_save_changes_test.dart": {
+      "kind": "adapter",
+      "reason": "Shared detail/contact ChangeNotifiers bind RightsService context, durable command recovery and ordered async draft saves.",
+      "sources": [
+        "test/components/eshop/order_detail_save_changes_test.dart"
+      ]
+    },
+    "test/components/eshop/order_detail_scroll_storage_test.dart": {
+      "kind": "environment",
+      "reason": "Retained contact expansion, scroll-storage namespaces and identity rebinding exercise real widget lifecycle and localized Material fields.",
+      "sources": [
+        "test/components/eshop/order_detail_scroll_storage_test.dart"
+      ]
+    },
+    "test/components/eshop/order_places_overview_test.dart": {
+      "kind": "environment",
+      "reason": "Localized saved-plan controls combine RightsService context, venue rendering, reduced motion and bounded camera focus.",
+      "sources": [
+        "test/components/eshop/order_places_overview_test.dart"
+      ]
+    },
+    "test/components/eshop/order_customer_payment_details_test.dart": {
+      "kind": "environment",
+      "reason": "Locale-aware selectable bank instructions, narrow wrapping, large text and copy selection require Flutter text layout and gestures.",
+      "sources": [
+        "test/components/eshop/order_customer_payment_details_test.dart"
+      ]
+    },
+    "test/components/eshop/order_detail_presentation_revision_test.dart": {
+      "kind": "environment",
+      "reason": "The full localized order detail composes rights, drafts, responsive tabs, modal guards and payment/ticket presentation.",
+      "sources": [
+        "test/components/eshop/order_detail_presentation_revision_test.dart"
+      ]
+    },
+    "test/components/eshop/order_grid_activation_revision_test.dart": {
+      "kind": "environment",
+      "reason": "TrinaGrid row activation, clipboard gestures and modal-versus-cell Escape handling require the real grid and focus tree.",
+      "sources": [
+        "test/components/eshop/order_grid_activation_revision_test.dart"
+      ]
+    },
+    "test/components/eshop/order_blueprint_cache_test.dart": {
+      "kind": "adapter",
+      "reason": "Drawing-cache adapters are exercised through the Flutter detail controller, RightsService context invalidation and immutable public venue documents.",
+      "sources": [
+        "test/components/eshop/order_blueprint_cache_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_feedback_test.dart": {
+      "kind": "environment",
+      "reason": "Localized setup controls, collaborator commits, appearance picking and retained venue previews require Material delegates and rendering resources.",
+      "sources": [
+        "test/components/occasion/occasion_setup_feedback_test.dart"
+      ]
+    },
+    "test/components/blueprint/blueprint_focus_navigation_test.dart": {
+      "kind": "environment",
+      "reason": "Blueprint route focus is verified against the real editor camera, public document API and localized navigation fixture.",
+      "sources": [
+        "test/components/blueprint/blueprint_focus_navigation_test.dart"
+      ]
+    },
+    "test/services/payment_deadline_test.dart": {
+      "kind": "environment",
+      "reason": "Deadline presentation composes Flutter locale/date adapters, embedded timezone initialization and the restorable application clock with Intl relative grammar.",
+      "sources": [
+        "test/services/payment_deadline_test.dart"
+      ]
     }
   }
 }

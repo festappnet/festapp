@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
@@ -47,9 +48,9 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org AND recipient=editor),10::bigint,'editor cannot read security messages');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE organization=org AND recipient=admin),17::bigint,'tenant admin receives all authorized kinds');
  PERFORM set_config('request.jwt.claim.sub',admin::text,true);
- result:=public.open_notification_center(org);
- PERFORM assert_eq(jsonb_array_length(result->'groups'),2,'bulk mail compacts same cause into scoped groups');
- PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(result->'groups') g WHERE (g->>'count')::int=10),'occasion bulk group keeps exact per-message count');
+ result:=pg_temp.prepared_notification_view(org);
+ PERFORM assert_eq(jsonb_array_length(result->'items'),17,'prepared incidents retain one actionable item per message');
+ PERFORM assert_eq((SELECT count(*) FROM jsonb_array_elements(result->'items') g WHERE (g->>'occasionId')::bigint=oc),10::bigint,'occasion incidents retain exact message scope');
  UPDATE public.user_info SET name='Jana',surname='Nováková' WHERE id=admin;
  UPDATE public.email_messages SET recipient_user=admin WHERE message_id=message_uuid;
  SELECT * INTO event_row FROM public.notification_center_events WHERE organization=org AND source_key='email:'||message_uuid;

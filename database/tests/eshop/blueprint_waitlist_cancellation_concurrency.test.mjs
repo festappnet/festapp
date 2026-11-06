@@ -6,14 +6,16 @@ const pg=require('pg');
 import assert from 'node:assert/strict';
 import {randomUUID,randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
+import {assertLocalDatabaseUrl,assertDisposableDatabase} from '../../../web_client/tests/database/disposable_database.js';
 const url=new URL(process.env.BLUEPRINT_DATABASE_URL??'');
-assert.equal(url.hostname,'127.0.0.1');assert(['59722','59822'].includes(url.port));
+assertLocalDatabaseUrl(url.href);
+
 const a=new pg.Client({connectionString:url.href}),b=new pg.Client({connectionString:url.href});
 let checks=0;
 try{
  await Promise.all([a.connect(),b.connect()]);
  const marker=(await a.query('select project from festapp_test_support.disposable_environment where singleton')).rows[0].project;
- assert.equal(marker,url.port==='59822'?'festapp-blueprint-1000-fresh-20261020':'festapp-blueprint-1000-e2e-20261020');
+ await assertDisposableDatabase(a);
  for(const c of [a,b])await c.query("set statement_timeout='10s';set lock_timeout='5s'");
  await a.query(readFileSync(new URL('../blueprint/fixtures.sql',import.meta.url),'utf8'));
  const lifecycle=readFileSync(new URL('../eshop_orders/waitlist_lifecycle_test.sql',import.meta.url),'utf8').replaceAll('regression@example.invalid',`waitlist-${randomUUID()}@example.invalid`);
@@ -28,14 +30,18 @@ try{
   const bank=(await a.query("insert into eshop.bank_accounts(title,type,supported_currencies) values('Waitlist race bank','FIO',array['CZK']) returning id")).rows[0].id;
   await a.query('insert into eshop.unit_bank_accounts(unit,bank_account) select unit,$1 from public.occasions where id=$2',[bank,f.occasion]);
   const x={...f,key:f.formKey};
-  const filled=(await a.query('select public.create_ticket_order_internal_v1(pg_temp.checkout($1)) r',[x])).rows[0].r;assert.equal(filled.code,200,JSON.stringify(filled));
+  const firstHold=randomUUID();
+  assert.equal((await a.query('select public.select_spot($1,$2,$3,true) r',[f.formKey,firstHold,f.spot])).rows[0].r.code,200);
+  const filled=(await a.query('select public.create_ticket_order_internal_v1($1) r',[{form:f.formKey,email:'waitlist@example.invalid',secret:firstHold,ticket:[{spot:f.spot,fields:[]}]}])).rows[0].r;assert.equal(filled.code,200,JSON.stringify(filled));
   const registration=(await a.query('select pg_temp.register($1,1) r',[x])).rows[0].r;
   f.order=registration.order;
   await a.query('select public.storno_order_client_sync_v1($1,$2)',[filled.order.id,randomUUID()]);
   const token=randomBytes(32).toString('hex');
   f.offer=(await a.query('select pg_temp.offer($1,$2,1,$3) r',[x,f.order,token])).rows[0].r.id;
   f.ticket=(await a.query('select ticket from eshop.order_product_ticket where "order"=$1',[f.order])).rows[0].ticket;
-  f.input={offerId:f.offer,ticketIds:[f.ticket],orderDetails:{form:f.formKey,email:`waitlist-race-${f.occasion}@example.invalid`,ticket:[{ticketId:f.ticket,spot:f.spot,fields:[]}]}};
+  const offerHold=randomUUID();
+  assert.equal((await a.query('select public.select_spot($1,$2,$3,true) r',[f.formKey,offerHold,f.spot])).rows[0].r.code,200);
+  f.input={offerId:f.offer,ticketIds:[f.ticket],orderDetails:{form:f.formKey,secret:offerHold,email:`waitlist-race-${f.occasion}@example.invalid`,ticket:[{ticketId:f.ticket,spot:f.spot,fields:[]}]}};
   return f;
  };
  const f=await fixture();
@@ -73,7 +79,7 @@ try{
   assert(waiting,'acceptance waits for committed offer cancellation');await a.query('commit');
   const rejected=(await acceptance).rows[0].r;assert.equal(rejected.status,'rejected',JSON.stringify(rejected));
   const state=(await b.query('select o.state order_state,t.state ticket_state,s.order_product_ticket,s.secret from eshop.orders o join eshop.tickets t on t.id=$2 join eshop.spots s on s.id=$3 where o.id=$1',[pending.order,pending.ticket,pending.spot])).rows[0];
-  assert.deepEqual(state,{order_state:'waitlisted',ticket_state:'waitlisted',order_product_ticket:null,secret:null});
+  assert.deepEqual(state,{order_state:'waitlisted',ticket_state:'waitlisted',order_product_ticket:null,secret:pending.input.orderDetails.secret});
   assert.equal((await b.query('select count(*)::int n from eshop.payment_info p join eshop.orders o on o.payment_info=p.id where o.id=$1',[pending.order])).rows[0].n,0);checks++;
  }
  console.log(`PASS ${checks} actual waitlist finalize/cancellation barriers; database=${marker}`);

@@ -45,7 +45,9 @@ export class CardPaymentController {
         if(target.protocol!=='https:'||target.hostname!=='checkout.stripe.com'||target.username||target.password||target.port)throw new Error('stripe_checkout_url_invalid');
         if(this.remember)this.remember(this.token,this.url);
         else if(this.url.origin===window.location.origin){
-            window.history.replaceState({...window.history.state,festappStripePayment:{kind:'pay',token:this.token}},'',this.url.pathname);
+            window.history.replaceState({...window.history.state,festappStripePayment:{kind:'pay',token:this.token}}, '', this.url.pathname);
+            this.navigate(target.toString());
+            return;
         }
         this.navigate(target.toString());
     }

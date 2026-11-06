@@ -1,3 +1,4 @@
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -6,6 +7,10 @@ import 'package:fstapp/components/_shared/appearance_palettes.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Map<String, String> setupFontIds;
+  setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
+
   test('all historical color pairs retain a unique translated identity', () {
     expect(AppearancePalettes.all.length, 34);
     expect(AppearancePalettes.all.map((p) => p.id).toSet().length, 34);
@@ -58,7 +63,7 @@ void main() {
     expect(AppearancePalettes.match(0xff14284b, 0xffa87f28, true)?.id, 'gala');
     expect(appearance['id'], 'custom');
     expect(appearance['preserveSource'], true);
-    expect(OccasionSetupAppearance.valid(appearance), true);
+    expect(OccasionSetupAppearance.valid(appearance, fonts: setupFontIds), true);
     expect(jsonEncode(data), before);
     final selected = OccasionSetupAppearance.selectPreset(data, 'form-night');
     expect(selected['fontFamily'], 'Existing custom font');
@@ -71,7 +76,7 @@ void main() {
     () {
       expect(
         OccasionSetupAppearance.presets.map((p) => p['fontFamily']).toSet(),
-        OccasionSetupAppearance.fonts.keys.toSet(),
+        everyElement(isIn(setupFontIds.keys)),
       );
       final data = <String, dynamic>{
         'appearance': {
@@ -83,7 +88,7 @@ void main() {
         final selected = OccasionSetupAppearance.selectPreset(data, palette.id);
         expect(selected['fontFamily'], 'Inter');
         expect(selected['gradient'], false);
-        expect(OccasionSetupAppearance.valid(selected), true);
+        expect(OccasionSetupAppearance.valid(selected, fonts: setupFontIds), true);
       }
     },
   );

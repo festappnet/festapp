@@ -5,17 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "node ../automation/configure_fonts.js .. --assets-only && vite",
-    "build": "node ../automation/configure_fonts.js .. --assets-only && vite build",
+    "build": "node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
-    "test": "node ../automation/generate_email_tlds.mjs --check && node --test tests/**/*.test.js",
+    "test": "node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node --test tests/**/*.test.js",
+    "test:measurement-browser": "node scripts/test_form_measurement_browser.mjs",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
     "test:seat-checkout-browser": "node scripts/test_seat_checkout_browser.mjs",
-    "test:form-access-browser": "node scripts/test_form_access_browser.mjs"
+    "test:form-access-browser": "node scripts/test_form_access_browser.mjs",
+    "test:measurement-cmp": "node scripts/test_form_measurement_browser.mjs --cmp",
+    "test:measurement-runtime-browser": "node scripts/test_form_measurement_runtime_browser.mjs",
+    "test:measurement-nested-browser": "node scripts/test_form_measurement_nested_browser.mjs",
+    "test:measurement-adversarial-browser": "node scripts/test_form_measurement_runtime_adversarial.mjs"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.10-d0360e8aa339.tgz",
+    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.10-f58aef881e07.tgz",
     "@supabase/supabase-js": "^2.118.0",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",
@@ -25,7 +30,8 @@
     "jsqr": "^1.4.0",
     "node-localstorage": "^3.0.5",
     "pg": "^8.23.1",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "klaro": "0.7.21"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

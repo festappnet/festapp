@@ -14,7 +14,7 @@ def tokens(sql):
  return [(m[0],m.start(),m.end()) for m in TOKEN.finditer(sql) if not m[0].isspace() and not m[0].startswith(('--','/*'))]
 def rules():
  result={}
- for filename in ['operation_rules.sql','email_operations.sql','bank_operations.sql']:
+ for filename in ['operation_rules.sql','email_operations.sql','bank_operations.sql','form_measurement.sql']:
   text=(ROOT/'database/functions/user_permissions'/filename).read_text()
   for statement in statements(text):
    m=CREATE.search(statement)

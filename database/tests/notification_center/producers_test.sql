@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 -- Transaction-local fixtures. All email envelopes are sealed test doubles; no provider is invoked.
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
@@ -104,8 +105,8 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='order_cancelled'),1::bigint,'repeated whole cancellation exactly once');
  PERFORM public.project_notification_center(100);
  PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
- PERFORM assert_true((public.get_notification_center_badge(org)->>'unread')::boolean,'real customer order reaches editor');
- PERFORM public.open_notification_center(org);
+ PERFORM assert_true((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'real customer order reaches editor');
+ PERFORM pg_temp.prepared_notification_view(org);
  -- Payment changes state only, no added delivery.
  SELECT last_delivery_sequence INTO n FROM public.notification_center_user_state WHERE organization=org AND recipient=(x->>'actor')::uuid;
  PERFORM public.notification_center_order_state_internal(oid);PERFORM public.project_notification_center(100);

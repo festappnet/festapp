@@ -47,6 +47,7 @@ BEGIN
         'is_open', f.is_open,
         'created_at', f.created_at,
         'data', public.normalize_form_metadata_internal(f.data),
+        'measurement_status', public.form_measurement_status_internal(f.id),
         'type', f.type,
         'title', f.title,
         'header', f.header,

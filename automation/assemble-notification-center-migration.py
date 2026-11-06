@@ -23,7 +23,7 @@ for prerequisite in manifest['prerequisites']:
         raise SystemExit('Historical prerequisite digest differs: ' + prerequisite)
 text = '-- Generated forward migration: ' + manifest['name'] + '\n'
 text += '-- Prerequisites: ' + ', '.join(manifest['prerequisites']) + '\nBEGIN;\n'
-text += "DO $$ BEGIN IF to_regclass('public.notification_center_organizations') IS NULL OR to_regclass('public.notification_center_activation') IS NOT NULL OR to_regclass('public.notification_center_source_state') IS NULL OR to_regprocedure('public.get_notification_center_updates(bigint,bigint,uuid[])') IS NULL THEN RAISE EXCEPTION 'notification_feed_prerequisites_missing'; END IF; END $$;\n"
+text += "DO $$ BEGIN IF to_regclass('public.notification_center_organizations') IS NULL OR to_regclass('public.notification_center_activation') IS NOT NULL OR to_regclass('public.notification_center_source_state') IS NULL OR to_regclass('public.notification_center_view_members') IS NULL OR to_regprocedure('public.notification_center_prepared_scope(bigint,jsonb)') IS NULL OR to_regprocedure('public.mark_notification_center_view_item_read(bigint,jsonb)') IS NULL THEN RAISE EXCEPTION 'notification_feed_prerequisites_missing'; END IF; END $$;\n"
 for source in manifest['sources']:
     content = (root / 'database/functions' / source).read_text()
     if source == 'notification_center/maintenance.sql':

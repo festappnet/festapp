@@ -6,7 +6,19 @@
     "send_email_mailersend",
     "blueprint_legacy_migration_source_internal",
     "migrate_blueprint_layout_reviewed_internal",
-    "get_blueprint_editor"
+    "get_blueprint_editor",
+    "get_notification_center_feed",
+    "get_notification_center_page",
+    "get_notification_center_group",
+    "get_notification_center_updates",
+    "open_notification_center",
+    "get_notification_center_badge",
+    "get_notification_center_timeline",
+    "get_notification_center_timeline_group",
+    "get_notification_center_timeline_group_updates",
+    "get_notification_center_overview",
+    "get_notification_center_daily_overview",
+    "mark_notification_center_item_read"
   ],
   "sync_tables": [
     "external_sync_sources",
@@ -1014,32 +1026,7 @@
       "authenticated": false,
       "service_role": true
     },
-    "public.get_notification_center_badge(bigint)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
-    "public.get_notification_center_group(bigint,text,bigint,bigint,integer)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
-    "public.get_notification_center_page(bigint,bigint,integer,bigint,jsonb)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
-    "public.open_notification_center(bigint,bigint,integer)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
     "public.set_notification_center_muted(bigint,bigint,boolean)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
-    "public.get_notification_center_updates(bigint,bigint,uuid[])": {
       "anon": false,
       "authenticated": true,
       "service_role": false
@@ -2399,45 +2386,10 @@
       "authenticated": true,
       "service_role": true
     },
-    "public.get_notification_center_feed(bigint,bigint,bigint,jsonb,integer)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.get_notification_center_timeline(bigint,bigint,bigint,timestamp with time zone,jsonb,jsonb,integer)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.get_notification_center_timeline_group(bigint,bigint,bigint,timestamp with time zone,bigint,jsonb,jsonb,integer)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.get_notification_center_timeline_group_updates(bigint,bigint,bigint,timestamp with time zone,jsonb)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
     "public.notification_center_order_selection(bigint,jsonb)": {
       "anon": false,
       "authenticated": true,
       "service_role": true
-    },
-    "public.get_notification_center_overview(bigint,bigint,bigint,jsonb,integer,text[])": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.get_notification_center_daily_overview(bigint,bigint,bigint,timestamp with time zone,text,jsonb,integer,text[],boolean)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.mark_notification_center_item_read(bigint,jsonb)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
     },
     "public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)": {
       "anon": false,
@@ -2828,6 +2780,221 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.can_manage_form_measurement(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_order_admin_detail(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_order_blueprint_view(bigint,bigint,bigint,text,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.update_order_detail_responses(bigint,bigint,jsonb,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.sale_opening_notification_command(text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_sale_opening_email_context(uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_sale_opening_summary(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_sale_opening_subscribers(bigint,uuid,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.maintain_sale_opening_notifications(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.can_read_sale_opening_subscribers(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.prepare_notification_center(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.prepare_notification_center_views(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_notification_center_view(bigint,bigint,text,uuid,integer,integer,text,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_notification_center_prepared_badge(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.mark_notification_center_view_item_read(bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_notification_center_settings(bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_notification_center_projection_health(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.retry_notification_center_projection(bigint,uuid,integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.set_notification_center_prepared_paused(bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.wake_notification_center()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.configure_notification_center_worker(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_notification_center_delivery_health()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.retry_notification_center_delivery(bigint,uuid,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_form_presale_archive(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.convert_form_presale_content(bigint,bigint,text,text,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.record_bank_sync_health(bigint,bigint,timestamp with time zone,text,boolean,boolean,boolean,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.update_bank_sync_connection_metadata(bigint,text,timestamp with time zone,text,bigint,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.begin_bank_sync_observation(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.record_bank_sync_pull(bigint,timestamp with time zone,text,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_form_measurement_policy(text)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_form_measurement_runtime_config(text,bigint,bigint,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.recover_form_save_client_sync_v1(jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.can_read_seating_status(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.can_assign_existing_admissions(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_blueprint_for_edit(text,bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_seating_workspace(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_seating_transition_context(uuid,text,text,bigint,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.preview_ticket_seat_assignment(uuid,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.set_ticket_seat_assignments(uuid,jsonb,text,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.start_seating_configuration(bigint,bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.cancel_seating_configuration(uuid,bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.preview_seating_publication(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.publish_seating_transitions(uuid,uuid[],text,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -2849,7 +3016,8 @@
     "database/functions/organization_verification/notifications.sql",
     "database/functions/organization_verification/review_commands.sql",
     "database/functions/organization_verification/public_identity.sql",
-    "database/functions/organization_verification/profile_commands.sql"
+    "database/functions/organization_verification/profile_commands.sql",
+    "database/functions/user_permissions/form_measurement.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

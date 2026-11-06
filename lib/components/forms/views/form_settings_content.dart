@@ -78,6 +78,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         _bankEnabled,
         _stripeConnectionId,
         _titleController.text,
+        _measurementEnabled,
         _linkController.text,
         _deadlineDaysController.text,
         _deadlineInherited,
@@ -109,6 +110,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String? _linkError;
   String? _savedLink;
   bool _isLoading = true;
+  bool get _canManageMeasurement => RightsService.hasCapability(
+        AuthorizationCapabilities.formsMeasurementWrite,
+      );
   bool get _canEdit => RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _hasChanges =>
       _canEdit && !_isLoading && _form != null && _snapshot.differs(_draft);
@@ -117,6 +121,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String _paymentMessageType = 'name_surname';
   String _communicationTone = 'inherit';
 
+  bool _measurementEnabled = false;
+
   bool _bankEnabled = true,
       _stripeRecipientFailed = false,
       _stripeRecipientLoaded = false,
@@ -124,6 +130,27 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String? _stripeConnectionId;
   Map<String, dynamic>? _stripeRecipient;
   int _stripeReadGeneration = 0;
+
+  bool get _showMeasurement {
+    final status = _form?.definition.measurementStatus;
+    return status?['organization_enabled'] == true &&
+        status?['unit_enabled'] == true;
+  }
+
+  List<String> get _measurementStatusMessages {
+    if (!_measurementEnabled) return [FormStrings.measurementDisabled];
+    final status = _form?.definition.measurementStatus;
+    final reasons = status?['blocked_reasons'];
+    final messages = <String>[
+      if (status?['organization_allowed'] != true)
+        FormStrings.measurementOrganizationBlocked,
+      if (status?['runtime_supported'] != true)
+        FormStrings.measurementRuntimeBlocked,
+      if (reasons is List && reasons.contains('no_destination'))
+        FormStrings.measurementNoDestination,
+    ];
+    return messages.isEmpty ? [FormStrings.measurementReady] : messages;
+  }
 
   String get _unitTone =>
       RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
@@ -134,6 +161,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   @override
   void initState() {
     super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_changed);
     _bankChanges = widget.bankConnectionChanges ??
         DbBankAccounts.current.connectionChanges;
     _bankChanges.addListener(_bankConnectionChanged);
@@ -163,6 +191,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   @override
   void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_changed);
     _bankChanges.removeListener(_bankConnectionChanged);
     _bankSettingsLink.dispose();
     _titleController.dispose();
@@ -242,6 +271,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         _loadStripeRecipient();
       }
 
+      final analytics = _form!.definition.data?['analytics'];
+      _measurementEnabled = analytics is Map && analytics['enabled'] == true;
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
       _linkController.text = _form!.definition.link ?? '';
@@ -378,6 +409,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       metadata.remove(FormMetadata.metaCommunicationTone);
     } else {
       metadata[FormMetadata.metaCommunicationTone] = _communicationTone;
+    }
+
+    if (_canManageMeasurement && _showMeasurement) {
+      metadata['analytics'] = {'enabled': _measurementEnabled};
     }
 
     final days = int.tryParse(_deadlineDaysController.text);
@@ -1033,8 +1068,37 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ],
                                   ),
                                   const SizedBox(height: 24),
-                                  const Divider(),
+                                  if (_showMeasurement) ...[
+                                    Text(
+                                      FormStrings.measurementTitle,
+                                      style: Theme.of(innerContext)
+                                          .textTheme
+                                          .titleLarge,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SwitchListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title:
+                                          Text(FormStrings.measurementEnabled),
+                                      subtitle: Text(
+                                        FormStrings.measurementFormHelp,
+                                      ),
+                                      value: _measurementEnabled,
+                                      onChanged: _canEdit &&
+                                              _canManageMeasurement
+                                          ? (value) => setState(
+                                                () =>
+                                                    _measurementEnabled = value,
+                                              )
+                                          : null,
+                                    ),
+                                    for (final message
+                                        in _measurementStatusMessages)
+                                      Text(message),
+                                    const SizedBox(height: 24),
+                                    const Divider(),
                                   const SizedBox(height: 16),
+                                  ],
                                   Text(
                                     FormStrings.paymentDetailsTitle,
                                     style: Theme.of(innerContext)

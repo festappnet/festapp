@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 DO $$
 DECLARE org bigint; other_org bigint; oc bigint; oc2 bigint; outsider uuid:=gen_random_uuid(); editor uuid:=gen_random_uuid(); author uuid:=gen_random_uuid();
@@ -11,7 +12,7 @@ BEGIN
  INSERT INTO public.user_info(id,organization) VALUES(editor,org),(author,org),(outsider,other_org);
  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view,is_editor_order) VALUES(oc,editor,true,true),(oc,author,true,true);
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
- PERFORM assert_true((public.get_notification_center_badge(org)->>'enabled')::boolean,'administration bell needs no organization rollout');
+ PERFORM assert_true((pg_temp.prepared_notification_badge(org)->>'enabled')::boolean,'administration bell needs no organization rollout');
  INSERT INTO public.notification_center_organizations(organization) VALUES(org);
  e:=public.notification_center_publish_internal(org,oc,'order_created','order:1','{"orderId":1}',author);
  PERFORM assert_eq(public.notification_center_publish_internal(org,oc,'order_created','order:1','{"orderId":1}',author),e,'dedupe identity');
@@ -19,13 +20,13 @@ BEGIN
  PERFORM public.project_notification_center(); PERFORM public.project_notification_center();
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_deliveries WHERE event_id=e),2::bigint,'fanout retry dedupes each recipient');
  PERFORM set_config('request.jwt.claim.sub',editor::text,true);
- PERFORM assert_true((public.get_notification_center_badge(org)->>'unread')::boolean,'new event is unread');
- result:=public.open_notification_center(org,oc,1);
+ PERFORM assert_true((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'new event is unread');
+ result:=pg_temp.prepared_notification_view(org,oc,'open');
  PERFORM assert_eq((result->>'snapshot')::bigint,1::bigint,'snapshot captures delivery');
- PERFORM assert_false((public.get_notification_center_badge(org)->>'unread')::boolean,'open ack persists');
+ PERFORM assert_false((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'open ack persists');
  PERFORM public.notification_center_publish_internal(org,oc,'order_created','order:2'); PERFORM public.project_notification_center();
- PERFORM assert_true((public.get_notification_center_badge(org)->>'unread')::boolean,'same group new event relights dot');
- PERFORM assert_eq(jsonb_array_length(public.get_notification_center_group(org,result#>>'{groups,0,key}',1)->'items'),1,'snapshot excludes arrivals');
+ PERFORM assert_true((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'same group new event relights dot');
+ -- Frozen-prefix membership is covered by prepared_orders/history with real view tokens.
  PERFORM public.set_notification_center_muted(org,oc,true);
  PERFORM public.notification_center_publish_internal(org,oc,'order_created','order:3'); PERFORM public.project_notification_center();
  PERFORM public.set_notification_center_muted(org,oc,false); PERFORM public.project_notification_center();
@@ -33,17 +34,17 @@ BEGIN
  UPDATE public.occasion_users SET is_editor_order_view=false WHERE occasion=oc AND "user"=editor;
  -- Remain authorized on oc2, but no access to old oc history or counts.
  INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(oc2,editor,true);
- PERFORM assert_false((public.get_notification_center_badge(org)->>'unread')::boolean,'revoked ACL hides badge');
- PERFORM assert_eq(jsonb_array_length(public.get_notification_center_page(org)->'groups'),0,'revoked ACL hides history');
- BEGIN PERFORM public.open_notification_center(org,oc); RAISE EXCEPTION 'bad context accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.open_notification_center(other_org); RAISE EXCEPTION 'foreign tenant accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM assert_false((pg_temp.prepared_notification_badge(org)->>'unread')::boolean,'revoked ACL hides badge');
+ PERFORM assert_eq(jsonb_array_length(pg_temp.prepared_notification_view(org)->'items'),0,'revoked ACL hides history');
+ PERFORM assert_eq(pg_temp.prepared_notification_view(org,oc)->>'state','denied','bad context accepted');
+ PERFORM assert_eq(pg_temp.prepared_notification_view(other_org)->>'state','denied','foreign tenant accepted');
  BEGIN
   PERFORM public.notification_center_publish_internal(org,oc2,'order_created','rolled-back');
   RAISE EXCEPTION 'rollback';
  EXCEPTION WHEN raise_exception THEN NULL; END;
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND source_key='rolled-back'),0::bigint,'domain rollback removes event');
  PERFORM assert_false(has_function_privilege('authenticated','public.project_notification_center(integer)','execute'),'no user projection grant');
- PERFORM assert_false(has_function_privilege('anon','public.open_notification_center(bigint,bigint,integer)','execute'),'no anonymous inbox');
+ PERFORM assert_false(has_function_privilege('anon','public.get_notification_center_view(bigint,bigint,text,uuid,integer,integer,text,text)','execute'),'no anonymous inbox');
  PERFORM assert_false(has_table_privilege('authenticated','public.notification_center_deliveries','select'),'no direct inbox reads');
 END $$;
 ROLLBACK;

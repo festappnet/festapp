@@ -33,6 +33,9 @@ BEGIN
         v_result := jsonb_set(v_result, '{data,order,order_symbol}', to_jsonb(v_symbol));
       END IF;
     END IF;
+    IF v_actor IS NULL AND p_context IS NULL THEN
+      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,CASE WHEN (v_result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+    END IF;
     RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
   IF p_order ? 'checkoutOrigin' THEN
@@ -57,12 +60,20 @@ BEGIN
   PERFORM public.enqueue_ticket_order_confirmation_v1(
     p_command_id,v_occasion,v_result,p_order->>'lang');
   IF p_context IS NOT NULL THEN v_result:=v_result||jsonb_build_object('adminQuote',p_context->'quote','paymentPreparationPolicy','leased_keep_pending'); END IF;
-  RETURN public.complete_profile_inventory_membership_mutation_v1(
+  v_result:=public.complete_profile_inventory_membership_mutation_v1(
     p_command_id,v_occasion,'inventory.order.create',jsonb_build_array(jsonb_build_object(
       'entityType','order','entityId',v_result#>>'{order,id}','operation','insert',
       'safeLabel','Ticket order','changedFields',jsonb_build_array(
         'tickets','products','allocations','membership'))),v_before_users,v_result,
     v_actor_kind);
+  -- The receipt remains frozen; first response and authorized replay project the
+  -- same immutable facts, filtered through current stored form policy.
+  IF v_actor IS NULL AND p_context IS NULL THEN
+    PERFORM public.record_form_conversion_internal((v_result#>>'{data,order,id}')::bigint);
+    v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(
+      public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,CASE WHEN (v_result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+  END IF;
+  RETURN v_result;
 END; $$;
 REVOKE ALL ON FUNCTION public.create_ticket_order_command_internal(jsonb,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
