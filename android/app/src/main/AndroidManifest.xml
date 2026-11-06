@@ -48,6 +48,8 @@
                 <data android:scheme="https" android:host="vstupenky.online" android:path="/stripe/return" />
                 <data android:scheme="https" android:host="vstupenky.online" android:path="/app/stripe/pay" />
                 <data android:scheme="https" android:host="vstupenky.online" android:path="/app/stripe/return" />
+                <data android:scheme="https" android:host="vstupenky.online" android:pathPrefix="/payments/" />
+                <data android:scheme="https" android:host="vstupenky.online" android:pathPrefix="/app/payments/" />
             </intent-filter>
             <!-- FESTAPP_GOOGLE_AUTH_LINK_END -->
         </activity>

@@ -127,6 +127,26 @@ test('Stripe SQL authority serializes checkout, duplicate webhook and refund/adm
   assert.equal(await scalar('SELECT state FROM eshop.tickets WHERE id=$1',[ticket]),raced[1].error?'storno':'used','refund preserves only admission that committed before it');
   assert.equal(await scalar('SELECT state FROM eshop.orders WHERE id=$1',[order]),'storno');
   assert.equal(Number(await scalar("SELECT count(*) FROM eshop.stripe_payment_movements WHERE attempt_id=$1 AND kind='refund'",[a.id])),1);
+  // Recovery inventory release and a late webhook overlap under the same lock order.
+  const uncertainToken=randomBytes(32).toString('hex');
+  const uncertainPayload={...payload,stripePaymentSource:{...payload.stripePaymentSource,tokenHash:hash(uncertainToken),returnHash:hash(randomBytes(32).toString('hex'))}};
+  const uncertainOrder=(await scalar('SELECT public.create_ticket_order_client_sync_v1($1,$2,$3)',[uncertainPayload,randomUUID(),randomUUID()])).data.order.id;
+  const uncertainAttempt=(await control.query('SELECT * FROM eshop.stripe_checkout_attempts WHERE order_id=$1',[uncertainOrder])).rows[0];
+  const uncertainClaim=await scalar('SELECT public.claim_stripe_checkout_internal($1,false)',[uncertainToken]);
+  await control.query("UPDATE eshop.stripe_checkout_attempts SET created_at=now()-interval '2 hours',reservation_expires_at=now()-interval '1 hour' WHERE id=$1",[uncertainAttempt.id]);
+  const lateFacts={...facts,observedAt:new Date().toISOString(),sessionId:'cs_test_uncertainLate',paymentIntentId:'pi_uncertainLate',movements:[{...facts.movements[0],providerId:'pi_uncertainLate',occurredAt:Math.floor(Date.now()/1000)}]};
+  const unresolvedRace=await race([
+   async w=>w.query('SELECT public.defer_stripe_recovery_internal($1,$2,120)',[uncertainAttempt.id,uncertainClaim.lease]),
+   async w=>w.query('SELECT public.ingest_stripe_payment_internal($1,$2,$3,$4)',[uncertainAttempt.id,uncertainClaim.lease,{...event,id:'evt_uncertainLate',bodyHash:'f'.repeat(64)},lateFacts]),
+  ]);
+  assert.equal(unresolvedRace.filter(r=>!r.error).length,1,'one fenced lease owner commits; the stale worker must retry');
+  for(const r of unresolvedRace)if(r.error)assert.match(r.error.message,/STRIPE_SYNC_LEASE_INVALID/);
+  // Retry through a newly acquired lease, then release the elapsed reservation.
+  const lateClaim=await scalar("SELECT public.claim_stripe_sync_internal('acct_raceFixture',false,$1,'cs_test_uncertainLate',NULL)",[uncertainAttempt.id]);
+  await control.query('SELECT public.ingest_stripe_payment_internal($1,$2,$3,$4)',[uncertainAttempt.id,lateClaim.lease,{...event,id:'evt_uncertainLate',bodyHash:'f'.repeat(64)},lateFacts]);
+  assert.equal(Number(await scalar('SELECT count(*) FROM eshop.stripe_payment_movements WHERE attempt_id=$1',[uncertainAttempt.id])),1);
+  assert.equal(await scalar('SELECT state FROM eshop.stripe_checkout_attempts WHERE id=$1',[uncertainAttempt.id]),'action_required');
+  assert.notEqual(await scalar('SELECT state FROM eshop.orders WHERE id=$1',[uncertainOrder]),'paid','late money cannot grant released admission');
   // Replacement and submission share form->unit locks; a stale recipient can
   // either commit before replacement or be rejected, never silently redirected.
   const actor=randomUUID();
@@ -149,7 +169,7 @@ test('Stripe SQL authority serializes checkout, duplicate webhook and refund/adm
    assert.equal(await scalar('SELECT connection_id FROM eshop.stripe_checkout_attempts WHERE order_id=$1',[submitted.order.id]),conn);
   }else{assert.equal(submitted.errorCode,'STRIPE_RECIPIENT_CHANGED',JSON.stringify(replaced[1].value));}
   assert.equal(await scalar('SELECT connection_id FROM eshop.stripe_checkout_attempts WHERE id=$1',[a.id]),conn);
-  assert.equal(await scalar("SELECT data#>>'{payments,stripeConnectionId}' FROM public.forms WHERE id=$1",[form]),replaced[0].value.connectionId);
+  assert.equal(await scalar("SELECT data#>>'{payments,providerConnections,stripe}' FROM public.forms WHERE id=$1",[form]),replaced[0].value.connectionId);
   const stale=await scalar('SELECT public.create_ticket_order_client_sync_v1($1,$2,$3)',[freshPayload,randomUUID(),randomUUID()]);
   assert.equal(stale.data.errorCode,'STRIPE_RECIPIENT_CHANGED','replacement-first outcome must have a stable public rejection code');
 

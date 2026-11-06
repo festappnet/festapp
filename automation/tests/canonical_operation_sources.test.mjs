@@ -114,10 +114,10 @@ for signature,body,path in functions:
   assert.equal(migration.slice(migration.indexOf('-- Apply after')), access);
  });
 
-test('payment email lifecycle forward matches its canonical owners', () => {
-  const sources = ['database/functions/eshop_orders/recalculate_order_payment_status.sql',
-    'database/functions/eshop_waitlist/fakturoid_recovery.sql'];
-  const migration = read('supabase/migrations/20261106144000_restore_payment_email_lifecycle.sql');
-  assert.equal(migration.slice(migration.indexOf('\n-- Source:')), sources.map(
-    source => `\n-- Source: ${source}\n${read(source)}`).join(''));
+test('payment lifecycle retains recovery history and provider-aware reconciliation', () => {
+  const recovery = read('database/functions/eshop_waitlist/fakturoid_recovery.sql');
+  const historical = read('supabase/migrations/20261106144000_restore_payment_email_lifecycle.sql');
+  assert.ok(historical.endsWith(recovery));
+  execFileSync('python3', ['automation/assemble-payment-provider-integration-migration.py', '--check']);
+  execFileSync('python3', ['automation/assemble-payment-provider-hardening-migration.py', '--check']);
 });

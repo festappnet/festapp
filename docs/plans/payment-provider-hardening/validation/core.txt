@@ -1,0 +1,11 @@
+00:00 +0: loading test/forms/form_payment_options_test.dart
+00:00 +0: test/forms/form_payment_options_test.dart: A06 legacy defaults to bank; explicit unavailability never falls back
+00:00 +1: test/payments/connector_test.dart: another provider has its own checkout policy and isolated availability
+00:00 +2: test/payments/connector_test.dart: another provider has its own checkout policy and isolated availability
+00:00 +3: test/forms/form_payment_options_test.dart: A06/A20 card needs a verified recipient and explicitly enabled surface
+00:00 +4: test/forms/form_payment_options_test.dart: A06/A20 card needs a verified recipient and explicitly enabled surface
+00:00 +5: test/forms/form_payment_options_test.dart: A06/A20 card needs a verified recipient and explicitly enabled surface
+00:00 +6: test/payments/configuration_test.dart: conflicting legacy and modern recipient fails closed
+00:00 +7: test/forms/form_payment_options_test.dart: A06 form availability survives immutable definition copies and cache round trip
+00:00 +8: test/forms/form_payment_options_test.dart: A06 form availability survives immutable definition copies and cache round trip
+00:00 +9: All tests passed!

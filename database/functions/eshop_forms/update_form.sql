@@ -158,6 +158,9 @@ BEGIN
             form_metadata:=jsonb_set(form_metadata,'{analytics}',
               coalesce(nullif(public.normalize_form_metadata_internal(previous_form_metadata)->'analytics','null'::jsonb),'{}'::jsonb) || (form_metadata->'analytics'));
           END IF;
+          -- Full metadata from released clients owns only its bank/Stripe part.
+          form_metadata:=jsonb_set(form_metadata,'{payments}',public.merge_form_payments_internal(
+            previous_form_metadata->'payments',public.normalize_form_metadata_internal(input_data->'data')->'payments'));
           form_metadata:=public.apply_form_settings_internal(form_metadata,
             public.form_settings_from_metadata_internal(form_metadata));
         END IF;

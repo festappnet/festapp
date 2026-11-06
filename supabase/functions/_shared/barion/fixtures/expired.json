@@ -1,0 +1,22 @@
+{
+  "PaymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+  "PaymentRequestId": "597fe855-892a-4199-8ae8-4122aace1542",
+  "PaymentType": "Immediate",
+  "Status": "Expired",
+  "Total": 0,
+  "Currency": "CZK",
+  "FundingSource": null,
+  "CompletedAt": "2026-11-06T12:39:28.604Z",
+  "Transactions": [
+    {
+      "TransactionId": "bb18b1e8ded9f1118c35001dd8b71cc5",
+      "POSTransactionId": "597fe855-892a-4199-8ae8-4122aace1542",
+      "TransactionTime": "2026-11-06T12:38:04.501Z",
+      "Total": 1,
+      "Currency": "CZK",
+      "Status": "Expired",
+      "TransactionType": "Unspecified",
+      "RelatedId": null
+    }
+  ]
+}

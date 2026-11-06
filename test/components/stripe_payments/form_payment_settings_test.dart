@@ -1,3 +1,5 @@
+import 'package:festapp_core/payments.dart';
+import 'package:fstapp/components/payments/payment_editor_registry.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/foundation.dart';
 
@@ -18,7 +20,7 @@ import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/components/forms/views/form_settings_content.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
+import 'package:fstapp/components/payments/payment_method_cards.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 
@@ -104,6 +106,64 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => _environment,
+    'another connector saves its recipient without erasing other provider bindings',
+    (tester) async {
+      const other = PaymentConnector(
+        id: 'other',
+        payPath: '/payments/other/pay',
+        returnPath: '/payments/other/return',
+        checkoutHost: 'pay.example',
+      );
+      final adapter = PaymentEditorConnector(
+        connector: other,
+        visible: () => true,
+        canManage: () => false,
+        supportedCurrencies: const {'CZK'},
+        titleKey: 'stripe',
+        setupKey: 'setupStripe',
+        settingsPath: (unit) => '/unit/$unit/edit/other',
+      );
+      Map<String, dynamic>? saved;
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormSettingsContent(
+            showCardPayments: true,
+            paymentProviders: [adapter],
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            formLink: 'other-provider',
+            loadBundle: (link) async => _bundle(link, 5, {
+              'bankEnabled': true,
+              'stripeConnectionId': 'kept-other-binding',
+              'providerConnections': {'other': _connection},
+            }),
+            loadPaymentRecipient: (_, __) async => _recipient(),
+            saveForm: (draft) async => saved = Map<String, dynamic>.from(
+              draft.toEditedJson()['settings']['payments'],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(_selection(tester), FormPaymentMethod.both);
+      await _choose(tester, FormPaymentMethod.online);
+      await _actions(tester).onSave();
+      await tester.pumpAndSettle();
+      expect(saved!['bankEnabled'], false);
+      expect(saved!['providerConnections'], {'other': _connection, 'stripe': 'kept-other-binding'});
+      expect(saved!.containsKey('stripeConnectionId'), isFalse);
+      await _choose(tester, FormPaymentMethod.bank);
+      await _actions(tester).onSave();
+      await tester.pumpAndSettle();
+      expect(saved!['providerConnections'], {'stripe': 'kept-other-binding'});
+      expect(saved!.containsKey('stripeConnectionId'), isFalse);
+      await _environment.pumpWidget(tester, const SizedBox.shrink());
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
     'normal form settings hide cards and avoid Stripe reads while retaining saved configuration',
     (tester) async {
       var reads = 0;
@@ -118,7 +178,7 @@ void main() {
               'bankEnabled': true,
               'stripeConnectionId': _connection,
             }),
-            loadStripeRecipient: (unit, occasion) async {
+            loadPaymentRecipient: (unit, occasion) async {
               reads++;
               return _recipient();
             },
@@ -148,7 +208,7 @@ void main() {
             bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
             formLink: 'payment-test',
             loadBundle: (link) async => _bundle(link, 5, savedPayments),
-            loadStripeRecipient: (unit, occasion) async {
+            loadPaymentRecipient: (unit, occasion) async {
               expect([unit, occasion], [5, 50]);
               checks++;
               return _recipient(paused: true);
@@ -156,7 +216,7 @@ void main() {
             saveForm: (draft) async {
               saves++;
               savedPayments = Map<String, dynamic>.from(
-                draft.definition.data!['payments'],
+                draft.toEditedJson()['settings']['payments'],
               );
             },
           ),
@@ -171,7 +231,7 @@ void main() {
       expect(find.text(PaymentMethodStrings.reason('paused')), findsOneWidget);
 
       for (final mode in [
-        FormPaymentMethod.stripe,
+        FormPaymentMethod.online,
         FormPaymentMethod.both,
         FormPaymentMethod.bank,
       ]) {
@@ -180,9 +240,9 @@ void main() {
         expect(_actions(tester).hasChanges, isTrue);
         await _actions(tester).onSave();
         await tester.pumpAndSettle();
-        expect(savedPayments!['bankEnabled'], mode != FormPaymentMethod.stripe);
+        expect(savedPayments!['bankEnabled'], mode != FormPaymentMethod.online);
         expect(
-          savedPayments!['stripeConnectionId'],
+          (savedPayments!['providerConnections'] as Map)['stripe'],
           mode == FormPaymentMethod.bank ? null : _connection,
         );
         expect(_actions(tester).hasChanges, isFalse);
@@ -225,14 +285,14 @@ void main() {
               'bankEnabled': false,
               'stripeConnectionId': _connection,
             }),
-            loadStripeRecipient: (unit, occasion) => pending.future,
+            loadPaymentRecipient: (unit, occasion) => pending.future,
           ),
         ),
       );
       // Deliberately leave the old recipient request unresolved.
       await tester.pump();
       await tester.pump();
-      expect(_selection(tester), FormPaymentMethod.stripe);
+      expect(_selection(tester), FormPaymentMethod.online);
       await _environment.pumpWidget(
         tester,
         MaterialApp(
@@ -243,7 +303,7 @@ void main() {
             key: const ValueKey('new-form'),
             formLink: 'new-form',
             loadBundle: (link) async => _bundle(link, 9, null),
-            loadStripeRecipient: (_, __) async => null,
+            loadPaymentRecipient: (_, __) async => null,
           ),
         ),
       );

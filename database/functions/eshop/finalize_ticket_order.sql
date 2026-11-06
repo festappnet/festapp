@@ -61,8 +61,7 @@ DECLARE
     v_total_deposit NUMERIC := 0;
     v_payment_method text;
     v_payment_instructions jsonb;
-    v_stripe_connection uuid;
-    v_stripe_attempt uuid;
+    v_provider_payment jsonb;
 BEGIN
     PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid)]);
     PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid));
@@ -227,28 +226,23 @@ BEGIN
               'note',ticket_note,'products',result->'products');
         END LOOP;
 
-        order_data := input_data - 'ticket' - 'stripePaymentSource' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
+        order_data := public.strip_payment_sources_internal(input_data) - 'ticket' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
 
         v_payment_method:=coalesce(input_data->>'payment_method','bank');
-        IF v_payment_method NOT IN ('bank','stripe') THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
+        IF NOT public.payment_method_registered_internal(v_payment_method) THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
         IF calculated_price=0 THEN v_payment_method:='bank'; END IF;
         IF calculated_price=0 THEN
           bank_account_id:=NULL;
           INSERT INTO eshop.payment_info(amount,currency_code,created_at) VALUES(0,first_currency_code,now) RETURNING id INTO payment_info_id;
-        ELSIF v_payment_method='stripe' THEN
-          IF coalesce(input_data->>'payment_type','full')<>'full' OR v_total_deposit>0 THEN
-            RAISE EXCEPTION 'STRIPE_DEPOSIT_UNSUPPORTED'; END IF;
-          v_stripe_connection:=public.assert_stripe_form_payable_internal(form_id,
-            (input_data->>'stripe_connection_id')::uuid,input_data->>'payment_surface');
-          IF (input_data->>'expected_payment_amount_minor')::numeric IS DISTINCT FROM calculated_price*100
-            OR input_data->>'expected_payment_currency' IS DISTINCT FROM first_currency_code::text THEN
-            RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','STRIPE_PRICE_CHANGED','message','Order price changed. Review the order before paying.')::text;
-          END IF;
-          IF first_currency_code NOT IN ('CZK','EUR','PLN','USD','GBP') OR calculated_price*100<>trunc(calculated_price*100) THEN
-            RAISE EXCEPTION 'STRIPE_AMOUNT_UNSUPPORTED'; END IF;
+        ELSIF v_payment_method<>'bank' THEN
+          v_provider_payment:=public.payment_provider_call_internal(v_payment_method,'initialize_payment',jsonb_build_object(
+            'formId',form_id,'input',input_data,'amount',calculated_price,'currency',first_currency_code,'deposit',v_total_deposit,'createdAt',now));
+          payment_info_id:=(v_provider_payment->>'paymentInfoId')::bigint;
+          IF payment_info_id IS NULL OR NOT EXISTS(SELECT 1 FROM eshop.payment_info provider_payment
+            WHERE provider_payment.id=payment_info_id AND provider_payment.payment_method=v_payment_method
+              AND provider_payment.amount=calculated_price AND provider_payment.currency_code=first_currency_code) THEN
+            RAISE EXCEPTION 'PAYMENT_PROVIDER_PREPARATION_INVALID'; END IF;
           bank_account_id:=NULL;
-          INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method,stripe_connection_id)
-          VALUES(calculated_price,first_currency_code,now,'stripe',v_stripe_connection) RETURNING id INTO payment_info_id;
         ELSE
           IF input_data->>'payment_type' = 'full' THEN v_total_deposit:=0; END IF;
           INSERT INTO eshop.payment_info(amount,deposit_amount,currency_code,created_at)
@@ -293,9 +287,10 @@ BEGIN
             (SELECT (feature->>'deadline_duration_seconds')::bigint
              FROM jsonb_array_elements(occasion_features) feature WHERE feature->>'code'='form'),604800);
           -- Calculate deadline if deadline duration is provided
-          IF v_payment_method='stripe' THEN
-              v_stripe_attempt:=public.create_stripe_order_attempt_internal(order_id);
-              SELECT reservation_expires_at INTO deadline FROM eshop.stripe_checkout_attempts WHERE id=v_stripe_attempt;
+          IF v_payment_method<>'bank' THEN
+              v_provider_payment:=public.payment_provider_call_internal(v_payment_method,'create_attempt',jsonb_build_object('orderId',order_id));
+              deadline:=(v_provider_payment->>'expiresAt')::timestamptz;
+              IF deadline IS NULL THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_DEADLINE_INVALID'; END IF;
           ELSIF form_deadline_duration IS NOT NULL THEN
               deadline := now + make_interval(secs => form_deadline_duration);
               PERFORM public.set_payment_deadline(payment_info_id, deadline);
@@ -365,7 +360,7 @@ BEGIN
         -- Prepare the success response JSON
         result := JSONB_BUILD_OBJECT(
             'code', 200,
-            'payment',public.stripe_order_payment_projection_internal(order_id),
+            'payment',public.provider_order_payment_projection_internal(order_id),
             'order', JSONB_BUILD_OBJECT(
                 'id', order_id,
                 'order_symbol', assigned_order_symbol,

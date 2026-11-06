@@ -1,0 +1,66 @@
+{
+  "deno": {
+    "logSha256": "68c17cb855a2398f03961cced5557d758526c147aeb7de7e80bbab3b77a388a2",
+    "summary": "validation/deno.txt"
+  },
+  "sql": {
+    "logSha256": "d52987154894694d862743dec1b50ba5bbaf7b99691c15820634325ed4f2bdbd",
+    "summary": "validation/sql.txt"
+  },
+  "upgrade": {
+    "logSha256": "c2cb64c8b88d839ee42a2c66894985ad2260ae5b972bd304034159f85162dba6",
+    "summary": "validation/upgrade.txt"
+  },
+  "concurrency": {
+    "logSha256": "6d5df87a1ec8d58cc4df599684891056ac0398beaaa6cd717dc9a0d57794a730",
+    "summary": "validation/concurrency.txt"
+  },
+  "core": {
+    "logSha256": "1cf1e92d3e0b2113b8a9edd18d634124f55fbfd4d8bdb26f20aef010eb138a85",
+    "summary": "validation/core.txt"
+  },
+  "setup-story": {
+    "logSha256": "d2406c8aa63c48b013d825d07d0a6697840b46a0131b14d0f3454f0c960f1b41",
+    "summary": "validation/setup-story.txt"
+  },
+  "flutter-original": {
+    "logSha256": "33ce47b0a3c924249bb02e1c7a1828861f657ce3fd753faa72ed89fab142e91d",
+    "summary": "validation/flutter-original.txt"
+  },
+  "flutter-corrected-contract": {
+    "logSha256": "b1803e1502a148029f74a6079c19d8ecb432f525a9e2b2ede32d6943cef1851c",
+    "summary": "validation/flutter-corrected-contract.txt"
+  },
+  "web": {
+    "logSha256": "2b639af775d86500b0240f226c88dfe130e1051909d21841553f7b1ae82ac40e",
+    "summary": "validation/web.txt"
+  },
+  "hosting": {
+    "logSha256": "f65a11818f61062d6977d3edbb062a91e1c4dbc4bc698466f96e37a41f8fdd81",
+    "summary": "validation/hosting.txt"
+  },
+  "coverage": {
+    "logSha256": "a0ac806acbe52c3daded8c33f92744ba52fd80af269d33c56054382359305f3d",
+    "summary": "validation/coverage.txt"
+  },
+  "callback": {
+    "logSha256": "d364fff8eb0f4e603785acd7ce1a113a4937e5d7931d25ea8fd3bda900be9d35",
+    "summary": "validation/callback.txt"
+  },
+  "architecture": {
+    "logSha256": "9d46c2e876b7e91acff24359bb26276f6637023492833e7a34accb90af6f7f3d",
+    "summary": "validation/architecture.txt"
+  },
+  "dart-analyze": {
+    "logSha256": "acf090c1c6fc0a623f0e9b9536d6874fcfab4876c6a6ef025df58e9d8b28e5d2",
+    "summary": "validation/dart-analyze.txt"
+  },
+  "fresh": {
+    "logSha256": "5cd31ad1123eb1b81eef559cf38371094a2f6b32bcf574697412931b62876e03",
+    "summary": "validation/fresh.txt"
+  },
+  "stop": {
+    "logSha256": "80109ed0da2f5f88fbb010780f06141055c7e46ab78a209ba7b4e92afa04032c",
+    "summary": "validation/stop.txt"
+  }
+}

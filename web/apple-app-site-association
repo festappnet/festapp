@@ -9,6 +9,8 @@
           "8WKBB6L8LT.festapp.festapp"
         ],
         "paths": [
+          "/payments/*",
+          "/app/payments/*",
           "/stripe/pay",
           "/stripe/return",
           "/app/stripe/pay",
@@ -17,6 +19,12 @@
           "*"
         ],
         "components": [
+          {
+            "/": "/payments/*"
+          },
+          {
+            "/": "/app/payments/*"
+          },
           {
             "/": "/stripe/pay"
           },

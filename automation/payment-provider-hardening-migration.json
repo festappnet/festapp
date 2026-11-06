@@ -1,0 +1,24 @@
+{
+  "migration": "20261106160000_payment_provider_hardening.sql",
+  "sources": [
+    "payment_providers/configuration.sql",
+    "payment_providers/registry.sql",
+    "payment_providers/financial_facts.sql",
+    "eshop_transactions/payment_totals.sql",
+    "eshop_stripe/form_availability.sql",
+    "eshop_stripe/provider.sql",
+    "eshop_stripe/connections.sql",
+    "payment_providers/effects.sql",
+    "eshop_stripe/admission.sql",
+    "eshop_stripe/ingest.sql",
+    "eshop_stripe/refund_decisions.sql",
+    "eshop_stripe/order_creation.sql",
+    "eshop_stripe/reconciliation.sql",
+    "eshop_forms/form_settings.sql",
+    "eshop_forms/update_form.sql",
+    "eshop_forms/update_form_client_sync_v1.sql",
+    "occasion_setup/drafts.sql",
+    "occasion_setup/finalize.sql",
+    "payment_providers/configuration_upgrade.sql"
+  ]
+}

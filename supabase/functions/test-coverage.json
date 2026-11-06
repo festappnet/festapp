@@ -550,6 +550,54 @@
         "explicit-opt-in",
         "turnstile-form-binding"
       ]
+    },
+    "payment-connect": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ]
+    },
+    "payment-checkout": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts",
+        "supabase/functions/_shared/barion/adapter_test.ts"
+      ]
+    },
+    "payment-return": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ]
+    },
+    "payment-webhook": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/checkout_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts",
+        "supabase/functions/_shared/barion/adapter_test.ts"
+      ]
+    },
+    "payment-reconcile": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/reconcileHandler_test.ts",
+        "supabase/functions/_shared/payments/reconcile_test.ts",
+        "supabase/functions/_shared/barion/adapter_test.ts"
+      ]
     }
   },
   "excluded": {

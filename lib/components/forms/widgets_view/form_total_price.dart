@@ -21,7 +21,7 @@ class FormTotalPrice extends StatelessWidget {
         Utilities.formatPrice(context, amount,
             currencyCode: currencyCode,
             decimalDigits:
-                FormPaymentOptions.fromJson(payments).stripeConfigured
+                FormPaymentOptions.fromJson(payments).cardConfigured
                     ? null
                     : 0),
         style: style,

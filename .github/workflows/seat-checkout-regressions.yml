@@ -4,6 +4,16 @@ on:
     branches: [main]
     paths:
       - 'database/functions/eshop/**'
+      - 'database/functions/eshop_barion/**'
+      - 'database/functions/eshop_stripe/**'
+      - 'database/functions/payment_providers/**'
+      - 'database/functions/abuse/policy.sql'
+      - 'supabase/functions/_shared/barion/**'
+      - 'supabase/functions/_shared/payments/**'
+      - 'supabase/functions/_shared/stripe/**'
+      - 'web_client/tests/database/barion*'
+      - 'automation/payments/**'
+      - 'automation/*barion*'
       - 'database/functions/blueprint/**'
       - 'database/tests/blueprint/legacy_ticket_offer_test.sql'
       - 'database/functions/eshop_orders/**'

@@ -49,8 +49,8 @@ test('Stripe private deep links reach Flutter before occasion lookup in both ten
  const {default: ticketingWorker} = await import('data:text/javascript;base64,' + Buffer.from(ticketingSource).toString('base64'));
  for (const currentWorker of [worker, ticketingWorker]) {
   for (const prefix of ['', '/app']) {
-   for (const suffix of ['/connect/callback', '/pay', '/return']) {
-    const path = prefix + '/stripe' + suffix;
+   for (const suffix of ['/stripe/connect/callback', '/stripe/pay', '/stripe/return', '/payments/other/pay', '/payments/other/return']) {
+    const path = prefix + suffix;
     const response = await currentWorker.fetch(new Request('https://tenant.invalid' + path + '?code=synthetic&state=fixture'), env);
     assert.equal(response.status, 200, path);
     assert.equal(await response.text(), 'Flutter shell', path);
@@ -62,7 +62,7 @@ test('Stripe private deep links reach Flutter before occasion lookup in both ten
   }
  }
  assert.equal(lookups, 0, 'Stripe routes are not occasion slugs');
- assert.equal(requests.length, 12);
+ assert.equal(requests.length, 20);
  assert.ok(requests.every(url => url.pathname === '/flutter' && url.search === ''), 'private query values never reach asset requests');
 });
 

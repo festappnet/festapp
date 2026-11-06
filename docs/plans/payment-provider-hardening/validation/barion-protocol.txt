@@ -1,0 +1,8 @@
+A13 correctly signed malformed facts are rejected before ingestion ... ok (224µs)
+A09 timeout replay keeps original Session expiry after the 30 minute creation window ... ok (132µs)
+A16/A25 refund recovery is account-scoped, bounded and keeps a provider cursor ... ok (194µs)
+loopback return origins are confined to sandbox and cannot enter live configuration ... ok (73µs)
+tenant Checkout locale is explicit while legacy attempts preserve their original body ... ok (116µs)
+
+ok | 51 passed | 0 failed (199ms)
+

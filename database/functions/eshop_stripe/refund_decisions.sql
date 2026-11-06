@@ -37,14 +37,8 @@ BEGIN
  SELECT coalesce(array_agg(ou."user"),'{}'::uuid[]) INTO before_users FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
  SELECT encode(extensions.digest(coalesce(jsonb_agg(jsonb_build_array(provider_id,amount_minor) ORDER BY provider_id)::text,'[]'),'sha256'),'hex')
  INTO revision FROM eshop.stripe_payment_movements WHERE attempt_id=a.id AND kind='refund';
- IF p_action='cancel_selected' THEN
-  PERFORM public.internal_storno_tickets_221(ids);
-  UPDATE eshop.orders SET email_payment_version=email_payment_version+1,updated_at=clock_timestamp() WHERE id=o.id;
-  IF EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE state<>'storno') THEN
-   PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
- END IF;
- INSERT INTO eshop.stripe_admission_decisions(attempt_id,actor,reason,ticket_ids,provider_revision)
- VALUES(a.id,actor,CASE WHEN p_action='keep' THEN 'partial_refund_keep' ELSE 'partial_refund_cancel' END,ids,revision) RETURNING id INTO decision;
+ claim:=public.apply_provider_payment_effects_internal('stripe',a.id,revision,public.stripe_order_payment_projection_internal(o.id),false,false,p_action,ids);
+ decision:=(claim->>'decisionId')::uuid;
  INSERT INTO eshop.orders_history("order",state,price,data) VALUES(o.id,o.state,o.price,jsonb_build_object('action','stripe_partial_refund_decision',
   'decisionId',decision,'actor',actor,'ticketIds',ids,'note',trim(p_note),'providerRevision',revision));
  RETURN public.complete_profile_inventory_membership_mutation_v1(p_command_id,v_occasion,'inventory.order.stripe_refund_decision',

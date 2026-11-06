@@ -20,8 +20,8 @@ BEGIN
     SELECT t.* FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info
     WHERE t.currency=p.currency_code
   ), stripe_movements AS MATERIALIZED (
-    SELECT m.*,a.payment_info_id FROM eshop.stripe_payment_movements m JOIN eshop.stripe_checkout_attempts a ON a.id=m.attempt_id
-     JOIN payments p ON p.id=a.payment_info_id WHERE m.currency=p.currency_code::text
+    SELECT m.*,p.id AS payment_info_id FROM payments p
+    CROSS JOIN LATERAL public.provider_payment_movements_internal(p.id) m WHERE m.currency=p.currency_code::text
   ), financial_totals AS MATERIALIZED (
     SELECT p.id,t.* FROM payments p CROSS JOIN LATERAL public.payment_financial_totals_internal(p.id) t
   ), stripe_money AS (

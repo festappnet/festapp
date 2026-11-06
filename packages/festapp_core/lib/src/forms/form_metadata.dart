@@ -1,3 +1,5 @@
+import '../../payments.dart';
+
 abstract final class FormMetadata {
   static const String fieldTypeName = "name";
   static const String fieldTypeSurname = "surname";
@@ -50,7 +52,7 @@ abstract final class FormMetadata {
     'communication_tone': null,
     'variable_symbol': ['type', 'starting_number'],
     'payment_message': ['type'],
-    'payments': ['bankEnabled', 'stripeConnectionId'],
+    'payments': ['bankEnabled', 'providerConnections'],
     'analytics': ['enabled'],
     'design': [
       'embed_inherit_style',
@@ -77,7 +79,11 @@ abstract final class FormMetadata {
   ) {
     final result = <String, dynamic>{};
     for (final entry in authoringSettings.entries) {
-      final value = data == null ? null : data[entry.key];
+      final value = entry.key == 'payments'
+          ? FormPaymentConfiguration.fromJson(
+              data?['payments'] as Map?,
+            ).toJson()
+          : data?[entry.key];
       if (entry.value == null || value == null) {
         result[entry.key] = value;
       } else {

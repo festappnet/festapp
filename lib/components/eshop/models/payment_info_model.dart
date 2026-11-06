@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'package:festapp_core/eshop.dart';
 export 'package:festapp_core/eshop.dart' show BankSyncWarning, BankSyncContact;
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
@@ -16,7 +17,7 @@ class PaymentInfoModel {
   DateTime? deadline;
   String? currencyCode;
   String? paymentMethod;
-  bool get isStripe => paymentMethod == 'stripe';
+  bool get isProvider => paymentConnectors.contains(paymentMethod);
   Map<String, dynamic>? data;
   bool? isReminderSent;
   BankSyncWarning? bankSyncWarning;

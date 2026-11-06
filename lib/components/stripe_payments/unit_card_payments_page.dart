@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'stripe_feature.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,7 +8,7 @@ import 'package:fstapp/components/unit/views/unit_admin_page.dart';
 import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'stripe_connection_api.dart';
+import 'package:fstapp/components/payments/payment_connection_api.dart';
 import 'stripe_connection_strings.dart';
 
 @RoutePage()
@@ -19,7 +20,7 @@ class UnitCardPaymentsPage extends StatelessWidget {
       : UnitCardPaymentsView(
           unitId: UnitAdministrationScope.of(context).unit.id!,
           canManage: StripeFeature.canManage,
-          api: const SupabaseStripeConnectionApi(),
+          api: const SupabasePaymentConnectionApi(connector: stripePaymentConnector),
         );
 }
 
@@ -34,7 +35,7 @@ class UnitCardPaymentsView extends StatefulWidget {
   final bool connectSupported;
   final int unitId;
   final bool canManage;
-  final StripeConnectionApi api;
+  final PaymentConnectionApi api;
   final Future<bool> Function(String url)? openExternal;
   @override
   State<UnitCardPaymentsView> createState() => _UnitCardPaymentsViewState();
@@ -98,7 +99,7 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
       if (mounted && generation == _generation) {
         setState(() => _connection = value);
       }
-    } on StripeNotConfiguredException {
+    } on PaymentNotConfiguredException {
       if (mounted && generation == _generation) {
         setState(() {
           _configurationRequired = true;
@@ -120,7 +121,7 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
     setState(() => _busy = true);
     try {
       await operation();
-    } on StripeNotConfiguredException {
+    } on PaymentNotConfiguredException {
       if (mounted && widget.unitId == unit) {
         setState(() {
           _configurationRequired = true;

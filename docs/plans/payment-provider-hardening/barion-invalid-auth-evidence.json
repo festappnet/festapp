@@ -1,0 +1,7 @@
+{
+  "operation": "invalid_auth_read",
+  "paymentId": "ba18b1e8ded9f1118c35001dd8b71cc5",
+  "httpStatus": 401,
+  "providerCode": "AuthenticationFailed",
+  "observedAt": "2026-11-06T12:47:26.298Z"
+}

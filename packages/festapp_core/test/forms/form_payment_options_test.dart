@@ -29,7 +29,7 @@ void main() {
       final value = FormPaymentOptions.fromJson(options());
       expect(value.availableFor('web'), ['stripe', 'bank']);
       expect(value.availableFor('embed'), ['bank']);
-      expect(value.stripeReasonFor('embed'), 'surface_unverified');
+      expect(value.cardReasonFor('embed'), 'surface_unverified');
       expect(
         FormPaymentOptions.fromJson({
           ...options(),

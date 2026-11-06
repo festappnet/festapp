@@ -1,6 +1,9 @@
 import '../../fonts/ticket_font_catalog.dart';
 import 'occasion_setup_review_row.dart';
 
+import 'package:festapp_core/payments.dart';
+import 'package:fstapp/components/payments/payment_editor_registry.dart';
+
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'setup_draft_conflict.dart';
@@ -8,8 +11,7 @@ import 'setup_email_preview_coordinator.dart';
 import 'setup_payment_configuration.dart';
 import '../../ticket_layout/ticket_delivery_strings.dart';
 
-import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
-import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import 'package:fstapp/components/payments/payment_method_cards.dart';
 import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 
@@ -370,7 +372,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }
         await _setupFontsFuture;
       } catch (_) {
-        if (mounted) setState(() => _sourceError = OccasionSetupStrings.ui('fonts_could_not_be_loaded_retry'));
+        if (mounted)
+          setState(
+            () => _sourceError = OccasionSetupStrings.ui(
+              'fonts_could_not_be_loaded_retry',
+            ),
+          );
         return;
       }
       if (!mounted || request != _sourceRequest) return;
@@ -601,12 +608,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       final sourcePayments =
           ((draft['formDraft'] as Map)['data'] as Map?)?['payments'];
       if (draft['paymentChoicesEnabled'] == true && sourcePayments is Map) {
-        final hasCard =
-            sourcePayments['stripeConnectionId'] is String ||
-            sourcePayments['bankEnabled'] == false;
-        draft['paymentMethod'] = hasCard
-            ? (sourcePayments['bankEnabled'] == false ? 'stripe' : 'both')
-            : 'bank';
+        draft['payments'] = FormPaymentConfiguration.fromJson(sourcePayments)
+            .toJson();
+        draft.remove('paymentRepairRequired');
       }
       (draft['formDraft'] as Map)['link'] = '';
       draft['formLinkAutomatic'] = true;
@@ -1976,17 +1980,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               for (final product in type.products ?? <ProductModel>[])
                 OccasionSetupReviewRow(
                   product.title ?? '',
-                  '${product.price?.toStringAsFixed(d['paymentMethod'] == 'stripe' || d['paymentMethod'] == 'both' ? 2 : 0) ?? '0'} ${product.currencyCode ?? 'CZK'}',
+                  '${product.price?.toStringAsFixed(_setupHasOnline(d) ? 2 : 0) ?? '0'} ${product.currencyCode ?? 'CZK'}',
                 ),
             ],
             const SizedBox(height: 6),
             if (AppConfig.isAppSupported &&
                 OccasionSetupStory.hasPaidProducts(d)) ...[
               OccasionSetupReviewRow(
-                d['paymentMethod'] == 'stripe'
+                _setupOnlineOnly(d)
                     ? PaymentMethodStrings.text('onlyStripe')
                     : 'BankAccount.bankAccount'.tr(),
-                d['paymentMethod'] == 'stripe'
+                _setupOnlineOnly(d)
                     ? OccasionSetupStrings.story('stripeDraftHint')
                     : OccasionSetupStory.paymentSetupReady(d)
                     ? (d['bankAccountLabel'] as String? ?? '')
@@ -2052,10 +2056,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         if (!AppConfig.isAppSupported && OccasionSetupStory.hasPaidProducts(d))
           _reviewSection(d, 4, OccasionSetupStrings.ui('payment_settings'), [
             OccasionSetupReviewRow(
-              d['paymentMethod'] == 'stripe'
+              _setupOnlineOnly(d)
                   ? PaymentMethodStrings.text('onlyStripe')
                   : 'BankAccount.bankAccount'.tr(),
-              d['paymentMethod'] == 'stripe'
+              _setupOnlineOnly(d)
                   ? OccasionSetupStrings.story('stripeDraftHint')
                   : OccasionSetupStory.paymentSetupReady(d)
                   ? (d['bankAccountLabel'] as String? ?? '')
@@ -2189,7 +2193,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       );
     }
     if (_questions[_questionIndex(d)].key == 'paymentTiming') {
-      if (d['paymentMethod'] == 'stripe')
+      if (_setupOnlineOnly(d))
         return Text(OccasionSetupStrings.story('stripeReservation'));
       return OccasionSetupCommunication(
         key: ValueKey('payment-timing-$_formEpoch'),
@@ -2627,6 +2631,62 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
   }
 
+  String? _setupProviderId;
+  int _setupPaymentGeneration = 0;
+  FormPaymentConfiguration _setupPayments(Map<String, dynamic> d) =>
+      FormPaymentConfiguration.fromJson(d['payments'] as Map?);
+  bool _setupOnlineOnly(Map<String, dynamic> d) =>
+      !_setupPayments(d).bankEnabled;
+  bool _setupHasOnline(Map<String, dynamic> d) =>
+      _setupPayments(d).connections.isNotEmpty;
+  PaymentEditorConnector? _setupProvider(Map<String, dynamic> d) {
+    final ids = _setupPayments(d).connections.keys;
+    final id = _setupProviderId ?? (ids.length == 1 ? ids.single : null);
+    return paymentEditors.where((p) => p.connector.id == id).firstOrNull;
+  }
+
+  Future<void> _setSetupPaymentMethod(FormPaymentMethod method) async {
+    final generation = ++_setupPaymentGeneration;
+    final provider = _setupProvider(_data);
+    if (method == FormPaymentMethod.bank) {
+      _change((x) {
+        x['payments'] = const FormPaymentConfiguration().toJson();
+        x.remove('paymentRepairRequired');
+      }, changesConfiguration: true);
+      return;
+    }
+    if (provider == null) return;
+    final options = await ExceptionHandler.guard(
+      context,
+      futureFunction: () => Supabase.instance.client.rpc(
+        'get_setup_payment_options',
+        params: {'p_draft': _stored.id},
+      ),
+    );
+    if (!mounted || generation != _setupPaymentGeneration) return;
+    final recipients = options is Map && options['providerRecipients'] is Map
+        ? (options['providerRecipients'][provider.connector.id] as List? ?? [])
+        : const [];
+    final id = recipients.length == 1 && recipients.single is Map
+        ? recipients.single['connectionId']
+        : null;
+    _change((x) {
+      final connections = Map<String, String>.from(
+        _setupPayments(x).connections,
+      );
+      if (id is String) connections[provider.connector.id] = id;
+      x['payments'] = FormPaymentConfiguration(
+        bankEnabled: method == FormPaymentMethod.both,
+        connections: connections,
+      ).toJson();
+      if (id is String) {
+        x.remove('paymentRepairRequired');
+      } else {
+        x['paymentRepairRequired'] = true;
+      }
+    }, changesConfiguration: true);
+  }
+
   Future<void> _repairPaymentPolicy() async {
     final key = GlobalKey<FormState>();
     final raw = SetupPaymentConfiguration.policy(_data);
@@ -2682,34 +2742,57 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       ],
       if (d['paymentChoicesEnabled'] == true) ...[
         PaymentMethodCards(
-          value: FormPaymentMethod.values.firstWhere(
-            (m) => m.name == (d['paymentMethod'] ?? 'bank'),
-          ),
-          canSelectStripe: true,
-          stripeFirst: true,
-          onChanged: (method) => _change(
-            (x) => x['paymentMethod'] = method.name,
-            changesConfiguration: true,
-          ),
+          value: _setupHasOnline(d)
+              ? (_setupOnlineOnly(d)
+                    ? FormPaymentMethod.online
+                    : FormPaymentMethod.both)
+              : (_setupOnlineOnly(d) ? null : FormPaymentMethod.bank),
+          canSelectOnline: _setupProvider(d) != null,
+          onlineTitle: _setupProvider(d) == null
+              ? null
+              : PaymentMethodStrings.text(_setupProvider(d)!.titleKey),
+          onlineFirst: true,
+          onChanged: _setSetupPaymentMethod,
         ),
+        DropdownButtonFormField<String>(
+          initialValue: _setupProvider(d)?.connector.id,
+          hint: Text(PaymentMethodStrings.text('onlyStripe')),
+          items: [
+            for (final p in paymentEditors.where((p) => p.visible()))
+              DropdownMenuItem(
+                value: p.connector.id,
+                child: Text(PaymentMethodStrings.text(p.titleKey)),
+              ),
+          ],
+          onChanged: (id) {
+            setState(() => _setupProviderId = id);
+            _setSetupPaymentMethod(
+              _setupPayments(d).bankEnabled
+                  ? FormPaymentMethod.both
+                  : FormPaymentMethod.online,
+            );
+          },
+        ),
+        if (d['paymentRepairRequired'] == true)
+          Text(PaymentMethodStrings.reason('recipient_changed')),
         const SizedBox(height: 16),
       ],
-      if (d['paymentMethod'] == 'stripe' || d['paymentMethod'] == 'both') ...[
+      if (_setupHasOnline(d)) ...[
         Text(OccasionSetupStrings.story('stripeDraftHint')),
-        if (StripeFeature.canManage)
+        if (_setupProvider(d)?.canManage() == true)
           TextButton(
             onPressed: () async {
               if (!await _flush() || !mounted) return;
               await RouterService.navigate(
                 context,
-                '/unit/${_stored.unit}/edit/card-payments',
+                _setupProvider(d)!.settingsPath(_stored.unit),
               );
             },
-            child: Text(OccasionSetupStrings.story('setupStripe')),
+            child: Text(PaymentMethodStrings.text(_setupProvider(d)!.setupKey)),
           ),
         const SizedBox(height: 16),
       ],
-      if (d['paymentMethod'] != 'stripe') ...[
+      if (!_setupOnlineOnly(d)) ...[
         OccasionSetupBankAccount(
           draftId: _stored.id,
           unitId: _stored.unit,

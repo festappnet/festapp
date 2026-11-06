@@ -62,7 +62,7 @@ BEGIN
   RAISE check_violation USING MESSAGE='replacement order rejected',DETAIL=created::text; END IF;
  PERFORM public.enqueue_ticket_order_confirmation_v1(p_command,occ,created,coalesce(p_input->>'lang',prepared#>>'{orderDetails,lang}'));
  SELECT * INTO new_order FROM eshop.orders WHERE id=(created#>>'{order,id}')::bigint;
- IF created#>>'{order,payment_info,payment_method}'='stripe' THEN
+ IF created#>>'{order,payment_info,payment_method}'<>'bank' THEN
   RAISE check_violation USING MESSAGE='STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',id,'beforeAmount',(before_orders->id::text->>'amount')::numeric,
   'afterAmount',price,'delta',price-(before_orders->id::text->>'amount')::numeric,'currencyCode',currency_code,

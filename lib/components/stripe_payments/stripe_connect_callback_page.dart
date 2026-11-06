@@ -1,8 +1,9 @@
+import 'package:festapp_core/payments.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/auth_service.dart';
-import 'stripe_connection_api.dart';
+import 'package:fstapp/components/payments/payment_connection_api.dart';
 import 'stripe_connection_callback_owner.dart';
 import 'stripe_connection_strings.dart';
 import 'stripe_connection_browser_stub.dart'
@@ -33,7 +34,7 @@ class StripeConnectCallbackView extends StatefulWidget {
       this.isLoggedIn});
   final String? code, state, error;
   final StripeConnectionCallbackOwner? callbackOwner;
-  final StripeConnectionApi? api;
+  final PaymentConnectionApi? api;
   final bool Function()? isLoggedIn;
   @override
   State<StripeConnectCallbackView> createState() =>
@@ -68,7 +69,7 @@ class _StripeConnectCallbackViewState extends State<StripeConnectCallbackView> {
     }
     setState(() => _busy = true);
     try {
-      final result = await (widget.api ?? const SupabaseStripeConnectionApi())
+      final result = await (widget.api ?? const SupabasePaymentConnectionApi(connector: stripePaymentConnector))
           .complete(callback);
       if (result['connected'] == true || result['status'] == 'cancelled') {
         _owner.complete(callback);

@@ -33,8 +33,8 @@ class ProductsDialog extends StatefulWidget {
 
 class _ProductsDialogState extends State<ProductsDialog> {
   bool _loading = true;
-  bool get _isStripe => _bundle?.order.isStripePayment == true;
-  bool get _canEditProducts => _canManageOrder && !_isStripe;
+  bool get _isProviderPayment => _bundle?.order.isProviderPayment == true;
+  bool get _canEditProducts => _canManageOrder && !_isProviderPayment;
   bool get _canManageOrder =>
       !_loading &&
       _bundle != null &&
@@ -248,7 +248,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                           onChanged: _fetch,
                           api: widget.refundApi,
                         ),
-                      if (_isStripe)
+                      if (_isProviderPayment)
                         Padding(
                           padding: const EdgeInsets.only(top: 16),
                           child: Text(
@@ -338,7 +338,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                         color: priceColor),
                                   ),
                                   const SizedBox(width: 8),
-                                  if (!isRemoved && !_isStripe)
+                                  if (!isRemoved && !_isProviderPayment)
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined),
                                       tooltip: OrdersStrings.editPriceTooltip,
@@ -347,7 +347,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                               ? null
                                               : () => _editPrice(pCurrent),
                                     ),
-                                  if (!_isStripe)
+                                  if (!_isProviderPayment)
                                     IconButton(
                                       icon: Icon(isRemoved
                                           ? Icons.add
@@ -368,7 +368,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         },
                       ),
                     const SizedBox(height: 12),
-                    if (!_isStripe)
+                    if (!_isProviderPayment)
                       Align(
                         alignment: Alignment.centerRight,
                         child: ElevatedButton.icon(
@@ -386,7 +386,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(CommonStrings.storno),
         ),
-        if (!_isStripe)
+        if (!_isProviderPayment)
           ElevatedButton(
             onPressed: _canEditProducts && _hasUnsavedChanges ? _save : null,
             child: Text(CommonStrings.save),

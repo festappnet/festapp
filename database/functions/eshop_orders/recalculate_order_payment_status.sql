@@ -23,7 +23,7 @@ BEGIN
     SELECT * INTO v_payment FROM eshop.payment_info WHERE id=v_order.payment_info FOR UPDATE;
     v_was_eligible := coalesce(v_order.state IN ('paid','sent'),false);
     -- Provider facts and non-admission shells retain their existing owners.
-    IF v_payment.id IS NULL OR v_payment.payment_method='stripe'
+    IF v_payment.id IS NULL OR v_payment.payment_method<>'bank'
        OR v_order.state NOT IN ('created','ordered','expired','paid','sent') THEN
         RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_order.state,
             'eligibility_changed',false,'email_payment_version',v_order.email_payment_version);

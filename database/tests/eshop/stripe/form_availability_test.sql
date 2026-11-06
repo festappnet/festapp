@@ -23,7 +23,7 @@ BEGIN
  INSERT INTO eshop.stripe_runtime_policy(organization_id,livemode,new_payments_enabled,online_admission_verified,reservation_policy_verified,dispute_policy_accepted,supported_surfaces)
  VALUES(org,false,true,true,true,true,ARRAY['web']);
  available:=public.form_payment_availability_internal(f);
- PERFORM assert_eq(available->'available','["stripe", "bank"]'::jsonb,'both configured methods offered');
+ PERFORM assert_eq(available->'available','["bank", "stripe"]'::jsonb,'both configured methods offered');
  PERFORM assert_eq(available#>>'{recipient,name}','Card form organizer','missing Stripe public name retains the bound organizer identity');
  UPDATE public.forms SET data=jsonb_build_object('payments',jsonb_build_object('bankEnabled',false,'stripeConnectionId',conn)) WHERE id=f;
  PERFORM public.validate_form_payment_configuration_internal(f);

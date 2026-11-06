@@ -1,0 +1,32 @@
+{
+  "PaymentId": "30a7fa31dcd9f1118c35001dd8b71cc5",
+  "PaymentRequestId": "23399c05-88e6-4e11-91a7-f128093614d0",
+  "PaymentType": "Immediate",
+  "Status": "Succeeded",
+  "Total": 1,
+  "Currency": "CZK",
+  "FundingSource": "BankCard",
+  "CompletedAt": "2026-11-06T12:21:26.363Z",
+  "Transactions": [
+    {
+      "TransactionId": "31a7fa31dcd9f1118c35001dd8b71cc5",
+      "POSTransactionId": "23399c05-88e6-4e11-91a7-f128093614d0",
+      "TransactionTime": "2026-11-06T12:18:39.279Z",
+      "Total": 1,
+      "Currency": "CZK",
+      "Status": "Succeeded",
+      "TransactionType": "CardPayment",
+      "RelatedId": null
+    },
+    {
+      "TransactionId": "16000b94dcd9f1118c35001dd8b71cc5",
+      "POSTransactionId": null,
+      "TransactionTime": "2026-11-06T12:21:26.351Z",
+      "Total": 0.01,
+      "Currency": "CZK",
+      "Status": "Reserved",
+      "TransactionType": "CardProcessingFee",
+      "RelatedId": null
+    }
+  ]
+}

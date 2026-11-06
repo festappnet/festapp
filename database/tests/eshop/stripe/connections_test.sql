@@ -52,13 +52,13 @@ BEGIN
    account||jsonb_build_object('accountId','acct_replacement','modelVerified',false));RAISE EXCEPTION 'unverified model accepted';
  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STRIPE_ACCOUNT_MODEL_UNVERIFIED' THEN RAISE; END IF; END;
  PERFORM assert_eq((SELECT state FROM eshop.stripe_connections WHERE id=conn),'connected','failed replacement retains old recipient');
- PERFORM assert_eq((SELECT data#>>'{payments,stripeConnectionId}' FROM public.forms WHERE id=card_form),conn::text,'failed replacement preserves form binding');
+ PERFORM assert_eq((SELECT public.payment_provider_connection_internal(data->'payments','stripe')::text FROM public.forms WHERE id=card_form),conn::text,'failed replacement preserves form binding');
  result:=public.complete_stripe_connection_flow_internal((replacement_claim->>'flowId')::uuid,(replacement_claim->>'lease')::uuid,
   account||jsonb_build_object('accountId','acct_replacement'));
  candidate:=(result->>'connectionId')::uuid;
  PERFORM assert_eq((SELECT state FROM eshop.stripe_connections WHERE id=conn),'retired','replacement retains old identity for history');
  PERFORM assert_true((SELECT paused FROM eshop.stripe_connections WHERE id=candidate),'replacement does not silently start accepting money');
- PERFORM assert_eq((SELECT data#>>'{payments,stripeConnectionId}' FROM public.forms WHERE id=card_form),candidate::text,'verified replacement atomically switches future card orders');
+ PERFORM assert_eq((SELECT data#>>'{payments,providerConnections,stripe}' FROM public.forms WHERE id=card_form),candidate::text,'verified replacement atomically switches future card orders');
  PERFORM assert_eq((SELECT data#>>'{payments,bankEnabled}' FROM public.forms WHERE id=card_form),'false','replacement retains the chosen Stripe-only policy');
  PERFORM assert_true(NOT (SELECT data ? 'payments' FROM public.forms WHERE id=bank_form),'bank-only form is never enabled by connecting');
  PERFORM assert_eq((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='form' AND scope_id=occasion_id AND aggregate_id=card_form::text),1::bigint,'replacement fences stale editor drafts');

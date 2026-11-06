@@ -2,6 +2,7 @@ import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_no
 import { FormDataLayer } from './form_datalayer.js';
 import { publicFormLocation } from '../../utils/public_form_location.js';
 import { FormMeasurementRuntime } from './form_measurement_runtime.js';
+import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
 import { SupabaseService } from '../../services/supabase_service.js';
@@ -924,13 +925,8 @@ export class FormPage extends Component {
 
         // 4. Submit via Network
         if(this._pendingPaymentMethod){
-            if(this._pendingPaymentMethod==='stripe'){
-                payload.payment_method='stripe';
-                payload.payment_type='full';
-                payload.expected_payment_amount_minor=this._pendingPaymentQuote.amountMinor;
-                payload.expected_payment_currency=this._pendingPaymentQuote.currency;
-                payload.stripe_connection_id=this._pendingPaymentQuote.connectionId;
-                payload.payment_surface=this._pendingPaymentQuote.surface;
+            if(isCardPaymentMethod(this._pendingPaymentMethod)){
+                Object.assign(payload, paymentConnectors.get(this._pendingPaymentMethod).quote(payload, this._pendingPaymentQuote));
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }

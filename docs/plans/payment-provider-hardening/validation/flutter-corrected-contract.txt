@@ -1,0 +1,13 @@
+[90m[🌎 Easy Localization] [DEBUG] Init Localization Delegate[0m
+[90m[🌎 Easy Localization] [DEBUG] Init provider[0m
+[90m[🌎 Easy Localization] [DEBUG] Load Localization Delegate[0m
+[90m[🌎 Easy Localization] [DEBUG] Build[0m
+[90m[🌎 Easy Localization] [DEBUG] Init Localization Delegate[0m
+[90m[🌎 Easy Localization] [DEBUG] Init provider[0m
+[90m[🌎 Easy Localization] [DEBUG] Start[0m
+[90m[🌎 Easy Localization] [DEBUG] Build[0m
+[90m[🌎 Easy Localization] [DEBUG] Init Localization Delegate[0m
+[90m[🌎 Easy Localization] [DEBUG] Init provider[0m
+00:02 +7: /Users/miakh/source/festapp/test/components/stripe_payments/payment_method_preview_test.dart: A06 editor save retains chosen configuration and excludes server availability
+00:02 +8: /Users/miakh/source/festapp/test/components/stripe_payments/payment_method_preview_test.dart: (tearDownAll)
+00:02 +8: All tests passed!

@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'waitlist_summary_model.dart';
 import '../../forms/waitlist_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -98,9 +99,9 @@ class OrderModel extends ITrinaRowModel {
   // Read-only payment method supplied by authorized order/history projections.
   String? paymentMethod;
   String? paymentChannel;
-  bool get isStripePayment =>
-      (paymentInfoModel?.paymentMethod ?? paymentMethod) == 'stripe';
-  int get amountDecimalDigits => isStripePayment ? 2 : 0;
+  bool get isProviderPayment =>
+      paymentConnectors.contains(paymentInfoModel?.paymentMethod ?? paymentMethod);
+  int get amountDecimalDigits => isProviderPayment ? 2 : 0;
   String? noteHidden;
   Map<String, dynamic>? emailDelivery;
 

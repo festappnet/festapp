@@ -1,0 +1,10 @@
+{
+  "migration": "20261106180000_barion_sandbox_connector.sql",
+  "sources": [
+    "eshop_barion/schema.sql",
+    "eshop_barion/provider.sql",
+    "eshop_barion/runtime.sql",
+    "eshop_barion/connections.sql",
+    "abuse/policy.sql"
+  ]
+}

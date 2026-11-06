@@ -10,9 +10,9 @@ import {
 import { executeConfirmedSeatOrder } from "./confirmedReplacement.ts";
 import { prepareFakturoidTicketOrder } from "./fakturoidPreparation.ts";
 import { fakturoidGateway } from "./fakturoid.ts";
-import { prepareStripePaySource } from "../_shared/stripe/paySource.ts";
-import { prepareStripeOrderDelivery } from "../_shared/stripe/orderDelivery.ts";
-import { stripePaymentDependencies } from "../_shared/stripe/environment.ts";
+import { type PaymentDependencies } from "../_shared/payments/contracts.ts";
+import { prepareOrderDelivery } from "../_shared/payments/orderDelivery.ts";
+import { paymentRegistry } from "../_shared/payments/runtime.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (replacement?.inputData?.payment_method === "stripe") {
+    if (paymentRegistry.has(replacement?.inputData?.payment_method)) {
       return Response.json({ error: "STRIPE_REPLACEMENT_UNSUPPORTED" }, {
         status: 400,
         headers: corsHeaders,
@@ -125,14 +125,13 @@ Deno.serve(async (req) => {
     const preparedOrder = directOrderDetails
       ? { ...directOrderDetails }
       : directOrderDetails;
-    let stripeDependencies:
-      | ReturnType<typeof stripePaymentDependencies>
-      | undefined;
+    let paymentDependencies: PaymentDependencies | undefined;
     if (preparedOrder) {
-      delete preparedOrder.stripePaymentSource;
-      if (preparedOrder.payment_method === "stripe") {
-        stripeDependencies = stripePaymentDependencies();
-        preparedOrder.stripePaymentSource = await prepareStripePaySource();
+      paymentRegistry.stripOrderSources(preparedOrder);
+      if (paymentRegistry.has(preparedOrder.payment_method)) {
+        paymentDependencies = paymentRegistry.resolve(preparedOrder.payment_method);
+        if (!paymentDependencies.order) throw new Error("payment_order_not_configured");
+        preparedOrder[paymentDependencies.order.sourceField] = await paymentDependencies.order.prepareSource();
       }
     }
     if (replacement && !authorizationHeader) {
@@ -308,28 +307,22 @@ Deno.serve(async (req) => {
       },
     );
     const order = ticketOrder.order;
-    let stripeResult: Record<string, unknown> | undefined;
-    if (order?.payment_info?.payment_method === "stripe") {
-      const { data: source, error: sourceError } = await supabaseAdmin.rpc(
-        "get_stripe_order_pay_source_internal",
-        {
-          p_order: order.id,
-          p_command: commandId,
-        },
-      );
-      if (sourceError) throw new Error("stripe_payment_source_unavailable");
-      stripeResult = await prepareStripeOrderDelivery(
+    let providerResult: Record<string, unknown> | undefined;
+    if (paymentRegistry.has(order?.payment_info?.payment_method)) {
+      const binding = paymentDependencies ?? paymentRegistry.resolve(order.payment_info.payment_method);
+      if (!binding.order) throw new Error("payment_order_not_configured");
+      const source = await binding.order.readSource(order.id, commandId);
+      providerResult = await prepareOrderDelivery(
         source,
         order.id,
         commandId,
-        preparedOrder?.payment_surface ??
-          waitlistAcceptance?.orderDetails?.payment_surface,
+        preparedOrder?.payment_surface ?? waitlistAcceptance?.orderDetails?.payment_surface,
         ticketOrder.payment,
-        stripeDependencies ?? stripePaymentDependencies(),
+        binding,
       );
     }
     if (
-      order?.payment_info?.payment_method !== "stripe" &&
+      !paymentRegistry.has(order?.payment_info?.payment_method) &&
       Number(order?.payment_info?.amount) > 0
     ) {
       const preparation = await prepareFakturoidTicketOrder({
@@ -355,7 +348,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentInfo = ticketOrder.order?.payment_info;
-    const payment = paymentInfo?.payment_method !== "stripe" && paymentInfo &&
+    const payment = !paymentRegistry.has(paymentInfo?.payment_method) && paymentInfo &&
         Number(paymentInfo.amount) > 0
       ? presentPayment(paymentInfo)
       : null;
@@ -404,7 +397,7 @@ Deno.serve(async (req) => {
               ...ticketOrder,
               payment_qr: paymentQr,
               delivery: "queued",
-              ...stripeResult,
+              ...providerResult,
               ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
             },
           }
@@ -413,7 +406,7 @@ Deno.serve(async (req) => {
             payment_qr: paymentQr,
             code: 200,
             delivery: "queued",
-            ...stripeResult,
+            ...providerResult,
             ...(deliveryReceipt ? { delivery_receipt: deliveryReceipt } : {}),
           },
       ),

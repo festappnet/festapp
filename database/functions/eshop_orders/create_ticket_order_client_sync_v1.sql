@@ -13,7 +13,7 @@ BEGIN
   IF v_occasion IS NULL THEN
     RAISE invalid_parameter_value USING MESSAGE='ticket order form not found'; END IF;
   v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(
-    'occasion',v_occasion,'order',p_order-'stripePaymentSource')
+    'occasion',v_occasion,'order',public.strip_payment_sources_internal(p_order))
       ||CASE WHEN p_context IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('administration',p_context) END)::text,'UTF8'),'sha256'),'hex');
   IF v_actor IS NULL THEN
     v_begin:=public.begin_anonymous_client_mutation_v1(p_command_id,
@@ -48,15 +48,13 @@ BEGIN
   END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  v_result:=public.create_ticket_order_internal_v1(p_order-ARRAY['stripePaymentSource','checkoutOrigin']);
+  v_result:=public.create_ticket_order_internal_v1(public.strip_payment_sources_internal(p_order)-'checkoutOrigin');
   IF COALESCE((v_result->>'code')::integer,500)<>200 THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
       CASE WHEN COALESCE((v_result->>'code')::integer,500) BETWEEN 100 AND 599
         THEN (v_result->>'code')::integer ELSE 400 END,v_result); END IF;
   PERFORM public.attach_checkout_origin_internal((v_result#>>'{order,id}')::bigint,v_origin);
-  IF v_result#>>'{order,payment_info,payment_method}'='stripe' THEN
-    PERFORM public.attach_stripe_order_pay_source_internal((v_result#>>'{order,id}')::bigint,p_command_id,p_order->'stripePaymentSource');
-  END IF;
+  PERFORM public.attach_provider_order_source_internal((v_result#>>'{order,id}')::bigint,p_command_id,p_order);
   PERFORM public.enqueue_ticket_order_confirmation_v1(
     p_command_id,v_occasion,v_result,p_order->>'lang');
   IF p_context IS NOT NULL THEN v_result:=v_result||jsonb_build_object('adminQuote',p_context->'quote','paymentPreparationPolicy','leased_keep_pending'); END IF;

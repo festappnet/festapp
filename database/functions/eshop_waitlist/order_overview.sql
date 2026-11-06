@@ -21,7 +21,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  due AS (SELECT *,greatest(amount-received,0) outstanding,
  CASE WHEN deposit_amount>received THEN greatest(deposit_amount-received,0) ELSE greatest(amount-received,0) END due_now,
  CASE WHEN deposit_amount>received THEN deposit_deadline ELSE deadline END due_at FROM facts)
- SELECT CASE WHEN payment_method='stripe' THEN public.stripe_order_payment_projection_internal(p_order) ELSE jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
+ SELECT CASE WHEN payment_method<>'bank' THEN public.provider_order_payment_projection_internal(p_order) ELSE jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
  'totalOutstanding',outstanding,'overpaid',greatest(received-amount,0),'depositAmount',deposit_amount,
  'depositDeadline',deposit_deadline,'finalDeadline',deadline,
  'dueNow',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN due_now ELSE 0 END,

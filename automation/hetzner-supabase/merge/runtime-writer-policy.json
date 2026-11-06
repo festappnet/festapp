@@ -382,6 +382,48 @@
         "database-rpc"
       ],
       "mutates_authority": true
+    },
+    "payment-connect": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "payment-checkout": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api",
+        "barion-sandbox-api"
+      ],
+      "mutates_authority": true
+    },
+    "payment-return": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-read"
+      ],
+      "mutates_authority": false
+    },
+    "payment-webhook": {
+      "trigger": "provider-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "payment-reconcile": {
+      "trigger": "machine-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api",
+        "barion-sandbox-api"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -466,7 +508,12 @@
       "prepare-ticket-batch-document": "user-jwt-occasion-order-viewer-private-immutable-storage-service-attested-fenced-completion",
       "wix-checkout-context": "bounded-body-authoritative-wix-token-introspection-exact-app-and-tenant-signed-provenance-no-festapp-privileges",
       "sale-opening-notifications": "bounded-body-server-validated-turnstile-hostname-action-form-contact-proof-or-opaque-unsubscribe-capability-transactional-admission",
-      "process-notification-center": "private-request-secret-machine-proof-bounded-committed-delivery-and-personal-projection-no-outbound-channel"
+      "process-notification-center": "private-request-secret-machine-proof-bounded-committed-delivery-and-personal-projection-no-outbound-channel",
+      "payment-connect": "explicit-installed-connector-router-delegates-user-jwt-typed-sql-authorization-and-origin-checks",
+      "payment-checkout": "explicit-installed-connector-scoped-expiring-capability-leased-immutable-attempt-no-default-provider",
+      "payment-return": "explicit-installed-connector-read-only-return-capability",
+      "payment-webhook": "explicit-installed-connector-raw-body-stripe-signature-or-durable-barion-hint-then-account-bound-authenticated-state",
+      "payment-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

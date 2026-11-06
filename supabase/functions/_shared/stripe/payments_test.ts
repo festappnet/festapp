@@ -186,6 +186,7 @@ function fixture(
       if (name === "commit_stripe_connection_status_internal") {
         return { committed: !options.rejectReceipt, connectionId: attempt };
       }
+      if (name === "purge_expired_stripe_sources_internal") return 0;
       if (name === "get_recoverable_stripe_attempts_internal") {
         return [{ attemptId: attempt, accountId: "acct_fixture" }];
       }
@@ -204,6 +205,7 @@ function fixture(
           },
         };
       }
+      if (name === "defer_stripe_recovery_internal") return null;
       if (name === "checkpoint_stripe_session_lookup_internal") {
         lookupCursor = args.p_cursor as string;
         lookupFound = args.p_found as string | null;
@@ -326,17 +328,11 @@ Deno.test("A09/A14 lost Session response is found after expiry by durable read-o
   assert.equal(facts.sessionId, "cs_test_fixture");
   assert.equal((facts.movements as unknown[]).length, 1);
 });
-Deno.test("A14 exhausted fixed Session search expires an absent attempt without fabricating a Session", async () => {
-  const { deps, calls, requests } = fixture({
-    expiredUnknown: true,
-    missingSession: true,
-  });
-  assert.equal((await reconcileStripePayments(deps))[0].state, "completed");
-  const facts = calls.find((c) => c.name === "ingest_stripe_payment_internal")!
-    .args.p_facts as Record<string, unknown>;
-  assert.equal(facts.sessionId, null);
-  assert.equal(facts.noSessionVerified, true);
-  assert.deepEqual(facts.movements, []);
+Deno.test("A14 empty Session search remains unresolved without creating a replacement", async () => {
+  const { deps, calls, requests } = fixture({ expiredUnknown: true, missingSession: true });
+  assert.equal((await reconcileStripePayments(deps))[0].state, "continuing");
+  assert(!calls.some(c => c.name === "ingest_stripe_payment_internal"));
+  assert(calls.some(c => c.name === "defer_stripe_recovery_internal"));
   assert.equal(requests.length, 1);
   assert(requests[0].url.includes("created[gte]="));
   assert.equal(requests[0].key, null);

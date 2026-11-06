@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:fstapp/services/launch_url_service.dart';
 
+import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/components/mcp/mcp_connection_page.dart';
 import 'package:fstapp/components/navigation/platform_route_parser.dart';
 import 'package:flutter/foundation.dart';
@@ -51,12 +51,14 @@ import 'components/information/game/game_page.dart';
 @AutoRouterConfig(replaceInRouteName: 'Page,Route', deferredLoading: false)
 class AppRouter extends RootStackRouter {
   @override
-  DefaultRouteParser defaultRouteParser(
-          {bool includePrefixMatches = !kIsWeb,
-          DeepLinkTransformer? deepLinkTransformer}) =>
-      PlatformRouteParser(matcher,
-          includePrefixMatches: includePrefixMatches,
-          deepLinkTransformer: deepLinkTransformer);
+  DefaultRouteParser defaultRouteParser({
+    bool includePrefixMatches = !kIsWeb,
+    DeepLinkTransformer? deepLinkTransformer,
+  }) => PlatformRouteParser(
+    matcher,
+    includePrefixMatches: includePrefixMatches,
+    deepLinkTransformer: deepLinkTransformer,
+  );
 
   static const String LINK = "occasionLink";
   static const String linkFormatted = "{$LINK}";
@@ -69,574 +71,654 @@ class AppRouter extends RootStackRouter {
 
   @override
   List<AutoRoute> get routes => [
-        if (AppConfig.isAppSupported)
-          CustomRoute(
-              page: OrganizationRoute.page,
-              path: "/",
-              guards: [InitialRedirectGuard()],
-              transitionsBuilder: TransitionsBuilders.noTransition)
-        else
-          RedirectRoute(path: '/', redirectTo: '/login'),
+    if (AppConfig.isAppSupported)
+      CustomRoute(
+        page: OrganizationRoute.page,
+        path: "/",
+        guards: [InitialRedirectGuard()],
+        transitionsBuilder: TransitionsBuilders.noTransition,
+      )
+    else
+      RedirectRoute(path: '/', redirectTo: '/login'),
 
+    AutoRoute(page: ResetPasswordRoute.page, path: sl(ResetPasswordPage.ROUTE)),
+    AutoRoute(
+      page: ForgotPasswordRoute.page,
+      path: sl(ForgotPasswordPage.ROUTE),
+    ),
+    RedirectRoute(path: '/app/google-auth', redirectTo: '/login'),
+    AutoRoute(page: LoginRoute.page, path: sl(LoginPage.ROUTE)),
+    AutoRoute(
+      page: OccasionTeamInvitationRoute.page,
+      path: sl(OccasionTeamInvitationPage.ROUTE),
+    ),
+    AutoRoute(
+      page: LoginQrScannerRoute.page,
+      path: sl(LoginQrScannerPage.ROUTE),
+    ),
+    AutoRoute(page: SignupRoute.page, path: sl(SignupPage.ROUTE)),
+    AutoRoute(page: McpConnectionRoute.page, path: McpConnectionPage.routePath),
+    AutoRoute(page: SettingsRoute.page, path: sl(SettingsPage.ROUTE)),
+    AutoRoute(
+      page: BankAccountConnectionSettingsRoute.page,
+      path: '/bank-accounts/:accountId/connection',
+      usesPathAsKey: true,
+    ),
+    AutoRoute(
+      page: StripeConnectCallbackRoute.page,
+      path: '/stripe/connect/callback',
+    ),
+    RedirectRoute(
+      path: '/app/stripe/connect/callback',
+      redirectTo: '/stripe/connect/callback',
+    ),
+    AutoRoute(page: PaymentPayRoute.page, path: '/payments/:provider/pay'),
+    AutoRoute(
+      page: PaymentReturnRoute.page,
+      path: '/payments/:provider/return',
+    ),
+    AutoRoute(page: StripePayRoute.page, path: '/stripe/pay'),
+    AutoRoute(page: StripeReturnRoute.page, path: '/stripe/return'),
+    RedirectRoute(path: '/app/stripe/pay', redirectTo: '/stripe/pay'),
+    RedirectRoute(path: '/app/stripe/return', redirectTo: '/stripe/return'),
+    AutoRoute(page: InstallRoute.page, path: sl(InstallPage.ROUTE)),
+    AutoRoute(page: TransferRoute.page, path: "/${TransferPage.ROUTE}"),
+    CustomRoute(
+      page: UnitAdminRoute.page,
+      // Retained context routers must have different keys per unit/link.
+      usesPathAsKey: true,
+      path: "/${UnitPage.ROUTE}/:id/edit",
+      children: [
         AutoRoute(
-            page: ResetPasswordRoute.page, path: sl(ResetPasswordPage.ROUTE)),
+          page: UnitAdministrationTabsRoute.page,
+          path: '',
+          initial: true,
+          children: [
+            RedirectRoute(path: '', redirectTo: NavigationPaths.occasions),
+            AutoRoute(
+              page: UnitOccasionsRoute.page,
+              path: NavigationPaths.occasions,
+            ),
+            AutoRoute(page: UnitUsersRoute.page, path: NavigationPaths.users),
+            AutoRoute(page: UnitQuotesRoute.page, path: NavigationPaths.quotes),
+            AutoRoute(
+              page: UnitEmailTemplatesRoute.page,
+              path: NavigationPaths.emailTemplates,
+            ),
+            AutoRoute(
+              page: UnitSettingsRoute.page,
+              path: NavigationPaths.settings,
+              children: [
+                AutoRoute(
+                  page: UnitSettingsContentRoute.page,
+                  path: '',
+                  initial: true,
+                ),
+                AutoRoute(
+                  page: UnitLegalProfileRoute.page,
+                  path: NavigationPaths.legalProfile,
+                ),
+              ],
+            ),
+            AutoRoute(
+              page: UnitCardPaymentsRoute.page,
+              path: NavigationPaths.cardPayments,
+            ),
+            AutoRoute(
+              page: UnitBankAccountsNavigationRoute.page,
+              path: NavigationPaths.bankAccounts,
+              children: [
+                AutoRoute(
+                  page: UnitBankAccountsListRoute.page,
+                  path: '',
+                  initial: true,
+                ),
+                AutoRoute(
+                  page: BankAccountDetailRoute.page,
+                  path: ':accountId',
+                  children: [
+                    AutoRoute(
+                      page: BankAccountTabsRoute.page,
+                      path: '',
+                      initial: true,
+                      children: [
+                        RedirectRoute(
+                          path: '',
+                          redirectTo: NavigationPaths.general,
+                        ),
+                        AutoRoute(
+                          page: BankAccountGeneralRoute.page,
+                          path: NavigationPaths.general,
+                        ),
+                        AutoRoute(
+                          page: BankAccountConnectionRoute.page,
+                          path: NavigationPaths.connection,
+                        ),
+                        AutoRoute(
+                          page: BankAccountUsersRoute.page,
+                          path: NavigationPaths.users,
+                        ),
+                      ],
+                    ),
+                    AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                  ],
+                ),
+                AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+              ],
+            ),
+          ],
+        ),
+        AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+      ],
+      transitionsBuilder: TransitionsBuilders.noTransition,
+    ),
+
+    CustomRoute(
+      page: OrganizationEditRoute.page,
+      path: "/organizationEdit/:id",
+      transitionsBuilder: TransitionsBuilders.noTransition,
+    ),
+
+    CustomRoute(
+      page: OrganizationEditRedirectRoute.page,
+      path: "/organizationEdit",
+      transitionsBuilder: TransitionsBuilders.noTransition,
+    ),
+
+    // Use UnitPage for the /unit/:id path (this was commented out)
+    if (AppConfig.isAppSupported)
+      AutoRoute(page: UnitRoute.page, path: "/${UnitPage.ROUTE}/:id")
+    else
+      RedirectRoute(
+        path: "/${UnitPage.ROUTE}/:id",
+        redirectTo: "/${UnitPage.ROUTE}/:id/edit",
+      ),
+
+    AutoRoute(
+      page: ScanRoute.page,
+      path: "/${ScanPage.ROUTE}",
+      children: [AutoRoute(path: ':scanCode', page: ScanRoute.page)],
+    ),
+    AutoRoute(page: FormRoute.page, path: "/${FormPage.ROUTE}/:formLink"),
+    CustomRoute(
+      page: ReservationsRoute.page,
+      // Retained context routers must have different keys per unit/link.
+      usesPathAsKey: true,
+      path: "/:$linkFormatted/${ReservationsPage.ROUTE}",
+      children: [
         AutoRoute(
-            page: ForgotPasswordRoute.page, path: sl(ForgotPasswordPage.ROUTE)),
-        RedirectRoute(path: '/app/google-auth', redirectTo: '/login'),
-        AutoRoute(page: LoginRoute.page, path: sl(LoginPage.ROUTE)),
-        AutoRoute(
-            page: OccasionTeamInvitationRoute.page,
-            path: sl(OccasionTeamInvitationPage.ROUTE)),
-        AutoRoute(
-            page: LoginQrScannerRoute.page, path: sl(LoginQrScannerPage.ROUTE)),
-        AutoRoute(page: SignupRoute.page, path: sl(SignupPage.ROUTE)),
-        AutoRoute(
-            page: McpConnectionRoute.page, path: McpConnectionPage.routePath),
-        AutoRoute(page: SettingsRoute.page, path: sl(SettingsPage.ROUTE)),
-        AutoRoute(
-            page: BankAccountConnectionSettingsRoute.page,
-            path: '/bank-accounts/:accountId/connection',
-            usesPathAsKey: true),
-        AutoRoute(
-            page: StripeConnectCallbackRoute.page,
-            path: '/stripe/connect/callback'),
-        RedirectRoute(
-            path: '/app/stripe/connect/callback',
-            redirectTo: '/stripe/connect/callback'),
-        AutoRoute(page: StripePayRoute.page, path: '/stripe/pay'),
-        AutoRoute(page: StripeReturnRoute.page, path: '/stripe/return'),
-        RedirectRoute(path: '/app/stripe/pay', redirectTo: '/stripe/pay'),
-        RedirectRoute(path: '/app/stripe/return', redirectTo: '/stripe/return'),
-        AutoRoute(page: InstallRoute.page, path: sl(InstallPage.ROUTE)),
-        AutoRoute(page: TransferRoute.page, path: "/${TransferPage.ROUTE}"),
-        CustomRoute(
-            page: UnitAdminRoute.page,
-            // Retained context routers must have different keys per unit/link.
-            usesPathAsKey: true,
-            path: "/${UnitPage.ROUTE}/:id/edit",
-            children: [
-              AutoRoute(
-                  page: UnitAdministrationTabsRoute.page,
+          page: ReservationsTabsRoute.page,
+          path: '',
+          initial: true,
+          children: [
+            RedirectRoute(path: '', redirectTo: NavigationPaths.orders),
+            AutoRoute(
+              page: OrdersNavigationRoute.page,
+              path: NavigationPaths.orders,
+              children: [
+                AutoRoute(
+                  page: OrdersTabsRoute.page,
                   path: '',
                   initial: true,
                   children: [
                     RedirectRoute(
-                        path: '', redirectTo: NavigationPaths.occasions),
+                      path: '',
+                      redirectTo: NavigationPaths.current,
+                    ),
                     AutoRoute(
-                        page: UnitOccasionsRoute.page,
-                        path: NavigationPaths.occasions),
+                      page: OrdersCurrentRoute.page,
+                      path: NavigationPaths.current,
+                    ),
                     AutoRoute(
-                        page: UnitUsersRoute.page, path: NavigationPaths.users),
+                      page: TicketBatchesRoute.page,
+                      path: NavigationPaths.pregenerated,
+                      children: [
+                        AutoRoute(
+                          page: TicketBatchListRoute.page,
+                          path: '',
+                          initial: true,
+                        ),
+                        AutoRoute(
+                          page: TicketBatchDetailRoute.page,
+                          path: ':batchId',
+                        ),
+                      ],
+                    ),
                     AutoRoute(
-                        page: UnitQuotesRoute.page,
-                        path: NavigationPaths.quotes),
-                    AutoRoute(
-                        page: UnitEmailTemplatesRoute.page,
-                        path: NavigationPaths.emailTemplates),
-                    AutoRoute(
-                        page: UnitSettingsRoute.page,
-                        path: NavigationPaths.settings,
-                        children: [
-                          AutoRoute(
-                              page: UnitSettingsContentRoute.page,
-                              path: '',
-                              initial: true),
-                          AutoRoute(
-                              page: UnitLegalProfileRoute.page,
-                              path: NavigationPaths.legalProfile),
-                        ]),
-                    AutoRoute(
-                        page: UnitCardPaymentsRoute.page,
-                        path: NavigationPaths.cardPayments),
-                    AutoRoute(
-                        page: UnitBankAccountsNavigationRoute.page,
-                        path: NavigationPaths.bankAccounts,
-                        children: [
-                          AutoRoute(
-                              page: UnitBankAccountsListRoute.page,
-                              path: '',
-                              initial: true),
-                          AutoRoute(
-                              page: BankAccountDetailRoute.page,
-                              path: ':accountId',
-                              children: [
-                                AutoRoute(
-                                    page: BankAccountTabsRoute.page,
-                                    path: '',
-                                    initial: true,
-                                    children: [
-                                      RedirectRoute(
-                                          path: '',
-                                          redirectTo: NavigationPaths.general),
-                                      AutoRoute(
-                                          page: BankAccountGeneralRoute.page,
-                                          path: NavigationPaths.general),
-                                      AutoRoute(
-                                          page: BankAccountConnectionRoute.page,
-                                          path: NavigationPaths.connection),
-                                      AutoRoute(
-                                          page: BankAccountUsersRoute.page,
-                                          path: NavigationPaths.users)
-                                    ]),
-                                AutoRoute(
-                                    page: NavigationNotFoundRoute.page,
-                                    path: '*')
-                              ]),
-                          AutoRoute(
-                              page: NavigationNotFoundRoute.page, path: '*')
-                        ])
-                  ]),
-              AutoRoute(page: NavigationNotFoundRoute.page, path: '*')
-            ],
-            transitionsBuilder: TransitionsBuilders.noTransition),
-
-        CustomRoute(
-            page: OrganizationEditRoute.page,
-            path: "/organizationEdit/:id",
-            transitionsBuilder: TransitionsBuilders.noTransition),
-
-        CustomRoute(
-            page: OrganizationEditRedirectRoute.page,
-            path: "/organizationEdit",
-            transitionsBuilder: TransitionsBuilders.noTransition),
-
-        // Use UnitPage for the /unit/:id path (this was commented out)
-        if (AppConfig.isAppSupported)
-          AutoRoute(page: UnitRoute.page, path: "/${UnitPage.ROUTE}/:id")
-        else
-          RedirectRoute(
-              path: "/${UnitPage.ROUTE}/:id",
-              redirectTo: "/${UnitPage.ROUTE}/:id/edit"),
-
-        AutoRoute(page: ScanRoute.page, path: "/${ScanPage.ROUTE}", children: [
-          AutoRoute(
-            path: ':scanCode',
-            page: ScanRoute.page,
-          ),
-        ]),
-        AutoRoute(page: FormRoute.page, path: "/${FormPage.ROUTE}/:formLink"),
-        CustomRoute(
-            page: ReservationsRoute.page,
-            // Retained context routers must have different keys per unit/link.
-            usesPathAsKey: true,
-            path: "/:$linkFormatted/${ReservationsPage.ROUTE}",
-            children: [
-              AutoRoute(
-                  page: ReservationsTabsRoute.page,
-                  path: '',
-                  initial: true,
+                      page: OrdersHistoryRoute.page,
+                      path: NavigationPaths.history,
+                    ),
+                  ],
+                ),
+                AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+              ],
+            ),
+            AutoRoute(
+              page: TicketsSectionRoute.page,
+              path: NavigationPaths.tickets,
+            ),
+            AutoRoute(
+              page: BlueprintSectionRoute.page,
+              path: NavigationPaths.blueprint,
+            ),
+            AutoRoute(
+              page: FormsNavigationRoute.page,
+              path: NavigationPaths.forms,
+              children: [
+                AutoRoute(page: FormsListRoute.page, path: '', initial: true),
+                CustomRoute(
+                  page: FormDetailRoute.page,
+                  // Selecting the only form must not add a second
+                  // nested slide after the outer Forms tab transition.
+                  transitionsBuilder: TransitionsBuilders.noTransition,
+                  duration: Duration.zero,
+                  reverseDuration: Duration.zero,
+                  path: ':formLink',
                   children: [
-                    RedirectRoute(path: '', redirectTo: NavigationPaths.orders),
                     AutoRoute(
-                        page: OrdersNavigationRoute.page,
-                        path: NavigationPaths.orders,
-                        children: [
-                          AutoRoute(
-                              page: OrdersTabsRoute.page,
-                              path: '',
-                              initial: true,
-                              children: [
-                                RedirectRoute(
-                                    path: '',
-                                    redirectTo: NavigationPaths.current),
-                                AutoRoute(
-                                    page: OrdersCurrentRoute.page,
-                                    path: NavigationPaths.current),
-                                AutoRoute(
-                                    page: TicketBatchesRoute.page,
-                                    path: NavigationPaths.pregenerated,
-                                    children: [
-                                      AutoRoute(
-                                          page: TicketBatchListRoute.page,
-                                          path: '',
-                                          initial: true),
-                                      AutoRoute(
-                                          page: TicketBatchDetailRoute.page,
-                                          path: ':batchId'),
-                                    ]),
-                                AutoRoute(
-                                    page: OrdersHistoryRoute.page,
-                                    path: NavigationPaths.history)
-                              ]),
-                          AutoRoute(
-                              page: NavigationNotFoundRoute.page, path: '*')
-                        ]),
-                    AutoRoute(
-                        page: TicketsSectionRoute.page,
-                        path: NavigationPaths.tickets),
-                    AutoRoute(
-                        page: BlueprintSectionRoute.page,
-                        path: NavigationPaths.blueprint),
-                    AutoRoute(
-                        page: FormsNavigationRoute.page,
-                        path: NavigationPaths.forms,
-                        children: [
-                          AutoRoute(
-                              page: FormsListRoute.page,
-                              path: '',
-                              initial: true),
-                          CustomRoute(
-                              page: FormDetailRoute.page,
-                              // Selecting the only form must not add a second
-                              // nested slide after the outer Forms tab transition.
-                              transitionsBuilder:
-                                  TransitionsBuilders.noTransition,
-                              duration: Duration.zero,
-                              reverseDuration: Duration.zero,
-                              path: ':formLink',
-                              children: [
-                                AutoRoute(
-                                    page: FormTabsRoute.page,
-                                    path: '',
-                                    initial: true,
-                                    children: [
-                                      RedirectRoute(
-                                          path: '',
-                                          redirectTo: NavigationPaths.editor),
-                                      AutoRoute(
-                                          page: FormEditorRoute.page,
-                                          path: NavigationPaths.editor),
-                                      AutoRoute(
-                                          page: FormSettingsRoute.page,
-                                          path: NavigationPaths.settings),
-                                      AutoRoute(
-                                          page: FormDesignRoute.page,
-                                          path: NavigationPaths.design),
-                                      AutoRoute(
-                                          page: FormResponsesRoute.page,
-                                          path: NavigationPaths.responses)
-                                    ]),
-                                AutoRoute(
-                                    page: NavigationNotFoundRoute.page,
-                                    path: '*')
-                              ]),
-                          AutoRoute(
-                              page: NavigationNotFoundRoute.page, path: '*')
-                        ]),
-                    AutoRoute(
-                        page: ProductsSectionRoute.page,
-                        path: NavigationPaths.products),
-                    AutoRoute(
-                        page: InventoryPoolsNavigationRoute.page,
-                        path: NavigationPaths.inventoryPools,
-                        children: [
-                          AutoRoute(
-                              page: InventoryPoolsListRoute.page,
-                              path: '',
-                              initial: true),
-                          AutoRoute(
-                              page: InventoryPoolDetailRoute.page,
-                              path: ':poolId',
-                              children: [
-                                AutoRoute(
-                                    page: InventoryPoolTabsRoute.page,
-                                    path: '',
-                                    initial: true,
-                                    children: [
-                                      RedirectRoute(
-                                          path: '',
-                                          redirectTo:
-                                              NavigationPaths.occupancy),
-                                      AutoRoute(
-                                          page:
-                                              InventoryPoolOccupancyRoute.page,
-                                          path: NavigationPaths.occupancy),
-                                      AutoRoute(
-                                          page: InventoryPoolRoomsRoute.page,
-                                          path: NavigationPaths.rooms),
-                                      AutoRoute(
-                                          page: InventoryPoolSettingsRoute.page,
-                                          path: NavigationPaths.settings)
-                                    ]),
-                                AutoRoute(
-                                    page: NavigationNotFoundRoute.page,
-                                    path: '*')
-                              ]),
-                          AutoRoute(
-                              page: NavigationNotFoundRoute.page, path: '*')
-                        ]),
-                    AutoRoute(
-                        page: ReportSectionRoute.page,
-                        path: NavigationPaths.report),
-                    AutoRoute(
-                        page: EmailTemplatesSectionRoute.page,
-                        path: NavigationPaths.emailTemplates),
-                    AutoRoute(
-                        page: UsersSectionRoute.page,
-                        path: NavigationPaths.users),
-                    AutoRoute(
-                        page: SettingsSectionRoute.page,
-                        path: NavigationPaths.settings)
-                  ]),
-              AutoRoute(page: NavigationNotFoundRoute.page, path: '*')
-            ],
-            transitionsBuilder: TransitionsBuilders.noTransition),
-        AutoRoute(
-            page: CheckRoute.page,
-            path: "/:$linkFormatted/${CheckPage.ROUTE}/:id"),
-        if (AppConfig.isAppSupported)
-          AutoRoute(
-              page: NewsFormRoute.page,
-              path: "/:$linkFormatted/${NewsFormPage.ROUTE}"),
-        if (AppConfig.isAppSupported)
-          CustomRoute(
-              page: AdminRoute.page,
-              // Retained context routers must have different keys per unit/link.
-              usesPathAsKey: true,
-              path: "/:$linkFormatted/${AdminPage.ROUTE}",
+                      page: FormTabsRoute.page,
+                      path: '',
+                      initial: true,
+                      children: [
+                        RedirectRoute(
+                          path: '',
+                          redirectTo: NavigationPaths.editor,
+                        ),
+                        AutoRoute(
+                          page: FormEditorRoute.page,
+                          path: NavigationPaths.editor,
+                        ),
+                        AutoRoute(
+                          page: FormSettingsRoute.page,
+                          path: NavigationPaths.settings,
+                        ),
+                        AutoRoute(
+                          page: FormDesignRoute.page,
+                          path: NavigationPaths.design,
+                        ),
+                        AutoRoute(
+                          page: FormResponsesRoute.page,
+                          path: NavigationPaths.responses,
+                        ),
+                      ],
+                    ),
+                    AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                  ],
+                ),
+                AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+              ],
+            ),
+            AutoRoute(
+              page: ProductsSectionRoute.page,
+              path: NavigationPaths.products,
+            ),
+            AutoRoute(
+              page: InventoryPoolsNavigationRoute.page,
+              path: NavigationPaths.inventoryPools,
               children: [
                 AutoRoute(
-                    page: AdminTabsRoute.page,
+                  page: InventoryPoolsListRoute.page,
+                  path: '',
+                  initial: true,
+                ),
+                AutoRoute(
+                  page: InventoryPoolDetailRoute.page,
+                  path: ':poolId',
+                  children: [
+                    AutoRoute(
+                      page: InventoryPoolTabsRoute.page,
+                      path: '',
+                      initial: true,
+                      children: [
+                        RedirectRoute(
+                          path: '',
+                          redirectTo: NavigationPaths.occupancy,
+                        ),
+                        AutoRoute(
+                          page: InventoryPoolOccupancyRoute.page,
+                          path: NavigationPaths.occupancy,
+                        ),
+                        AutoRoute(
+                          page: InventoryPoolRoomsRoute.page,
+                          path: NavigationPaths.rooms,
+                        ),
+                        AutoRoute(
+                          page: InventoryPoolSettingsRoute.page,
+                          path: NavigationPaths.settings,
+                        ),
+                      ],
+                    ),
+                    AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                  ],
+                ),
+                AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+              ],
+            ),
+            AutoRoute(
+              page: ReportSectionRoute.page,
+              path: NavigationPaths.report,
+            ),
+            AutoRoute(
+              page: EmailTemplatesSectionRoute.page,
+              path: NavigationPaths.emailTemplates,
+            ),
+            AutoRoute(
+              page: UsersSectionRoute.page,
+              path: NavigationPaths.users,
+            ),
+            AutoRoute(
+              page: SettingsSectionRoute.page,
+              path: NavigationPaths.settings,
+            ),
+          ],
+        ),
+        AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+      ],
+      transitionsBuilder: TransitionsBuilders.noTransition,
+    ),
+    AutoRoute(
+      page: CheckRoute.page,
+      path: "/:$linkFormatted/${CheckPage.ROUTE}/:id",
+    ),
+    if (AppConfig.isAppSupported)
+      AutoRoute(
+        page: NewsFormRoute.page,
+        path: "/:$linkFormatted/${NewsFormPage.ROUTE}",
+      ),
+    if (AppConfig.isAppSupported)
+      CustomRoute(
+        page: AdminRoute.page,
+        // Retained context routers must have different keys per unit/link.
+        usesPathAsKey: true,
+        path: "/:$linkFormatted/${AdminPage.ROUTE}",
+        children: [
+          AutoRoute(
+            page: AdminTabsRoute.page,
+            path: '',
+            initial: true,
+            children: [
+              RedirectRoute(path: '', redirectTo: NavigationPaths.info),
+              AutoRoute(
+                page: InformationNavigationRoute.page,
+                path: NavigationPaths.info,
+                children: [
+                  AutoRoute(
+                    page: InformationTabsRoute.page,
                     path: '',
                     initial: true,
                     children: [
-                      RedirectRoute(path: '', redirectTo: NavigationPaths.info),
-                      AutoRoute(
-                          page: InformationNavigationRoute.page,
-                          path: NavigationPaths.info,
-                          children: [
-                            AutoRoute(
-                                page: InformationTabsRoute.page,
-                                path: '',
-                                initial: true,
-                                children: [
-                                  RedirectRoute(
-                                      path: '',
-                                      redirectTo: NavigationPaths.information),
-                                  AutoRoute(
-                                      page: InformationInformationRoute.page,
-                                      path: NavigationPaths.information),
-                                  AutoRoute(
-                                      page: InformationSongbookRoute.page,
-                                      path: NavigationPaths.songbook)
-                                ]),
-                            AutoRoute(
-                                page: NavigationNotFoundRoute.page, path: '*')
-                          ]),
-                      AutoRoute(
-                          page: ScheduleNavigationRoute.page,
-                          path: NavigationPaths.events,
-                          children: [
-                            AutoRoute(
-                                page: ScheduleTabsRoute.page,
-                                path: '',
-                                initial: true,
-                                children: [
-                                  RedirectRoute(
-                                      path: '',
-                                      redirectTo: NavigationPaths.schedule),
-                                  AutoRoute(
-                                      page: ScheduleScheduleRoute.page,
-                                      path: NavigationPaths.schedule),
-                                  AutoRoute(
-                                      page: ScheduleSuspiciousRoute.page,
-                                      path: NavigationPaths.suspicious),
-                                  AutoRoute(
-                                      page: ScheduleExclusivityRoute.page,
-                                      path: NavigationPaths.exclusivity),
-                                  AutoRoute(
-                                      page: ScheduleFeedbackRoute.page,
-                                      path: NavigationPaths.feedback)
-                                ]),
-                            AutoRoute(
-                                page: NavigationNotFoundRoute.page, path: '*')
-                          ]),
-                      AutoRoute(
-                          page: PlacesNavigationRoute.page,
-                          path: NavigationPaths.places,
-                          children: [
-                            AutoRoute(
-                                page: PlacesTabsRoute.page,
-                                path: '',
-                                initial: true,
-                                children: [
-                                  RedirectRoute(
-                                      path: '',
-                                      redirectTo: NavigationPaths.list),
-                                  AutoRoute(
-                                      page: PlacesListRoute.page,
-                                      path: NavigationPaths.list),
-                                  AutoRoute(
-                                      page: PlacesPathsRoute.page,
-                                      path: NavigationPaths.paths),
-                                  AutoRoute(
-                                      page: PlacesTypesRoute.page,
-                                      path: NavigationPaths.types),
-                                  AutoRoute(
-                                      page: PlacesIconsRoute.page,
-                                      path: NavigationPaths.icons)
-                                ]),
-                            AutoRoute(
-                                page: NavigationNotFoundRoute.page, path: '*')
-                          ]),
-                      AutoRoute(
-                          page: SpeakersSectionRoute.page,
-                          path: NavigationPaths.speakers),
-                      AutoRoute(
-                          page: GroupsSectionRoute.page,
-                          path: NavigationPaths.groups),
-                      AutoRoute(
-                          page: GameNavigationRoute.page,
-                          path: NavigationPaths.game,
-                          children: [
-                            AutoRoute(
-                                page: GameTabsRoute.page,
-                                path: '',
-                                initial: true,
-                                children: [
-                                  RedirectRoute(
-                                      path: '',
-                                      redirectTo: NavigationPaths.checkpoints),
-                                  AutoRoute(
-                                      page: GameCheckpointsRoute.page,
-                                      path: NavigationPaths.checkpoints),
-                                  AutoRoute(
-                                      page: GameGroupsRoute.page,
-                                      path: NavigationPaths.groups),
-                                  AutoRoute(
-                                      page: GameSettingsRoute.page,
-                                      path: NavigationPaths.settings)
-                                ]),
-                            AutoRoute(
-                                page: NavigationNotFoundRoute.page, path: '*')
-                          ]),
-                      AutoRoute(
-                          page: ServiceSectionRoute.page,
-                          path: NavigationPaths.services),
-                      AutoRoute(
-                          page: VolunteersSectionRoute.page,
-                          path: NavigationPaths.volunteers),
-                      AutoRoute(
-                          page: EmailTemplatesSectionRoute.page,
-                          path: NavigationPaths.emailTemplates),
-                      AutoRoute(
-                          page: UsersSectionRoute.page,
-                          path: NavigationPaths.users),
-                      AutoRoute(
-                          page: ChangesSectionRoute.page,
-                          path: NavigationPaths.changes),
-                      AutoRoute(
-                          page: SettingsSectionRoute.page,
-                          path: NavigationPaths.settings)
-                    ]),
-                AutoRoute(page: NavigationNotFoundRoute.page, path: '*')
-              ],
-              transitionsBuilder: TransitionsBuilders.noTransition),
-        if (!AppConfig.isAppSupported) ...[
-          RedirectRoute(
-              path: "/:$linkFormatted/${AdminPage.ROUTE}",
-              redirectTo: "/:$linkFormatted/${ReservationsPage.ROUTE}"),
-          RedirectRoute(
-              path: "/:$linkFormatted/${AdminPage.ROUTE}/*",
-              redirectTo: "/:$linkFormatted/${ReservationsPage.ROUTE}"),
-        ],
-        if (AppConfig.isAppSupported) ...[
-          AutoRoute(
-              page: MyScheduleRoute.page,
-              path: "/:$linkFormatted/${MySchedulePage.ROUTE}"),
-          // Counseling rozcestník is a full-screen page (own Scaffold + back
-          // button), NOT a bottom-nav tab — so it must be a top-level occasion
-          // route. As a child of the tabbed OccasionHomeRoute it could not be
-          // resolved by the AutoTabsRouter (which only knows its tab routes), so
-          // deep links / redirects to it fell back to the default Program tab.
-          AutoRoute(
-              page: CounselingRoute.page,
-              path: "/:$linkFormatted/${CounselingPage.ROUTE}"),
-        ],
-        // Cleaning page: top-level occasion route (own Scaffold like Counseling)
-        // with an optional `:id` self-child so `cleaning/:placeId` deep-links
-        // straight into the report dialog (same idiom as EventEditPage).
-        if (AppConfig.isAppSupported)
-          AutoRoute(
-              page: CleaningRoute.page,
-              path: "/:$linkFormatted/${CleaningPage.ROUTE}",
-              children: [
-                AutoRoute(path: ':id', page: CleaningRoute.page),
-              ]),
-        if (AppConfig.isAppSupported)
-          AutoRoute(
-              page: ReceptionRoute.page,
-              path: "/:$linkFormatted/${ReceptionPage.ROUTE}"),
-        if (AppConfig.isAppSupported) ...[
-          AutoRoute(
-              page: TimetableRoute.page,
-              path: "/:$linkFormatted/${TimetablePage.ROUTE}"),
-          AutoRoute(
-              page: GameRoute.page, path: "/:$linkFormatted/${GamePage.ROUTE}"),
-          AutoRoute(
-              page: SongbookRoute.page,
-              path: "/:$linkFormatted/${SongbookPage.ROUTE}"),
-          AutoRoute(
-              page: UserStayRoute.page,
-              path: "/:$linkFormatted/${UserStayPage.ROUTE}"),
-        ],
-        if (AppConfig.isAppSupported)
-          AutoRoute(page: MapEditorRoute.page, path: '/map-editor'),
-        if (AppConfig.isAppSupported)
-          AutoRoute(
-              page: EventEditRoute.page,
-              path: "/:$linkFormatted/${EventEditPage.ROUTE}",
-              children: [
-                AutoRoute(
-                  path: ':id',
-                  page: EventEditRoute.page,
-                ),
-              ]),
-        if (AppConfig.isAppSupported)
-          AutoRoute(
-              page: OccasionHomeRoute.page,
-              path: "/:$linkFormatted",
-              children: [
-                AutoRoute(page: UserRoute.page, path: UserPage.ROUTE),
-                AutoRoute(
-                    page: ScheduleNavigationRoute.page,
-                    path: EventPage.ROUTE,
-                    children: [
-                      getSchedulePage(),
-                      AutoRoute(page: EventRoute.page, path: ":id")
-                    ]),
-                AutoRoute(page: NewsRoute.page, path: NewsPage.ROUTE),
-
-                // Use UnitPage for the nested /:occasionLink/unit path
-                AutoRoute(
-                    page: UnitRoute.page,
-                    path: UnitPage.ROUTE,
-                    maintainState: false),
-
-                RedirectRoute(
-                  path: MapPage.ROUTE,
-                  redirectTo:
-                      '${MapPage.ROUTE}/${PublicMapPage.overviewDestination}',
-                ),
-                AutoRoute(
-                  page: PublicMapRoute.page,
-                  path: '${MapPage.ROUTE}/:destination',
-                ),
-                AutoRoute(
-                    page: InfoRoute.page,
-                    path: InfoPage.ROUTE,
-                    children: [
-                      AutoRoute(
-                        path: ':id',
-                        page: InfoRoute.page,
+                      RedirectRoute(
+                        path: '',
+                        redirectTo: NavigationPaths.information,
                       ),
-                    ]),
-                AutoRoute(page: TimetableRoute.page, path: TimetablePage.ROUTE),
-              ]),
+                      AutoRoute(
+                        page: InformationInformationRoute.page,
+                        path: NavigationPaths.information,
+                      ),
+                      AutoRoute(
+                        page: InformationSongbookRoute.page,
+                        path: NavigationPaths.songbook,
+                      ),
+                    ],
+                  ),
+                  AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                ],
+              ),
+              AutoRoute(
+                page: ScheduleNavigationRoute.page,
+                path: NavigationPaths.events,
+                children: [
+                  AutoRoute(
+                    page: ScheduleTabsRoute.page,
+                    path: '',
+                    initial: true,
+                    children: [
+                      RedirectRoute(
+                        path: '',
+                        redirectTo: NavigationPaths.schedule,
+                      ),
+                      AutoRoute(
+                        page: ScheduleScheduleRoute.page,
+                        path: NavigationPaths.schedule,
+                      ),
+                      AutoRoute(
+                        page: ScheduleSuspiciousRoute.page,
+                        path: NavigationPaths.suspicious,
+                      ),
+                      AutoRoute(
+                        page: ScheduleExclusivityRoute.page,
+                        path: NavigationPaths.exclusivity,
+                      ),
+                      AutoRoute(
+                        page: ScheduleFeedbackRoute.page,
+                        path: NavigationPaths.feedback,
+                      ),
+                    ],
+                  ),
+                  AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                ],
+              ),
+              AutoRoute(
+                page: PlacesNavigationRoute.page,
+                path: NavigationPaths.places,
+                children: [
+                  AutoRoute(
+                    page: PlacesTabsRoute.page,
+                    path: '',
+                    initial: true,
+                    children: [
+                      RedirectRoute(path: '', redirectTo: NavigationPaths.list),
+                      AutoRoute(
+                        page: PlacesListRoute.page,
+                        path: NavigationPaths.list,
+                      ),
+                      AutoRoute(
+                        page: PlacesPathsRoute.page,
+                        path: NavigationPaths.paths,
+                      ),
+                      AutoRoute(
+                        page: PlacesTypesRoute.page,
+                        path: NavigationPaths.types,
+                      ),
+                      AutoRoute(
+                        page: PlacesIconsRoute.page,
+                        path: NavigationPaths.icons,
+                      ),
+                    ],
+                  ),
+                  AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                ],
+              ),
+              AutoRoute(
+                page: SpeakersSectionRoute.page,
+                path: NavigationPaths.speakers,
+              ),
+              AutoRoute(
+                page: GroupsSectionRoute.page,
+                path: NavigationPaths.groups,
+              ),
+              AutoRoute(
+                page: GameNavigationRoute.page,
+                path: NavigationPaths.game,
+                children: [
+                  AutoRoute(
+                    page: GameTabsRoute.page,
+                    path: '',
+                    initial: true,
+                    children: [
+                      RedirectRoute(
+                        path: '',
+                        redirectTo: NavigationPaths.checkpoints,
+                      ),
+                      AutoRoute(
+                        page: GameCheckpointsRoute.page,
+                        path: NavigationPaths.checkpoints,
+                      ),
+                      AutoRoute(
+                        page: GameGroupsRoute.page,
+                        path: NavigationPaths.groups,
+                      ),
+                      AutoRoute(
+                        page: GameSettingsRoute.page,
+                        path: NavigationPaths.settings,
+                      ),
+                    ],
+                  ),
+                  AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+                ],
+              ),
+              AutoRoute(
+                page: ServiceSectionRoute.page,
+                path: NavigationPaths.services,
+              ),
+              AutoRoute(
+                page: VolunteersSectionRoute.page,
+                path: NavigationPaths.volunteers,
+              ),
+              AutoRoute(
+                page: EmailTemplatesSectionRoute.page,
+                path: NavigationPaths.emailTemplates,
+              ),
+              AutoRoute(
+                page: UsersSectionRoute.page,
+                path: NavigationPaths.users,
+              ),
+              AutoRoute(
+                page: ChangesSectionRoute.page,
+                path: NavigationPaths.changes,
+              ),
+              AutoRoute(
+                page: SettingsSectionRoute.page,
+                path: NavigationPaths.settings,
+              ),
+            ],
+          ),
+          AutoRoute(page: NavigationNotFoundRoute.page, path: '*'),
+        ],
+        transitionsBuilder: TransitionsBuilders.noTransition,
+      ),
+    if (!AppConfig.isAppSupported) ...[
+      RedirectRoute(
+        path: "/:$linkFormatted/${AdminPage.ROUTE}",
+        redirectTo: "/:$linkFormatted/${ReservationsPage.ROUTE}",
+      ),
+      RedirectRoute(
+        path: "/:$linkFormatted/${AdminPage.ROUTE}/*",
+        redirectTo: "/:$linkFormatted/${ReservationsPage.ROUTE}",
+      ),
+    ],
+    if (AppConfig.isAppSupported) ...[
+      AutoRoute(
+        page: MyScheduleRoute.page,
+        path: "/:$linkFormatted/${MySchedulePage.ROUTE}",
+      ),
+      // Counseling rozcestník is a full-screen page (own Scaffold + back
+      // button), NOT a bottom-nav tab — so it must be a top-level occasion
+      // route. As a child of the tabbed OccasionHomeRoute it could not be
+      // resolved by the AutoTabsRouter (which only knows its tab routes), so
+      // deep links / redirects to it fell back to the default Program tab.
+      AutoRoute(
+        page: CounselingRoute.page,
+        path: "/:$linkFormatted/${CounselingPage.ROUTE}",
+      ),
+    ],
+    // Cleaning page: top-level occasion route (own Scaffold like Counseling)
+    // with an optional `:id` self-child so `cleaning/:placeId` deep-links
+    // straight into the report dialog (same idiom as EventEditPage).
+    if (AppConfig.isAppSupported)
+      AutoRoute(
+        page: CleaningRoute.page,
+        path: "/:$linkFormatted/${CleaningPage.ROUTE}",
+        children: [AutoRoute(path: ':id', page: CleaningRoute.page)],
+      ),
+    if (AppConfig.isAppSupported)
+      AutoRoute(
+        page: ReceptionRoute.page,
+        path: "/:$linkFormatted/${ReceptionPage.ROUTE}",
+      ),
+    if (AppConfig.isAppSupported) ...[
+      AutoRoute(
+        page: TimetableRoute.page,
+        path: "/:$linkFormatted/${TimetablePage.ROUTE}",
+      ),
+      AutoRoute(
+        page: GameRoute.page,
+        path: "/:$linkFormatted/${GamePage.ROUTE}",
+      ),
+      AutoRoute(
+        page: SongbookRoute.page,
+        path: "/:$linkFormatted/${SongbookPage.ROUTE}",
+      ),
+      AutoRoute(
+        page: UserStayRoute.page,
+        path: "/:$linkFormatted/${UserStayPage.ROUTE}",
+      ),
+    ],
+    if (AppConfig.isAppSupported)
+      AutoRoute(page: MapEditorRoute.page, path: '/map-editor'),
+    if (AppConfig.isAppSupported)
+      AutoRoute(
+        page: EventEditRoute.page,
+        path: "/:$linkFormatted/${EventEditPage.ROUTE}",
+        children: [AutoRoute(path: ':id', page: EventEditRoute.page)],
+      ),
+    if (AppConfig.isAppSupported)
+      AutoRoute(
+        page: OccasionHomeRoute.page,
+        path: "/:$linkFormatted",
+        children: [
+          AutoRoute(page: UserRoute.page, path: UserPage.ROUTE),
+          AutoRoute(
+            page: ScheduleNavigationRoute.page,
+            path: EventPage.ROUTE,
+            children: [
+              getSchedulePage(),
+              AutoRoute(page: EventRoute.page, path: ":id"),
+            ],
+          ),
+          AutoRoute(page: NewsRoute.page, path: NewsPage.ROUTE),
 
-        RedirectRoute(path: '*', redirectTo: getDefaultLink()),
-      ];
+          // Use UnitPage for the nested /:occasionLink/unit path
+          AutoRoute(
+            page: UnitRoute.page,
+            path: UnitPage.ROUTE,
+            maintainState: false,
+          ),
+
+          RedirectRoute(
+            path: MapPage.ROUTE,
+            redirectTo: '${MapPage.ROUTE}/${PublicMapPage.overviewDestination}',
+          ),
+          AutoRoute(
+            page: PublicMapRoute.page,
+            path: '${MapPage.ROUTE}/:destination',
+          ),
+          AutoRoute(
+            page: InfoRoute.page,
+            path: InfoPage.ROUTE,
+            children: [AutoRoute(path: ':id', page: InfoRoute.page)],
+          ),
+          AutoRoute(page: TimetableRoute.page, path: TimetablePage.ROUTE),
+        ],
+      ),
+
+    RedirectRoute(path: '*', redirectTo: getDefaultLink()),
+  ];
 
   static AutoRoute getSchedulePage() {
-    var scheduleFeat =
-        FeatureService.getFeatureDetails(ScheduleFeature.metaSchedule);
+    var scheduleFeat = FeatureService.getFeatureDetails(
+      ScheduleFeature.metaSchedule,
+    );
     if (scheduleFeat is ScheduleFeature) {
       if (scheduleFeat.scheduleType == ScheduleFeature.scheduleTypeAdvanced) {
         return AutoRoute(page: ScheduleRoute.page, path: "", initial: true);
       }
       if (scheduleFeat.scheduleType == ScheduleFeature.scheduleTypeLight) {
         return AutoRoute(
-            page: ScheduleLightRoute.page, path: "", initial: true);
+          page: ScheduleLightRoute.page,
+          path: "",
+          initial: true,
+        );
       }
     }
     return AutoRoute(page: ScheduleBasicRoute.page, path: "", initial: true);
@@ -656,7 +738,8 @@ class AppRouter extends RootStackRouter {
 
     if (AppConfig.isAllUnit) return "/";
 
-    final unitId = RightsService.currentUnit()?.id ??
+    final unitId =
+        RightsService.currentUnit()?.id ??
         RightsService.occasionLinkModel?.organization?.defaultUnit;
     return unitId == null ? "/" : "/${UnitPage.ROUTE}/$unitId";
   }
@@ -709,13 +792,18 @@ class RoutingObserver extends AutoRouteObserver {
 /// Redirects app-specific landings and hands the web catalogue to webclient.
 class InitialRedirectGuard extends AutoRouteGuard {
   InitialRedirectGuard({VoidCallback? openWebHome})
-      : _openWebHome = openWebHome ??
-            (kIsWeb && AppConfig.isWebclientSupported
-                ? () {
-                    unawaited(LaunchUrlService.openExternalUrl('/',
-                        inCurrentWindow: true));
-                  }
-                : null);
+    : _openWebHome =
+          openWebHome ??
+          (kIsWeb && AppConfig.isWebclientSupported
+              ? () {
+                  unawaited(
+                    LaunchUrlService.openExternalUrl(
+                      '/',
+                      inCurrentWindow: true,
+                    ),
+                  );
+                }
+              : null);
 
   final VoidCallback? _openWebHome;
 

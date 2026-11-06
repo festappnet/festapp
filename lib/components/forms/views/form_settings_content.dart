@@ -1,9 +1,12 @@
 import 'package:fstapp/services/decimal_input.dart';
-import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
-import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import 'package:fstapp/components/payments/payment_connection_api.dart';
+import 'package:fstapp/components/payments/payment_editor_registry.dart';
+
 import '../payment_method_strings.dart';
-import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
+
+import 'package:fstapp/components/payments/payment_method_cards.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
+
 import 'form_variable_symbol_settings.dart';
 
 import 'package:flutter/foundation.dart';
@@ -46,9 +49,10 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
+  final List<PaymentEditorConnector>? paymentProviders;
   // Preview fixtures can opt in; normal application builds keep the feature hidden.
   final bool? showCardPayments;
-  final Future<Map<String, dynamic>?> Function(int, int)? loadStripeRecipient;
+  final Future<Map<String, dynamic>?> Function(int, int)? loadPaymentRecipient;
   final ValueListenable<({int accountId, int revision})>? bankConnectionChanges;
   final Future<FormEditBundle?> Function(String)? loadBundle;
   final Future<void> Function(FormEditorDraft)? saveForm;
@@ -57,8 +61,9 @@ class FormSettingsContent extends StatefulWidget {
   const FormSettingsContent({
     super.key,
     this.formLink,
+    this.paymentProviders,
     this.showCardPayments,
-    this.loadStripeRecipient,
+    this.loadPaymentRecipient,
     this.bankConnectionChanges,
     this.onActionCompleted,
     this.onDataUpdated,
@@ -72,23 +77,33 @@ class FormSettingsContent extends StatefulWidget {
 
 class _FormSettingsContentState extends State<FormSettingsContent> {
   final _snapshot = EditorSnapshot();
+  List<PaymentEditorConnector> get _providers =>
+      widget.paymentProviders ?? paymentEditors;
+  PaymentEditorConnector get _provider =>
+      _providers.firstWhere((p) => p.connector.id == _providerId);
+  String? _providerId;
+  Map<String, dynamic> _savedPayments = {};
+  bool get _paymentsVisible =>
+      widget.showCardPayments ?? _providers.any((p) => p.visible());
   bool _deadlineInherited = true;
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
-        _bankEnabled,
-        _stripeConnectionId,
-        _titleController.text,
-        _measurementEnabled,
-        _linkController.text,
-        _deadlineDaysController.text,
-        _deadlineInherited,
-        _startingNumberController.text,
-        _reminderMode,
-        _reminderDaysController.text,
-        _variableSymbolType,
-        _paymentMessageType,
-        _communicationTone,
-      ];
+    _bankEnabled,
+    _paymentConnectionId,
+    _savedPayments,
+    _providerId,
+    _titleController.text,
+    _measurementEnabled,
+    _linkController.text,
+    _deadlineDaysController.text,
+    _deadlineInherited,
+    _startingNumberController.text,
+    _reminderMode,
+    _reminderDaysController.text,
+    _variableSymbolType,
+    _paymentMessageType,
+    _communicationTone,
+  ];
   void _changed() {
     if (mounted) setState(() {});
   }
@@ -111,9 +126,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String? _savedLink;
   bool _isLoading = true;
   bool get _canManageMeasurement => RightsService.hasCapability(
-        AuthorizationCapabilities.formsMeasurementWrite,
-      );
-  bool get _canEdit => RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
+    AuthorizationCapabilities.formsMeasurementWrite,
+  );
+  bool get _canEdit =>
+      RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _hasChanges =>
       _canEdit && !_isLoading && _form != null && _snapshot.differs(_draft);
 
@@ -124,12 +140,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   bool _measurementEnabled = false;
 
   bool _bankEnabled = true,
-      _stripeRecipientFailed = false,
-      _stripeRecipientLoaded = false,
-      _stripeRecipientLoading = false;
-  String? _stripeConnectionId;
-  Map<String, dynamic>? _stripeRecipient;
-  int _stripeReadGeneration = 0;
+      _paymentRecipientFailed = false,
+      _paymentRecipientLoaded = false,
+      _paymentRecipientLoading = false;
+  String? _paymentConnectionId;
+  Map<String, dynamic>? _paymentRecipient;
+  int _paymentReadGeneration = 0;
 
   bool get _showMeasurement {
     final status = _form?.definition.measurementStatus;
@@ -148,7 +164,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (_measurementEnabled && status?['runtime_supported'] != true)
         FormStrings.measurementRuntimeBlocked,
       if (_measurementEnabled &&
-          reasons is List && reasons.contains('no_destination'))
+          reasons is List &&
+          reasons.contains('no_destination'))
         FormStrings.measurementNoDestination,
     ];
     return messages.isEmpty ? [FormStrings.measurementReady] : messages;
@@ -156,15 +173,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   String get _unitTone =>
       RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
-              'informal'
-          ? 'informal'
-          : 'formal';
+          'informal'
+      ? 'informal'
+      : 'formal';
 
   @override
   void initState() {
     super.initState();
     RightsService.occasionLinkModelNotifier.addListener(_changed);
-    _bankChanges = widget.bankConnectionChanges ??
+    _bankChanges =
+        widget.bankConnectionChanges ??
         DbBankAccounts.current.connectionChanges;
     _bankChanges.addListener(_bankConnectionChanged);
     for (final controller in [
@@ -260,17 +278,24 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _form = form;
       final payments = _form!.definition.data?['payments'];
       _bankEnabled = payments is! Map || payments['bankEnabled'] != false;
-      _stripeConnectionId =
-          payments is Map && payments['stripeConnectionId'] is String
-              ? payments['stripeConnectionId']
-              : null;
-      _stripeReadGeneration++;
-      _stripeRecipient = null;
-      _stripeRecipientFailed = false;
-      _stripeRecipientLoaded = false;
-      _stripeRecipientLoading = false;
-      if (widget.showCardPayments ?? StripeFeature.visible) {
-        _loadStripeRecipient();
+      _savedPayments = Map<String, dynamic>.from(
+        payments is Map ? payments : {},
+      );
+      _providerId = _providers
+          .firstWhere(
+            (p) => p.connectionId(_savedPayments) != null,
+            orElse: () => _providers.first,
+          )
+          .connector
+          .id;
+      _paymentConnectionId = _provider.connectionId(_savedPayments);
+      _paymentReadGeneration++;
+      _paymentRecipient = null;
+      _paymentRecipientFailed = false;
+      _paymentRecipientLoaded = false;
+      _paymentRecipientLoading = false;
+      if (_paymentsVisible) {
+        _loadPaymentRecipient();
       }
 
       final analytics = _form!.definition.data?['analytics'];
@@ -281,18 +306,22 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _linkNotifier.value = _linkController.text;
       _linkController.removeListener(_updateLinkPreview);
       _linkController.addListener(_updateLinkPreview);
-      final reminderOverride = _form!
-          .definition.data?[FormDefinition.metaIsReminderEnabled] as bool?;
+      final reminderOverride =
+          _form!.definition.data?[FormDefinition.metaIsReminderEnabled]
+              as bool?;
       _reminderMode = reminderOverride == null
           ? 'inherit'
           : (reminderOverride ? 'enabled' : 'disabled');
-      final reminderSeconds = _form!
-          .definition.data?[FormDefinition.metaReminderIntervalSeconds] as int?;
-      _reminderDaysController.text =
-          reminderSeconds == null ? '' : (reminderSeconds / 86400).toString();
+      final reminderSeconds =
+          _form!.definition.data?[FormDefinition.metaReminderIntervalSeconds]
+              as int?;
+      _reminderDaysController.text = reminderSeconds == null
+          ? ''
+          : (reminderSeconds / 86400).toString();
 
-      final vsData = _form!.definition.data?[FormDefinition.metaVariableSymbol]
-          as Map<String, dynamic>?;
+      final vsData =
+          _form!.definition.data?[FormDefinition.metaVariableSymbol]
+              as Map<String, dynamic>?;
       _variableSymbolType =
           vsData?[FormDefinition.metaType] as String? ?? 'random';
       if (_variableSymbolType == 'sequence') {
@@ -302,8 +331,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         _startingNumberController.text = '';
       }
 
-      final msgData = _form!.definition.data?[FormDefinition.metaPaymentMessage]
-          as Map<String, dynamic>?;
+      final msgData =
+          _form!.definition.data?[FormDefinition.metaPaymentMessage]
+              as Map<String, dynamic>?;
       _paymentMessageType =
           msgData?[FormDefinition.metaType] as String? ?? 'name_surname';
 
@@ -314,12 +344,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           : 'inherit';
 
       _deadlineInherited = _form!.definition.deadlineDurationSeconds == null;
-      _deadlineDaysController.text = (_form!.definition
-                  .effectiveDeadlineDurationSeconds(
-                      occasionDefault: _formFeature.deadlineDurationSeconds) /
-              86400)
-          .round()
-          .toString();
+      _deadlineDaysController.text =
+          (_form!.definition.effectiveDeadlineDurationSeconds(
+                    occasionDefault: _formFeature.deadlineDurationSeconds,
+                  ) /
+                  86400)
+              .round()
+              .toString();
     } else {
       _form = null;
     }
@@ -399,12 +430,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     if (metadata.containsKey('payments') ||
         !_bankEnabled ||
-        _stripeConnectionId != null) {
-      metadata['payments'] = {
-        'bankEnabled': _bankEnabled,
-        if (_stripeConnectionId != null)
-          'stripeConnectionId': _stripeConnectionId
-      };
+        _paymentConnectionId != null) {
+      _capturePaymentConfiguration();
+      metadata['payments'] = {..._savedPayments, 'bankEnabled': _bankEnabled};
     }
 
     if (_communicationTone == 'inherit') {
@@ -462,14 +490,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _form?.definition = _form!.definition.copyWith(link: _savedLink);
       if (!mounted) return;
       var errorMessage = e.toString().replaceFirst("Exception: ", "");
-      if (errorMessage.contains('STRIPE_RECIPIENT_UNAVAILABLE'))
+      if (errorMessage.endsWith('_RECIPIENT_UNAVAILABLE'))
         errorMessage = PaymentMethodStrings.reason('recipient_changed');
-      final stripeReason =
-          RegExp(r'STRIPE_CONFIGURATION_UNSUPPORTED:\s*([a-z_]+)')
-              .firstMatch(errorMessage)
-              ?.group(1);
-      if (stripeReason != null)
-        errorMessage = PaymentMethodStrings.reason(stripeReason);
+      final providerReason = RegExp(
+        r'STRIPE_CONFIGURATION_UNSUPPORTED:\s*([a-z_]+)',
+      ).firstMatch(errorMessage)?.group(1);
+      if (providerReason != null)
+        errorMessage = PaymentMethodStrings.reason(providerReason);
       for (final code in [
         'CAPACITY_BELOW_COMMITTED',
         'WAITLIST_HAS_ACTIVE_ENTRIES',
@@ -497,8 +524,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _deleteForm(BuildContext currentContext) async {
     if (!_canEdit) return;
     try {
-      await DbForms.deleteForm(_form!.definition.id!,
-          expectedVersion: _form!.aggregateVersion);
+      await DbForms.deleteForm(
+        _form!.definition.id!,
+        expectedVersion: _form!.aggregateVersion,
+      );
       if (!mounted) return;
       ToastHelper.Show(
         currentContext,
@@ -588,31 +617,34 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (usedCurrencies.isEmpty) return const SizedBox.shrink();
 
     final usedAccounts = _getUsedBankAccounts();
-    final missingCurrencies = usedCurrencies
-        .where(
-          (currency) => !usedAccounts.any(
-            (account) => account.supportedCurrencies.contains(currency),
-          ),
-        )
-        .toList()
-      ..sort();
+    final missingCurrencies =
+        usedCurrencies
+            .where(
+              (currency) => !usedAccounts.any(
+                (account) => account.supportedCurrencies.contains(currency),
+              ),
+            )
+            .toList()
+          ..sort();
     final unitId = RightsService.currentUnit()?.id;
-    final canManageAccounts = unitId != null &&
+    final canManageAccounts =
+        unitId != null &&
         RightsService.hasCapability(
-            AuthorizationCapabilities.bankAccountsUnitManage);
+          AuthorizationCapabilities.bankAccountsUnitManage,
+        );
 
     final guidance = missingCurrencies.isNotEmpty
         ? (canManageAccounts
-            ? BankAccountStrings.addAccountForPayments
-            : BankAccountStrings.askManagerForPaymentAccount)
+              ? BankAccountStrings.addAccountForPayments
+              : BankAccountStrings.askManagerForPaymentAccount)
         : BankAccountStrings.manageInUnitSettings;
     final settingsLabel = BankAccountStrings.organizationSettings;
     final linkStart = guidance.indexOf(settingsLabel);
     _bankSettingsLink.onTap = canManageAccounts
         ? () => pushRootPath(
-              context.router.root,
-              '/unit/$unitId/edit/bank-accounts',
-            )
+            context.router.root,
+            '/unit/$unitId/edit/bank-accounts',
+          )
         : null;
 
     return SelectionArea(
@@ -652,8 +684,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
             style: missingCurrencies.isNotEmpty
                 ? null
                 : Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
           ),
           if (usedAccounts.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -734,157 +766,233 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     );
   }
 
-  Future<void> _loadStripeRecipient() async {
-    final generation = ++_stripeReadGeneration;
+  void _capturePaymentConfiguration() {
+    final connections = Map<String, dynamic>.from(
+      _savedPayments['providerConnections'] as Map? ?? {},
+    );
+    connections.remove(_provider.connector.id);
+    final legacy = _provider.legacyConnectionField;
+    if (legacy != null) _savedPayments.remove(legacy);
+    if (_paymentConnectionId != null) {
+      connections[_provider.connector.id] = _paymentConnectionId;
+    }
+    if (connections.isEmpty) {
+      _savedPayments.remove('providerConnections');
+    } else {
+      _savedPayments['providerConnections'] = connections;
+    }
+  }
+
+  void _selectPaymentProvider(String id) {
+    _capturePaymentConfiguration();
+    setState(() {
+      _providerId = id;
+      _paymentConnectionId = _provider.connectionId(_savedPayments);
+      _paymentRecipient = null;
+      _paymentRecipientLoaded = false;
+      _paymentRecipientFailed = false;
+    });
+    _loadPaymentRecipient();
+  }
+
+  Future<void> _loadPaymentRecipient() async {
+    final generation = ++_paymentReadGeneration;
     final unit = _form?.occasionModel?.unit,
         occasion = _form?.definition.occasionId;
     if (unit == null || occasion == null) return;
-    setState(() => _stripeRecipientLoading = true);
+    setState(() => _paymentRecipientLoading = true);
     try {
-      final value = await (widget.loadStripeRecipient?.call(unit, occasion) ??
-          const SupabaseStripeConnectionApi().formRecipient(unit, occasion));
-      if (mounted && generation == _stripeReadGeneration)
+      final value =
+          await (widget.loadPaymentRecipient?.call(unit, occasion) ??
+              SupabasePaymentConnectionApi(connector: _provider.connector)
+                  .formRecipient(unit, occasion));
+      if (mounted && generation == _paymentReadGeneration)
         setState(() {
-          _stripeRecipient = value;
-          _stripeRecipientLoaded = true;
-          _stripeRecipientFailed = false;
+          _paymentRecipient = value;
+          _paymentRecipientLoaded = true;
+          _paymentRecipientFailed = false;
         });
     } catch (_) {
-      if (mounted && generation == _stripeReadGeneration)
+      if (mounted && generation == _paymentReadGeneration)
         setState(() {
-          _stripeRecipientFailed = true;
-          _stripeRecipientLoaded = true;
+          _paymentRecipientFailed = true;
+          _paymentRecipientLoaded = true;
         });
     } finally {
-      if (mounted && generation == _stripeReadGeneration)
-        setState(() => _stripeRecipientLoading = false);
+      if (mounted && generation == _paymentReadGeneration)
+        setState(() => _paymentRecipientLoading = false);
     }
   }
 
   String? get _draftCardCompatibility {
-    if (_stripeRecipient?['unsupportedReason'] is String)
-      return _stripeRecipient!['unsupportedReason'];
+    if (_paymentRecipient?['unsupportedReason'] is String)
+      return _paymentRecipient!['unsupportedReason'];
     final products = _form!.relatedFields
         .where((field) => field.definition.isHidden != true)
-        .expand((field) =>
-            field.definition.productType?.products ?? <ProductModel>[])
+        .expand(
+          (field) => field.definition.productType?.products ?? <ProductModel>[],
+        )
         .where((product) => product.isHidden != true)
         .toList();
     final currencies = products.map((product) => product.currencyCode).toSet();
     if (currencies.length != 1 ||
-        !{'CZK', 'EUR', 'PLN', 'USD', 'GBP'}.contains(currencies.single))
+        !_provider.supportedCurrencies.contains(currencies.single))
       return 'currency_unsupported';
-    if (products.any((product) =>
-        product.data?['deposit'] is Map &&
-        (num.tryParse(product.data!['deposit']['amount'].toString()) ?? 0) > 0))
+    if (products.any(
+      (product) =>
+          product.data?['deposit'] is Map &&
+          (num.tryParse(product.data!['deposit']['amount'].toString()) ?? 0) >
+              0,
+    ))
       return 'deposit_unsupported';
-    if (products.any((product) =>
-        product.data?['meta_surcharge'] is Map &&
-        (product.data!['meta_surcharge'] as Map).isNotEmpty))
+    if (products.any(
+      (product) =>
+          product.data?['meta_surcharge'] is Map &&
+          (product.data!['meta_surcharge'] as Map).isNotEmpty,
+    ))
       return 'surcharge_unsupported';
     return null;
   }
 
   Widget _buildPaymentMethods(BuildContext context) {
-    final recipient = _stripeRecipient;
+    final recipient = _paymentRecipient;
     final String? candidate = recipient?['connectionId'] is String
         ? recipient!['connectionId']
         : null;
     final unit = _form?.occasionModel?.unit;
-    final canConnect = unit != null &&
+    final canConnect =
+        unit != null &&
         unit == RightsService.currentUnit()?.id &&
-        StripeFeature.canManage;
-    final cardEnabled = _stripeConnectionId != null;
+        _provider.canManage();
+    final cardEnabled = _paymentConnectionId != null;
     final compatibility = _draftCardCompatibility;
-    final canSelect = recipient?['modelVerified'] == true &&
+    final canSelect =
+        recipient?['modelVerified'] == true &&
         {'connected', 'restricted'}.contains(recipient?['state']) &&
         candidate != null &&
         compatibility == null;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(PaymentMethodStrings.text('title'),
-          style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 12),
-      if (_stripeRecipientLoading) const LinearProgressIndicator(),
-      if (_stripeRecipientFailed)
-        Text(PaymentMethodStrings.reason('unavailable'))
-      else if (recipient == null && _stripeRecipientLoaded)
-        Text(PaymentMethodStrings.reason('not_configured')),
-      if (compatibility != null)
-        Text(PaymentMethodStrings.reason(compatibility)),
-      PaymentMethodCards(
-        value: cardEnabled
-            ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.stripe)
-            : (_bankEnabled ? FormPaymentMethod.bank : null),
-        canSelectStripe: cardEnabled || canSelect,
-        onChanged: (method) => setState(() {
-          _bankEnabled = method != FormPaymentMethod.stripe;
-          // Keep an explicitly configured recipient, including stale ones,
-          // until the editor chooses its replacement below.
-          _stripeConnectionId = method == FormPaymentMethod.bank
-              ? null
-              : (_stripeConnectionId ?? candidate);
-        }),
-      ),
-      const SizedBox(height: 16),
-      if (!_bankEnabled && !cardEnabled)
-        Text(PaymentMethodStrings.text('noMethodSelected')),
-      if (_bankEnabled) ...[
-        Text(PaymentMethodStrings.text('bank'),
-            style: Theme.of(context).textTheme.titleSmall),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          PaymentMethodStrings.text('title'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        if (_providers.length > 1)
+          DropdownButton<String>(
+            value: _providerId,
+            items: [
+              for (final p in _providers)
+                DropdownMenuItem(
+                  value: p.connector.id,
+                  child: Text(PaymentMethodStrings.text(p.titleKey)),
+                ),
+            ],
+            onChanged: (id) {
+              if (id != null) _selectPaymentProvider(id);
+            },
+          ),
+        if (_paymentRecipientLoading) const LinearProgressIndicator(),
+        if (_paymentRecipientFailed)
+          Text(PaymentMethodStrings.reason('unavailable'))
+        else if (recipient == null && _paymentRecipientLoaded)
+          Text(PaymentMethodStrings.reason('not_configured')),
+        if (compatibility != null)
+          Text(PaymentMethodStrings.reason(compatibility)),
+        PaymentMethodCards(
+          value: cardEnabled
+              ? (_bankEnabled
+                    ? FormPaymentMethod.both
+                    : FormPaymentMethod.online)
+              : (_bankEnabled ? FormPaymentMethod.bank : null),
+          canSelectOnline: cardEnabled || canSelect,
+          onlineTitle: PaymentMethodStrings.text(_provider.titleKey),
+          onChanged: (method) => setState(() {
+            _bankEnabled = method != FormPaymentMethod.online;
+            // Keep an explicitly configured recipient, including stale ones,
+            // until the editor chooses its replacement below.
+            _paymentConnectionId = method == FormPaymentMethod.bank
+                ? null
+                : (_paymentConnectionId ?? candidate);
+          }),
+        ),
+        const SizedBox(height: 16),
+        if (!_bankEnabled && !cardEnabled)
+          Text(PaymentMethodStrings.text('noMethodSelected')),
+        if (_bankEnabled) ...[
+          Text(
+            PaymentMethodStrings.text('bank'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          _buildUsedBankAccounts(context),
+          const SizedBox(height: 16),
+        ],
+        Text(
+          PaymentMethodStrings.text(_provider.titleKey),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
         const SizedBox(height: 8),
-        _buildUsedBankAccounts(context),
+        if (!_paymentRecipientLoaded || _paymentRecipientFailed)
+          TextButton(
+            onPressed: _paymentRecipientLoading ? null : _loadPaymentRecipient,
+            child: Text(PaymentMethodStrings.text('checkAccount')),
+          ),
+        if (cardEnabled &&
+            _paymentRecipientLoaded &&
+            (recipient == null || candidate != _paymentConnectionId))
+          Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
+        if (recipient != null) ...[
+          if (recipient['modelVerified'] != true)
+            Text(PaymentMethodStrings.reason('model_unverified')),
+          if (recipient['name'] is String)
+            Text(
+              !cardEnabled || candidate != _paymentConnectionId
+                  ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
+                  : PaymentMethodStrings.recipient(recipient['name']),
+            ),
+          if (recipient['paused'] == true)
+            Text(PaymentMethodStrings.reason('paused')),
+          if (recipient['chargesEnabled'] != true ||
+              recipient['cardPaymentsActive'] != true)
+            Text(PaymentMethodStrings.reason(_provider.restrictedReason)),
+          if (cardEnabled && candidate != _paymentConnectionId) ...[
+            Text(PaymentMethodStrings.reason('recipient_changed')),
+            TextButton(
+              onPressed: canSelect
+                  ? () => setState(() => _paymentConnectionId = candidate)
+                  : null,
+              child: Text(PaymentMethodStrings.text('selectRecipient')),
+            ),
+          ],
+        ],
+        if (cardEnabled) ...[
+          Text(PaymentMethodStrings.text('fullAmount')),
+          if (_form!.definition.payments != null)
+            Text(
+              PaymentMethodStrings.reservation(
+                FormPaymentOptions.fromJson(_form!.definition.payments)
+                    .reservationSeconds,
+              ),
+            ),
+        ],
+        if (canConnect)
+          TextButton(
+            onPressed: () =>
+                pushRootPath(context.router.root, _provider.settingsPath(unit)),
+            child: Text(PaymentMethodStrings.text(_provider.setupKey)),
+          ),
         const SizedBox(height: 16),
       ],
-      Text(PaymentMethodStrings.text('stripe'),
-          style: Theme.of(context).textTheme.titleSmall),
-      const SizedBox(height: 8),
-      if (!_stripeRecipientLoaded || _stripeRecipientFailed)
-        TextButton(
-            onPressed: _stripeRecipientLoading ? null : _loadStripeRecipient,
-            child: Text(PaymentMethodStrings.text('checkAccount'))),
-      if (cardEnabled &&
-          _stripeRecipientLoaded &&
-          (recipient == null || candidate != _stripeConnectionId))
-        Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
-      if (recipient != null) ...[
-        if (recipient['modelVerified'] != true)
-          Text(PaymentMethodStrings.reason('model_unverified')),
-        if (recipient['name'] is String)
-          Text(!cardEnabled || candidate != _stripeConnectionId
-              ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
-              : PaymentMethodStrings.recipient(recipient['name'])),
-        if (recipient['paused'] == true)
-          Text(PaymentMethodStrings.reason('paused')),
-        if (recipient['chargesEnabled'] != true ||
-            recipient['cardPaymentsActive'] != true)
-          Text(PaymentMethodStrings.reason('stripe_restricted')),
-        if (cardEnabled && candidate != _stripeConnectionId) ...[
-          Text(PaymentMethodStrings.reason('recipient_changed')),
-          TextButton(
-              onPressed: canSelect
-                  ? () => setState(() => _stripeConnectionId = candidate)
-                  : null,
-              child: Text(PaymentMethodStrings.text('selectRecipient'))),
-        ],
-      ],
-      if (cardEnabled) ...[
-        Text(PaymentMethodStrings.text('fullAmount')),
-        Text(PaymentMethodStrings.reservation(1860))
-      ],
-      if (canConnect)
-        TextButton(
-            onPressed: () => pushRootPath(
-                context.router.root, '/unit/$unit/edit/card-payments'),
-            child: Text(PaymentMethodStrings.text('setupStripe'))),
-      const SizedBox(height: 16),
-    ]);
+    );
   }
 
   @override
   Widget build(BuildContext context) => NavigationDraftBoundary(
-        isDirty: () => _hasChanges,
-        child: _buildContent(context),
-      );
+    isDirty: () => _hasChanges,
+    child: _buildContent(context),
+  );
 
   Widget _buildContent(BuildContext context) {
     final defaultReminders = _formFeature.reminderIsEnabled ?? true;
@@ -898,407 +1006,413 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           return _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _form == null
-                  ? Center(child: Text(FormStrings.formNotFound))
-                  : Align(
-                      alignment: Alignment.topCenter,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: StylesConfig.formMaxWidth,
-                        ),
-                        child: SingleChildScrollView(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                key: ObjectKey(_form),
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    FormStrings.formSettingsTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .headlineSmall,
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Text(FormStrings.formPaymentDefaultsHelp),
-                                  const SizedBox(height: 16),
-                                  DropdownButtonFormField<String>(
-                                    value: _reminderMode,
-                                    isExpanded: true,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          FormStrings.labelEnableReminders,
-                                      border: const OutlineInputBorder(),
+              ? Center(child: Text(FormStrings.formNotFound))
+              : Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: StylesConfig.formMaxWidth,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            key: ObjectKey(_form),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                FormStrings.formSettingsTitle,
+                                style: Theme.of(innerContext)
+                                    .textTheme
+                                    .headlineSmall,
+                              ),
+                              const SizedBox(height: 24),
+                              Text(FormStrings.formPaymentDefaultsHelp),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                value: _reminderMode,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.labelEnableReminders,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'inherit',
+                                    child: Text(
+                                      FormStrings.inheritReminder(
+                                        defaultReminders,
+                                      ),
                                     ),
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: 'inherit',
-                                        child: Text(
-                                          FormStrings.inheritReminder(
-                                            defaultReminders,
-                                          ),
-                                        ),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'enabled',
-                                        child: Text(FormStrings.remindersOn),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'disabled',
-                                        child: Text(FormStrings.remindersOff),
-                                      ),
-                                    ],
-                                    onChanged: _canEdit
-                                        ? (value) => setState(
-                                            () => _reminderMode = value!)
-                                        : null,
                                   ),
-                                  if (remindersEnabled) ...[
-                                    const SizedBox(height: 24),
-                                    TextFormField(
-                                      enabled: _canEdit,
-                                      controller: _reminderDaysController,
-                                      decoration: InputDecoration(
-                                        labelText:
-                                            FormStrings.labelReminderInterval,
-                                        border: const OutlineInputBorder(),
-                                        helperText: FormStrings.inheritDays(
-                                          (_formFeature
-                                                      .reminderIntervalSeconds ??
-                                                  86400) /
-                                              86400,
-                                        ),
-                                        helperMaxLines: 4,
-                                      ),
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
+                                  DropdownMenuItem(
+                                    value: 'enabled',
+                                    child: Text(FormStrings.remindersOn),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'disabled',
+                                    child: Text(FormStrings.remindersOff),
+                                  ),
+                                ],
+                                onChanged: _canEdit
+                                    ? (value) =>
+                                          setState(() => _reminderMode = value!)
+                                    : null,
+                              ),
+                              if (remindersEnabled) ...[
+                                const SizedBox(height: 24),
+                                TextFormField(
+                                  enabled: _canEdit,
+                                  controller: _reminderDaysController,
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        FormStrings.labelReminderInterval,
+                                    border: const OutlineInputBorder(),
+                                    helperText: FormStrings.inheritDays(
+                                      (_formFeature.reminderIntervalSeconds ??
+                                              86400) /
+                                          86400,
+                                    ),
+                                    helperMaxLines: 4,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
                                         decimal: true,
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return null;
-                                        }
-                                        final days =
-                                            DecimalInput.tryParse(value);
-                                        return days == null ||
-                                                !days.isFinite ||
-                                                days < 0
-                                            ? FormStrings.nonNegativeDays
-                                            : null;
-                                      },
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return null;
+                                    }
+                                    final days = DecimalInput.tryParse(value);
+                                    return days == null ||
+                                            !days.isFinite ||
+                                            days < 0
+                                        ? FormStrings.nonNegativeDays
+                                        : null;
+                                  },
+                                ),
+                              ],
+                              const SizedBox(height: 24),
+                              TextFormField(
+                                enabled: _canEdit,
+                                controller: _titleController,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.labelFormTitle,
+                                  border: const OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              TextFormField(
+                                enabled: _canEdit,
+                                controller: _linkController,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.labelFormLink,
+                                  border: const OutlineInputBorder(),
+                                  errorText: _linkError,
+                                  helperText: FormStrings.publicLinkHistoryHelp,
+                                ),
+                                onChanged: _canEdit
+                                    ? (value) {
+                                        _validateLink(value);
+                                      }
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              ValueListenableBuilder<String>(
+                                valueListenable: _linkNotifier,
+                                builder: (context, formLink, child) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0,
                                     ),
-                                  ],
-                                  const SizedBox(height: 24),
-                                  TextFormField(
-                                    enabled: _canEdit,
-                                    controller: _titleController,
-                                    decoration: InputDecoration(
-                                      labelText: FormStrings.labelFormTitle,
-                                      border: const OutlineInputBorder(),
+                                    child: FormPublicLink(
+                                      link: formLink,
+                                      savedLink: _savedLink,
+                                      onOpenAppearance: _savedLink == null
+                                          ? null
+                                          : () {
+                                              context.router.navigate(
+                                                FormDetailRoute(
+                                                  formLink: _savedLink!,
+                                                  children: const [
+                                                    FormTabsRoute(
+                                                      children: [
+                                                        FormDesignRoute(),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  TextFormField(
-                                    enabled: _canEdit,
-                                    controller: _linkController,
-                                    decoration: InputDecoration(
-                                      labelText: FormStrings.labelFormLink,
-                                      border: const OutlineInputBorder(),
-                                      errorText: _linkError,
-                                      helperText:
-                                          FormStrings.publicLinkHistoryHelp,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              TextFormField(
+                                enabled: _canEdit,
+                                controller: _deadlineDaysController,
+                                onChanged: (value) => setState(
+                                  () => _deadlineInherited = value.isEmpty,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.labelDeadlineDays,
+                                  suffixIcon: IconButton(
+                                    tooltip: FormStrings.inheritDays(
+                                      (_formFeature.deadlineDurationSeconds ??
+                                              604800) /
+                                          86400,
                                     ),
-                                    onChanged: _canEdit
-                                        ? (value) {
-                                            _validateLink(value);
-                                          }
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ValueListenableBuilder<String>(
-                                    valueListenable: _linkNotifier,
-                                    builder: (context, formLink, child) {
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12.0,
-                                        ),
-                                        child: FormPublicLink(
-                                          link: formLink,
-                                          savedLink: _savedLink,
-                                          onOpenAppearance: _savedLink == null ? null : () {
-                                            context.router.navigate(
-                                              FormDetailRoute(
-                                                formLink: _savedLink!,
-                                                children: const [FormTabsRoute(children: [FormDesignRoute()])],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 24),
-                                  TextFormField(
-                                    enabled: _canEdit,
-                                    controller: _deadlineDaysController,
-                                    onChanged: (value) => setState(() =>
-                                        _deadlineInherited = value.isEmpty),
-                                    decoration: InputDecoration(
-                                      labelText: FormStrings.labelDeadlineDays,
-                                      suffixIcon: IconButton(
-                                        tooltip: FormStrings.inheritDays(
-                                            (_formFeature
-                                                        .deadlineDurationSeconds ??
-                                                    604800) /
-                                                86400),
-                                        icon: const Icon(Icons.restore),
-                                        onPressed: () => setState(() {
-                                          _deadlineInherited = true;
-                                          _deadlineDaysController
-                                              .text = ((_formFeature
-                                                          .deadlineDurationSeconds ??
+                                    icon: const Icon(Icons.restore),
+                                    onPressed: () => setState(() {
+                                      _deadlineInherited = true;
+                                      _deadlineDaysController.text =
+                                          ((_formFeature.deadlineDurationSeconds ??
                                                       604800) /
                                                   86400)
                                               .round()
                                               .toString();
-                                        }),
-                                      ),
-                                      border: const OutlineInputBorder(),
-                                      helperText: FormStrings.inheritDays(
-                                        (_formFeature.deadlineDurationSeconds ??
-                                                604800) /
-                                            86400,
-                                      ),
-                                      helperMaxLines: 5,
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  if (_showMeasurement) ...[
-                                    ExpansionTile(
-                                      initiallyExpanded: false,
-                                      tilePadding: EdgeInsets.zero,
-                                      expandedCrossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      title: Text(
-                                        FormStrings.measurementTitle,
-                                        style: Theme.of(innerContext)
-                                            .textTheme
-                                            .titleLarge,
-                                      ),
-                                      children: [
-                                        SwitchListTile(
-                                          contentPadding: EdgeInsets.zero,
-                                          title:
-                                              Text(FormStrings.measurementEnabled),
-                                          subtitle: Text(
-                                            FormStrings.measurementFormHelp,
-                                          ),
-                                          value: _measurementEnabled,
-                                          onChanged: _canEdit &&
-                                                  _canManageMeasurement
-                                              ? (value) => setState(
-                                                    () =>
-                                                        _measurementEnabled = value,
-                                                  )
-                                              : null,
-                                        ),
-                                        for (final message
-                                            in _measurementStatusMessages)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 8),
-                                            child: Text(message),
-                                          ),
-                                        if (RightsService.currentUnit()?.id != null &&
-                                            RightsService.hasCapability(
-                                              AuthorizationCapabilities.unitSettingsWrite,
-                                            ))
-                                          TextButton(
-                                            onPressed: () => pushRootPath(
-                                              context.router.root,
-                                              '/unit/${RightsService.currentUnit()!.id}/edit/settings',
-                                            ),
-                                            child: Text(FormStrings.measurementOpenUnitSettings),
-                                          )
-                                        else
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 8),
-                                            child: Text(FormStrings.measurementAskUnitManager),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Divider(),
-                                    const SizedBox(height: 16),
-                                  ],
-                                  Text(
-                                    FormStrings.paymentDetailsTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .titleLarge,
-                                  ),
-                                  const SizedBox(height: 24),
-                                  ((widget.showCardPayments ??
-                                          StripeFeature.visible)
-                                      ? _buildPaymentMethods(innerContext)
-                                      : _buildUsedBankAccounts(innerContext)),
-                                  const SizedBox(height: 16),
-                                  FormVariableSymbolSettings(
-                                    value: {
-                                      FormDefinition.metaType:
-                                          _variableSymbolType,
-                                      FormDefinition.metaStartingNumber:
-                                          int.tryParse(
-                                        _startingNumberController.text,
-                                      ),
-                                    },
-                                    enabled: _canEdit,
-                                    onChanged: (value) => setState(() {
-                                      _variableSymbolType =
-                                          value[FormDefinition.metaType]
-                                              as String;
-                                      _startingNumberController.text =
-                                          '${value[FormDefinition.metaStartingNumber] ?? ''}';
                                     }),
                                   ),
-                                  const SizedBox(height: 16),
-                                  DropdownButtonFormField<String>(
-                                    isExpanded: true,
-                                    value: _paymentMessageType,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          FormStrings.labelPaymentMessage,
-                                      border: const OutlineInputBorder(),
-                                    ),
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: 'name_surname',
-                                        child: Text(
-                                            FormStrings.msgTypeNameSurname),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'none',
-                                        child: Text(FormStrings.msgTypeNone),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'occasion_title',
-                                        child: Text(
-                                          FormStrings.msgTypeOccasionTitle,
-                                        ),
-                                      ),
-                                    ],
-                                    onChanged: _canEdit
-                                        ? (value) {
-                                            if (value != null) {
-                                              setState(() {
-                                                _paymentMessageType = value;
-                                              });
-                                            }
-                                          }
-                                        : null,
+                                  border: const OutlineInputBorder(),
+                                  helperText: FormStrings.inheritDays(
+                                    (_formFeature.deadlineDurationSeconds ??
+                                            604800) /
+                                        86400,
                                   ),
-                                  const SizedBox(height: 24),
-                                  const Divider(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    FormStrings.communicationToneTitle,
+                                  helperMaxLines: 5,
+                                ),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              if (_showMeasurement) ...[
+                                ExpansionTile(
+                                  initiallyExpanded: false,
+                                  tilePadding: EdgeInsets.zero,
+                                  expandedCrossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  title: Text(
+                                    FormStrings.measurementTitle,
                                     style: Theme.of(innerContext)
                                         .textTheme
                                         .titleLarge,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    FormStrings.helperCommunicationTone,
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium,
-                                  ),
-                                  const SizedBox(height: 24),
-                                  DropdownButtonFormField<String>(
-                                    isExpanded: true,
-                                    initialValue: _communicationTone,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          FormStrings.labelCommunicationTone,
-                                      border: const OutlineInputBorder(),
+                                  children: [
+                                    SwitchListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(
+                                        FormStrings.measurementEnabled,
+                                      ),
+                                      subtitle: Text(
+                                        FormStrings.measurementFormHelp,
+                                      ),
+                                      value: _measurementEnabled,
+                                      onChanged:
+                                          _canEdit && _canManageMeasurement
+                                          ? (value) => setState(
+                                              () => _measurementEnabled = value,
+                                            )
+                                          : null,
                                     ),
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: 'inherit',
+                                    for (final message
+                                        in _measurementStatusMessages)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(message),
+                                      ),
+                                    if (RightsService.currentUnit()?.id !=
+                                            null &&
+                                        RightsService.hasCapability(
+                                          AuthorizationCapabilities
+                                              .unitSettingsWrite,
+                                        ))
+                                      TextButton(
+                                        onPressed: () => pushRootPath(
+                                          context.router.root,
+                                          '/unit/${RightsService.currentUnit()!.id}/edit/settings',
+                                        ),
                                         child: Text(
-                                          FormStrings.toneInherit(
-                                            _unitTone == 'informal'
-                                                ? FormStrings.toneInformal
-                                                : FormStrings.toneFormal,
-                                          ),
+                                          FormStrings
+                                              .measurementOpenUnitSettings,
+                                        ),
+                                      )
+                                    else
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          FormStrings.measurementAskUnitManager,
                                         ),
                                       ),
-                                      DropdownMenuItem(
-                                        value: 'formal',
-                                        child: Text(FormStrings.toneFormal),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                const Divider(),
+                                const SizedBox(height: 16),
+                              ],
+                              Text(
+                                FormStrings.paymentDetailsTitle,
+                                style: Theme.of(innerContext)
+                                    .textTheme
+                                    .titleLarge,
+                              ),
+                              const SizedBox(height: 24),
+                              ((_paymentsVisible)
+                                  ? _buildPaymentMethods(innerContext)
+                                  : _buildUsedBankAccounts(innerContext)),
+                              const SizedBox(height: 16),
+                              FormVariableSymbolSettings(
+                                value: {
+                                  FormDefinition.metaType: _variableSymbolType,
+                                  FormDefinition.metaStartingNumber:
+                                      int.tryParse(
+                                        _startingNumberController.text,
                                       ),
-                                      DropdownMenuItem(
-                                        value: 'informal',
-                                        child: Text(FormStrings.toneInformal),
-                                      ),
-                                    ],
-                                    onChanged: _canEdit
-                                        ? (value) {
-                                            if (value != null) {
-                                              setState(() {
-                                                _communicationTone = value;
-                                              });
-                                            }
-                                          }
-                                        : null,
+                                },
+                                enabled: _canEdit,
+                                onChanged: (value) => setState(() {
+                                  _variableSymbolType =
+                                      value[FormDefinition.metaType] as String;
+                                  _startingNumberController.text =
+                                      '${value[FormDefinition.metaStartingNumber] ?? ''}';
+                                }),
+                              ),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: _paymentMessageType,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.labelPaymentMessage,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'name_surname',
+                                    child: Text(FormStrings.msgTypeNameSurname),
                                   ),
-                                  const SizedBox(height: 48),
-                                  if (RightsService.hasCapability(AuthorizationCapabilities.formsWrite))
-                                    Center(
-                                      child: Tooltip(
-                                        message: (_form?.definition.canDelete ??
-                                                true)
-                                            ? ""
-                                            : FormStrings
-                                                .cannotDeleteFormWithResponses,
-                                        child: TextButton(
-                                          onPressed: (_form
-                                                      ?.definition.canDelete ??
+                                  DropdownMenuItem(
+                                    value: 'none',
+                                    child: Text(FormStrings.msgTypeNone),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'occasion_title',
+                                    child: Text(
+                                      FormStrings.msgTypeOccasionTitle,
+                                    ),
+                                  ),
+                                ],
+                                onChanged: _canEdit
+                                    ? (value) {
+                                        if (value != null) {
+                                          setState(() {
+                                            _paymentMessageType = value;
+                                          });
+                                        }
+                                      }
+                                    : null,
+                              ),
+                              const SizedBox(height: 24),
+                              const Divider(),
+                              const SizedBox(height: 16),
+                              Text(
+                                FormStrings.communicationToneTitle,
+                                style: Theme.of(innerContext)
+                                    .textTheme
+                                    .titleLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                FormStrings.helperCommunicationTone,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 24),
+                              DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                initialValue: _communicationTone,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.labelCommunicationTone,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'inherit',
+                                    child: Text(
+                                      FormStrings.toneInherit(
+                                        _unitTone == 'informal'
+                                            ? FormStrings.toneInformal
+                                            : FormStrings.toneFormal,
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'formal',
+                                    child: Text(FormStrings.toneFormal),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'informal',
+                                    child: Text(FormStrings.toneInformal),
+                                  ),
+                                ],
+                                onChanged: _canEdit
+                                    ? (value) {
+                                        if (value != null) {
+                                          setState(() {
+                                            _communicationTone = value;
+                                          });
+                                        }
+                                      }
+                                    : null,
+                              ),
+                              const SizedBox(height: 48),
+                              if (RightsService.hasCapability(
+                                AuthorizationCapabilities.formsWrite,
+                              ))
+                                Center(
+                                  child: Tooltip(
+                                    message:
+                                        (_form?.definition.canDelete ?? true)
+                                        ? ""
+                                        : FormStrings
+                                              .cannotDeleteFormWithResponses,
+                                    child: TextButton(
+                                      onPressed:
+                                          (_form?.definition.canDelete ?? true)
+                                          ? () => _confirmDelete(innerContext)
+                                          : null,
+                                      child: Text(
+                                        FormStrings.deleteFormTitle,
+                                        style: TextStyle(
+                                          color:
+                                              (_form?.definition.canDelete ??
                                                   true)
-                                              ? () =>
-                                                  _confirmDelete(innerContext)
-                                              : null,
-                                          child: Text(
-                                            FormStrings.deleteFormTitle,
-                                            style: TextStyle(
-                                              color: (_form?.definition
-                                                          .canDelete ??
-                                                      true)
-                                                  ? ThemeConfig.redColor(
-                                                      innerContext,
-                                                    )
-                                                  : Colors.grey,
-                                            ),
-                                          ),
+                                              ? ThemeConfig.redColor(
+                                                  innerContext,
+                                                )
+                                              : Colors.grey,
                                         ),
                                       ),
                                     ),
-                                  const SizedBox(height: 48),
-                                ],
-                              ),
-                            ),
+                                  ),
+                                ),
+                              const SizedBox(height: 48),
+                            ],
                           ),
                         ),
                       ),
-                    );
+                    ),
+                  ),
+                );
         },
       ),
       bottomNavigationBar: EditorActionBar(
         hasChanges: !_isLoading && _form != null && _snapshot.differs(_draft),
-        enabled: RightsService.hasCapability(AuthorizationCapabilities.formsWrite),
+        enabled: RightsService.hasCapability(
+          AuthorizationCapabilities.formsWrite,
+        ),
         onDiscard: _cancelEdit,
         onSave: () => _saveChanges(context),
       ),

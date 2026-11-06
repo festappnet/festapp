@@ -15,7 +15,7 @@ BEGIN
     SELECT org.data->>'DEFAULT_FORM_PAYMENT_METHOD' INTO payment_default
     FROM public.occasions o JOIN public.organizations org ON org.id=o.organization
     WHERE o.id=p_occasion_id;
-    IF payment_default = 'stripe' THEN
+    IF payment_default<>'bank' AND public.payment_method_registered_internal(payment_default) THEN
       -- A closed draft can await Connect without inventing a recipient or bank.
       initial_data := initial_data || '{"payments":{"bankEnabled":false}}'::jsonb;
     END IF;

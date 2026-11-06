@@ -1,32 +1,38 @@
+import 'package:festapp_core/payments.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/stripe_payments/stripe_payment_api.dart';
-import 'package:fstapp/components/stripe_payments/stripe_payment_page.dart';
+import 'package:fstapp/components/payments/payment_gateway.dart';
+import 'package:fstapp/components/payments/payment_access_view.dart';
+
 import '../../support/fixtures/widget_environment_fixture.dart';
 
 Map<String, dynamic> payment(String status) => {
-      'method': 'stripe',
-      'status': status,
-      'amount': '123.45',
-      'received': status == 'paid' ? '123.45' : '0',
-      'returned': '0',
-      'currency': 'CZK',
-      'allowedActions': ['pay', 'refresh']
-    };
+  'method': 'stripe',
+  'status': status,
+  'amount': '123.45',
+  'received': status == 'paid' ? '123.45' : '0',
+  'returned': '0',
+  'currency': 'CZK',
+  'allowedActions': ['pay', 'refresh'],
+};
 
-class PaymentGatewayFake implements StripePaymentGateway {
+class PaymentGatewayFake implements PaymentGateway {
   final reads = <bool>[];
   int prepares = 0, handoffReads = 0, handoffPrepares = 0;
   bool handoffConsumed = false;
   String status = 'open';
   Completer<Map<String, dynamic>>? pending;
   @override
-  Future<Map<String, dynamic>> read(String token,
-      {bool returnOnly = false}) async {
+  Future<Map<String, dynamic>> read(
+    String token, {
+    bool returnOnly = false,
+  }) async {
     reads.add(returnOnly);
     return payment(status);
   }
@@ -36,7 +42,7 @@ class PaymentGatewayFake implements StripePaymentGateway {
     handoffReads++;
     return {
       ...payment(status),
-      'allowedActions': [if (!handoffConsumed) 'pay', 'refresh']
+      'allowedActions': [if (!handoffConsumed) 'pay', 'refresh'],
     };
   }
 
@@ -48,8 +54,8 @@ class PaymentGatewayFake implements StripePaymentGateway {
         Future.value({
           'payment': {
             ...payment(status),
-            'allowedActions': ['refresh']
-          }
+            'allowedActions': ['refresh'],
+          },
         });
   }
 
@@ -63,86 +69,112 @@ class PaymentGatewayFake implements StripePaymentGateway {
 void main() {
   WidgetEnvironmentFixture.register();
   late Map<String, dynamic> catalog;
-  setUpAll(() => catalog =
-      jsonDecode(File('assets/translations/cs.json').readAsStringSync()));
+  setUpAll(
+    () => catalog = jsonDecode(
+      File('assets/translations/cs.json').readAsStringSync(),
+    ),
+  );
   WidgetEnvironmentFixture env() => WidgetEnvironmentFixture(
-      locale: const Locale('cs'), translations: catalog);
-  Widget page(PaymentGatewayFake gateway,
-          {bool returnOnly = false,
-          bool handoff = false,
-          String? surface,
-          Future<bool> Function(String)? open}) =>
-      MaterialApp(builder: DependencyMaterialBridge.builder,
-          home: Scaffold(
-              body: StripePaymentAccessView(
-                  token: 'a' * 64,
-                  gateway: gateway,
-                  returnOnly: returnOnly,
-                  handoff: handoff,
-                  paymentSurface: surface == null ? null : () => surface,
-                  openCheckout: open)));
+    locale: const Locale('cs'),
+    translations: catalog,
+  );
+  Widget page(
+    PaymentGatewayFake gateway, {
+    bool returnOnly = false,
+    bool handoff = false,
+    String? surface,
+    Future<bool> Function(String)? open,
+  }) => MaterialApp(
+    builder: DependencyMaterialBridge.builder,
+    home: Scaffold(
+      body: PaymentAccessView(
+        token: 'a' * 64,
+        gateway: gateway,
+        connector: stripePaymentConnector,
+        returnOnly: returnOnly,
+        handoff: handoff,
+        paymentSurface: surface == null ? null : () => surface,
+        openCheckout: open,
+      ),
+    ),
+  );
   testWidgets(
-      'A08 return scope remains read only despite a pay action in a projection',
-      (tester) async {
-    final gateway = PaymentGatewayFake();
-    await env().pumpWidget(tester, page(gateway, returnOnly: true));
-    await tester.pumpAndSettle();
-    expect(gateway.reads, [true]);
-    expect(find.text(catalog['CardPayments']['continuePayment']), findsNothing);
-    expect(gateway.prepares, 0);
-  });
+    'A08 return scope remains read only despite a pay action in a projection',
+    (tester) async {
+      final gateway = PaymentGatewayFake();
+      await env().pumpWidget(tester, page(gateway, returnOnly: true));
+      await tester.pumpAndSettle();
+      expect(gateway.reads, [true]);
+      expect(
+        find.text(catalog['CardPayments']['continuePayment']),
+        findsNothing,
+      );
+      expect(gateway.prepares, 0);
+    },
+  );
   testWidgets(
-      'A09 two clicks prepare one attempt and a paid response cannot open Checkout',
-      (tester) async {
+    'A09 two clicks prepare one attempt and a paid response cannot open Checkout',
+    (tester) async {
+      final gateway = PaymentGatewayFake()..pending = Completer();
+      int opened = 0;
+      await env().pumpWidget(
+        tester,
+        page(
+          gateway,
+          open: (_) async {
+            opened++;
+            return true;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      final button = find.text(catalog['CardPayments']['continuePayment']);
+      await tester.tap(button);
+      await tester.tap(button);
+      await tester.pump();
+      expect(gateway.prepares, 1);
+      gateway.pending!.complete({'payment': payment('paid')});
+      await tester.pumpAndSettle();
+      expect(opened, 0);
+      expect(find.text(catalog['CardPayments']['paid']), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'A11 app resume reads SQL state without preparing another payment',
+    (tester) async {
+      final gateway = PaymentGatewayFake();
+      await env().pumpWidget(tester, page(gateway));
+      await tester.pumpAndSettle();
+      gateway.status = 'paid';
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(gateway.reads.length, 2);
+      expect(gateway.prepares, 0);
+      expect(find.text(catalog['CardPayments']['paid']), findsOneWidget);
+    },
+  );
+  testWidgets('A10 provider URL outside Stripe cannot receive the visitor', (
+    tester,
+  ) async {
     final gateway = PaymentGatewayFake()..pending = Completer();
     int opened = 0;
     await env().pumpWidget(
-        tester,
-        page(gateway, open: (_) async {
+      tester,
+      page(
+        gateway,
+        open: (_) async {
           opened++;
           return true;
-        }));
-    await tester.pumpAndSettle();
-    final button = find.text(catalog['CardPayments']['continuePayment']);
-    await tester.tap(button);
-    await tester.tap(button);
-    await tester.pump();
-    expect(gateway.prepares, 1);
-    gateway.pending!.complete({'payment': payment('paid')});
-    await tester.pumpAndSettle();
-    expect(opened, 0);
-    expect(find.text(catalog['CardPayments']['paid']), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-  testWidgets(
-      'A11 app resume reads SQL state without preparing another payment',
-      (tester) async {
-    final gateway = PaymentGatewayFake();
-    await env().pumpWidget(tester, page(gateway));
-    await tester.pumpAndSettle();
-    gateway.status = 'paid';
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-    expect(gateway.reads.length, 2);
-    expect(gateway.prepares, 0);
-    expect(find.text(catalog['CardPayments']['paid']), findsOneWidget);
-  });
-  testWidgets('A10 provider URL outside Stripe cannot receive the visitor',
-      (tester) async {
-    final gateway = PaymentGatewayFake()..pending = Completer();
-    int opened = 0;
-    await env().pumpWidget(
-        tester,
-        page(gateway, open: (_) async {
-          opened++;
-          return true;
-        }));
+        },
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text(catalog['CardPayments']['continuePayment']));
     gateway.pending!.complete({
       'payment': payment('open'),
-      'checkoutUrl': 'https://foreign.example/collect'
+      'checkoutUrl': 'https://foreign.example/collect',
     });
     await tester.pumpAndSettle();
     expect(opened, 0);
@@ -150,73 +182,95 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
-      'handoff initial/resume reads remain scoped and only explicit click consumes once',
-      (tester) async {
-    final gateway = PaymentGatewayFake()..pending = Completer();
-    final opened = <String>[];
-    await env().pumpWidget(
+    'handoff initial/resume reads remain scoped and only explicit click consumes once',
+    (tester) async {
+      final gateway = PaymentGatewayFake()..pending = Completer();
+      final opened = <String>[];
+      await env().pumpWidget(
         tester,
-        page(gateway, handoff: true, surface: 'web', open: (url) async {
-          opened.add(url);
-          return true;
-        }));
-    await tester.pumpAndSettle();
-    expect(gateway.handoffReads, 1);
-    expect(gateway.reads, isEmpty);
-    expect(gateway.handoffPrepares, 0);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-    expect(gateway.handoffReads, 2);
-    final button = find.text(catalog['CardPayments']['continuePayment']);
-    await tester.tap(button);
-    await tester.tap(button);
-    await tester.pump();
-    expect(gateway.handoffPrepares, 1);
-    gateway.pending!.complete({
-      'payment': {
-        ...payment('open'),
-        'allowedActions': ['refresh']
-      },
-      'checkoutUrl': 'https://checkout.stripe.com/c/pay/cs_test_handoff'
-    });
-    await tester.pumpAndSettle();
-    expect(opened, ['https://checkout.stripe.com/c/pay/cs_test_handoff']);
-    expect(gateway.prepares, 0);
-    expect(find.text(catalog['CardPayments']['continuePayment']), findsNothing);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-    expect(gateway.handoffReads, 3);
-    expect(gateway.handoffPrepares, 1);
-  });
+        page(
+          gateway,
+          handoff: true,
+          surface: 'web',
+          open: (url) async {
+            opened.add(url);
+            return true;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(gateway.handoffReads, 1);
+      expect(gateway.reads, isEmpty);
+      expect(gateway.handoffPrepares, 0);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(gateway.handoffReads, 2);
+      final button = find.text(catalog['CardPayments']['continuePayment']);
+      await tester.tap(button);
+      await tester.tap(button);
+      await tester.pump();
+      expect(gateway.handoffPrepares, 1);
+      gateway.pending!.complete({
+        'payment': {
+          ...payment('open'),
+          'allowedActions': ['refresh'],
+        },
+        'checkoutUrl': 'https://checkout.stripe.com/c/pay/cs_test_handoff',
+      });
+      await tester.pumpAndSettle();
+      expect(opened, ['https://checkout.stripe.com/c/pay/cs_test_handoff']);
+      expect(gateway.prepares, 0);
+      expect(
+        find.text(catalog['CardPayments']['continuePayment']),
+        findsNothing,
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(gateway.handoffReads, 3);
+      expect(gateway.handoffPrepares, 1);
+    },
+  );
 
   for (final surface in ['embed', 'android', 'ios', 'unsupported']) {
-    testWidgets('handoff cannot be read or consumed on $surface',
-        (tester) async {
+    testWidgets('handoff cannot be read or consumed on $surface', (
+      tester,
+    ) async {
       final gateway = PaymentGatewayFake();
-      await env()
-          .pumpWidget(tester, page(gateway, handoff: true, surface: surface));
+      await env().pumpWidget(
+        tester,
+        page(gateway, handoff: true, surface: surface),
+      );
       await tester.pumpAndSettle();
       expect(gateway.handoffReads, 0);
       expect(gateway.reads, isEmpty);
       expect(gateway.handoffPrepares, 0);
-      expect(find.text(catalog['CardPayments']['protectedPaymentLink']),
-          findsOneWidget);
       expect(
-          find.text(catalog['CardPayments']['continuePayment']), findsNothing);
+        find.text(catalog['CardPayments']['protectedPaymentLink']),
+        findsOneWidget,
+      );
+      expect(
+        find.text(catalog['CardPayments']['continuePayment']),
+        findsNothing,
+      );
     });
   }
 
-  testWidgets('return route cannot upgrade a handoff into payment access',
-      (tester) async {
+  testWidgets('return route cannot upgrade a handoff into payment access', (
+    tester,
+  ) async {
     final gateway = PaymentGatewayFake();
     await env().pumpWidget(
-        tester, page(gateway, handoff: true, returnOnly: true, surface: 'web'));
+      tester,
+      page(gateway, handoff: true, returnOnly: true, surface: 'web'),
+    );
     await tester.pumpAndSettle();
     expect(gateway.handoffReads, 0);
     expect(gateway.reads, isEmpty);
-    expect(find.text(catalog['CardPayments']['protectedPaymentLink']),
-        findsOneWidget);
+    expect(
+      find.text(catalog['CardPayments']['protectedPaymentLink']),
+      findsOneWidget,
+    );
   });
 }

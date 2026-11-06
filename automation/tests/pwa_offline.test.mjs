@@ -241,6 +241,7 @@ try {
       if (url.includes('/web-assets/index.js')) {
         return new Response('web client bundle');
       }
+      if (url.includes('/payments/other/')) return new Response('private payment from network');
       if (url.includes('/napoveda/')) return new Response('public help from network');
       throw new Error(`unexpected network request: ${url}`);
     },
@@ -813,6 +814,15 @@ try {
   assert.equal(await (await dispatchFetch(catalogue)).text(),'<html>generic event list</html>');
   networkAvailable=false;
   assert.equal(await (await dispatchFetch(marketingRoot)).text(),'<html>generic event list</html>');
+  networkAvailable = true;
+  for (const path of ['/payments/other/pay', '/app/payments/other/return']) {
+    const request = new Request('https://app.test' + path + '?token=private-proof');
+    assert.equal(await (await dispatchFetch(request)).text(), 'private payment from network');
+    networkAvailable = false;
+    await assert.rejects(dispatchFetch(request), /offline/, 'private payment cannot fall back to an offline shell');
+    networkAvailable = true;
+    assert.ok(!cachedPuts.some(url => url.includes(path)), 'payment capabilities never enter the shell cache');
+  }
   console.log('pwa_offline.test: ok');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

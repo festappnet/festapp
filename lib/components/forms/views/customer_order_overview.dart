@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
@@ -124,7 +125,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                                       paragraph(
                                           '${text('orderState')}: ${text(order['state'] ?? 'unknown')}'),
                                       paragraph(
-                                          '${text('total')}: ${money(order['total'], order['currency'], card: order['payment']?['method'] == 'stripe')}'),
+                                          '${text('total')}: ${money(order['total'], order['currency'], card: paymentConnectors.contains(order['payment']?['method']))}'),
                                       for (final item in order['items'] ?? []) ...[
                                         paragraph(
                                             '${item['title'] ?? ''}: ${money(item['price'], item['currency'])}'),

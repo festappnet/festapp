@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/forms/order_overview_strings.dart';
@@ -11,11 +12,11 @@ import 'package:fstapp/components/forms/widgets_view/payment_qr_card.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import '../widgets_view/card_payment_status.dart';
 import '../payment_method_strings.dart';
-import 'package:fstapp/components/stripe_payments/stripe_payment_api.dart';
+import 'package:fstapp/components/payments/payment_gateway.dart';
 import 'package:fstapp/services/launch_url_service.dart';
-import 'package:fstapp/components/stripe_payments/stripe_payment_browser_stub.dart'
-    if (dart.library.html) 'package:fstapp/components/stripe_payments/stripe_payment_browser_web.dart'
-    if (dart.library.js_interop) 'package:fstapp/components/stripe_payments/stripe_payment_browser_web.dart';
+import 'package:fstapp/components/payments/payment_browser_stub.dart'
+    if (dart.library.html) 'package:fstapp/components/payments/payment_browser_web.dart'
+    if (dart.library.js_interop) 'package:fstapp/components/payments/payment_browser_web.dart';
 
 class FinishOrderScreen extends StatefulWidget {
   final Future<FunctionResponse> Function() orderFutureFunction;
@@ -115,11 +116,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     setState(() => _isLoading = false);
     _loadingController.stop();
     _mainController.forward();
-    if (_isSuccess && _orderData?['payment']?['method'] != 'stripe') {
+    if (_isSuccess && !paymentConnectors.contains(_orderData?['payment']?['method'])) {
       _observeDelivery();
     }
     if (_isSuccess &&
-        _orderData?['payment']?['method'] == 'stripe' &&
+        paymentConnectors.contains(_orderData?['payment']?['method']) &&
         _payToken != null &&
         _orderData?['checkout_url'] is String) {
       try {
@@ -157,7 +158,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     if (token == null || _readingPayment) return;
     _readingPayment = true;
     try {
-      final payment = await const SupabaseStripePaymentGateway().read(token);
+      final payment = await SupabasePaymentGateway(paymentConnectors.get(_orderData?['payment']?['method'])!).read(token);
       if (mounted) setState(() => _orderData!['payment'] = payment);
     } catch (_) {
       if (mounted)
@@ -171,23 +172,20 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   }
 
   Future<void> _openCardCheckout(String value) async {
-    if (stripePaymentSurface() == 'embed')
-      throw StateError('stripe_handoff_required');
-    final uri = Uri.parse(value);
-    if (uri.scheme != 'https' ||
-        uri.host != 'checkout.stripe.com' ||
-        uri.userInfo.isNotEmpty ||
-        uri.hasPort) {
-      throw StateError('stripe_checkout_url_invalid');
-    }
+    if (paymentSurface() == 'embed')
+      throw StateError('payment_handoff_required');
+    final connector = paymentConnectors.get(_orderData?['payment']?['method']);
+    if (connector == null) throw StateError('payment_connector_unavailable');
+    final uri = connector.checkoutUri(value);
     final token = _payToken;
     if (token != null) {
-      rememberStripePaymentLink(token,
+      rememberPaymentLink(token,
+          connector: paymentConnectors.get(_orderData?['payment']?['method'])!,
           payUrl: _orderData?['payment_access']?['url']);
     }
     if (!await LaunchUrlService.openExternalUrl(uri.toString(),
         inCurrentWindow: true)) {
-      throw StateError('stripe_browser_unavailable');
+      throw StateError('payment_browser_unavailable');
     }
   }
 
@@ -196,7 +194,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     if (token == null || _readingPayment) return;
     _readingPayment = true;
     try {
-      final result = await const SupabaseStripePaymentGateway().prepare(token);
+      final result = await SupabasePaymentGateway(paymentConnectors.get(_orderData?['payment']?['method'])!).prepare(token);
       if (!mounted) return;
       if (result['payment'] is Map) {
         setState(() => _orderData!['payment'] = result['payment']);
@@ -309,11 +307,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   Widget _buildResult() {
     final payment = _orderData?['payment'];
     final handoff = _orderData?['payment_access']?['kind'] == 'handoff';
-    final handoffUri = handoff && stripePaymentSurface() == 'embed'
-        ? stripeHandoffUri(_orderData?['payment_access']?['url'],
-            _orderData?['payment_access']?['token'])
+    final handoffUri = handoff && paymentSurface() == 'embed'
+        ? paymentHandoffUri(_orderData?['payment_access']?['url'],
+            _orderData?['payment_access']?['token'], connector: paymentConnectors.get(payment is Map ? payment['method'] : null))
         : null;
-    if (_isSuccess && payment is Map && payment['method'] == 'stripe') {
+    if (_isSuccess && payment is Map && paymentConnectors.contains(payment['method'])) {
       return SingleChildScrollView(
           child: Column(
         mainAxisSize: MainAxisSize.min,
