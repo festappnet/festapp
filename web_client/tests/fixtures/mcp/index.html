@@ -1,4 +1,4 @@
-<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>MCP consent fixture</title><div id="consent"></div><script type="module">
+<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>MCP consent fixture</title><link rel="stylesheet" href="/src/theme_config.css"><script>if (new URLSearchParams(location.search).has("dark")) document.documentElement.classList.add("fixture-dark");</script><body><script>document.body.classList.toggle("dark-mode", document.documentElement.classList.contains("fixture-dark"));</script><div id="consent"></div><script type="module">
 import { McpConnectionPage } from '/src/components/mcp/mcp_connection_page.js';
 import { LocalizationService } from '/src/services/localization_service.js';
 LocalizationService.translations = await (await fetch('/assets/translations/cs.json')).json();

@@ -169,7 +169,8 @@ export class McpConnectionPage {
 
     render() {
         const root = document.createElement('section');
-        root.className = 'mcp-connection connection-page';
+        root.className = `mcp-connection connection-page${this.state === 'connected' ? ' mcp-connected' : ''}`;
+        if (this.state === 'connected') root.setAttribute('role', 'status');
         root.setAttribute('aria-busy', String(this.busy || this.state === 'loading'));
         const add = (tag, text, parent = root) => {
             const element = document.createElement(tag);
@@ -180,14 +181,24 @@ export class McpConnectionPage {
         const button = (key, action, disabled = false) => {
             const element = add('button', this.text(key));
             element.type = 'button';
-            if (key === 'approve' || key === 'login') element.dataset.primary = '';
+            if (key === 'approve' || key === 'login' || key === 'closeWindow') element.dataset.primary = '';
             element.disabled = this.busy || disabled;
             element.addEventListener('click', action);
             return element;
         };
+        if (this.state === 'connected') {
+            const mark = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            mark.setAttribute('viewBox', '0 0 24 24');
+            mark.setAttribute('aria-hidden', 'true');
+            mark.classList.add('mcp-success-mark');
+            const check = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            check.setAttribute('d', 'm6 12 4 4 8-8');
+            mark.appendChild(check);
+            root.appendChild(mark);
+        }
         add('h1', this.text(this.state === 'connected' ? 'connected' : 'heading'));
         if (this.state === 'consent') {
-            add('h2', this.text('client', { client: this.details.client }));
+            add('h2', this.text('client'));
             if (this.details.regionalPortal) {
                 const { name: portal, platform } = this.details.regionalPortal;
                 add('p', this.text('regionalPlatform', { portal, platform }));
@@ -308,7 +319,7 @@ export class McpConnectionPage {
             button('login', () => this.login());
             button('cancel', () => this.finish('cancel'));
         } else if (this.state === 'connected') {
-            add('p', this.text('connectedClient', { client: this.details.client }));
+            add('p', this.text('connectedClient'));
             add('p', this.text('closeHint'));
             button('closeWindow', () => this.browser.close());
             const back = add('a', this.text('backToTenant', { tenant: AppConfig.appName }));
@@ -327,6 +338,11 @@ export class McpConnectionPage {
         const style = document.createElement('style');
         style.textContent = connectionPageStyles + `
 .mcp-connection h2{margin-block-start:24px}
+.mcp-connected{max-width:640px}
+.mcp-success-mark{display:block;width:48px;height:48px;margin-bottom:20px;color:var(--connection-link);fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.mcp-connected button[data-primary]{margin-top:20px}
+.mcp-connected>p:first-of-type{font-size:1.125rem}
+
 .mcp-organizer{margin-block:12px;padding-block:12px;border-block-end:1px solid var(--connection-line)}
 .mcp-organizer:last-child{border-block-end:0}
 .mcp-organizer h3{margin:0;flex:1;min-width:0}

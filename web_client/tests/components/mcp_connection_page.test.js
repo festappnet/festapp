@@ -61,6 +61,10 @@ test('native callback is isolated and success waits for server acknowledgement',
     assert.equal(f.opened(), 1); assert.equal(f.popup.opener, null); assert.equal(f.popup.closed, true);
     assert.deepEqual(f.calls.map(c => c.operation), ['details', 'approve', 'status']);
     assert.equal(f.page.state, 'connected'); assert.match(f.container.textContent, /Propojeno/);
+    assert.match(f.container.textContent, /Připojená aplikace má povolený přístup/);
+    assert.doesNotMatch(f.container.textContent, /Codex/);
+    assert.equal(f.container.querySelector('button[data-primary]').textContent, 'Zavřít okno');
+    assert.equal(f.container.querySelector('.mcp-connected').getAttribute('role'), 'status');
 });
 test('lost completion acknowledgement offers no second approval and leaves callback alive', async () => {
     const f = fixture({ native: true, invoke: async body => {

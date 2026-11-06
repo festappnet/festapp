@@ -18,12 +18,54 @@ async function browser(...args) {
     const result=JSON.parse(stdout); assert.equal(result.success,true,result.error); return result.data;
 }
 const evaluate=async source=>(await browser('eval',source)).result;
+const measureContrast = async (selector, foreground, background) => evaluate(`(() => {
+    const el = document.querySelector(${JSON.stringify(selector)}), style = getComputedStyle(el);
+    const context = document.createElement('canvas').getContext('2d');
+    const pixel = (color, underneath) => { context.clearRect(0,0,1,1); context.fillStyle=underneath; context.fillRect(0,0,1,1); context.fillStyle=color; context.fillRect(0,0,1,1); return [...context.getImageData(0,0,1,1).data].slice(0,3); };
+    const bg=getComputedStyle(document.querySelector('.connection-page')).backgroundColor;
+    const lum = rgb => rgb.map(x=>{const v=x/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0);
+    const a=lum(pixel(style[${JSON.stringify(foreground)}], bg)), b=lum(pixel(${background === 'page' ? 'bg' : `style[${JSON.stringify(background)}]`}, bg));
+    return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+})()`);
 try {
     server=await createServer({configFile:false,root:path.resolve(import.meta.dirname,'..'),logLevel:'error',server:{host:'127.0.0.1',port:0,strictPort:true},plugins:[{name:'mcp-translations',configureServer(vite){vite.middlewares.use(async(req,res,next)=>{
         if(req.url==='/assets/translations/cs.json'){res.setHeader('content-type','application/json');res.end(await readFile(new URL('../../assets/translations/cs.json',import.meta.url)));return;} next();
     });}}]});
     await server.listen();
     const fixtureUrl=`http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/mcp/index.html`;
+    // Exercise the actual theme tokens at representative viewport widths.
+    for (const dark of [false, true]) for (const width of [320, 390, 1280]) {
+        await browser('set','viewport',String(width),'900');
+        await browser('open',fixtureUrl+(dark?'?dark=1':''));
+        await browser('wait','--fn','window.consentFixture?.ready === true');
+        assert.equal(await evaluate('document.body.classList.contains("dark-mode")'),dark);
+        assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`consent overflow ${dark}/${width}`);
+        const colors = await evaluate(`(() => {
+            const root = document.querySelector('.connection-page');
+            const color = s => s.match(/[0-9.]+/g).slice(0,3).map(Number);
+            const lum = c => { const v=c/255; return v<=.04045?v/12.92:((v+.055)/1.055)**2.4; };
+            const contrast = (a,b) => { const x=color(a).map(lum), y=color(b).map(lum); const l=v=>.2126*v[0]+.7152*v[1]+.0722*v[2]; return (Math.max(l(x),l(y))+.05)/(Math.min(l(x),l(y))+.05); };
+            const bg=getComputedStyle(root).backgroundColor;
+            return { body:contrast(getComputedStyle(root).color,bg), links:[...root.querySelectorAll('a')].map(a=>contrast(getComputedStyle(a).color,bg)) };
+        })()`);
+        assert.ok(colors.body >= 4.5 && colors.links.every(c=>c >= 4.5),`consent contrast ${dark}/${width}: ${JSON.stringify(colors)}`);
+        assert.ok(await measureContrast('button[data-primary]', 'color', 'backgroundColor') >= 4.5, 'disabled text contrast');
+        await browser('press','Tab');
+        const focusContrast = await measureContrast(':focus-visible', 'outlineColor', 'page');
+        assert.ok(focusContrast >= 3, `focus contrast ${dark}/${width}: ${focusContrast}`);
+        if (dark && (width===320 || width===1280)) await browser('screenshot',`/private/tmp/festapp-mcp-consent-dark-${width}.png`,'--full');
+        await browser('click','input[data-select-all]');
+        await browser('find','role','button','click','--name','Povolit a propojit');
+        await browser('wait','--fn','window.consentFixture.read().state === "connected"');
+        assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`connected overflow ${dark}/${width}`);
+        assert.equal(await evaluate('document.querySelector(".connection-page button").hasAttribute("data-primary")'),true,'close action is primary');
+        assert.ok(await measureContrast('button[data-primary]', 'color', 'backgroundColor') >= 4.5, 'close text contrast');
+        await browser('hover','button[data-primary]');
+        await browser('wait','200');
+        assert.ok(await measureContrast('button[data-primary]', 'color', 'backgroundColor') >= 4.5, 'hover text contrast');
+        assert.equal(await evaluate('document.querySelector(".connection-page").textContent.includes("Codex")'),false,'connected copy is generic');
+        if (dark && (width===320 || width===1280)) await browser('screenshot',`/private/tmp/festapp-mcp-connected-dark-${width}.png`,'--full');
+    }
     await browser('open',fixtureUrl);
     await browser('wait','--fn','window.consentFixture?.ready === true');
     await browser('set','viewport','1280','1000');
@@ -92,8 +134,10 @@ try {
     await browser('open',fixtureUrl.replace('/mcp/index.html','/connections/index.html'));
     await browser('wait','--fn','window.connectionsFixture?.ready === true');
     await browser('set','viewport','320','900');
-    await browser('eval',"document.body.style.cssText='margin:0;background:#222629;color:#f3f3f3;font:16px system-ui'");
+    await browser('eval',"document.head.insertAdjacentHTML('beforeend', '<link rel=stylesheet href=/src/theme_config.css>'); document.body.classList.add('dark-mode')");
+    await browser('wait','--fn','getComputedStyle(document.body).marginLeft === "0px"');
     await browser('snapshot','-i');
+    assert.ok(await measureContrast('.connection-page', 'color', 'page') >= 4.5, 'account text contrast');
     assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,'account connections fit mobile');
     assert.equal(await evaluate('document.body.textContent.includes("Způsoby přihlášení") && document.body.textContent.includes("Připojené aplikace")'),true);
     await browser('click','[data-revoke="first-grant"]');
