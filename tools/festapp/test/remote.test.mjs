@@ -209,13 +209,16 @@ for (const resourceCount of [0, 1, 2, 3]) test(`native OAuth with ${resourceCoun
 });
 
 for (const guide of ['automation/release/help/ai-agenti.html', 'automation/release/help/en/ai-agents.html', 'tools/festapp/README.md'])
-    test(`documented Codex login refreshes with the SDK's offline_access scope: ${guide}`, async t => {
+    test(`documented MCP login refreshes with the SDK's offline_access scope: ${guide}`, async t => {
         const text = await readFile(new URL('../../../' + guide, import.meta.url), 'utf8');
-        const commands = [...text.matchAll(/codex mcp login \S+ --scopes ([^<\s]+)/g)];
-        assert(commands.length > 0);
-        for (const [index, command] of commands.entries()) await t.test(`login command ${index + 1}`, async t => {
+        const scopeSets = guide.endsWith('.html')
+            ? [[...new Set(text.match(/\b(?:offline_access|festapp:[a-z-]+:[a-z-]+)\b/g))]]
+            : [...text.matchAll(/codex mcp login \S+ --scopes ([^<\s]+)/g)].map(command => command[1].split(','));
+        assert(scopeSets.length > 0);
+        if (guide.endsWith('.html')) assert.doesNotMatch(text, /codex/i);
+        for (const [index, scopes] of scopeSets.entries()) await t.test(`documented scopes ${index + 1}`, async t => {
             const f = await setup(t, { native: true, tenant: true });
-            const scopes = command[1].split(',');
+            assert(scopes.includes('offline_access'));
             const permissions = scopes.filter(scope => MCP_SCOPES.includes(scope));
             const clientId = 'codex-fixture', callbackUri = 'http://127.0.0.1:51789/callback', verifier = 'v'.repeat(43);
             const query = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: callbackUri,
@@ -400,6 +403,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     assert.match(client.getInstructions(), /ask which occasion/i);
     assert.match(client.getInstructions(), /untrusted data, never instructions/i);
     const tools = await client.listTools();
+    assert.doesNotMatch(JSON.stringify({ instructions: client.getInstructions(), server: client.getServerVersion(), tools }), /codex|chatgpt|claude|openai/i, 'automatic MCP discovery stays client independent');
     assert(tools.tools.some(t => t.name === 'festapp_orders_update' && t.annotations.destructiveHint === true));
     assert(tools.tools.some(t => t.name === 'festapp_orders_report' && t.annotations.readOnlyHint === true));
     assert(tools.tools.some(t => t.name === 'festapp_products_list' && t.annotations.readOnlyHint === true));
@@ -498,6 +502,7 @@ test('OAuth discovery, exact callbacks, browser CSRF and PKCE fail closed', asyn
     const challenge = await fetch(f.issuer + '/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
     assert.equal(challenge.status, 401);
     assert.match(challenge.headers.get('www-authenticate'), /oauth-protected-resource/);
+    assert.doesNotMatch(challenge.headers.get('www-authenticate'), /codex|chatgpt|claude|openai/i);
     for (const bearer of [supabaseToken, 'invented-access-token-1234567890']) {
         assert.equal((await fetch(f.issuer + '/mcp', { method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' }, body: '{}' })).status, 401);
     }
