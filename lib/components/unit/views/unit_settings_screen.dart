@@ -332,10 +332,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
               const BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Column(children: [
-              Form(
-                key: _formKey,
-                child: Column(
+            child: Form(
+              key: _formKey,
+              child: Column(children: [
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_isLoading)
@@ -390,17 +390,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         ]),
                       ),
                       const SizedBox(height: 24),
-                      if (_organizationMeasurementEnabled) ...[
-                        UnitMeasurementSettings(
-                          enabled: _measurementEnabled,
-                          canEdit: _canEdit && !_isSaving,
-                          gtmController: _measurementGtmController,
-                          scriptsController: _measurementScriptsController,
-                          onEnabledChanged: (value) =>
-                              setState(() => _measurementEnabled = value),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
                       DropdownButtonFormField<String>(
                         initialValue: _communicationTone,
                         decoration: InputDecoration(
@@ -570,7 +559,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                     ],
                   ],
                 ),
-              ),
               if (!_isLoading && _unit.id != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 24),
@@ -598,6 +586,17 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                     },
                   ),
                 const SizedBox(height: 48),
+                if (_organizationMeasurementEnabled) ...[
+                  UnitMeasurementSettings(
+                    enabled: _measurementEnabled,
+                    canEdit: _canEdit && !_isSaving,
+                    gtmController: _measurementGtmController,
+                    scriptsController: _measurementScriptsController,
+                    onEnabledChanged: (value) =>
+                        setState(() => _measurementEnabled = value),
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 if (StripeFeature.canActivate &&
                     RightsService.currentUnit()?.id == _unit.id)
                   ExpansionTile(
@@ -649,7 +648,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                     ),
                   ),
               ],
-            ]),
+              ]),
+            ),
           ),
         ),
       ),
