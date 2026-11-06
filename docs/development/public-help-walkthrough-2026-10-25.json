@@ -1128,6 +1128,31 @@
         "English guide remains preview-only under the existing publication gate.",
         "The initial legacy-fixture failure is resolved in the follow-up receipt. Earlier screenshots remain historical captures from the old service fixture; the selected-seat screenshot uses dedicated API 59931 with current canonical migrations. One actual seat hold was acquired and released; zero orders, payments or email delivery."
       ]
+    },
+    {
+      "id": "wordpress-directory-plugin-20261106",
+      "locale": "cs",
+      "source": "WordPress.org vstupenky.online 1.0.4; system Google Chrome; isolated disposable WordPress7.1.3 and local canonical backend",
+      "scenario": [
+        "Install/activate plugin in local WordPress; public directory install separately verified on WordPress6.6/PHP7.4.33",
+        "Open actual localized onboarding",
+        "Add native block with public saved form URL",
+        "Set appearance false, publish/reopen false, true/save/reopen true",
+        "Open actual published page, mobile forms and seat map; select one local seat without submitting an order"
+      ],
+      "mediaIds": [
+        "cs/wordpress/01-get-started",
+        "cs/wordpress/02-block-editor",
+        "cs/wordpress/04-published-form",
+        "cs/wordpress/05-mobile-form",
+        "cs/wordpress/06-seat-selection"
+      ],
+      "provenance": "integrations/wordpress/catalog/source/PROVENANCE.txt",
+      "notVerified": [
+        "No production order or payment submitted",
+        "Mobile captures are Chrome, not Safari"
+      ],
+      "catalogTranslation": "38 Czech readme suggestions Waiting; no claim of locale editor approval"
     }
   ],
   "notVerified": [

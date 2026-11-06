@@ -1,7 +1,9 @@
 {
   "plugin": "vstupenky-online",
-  "version": "1.0.1",
-  "sha256": "5d8a605eb7f2663e420768d6ec5f3588181fa8ac42fc7b8462aa896ba358ca75",
-  "directoryStatus": "awaiting-review",
-  "statusCheckedAt": "2026-10-24"
+  "version": "1.0.4",
+  "sha256": "6bb47d136cc978678a0b81e485e7d1dedd3c0a4a983e2fa69a56d50a06a80394",
+  "sha256Artifact": "GitHub release ZIP; official WordPress ZIP has identical 12 plugin file bytes but is repacked",
+  "directoryStatus": "published",
+  "directoryUrl": "https://wordpress.org/plugins/vstupenky-online/",
+  "statusCheckedAt": "2026-11-06"
 }

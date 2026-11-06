@@ -1,0 +1,17 @@
+{
+  "project_url": "https://translate.wordpress.org/projects/wp-plugins/vstupenky-online/stable-readme/cs/default/",
+  "submitted_at_utc": "2026-11-06T12:06:01+00:00",
+  "source_file": "stable-readme-cs_CZ.po",
+  "sha256": "bf2242c0049b56e148007f561903759ba8c265e9e55aa9699bdd790292b90ef4",
+  "actor": "festappnet (AI-assisted)",
+  "counts": {
+    "total": 38,
+    "waiting": 38,
+    "translated": 0,
+    "untranslated": 0,
+    "warnings": 0
+  },
+  "status": "Waiting for translation review",
+  "directory_url": "https://cs.wordpress.org/plugins/vstupenky-online/",
+  "directory_observation": "English source still displayed; proposals are pending review."
+}

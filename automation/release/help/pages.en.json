@@ -132,8 +132,8 @@
     "category": "integrations",
     "slug": "wordpress",
     "title": "Sell tickets on WordPress",
-    "seoTitle": "WordPress ticket sales with a Custom HTML embed",
-    "description": "Generate the HTML embed, add it to a WordPress Custom HTML block and check the published form.",
+    "seoTitle": "WordPress ticket sales with the vstupenky.online plugin",
+    "description": "Install the official vstupenky.online plugin, insert a public ticket form and configure its appearance. Includes the Custom HTML alternative.",
     "label": "WordPress",
     "preview": "en/wordpress/03-custom-html"
   },

@@ -41,7 +41,7 @@ Cloudflare binds each guide to its generated CSP profile and includes it in the
 sitemap. Help documents/assets are network content, outside the installed app
 cache. No checkout is loaded by the HTML code generator.
 
-Public guides cover HTML embeds, WordPress Custom HTML, Webnode and the published
+Public guides cover HTML embeds, the published WordPress.org vstupenky.online plugin, WordPress Custom HTML, Webnode and the published
 Joomla vstupenky.online module. The Joomla guide links to the public JED listing
 instead of shipping a ZIP with the help. Keep unpublished plugins, their setup
 screenshots and ZIP downloads out of the help until they are actually published.
@@ -183,3 +183,7 @@ order handling, bank account setup and troubleshooting link to it in both locale
 It covers manual linking, wrong-order recovery, bank permissions and post-link
 balance/delivery checks. Its instructions are grounded in the transaction dialogs
 and pairing SQL; no new screenshot or live bank mutation is claimed.
+
+## WordPress directory publication (2026-11-06)
+
+The Czech WordPress guide now installs the public plugin from the WordPress.org directory (publisher festappnet, version 1.0.4 or later), followed by native block setup, per-block appearance, standalone-link/mobile/seat checks and a separate Custom HTML alternative. Five actual Czech WordPress7.1.3 captures use the November6 Ples U Lípy fixture; provenance is in integrations/wordpress/catalog/source/PROVENANCE.txt. No English guide uses Czech captures. The catalog description translation is separate: all38 Czech strings were submitted as Waiting, not represented as approved or live.
