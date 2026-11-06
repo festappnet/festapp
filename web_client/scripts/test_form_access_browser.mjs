@@ -14,7 +14,7 @@ const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
 const config = path.join(temporary, 'browser.json');
-await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false }));
+await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio' }));
 let browserIndex = 0;
 let session = `fa-${process.pid}`;
 let browserPhase = 'setup';
@@ -39,9 +39,10 @@ async function openBrowser(url) {
         },
         info: () => browser('session', 'info'),
         close: () => browser('close'),
+        navigate: target => { browserPhase = 'navigation'; return browser('open', target); },
+        currentUrl: async () => (await browser('get', 'url')).url,
+        targetUrl: url,
     });
-    browserPhase = 'navigation';
-    await browser('open', url);
     browserPhase = 'page assertions';
 }
 let server;
@@ -211,6 +212,8 @@ try {
     console.log('PASS: catalogue login - visible Google action and provider handoff');
 } catch (error) {
     console.error('Browser fixture failure:', { phase: browserPhase, requests });
+    console.error('Browser session:', await browser('session', 'info').catch(() => null));
+    console.error('Browser tabs:', await browser('tab').catch(() => null));
     console.error('Browser errors:', await browser('errors').catch(() => null));
     console.error('Browser snapshot:', await browser('snapshot', '-i').catch(() => null));
     throw error;
