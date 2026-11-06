@@ -1,0 +1,52 @@
+{
+  "verifiedAtUtc": "2026-11-06T17:00:07.062167+00:00",
+  "endpoint": "https://mcp.vstupenky.online/mcp",
+  "sourceRevision": "e1690cb82ce61f32c8242c8a12f76196c5b76ced",
+  "client": "native Codex CLI and app-server",
+  "clientId": "festapp-codex",
+  "oauthLogin": "PASS",
+  "authStatus": "oAuth",
+  "toolDiscoveryCount": 5,
+  "consent": {
+    "organizerGrants": 0,
+    "occasionGrants": 1,
+    "scopes": [
+      "offline_access",
+      "festapp:ticket-layouts:read",
+      "festapp:forms:read"
+    ]
+  },
+  "liveReads": {
+    "results": [
+      {
+        "tool": "festapp_context_inspect",
+        "isError": false,
+        "ok": true,
+        "operation": "context.inspect"
+      },
+      {
+        "tool": "festapp_forms_list",
+        "isError": false,
+        "ok": true,
+        "operation": "forms.list"
+      },
+      {
+        "tool": "festapp_forms_inspect",
+        "isError": false,
+        "ok": true,
+        "operation": "forms.inspect"
+      }
+    ],
+    "allPassed": true,
+    "modelTurns": 0
+  },
+  "refreshVerification": "Covered by local MCP suite; no claim of forced production refresh cycles",
+  "secretsIncluded": false,
+  "credentialStorage": {
+    "store": "encrypted macOS login Keychain",
+    "service": "Codex MCP Credentials",
+    "newFestappEntryModificationDateVerified": true,
+    "originalEntryPreserved": true,
+    "iCloudSynchronizationVerified": false
+  }
+}

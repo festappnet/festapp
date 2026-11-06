@@ -1,0 +1,18 @@
+{
+  "extensionId": 17931,
+  "listing": "https://extensions.joomla.org/extension/vstupenky-online/",
+  "result": "updated and publicly verified",
+  "version": "1.0.4",
+  "downloadPage": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.4",
+  "directDownload": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.4/vstupenky.online.zip",
+  "zipSha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
+  "uploadedZip": "6aee095e6fbfa.zip",
+  "images": [
+    "6aee0984d2c1e.png",
+    "6aee098538c98.png",
+    "6aee09857d3af.png"
+  ],
+  "imageEvidence": "catalog-screenshots-20261106.json",
+  "confirmation": "Listing Update Received; public version and three image URLs verified; edit readback confirmed both download URLs and uploaded ZIP.",
+  "unrelatedFields": "41 nonhidden controls compared unchanged before save."
+}
