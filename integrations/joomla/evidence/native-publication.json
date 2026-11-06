@@ -2,64 +2,64 @@
   "checks": [
     {
       "joomla_major": 5,
-      "new_module_id": 131,
-      "article_id": 4,
+      "new_module_id": 125,
+      "article_id": 3,
       "baseline_restored": true,
       "cases": [
         "native New/type selection/save/publish/template position/all-menu assignment/public readback",
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         }
@@ -67,64 +67,64 @@
     },
     {
       "joomla_major": 6,
-      "new_module_id": 131,
-      "article_id": 4,
+      "new_module_id": 125,
+      "article_id": 3,
       "baseline_restored": true,
       "cases": [
         "native New/type selection/save/publish/template position/all-menu assignment/public readback",
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "auto",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": false,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "cold",
           "helpers": 1
         },
         {
           "article_only": true,
           "mode": "fixed",
-          "inherit_style": true,
+          "legacy_override_ignored": true,
           "cache": "warm",
           "helpers": 1
         }

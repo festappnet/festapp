@@ -1,0 +1,16 @@
+{
+  "plugin": "vstupenky-online",
+  "version": "1.0.5",
+  "scope": "new 1.0.5 runtime and refreshed central-appearance catalog screenshots; published1.0.4 immutable",
+  "files": {
+    "icon-128x128.png": "1479cafcae9c95c48d107cc9d5cab4194bc1fbf12812fa397b177a86288f6680",
+    "icon-256x256.png": "95c1505b76275bf6362d69e7ba938dcd00dfe0f9eb00138c9f025eb4a3dea8d5",
+    "banner-772x250.png": "05e49efabf16a594d10ba652f62bedb8eb1cf21965c03c2f2186bc105769b2c0",
+    "banner-1544x500.png": "6dd09918a4d0f10816bee06331385014100ff3f02ab44587be20c4f8bf5ca6f4",
+    "screenshot-1.png": "e0207c15df2e7cdfe785b8e3f02818094eaa31efd7e56128bb3d5c4eff3093d9",
+    "screenshot-2.png": "b7700a870d4baafc11eba00fc84bede8668ebc02a19c322ad150a8692d9ecb5b",
+    "screenshot-3.png": "493b9f13f672a5d33a856669ff1c1d5ef0d9c9da308c889dddc887816dc88b03",
+    "screenshot-4.png": "6a84a8e0293395bce8471c3c47445cb0d20c1a2fc20356128086434cbc5b5d7b",
+    "screenshot-5.png": "a4f56486f54fafd2006322f5d2eab4a989fccf7bb21962f01c8826cf4d5629ff"
+  }
+}

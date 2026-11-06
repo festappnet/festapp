@@ -38,7 +38,8 @@ const assets = {...runtime.assets};
 const mcpReference = readMcpReference(root);
 const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
 assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
-const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id));
+const wordpressPublished = JSON.parse(read('download.json')).directoryStatus === 'published';
+const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && (wordpressPublished || !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id)));
 const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
 const previewImages = new Map();
 const figures = new Map(media.map(item => {

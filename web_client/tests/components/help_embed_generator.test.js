@@ -21,7 +21,7 @@ test('public generator produces isolated service code without loading checkout',
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
-  assert.equal(frame.getAttribute('data-festapp-style'),'inherit');
+  assert.equal(frame.getAttribute('data-festapp-style'),null);
   assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.style.display,'block');
   assert.equal(frame.style.width,'100%');
@@ -46,30 +46,15 @@ test('English generator uses its configured service origin and localized results
   mode.value='fixed';mode.dispatchEvent(new form.ownerDocument.defaultView.Event('change'));
   mode.value='automatic';mode.dispatchEvent(new form.ownerDocument.defaultView.Event('change'));
 });
-test('generator exposes the same per-embed choice in both height modes',t=>{
+test('generator leaves appearance to the saved form in both height modes',t=>{
   const {dom,form,field,submit}=fixture(t);
-  const appearance=form.querySelector('[name=inherit-style]');
-  assert.equal(appearance.checked,true);
+  const mode=form.querySelector('[name=height-mode]');
+  assert.equal(form.querySelector('[name=inherit-style]'),null);
   submit('https://vstupenky.online/form/ples');
-  assert.match(form.querySelector('textarea').value,/data-festapp-style="inherit"/);
-  appearance.checked=false;appearance.dispatchEvent(new dom.window.Event('change'));
-  assert.equal(form.querySelector('[data-embed-output]').hidden,true,'changing the choice invalidates previously generated HTML');
+  assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
+  mode.value='fixed';mode.dispatchEvent(new dom.window.Event('change'));
   submit('https://vstupenky.online/form/ples');
-  assert.match(form.querySelector('textarea').value,/data-festapp-style="default"/);
-  field.dispatchEvent(new dom.window.Event('input'));
-  assert.equal(form.querySelector('[data-embed-output]').hidden,true);
-  const mode=form.querySelector('select');mode.value='fixed';mode.dispatchEvent(new dom.window.Event('change'));
-  submit('https://vstupenky.online/form/ples');
-  const code=new JSDOM(form.querySelector('textarea').value);t.after(()=>code.window.close());
-  const frame=code.window.document.querySelector('iframe');
-  assert.equal(frame.getAttribute('data-festapp-height'),'fixed');
-  assert.equal(frame.getAttribute('data-festapp-style'),'default');
-  assert.equal(frame.hasAttribute('data-festapp-embed'),true);
-  assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
-  appearance.checked=true;appearance.dispatchEvent(new dom.window.Event('change'));
-  assert.equal(appearance.disabled,false);
-  submit('https://vstupenky.online/form/ples');
-  assert.match(form.querySelector('textarea').value,/data-festapp-style="inherit"/);
+  assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
   assert.match(form.querySelector('textarea').value,/data-festapp-height="fixed"/);
 });
 test('copy action copies the current prepared code',async t=>{

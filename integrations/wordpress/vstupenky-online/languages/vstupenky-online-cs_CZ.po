@@ -1,5 +1,5 @@
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.4\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.5\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr "1. Připravte formulář"
@@ -13,20 +13,20 @@ msgstr "3. Zkontrolujte a zveřejněte"
 msgid "After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor."
 msgstr "Po zveřejnění se návštěvník připojí k vstupenky.online a zadává údaje přímo službě. Oba režimy výšky načítají její /embed.js. V editoru se vzdálený formulář nenačítá."
 
+msgid "Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes."
+msgstr "Vzhled nastavíte v uloženém formuláři. Otevřete Formuláře, vyberte tento formulář, přejděte na Vzhled a změnu uložte."
+
 msgid "Automatic"
 msgstr "Automatická"
 
-msgid "Automatic height and Match website appearance are enabled by default. Each block or shortcode has its own settings."
-msgstr "Automatická výška a přizpůsobení vzhledu webu jsou ve výchozím nastavení zapnuté. Každý blok nebo shortcode má vlastní nastavení."
+msgid "Automatic height is enabled by default. Website appearance is controlled by the saved form setting in the service."
+msgstr "Automatická výška je ve výchozím nastavení zapnutá. Vzhled řídí uložené nastavení formuláře ve službě."
 
 msgid "Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr "Oba režimy výšky načítají pomocný skript služby. Pevná výška (240-4000 px) používá posouvání uvnitř formuláře. Odkaz pod formulářem funguje i bez skriptu. Pokud šablona nebo bezpečnostní pravidla blokují vložení, návštěvník otevře formulář v nové záložce."
 
 msgid "Check the public URL. The server accepts only an allowed form address."
 msgstr "Zkontrolujte veřejný odkaz. Server přijme pouze povolenou adresu formuláře."
-
-msgid "Choose Match website appearance for each block, or set inherit_style=\"false\" in its shortcode to keep the form appearance. Save and publish the page after changing it."
-msgstr "Pro každý blok zvolte Přizpůsobit vzhled webu, nebo v jeho shortcodu nastavte inherit_style=\"false\" pro zachování vzhledu formuláře. Po změně stránku uložte a publikujte."
 
 msgid "Copy the public URL in the form https://vstupenky.online/form/saved-slug. Do not use a personal order link or administration URL."
 msgstr "Zkopírujte veřejný odkaz ve tvaru https://vstupenky.online/form/ulozeny-odkaz. Nepoužívejte osobní odkaz z objednávky ani adresu administrace."
@@ -76,11 +76,11 @@ msgstr "Výška (px)"
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr "Při nejistém výsledku nákupu ověřte objednávku s pořadatelem před novým nákupem. Platby a dostupnost sedadel řídí služba. Deaktivace ani odinstalace pluginu nemaže objednávky ve službě; shortcode pak může být na stránce viditelný jako text."
 
-msgid "Match website appearance"
-msgstr "Přizpůsobit vzhled webu"
-
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr "Otevřete novou nebo existující stránku ve WordPressu. Přes tlačítko + vyhledejte blok vstupenky.online a vložte do něj veřejný odkaz formuláře."
+
+msgid "Open forms"
+msgstr "Otevřít formuláře"
 
 msgid "Open the form in a new tab"
 msgstr "Otevřít formulář v nové záložce"
@@ -136,11 +136,11 @@ msgstr "Vstupenky na vašem webu"
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr "Použijte https://vstupenky.online/form/ulozeny-odkaz bez parametrů a osobního fragmentu."
 
-msgid "Use the website font, background and colors for this block only. Save and publish the page to apply changes. The seating plan keeps its own appearance."
-msgstr "Použije písmo, pozadí a barvy webu pouze pro tento blok. Změny uplatníte uložením a publikováním stránky. Plánek sálu si ponechá vlastní vzhled."
-
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
 msgstr "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Objednávky, platby a odbavení spravujete ve svém účtu vstupenky.online."
+
+msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
+msgstr "Vzhled všech vložení řídí pouze uložené nastavení formuláře ve službě. Otevřete Vzhled formuláře, nastavte Přizpůsobit vzhled webu a formulář uložte. Změna se projeví při příštím načtení bez výměny kódu. WordPress ji nemůže přepsat. Plánek sálu si ponechá vlastní vzhled."
 
 msgid "vstupenky.online"
 msgstr "vstupenky.online"

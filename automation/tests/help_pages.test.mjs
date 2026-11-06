@@ -78,8 +78,10 @@ test('public guides render crawlable linked documents, code generator without un
  const scanner=fs.readFileSync(path.join(target,'nastaveni-skeneru/index.html'),'utf8');
  assert.match(scanner,/href="\/events\?help=scanner-settings" target="_blank"/);
  const embed=fs.readFileSync(path.join(target,'vlozeni-na-web/index.html'),'utf8');assert.match(embed,/data-embed-generator/);
- const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.doesNotMatch(wordpress,/vstupenky_online url=|s-doplnkem|\.zip/);
- assert.equal(fs.readdirSync(path.join(target,'assets')).some(name=>name.endsWith('.zip') || /wordpress-(01|02)-/.test(name)),false,'unpublished plugins and their setup captures stay out of help');
+ const wordpress=fs.readFileSync(path.join(target,'wordpress/index.html'),'utf8');assert.match(wordpress,/Vlastní HTML/);assert.match(wordpress,/https:\/\/cs\.wordpress\.org\/plugins\/vstupenky-online\//);assert.doesNotMatch(wordpress,/inherit_style=|data-festapp-style/);assert.match(wordpress,/jedno uložené nastavení/);assert.match(wordpress,/240-4000/);assert.match(wordpress,/wordpress-02-block-editor/);
+ assert.equal(fs.readdirSync(path.join(target,'assets')).some(name=>name.endsWith('.zip')),false,'plugin ZIP payloads stay out of help; link to the public directory');
+ const joomla=fs.readFileSync(path.join(target,'joomla/index.html'),'utf8');assert.match(joomla,/Přístupný název iframe/);assert.match(joomla,/Uložený veřejný odkaz na formulář/);
+ const wix=fs.readFileSync(path.join(target,'wix/index.html'),'utf8');assert.match(wix,/Add to Site/);assert.match(wix,/Přístupný název formuláře/);
  const before=fs.readFileSync(path.join(target,'index.html'));run=render();assert.equal(run.status,0,run.stderr);assert.deepEqual(fs.readFileSync(path.join(target,'index.html')),before);
  const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
  assert.equal(english.status,0,english.stderr);

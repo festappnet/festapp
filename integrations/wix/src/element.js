@@ -1,4 +1,4 @@
-import {DEFAULT_TITLE, HELP_URL, SERVICE_ORIGIN, TAG_NAME, formUrl, inheritStyle} from './config.js';
+import {DEFAULT_TITLE, HELP_URL, SERVICE_ORIGIN, TAG_NAME, formUrl} from './config.js';
 
 function ensureHelper(document) {
   if (document.defaultView.__festappEmbedV1 || [...document.scripts].some(script => script.src === `${SERVICE_ORIGIN}/embed.js`)) return;
@@ -23,7 +23,7 @@ export function registerTicketElement(win, getViewMode, attribution) {
         catch { this.attributionFailed=true; }
       }
     }
-    static observedAttributes = ['form-url', 'form-title', 'inherit-style'];
+    static observedAttributes = ['form-url', 'form-title'];
     connectedCallback() {
       const generation = this.generation = (this.generation || 0) + 1;
       this.mode = null;
@@ -128,7 +128,6 @@ export function registerTicketElement(win, getViewMode, attribution) {
       }
       const source = `${url}?embed=1${this.checkoutOrigin ? `&checkout_origin=${encodeURIComponent(this.checkoutOrigin)}` : ''}`;
       if (this.frame.getAttribute('src') !== source) this.frame.src = source;
-      this.frame.dataset.festappStyle = inheritStyle(this.getAttribute('inherit-style')) ? 'inherit' : 'default';
       this.frame.title = this.getAttribute('form-title')?.trim().slice(0, 200) || DEFAULT_TITLE;
       this.fallback.href = this.directUrl(url);
       ensureHelper(this.ownerDocument);

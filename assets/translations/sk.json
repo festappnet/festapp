@@ -466,7 +466,7 @@
     "embedAutomatic": "Automatická výška (odporúčané)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Prispôsobiť vzhľad webu",
-    "embedInheritStyleHelp": "Pre toto vloženie použije písmo, pozadie a farby Vášho webu. Voľbu nastavte pred skopírovaním kódu. Plán sály si ponechá vlastný vzhľad.",
+    "embedInheritStyleHelp": "Použije písmo, pozadie a farby hostiteľského webu pre všetky vloženia tohto formulára. Zmenu uložte s formulárom; prejaví sa pri ďalšom načítaní. Plán sály si ponechá vlastný vzhľad.",
     "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
     "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
     "labelBeforeStartMessage": "Informácie pred začiatkom",
@@ -486,7 +486,8 @@
     "savedPublicLink": "Aktuálny uložený odkaz",
     "publicLinkPreview": "Náhľad neuloženého odkazu",
     "automaticPublicLink": "Krátky odkaz sa vytvorí po uložení. Názov adresy môžete zadať ručne.",
-    "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať."
+    "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať.",
+    "embedOpenAppearance": "Upraviť vzhľad formulára"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Predgenerované vstupenky",

@@ -54,7 +54,7 @@ function admin_page() {
 		<?php if ( current_user_can( 'edit_pages' ) ) : ?>
 		<p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=page' ) ); ?>"><?php esc_html_e( 'Create a page', 'vstupenky-online' ); ?></a></p>
 		<?php endif; ?>
-		<p><?php esc_html_e( 'Automatic height and Match website appearance are enabled by default. Each block or shortcode has its own settings.', 'vstupenky-online' ); ?></p>
+		<p><?php esc_html_e( 'Automatic height is enabled by default. Website appearance is controlled by the saved form setting in the service.', 'vstupenky-online' ); ?></p>
 		</div>
 		<div class="card">
 		<h2><?php esc_html_e( '3. Preview and publish', 'vstupenky-online' ); ?></h2>
@@ -67,7 +67,8 @@ function admin_page() {
 		<p><code>[vstupenky_online url="https://vstupenky.online/form/saved-slug" title="Tickets for our event"]</code></p>
 		<p><code>[vstupenky_online url="https://vstupenky.online/form/saved-slug" mode="fixed" height="800"]</code></p>
 		<p><?php esc_html_e( 'Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab.', 'vstupenky-online' ); ?></p>
-		<p><?php esc_html_e( 'Choose Match website appearance for each block, or set inherit_style="false" in its shortcode to keep the form appearance. Save and publish the page after changing it.', 'vstupenky-online' ); ?></p>
+		<p><a href="https://vstupenky.online/events?help=forms" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open forms', 'vstupenky-online' ); ?></a></p>
+		<p><?php esc_html_e( 'Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance.', 'vstupenky-online' ); ?></p>
 		<h2><?php esc_html_e( 'External service and privacy', 'vstupenky-online' ); ?></h2>
 		<p><?php esc_html_e( 'The published form connects to vstupenky.online. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form.', 'vstupenky-online' ); ?></p>
 		<p>

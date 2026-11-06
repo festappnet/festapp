@@ -67,6 +67,9 @@ class FormStrings {
   static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
+  static String get embedOpenAppearance =>
+      'FeatureFormSettings.embedOpenAppearance'.tr();
+
   static String get embedInheritStyle =>
       'FeatureFormSettings.embedInheritStyle'.tr();
   static String get embedInheritStyleHelp =>

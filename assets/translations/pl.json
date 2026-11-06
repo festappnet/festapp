@@ -448,7 +448,7 @@
     "embedAutomatic": "Automatyczna wysokość (zalecana)",
     "embedFixed": "Stała wysokość",
     "embedInheritStyle": "Dopasuj wygląd do strony",
-    "embedInheritStyleHelp": "Używa czcionki, tła i kolorów Państwa witryny w tym osadzeniu. Proszę wybrać ustawienie przed skopiowaniem kodu. Plan sali zachowa własny wygląd.",
+    "embedInheritStyleHelp": "Używa czcionki, tła i kolorów strony dla wszystkich osadzeń tego formularza. Zapisz formularz, aby zastosować zmianę przy następnym wczytaniu. Plan sali zachowuje własny wygląd.",
     "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
     "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
     "labelBeforeStartMessage": "Informacje przed rozpoczęciem zapisów",
@@ -468,7 +468,8 @@
     "savedPublicLink": "Aktualny zapisany link",
     "publicLinkPreview": "Podgląd niezapisanego linku",
     "automaticPublicLink": "Krótki link powstanie po zapisaniu. Możesz wpisać własną nazwę adresu.",
-    "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać."
+    "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać.",
+    "embedOpenAppearance": "Zmień wygląd formularza"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Wstępnie wygenerowane bilety",

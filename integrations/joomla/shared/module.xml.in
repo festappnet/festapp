@@ -29,9 +29,7 @@
           <option value="auto">@@KEY@@_AUTO</option><option value="fixed">@@KEY@@_FIXED</option>
         </field>
         <field name="height" type="number" default="800" min="240" max="4000" filter="integer" validate="number" label="@@KEY@@_HEIGHT" />
-        <field name="inherit_style" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer" validate="options" label="@@KEY@@_INHERIT_STYLE" description="@@KEY@@_APPEARANCE">
-          <option value="1">JYES</option><option value="0">JNO</option>
-        </field>
+        <field name="appearance_help" type="note" description="@@KEY@@_CENTRAL_APPEARANCE" />
         <field name="external" type="note" label="@@KEY@@_SERVICE" description="@@KEY@@_DISCLOSURE" />
       </fieldset>
       <fieldset name="advanced">

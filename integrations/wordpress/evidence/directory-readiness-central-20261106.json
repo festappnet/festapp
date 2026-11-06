@@ -1,0 +1,145 @@
+{
+  "state": "TECHNICALLY_VALIDATED_PENDING_CENTRAL_RUNTIME_ROLLOUT",
+  "prepared_at_utc": "2026-11-06T13:19:56+00:00",
+  "source": {
+    "branch": "docs/wordpress-czech-directory-20261106",
+    "head": "98435f5f2a5d41433fd2f9d62cd27a052f3c3526",
+    "main_merge": "pending; candidate source is in an active worktree and is not asserted as canonical main"
+  },
+  "scope": {
+    "product": "vstupenky-online",
+    "version": "1.0.5",
+    "market": "Czech",
+    "publish_global_festapp_tickets": false
+  },
+  "artifact": {
+    "path": "dist/vstupenky-online-1.0.5.zip",
+    "sha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+    "zip_file_count": 12,
+    "package_input_manifest": "evidence/vstupenky-online-package-inputs.json",
+    "offline_stage": "dist/wordpress-org-draft",
+    "offline_stage_file_count": 33,
+    "offline_release_manifest_sha256": "b3d7d35f2821a1bca01bd052b5e983e0303f6ca7f90f4c2f531e2145ae19613c",
+    "stage_layout": {
+      "trunk_files": 12,
+      "tag_1_0_5_files": 12,
+      "catalog_asset_files": 9
+    },
+    "catalog_asset_manifest": "evidence/catalog-assets-central-20261106.json",
+    "catalog_asset_manifest_sha256": "30363c3eaa8299b8bf0c797c068dbd51bd736c6e7c5d745dedbfa18ce53b2021",
+    "previous_tag_1_0_4": "immutable; untouched",
+    "svn_commit": "none; offline stage only"
+  },
+  "source_transition": {
+    "browser_capture_zip_sha256": "572e20839cfe41be8b785562835bda6c19cc086a6088753a6d1aacff5afbeee5",
+    "intermediate_candidate_zip_sha256": "27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65",
+    "final_zip_sha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+    "final_runtime_change": "WPCS alignment whitespace only in the shared PHP template",
+    "php_token_comparison": "token_get_all streams identical after excluding T_WHITESPACE; 541 tokens",
+    "behavioral_evidence_binding": "37 tester assertions, 48 coexistence/security assertions, Czech PHP/editor translations, lifecycle, and production-origin gate ran on the intermediate candidate; runtime tokens and catalog assets are unchanged in the final candidate. The final candidate additionally passed its 47-assertion contract on both engines."
+  },
+  "checks": {
+    "real_wordpress_contract": [
+      {
+        "wordpress": "7.1.3",
+        "php": "8.5.12",
+        "assertions": 47,
+        "candidate_sha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+        "status": "PASS"
+      },
+      {
+        "wordpress": "6.6",
+        "php": "7.4.33",
+        "assertions": 47,
+        "candidate_sha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+        "status": "PASS"
+      }
+    ],
+    "tester_contract": {
+      "assertions": 37,
+      "status": "PASS",
+      "candidate_sha256": "27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65"
+    },
+    "dual_product_coexistence_security": {
+      "assertions": 48,
+      "status": "PASS",
+      "candidate_sha256": "27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65"
+    },
+    "translation_catalogs": {
+      "status": "PASS",
+      "candidate_sha256": "27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65"
+    },
+    "plugin_lifecycle": {
+      "status": "PASS",
+      "candidate_sha256": "27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65"
+    },
+    "production_origin_gate": {
+      "status": "PASS",
+      "wordpress": "7.1.3/PHP 8.5.12 and 6.6/PHP 7.4.33",
+      "candidate_sha256": "27232206ed552ad5fa744261a8f40824f99fe0e6004220ab9f529eb395a31d65"
+    },
+    "wpcs": {
+      "version": "3.4.1",
+      "errors": 0,
+      "warnings": 0,
+      "products": [
+        "vstupenky-online 1.0.5 final ZIP",
+        "festapp-tickets 1.0.1 prepared ZIP"
+      ],
+      "status": "PASS"
+    },
+    "plugin_check": {
+      "version": "2.1.0",
+      "cli_bootstrap": true,
+      "wordpress_php": [
+        "7.1.3/8.5.12",
+        "6.6/7.4.33"
+      ],
+      "products": [
+        "vstupenky-online 1.0.5 final ZIP",
+        "festapp-tickets 1.0.1 prepared ZIP"
+      ],
+      "errors_per_product_per_engine": 0,
+      "warnings_per_product_per_engine": 1,
+      "known_warning": "Discouraged load_plugin_textdomain; retained for bundled translations in standalone ZIP installs",
+      "status": "PASS"
+    },
+    "php_syntax": {
+      "status": "PASS",
+      "files": 6,
+      "engines": [
+        "PHP 8.5.12",
+        "PHP 7.4.33"
+      ],
+      "errors": 0
+    }
+  },
+  "browser_validation": {
+    "status": "PASS per release owner report",
+    "scope": "isolated native WordPress editor and onboarding on the earlier 1.0.5 runtime-identical candidate; no local appearance override; Forms CTA visible",
+    "production_accessed": false,
+    "capture_provenance": "catalog/source/provenance-1.0.5.txt"
+  },
+  "hosting_review": {
+    "previous_approved_reviewed_version": "1.0.3",
+    "evidence": "evidence/directory-readiness-20261106.json",
+    "wordpress_org_manual_review_of_1_0_5": "not claimed"
+  },
+  "rollout": {
+    "native_plugin_candidate_compatible_with_current_live_bridge_fallback": true,
+    "central_only_enforcement_for_legacy_html_cms": "pending web/runtime cutover and coherent live verification",
+    "production_service_fixes_deployed": false,
+    "main_merge": "pending",
+    "remaining_external_gates": [
+      "merge central-cutover source to main",
+      "deploy the central-only web/runtime cutover and verify the live bridge for existing HTML/CMS embeds"
+    ],
+    "overall_rollout_ready": false
+  },
+  "tooling_only_global_package": {
+    "path": "dist/festapp-tickets-1.0.1.zip",
+    "version": "1.0.1",
+    "sha256": "45065983155562d026e0a0fd766569bec9d5591e508427a6bf8ccffa101baaef",
+    "purpose": "Coexistence, WPCS and Plugin Check only; excluded from SVN stage and publication."
+  }
+}

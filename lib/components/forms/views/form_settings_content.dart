@@ -1026,6 +1026,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         child: FormPublicLink(
                                           link: formLink,
                                           savedLink: _savedLink,
+                                          onOpenAppearance: _savedLink == null ? null : () {
+                                            context.router.navigate(
+                                              FormDetailRoute(
+                                                formLink: _savedLink!,
+                                                children: const [FormTabsRoute(children: [FormDesignRoute()])],
+                                              ),
+                                            );
+                                          },
                                         ),
                                       );
                                     },

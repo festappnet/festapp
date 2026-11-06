@@ -159,10 +159,8 @@ obsah stránek. Nejde o vypnutí ochrany. Živý browser test používá skuteč
 produkční helper a veřejný formulář z nainstalovaného Joomla modulu, bez
 odeslání objednávky nebo výběru sedadla.
 
-## Vzhled konkrétního vložení
+## Centrální vzhled formuláře
 
-Aktuální zdroj a nově sestavený balíček nabízí **Přizpůsobit vzhled webu** přímo v nativním nastavení vložení. Modul ukládá nativní `inherit_style` jako `1` nebo `0`; renderer nepovažuje text `false` za pravdivý. Výchozí zapnutí se použije jen při chybějící hodnotě; existující vypnutí zůstává vypnuté. Uložte konkrétní modul, ověřte zveřejnění stránky a případně vyčistěte cache Joomly.
+Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávněný editor ho nastaví ve Vzhledu formuláře a formulář uloží. Všechna vložení použijí tuto volbu při příštím načtení bez výměny HTML. Nativní doplněk ukládá odkaz a své nastavení výšky či názvu, nikoli vlastní volbu vzhledu. Staré uložené atributy jsou neúčinné a nové verze je negenerují. Helper zůstává v obou režimech výšky; plánek sálu se nepřebarvuje.
 
-Adaptér vždy emituje `data-festapp-style="inherit"` nebo `data-festapp-style="default"`. Společný `/embed.js` a `EmbedBridge`/`EmbedTheme` zůstávají jedinými vlastníky předání a použití vzhledu. Automatická a pevná výška jsou nezávislé; helper se načítá v obou režimech. Plánek sálu si ponechává vlastní vzhled.
-
-To není tvrzení o aktualizaci již nainstalovaných doplňků. Ovládání vyžaduje aktualizovaný balíček/hostované assets a jejich zapojení v CMS. Starší ruční HTML bez explicitního atributu dál používá kompatibilní nastavení formuláře; nové nativní vložení je vždy explicitní. Žádné nastavení vzhledu se tím globálně neukládá do formuláře.
+Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.

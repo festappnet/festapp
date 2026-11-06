@@ -4,8 +4,8 @@
     {
       "case": "320px, real form, article/position auto height, one helper",
       "heights": [
-        1756,
-        1756
+        723,
+        748
       ],
       "helpers": 1,
       "scrollWidth": 320,

@@ -29,10 +29,13 @@ vo_qa_assert( false !== strpos( $empty, 'vstupenky-online-error' ) && false === 
 $short = do_shortcode( '[vstupenky_online]' );
 vo_qa_assert( false !== strpos( $short, 'vstupenky-online-error' ), 'empty shortcode renders safely' );
 $fixed = do_shortcode( '[vstupenky_online url="' . $url . '" mode="fixed" height="240" inherit_style="false"]' );
-vo_qa_assert( false !== strpos( $fixed, 'data-festapp-style="default"' ) && false !== strpos( $fixed, 'data-festapp-height="fixed"' ) && false !== strpos( $fixed, 'data-festapp-embed' ), 'fixed shortcode uses canonical helper with explicit own appearance' );
+vo_qa_assert( false === strpos( $fixed, 'data-festapp-style' ) && false !== strpos( $fixed, 'data-festapp-height="fixed"' ) && false !== strpos( $fixed, 'data-festapp-embed' ), 'fixed shortcode ignores retired appearance overrides and preserves fixed height' );
 $block = WP_Block_Type_Registry::get_instance()->get_registered( 'vstupenky-online/ticket-form' );
 vo_qa_assert( $block && 3 === $block->api_version && false === $block->supports['html'], 'native API v3 block with HTML editing disabled' );
-vo_qa_assert( 'en_US' === get_locale() && 'Tickets on your website' === __( 'Tickets on your website', 'vstupenky-online' ), 'bundled PHP translation actually loads' );
+$locale_switched = switch_to_locale( 'cs_CZ' );
+$translated = __( 'Tickets on your website', 'vstupenky-online' );
+if ( $locale_switched ) { restore_previous_locale(); }
+vo_qa_assert( 'Vstupenky na vašem webu' === $translated, 'bundled Czech PHP translation actually loads' );
 $catalogs = glob( WP_PLUGIN_DIR . '/vstupenky-online/languages/*-cs_CZ-*.json' );
 vo_qa_assert( 1 === count( $catalogs ) && false !== strpos( file_get_contents( $catalogs[0] ), 'Vstupenky na' ), 'bundled Czech editor catalog present; English source needs no English catalog' );
 vo_qa_assert( false === has_action( 'wp_ajax_vstupenky_online' ) && false === has_action( 'rest_api_init', 'VstupenkyOnline\\register' ), 'no extra order/admin write endpoint' );

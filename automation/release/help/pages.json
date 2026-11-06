@@ -130,12 +130,12 @@
   {
     "slug": "wordpress",
     "title": "Prodej vstupenek ve WordPressu",
-    "seoTitle": "WordPress: vložení prodeje vstupenek přes HTML",
-    "description": "Vložte prodej vstupenek do WordPressu přes blok Vlastní HTML. Připravte kód, vložte jej do stránky a ověřte zveřejněný formulář.",
+    "seoTitle": "WordPress: prodej vstupenek pomocí doplňku vstupenky.online",
+    "description": "Nainstalujte oficiální doplněk vstupenky.online, vložte formulář do stránky a nastavte jeho vzhled. Návod s obrázky pro editor, mobil a místenky.",
     "label": "WordPress",
     "id": "wordpress",
     "category": "integrations",
-    "preview": "cs/wordpress/03-custom-html"
+    "preview": "cs/wordpress/02-block-editor"
   },
   {
     "id": "joomla",
