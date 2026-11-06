@@ -1,0 +1,19 @@
+{
+  "app_id": "9c099206-ce3d-43de-bd9d-deb96bb4f51e",
+  "native_version": "2.2",
+  "status": "Market listing updated and live; Up-to-date",
+  "public_url": "https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online",
+  "public_readback": {
+    "approved_feature": true,
+    "approved_paragraph": true,
+    "current_gallery_ids": [
+      "397be0_dad01382071b42bcb220c588fbdef794~mv2.png",
+      "397be0_51da74a5650742f2825345798379fc57~mv2.png"
+    ]
+  },
+  "removed": "Invalid optional historical promotional banner; Wix rejected its dimensions/format",
+  "pricing": "Existing baseline retained; no pricing edits",
+  "source_screenshots_commit": "be2056bb77ce68300a8cbcfdd130994180623906",
+  "verified_at_utc": "2026-11-06T17:23:33.274927+00:00",
+  "screenshot_evidence": "catalog-screenshots-20261106.json"
+}

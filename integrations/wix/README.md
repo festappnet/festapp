@@ -3,7 +3,7 @@
 Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
 and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
 
-Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED; central-appearance runtime0.1.2 hosting remains a separate release. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
+Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED; central-appearance runtime0.1.2 hosting and the refreshed public gallery are deployed and verified; see `evidence/hosting-central-appearance-20261106.json` and `evidence/market-listing-update-20261106.json`. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
 
 Repository entry point: [all platform integrations](../README.md).
 

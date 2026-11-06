@@ -36,3 +36,8 @@ The earlier `gallery-published-desktop.png` and `gallery-summary.png` are retain
 as historical evidence only. Their old checkout wording is obsolete; do not
 reuse them for the current gallery. Their original Wix CDN readback is documented
 in [the historical receipt](../evidence/gallery-20261025.json).
+
+The current pair and central-appearance listing text were published and read back
+on the public App Market on November 6, 2026. Native version 2.2 and pricing
+were retained; the invalid optional historical promotional banner was removed.
+See [the publication receipt](../evidence/market-listing-update-20261106.json).
