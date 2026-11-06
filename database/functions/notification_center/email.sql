@@ -1,3 +1,27 @@
+-- Reuse the order reporting authority: successful repair chains and delivered
+-- current tickets can resolve a different, older message's incident.
+CREATE OR REPLACE FUNCTION public.notification_center_reconcile_order_email_internal(p_order bigint)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE issues jsonb; event_id uuid;
+BEGIN
+ IF p_order IS NULL THEN RETURN; END IF;
+ issues:=public.order_email_current_issues(p_order);
+ FOR event_id IN
+  SELECT e.id FROM public.email_messages m
+  JOIN eshop.orders o ON o.id=m.order_id AND o.occasion=m.occasion AND o.state<>'storno'
+  JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=m.organization
+  JOIN public.notification_center_events e ON e.organization=m.organization AND e.source_key='email:'||m.message_id
+  WHERE m.order_id=p_order AND m.message_kind IN ('order_confirmation','order_tickets')
+   AND e.kind='email_problem' AND e.status='active'
+   AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(issues) issue
+    WHERE issue->>'source_message_id'=m.message_id::text OR issue->>'message_id'=m.message_id::text)
+ LOOP
+  PERFORM public.notification_center_prepared_invalidate(event_id);
+  UPDATE public.notification_center_events SET status='recovered' WHERE id=event_id;
+ END LOOP;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_center_reconcile_order_email_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.notification_center_email_internal(p_message uuid,p_at timestamptz DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE m public.email_messages; a public.notification_center_organizations; old public.notification_center_source_state;
@@ -50,12 +74,15 @@ BEGIN
    PERFORM public.notification_center_capture_recipients_internal((old.state->>'eventId')::uuid,NULL);
   END IF;
   seen:=seen||jsonb_build_array(reason);
- ELSIF reason IS NULL AND old.state->>'eventId' IS NOT NULL AND public.email_reporting_state(m) IN ('delivery','open','click','accepted') THEN
+ ELSIF reason IS NULL AND old.state->>'eventId' IS NOT NULL
+  AND (m.order_id IS NULL OR m.message_kind NOT IN ('order_confirmation','order_tickets'))
+  AND public.email_reporting_state(m) IN ('delivery','open','click','accepted') THEN
   PERFORM public.notification_center_prepared_invalidate((old.state->>'eventId')::uuid);
   UPDATE public.notification_center_events SET status='recovered' WHERE id=(old.state->>'eventId')::uuid;
  END IF;
  INSERT INTO public.notification_center_source_state(organization,source_key,state)
  VALUES(m.organization,key,jsonb_build_object('reason',reason,'seen',seen,'dueAt',due_at,'eventId',coalesce(ev::text,old.state->>'eventId')))
  ON CONFLICT(organization,source_key) DO UPDATE SET state=excluded.state,observed_at=p_at;
+ PERFORM public.notification_center_reconcile_order_email_internal(m.order_id);
 END $$;
 REVOKE ALL ON FUNCTION public.notification_center_email_internal(uuid,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
