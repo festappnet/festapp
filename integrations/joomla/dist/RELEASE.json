@@ -1,18 +1,18 @@
 {
   "state": "READY_TO_PUBLISH",
   "element": "mod_vstupenky_online",
-  "version": "1.0.1",
-  "tag": "joomla-vstupenky-online-v1.0.1",
-  "zip": "dist/sha256/8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f/vstupenky.online.zip",
-  "sha256": "8396ed9892ab07791e037a44e0bc1459274c68a6933f6a531f1e90653494ba6f",
-  "download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.1/vstupenky.online.zip",
+  "version": "1.0.3",
+  "tag": "joomla-vstupenky-online-v1.0.3",
+  "zip": "dist/sha256/063987a9208d43282a3cabf1a9a0ece974c1952bf9cb42712390a022934d6fca/vstupenky.online.zip",
+  "sha256": "063987a9208d43282a3cabf1a9a0ece974c1952bf9cb42712390a022934d6fca",
+  "download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.3/vstupenky.online.zip",
   "update_url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
-  "update_feed_sha256": "37715393e8a7299c7eedbf80e1a95fdf4b2fae6877e7e917723060e8769edeb4",
-  "verification_sha256": "d4b8f0996cea8171ad168b8c450fcd6c59a458d4ee07557140bb5fe0ef9ca9a8",
-  "critic_sha256": "05d77b0e3d2e2fb0890535ce8c1e3c14b24e3ea4fd5a39428b5d5f287af0d5a8",
+  "update_feed_sha256": "39e7086097f83b52ec7a73e8f891649c3a391e55bd0fbf8901471e30cb7317d7",
+  "verification_sha256": "722b165e8cf7043d2daf7a83f4ad90664669a7715c5c5910bc480927666b8c3a",
+  "critic_sha256": "185c94cb6480ead93102fdeb6103f563448bc84b10b0707cf5e1cb9235d14e2c",
   "documentation_sha256": {
-    "README.md": "43c439aa71fc7ddc200eee1f65472a1fa1db0eb9d4e1e65343339a433349e586",
-    "SUBMISSION.md": "10b564102e9547befd603603873e4bfd57f4a16978d14b22f642edbbb007df33",
-    "dist/RELEASE-NOTES.md": "955567b01ac7b03d34ba1284edd58c0887d1ff000f3d717358c0677d4c1c5ec0"
+    "README.md": "a74f7845c1872d22855920ad1a7ed8eef7518f1e821af2289842cf2c4222f516",
+    "SUBMISSION.md": "904325f580ea4bd7dec75bdeeeee9756bd2725b331116bb4981863daf5f81d26",
+    "dist/RELEASE-NOTES.md": "cd19c2c11ab2681ee7105a1eff55939976af75736aab70fc4b047b9c723b57cf"
   }
 }

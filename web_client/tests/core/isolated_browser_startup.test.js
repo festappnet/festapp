@@ -44,6 +44,20 @@ test('navigation errors propagate without retrying page actions', async () => {
     assert.deepEqual(browser.calls, []);
 });
 
+test('timed out launch continues only after a healthy owned daemon is confirmed', async () => {
+    const browser = fixture([{ runtime: { pageCount: 1 } }]);
+    browser.open = async () => { browser.calls.push('open'); throw Object.assign(new Error('timed out'), { killed: true, signal: 'SIGTERM' }); };
+    await openIsolatedBrowser(browser);
+    assert.deepEqual(browser.calls, ['open', 'info']);
+});
+
+test('a non-timeout launch error remains fatal', async () => {
+    const browser = fixture([]);
+    browser.open = async () => { throw Object.assign(new Error('launch failed'), { killed: false, signal: 'SIGTERM' }); };
+    await assert.rejects(openIsolatedBrowser(browser), /launch failed/);
+    assert.deepEqual(browser.calls, []);
+});
+
 
 test('a launched browser without a page retries only startup before page assertions', async () => {
     const browser = fixture([{ runtime: { pageCount: 0 } }, { runtime: { pageCount: 1 } }]);
@@ -55,4 +69,23 @@ test('repeated empty browser startup is bounded to three fresh sessions', async 
     const browser = fixture(Array.from({ length: 3 }, () => ({ runtime: { pageCount: 0 } })));
     await assert.rejects(openIsolatedBrowser(browser), /opened no page/);
     assert.deepEqual(browser.calls, ['open', 'info', 'close', 'open', 'info', 'close', 'open', 'info', 'close']);
+});
+
+test('lost blank target after navigation is replaced before page assertions', async () => {
+    const browser = fixture(Array.from({ length: 4 }, () => ({ runtime: { pageCount: 1 } })));
+    const urls = ['about:blank', 'http://127.0.0.1/test'];
+    browser.targetUrl = 'http://127.0.0.1/test';
+    browser.navigate = async () => { browser.calls.push('navigate'); };
+    browser.currentUrl = async () => { browser.calls.push('url'); return urls.shift(); };
+    await openIsolatedBrowser(browser);
+    assert.deepEqual(browser.calls, ['open', 'info', 'navigate', 'info', 'url', 'close', 'open', 'info', 'navigate', 'info', 'url']);
+});
+
+test('unexpected nonblank navigation fails without replacing the page', async () => {
+    const browser = fixture([{ runtime: { pageCount: 1 } }, { runtime: { pageCount: 1 } }]);
+    browser.targetUrl = 'http://127.0.0.1/test';
+    browser.navigate = async () => {};
+    browser.currentUrl = async () => 'http://127.0.0.1/other';
+    await assert.rejects(openIsolatedBrowser(browser), /Unexpected browser navigation/);
+    assert.equal(browser.calls.includes('close'), false);
 });

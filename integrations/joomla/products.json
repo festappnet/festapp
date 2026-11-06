@@ -4,7 +4,7 @@
     "name": "vstupenky.online",
     "namespace": "VstupenkyOnline",
     "origin": "https://vstupenky.online",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "update_url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml"
   },
   {

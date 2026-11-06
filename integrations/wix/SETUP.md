@@ -44,16 +44,24 @@ Do not publish a claim of verified compatibility until the matrix below passes.
      outer Wix iframe. Initial fallback content height is 800 px.
    - Placement: a user-chosen page; do not insert a live sales form on every page.
    - Non-essential widget; provide a thumbnail so it is available in Add Elements.
-4. Save and record the generated widget extension ID. Define these public
-   string attributes/properties where the dashboard requests them:
+4. Save and record the generated widget extension ID. The Settings API maps
+   these string properties directly to custom-element attributes:
 
    | Property | Initial value | Meaning |
    | --- | --- | --- |
    | `form-url` | empty | Canonical public service form URL |
    | `form-title` | `Prodej vstupenek - vstupenky.online` | Accessible iframe title |
+   | `inherit-style` | `true` | Per-widget appearance preference, serialized `true` / `false` |
 
-   The native widget uses the saved service fallback. For a per-embed appearance
-   choice, use generated HTML from Embed on your website in the form administration.
+   The updated native Settings panel saves Match website appearance for this widget.
+   Use the documented [setProp property-to-attribute binding](https://dev.wix.com/docs/sdk/host-modules/editor/widget/set-prop).
+   Do not reset an existing
+   `false` value to the initial default. Updating source/assets alone does not prove
+   native persistence: verify the actual property and save/reopen readback in the
+   owned Wix editor before claiming that the control works there.
+   The renderer emits explicit `data-festapp-style="inherit"` or `"default"` and
+   updates presentation without replacing the checkout iframe. Nested Wix frames
+   can expose only their accessible surrounding styles, not all outer-site CSS.
 
    Wix widget properties bind to custom-element attributes. Use the settings
    panel for subsequent changes; no credentials or hidden order state are stored.

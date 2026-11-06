@@ -11,7 +11,7 @@ Dva samostatné pluginy 1.0.0 sestavené z `shared/` a explicitních identit v `
 | vstupenky-online | vstupenky-online/ticket-form | vstupenky_online | https://vstupenky.online |
 | festapp-tickets | festapp-tickets/ticket-form | festapp_tickets | https://tickets.festapp.net |
 
-Ve službě vytvořte účet, akci a formulář, uložte jej a zkopírujte veřejné `/form/<slug>` URL. Pro placený prodej dokončete obchodní/platební nastavení. Vložte URL do bloku nebo například `[festapp_tickets url="https://tickets.festapp.net/form/ulozeny-slug"]`. Nevkládejte administrační ani soukromé odkazy. V editoru je bezpečný náhled nastavení; služba se načte až na veřejné stránce. Ve WordPressu se neukládají servisní hesla ani objednávky. Automatická výška používá servisní `/embed.js`, fixed režim ji nepotřebuje; veřejný odkaz zůstává dostupný.
+Ve službě vytvořte účet, akci a formulář, uložte jej a zkopírujte veřejné `/form/<slug>` URL. Pro placený prodej dokončete obchodní/platební nastavení. Vložte URL do bloku nebo například `[festapp_tickets url="https://tickets.festapp.net/form/ulozeny-slug"]`. Nevkládejte administrační ani soukromé odkazy. V editoru je bezpečný náhled nastavení; služba se načte až na veřejné stránce. Ve WordPressu se neukládají servisní hesla ani objednávky. Oba režimy výšky používají servisní `/embed.js`; při jeho blokování zůstává pevný rám a veřejný odkaz dostupný.
 
 Aktuální podání se připravuje pouze pro **vstupenky.online**. Globální distribuce
 zůstává mimo rozsah. Před odesláním musí projít
@@ -28,13 +28,13 @@ Skutečné obrazovky: [obrázkový průchod](preview/onboarding/index.html).
 
 ## Převzetí vzhledu webu
 
-Přebírání vzhledu řídí uložené nastavení formuláře pro všechna vložení. Sdílený servisní `/embed.js` předává skutečnou computed
+Přebírání vzhledu řídí volba konkrétního bloku nebo shortcodu, nikoli globální uložení formuláře. Sdílený servisní `/embed.js` předává skutečnou computed
 `font-family`, dostupné definice fontů a barvy okolní stránky přes stejný ověřený
 embed protokol. Fonty se načítají také v iframe a potřebují CORS na svém serveru.
 Nepřístupné stylesheety/fonty ponechají fallback ze stejné font-family. Plánek
 zachovává původní vzhled služby. Pevná výška zůstává pevná i s helperem.
 WordPress pouze vkládá formulář; nenese druhý renderer ani vlastní theme bridge.
-Změna vyžaduje nasazení aktualizovaného web clientu i `/embed.js` služby.
+Nová instalace vyžaduje kompatibilní plugin i společný web client a `/embed.js`; tato dokumentace nedokládá jejich nasazení na konkrétním webu.
 
 ## Sestavení a lokální WordPress
 
@@ -46,9 +46,9 @@ Z tohoto adresáře:
 pnpm install --frozen-lockfile
 pnpm run package
 pnpm run start
-node scripts/environment.mjs run cli wp plugin install /var/www/html/wp-content/vo-artifacts/vstupenky-online-1.0.0.zip --force --activate
+node scripts/environment.mjs run cli wp plugin install /var/www/html/wp-content/vo-artifacts/vstupenky-online-1.0.4.zip --force --activate
 node scripts/environment.mjs run cli wp plugin install /var/www/html/wp-content/vo-artifacts/festapp-tickets-1.0.0.zip --force --activate
-node scripts/environment.mjs run tests-cli wp plugin install /var/www/html/wp-content/vo-artifacts/vstupenky-online-1.0.0.zip --force --activate
+node scripts/environment.mjs run tests-cli wp plugin install /var/www/html/wp-content/vo-artifacts/vstupenky-online-1.0.4.zip --force --activate
 node scripts/environment.mjs run tests-cli wp plugin install /var/www/html/wp-content/vo-artifacts/festapp-tickets-1.0.0.zip --force --activate
 pnpm run seed
 node scripts/environment.mjs run tests-cli wp eval-file /var/www/html/wp-content/plugins/vstupenky-online-tests/seed.php
@@ -147,11 +147,21 @@ pnpm run backend:stop
 
 `backend:stop --no-backup` odstraní vlastní disposable data. ZIPy a veřejné důkazy zůstávají. HAR, přihlašovací údaje, capability a raw queue capture patří pouze do ignorované `.private/` s režimem 0600, nikdy do ZIP/SVN. Nepoužívejte globální Docker stop/prune ani globální browser close. Stav úklidu: `evidence/cleanup.json`.
 
-## Sdílené nastavení vzhledu
+## Vzhled konkrétního vložení
 
-Vzhled konkrétního HTML vložení zvolte přímo v dialogu Vložit na vlastní web v aplikaci.
-Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
-vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
-Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou
-aktualizovat doplněk nebo doplnit skript; běžné automatické vložení změnu převezme
-bez výměny kódu.
+Aktuální zdroj a nově sestavený balíček nabízí **Přizpůsobit vzhled webu** přímo v nativním nastavení vložení. Blok ukládá boolean `inheritStyle`; shortcode přijímá `inherit_style="true"` nebo `inherit_style="false"` přes tentýž normalizační helper. Výchozí zapnutí se použije jen při chybějící hodnotě; existující vypnutí zůstává vypnuté. Uložte a publikujte stránku WordPressu a případně obnovte její cache.
+
+Adaptér vždy emituje `data-festapp-style="inherit"` nebo `data-festapp-style="default"`. Společný `/embed.js` a `EmbedBridge`/`EmbedTheme` zůstávají jedinými vlastníky předání a použití vzhledu. Automatická a pevná výška jsou nezávislé; helper se načítá v obou režimech. Plánek sálu si ponechává vlastní vzhled.
+
+To není tvrzení o aktualizaci již nainstalovaných doplňků. Ovládání vyžaduje aktualizovaný balíček/hostované assets a jejich zapojení v CMS. Starší ruční HTML bez explicitního atributu dál používá kompatibilní nastavení formuláře; nové nativní vložení je vždy explicitní. Žádné nastavení vzhledu se tím globálně neukládá do formuláře.
+
+## Český balíček pro přímou instalaci
+
+Vydání 1.0.4 obsahuje nativní ovládání vzhledu. Ověřený český ZIP se publikuje
+pod tagem `wordpress-vstupenky-online-v1.0.4` v repozitáři `festappnet/festapp`
+z přesného kanonického commitu `main` po jeho CI kontrolách. Asset
+`vstupenky-online-1.0.4.zip` a odpovídající `.sha256` musí odpovídat výstupu
+`python3 scripts/package.py --product vstupenky-online` a manifestu
+`evidence/vstupenky-online-package-inputs.json`. Po publikaci se porovnají bajty
+veřejného ZIPu s místním hashem. Jde o přímou distribuci vlastního balíčku;
+samo o sobě to nemění vydání ve WordPress.org ani globální distribuci.

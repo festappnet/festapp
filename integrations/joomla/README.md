@@ -1,6 +1,6 @@
 # Joomla: vstupenky.online / Festapp Tickets
 
-Česká distribuce **vstupenky.online 1.0.1** a samostatná globální varianta 1.0.0
+Česká distribuce **vstupenky.online 1.0.3** a samostatná globální varianta 1.0.0
 ze společného zdroje. Toto vydání se týká pouze vstupenky.online. Finální český balíček má název
 [vstupenky.online.zip](dist/vstupenky.online.zip). Kandidáti obou značek jsou
 v [artifacts/](artifacts/); SHA-256 a vstupní/souborové manifesty obsahuje
@@ -34,7 +34,7 @@ službou; cena služby se sjednává samostatně.
    `https://tickets.festapp.net/form/slug`. Parametry, fragmenty, administrace
    ani URL druhé značky nejsou přípustné. Diakritiku ponechte kanonicky
    zakódovanou ze zkopírovaného odkazu, například `%C5%BE`.
-4. Nastavte modul jako **Zveřejněný**, přístup **Veřejný**, zvolte pozici své
+4. V aktualizovaném modulu nastavte **Přizpůsobit vzhled webu** (výchozí zapnuto), nezávisle na výšce. Volba patří tomuto modulu. Nastavte modul jako **Zveřejněný**, přístup **Veřejný**, zvolte pozici své
    šablony a v **Přiřazení nabídky** vyberte požadované stránky. Uložte a
    otevřete veřejnou stránku. V nastavení modulu se externí formulář nenačítá.
 5. Pro vložení do článku zapněte standardní Joomla plugin **Obsah - Načítání
@@ -87,7 +87,7 @@ Nové verze se zobrazí v **Systém > Aktualizace > Rozšíření**; instalace p
 standardním Joomla updaterem. ZIP je veřejný GitHub release asset, feed obsahuje
 SHA-256 a podporované řady Joomla 5.4/6.1 s PHP 8.3 nebo novějším. Lze také ručně
 nahrát novější český ZIP přes instalátor. Původní lokální 1.0.0 neměla update
-kanál; první přechod na 1.0.1 vyžaduje ruční instalaci. Globální varianta má
+kanál; první přechod na aktuální vydání vyžaduje ruční instalaci. Globální varianta má
 zatím pouze ruční aktualizace a není součástí tohoto veřejného vydání.
 
 Ověřena přeinstalace při zachování nastavení i skutečný updater přes lokální
@@ -159,11 +159,10 @@ obsah stránek. Nejde o vypnutí ochrany. Živý browser test používá skuteč
 produkční helper a veřejný formulář z nainstalovaného Joomla modulu, bez
 odeslání objednávky nebo výběru sedadla.
 
-## Sdílené nastavení vzhledu
+## Vzhled konkrétního vložení
 
-Vzhled konkrétního HTML vložení zvolte přímo v dialogu Vložit na vlastní web v aplikaci.
-Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
-vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
-Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou
-aktualizovat doplněk nebo doplnit skript; běžné automatické vložení změnu převezme
-bez výměny kódu.
+Aktuální zdroj a nově sestavený balíček nabízí **Přizpůsobit vzhled webu** přímo v nativním nastavení vložení. Modul ukládá nativní `inherit_style` jako `1` nebo `0`; renderer nepovažuje text `false` za pravdivý. Výchozí zapnutí se použije jen při chybějící hodnotě; existující vypnutí zůstává vypnuté. Uložte konkrétní modul, ověřte zveřejnění stránky a případně vyčistěte cache Joomly.
+
+Adaptér vždy emituje `data-festapp-style="inherit"` nebo `data-festapp-style="default"`. Společný `/embed.js` a `EmbedBridge`/`EmbedTheme` zůstávají jedinými vlastníky předání a použití vzhledu. Automatická a pevná výška jsou nezávislé; helper se načítá v obou režimech. Plánek sálu si ponechává vlastní vzhled.
+
+To není tvrzení o aktualizaci již nainstalovaných doplňků. Ovládání vyžaduje aktualizovaný balíček/hostované assets a jejich zapojení v CMS. Starší ruční HTML bez explicitního atributu dál používá kompatibilní nastavení formuláře; nové nativní vložení je vždy explicitní. Žádné nastavení vzhledu se tím globálně neukládá do formuláře.

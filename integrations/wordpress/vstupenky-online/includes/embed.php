@@ -75,11 +75,23 @@ function shortcode( $attributes ) {
 				'title'         => '',
 				'mode'          => 'auto',
 				'height'        => 800,
+				'inherit_style' => true,
 			),
 			$attributes,
 			'vstupenky_online'
 		)
 	);
+}
+
+/**
+ * Normalize native block booleans and the public shortcode boolean syntax.
+ * Invalid values disable inheritance; an omitted setting defaults to enabled.
+ *
+ * @param mixed $value Stored appearance preference.
+ * @return bool Whether to inherit website appearance.
+ */
+function inherit_style_enabled( $value ) {
+	return is_scalar( $value ) && true === filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 }
 
 /**
@@ -100,6 +112,8 @@ function render( $attributes ) {
 	$height        = isset( $attributes['height'] ) && is_scalar( $attributes['height'] ) ? filter_var( $attributes['height'], FILTER_VALIDATE_INT ) : false;
 	$height        = false !== $height && $height >= 240 && $height <= 4000 ? $height : 800;
 	$auto          = ! isset( $attributes['mode'] ) || 'fixed' !== $attributes['mode'];
+	$inherit_value = array_key_exists( 'inheritStyle', $attributes ) ? $attributes['inheritStyle'] : ( array_key_exists( 'inherit_style', $attributes ) ? $attributes['inherit_style'] : true );
+	$inherit_style = inherit_style_enabled( $inherit_value );
 	wp_enqueue_style( 'vstupenky-online' );
 	$handle = 'vstupenky-online-helper-' . substr( md5( $valid['origin'] ), 0, 12 );
 	// Secondary loops enqueue before wp_footer prints. Service owns revalidation.
@@ -117,7 +131,7 @@ function render( $attributes ) {
 	// phpcs:enable WordPress.WP.EnqueuedResourceParameters.MissingVersion
 	return sprintf(
 		'<div class="vstupenky-online" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
-		' data-festapp-embed' . ( ! $auto ? ' data-festapp-height="fixed"' : '' ),
+		' data-festapp-embed data-festapp-style="' . ( $inherit_style ? 'inherit' : 'default' ) . '"' . ( ! $auto ? ' data-festapp-height="fixed"' : '' ),
 		esc_url( $valid['url'] . '?embed=1' ),
 		esc_attr( $title ),
 		$height,

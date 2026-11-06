@@ -21,7 +21,7 @@
 <p>Odkaz formuláře ověřte ještě před instalací. Neexistující testovací odkaz není chyba vložení. Neveřejné demo vyžadující přihlášení není vhodná anonymní ukázka pro recenzenta.</p>
 
 <h2>2. Zaregistrujte skutečný nativní widget</h2>
-<p>Pro samostatně hostovaný doplněk použijte Site Widget typu Custom Element se settings panelem. Zapište přidělené ID aplikace a extension, tag prvku, HTTPS adresu skriptu a nastavení. Povolte potřebné frontendové moduly Wix SDK a ověřte uloženou konfiguraci po opětovném načtení.</p>
+<p>Pro samostatně hostovaný doplněk použijte Site Widget typu Custom Element se settings panelem. Zapište přidělené ID aplikace a extension, tag prvku, HTTPS adresu skriptu a nastavení. Povolte potřebné frontendové moduly Wix SDK a ověřte uloženou konfiguraci po opětovném načtení. <a href="https://dev.wix.com/docs/sdk/host-modules/editor/widget/set-prop">Settings API</a> předává vlastnost <code>inherit-style</code> jako atribut vlastního elementu. Výchozí chybějící hodnota znamená <code>true</code>. Nativní Settings ukládá <code>true</code> nebo <code>false</code> pro konkrétní widget a ověřuje zápis zpětným čtením. Existující vypnutou hodnotu zachovejte. Změna vyžaduje aktualizované assets a skutečné ověření uložení a opětovného otevření v editoru Wix; lokální test SDK sám tento výsledek nedokládá. Po změně nastavení publikujte vlastní web. Vnořené rámy omezují dostupný vzhled hostitele.</p>
 <p>Editor a Preview mají zobrazovat zástupný obsah. Skutečný prodejní formulář načítejte až na zveřejněném webu, aby práce v editoru nezpůsobovala rezervace.</p>
 
 <h2>3. Použijte podporované předání identity</h2>

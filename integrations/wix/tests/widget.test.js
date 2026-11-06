@@ -59,6 +59,8 @@ test('Editor, Preview and unavailable Wix context never load a live form or serv
     const {dom, element, document} = host(async () => mode);
     await tick();
     assert.equal(element.querySelector('iframe'), null);
+    element.setAttribute('inherit-style', 'false');
+    assert.equal(element.querySelector('iframe'), null);
     assert.equal(document.scripts.length, 0);
     assert.equal(element.querySelector('a').href, HELP_URL);
     dom.window.close();
@@ -99,7 +101,16 @@ test('live widgets isolate frames, reuse the canonical helper and preserve check
   element.setAttribute('inherit-style', 'false');
   assert.equal(element.querySelector('iframe'), frame);
   assert.equal(frame.title, '<script>not html</script>');
-  assert.equal(frame.hasAttribute('data-festapp-style'), false);
+  assert.equal(frame.dataset.festappStyle, 'default');
+  assert.equal(frame.src, `${SERVICE_ORIGIN}/form/ukazka?embed=1`);
+  element.setAttribute('inherit-style', 'true');
+  assert.equal(element.querySelector('iframe'), frame);
+  assert.equal(frame.dataset.festappStyle, 'inherit');
+  element.setAttribute('inherit-style', '"><script>bad</script>');
+  assert.equal(frame.dataset.festappStyle, 'default');
+  assert.equal(element.querySelector('iframe'), frame);
+  assert.equal(second.querySelector('iframe').dataset.festappStyle, 'inherit');
+  assert.equal(document.scripts.length, 1);
   assert.equal(element.querySelector('script'), null);
   element.setAttribute('form-url', 'https://other.invalid/form/a');
   assert.equal(element.querySelector('iframe'), null);
@@ -113,11 +124,15 @@ test('settings validate before any writes, serialize readbacks and stop on a fai
   await assert.rejects(saveSettings(api, {'form-url':'https://evil.invalid/form/a'}));
   assert.equal(calls.length, 0);
   await saveSettings(api, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Test','inherit-style':'false'});
-  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title']]);
+  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title'],['set','inherit-style'],['get','inherit-style']]);
+  assert.equal(data['inherit-style'], 'false');
   const writes=[];
   await assert.rejects(saveSettings({async setProp(name) {writes.push(name);},async getProp() {return 'unexpected';}}, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`}));
   assert.deepEqual(writes,['form-url']);
-  assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`})['inherit-style'],undefined);
+  assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`})['inherit-style'],'true');
+  for (const value of [false, 'false', '0', '', 'yes', {}, '<script>']) {
+    assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/ukazka`, 'inherit-style':value})['inherit-style'], 'false');
+  }
 });
 
 test('settings wait for propagated readback before writing sibling properties', async () => {
@@ -138,7 +153,7 @@ test('settings wait for propagated readback before writing sibling properties', 
       return value;
     },
   }, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Delayed','inherit-style':'false'});
-  assert.deepEqual(confirmed, ['form-url', 'form-title']);
+  assert.deepEqual(confirmed, ['form-url', 'form-title', 'inherit-style']);
 });
 
 test('settings page fails closed outside editor and surfaces save success', async () => {
@@ -227,4 +242,48 @@ test('settings lock values during loading and saving, then unlock for correction
   assert.ok(controls.every(control => !control.matches(':disabled')));
   assert.equal(form.getAttribute('aria-busy'), 'false');
   dom.window.close();
+});
+
+
+test('appearance checkbox saves checked state and reopens the confirmed widget preference', async () => {
+  const html = readFileSync(new URL('../src/settings.html', import.meta.url), 'utf8');
+  const values = {'form-url': `${SERVICE_ORIGIN}/form/ukazka`};
+  const api = {async getProp(name) {return values[name];}, async setProp(name, value) {values[name] = value;}};
+  for (const next of [false, true]) {
+    const dom = new JSDOM(html);
+    try {
+      await initSettings(dom.window.document, api);
+      const checkbox = dom.window.document.getElementById('inherit-style');
+      assert.equal(checkbox.checked, values['inherit-style'] !== 'false');
+      checkbox.value = 'irrelevant-input-value';
+      checkbox.checked = next;
+      dom.window.document.querySelector('form').dispatchEvent(new dom.window.Event('submit', {cancelable: true}));
+      await tick();
+      assert.equal(values['inherit-style'], String(next));
+      assert.match(dom.window.document.getElementById('status').textContent, /Uloženo/);
+    } finally {dom.window.close();}
+    const reopened = new JSDOM(html);
+    try {
+      await initSettings(reopened.window.document, api);
+      assert.equal(reopened.window.document.getElementById('inherit-style').checked, next);
+    } finally {reopened.window.close();}
+  }
+});
+
+test('failed appearance readback does not report settings saved', async () => {
+  const html = readFileSync(new URL('../src/settings.html', import.meta.url), 'utf8');
+  const dom = new JSDOM(html);
+  const values = {'form-url': `${SERVICE_ORIGIN}/form/ukazka`, 'inherit-style': 'true'};
+  let failed = false;
+  try {
+    await initSettings(dom.window.document, {
+      async getProp(name) {if (failed && name === 'inherit-style') throw Error('Readback failed'); return values[name];},
+      async setProp(name, value) {values[name] = value; if (name === 'inherit-style') failed = true;},
+    });
+    dom.window.document.getElementById('inherit-style').checked = false;
+    dom.window.document.querySelector('form').dispatchEvent(new dom.window.Event('submit', {cancelable: true}));
+    await tick();
+    assert.match(dom.window.document.getElementById('status').textContent, /Readback failed/);
+    assert.equal(dom.window.document.getElementById('inherit-style').disabled, false);
+  } finally {dom.window.close();}
 });

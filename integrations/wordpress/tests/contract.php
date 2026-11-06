@@ -25,6 +25,18 @@ vo_assert( false !== strpos( $fixed, 'noopener noreferrer' ) && false !== strpos
 $block = render_block( array( 'blockName' => 'vstupenky-online/ticket-form', 'attrs' => array( 'url' => $url, 'mode' => 'fixed' ), 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
 $short = do_shortcode( '[vstupenky_online url="' . $url . '" mode="fixed"]' );
 vo_assert( $block === $short, 'block/shortcode share renderer' );
+foreach ( array( 'auto', 'fixed' ) as $mode ) {
+	foreach ( array( true, false ) as $inherit ) {
+		$block = render_block( array( 'blockName' => 'vstupenky-online/ticket-form', 'attrs' => array( 'url' => $url, 'mode' => $mode, 'inheritStyle' => $inherit ), 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
+		$short = do_shortcode( '[vstupenky_online url="' . $url . '" mode="' . $mode . '" inherit_style="' . ( $inherit ? 'true' : 'false' ) . '"]' );
+		vo_assert( $block === $short, 'appearance uses one block/shortcode renderer' );
+		vo_assert( false !== strpos( $block, 'data-festapp-style="' . ( $inherit ? 'inherit' : 'default' ) . '"' ), 'per-embed appearance independent of height' );
+	}
+}
+foreach ( array( array(), null, 'unexpected', '"><script>bad</script>' ) as $value ) {
+	vo_assert( false === VstupenkyOnline\inherit_style_enabled( $value ), 'invalid appearance disables inheritance' );
+}
+
 VstupenkyOnline\render( array( 'url' => $url ) );
 VstupenkyOnline\render( array( 'url' => $url ) );
 $scripts = wp_scripts();

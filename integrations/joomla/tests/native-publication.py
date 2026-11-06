@@ -97,15 +97,13 @@ def inspect_article(html, title, mode, inherit):
     frame = markup.frames[0]
     assert frame['title'] == title and frame['height'] == '800'
     assert frame['src'] == 'https://vstupenky.online/form/embedded-synthetic?embed=1'
-    helper = mode == 'auto' or inherit == 1
+    helper = True
     assert markup.scripts.count('https://vstupenky.online/embed.js') == int(helper), 'Actual dispatcher helper count'
     assert ('data-festapp-embed' in frame) == helper
-    assert ('data-festapp-height' in frame) == (mode == 'fixed' and inherit == 1)
-    if mode == 'fixed' and inherit == 1:
+    assert ('data-festapp-height' in frame) == (mode == 'fixed')
+    if mode == 'fixed':
         assert frame['data-festapp-height'] == 'fixed'
-    assert ('data-festapp-style' in frame) == (inherit == 1)
-    if inherit:
-        assert frame['data-festapp-style'] == 'inherit'
+    assert frame['data-festapp-style'] == ('inherit' if inherit else 'default')
     assert html.count('data-festapp-embed-host') == 1
 
 
@@ -179,7 +177,7 @@ def verify(major):
                     status, article = request(session(), article_url)
                     assert status == 200
                     inspect_article(article, iframe_title, mode, inherit)
-                    cases.append({'article_only': True, 'mode': mode, 'inherit_style': bool(inherit), 'cache': temperature, 'helpers': int(mode == 'auto' or inherit == 1)})
+                    cases.append({'article_only': True, 'mode': mode, 'inherit_style': bool(inherit), 'cache': temperature, 'helpers': 1})
     finally:
         # Preserve the existing three-instance baseline for browser/lifecycle.
         try:

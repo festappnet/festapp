@@ -54,7 +54,7 @@ function admin_page() {
 		<?php if ( current_user_can( 'edit_pages' ) ) : ?>
 		<p><a class="button button-secondary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=page' ) ); ?>"><?php esc_html_e( 'Create a page', 'festapp-tickets' ); ?></a></p>
 		<?php endif; ?>
-		<p><?php esc_html_e( 'Automatic height is enabled. Website appearance is controlled in the saved form design settings.', 'festapp-tickets' ); ?></p>
+		<p><?php esc_html_e( 'Automatic height and Match website appearance are enabled by default. Each block or shortcode has its own settings.', 'festapp-tickets' ); ?></p>
 		</div>
 		<div class="card">
 		<h2><?php esc_html_e( '3. Preview and publish', 'festapp-tickets' ); ?></h2>
@@ -66,10 +66,10 @@ function admin_page() {
 		<h2><?php esc_html_e( 'Shortcode and height', 'festapp-tickets' ); ?></h2>
 		<p><code>[festapp_tickets url="https://tickets.festapp.net/form/saved-slug" title="Tickets for our event"]</code></p>
 		<p><code>[festapp_tickets url="https://tickets.festapp.net/form/saved-slug" mode="fixed" height="800"]</code></p>
-		<p><?php esc_html_e( 'Automatic height loads the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab.', 'festapp-tickets' ); ?></p>
-		<p><?php esc_html_e( 'Website appearance is controlled in the saved form design settings. Changes apply to every embed after reloading the page.', 'festapp-tickets' ); ?></p>
+		<p><?php esc_html_e( 'Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab.', 'festapp-tickets' ); ?></p>
+		<p><?php esc_html_e( 'Choose Match website appearance for each block, or set inherit_style="false" in its shortcode to keep the form appearance. Save and publish the page after changing it.', 'festapp-tickets' ); ?></p>
 		<h2><?php esc_html_e( 'External service and privacy', 'festapp-tickets' ); ?></h2>
-		<p><?php esc_html_e( 'The published form connects to Festapp Tickets. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Automatic height also loads /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form.', 'festapp-tickets' ); ?></p>
+		<p><?php esc_html_e( 'The published form connects to Festapp Tickets. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form.', 'festapp-tickets' ); ?></p>
 		<p>
 			<a href="https://tickets.festapp.net/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open Festapp Tickets', 'festapp-tickets' ); ?></a> |
 			<a href="https://tickets.festapp.net/privacy/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Privacy policy', 'festapp-tickets' ); ?></a> |

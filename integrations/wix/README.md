@@ -190,11 +190,10 @@ Published Editor recovery preserved the checkout iframe and loaded one helper;
 14 regression tests pass. This does not resolve native Wix portal/install errors
 or qualify commercial submission.
 
-## Sdílené nastavení vzhledu
+## Vzhled konkrétního vložení
 
-Vzhled konkrétního HTML vložení zvolte přímo v dialogu Vložit na vlastní web v aplikaci.
-Nastavení platí pro všechna vložení po dalším načtení stránky. Doplněk nemá
-vlastní přepínač vzhledu a používá společný `/embed.js` i při pevné výšce.
-Staré lokální volby jsou ignorovány. Staré vložení bez helperu potřebuje jednou
-aktualizovat doplněk nebo doplnit skript; běžné automatické vložení změnu převezme
-bez výměny kódu.
+Aktuální zdroj a nově sestavený balíček nabízí **Přizpůsobit vzhled webu** přímo v nativním nastavení vložení. Widget ukládá veřejnou vlastnost `inherit-style` jako řetězec `true` nebo `false`; Settings používá stav checkboxu a potvrzuje zápis zpětným čtením. Výchozí zapnutí se použije jen při chybějící hodnotě; existující vypnutí zůstává vypnuté. Uložte Settings konkrétního widgetu a publikujte web Wix. Registrace widgetu musí vlastnost podporovat; tento popis nedokládá provedení změny v Dashboardu.
+
+Adaptér vždy emituje `data-festapp-style="inherit"` nebo `data-festapp-style="default"`. Společný `/embed.js` a `EmbedBridge`/`EmbedTheme` zůstávají jedinými vlastníky předání a použití vzhledu. Automatická a pevná výška jsou nezávislé; helper se načítá v obou režimech. Plánek sálu si ponechává vlastní vzhled.
+
+To není tvrzení o aktualizaci již nainstalovaných doplňků. Ovládání vyžaduje aktualizovaný balíček/hostované assets a jejich zapojení v CMS. Starší ruční HTML bez explicitního atributu dál používá kompatibilní nastavení formuláře; nové nativní vložení je vždy explicitní. Žádné nastavení vzhledu se tím globálně neukládá do formuláře.
