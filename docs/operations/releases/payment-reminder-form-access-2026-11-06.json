@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-06",
+  "tenant": "festapptickets",
+  "organization_id": 3,
+  "database": "festapp_rehearsal_20260909220601",
+  "migrations": [
+    {
+      "version": "20261106115000",
+      "sha256": "33397805766926edc0c64adc16b721bd24b0fe215d277b817afcb035bc10b3a5",
+      "result": "applied"
+    },
+    {
+      "version": "20261106115500",
+      "sha256": "2d68563461a120a73382f3e924f7fe4cbf9f2789ee0582c55d955dc55931e7d3",
+      "result": "applied"
+    }
+  ],
+  "verification": {
+    "email_order_details_service_role_codes": [200, 200],
+    "effective_form_data_public_roles_denied": true,
+    "pure_metadata_public_roles_denied": true,
+    "authorized_reminders_accepted": 2,
+    "rendering_failure_notifications_recovered": 2,
+    "email_delivery_health_alerts": [],
+    "email_delivery_paused": false,
+    "provider_outage_streak": 0,
+    "post_action_backlog": 0
+  },
+  "recovery": {
+    "scope": "Two existing unsent org 3 order reminders with preparation_failed attempts",
+    "action": "Advanced only next retry eligibility, then called wake_email_worker",
+    "new_intents_created": 0
+  }
+}
