@@ -1,0 +1,45 @@
+{
+  "scope": "Prepared canonical appearance cutover; deployment belongs to another session",
+  "canonical_setting": "forms.data.design.embed_inherit_style",
+  "publications_performed_by_this_cutover_task": false,
+  "production_tenant": {
+    "branch": "prod/festapptickets",
+    "tenantId": "festapptickets",
+    "domain": "vstupenky.online",
+    "project": "vstupenkyonline",
+    "instruction": "Fetch latest main/prod, preserve ancestry and canonical tenant overlay, run exact-main8-job release gate, use one local Flutter task and automation/deploy_direct.sh. No GitHub production build or other tenant rollout."
+  },
+  "artifacts": {
+    "wordpress": {
+      "version": "1.0.5",
+      "sha256": "da1dbbe0e10908bb588e380da7b896178f3c749d96531652d79cd0c877511cb8",
+      "zip": "integrations/wordpress/dist/vstupenky-online-1.0.5.zip",
+      "seal": "integrations/wordpress/dist/APPROVAL.json",
+      "stage": "integrations/wordpress/dist/wordpress-org-draft",
+      "readiness": "integrations/wordpress/evidence/directory-readiness-central-20261106.json",
+      "remaining": "Merge main and verify central web rollout before clearing submit-ready external gates. Publish only new trunk/tag1.0.5; tag1.0.4 immutable; verify official ZIP12 file bytes and9 catalog assets."
+    },
+    "joomla": {
+      "version": "1.0.4",
+      "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
+      "zip": "integrations/joomla/artifacts/sha256/75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c/mod_vstupenky_online-1.0.4.zip",
+      "verification": "integrations/joomla/evidence/verification.json",
+      "critic": "integrations/joomla/evidence/critic.json",
+      "remaining": "Keep stable published1.0.3 feed until actual release. Run stage-release.py to restore exact verified1.0.4 candidate feed, compare source/evidence hashes, then seal/public gates. Publish new immutable GitHub release and update existing JED listing; do not claim JED updated until readback."
+    },
+    "wix": {
+      "runtimeVersion": "0.1.2",
+      "zipSha256": "5a3eb7f156e7306fc43b6a339bc34c2a0de0429d6faf9e7c0195323afb6b073e",
+      "zip": "integrations/wix/artifacts/vstupenky-online-wix-0.1.2.zip",
+      "manifestSha256": "862828a6291bbc12b6f33ab050cfc023dd664fc989d7f79ebe5c5a7402f248e2",
+      "remaining": "Recompute/reverify every frozen asset before publishing. Deploy immutable+stable hosting to existing festapp-wix project; preserve IDs/tag. No registered appearance property exists to delete. Verify existing native Settings has no checkbox, legacy saved false is inert, then update the two approved English listing sentences."
+    }
+  },
+  "wix_listing_copy": {
+    "feature3": "Control appearance centrally in saved form settings",
+    "replace_sentence": "Paste the public form URL in the widget settings and choose its title. Appearance is controlled centrally in the saved form settings and applies to all embeds on their next load."
+  },
+  "translation": "Current public WordPress readme1.0.4 has38 Czech suggestions Waiting,0approved. After1.0.5 source reaches GlotPress, export actualStableReadme, apply central-czech-message-map.json only to matching IDs, format/short-description checks, submit Waiting without asserting human approval. Locale editor approval remains external.",
+  "local_worktree": "/Users/miakh/source/festapp-measurement-settings-ui-20261106",
+  "credential_policy": "Existing SVN password is in encrypted macOS login Keychain, server plugins.svn.wordpress.org, account festappnet, HTTPS, synchronizable false. Read into temporary0600 file, use password-from-stdin/no-auth-cache, delete working copy. Do not rotate or print secrets."
+}

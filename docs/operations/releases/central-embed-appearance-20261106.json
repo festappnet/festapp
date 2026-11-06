@@ -1,5 +1,5 @@
 {
-  "state": "validated source ready for main; production rollout pending",
+  "state": "validated implementation; main merge only; deployment deferred by owner",
   "canonical_owner": "forms.data.design.embed_inherit_style",
   "scope": [
     "HTML generator and embed dialog",
@@ -45,5 +45,14 @@
     "joomla_critic_receipt": "integrations/joomla/evidence/critic.json"
   },
   "external_state": "No central-contract release is claimed yet. Existing releases remain immutable. New stable-readme translation awaits the1.0.5 source.",
-  "wix_zip_sha256": "5a3eb7f156e7306fc43b6a339bc34c2a0de0429d6faf9e7c0195323afb6b073e"
+  "wix_zip_sha256": "5a3eb7f156e7306fc43b6a339bc34c2a0de0429d6faf9e7c0195323afb6b073e",
+  "deployment_authorization": "Owner explicitly deferred all deployment/publication to another session; do not deploy from this task.",
+  "joomla_stable_feed": {
+    "version": "1.0.3",
+    "sha256": "39e7086097f83b52ec7a73e8f891649c3a391e55bd0fbf8901471e30cb7317d7",
+    "policy": "Keep the currently published feed on main until an actual1.0.4 release; stage-release.py restores the verified1.0.4 candidate immediately before publication.",
+    "candidate_feed": "docs/operations/releases/central-embed-appearance-20261106-candidate-feed.xml",
+    "candidate_sha256": "aeb9ebdfe2f5fe029ad72b1f08a1547fe85d6347b05425799e970de880ef1e7b",
+    "verification_note": "The verification/critic/seal bind the staged1.0.4 feed. The main-only state intentionally retains the1.0.3 public feed; release gate must fail until the identical candidate feed is re-staged."
+  }
 }
