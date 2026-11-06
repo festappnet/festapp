@@ -266,7 +266,7 @@ class DbForms {
   static Future<FormEditBundle?> getFormForEdit(String link) async {
     final response = await _supabase.rpc(
       'get_form_for_edit',
-      params: {'input_data': {'form_link': link, 'client_capabilities': ['cash_reservations', 'no_payment_deadline']}},
+      params: {'form_link': link},
     );
 
     if (response["code"] != 200) {

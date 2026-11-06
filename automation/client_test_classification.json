@@ -860,6 +860,13 @@
         "test/components/eshop/order_detail_viewer_cases.dart",
         "test/components/occasion/occasion_setup_story_shell_cases.dart"
       ]
+    },
+    "test/data_services/form_editor_rpc_test.dart": {
+      "kind": "environment",
+      "reason": "Actual DbForms RPC transport and root Supabase singleton integration for editor and public reader contracts.",
+      "sources": [
+        "test/data_services/form_editor_rpc_test.dart"
+      ]
     }
   }
 }
