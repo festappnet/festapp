@@ -1,4 +1,4 @@
-FROM node:24.20.0-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e
+FROM node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c
 ENV NODE_ENV=production
 WORKDIR /app
 COPY tools/festapp/package.json tools/festapp/pnpm-lock.yaml tools/festapp/pnpm-workspace.yaml ./tools/festapp/

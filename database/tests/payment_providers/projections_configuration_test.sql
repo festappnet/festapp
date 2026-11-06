@@ -1,3 +1,7 @@
+-- This rollback-only matrix unregisters providers. Remove other disposable
+-- fixtures' financial rows first, retaining the real registry foreign key.
+TRUNCATE eshop.payment_info CASCADE;
+
 CREATE FUNCTION public.test_isolated_provider(p_operation text,p_args jsonb)
 RETURNS jsonb LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
