@@ -183,7 +183,6 @@
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
-            styleMode: ['inherit', 'default'].includes(frame.dataset.festappStyle) ? frame.dataset.festappStyle : undefined,
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
             consentId: record.consentId || null, consentUntil: record.consentUntil || 0,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
@@ -344,13 +343,13 @@
     new MutationObserver((mutations = []) => {
         scan();
         for (const mutation of mutations) {
-            if (['data-festapp-style', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
+            if (['data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
                 send(mutation.target, frames.get(mutation.target), 'init', false);
             }
         }
         if (!themeRaf) themeRaf = requestAnimationFrame(() => { themeRaf = null; refreshThemes(); });
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true,
-        attributeFilter: ['class', 'style', 'src', 'data-festapp-style', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
+        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
     document.fonts?.ready.then(refreshThemes);
     scan();
 })();
