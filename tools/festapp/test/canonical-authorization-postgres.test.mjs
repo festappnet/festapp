@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { connect, fixture } from '../../../automation/authorization/benchmark.mjs';
 const options={skip:!process.env.FESTAPP_AUTHORIZATION_DATABASE_URL};
 async function within(t,body) {
@@ -71,11 +71,15 @@ test('canonical truth table preserves server operation rights across 2048 role c
         const original=(await db.query('select authorization_context_before_for_test($1::jsonb) c',
           [JSON.stringify({organization:f.org,link:f.link,platform:{platform:'web'}})])).rows[0].c;
         const {capabilities,bank_capabilities,...currentEnvelope}=c;
-        // The approved Stripe checkout migration adds this feature projection;
-        // keep the historical reference exact and assert the addition separately.
-        const {stripe_preview_enabled,...unitEnvelope}=currentEnvelope.unit;
+        // Keep the historical reference exact and assert the approved additive
+        // measurement/provider projections separately from authorization facts.
+        const {stripe_preview_enabled,payment_providers,providerFields,...unitEnvelope}=currentEnvelope.unit;
+        const {FORM_MEASUREMENT_ENABLED,...organizationEnvelope}=currentEnvelope.organization;
         assert.equal(stripe_preview_enabled,false,`fixture Stripe feature default, roles ${bits}`);
-        assert.deepEqual({...currentEnvelope,unit:unitEnvelope},original,`unchanged context envelope, roles ${bits}`);
+        assert.equal(FORM_MEASUREMENT_ENABLED,false,`fixture measurement default, roles ${bits}`);
+        assert.deepEqual(payment_providers,{stripe:false,barion:false});
+        assert.deepEqual(providerFields,{stripe:{stripe_preview_enabled:false},barion:{}});
+        assert.deepEqual({...currentEnvelope,unit:unitEnvelope,organization:organizationEnvelope},original,`unchanged context envelope, roles ${bits}`);
         for(const [key,expected] of Object.entries({
           'orders.read':r.read,'orders.write':r.write,'orders.delete':r.delete,
           'ticket_layouts.read':r.layout,'ticket_layouts.write':r.layout,
@@ -643,6 +647,20 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       'sale_opening_campaigns','sale_opening_subscriptions','sale_opening_capabilities',
       'service_fee_agreements','service_fee_allocations','service_fee_customer_acquisitions','service_fee_settlements',
       'wix_billing_activation','wix_billing_attempts','wix_billing_deliveries'].map(name=>['public',name])];
+    // Exact reviewed additions, pinned to their canonical declaration owners.
+    // A new table in any source requires an explicit review of this inventory.
+    const reviewedPrivateSources={
+      'payment_providers/schema.sql':['eshop.payment_providers'],
+      'eshop_barion/schema.sql':['barion_connections','barion_attempts','barion_movements','barion_capabilities','barion_sources','barion_observations'].map(n=>'eshop.'+n),
+      'presale_content/archive.sql':['public.form_presale_content_archive'],
+      'notification_center/prepared_schema.sql':['projection_scopes','view_members','member_subjects','batch_summaries','summary_scopes','group_repairs','views','view_rows'].map(n=>'public.notification_center_'+n),
+    };
+    for(const [source,relations] of Object.entries(reviewedPrivateSources)){
+      const sql=await readFile(new URL('../../../database/functions/'+source,import.meta.url),'utf8');
+      const declared=[...sql.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?((?:public|eshop)\.\w+)/gi)].map(m=>m[1]);
+      assert.deepEqual(declared.toSorted(),relations.toSorted(),source+' reviewed private relations');
+      forwardPrivateTables.push(...relations.map(relation=>relation.split('.')));
+    }
     const expectedTables=approvedPrivateTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_name})));
     // The ticketing profile migration grants only SELECT for service-side
     // seat/area projection. Every other table privilege remains exact.
@@ -673,10 +691,10 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     }
     const bankColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='bank_sync_connections'&&g.column_name==='bank_account_id');
     for(const column_name of ['failure_observed_at','failure_since','observation_id']) expectedColumns.push(...bankColumnTemplate.map(g=>({...g,column_name})));
-    // The two additive payment_info columns inherit its unchanged table ACL.
+    // The exact Stripe/Barion payment_info columns inherit its unchanged table ACL.
     // API access to any other new column or any approved private-table column still fails.
     const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
-    for(const column_name of ['payment_method','stripe_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
+    for(const column_name of ['payment_method','stripe_connection_id','barion_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
     assert.deepEqual(sorted(after.columnGrants),sorted([...before.columnGrants,...expectedColumns]),
         'Every old column grant remains exact; additions match the reviewed Stripe ownership/inheritance');
     const old=new Map(before.functions.map(f=>[f.signature,f]));
@@ -730,6 +748,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
         'begin_client_mutation_v1(uuid,text,bigint,uuid,text)',
         'delete_unit_user_internal_v1(uuid,bigint)',
         'get_form_for_edit(text)',
+        'get_effective_form_data(bigint)',
         'get_occasion_seo_data(text)',
         'get_unit_edit_data(bigint)',
         'storno_tickets_client_sync_v1(bigint[],uuid)',
@@ -741,11 +760,20 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // Approved scope tightening: unit dashboard 20261021230000 and public SEO
     // 20261022225500 remove ambient grants, without adding any new principal.
     // Later reviewed cuts: explicit application ACLs (240210), ticket
-    // cancellation (240240), and participant authoring (271500).
-    for(const [signature,removed] of [['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
+    // cancellation (240240), participant authoring (271500), and the private
+    // measurement metadata reader (20261106115500).
+    for(const [signature,removed] of [['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['get_effective_form_data(bigint)',['service_role']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
         assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>!removed.includes(g.grantee))),signature+' has only its reviewed revocations');
     for(const signature of publicRevocations) assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>g.grantee!=='PUBLIC')),signature+' removes only PUBLIC execution');
     assert.deepEqual(sorted(changes.find(f=>f.signature==='begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants),sorted(old.get('begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants.filter(g=>g.grantee!=='service_role')));
+    const metadataReader=after.functions.find(f=>f.signature==='get_effective_form_data(bigint)');
+    const metadataSource=await readFile(new URL('../../../database/functions/eshop_forms/get_effective_form_data.sql',import.meta.url),'utf8');
+    const metadataBody=metadataSource.match(/CREATE OR REPLACE FUNCTION public\.get_effective_form_data\([\s\S]*?AS \$\$([\s\S]*?)\$\$/i)?.[1];
+    assert(metadataBody,'canonical metadata reader definition');
+    assert.equal(metadataReader.bodyMd5,createHash('md5').update(metadataBody).digest('hex'));
+    assert.equal(metadataReader.owner,'postgres');assert.equal(metadataReader.definer,false);
+    assert.deepEqual(metadataReader.settings,['search_path=public, extensions']);
+    assert.deepEqual(metadataReader.execute,{anon:false,authenticated:false,service_role:false});
     const grants=sig=>changes.find(f=>f.signature===sig).grants.map(g=>g.grantee).sort();
     assert.deepEqual(grants('delete_unit_user_internal_v1(uuid,bigint)'),['postgres']);
     assert.deepEqual(grants('update_bank_account(bigint,text,text,text,text[],text,bigint,text)'),['authenticated','postgres','service_role']);

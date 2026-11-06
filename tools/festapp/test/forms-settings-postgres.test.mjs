@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {options,setup,executor,create,formPatch,save,denied} from './form-fixtures.mjs';
+const defaultPayments={bankEnabled:true,providerConnections:{}};
 const stored=async(db,id)=>(await db.query('select data from forms where id=$1',[id])).rows[0].data;
 
 test('settings executor preserves unrelated metadata and shares UI snapshots, original versions and frozen retries',options,async t=>{
@@ -25,7 +26,7 @@ test('null resets known overrides to inheritance without deleting lifecycle or o
  const{db,f}=await setup(t);const made=await create(db,f);await db.query(`update units set data='{"communication_tone":"informal"}' where id=$1`,[f.unit]);
  await db.query(`update forms set data='{"communication_tone":"formal","is_reminder_enabled":false,"reminder_interval_seconds":0,"private_owner":7,"schedule":{"sale_preparation":true,"start_time":"2030-01-01T00:00:00Z","end_time":"2031-01-01T00:00:00Z"},"design":{"primary_color":"#123456","paper_texture":"pattern"},"variable_symbol":{"type":"sequence","starting_number":1,"preferred_digits":5}}' where id=$1`,[made.formId]);
  await db.query('SET LOCAL ROLE authenticated');const result=await save(db,f,formPatch(made.authoring,{settings:{communication_tone:null,is_reminder_enabled:null,reminder_interval_seconds:null,schedule:null,design:{primary_color:null},variable_symbol:{type:'random',starting_number:null}}}));assert.equal(result.code,200,JSON.stringify(result));
- assert.deepEqual(result.data.authoring.form.data,{private_owner:7,schedule:{sale_preparation:true},design:{paper_texture:'pattern'},variable_symbol:{type:'random',preferred_digits:5}});
+ assert.deepEqual(result.data.authoring.form.data,{private_owner:7,schedule:{sale_preparation:true},design:{paper_texture:'pattern'},variable_symbol:{type:'random',preferred_digits:5},payments:defaultPayments});
  await db.query('RESET ROLE');assert.equal((await db.query('select get_effective_form_data($1) value',[made.formId])).rows[0].value.communication_tone,'informal');
  // Opening still belongs to the lifecycle owner; a settings reset cannot restore preparation.
  const opened=await save(db,f,formPatch(result.data.authoring,{is_open:true,settings:{schedule:null}}));assert.equal(opened.code,200,JSON.stringify(opened));assert.equal(opened.data.authoring.form.data.schedule.sale_preparation,false);
@@ -35,15 +36,15 @@ test('invalid SQL settings reject atomically before title/field mutation and can
  const{db,f}=await setup(t);const made=await create(db,f);const before=await stored(db,made.formId);
  const invalid=[{design:{presale_header:'event_and_date',theme_mode:'auto'}},{design:{presale_header:'event_and_date',theme_mode:true}},{unknown:true},{schedule:{sale_preparation:false}},{design:{paper_texture:'injected'}},{payments:{account_id:'acct_injected'}},{is_reminder_enabled:'true'},{reminder_interval_seconds:-1},{reminder_interval_seconds:1.5},{communication_tone:'casual'},{variable_symbol:{type:'sequence'}},{variable_symbol:{starting_number:10000000000}},{variable_symbol:{type:'sequence',starting_number:'123'}},{payment_message:{type:'custom'}},{design:{primary_color:'red'}},{payments:{stripeConnectionId:'wrong'}},{schedule:{start_time:'2030-01-01T00:00:00'}},{schedule:{start_time:'2031-01-01T00:00:00Z',end_time:'2030-01-01T00:00:00Z'}}];
  await db.query('SET LOCAL ROLE authenticated');
- for(const settings of invalid){await db.query('SAVEPOINT invalid_settings');await assert.rejects(save(db,f,formPatch(made.authoring,{title:'Must rollback',settings})),error=>error.code?.startsWith('22'));await db.query('ROLLBACK TO SAVEPOINT invalid_settings');await db.query('RELEASE SAVEPOINT invalid_settings');assert.deepEqual(await stored(db,made.formId),before);assert.equal((await db.query('select title from forms where id=$1',[made.formId])).rows[0].title,'Synthetic form');}
+ for(const settings of invalid){await db.query('SAVEPOINT invalid_settings');const rejected=await save(db,f,formPatch(made.authoring,{title:'Must rollback',settings})).catch(error=>{assert(error.code?.startsWith('22'),JSON.stringify(settings)+' '+error.message);return null;});if(rejected)assert.equal(rejected.status,'rejected',JSON.stringify(settings));await db.query('ROLLBACK TO SAVEPOINT invalid_settings');await db.query('RELEASE SAVEPOINT invalid_settings');assert.deepEqual(await stored(db,made.formId),before);assert.equal((await db.query('select title from forms where id=$1',[made.formId])).rows[0].title,'Synthetic form');}
  const inspected=(await executor(db,f).ops.invoke('forms.inspect',{occasionId:f.occasion,formId:made.formId})).data.authoring;assert.equal(inspected.form.aggregate_version,made.authoring.form.aggregate_version);
 });
 
 test('released metadata boundary normalizes historical data and uses the same settings validation as the new patch',options,async t=>{
  const{db,f}=await setup(t);const made=await create(db,f);const metadata={private_owner:9,is_reminder_enabled:false,communication_tone:'informal',design:{primary_color:'#112233',paper_texture:'pattern'}};
  await db.query('SET LOCAL ROLE authenticated');const legacy=async p=>(await db.query('select update_form_client_sync_v1($1,$2) value',[{occasion:f.occasion,...p},randomUUID()])).rows[0].value;
- const result=await legacy(formPatch(made.authoring,{data:[null,metadata]}));assert.equal(result.code,200,JSON.stringify(result));assert.deepEqual(result.data.authoring.form.data,{...metadata,design:{...metadata.design,presale_header:'event_and_date'}});
- await denied(db,'select update_form_client_sync_v1($1,$2)',[{occasion:f.occasion,...formPatch(result.data.authoring,{data:{...metadata,reminder_interval_seconds:-1},title:'Must rollback'})},randomUUID()],'22023');assert.deepEqual(await stored(db,made.formId),{...metadata,design:{...metadata.design,presale_header:'event_and_date'}});
+ const result=await legacy(formPatch(made.authoring,{data:[null,metadata]}));assert.equal(result.code,200,JSON.stringify(result));assert.deepEqual(result.data.authoring.form.data,{...metadata,design:{...metadata.design,presale_header:'event_and_date'},payments:defaultPayments});
+ await denied(db,'select update_form_client_sync_v1($1,$2)',[{occasion:f.occasion,...formPatch(result.data.authoring,{data:{...metadata,reminder_interval_seconds:-1},title:'Must rollback'})},randomUUID()],'22023');assert.deepEqual(await stored(db,made.formId),{...metadata,design:{...metadata.design,presale_header:'event_and_date'},payments:defaultPayments});
  await denied(db,'select update_form_client_sync_v1($1,$2)',[{occasion:f.occasion,...formPatch(result.data.authoring,{data:metadata,settings:{communication_tone:'formal'}})},randomUUID()],'22023');
  const saved=await save(db,f,formPatch(result.data.authoring,{settings:{communication_tone:'formal'}}));assert.equal(saved.code,200);assert.equal(saved.data.authoring.form.data.private_owner,9);
 });
@@ -64,11 +65,31 @@ test('existing Stripe selection validates actual recipient scope and compatibili
  const counts=async()=> (await db.query('select (select count(*) from eshop.payment_info) payments,(select count(*) from eshop.payment_reference_reservations) refs')).rows[0];const before=await counts();
  await db.query('SET LOCAL ROLE authenticated');let result=await save(db,f,formPatch(made.authoring,{settings:{payments:{bankEnabled:false,stripeConnectionId:conn}}}));assert.equal(result.code,200,JSON.stringify(result));
  const options=await executor(db,f).ops.invoke('forms.paymentOptions',{occasionId:f.occasion,formId:made.formId,livemode:true});assert.equal(options.ok,true,JSON.stringify(options));assert.equal(options.data.stripeRecipient.connectionId,conn);assert(!JSON.stringify(options).includes('acct_'));
- assert.equal(options.data.availability.configured.stripe,true);assert.notEqual(options.data.availability.stripeUnavailableReason,null); // no live activation in fixture
- const foreign=await save(db,f,formPatch(result.data.authoring,{settings:{payments:{stripeConnectionId:other}},title:'Must rollback'}));assert.equal(foreign.status,'rejected',JSON.stringify(foreign));assert.equal((await stored(db,made.formId)).payments.stripeConnectionId,conn);
+ assert.equal(options.data.availability.providers.stripe.configured,true);assert.notEqual(options.data.availability.providers.stripe.reason.code,null); // no live activation in fixture
+ const modern=await executor(db,f).ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(result.data.authoring,{settings:{payments:{bankEnabled:false,providerConnections:{stripe:conn}}}})});assert.equal(modern.ok,true,JSON.stringify(modern));result={data:modern.data};
+ const foreign=await save(db,f,formPatch(result.data.authoring,{settings:{payments:{providerConnections:{stripe:other}}},title:'Must rollback'}));assert.equal(foreign.status,'rejected',JSON.stringify(foreign));assert.equal((await stored(db,made.formId)).payments.providerConnections.stripe,conn);
  await db.query('RESET ROLE');await db.query('update eshop.stripe_connections set paused=true where id=$1',[conn]);await db.query('SET LOCAL ROLE authenticated');result=await save(db,f,formPatch(result.data.authoring,{settings:{payment_message:{type:'none'}}}));assert.equal(result.code,200,JSON.stringify(result));
- const paused=await executor(db,f).ops.invoke('forms.paymentOptions',{occasionId:f.occasion,formId:made.formId,livemode:true});assert.equal(paused.data.availability.stripeUnavailableReason,'paused');assert.equal(result.data.authoring.form.data.payments.stripeConnectionId,conn);
+ const paused=await executor(db,f).ops.invoke('forms.paymentOptions',{occasionId:f.occasion,formId:made.formId,livemode:true});assert.equal(paused.data.availability.providers.stripe.reason.code,'paused');assert.equal(result.data.authoring.form.data.payments.providerConnections.stripe,conn);
  await db.query('RESET ROLE');assert.deepEqual(await counts(),before);
+});
+
+test('payment null resets share the canonical merge owner and the real MCP save contract',options,async t=>{
+ const{db,f}=await setup(t);const connections={stripe:randomUUID(),barion:randomUUID()};
+ const payments={bankEnabled:false,providerConnections:connections};
+ const merge=async input=>(await db.query('select merge_form_payments_internal($1,$2) value',[payments,input])).rows[0].value;
+ assert.deepEqual(await merge(null),payments,'SQL NULL is an internal preservation request');
+ const patch=async value=>(await db.query('select apply_form_settings_internal($1,$2) value',[{payments,private_owner:7},{payments:value}])).rows[0].value;
+ assert.deepEqual(await patch(null),{payments:defaultPayments,private_owner:7});
+ assert.deepEqual(await patch({bankEnabled:null,providerConnections:connections}),{payments:{bankEnabled:true,providerConnections:connections},private_owner:7});
+ assert.deepEqual(await patch({providerConnections:null}),{payments:{bankEnabled:false,providerConnections:{}},private_owner:7});
+ assert.deepEqual(await merge({bankEnabled:true}),{bankEnabled:true,providerConnections:{barion:connections.barion}},'released Stripe-only omission preserves other providers');
+ const made=await create(db,f);await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);
+ let result=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(made.authoring,{settings:{payments:{bankEnabled:false,providerConnections:{}}}})});
+ assert.equal(result.ok,true,JSON.stringify(result));
+ for(const value of [{bankEnabled:null,providerConnections:{}},null,{providerConnections:null}]){
+  result=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(result.data.authoring,{settings:{payments:value}})});
+  assert.equal(result.ok,true,JSON.stringify(result));assert.deepEqual(result.data.authoring.form.data.payments,defaultPayments);
+ }
 });
 
 test('incomplete payment methods and foreign bank selection roll back settings and other aggregate writes together',options,async t=>{
@@ -116,7 +137,7 @@ test('legacy sale dates normalize once in admin reads and saves; reset cannot re
  assert(!Object.hasOwn(data,'start_time'));assert(!Object.hasOwn(data,'end_time'));assert.equal(Date.parse(data.schedule.start_time),Date.parse(before.startAt));assert.equal(Date.parse(data.schedule.end_time),Date.parse(before.endAt));
  const ui=(await db.query('select get_form_for_edit($1) value',[link])).rows[0].value;assert.deepEqual(ui.data.form.data,data);
  const reset=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(read.data.authoring,{settings:{schedule:null}})});assert.equal(reset.ok,true,JSON.stringify(reset));
- await db.query('RESET ROLE');const persisted=await stored(db,made.formId);assert.deepEqual(persisted,{private_owner:7,schedule:{sale_preparation:true}});
+ await db.query('RESET ROLE');const persisted=await stored(db,made.formId);assert.deepEqual(persisted,{private_owner:7,schedule:{sale_preparation:true},payments:defaultPayments});
  const after=(await db.query("select get_form_availability_snapshot_internal($1,'2029-01-01T00:00:00Z') value",[made.formId])).rows[0].value;assert.equal(after.startAt,null);assert.equal(after.endAt,null);
  // The bounded released-input adapter also retires aliases on its next save.
  const saved=(await db.query('select update_form_client_sync_v1($1,$2) value',[{occasion:f.occasion,...formPatch(reset.data.authoring,{data:legacy})},randomUUID()])).rows[0].value;assert.equal(saved.code,200,JSON.stringify(saved));const canonical=await stored(db,made.formId);assert(!Object.hasOwn(canonical,'start_time'));assert(!Object.hasOwn(canonical,'end_time'));assert(canonical.schedule.start_time.includes('T'));

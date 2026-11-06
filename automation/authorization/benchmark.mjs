@@ -7,16 +7,25 @@ import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 const { Client } = createRequire(new URL('../../web_client/package.json', import.meta.url))('pg');
 export const databaseUrl = process.env.FESTAPP_AUTHORIZATION_DATABASE_URL;
-export async function connect() {
-    const u = new URL(databaseUrl);
+export function expectedAuthorizationProject(connection, env = process.env) {
+    const u = new URL(connection);
     assert.equal(u.hostname, '127.0.0.1');
     const projects = {'61022': 'festapp-authz-20261020', '61032': 'festapp-mcp-hardening-20261029'};
-    assert(projects[u.port], 'Explicitly supported authorization fixture port required');
+    if (projects[u.port]) return projects[u.port];
+    // An isolated task clone must bind its URL, forwarded port and database marker.
+    assert.equal(connection, env.FESTAPP_AUTHORIZATION_DATABASE_URL);
+    assert.equal(u.port, env.FESTAPP_LOCAL_DB_PORT);
+    assert.match(env.FESTAPP_LOCAL_DB_PROJECT_ID ?? '', /^festapp-[a-z0-9-]+$/);
+    return env.FESTAPP_LOCAL_DB_PROJECT_ID;
+}
+export async function connect() {
+    const project = expectedAuthorizationProject(databaseUrl);
     const db = new Client({ connectionString: databaseUrl }); await db.connect();
     try {
-        assert.equal((await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project, projects[u.port]);
+        assert.equal((await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project, project);
         assert.equal((await db.query('show cron.launch_active_jobs')).rows[0]['cron.launch_active_jobs'], 'off');
         assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe, true);
+        await db.query("select set_config('festapp.authorization_fixture_project',$1,false)", [project]);
     } catch (error) { await db.end(); throw error; }
     return db;
 }
