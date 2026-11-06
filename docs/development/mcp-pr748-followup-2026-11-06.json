@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-06",
+  "pr": 748,
+  "reportedBy": "bujnovskyf",
+  "report": "https://github.com/festappnet/festapp/pull/748#issuecomment-6686094548",
+  "refresh": {
+    "client": "Codex CLI 0.166.0",
+    "sdkSource": "https://github.com/modelcontextprotocol/rust-sdk/blob/98a54789b80110ad210495c4ad845c89e1980471/crates/rmcp/src/transport/auth.rs#L2380-L2392",
+    "missingScope": "offline_access",
+    "reproduction": "A login omitting offline_access succeeds; refreshing with the scopes added by RMCP returns invalid_scope, scope=offline_access.",
+    "policy": "Request offline_access at login; default an omitted authorization prompt to consent before provider scope validation. Preserve explicit prompt=none and the refresh scope subset check. Old credentials must reconnect; no grant is widened.",
+    "tests": "All five actual login commands read from the CS/EN guides and README complete native tenant consent, reject scope widening, rotate refresh credentials twice, and call MCP successfully."
+  },
+  "form": {
+    "occasionId": 1072644,
+    "formId": 623,
+    "liveSourceRevision": "2b80ebb92f8ae37515e65fdebadb8751a8109089",
+    "liveFailure": {
+      "code": "unrecognized_keys",
+      "path": [
+        "authoring",
+        "form"
+      ],
+      "keys": [
+        "measurement_status"
+      ]
+    },
+    "currentProjection": "An explicit form-property allowlist omits unknown internal properties. Missing/null measurement_status is null (unknown); malformed known values are rejected. Mutation readback uses the same unknown default.",
+    "liveSnapshotValidation": "The read-only production snapshot passes the current parser. Its content is not retained in this receipt."
+  },
+  "verification": {
+    "runtime": "Node 24.20.0",
+    "targetedTests": 90,
+    "passed": 90,
+    "skipped": 0,
+    "additionalDefaultReadbackTest": {
+      "passed": 1
+    },
+    "renderedGuides": [
+      "cs",
+      "en"
+    ],
+    "productionAccess": "Read-only database transactions and read-only inspection of MCP source and token scope metadata. No token values, credentials or customer data retained.",
+    "remaining": "No production image rollout or real-account reconnection performed. Full PostgreSQL suite requires an independently migrated disposable fixture."
+  }
+}
