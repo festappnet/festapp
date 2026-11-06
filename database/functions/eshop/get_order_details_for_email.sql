@@ -64,7 +64,7 @@ BEGIN
         -- 2. Modified query to fetch both form_fields and form_data at the same time
         SELECT
             jsonb_object_agg(ff.id, to_jsonb(ff.*)), -- All fields
-            public.get_effective_form_data(f.id)     -- Form data with unit defaults
+            public.effective_form_metadata_internal(f.data, u.data) -- Communication metadata without analytics policy
         INTO
             form_fields_data,
             form_data
@@ -72,10 +72,12 @@ BEGIN
             public.form_fields AS ff
         JOIN
             public.forms AS f ON ff.form = f.id
+        JOIN public.occasions form_occasion ON form_occasion.id = f.occasion
+        JOIN public.units u ON u.id = form_occasion.unit
         WHERE
             f.key = form_key
         GROUP BY
-            f.id; -- Group by the form used for effective data
+            f.id, u.data; -- Group by the form used for effective data
 
         -- If form fields were found, add them to the result data
         IF form_fields_data IS NOT NULL THEN
