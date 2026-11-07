@@ -179,8 +179,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     for (const previousGrant of storage.values('Delegation')) {
         if (previousGrant.access || !previousGrant.occasions) continue;
         const { occasions, ...grant } = previousGrant;
-        storage.put('Delegation', grant.id, { ...grant, access: { type: 'occasions', occasionIds: occasions } },
-            Math.max(1, (grant.expiresAt - Date.now()) / 1000));
+        storage.putUntil('Delegation', grant.id, { ...grant, access: { type: 'occasions', occasionIds: occasions } }, grant.expiresAt);
     }
     const availableAccess = async (_owner, backend) => operatorAccess(backend, config.profile);
     const canRequestCreate = d => String(d.params.scope ?? '').split(' ').includes(CREATE_SCOPE);
@@ -200,10 +199,10 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         grant.addResourceScope(config.resource, scopes);
         const grantId = await grant.save();
         const sessionBinding = connectionBinding(config.profile, d.uid);
-        storage.put('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
+        storage.putUntil('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
             profileBinding: config.profile.binding, binding: sessionBinding,
-            access, permissions, ...choice, createdAt, expiresAt, lifecycle: 'pending', pendingExpiresAt, revoked: false }, (pendingExpiresAt - Date.now()) / 1000);
-        storage.put('Binding', sessionBinding, { id: grantId }, (pendingExpiresAt - Date.now()) / 1000);
+            access, permissions, ...choice, createdAt, expiresAt, lifecycle: 'pending', pendingExpiresAt, revoked: false }, pendingExpiresAt);
+        storage.putUntil('Binding', sessionBinding, { id: grantId }, pendingExpiresAt);
         await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
         if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid }, 600);
         storage.remove('Connect', d.uid);
@@ -329,8 +328,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!token) return challenge(res);
             owner = new DelegatedOwner(config, storage, token, { fetchImpl });
             const grant = owner.current();
-            if (!grant.clientConnectedAt) storage.put('Delegation', token.grantId,
-                { ...grant, clientConnectedAt: Date.now() }, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
+            if (!grant.clientConnectedAt) storage.putUntil('Delegation', token.grantId,
+                { ...grant, clientConnectedAt: Date.now() }, grant.expiresAt);
         } catch { return challenge(res); }
         if (make) {
             if (token.clientId !== MAKE_CLIENT_ID || !owner.orderSummaryOnly ||

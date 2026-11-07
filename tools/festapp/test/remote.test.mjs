@@ -1532,6 +1532,9 @@ for (const state of ['revoked', 'expired']) test(`target ${state} after consent 
 
 test('pending expires at original interaction deadline, including backend writes and restart', async t => {
     const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    // Exercise clock movement between the caller's TTL calculation and SQLite's write.
+    let now = Date.now();
+    t.mock.method(Date, 'now', () => now++);
     await connectTenant(f, { clientId: 'desktop-fixture', scopes: [READ_SCOPE], pending: true,
         connection: { mode: 'new', durationDays: 365 } });
     const grant = f.storage.values('Delegation')[0];
