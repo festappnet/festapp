@@ -254,7 +254,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
     final trimmedEmail = _replyToEmailController.text.trim();
     if (trimmedEmail.isEmpty) {
-      pendingUnit.data!.remove(Tb.units.data_reply_to);
+      pendingUnit.data![Tb.units.data_reply_to] = null;
     } else {
       pendingUnit.data![Tb.units.data_reply_to] = trimmedEmail;
     }
@@ -264,34 +264,15 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     if (_organizationMeasurementEnabled) {
       pendingUnit.data!['measurement_enabled'] = _measurementEnabled;
       pendingUnit.data!['measurement_consent_layout'] = _measurementConsentLayout;
-      for (final (key, controller) in [
-        ('measurement_consent_title', _measurementConsentTitleController),
-        ('measurement_consent_text', _measurementConsentTextController),
+      // Omission preserves unloaded metadata; explicit null clears an edited field.
+      for (final (key, value) in [
+        ('measurement_consent_title', _measurementConsentTitleController.text.trim()),
+        ('measurement_consent_text', _measurementConsentTextController.text.trim()),
+        ('measurement_privacy_url', _measurementPrivacyUrlController.text.trim()),
+        ('measurement_gtm_container', _measurementGtmController.text.trim()),
+        ('measurement_scripts', _measurementScriptsController.text),
       ]) {
-        final text = controller.text.trim();
-        if (text.isEmpty) {
-          pendingUnit.data!.remove(key);
-        } else {
-          pendingUnit.data![key] = text;
-        }
-      }
-      final privacyUrl = _measurementPrivacyUrlController.text.trim();
-      if (privacyUrl.isEmpty) {
-        pendingUnit.data!.remove('measurement_privacy_url');
-      } else {
-        pendingUnit.data!['measurement_privacy_url'] = privacyUrl;
-      }
-      final gtm = _measurementGtmController.text.trim();
-      final scripts = _measurementScriptsController.text;
-      if (gtm.isEmpty) {
-        pendingUnit.data!.remove('measurement_gtm_container');
-      } else {
-        pendingUnit.data!['measurement_gtm_container'] = gtm;
-      }
-      if (scripts.isEmpty) {
-        pendingUnit.data!.remove('measurement_scripts');
-      } else {
-        pendingUnit.data!['measurement_scripts'] = scripts;
+        pendingUnit.data![key] = value.isEmpty ? null : value;
       }
     }
 

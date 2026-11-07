@@ -47,18 +47,57 @@ void main() {
     expect(saved.aggregateVersion, 3);
     final payload = parameters['p_unit_data'] as Map;
     expect(payload.containsKey('data'), isFalse);
-    expect(payload['settings'], {
-      'reply_to': 'reply@example.invalid',
-      'communication_tone': null,
-      'timezone': null,
-      'measurement_consent_layout': null,
-      'measurement_consent_title': null,
-      'measurement_consent_text': null,
-      'measurement_gtm_container': null,
-      'measurement_scripts': null,
-      'measurement_privacy_url': null,
-    });
+    expect(payload['settings'], {'reply_to': 'reply@example.invalid'});
   });
+
+  test(
+    'unit save sends organizer measurement settings that are present',
+    () async {
+      late Map<String, dynamic> parameters;
+      final commands = SupabaseUnitCommands.withTransport(
+        ClientCommandTransport((name, params) async {
+          parameters = params;
+          return commandResponseFixture(
+            params['p_command_id'] as String,
+            data: {
+              'version': 3,
+              'unit': {
+                'id': 4,
+                'title': 'Unit',
+                'data': <String, dynamic>{},
+                'aggregate_version': 3,
+              },
+            },
+          );
+        }, maxAttempts: 1),
+      );
+
+      await commands.save(
+        UnitModel(
+          id: 4,
+          title: 'Unit',
+          data: {
+            'measurement_enabled': true,
+            'measurement_gtm_container': 'GTM-ABCD1234',
+            'measurement_privacy_url': 'https://example.invalid/privacy',
+            'measurement_consent_title': null,
+          },
+          aggregateVersion: 2,
+        ),
+      );
+
+      final settings = (parameters['p_unit_data'] as Map)['settings'] as Map;
+      expect(settings['measurement_enabled'], isTrue);
+      expect(settings['measurement_gtm_container'], 'GTM-ABCD1234');
+      expect(
+        settings['measurement_privacy_url'],
+        'https://example.invalid/privacy',
+      );
+      expect(settings.containsKey('measurement_consent_title'), isTrue);
+      expect(settings['measurement_consent_title'], isNull);
+      expect(settings.containsKey('measurement_scripts'), isFalse);
+    },
+  );
 
   test('unit user grid save carries original version and accepts confirmed identity', () async {
     late Map<String, dynamic> parameters;

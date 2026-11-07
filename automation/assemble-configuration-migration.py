@@ -5,10 +5,7 @@ import json,sys
 root=Path(__file__).resolve().parents[1]
 spec=json.loads((root/'packages/festapp_contracts/configuration-settings.json').read_text())
 client_path=root/'lib/components/unit/unit_settings_fields.dart'
-client_contract='// Generated from packages/festapp_contracts/configuration-settings.json.\n// Nullable fields use null to clear an override; other fields preserve omission.\n'
-for name,nullable in [('unitSettingsNullableKeys',True),('unitSettingsValueKeys',False)]:
- keys=[key for key,rule in spec['unit'].items() if bool(rule.get('nullable',False))==nullable]
- client_contract+='const '+name+' = <String>{\n'+''.join("  '"+key+"',\n" for key in keys)+'};\n'
+client_contract='// Generated from packages/festapp_contracts/configuration-settings.json.\n// Omission preserves server settings; explicit null clears nullable overrides.\nconst unitSettingsKeys = <String>{\n'+''.join("  '"+key+"',\n" for key in spec['unit'])+'};\n'
 contract="-- Generated from packages/festapp_contracts/configuration-settings.json.\nCREATE OR REPLACE FUNCTION public.configuration_settings_contract_internal_v1() RETURNS jsonb\nLANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $contract$\n SELECT $json$"+json.dumps(spec,separators=(',',':'))+"$json$::jsonb;\n$contract$;\nREVOKE ALL ON FUNCTION public.configuration_settings_contract_internal_v1() FROM PUBLIC,anon,authenticated,service_role;\n"
 sources=['others/configuration_settings_contract.sql', 'others/configuration_settings.sql', 'user_permissions/game_settings.sql', 'others/save_occasion_domain_command_internal_v1.sql', 'others/save_occasion_client_sync_v1.sql', 'units/update_unit_internal_v1.sql', 'units/save_unit_client_sync_v1.sql', 'others/game_update_settings.sql', 'others/game_update_settings_client_sync_v1.sql', 'others/configuration_authoring.sql', 'others/get_ticket_layout_write_contract_v1.sql']
 # The original stage-5 migration is immutable. New contracts are assembled into

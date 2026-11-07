@@ -88,8 +88,7 @@ class SupabaseUnitCommands implements UnitCommands {
           'id': id,
           'title': unit.title,
           'settings': {
-            for (final key in unitSettingsNullableKeys) key: unit.data?[key],
-            for (final key in unitSettingsValueKeys)
+            for (final key in unitSettingsKeys)
               if (unit.data?.containsKey(key) ?? false) key: unit.data![key],
           },
         },

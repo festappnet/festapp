@@ -104,6 +104,16 @@ Samostatný izolovaný root test `unit_settings_save_test.dart` pokrývá kliknu
 prázdný Reply-To, vymazání kódu i odmítnutý zápis. HTTP backend je v tomto
 widget testu simulovaný; nejde o provedený produkční zápis.
 
+Kompatibilita s PR #767 (`1484c8cb52ae325e04107c0f062e36220bc65b66`): jeho
+test odhalil chybu v první lokální verzi našeho adaptéru, která posílala
+nenačtená nullable pole jako `null`. Sjednocená implementace proto odesílá
+jen přítomné klíče ze společného generovaného kontraktu a UI při úmyslném
+vymazání zapisuje explicitní `null` do samostatného draftu. Zachovává se tím
+Frantova ochrana proti ztrátě dat i naše validace nepovinného Reply-To,
+potvrzené verze a bezpečné chování při odmítnutém zápisu. Samostatný ruční
+seznam měřicích klíčů se nezachovává jako další autorita. Všech 15 cílených
+testů, včetně původního Frantova regresního testu, prošlo společně.
+
 ## Cílový model
 
 ```mermaid

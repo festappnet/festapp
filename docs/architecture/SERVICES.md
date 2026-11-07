@@ -97,8 +97,8 @@ descriptions. This performs no permission preflight and grants no new scopes;
 resource consent and live account authorization are still checked on execution.
 Organizer settings serialization uses Dart field sets generated from
 `packages/festapp_contracts/configuration-settings.json` by
-`automation/assemble-configuration-migration.py`. Nullable keys explicitly clear
-overrides; absent non-nullable keys preserve server values. The settings screen
+`automation/assemble-configuration-migration.py`. Omitted keys preserve server values; explicit null clears
+nullable overrides. The settings screen
 saves a separate draft and publishes returned values and aggregate version only
 after confirmation. Optional Reply-To is validated only when supplied.
 Delegated authoring reads verify and lock the actual occasion/unit binding in

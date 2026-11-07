@@ -200,6 +200,10 @@ void main() {
         );
         expect(saves.single['p_expected_version'], 4);
         expect(
+          ((saves.single['p_unit_data'] as Map)['settings'] as Map)['reply_to'],
+          replyTo.isEmpty ? null : replyTo,
+        );
+        expect(
           ((saves.single['p_unit_data'] as Map)['settings']
               as Map)['measurement_scripts'],
           edited.isEmpty ? null : edited,
