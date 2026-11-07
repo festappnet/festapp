@@ -6,6 +6,17 @@ import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Organizer measurement settings saved through the Unit settings contract.
+const unitMeasurementSettingKeys = [
+  'measurement_enabled',
+  'measurement_consent_layout',
+  'measurement_consent_title',
+  'measurement_consent_text',
+  'measurement_privacy_url',
+  'measurement_gtm_container',
+  'measurement_scripts',
+];
+
 abstract interface class UnitCommands {
   Future<UnitModel> save(UnitModel unit);
   Future<void> saveUser(UnitUserModel user);
@@ -89,6 +100,10 @@ class SupabaseUnitCommands implements UnitCommands {
           'settings': {
             for (final key in ['reply_to', 'communication_tone', 'timezone'])
               key: unit.data?[key],
+            // Measurement keys are sent only when present, so a save that did
+            // not load them never clears stored values.
+            for (final key in unitMeasurementSettingKeys)
+              if (unit.data?.containsKey(key) ?? false) key: unit.data![key],
           },
         },
       }),

@@ -261,34 +261,24 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     if (_organizationMeasurementEnabled) {
       _unit.data!['measurement_enabled'] = _measurementEnabled;
       _unit.data!['measurement_consent_layout'] = _measurementConsentLayout;
-      for (final (key, controller) in [
-        ('measurement_consent_title', _measurementConsentTitleController),
-        ('measurement_consent_text', _measurementConsentTextController),
+      // Empty fields are sent as null so the server clears them.
+      for (final (key, value) in [
+        (
+          'measurement_consent_title',
+          _measurementConsentTitleController.text.trim(),
+        ),
+        (
+          'measurement_consent_text',
+          _measurementConsentTextController.text.trim(),
+        ),
+        (
+          'measurement_privacy_url',
+          _measurementPrivacyUrlController.text.trim(),
+        ),
+        ('measurement_gtm_container', _measurementGtmController.text.trim()),
+        ('measurement_scripts', _measurementScriptsController.text),
       ]) {
-        final text = controller.text.trim();
-        if (text.isEmpty) {
-          _unit.data!.remove(key);
-        } else {
-          _unit.data![key] = text;
-        }
-      }
-      final privacyUrl = _measurementPrivacyUrlController.text.trim();
-      if (privacyUrl.isEmpty) {
-        _unit.data!.remove('measurement_privacy_url');
-      } else {
-        _unit.data!['measurement_privacy_url'] = privacyUrl;
-      }
-      final gtm = _measurementGtmController.text.trim();
-      final scripts = _measurementScriptsController.text;
-      if (gtm.isEmpty) {
-        _unit.data!.remove('measurement_gtm_container');
-      } else {
-        _unit.data!['measurement_gtm_container'] = gtm;
-      }
-      if (scripts.isEmpty) {
-        _unit.data!.remove('measurement_scripts');
-      } else {
-        _unit.data!['measurement_scripts'] = scripts;
+        _unit.data![key] = value.isEmpty ? null : value;
       }
     }
 
