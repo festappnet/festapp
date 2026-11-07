@@ -76,10 +76,7 @@ class RightsService {
       bool refreshOffline = AppConfig.isAppSupported,
       String? formLink}) {
     final contextGeneration = ++_contextGeneration;
-    if (force ||
-        (unitId != null && unitId != currentUnit()?.id) ||
-        (link != null && link != currentLink) ||
-        formLink != null) {
+    if (force || unitId != null || link != null || formLink != null) {
       invalidateCapabilities();
     }
     final previous = _lastUpdate;
@@ -108,21 +105,14 @@ class RightsService {
       bool refreshOffline = AppConfig.isAppSupported,
       String? formLink}) async {
     if (contextGeneration != _contextGeneration) return false;
-    // Check if an update is needed
-    // Logic: If force is true, update.
-    // If unitId is specified (Unit Admin mode), only update if we aren't already on that unit.
-    // Otherwise (Occasion mode), update if we don't have an occasion or the link changed.
-    bool needsUpdate = force;
-    if (!needsUpdate) {
-      if (unitId != null) {
-        if (occasionLinkModelNotifier.value?.unit?.id != unitId) {
-          needsUpdate = true;
-        }
-      } else if (occasionLinkModelNotifier.value?.occasion?.id == null ||
-          link != currentLink) {
-        needsUpdate = true;
-      }
-    }
+    // Explicit entry must resolve live roles even when the event/unit is retained.
+    // Another administrator may have changed this user's membership.
+    final needsUpdate = force ||
+        unitId != null ||
+        link != null ||
+        formLink != null ||
+        currentOccasionId() == null ||
+        link != currentLink;
 
     if (needsUpdate) {
       LinkModel model =

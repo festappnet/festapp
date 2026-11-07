@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "fb8ca0394de11f86c63b8a90908cd2c0ea8c788eb3552c707e24d414c50e5af3",
+  "sourceDigest": "a8a8a499eeacba49a58bd6fdc004f068f7db3fa32248d9e662ccd26b0f091d36",
   "permissions": [
     {
       "scope": "festapp:history:delete",

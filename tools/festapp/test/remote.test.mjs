@@ -14,7 +14,7 @@ import { createServer as httpServer } from 'node:http';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomBytes, createHash, generateKeyPairSync } from 'node:crypto';
+import { randomBytes, randomUUID, createHash, generateKeyPairSync } from 'node:crypto';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Client as LegacyClient } from 'mcp-sdk-legacy/client/index.js';
 import { StreamableHTTPClientTransport as LegacyHTTPClientTransport } from 'mcp-sdk-legacy/client/streamableHttp.js';
@@ -939,6 +939,32 @@ async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_S
     assert.equal(r.status, 200);
     return r.json();
 }
+
+for (const modern of [true, false]) test(`form save denial explains account rights over ${modern ? 'modern' : 'legacy'} MCP`, async t => {
+    let saves = 0;
+    const f = await setup(t, { tenant: true, fetchImpl: (url) => {
+        if (url.pathname !== '/rest/v1/rpc/manage_form') return undefined;
+        saves++;
+        return reply({ code: '42501', message: 'private database denial', details: 'private-role-detail' }, 403);
+    } });
+    const tokens = await connectTenant(f, { scopes: [READ_SCOPE, 'festapp:forms:read', 'festapp:forms:write'] });
+    const client = new (modern ? Client : LegacyClient)({ name: 'generic-form-editor', version: '1' });
+    await client.connect(new (modern ? StreamableHTTPClientTransport : LegacyHTTPClientTransport)(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
+    }));
+    t.after(() => client.close());
+    const result = await client.callTool({ name: 'festapp_forms_save', arguments: {
+        occasionId: 7, commandId: randomUUID(), form: { id: 42, expected_aggregate_version: 0,
+            expected_product_versions: {}, expected_product_type_versions: {}, title: 'Approved change' },
+    } });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.error.code, 'FORBIDDEN');
+    assert.equal(result.structuredContent.error.retryable, false);
+    assert.match(result.structuredContent.error.message, /account.*form editor/i);
+    assert.match(result.content[0].text, /OAuth consent does not grant account permissions/);
+    assert(!JSON.stringify(result).includes('private-role-detail'));
+    assert.equal(saves, 1, 'a permission denial must not retry the mutation');
+});
 
 const orderRow = id => ({ id, occasionId: 7, symbol: 'FIXTURE-' + id, state: id % 2 ? 'ordered' : 'paid',
     createdAt: null, updatedAt: null, revision: 'a'.repeat(64), customer: { name: null, surname: null, email: null },

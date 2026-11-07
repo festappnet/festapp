@@ -66,6 +66,11 @@ its existing payload, including through existing versioned adapters. Dart/JS
 identifiers are generated from that SQL projection. No action adds a permission
 preflight RPC. Context and identity changes invalidate the projection and discard
 outstanding stale results; the Dart notifier publishes a new context value.
+Explicit occasion/unit entry reloads that same SQL projection even if the
+selected context has not changed. Administration entry may join an in-flight
+read for the same context, but does not reuse a completed permission snapshot.
+This observes external role promotions and revocations without copying roles
+into the client or changing the domain authorization rules.
 
 Creating an occasion accepts a unit editor **or** unit manager, as explicitly
 requested on 2026-10-20. The command, receipt claim, setup drafts and initial form
@@ -80,6 +85,9 @@ its own editor role; a tenant administrator in `organization_users` is a separat
 scope. Other domain roles are not implicitly expanded by this change.
 
 Remote MCP keeps OAuth scope and stored consent as additional restrictions.
+Permission errors preserve `FORBIDDEN` and `INSUFFICIENT_SCOPE`. The operation
+boundary adds actionable guidance for form saves without interpreting SQL
+message text, revealing upstream details, or treating a denial as retryable.
 Delegated authoring reads verify and lock the actual occasion/unit binding in
 the data request; delegated creation verifies its unit/tenant before command
 execution or replay. Discovery reports concrete `ticket_layouts.read` capability;

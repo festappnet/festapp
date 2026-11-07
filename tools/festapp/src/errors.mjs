@@ -8,14 +8,21 @@ export class OperationError extends Error {
 export function check(value, code = 'UPSTREAM_CONTRACT_FAILURE') {
     if (!value) throw new OperationError(code);
 }
-export function safeError(error) {
+const permissionMessages = new Map([
+    ['INSUFFICIENT_SCOPE', 'This connection is missing the required OAuth permissions. Reconnect and explicitly approve the scopes required by this tool; your account must also have permission for the action.'],
+    ['FORBIDDEN', 'The connected account or selected connection access does not permit this action. Check the selected event or organizer and ask its administrator to verify your account permissions. Retrying unchanged will not grant access.'],
+]);
+export function safeError(error, { operation } = {}) {
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')
         return { code: 'TIMEOUT', message: 'TIMEOUT', retryable: true };
     const known = error instanceof OperationError;
+    const message = error?.code === 'FORBIDDEN' && operation === 'forms.save'
+        ? 'Saving this form was denied. Your account needs form editor rights for this event or its organizer unit, and the form must belong to an event included in this connection. Ask the event organizer to verify your role and check the selected event and form. OAuth consent does not grant account permissions; reconnect only if the connection access or scopes need changing.'
+        : permissionMessages.get(error?.code) ?? error?.code;
     return {
         code: known ? error.code : 'UNAVAILABLE',
-        message: known ? error.code : 'Operation unavailable',
-        retryable: known ? error.retryable : true,
+        message: known ? message : 'Operation unavailable',
+        retryable: known ? !permissionMessages.has(error.code) && error.retryable : true,
     };
 }
 export function upstream(error) {

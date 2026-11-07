@@ -502,7 +502,7 @@ export class Operations {
                 return { ok: true, operation: id, data, meta };
             });
         } catch (error) {
-            return { ok: false, operation: id, error: safeError(error), meta };
+            return { ok: false, operation: id, error: safeError(error, { operation: id }), meta };
         }
     }
     async readArtifact(uri) {
