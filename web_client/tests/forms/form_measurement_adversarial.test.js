@@ -30,7 +30,7 @@ test('seeded event mutation keeps the receiver idempotent, bounded and free of i
 test('script-breaking text, wrong scope and malformed backend responses fail at the actual Worker fetch/JSON seam',async t=>{
  const credential='SERVER_ONLY_SENTINEL_733';
  const config={organization:1,unit:2,form_id:3,form_link:'summer',runtime_origin:origin,parent_origin:host,profile:'gtm-v1',ancestor_origins:[host],collector_origins:[],
-  policy:{eligible:true,runtime_supported:true,organization:1,unit:2,processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']},gtm_container:'GTM-AB12',scripts:'</ScRiPt><script>window.XSS="SECRET"</script>\u2028\u2029'};
+  policy:{measurement_protocol:3,eligible:true,runtime_supported:true,organization:1,unit:2,processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']},gtm_container:'GTM-AB12',scripts:'</ScRiPt><script>window.XSS="SECRET"</script>\u2028\u2029'};
  const env={ORGANIZATION_ID:1,UNIT_ID:2,FESTAPP_API_URL:'https://api.festapp.net',SUPABASE_SERVICE_ROLE_KEY:credential};
  const request=new Request(origin+'/runtime?form=summer&parent='+encodeURIComponent(host));
  let response;

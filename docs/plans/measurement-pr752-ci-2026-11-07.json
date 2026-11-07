@@ -1,0 +1,52 @@
+{
+  "verification": "standard; local dirty development receipts, not production release attestations",
+  "fullCanonicalBatch": {
+    "head": "8af7d6435a9d763db1d1e55e2fb06d83b3f70dde",
+    "dirty": true,
+    "platform": "darwin",
+    "jobs": [
+      {
+        "name": "web-startup",
+        "seconds": 44.34,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/web-startup.log"
+      },
+      {
+        "name": "wix-checkout-compatibility",
+        "seconds": 11.07,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/wix-checkout-compatibility.log"
+      },
+      {
+        "name": "seat-checkout",
+        "seconds": 95.05,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/seat-checkout.log"
+      },
+      {
+        "name": "server-policy",
+        "seconds": 9.94,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/server-policy.log"
+      }
+    ],
+    "complete": true,
+    "seconds": 160.39
+  },
+  "finalAffectedWebStartup": {
+    "head": "8af7d6435a9d763db1d1e55e2fb06d83b3f70dde",
+    "dirty": true,
+    "platform": "darwin",
+    "jobs": [
+      {
+        "name": "web-startup",
+        "seconds": 42.51,
+        "exitCode": 0,
+        "log": "/Users/miakh/Library/Caches/festapp-ci/web-startup.log"
+      }
+    ],
+    "complete": true,
+    "seconds": 42.51
+  },
+  "inputChangesAfterFullBatch": "Browser-only lifecycle/source-error cases and one obsolete test title; production runtime, SQL and the other three lane inputs unchanged. Final web-startup supersedes the earlier web-startup receipt."
+}

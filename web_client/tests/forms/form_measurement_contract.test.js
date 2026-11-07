@@ -14,7 +14,7 @@ test('cross-language limits, capability projection and canonical migration are c
     }
 });
 
-test('embed is a deterministic build from the shared contact-free contract',()=>{
+test('embed is a deterministic build from the shared allowlisted payload contract',()=>{
  execFileSync(process.execPath,['web_client/scripts/build_embed.mjs','--check'],{cwd:root,stdio:'pipe'});
 });
 

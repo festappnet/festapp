@@ -14,10 +14,15 @@ export function bindKlaroConsent(manager, setConsent) {
         if (!disposed) setConsent(granted);
     };
     const watcher = {update: sync};
-    manager.watch(watcher);
-    sync();
-    return () => {
+    const disconnect = () => {
+        if (disposed) return;
         disposed = true;
         try { manager.unwatch(watcher); } finally { setConsent(false); }
     };
+    try { manager.watch(watcher); sync(); }
+    catch (error) {
+        try { disconnect(); } catch { /* The failed source must not retain its watcher. */ }
+        throw error;
+    }
+    return disconnect;
 }

@@ -1,3 +1,5 @@
+// Advanced measurement with consent state and bounded conversion contacts.
+export const measurementProtocol = 3;
 // Pure contract. Every receiver rebuilds the payload independently.
 const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase']);
 export const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
@@ -132,16 +134,16 @@ export function analyticsPayload(input) {
 
 // Identity of the SQL snapshot that actually supplies the runtime code.
 export function measurementManifest(policy, formLink) {
-    if (!policy || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
+    if (!policy || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
         !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision<1 ||
         !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision<1 ||
         typeof policy.processing_revision !== 'string' || !policy.processing_revision || policy.processing_revision.length>128 ||
         policy.profile !== 'gtm-v1' || !measurementId(formLink) ||
         JSON.stringify(policy.required_purposes) !== JSON.stringify(['analytics', 'marketing'])) return null;
-    return {organization:policy.organization, unit:policy.unit, form_link:formLink,
+    return {measurement_protocol:measurementProtocol, organization:policy.organization, unit:policy.unit, form_link:formLink,
         processing_revision:policy.processing_revision, runtime_revision:policy.runtime_revision,
         policy_revision:policy.policy_revision, profile:policy.profile, required_purposes:['analytics','marketing']};
 }
 export const sameMeasurementManifest = (a,b) => !!a && !!b &&
-    ['organization','unit','form_link','processing_revision','runtime_revision','policy_revision','profile','required_purposes']
+    ['measurement_protocol','organization','unit','form_link','processing_revision','runtime_revision','policy_revision','profile','required_purposes']
         .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key]));

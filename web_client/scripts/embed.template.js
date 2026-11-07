@@ -6,53 +6,121 @@
     /* MEASUREMENT_CONTRACT */
     /* MEASUREMENT_CONSENT */
     const frames = new Map();
-    // The lease only proves that this helper is alive. Consent never gates measurement:
-    // the choice below is passed on as state for the organizer's tags.
-    const revoke = (frame,record) => {
-        record.lease=null;
-        if(record.manifest) sendConsent(frame,record);
+    let suspended = false;
+    const currentRecord = (frame, record) => {
+        if (frames.get(frame) !== record || !frame.isConnected) return false;
+        try { return new URL(frame.src, document.baseURI).origin === record.origin; }
+        catch { return false; }
+    };
+    const stopHeartbeat = record => {
+        clearInterval(record.heartbeat);
+        record.heartbeat = null;
     };
     const readChoice = record => {
-        const m=record.manifest;
-        if(!m || !record.source)return measurementConsent(record.consent);
-        try {
-            const choice=record.source.read({organization:m.organization,unit:m.unit,
-                processingRevision:m.processing_revision,requiredPurposes:m.required_purposes});
-            return measurementConsent(choice?.processingRevision===m.processing_revision ? choice:false);
-        }catch{return measurementConsent(false);}
+        try { return measurementConsent(record.choice?.read(record.manifest)); }
+        catch { return measurementConsent(false); }
     };
-    const sendConsent = (frame,record) => frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,
-        type:'measurement-consent',measurement:{protocol:2,manifest:record.manifest,leaseId:record.lease?.id,
-            ttl:record.lease?60000:0,consent:readChoice(record)}},record.origin);
-    const syncConsent = (frame,record) => {
-        if(!frame.isConnected){clearInterval(record.heartbeat);record.heartbeat=null;revoke(frame,record);return;}
-        record.heartbeat??=setInterval(()=>syncConsent(frame,record),20000);
-        if(!record.lease)record.lease={id:crypto.randomUUID()};
-        record.lease.until=Date.now()+60000;
-        sendConsent(frame,record);
+    const sendConsent = (frame, record) => frame.contentWindow?.postMessage({namespace, protocol:1, instance:record.instance,
+        type:'measurement-consent', measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
+            ttl:record.lease ? 60000 : 0, consent:readChoice(record)}}, record.origin);
+    const revoke = (frame, record) => {
+        record.lease = null;
+        if (record.manifest && currentRecord(frame, record)) sendConsent(frame, record);
+    };
+    const disposeRecord = (frame, record) => {
+        if (frames.get(frame) !== record) return;
+        frames.delete(frame);
+        stopHeartbeat(record);
+        record.lease = null;
+        record.choice?.dispose();
+        frame.removeEventListener('load', record.load);
+        record.priceLayer?.remove();
+    };
+    // Liveness belongs to the record, independently of the visitor's choice.
+    const syncConsent = (frame, record) => {
+        if (!currentRecord(frame, record)) { disposeRecord(frame, record); return; }
+        if (suspended || !record.manifest) return;
+        record.heartbeat ??= setInterval(() => syncConsent(frame, record), 20000);
+        record.lease ??= {id:crypto.randomUUID()};
+        record.lease.until = Date.now() + 60000;
+        sendConsent(frame, record);
+    };
+    const scopeOf = manifest => manifest && JSON.stringify([manifest.organization, manifest.unit, manifest.processing_revision]);
+    const scopedChoice = (record, read) => {
+        let scope = scopeOf(record.manifest);
+        return manifest => {
+            if (!manifest) return false;
+            scope ??= scopeOf(manifest);
+            return scope === scopeOf(manifest) ? read() : false;
+        };
+    };
+    // All public choice adapters install one binding. Retired callbacks are inert.
+    const bindChoice = (frame, record, connect) => {
+        if (!currentRecord(frame, record)) return null;
+        record.choice?.dispose();
+        const binding = {read:() => false};
+        record.choice = binding;
+        const notify = () => {
+            if (record.choice === binding && currentRecord(frame, record)) syncConsent(frame, record);
+        };
+        let adapter, disposed = false;
+        binding.dispose = () => {
+            if (disposed) return;
+            disposed = true;
+            const owns = record.choice === binding;
+            if (owns) record.choice = null;
+            try { adapter?.dispose?.(); } catch { /* Retired source cannot retain a choice. */ }
+            if (owns && currentRecord(frame, record)) syncConsent(frame, record);
+        };
+        try { adapter = connect(notify); binding.read = adapter.read; }
+        catch { binding.read = () => false; }
+        notify();
+        return binding.dispose;
     };
     window.FestappEmbed = Object.freeze({
-        connectMeasurementConsent(frame,source) {
-            const record=frames.get(frame);
-            if(!record || typeof source?.read!=='function' || typeof source?.subscribe!=='function')return null;
-            record.consentDispose?.();record.source=source;
-            const notify=()=>{if(record.manifest)syncConsent(frame,record);};
-            let unsubscribe;
-            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;notify();return null;}
-            const disconnect=()=>{record.source=null;notify();try{unsubscribe?.();}catch{ /* Teardown only stops updates. */ }};
-            record.consentDispose=disconnect;notify();return disconnect;
+        connectMeasurementConsent(frame, source) {
+            const record = frames.get(frame);
+            if (!record || typeof source?.read !== 'function' || typeof source?.subscribe !== 'function') return null;
+            return bindChoice(frame, record, notify => {
+                const dispose = source.subscribe(notify);
+                return {dispose, read:manifest => {
+                    if (!manifest) return false;
+                    const choice = source.read({organization:manifest.organization, unit:manifest.unit,
+                        processingRevision:manifest.processing_revision, requiredPurposes:manifest.required_purposes});
+                    return choice?.processingRevision === manifest.processing_revision ? choice : false;
+                }};
+            });
         },
-        connectKlaro(frame,manager) {
-            const record=frames.get(frame);if(!record)return null;
-            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);if(record.manifest)syncConsent(frame,record);});
+        connectKlaro(frame, manager) {
+            const record = frames.get(frame);
+            if (!record) return null;
+            return bindChoice(frame, record, notify => {
+                let choice = measurementConsent(false);
+                const read = scopedChoice(record, () => choice);
+                const dispose = bindKlaroConsent(manager, value => { choice = measurementConsent(value); notify(); });
+                return {read, dispose};
+            });
         },
-        setMeasurementConsent(frame,granted) {
-            const record=frames.get(frame);if(!record)return false;
-            record.consent=measurementConsent(granted);if(record.manifest)syncConsent(frame,record);return true;
+        setMeasurementConsent(frame, value) {
+            const record = frames.get(frame);
+            if (!record || !currentRecord(frame, record)) return false;
+            const choice = measurementConsent(value);
+            bindChoice(frame, record, () => ({read:scopedChoice(record, () => choice)}));
+            return true;
         }
     });
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)frames.forEach((record,frame)=>{if(record.manifest)syncConsent(frame,record);});});
-    window.addEventListener('pagehide',()=>frames.forEach((record,frame)=>revoke(frame,record)));
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !suspended) frames.forEach((record, frame) => syncConsent(frame, record));
+    });
+    window.addEventListener('pagehide', () => {
+        suspended = true;
+        frames.forEach((record, frame) => { stopHeartbeat(record); revoke(frame, record); });
+    });
+    window.addEventListener('pageshow', () => {
+        suspended = false;
+        scan();
+        frames.forEach((record, frame) => syncConsent(frame, record));
+    });
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
     // The saved form owns appearance; the host only supplies presentation tokens.
     const externalSheets = new Map();
@@ -210,7 +278,7 @@
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
-            measurementProtocol: 2,
+            measurementProtocol,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
         if (theme !== false) {
@@ -266,19 +334,19 @@
     };
     const scan = () => {
         for (const [frame, record] of frames) {
-            if (!frame.isConnected) { record.consentDispose?.(); frame.removeEventListener('load', record.load); record.priceLayer?.remove(); frames.delete(frame); }
+            if (!frame.isConnected) disposeRecord(frame, record);
         }
         document.querySelectorAll('iframe[data-festapp-embed]').forEach(frame => {
             if (frames.has(frame)) {
                 const record = frames.get(frame);
-                try { if (new URL(frame.src, document.baseURI).origin === record.origin) return; } catch { return; }
-                record.consentDispose?.(); frame.removeEventListener('load', record.load); record.priceLayer?.remove(); frames.delete(frame);
+                try { if (new URL(frame.src, document.baseURI).origin === record.origin) return; } catch { disposeRecord(frame, record); return; }
+                disposeRecord(frame, record);
             }
             let url;
             try { url = new URL(frame.getAttribute('src'), document.baseURI); } catch { return; }
             if (!/^https?:$/.test(url.protocol) || url.origin === 'null') return;
             const record = { origin: url.origin, instance: `f_${crypto.randomUUID()}` };
-            record.load = () => {revoke(frame,record);record.manifest=null;send(frame,record,'init');};
+            record.load = () => {stopHeartbeat(record);revoke(frame,record);record.manifest=null;send(frame,record,'init');};
             frames.set(frame, record);
             frame.addEventListener('load', record.load);
             send(frame, record, 'init');
@@ -290,10 +358,10 @@
         for (const [frame, record] of frames) {
             if (event.source !== frame.contentWindow || event.origin !== record.origin) continue;
             // Changing src invalidates the original declaration until re-discovered.
-            if (new URL(frame.src, document.baseURI).origin !== record.origin) return;
+            if (!currentRecord(frame, record)) return;
             if (data.type === 'ready') { send(frame, record, 'init'); return; }
             if (data.instance !== record.instance) return;
-            if(data.type==='measurement-context' && data.measurement?.protocol===2) {
+            if(data.type==='measurement-context' && data.measurement?.protocol===measurementProtocol) {
                 const m=data.measurement.manifest;
                 if(!m || !sameMeasurementManifest(m,measurementManifest(m,m.form_link)))return;
                 if(!sameMeasurementManifest(m,record.manifest)){revoke(frame,record);record.manifest=m;}
@@ -301,7 +369,7 @@
             }
             if(data.type==='measurement-activate' || data.type==='analytics') {
                 const m=data.measurement;
-                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until ||
+                if(m?.protocol!==measurementProtocol || !record.lease || Date.now()>=record.lease.until ||
                     m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return;
                 if(data.type==='measurement-activate') {
                     record.lease.generation=m.generation;

@@ -2,7 +2,7 @@ import {JSDOM} from 'jsdom';
 import {FormMeasurementSession} from '../../src/components/forms/form_measurement_session.js';
 import {FormDataLayer} from '../../src/components/forms/form_datalayer.js';
 import {analyticsPayload} from '../../src/components/forms/form_measurement_contract.js';
-export const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,organization:1,unit:2,
+export const policy={measurement_protocol:3,enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,organization:1,unit:2,
  form_link:'summer',runtime_origin:'https://unit-measurement.pages.dev',privacy_url:'https://organizer.example/privacy',
  processing_revision:'processing-a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],valid_for_seconds:60,visitor_role:'anonymous'};
 export const settle=()=>new Promise(resolve=>setImmediate(resolve));

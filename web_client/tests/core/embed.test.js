@@ -1,3 +1,4 @@
+import {measurementProtocol} from '../../src/components/forms/form_measurement_contract.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -463,14 +464,14 @@ test('new child uses one native reveal with a legacy host for end and nearest al
     }
 });
 
-const measurement={organization:1,unit:2,form_link:'summer',processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']};
+const measurement={measurement_protocol:measurementProtocol,organization:1,unit:2,form_link:'summer',processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']};
 const plain=value=>JSON.parse(JSON.stringify(value));
 function measurementHost() {
  const f=host(),{dom,frames:[frame],sent,message}=f;
  Object.defineProperty(dom.window.document,'hidden',{value:false,configurable:true});
  frame.setAttribute('data-festapp-datalayer','');const instance=sent[0][0][0].instance;
  const send=(type,values={},origin='https://tickets.invalid',source=frame.contentWindow)=>message(frame,origin,envelope(type,instance,values),source);
- send('measurement-context',{measurement:{protocol:2,manifest:measurement}});
+ send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:measurement}});
  return {...f,frame,instance,send,last:()=>sent[0].at(-1)[0]};
 }
 test('a helper alone measures: lease without a CMP, setters and Klaro only pass the choice on',()=>{
@@ -490,7 +491,7 @@ test('lease binds instance and generation; a revoked choice does not stop host e
  const f=measurementHost(),{dom,frame,send,last}=f;let choice={processingRevision:'a',analytics:true,marketing:true},notify;
  const source={read:context=>{assert.equal(context.processingRevision,'a');return choice;},subscribe:fn=>{notify=fn;return ()=>{};}};
  const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,source);const leaseId=last().measurement.leaseId;assert.ok(leaseId);
- const measurementEnvelope=()=>({protocol:2,manifest:measurement,generation:7,leaseId});
+ const measurementEnvelope=()=>({protocol:measurementProtocol,manifest:measurement,generation:7,leaseId});
  const emit=(m=measurementEnvelope(),origin,source)=>send('analytics',{measurement:m,payload:{event:'page_view'}},origin,source);
  emit();assert.equal(dom.window.dataLayer,undefined,'activate handshake required');
  send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.length,1);
@@ -509,7 +510,7 @@ test('unreadable, partial or stale-revision source keeps the lease and reports t
 });
 test('host dataLayer receives the contact only on conversions and clears it afterwards',()=>{
  const f=measurementHost();
- const m={protocol:2,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};f.send('measurement-activate',{measurement:m});
+ const m={protocol:measurementProtocol,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};f.send('measurement-activate',{measurement:m});
  f.send('analytics',{measurement:m,payload:{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:'buyer@example.test',phone_number:'+420601234567',first_name:'PRIVATE'}}});
  f.send('analytics',{measurement:m,payload:{event:'page_view',user_data:{email:'buyer2@example.test'}}});
  const layer=f.dom.window.dataLayer;
@@ -532,7 +533,7 @@ function child(){
 
 test('layout handshake, legacy consent and absent helper never start Unit code',async()=>{
  const f=child();f.init({consent:{analytics:true,marketing:true}});assert.equal(f.calls.includes('start'),false);assert.equal(f.bridge.selection(),null);
- f.init({measurementProtocol:2,dataLayer:true});assert.equal(f.bridge.selection(),'host');assert.equal(f.bridge.track({event:'page_view'}),false);
+ f.init({measurementProtocol,dataLayer:true});assert.equal(f.bridge.selection(),'host');assert.equal(f.bridge.track({event:'page_view'}),false);
  f.done();
  const absent=child();assert.equal(absent.bridge.selection(),null);assert.equal(absent.calls.includes('start'),false);absent.done();
 });
@@ -729,7 +730,7 @@ test('saved form preference overrides hostile legacy markup in either loading or
 test('heartbeat keeps the lease and rereads the source; hiding the page changes nothing',()=>{
  let heartbeat;const f=host(false,win=>{Object.defineProperty(win.document,'hidden',{value:true,configurable:true});win.setInterval=callback=>{heartbeat=callback;return 1;};win.clearInterval=()=>{};});
  const {dom,frames:[frame],sent,message}=f;const instance=sent[0][0][0].instance;
- const context=manifest=>message(frame,'https://tickets.invalid',envelope('measurement-context',instance,{measurement:{protocol:2,manifest}}),frame.contentWindow);
+ const context=manifest=>message(frame,'https://tickets.invalid',envelope('measurement-context',instance,{measurement:{protocol:measurementProtocol,manifest}}),frame.contentWindow);
  context(measurement);let choice={processingRevision:'a',analytics:true,marketing:true},reads=0;
  const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,{read:()=>{reads++;return choice;},subscribe:()=>()=>{}});
  const lease=sent[0].at(-1)[0].measurement.leaseId;assert.ok(lease,'a hidden page still measures');
@@ -739,4 +740,78 @@ test('heartbeat keeps the lease and rereads the source; hiding the page changes 
  choice=null;heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);assert.deepEqual(plain(sent[0].at(-1)[0].measurement.consent),{analytics:false,marketing:false});
  context({...measurement,processing_revision:'b'});assert.notEqual(sent[0].at(-1)[0].measurement.leaseId,lease,'a new revision gets a new lease');
  disconnect();const disconnectedReads=reads;heartbeat();assert.equal(reads,disconnectedReads,'disconnected source is never reread');dom.window.close();
+});
+
+const deniedChoice={analytics:false,marketing:false};
+test('cutover: replacing or losing a choice source never reveals an older grant',()=>{
+ const f=measurementHost();try{
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,{analytics:true,marketing:true});
+  const stop=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'a',...deniedChoice}),subscribe:()=>()=>{}});
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+  const lease=f.last().measurement.leaseId;stop();stop();
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);assert.equal(f.last().measurement.leaseId,lease);
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,true);
+  f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>true,subscribe(){throw Error('unavailable');}});
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+ }finally{f.dom.window.close();}
+});
+test('cutover: legacy choice is scoped and an old disposer cannot clear its replacement',()=>{
+ const f=measurementHost();try{
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,{analytics:true,marketing:true});
+  f.send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:{...measurement,processing_revision:'b'}}});
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+  let staleNotify;
+  const old=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'b',...deniedChoice}),subscribe:fn=>{staleNotify=fn;return()=>{};}});
+  f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'b',analytics:true,marketing:false}),subscribe:()=>()=>{}});
+  old();staleNotify();
+  assert.deepEqual(plain(f.last().measurement.consent),{analytics:true,marketing:false});
+ }finally{f.dom.window.close();}
+});
+test('cutover: record owns Klaro subscription and ignores retired watcher updates',async()=>{
+ const f=measurementHost();let watcher,unwatched=0;try{
+  const manager={confirmed:true,savedConsents:{analytics:true,marketing:true},getConsent:()=>true,watch:w=>{watcher=w;},unwatch(){unwatched++;}};
+  const stop=f.dom.window.FestappEmbed.connectKlaro(f.frame,manager);
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,false);
+  assert.equal(unwatched,1);watcher.update();assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+  stop();assert.equal(unwatched,1);
+ }finally{f.dom.window.close();}
+});
+test('cutover: retired record heartbeat is removed on origin replacement and pagehide',async()=>{
+ const timers=new Map();let n=0;
+ const f=host(false,win=>{win.setInterval=fn=>{timers.set(++n,fn);return n;};win.clearInterval=id=>timers.delete(id);});
+ const frame=f.frames[0],instance=f.sent[0][0][0].instance;
+ const context=(id=instance,origin='https://tickets.invalid')=>f.message(frame,origin,envelope('measurement-context',id,{measurement:{protocol:measurementProtocol,manifest:measurement}}));
+ try{
+  context();assert.equal(timers.size,1);const retired=[...timers.values()][0];
+  frame.src='https://new.invalid/form/b?embed=1';await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(timers.size,0);const before=f.sent[0].length;retired();assert.equal(f.sent[0].length,before);
+  frame.contentWindow.postMessage=(...args)=>f.sent[0].push(args);
+  f.message(frame,'https://new.invalid',envelope('ready'));
+  const next=f.sent[0].at(-1)[0].instance;context(next,'https://new.invalid');assert.equal(timers.size,1);
+  f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pagehide',{persisted:true}));assert.equal(timers.size,0);
+  f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pageshow',{persisted:true}));assert.equal(timers.size,1);
+  frame.remove();await new Promise(resolve=>setImmediate(resolve));assert.equal(timers.size,0);
+ }finally{f.dom.window.close();}
+});
+
+test('cutover: pre-context setter binds once and two frames keep independent scopes',()=>{
+ const f=host();const [a,b]=f.frames;try{
+  f.dom.window.FestappEmbed.setMeasurementConsent(a,true);
+  f.dom.window.FestappEmbed.setMeasurementConsent(b,{analytics:true,marketing:true});
+  const context=(frame,index,manifest)=>f.message(frame,new URL(frame.src).origin,envelope('measurement-context',f.sent[index][0][0].instance,{measurement:{protocol:measurementProtocol,manifest}}));
+  context(a,0,measurement);context(b,1,{...measurement,organization:2,unit:3});
+  assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.consent),{analytics:true,marketing:false});
+  assert.deepEqual(plain(f.sent[1].at(-1)[0].measurement.consent),{analytics:true,marketing:true});
+  context(a,0,{...measurement,unit:4});assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.consent),deniedChoice);
+  assert.deepEqual(plain(f.sent[1].at(-1)[0].measurement.consent),{analytics:true,marketing:true});
+ }finally{f.dom.window.close();}
+});
+
+test('cutover: bridge publishes the complete canonical manifest to the real helper',()=>{
+ const f=child();try{
+  f.bridge.connectConsent(measurement,()=>{});
+  f.init({measurementProtocol,dataLayer:true});
+  const context=f.sent.find(([message])=>message.type==='measurement-context')[0].measurement;
+  assert.equal(context.protocol,measurementProtocol);assert.deepEqual(context.manifest,measurement);
+ }finally{f.done();}
 });
