@@ -1,6 +1,7 @@
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/users/unit_user_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/unit_settings_fields.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -87,8 +88,9 @@ class SupabaseUnitCommands implements UnitCommands {
           'id': id,
           'title': unit.title,
           'settings': {
-            for (final key in ['reply_to', 'communication_tone', 'timezone'])
-              key: unit.data?[key],
+            for (final key in unitSettingsNullableKeys) key: unit.data?[key],
+            for (final key in unitSettingsValueKeys)
+              if (unit.data?.containsKey(key) ?? false) key: unit.data![key],
           },
         },
       }),

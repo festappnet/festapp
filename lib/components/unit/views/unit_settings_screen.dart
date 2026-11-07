@@ -8,7 +8,6 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -228,7 +227,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
-    if (!RightsService.hasCapability(
+    if (_isSaving || !RightsService.hasCapability(
       AuthorizationCapabilities.unitSettingsWrite,
     )) {
       return;
@@ -246,58 +245,74 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
     _formKey.currentState!.save();
 
-    _unit.title = _title;
-    _unit.data ??= {};
+    final pendingUnit = UnitModel(
+      id: _unit.id,
+      title: _title,
+      data: Map<String, dynamic>.from(_unit.data ?? {}),
+      aggregateVersion: _unit.aggregateVersion,
+    );
 
     final trimmedEmail = _replyToEmailController.text.trim();
     if (trimmedEmail.isEmpty) {
-      _unit.data!.remove(Tb.units.data_reply_to);
+      pendingUnit.data!.remove(Tb.units.data_reply_to);
     } else {
-      _unit.data![Tb.units.data_reply_to] = trimmedEmail;
+      pendingUnit.data![Tb.units.data_reply_to] = trimmedEmail;
     }
 
-    _unit.data![dataTimezone] = _selectedTimezone;
-    _unit.data![Tb.units.data_communication_tone] = _communicationTone;
+    pendingUnit.data![dataTimezone] = _selectedTimezone;
+    pendingUnit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
-      _unit.data!['measurement_enabled'] = _measurementEnabled;
-      _unit.data!['measurement_consent_layout'] = _measurementConsentLayout;
+      pendingUnit.data!['measurement_enabled'] = _measurementEnabled;
+      pendingUnit.data!['measurement_consent_layout'] = _measurementConsentLayout;
       for (final (key, controller) in [
         ('measurement_consent_title', _measurementConsentTitleController),
         ('measurement_consent_text', _measurementConsentTextController),
       ]) {
         final text = controller.text.trim();
         if (text.isEmpty) {
-          _unit.data!.remove(key);
+          pendingUnit.data!.remove(key);
         } else {
-          _unit.data![key] = text;
+          pendingUnit.data![key] = text;
         }
       }
       final privacyUrl = _measurementPrivacyUrlController.text.trim();
       if (privacyUrl.isEmpty) {
-        _unit.data!.remove('measurement_privacy_url');
+        pendingUnit.data!.remove('measurement_privacy_url');
       } else {
-        _unit.data!['measurement_privacy_url'] = privacyUrl;
+        pendingUnit.data!['measurement_privacy_url'] = privacyUrl;
       }
       final gtm = _measurementGtmController.text.trim();
       final scripts = _measurementScriptsController.text;
       if (gtm.isEmpty) {
-        _unit.data!.remove('measurement_gtm_container');
+        pendingUnit.data!.remove('measurement_gtm_container');
       } else {
-        _unit.data!['measurement_gtm_container'] = gtm;
+        pendingUnit.data!['measurement_gtm_container'] = gtm;
       }
       if (scripts.isEmpty) {
-        _unit.data!.remove('measurement_scripts');
+        pendingUnit.data!.remove('measurement_scripts');
       } else {
-        _unit.data!['measurement_scripts'] = scripts;
+        pendingUnit.data!['measurement_scripts'] = scripts;
       }
     }
 
     try {
-      await DbUnits.updateUnit(_unit);
-      widget.unit.data = _unit.data;
-      if (RightsService.currentUnit()?.id == _unit.id) {
-        RightsService.currentUnit()?.data = _unit.data;
+      await DbUnits.updateUnit(pendingUnit);
+      _unit
+        ..title = pendingUnit.title
+        ..data = pendingUnit.data
+        ..aggregateVersion = pendingUnit.aggregateVersion;
+      widget.unit
+        ..title = _unit.title
+        ..data = _unit.data
+        ..aggregateVersion = _unit.aggregateVersion;
+      final currentUnit = RightsService.currentUnit();
+      if (currentUnit?.id == _unit.id) {
+        currentUnit!
+          ..title = _unit.title
+          ..data = _unit.data
+          ..aggregateVersion = _unit.aggregateVersion;
       }
+      if (!mounted) return;
       ToastHelper.Show(context, "${CommonStrings.saved}: ${_unit.title!}");
       widget.onUnitUpdated();
     } catch (e) {
@@ -421,13 +436,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                           helperMaxLines: 3,
                         ),
                         keyboardType: TextInputType.emailAddress,
-                        validator: FormBuilderValidators.compose([
-                          FormBuilderValidators.required(
-                              errorText: CommonStrings.fieldCannotBeEmpty),
-                          EmailValidation.validator(
-                              errorText: OccasionSettingsStrings
-                                  .validationEmailInvalid),
-                        ]),
+                        validator: (value) => EmailValidation.validator(
+                            checkNullOrEmpty: false,
+                            errorText: OccasionSettingsStrings
+                                .validationEmailInvalid)(value?.trim()),
                       ),
                       const SizedBox(height: 24),
                       DropdownButtonFormField<String>(

@@ -10,14 +10,20 @@ export function check(value, code = 'UPSTREAM_CONTRACT_FAILURE') {
 }
 const permissionMessages = new Map([
     ['INSUFFICIENT_SCOPE', 'This connection is missing the required OAuth permissions. Reconnect and explicitly approve the scopes required by this tool; your account must also have permission for the action.'],
+    ['ORGANIZER_CONSENT_REQUIRED', 'This connection does not include access to the whole organizer. Reconnect and explicitly select that organizer, rather than only its events. The account must also have the required organizer role; consent alone does not grant that role.'],
     ['FORBIDDEN', 'The connected account or selected connection access does not permit this action. Check the selected event or organizer and ask its administrator to verify your account permissions. Retrying unchanged will not grant access.'],
+]);
+const operationPermissionMessages = new Map([
+    ['forms.save', 'Saving this form was denied. Your account needs form editor rights for this event or its organizer unit, and the form must belong to an event included in this connection. Ask the event organizer to verify your role and check the selected event and form. OAuth consent does not grant account permissions; reconnect only if the connection access or scopes need changing.'],
+    ['units.settings.inspect', 'Reading organizer settings requires a live manager role for that organizer. Check the selected organizer and ask its administrator to verify the account role. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
+    ['units.settings.save', 'Changing analytics or other organizer settings requires a live manager role for that organizer. Check the selected organizer and ask its administrator to verify the account role. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
 ]);
 export function safeError(error, { operation } = {}) {
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')
         return { code: 'TIMEOUT', message: 'TIMEOUT', retryable: true };
     const known = error instanceof OperationError;
-    const message = error?.code === 'FORBIDDEN' && operation === 'forms.save'
-        ? 'Saving this form was denied. Your account needs form editor rights for this event or its organizer unit, and the form must belong to an event included in this connection. Ask the event organizer to verify your role and check the selected event and form. OAuth consent does not grant account permissions; reconnect only if the connection access or scopes need changing.'
+    const message = error?.code === 'FORBIDDEN'
+        ? operationPermissionMessages.get(operation) ?? permissionMessages.get(error.code)
         : permissionMessages.get(error?.code) ?? error?.code;
     return {
         code: known ? error.code : 'UNAVAILABLE',

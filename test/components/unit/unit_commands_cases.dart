@@ -51,6 +51,12 @@ void main() {
       'reply_to': 'reply@example.invalid',
       'communication_tone': null,
       'timezone': null,
+      'measurement_consent_layout': null,
+      'measurement_consent_title': null,
+      'measurement_consent_text': null,
+      'measurement_gtm_container': null,
+      'measurement_scripts': null,
+      'measurement_privacy_url': null,
     });
   });
 

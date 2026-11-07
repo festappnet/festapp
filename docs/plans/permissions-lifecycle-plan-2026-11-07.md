@@ -62,6 +62,48 @@ klienta tento rozdíl mezi SQL autoritami neopraví.
 - Ověřeno moderním i legacy SDK přes HTTP/OAuth a skutečným lokálním SQL
   odmítnutím ukládání. Tato oprava nemění doménovou matici ani stará členství.
 
+### Ověření analytického měření pořadatele
+
+MCP tuto změnu podporuje: `festapp_units_settings_save` přijímá
+`changes.settings.measurement_enabled: true`, původní `expectedVersion`
+a `commandId`. Ověřeno i validací schématu běžícího produkčního serveru,
+bez provedení produkční změny. Potřebné scopes jsou základní
+`festapp:ticket-layouts:read`, `festapp:unit-settings:read` a
+`festapp:unit-settings:write`. Skutečný účet musí být unit manager a
+souhlas musí zahrnovat celý pořadatel; vybrané jednotlivé akce nestačí.
+Tenantový a per-form measurement gate zůstávají samostatné.
+
+Rozlišovat chybějící nástroj v aktuálním scope/profile, chybějící whole-unit
+souhlas a odmítnutí rolí v SQL. Delegation owner nyní zná a vrací přesný
+`ORGANIZER_CONSENT_REQUIRED` ještě před RPC; neodvozuje ho z SQL message.
+Moderní i legacy HTTP/OAuth test pokrývá odmítnutí bez souhlasu (nula zápisů),
+odmítnutí bez manager role a úspěšné předání `measurement_enabled`.
+Backend pro tento wire test je simulovaný; skutečné SQL měření ověřuje
+`configuration-postgres.test.mjs`. Nepřítomnost toolu v jednom připojení
+není důkaz nepodporované funkce celého serveru.
+
+Lokálně je také rozšířen stávající `context.inspect` o volitelné hledání
+`query` a omezení `limit` (nejvýše 10 výsledků). `capabilitySearch` vrací
+existující názvy/descriptions z téhož implementačního katalogu, požadované
+scopes ze stejného registru a rozlišuje `serverSupported` od `toolEnabled`.
+Popis enabled toolu respektuje aktuální datový profil. Není to nová permission
+autorita ani příslib práva na konkrétní resource: výstup výslovně uvádí
+`checked_when_action_runs`. Běžný dotaz bez `query` nemění dosavadní výstup.
+Agent tak může odpovědět i na funkci, jejíž tool aktuální spojení neobsahuje.
+Tyto pozdější změny zůstávají podle pokynu uživatele lokálně necommitnuté.
+
+### Nezávislá chyba tlačítka Uložit
+
+Celý `UnitSettingsScreen` byl ověřen kliknutím přes skutečný Flutter widget,
+`DbUnits`, Supabase transport a zachycený HTTP request. `UnitCommands.save`
+odesílal pouze Reply-To, tón a časové pásmo, takže zahazoval měřicí pole.
+Nepovinný Reply-To navíc UI chybně vyžadovalo a zastavilo request ještě před
+odesláním. Lokální oprava generuje povolená/nullovatelná pole ze společného
+kontraktu, opravuje validaci a potvrzuje model i jeho verzi až po úspěchu.
+Samostatný izolovaný root test `unit_settings_save_test.dart` pokrývá kliknutí,
+prázdný Reply-To, vymazání kódu i odmítnutý zápis. HTTP backend je v tomto
+widget testu simulovaný; nejde o provedený produkční zápis.
+
 ## Cílový model
 
 ```mermaid

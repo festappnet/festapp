@@ -85,9 +85,22 @@ its own editor role; a tenant administrator in `organization_users` is a separat
 scope. Other domain roles are not implicitly expanded by this change.
 
 Remote MCP keeps OAuth scope and stored consent as additional restrictions.
-Permission errors preserve `FORBIDDEN` and `INSUFFICIENT_SCOPE`. The operation
+Permission errors preserve `FORBIDDEN` and `INSUFFICIENT_SCOPE`. Missing
+whole-organizer selection is reported by the delegation owner as
+`ORGANIZER_CONSENT_REQUIRED`, independently of account roles. The operation
 boundary adds actionable guidance for form saves without interpreting SQL
 message text, revealing upstream details, or treating a denial as retryable.
+`context.inspect` can optionally search the existing implementation catalogue.
+Its bounded metadata results distinguish server support from tool exposure in
+the current connection and use the existing scope registry and effective tool
+descriptions. This performs no permission preflight and grants no new scopes;
+resource consent and live account authorization are still checked on execution.
+Organizer settings serialization uses Dart field sets generated from
+`packages/festapp_contracts/configuration-settings.json` by
+`automation/assemble-configuration-migration.py`. Nullable keys explicitly clear
+overrides; absent non-nullable keys preserve server values. The settings screen
+saves a separate draft and publishes returned values and aggregate version only
+after confirmation. Optional Reply-To is validated only when supplied.
 Delegated authoring reads verify and lock the actual occasion/unit binding in
 the data request; delegated creation verifies its unit/tenant before command
 execution or replay. Discovery reports concrete `ticket_layouts.read` capability;

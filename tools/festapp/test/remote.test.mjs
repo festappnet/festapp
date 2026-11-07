@@ -903,7 +903,7 @@ test('configuration scopes and whole-unit selection stay separate from occasion-
  token.scope=READ_SCOPE+' festapp:unit-settings:read';assert(!owner().allowedOperations.includes('units.settings.save'));
 });
 
-async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], connection, legacy = false, pending = false, prepareStatus = 200 } = {}) {
+async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200 } = {}) {
     const callbackUri = f.config.clients.find(c => c.id === clientId).redirectUris[0];
     const verifier = randomBytes(32).toString('base64url');
     let r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code',
@@ -918,7 +918,7 @@ async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_S
         body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
             organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }) });
     r = await broker('prepare', { accessToken: supabaseToken, access: legacy ? { type: 'occasions', occasionIds: [7] } : { consentVersion: 2,
-        selection: { type: 'occasions', occasionIds: [7] }, permissions: scopes.filter(s => MCP_SCOPES.includes(s)), ...(connection ? { connection } : {}) } });
+        selection, permissions: scopes.filter(s => MCP_SCOPES.includes(s)), ...(connection ? { connection } : {}) } });
     assert.equal(r.status, prepareStatus);
     if (prepareStatus !== 200) return;
     const { lease } = await r.json();
@@ -964,6 +964,57 @@ for (const modern of [true, false]) test(`form save denial explains account righ
     assert.match(result.content[0].text, /OAuth consent does not grant account permissions/);
     assert(!JSON.stringify(result).includes('private-role-detail'));
     assert.equal(saves, 1, 'a permission denial must not retry the mutation');
+});
+
+for (const modern of [true, false]) test(`organizer analytics distinguishes consent, manager rights and enabled measurement over ${modern ? 'modern' : 'legacy'} MCP`, async t => {
+    let saves = 0, manager = false;
+    const measurementSettings = { measurement_enabled: true, measurement_gtm_container: 'GTM-AB12',
+        measurement_scripts: '<script>window.syntheticMeasurement = true;</script>' };
+    const f = await setup(t, { tenant: true, fetchImpl: (url, init) => {
+        if (url.pathname !== '/rest/v1/rpc/save_configuration_settings') return undefined;
+        saves++;
+        if (!manager) return reply({ code: '42501', message: 'private organizer denial' }, 403);
+        const p = JSON.parse(init.body);
+        assert.equal(p.p_entity_type, 'unit');assert.equal(p.p_entity_id, 3);
+        assert.deepEqual(p.p_settings.settings, measurementSettings);
+        return reply({ code: 200, status: 'applied', mutation: { commandId: p.p_command_id, receiptId: p.p_command_id },
+            data: { configuration: { entityType: 'unit', entityId: 3, aggregateVersion: 1,
+                title: 'Organizer', settings: measurementSettings } } });
+    } });
+    const scopes = [READ_SCOPE, 'festapp:unit-settings:read', 'festapp:unit-settings:write'];
+    const connectClient = async (selection, requestedScopes = scopes) => {
+        const tokens = await connectTenant(f, { scopes: requestedScopes, ...(selection ? { selection } : {}) });
+        const c = new (modern ? Client : LegacyClient)({ name: 'generic-analytics-editor', version: '1' });
+        await c.connect(new (modern ? StreamableHTTPClientTransport : LegacyHTTPClientTransport)(new URL(f.config.resource), {
+            requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
+        }));t.after(() => c.close());return c;
+    };
+    const call = c => c.callTool({ name: 'festapp_units_settings_save', arguments: { unitId: 3,
+        expectedVersion: 0, commandId: randomUUID(), changes: { settings: measurementSettings } } });
+    const readOnly = await connectClient(undefined, [READ_SCOPE]);
+    assert(!(await readOnly.listTools()).tools.some(t => t.name === 'festapp_units_settings_save'));
+    const discovery = await readOnly.callTool({ name: 'festapp_context_inspect', arguments: { query: 'tracking code' } });
+    assert.equal(discovery.structuredContent.ok, true, JSON.stringify(discovery));
+    const support = discovery.structuredContent.data.capabilitySearch.matches.find(m => m.operation === 'units.settings.save');
+    assert(support, 'read-only clients can discover implemented analytics without gaining its tool');
+    assert.equal(support.serverSupported, true);assert.equal(support.toolEnabled, false);
+    assert(support.requiredScopes.includes('festapp:unit-settings:write'));
+    assert.match(support.description, /manager authorization/i);
+    assert.equal(discovery.structuredContent.data.capabilitySearch.authorization, 'checked_when_action_runs');
+    assert.equal(saves, 0);
+    const occasionOnly = await connectClient();
+    const consentDenied = await call(occasionOnly);
+    assert.equal(consentDenied.structuredContent.error.code, 'ORGANIZER_CONSENT_REQUIRED');
+    assert.match(consentDenied.structuredContent.error.message, /whole organizer/i);
+    assert.equal(consentDenied.structuredContent.error.retryable, false);assert.equal(saves, 0);
+    const organizer = await connectClient({ type: 'selection', occasionIds: [], units: [{ unitId: 3, canCreateOccasions: false }] });
+    const roleDenied = await call(organizer);
+    assert.equal(roleDenied.structuredContent.error.code, 'FORBIDDEN');
+    assert.match(roleDenied.structuredContent.error.message, /manager role/i);
+    assert.equal(roleDenied.structuredContent.error.retryable, false);assert.equal(saves, 1);
+    manager = true;
+    const saved = await call(organizer);assert.equal(saved.structuredContent.ok, true, JSON.stringify(saved));
+    assert.deepEqual(saved.structuredContent.data.settings, measurementSettings);assert.equal(saves, 2);
 });
 
 const orderRow = id => ({ id, occasionId: 7, symbol: 'FIXTURE-' + id, state: id % 2 ? 'ordered' : 'paid',
