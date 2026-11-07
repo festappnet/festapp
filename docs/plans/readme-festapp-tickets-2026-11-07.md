@@ -83,3 +83,12 @@ The ticketing gallery shows the complete Lucerna hall and the existing approved
 stage. Both PNGs are 1440 x 900. The README describes the app's features and
 omits capture, simulator and translation commentary. Source and capture facts
 remain in the media provenance document.
+
+### Arena chair orientation correction
+
+Corrected all 96 arena chairs in canonical template source `c1d4a28` so they
+face the central stage. The rendered-backrest regression failed before the
+change and passed afterward; source analysis and the full Flutter test suite
+passed. Replaced the arena screenshot with a fresh real-picker capture.
+Seat positions and the Lucerna screenshot are unchanged. Festapp vendor
+artifacts and production layouts are outside this documentation update.

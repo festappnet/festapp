@@ -90,7 +90,12 @@ or other pixels were painted over the screenshot.
 alongside the Lucerna comparison, using the same real public web-client picker,
 English locale, light theme and disposable local fixture. It shows the existing
 approved **`studio-arena`** template: 96 seats in four curved sectors around a
-central stage, with its original geometry, colors and materials preserved.
+central stage. Seat positions, colors and materials are preserved; all 96
+chair rotations were corrected by 180 degrees so their fronts face the stage.
+The replacement capture uses canonical template source `c1d4a28` from
+`festappnet/venue_seat_picker`, rendered by the same public picker. The source
+fix includes a regression test of every rendered chair backrest; it does not
+upgrade Festapp's vendored SDK or change saved production layouts.
 The complete plan is visible; no seat is selected in this view. It is a second
 ready-made venue layout, not a zoomed region of the Lucerna plan.
 
