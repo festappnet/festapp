@@ -9,7 +9,7 @@ export class FormMeasurementRuntime {
             if(!grant || !this.live() || event.source!==this.frame?.contentWindow || event.origin!==this.origin ||
                 data?.namespace!==measurementNamespace || data.protocol!==2) return;
             if(!sameMeasurementManifest(data.manifest,grant.manifest)) {const mismatch=grant.onMismatch;this.stop();mismatch();return;}
-            if(data.type==='ready' && !this.ready) this.send('init',{context:this.context,consent:grant.consent});
+            if(data.type==='ready' && !this.ready) {this.initialized=this.send('init',{context:this.context,consent:this.consent});}
             else if(data.type==='ack' && data.instance===this.instance && data.generation===grant.generation && !this.ready) {
                 this.win.clearTimeout(this.handshake);this.ready=true;grant.onReady();
             }
@@ -18,13 +18,13 @@ export class FormMeasurementRuntime {
     }
     activate(grant) {
         this.stop();
-        if(this.disposed || !grant?.consent.analytics || !grant.consent.marketing)return;
+        if(this.disposed || !grant)return;
         const origin=measurementOrigin(grant.runtimeOrigin,this.local);
         if(!origin || origin===this.win.location.origin)return;
         const input={...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign(),
             page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};
         this.context=attributionContext(input);if(!this.context)return;
-        this.grant=grant;this.origin=origin;this.instance=this.win.crypto.randomUUID();this.until=grant.expiresAt;
+        this.grant=grant;this.consent=grant.consent;this.origin=origin;this.instance=this.win.crypto.randomUUID();this.until=grant.expiresAt;
         const frame=this.frame=this.win.document.createElement('iframe');
         frame.hidden=true;frame.title='Measurement';frame.referrerPolicy='no-referrer';
         frame.setAttribute('sandbox','allow-scripts allow-same-origin');
@@ -39,6 +39,8 @@ export class FormMeasurementRuntime {
         this.until=until;this.win.clearTimeout(this.expiry);
         this.expiry=this.win.setTimeout(()=>this.stop(),Math.max(0,until-Date.now()));
     }
+    // A later choice reaches tags as Consent Mode state. It never stops the frame.
+    updateConsent(consent) {this.consent=consent;if(this.initialized)this.send('consent',{consent});}
     live() {return !!this.grant && !this.disposed && this.frame?.isConnected===true && Date.now()<this.until;}
     send(type,extra={}) {
         if(!this.live())return false;
@@ -47,7 +49,7 @@ export class FormMeasurementRuntime {
     }
     track(input) {const payload=analyticsPayload(input);return this.ready===true && measurementId(this.instance) && !!payload && this.send('event',{payload});}
     stop() {
-        this.ready=false;this.grant=null;this.win.clearTimeout(this.expiry);this.win.clearTimeout(this.handshake);
+        this.ready=false;this.initialized=false;this.grant=null;this.win.clearTimeout(this.expiry);this.win.clearTimeout(this.handshake);
         this.frame?.remove();this.frame=null;this.instance=null;
     }
     destroy() {this.stop();this.disposed=true;this.win.removeEventListener('message',this.onMessage);}

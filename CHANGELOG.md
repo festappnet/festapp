@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Form measurement passes `gbraid`, `wbraid`, `sznclid`, `ttclid` and `msclkid` next to UTM, `gclid` and `fbclid`, and adds optional `item_category` (product type) and `item_brand` (occasion) to items in browser events and the server `purchase`. Value calculation and recorded conversion facts are unchanged.
-- Form measurement uses basic consent gating: GTM/organizer scripts and host events require both analytics and marketing consent. One lifecycle owner invalidates old senders on revoke, identity/configuration changes, hiding and expiry. Protocol 2 checks the actual runtime manifest and live revision-bound host leases before activation. Contact export is removed and enhanced conversions are unavailable. Signed-in visitors wait for a verified role; staff remains unmeasured.
+- Form measurement no longer waits for visitor consent: on eligible forms the frame loads GTM and organizer scripts at once, including embedded forms without a host CMP, and the notice only passes the choice to Google Consent Mode. `purchase` and `generate_lead` carry the buyer's e-mail and phone in `user_data`, and enhanced conversions are available again. Hiding the tab no longer restarts the container.
 - The consent notice follows the form design and has two layouts, a bottom bar (default) or a centered window, and an optional custom plain-text title and text on the Unit.
 
 - Measurement requires an organizer HTTPS privacy policy URL. Without it, tags, conversion recording/export and the consent notice remain disabled; partial configuration can still be saved outside the unit settings screen, which requires the URL and warns measurement managers while it is missing.

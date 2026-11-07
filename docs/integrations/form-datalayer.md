@@ -6,11 +6,12 @@ a supported Unit runtime deployment, a safe public browser context and a valid
 organizer HTTPS privacy policy URL. Saving configuration or entering a GTM ID grants
 none of these.
 
-**Basic consent gates measurement.** Neither GTM/Unit code nor host events start
-before both analytics and marketing are confirmed. A single purpose cannot start
-the current mixed profile. Missing or broken consent sources fail closed while
-checkout continues. No contact fields leave through measurement; enhanced
-conversions are unavailable.
+**Visitor consent does not gate measurement.** On an eligible form the frame loads
+GTM and Unit scripts as soon as the form loads, and dataLayer is always filled. The
+choice in the consent notice is state for Google Consent Mode, evaluated by the
+organizer's container, which the organizer configures and answers for. Missing or
+broken consent sources report denied state and measurement continues. `purchase` and
+`generate_lead` always carry `user_data`; see [Contact in conversions](#contact-in-conversions).
 
 ## Configuration and ownership
 
@@ -67,41 +68,46 @@ A single SQL status owner supplies editor/MCP status and public runtime policy.
 `organization_allowed` means platform permission; `organization_enabled` and
 `unit_enabled` are administrator-owned gates. `eligible` is configuration
 eligibility, never proof of a tag's delivery.
-`enhanced_conversions_unavailable` is true. Immutable historical receipts may
-contain historical status; UI/MCP inspect current policy through authorized readers.
+`enhanced_conversions_unavailable` is false: contact is part of the conversion
+events. Immutable historical receipts may contain historical status; UI/MCP inspect
+current policy through authorized readers.
 SQL facts depend on permanent enablement and valid policy, not temporary runtime
-availability. The browser additionally requires a current eligible policy and consent.
+availability. The browser additionally requires a current eligible policy.
 
 ## Runtime, consent and transport
 
-`FormMeasurementSession` owns role, policy renewal, consent, lifecycle, generation
-and selection of exactly one transport. Its constructor has no I/O. `start()`
-subscribes and starts reconciliation without waiting for consent. Errors recover;
+`FormMeasurementSession` owns role, policy renewal, lifecycle, generation and
+selection of exactly one transport. It forwards the visitor's choice as state and
+never uses it as a condition. Its constructor has no I/O. `start()` subscribes and
+starts reconciliation. Errors recover;
 only disposal is terminal. `FormDataLayer` owns catalogue, funnel, baseline and
 visit deduplication. It has no policy/Auth/consent decisions or timer.
 
 Standalone uses the real Klaro UI with analytics and marketing services, off by
-default. Both are necessary for the mixed GTM/custom profile. The translated
-notice keeps bar/modal styling, equal buttons, privacy URL and plain custom text.
-Saved choice belongs to organization + Unit + `processing_revision`. A new revision
-requires a matching saved choice; unknown role can attach CMP without running tags.
-Staff is unmeasured. Signed-in visitors wait for a matching policy/role response.
+default. The translated notice keeps bar/modal styling, equal buttons, privacy URL
+and plain custom text. It blocks the page, not measurement. Saved choice belongs to
+organization + Unit + `processing_revision`. Staff is unmeasured. Signed-in visitors
+wait for a matching policy/role response.
 
 A single in-flight Promise serves concurrent policy waiters. Identity changes
 invalidate the generation before fresh policy is requested. Stale responses and
 finally blocks cannot overwrite a newer request. Equivalent renewal preserves the
-active grant; consent, identity, relevant configuration or transport changes revoke
-it. Hidden/pagehide removes the frame and invalidates pending sends; BFCache return
-rechecks sources. Policy and host leases last at most 60 seconds, renewed every
-20 seconds. Expiry always detaches, including hidden pages. Browser throttling
-precludes an instantaneous global backend kill guarantee.
+active grant; identity, relevant configuration or transport changes revoke it. A
+consent change does not: it reaches the frame as `gtag('consent','update',...)` plus
+the `festapp_consent_update` dataLayer event with `{analytics, marketing}`. Hiding the
+page keeps the frame, so a tab switch does not run the container again. Pagehide
+removes it and BFCache return starts a new grant. Policy and host leases last at
+most 60 seconds, renewed every 20 seconds. Expiry always detaches, and a page that
+stayed hidden past it starts a new frame on return. Browser throttling precludes an
+instantaneous global backend kill guarantee.
 
 Runtime protocol 2 (`festapp-measurement`) compares the actual SQL/Worker manifest
 with the accepted policy before init can insert any Unit code. Scope, form link,
-processing/runtime/policy revisions, profile and required purposes must match.
-Ready/init/ACK bind source window, origin, instance and generation. Consent Mode
-default/update precede GTM as supplementary state; `festapp_consent` is also supplied.
-No always-on, catch-start, timeout-start or same-origin script fallback remains.
+processing/runtime/policy revisions and profile must match. Ready/init/ACK bind
+source window, origin, instance and generation. Consent Mode default/update precede
+GTM, all denied without a saved choice; every event also carries `festapp_consent`.
+Custom HTML tags such as Meta Pixel and Unit scripts do not read Consent Mode: require
+consent on the tag in GTM, or read `festapp_consent` and `festapp_consent_update`.
 
 Each Unit retains its separate canonical `PROJECT.pages.dev` site, CSP and sandbox.
 Scripts cannot access checkout DOM or backend credentials. Layout/scroll/theme
@@ -109,24 +115,21 @@ embed protocol 1 remains compatible; measurement protocol 1 grants are rejected.
 A missing/old helper preserves checkout but cannot activate new measurement.
 
 `data-festapp-datalayer` selects host-only transport; otherwise the Unit runtime is
-used. Both require an approved host and a live revision-bound source through
-`FestappEmbed.connectMeasurementConsent(frame, source)`. Source `read(context)`
-synchronously returns a stored `{processingRevision, analytics, marketing}` or null;
-its revision must come from the saved choice, never be copied from the context.
-`subscribe(notify)` returns an unsubscribe function. Heartbeats reread this source
-and renew a random local lease bound to scope/revision/instance. Receiver verifies
-live choice, lease, expiry and generation before each push. Viewport cannot renew
-permission. Disconnect, source errors or new revision invalidate the lease.
-Legacy boolean `true` means analytics only; legacy setters/`connectKlaro` are not
-revision-bound sources and do not authorize the mixed profile. See the
+used. Both require an approved host and the current helper, nothing else: the helper
+issues a random local lease that only proves it is alive, and renews it on a heartbeat.
+A host CMP is optional. `FestappEmbed.connectKlaro(frame, manager)`,
+`setMeasurementConsent(frame, granted)` and
+`connectMeasurementConsent(frame, source)` all pass the choice on as state; without
+one the state is denied and measurement runs. In the host transport the host's own
+Consent Mode gates its tags. See the
 [runtime integration example](../../workers/form-measurement/README.md#host-cmp-integration).
 
 `capture()` returns a sender bound forever to the original active grant; inactive
-capture is forever no-op. `captureSubmission()` captures before submit; `observe()`
-captures before awaiting reservations. Revoke/regrant cannot revive either callback.
-Activation sets current cart baseline and page/catalog context without replaying
-old interactions. Dedupe survives inactive periods. No queue replays old purchases
-when a visitor later consents. Measurement failure never controls business success.
+capture is forever no-op. `captureSubmission(payload)` captures before submit;
+`observe()` captures before awaiting reservations. A replaced grant cannot revive
+either callback. Activation sets current cart baseline and page/catalog context
+without replaying old interactions. Dedupe survives inactive periods. Measurement
+failure never controls business success.
 
 ## Attribution and GTM profile
 
@@ -149,14 +152,25 @@ may reduce real attribution. Validated click IDs reach both dataLayer and the
 runtime URL; no capability/query secrets are forwarded. Deterministic tests do not
 prove Google/Meta delivery or arbitrary future container compatibility.
 
-## Contact-free conversions
+## Contact in conversions
 
-`analyticsPayload` rebuilds allowlisted events/items and discards all `user_data`,
-contacts, private answers and extra fields at every receiver. No contact extraction
-or hashing is performed. Clearing a later dataLayer entry would not erase history;
-contacts therefore never enter that history. Public labels/allowlisted campaign
-strings are not a general anonymity guarantee. Enhanced conversions and the old
-form-level enhanced key remain unavailable. Already delivered data cannot be recalled.
+**dataLayer contains the readable e-mail and phone.** Every `purchase` and
+`generate_lead` carries `user_data: {email, phone_number}`, whatever the visitor chose,
+so every tag and Unit script in the container can read them. Being in dataLayer is
+not the same as being sent: Google tags honour `ad_user_data`, and the organizer is
+responsible for how tags use the values and for describing it in its privacy policy.
+
+The form document reads the answers it already holds: the e-mail trimmed and
+lowercased, the phone in E.164. Every receiver rebuilds `user_data` and passes only
+these two fields, an e-mail up to 254 characters and an E.164 phone. Anything else is
+left out, including a national number whose country is not known. No other event
+carries contact. Nothing is stored in `conversion_facts`, logged or put in a URL.
+Reading it cannot affect the order. The frame and host clear `user_data` after the
+event, which stops it reaching later events but does not erase dataLayer history.
+
+Host transport delivers to approved `parent_origins` only, like every measurement
+event. The form-level `enhanced_conversions` key remains rejected. In GTM, map
+`user_data.email` and `user_data.phone_number` to the tag's user-provided data.
 
 ## Conversions and migration
 
@@ -214,6 +228,4 @@ remain unperformed; no domain purchase or setup was requested.
 Local tests verify deterministic tags and the actual network/execution gate.
 Live Google/Meta attribution requires separately authorized external evidence.
 No configuration changes, production migration, publication or deployment are
-performed by local implementation. Existing open always-on clients are not killed
-by a new deployment or DB disable; an operational rollout must prove their end or
-keep measurement disabled.
+performed by local implementation.

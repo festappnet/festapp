@@ -1,4 +1,6 @@
 import {analyticsPayload, currencies} from './form_measurement_contract.js';
+import {isValidEmail} from '../../logic/email_address.js';
+import {normalizeE164Phone} from '../../utils/phone_formatter.js';
 
 // Public catalog labels only: the product type and the occasion it belongs to.
 const catalogItem = (product, currency, item_category, item_brand) => ({item_id: `product_${product.id}`, item_name: product.title,
@@ -34,8 +36,25 @@ export class FormDataLayer {
         this.previous=this.cart(session?.payload,session);
         this.view();
     }
-    captureSubmission() {
+    // Normalized as Google requires: e-mail trimmed and lowercased, phone in E.164.
+    // A value that cannot be normalized safely is left out rather than guessed.
+    // Runs inside order submission, so no failure here may reach the caller.
+    contact(payload) {
+        try {
+            const answer = type => {
+                const field = (this.model.visibleFields || this.model.relatedFields)?.find(item => item.type === type);
+                const id = String(field?.id);
+                return payload?.fields?.find(entry => Object.hasOwn(entry, id))?.[id];
+            };
+            const email = String(answer('email') ?? '').trim().toLowerCase();
+            const prefixes = this.model.data?.phone_prefixes;
+            const phone = normalizeE164Phone(answer('phone'), {defaultPrefix: Array.isArray(prefixes) && prefixes.length === 1 ? prefixes[0] : null});
+            return {email: isValidEmail(email) ? email : null, phone_number: phone};
+        } catch { return null; }
+    }
+    captureSubmission(payload) {
         const send=this.sink.capture();
+        const contact=this.contact(payload);
         return (success,data)=>{
             if(this.disposed)return;
             if(!success){send({event:'form_submit_error'});return;}
@@ -45,7 +64,7 @@ export class FormDataLayer {
             if(this.conversions.has(identity))return;
             if(!this.#publishPage('confirmation',send))return;
             this.pageType='confirmation';
-            if(send(conversion))this.conversions.add(identity);
+            if(send(contact?{...conversion,user_data:contact}:conversion))this.conversions.add(identity);
         };
     }
 

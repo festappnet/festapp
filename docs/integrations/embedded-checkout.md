@@ -216,42 +216,27 @@ Protokol 1 musí zachovat kompatibilitu se staršími instalacemi.
 
 ## Měření a datová vrstva hostitele
 
-Měření je ve výchozím stavu vypnuté. Vyžaduje všechna uložená povolení,
-platné zásady, aktuální policy a souhlas s analytikou i marketingem. Samotný jeden
-účel současný smíšený GTM/custom profil nespustí. Bez souhlasu se cizí skripty
-nenačítají a hostiteli nepřijdou měřicí události. Kontaktní pole se nikdy nepředávají;
-rozšířené konverze nejsou dostupné. Odmítnutí, porucha CMP nebo starší helper
-nebrání nákupu ani layoutu.
+Měření je ve výchozím stavu vypnuté. Vyžaduje všechna uložená povolení, platné
+zásady, aktuální policy a schválený hostitelský origin. Na souhlas nečeká: skripty se
+načtou hned a volba návštěvníka jde do Consent Mode, který vyhodnocuje kontejner
+pořadatele. Události `purchase` a `generate_lead` nesou `user_data` s e-mailem a
+telefonem. Za nastavení tagů a použití údajů odpovídá pořadatel. Porucha CMP ani
+starší helper nebrání nákupu ani layoutu.
 
 `data-festapp-datalayer` volí výhradně hostitelský transport. Bez atributu je cílem
-oddělený runtime jednotky. Obě cesty vyžadují schválený hostitelský origin a živý
-zdroj uložené volby navázané na konkrétní revizi:
+oddělený runtime jednotky. Obě cesty fungují bez dalšího kódu na webu. Napojení lišty
+je volitelné a předává jen stav souhlasu:
 
 ```js
 const formular = document.querySelector('iframe[data-festapp-embed]');
-const odpojit = FestappEmbed.connectMeasurementConsent(formular, {
-  read(kontext) {
-    const volba = cmp.ulozenaVolba(kontext.organization, kontext.unit);
-    return volba && {
-      processingRevision: volba.processingRevision,
-      analytics: volba.analytics,
-      marketing: volba.marketing,
-    };
-  },
-  subscribe(oznamit) { return cmp.prihlasitZmeny(oznamit); },
-});
+FestappEmbed.setMeasurementConsent(formular, {analytics: true, marketing: false});
 ```
 
-Metody `cmp` jsou příkladem adaptéru Vašeho skutečného CMP. `read` je synchronní,
-vrací potvrzený uložený záznam nebo null a jeho revizi nesmí převzít z argumentu.
-Nová revize vyžaduje nový odpovídající záznam souhlasu. Heartbeat zdroj znovu čte;
-viewport oprávnění neprodlužuje. `odpojit()` zneplatní lease i rozpracované odesílání.
-Receiver před každým push ověří živý zdroj, revizi, instanci, generaci a lokální expiraci.
-Staré `setMeasurementConsent(true)` znamená pouze analytiku; starý setter ani
-`connectKlaro` nejsou revision-bound zdrojem pro nový protokol.
+Pro průběžné čtení uložené volby slouží `connectKlaro(formular, manager)` nebo
+`connectMeasurementConsent(formular, zdroj)`. Bez signálu je stav `denied` a měření
+běží. Změna volby měření nezastaví ani nespustí znovu.
 
 Layout/scroll/theme zůstávají na protokolu 1. Měření používá protokol 2 a staré
-měřicí zprávy odmítá. Události se nefrontují a po pozdějším souhlasu se staré
-nákupy nepřehrávají. Již přijatá data nelze odvolat. Povolené kampaně se filtrují,
+měřicí zprávy odmítá. Události se nefrontují. Již přijatá data nelze odvolat. Povolené kampaně se filtrují,
 celá URL hostitele ani soukromé odpovědi se nepředávají. Podrobný kontrakt,
 SQL fakta a provozní meze popisuje [měření formulářů](form-datalayer.md).

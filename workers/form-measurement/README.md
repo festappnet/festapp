@@ -1,26 +1,24 @@
 # Isolated form measurement
 
-`FormMeasurementSession` is the only owner of visitor role, eligibility, saved
-consent, freshness, generation and transport selection. `FormDataLayer` owns
+`FormMeasurementSession` is the only owner of visitor role, eligibility, freshness,
+generation and transport selection. It forwards saved consent as state. `FormDataLayer` owns
 catalogue/funnel semantics, baseline and visit deduplication. Construction is
 inert; `start()` subscribes synchronously and resolves policy asynchronously.
 Policy errors recover; disposal is terminal. Captured senders belong permanently
-to their original active grant. They never queue or replay pre-consent activity.
+to their original active grant. They never queue or replay earlier activity.
 
-This is basic measurement: no Unit code or GTM loads and no event is sent to the
-host before **both analytics and marketing** consent. The current arbitrary
-GTM/custom `gtm-v1` profile mixes purposes. Analytics alone cannot start it.
-Missing/broken CMP, absent/old embed helper or unapproved host leaves measurement
-off while checkout/layout continue. Consent Mode is set before GTM, as supplementary
-provider information, not as the security gate. No same-origin script fallback.
+Measurement does not wait for consent: on an eligible form the runtime loads GTM and
+Unit code at once. Consent Mode is set before GTM and later choices reach the frame
+as an update, so the organizer's container decides what its tags may do. Missing or
+broken CMP reports denied state. Absent/old embed helper or an unapproved host leaves
+measurement off while checkout/layout continue. No same-origin script fallback.
 
-Contacts are never extracted from submitted form answers or exported in general
-payloads, messages, dataLayer history or SQL conversion facts. Enhanced conversions
-are unavailable. Public product names/labels and allowlisted campaign strings are
-not a guarantee of anonymity. Purchase means an accepted order, not a settled
-payment. SQL facts retain stable event IDs on authorized replay and remain
-independent of temporary runtime outages. Browser delivery is best effort, not
-exactly-once or proof of delivery to Ads/Meta. Later consent does not replay orders.
+`purchase` and `generate_lead` carry `user_data` with the buyer's e-mail and E.164
+phone, allowlisted at every boundary and cleared after the event. Nothing else from
+form answers leaves, and contacts do not enter SQL conversion facts. Purchase means
+an accepted order, not a settled payment. SQL facts retain stable event IDs on
+authorized replay and remain independent of temporary runtime outages. Browser
+delivery is best effort, not exactly-once or proof of delivery to Ads/Meta.
 
 ## Revision and handshake
 
@@ -39,19 +37,20 @@ instance and generation before any Unit script is inserted. Parent policy A and
 Worker configuration B fail closed. Layout/scroll/theme `festapp-embed` stays at
 protocol 1; old measurement messages never grant protocol 2 permission.
 
-Visibility hiding, pagehide/BFCache, role/identity changes, expiry, consent source
-loss, revocation or relevant policy changes invalidate grant and pending sends,
-then remove the runtime. Regrant creates a new grant. Equivalent policy renewal
-preserves the grant. Browser scheduling cannot promise instantaneous backend
+Pagehide/BFCache, role/identity changes, expiry or relevant policy changes invalidate
+grant and pending sends, then remove the runtime. Hiding the page and consent changes
+do not, so the container runs once per visit. Equivalent policy renewal preserves
+the grant. Browser scheduling cannot promise instantaneous backend
 revocation in a suspended process. Already delivered data cannot be recalled.
 
 ## Host CMP integration
+
+The helper measures on its own. A host CMP is optional and only reports the choice:
 
 ```js
 const disconnect = FestappEmbed.connectMeasurementConsent(frame, {
   read(context) {
     // Stored record for organization + Unit, confirmed for its saved revision.
-    // Never replace its revision with context.processingRevision.
     const saved = cmp.readSavedChoice(context.organization, context.unit);
     return saved && {
       processingRevision: saved.processingRevision,
@@ -63,14 +62,10 @@ const disconnect = FestappEmbed.connectMeasurementConsent(frame, {
 });
 ```
 
-A source read is synchronous and returns null when unavailable. Reconnect only to
-a real source; the adapter is the integrator's responsibility. Heartbeats reread
-it and renew a random lease for scope/revision/instance, for at most 60 seconds
-measured locally. Viewport messages do not renew it. Receivers reread the source
-and validate lease/generation before every push. Disconnect invalidates it.
-The old `setMeasurementConsent(true)` means analytics only and cannot grant this
-mixed profile; legacy setters and `connectKlaro` are not revision-bound v2 sources.
-A trusted host can lie about CMP and can retain data it has already received.
+A read returning null, or another revision, reports denied state. Simpler hosts use
+`connectKlaro(frame, manager)` or `setMeasurementConsent(frame, {analytics, marketing})`;
+a boolean means analytics only. The lease is random, local and lasts at most 60
+seconds; it proves a live helper and carries no permission from the visitor.
 
 ## Isolation and operation
 
@@ -84,7 +79,4 @@ boundaries, not live Google/Meta attribution.
 Forward migration is generated by
 `automation/assemble-form-measurement-consent-migration.py`. Historical migrations
 remain immutable. Production application, compatible runtime/helper rollout,
-source publication and enabling measurement are separate operations. New clients
-cannot terminate already open legacy always-on clients: keep measurement disabled
-until an authorized rollout proves the operational cutover. Never restore the
-contact-exporting or always-on implementation as a rollback.
+source publication and enabling measurement are separate operations.

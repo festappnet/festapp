@@ -68,9 +68,10 @@ test('extreme cart mutations never export totals outside exact integer-cent arit
  }
 });
 
-test('contact inputs on every conversion are discarded rather than normalized or forwarded',()=>{
- for(const user_data of [{email:'real@example.test',phone_number:'+420601234567'},{email:'bad',phone_number:'SECRET'},null]){
-  const input={event:'generate_lead',event_id:'11111111-1111-4111-8111-111111111111',currency:'CZK',value:0,lead_source:'waitlist',user_data};
-  assert.equal('user_data' in analyticsPayload(input),false);
- }
+test('only a well-formed e-mail and E.164 phone pass, and only on conversions',()=>{
+ const lead={event:'generate_lead',event_id:'11111111-1111-4111-8111-111111111111',currency:'CZK',value:0,lead_source:'waitlist'};
+ assert.deepEqual(analyticsPayload({...lead,user_data:{email:'real@example.test',phone_number:'+420601234567',first_name:'SECRET'}}).user_data,{email:'real@example.test',phone_number:'+420601234567'});
+ assert.deepEqual(analyticsPayload({...lead,user_data:{email:'bad',phone_number:'+420601234567'}}).user_data,{phone_number:'+420601234567'});
+ for(const user_data of [{email:'bad',phone_number:'SECRET'},{email:'a@b.c\n'},null,'real@example.test'])assert.equal('user_data' in analyticsPayload({...lead,user_data}),false);
+ assert.equal('user_data' in analyticsPayload({event:'page_view',user_data:{email:'real@example.test'}}),false);
 });

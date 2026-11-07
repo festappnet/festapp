@@ -10,9 +10,15 @@ for(const role of ['visitor','staff','anonymous',undefined,'admin'])test('delaye
  resolve({...policy,visitor_role:role});await first;
  assert.equal(f.session.record({event:'form_start'}),role==='visitor');assert.equal(f.starts.length,role==='visitor'?1:0);
 });
-for(const consent of [null,false,true,{analytics:true},{marketing:true},{analytics:'true',marketing:true}])test('both purposes strictly required '+JSON.stringify(consent),async t=>{
- const f=fixture(t,{consent});await f.start();assert.equal(f.starts.length,0);assert.equal(f.session.record({event:'page_view'}),false);
- const send=f.session.capture();f.choose({analytics:true,marketing:true});assert.equal(f.starts.length,1);assert.equal(send({event:'page_view'}),false,'inactive capture remains inactive');
+for(const [consent,state] of [[null,{analytics:false,marketing:false}],[false,{analytics:false,marketing:false}],[true,{analytics:true,marketing:false}],[{analytics:true},{analytics:true,marketing:false}],[{marketing:true},{analytics:false,marketing:true}],[{analytics:'true',marketing:true},{analytics:false,marketing:true}]])test('consent never gates measurement '+JSON.stringify(consent),async t=>{
+ const f=fixture(t,{consent});await f.start();assert.equal(f.starts.length,1);assert.equal(f.session.record({event:'page_view'}),true);
+ assert.deepEqual(f.starts[0].consent,state);
+});
+test('a later choice reaches the transport as state and keeps grant, frame and captured senders',async t=>{
+ const f=fixture(t,{consent:false});const updates=[];f.transport.updateConsent=value=>updates.push(value);await f.start();
+ const send=f.session.capture(),grant=f.transport.grant;f.choose({analytics:true,marketing:true});f.choose({analytics:true,marketing:true});f.choose(false);
+ assert.deepEqual(updates,[{analytics:true,marketing:true},{analytics:false,marketing:false}]);
+ assert.equal(f.transport.grant,grant);assert.equal(f.starts.length,1);assert.equal(send({event:'form_start'}),true);
 });
 test('policy error recovers; stale identity response and finally cannot replace current request',async t=>{
  const queue=[];const f=fixture(t,{source:()=>new Promise((resolve,reject)=>queue.push({resolve,reject}))});
@@ -32,31 +38,39 @@ test('equivalent renewal keeps generation; processing, runtime and policy revisi
   assert.equal(old({event:'form_start'}),false);assert.equal(f.session.state,'active');
  }
 });
-test('revoke/regrant never revives captured submit or reservations and never replays preconsent actions',async t=>{
+test('a replaced grant never revives captured submit or reservations; conversions carry the contact once',async t=>{
  const f=fixture(t);await f.start();f.sent.length=0;
- const submit=f.layer.captureSubmission();let finish;
+ const contact={fields:[{5:' Buyer@Example.TEST '},{6:'+420601234567'},{7:'PRIVATE'}]};
+ const submit=f.layer.captureSubmission(contact);let finish;
  const checkout={payload:{fields:[{4:11}]},awaitPendingReservations:()=>new Promise(r=>finish=r)};
- f.layer.observe(checkout);await settle();f.choose(false);f.choose({analytics:true,marketing:true});finish();await settle();
+ f.layer.observe(checkout);await settle();f.choose({analytics:true,marketing:true,leaseId:'next'});finish();await settle();
  submit(true,{ticketOrder:{analytics:purchase}});assert.equal(f.sent.some(p=>['purchase','add_to_cart'].includes(p.event)),false);
- const current=f.layer.captureSubmission();current(true,{ticketOrder:{analytics:{...purchase,user_data:{email:'private@example.test',phone_number:'+420601234567'},private:'SECRET'}}});
- current(true,{ticketOrder:{analytics:purchase}});assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);
- assert.doesNotMatch(JSON.stringify(f.sent),/private|SECRET|user_data|601234567/);
- f.choose(false);f.choose({analytics:true,marketing:true});f.layer.captureSubmission()(true,{ticketOrder:{analytics:purchase}});
- assert.equal(f.sent.filter(p=>p.event==='purchase').length,1,'dedupe survives inactive periods');
+ f.choose(false);const current=f.layer.captureSubmission(contact);current(true,{ticketOrder:{analytics:{...purchase,private:'SECRET'}}});
+ current(true,{ticketOrder:{analytics:purchase}});const sent=f.sent.filter(p=>p.event==='purchase');assert.equal(sent.length,1);
+ assert.deepEqual(sent[0].user_data,{email:'buyer@example.test',phone_number:'+420601234567'},'a refusal does not remove the contact');
+ assert.doesNotMatch(JSON.stringify(f.sent),/SECRET|PRIVATE/);
+ f.layer.captureSubmission(contact)(true,{ticketOrder:{analytics:purchase}});
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,1,'dedupe survives grant changes');
+});
+test('an unusable contact is left out without touching the conversion',async t=>{
+ const f=fixture(t);await f.start();f.sent.length=0;
+ f.layer.captureSubmission({fields:[{5:'not-an-email'},{6:'601234567'}]})(true,{ticketOrder:{analytics:purchase}});
+ assert.equal(f.sent.find(p=>p.event==='purchase').user_data,undefined);
 });
 test('inactive cart updates baseline, activation starts from current cart without replay',async t=>{
- const f=fixture(t,{consent:false});await f.start();f.checkout.payload={fields:[{4:11}]};f.layer.observe(f.checkout);await settle();
- f.choose({analytics:true,marketing:true});assert.equal(f.sent.some(p=>p.event==='add_to_cart'),false);
+ const f=fixture(t,{autoReady:false});await f.start();f.checkout.payload={fields:[{4:11}]};f.layer.observe(f.checkout);await settle();
+ f.transport.grant.onReady();assert.equal(f.sent.some(p=>p.event==='add_to_cart'),false);
  f.layer.observe(f.checkout);await settle();assert.equal(f.sent.some(p=>p.event==='add_to_cart'),false);
  f.checkout.payload={fields:[{4:11},{4:12}]};f.layer.observe(f.checkout);await settle();
  assert.deepEqual(f.sent.filter(p=>p.event==='add_to_cart').map(p=>p.ecommerce.items[0].item_id),['product_12']);
 });
-test('hidden, pagehide/BFCache and expired source revoke synchronously; late ACK cannot activate',async t=>{
+test('hiding keeps the frame so the container runs once; pagehide/BFCache and an expired lease revoke',async t=>{
  const f=fixture(t,{autoReady:false});await f.start();const old=f.transport.grant;
  Object.defineProperty(f.dom.window.document,'hidden',{value:true,configurable:true});f.dom.window.document.dispatchEvent(new f.dom.window.Event('visibilitychange'));
- old.onReady();assert.notEqual(f.session.state,'active');assert.equal(f.transport.grant,null);
+ assert.equal(f.transport.grant,old);old.onReady();assert.equal(f.session.state,'active');assert.equal(f.session.record({event:'form_start'}),true);
  Object.defineProperty(f.dom.window.document,'hidden',{value:false,configurable:true});f.dom.window.document.dispatchEvent(new f.dom.window.Event('visibilitychange'));await settle();
- f.transport.grant.onReady();const captured=f.session.capture();f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pagehide',{persisted:true}));
+ assert.equal(f.starts.length,1,'returning to the tab does not start the frame again');
+ const captured=f.session.capture();f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pagehide',{persisted:true}));
  assert.equal(captured({event:'page_view'}),false);assert.equal(f.transport.grant,null);
  f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pageshow',{persisted:true}));await settle();f.transport.grant.onReady();
  f.choose({analytics:true,marketing:true,leaseId:'lease',expiresAt:Date.now()-1});assert.equal(f.session.record({event:'page_view'}),false);
@@ -76,7 +90,7 @@ test('transport errors cannot reach checkout callbacks or consume conversion ide
 });
 test('staff-to-visitor policy recovery reconnects the previously suppressed CMP source',async t=>{
  let answer={...policy,visitor_role:'staff'};const f=fixture(t,{identity:'user',source:async()=>answer});
- await f.start();assert.equal(f.session.state,'awaiting-consent');
+ await f.start();assert.equal(f.session.state,'blocked');
  answer={...policy,visitor_role:'visitor'};await f.session.refresh();assert.equal(f.session.state,'active');
 });
 test('a delayed embed helper selects no transport until it is known, then activates',async t=>{
@@ -90,13 +104,13 @@ test('consent changes preserve owner expiry and expired policy cannot revive a c
  const send=f.session.capture();await new Promise(r=>setTimeout(r,50));assert.equal(f.session.grant,null);assert.equal(send({event:'form_start'}),false);
  await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(send({event:'form_start'}),false);
 });
-test('missing/broken consent source retries after renewal and recovers without reconstructing the session',async t=>{
- const f=fixture(t);let attempts=0,notify;
+test('missing/broken consent source measures with denied state and retries after renewal',async t=>{
+ const f=fixture(t);let attempts=0,notify;const updates=[];f.transport.updateConsent=value=>updates.push(value);
  f.session.consentSource={connect(_policy,callback){notify=callback;if(++attempts===1)throw Error('CMP unavailable');callback({analytics:true,marketing:true});return ()=>{};}};
- await f.start();assert.equal(f.starts.length,0);assert.equal(f.session.consentConnected,false);
- await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(attempts,2);
- const old=f.session.capture();notify(null);assert.equal(f.transport.grant,null);assert.equal(old({event:'page_view'}),false);
- await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(attempts,3);assert.equal(old({event:'page_view'}),false);
+ await f.start();assert.equal(f.starts.length,1);assert.deepEqual(f.starts[0].consent,{analytics:false,marketing:false});assert.equal(f.session.consentConnected,false);
+ await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(attempts,2);assert.deepEqual(updates.at(-1),{analytics:true,marketing:true});
+ const send=f.session.capture();notify(null);assert.equal(send({event:'page_view'}),true,'an unavailable CMP never stops measurement');assert.deepEqual(updates.at(-1),{analytics:false,marketing:false});
+ await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(attempts,3);assert.equal(f.starts.length,1);
 });
 test('session alone owns approved-host eligibility and binds the host instance into its grant',async t=>{
  let host={origin:'https://unapproved.test',instance:'one'},answer={...policy,approved_hosts:['https://approved.test']};
@@ -109,9 +123,9 @@ test('session alone owns approved-host eligibility and binds the host instance i
  answer={...answer,approved_hosts:[]};await f.session.refresh();assert.equal(f.transport.grant,null,'policy removal is owned by session');
 });
 test('a stale submission cannot change event-owner page state across reactivation',async t=>{
- const f=fixture(t);await f.start();const outcome=f.layer.captureSubmission();f.choose(false);f.choose({analytics:true,marketing:true});
+ const f=fixture(t);await f.start();const outcome=f.layer.captureSubmission();f.choose({analytics:true,marketing:true,leaseId:'one'});
  outcome(true,{ticketOrder:{analytics:purchase}});assert.equal(f.layer.pageType,'product');
- f.choose(false);f.choose({analytics:true,marketing:true});assert.equal(f.sent.some(p=>p.page_type==='confirmation'),false);
+ f.choose({analytics:true,marketing:true,leaseId:'two'});assert.equal(f.sent.some(p=>p.page_type==='confirmation'),false);
 });
 test('a delayed expiry timer cannot let policy renewal revive the expired grant',async t=>{
  let now=100000;const f=fixture(t,{clock:()=>now});await f.start();const expired=f.session.capture();
