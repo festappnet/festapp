@@ -53,19 +53,18 @@ venue maps. See the [feature reference](docs/overview/features.md) for more.
 
 ## Ticketing for organizers
 
-### Venue overview
+### Lucerna hall
 
 ![Lucerna seating plan with ground-floor seating, boxes and two balconies](docs/images/readme/tickets-seating-desktop.png)
 
 Manage seating across the ground floor, boxes and balconies, with a clear view
 of the stage and dance floor.
 
-### Seat selection up close
+### Arena seating
 
-![Close-up of the Lucerna seating plan showing individual tables, seats and a selected seat in Festapp Tickets](docs/images/readme/tickets-seating-detail.png)
+![Concert arena with four curved seating sectors around a central stage](docs/images/readme/tickets-arena-desktop.png)
 
-Zoom into the same plan to see individual seats around each numbered table
-and choose a specific place.
+Seat the audience in four curved sectors around a central stage.
 
 - **Ticket sales and registration.** Build public forms with ticket types,
   prices, capacity limits and attendee questions; share a link or embed a form

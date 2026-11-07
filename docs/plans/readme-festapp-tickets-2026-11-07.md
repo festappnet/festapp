@@ -76,10 +76,10 @@ All 1,066 seats use the original geometry and materials. English labels are
 rendered through the canonical text engine in a local fixture, with one selected
 seat at CZK 450. Capture source is `cd9dbe25b`; the PNG is 1440 x 900.
 
-### Paired seating views and product copy
+### Two ready-made layouts and product copy
 
-The Lucerna gallery now shows the complete hall and a second real picker view
-zoomed into the seating bands. Both PNGs are 1440 x 900; the detail shows an
-actual selected chair at table 3. The README describes the app's features and
+The ticketing gallery shows the complete Lucerna hall and the existing approved
+`studio-arena` template, with 96 seats in four curved sectors around a central
+stage. Both PNGs are 1440 x 900. The README describes the app's features and
 omits capture, simulator and translation commentary. Source and capture facts
 remain in the media provenance document.

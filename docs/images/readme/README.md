@@ -84,13 +84,15 @@ through the actual picker, producing the visible `1x CZK 450` summary. This is
 a local fixture reservation, not a live sale or submitted checkout. No text
 or other pixels were painted over the screenshot.
 
-The companion `tickets-seating-detail.png` is a second **1440 x 900** capture
-from source `365cb4d4f`, using the same English Lucerna fixture. The actual
-picker's zoom and pan controls frame the ground floor and both balcony bands,
-with readable table numbers and individual seats. A chair at ground-floor
-table 3 was selected through the picker, displaying the local CZK 450 price.
-This detail is a fresh app capture, not a raster crop or enlargement of the
-overview. The overview PNG remains unchanged.
+### Existing arena template
+
+`tickets-arena-desktop.png` is the **1440 x 900** candidate captured on 2026-11-07
+alongside the Lucerna comparison, using the same real public web-client picker,
+English locale, light theme and disposable local fixture. It shows the existing
+approved **`studio-arena`** template: 96 seats in four curved sectors around a
+central stage, with its original geometry, colors and materials preserved.
+The complete plan is visible; no seat is selected in this view. It is a second
+ready-made venue layout, not a zoomed region of the Lucerna plan.
 
 ### Order administration
 
