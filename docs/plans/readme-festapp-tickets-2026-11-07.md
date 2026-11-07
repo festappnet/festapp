@@ -49,3 +49,9 @@ portal. Update GitHub's short description and homepage to match.
   remains explicitly recorded as `99dc29ae7`.
 - Documentation validation covers local link/image targets, PNG decoding and
   dimensions, total image size, and whitespace. Application code is unchanged.
+- Follow-up: replaced the homepage's two generic mobile examples with three
+  real Slunovrat Winter Edition views (program, Opava map, artist detail).
+  The owner authorized local English translation; only browser presentation
+  responses were translated, without editing the live event. These are explicitly
+  labelled mobile web captures at iPhone dimensions, not native iOS captures.
+  The static GitHub-style preview displays them in phone frames.

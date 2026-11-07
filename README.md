@@ -46,19 +46,29 @@ Festapp also gives attendees schedules, venue maps, news, workshop sign-ups
 and a personal program on Android, iOS and the web. Organizers choose which
 features each event needs, including information pages, songbooks and group games.
 
+### Slunovrat Winter Edition
+
+A real festival app powered by Festapp: browse the program, find venues around
+Opava and open artist details.
+
 <table>
   <tr>
+    <th align="center">Festival program</th>
     <th align="center">Venue map</th>
-    <th align="center">Event program</th>
+    <th align="center">Artist details</th>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/readme/event-map-mobile.png" width="260" alt="English event app showing the venue map in a mobile browser" /></td>
-    <td align="center"><img src="docs/images/readme/event-schedule-mobile.png" width="260" alt="English event app showing the program in a mobile browser" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-web-program.png" width="220" alt="Slunovrat festival program with a local English translation at an iPhone-sized viewport" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-web-map.png" width="220" alt="Slunovrat venue map of Opava at an iPhone-sized viewport" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-web-detail.png" width="220" alt="Slunovrat artist detail with a local English translation at an iPhone-sized viewport" /></td>
   </tr>
 </table>
 
-Screenshots show the web app at mobile screen sizes, using English demo data
-and light mode. [Capture details](docs/images/readme/README.md).
+The [Slunovrat web app](https://app.festivalslunovrat.cz/) is shown at iPhone
+screen dimensions in light mode. Public event text was translated into English
+only for these local captures; artist and venue names retain their original
+spelling. These are mobile web views, not native iOS captures.
+[Capture details](docs/images/readme/README.md).
 
 Previously synchronized data can be read offline. Authentication, payments and
 server-confirmed writes need a connection; native offline maps require a prepared
