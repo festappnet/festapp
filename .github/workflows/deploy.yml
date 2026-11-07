@@ -15,7 +15,7 @@ jobs:
       contents: read
       checks: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Require green CI for the exact canonical source
@@ -27,7 +27,7 @@ jobs:
     needs: source-ci
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Verify production branch is a canonical main overlay
@@ -67,7 +67,7 @@ jobs:
     needs: tenant-drift
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify required legal and support configuration
         run: |
           set -euo pipefail
@@ -86,7 +86,7 @@ jobs:
       cf_project: ${{ steps.read.outputs.cf_project }}
       branch: ${{ steps.read.outputs.branch }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: read
         shell: bash
         run: |
@@ -123,7 +123,7 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           version: 11.24.0

@@ -28,7 +28,7 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       raw_run_id: ${{ steps.plan.outputs.raw_run_id }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: plan
         env:
           TARGETS_JSON: ${{ inputs.targets_json }}
@@ -54,14 +54,14 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: Check out trusted release tooling
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
       - name: Preserve trusted verifier outside the source checkout
         run: cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
       - name: Check out immutable tenant source
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ matrix.sourceSha }}
           fetch-depth: 0
