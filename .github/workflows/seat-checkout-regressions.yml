@@ -84,7 +84,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
       SEAT_CHECKOUT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: pnpm/action-setup@v6
@@ -131,7 +131,7 @@ jobs:
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: denoland/setup-deno@v2
         with:
           deno-version: '2.9.0'
