@@ -1,4 +1,5 @@
-import { analyticsPayload, campaignContext, measurementConsent, sameMeasurementManifest } from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol} from '../components/forms/form_measurement_contract.js';
+import { analyticsPayload, campaignContext, measurementConsent, measurementManifest, sameMeasurementManifest } from '../components/forms/form_measurement_contract.js';
 import { isEmbed, applyEmbedContext } from './embed_context.js';
 import { EmbedTheme } from './embed_theme.js';
 
@@ -52,7 +53,7 @@ export class EmbedBridge {
                 if (data.theme !== undefined) { this.receiveTheme(data.theme); }
                 this.height = null;
                 this.measure();
-            } else if (data.type === 'measurement-consent' && data.measurement?.protocol===2) {
+            } else if (data.type === 'measurement-consent' && data.measurement?.protocol===measurementProtocol) {
                 const value=data.measurement;
                 if(!sameMeasurementManifest(value.manifest,this.measurementManifest))return;
                 // The lease proves a live helper. The purposes are only state for tags.
@@ -64,7 +65,7 @@ export class EmbedBridge {
                 this.win.clearTimeout(this.leaseTimer);
                 this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
                 this.consentNotify?.(granted?{...measurementConsent(value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
-            } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===2 &&
+            } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===measurementProtocol &&
                 data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
                 sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {
                 this.hostActive=true;this.grant.onReady();
@@ -108,17 +109,14 @@ export class EmbedBridge {
     }
     subscribe(notify) {this.measurementChanged=notify;return ()=>{this.measurementChanged=null;};}
     setMeasurementRuntime(runtime) {this.measurementRuntime=runtime;}
-    selection() {return this.origin && this.measurementProtocol===2 ? (this.dataLayer?'host':'runtime') : null;}
+    selection() {return this.origin && this.measurementProtocol===measurementProtocol ? (this.dataLayer?'host':'runtime') : null;}
     connectConsent(policy,notify) {
-        this.measurementManifest=policy?.processing_revision ? {
-            organization:policy.organization,unit:policy.unit,form_link:policy.form_link,
-            processing_revision:policy.processing_revision,runtime_revision:policy.runtime_revision,
-            policy_revision:policy.policy_revision,profile:policy.profile,required_purposes:policy.required_purposes} : null;
+        this.measurementManifest=measurementManifest(policy,policy?.form_link);
         this.consentNotify=notify;this.requestConsent();
         return ()=>{this.consentNotify=null;this.measurementManifest=null;this.stop();};
     }
     requestConsent() {
-        if(this.selection() && this.measurementManifest)this.send('measurement-context',{measurement:{protocol:2,manifest:this.measurementManifest}});
+        if(this.selection() && this.measurementManifest)this.send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:this.measurementManifest}});
     }
     hostContext() {return this.selection()?{origin:this.origin,instance:this.instance}:null;}
     activate(grant) {
@@ -126,7 +124,7 @@ export class EmbedBridge {
         if(grant.selection!==this.selection() || grant.host?.origin!==this.origin || grant.host?.instance!==this.instance || !this.leaseId || this.leaseId!==grant.leaseId || Date.now()>=this.leaseUntil)return;
         this.grant=grant;
         if(grant.selection==='runtime')this.measurementRuntime.activate(grant);
-        else this.send('measurement-activate',{measurement:{protocol:2,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
+        else this.send('measurement-activate',{measurement:{protocol:measurementProtocol,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
     }
     renew(until) {this.measurementRuntime?.renew(Math.min(until,this.leaseUntil||0));}
     updateConsent(consent) {this.measurementRuntime?.updateConsent(consent);}
@@ -136,7 +134,7 @@ export class EmbedBridge {
         const payload=analyticsPayload(input);if(!payload)return false;
         if(this.grant.selection==='runtime')return this.measurementRuntime.track(payload);
         if(!this.hostActive)return false;
-        this.send('analytics',{measurement:{protocol:2,manifest:this.grant.manifest,generation:this.grant.generation,leaseId:this.grant.leaseId},payload});return true;
+        this.send('analytics',{measurement:{protocol:measurementProtocol,manifest:this.grant.manifest,generation:this.grant.generation,leaseId:this.grant.leaseId},payload});return true;
     }
     measure() {
         if (this.raf) return;

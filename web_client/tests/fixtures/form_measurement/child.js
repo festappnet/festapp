@@ -1,7 +1,7 @@
 import {EmbedBridge} from '/src/services/embed_bridge.js';
 import {FormDataLayer} from '/src/components/forms/form_datalayer.js';
 import {FormMeasurementSession} from '/src/components/forms/form_measurement_session.js';
-const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,visitor_role:'visitor',valid_for_seconds:60,organization:1,unit:2,form_link:'test',processing_revision:'rev-a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],approved_hosts:[new URL(document.referrer).origin]};
+const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,visitor_role:'visitor',valid_for_seconds:60,organization:1,unit:2,form_link:'test',processing_revision:'rev-a',measurement_protocol:3,runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],approved_hosts:[new URL(document.referrer).origin]};
 const model={link:'test',data:{analytics:policy},visibleFields:[{id:1,type:'product_type',options:[{id:1,title:'Ticket',price:10,currency:'CZK'}]}]};
 const bridge=new EmbedBridge();bridge.start();
 let layer;const measurement=new FormMeasurementSession({model,policySource:async()=>policy,consentSource:{connect:(p,n)=>bridge.connectConsent(p,n)},identitySource:{read:()=> 'anonymous',subscribe:()=>()=>{}},transport:bridge,onActive:()=>layer.activate({payload:{fields:[]}})});layer=new FormDataLayer({model,sink:measurement});measurement.start();

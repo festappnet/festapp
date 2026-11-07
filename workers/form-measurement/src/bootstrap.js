@@ -1,9 +1,12 @@
+import {measurementProtocol} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 import {analyticsPayload, attributionContext, campaignKeys, measurementConsent, measurementPageLocation, measurementId, measurementNamespace, sameMeasurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
 const config = JSON.parse(document.getElementById('measurement-config').textContent);
 let instance;
 let generation;
 let context;
+let consent;
+const consentContext = () => ({...context, festapp_consent:{...consent}});
 window.dataLayer = [];
 
 // Consent commands must be Arguments objects, as in Google's gtag snippet;
@@ -16,18 +19,18 @@ const consentState = ({analytics, marketing}) => {
 
 function push(payload) {
     if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null});
-    dataLayer.push({...context,...payload});
+    dataLayer.push({...consentContext(),...payload});
     if (['purchase','generate_lead'].includes(payload.event)) dataLayer.push({user_data:null});
 }
 function reply(type) {
-    parent.postMessage({namespace:measurementNamespace,protocol:2,type,instance,generation,manifest:config.manifest},config.parent_origin);
+    parent.postMessage({namespace:measurementNamespace,protocol:measurementProtocol,type,instance,generation,manifest:config.manifest},config.parent_origin);
 }
 window.addEventListener('message', event => {
     const message = event.data;
     if (event.source !== parent || event.origin !== config.parent_origin || message?.namespace !== measurementNamespace ||
-        message.protocol !== 2 || !sameMeasurementManifest(message.manifest,config.manifest) || !measurementId(message.instance)) return;
+        message.protocol !== measurementProtocol || !sameMeasurementManifest(message.manifest,config.manifest) || !measurementId(message.instance)) return;
     if (message.type === 'init' && !instance) {
-        const consent = measurementConsent(message.consent);
+        consent = measurementConsent(message.consent);
         if(!Number.isSafeInteger(message.generation))return;
         generation=message.generation;
         context = attributionContext(message.context);
@@ -40,13 +43,12 @@ window.addEventListener('message', event => {
         history.replaceState(null, '', frameUrl);
         // Every event carries the purposes for tags and Unit scripts that do not
         // read Consent Mode, which is the only consent check in this frame.
-        context.festapp_consent = {...consent};
         instance = message.instance;
         // Queued before gtm.js exists, so the container reads it first. The update
         // keeps the saved choice when a container template sets its own default.
         gtag('consent','default',consentState(consent));
         gtag('consent','update',consentState(consent));
-        dataLayer.push(context);
+        dataLayer.push(consentContext());
         if (config.gtm_container) {
             dataLayer.push({'gtm.start':Date.now(),event:'gtm.js'});
             const script = document.createElement('script');
@@ -70,10 +72,9 @@ window.addEventListener('message', event => {
         }
         reply('ack');
     } else if (message.type === 'consent' && message.instance === instance && message.generation === generation) {
-        const consent = measurementConsent(message.consent);
-        context.festapp_consent = {...consent};
+        consent = measurementConsent(message.consent);
         gtag('consent','update',consentState(consent));
-        dataLayer.push({event:'festapp_consent_update',...consent});
+        dataLayer.push({event:'festapp_consent_update',festapp_consent:{...consent},...consent});
     } else if (message.type === 'event' && message.instance === instance && message.generation === generation) {
         const payload = analyticsPayload(message.payload);
         if (payload) push(payload);

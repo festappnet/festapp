@@ -101,7 +101,7 @@ most 60 seconds, renewed every 20 seconds. Expiry always detaches, and a page th
 stayed hidden past it starts a new frame on return. Browser throttling precludes an
 instantaneous global backend kill guarantee.
 
-Runtime protocol 2 (`festapp-measurement`) compares the actual SQL/Worker manifest
+Runtime protocol 3 (`festapp-measurement`) compares the actual SQL/Worker manifest
 with the accepted policy before init can insert any Unit code. Scope, form link,
 processing/runtime/policy revisions and profile must match. Ready/init/ACK bind
 source window, origin, instance and generation. Consent Mode default/update precede
@@ -229,3 +229,25 @@ Local tests verify deterministic tags and the actual network/execution gate.
 Live Google/Meta attribution requires separately authorized external evidence.
 No configuration changes, production migration, publication or deployment are
 performed by local implementation.
+
+## Measurement protocol 3 cutover
+
+The shared measurement contract is protocol 3, with a required
+`measurement_protocol: 3` in SQL policy and manifests. Its version is part of
+`processing_revision`, so saved choices from the prior behavior do not carry
+forward. Layout protocol 1 and the registered `gtm-v1` site profile are distinct
+interfaces and remain unchanged. `consent_required` denotes the required notice
+and choice controls, not permission to execute; `required_purposes` describes
+the choices reported to tags.
+
+Host setters, Klaro and revision-aware sources share one active binding. New
+sources retire old callbacks and disposers; disconnect/failure yields denied
+without stopping the live helper lease. Legacy setters and Klaro cannot carry a
+grant across organization, Unit or processing revision. A setter before the first
+context binds once. Record removal/origin replacement clears its heartbeat and
+subscription. A nested `festapp_consent` snapshot accompanies every consent
+update before any later conversion, without mutating a previously pushed object.
+
+See [the runtime cutover contract](../../workers/form-measurement/README.md#canonical-protocol-and-choice-ownership)
+for ordered deployment, unsupported cached peers, and the intentionally retained
+historical test fixtures. New production code only accepts protocol 3.

@@ -37,6 +37,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.form_measurement_unit_data_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
+-- consent_required denotes the required notice/choice controls, not an execution gate.
+-- required_purposes describes reported choices; neither purpose must be granted to run.
 -- Single status owner. Configuration belongs to Unit; forms contain only intent.
 CREATE OR REPLACE FUNCTION public.form_measurement_status_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
@@ -83,9 +85,9 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'consent_notice',CASE WHEN s->'eligible'='true'::jsonb THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
    'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
   'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
-  'form_link',f.link,'profile',r.runtime_profile,'required_purposes',jsonb_build_array('analytics','marketing'),
+  'measurement_protocol',3,'form_link',f.link,'profile',r.runtime_profile,'required_purposes',jsonb_build_array('analytics','marketing'),
   'enhanced_conversions_unavailable',false,
-  'processing_revision',md5(jsonb_build_array(o.organization,u.id,u.data->'measurement_gtm_container',u.data->'measurement_scripts',
+  'processing_revision',md5(jsonb_build_array(3,o.organization,u.id,u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_privacy_url',coalesce(u.data->'measurement_consent_version','1'::jsonb),r.runtime_profile,r.runtime_origin,
    r.parent_origins,r.collector_origins,r.revision,s->'policy_revision',u.data->'measurement_enabled',
    org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')::text),
