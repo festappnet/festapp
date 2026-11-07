@@ -4,7 +4,7 @@
     if (window.__festappEmbedV1) return;
     window.__festappEmbedV1 = true;
     const namespace = 'festapp-embed';
-    // Pure, contact-free contract. Every receiver rebuilds the payload independently.
+    // Pure contract. Every receiver rebuilds the payload independently.
     const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase']);
     const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
     const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
@@ -13,6 +13,12 @@
 
     const measurementNamespace = 'festapp-measurement';
     const measurementId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+
+    // Saved purposes. A boolean is the earlier API: true grants analytics only.
+    function measurementConsent(input) {
+        if (input === true) return {analytics: true, marketing: false};
+        return {analytics: input?.analytics === true, marketing: input?.marketing === true};
+    }
 
     // Pages project hostnames are separate sites on the Public Suffix List. A
     // shared workers.dev account or sibling custom domains are not this profile.
@@ -26,10 +32,16 @@
         return null;
     }
 
+    // The single campaign/click allowlist for the URL gate, host handshake and runtime.
+    const campaignKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id', 'gclid', 'gbraid', 'wbraid', 'gad_source', 'gad_campaignid', 'srsltid', 'fbclid', 'sznclid', 'ttclid', 'msclkid'];
+    // Tolerated on arrival but never forwarded: cross-domain linker and GTM Preview signal.
+    const measurementSignalKeys = ['_gl', 'gtm_debug'];
+    const unsafeText = /[@\u0000-\u001f\u007f-\u009f]/;
+
     function campaignContext(input) {
         const result = {};
-        for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
-            if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !/[@\u0000-\u001f\u007f-\u009f]/.test(input[key])) result[key] = input[key];
+        for (const key of campaignKeys) {
+            if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !unsafeText.test(input[key])) result[key] = input[key];
         }
         return result;
     }
@@ -59,9 +71,11 @@
     }
 
     const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000-\u001f]/.test(value) ? value.trim().slice(0, limit) : '';
+    // Optional public catalog labels. A rejected label is omitted, never the item.
+    const itemLabel = value => typeof value === 'string' && !unsafeText.test(value) ? value.trim().slice(0, 100) : '';
     const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
-    // Rebuild at both transport boundaries. Never spread form, order or message data.
+    // Rebuild at every transport boundary. Never spread form, order or message data.
     function analyticsPayload(input) {
         if (!input || typeof input !== 'object') return null;
         if (!input.event) {
@@ -83,7 +97,12 @@
             const price = money(item?.price);
             const name = textValue(item?.item_name);
             if (!item || !productId(item.item_id) || !name || price === null || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 9999) return null;
-            items.push({item_id: item.item_id, item_name: name, price, quantity: item.quantity});
+            const entry = {item_id: item.item_id, item_name: name, price, quantity: item.quantity};
+            for (const key of ['item_category', 'item_brand']) {
+                const label = itemLabel(item[key]);
+                if (label) entry[key] = label;
+            }
+            items.push(entry);
         }
         // Integer cents keep values such as 0.10 × 3 stable across both boundaries.
         const cents = items.reduce((sum, item) => sum + Math.round(item.price * 100) * item.quantity, 0);
@@ -103,54 +122,93 @@
         return result;
     }
 
+    // Identity of the SQL snapshot that actually supplies the runtime code.
+    function measurementManifest(policy, formLink) {
+        if (!policy || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
+            !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision<1 ||
+            !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision<1 ||
+            typeof policy.processing_revision !== 'string' || !policy.processing_revision || policy.processing_revision.length>128 ||
+            policy.profile !== 'gtm-v1' || !measurementId(formLink) ||
+            JSON.stringify(policy.required_purposes) !== JSON.stringify(['analytics', 'marketing'])) return null;
+        return {organization:policy.organization, unit:policy.unit, form_link:formLink,
+            processing_revision:policy.processing_revision, runtime_revision:policy.runtime_revision,
+            policy_revision:policy.policy_revision, profile:policy.profile, required_purposes:['analytics','marketing']};
+    }
+    const sameMeasurementManifest = (a,b) => !!a && !!b &&
+        ['organization','unit','form_link','processing_revision','runtime_revision','policy_revision','profile','required_purposes']
+            .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key]));
+
 // The same saved-choice adapter is used by standalone Klaro and embedding hosts.
-// A changed draft is never a grant. Renewal preserves the transport's epoch.
-function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} = {}) {
+// It only reports the saved choice; a changed draft is never reported as a grant.
+function bindKlaroConsent(manager, setConsent) {
     let disposed = false;
+    const saved = service => manager.confirmed === true && manager.savedConsents?.[service] === true &&
+        manager.getConsent(service) === true;
     const sync = () => {
-        let granted = false;
+        const granted = {analytics: false, marketing: false};
         try {
-            granted = manager.confirmed === true && manager.savedConsents?.analytics === true &&
-                manager.getConsent('analytics') === true && !win.document.hidden;
-        } catch { /* Missing/broken CMP remains denied. */ }
+            granted.analytics = saved('analytics');
+            // Optional: a host manager without this service grants analytics only.
+            granted.marketing = saved('marketing');
+        } catch { granted.analytics = granted.marketing = false; /* Missing/broken CMP remains denied. */ }
         if (!disposed) setConsent(granted);
     };
     const watcher = {update: sync};
     manager.watch(watcher);
-    win.document.addEventListener('visibilitychange', sync);
-    const timer = win.setInterval(sync, interval);
     sync();
     return () => {
         disposed = true;
-        win.clearInterval(timer);
-        manager.unwatch(watcher);
-        win.document.removeEventListener('visibilitychange', sync);
-        setConsent(false);
+        try { manager.unwatch(watcher); } finally { setConsent(false); }
     };
 }
 
     const frames = new Map();
-    // Integration seam only: a real CMP adapter must call this after checking
-    // the visitor's purpose-specific consent, renew within 60s, and revoke it.
-    // HTML attributes never grant consent. Klaro binds only its saved choice.
+    // A live revision-bound CMP source is required. Legacy setters cannot grant v2.
+    const revoke = (frame,record) => {
+        record.lease=null;
+        if(record.manifest) sendConsent(frame,record);
+    };
+    const readChoice = record => {
+        try {
+            const m=record.manifest;
+            if(!m || !record.source || document.hidden)return null;
+            const choice=record.source.read({organization:m.organization,unit:m.unit,
+                processingRevision:m.processing_revision,requiredPurposes:m.required_purposes});
+            return choice?.processingRevision===m.processing_revision && choice.analytics===true && choice.marketing===true ? choice:null;
+        }catch{return null;}
+    };
+    const sendConsent = (frame,record) => frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,
+        type:'measurement-consent',measurement:{protocol:2,manifest:record.manifest,leaseId:record.lease?.id,
+            ttl:record.lease?60000:0,consent:{analytics:!!record.lease,marketing:!!record.lease}}},record.origin);
+    const syncConsent = (frame,record) => {
+        if(!frame.isConnected || !readChoice(record)){revoke(frame,record);return;}
+        if(!record.lease)record.lease={id:crypto.randomUUID()};
+        record.lease.until=Date.now()+60000;
+        sendConsent(frame,record);
+    };
     window.FestappEmbed = Object.freeze({
-        connectKlaro(frame, manager) {
-            const record = frames.get(frame);
-            if (!record) return null;
-            record.consentDispose?.();
-            record.consentDispose = bindKlaroConsent(manager, granted => window.FestappEmbed.setMeasurementConsent(frame, granted));
-            return record.consentDispose;
+        connectMeasurementConsent(frame,source) {
+            const record=frames.get(frame);
+            if(!record || typeof source?.read!=='function' || typeof source?.subscribe!=='function')return null;
+            record.consentDispose?.();record.source=source;
+            const notify=()=>{revoke(frame,record);syncConsent(frame,record);};
+            let unsubscribe;
+            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;revoke(frame,record);return null;}
+            const timer=setInterval(()=>syncConsent(frame,record),20000);
+            const disconnect=()=>{clearInterval(timer);record.source=null;revoke(frame,record);try{unsubscribe?.();}catch{ /* Source teardown cannot restore permission. */ }};
+            record.consentDispose=disconnect;syncConsent(frame,record);return disconnect;
         },
-        setMeasurementConsent(frame, granted, ttlSeconds = 60) {
-            const record = frames.get(frame);
-            if (!record) return false;
-            record.consentId = granted === true
-                ? (record.consentId && Date.now() < record.consentUntil ? record.consentId : `c_${crypto.randomUUID()}`) : null;
-            record.consentUntil = granted === true ? Date.now() + Math.min(60, Math.max(0, Number(ttlSeconds) || 0)) * 1000 : 0;
-            send(frame, record, 'init', false);
-            return true;
+        connectKlaro(frame,manager) {
+            const record=frames.get(frame);if(!record)return null;
+            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);});
+        },
+        setMeasurementConsent(frame,granted) {
+            const record=frames.get(frame);if(!record)return false;
+            record.consent=measurementConsent(granted);return true;
         }
     });
+    document.addEventListener('visibilitychange',()=>frames.forEach((record,frame)=>{revoke(frame,record);if(!document.hidden)syncConsent(frame,record);}));
+    window.addEventListener('pagehide',()=>frames.forEach((record,frame)=>revoke(frame,record)));
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
     // The saved form owns appearance; the host only supplies presentation tokens.
     const externalSheets = new Map();
@@ -308,7 +366,7 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
-            consentId: record.consentId || null, consentUntil: record.consentUntil || 0,
+            measurementProtocol: 2,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
         if (theme !== false) {
@@ -376,7 +434,7 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
             try { url = new URL(frame.getAttribute('src'), document.baseURI); } catch { return; }
             if (!/^https?:$/.test(url.protocol) || url.origin === 'null') return;
             const record = { origin: url.origin, instance: `f_${crypto.randomUUID()}` };
-            record.load = () => send(frame, record, 'init');
+            record.load = () => {revoke(frame,record);record.manifest=null;send(frame,record,'init');};
             frames.set(frame, record);
             frame.addEventListener('load', record.load);
             send(frame, record, 'init');
@@ -391,14 +449,26 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
             if (new URL(frame.src, document.baseURI).origin !== record.origin) return;
             if (data.type === 'ready') { send(frame, record, 'init'); return; }
             if (data.instance !== record.instance) return;
-            if (data.type === 'analytics') {
-                if (frame.hasAttribute('data-festapp-datalayer') && record.consentId && data.consentId === record.consentId && Date.now() < record.consentUntil) {
-                    const payload = analyticsPayload(data.payload);
-                    if (!payload) return;
-                    window.dataLayer = window.dataLayer || [];
-                    if (payload.ecommerce || payload.event === 'generate_lead') window.dataLayer.push({ecommerce: null, user_data: null});
+            if(data.type==='measurement-context' && data.measurement?.protocol===2) {
+                const m=data.measurement.manifest;
+                if(!m || !sameMeasurementManifest(m,measurementManifest(m,m.form_link)))return;
+                if(!sameMeasurementManifest(m,record.manifest)){revoke(frame,record);record.manifest=m;}
+                syncConsent(frame,record);return;
+            }
+            if(data.type==='measurement-activate' || data.type==='analytics') {
+                const m=data.measurement;
+                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until || !readChoice(record) ||
+                    m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return;
+                if(data.type==='measurement-activate') {
+                    record.lease.generation=m.generation;
+                    frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,type:'measurement-ack',measurement:m},record.origin);return;
+                }
+                if(record.lease.generation!==m.generation)return;
+                if(frame.hasAttribute('data-festapp-datalayer')) {
+                    const payload=analyticsPayload(data.payload);if(!payload)return;
+                    window.dataLayer=window.dataLayer||[];
+                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null});
                     window.dataLayer.push(payload);
-                    if (['purchase', 'generate_lead'].includes(payload.event)) window.dataLayer.push({user_data: null});
                 }
                 return;
             }
@@ -467,13 +537,13 @@ function bindKlaroConsent(manager, setConsent, {win = window, interval = 20000} 
     new MutationObserver((mutations = []) => {
         scan();
         for (const mutation of mutations) {
-            if (['data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
+            if (['data-festapp-datalayer'].includes(mutation.attributeName) && frames.has(mutation.target)) {
                 send(mutation.target, frames.get(mutation.target), 'init', false);
             }
         }
         if (!themeRaf) themeRaf = requestAnimationFrame(() => { themeRaf = null; refreshThemes(); });
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true,
-        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
+        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer'] });
     document.fonts?.ready.then(refreshThemes);
     scan();
 })();

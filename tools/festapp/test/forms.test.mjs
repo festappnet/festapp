@@ -41,7 +41,7 @@ test('payment selection output rejects unexpected credentials in bank or Stripe 
 
 const measurementStatus={requested_enabled:false,organization_allowed:false,organization_enabled:false,unit_enabled:false,
  runtime_supported:true,eligible:false,blocked_reasons:['disabled'],policy_revision:1,
- consent_required:true,enhanced_conversions_unavailable:true};
+ consent_required:true,enhanced_conversions_unavailable:false};
 test('form inspect tolerates missing status and future internal fields without inventing a measurement policy',async()=>{
  for(const status of [undefined,null,measurementStatus]){
   const form={...state.form,...(status===undefined?{}:{measurement_status:status}),future_internal_flag:'internal-only'};
@@ -72,4 +72,27 @@ test('form mutation readback defaults a missing measurement status to unknown',a
  assert.equal(result.current_measurement_status,null);
  assert.equal(result.measurement_status_is_historical,true);
  assert.deepEqual(calls,['manage_form','get_form_for_authoring']);
+});
+
+test('form status is truthful now and durable receipts keep the earlier value',async()=>{
+ for(const enhanced_conversions_unavailable of [false,true]){
+  const status={...measurementStatus,enhanced_conversions_unavailable};
+  const f=fixture({occasionId:7,authoring:{...state,form:{...state.form,measurement_status:status}}});
+  const result=await f.ops.invoke('forms.inspect',{occasionId:7,formId:42});
+  assert.equal(result.ok,true,JSON.stringify(result));assert.deepEqual(result.data.authoring.form.measurement_status,status);
+ }
+ const {enhanced_conversions_unavailable,...base}=measurementStatus;
+ for(const invalid of [{...base,enhanced_conversions_unavailable:'true'},base]){
+  const f=fixture({occasionId:7,authoring:{...state,form:{...state.form,measurement_status:invalid}}});
+  assert.equal((await f.ops.invoke('forms.inspect',{occasionId:7,formId:42})).ok,false,JSON.stringify(invalid));
+ }
+});
+
+test('form inspect accepts the canonical no_privacy_policy measurement block',async()=>{
+ const measurement_status={requested_enabled:true,organization_allowed:true,organization_enabled:true,unit_enabled:true,
+  runtime_supported:true,eligible:false,blocked_reasons:['no_privacy_policy'],policy_revision:1,consent_required:true,enhanced_conversions_unavailable:false};
+ const f=fixture({occasionId:7,authoring:{...state,form:{...state.form,measurement_status}}});
+ const result=await f.ops.invoke('forms.inspect',{occasionId:7,formId:42});
+ assert.equal(result.ok,true,JSON.stringify(result));
+ assert.deepEqual(result.data.authoring.form.measurement_status.blocked_reasons,['no_privacy_policy']);
 });

@@ -77,7 +77,7 @@ test('stored form ownership defeats forged scope; public open and closed bundles
  await db.query("select set_config('request.jwt.claim.sub','',true),set_config('request.jwt.claim.role','anon',true)");
  await db.query('SET LOCAL ROLE anon');
  const publicBundle=(await db.query('select get_form_by_link($1) value',[link])).rows[0].value;
- assert.equal(publicBundle.code,200,JSON.stringify(publicBundle));assert(!JSON.stringify(publicBundle).includes('CODE_SENTINEL_733'));assert(!JSON.stringify(publicBundle).includes('GTM-AB12'));assert(!JSON.stringify(publicBundle).includes('enhanced_conversions'));
+ assert.equal(publicBundle.code,200,JSON.stringify(publicBundle));assert(!JSON.stringify(publicBundle).includes('CODE_SENTINEL_733'));assert(!JSON.stringify(publicBundle).includes('GTM-AB12'));assert.equal(publicBundle.data.data.analytics.enhanced_conversions_unavailable,true);assert.equal(Object.hasOwn(publicBundle.data.data.analytics,'enhanced_conversions'),false);
  await db.query('RESET ROLE');
  await db.query('update forms set is_open=false where id=$1',[made.formId]);
  const closedPreview=(await db.query('select get_form_bundle_internal($1,true) value',[made.formId])).rows[0].value;

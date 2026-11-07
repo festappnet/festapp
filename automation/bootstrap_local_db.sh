@@ -70,7 +70,8 @@ FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
 WHERE n.nspname IN ('public','eshop','analytics') AND c.relkind IN ('r','p')
 AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_class'::regclass AND d.objid=c.oid AND d.deptype='e')
 \gexec
-GRANT USAGE ON SCHEMA analytics TO postgres;
+-- Match the migration operator for schema CREATE/reapply as well as tables.
+ALTER SCHEMA analytics OWNER TO postgres;
 GRANT ALL ON ALL TABLES IN SCHEMA public,eshop,analytics TO postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop,analytics TO postgres;
 SELECT format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure)

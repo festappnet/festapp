@@ -439,7 +439,7 @@ export class FormSession extends EventTarget {
             while (current.length < quantity) {
                 const value = {product_type: product.id, ...(field ? {_subFieldId: field.id} : {}),
                     price: product.price, currency_code: product.currency_code || product.currencyCode || this.state.currency};
-                this.addTicket({_blueprintArea: binding.nodeId, _blueprintProduct: {id:product.id,title:product.title,price:product.price,currency_code:value.currency_code}, fields: [value]});
+                this.addTicket({_blueprintArea: binding.nodeId, _blueprintProduct: {id:product.id,title:product.title,type_title:product.type_title,price:product.price,currency_code:value.currency_code}, fields: [value]});
                 current.push(this.state.tickets.at(-1));
             }
             this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();

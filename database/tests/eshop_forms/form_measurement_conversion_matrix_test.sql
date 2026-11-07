@@ -57,6 +57,17 @@ BEGIN
  PERFORM assert_eq((conversion#>>'{ecommerce,value}')::numeric,0.30::numeric,'integer cents survive repeated product quantities');
  PERFORM assert_eq((conversion#>>'{ecommerce,items,0,quantity}')::integer,3,'three admissions aggregate to quantity three');
  PERFORM assert_eq((conversion#>>'{ecommerce,items,0,price}')::numeric,0.10::numeric,'snapshot preserves charged unit price');
+ PERFORM assert_eq(conversion#>>'{ecommerce,items,0,item_category}','spot','item category comes from the charged product type snapshot');
+ PERFORM assert_eq(conversion#>>'{ecommerce,items,0,item_brand}','Waitlist regression','item brand is the occasion title');
+ PERFORM assert_eq(jsonb_array_length(conversion#>'{ecommerce,items}'),1,'labels do not split a charged line');
+ -- A snapshot without the optional label keeps the same value and omits only that field.
+ oid:=(result#>>'{data,order,id}')::bigint;
+ UPDATE eshop.orders o SET data=jsonb_set(o.data,'{tickets}',(SELECT jsonb_agg(jsonb_set(t,'{products}',(SELECT jsonb_agg(p-'type_title') FROM jsonb_array_elements(t->'products') p)))
+  FROM jsonb_array_elements(o.data->'tickets') t)) WHERE o.id=oid;
+ DELETE FROM analytics.conversion_facts WHERE "order"=oid;
+ PERFORM public.record_form_conversion_internal(oid);
+ PERFORM assert_false((SELECT cf.payload#>'{ecommerce,items,0}' ? 'item_category' FROM analytics.conversion_facts cf WHERE "order"=oid),'missing product type label is omitted, not invented');
+ PERFORM assert_eq((SELECT (cf.payload#>>'{ecommerce,value}')::numeric FROM analytics.conversion_facts cf WHERE "order"=oid),0.30::numeric,'missing label cannot change the charged total');
  -- Inject a real SQL persistence failure in measurement only. The caller must
  -- still receive its committed order/payment/receipt without any analytics.
  ALTER TABLE analytics.conversion_facts ADD CONSTRAINT measurement_fixture_fault CHECK(payload->>'event'<>'purchase') NOT VALID;

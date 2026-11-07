@@ -34,7 +34,8 @@ test('standing ticket shows its admission product without a required addressed s
 test('standing summary and payload work without a duplicate admission product field', () => {
     const model = new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket'},{id:17,type:'spot',is_ticket_field:true,is_required:true}]});
     const session = new FormSession(model);
-    session.setAreaQuantity({nodeId:'standing',productId:9},1,3,{id:9,title:'Bound standing',price:80,currency_code:'CZK'});
+    session.setAreaQuantity({nodeId:'standing',productId:9},1,3,{id:9,title:'Bound standing',type_title:'Standing',price:80,currency_code:'CZK'});
+    assert.equal(session.state.tickets[0]._blueprintProduct.type_title,'Standing');
     const view=TicketFieldBuilder.create(model.visibleFields.find(f=>f.type==='ticket'),model,session);
     assert.match(view.textContent,/Bound standing/);
     assert.equal(session.state.totalPrice,80);

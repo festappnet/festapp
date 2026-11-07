@@ -40,6 +40,38 @@ class FormStrings {
       'FeatureFormSettings.measurementNoDestination'.tr();
   static String get measurementReady =>
       'FeatureFormSettings.measurementReady'.tr();
+  static String get measurementConsentLayout =>
+      'FeatureFormSettings.measurementConsentLayout'.tr();
+  static String get measurementConsentLayoutBar =>
+      'FeatureFormSettings.measurementConsentLayoutBar'.tr();
+  static String get measurementConsentLayoutModal =>
+      'FeatureFormSettings.measurementConsentLayoutModal'.tr();
+  static String get measurementConsentCustomTitle =>
+      'FeatureFormSettings.measurementConsentCustomTitle'.tr();
+  static String get measurementConsentCustomTitleHelp =>
+      'FeatureFormSettings.measurementConsentCustomTitleHelp'.tr(
+        namedArgs: {
+          'text': 'FeatureFormSettings.measurementConsentTitle'.tr(),
+        },
+      );
+  static String get measurementConsentCustomText =>
+      'FeatureFormSettings.measurementConsentCustomText'.tr();
+  static String get measurementConsentCustomTextHelp =>
+      'FeatureFormSettings.measurementConsentCustomTextHelp'.tr(
+        namedArgs: {
+          'text': 'FeatureFormSettings.measurementConsentDescription'.tr(),
+        },
+      );
+  static String get measurementPrivacyUrlRequired =>
+      'FeatureFormSettings.measurementPrivacyUrlRequired'.tr();
+  static String get measurementNoPrivacyPolicy =>
+      'FeatureFormSettings.measurementNoPrivacyPolicy'.tr();
+  static String get measurementPrivacyUrl =>
+      'FeatureFormSettings.measurementPrivacyUrl'.tr();
+  static String get measurementPrivacyUrlHelp =>
+      'FeatureFormSettings.measurementPrivacyUrlHelp'.tr();
+  static String get measurementPrivacyUrlInvalid =>
+      'FeatureFormSettings.measurementPrivacyUrlInvalid'.tr();
   static String get measurementTitle =>
       'FeatureFormSettings.measurementTitle'.tr();
   static String get measurementScripts =>

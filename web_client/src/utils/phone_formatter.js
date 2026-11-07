@@ -1,4 +1,18 @@
 
+// Conservative and non-truncating: a number without a known country stays out.
+export function normalizeE164Phone(value, {defaultPrefix = null} = {}) {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length > 100 || !/^[+\d\s().-]+$/.test(trimmed) || trimmed.includes('(0)')) return null;
+    let phone = trimmed.replace(/[\s().-]/g, '').replace(/^00/, '+');
+    if (!phone.startsWith('+')) {
+        if (/^(420|421)\d{9}$/.test(phone)) phone = '+' + phone;
+        else if (/^\d{9}$/.test(phone) && ['+420', '+421'].includes(defaultPrefix)) phone = defaultPrefix + phone;
+        else return null;
+    }
+    return /^\+[1-9]\d{7,14}$/.test(phone) ? phone : null;
+}
+
 export class PhoneFormatter {
     static kMaxPhoneNumberLength = 12;
 

@@ -1,6 +1,6 @@
 import {FORM_MEASUREMENT_SCRIPT_LIMIT} from '../../../web_client/src/components/forms/form_measurement_limits.js';
 import {runtimeSource} from './runtime_source.mjs';
-import {measurementOrigin} from '../../../web_client/src/components/forms/form_measurement_contract.js';
+import {measurementOrigin, measurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
 const headers = {'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
     'permissions-policy':'camera=(), microphone=(), geolocation=(), payment=()', 'cross-origin-opener-policy':'same-origin'};
@@ -43,7 +43,9 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
         const sources=['https://www.googletagmanager.com',...collectors].join(' ');
         const csp=`default-src 'none'; script-src 'self' 'unsafe-inline' ${sources}; script-src-attr 'none'; connect-src ${sources}; img-src ${sources}; style-src 'none'; frame-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${ancestors.join(' ')}`;
         // Explicit fields only: never serialize the service credential or env.
-        const boot={organization:config.organization,form_id:config.form_id,form_link:form,parent_origin:parent,
+        const manifest=measurementManifest(config.policy,form);
+        if(!manifest || manifest.organization!==config.organization || manifest.unit!==config.unit)return fail();
+        const boot={manifest,organization:config.organization,unit:config.unit,form_id:config.form_id,form_link:form,parent_origin:parent,
             gtm_container:config.gtm_container||null,scripts:config.scripts||null};
         const html=`<!doctype html><meta charset="utf-8"><title>Festapp measurement</title><script type="application/json" id="measurement-config">${json(boot)}</script><script src="/runtime.js"></script>`;
         return new Response(html,{headers:{...headers,'content-type':'text/html; charset=utf-8','content-security-policy':csp}});

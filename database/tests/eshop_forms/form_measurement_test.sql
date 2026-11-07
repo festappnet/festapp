@@ -16,4 +16,31 @@ BEGIN
  rejected:=false;
  BEGIN PERFORM public.validate_configuration_value_internal_v1('"bad"'::jsonb,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_gtm_container}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
  PERFORM assert_true(rejected,'Unit GTM validator owns destination format');
+ PERFORM public.validate_configuration_value_internal_v1('"modal"'::jsonb,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_layout}');
+ rejected:=false;
+ BEGIN PERFORM public.validate_configuration_value_internal_v1('"popup"'::jsonb,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_layout}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'notice layout accepts only bar or modal');
+ rejected:=false;
+ BEGIN PERFORM public.validate_configuration_value_internal_v1(to_jsonb(repeat('x',81)),public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_title}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'notice title is limited to 80 characters');
+ rejected:=false;
+ BEGIN PERFORM public.validate_configuration_value_internal_v1(to_jsonb(repeat('x',501)),public.configuration_settings_contract_internal_v1()#>'{unit,measurement_consent_text}');EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'notice text is limited to 500 characters');
+END $$;
+
+DO $$
+DECLARE rule jsonb:=public.configuration_settings_contract_internal_v1()#>'{unit,measurement_privacy_url}'; value text; rejected boolean; stored jsonb;
+BEGIN
+ PERFORM public.validate_configuration_value_internal_v1(to_jsonb('https://organizer.example/privacy'::text),rule);
+ PERFORM public.validate_configuration_value_internal_v1('null',rule);
+ PERFORM public.validate_configuration_value_internal_v1('""',rule);
+ FOR value IN SELECT unnest(ARRAY['javascript:alert(1)','data:text/plain,x','http://example.com','/privacy','https://user:pass@example.com','https://@example.com','https://example.com:99999','https://example.com/'||repeat('x',2048)]) LOOP
+  rejected:=false;
+  BEGIN PERFORM public.validate_configuration_value_internal_v1(to_jsonb(value),rule);
+  EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+  PERFORM assert_true(rejected,'invalid privacy URL rejected');
+ END LOOP;
+ stored:=public.merge_configuration_settings_internal_v1('{}','{"measurement_privacy_url":"https://organizer.example/privacy"}','unit');
+ PERFORM assert_eq(public.merge_configuration_settings_internal_v1(stored,'{}','unit'),stored,'omission preserves URL');
+ PERFORM assert_false(public.merge_configuration_settings_internal_v1(stored,'{"measurement_privacy_url":null}','unit') ? 'measurement_privacy_url','null clears URL');
 END $$;

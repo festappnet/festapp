@@ -41,10 +41,12 @@ try {
     fixture = setup.at(-1).rows[0].fixture;
     const rpc = {
         get_form_by_link: ['SELECT public.get_form_by_link($1::jsonb) AS result', a => [a.input_data]],
+        get_form_measurement_policy: ['SELECT public.get_form_measurement_policy($1) AS result', a => [a.p_form_link]],
         get_blueprint: ['SELECT public.get_blueprint($1,$2,$3) AS result', a => [a.my_secret, a.form_key, a.blueprint_id]],
         select_spot: ['SELECT public.select_spot($1,$2,$3,$4) AS result', a => [a.form_key, a.secret_id, a.spot_id, a.selecting]],
         'send-ticket-order': ['SELECT public.create_ticket_order_client_sync_v1($1,$2,$3) AS result', a => [a.orderDetails, a.commandId, a.clientId]],
     };
+    let rpcQueue = Promise.resolve();
     const handleRpc = async (req, res, next) => {
         if (req.url === '/assets/translations/cs.json') {
             res.setHeader('Content-Type', 'application/json');
@@ -53,29 +55,34 @@ try {
         }
         if (req.url !== '/__seat_checkout_rpc') return next();
         res.setHeader('Content-Type', 'application/json');
-        try {
-            let body = '';
-            for await (const chunk of req) body += chunk;
-            const { name, args } = JSON.parse(body);
-            assert.ok(Object.hasOwn(rpc, name), `Unexpected RPC ${name}`);
-            const [sql, parameters] = rpc[name];
-            calls.push(name);
-            if (name === 'select_spot') await new Promise(resolve => setTimeout(resolve, 250));
-            await db.query('SAVEPOINT browser_rpc');
-            await db.query('SET LOCAL ROLE anon');
-            const result = (await db.query(sql, parameters(args))).rows[0].result;
-            await db.query('RESET ROLE');
-            await db.query('RELEASE SAVEPOINT browser_rpc');
-            let data = result;
-            if (name === 'send-ticket-order') {
-                checkout = { payload: args.orderDetails, result: result.data };
-                data = result.data.code === 200 ? { code: 200, ticketOrder: result.data } : result.data;
+        let body = '';
+        for await (const chunk of req) body += chunk;
+        const operation = rpcQueue.then(async () => {
+            let savepoint = false;
+            try {
+                const { name, args } = JSON.parse(body);
+                assert.ok(Object.hasOwn(rpc, name), `Unexpected RPC ${name}`);
+                const [sql, parameters] = rpc[name];
+                calls.push(name);
+                if (name === 'select_spot') await new Promise(resolve => setTimeout(resolve, 250));
+                await db.query('SAVEPOINT browser_rpc'); savepoint = true;
+                await db.query('SET LOCAL ROLE anon');
+                const result = (await db.query(sql, parameters(args))).rows[0].result;
+                await db.query('RESET ROLE');
+                await db.query('RELEASE SAVEPOINT browser_rpc'); savepoint = false;
+                let data = result;
+                if (name === 'send-ticket-order') {
+                    checkout = { payload: args.orderDetails, result: result.data };
+                    data = result.data.code === 200 ? { code: 200, ticketOrder: result.data } : result.data;
+                }
+                res.end(JSON.stringify({ data, error: null }));
+            } catch (error) {
+                if (savepoint) await db.query('ROLLBACK TO SAVEPOINT browser_rpc');
+                res.end(JSON.stringify({ data: null, error: { message: error.message } }));
             }
-            res.end(JSON.stringify({ data, error: null }));
-        } catch (error) {
-            await db.query('ROLLBACK TO SAVEPOINT browser_rpc');
-            res.end(JSON.stringify({ data: null, error: { message: error.message } }));
-        }
+        });
+        rpcQueue = operation.catch(() => {});
+        await operation;
     };
     server = await createServer({ root, server: { host: '127.0.0.1', port: 0, strictPort: true }, logLevel: 'error',
         plugins: [{ name: 'seat-checkout-fixture', configureServer(server) { server.middlewares.use(handleRpc); } }] });

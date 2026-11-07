@@ -29,6 +29,8 @@ jobs:
         run: python3 automation/ci/run.py step web-install
       - name: Verify restricted WebViews and production module identity
         run: python3 automation/ci/run.py step web-startup
+      - name: Verify consent-bound form measurement
+        run: python3 automation/ci/run.py step web-measurement
       - name: Install public renderer dependencies
         run: python3 automation/ci/run.py step renderer-install
       - name: Verify deployment gates

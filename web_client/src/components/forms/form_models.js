@@ -133,6 +133,7 @@ export class FormModel {
         this.key = data.key;
         this.occasionTitle = data.occasion?.title || null;
         this.occasionId = data.occasion; // Occasion ID might come as integer or object depending on query
+        this.occasionTitle = data.occasion?.title;
         this.blueprint = data.blueprint;
         this.type = data.type;
         this.bankAccountId = data.bank_account;

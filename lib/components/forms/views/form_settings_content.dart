@@ -157,6 +157,22 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     return status?['organization_enabled'] == true;
   }
 
+  /// Only people who run measurement need this warning, and only when the
+  /// missing link is what stops a form that is otherwise set up.
+  bool get _showMeasurementPrivacyWarning {
+    final status = _form?.definition.measurementStatus;
+    final reasons = status?['blocked_reasons'];
+    return _measurementEnabled &&
+        status?['unit_enabled'] == true &&
+        reasons is List &&
+        reasons.contains('no_privacy_policy') &&
+        !reasons.contains('no_destination') &&
+        (_canManageMeasurement ||
+            RightsService.hasCapability(
+              AuthorizationCapabilities.unitSettingsWrite,
+            ));
+  }
+
   List<String> get _measurementStatusMessages {
     final status = _form?.definition.measurementStatus;
     final reasons = status?['blocked_reasons'];
@@ -172,6 +188,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           reasons is List &&
           reasons.contains('no_destination'))
         FormStrings.measurementNoDestination,
+      if (_measurementEnabled &&
+          reasons is List &&
+          reasons.contains('no_privacy_policy'))
+        FormStrings.measurementNoPrivacyPolicy,
     ];
     return messages.isEmpty ? [FormStrings.measurementReady] : messages;
   }
@@ -1223,6 +1243,17 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         .textTheme
                                         .titleLarge,
                                   ),
+                                  subtitle: _showMeasurementPrivacyWarning
+                                      ? Text(
+                                          FormStrings
+                                              .measurementNoPrivacyPolicy,
+                                          style: TextStyle(
+                                            color: Theme.of(innerContext)
+                                                .colorScheme
+                                                .error,
+                                          ),
+                                        )
+                                      : null,
                                   children: [
                                     SwitchListTile(
                                       contentPadding: EdgeInsets.zero,

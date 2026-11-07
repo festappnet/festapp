@@ -97,6 +97,10 @@ try {
                 if (req.url !== '/__form_access_rpc') return next();
                 let body = ''; for await (const chunk of req) body += chunk;
                 const { name, args, scenario } = JSON.parse(body);
+                if (name === 'get_form_measurement_policy') {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({data:{eligible:false, enabled:false}, error:null})); return;
+                }
                 const editor = scenario.startsWith('editor') || scenario.startsWith('unit-editor');
                 let data;
                 if (name === 'get_app_config_v218') data = {

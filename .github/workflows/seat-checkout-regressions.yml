@@ -116,6 +116,8 @@ jobs:
         env:
           GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
         run: python3 automation/ci/run.py step seat-google-auth
+      - name: Measurement SQL, revision and MCP contracts
+        run: python3 automation/ci/run.py step seat-measurement
       - name: Database contract and anonymous checkout
         run: python3 automation/ci/run.py step seat-contract
       - name: Notification feed and history authorization contracts

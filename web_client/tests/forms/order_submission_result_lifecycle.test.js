@@ -114,7 +114,7 @@ for (const scenario of ['success', 'server-error', 'transport-error', 'demo', 'r
       FormNetwork.submitOrder=()=>new Promise((resolve,reject)=>{resolveRequest=resolve;rejectRequest=reject;});
       const page=new FormPage('form-page-container');
       const events=[];
-      page.analytics={confirmed:()=>events.push('confirmed'),emit:payload=>events.push(payload.event)};
+      page.analytics={captureSubmission:()=> (success)=>events.push(success?'confirmed':'form_submit_error')};
       page.currentSession={payload:{form:'test'}, awaitPendingReservations:async()=>{}, captureReservationCapability:()=>null, completeReservation:()=>{}};
       page.cleanup=()=>{};
       page.closePreview=()=>{};
@@ -152,7 +152,7 @@ test('real dataLayer emits purchase only after backend confirmation and survives
     const page=new FormPage('form-page-container');
     page.currentSession={payload:{form:'private',email:'private@example.test'},awaitPendingReservations:async()=>{},captureReservationCapability:()=>null,completeReservation:()=>{}};
     const sent=[];
-    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[],data:{analytics:{enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60}}},bridge:{measurementEpoch:()=> 'fixture-lease',measurementAllowed:()=>true,track:p=>{sent.push(p);return true;}},session:()=>false});
+    page.analytics=new FormDataLayer({win:window,model:{id:1,visibleFields:[],data:{analytics:{enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60}}},sink:{record:p=>{sent.push(p);return true;},capture:()=>p=>{sent.push(p);return true;}}});
     page.closePreview=()=>{};page.cleanup=()=>{};
     let finish;const finished=new Promise(resolve=>{finish=resolve;});let renders=0;
     page.showFullScreenResult=()=>{if(renders++===0)throw new Error('render failed');finish();};
@@ -163,4 +163,25 @@ test('real dataLayer emits purchase only after backend confirmation and survives
     assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view','purchase']);
     assert.equal(JSON.stringify(sent).includes('private'),false);
   }finally{FormNetwork.submitOrder=original;dom.window.close();}
+});
+
+for(const pending of ['reservations','backend'])test(`real FormPage pending ${pending} keeps its original measurement grant through revoke/regrant`,async t=>{
+ const {fixture,purchase,settle}=await import('../support/measurement_fixture.js');const f=fixture(t);await f.start();
+ const win=f.dom.window;Object.assign(globalThis,{window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent});win.scrollTo=()=>{};
+ win.document.body.innerHTML='<div id="form-page-container"></div>';
+ const [{FormPage},{FormNetwork}]=await Promise.all([import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js')]);
+ const page=new FormPage('form-page-container');let releaseReservations,resolveBackend,completed=0,finished;
+ const resultShown=new Promise(resolve=>finished=resolve);
+ page.currentSession={payload:{form:'private',fields:[{5:'PRIVATE@example.test'},{6:'+420601234567'}]},
+  awaitPendingReservations:()=>pending==='reservations'?new Promise(resolve=>releaseReservations=resolve):Promise.resolve(),
+  captureReservationCapability:()=>null,completeReservation:()=>completed++};
+ page.analytics=f.layer;page.closePreview=()=>{};page.cleanup=()=>{};page.showFullScreenResult=()=>finished();
+ t.mock.method(FormNetwork,'submitOrder',()=>new Promise(resolve=>resolveBackend=resolve));
+ f.sent.length=0;page.submitOrder(win.document.createElement('form'),{});await settle();
+ f.choose(false);f.choose({analytics:true,marketing:true});const afterGrant=f.sent.length;
+ if(pending==='reservations'){releaseReservations();await settle();}
+ resolveBackend({success:true,data:{ticketOrder:{analytics:purchase}}});await resultShown;
+ assert.equal(completed,1,'business completion is independent of measurement');
+ assert.equal(f.sent.length,afterGrant,'stale completion sends neither conversion nor context');
+ assert.doesNotMatch(JSON.stringify(f.sent),/PRIVATE|601234567/);
 });

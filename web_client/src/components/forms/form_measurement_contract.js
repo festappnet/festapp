@@ -1,4 +1,4 @@
-// Pure, contact-free contract. Every receiver rebuilds the payload independently.
+// Pure contract. Every receiver rebuilds the payload independently.
 const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase']);
 export const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
 const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
@@ -7,6 +7,12 @@ const pageTypes = ['product', 'checkout', 'confirmation'];
 
 export const measurementNamespace = 'festapp-measurement';
 export const measurementId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+
+// Saved purposes. A boolean is the earlier API: true grants analytics only.
+export function measurementConsent(input) {
+    if (input === true) return {analytics: true, marketing: false};
+    return {analytics: input?.analytics === true, marketing: input?.marketing === true};
+}
 
 // Pages project hostnames are separate sites on the Public Suffix List. A
 // shared workers.dev account or sibling custom domains are not this profile.
@@ -20,10 +26,16 @@ export function measurementOrigin(value, local = false) {
     return null;
 }
 
+// The single campaign/click allowlist for the URL gate, host handshake and runtime.
+export const campaignKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id', 'gclid', 'gbraid', 'wbraid', 'gad_source', 'gad_campaignid', 'srsltid', 'fbclid', 'sznclid', 'ttclid', 'msclkid'];
+// Tolerated on arrival but never forwarded: cross-domain linker and GTM Preview signal.
+export const measurementSignalKeys = ['_gl', 'gtm_debug'];
+const unsafeText = /[@\u0000-\u001f\u007f-\u009f]/;
+
 export function campaignContext(input) {
     const result = {};
-    for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
-        if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !/[@\u0000-\u001f\u007f-\u009f]/.test(input[key])) result[key] = input[key];
+    for (const key of campaignKeys) {
+        if (typeof input?.[key] === 'string' && input[key].length >= 1 && input[key].length <= 256 && !unsafeText.test(input[key])) result[key] = input[key];
     }
     return result;
 }
@@ -53,9 +65,11 @@ export function measurementPageLocation(context) {
 }
 
 const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000-\u001f]/.test(value) ? value.trim().slice(0, limit) : '';
+// Optional public catalog labels. A rejected label is omitted, never the item.
+const itemLabel = value => typeof value === 'string' && !unsafeText.test(value) ? value.trim().slice(0, 100) : '';
 const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
-// Rebuild at both transport boundaries. Never spread form, order or message data.
+// Rebuild at every transport boundary. Never spread form, order or message data.
 export function analyticsPayload(input) {
     if (!input || typeof input !== 'object') return null;
     if (!input.event) {
@@ -77,7 +91,12 @@ export function analyticsPayload(input) {
         const price = money(item?.price);
         const name = textValue(item?.item_name);
         if (!item || !productId(item.item_id) || !name || price === null || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 9999) return null;
-        items.push({item_id: item.item_id, item_name: name, price, quantity: item.quantity});
+        const entry = {item_id: item.item_id, item_name: name, price, quantity: item.quantity};
+        for (const key of ['item_category', 'item_brand']) {
+            const label = itemLabel(item[key]);
+            if (label) entry[key] = label;
+        }
+        items.push(entry);
     }
     // Integer cents keep values such as 0.10 × 3 stable across both boundaries.
     const cents = items.reduce((sum, item) => sum + Math.round(item.price * 100) * item.quantity, 0);
@@ -96,3 +115,19 @@ export function analyticsPayload(input) {
     const result = {event: input.event, ecommerce};
     return result;
 }
+
+// Identity of the SQL snapshot that actually supplies the runtime code.
+export function measurementManifest(policy, formLink) {
+    if (!policy || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
+        !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision<1 ||
+        !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision<1 ||
+        typeof policy.processing_revision !== 'string' || !policy.processing_revision || policy.processing_revision.length>128 ||
+        policy.profile !== 'gtm-v1' || !measurementId(formLink) ||
+        JSON.stringify(policy.required_purposes) !== JSON.stringify(['analytics', 'marketing'])) return null;
+    return {organization:policy.organization, unit:policy.unit, form_link:formLink,
+        processing_revision:policy.processing_revision, runtime_revision:policy.runtime_revision,
+        policy_revision:policy.policy_revision, profile:policy.profile, required_purposes:['analytics','marketing']};
+}
+export const sameMeasurementManifest = (a,b) => !!a && !!b &&
+    ['organization','unit','form_link','processing_revision','runtime_revision','policy_revision','profile','required_purposes']
+        .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key]));

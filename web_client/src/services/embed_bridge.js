@@ -1,4 +1,4 @@
-import { analyticsPayload, campaignContext } from '../components/forms/form_measurement_contract.js';
+import { analyticsPayload, campaignContext, measurementConsent, sameMeasurementManifest } from '../components/forms/form_measurement_contract.js';
 import { isEmbed, applyEmbedContext } from './embed_context.js';
 import { EmbedTheme } from './embed_theme.js';
 
@@ -38,23 +38,35 @@ export class EmbedBridge {
                 data?.namespace !== namespace || data.protocol !== 1 || !validId(data.instance)) return;
             if (this.origin && (event.origin !== this.origin || data.instance !== this.instance)) return;
             if (data.type === 'init' && viewport(data.viewportHeight)) {
-                if (this.consentId !== data.consentId) this.measurementRuntime?.setConsent(false);
                 this.origin = event.origin; this.instance = data.instance;
                 this.applyStylePreference();
                 this.autoHeight = data.autoHeight !== false;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
                 this.dataLayer = data.dataLayer === true;
-                // Host API must supply a current consent lease. Markup is only opt-in.
-                this.consentId = typeof data.consentId === 'string' ? data.consentId : null;
-                this.consentUntil = Number.isFinite(data.consentUntil) && data.consentUntil <= Date.now() + 60000 ? data.consentUntil : 0;
+                this.measurementProtocol=data.measurementProtocol;
                 this.measurementCampaign = campaignContext(data.attribution);
-                this.syncMeasurementRuntime();
+                this.requestConsent(); this.measurementChanged?.();
                 this.syncPrice();
                 this.setViewport(data.viewportHeight, data.viewportOffset);
                 if (data.theme !== undefined) { this.receiveTheme(data.theme); }
                 this.height = null;
                 this.measure();
+            } else if (data.type === 'measurement-consent' && data.measurement?.protocol===2) {
+                const value=data.measurement;
+                if(!sameMeasurementManifest(value.manifest,this.measurementManifest))return;
+                const granted=value.consent?.analytics===true && value.consent?.marketing===true && validId(value.leaseId);
+                const changed=this.leaseId!==value.leaseId;
+                if(changed)this.stop();
+                this.leaseId=granted?value.leaseId:null;
+                this.leaseUntil=granted?Date.now()+Math.min(60000,Math.max(0,Number(value.ttl)||0)):0;
+                this.win.clearTimeout(this.leaseTimer);
+                this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
+                this.consentNotify?.(granted?{...value.consent,leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
+            } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===2 &&
+                data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
+                sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {
+                this.hostActive=true;this.grant.onReady();
             } else if (data.type === 'viewport' && this.origin && viewport(data.viewportHeight)) {
                 this.setViewport(data.viewportHeight, data.viewportOffset);
                 if (data.theme !== undefined) { this.receiveTheme(data.theme); }
@@ -78,6 +90,7 @@ export class EmbedBridge {
         this.ready = () => {
             if (!this.origin) this.win.parent.postMessage({ namespace, protocol: 1, type: 'ready' }, '*');
             if (++attempts >= 10 || this.origin) this.win.clearInterval(this.timer);
+
         };
         this.ready();
         this.timer = this.win.setInterval(this.ready, 500);
@@ -92,29 +105,36 @@ export class EmbedBridge {
     send(type, values) {
         if (this.origin) this.win.parent.postMessage({ namespace, protocol: 1, instance: this.instance, type, ...values }, this.origin);
     }
-    measurementAllowed() {
-        return !!this.origin && !!this.consentId && Date.now() < this.consentUntil &&
-            (this.dataLayer === true || this.measurementRuntime?.measurementAllowed() === true);
+    subscribe(notify) {this.measurementChanged=notify;return ()=>{this.measurementChanged=null;};}
+    setMeasurementRuntime(runtime) {this.measurementRuntime=runtime;}
+    selection() {return this.origin && this.measurementProtocol===2 ? (this.dataLayer?'host':'runtime') : null;}
+    connectConsent(policy,notify) {
+        this.measurementManifest=policy?.processing_revision ? {
+            organization:policy.organization,unit:policy.unit,form_link:policy.form_link,
+            processing_revision:policy.processing_revision,runtime_revision:policy.runtime_revision,
+            policy_revision:policy.policy_revision,profile:policy.profile,required_purposes:policy.required_purposes} : null;
+        this.consentNotify=notify;this.requestConsent();
+        return ()=>{this.consentNotify=null;this.measurementManifest=null;this.stop();};
     }
-    measurementEpoch() {
-        if (!this.measurementAllowed()) return null;
-        return this.dataLayer === true ? `${this.origin}:${this.instance}:${this.consentId}` : this.measurementRuntime.measurementEpoch();
+    requestConsent() {
+        if(this.selection() && this.measurementManifest)this.send('measurement-context',{measurement:{protocol:2,manifest:this.measurementManifest}});
     }
-    setMeasurementRuntime(runtime, onReady = () => {}) { this.onMeasurementReady = onReady; this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
-    syncMeasurementRuntime() {
-        this.measurementRuntime?.setConsent(this.dataLayer !== true && !!this.consentId && Date.now() < this.consentUntil, this.consentUntil);
-        if (this.dataLayer === true && this.measurementAllowed() && this.onMeasurementReady?.()) this.onMeasurementReady = null;
+    hostContext() {return this.selection()?{origin:this.origin,instance:this.instance}:null;}
+    activate(grant) {
+        this.stop();
+        if(grant.selection!==this.selection() || grant.host?.origin!==this.origin || grant.host?.instance!==this.instance || !this.leaseId || this.leaseId!==grant.leaseId || Date.now()>=this.leaseUntil)return;
+        this.grant=grant;
+        if(grant.selection==='runtime')this.measurementRuntime.activate(grant);
+        else this.send('measurement-activate',{measurement:{protocol:2,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
     }
-    updatePolicy(expiresAt) { this.measurementRuntime?.updatePolicy(expiresAt); }
-    revokeMeasurement() { this.consentId = null; this.consentUntil = 0; this.measurementRuntime?.setConsent(false); }
-    // No queue before consent or initialization. Every payload is revalidated.
+    renew(until) {this.measurementRuntime?.renew(Math.min(until,this.leaseUntil||0));}
+    stop() {this.grant=null;this.hostActive=false;this.measurementRuntime?.stop();}
     track(input) {
-        if (!this.measurementAllowed()) return false;
-        const payload = analyticsPayload(input);
-        if (!payload) return false;
-        if (this.dataLayer !== true) return this.measurementRuntime.track(payload);
-        this.send('analytics', {payload, consentId: this.consentId});
-        return true;
+        if(!this.grant || Date.now()>=this.leaseUntil)return false;
+        const payload=analyticsPayload(input);if(!payload)return false;
+        if(this.grant.selection==='runtime')return this.measurementRuntime.track(payload);
+        if(!this.hostActive)return false;
+        this.send('analytics',{measurement:{protocol:2,manifest:this.grant.manifest,generation:this.grant.generation,leaseId:this.grant.leaseId},payload});return true;
     }
     measure() {
         if (this.raf) return;
@@ -200,7 +220,7 @@ export class EmbedBridge {
         }
     }
     destroy() {
-        this.revokeMeasurement();
+        this.stop();this.win.clearTimeout(this.leaseTimer);
         this.win.removeEventListener('message', this.onMessage);
         this.win.removeEventListener('resize', this.onResize);
         this.win.removeEventListener('festapp-embed-price',this.onPrice);
