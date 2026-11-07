@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="470" viewBox="0 0 1060 470" role="img" aria-labelledby="title desc">
+  <title id="title">Festapp: one platform for ticketing and branded event apps</title>
+  <desc id="desc">Festapp provides ticketing and registration through Festapp Tickets internationally and vstupenky.online in the Czech market. It also powers branded festival apps such as Festival Slunovrat on iOS, Android and the web. All share one codebase and event backend.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 6 3 0 6" fill="none" stroke="#8c959f" stroke-width="1.5"/></marker>
+    <style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;fill:#1f2328}.name{font-size:23px;font-weight:650}.label{font-size:18px;font-weight:600}.sub{font-size:14px;fill:#59636e}.wire{fill:none;stroke:#8c959f;stroke-width:1.8;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect x="1" y="1" width="1058" height="468" rx="12" fill="#fff" stroke="#d1d9e0"/>
+  <rect x="359" y="29" width="342" height="80" rx="10" fill="#eaf3ff" stroke="#8cb4ea"/>
+  <text x="530" y="62" text-anchor="middle" class="name">Festapp</text>
+  <text x="530" y="88" text-anchor="middle" class="sub">Shared event platform</text>
+  <path d="M530 109v25H294v31" class="wire"/><path d="M530 134h254v31" class="wire"/>
+  <rect x="69" y="166" width="450" height="69" rx="9" fill="#f6f8fa" stroke="#d1d9e0"/>
+  <text x="294" y="195" text-anchor="middle" class="label">Ticketing &amp; registration</text>
+  <text x="294" y="218" text-anchor="middle" class="sub">Forms, seats, orders, payments and check-in</text>
+  <rect x="589" y="166" width="390" height="69" rx="9" fill="#f6f8fa" stroke="#d1d9e0"/>
+  <text x="784" y="195" text-anchor="middle" class="label">Branded event apps</text>
+  <text x="784" y="218" text-anchor="middle" class="sub">Programs, maps, news and personal schedules</text>
+  <path d="M294 235v24H175v30" class="wire"/><path d="M294 259h119v30" class="wire"/><path d="M784 235v54" class="wire"/>
+  <rect x="62" y="290" width="226" height="79" rx="9" fill="#fff" stroke="#d1d9e0"/>
+  <text x="175" y="322" text-anchor="middle" class="label">Festapp Tickets</text>
+  <text x="175" y="346" text-anchor="middle" class="sub">International ticketing service</text>
+  <rect x="300" y="290" width="226" height="79" rx="9" fill="#fff" stroke="#d1d9e0"/>
+  <text x="413" y="322" text-anchor="middle" class="label">vstupenky.online</text>
+  <text x="413" y="346" text-anchor="middle" class="sub">Czech ticketing portal</text>
+  <rect x="589" y="290" width="390" height="79" rx="9" fill="#fff8e5" stroke="#e8c76a"/>
+  <text x="784" y="322" text-anchor="middle" class="label">Festival Slunovrat</text>
+  <text x="784" y="346" text-anchor="middle" class="sub">Example festival app: iOS, Android and web</text>
+  <path d="M48 403h964" stroke="#d1d9e0"/>
+  <text x="530" y="436" text-anchor="middle" class="sub">One shared codebase and event backend, configured for each organization.</text>
+</svg>
