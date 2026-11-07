@@ -4623,7 +4623,7 @@
       "many": "{count} míst",
       "other": "{count} míst"
     },
-    "capacity": "Volná místa pro veřejnost: {remaining} / {limit}",
+    "capacity": "Volná místa: {remaining} / {limit}",
     "heldForWaiting": "Drženo pro pořadník: {count}",
     "needsAttention": "Vyžaduje pozornost",
     "detail": "Detail",
