@@ -68,7 +68,7 @@ jobs:
   server-policy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           version: 11.24.0
@@ -90,7 +90,7 @@ jobs:
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: sdk
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
