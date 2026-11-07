@@ -4,7 +4,7 @@
     "jsr:@std/assert@*": "1.0.19",
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
-    "npm:@festapp/banksync@0.5.2": "0.5.2",
+    "npm:@festapp/banksync@0.5.4": "0.5.4",
     "npm:bidi-js@1.1.0": "1.1.0",
     "npm:fflate@0.8.2": "0.8.2",
     "npm:fontkit@*": "2.0.4",
@@ -34,8 +34,8 @@
     }
   },
   "npm": {
-    "@festapp/banksync@0.5.2": {
-      "integrity": "sha512-pBru/G8FC+n1eomcDlphs3a43qDyM2oZs88LVa2nbjRBSDS33PWyPZfl7an6AbzESY+kXoDXLMizx3aBuD8klA==",
+    "@festapp/banksync@0.5.4": {
+      "integrity": "sha512-/fv26h29vnkq4vm7sBTIP6iZwo6nNa5qesmBtmQ3ZL0c9SdLd65DN4AOsfQ0KoCxkE0bIB+0MYX9uJjsLJ7s/w==",
       "dependencies": [
         "htmlparser2",
         "postal-mime",
