@@ -25,27 +25,50 @@ class PaymentMethodCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, size) {
-      // Stack early when enlarged text needs more room.
+      // Each row shares its natural height, including wrapped translations.
       final columns =
           size.maxWidth >= 600 * MediaQuery.textScalerOf(context).scale(1)
-          ? 3
+          ? 2
           : 1;
-      final width = (size.maxWidth - (columns - 1) * 12) / columns;
-      return Wrap(
-        spacing: 12,
-        runSpacing: 12,
+      final methods = [
+        for (final method
+            in (onlineFirst
+                ? const [
+                    FormPaymentMethod.online,
+                    FormPaymentMethod.bank,
+                    FormPaymentMethod.both,
+                    FormPaymentMethod.cash,
+                  ]
+                : FormPaymentMethod.values))
+          if (showOnline ||
+              method == FormPaymentMethod.bank ||
+              method == FormPaymentMethod.cash)
+            method,
+      ];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final method
-              in (onlineFirst
-                  ? const [
-                      FormPaymentMethod.online,
-                      FormPaymentMethod.bank,
-                      FormPaymentMethod.both,
-                      FormPaymentMethod.cash,
-                    ]
-                  : FormPaymentMethod.values))
-            if (showOnline || method == FormPaymentMethod.bank || method == FormPaymentMethod.cash)
-              SizedBox(width: width, child: _card(context, method)),
+          for (var start = 0; start < methods.length; start += columns) ...[
+            if (start > 0) const SizedBox(height: 12),
+            if (columns == 1)
+              _card(context, methods[start])
+            else
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var offset = 0; offset < columns; offset++) ...[
+                      if (offset > 0) const SizedBox(width: 12),
+                      Expanded(
+                        child: start + offset < methods.length
+                            ? _card(context, methods[start + offset])
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+          ],
         ],
       );
     },
@@ -55,7 +78,10 @@ class PaymentMethodCards extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final selected = value == method;
-    final enabled = method == FormPaymentMethod.cash || method == FormPaymentMethod.bank || canSelectOnline;
+    final enabled =
+        method == FormPaymentMethod.cash ||
+        method == FormPaymentMethod.bank ||
+        canSelectOnline;
     final title = method == FormPaymentMethod.online && onlineTitle != null
         ? onlineTitle!
         : PaymentMethodStrings.text(switch (method) {
@@ -70,7 +96,7 @@ class PaymentMethodCards extends StatelessWidget {
       FormPaymentMethod.online => 'stripeDescription',
       FormPaymentMethod.both => 'bothDescription',
     });
-    final radius = BorderRadius.circular(8);
+    final radius = BorderRadius.circular(12);
     return Semantics(
       container: true,
       checked: selected,
@@ -96,6 +122,7 @@ class PaymentMethodCards extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -139,7 +166,7 @@ class PaymentMethodCards extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: selected
                           ? colors.onPrimaryContainer
                           : colors.onSurfaceVariant,
