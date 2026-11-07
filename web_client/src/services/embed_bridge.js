@@ -22,8 +22,7 @@ export class EmbedBridge {
         this.theme.apply(theme);
         this.syncPrice();
     }
-    start(grant) {
-        if(grant)return this.attachMeasurement(grant);
+    start() {
         if (!isEmbed(this.win.location) || this.win.parent === this.win) return;
         applyEmbedContext();
         this.onPrice = event => { this.price = event.detail; this.syncPrice(); };
@@ -120,11 +119,12 @@ export class EmbedBridge {
     requestConsent() {
         if(this.selection() && this.measurementManifest)this.send('measurement-context',{measurement:{protocol:2,manifest:this.measurementManifest}});
     }
-    attachMeasurement(grant) {
+    hostContext() {return this.selection()?{origin:this.origin,instance:this.instance}:null;}
+    activate(grant) {
         this.stop();
-        if(!this.selection() || !this.modelPolicyApproved?.(this.origin) || !this.leaseId || this.leaseId!==grant.leaseId || Date.now()>=this.leaseUntil)return;
+        if(grant.selection!==this.selection() || grant.host?.origin!==this.origin || grant.host?.instance!==this.instance || !this.leaseId || this.leaseId!==grant.leaseId || Date.now()>=this.leaseUntil)return;
         this.grant=grant;
-        if(grant.selection==='runtime')this.measurementRuntime.start(grant);
+        if(grant.selection==='runtime')this.measurementRuntime.activate(grant);
         else this.send('measurement-activate',{measurement:{protocol:2,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
     }
     renew(until) {this.measurementRuntime?.renew(Math.min(until,this.leaseUntil||0));}

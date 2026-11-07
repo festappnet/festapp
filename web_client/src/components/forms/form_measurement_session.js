@@ -56,7 +56,7 @@ export class FormMeasurementSession {
             if (this.disposed || generation!==this.generation || identity!==this.identity()) return;
             const manifest=measurementManifest(policy,this.model.link);
             const changed=!sameMeasurementManifest(manifest,this.manifest);
-            if (changed) this.invalidate();
+            if (changed || (this.grant && this.clock()>=this.until)) this.invalidate();
             this.verifiedIdentity=identity; this.policy=policy; this.model.data.analytics=policy; this.manifest=changed?manifest:this.manifest;
             this.until=this.clock()+Math.min(60,Math.max(0,Number(policy?.valid_for_seconds)||0))*1000;
             if (changed || !this.consentConnected || this.consentStaff!==(policy?.visitor_role==='staff')) this.connectConsent();
@@ -85,7 +85,10 @@ export class FormMeasurementSession {
     }
     permitted() {
         const p=this.policy;
-        return this.clock()>=(this.failureUntil||0) && this.contextAllowed() && this.identity()===this.verifiedIdentity && p?.visitor_role!=='staff' &&
+        const host=this.transport.hostContext?.() || null;
+        const hostAllowed=!host || (Array.isArray(p?.approved_hosts) && p.approved_hosts.includes(host.origin));
+        const hostUnchanged=!this.grant || (host?.origin===this.grant.host?.origin && host?.instance===this.grant.host?.instance);
+        return hostAllowed && hostUnchanged && this.clock()>=(this.failureUntil||0) && this.contextAllowed() && this.identity()===this.verifiedIdentity && p?.visitor_role!=='staff' &&
             (this.identity()==='anonymous' || p?.visitor_role==='visitor') &&
             p?.enabled===true && p.organization_allowed===true && p.runtime_supported===true && p.eligible===true &&
             !!this.manifest && this.clock()<this.until && this.consent.analytics && this.consent.marketing &&
@@ -99,10 +102,11 @@ export class FormMeasurementSession {
         if (!selection) {if(this.grant)this.invalidate(); return;}
         if(this.grant && this.grant.selection!==selection) this.invalidate();
         if(this.grant) return;
-        const grant=this.grant={manifest:this.manifest,generation:this.generation,identity:this.identity(),selection,
+        const host=this.transport.hostContext?.() || null;
+        const grant=this.grant={host:host?Object.freeze({...host}):null,runtimeOrigin:this.policy.runtime_origin,manifest:this.manifest,generation:this.generation,identity:this.identity(),selection,
             consent:{analytics:true,marketing:true},leaseId:this.consent.leaseId};
         this.state='starting';
-        try {this.transport.start({...grant,expiresAt:Math.min(this.until,this.consent.expiresAt||Infinity),
+        try {this.transport.activate({...grant,expiresAt:Math.min(this.until,this.consent.expiresAt||Infinity),
             onReady:()=>{if(this.grant===grant && this.permitted() && this.state==='starting'){this.state='active';this.onActive();}},
             onMismatch:()=>{if(this.grant===grant){this.failureUntil=this.clock()+20000;this.invalidate();this.refresh();}}});}
         catch {this.invalidate();}

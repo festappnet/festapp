@@ -43,16 +43,21 @@ export class FormDataLayer {
             if(!conversion || !['purchase','generate_lead'].includes(conversion.event))return;
             const identity=conversion.ecommerce?.transaction_id||conversion.event_id;
             if(this.conversions.has(identity))return;
-            this.page('confirmation',send);
+            if(!this.#publishPage('confirmation',send))return;
+            this.pageType='confirmation';
             if(send(conversion))this.conversions.add(identity);
         };
     }
 
-    page(page_type, send = input=>this.emit(input)) {
+    page(page_type) {
         this.pageType = page_type;
+        return this.#publishPage(page_type,input=>this.emit(input));
+    }
+    #publishPage(page_type, send) {
         const language = this.win.document.documentElement.lang?.slice(0, 2);
-        send({page_type, language});
+        if(!send({page_type, language}))return false;
         if (!this.viewedPages.has(page_type) && send({event: 'page_view'})) this.viewedPages.add(page_type);
+        return true;
     }
     // First real visitor input. Field names and values never leave.
     started() { if (!this.formStarted && this.emit({event: 'form_start'})) this.formStarted = true; }

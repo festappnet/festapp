@@ -603,7 +603,6 @@ export class FormPage extends Component {
             const transport=this.embedBridge||runtime;
             if(this.embedBridge) {
                 this.embedBridge.setMeasurementRuntime(runtime);
-                this.embedBridge.modelPolicyApproved=origin=>formModel.data?.analytics?.approved_hosts?.includes(origin)===true;
             }
             let identity=hasBrowserSession(window)?'authenticated':'anonymous';
             const consentSource=this.embedBridge?{connect:(policy,notify)=>this.embedBridge.connectConsent(policy,notify)}:{

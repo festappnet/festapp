@@ -134,3 +134,20 @@ ledger s cash_reservations na `20261106220000` a žádnou ze tří PR migrací a
 consent migraci. V daném tenantu je 0 povolených platform policies, 0 provisioned
 Unit runtimes a 0 measurement-enabled Units. Zapnutí měření není součástí release.
 Release stav a skutečně provedené provozní kroky budou zaznamenány samostatně.
+
+
+## Vyžádaná architektonická kontrola před publikací
+
+Kontrola caller -> owner -> transport potvrdila skutečný transport seam se dvěma
+adaptéry a SQL autoritu pro obchodní facts/enablement. Opraveny byly zbývající
+mezivrstvové nedostatky: approved-host rozhodnutí nyní vlastní session, grant váže
+konkrétní host origin/instanci i runtime origin; stránka ani bridge neobsahují
+samostatný policy predicate. Bridge.start() slouží pouze layoutu, jednotné
+activate(grant) připojuje měřicí transport. Stará submission closure nemůže změnit
+ani page state event ownera. Ekvivalentní policy renewal po již uplynulé expiraci
+vytvoří nový grant i při zpožděném expiry timeru, takže starý sender zůstane neplatný.
+Cílené veřejné-interface/wiring regrese prošly 140/140, bez skipů. Tato kontrola
+nepřidala provider framework, event bus, druhý consent owner ani další business cestu.
+Po úpravě byly znovu vykonány dotčené browserové scénáře; publikační gate používá
+kanonické lane selekce. Jde o kontrolu implementujícího agenta, nikoli novou
+nezávislou oponenturu.

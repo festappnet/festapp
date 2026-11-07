@@ -98,3 +98,23 @@ test('missing/broken consent source retries after renewal and recovers without r
  const old=f.session.capture();notify(null);assert.equal(f.transport.grant,null);assert.equal(old({event:'page_view'}),false);
  await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(attempts,3);assert.equal(old({event:'page_view'}),false);
 });
+test('session alone owns approved-host eligibility and binds the host instance into its grant',async t=>{
+ let host={origin:'https://unapproved.test',instance:'one'},answer={...policy,approved_hosts:['https://approved.test']};
+ const f=fixture(t,{source:async()=>answer});f.transport.hostContext=()=>host;
+ await f.start();assert.equal(f.starts.length,0,'owner rejects unapproved host before transport activation');
+ host={origin:'https://approved.test',instance:'one'};await f.session.refresh();assert.equal(f.session.state,'active');
+ assert.deepEqual(f.transport.grant.host,host);assert.equal(f.transport.grant.runtimeOrigin,policy.runtime_origin);
+ const old=f.session.capture();host={...host,instance:'two'};assert.equal(old({event:'page_view'}),false,'host instance is part of the captured permission');
+ f.session.reconcile();await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(old({event:'page_view'}),false);
+ answer={...answer,approved_hosts:[]};await f.session.refresh();assert.equal(f.transport.grant,null,'policy removal is owned by session');
+});
+test('a stale submission cannot change event-owner page state across reactivation',async t=>{
+ const f=fixture(t);await f.start();const outcome=f.layer.captureSubmission();f.choose(false);f.choose({analytics:true,marketing:true});
+ outcome(true,{ticketOrder:{analytics:purchase}});assert.equal(f.layer.pageType,'product');
+ f.choose(false);f.choose({analytics:true,marketing:true});assert.equal(f.sent.some(p=>p.page_type==='confirmation'),false);
+});
+test('a delayed expiry timer cannot let policy renewal revive the expired grant',async t=>{
+ let now=100000;const f=fixture(t,{clock:()=>now});await f.start();const expired=f.session.capture();
+ now+=61000;assert.equal(expired({event:'page_view'}),false,'expiry is checked before sending, independent of timers');
+ await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(expired({event:'page_view'}),false,'renewal creates a new grant after elapsed expiry');
+});

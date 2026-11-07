@@ -16,10 +16,10 @@ export class FormMeasurementRuntime {
         };
         win.addEventListener('message',this.onMessage);
     }
-    start(grant) {
+    activate(grant) {
         this.stop();
         if(this.disposed || !grant?.consent.analytics || !grant.consent.marketing)return;
-        const origin=measurementOrigin(this.model.data?.analytics?.runtime_origin,this.local);
+        const origin=measurementOrigin(grant.runtimeOrigin,this.local);
         if(!origin || origin===this.win.location.origin)return;
         const input={...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign(),
             page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};

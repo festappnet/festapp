@@ -25,26 +25,26 @@ test('Worker binds actual SQL manifest, escapes scoped config, preserves CSP and
 function fixture(t){
  const dom=new JSDOM('<body></body>',{url:parent+'/form/summer?gclid=click',pretendToBeVisual:true});const model={link:'summer',data:{analytics:policy}};
  const transport=new FormMeasurementRuntime({win:dom.window,model});let ready=0,mismatches=0;
- const grant={manifest,generation:7,consent:{analytics:true,marketing:true},expiresAt:Date.now()+60000,onReady:()=>ready++,onMismatch:()=>mismatches++};
+ const grant={runtimeOrigin:runtime,manifest,generation:7,consent:{analytics:true,marketing:true},expiresAt:Date.now()+60000,onReady:()=>ready++,onMismatch:()=>mismatches++};
  const message=(type,extra={})=>dom.window.dispatchEvent(new dom.window.MessageEvent('message',{source:transport.frame?.contentWindow,origin:runtime,
   data:{namespace:'festapp-measurement',protocol:2,type,manifest,instance:transport.instance,generation:7,...extra}}));
  t.after(()=>{transport.destroy();dom.window.close();});return{dom,transport,grant,message,ready:()=>ready,mismatches:()=>mismatches};
 }
 test('no grant means no iframe; ready/init/ACK bind origin, source, manifest, generation and instance',t=>{
- const f=fixture(t),r=f.transport;r.start();assert.equal(r.frame,null);r.start({...f.grant,consent:{analytics:true,marketing:false}});assert.equal(r.frame,null);
- r.start(f.grant);assert.equal(r.frame.getAttribute('sandbox'),'allow-scripts allow-same-origin');assert.equal(r.frame.referrerPolicy,'no-referrer');
+ const f=fixture(t),r=f.transport;r.activate();assert.equal(r.frame,null);r.activate({...f.grant,consent:{analytics:true,marketing:false}});assert.equal(r.frame,null);
+ r.activate(f.grant);assert.equal(r.frame.getAttribute('sandbox'),'allow-scripts allow-same-origin');assert.equal(r.frame.referrerPolicy,'no-referrer');
  f.message('ack',{protocol:1});f.message('ack',{instance:'forged'});f.message('ack',{generation:6});assert.equal(f.ready(),0);
  f.message('ready');f.message('ack');assert.equal(f.ready(),1);assert.equal(r.track({event:'page_view'}),true);
  r.renew(Date.now()+60000);assert.equal(f.ready(),1);r.stop();f.message('ack');assert.equal(r.track({event:'page_view'}),false);
 });
 test('policy A / Worker B mismatches before init, and old frames/ACKs cannot revive',t=>{
- const f=fixture(t),r=f.transport;r.start(f.grant);const old=r.frame.contentWindow,instance=r.instance;
+ const f=fixture(t),r=f.transport;r.activate(f.grant);const old=r.frame.contentWindow,instance=r.instance;
  f.message('ready',{manifest:{...manifest,processing_revision:'b'}});assert.equal(f.mismatches(),1);assert.equal(r.frame,null);
- r.start({...f.grant,generation:8});f.dom.window.dispatchEvent(new f.dom.window.MessageEvent('message',{source:old,origin:runtime,data:{namespace:'festapp-measurement',protocol:2,type:'ack',manifest,instance,generation:7}}));
+ r.activate({...f.grant,generation:8});f.dom.window.dispatchEvent(new f.dom.window.MessageEvent('message',{source:old,origin:runtime,data:{namespace:'festapp-measurement',protocol:2,type:'ack',manifest,instance,generation:7}}));
  assert.equal(f.ready(),0);r.frame.remove();f.message('ack',{generation:8});assert.equal(f.ready(),0);
 });
 for(const hidden of [false,true])test('expiry destroys the runtime even when hidden='+hidden,async t=>{
- const f=fixture(t);f.transport.start({...f.grant,expiresAt:Date.now()+10});Object.defineProperty(f.dom.window.document,'hidden',{value:hidden});
+ const f=fixture(t);f.transport.activate({...f.grant,expiresAt:Date.now()+10});Object.defineProperty(f.dom.window.document,'hidden',{value:hidden});
  await new Promise(r=>setTimeout(r,30));assert.equal(f.transport.frame,null);assert.equal(f.transport.track({event:'page_view'}),false);
 });
 function bootstrap(t,consent={analytics:true,marketing:true},manifestOverride=manifest){
