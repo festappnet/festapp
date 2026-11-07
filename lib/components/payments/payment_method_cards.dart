@@ -37,20 +37,20 @@ class PaymentMethodCards extends StatelessWidget {
                     FormPaymentMethod.online,
                     FormPaymentMethod.bank,
                     FormPaymentMethod.both,
-                    FormPaymentMethod.cash,
                   ]
-                : FormPaymentMethod.values))
-          if (showOnline ||
-              method == FormPaymentMethod.bank ||
-              method == FormPaymentMethod.cash)
-            method,
+                : const [
+                    FormPaymentMethod.bank,
+                    FormPaymentMethod.online,
+                    FormPaymentMethod.both,
+                  ]))
+          if (showOnline || method == FormPaymentMethod.bank) method,
       ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var start = 0; start < methods.length; start += columns) ...[
             if (start > 0) const SizedBox(height: 12),
-            if (columns == 1)
+            if (columns == 1 || start + 1 == methods.length)
               _card(context, methods[start])
             else
               IntrinsicHeight(
@@ -69,6 +69,22 @@ class PaymentMethodCards extends StatelessWidget {
                 ),
               ),
           ],
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          RadioGroup<FormPaymentMethod>(
+            groupValue: value,
+            onChanged: (method) {
+              if (method != null) onChanged(method);
+            },
+            child: RadioListTile<FormPaymentMethod>(
+              key: const ValueKey('payment-method-cash'),
+              value: FormPaymentMethod.cash,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              title: Text(PaymentMethodStrings.text('cash')),
+              subtitle: Text(PaymentMethodStrings.text('cashDescription')),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ),
         ],
       );
     },

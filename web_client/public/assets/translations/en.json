@@ -4177,10 +4177,10 @@
   "PaymentMethods": {
     "continueInNewTab": "Continue to payment in a new tab",
     "refreshFailed": "Current prices could not be loaded. Your answers are preserved. Please try again.",
-    "onlyBank": "Bank only",
+    "onlyBank": "Bank transfer",
     "onlyStripe": "Stripe only",
     "bothMethods": "Bank and Stripe",
-    "bankDescription": "Payment by bank transfer.",
+    "bankDescription": "Customers pay by bank transfer. You can also record cash payments received.",
     "stripeDescription": "Online payment by card.",
     "bothDescription": "The customer chooses how to pay.",
     "noMethodSelected": "Choose at least one payment method.",

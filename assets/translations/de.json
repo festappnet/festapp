@@ -2338,10 +2338,10 @@
   "PaymentMethods": {
     "continueInNewTab": "Zahlung in neuem Tab fortsetzen",
     "refreshFailed": "Aktuelle Preise konnten nicht geladen werden. Ihre Angaben bleiben erhalten. Versuchen Sie es erneut.",
-    "onlyBank": "Nur Bank",
+    "onlyBank": "Banküberweisung",
     "onlyStripe": "Nur Stripe",
     "bothMethods": "Bank und Stripe",
-    "bankDescription": "Zahlung per Banküberweisung.",
+    "bankDescription": "Kunden zahlen per Banküberweisung. Sie können auch erhaltene Barzahlungen erfassen.",
     "stripeDescription": "Onlinezahlung mit Karte.",
     "bothDescription": "Der Kunde wählt die Zahlungsart.",
     "noMethodSelected": "Wählen Sie mindestens eine Zahlungsart.",

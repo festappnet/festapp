@@ -4391,10 +4391,10 @@
   "PaymentMethods": {
     "continueInNewTab": "Pokračovat k platbě v nové kartě",
     "refreshFailed": "Aktuální ceny se nepodařilo načíst. Vyplněné údaje zůstávají zachovány. Zkuste to znovu.",
-    "onlyBank": "Pouze banka",
+    "onlyBank": "Bankovní převod",
     "onlyStripe": "Pouze Stripe",
     "bothMethods": "Banka i Stripe",
-    "bankDescription": "Platba bankovním převodem.",
+    "bankDescription": "Zákazník zaplatí převodem na účet. Přijatou hotovost můžete také zaevidovat.",
     "stripeDescription": "Online platba kartou.",
     "bothDescription": "Zákazník si vybere způsob platby.",
     "noMethodSelected": "Vyberte alespoň jeden způsob platby.",

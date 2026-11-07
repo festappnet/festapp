@@ -1355,10 +1355,10 @@
   "PaymentMethods": {
     "continueInNewTab": "Przejdź do płatności w nowej karcie",
     "refreshFailed": "Nie udało się wczytać aktualnych cen. Twoje odpowiedzi zostały zachowane. Spróbuj ponownie.",
-    "onlyBank": "Tylko bank",
+    "onlyBank": "Przelew bankowy",
     "onlyStripe": "Tylko Stripe",
     "bothMethods": "Bank i Stripe",
-    "bankDescription": "Płatność przelewem bankowym.",
+    "bankDescription": "Klient płaci przelewem na konto. Mogą Państwo również zarejestrować otrzymaną gotówkę.",
     "stripeDescription": "Płatność kartą online.",
     "bothDescription": "Klient wybiera sposób płatności.",
     "noMethodSelected": "Wybierz co najmniej jeden sposób płatności.",

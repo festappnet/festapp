@@ -2365,10 +2365,10 @@
   "PaymentMethods": {
     "continueInNewTab": "Pokračovať k platbe na novej karte",
     "refreshFailed": "Aktuálne ceny sa nepodarilo načítať. Vyplnené údaje zostávajú zachované. Skúste to znova.",
-    "onlyBank": "Iba banka",
+    "onlyBank": "Bankový prevod",
     "onlyStripe": "Iba Stripe",
     "bothMethods": "Banka aj Stripe",
-    "bankDescription": "Platba bankovým prevodom.",
+    "bankDescription": "Zákazník zaplatí prevodom na účet. Prijatú hotovosť môžete tiež zaevidovať.",
     "stripeDescription": "Online platba kartou.",
     "bothDescription": "Zákazník si vyberie spôsob platby.",
     "noMethodSelected": "Vyberte aspoň jeden spôsob platby.",
