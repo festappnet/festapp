@@ -1,26 +1,68 @@
-# Festapp
+# Festapp Tickets
 
-Festapp is an event platform for festivals, conferences and community events.
-Organizers manage registration, tickets, payments and staffing; attendees use
-schedules, maps, news and their personal program on Android, iOS and the web.
+Sell tickets, offer reserved seating and manage event registration with
+[Festapp Tickets](https://tickets.festapp.net/), built on the Festapp event
+platform. Organizers manage forms, orders, payments and admission in one place.
+Attendees can also follow the program, explore the venue map and save their
+personal schedule in the companion event app.
 
-It also powers [vstupenky.online](https://vstupenky.online), the ticketing and
-registration service. Try the event app at [live.festapp.net](https://live.festapp.net)
-or visit [festapp.net](https://festapp.net).
+[Festapp Tickets](https://tickets.festapp.net/) ·
+[Try the event app](https://live.festapp.net/) ·
+[Developer setup](docs/setup/howto.md) ·
+[Contributing](CONTRIBUTING.md)
 
-![Festapp app screens](repo-data/festapp-showcase.png?raw=true)
+## Ticketing for organizers
 
-## What it does
+![Reserved seating in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
 
-- Event schedules, workshops, maps, news, songbooks and group games
-- Registration forms, seat selection, ticket PDFs and QR scanning
-- Order administration, bank payment matching and email communication
-- Volunteer shifts, participant groups, accommodation and reception
-- Tenant branding and feature settings for each occasion
+Select seats on an interactive venue plan and see the price before continuing
+to checkout.
+
+
+- **Ticket sales and registration.** Build public forms with ticket types,
+  prices, capacity limits and attendee questions; share a link or embed a form
+  on your website.
+- **Reserved seating.** Design your venue layout and let buyers select seats
+  when purchasing tickets.
+- **Orders and payments.** Manage orders, track payments and match bank transfers.
+  Online payment options depend on the event's configured provider.
+- **Tickets and admission.** Customize PDF tickets, deliver them by email and
+  verify QR codes with the browser scanner.
+- **Event operations.** Coordinate volunteers, participant groups,
+  accommodation and reception, with event-specific branding and permissions.
+
+![English order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
+
+Track orders and payments from the event administration.
+
+The same platform powers [vstupenky.online](https://vstupenky.online/), its
+regional ticketing and registration portal. Website plugins and connectors
+live in the [integration directory](integrations/README.md), together with their
+setup instructions and publication status.
+
+## The event app, on mobile
+
+Festapp also gives attendees schedules, venue maps, news, workshop sign-ups
+and a personal program on Android, iOS and the web. Organizers choose which
+features each event needs, including information pages, songbooks and group games.
+
+<table>
+  <tr>
+    <th align="center">Venue map</th>
+    <th align="center">Event program</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/readme/event-map-mobile.png" width="260" alt="English event app showing the venue map in a mobile browser" /></td>
+    <td align="center"><img src="docs/images/readme/event-schedule-mobile.png" width="260" alt="English event app showing the program in a mobile browser" /></td>
+  </tr>
+</table>
+
+Screenshots show the web app at mobile screen sizes, using English demo data
+and light mode. [Capture details](docs/images/readme/README.md).
 
 Previously synchronized data can be read offline. Authentication, payments and
 server-confirmed writes need a connection; native offline maps require a prepared
-map bundle. See [features and screenshots](docs/overview/features.md) for more.
+map bundle. See the [feature reference](docs/overview/features.md) for details.
 
 ## Start here
 
@@ -70,7 +112,7 @@ For details, use the [documentation map](docs/README.md),
 
 ## Local development
 
-Install Git, Node.js/npm and FVM. Use the Flutter version specified by
+Install Git, Node.js, pnpm 11.24.0 and FVM. Use the Flutter version specified by
 `FLUTTER_VERSION` in `automation/project.conf`. From the repository root:
 
 ```bash
@@ -102,6 +144,6 @@ Festapp began with volunteers building an app for
 [CHANGELOG.md](CHANGELOG.md) records development history. Updates are also
 shared in the [Czech WhatsApp channel](https://whatsapp.com/channel/0029Vb64lj91CYoUWARKf80R).
 
-## JavaScript dependencies
-
-Use pnpm 11.24.0, matching the Mendelio workspace. Run `pnpm install --frozen-lockfile` in the directory containing the relevant `package.json`, then `pnpm run <script>`. Each package keeps its own `pnpm-lock.yaml`; pnpm shares package content through the user store across repositories and worktrees. Keep the local virtual store enabled for compatibility with direct Node scripts and container builds. Do not use npm installs or commit npm lockfiles. Approved native build scripts are declared in each `pnpm-workspace.yaml`.
+JavaScript packages use pnpm 11.24.0 and their own frozen lockfiles. Run
+`pnpm install --frozen-lockfile` in the package directory, then use `pnpm run`
+or `pnpm exec`. See [Contributing](CONTRIBUTING.md) for the full workflow.
