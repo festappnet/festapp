@@ -9,12 +9,12 @@ import {startMeasurementConsent} from './src/components/forms/form_measurement_c
 import {LocalizationService} from './src/services/localization_service.js';
 window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice) => {
  LocalizationService.translations = translations;
- return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2,privacy_url,consent_notice}}},transport,host:document.querySelector('main')});
+ return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,30));
 const none={analytics:false,marketing:false},both={analytics:true,marketing:true};
 // Klaro runs in the JSDOM realm; compare plain values here.
-const plain=value=>typeof value==='object'?{...value}:value;
+const plain=value=>value && typeof value==='object'?{...value}:value;
 for (const lang of ['cs','sk','en','de','pl','uk']) test(`actual Klaro first choice and saved settings in ${lang}`,async()=>{
  const translations=JSON.parse(readFileSync(new URL(`../../../assets/translations/${lang}.json`,import.meta.url)));
  const strings=translations.FeatureFormSettings;
@@ -77,16 +77,16 @@ async function notice(consent_notice,body=''){
  return {win,grants,cleanup,root:win.document.querySelector('#festapp-measurement-consent'),css:win.document.head.querySelector('style:last-of-type').textContent};
 }
 
-test('the frame starts once, after the saved choice is known, and a choice stops nothing',async()=>{
+test('CMP reports only choices and never starts a transport, even on failure',async()=>{
  const dom=new JSDOM('<html lang="cs"><head></head><body><main></main></body></html>',{url:'https://tickets.example/form/summer',runScripts:'outside-only',pretendToBeVisual:true});
  const win=dom.window,log=[];win.eval(bundle.outputFiles[0].text);
  const cleanup=win.startFixture(cs(),{setConsent:value=>log.push(plain(value)),start:()=>log.push('start')});await settle();
- assert.deepEqual(log,[none,'start'],'denied state before the frame starts, without waiting for a choice');
- win.document.querySelector('.cn-decline').click();await settle();assert.equal(log.filter(x=>x==='start').length,1);assert.deepEqual(log.at(-1),none);
+ assert.deepEqual(log,[none],'only the saved choice is reported');
+ win.document.querySelector('.cn-decline').click();await settle();assert.equal(log.filter(x=>x==='start').length,0);assert.deepEqual(log.at(-1),none);
  cleanup();win.close();
  const broken=new JSDOM('<html lang="cs"><head></head><body><main></main></body></html>',{url:'https://tickets.example/form/summer',runScripts:'outside-only',pretendToBeVisual:true});
  broken.window.eval(bundle.outputFiles[0].text);Object.defineProperty(broken.window.document,'cookie',{get(){throw Error('storage blocked');}});
- let started=0;broken.window.startFixture(cs(),{setConsent(){},start:()=>started++});await settle();assert.equal(started,1,'a broken CMP leaves denied state and measurement runs');broken.window.close();
+ let started=0;broken.window.startFixture(cs(),{setConsent(){},start:()=>started++});await settle();assert.equal(started,0,'a broken CMP cannot start measurement');broken.window.close();
 });
 
 test('both layouts are the same mandatory notice; bar is the default and only docks it',async()=>{
@@ -145,6 +145,7 @@ test('CMP cleanup before choosing restores scroll, and storage failure fails clo
    if(broken)Object.defineProperty(win.document,'cookie',{get(){throw Error('storage blocked');}});
    const cleanup=win.startFixture(JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json',import.meta.url))),{setConsent:value=>grants.push(plain(value))});
    await settle();
+   if(broken)assert.equal(grants.at(-1),null,'unavailable CMP is reported for session recovery');
    if(!broken){win.document.querySelector('.cn-decline').click();await settle();assert.deepEqual(grants.at(-1),none);assert.equal(win.document.body.style.overflow,'');}
    cleanup();assert.equal(win.document.body.style.overflow,'');assert.equal(grants.at(-1),false);
    assert.equal(win.document.querySelector('#festapp-measurement-consent'),null);

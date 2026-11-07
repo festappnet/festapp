@@ -38,7 +38,7 @@ function privacyUrl(value) {
     } catch { return null; }
 }
 
-export function startMeasurementConsent({win = window, model, transport, host}) {
+export function startMeasurementConsent({win = window, model, setConsent, host}) {
     const policy = model.data?.analytics;
     if (!Number.isSafeInteger(policy?.organization) || !Number.isSafeInteger(policy?.unit)) return () => {};
     const privacy = privacyUrl(policy.privacy_url);
@@ -51,7 +51,7 @@ export function startMeasurementConsent({win = window, model, transport, host}) 
     const description = customText(notice?.text, 500) ?? FormStrings.measurementConsentDescription;
     const config = {
         version:1, elementID:'festapp-measurement-consent',
-        storageName:`festapp-measurement-${policy.organization}-${policy.unit}`,
+        storageName:`festapp-measurement-${policy.organization}-${policy.unit}-${policy.processing_revision}`,
         storageMethod:'cookie', cookieExpiresAfterDays:180,
         lang, fallbackLang:lang,
         // In Klaro 0.7.21 mustConsent forces the detailed modal. The modal
@@ -100,36 +100,35 @@ ${layout}`;
         for (const {node,value} of scroll) node.style.overflow = value;
         locked = false;
     };
-    const fail = () => {
+    const fail = (unavailable = false) => {
+        // Revoke before touching a broken third-party manager's teardown.
+        try { setConsent(unavailable ? null : false); } catch { /* Cleanup must still restore the page. */ }
         unlock(); style.remove();
         win.document.getElementById(config.elementID)?.remove();
-        manager?.unwatch(watcher);
+        try { manager?.unwatch(watcher); } catch { /* A broken CMP cannot retain permission. */ }
         try { unbind?.(); } catch { /* Cleanup still restores the page. */ }
-        try { transport.setConsent(false); } catch { /* Reporting cannot block cleanup. */ }
+        if(unavailable)try { setConsent(null); } catch { /* Keep unavailable sources retryable. */ }
     };
     const watcher = {update:() => { if (manager.confirmed) unlock(); }};
     try {
         win.document.head.append(style);
         manager = klaro.getManager(config);
         manager.watch(watcher);
-        unbind = bindKlaroConsent(manager, granted => transport.setConsent(granted));
+        unbind = bindKlaroConsent(manager, granted => setConsent(granted));
         if (!manager.confirmed) {
             locked = true;
             for (const {node} of scroll) node.style.overflow = 'hidden';
             klaro.show(config,false);
         }
     } catch {
-        fail();
-        transport.start?.();
-        return () => {};
+        fail(true);
+        return () => setConsent(false);
     }
-    // The frame starts with the saved choice already known. The notice blocks nothing else.
-    transport.start?.();
     const choices = win.document.createElement('button');
     choices.type = 'button'; choices.className = 'btn-text';
     choices.textContent = FormStrings.measurementConsentChoices;
     choices.addEventListener('click', () => {
-        try { klaro.show(config,true); } catch { fail(); choices.remove(); }
+        try { klaro.show(config,true); } catch { fail(true); choices.remove(); }
     });
     host.append(choices);
     return () => {fail(); choices.remove();};

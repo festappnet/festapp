@@ -1,6 +1,7 @@
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
 import { FormDataLayer } from './form_datalayer.js';
 import { publicFormLocation } from '../../utils/public_form_location.js';
+import {FormMeasurementSession, hasBrowserSession} from './form_measurement_session.js';
 import { FormMeasurementRuntime } from './form_measurement_runtime.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { isEmbed } from '../../services/embed_context.js';
@@ -62,8 +63,7 @@ export class FormPage extends Component {
     }
 
     clear() {
-        this.measurementAuthSubscription?.unsubscribe(); this.measurementAuthSubscription = null;
-        this.measurementCleanup?.(); this.measurementCleanup = null;
+        this.measurementSession?.dispose(); this.measurementSession=null;
         this.measurementRuntime?.destroy(); this.measurementRuntime = null;
         this.analytics?.dispose();
         this.analytics = null;
@@ -137,8 +137,7 @@ export class FormPage extends Component {
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
-        this.measurementAuthSubscription?.unsubscribe(); this.measurementAuthSubscription = null;
-        this.measurementCleanup?.(); this.measurementCleanup = null;
+        this.measurementSession?.dispose(); this.measurementSession=null;
         this.measurementRuntime?.destroy(); this.measurementRuntime = null;
         this.analytics?.dispose();
         this.analytics = null;
@@ -599,29 +598,34 @@ export class FormPage extends Component {
         });
 
         if (!showPreview && !this.analytics) {
-            let analytics;
-            const runtime = new FormMeasurementRuntime({model:formModel,
-                campaign:() => this.embedBridge?.measurementCampaign || {},
-                canRun:() => analytics?.contextAllowed() === true,
-                onReady:() => analytics?.view()});
-            this.measurementRuntime = runtime;
-            analytics = this.analytics = new FormDataLayer({model:formModel, bridge:this.embedBridge || runtime,
-                entryAllowed:this.analyticsEntryAllowed, refreshPolicy:() => DbForms.getMeasurementPolicy(formModel.link)});
-            this.embedBridge?.setMeasurementRuntime(runtime, () => analytics.view());
-            if (!this.embedBridge && formModel.data?.analytics?.eligible === true) {
-                analytics.visitorReady().then(async allowed => {
-                    if (!allowed || this.analytics !== analytics) return;
-                    const {startMeasurementConsent} = await import('./form_measurement_cmp.js');
-                    if (this.analytics !== analytics) return;
-                    this.measurementCleanup = startMeasurementConsent({model:formModel,transport:runtime,host:this.host});
-                }).catch(() => { if (analytics.contextAllowed()) runtime.start(); });
+            const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,
+                campaign:()=>this.embedBridge?.measurementCampaign||{}});
+            const transport=this.embedBridge||runtime;
+            if(this.embedBridge) {
+                this.embedBridge.setMeasurementRuntime(runtime);
+                this.embedBridge.modelPolicyApproved=origin=>formModel.data?.analytics?.approved_hosts?.includes(origin)===true;
             }
-            try {
-                this.measurementAuthSubscription = SupabaseService.getClient().auth?.onAuthStateChange?.((_event, session) =>
-                    analytics.authChanged(session?.user?.id ?? null))?.data?.subscription;
-            } catch { runtime?.destroy(); }
-            analytics.view();
-
+            let identity=hasBrowserSession(window)?'authenticated':'anonymous';
+            const consentSource=this.embedBridge?{connect:(policy,notify)=>this.embedBridge.connectConsent(policy,notify)}:{
+                connect:(policy,notify)=>{
+                    let disposed=false,cleanup;
+                    if(policy?.visitor_role!=='staff') import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{
+                        if(!disposed)cleanup=startMeasurementConsent({model:formModel,setConsent:notify,host:this.host});
+                    }).catch(()=>{if(!disposed)notify(null);});
+                    return ()=>{disposed=true;cleanup?.();};
+                }
+            };
+            const measurement=this.measurementSession=new FormMeasurementSession({model:formModel,transport,consentSource,
+                entryAllowed:this.analyticsEntryAllowed,policySource:()=>DbForms.getMeasurementPolicy(formModel.link),
+                identitySource:{read:()=>identity,subscribe:notify=>{
+                    const subscription=SupabaseService.getClient().auth?.onAuthStateChange?.((_event,value)=>{
+                        const next=value?.user?.id||'anonymous';
+                        if(identity!==next){identity=next;notify();}
+                    })?.data?.subscription;
+                    return ()=>subscription?.unsubscribe();
+                }},onActive:()=>this.analytics?.activate(this.currentSession)});
+            this.analytics=new FormDataLayer({model:formModel,sink:measurement});
+            measurement.start();
         }
         this.analytics?.observe(session);
         session.addEventListener('state-changed', () => {
@@ -928,6 +932,7 @@ export class FormPage extends Component {
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
         const submittedSession = this.currentSession;
+        const measurementOutcome=this.analytics?.captureSubmission();
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
             await submittedSession?.awaitPendingReservations();
@@ -936,7 +941,7 @@ export class FormPage extends Component {
             ? Promise.resolve({ success: true, data: { demoSimulation: true } })
             : formModel.registrationMode === 'waitlist'
             ? this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession))
-                .then(data => ({ success: true, data: { ...data, ticketOrder: { order: data.order } } }))
+                .then(data => ({ success: true, data: { ...data, ticketOrder: { order: data.order, analytics:data.analytics } } }))
             : formModel.offerBundle
             ? this.waitlistCommands.accept(this.waitlistScope, formModel.selectedTicketIds, {
                 ...payload, ticket: payload.ticket.map(t => ({ ...t, fields: t.fields.map(f => {
@@ -947,12 +952,10 @@ export class FormPage extends Component {
             : FormNetwork.submitOrder(payload);
         });
         let outcomeReported = false;
-        const measurementContact = this.analytics?.contact?.(payload);
         const reportOutcome = (success, data) => {
             if (outcomeReported || formModel.demoSimulation) return;
             outcomeReported = true;
-            if (success) this.analytics?.confirmed(data, measurementContact);
-            else this.analytics?.emit({event: 'form_submit_error'});
+            try {measurementOutcome?.(success,data);} catch { /* Measurement cannot affect checkout. */ }
         };
         request.then(async result => {
              reportOutcome(result.success === true, result.data);

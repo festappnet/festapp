@@ -6,25 +6,52 @@
     /* MEASUREMENT_CONTRACT */
     /* MEASUREMENT_CONSENT */
     const frames = new Map();
-    // Reports the visitor's choice to the form. It starts and stops nothing:
-    // measurement runs anyway and tags evaluate this state through Consent Mode.
+    // A live revision-bound CMP source is required. Legacy setters cannot grant v2.
+    const revoke = (frame,record) => {
+        record.lease=null;
+        if(record.manifest) sendConsent(frame,record);
+    };
+    const readChoice = record => {
+        try {
+            const m=record.manifest;
+            if(!m || !record.source || document.hidden)return null;
+            const choice=record.source.read({organization:m.organization,unit:m.unit,
+                processingRevision:m.processing_revision,requiredPurposes:m.required_purposes});
+            return choice?.processingRevision===m.processing_revision && choice.analytics===true && choice.marketing===true ? choice:null;
+        }catch{return null;}
+    };
+    const sendConsent = (frame,record) => frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,
+        type:'measurement-consent',measurement:{protocol:2,manifest:record.manifest,leaseId:record.lease?.id,
+            ttl:record.lease?60000:0,consent:{analytics:!!record.lease,marketing:!!record.lease}}},record.origin);
+    const syncConsent = (frame,record) => {
+        if(!frame.isConnected || !readChoice(record)){revoke(frame,record);return;}
+        if(!record.lease)record.lease={id:crypto.randomUUID()};
+        record.lease.until=Date.now()+60000;
+        sendConsent(frame,record);
+    };
     window.FestappEmbed = Object.freeze({
-        connectKlaro(frame, manager) {
-            const record = frames.get(frame);
-            if (!record) return null;
-            record.consentDispose?.();
-            record.consentDispose = bindKlaroConsent(manager, granted => window.FestappEmbed.setMeasurementConsent(frame, granted));
-            return record.consentDispose;
+        connectMeasurementConsent(frame,source) {
+            const record=frames.get(frame);
+            if(!record || typeof source?.read!=='function' || typeof source?.subscribe!=='function')return null;
+            record.consentDispose?.();record.source=source;
+            const notify=()=>{revoke(frame,record);syncConsent(frame,record);};
+            let unsubscribe;
+            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;revoke(frame,record);return null;}
+            const timer=setInterval(()=>syncConsent(frame,record),20000);
+            const disconnect=()=>{clearInterval(timer);record.source=null;revoke(frame,record);try{unsubscribe?.();}catch{ /* Source teardown cannot restore permission. */ }};
+            record.consentDispose=disconnect;syncConsent(frame,record);return disconnect;
         },
-        // granted is {analytics, marketing}; a boolean keeps the analytics-only API.
-        setMeasurementConsent(frame, granted) {
-            const record = frames.get(frame);
-            if (!record) return false;
-            record.consent = measurementConsent(granted);
-            send(frame, record, 'init', false);
-            return true;
+        connectKlaro(frame,manager) {
+            const record=frames.get(frame);if(!record)return null;
+            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);});
+        },
+        setMeasurementConsent(frame,granted) {
+            const record=frames.get(frame);if(!record)return false;
+            record.consent=measurementConsent(granted);return true;
         }
     });
+    document.addEventListener('visibilitychange',()=>frames.forEach((record,frame)=>{revoke(frame,record);if(!document.hidden)syncConsent(frame,record);}));
+    window.addEventListener('pagehide',()=>frames.forEach((record,frame)=>revoke(frame,record)));
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
     // The saved form owns appearance; the host only supplies presentation tokens.
     const externalSheets = new Map();
@@ -182,7 +209,7 @@
         const data = {namespace, protocol: 1, type, instance: record.instance,
             viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
-            consent: record.consent || null,
+            measurementProtocol: 2,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};
         if (theme !== false) {
@@ -250,7 +277,7 @@
             try { url = new URL(frame.getAttribute('src'), document.baseURI); } catch { return; }
             if (!/^https?:$/.test(url.protocol) || url.origin === 'null') return;
             const record = { origin: url.origin, instance: `f_${crypto.randomUUID()}` };
-            record.load = () => send(frame, record, 'init');
+            record.load = () => {revoke(frame,record);record.manifest=null;send(frame,record,'init');};
             frames.set(frame, record);
             frame.addEventListener('load', record.load);
             send(frame, record, 'init');
@@ -265,14 +292,26 @@
             if (new URL(frame.src, document.baseURI).origin !== record.origin) return;
             if (data.type === 'ready') { send(frame, record, 'init'); return; }
             if (data.instance !== record.instance) return;
-            if (data.type === 'analytics') {
-                if (frame.hasAttribute('data-festapp-datalayer')) {
-                    const payload = analyticsPayload(data.payload);
-                    if (!payload) return;
-                    window.dataLayer = window.dataLayer || [];
-                    if (payload.ecommerce || payload.event === 'generate_lead') window.dataLayer.push({ecommerce: null, user_data: null});
+            if(data.type==='measurement-context' && data.measurement?.protocol===2) {
+                const m=data.measurement.manifest;
+                if(!m || !sameMeasurementManifest(m,measurementManifest(m,m.form_link)))return;
+                if(!sameMeasurementManifest(m,record.manifest)){revoke(frame,record);record.manifest=m;}
+                syncConsent(frame,record);return;
+            }
+            if(data.type==='measurement-activate' || data.type==='analytics') {
+                const m=data.measurement;
+                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until || !readChoice(record) ||
+                    m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return;
+                if(data.type==='measurement-activate') {
+                    record.lease.generation=m.generation;
+                    frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,type:'measurement-ack',measurement:m},record.origin);return;
+                }
+                if(record.lease.generation!==m.generation)return;
+                if(frame.hasAttribute('data-festapp-datalayer')) {
+                    const payload=analyticsPayload(data.payload);if(!payload)return;
+                    window.dataLayer=window.dataLayer||[];
+                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null});
                     window.dataLayer.push(payload);
-                    if (['purchase', 'generate_lead'].includes(payload.event)) window.dataLayer.push({user_data: null});
                 }
                 return;
             }
@@ -341,13 +380,13 @@
     new MutationObserver((mutations = []) => {
         scan();
         for (const mutation of mutations) {
-            if (['data-festapp-datalayer', 'data-festapp-datalayer-user-data'].includes(mutation.attributeName) && frames.has(mutation.target)) {
+            if (['data-festapp-datalayer'].includes(mutation.attributeName) && frames.has(mutation.target)) {
                 send(mutation.target, frames.get(mutation.target), 'init', false);
             }
         }
         if (!themeRaf) themeRaf = requestAnimationFrame(() => { themeRaf = null; refreshThemes(); });
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true,
-        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer', 'data-festapp-datalayer-user-data'] });
+        attributeFilter: ['class', 'style', 'src', 'data-festapp-datalayer'] });
     document.fonts?.ready.then(refreshThemes);
     scan();
 })();

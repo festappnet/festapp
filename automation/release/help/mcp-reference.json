@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "3ebc3e67006a67ac98c4577bcf46fd4899a37169fdb1dfc15b5603dbf44a14d8",
+  "sourceDigest": "fcf04eb2304d1787416eb2dfd9bfe08772fd0b7e986bf421466cffa3cbc01935",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -15744,7 +15744,7 @@
     {
       "id": "units.settings.save",
       "name": "festapp_units_settings_save",
-      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned measurement configuration with explicit organizer consent and live manager authorization. Measurement configuration uses measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. After visitor consent, purchase and generate_lead carry the readable e-mail and phone in dataLayer; the organizer answers for their use and privacy policy. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
+      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned measurement configuration with explicit organizer consent and live manager authorization. Measurement configuration uses measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Basic measurement loads only after BOTH analytics and marketing consent. Analytics alone cannot start this mixed GTM/custom profile. Contacts never enter measurement payloads; enhanced conversions are unavailable. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -15895,6 +15895,11 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "measurement_consent_version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
                   }
                 },
                 "additionalProperties": false

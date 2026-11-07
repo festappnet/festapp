@@ -1,4 +1,4 @@
-import { analyticsPayload, campaignContext, measurementConsent } from '../components/forms/form_measurement_contract.js';
+import { analyticsPayload, campaignContext, measurementConsent, sameMeasurementManifest } from '../components/forms/form_measurement_contract.js';
 import { isEmbed, applyEmbedContext } from './embed_context.js';
 import { EmbedTheme } from './embed_theme.js';
 
@@ -22,7 +22,8 @@ export class EmbedBridge {
         this.theme.apply(theme);
         this.syncPrice();
     }
-    start() {
+    start(grant) {
+        if(grant)return this.attachMeasurement(grant);
         if (!isEmbed(this.win.location) || this.win.parent === this.win) return;
         applyEmbedContext();
         this.onPrice = event => { this.price = event.detail; this.syncPrice(); };
@@ -44,16 +45,29 @@ export class EmbedBridge {
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
                 this.dataLayer = data.dataLayer === true;
-                // State only; nothing here starts or stops measurement. An earlier embed.js
-                // sends a lease id without purposes, which meant analytics.
-                this.consent = measurementConsent(data.consent ?? typeof data.consentId === 'string');
+                this.measurementProtocol=data.measurementProtocol;
                 this.measurementCampaign = campaignContext(data.attribution);
-                this.syncMeasurementRuntime();
+                this.requestConsent(); this.measurementChanged?.();
                 this.syncPrice();
                 this.setViewport(data.viewportHeight, data.viewportOffset);
                 if (data.theme !== undefined) { this.receiveTheme(data.theme); }
                 this.height = null;
                 this.measure();
+            } else if (data.type === 'measurement-consent' && data.measurement?.protocol===2) {
+                const value=data.measurement;
+                if(!sameMeasurementManifest(value.manifest,this.measurementManifest))return;
+                const granted=value.consent?.analytics===true && value.consent?.marketing===true && validId(value.leaseId);
+                const changed=this.leaseId!==value.leaseId;
+                if(changed)this.stop();
+                this.leaseId=granted?value.leaseId:null;
+                this.leaseUntil=granted?Date.now()+Math.min(60000,Math.max(0,Number(value.ttl)||0)):0;
+                this.win.clearTimeout(this.leaseTimer);
+                this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
+                this.consentNotify?.(granted?{...value.consent,leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
+            } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===2 &&
+                data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
+                sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {
+                this.hostActive=true;this.grant.onReady();
             } else if (data.type === 'viewport' && this.origin && viewport(data.viewportHeight)) {
                 this.setViewport(data.viewportHeight, data.viewportOffset);
                 if (data.theme !== undefined) { this.receiveTheme(data.theme); }
@@ -77,8 +91,7 @@ export class EmbedBridge {
         this.ready = () => {
             if (!this.origin) this.win.parent.postMessage({ namespace, protocol: 1, type: 'ready' }, '*');
             if (++attempts >= 10 || this.origin) this.win.clearInterval(this.timer);
-            // A page without the helper never answers. The frame then runs with denied state.
-            if (attempts >= 10 && !this.origin) { this.hostAbsent = true; this.syncMeasurementRuntime(); }
+
         };
         this.ready();
         this.timer = this.win.setInterval(this.ready, 500);
@@ -93,31 +106,35 @@ export class EmbedBridge {
     send(type, values) {
         if (this.origin) this.win.parent.postMessage({ namespace, protocol: 1, instance: this.instance, type, ...values }, this.origin);
     }
-    measurementAllowed() {
-        return this.dataLayer === true ? !!this.origin : this.measurementRuntime?.measurementAllowed() === true;
+    subscribe(notify) {this.measurementChanged=notify;return ()=>{this.measurementChanged=null;};}
+    setMeasurementRuntime(runtime) {this.measurementRuntime=runtime;}
+    selection() {return this.origin && this.measurementProtocol===2 ? (this.dataLayer?'host':'runtime') : null;}
+    connectConsent(policy,notify) {
+        this.measurementManifest=policy?.processing_revision ? {
+            organization:policy.organization,unit:policy.unit,form_link:policy.form_link,
+            processing_revision:policy.processing_revision,runtime_revision:policy.runtime_revision,
+            policy_revision:policy.policy_revision,profile:policy.profile,required_purposes:policy.required_purposes} : null;
+        this.consentNotify=notify;this.requestConsent();
+        return ()=>{this.consentNotify=null;this.measurementManifest=null;this.stop();};
     }
-    dataLayerHost() { return this.dataLayer === true ? this.origin : null; }
-    setMeasurementRuntime(runtime, onReady = () => {}) { this.onMeasurementReady = onReady; this.measurementRuntime = runtime; this.syncMeasurementRuntime(); }
-    // The transport is known only after the host answers, so the frame waits for that
-    // handshake: host transport must not also run the Unit container.
-    syncMeasurementRuntime() {
-        const runtime = this.measurementRuntime;
-        runtime?.setConsent(this.consent);
-        if (this.dataLayer === true) {
-            runtime?.stop();
-            if (this.measurementAllowed() && this.onMeasurementReady?.()) this.onMeasurementReady = null;
-        } else if (this.origin || this.hostAbsent) runtime?.start();
+    requestConsent() {
+        if(this.selection() && this.measurementManifest)this.send('measurement-context',{measurement:{protocol:2,manifest:this.measurementManifest}});
     }
-    updatePolicy(expiresAt) { this.measurementRuntime?.updatePolicy(expiresAt); }
-    revokeMeasurement() { this.measurementRuntime?.revokeMeasurement(); }
-    // No queue before initialization. Every payload is revalidated.
+    attachMeasurement(grant) {
+        this.stop();
+        if(!this.selection() || !this.modelPolicyApproved?.(this.origin) || !this.leaseId || this.leaseId!==grant.leaseId || Date.now()>=this.leaseUntil)return;
+        this.grant=grant;
+        if(grant.selection==='runtime')this.measurementRuntime.start(grant);
+        else this.send('measurement-activate',{measurement:{protocol:2,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
+    }
+    renew(until) {this.measurementRuntime?.renew(Math.min(until,this.leaseUntil||0));}
+    stop() {this.grant=null;this.hostActive=false;this.measurementRuntime?.stop();}
     track(input) {
-        if (!this.measurementAllowed()) return false;
-        const payload = analyticsPayload(input);
-        if (!payload) return false;
-        if (this.dataLayer !== true) return this.measurementRuntime.track(payload);
-        this.send('analytics', {payload});
-        return true;
+        if(!this.grant || Date.now()>=this.leaseUntil)return false;
+        const payload=analyticsPayload(input);if(!payload)return false;
+        if(this.grant.selection==='runtime')return this.measurementRuntime.track(payload);
+        if(!this.hostActive)return false;
+        this.send('analytics',{measurement:{protocol:2,manifest:this.grant.manifest,generation:this.grant.generation,leaseId:this.grant.leaseId},payload});return true;
     }
     measure() {
         if (this.raf) return;
@@ -203,7 +220,7 @@ export class EmbedBridge {
         }
     }
     destroy() {
-        this.revokeMeasurement();
+        this.stop();this.win.clearTimeout(this.leaseTimer);
         this.win.removeEventListener('message', this.onMessage);
         this.win.removeEventListener('resize', this.onResize);
         this.win.removeEventListener('festapp-embed-price',this.onPrice);

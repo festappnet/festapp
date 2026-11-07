@@ -214,55 +214,44 @@ pluginu. Již otevřený formulář se během vyplňování násilně neobnovuje
 Změny WordPress nastavení, editoru nebo PHP vyžadují vydání pluginu.
 Protokol 1 musí zachovat kompatibilitu se staršími instalacemi.
 
-## Datová vrstva hostitele
+## Měření a datová vrstva hostitele
 
-Měření je ve výchozím stavu vypnuté. `data-festapp-datalayer` zapne hostitelský
-přenos. Předání událostí vyžaduje uložené `analytics.enabled=true`, povolení
-organizace, podporované prostředí a bezpečný veřejný kontext. Souhlas návštěvníka
-podmínkou není: události přijdou i bez něj a tagy hostitele řídí jeho Consent Mode.
+Měření je ve výchozím stavu vypnuté. Vyžaduje všechna uložená povolení,
+platné zásady, aktuální policy a souhlas s analytikou i marketingem. Samotný jeden
+účel současný smíšený GTM/custom profil nespustí. Bez souhlasu se cizí skripty
+nenačítají a hostiteli nepřijdou měřicí události. Kontaktní pole se nikdy nepředávají;
+rozšířené konverze nejsou dostupné. Odmítnutí, porucha CMP nebo starší helper
+nebrání nákupu ani layoutu.
 
-Společný whitelist se do `public/embed.js` generuje příkazem
-`pnpm --dir web_client exec node scripts/build_embed.mjs`. Hostitel i iframe
-payload nezávisle validují. Zprávy se vážou na origin, okno a instanci. Události
-se neukládají do fronty.
-
-`window.FestappEmbed.setMeasurementConsent(frame, granted)` přijímá
-`{analytics, marketing}`; boolean dál znamená jen analytics. Volbu jen předá, nic
-nespouští ani nezastavuje. `purchase` a `generate_lead` nesou čitelný e-mail a
-telefon v `user_data`, jen pro origin schválený u jednotky. Vidí je všechny tagy na
-stránce hostitele. Starý atribut `data-festapp-datalayer-user-data` nic nezapíná.
-
-Izolované GTM zatím není ověřené a runtime vrací `runtime_supported=false`.
-Skripty pořadatele se do hlavní aplikace nevkládají. Konfiguraci lze uložit při
-vypnutém měření a vypnutí ji zachová. Úplný aktuální kontrakt, význam konverzí,
-MCP příklady a zbývající podmínky aktivace popisuje
-[Form measurement contract](form-datalayer.md).
-## Měření a souhlas
-
-Výchozí vložený formulář používá konfiguraci měření své jednotky v odděleném
-runtime. Ten běží po načtení i bez souhlasu; hostitel předává jen uloženou volbu
-přes ověřený iframe kanál. Bez signálu od hostitele platí denied. Vyhodnocuje ji
-kontejner pořadatele přes Consent Mode.
-
-Po načtení helperu a připravení skutečného Klaro manageru připojte uloženou volbu:
+`data-festapp-datalayer` volí výhradně hostitelský transport. Bez atributu je cílem
+oddělený runtime jednotky. Obě cesty vyžadují schválený hostitelský origin a živý
+zdroj uložené volby navázané na konkrétní revizi:
 
 ```js
 const formular = document.querySelector('iframe[data-festapp-embed]');
-const odpojit = FestappEmbed.connectKlaro(formular, klaro.getManager(klaroConfig));
+const odpojit = FestappEmbed.connectMeasurementConsent(formular, {
+  read(kontext) {
+    const volba = cmp.ulozenaVolba(kontext.organization, kontext.unit);
+    return volba && {
+      processingRevision: volba.processingRevision,
+      analytics: volba.analytics,
+      marketing: volba.marketing,
+    };
+  },
+  subscribe(oznamit) { return cmp.prihlasitZmeny(oznamit); },
+});
 ```
 
-Klaro konfigurace hostitele musí obsahovat službu `analytics`, volitelně i
-`marketing` pro reklamu. Adaptér předává jen potvrzenou uloženou volbu a runtime
-nezastavuje. Funkce `odpojit()` odstraní vazbu a předá denied.
-Povolené hostitelské originy musí být součástí schváleného seznamu předků runtime;
-neznámý host měření nespustí, formulář tím není zablokovaný.
+Metody `cmp` jsou příkladem adaptéru Vašeho skutečného CMP. `read` je synchronní,
+vrací potvrzený uložený záznam nebo null a jeho revizi nesmí převzít z argumentu.
+Nová revize vyžaduje nový odpovídající záznam souhlasu. Heartbeat zdroj znovu čte;
+viewport oprávnění neprodlužuje. `odpojit()` zneplatní lease i rozpracované odesílání.
+Receiver před každým push ověří živý zdroj, revizi, instanci, generaci a lokální expiraci.
+Staré `setMeasurementConsent(true)` znamená pouze analytiku; starý setter ani
+`connectKlaro` nejsou revision-bound zdrojem pro nový protokol.
 
-Atribut `data-festapp-datalayer` výslovně volí měření v hostitelském dokumentu:
-události pak dostává pouze jeho dataLayer a GTM, nikoli současně kontejner
-jednotky. Bez tohoto atributu je cílem runtime jednotky. Události projdou při
-kterémkoli uděleném účelu, tagy hostitele řídí jeho vlastní Consent Mode.
-Podmínky pro kontakt popisuje část Datová vrstva hostitele.
-
-Předávají se pouze povolené hodnoty kampaně, nikdy celá URL hostitele. Důvěra
-je svázaná se zdrojovým oknem, originem a instancí. Podrobný
-kontrakt a podporovanou matici popisuje [měření formulářů](form-datalayer.md).
+Layout/scroll/theme zůstávají na protokolu 1. Měření používá protokol 2 a staré
+měřicí zprávy odmítá. Události se nefrontují a po pozdějším souhlasu se staré
+nákupy nepřehrávají. Již přijatá data nelze odvolat. Povolené kampaně se filtrují,
+celá URL hostitele ani soukromé odpovědi se nepředávají. Podrobný kontrakt,
+SQL fakta a provozní meze popisuje [měření formulářů](form-datalayer.md).

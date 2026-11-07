@@ -1,7 +1,8 @@
-import {analyticsPayload, attributionContext, campaignKeys, measurementConsent, measurementPageLocation, measurementId, measurementNamespace} from '../../../web_client/src/components/forms/form_measurement_contract.js';
+import {analyticsPayload, attributionContext, campaignKeys, measurementConsent, measurementPageLocation, measurementId, measurementNamespace, sameMeasurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
 const config = JSON.parse(document.getElementById('measurement-config').textContent);
 let instance;
+let generation;
 let context;
 window.dataLayer = [];
 
@@ -14,19 +15,20 @@ const consentState = ({analytics, marketing}) => {
 };
 
 function push(payload) {
-    if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null});
+    if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null});
     dataLayer.push({...context,...payload});
-    if (['purchase','generate_lead'].includes(payload.event)) dataLayer.push({user_data:null});
 }
 function reply(type) {
-    parent.postMessage({namespace:measurementNamespace,protocol:1,type,instance},config.parent_origin);
+    parent.postMessage({namespace:measurementNamespace,protocol:2,type,instance,generation,manifest:config.manifest},config.parent_origin);
 }
 window.addEventListener('message', event => {
     const message = event.data;
     if (event.source !== parent || event.origin !== config.parent_origin || message?.namespace !== measurementNamespace ||
-        message.protocol !== 1 || !measurementId(message.instance)) return;
+        message.protocol !== 2 || !sameMeasurementManifest(message.manifest,config.manifest) || !measurementId(message.instance)) return;
     if (message.type === 'init' && !instance) {
         const consent = measurementConsent(message.consent);
+        if(!consent.analytics || !consent.marketing || !Number.isSafeInteger(message.generation))return;
+        generation=message.generation;
         context = attributionContext(message.context);
         if (!context || new URL(context.page_location).origin !== config.parent_origin ||
             new URL(context.page_location).pathname.replace(/\/$/,'') !== '/form/' + config.form_link) return;
@@ -36,7 +38,7 @@ window.addEventListener('message', event => {
         for (const key of campaignKeys) if (context[key]) frameUrl.searchParams.set(key, context[key]);
         history.replaceState(null, '', frameUrl);
         // Every event carries the purposes for tags and Unit scripts that do not
-        // read Consent Mode, which is the only consent check in this frame.
+        // read Consent Mode. The parent has already verified the basic grant.
         context.festapp_consent = {...consent};
         instance = message.instance;
         // Queued before gtm.js exists, so the container reads it first. The update
@@ -66,12 +68,7 @@ window.addEventListener('message', event => {
             }
         }
         reply('ack');
-    } else if (message.type === 'consent' && message.instance === instance) {
-        const consent = measurementConsent(message.consent);
-        context.festapp_consent = {...consent};
-        gtag('consent','update',consentState(consent));
-        dataLayer.push({event:'festapp_consent_update',...consent});
-    } else if (message.type === 'event' && message.instance === instance) {
+    } else if (message.type === 'event' && message.instance === instance && message.generation === generation) {
         const payload = analyticsPayload(message.payload);
         if (payload) push(payload);
     }

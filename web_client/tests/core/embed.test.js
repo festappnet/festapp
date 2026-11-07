@@ -463,46 +463,51 @@ test('new child uses one native reveal with a legacy host for end and nearest al
     }
 });
 
-test('host transport is bound to origin, source, instance and opt-in, and needs no consent', () => {
- const {dom,frames:[a,b],sent,message}=host();
- const instance=sent[0][0][0].instance;
- const payload={event:'page_view',user_data:{email:'private'},token:'private'};
- const emit=(extra={},origin='https://tickets.invalid',source=a.contentWindow)=>message(a,origin,envelope('analytics',instance,{payload,...extra}),source);
- emit();assert.equal(dom.window.dataLayer,undefined,'no opt-in');
- a.setAttribute('data-festapp-datalayer','');
- emit({instance:'wrong'});emit({protocol:2});emit({},'https://evil.invalid');emit({},'https://tickets.invalid',b.contentWindow);
- assert.equal(dom.window.dataLayer,undefined);
- emit();assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[{event:'page_view'}]);
- dom.window.FestappEmbed.setMeasurementConsent(a,false);emit();assert.equal(dom.window.dataLayer.length,2,'refusal stops nothing');
- a.removeAttribute('data-festapp-datalayer');emit();assert.equal(dom.window.dataLayer.length,2);
- dom.window.close();
+const measurement={organization:1,unit:2,form_link:'summer',processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']};
+function measurementHost() {
+ const f=host(),{dom,frames:[frame],sent,message}=f;
+ Object.defineProperty(dom.window.document,'hidden',{value:false,configurable:true});
+ frame.setAttribute('data-festapp-datalayer','');const instance=sent[0][0][0].instance;
+ const send=(type,values={},origin='https://tickets.invalid',source=frame.contentWindow)=>message(frame,origin,envelope(type,instance,values),source);
+ send('measurement-context',{measurement:{protocol:2,manifest:measurement}});
+ return {...f,frame,instance,send,last:()=>sent[0].at(-1)[0]};
+}
+test('old boolean/Klaro and protocol1 events never authorize measurement',()=>{
+ const f=measurementHost();const {dom,frame,send}=f;let watcher;
+ for(const choice of [true,{analytics:true,marketing:true},false]) {
+  dom.window.FestappEmbed.setMeasurementConsent(frame,choice);send('analytics',{payload:{event:'page_view'}});
+ }
+ const manager={confirmed:true,savedConsents:{analytics:true,marketing:true},getConsent:()=>true,watch:w=>watcher=w,unwatch(){}};
+ const stop=dom.window.FestappEmbed.connectKlaro(frame,manager);watcher.update();send('analytics',{payload:{event:'page_view'}});stop();
+ assert.equal(dom.window.dataLayer,undefined);dom.window.close();
 });
-
-test('host only reports purposes; a boolean stays analytics only', () => {
- const {dom,frames:[a],sent}=host();const api=dom.window.FestappEmbed,last=()=>sent[0].at(-1)[0],plain=value=>value&&{...value};
- assert.equal(sent[0][0][0].consent,null,'no signal from the host');
- api.setMeasurementConsent(a,true);assert.deepEqual(plain(last().consent),{analytics:true,marketing:false});
- api.setMeasurementConsent(a,{analytics:false,marketing:true});assert.deepEqual(plain(last().consent),{analytics:false,marketing:true});
- for(const denied of [false,{},{analytics:'true'}]) {api.setMeasurementConsent(a,denied);assert.deepEqual(plain(last().consent),{analytics:false,marketing:false});}
- assert.equal('consentId' in last(),false);assert.equal('consentUntil' in last(),false);dom.window.close();
+test('live revision source binds lease, instance, generation and receiver reread; disconnect/revision invalidates',()=>{
+ const f=measurementHost(),{dom,frame,send,last}=f;let choice={processingRevision:'a',analytics:true,marketing:true},notify;
+ const source={read:context=>{assert.equal(context.processingRevision,'a');return choice;},subscribe:fn=>{notify=fn;return ()=>{};}};
+ const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,source);let leaseId=last().measurement.leaseId;assert.ok(leaseId);
+ const measurementEnvelope=()=>({protocol:2,manifest:measurement,generation:7,leaseId});
+ const emit=(m=measurementEnvelope(),origin,source)=>send('analytics',{measurement:m,payload:{event:'page_view',user_data:{email:'PRIVATE'}}},origin,source);
+ emit();assert.equal(dom.window.dataLayer,undefined,'activate handshake required');
+ send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.length,1);
+ emit({...measurementEnvelope(),generation:6});emit({...measurementEnvelope(),leaseId:'stale'});emit(measurementEnvelope(),'https://evil.invalid');emit(measurementEnvelope(),undefined,{});
+ assert.equal(dom.window.dataLayer.length,1);
+ choice=null;emit();assert.equal(dom.window.dataLayer.length,1,'receiver rereads source before every push, without subscription notification');
+ notify();choice={processingRevision:'a',analytics:true,marketing:true};notify();const old=leaseId;leaseId=last().measurement.leaseId;assert.notEqual(leaseId,old);
+ emit();assert.equal(dom.window.dataLayer.length,1,'new lease must activate');send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.length,2);
+ choice={...choice,processingRevision:'b'};emit();assert.equal(dom.window.dataLayer.length,2,'a global true cannot migrate to another processing revision');
+ disconnect();emit();assert.equal(dom.window.dataLayer.length,2);assert(!JSON.stringify(dom.window.dataLayer).includes('PRIVATE'));dom.window.close();
 });
-
-test('connectKlaro reports analytics and optional marketing from saved choices', () => {
- const {dom,frames:[a],sent}=host();const last=()=>sent[0].at(-1)[0],plain=value=>value&&{...value};let watcher;
- const manager={confirmed:true,savedConsents:{analytics:true},getConsent:name=>manager.savedConsents[name]===true,watch:value=>watcher=value,unwatch(){}};
- const stop=dom.window.FestappEmbed.connectKlaro(a,manager);assert.deepEqual(plain(last().consent),{analytics:true,marketing:false});
- manager.savedConsents.marketing=true;watcher.update();assert.deepEqual(plain(last().consent),{analytics:true,marketing:true});
- stop();assert.deepEqual(plain(last().consent),{analytics:false,marketing:false});dom.window.close();
+test('unreadable, analytics-only or stale-revision source cannot create a lease',()=>{
+ for(const choice of [null,{processingRevision:'a',analytics:true},{processingRevision:'b',analytics:true,marketing:true}]){
+  const f=measurementHost();const disconnect=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>choice,subscribe:()=>()=>{}});
+  assert.equal(f.last().measurement.leaseId,undefined);disconnect();f.dom.window.close();
+ }
 });
-
-test('host dataLayer gets contact under any choice, rebuilt, and clears it after the event', () => {
- const {dom,frames:[a],sent,message}=host();const instance=sent[0][0][0].instance,contact={email:'visitor@example.test',phone_number:'+420601234567'};
- a.setAttribute('data-festapp-datalayer','');
- const payload={event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',email:'private@example.test',user_data:{...contact,first_name:'private@example.test'}};
- message(a,'https://tickets.invalid',envelope('analytics',instance,{payload}),a.contentWindow);
- assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)).find(entry=>entry.event==='generate_lead').user_data,contact);
- assert.equal(JSON.stringify(dom.window.dataLayer).includes('private@example.test'),false);
- assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer.at(-1))),{user_data:null});dom.window.close();
+test('contacts never enter host dataLayer even with a live lease',()=>{
+ const f=measurementHost();const disconnect=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'a',analytics:true,marketing:true}),subscribe:()=>()=>{}});
+ const m={protocol:2,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};f.send('measurement-activate',{measurement:m});
+ f.send('analytics',{measurement:m,payload:{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:'PRIVATE@example.test',phone_number:'+420601234567'}}});
+ assert.equal(f.dom.window.dataLayer.filter(p=>p.event==='generate_lead').length,1);assert.doesNotMatch(JSON.stringify(f.dom.window.dataLayer),/PRIVATE|601234567|user_data/);disconnect();f.dom.window.close();
 });
 
 function child(){
@@ -517,20 +522,11 @@ function child(){
  return{dom,win,sent,calls,bridge,init,done(){bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;}};
 }
 
-test('child starts the frame after the handshake with denied state and passes later choices on',()=>{
- const {calls,init,bridge,done}=child();
- assert.equal(calls.includes('start'),false,'the transport is unknown before the host answers');
- init();assert.ok(calls.includes('start'));assert.deepEqual(bridge.consent,{analytics:false,marketing:false});
- calls.length=0;init({consent:{analytics:true,marketing:true}});assert.deepEqual(calls[0],{analytics:true,marketing:true});assert.equal(calls.includes('stop'),false);
- calls.length=0;init({consentId:'earlier-embed-js'});assert.deepEqual(calls[0],{analytics:true,marketing:false},'an earlier embed.js lease meant analytics');done();
-});
-
-test('child uses host transport without loading the frame, and a page without the helper still runs the frame',async()=>{
- const first=child();first.init({dataLayer:true});assert.ok(first.calls.includes('stop'));assert.equal(first.calls.includes('start'),false);
- first.bridge.track({event:'page_view',user_data:{email:'private'}});
- assert.deepEqual(first.sent.filter(([d])=>d.type==='analytics').map(([d])=>d.payload),[{event:'page_view'}]);
- first.init({dataLayer:true},{},'https://evil.invalid');first.init({dataLayer:false},first.win,'https://host.invalid');assert.equal(first.bridge.dataLayer,true,'forged init ignored');first.done();
- const second=child();await new Promise(resolve=>second.win.setTimeout(resolve,5200));assert.ok(second.calls.includes('start'));second.done();
+test('layout handshake, legacy consent and absent helper never start Unit code',async()=>{
+ const f=child();f.init({consent:{analytics:true,marketing:true}});assert.equal(f.calls.includes('start'),false);assert.equal(f.bridge.selection(),null);
+ f.init({measurementProtocol:2,dataLayer:true});assert.equal(f.bridge.selection(),'host');assert.equal(f.bridge.track({event:'page_view'}),false);
+ f.done();
+ const absent=child();assert.equal(absent.bridge.selection(),null);assert.equal(absent.calls.includes('start'),false);absent.done();
 });
 
 test('host refreshes changed appearance while scroll messages omit presentation', async () => {
@@ -720,4 +716,17 @@ test('saved form preference overrides hostile legacy markup in either loading or
             assert.equal(root.dataset.embedTheme,!formEnabled?'host':undefined,'later form load applies its saved choice');
         } finally { bridge.destroy();win.close();Object.assign(globalThis,previous); }
     }
+});
+
+test('heartbeat rereads the live source; viewport cannot renew a lost source or old revision',()=>{
+ let heartbeat;const f=host(false,win=>{Object.defineProperty(win.document,'hidden',{value:false});win.setInterval=callback=>{heartbeat=callback;return 1;};win.clearInterval=()=>{};});
+ const {dom,frames:[frame],sent,message}=f;const instance=sent[0][0][0].instance;
+ const context=manifest=>message(frame,'https://tickets.invalid',envelope('measurement-context',instance,{measurement:{protocol:2,manifest}}),frame.contentWindow);
+ context(measurement);let choice={processingRevision:'a',analytics:true,marketing:true},reads=0;
+ const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,{read:()=>{reads++;return choice;},subscribe:()=>()=>{}});
+ const lease=sent[0].at(-1)[0].measurement.leaseId;heartbeat();assert.equal(reads,2);assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);
+ const before=reads;dom.window.dispatchEvent(new dom.window.Event('scroll'));assert.equal(reads,before,'layout does not renew choice');
+ choice=null;heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,undefined);
+ choice={processingRevision:'a',analytics:true,marketing:true};context({...measurement,processing_revision:'b'});heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,undefined,'old saved choice cannot become revision b');
+ disconnect();const disconnectedReads=reads;heartbeat();assert.equal(reads,disconnectedReads,'disconnected source is never reread or revived');dom.window.close();
 });

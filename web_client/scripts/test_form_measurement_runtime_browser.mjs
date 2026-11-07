@@ -4,75 +4,32 @@ import {createServer as httpServer} from 'node:http';
 import {createServer} from 'vite';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
+import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {serveMeasurement} from '../../workers/form-measurement/src/worker.mjs';
 import {openIsolatedBrowser} from './isolated_browser_startup.mjs';
-const root=path.resolve(import.meta.dirname,'..'), exec=promisify(execFile), temp=await mkdtemp(path.join(tmpdir(),'fm-runtime-'));
-const configPath=path.join(temp,'browser.json'); await writeFile(configPath,JSON.stringify({provider:null,plugins:[],headed:false,autoConnect:false}));
-const previewAuth=process.env.FORM_GTM_PREVIEW_AUTH_FILE ? (await readFile(process.env.FORM_GTM_PREVIEW_AUTH_FILE,'utf8')).trim() : null;
-let host, server, session=`fmr-${process.pid}`, index=0;
-const browser=async(...args)=>{const {stdout}=await exec('agent-browser',['--config',configPath,'--namespace',session,'--session',session,'--headed','false','--json',...args],{timeout:30000});const d=JSON.parse(stdout);assert.equal(d.success,true,d.error);return d.data;};
+const root=path.resolve(import.meta.dirname,'..'),exec=promisify(execFile),tmp=await mkdtemp(path.join(tmpdir(),'fmr-')),cfg=path.join(tmp,'config.json');
+await writeFile(cfg,JSON.stringify({provider:null,plugins:[],headed:false,autoConnect:false,args:'--mute-audio'}));
+let host,server,session=`fmr-${process.pid}`,index=0,parent,origin,tagRequests=0;
+const browser=async(...args)=>{const {stdout}=await exec('agent-browser',['--config',cfg,'--namespace',session,'--session',session,'--headed','false','--json',...args],{timeout:30000});const d=JSON.parse(stdout);assert.equal(d.success,true,d.error);return d.data};
 try {
- host=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'host-fixture',configureServer(s){s.middlewares.use((req,res,next)=>{if(!req.url.startsWith('/form/test'))return next();res.setHeader('content-type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><title>Local runtime test</title><script type="module" src="/tests/fixtures/form_measurement/runtime_host.js"></script>');});}}]}); await host.listen();
- const parent=`http://127.0.0.1:${host.httpServer.address().port}`;
- server=httpServer(async(req,res)=>{const origin=`http://localhost:${server.address().port}`;const response=await serveMeasurement(new Request(origin+req.url),{LOCAL_TEST:true,ORGANIZATION_ID:1,UNIT_ID:2},async args=>({organization:1,unit:2,form_id:1,form_link:'test',runtime_origin:origin,parent_origin:parent,ancestor_origins:[parent],profile:'gtm-v1',collector_origins:[],policy:{eligible:true,runtime_supported:true,enhanced_conversions:true},gtm_container:'GTM-W9WRHWT9',scripts:'<script>parent.postMessage({fixtureDefault:Array.prototype.slice.call(dataLayer[0]),fixtureSearch:location.search},'+JSON.stringify(parent)+');window.__festappConsentReceipt=function(value){parent.postMessage({fixtureConsent:value},'+JSON.stringify(parent)+')}; new MutationObserver(function(records){records.forEach(function(r){r.addedNodes.forEach(function(n){if(n.tagName===\"SCRIPT\") parent.postMessage({fixtureScript:{hasSrc:!!n.src,hasNonce:!!n.nonce,nonceMatches:n.nonce===document.querySelector(\"script[nonce]\").nonce}},'+JSON.stringify(parent)+');});});}).observe(document.documentElement,{childList:true,subtree:true}); window.addEventListener(\"securitypolicyviolation\",function(e){parent.postMessage({fixtureViolation:e.violatedDirective, blocked:e.blockedURI},'+JSON.stringify(parent)+')}); setTimeout(function(){parent.postMessage({fixtureGtm:!!window.google_tag_manager,fixtureCount:dataLayer.length},'+JSON.stringify(parent)+')},5000); var originalPush=dataLayer.push; dataLayer.push=function(){var out=originalPush.apply(this,arguments); parent.postMessage({fixtureMeasurement:Array.prototype.slice.call(arguments).filter(function(x){return Object.prototype.toString.call(x)!==\"[object Arguments]\"})}, '+JSON.stringify(parent)+'); return out;};</script>'}));res.writeHead(response.status,Object.fromEntries(response.headers)); let body=await response.text(); if(previewAuth && req.url==='/runtime.js') body=body.replace('config.gtm_container;', 'config.gtm_container + '+JSON.stringify('&gtm_auth='+previewAuth+'&gtm_preview='+encodeURIComponent(process.env.FORM_GTM_PREVIEW_ENV || '')+'&gtm_cookies_win=x')+';'); res.end(body);}); await new Promise(resolve=>server.listen(0,'::',resolve));
- const runtime=`http://localhost:${server.address().port}`, url=`${parent}/form/test?runtime=${encodeURIComponent(runtime)}&gclid=synthetic123&sznclid=synthetic456&email=private%40example.com`;
- if(process.argv.includes('--serve')) {console.log(`READY ${url}`);await new Promise(resolve=>process.once('SIGTERM',resolve));}
- else {
- await openIsolatedBrowser({open:async()=>{session=`fmr-${process.pid}-${++index}`;await browser('open');},info:()=>browser('session','info'),close:()=>browser('close')});
- await browser('open',url); await browser('wait','--fn','!!window.runtime'); const run=async s=>(await browser('eval',s)).result;
- assert.equal(await run('document.querySelectorAll("iframe").length'),0);assert.equal(await run("window.event('page_view')"),false);
- await run('runtime.start()'); await browser('wait','--fn','window.ready === true');
- assert.equal(await run('runtime.frame.getAttribute("sandbox")'),'allow-scripts allow-same-origin');
- assert.equal(await run('(()=>{try{return !!runtime.frame.contentWindow.document}catch(e){return false}})()'),false);
- for(const event of ['page_view','view_item','purchase'])assert.equal(await run(`window.event('${event}')`),true);
- if(previewAuth) { await browser('wait','--fn',"window.gtmReceipts?.length >= 3 || window.diagnostics?.some(x=>x.fixtureGtm !== undefined)"); const report=await run('({receipts:window.gtmReceipts,diagnostics:window.diagnostics})'); assert.equal(report.receipts.length,3,'GTM diagnostic tag receipts: '+JSON.stringify(report.diagnostics)); await browser('wait','--fn','consentReceipts.length >= 3'); assert.deepEqual(await run('consentReceipts[0]'),{analytics:true,ad_storage:false,ad_user_data:false,ad_personalization:false}); console.log('PASS: Google consent API analytics granted, advertising denied'); assert.deepEqual(report.receipts.map(x=>x.event),['page_view','view_item','purchase']); for(const receipt of report.receipts){assert.equal(receipt.page_location,`${parent}/form/test?gclid=synthetic123&sznclid=synthetic456`);assert.equal(receipt.gclid,'synthetic123');} console.log('PASS: unpublished GTM preview diagnostic tag fired for three events'); }
- await browser('wait','--fn',"window.observed?.some(x=>x.event==='purchase')"); const layer=await run('window.observed');assert.ok(layer.some(x=>x.event==='purchase'));assert.equal(JSON.stringify(layer).includes('secret@example.com'),false);assert.equal(JSON.stringify(layer).includes('private@example.com'),false); const page=layer.find(x=>x.event==='page_view'); assert.equal(page.page_location,`${parent}/form/test?gclid=synthetic123&sznclid=synthetic456`);assert.equal(page.gclid,'synthetic123');
- const frameSearch=new URLSearchParams(await run('window.frameSearch'));assert.equal(frameSearch.get('gclid'),'synthetic123','tags read the click ID from the frame URL');assert.equal(frameSearch.get('sznclid'),'synthetic456');assert.equal(frameSearch.has('email'),false,'unknown parameters stay out');
- assert.deepEqual(await run('window.consentDefaults.at(-1)'),['consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'}]);
- const sale="{event:'purchase',email:'secret@example.com',user_data:{email:'visitor@example.com',phone_number:'+420601234567',first_name:'secret@example.com'},ecommerce:{currency:'CZK',payment_type:'card',transaction_id:'12345678-1234-4234-8234-123456789abc',items:[{item_id:'product_1',item_name:'Ticket',price:100,quantity:1}]}}";
- assert.equal(await run(`runtime.track(${sale})`),true);await browser('wait','--fn',"window.observed.filter(x=>x.event==='purchase').length===2");let purchase=(await run('window.observed')).filter(x=>x.event==='purchase').at(-1);
- assert.deepEqual(purchase.user_data,{email:'visitor@example.com',phone_number:'+420601234567'},'contact goes with denied state');assert.equal((await run('window.observed')).at(-1).user_data,null,'bootstrap clears user_data after the event');assert.equal(JSON.stringify(await run('window.observed')).includes('secret@example.com'),false);
- const firstInstance=await run('window.firstFrame=runtime.frame;runtime.instance');await run("runtime.setConsent({analytics:false,marketing:true})");await browser('wait','--fn',"window.observed.some(x=>x.event==='festapp_consent_update'&&x.marketing===true&&x.analytics===false)");
- assert.equal(await run('runtime.frame===window.firstFrame&&runtime.frame.isConnected'),true,'a choice keeps the browsing context');assert.equal(await run('runtime.instance'),firstInstance);assert.equal(await run('window.consentDefaults.length'),1,'the frame did not reload');
- await run("runtime.setConsent(false)");await browser('wait','--fn',"window.observed.filter(x=>x.event==='festapp_consent_update').length===2");assert.equal(await run('runtime.measurementAllowed()'),true,'refusal stops nothing');
- console.log('PASS: frame runs with denied Consent Mode, contact on conversions cleared after the event, choices update the same frame');
- await run('runtime.stop()');assert.equal(await run('document.querySelectorAll("iframe").length'),0);assert.equal(await run("window.event('page_view')"),false); await run('model.data.analytics.eligible=false;runtime.start()');assert.equal(await run('document.querySelectorAll("iframe").length'),0);
- console.log('PASS: isolated runtime, cross-origin sandbox, event projection, field stripping, stop and policy denial');
- await mkdir(path.join(root,'node_modules/.cache'),{recursive:true});
- for (const lang of ['cs','en']) {
-  await run("document.cookie='festapp-measurement-1-2=; Max-Age=0; path=/'");
-  await browser('open',url+'&cmp=1&lang='+lang);
-  await browser('wait','--fn','!!document.querySelector(".cookie-modal-notice")');
-  const notice=await run(`(()=>{
-   const node=document.querySelector('.cookie-modal-notice');
-   return {text:node.innerText,buttons:[...node.querySelectorAll('button')].map(b=>b.innerText),
-    inputs:node.querySelectorAll('input').length,close:node.querySelectorAll('.hide').length,
-    overflow:document.body.style.overflow};
-  })()`);
-  console.log(JSON.stringify({lang,...notice}));
-  assert(!/<tr-|počítače/.test(notice.text));
-  assert.deepEqual(notice.buttons,lang==='cs'?['Odmítnout','Přijmout']:['Decline','Accept']);
-  assert.equal(notice.inputs,0);assert.equal(notice.close,0);assert.equal(notice.overflow,'hidden');
-  await browser('screenshot',path.join(root,`node_modules/.cache/lista-${lang}.png`));
-  await run('cleanupCmp()');assert.equal(await run('document.body.style.overflow'),'');
+ host=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'host',configureServer(s){s.middlewares.use((req,res,next)=>{if(!req.url.startsWith('/form/test'))return next();res.setHeader('content-type','text/html');res.end('<!doctype html><html lang="en"><script type="module" src="/tests/fixtures/form_measurement/runtime_host.js"></script></html>')})}}]});await host.listen();parent=`http://127.0.0.1:${host.httpServer.address().port}`;
+ server=httpServer(async(req,res)=>{if(req.url==='/tag.js'){tagRequests++;res.setHeader('content-type','application/javascript');res.end(`parent.postMessage({fixtureTag:true},${JSON.stringify(parent)});var old=dataLayer.push;dataLayer.push=function(){var r=old.apply(this,arguments);parent.postMessage({fixtureMeasurement:Array.from(arguments)},${JSON.stringify(parent)});return r}`);return;}const response=await serveMeasurement(new Request(origin+req.url),{LOCAL_TEST:true,ORGANIZATION_ID:1,UNIT_ID:2},async()=>({organization:1,unit:2,form_id:1,form_link:'test',runtime_origin:origin,parent_origin:parent,ancestor_origins:[parent],profile:'gtm-v1',collector_origins:[],policy:{eligible:true,runtime_supported:true,organization:1,unit:2,processing_revision:'rev-a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']},gtm_container:null,scripts:`<script src="${origin}/tag.js"></script>`}));res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));});await new Promise(r=>server.listen(0,'::',r));origin=`http://localhost:${server.address().port}`;
+ await openIsolatedBrowser({open:async()=>{session=`fmr-${process.pid}-${++index}`;await browser('open')},info:()=>browser('session','info'),close:()=>browser('close')});await browser('open',`${parent}/form/test?runtime=${encodeURIComponent(origin)}&gclid=synthetic123&email=private%40example.com`);await browser('wait','--fn','!!window.runtime');const run=async s=>(await browser('eval',`(()=>{return (${s})})()`)).result;
+ assert.equal(await run('document.querySelectorAll("iframe").length'),0);assert.equal(tagRequests,0);assert.equal(await run("event('page_view')"),false);
+ await run("(runtime.start({...grant(),consent:{analytics:true,marketing:false}}),true)");await new Promise(r=>setTimeout(r,250));assert.equal(tagRequests,0);assert.equal(await run('executed'),0);
+ await run("(setTimeout(()=>runtime.start(grant('rev-b')),0),true)");await new Promise(r=>setTimeout(r,1500));assert.equal(await run('window.mismatch'),true);assert.equal(tagRequests,0);assert.equal(await run('executed'),0,'mismatched Worker never executes Unit code');
+ await run('(setTimeout(()=>runtime.start(grant()),0),true)');await browser('wait','--fn','window.ready && window.executed===1');assert.equal(tagRequests,1);assert.equal(await run('runtime.frame.getAttribute("sandbox")'),'allow-scripts allow-same-origin');assert.equal(await run('(()=>{try{return !!runtime.frame.contentWindow.document}catch{return false}})()'),false);
+ assert.equal(await run("event('page_view')"),true);assert.equal(await run("event('purchase')"),true);await browser('wait','--fn',"observed.some(x=>x.event==='purchase')");const events=await run('observed');assert.equal(JSON.stringify(events).includes('example.com'),false);assert.equal(events.find(x=>x.event==='page_view').gclid,'synthetic123');
+ await run('(runtime.stop(),true)');assert.equal(await run("event('page_view')"),false);assert.equal(await run('document.querySelectorAll("iframe").length'),0);console.log('PASS: basic grant gates real tag request and execution; mismatch, contact stripping, sandbox and stop');
+ for(const lang of ['cs','en']) {
+  await browser('open',`${parent}/form/test?runtime=${encodeURIComponent(origin)}&cmp=1&lang=${lang}`);await browser('wait','--fn','!!document.querySelector(".cookie-modal-notice")');
+  const notice=await run(`({buttons:[...document.querySelectorAll('.cookie-modal-notice button')].map(x=>x.innerText),href:document.querySelector('.cookie-modal-notice a').getAttribute('href'),frames:document.querySelectorAll('iframe').length})`);
+  assert.deepEqual(notice.buttons,lang==='cs'?['Odmítnout','Přijmout']:['Decline','Accept']);assert.equal(notice.href,'https://organizer.example/privacy');assert.equal(notice.frames,0);await run('(cleanupCmp(),true)');
  }
- for (const privacy of ['https://organizer.example/privacy', '', 'javascript:alert(1)', 'https://user:pass@example.com']) {
-  await run("document.cookie='festapp-measurement-1-2=; Max-Age=0; path=/'");
-  await browser('open',url+'&cmp=1&privacy='+encodeURIComponent(privacy));
-  await browser('wait','--fn','!!window.cleanupCmp');
-  if (privacy==='https://organizer.example/privacy') {
-   assert.equal(await run('document.querySelector(".cookie-modal-notice a").getAttribute("href")'),privacy);
-  } else {
-   assert.equal(await run('document.querySelector("#festapp-measurement-consent, .btn-text, iframe")'),null);
-   assert.equal(await run('document.body.style.overflow'),'');
-   assert.equal(await run('runtime.measurementAllowed()'),false);
-  }
-  await run('cleanupCmp()');
+ for(const privacy of ['', 'javascript:alert(1)', 'https://user:pass@example.com']) {
+  await browser('open',`${parent}/form/test?runtime=${encodeURIComponent(origin)}&cmp=1&privacy=${encodeURIComponent(privacy)}`);await browser('wait','--fn','!!window.cleanupCmp');assert.equal(await run('document.querySelector("#festapp-measurement-consent, .btn-text, iframe")'),null);
  }
- console.log('PASS: consent privacy URL uses organizer HTTPS link and rejects unsafe links');
- await browser('open',url+'&cmp=1'); await browser('wait','--fn','!!window.cleanupCmp && !!document.querySelector(".cookie-modal-notice") && window.ready === true'); assert.equal(await run('document.querySelectorAll("iframe").length'),1,'the frame does not wait for the notice'); await run('window.undecided=runtime.frame;document.querySelector(".cookie-modal-notice .cm-btn-success").click()'); await browser('wait','--fn','runtime.consent.marketing===true'); assert.equal(await run('runtime.frame===window.undecided'),true); await browser('reload'); await browser('wait','--fn','!!window.cleanupCmp && runtime.measurementAllowed() && runtime.consent.analytics===true'); assert.equal(await run('!!document.querySelector(".cookie-modal, .cookie-notice")'),false,'saved choice restores without opening consent UI'); await run('document.querySelector(".btn-text").click()'); await browser('wait','--fn','!!document.querySelector(".cm-list-input")'); assert.equal(await run('document.querySelectorAll(".cm-list-input").length'),2); await run('window.grantedFrame=runtime.frame;document.querySelector("#service-item-marketing").click();document.querySelector(".cm-btn-accept").click()'); await browser('wait','--fn','runtime.consent.marketing===false'); assert.equal(await run('runtime.frame===window.grantedFrame'),true); await run('document.querySelector(".btn-text").click()'); await browser('wait','--fn','!!document.querySelector("#service-item-analytics")'); await run('document.querySelector("#service-item-analytics").click();document.querySelector(".cm-btn-accept").click()'); await browser('wait','--fn','runtime.consent.analytics===false'); assert.equal(await run('runtime.frame===window.grantedFrame && runtime.measurementAllowed()'),true,'refusal stops nothing'); console.log('PASS: actual Klaro UI choice, saved-choice restore, reopened preferences and refusal in the same frame');
- }
-} finally {if(!process.argv.includes('--serve'))try{await browser('close')}catch{} if(host)await host.close();if(server)await new Promise(resolve=>server.close(resolve));await rm(temp,{recursive:true,force:true});}
+ console.log('PASS: localized consent notices and safe organizer privacy links');
+} finally {try{await browser('close')}catch{}if(host)await host.close();if(server)await new Promise(r=>server.close(r));await rm(tmp,{recursive:true,force:true})}

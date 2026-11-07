@@ -18,7 +18,6 @@ export function bindKlaroConsent(manager, setConsent) {
     sync();
     return () => {
         disposed = true;
-        manager.unwatch(watcher);
-        setConsent(false);
+        try { manager.unwatch(watcher); } finally { setConsent(false); }
     };
 }

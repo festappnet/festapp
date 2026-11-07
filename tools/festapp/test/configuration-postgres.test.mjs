@@ -177,3 +177,10 @@ test('Unit consent notice settings share the bounded contract',()=>{
  for(const value of [{measurement_consent_layout:'bar'},{measurement_consent_layout:'modal'},{measurement_consent_layout:null},{measurement_consent_title:'x'.repeat(80)},{measurement_consent_title:null},{measurement_consent_text:'x'.repeat(500)},{measurement_consent_text:null}]) assert.equal(parse(value),true,JSON.stringify(value));
  for(const value of [{measurement_consent_layout:'popup'},{measurement_consent_title:'x'.repeat(81)},{measurement_consent_text:'x'.repeat(501)},{measurement_consent_color:'#000'},{measurement_enhanced_conversions:true}]) assert.equal(parse(value),false,JSON.stringify(value).slice(0,60));
 });
+
+test('MCP consent version contract is positive, bounded and never nullable',()=>{
+ const schema=configurationDescriptors.find(d=>d.id==='units.settings.save').input;
+ const parse=value=>schema.safeParse({unitId:1,commandId:randomUUID(),expectedVersion:0,changes:{settings:{measurement_consent_version:value}}}).success;
+ for(const value of [1,2,2147483647])assert.equal(parse(value),true);
+ for(const value of [null,0,-1,1.5,'2',2147483648])assert.equal(parse(value),false);
+});

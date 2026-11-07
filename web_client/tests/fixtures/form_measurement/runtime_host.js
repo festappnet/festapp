@@ -1,17 +1,15 @@
 import {FormMeasurementRuntime} from '../../../src/components/forms/form_measurement_runtime.js';
-const origin = new URLSearchParams(location.search).get('runtime');
-window.consentDefaults=[];window.addEventListener('message',e=>{if(e.origin===origin && Array.isArray(e.data?.fixtureDefault)){window.consentDefaults.push(e.data.fixtureDefault);window.frameSearch=e.data.fixtureSearch;}});
-window.consentReceipts=[];window.addEventListener('message',e=>{if(e.origin===origin && e.source===runtime.frame?.contentWindow && e.data?.fixtureConsent)window.consentReceipts.push(e.data.fixtureConsent)});
-window.gtmReceipts=[]; window.addEventListener('message',e=>{if(e.origin===origin && e.source===runtime.frame?.contentWindow && e.data?.namespace==='festapp-test-gtm') window.gtmReceipts.push(e.data)});
-window.diagnostics=[];window.addEventListener('message',e=>{if(e.origin===origin && (e.data?.fixtureViolation || e.data?.fixtureScript || 'fixtureGtm' in (e.data||{}))) window.diagnostics.push(e.data)});
-window.observed=[]; window.addEventListener('message',e=>{if(e.origin===origin && Array.isArray(e.data?.fixtureMeasurement)) window.observed.push(...e.data.fixtureMeasurement);});
-window.model = {link:'test',data:{analytics:{privacy_url:"https://organizer.example/privacy",eligible:true,runtime_supported:true,runtime_origin:origin,organization:1,unit:2,configuration_revision:1,policy_revision:1,valid_for_seconds:60}}};
-window.runtime = new FormMeasurementRuntime({model,local:true,onReady:()=>{window.ready=true;}});
-window.event = (name) => runtime.track(name === 'page_view' ? {event:name,email:'secret@example.com'} : {event:name,ecommerce:{currency:'CZK',items:[{item_id:'product_1',item_name:'Ticket',item_category:'Tickets',item_brand:'Summer',price:100,quantity:1,email:'secret@example.com'}],...(name==='purchase'?{payment_type:'card',transaction_id:'12345678-1234-4234-8234-123456789abc'}:{})}});
-if (new URLSearchParams(location.search).has('cmp')) {
-    const {LocalizationService} = await import('../../../src/services/localization_service.js');
-    await LocalizationService.init({locale:new URLSearchParams(location.search).get('lang') || 'cs',persist:false});
-    const {startMeasurementConsent} = await import('../../../src/components/forms/form_measurement_cmp.js');
-    model.data.analytics.privacy_url = new URLSearchParams(location.search).get('privacy') ?? 'https://organizer.example/privacy';
-    window.cleanupCmp = startMeasurementConsent({model,transport:runtime,host:document.body});
+const origin=new URLSearchParams(location.search).get('runtime');
+window.observed=[]; window.executed=0;
+window.addEventListener('message',e=>{if(e.origin!==origin || e.source!==runtime.frame?.contentWindow)return;if(e.data?.fixtureTag)executed++;if(Array.isArray(e.data?.fixtureMeasurement))observed.push(...e.data.fixtureMeasurement);});
+window.model={link:'test',data:{analytics:{privacy_url:'https://organizer.example/privacy',eligible:true,runtime_supported:true,runtime_origin:origin,organization:1,unit:2,processing_revision:'rev-a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],valid_for_seconds:60}}};
+window.runtime=new FormMeasurementRuntime({model,local:true});
+window.grant=(revision='rev-a')=>({manifest:{organization:1,unit:2,form_link:'test',processing_revision:revision,runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']},generation:1,consent:{analytics:true,marketing:true},expiresAt:Date.now()+60000,onReady:()=>{window.ready=true},onMismatch:()=>{window.mismatch=true}});
+window.event=name=>runtime.track(name==='page_view'?{event:name,email:'secret@example.com'}:{event:name,ecommerce:{currency:'CZK',items:[{item_id:'product_1',item_name:'Ticket',price:100,quantity:1,email:'secret@example.com'}],payment_type:'card',transaction_id:'12345678-1234-4234-8234-123456789abc'}});
+if(new URLSearchParams(location.search).has('cmp')) {
+ const {LocalizationService}=await import('../../../src/services/localization_service.js');
+ const params=new URLSearchParams(location.search);await LocalizationService.init({locale:params.get('lang')||'cs',persist:false});
+ const {startMeasurementConsent}=await import('../../../src/components/forms/form_measurement_cmp.js');
+ model.data.analytics.privacy_url=params.get('privacy')??'https://organizer.example/privacy';
+ window.choices=[];window.cleanupCmp=startMeasurementConsent({model,setConsent:value=>choices.push(value),host:document.body});
 }

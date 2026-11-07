@@ -9,7 +9,7 @@ const root=fileURLToPath(new URL('../../../',import.meta.url));
 const read=path=>readFileSync(new URL('../../../'+path,import.meta.url),'utf8');
 
 test('cross-language limits, capability projection and canonical migration are current',()=>{
-    for(const script of ['generate_form_measurement_limits.py','generate_authorization_projection.py','generate_authorization_capabilities.py','assemble-form-measurement-migration.py','assemble-configuration-migration.py']){
+    for(const script of ['generate_form_measurement_limits.py','generate_authorization_projection.py','generate_authorization_capabilities.py','assemble-form-measurement-migration.py','assemble-configuration-migration.py','assemble-form-measurement-consent-migration.py']){
         execFileSync('python3',['automation/'+script,'--check'],{cwd:root,stdio:'pipe'});
     }
 });
@@ -32,22 +32,6 @@ test('consent state grants only strict true purposes and a boolean stays analyti
     assert.deepEqual(measurementConsent(true),{analytics:true,marketing:false});
     for(const input of [false,null,undefined,'true',1,{},{analytics:'true',marketing:1}]) assert.deepEqual(measurementConsent(input),{analytics:false,marketing:false});
     assert.deepEqual(measurementConsent({marketing:true,extra:true}),{analytics:false,marketing:true});
-});
-
-test('administrators are told about readable contact and the Consent Mode responsibility',()=>{
-    const words={cs:/čiteln/i,en:/readable/i,sk:/čitateľn/i,de:/lesbar/i,pl:/czyteln/i,uk:/читабельн/i};
-    for(const [locale,word] of Object.entries(words)) for(const root of ['assets','web_client/public/assets']) {
-        const strings=JSON.parse(read(`${root}/translations/${locale}.json`)).FeatureFormSettings;
-        assert.match(strings.measurementActivationHelp,word,`${root} ${locale}`);assert.match(strings.measurementActivationHelp,/Consent Mode/);assert.match(strings.measurementActivationHelp,/dataLayer/);
-        for(const key of ['measurementConsentCustomTitleHelp','measurementConsentCustomTextHelp']) assert.ok(strings[key].includes('{text}'),`${locale}.${key}`);
-    }
-});
-
-test('no measurement text claims that visitor consent starts measurement',()=>{
-    for(const key of ['measurementFormHelp','measurementReady','gtmHelp','measurementConsentDescription']) {
-        const strings=JSON.parse(read('assets/translations/cs.json')).FeatureFormSettings;
-        assert.doesNotMatch(strings[key],/po (Vašem )?souhlasu|vyžaduje souhlas/i,key);
-    }
 });
 
 test('the fixed consent text names advertising and sharing in every language',()=>{

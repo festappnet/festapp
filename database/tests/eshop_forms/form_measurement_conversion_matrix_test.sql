@@ -66,8 +66,8 @@ BEGIN
   FROM jsonb_array_elements(o.data->'tickets') t)) WHERE o.id=oid;
  DELETE FROM analytics.conversion_facts WHERE "order"=oid;
  PERFORM public.record_form_conversion_internal(oid);
- PERFORM assert_false((SELECT payload#>'{ecommerce,items,0}' ? 'item_category' FROM analytics.conversion_facts WHERE "order"=oid),'missing product type label is omitted, not invented');
- PERFORM assert_eq((SELECT (payload#>>'{ecommerce,value}')::numeric FROM analytics.conversion_facts WHERE "order"=oid),0.30::numeric,'missing label cannot change the charged total');
+ PERFORM assert_false((SELECT cf.payload#>'{ecommerce,items,0}' ? 'item_category' FROM analytics.conversion_facts cf WHERE "order"=oid),'missing product type label is omitted, not invented');
+ PERFORM assert_eq((SELECT (cf.payload#>>'{ecommerce,value}')::numeric FROM analytics.conversion_facts cf WHERE "order"=oid),0.30::numeric,'missing label cannot change the charged total');
  -- Inject a real SQL persistence failure in measurement only. The caller must
  -- still receive its committed order/payment/receipt without any analytics.
  ALTER TABLE analytics.conversion_facts ADD CONSTRAINT measurement_fixture_fault CHECK(payload->>'event'<>'purchase') NOT VALID;

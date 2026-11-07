@@ -3,8 +3,6 @@ const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart',
 export const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
 const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
 const eventIdentity = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-const contactEmail = value => typeof value === 'string' && value.length <= 254 && /^[^\s@\u0000-\u001f\u007f]+@[^\s@\u0000-\u001f\u007f]+\.[^\s@\u0000-\u001f\u007f]+$/.test(value);
-const contactPhone = value => typeof value === 'string' && /^\+[1-9]\d{7,14}$/.test(value);
 const pageTypes = ['product', 'checkout', 'confirmation'];
 
 export const measurementNamespace = 'festapp-measurement';
@@ -71,21 +69,9 @@ const textValue = (value, limit = 256) => typeof value === 'string' && !/[\u0000
 const itemLabel = value => typeof value === 'string' && !unsafeText.test(value) ? value.trim().slice(0, 100) : '';
 const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
-// Only these two bounded fields pass. Anything else, or a malformed value, is left out.
-function contactUserData(input) {
-    const result = {};
-    if (contactEmail(input?.email)) result.email = input.email;
-    if (contactPhone(input?.phone_number)) result.phone_number = input.phone_number;
-    return Object.keys(result).length ? result : null;
-}
-
 // Rebuild at every transport boundary. Never spread form, order or message data.
 export function analyticsPayload(input) {
     if (!input || typeof input !== 'object') return null;
-    const withUserData = payload => {
-        const user_data = contactUserData(input.user_data);
-        return user_data ? {...payload, user_data} : payload;
-    };
     if (!input.event) {
         if (!pageTypes.includes(input.page_type)) return null;
         const result = {page_type: input.page_type, user_type: 'b2c'};
@@ -95,7 +81,7 @@ export function analyticsPayload(input) {
     if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
     if (input.event === 'generate_lead') {
         if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
-        return withUserData({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
+        return ({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
     }
     const source = input.ecommerce;
     if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) ||
@@ -127,5 +113,21 @@ export function analyticsPayload(input) {
         ecommerce.transaction_id = source.transaction_id;
     }
     const result = {event: input.event, ecommerce};
-    return input.event === 'purchase' ? withUserData(result) : result;
+    return result;
 }
+
+// Identity of the SQL snapshot that actually supplies the runtime code.
+export function measurementManifest(policy, formLink) {
+    if (!policy || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
+        !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision<1 ||
+        !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision<1 ||
+        typeof policy.processing_revision !== 'string' || !policy.processing_revision || policy.processing_revision.length>128 ||
+        policy.profile !== 'gtm-v1' || !measurementId(formLink) ||
+        JSON.stringify(policy.required_purposes) !== JSON.stringify(['analytics', 'marketing'])) return null;
+    return {organization:policy.organization, unit:policy.unit, form_link:formLink,
+        processing_revision:policy.processing_revision, runtime_revision:policy.runtime_revision,
+        policy_revision:policy.policy_revision, profile:policy.profile, required_purposes:['analytics','marketing']};
+}
+export const sameMeasurementManifest = (a,b) => !!a && !!b &&
+    ['organization','unit','form_link','processing_revision','runtime_revision','policy_revision','profile','required_purposes']
+        .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key]));

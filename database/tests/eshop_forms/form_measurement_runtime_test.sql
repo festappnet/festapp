@@ -52,8 +52,8 @@ BEGIN
  config:=public.form_measurement_runtime_internal(fid);
  UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/updated"}' WHERE id=un;
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid)->>'configuration_revision',config->>'configuration_revision','privacy change preserves frame revision');
- PERFORM assert_eq(public.form_measurement_status_internal(fid)->'enhanced_conversions_unavailable','false'::jsonb,'contact is part of conversions');
- PERFORM assert_eq(config->'approved_hosts','["https://tickets.example"]'::jsonb,'only approved origins may receive contact');
+ PERFORM assert_eq(public.form_measurement_status_internal(fid)->'enhanced_conversions_unavailable','true'::jsonb,'enhanced conversions are unavailable');
+ PERFORM assert_eq(config->'approved_hosts','["https://tickets.example"]'::jsonb,'only approved origins may receive measurement events');
  PERFORM assert_eq(config#>>'{consent_notice,layout}','bar','bar is the default notice layout');
  PERFORM assert_true(config#>>'{consent_notice,title}' IS NULL AND config#>>'{consent_notice,text}' IS NULL,'empty notice text uses translations');
  UPDATE public.units SET data=data||'{"measurement_consent_layout":"modal","measurement_consent_title":" Vlastní ","measurement_consent_text":"  "}' WHERE id=un;
