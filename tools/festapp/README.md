@@ -246,6 +246,10 @@ and consent, giving report/list/detail readers. The configured ordinary-user
 rights, client ceiling and consent are checked again for every call. Disconnect at
 `https://mcp.vstupenky.online/connections`, independently of the Festapp application.
 
+Connection activation, replacement, expiry, refresh replay and encrypted storage
+upgrade are documented in [the authorization lifecycle](../../docs/architecture/operations/remote-mcp-auth.md#connection-lifecycle-and-recovery).
+Both consent entries use the same policy; pending approval grants no MCP access.
+
 Private setup with the provided client and both read scopes is recorded in
 [integrations/chatgpt](../../integrations/chatgpt/README.md). A bare URL/base-only
 connection does not establish sales access. `allowedScopes` is an optional

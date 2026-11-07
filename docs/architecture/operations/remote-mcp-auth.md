@@ -96,7 +96,8 @@ This does not widen web-client redirects or enable dynamic registration.
 
 The browser logs into downstream Supabase normally. Explicit consent binds one
 new independent backend refresh session to one actor/client/tenant/profile and
-the selected access scope for seven days. The MCP token and the Supabase token
+the selected access scope for seven days by default, or 30, 90 or 365 days
+when explicitly selected at consent. The MCP token and the Supabase token
 remain separate. The adapter has no service-role key and never relays a supplied
 MCP bearer to Supabase. Existing SQL/RPC permissions remain the final domain
 authority. The OAuth grant narrows access; the stored ordinary Supabase session
@@ -397,3 +398,77 @@ Catalog administration uses the shared UI/MCP product boundary described in
 separate from order scopes. Existing delegations remain unchanged; a new consent
 is required before these tools appear. The issuer and tenant UI import the same
 functional permission registry from `packages/festapp_contracts`.
+
+
+## Reconnecting an application
+
+Consent lists active connections for the verified actor, registered OAuth client
+and exact backend profile. This behavior applies to every registered client;
+application names come from client registration. Replace defaults to the newest eligible active connection. Historical records
+without first-use evidence require an explicit target choice; pending records
+are never candidates. The user can inspect names, expiry, resource
+access and functional permissions, or choose New device. A separate device
+requires a nonblank name when another connection exists. First connections and
+replacement names are optional. Names are trimmed, limited to 80 characters and
+reject control characters; clients render them as text. Older unnamed grants
+fall back to their registered application name.
+
+The version 2 opaque `access` consent envelope can carry
+`connection: {mode: "replace", connectionId, name?}` or
+`connection: {mode: "new", name?}`. The Edge broker passes it unchanged. The issuer
+validates ownership at preparation, again at final consent, and before revoking.
+Missing choices retain the legacy independent-connection behavior. New grants
+contain only the new consent's access and permissions, without inheritance.
+
+## Connection lifecycle and recovery
+
+Consent offers a new named connection or replacement of an active connection of
+that same user, registered client and profile. Pending consent is never active
+and cannot become the next default replacement target. Only a successful native
+code exchange activates it. A single SQLite transaction promotes the new
+connection and revokes the old backend session and provider grant records. First
+committed replacement wins; later exchanges return `invalid_grant`. SQLite
+failure rolls everything back and returns `server_error` without tokens. The
+consumed code needs a new consent. Loss of the HTTP response after commit can
+require reconnecting; `issuedAt` proves server issuance, not client receipt.
+
+The shared policy in `packages/festapp_contracts/mcp-connection.mjs` offers
+7/30/90/365 days, always defaulting a new consent to 7 days, including replacement
+of an annual connection. Access tokens last 300 seconds and every request also
+checks the live connection and domain rights. New connections end at the earlier
+of their fixed consent deadline or 30 days since the last successful token
+exchange. Refresh rotation moves only that idle window; status, rejected refresh
+and management reads do not. Native refresh replay revokes the entire grant and
+its backend session. Account session expiry or MFA may require reconnecting
+sooner. Device names are user labels, not verified hardware identities.
+
+Pending Delegation, Binding and backend session retain the original 600-second
+interaction deadline (the native code separately lasts 60 seconds), across
+backend writes and restart. Activation promotes them only to the original
+absolute consent deadline. Provider token rows alone never establish activity.
+Known activation failures attempt token cleanup, but fail-closed access does not
+depend on cleanup working. Keep the single process lock and `/token` queue.
+
+Startup normalizes markerless historical records transactionally once, recording
+version 1 in encrypted SQLite metadata. It preserves their original scopes and
+absolute expiry as `legacy`; it does not invent a refresh timestamp or apply a
+new idle cutoff. Unused historical records remain available for explicit
+replacement but are never preselected. All new consents write `pending`.
+Do not rotate keys, replace the volume or restore the old non-atomic writer over
+this storage. Before any separately authorized release, determine whether an
+unreleased PR build was deployed and review its data without assuming token rows
+prove completed issuance. Production GoTrue limits need separate verification.
+
+These local lifetimes do not override the backend Auth service's independent
+session timebox, inactivity timeout, revocation or credential validity. The
+repository's `supabase/config.toml` contains only commented session-timeout
+examples, and the checked-in production Auth overlay does not specify those
+limits. The live Auth configuration was not inspected; survival of a full year
+of inactivity cannot be established from this repository. If backend refresh
+returns an authentication failure (HTTP 400/401), SessionOwner reports
+AUTHENTICATION_REQUIRED; DelegatedOwner revokes the MCP connection, deletes its
+stored downstream credential and requires a fresh login/consent. A temporary
+backend/network error is not proof of session expiry and follows the existing
+upstream-error path. Selecting one year therefore allows access for up to that
+fixed deadline, subject to the backend session remaining valid; it is not a
+promise of a year without reauthorization.

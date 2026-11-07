@@ -1,3 +1,4 @@
+import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
 import { join } from 'node:path';
 import { SessionOwner } from '../auth/session.mjs';
@@ -51,10 +52,10 @@ export class DelegatedOwner {
     current() {
         const t = this.token;
         const grant = this.storage.get('Delegation', t.grantId);
-        check(grant && !grant.revoked && grant.userId === t.accountId &&
+        check(connectionActive(grant) && grant.userId === t.accountId &&
             this.config.clients.some(c => c.id === grant.clientId) &&
             grant.clientId === t.clientId && grant.profileBinding === this.config.profile.binding &&
-            grant.expiresAt > Date.now() && t.exp * 1000 > Date.now() &&
+            t.exp * 1000 > Date.now() &&
             t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
             clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');
         return grant;
@@ -116,7 +117,7 @@ export class DelegatedOwner {
             return result;
         }); } catch (error) {
             const current = this.storage.get('Delegation', this.token.grantId);
-            if (!current || current.revoked || current.expiresAt <= Date.now() || this.token.exp * 1000 <= Date.now())
+            if (!connectionActive(current) || this.token.exp * 1000 <= Date.now())
                 error = new OperationError('AUTHENTICATION_REQUIRED');
             if (error.code === 'AUTHENTICATION_REQUIRED' || error.code === 'MFA_REQUIRED')
                 this.storage.revoke(this.token.grantId);

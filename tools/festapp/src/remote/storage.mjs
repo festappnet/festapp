@@ -1,3 +1,5 @@
+import { connectionActive, connectionIssuable } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
+import { errors } from 'oidc-provider';
 import { acquireProcessLock, rejectLegacyLock, createSessionQueue } from '../auth/process-lock.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
@@ -40,6 +42,20 @@ export async function openRemoteStorage(root, key) {
             decipher.setAuthTag(bytes.subarray(12, 28));
             return JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]));
         };
+        const transaction = action => {
+            db.exec('BEGIN IMMEDIATE');
+            try { const result = action(); db.exec('COMMIT'); return result; }
+            catch (error) { db.exec('ROLLBACK'); throw error; }
+        };
+        // Called only inside the transaction owned by activation or revocation.
+        const revokeRecords = grantId => {
+            const grant = store.get('Delegation', grantId);
+            if (grant) {
+                store.remove('Backend', grant.binding);
+                store.put('Delegation', grantId, { ...grant, revoked: true }, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
+            }
+            db.prepare('DELETE FROM records WHERE grant_id=?').run(digest(grantId));
+        };
         const store = {
             root,
             runSessionExclusive,
@@ -64,14 +80,38 @@ export async function openRemoteStorage(root, key) {
                 return db.prepare('SELECT id,value FROM records WHERE model=? AND expires>?').all(model, Date.now())
                     .map(r => unseal(model, r.id, r.value));
             },
-            revoke(grantId) {
-                const grant = this.get('Delegation', grantId);
-                if (grant) {
-                    this.remove('Backend', grant.binding);
-                    grant.revoked = true;
-                    this.put('Delegation', grantId, grant, 86400 * 7);
-                }
-                db.prepare('DELETE FROM records WHERE grant_id=?').run(digest(grantId));
+            revoke(grantId) { return transaction(() => revokeRecords(grantId)); },
+            discardUnissuedTokens(grantId) {
+                db.prepare("DELETE FROM records WHERE grant_id=? AND model IN ('AccessToken','RefreshToken')").run(digest(grantId));
+            },
+            activateConnection(grantId) {
+                return transaction(() => {
+                    const grant = this.get('Delegation', grantId);
+                    if (!connectionIssuable(grant)) throw new errors.InvalidGrant('consent expired');
+                    if (grant.replaces) {
+                        const old = this.get('Delegation', grant.replaces);
+                        if (!connectionActive(old) || ['userId', 'clientId', 'profileBinding'].some(k => old[k] !== grant[k]))
+                            throw new errors.InvalidGrant('replacement target inactive');
+                        revokeRecords(old.id);
+                    }
+                    const seconds = (grant.expiresAt - Date.now()) / 1000;
+                    const backend = this.get('Backend', grant.binding);
+                    if (!backend) throw new errors.InvalidGrant('backend session expired');
+                    const issued = { ...grant, lifecycle: 'issued', issuedAt: Date.now(), lastTokenExchangeAt: Date.now() };
+                    this.put('Delegation', grantId, issued, seconds);
+                    this.put('Binding', grant.binding, { id: grantId }, seconds);
+                    this.put('Backend', grant.binding, backend, seconds);
+                    return issued;
+                });
+            },
+            refreshConnection(grantId) {
+                return transaction(() => {
+                    const grant = this.get('Delegation', grantId);
+                    if (!connectionActive(grant)) throw new errors.InvalidGrant('connection inactive');
+                    const updated = { ...grant, lastTokenExchangeAt: Date.now() };
+                    this.put('Delegation', grantId, updated, (grant.expiresAt - Date.now()) / 1000);
+                    return updated;
+                });
             },
             adapter(model) {
                 return {
@@ -101,11 +141,11 @@ export async function openRemoteStorage(root, key) {
                 write: async (binding, value) => {
                     const link = store.get('Binding', binding);
                     const grant = link && store.get('Delegation', link.id);
-                    if (link && (!grant || grant.revoked || grant.expiresAt <= Date.now()))
+                    if (link && !connectionActive(grant) && !connectionIssuable(grant))
                         throw new Error('CONNECTION_REVOKED');
                     // Abandoned login flows expire in ten minutes. Only an
-                    // explicit consent promotes a session to the grant lifetime.
-                    store.put('Backend', binding, value, grant ? (grant.expiresAt - Date.now()) / 1000 : 600);
+                    // successful code exchange promotes a session to the grant lifetime.
+                    store.put('Backend', binding, value, grant ? ((grant.lifecycle === 'pending' ? grant.pendingExpiresAt : grant.expiresAt) - Date.now()) / 1000 : 600);
                 },
                 remove: async binding => store.remove('Backend', binding),
             },
@@ -114,6 +154,13 @@ export async function openRemoteStorage(root, key) {
         // Detect a wrong/missing key before accepting traffic, even after restart.
         const sentinel = store.get('Metadata', 'encryption');
         if (!sentinel) store.put('Metadata', 'encryption', { version: 1 }, 86400 * 3650);
+        if (!store.get('Metadata', 'connection-lifecycle')) transaction(() => {
+            for (const grant of store.values('Delegation')) {
+                if (!grant.lifecycle) store.put('Delegation', grant.id, { ...grant, lifecycle: 'legacy' },
+                    Math.max(1, (grant.expiresAt - Date.now()) / 1000));
+            }
+            store.put('Metadata', 'connection-lifecycle', { version: 1 }, 86400 * 3650);
+        });
         return store;
     } catch (e) { try { db?.close(); } finally { release(); } throw e; }
 }

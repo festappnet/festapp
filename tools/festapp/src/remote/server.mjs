@@ -1,3 +1,6 @@
+import { connectionActive, connectionIssuable, connectionRefreshSeconds, connectionDeadline, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
+import { CONNECTION_DURATION_DAYS, MAX_CONNECTION_DURATION_DAYS, DAY_SECONDS } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
+import { activeConnections, verifyConnectionChoice, installConnectionActivation } from './connection-choice.mjs';
 import { createRateLimiter, clientIdentity } from './rate-limit.mjs';
 import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS } from './make-contract.mjs';
 import {PreviewArtifacts} from '../operations/preview.mjs';
@@ -60,13 +63,18 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
                 },
             },
         },
-        ttl: { AccessToken: 300, IdToken: 300, AuthorizationCode: 60, Interaction: 600, Grant: 86400 * 7,
-            RefreshToken: 86400 * 7, Session: 3600 },
-        issueRefreshToken: (_ctx, client, source) => {
+        ttl: { AccessToken: 300, IdToken: 300, AuthorizationCode: 60, Interaction: 600, Grant: DAY_SECONDS * MAX_CONNECTION_DURATION_DAYS,
+            RefreshToken: (ctx, token) => {
+                const grant = storage.get('Delegation', token.grantId);
+                if (!(connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))))
+                    throw new errors.InvalidGrant('connection expired or revoked');
+                return connectionRefreshSeconds(grant);
+            }, Session: 3600 },
+        issueRefreshToken: (ctx, client, source) => {
             if (!clientAllowsScopes(config, client.clientId, source.scope?.split(' ') ?? []))
                 throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
-            return Boolean(grant && !grant.revoked && grant.clientId === client.clientId && grant.expiresAt > Date.now());
+            return Boolean(grant?.clientId === client.clientId && (connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))));
         },
         expiresWithSession: () => false,
         rotateRefreshToken: ctx => {
@@ -76,7 +84,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!clientAllowsScopes(config, ctx.oidc.client.clientId, source.scope?.split(' ') ?? []))
                 throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
-            if (!grant || grant.revoked || grant.clientId !== ctx.oidc.client.clientId || grant.expiresAt <= Date.now())
+            if (!connectionActive(grant) || grant.clientId !== ctx.oidc.client.clientId)
                 throw new errors.InvalidGrant('connection expired or revoked');
             return true;
         },
@@ -90,12 +98,13 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         findAccount: async (_ctx, id) => ({ accountId: id, claims: async () => ({ sub: id }) }),
         renderError: async (ctx) => {
             ctx.type = 'html';
-            ctx.body = page('Připojení se nezdařilo', '<p>Požadavek není platný nebo vypršel. Spusť připojení znovu v aplikaci.</p>');
+            ctx.body = page('Připojení se nezdařilo', '<p>Požadavek není platný nebo vypršel. Spusťte připojení znovu v aplikaci.</p>');
         },
     });
     // Only a loopback-bound listener behind the configured trusted TLS proxy.
     // The outer host/proto check below rejects forged forwarded destinations.
     provider.proxy = config.profile.kind === 'canonical';
+    installConnectionActivation(provider, storage, audit);
     provider.on('server_error', () => audit({ event: 'issuer_error' }));
     const app = express();
     app.disable('x-powered-by');
@@ -124,7 +133,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             (canonical && req.headers['x-forwarded-proto'] !== 'https')) return res.sendStatus(400);
         if ((req.path === '/mcp' || req.path.startsWith('/make/v1/')) && req.headers.origin && req.headers.origin !== config.issuer)
             return res.sendStatus(403);
-        res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
+        res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'same-origin',
             'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
             // Empty script-src denies scripts; oidc-provider adds only the exact
             // hash of its account-switch auto-submit script when it renders it.
@@ -181,15 +190,20 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const permissions = verifyPermissions(f.permissions, String(d.params.scope ?? '').split(' '));
         const scopes = [READ_SCOPE, ...(canCreateWithAccess(access) ? [CREATE_SCOPE] : []), ...permissions].join(' ');
         check(clientAllowsScopes(config, d.params.client_id, scopes.split(' ')), 'FORBIDDEN');
-        const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
+        const choice = verifyConnectionChoice(f.connection, storage, f.userId, d.params.client_id, config.profile.binding);
+        const durationSeconds = choice.durationDays * DAY_SECONDS;
+        const createdAt = Date.now();
+        const expiresAt = consentDeadline(choice.durationDays, createdAt);
+        const pendingExpiresAt = Math.min(d.exp * 1000, expiresAt);
+        const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id, expiresIn: durationSeconds });
         grant.addOIDCScope(`openid offline_access ${scopes}`);
         grant.addResourceScope(config.resource, scopes);
         const grantId = await grant.save();
         const sessionBinding = connectionBinding(config.profile, d.uid);
         storage.put('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
             profileBinding: config.profile.binding, binding: sessionBinding,
-            access, permissions, expiresAt: Date.now() + 86400 * 7000, revoked: false }, 86400 * 7);
-        storage.put('Binding', sessionBinding, { id: grantId }, 86400 * 8);
+            access, permissions, ...choice, createdAt, expiresAt, lifecycle: 'pending', pendingExpiresAt, revoked: false }, (pendingExpiresAt - Date.now()) / 1000);
+        storage.put('Binding', sessionBinding, { id: grantId }, (pendingExpiresAt - Date.now()) / 1000);
         await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
         if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid }, 600);
         storage.remove('Connect', d.uid);
@@ -214,7 +228,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         f.available = available;
         storage.put('Connect', d.uid, f, 600);
         return res.type('html').send(consentForm({ csrf: f.csrf, client,
-            action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, canRequestCreate: canRequestCreate(d), selectedTenant: config.profile.tenantId }));
+            connections: activeConnections(storage, f.userId, d.params.client_id, config.profile.binding), action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, canRequestCreate: canRequestCreate(d), selectedTenant: config.profile.tenantId }));
     };
     app.get('/connect/:uid', (req, res) => renderConnect(req, res));
     app.post('/connect/:uid/login', form, async (req, res) => {
@@ -246,7 +260,15 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         }
         const selection = req.body.unit ? { type: 'unit', unitId: Number(req.body.unit), canCreateOccasions: req.body.create === '1' }
             : { type: 'occasions', occasionIds: [req.body.occasion].flat().map(Number) };
-        return completeConsent(req, res, d, f, selection);
+        // The standalone select also submits in New device mode. Validate every
+        // supplied ID before discarding that unused, owned selection.
+        if (req.body.connectionId !== undefined) verifyConnectionChoice({ mode: 'replace', connectionId: req.body.connectionId },
+            storage, f.userId, d.params.client_id, config.profile.binding);
+        if (req.body.durationDays !== undefined) check(CONNECTION_DURATION_DAYS.some(days => String(days) === req.body.durationDays), 'FORBIDDEN');
+        const connection = req.body.mode === undefined && req.body.durationDays === undefined ? undefined : { mode: req.body.mode ?? 'new',
+            ...(req.body.durationDays !== undefined ? { durationDays: Number(req.body.durationDays) } : {}),
+            ...(req.body.mode === 'replace' ? { connectionId: req.body.connectionId } : {}), name: req.body.name };
+        return completeConsent(req, res, d, { ...f, connection }, selection);
     });
     const manage = (req, res) => {
         const value = req.headers.cookie?.split(';').map(s => s.trim()).find(s => s.startsWith(cookieName + '='))?.slice(cookieName.length + 1);
@@ -262,7 +284,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res);
         return res.type('html').send(f.userId ? connectionsPage(f.csrf,
-            storage.values('Delegation').filter(g => g.userId === f.userId && !g.revoked && g.expiresAt > Date.now()), config.clients)
+            storage.values('Delegation').filter(g => g.userId === f.userId && connectionActive(g)).map(g => ({ ...g, expiresAt: connectionDeadline(g) })), config.clients)
             : loginForm({ csrf: f.csrf, action: '/connections/login' }));
     });
     app.post('/connections/login', form, async (req, res) => {
@@ -391,7 +413,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const safe = safeError(error);
         if (safe.code === 'TEMPORARILY_LIMITED') return limited(req, res, error);
         res.status(safe.code === 'FORBIDDEN' ? 403 : safe.code === 'TEMPORARILY_LIMITED' ? 429 : 400)
-            .type('html').send(page('Požadavek se nezdařil', '<p>Připojení vypršelo, bylo odmítnuto nebo se službou nelze spojit. Spusť připojení znovu.</p>'));
+            .type('html').send(page('Požadavek se nezdařil', '<p>Připojení vypršelo, bylo odmítnuto nebo se službou nelze spojit. Spusťte připojení znovu.</p>'));
     });
     return { app, provider };
 }
