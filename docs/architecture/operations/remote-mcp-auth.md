@@ -404,8 +404,9 @@ functional permission registry from `packages/festapp_contracts`.
 
 Consent lists active connections for the verified actor, registered OAuth client
 and exact backend profile. This behavior applies to every registered client;
-application names come from client registration. Replace is the default, with
-the newest connection selected. The user can inspect names, expiry, resource
+application names come from client registration. Replace defaults to the newest eligible active connection. Historical records
+without first-use evidence require an explicit target choice; pending records
+are never candidates. The user can inspect names, expiry, resource
 access and functional permissions, or choose New device. A separate device
 requires a nonblank name when another connection exists. First connections and
 replacement names are optional. Names are trimmed, limited to 80 characters and
@@ -419,51 +420,44 @@ validates ownership at preparation, again at final consent, and before revoking.
 Missing choices retain the legacy independent-connection behavior. New grants
 contain only the new consent's access and permissions, without inheritance.
 
-Consent stores replacement intent on the new delegation. It does not revoke the
-old connection. In oidc-provider 9.12.2, `lib/actions/token.js` emits
-`grant.success` after the awaited grant handler, for both code and refresh
-exchanges. The synchronous listener explicitly handles only `authorization_code`
-and uses its AuthorizationCode entity's grant ID. It invokes canonical
-`storage.revoke` and the revocation audit after issuance. Cleanup exceptions are
-contained and audited as `replacement_failed`, preserving the token response;
-operators must investigate such an audit event (the old connection may remain
-active). There is no cleanup on approval, callback navigation, failed exchange
-or refresh. As with any OAuth response, issuance cannot prove delivery over the
-network; a client that loses the successful token response may need to reconnect.
+## Connection lifecycle and recovery
 
+Consent offers a new named connection or replacement of an active connection of
+that same user, registered client and profile. Pending consent is never active
+and cannot become the next default replacement target. Only a successful native
+code exchange activates it. A single SQLite transaction promotes the new
+connection and revokes the old backend session and provider grant records. First
+committed replacement wins; later exchanges return `invalid_grant`. SQLite
+failure rolls everything back and returns `server_error` without tokens. The
+consumed code needs a new consent. Loss of the HTTP response after commit can
+require reconnecting; `issuedAt` proves server issuance, not client receipt.
 
-## Consent duration and downstream session lifetime
+The shared policy in `packages/festapp_contracts/mcp-connection.mjs` offers
+7/30/90/365 days, always defaulting a new consent to 7 days, including replacement
+of an annual connection. Access tokens last 300 seconds and every request also
+checks the live connection and domain rights. New connections end at the earlier
+of their fixed consent deadline or 30 days since the last successful token
+exchange. Refresh rotation moves only that idle window; status, rejected refresh
+and management reads do not. Native refresh replay revokes the entire grant and
+its backend session. Account session expiry or MFA may require reconnecting
+sooner. Device names are user labels, not verified hardware identities.
 
-Both consent adapters offer exactly 7 (default), 30, 90 and 365 days, independently
-of the registered OAuth client. `connection.durationDays` in the version 2 consent
-envelope accepts only these numeric values. Missing durations, missing connection
-choices and legacy membership-only consent remain seven days. Replacing a
-connection does not inherit its duration or extend any other delegation. A year
-is exactly 365 days from approval, not a calendar-year calculation.
+Pending Delegation, Binding and backend session retain the original 600-second
+interaction deadline (the native code separately lasts 60 seconds), across
+backend writes and restart. Activation promotes them only to the original
+absolute consent deadline. Provider token rows alone never establish activity.
+Known activation failures attempt token cleanup, but fail-closed access does not
+depend on cleanup working. Keep the single process lock and `/token` queue.
 
-The new delegation stores `createdAt`, `durationDays` and the fixed `expiresAt`.
-That deadline remains the authority on every refresh and delegated invocation.
-The provider's Grant configuration supports up to 365 days; each new Grant gets
-an explicit lifetime matching the approved duration. RefreshToken TTL uses the
-remaining delegation lifetime, rounded up to seconds. Rotation never advances
-the delegation deadline. Access tokens remain five minutes and cannot outlive
-consent in use because DelegatedOwner also checks the deadline. Existing provider
-grants keep their persisted expirations; changing configuration does not extend
-them. Delegation storage follows its deadline, Binding survives it by one day,
-and revoked delegation markers remain until the original deadline. Creation-time
-ordering uses `createdAt`; only legacy records fall back to expiry minus their
-stored duration, or seven days when that duration is absent.
-
-The encrypted Backend store initially retains an unapproved session for ten
-minutes. Consent promotes it to the same fixed delegation deadline. Each later
-write uses the remaining time, including downstream refresh rotation, so it
-cannot introduce a sliding lifetime. A Binding that outlives its delegation
-also prevents backend writes from resurrecting an expired connection. There is
-no background keepalive. MCP OAuth token refresh neither contacts Supabase Auth
-nor rotates the downstream refresh token. `SessionOwner.authorized` performs
-that refresh under the connection lock when an MCP operation needs the ordinary
-session, persists the rotated token before further identity/permission checks,
-and preserves rotation even if the subsequent operation is denied.
+Startup normalizes markerless historical records transactionally once, recording
+version 1 in encrypted SQLite metadata. It preserves their original scopes and
+absolute expiry as `legacy`; it does not invent a refresh timestamp or apply a
+new idle cutoff. Unused historical records remain available for explicit
+replacement but are never preselected. All new consents write `pending`.
+Do not rotate keys, replace the volume or restore the old non-atomic writer over
+this storage. Before any separately authorized release, determine whether an
+unreleased PR build was deployed and review its data without assuming token rows
+prove completed issuance. Production GoTrue limits need separate verification.
 
 These local lifetimes do not override the backend Auth service's independent
 session timebox, inactivity timeout, revocation or credential validity. The

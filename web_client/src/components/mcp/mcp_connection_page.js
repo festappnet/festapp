@@ -1,4 +1,4 @@
-import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
+import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, CONNECTION_IDLE_SECONDS, DAY_SECONDS, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { MCP_PERMISSIONS, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { ACCOUNT_CONNECTIONS_PATH } from '../users/account_connections_links.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -67,7 +67,8 @@ export class McpConnectionPage {
     }
 
     get canApprove() {
-        if (this.connection && (!CONNECTION_DURATION_DAYS.includes(this.connection.durationDays) || this.connection.name.length > 80 || /[\u0000-\u001f\u007f]/u.test(this.connection.name) ||
+        if (this.connection && (!['new', 'replace'].includes(this.connection.mode) || !CONNECTION_DURATION_DAYS.includes(this.connection.durationDays) || this.connection.name.length > 80 || /[\u0000-\u001f\u007f]/u.test(this.connection.name) ||
+            (this.connection.mode === 'replace' && !this.connection.connectionId) ||
             (this.connection.mode === 'new' && this.details.connections?.length && !this.connection.name.trim()))) return false;
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
         const units = this.details?.units || [];
@@ -99,8 +100,8 @@ export class McpConnectionPage {
                 const details = await this.call('details');
                 if (generation !== this.generation) return;
                 this.details = details;
-                const latest = details.connections?.[0];
-                this.connection = details.connections ? { mode: latest ? 'replace' : 'new', ...(latest ? { connectionId: latest.id } : {}), name: latest?.name || '', durationDays: DEFAULT_CONNECTION_DURATION_DAYS } : undefined;
+                const latest = details.connections?.find(c => c.defaultEligible !== false);
+                this.connection = details.connections ? { mode: latest ? 'replace' : (details.connections.length ? '' : 'new'), ...(latest ? { connectionId: latest.id } : {}), name: latest?.name || '', durationDays: DEFAULT_CONNECTION_DURATION_DAYS } : undefined;
                 if (!Array.isArray(this.details.occasions) || this.details.occasions.some(o => !Number.isSafeInteger(o.id))) {
                     throw new Error('Invalid occasions');
                 }
@@ -221,6 +222,8 @@ export class McpConnectionPage {
                     this.connection.durationDays = Number(duration.value); this.render();
                     this.container.querySelector('[name="durationDays"]')?.focus();
                 });
+                add('p', this.text('consentDeadline', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(consentDeadline(this.connection.durationDays))) }));
+                add('p', this.text('idleDurationHint', { days: CONNECTION_IDLE_SECONDS / DAY_SECONDS }));
                 if (this.connection.durationDays === 365) add('p', this.text('longDurationHint')).dataset.longDurationHint = '';
 
                 const section = add('fieldset', ''); section.disabled = this.busy;
@@ -231,14 +234,18 @@ export class McpConnectionPage {
                         const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'connection-mode';
                         radio.value = mode; radio.checked = this.connection.mode === mode;
                         radio.addEventListener('change', () => {
-                            this.connection = { mode, durationDays: this.connection.durationDays, name: mode === 'replace' ? choices[0].name || '' : '',
-                                ...(mode === 'replace' ? { connectionId: choices[0].id } : {}) }; this.render();
+                            const target = choices.find(c => c.defaultEligible !== false);
+                            this.connection = { mode, durationDays: this.connection.durationDays, name: mode === 'replace' ? target?.name || '' : '',
+                                ...(mode === 'replace' && target ? { connectionId: target.id } : {}) }; this.render();
                         });
                         label.appendChild(radio); add('span', this.text(mode === 'replace' ? 'replaceConnection' : 'newDevice'), label);
                     }
                     if (this.connection.mode === 'replace') {
                         const label = add('label', this.text('replaceTarget'), section);
                         const select = add('select', '', label); select.name = 'connectionId';
+                        if (!this.connection.connectionId) {
+                            const placeholder = add('option', this.text('replaceTarget'), select); placeholder.value = '';
+                        }
                         for (const [index, c] of choices.entries()) {
                             const date = new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(c.expiresAt));
                             const option = add('option', `${index + 1}. ${c.name || this.details.client} · ${date}`, select); option.value = c.id;
@@ -246,7 +253,7 @@ export class McpConnectionPage {
                         }
                         select.addEventListener('change', () => {
                             this.connection.connectionId = select.value;
-                            this.connection.name = choices.find(c => c.id === select.value).name || ''; this.render();
+                            this.connection.name = choices.find(c => c.id === select.value)?.name || ''; this.render();
                         });
                         // Show every target's scope before approval, using text nodes only.
                         for (const [index, c] of choices.entries()) {

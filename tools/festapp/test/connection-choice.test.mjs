@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { verifyConnectionChoice, activeConnections, installConnectionReplacement } from '../src/remote/connection-choice.mjs';
+import { verifyConnectionChoice, activeConnections, installConnectionActivation } from '../src/remote/connection-choice.mjs';
 import { verifyConsent } from '../src/remote/consent.mjs';
 import { consentForm, connectionsPage } from '../src/remote/views.mjs';
 
-const old = { id: 'old', userId: 'user', clientId: 'application', profileBinding: 'profile', expiresAt: Date.now() + 60000,
+const old = { lifecycle: 'legacy', id: 'old', userId: 'user', clientId: 'application', profileBinding: 'profile', expiresAt: Date.now() + 60000,
     access: { type: 'occasions', occasionIds: [7] }, permissions: [], binding: 'session' };
 const storage = { get: (_model, id) => id === 'old' ? old : undefined, values: () => [old] };
 const verify = choice => verifyConnectionChoice(choice, storage, 'user', 'application', 'profile');
@@ -36,17 +36,17 @@ test('active candidates are restricted to actor/client/profile and newest first'
         { ...old, userId: 'foreign' }, { ...old, profileBinding: 'foreign' }, { ...old, revoked: true }];
     assert.deepEqual(activeConnections({ values: () => values }, 'user', 'application', 'profile').map(g => g.id), ['latest', 'old']);
 });
-test('replacement listener ignores refresh and contains storage/audit exceptions', () => {
+test('activation listener propagates commit failures and contains audit failures', () => {
     const provider = new EventEmitter(); let revocations = 0;
     const store = { get: (_m, id) => id === 'new' ? { ...old, id, replaces: 'old' } : old,
-        revoke: () => { revocations++; throw Error('disk unavailable'); } };
-    installConnectionReplacement(provider, store, () => { throw Error('audit unavailable'); });
+        activateConnection: () => { revocations++; throw Error('disk unavailable'); }, refreshConnection: () => ({}) };
+    installConnectionActivation(provider, store, () => { throw Error('audit unavailable'); });
     const ctx = { oidc: { params: { grant_type: 'refresh_token' }, entities: { AuthorizationCode: { grantId: 'new' } } } };
     provider.emit('grant.success', ctx); assert.equal(revocations, 0);
     ctx.oidc.params.grant_type = 'authorization_code';
-    assert.doesNotThrow(() => provider.emit('grant.success', ctx)); assert.equal(revocations, 1);
-    store.get = (_m, id) => id === 'new' ? { ...old, id, replaces: 'old' } : { ...old, clientId: 'other' };
-    provider.emit('grant.success', ctx); assert.equal(revocations, 1, 'recheck ownership at issuance');
+    assert.throws(() => provider.emit('grant.success', ctx), /disk unavailable/); assert.equal(revocations, 1);
+    store.activateConnection = () => ({ replaces: 'old' });
+    assert.doesNotThrow(() => provider.emit('grant.success', ctx));
 });
 test('standalone consent and management escape device names', () => {
     const name = '<img src=x onerror=alert(1)>';
@@ -79,4 +79,15 @@ test('standalone duration choice defaults to seven days and explains long access
     for (const days of [30, 90, 365]) assert(html.includes(`value="${days}"`));
     assert.match(html, /1 rok/); assert.match(html, /Kdykoli jej můžete odebrat/);
     assert(!html.includes('Přístup vyprší za 7 dní'));
+});
+
+test('pending never appears as candidate; unused legacy has no automatic default', () => {
+    const values = [{ ...old, id: 'pending', lifecycle: 'pending' }, old, { ...old, id: 'used', clientConnectedAt: Date.now() }];
+    const candidates = activeConnections({ values: () => values }, 'user', 'application', 'profile');
+    assert.equal(candidates.length, 2);
+    assert.equal(candidates.find(c => c.id === 'old').defaultEligible, false);
+    assert.equal(candidates.find(c => c.id === 'used').defaultEligible, true);
+    const html = consentForm({ csrf: 'test', client: 'Application', action: '/consent', occasions: [], connections: [candidates.find(c => c.id === 'old')] });
+    assert.match(html, /<option value="" selected>/);
+    assert.doesNotMatch(html, /value="replace" checked/);
 });

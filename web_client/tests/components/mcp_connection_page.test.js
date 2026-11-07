@@ -397,3 +397,15 @@ test('Czech and English duration copy describes the selected lifetime and revoca
         }
     } finally { LocalizationService.translations = original; }
 });
+
+test('unused legacy connections require an explicit choice and eligible default skips them', async () => {
+    const old = { id: 'historical', name: 'Dřívější připojení', defaultEligible: false, expiresAt: '2030-01-01T12:00:00Z', access: { units: [], occasionIds: [99] }, permissions: [] };
+    const connections = [old];
+    const f = fixture({ invoke: async () => ({ data: { client: 'Aplikace', occasions: [{ id: 99, title: 'Ples' }], connections } }) });
+    await f.page.init(); f.page.selected.add(99);
+    assert.equal(f.page.connection.mode, ''); assert.equal(f.page.canApprove, false);
+    connections.push({ ...old, id: 'issued', defaultEligible: true });
+    await f.page.init();
+    assert.equal(f.page.connection.connectionId, 'issued');
+    assert.match(f.container.textContent, /30 dnech bez obnovy tokenu/);
+});

@@ -1,3 +1,4 @@
+import { connectionActive, connectionIssuable } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { activeConnections, verifyConnectionChoice } from './connection-choice.mjs';
 import { verifyConsent } from './consent.mjs';
 import express from 'express';
@@ -39,7 +40,8 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
                 check(context.userId === userId, 'FORBIDDEN'));
             if (!result) return res.json({ status: 'pending' });
             const grant = storage.get('Delegation', result.grantId);
-            if (!grant || grant.revoked || grant.expiresAt <= Date.now()) return res.json({ status: 'revoked' });
+            if (connectionIssuable(grant)) return res.json({ status: 'pending' });
+            if (!connectionActive(grant)) return res.json({ status: 'revoked' });
             return res.json({ status: grant.clientConnectedAt ? 'connected' : 'pending' });
         }
         const { uid, flow } = read(request);

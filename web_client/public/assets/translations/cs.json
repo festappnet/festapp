@@ -3765,6 +3765,8 @@
     "duration30": "30 dní",
     "duration90": "90 dní",
     "duration365": "1 rok",
+    "consentDeadline": "Při potvrzení nyní bude souhlas platit nejpozději do {date}.",
+    "idleDurationHint": "Připojení skončí nejpozději po zvolené době nebo po {days} dnech bez obnovy tokenu. Přihlášení k účtu může skončit dříve. Název je pouze Váš štítek, nikoli ověřená identita zařízení.",
     "longDurationHint": "Přístup bude platit dlouho. Kdykoli jej můžete odebrat ve správě připojení.",
     "connectionChoice": "Připojení",
     "replaceConnection": "Nahradit",

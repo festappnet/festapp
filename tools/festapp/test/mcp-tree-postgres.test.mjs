@@ -35,7 +35,7 @@ test('tree consent keeps real SQL reads, future creation, moves and revoked righ
     const available=(await client.rpc('get_operator_access_v1',{p_organization:f.org,p_unit:null,p_occasion:null})).data;
     const access=verifySelection({type:'selection',units:[{unitId:f.unit,canCreateOccasions:true},{unitId:second,canCreateOccasions:true}],occasionIds:[individual]},available,true);
     const config={profile,clients:[{id:'tree-client'}],resource:'https://fixture.test/mcp'};
-    const grant={id:'tree-grant',userId:f.actor,clientId:'tree-client',profileBinding:profile.binding,binding:'tree-session',access,expiresAt:Date.now()+60000};
+    const grant={lifecycle:'legacy',id:'tree-grant',userId:f.actor,clientId:'tree-client',profileBinding:profile.binding,binding:'tree-session',access,expiresAt:Date.now()+60000};
     const owner=new DelegatedOwner(config,{get:()=>grant,backendStore:{}},{grantId:grant.id,accountId:f.actor,clientId:'tree-client',aud:config.resource,scope:READ_SCOPE+' '+CREATE_SCOPE,exp:Date.now()/1000+60});
     const create=async unitId=>{
         owner.authorizeOperation('occasions.create',{unitId});

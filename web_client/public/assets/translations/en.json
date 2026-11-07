@@ -3763,6 +3763,8 @@
     "duration30": "30 days",
     "duration90": "90 days",
     "duration365": "1 year",
+    "consentDeadline": "If confirmed now, consent will end no later than {date}.",
+    "idleDurationHint": "The connection ends at the selected deadline or after {days} days without token refresh. Your account session may end earlier. The name is your label, not a verified device identity.",
     "longDurationHint": "Access will remain valid for a long time. You can revoke it at any time in connection management.",
     "connectionChoice": "Connection",
     "replaceConnection": "Replace",

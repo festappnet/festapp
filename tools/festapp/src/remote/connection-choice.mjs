@@ -1,4 +1,4 @@
-import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, DAY_SECONDS } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
+import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, DAY_SECONDS, connectionActive, connectionDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { digest } from '../context/profile.mjs';
 import { z } from 'zod';
 import { check } from '../errors.mjs';
@@ -16,10 +16,10 @@ const owns = (g, userId, clientId, profileBinding) => g && g.userId === userId &
 const creationTime = grant => grant.createdAt ??
     grant.expiresAt - (grant.durationDays ?? DEFAULT_CONNECTION_DURATION_DAYS) * DAY_SECONDS * 1000;
 export function activeConnections(storage, userId, clientId, profileBinding) {
-    return storage.values('Delegation').filter(g => owns(g, userId, clientId, profileBinding) && !g.revoked && g.expiresAt > Date.now())
+    return storage.values('Delegation').filter(g => owns(g, userId, clientId, profileBinding) && connectionActive(g))
         .sort((a, b) => creationTime(b) - creationTime(a) || a.id.localeCompare(b.id))
-        .map(g => ({ id: g.id, name: g.name || null, expiresAt: new Date(g.expiresAt).toISOString(),
-            access: accessSelection(g.access), permissions: g.permissions ?? [] }));
+        .map(g => ({ id: g.id, name: g.name || null, expiresAt: new Date(connectionDeadline(g)).toISOString(),
+            access: accessSelection(g.access), permissions: g.permissions ?? [], defaultEligible: g.lifecycle === 'issued' || Boolean(g.clientConnectedAt) }));
 }
 export function verifyConnectionChoice(raw, storage, userId, clientId, profileBinding) {
     if (raw === undefined) return { durationDays: DEFAULT_CONNECTION_DURATION_DAYS }; // Legacy requests always create an independent connection.
@@ -30,7 +30,7 @@ export function verifyConnectionChoice(raw, storage, userId, clientId, profileBi
     if (mode === 'replace') {
         check(typeof connectionId === 'string', 'FORBIDDEN');
         const old = storage.get('Delegation', connectionId);
-        check(owns(old, userId, clientId, profileBinding) && !old.revoked && old.expiresAt > Date.now(), 'FORBIDDEN');
+        check(owns(old, userId, clientId, profileBinding) && connectionActive(old), 'FORBIDDEN');
         inheritedName = old.name;
     } else {
         check(connectionId === undefined, 'FORBIDDEN');
@@ -39,19 +39,21 @@ export function verifyConnectionChoice(raw, storage, userId, clientId, profileBi
     return { durationDays, name: name || inheritedName || undefined, replaces: mode === 'replace' ? connectionId : undefined };
 }
 
-// EventEmitter listeners must be synchronous and contain every exception: a
-// cleanup failure cannot turn already-issued tokens into a failed token response.
-export function installConnectionReplacement(provider, storage, audit) {
+// EventEmitter executes this synchronously inside the provider's error boundary.
+export function installConnectionActivation(provider, storage, audit) {
     provider.on('grant.success', ctx => {
-        try {
-            if (ctx.oidc.params.grant_type !== 'authorization_code') return;
-            const id = ctx.oidc.entities.AuthorizationCode?.grantId;
-            const grant = id && storage.get('Delegation', id);
-            if (!grant?.replaces || grant.revoked || grant.expiresAt <= Date.now()) return;
-            const old = storage.get('Delegation', grant.replaces);
-            check(owns(old, grant.userId, grant.clientId, grant.profileBinding), 'FORBIDDEN');
-            storage.revoke(old.id);
-            audit({ event: 'revoked', connection: digest(old.id) });
-        } catch { try { audit({ event: 'replacement_failed' }); } catch { /* Never break issuance. */ } }
+        const type = ctx.oidc.params.grant_type;
+        if (!['authorization_code', 'refresh_token'].includes(type)) return;
+        const id = (type === 'authorization_code' ? ctx.oidc.entities.AuthorizationCode : ctx.oidc.entities.RefreshToken)?.grantId;
+        let result;
+        try { result = type === 'authorization_code' ? storage.activateConnection(id) : storage.refreshConnection(id); }
+        catch (error) {
+            if (type === 'authorization_code') {
+                try { storage.discardUnissuedTokens(id); } catch { /* Pending remains unusable even if cleanup fails. */ }
+            }
+            throw error;
+        }
+        try { audit({ event: type === 'authorization_code' ? 'issued' : 'refreshed', connection: digest(id),
+            ...(result.replaces ? { replaced: digest(result.replaces) } : {}) }); } catch { /* Audit cannot undo a committed transaction. */ }
     });
 }

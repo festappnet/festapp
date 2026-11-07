@@ -3,6 +3,20 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'assets/translations/cs.json'
+      - 'assets/translations/en.json'
+      - 'web_client/public/assets/translations/cs.json'
+      - 'web_client/public/assets/translations/en.json'
+      - 'web_client/pnpm-lock.yaml'
+      - 'web_client/pnpm-workspace.yaml'
+      - 'web_client/package.json'
+      - 'tools/festapp/**'
+      - 'packages/festapp_contracts/**'
+      - 'web_client/src/components/mcp/**'
+      - 'web_client/src/components/users/account_connections_page.js'
+      - 'web_client/tests/components/mcp_connection_page.test.js'
+      - 'web_client/tests/components/account_connections_page.test.js'
+      - 'supabase/functions/mcp-session-exchange/**'
       - 'workers/image-worker/**'
       - 'lib/components/images/**'
       - 'lib/components/html/**'
@@ -20,6 +34,20 @@ on:
   push:
     branches: [main]
     paths:
+      - 'assets/translations/cs.json'
+      - 'assets/translations/en.json'
+      - 'web_client/public/assets/translations/cs.json'
+      - 'web_client/public/assets/translations/en.json'
+      - 'web_client/pnpm-lock.yaml'
+      - 'web_client/pnpm-workspace.yaml'
+      - 'web_client/package.json'
+      - 'tools/festapp/**'
+      - 'packages/festapp_contracts/**'
+      - 'web_client/src/components/mcp/**'
+      - 'web_client/src/components/users/account_connections_page.js'
+      - 'web_client/tests/components/mcp_connection_page.test.js'
+      - 'web_client/tests/components/account_connections_page.test.js'
+      - 'supabase/functions/mcp-session-exchange/**'
       - 'workers/image-worker/**'
       - 'lib/components/images/**'
       - 'lib/components/html/**'
@@ -49,8 +77,13 @@ jobs:
           node-version: '22.23.3'
           cache: pnpm
           cache-dependency-path: workers/image-worker/pnpm-lock.yaml
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: '2.9.0'
       - run: python3 automation/ci/run.py step image-server-install
       - run: python3 automation/ci/run.py step image-server-policy
+      - run: python3 automation/ci/run.py step mcp-auth-install
+      - run: python3 automation/ci/run.py step mcp-auth-contract
 
   client-contract:
     runs-on: ubuntu-latest

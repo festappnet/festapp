@@ -1,5 +1,6 @@
+import { connectionActive, connectionIssuable, connectionRefreshSeconds, connectionDeadline, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { CONNECTION_DURATION_DAYS, MAX_CONNECTION_DURATION_DAYS, DAY_SECONDS } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
-import { activeConnections, verifyConnectionChoice, installConnectionReplacement } from './connection-choice.mjs';
+import { activeConnections, verifyConnectionChoice, installConnectionActivation } from './connection-choice.mjs';
 import { createRateLimiter, clientIdentity } from './rate-limit.mjs';
 import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS } from './make-contract.mjs';
 import {PreviewArtifacts} from '../operations/preview.mjs';
@@ -63,17 +64,17 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             },
         },
         ttl: { AccessToken: 300, IdToken: 300, AuthorizationCode: 60, Interaction: 600, Grant: DAY_SECONDS * MAX_CONNECTION_DURATION_DAYS,
-            RefreshToken: (_ctx, token) => {
+            RefreshToken: (ctx, token) => {
                 const grant = storage.get('Delegation', token.grantId);
-                if (!grant || grant.revoked || grant.expiresAt <= Date.now())
+                if (!(connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))))
                     throw new errors.InvalidGrant('connection expired or revoked');
-                return Math.max(1, Math.ceil((grant.expiresAt - Date.now()) / 1000));
+                return connectionRefreshSeconds(grant);
             }, Session: 3600 },
-        issueRefreshToken: (_ctx, client, source) => {
+        issueRefreshToken: (ctx, client, source) => {
             if (!clientAllowsScopes(config, client.clientId, source.scope?.split(' ') ?? []))
                 throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
-            return Boolean(grant && !grant.revoked && grant.clientId === client.clientId && grant.expiresAt > Date.now());
+            return Boolean(grant?.clientId === client.clientId && (connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))));
         },
         expiresWithSession: () => false,
         rotateRefreshToken: ctx => {
@@ -83,7 +84,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!clientAllowsScopes(config, ctx.oidc.client.clientId, source.scope?.split(' ') ?? []))
                 throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
-            if (!grant || grant.revoked || grant.clientId !== ctx.oidc.client.clientId || grant.expiresAt <= Date.now())
+            if (!connectionActive(grant) || grant.clientId !== ctx.oidc.client.clientId)
                 throw new errors.InvalidGrant('connection expired or revoked');
             return true;
         },
@@ -97,13 +98,13 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         findAccount: async (_ctx, id) => ({ accountId: id, claims: async () => ({ sub: id }) }),
         renderError: async (ctx) => {
             ctx.type = 'html';
-            ctx.body = page('Připojení se nezdařilo', '<p>Požadavek není platný nebo vypršel. Spusť připojení znovu v aplikaci.</p>');
+            ctx.body = page('Připojení se nezdařilo', '<p>Požadavek není platný nebo vypršel. Spusťte připojení znovu v aplikaci.</p>');
         },
     });
     // Only a loopback-bound listener behind the configured trusted TLS proxy.
     // The outer host/proto check below rejects forged forwarded destinations.
     provider.proxy = config.profile.kind === 'canonical';
-    installConnectionReplacement(provider, storage, audit);
+    installConnectionActivation(provider, storage, audit);
     provider.on('server_error', () => audit({ event: 'issuer_error' }));
     const app = express();
     app.disable('x-powered-by');
@@ -132,7 +133,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             (canonical && req.headers['x-forwarded-proto'] !== 'https')) return res.sendStatus(400);
         if ((req.path === '/mcp' || req.path.startsWith('/make/v1/')) && req.headers.origin && req.headers.origin !== config.issuer)
             return res.sendStatus(403);
-        res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
+        res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'same-origin',
             'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
             // Empty script-src denies scripts; oidc-provider adds only the exact
             // hash of its account-switch auto-submit script when it renders it.
@@ -192,7 +193,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const choice = verifyConnectionChoice(f.connection, storage, f.userId, d.params.client_id, config.profile.binding);
         const durationSeconds = choice.durationDays * DAY_SECONDS;
         const createdAt = Date.now();
-        const expiresAt = createdAt + durationSeconds * 1000;
+        const expiresAt = consentDeadline(choice.durationDays, createdAt);
+        const pendingExpiresAt = Math.min(d.exp * 1000, expiresAt);
         const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id, expiresIn: durationSeconds });
         grant.addOIDCScope(`openid offline_access ${scopes}`);
         grant.addResourceScope(config.resource, scopes);
@@ -200,8 +202,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const sessionBinding = connectionBinding(config.profile, d.uid);
         storage.put('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
             profileBinding: config.profile.binding, binding: sessionBinding,
-            access, permissions, ...choice, createdAt, expiresAt, revoked: false }, durationSeconds);
-        storage.put('Binding', sessionBinding, { id: grantId }, durationSeconds + DAY_SECONDS);
+            access, permissions, ...choice, createdAt, expiresAt, lifecycle: 'pending', pendingExpiresAt, revoked: false }, (pendingExpiresAt - Date.now()) / 1000);
+        storage.put('Binding', sessionBinding, { id: grantId }, (pendingExpiresAt - Date.now()) / 1000);
         await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
         if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid }, 600);
         storage.remove('Connect', d.uid);
@@ -282,7 +284,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res);
         return res.type('html').send(f.userId ? connectionsPage(f.csrf,
-            storage.values('Delegation').filter(g => g.userId === f.userId && !g.revoked && g.expiresAt > Date.now()), config.clients)
+            storage.values('Delegation').filter(g => g.userId === f.userId && connectionActive(g)).map(g => ({ ...g, expiresAt: connectionDeadline(g) })), config.clients)
             : loginForm({ csrf: f.csrf, action: '/connections/login' }));
     });
     app.post('/connections/login', form, async (req, res) => {
@@ -411,7 +413,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const safe = safeError(error);
         if (safe.code === 'TEMPORARILY_LIMITED') return limited(req, res, error);
         res.status(safe.code === 'FORBIDDEN' ? 403 : safe.code === 'TEMPORARILY_LIMITED' ? 429 : 400)
-            .type('html').send(page('Požadavek se nezdařil', '<p>Připojení vypršelo, bylo odmítnuto nebo se službou nelze spojit. Spusť připojení znovu.</p>'));
+            .type('html').send(page('Požadavek se nezdařil', '<p>Připojení vypršelo, bylo odmítnuto nebo se službou nelze spojit. Spusťte připojení znovu.</p>'));
     });
     return { app, provider };
 }
