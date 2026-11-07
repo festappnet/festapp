@@ -1,57 +1,68 @@
-# Festapp Tickets repository presentation
+# Festapp repository presentation
 
 ## Intended result
 
-An English repository homepage led by Festapp Tickets, with current light-mode
-screenshots of ticketing and the companion event app at mobile screen sizes.
-Keep Festapp as the platform name and explain vstupenky.online as its regional
-portal. Update GitHub's short description and homepage to match.
+An English repository homepage named **Festapp**, explaining the shared platform,
+its ticketing products and branded festival apps. Show actual native iPhone
+simulator screenshots of the **summer Slunovrat 2026 festival, June 18-21**, plus
+English ticketing screens. Provide a standalone GitHub-style HTML preview.
+
+The owner's latest instructions replace the earlier Festapp Tickets-first title
+and Winter Edition mobile web gallery. English translations are local only.
 
 ## Plan
 
-1. Read the current documentation, branding rules and capture workflow. Bring
-   `main` up to date without changing unrelated work.
-2. Capture real current UI in an isolated, muted, headless browser. Use disposable
-   English examples, English controls and light mode. Show ticket purchase and
-   management, plus the event app's mobile map and schedule. Record capture
-   provenance; identify mobile browser captures accurately.
-3. Rewrite the README around the organizer and attendee journeys. Put product
-   links and screenshots before developer instructions. Keep the architecture,
-   setup, offline limitations and contribution references concise and accurate.
-4. Check local Markdown/image targets, image dimensions and the diff. No runtime
-   code changes are planned, so no canonical application CI lane is affected.
-5. Fetch main again, account for any upstream changes, commit only these docs and
-   screenshots, publish through the required pull request, and verify GitHub's
-   README, description and homepage.
+1. Preserve unrelated work and bring the documentation branch up to date with
+   canonical main before publication.
+2. Explain the relationships with a source-controlled vector diagram: Festapp
+   as the shared platform, ticketing through Festapp Tickets and vstupenky.online,
+   and branded event apps such as Festival Slunovrat on iOS, Android and web.
+3. Use the verified public summer occasion 1072558, not the current winter landing
+   page or identifiers from historical rehearsal databases. Preserve artist,
+   venue, image and date facts; translate visible editorial text only locally.
+4. Build the real iOS app in an isolated checkout with Slunovrat's public branding.
+   Install Apple's simulator runtime, launch a task-owned headless iPhone in light
+   mode, and capture native program, map and artist-detail screens with simctl.
+   Keep push disabled and guard backend transport against live mutations.
+5. Put the native app gallery before ticketing so the app is immediately visible.
+   Keep the English local seat-selection and order-administration screenshots.
+   Remove superseded mobile captures from the final gallery and asset directory.
+6. Rebuild the self-contained static HTML preview with embedded assets, phone
+   frames and the relationship diagram. Open it directly from disk, without a
+   preview server or disturbance to existing browser tabs.
+7. Validate the final local Markdown/image targets, PNGs, SVG and whitespace;
+   inspect the native screens and the static preview. No main-checkout application
+   source changes or tenant deployment are part of this documentation task.
+8. Update the existing PR #755 and GitHub description/homepage. Main requires
+   one approving review; do not bypass that protection.
 
-## Assumptions and boundaries
+## Evidence and boundaries
 
-- Scope is repository presentation, not a tenant deployment or product release.
-- Screenshots must come from rendered UI, not translated or invented mockups.
-- No live customer data or production mutations are needed.
-- A mobile viewport demonstrates responsive web UI, not a native app capture.
-- Historical feature screenshots remain separate from the new homepage gallery.
+- Shared capture source: `1080cadc1`; public Slunovrat configuration/branding:
+  `f89359611d4ffab7175e74a179ec956e33941bf6`.
+- Summer source: `https://slunovrat.festapp.net/2025-copy-98cf835a/event`,
+  occasion 1072558, organization 19, canonical tenant `festivalslunovrat`.
+- The historical rehearsal's 1072557 is Winter 2025 in live production and must
+  not be used to identify the summer event.
+- Local translation is applied to decoded display models in the isolated capture
+  checkout. Public sync asset integrity and live event content remain intact.
+- Local app clock selects June 18; simulator status-bar time is normalized for
+  presentation. Artist photos, names, times and venues come from public data.
+- The two ticketing screens retain their original source/fixture provenance.
+- Final screenshot details and native capture commands are recorded beside the
+  images in `docs/images/readme/README.md`.
 
-## Execution
+## Execution result
 
-- Reconnaissance complete. Main fast-forwarded from `94ba7063c` to `99dc29ae7`;
-  the intervening work concerns MCP connections. Two pre-existing untracked plan
-  files matched upstream byte-for-byte and were preserved before fast-forward.
-- Browser capture delegated to Terra under the owner's standing browser rules.
-- GitHub description and homepage now point to Festapp Tickets. Main requires
-  one approving review, so publish the documentation via a PR without bypassing
-  that rule. No application deployment is involved.
-- Captured and visually inspected four new PNGs: seat selection with its price,
-  orders, mobile map and mobile schedule. Provenance is recorded beside the images.
-- Before publication, fetched main again and rebased onto `c5d32e6a3`.
-  The intervening changes concern form measurement and payment settings, not
-  the captured seating renderer, order table, map or schedule. Capture revision
-  remains explicitly recorded as `99dc29ae7`.
-- Documentation validation covers local link/image targets, PNG decoding and
-  dimensions, total image size, and whitespace. Application code is unchanged.
-- Follow-up: replaced the homepage's two generic mobile examples with three
-  real Slunovrat Winter Edition views (program, Opava map, artist detail).
-  The owner authorized local English translation; only browser presentation
-  responses were translated, without editing the live event. These are explicitly
-  labelled mobile web captures at iPhone dimensions, not native iOS captures.
-  The static GitHub-style preview displays them in phone frames.
+- Installed iOS 26.5 and built the native app for arm64; captured three clean
+  1206 x 2622 PNGs directly with simctl. The task-owned simulator was shut down
+  and deleted after capture. The runtime remains installed for future work.
+- Restored the Festapp title, repository description and homepage; added the
+  relationship diagram and replaced all superseded mobile examples.
+- Checked 27 local README targets, decoded all five PNGs with valid CRCs and
+  dimensions, parsed the SVG, and verified whitespace. Browser inspection
+  confirmed six embedded images, three aligned native phone frames, a legible
+  diagram, and no page overflow at 1440px or 390px.
+- Fetched upstream main at `db00d5c7b`. Its intervening measurement-protocol
+  changes do not touch the captured native UI, images or README. Incorporate
+  that main revision before updating PR #755; no capture checks are invalidated.

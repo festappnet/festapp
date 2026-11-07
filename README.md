@@ -1,15 +1,61 @@
-# Festapp Tickets
+# Festapp
 
-Sell tickets, offer reserved seating and manage event registration with
-[Festapp Tickets](https://tickets.festapp.net/), built on the Festapp event
-platform. Organizers manage forms, orders, payments and admission in one place.
-Attendees can also follow the program, explore the venue map and save their
-personal schedule in the companion event app.
+Festapp is an event platform for festivals, conferences and community
+events. Attendees browse programs, explore venue maps and save their personal
+schedule on iOS, Android and the web. Organizers manage registration, tickets,
+reserved seating, payments and admission.
 
+The same platform powers branded festival apps such as **Festival Slunovrat**,
+the international **Festapp Tickets** service and the Czech **vstupenky.online**
+portal.
+
+[Festapp](https://festapp.net/) ·
 [Festapp Tickets](https://tickets.festapp.net/) ·
-[Try the event app](https://live.festapp.net/) ·
+[vstupenky.online](https://vstupenky.online/) ·
 [Developer setup](docs/setup/howto.md) ·
 [Contributing](CONTRIBUTING.md)
+
+## One platform, connected products
+
+![Festapp powers international and Czech ticketing services, and branded event apps such as Festival Slunovrat](docs/images/readme/festapp-platform.svg)
+
+The products share the same application and event backend. Each organization
+configures its branding and features; a festival app and a ticketing portal are
+different experiences built on Festapp.
+
+## The event app on iPhone
+
+Festapp also gives attendees schedules, venue maps, news, workshop sign-ups
+and a personal program on Android, iOS and the web. Organizers choose which
+features each event needs, including information pages, songbooks and group games.
+
+### Slunovrat 2026: the summer festival
+
+A real festival app powered by Festapp: browse the program, find venues around
+Opava and open artist details.
+
+<table>
+  <tr>
+    <th align="center">Festival program</th>
+    <th align="center">Venue map</th>
+    <th align="center">Artist details</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-program.png" width="220" alt="Native iOS Slunovrat summer festival program in an iPhone simulator, with local English translation" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-map.png" width="220" alt="Native iOS Slunovrat summer festival venue map of Opava in an iPhone simulator" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-detail.png" width="220" alt="Native iOS Slunovrat summer artist detail in an iPhone simulator, with local English translation" /></td>
+  </tr>
+</table>
+
+Festival Slunovrat's summer edition, **June 18-21, 2026**, captured directly
+from the native iOS app running in an **iPhone simulator**, in light mode.
+Public event text was translated into English only in the local capture build;
+artist and venue names retain their original spelling. The live event is unchanged.
+[Capture details](docs/images/readme/README.md).
+
+Previously synchronized data can be read offline. Authentication, payments and
+server-confirmed writes need a connection; native offline maps require a prepared
+map bundle. See the [feature reference](docs/overview/features.md) for details.
 
 ## Ticketing for organizers
 
@@ -39,40 +85,6 @@ The same platform powers [vstupenky.online](https://vstupenky.online/), its
 regional ticketing and registration portal. Website plugins and connectors
 live in the [integration directory](integrations/README.md), together with their
 setup instructions and publication status.
-
-## The event app, on mobile
-
-Festapp also gives attendees schedules, venue maps, news, workshop sign-ups
-and a personal program on Android, iOS and the web. Organizers choose which
-features each event needs, including information pages, songbooks and group games.
-
-### Slunovrat Winter Edition
-
-A real festival app powered by Festapp: browse the program, find venues around
-Opava and open artist details.
-
-<table>
-  <tr>
-    <th align="center">Festival program</th>
-    <th align="center">Venue map</th>
-    <th align="center">Artist details</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/readme/slunovrat-web-program.png" width="220" alt="Slunovrat festival program with a local English translation at an iPhone-sized viewport" /></td>
-    <td align="center"><img src="docs/images/readme/slunovrat-web-map.png" width="220" alt="Slunovrat venue map of Opava at an iPhone-sized viewport" /></td>
-    <td align="center"><img src="docs/images/readme/slunovrat-web-detail.png" width="220" alt="Slunovrat artist detail with a local English translation at an iPhone-sized viewport" /></td>
-  </tr>
-</table>
-
-The [Slunovrat web app](https://app.festivalslunovrat.cz/) is shown at iPhone
-screen dimensions in light mode. Public event text was translated into English
-only for these local captures; artist and venue names retain their original
-spelling. These are mobile web views, not native iOS captures.
-[Capture details](docs/images/readme/README.md).
-
-Previously synchronized data can be read offline. Authentication, payments and
-server-confirmed writes need a connection; native offline maps require a prepared
-map bundle. See the [feature reference](docs/overview/features.md) for details.
 
 ## Start here
 
