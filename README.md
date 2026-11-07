@@ -59,10 +59,10 @@ map bundle. See the [feature reference](docs/overview/features.md) for details.
 
 ## Ticketing for organizers
 
-![Reserved seating in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
+![Gala seating plan with round tables and a central dance floor in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
 
-Select seats on an interactive venue plan and see the price before continuing
-to checkout.
+Choose seats for a gala with numbered round tables, a stage and a central dance
+floor. VIP and standard ticket types let organizers offer different price zones.
 
 
 - **Ticket sales and registration.** Build public forms with ticket types,

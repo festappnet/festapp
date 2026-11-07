@@ -48,7 +48,8 @@ and Winter Edition mobile web gallery. English translations are local only.
   checkout. Public sync asset integrity and live event content remain intact.
 - Local app clock selects June 18; simulator status-bar time is normalized for
   presentation. Artist photos, names, times and venues come from public data.
-- The two ticketing screens retain their original source/fixture provenance.
+- The order-administration screen retains its original fixture provenance.
+  The gala seating capture uses the newer local round-table fixture below.
 - Final screenshot details and native capture commands are recorded beside the
   images in `docs/images/readme/README.md`.
 
@@ -66,3 +67,11 @@ and Winter Edition mobile web gallery. English translations are local only.
 - Fetched upstream main at `db00d5c7b`. Its intervening measurement-protocol
   changes do not touch the captured native UI, images or README. Merged
   that main revision before updating PR #755; no capture checks were invalidated.
+
+### Round-table gallery refinement
+
+The organizer screenshot now shows the complete Grand Gala plan: 12 round tables,
+96 seats, a stage, a central dance floor, and local VIP/standard ticket products.
+The real public picker captured one selected VIP seat at CZK 650. Capture source
+is `307b61405`; the PNG is 1440 x 900. The README caption and media provenance
+are updated with the same local-only fixture boundary.

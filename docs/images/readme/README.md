@@ -63,19 +63,31 @@ isolated from the documentation branch.
 
 ## English ticketing examples
 
-`tickets-seating-desktop.png` and `tickets-admin-desktop.png` were captured on
-2026-11-07 from source `99dc29ae7` against a dedicated disposable local Supabase
-database. The canonical baseline, forward migrations and demo seed supplied
-English event, organizer, form, product and synthetic customer names. No live
-customer information is shown and no production data was changed.
+### Round-table gala seating
 
-| Image | View | Viewport |
-| --- | --- | --- |
-| `tickets-seating-desktop.png` | Public web seat picker with a selected seat and price | 1100 x 750 |
-| `tickets-admin-desktop.png` | Flutter web order administration with synthetic orders | 1440 x 900 |
+`tickets-seating-desktop.png` was captured on 2026-11-07 from Festapp source
+`307b614057b18dea2eb8b4d3f784f2992388d3dd`, using the real public web-client
+seat picker at **1440 x 900**, in English and light mode, against a dedicated
+loopback-only disposable Supabase fixture. No production data was changed.
 
-Both captures use English UI and light appearance. The tenant's dark header and
-navigation are part of its light theme. The Flutter release fixture stubs external
-notification callbacks; the public client uses local Vite with the same isolated
-backend. Browser sessions were isolated and headless. The disposable project,
-owned servers and capture sessions were stopped after capture.
+The local Grand Gala plan starts from the approved `approvedRoundBall()` template:
+12 native circular tables with eight seats each, a stage, and the Champagne/wood
+palette. The local layout positions the tables around an added central dance
+floor and distinguishes the first four tables visually. Its 96 seat bindings
+use local VIP (CZK 650) and standard (CZK 450) products. Stage, table numbers
+and dance-floor labels use canonical prepared text resources. A VIP seat was
+selected through the actual picker, producing the visible `1x CZK 650` summary.
+This is a local fixture reservation, not a live sale or submitted checkout.
+
+### Order administration
+
+`tickets-admin-desktop.png` was captured on 2026-11-07 from source `99dc29ae7`
+using the real Flutter web app against a disposable local Supabase database,
+at **1440 x 900**, in English and light mode. The canonical baseline, migrations
+and demo seed supplied English event, organizer, form, product and synthetic
+customer names. No live customer information is shown. The fixture stubs
+external notification callbacks. The tenant's dark header/navigation belongs
+to its light theme.
+
+Both capture sessions were isolated and headless. The dedicated local servers,
+Supabase fixtures and owned browser sessions were stopped after capture.
