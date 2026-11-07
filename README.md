@@ -23,7 +23,7 @@ The products share the same application and event backend. Each organization
 configures its branding and features; a festival app and a ticketing portal are
 different experiences built on Festapp.
 
-## The event app on iPhone
+## The event app
 
 Festapp also gives attendees schedules, venue maps, news, workshop sign-ups
 and a personal program on Android, iOS and the web. Organizers choose which
