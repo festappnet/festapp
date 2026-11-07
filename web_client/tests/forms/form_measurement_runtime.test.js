@@ -1,3 +1,4 @@
+import {measurementProtocol} from '../../src/components/forms/form_measurement_contract.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
@@ -17,7 +18,7 @@ test('Worker binds actual SQL manifest, escapes scoped config, preserves CSP and
  assert.equal(response.status,200);assert.deepEqual(args,{p_form_link:'summer',p_organization:1,p_unit:2,p_runtime_origin:runtime,p_parent_origin:parent});
  const html=await response.text();assert.ok(!html.includes(config.scripts));assert.ok(html.includes('\\u003c/script>'));assert.ok(html.includes('processing-a'));
  for(const directive of ["worker-src 'none'","frame-src 'none'","object-src 'none'","form-action 'none'",'frame-ancestors '+parent])assert.ok(response.headers.get('content-security-policy').includes(directive));
- for(const bad of [{...config,organization:2},{...config,unit:3},{...config,form_link:'other'}, {...config,parent_origin:'https://other.example'},
+ for(const bad of [{...config,policy:{...policy,measurement_protocol:2}},{...config,policy:{...policy,measurement_protocol:undefined}},{...config,organization:2},{...config,unit:3},{...config,form_link:'other'}, {...config,parent_origin:'https://other.example'},
   {...config,runtime_origin:'https://other.pages.dev'}, {...config,policy:{...policy,eligible:false}}, {...config,policy:{...policy,processing_revision:null}},
   {...config,collector_origins:[parent]},{...config,collector_origins:['https://api.festapp.net']},{...config,collector_origins:['https://collect.example; script-src *']},{...config,scripts:'x'.repeat(5001)}])assert.equal((await serveMeasurement(request,env,async()=>bad)).status,404);
  assert.equal((await serveMeasurement(request,env,async()=>{throw Error('SECRET')})).status,404);
@@ -27,7 +28,7 @@ function fixture(t){
  const transport=new FormMeasurementRuntime({win:dom.window,model});let ready=0,mismatches=0;
  const grant={runtimeOrigin:runtime,manifest,generation:7,consent:{analytics:true,marketing:true},expiresAt:Date.now()+60000,onReady:()=>ready++,onMismatch:()=>mismatches++};
  const message=(type,extra={})=>dom.window.dispatchEvent(new dom.window.MessageEvent('message',{source:transport.frame?.contentWindow,origin:runtime,
-  data:{namespace:'festapp-measurement',protocol:2,type,manifest,instance:transport.instance,generation:7,...extra}}));
+  data:{namespace:'festapp-measurement',protocol:measurementProtocol,type,manifest,instance:transport.instance,generation:7,...extra}}));
  t.after(()=>{transport.destroy();dom.window.close();});return{dom,transport,grant,message,ready:()=>ready,mismatches:()=>mismatches};
 }
 test('no grant means no iframe; ready/init/ACK bind origin, source, manifest, generation and instance',t=>{
@@ -40,7 +41,7 @@ test('no grant means no iframe; ready/init/ACK bind origin, source, manifest, ge
 test('policy A / Worker B mismatches before init, and old frames/ACKs cannot revive',t=>{
  const f=fixture(t),r=f.transport;r.activate(f.grant);const old=r.frame.contentWindow,instance=r.instance;
  f.message('ready',{manifest:{...manifest,processing_revision:'b'}});assert.equal(f.mismatches(),1);assert.equal(r.frame,null);
- r.activate({...f.grant,generation:8});f.dom.window.dispatchEvent(new f.dom.window.MessageEvent('message',{source:old,origin:runtime,data:{namespace:'festapp-measurement',protocol:2,type:'ack',manifest,instance,generation:7}}));
+ r.activate({...f.grant,generation:8});f.dom.window.dispatchEvent(new f.dom.window.MessageEvent('message',{source:old,origin:runtime,data:{namespace:'festapp-measurement',protocol:measurementProtocol,type:'ack',manifest,instance,generation:7}}));
  assert.equal(f.ready(),0);r.frame.remove();f.message('ack',{generation:8});assert.equal(f.ready(),0);
 });
 for(const hidden of [false,true])test('expiry destroys the runtime even when hidden='+hidden,async t=>{
@@ -51,7 +52,7 @@ const unitScripts=f=>[...f.win.document.querySelectorAll('script')].filter(s=>s.
 function bootstrap(t,consent={analytics:true,marketing:true},manifestOverride=manifest){
  const boot={...config,manifest};const dom=new JSDOM('<head><script type="application/json" id="measurement-config"></script></head>',{url:runtime+'/runtime',runScripts:'outside-only'});
  const win=dom.window;win.document.getElementById('measurement-config').textContent=JSON.stringify({...boot,gtm_container:'GTM-AB12',scripts:'window.tagRuns=(window.tagRuns||0)+1'});win.eval(runtimeSource);
- const send=(type,extra={})=>win.dispatchEvent(new win.MessageEvent('message',{source:win.parent,origin:parent,data:{namespace:'festapp-measurement',protocol:2,type,manifest:manifestOverride,instance:'instance',generation:7,consent,context:{page_location:parent+'/form/summer',gclid:'click'},...extra}}));
+ const send=(type,extra={})=>win.dispatchEvent(new win.MessageEvent('message',{source:win.parent,origin:parent,data:{namespace:'festapp-measurement',protocol:measurementProtocol,type,manifest:manifestOverride,instance:'instance',generation:7,consent,context:{page_location:parent+'/form/summer',gclid:'click'},...extra}}));
  t.after(()=>win.close());return{win,send};
 }
 for(const [consent,ads] of [[null,'denied'],[false,'denied'],[true,'denied'],[{analytics:true},'denied'],[{marketing:true},'granted'],[{analytics:false,marketing:false},'denied']])test('bootstrap always runs Unit code and events for '+JSON.stringify(consent),t=>{
@@ -102,4 +103,21 @@ test('a broken CMP unsubscribe still revokes its saved grant synchronously',()=>
  const sent=[];const manager={confirmed:true,savedConsents:{analytics:true,marketing:true},getConsent:()=>true,watch(){},unwatch(){throw Error('CMP teardown failed');}};
  const disconnect=bindKlaroConsent(manager,value=>sent.push(value));assert.deepEqual(sent.at(-1),{analytics:true,marketing:true});
  assert.throws(disconnect,/teardown failed/);assert.equal(sent.at(-1),false);
+});
+
+test('cutover: update publishes a fresh nested consent snapshot before another event',t=>{
+ const f=bootstrap(t);const model={},events=[];
+ f.win.dataLayer.push=(...entries)=>{for(const entry of entries){const snapshot=JSON.parse(JSON.stringify(entry));Object.assign(model,snapshot);if(snapshot.event)events.push({payload:snapshot,model:structuredClone(model)});}return 0;};
+ f.send('init');f.send('consent',{consent:false});
+ assert.equal(events.at(-1).payload.event,'festapp_consent_update');
+ assert.deepEqual(events.at(-1).model.festapp_consent,{analytics:false,marketing:false});
+ f.send('consent',{consent:{analytics:true,marketing:true}});
+ assert.deepEqual(events.at(-1).model.festapp_consent,{analytics:true,marketing:true});assert.equal(unitScripts(f),1);
+});
+
+test('Klaro failed registration cleans its watcher and disposal is idempotent',()=>{
+ let watched,unwatched=0;
+ const manager={watch(w){watched=w;throw Error('partial registration');},unwatch(w){assert.equal(w,watched);unwatched++;}};
+ assert.throws(()=>bindKlaroConsent(manager,()=>{}),/partial registration/);assert.equal(unwatched,1);
+ manager.watch=w=>{watched=w;};const stop=bindKlaroConsent(manager,()=>{});stop();stop();assert.equal(unwatched,2);
 });

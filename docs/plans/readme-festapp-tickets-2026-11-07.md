@@ -64,5 +64,5 @@ and Winter Edition mobile web gallery. English translations are local only.
   confirmed six embedded images, three aligned native phone frames, a legible
   diagram, and no page overflow at 1440px or 390px.
 - Fetched upstream main at `db00d5c7b`. Its intervening measurement-protocol
-  changes do not touch the captured native UI, images or README. Incorporate
-  that main revision before updating PR #755; no capture checks are invalidated.
+  changes do not touch the captured native UI, images or README. Merged
+  that main revision before updating PR #755; no capture checks were invalidated.

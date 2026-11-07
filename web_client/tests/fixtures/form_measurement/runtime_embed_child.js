@@ -2,7 +2,7 @@ import {EmbedBridge} from '../../../src/services/embed_bridge.js';
 import {FormDataLayer} from '../../../src/components/forms/form_datalayer.js';
 import {FormMeasurementSession} from '../../../src/components/forms/form_measurement_session.js';
 import {FormMeasurementRuntime} from '../../../src/components/forms/form_measurement_runtime.js';
-const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,visitor_role:'visitor',privacy_url:'https://organizer.example/privacy',valid_for_seconds:60,organization:1,unit:2,form_link:'test',processing_revision:'rev-a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],runtime_origin:window.fixtureRuntime,approved_hosts:[window.fixtureHost]};
+const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,visitor_role:'visitor',privacy_url:'https://organizer.example/privacy',valid_for_seconds:60,organization:1,unit:2,form_link:'test',processing_revision:'rev-a',measurement_protocol:3,runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],runtime_origin:window.fixtureRuntime,approved_hosts:[window.fixtureHost]};
 const model={link:'test',data:{analytics:policy},visibleFields:[]};
 const bridge=new EmbedBridge();bridge.start();
 const runtime=new FormMeasurementRuntime({model,local:true,campaign:()=>bridge.measurementCampaign||{}});bridge.setMeasurementRuntime(runtime);

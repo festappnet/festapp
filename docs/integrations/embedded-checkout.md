@@ -240,3 +240,9 @@ Layout/scroll/theme zůstávají na protokolu 1. Měření používá protokol 2
 měřicí zprávy odmítá. Události se nefrontují. Již přijatá data nelze odvolat. Povolené kampaně se filtrují,
 celá URL hostitele ani soukromé odpovědi se nepředávají. Podrobný kontrakt,
 SQL fakta a provozní meze popisuje [měření formulářů](form-datalayer.md).
+
+Měřicí komunikace používá protocol 3, nezávisle na layout protocol 1. Starý helper
+nebo runtime s novým klientem měření neaktivuje; samotný checkout funguje dál.
+Setter, Klaro a revision-aware source nahrazují jednu účinnou volbu. Odpojení
+zdroje neobnoví starší souhlas a nový scope vyžaduje novou nebo znovu ověřenou
+volbu. Změna iframe originu uklidí původní subscription i heartbeat.

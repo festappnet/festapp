@@ -1,3 +1,4 @@
+import {measurementProtocol} from './form_measurement_contract.js';
 import {analyticsPayload, attributionContext, measurementId, measurementNamespace, measurementOrigin, sameMeasurementManifest} from './form_measurement_contract.js';
 
 // Mechanical isolated transport. Only the session supplies a grant.
@@ -7,7 +8,7 @@ export class FormMeasurementRuntime {
         this.onMessage=event=>{
             const data=event.data, grant=this.grant;
             if(!grant || !this.live() || event.source!==this.frame?.contentWindow || event.origin!==this.origin ||
-                data?.namespace!==measurementNamespace || data.protocol!==2) return;
+                data?.namespace!==measurementNamespace || data.protocol!==measurementProtocol) return;
             if(!sameMeasurementManifest(data.manifest,grant.manifest)) {const mismatch=grant.onMismatch;this.stop();mismatch();return;}
             if(data.type==='ready' && !this.ready) {this.initialized=this.send('init',{context:this.context,consent:this.consent});}
             else if(data.type==='ack' && data.instance===this.instance && data.generation===grant.generation && !this.ready) {
@@ -44,7 +45,7 @@ export class FormMeasurementRuntime {
     live() {return !!this.grant && !this.disposed && this.frame?.isConnected===true && Date.now()<this.until;}
     send(type,extra={}) {
         if(!this.live())return false;
-        this.frame.contentWindow?.postMessage({namespace:measurementNamespace,protocol:2,type,instance:this.instance,
+        this.frame.contentWindow?.postMessage({namespace:measurementNamespace,protocol:measurementProtocol,type,instance:this.instance,
             generation:this.grant.generation,manifest:this.grant.manifest,...extra},this.origin);return true;
     }
     track(input) {const payload=analyticsPayload(input);return this.ready===true && measurementId(this.instance) && !!payload && this.send('event',{payload});}
