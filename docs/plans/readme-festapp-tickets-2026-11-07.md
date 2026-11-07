@@ -49,7 +49,7 @@ and Winter Edition mobile web gallery. English translations are local only.
 - Local app clock selects June 18; simulator status-bar time is normalized for
   presentation. Artist photos, names, times and venues come from public data.
 - The order-administration screen retains its original fixture provenance.
-  The gala seating capture uses the newer local round-table fixture below.
+  The Lucerna seating capture uses the existing reference template below.
 - Final screenshot details and native capture commands are recorded beside the
   images in `docs/images/readme/README.md`.
 
@@ -68,10 +68,10 @@ and Winter Edition mobile web gallery. English translations are local only.
   changes do not touch the captured native UI, images or README. Merged
   that main revision before updating PR #755; no capture checks were invalidated.
 
-### Round-table gallery refinement
+### Existing Lucerna gallery selection
 
-The organizer screenshot now shows the complete Grand Gala plan: 12 round tables,
-96 seats, a stage, a central dance floor, and local VIP/standard ticket products.
-The real public picker captured one selected VIP seat at CZK 650. Capture source
-is `307b61405`; the PNG is 1440 x 900. The README caption and media provenance
-are updated with the same local-only fixture boundary.
+The organizer screenshot uses the existing approved `reference-lucerna` template:
+ground-floor seating, boxes, two balconies, a stage and a large dance floor.
+All 1,066 seats use the original geometry and materials. English labels are
+rendered through the canonical text engine in a local fixture, with one selected
+seat at CZK 450. Capture source is `cd9dbe25b`; the PNG is 1440 x 900.

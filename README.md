@@ -59,10 +59,10 @@ map bundle. See the [feature reference](docs/overview/features.md) for details.
 
 ## Ticketing for organizers
 
-![Gala seating plan with round tables and a central dance floor in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
+![Existing Lucerna venue plan with ground-floor seating, boxes and two balconies in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
 
-Choose seats for a gala with numbered round tables, a stage and a central dance
-floor. VIP and standard ticket types let organizers offer different price zones.
+The existing Lucerna hall template brings together ground-floor seating, boxes
+and two balconies around a stage and a large dance floor.
 
 
 - **Ticket sales and registration.** Build public forms with ticket types,
