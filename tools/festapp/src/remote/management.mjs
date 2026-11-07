@@ -1,3 +1,4 @@
+import { connectionActive, connectionDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import express from 'express';
 import { timingSafeEqual, randomUUID } from 'node:crypto';
 import { check } from '../errors.mjs';
@@ -22,10 +23,10 @@ export function tenantConnections(app, { config, storage, brokerSecret, owner, a
         return owner(`management:${randomUUID()}`).withAccessToken(body.accessToken, async (_client, { userId }) => {
             if (body.operation === 'list') {
                 const connections = storage.values('Delegation')
-                    .filter(g => owns(g, userId) && !g.revoked && g.expiresAt > Date.now())
+                    .filter(g => owns(g, userId) && connectionActive(g))
                     .sort((a, b) => b.expiresAt - a.expiresAt || a.id.localeCompare(b.id))
                     .map(g => ({ id: g.id, client: config.clients.find(c => c.id === g.clientId)?.name ?? g.clientId,
-                        expiresAt: new Date(g.expiresAt).toISOString(), access: accessSelection(g.access),
+                        name: g.name || null, expiresAt: new Date(connectionDeadline(g)).toISOString(), access: accessSelection(g.access),
                         permissions: MCP_SCOPES.filter(p => g.permissions?.includes(p)) }));
                 return res.json({ connections });
             }

@@ -1,9 +1,10 @@
+import { connectionChoice } from './connection-choice.mjs';
 import { z } from 'zod';
 import { verifySelection } from '../operations/access.mjs';
 import { check } from '../errors.mjs';
 import { MCP_SCOPES, verifyPermissions } from './config.mjs';
 
-const consent = z.strictObject({ consentVersion: z.literal(2), selection: z.unknown(), permissions: z.array(z.string()).max(MCP_SCOPES.length) });
+const consent = z.strictObject({ consentVersion: z.literal(2), connection: connectionChoice.optional(), selection: z.unknown(), permissions: z.array(z.string()).max(MCP_SCOPES.length) });
 
 /** The existing Edge exchange transports this opaque consent. Only the issuer
  * interprets membership and functional permissions or persists a delegation. */
@@ -11,7 +12,7 @@ export function verifyConsent(raw, available, canCreate, requestedPermissions) {
     if (raw?.consentVersion !== undefined) {
         const parsed = consent.safeParse(raw);
         check(parsed.success, 'FORBIDDEN');
-        return { selected: verifySelection(parsed.data.selection, available, canCreate),
+        return { connection: parsed.data.connection, selected: verifySelection(parsed.data.selection, available, canCreate),
             permissions: verifyPermissions(parsed.data.permissions, requestedPermissions) };
     }
     return { selected: verifySelection(raw, available, canCreate), permissions: [] };

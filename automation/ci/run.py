@@ -54,7 +54,7 @@ def local(names):
         except BlockingIOError:
             raise RuntimeError('Another local CI mirror is running; wait for it to finish.')
         require_version(['pnpm', '--version'], '11.24.0')
-        if any(n in names for n in ('seat-checkout', 'ticket-preview-and-delivery')):
+        if any(n in names for n in ('seat-checkout', 'ticket-preview-and-delivery', 'server-policy')):
             require_version(['deno', '--version'], '2.9.0')
         browser_jobs = {'seat-checkout', 'web-startup', 'client-contract'}
         if browser_jobs.intersection(names):

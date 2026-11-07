@@ -951,9 +951,25 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           }),
         ),
         if (_cashEnabled) ...[
-          TextFormField(controller: _cashInstructionsController, onChanged: (_) => setState(() => _paymentSelectionChanged = true), maxLength: 1000, maxLines: 3,
-            decoration: InputDecoration(labelText: PaymentMethodStrings.text('cashInstructions'), hintText: PaymentMethodStrings.text('cashInstructionsDefault'))),
-          Text(PaymentMethodStrings.text('cashDeadlineHelp')),
+          const SizedBox(height: 24),
+          TextFormField(
+            controller: _cashInstructionsController,
+            onChanged: (_) =>
+                setState(() => _paymentSelectionChanged = true),
+            maxLength: 1000,
+            minLines: 2,
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: PaymentMethodStrings.text('cashInstructions'),
+              hintText: PaymentMethodStrings.text('cashInstructionsDefault'),
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              alignLabelWithHint: true,
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.all(16),
+              helperText: PaymentMethodStrings.text('cashDeadlineHelp'),
+              helperMaxLines: 3,
+            ),
+          ),
         ],
         const SizedBox(height: 16),
         if (!_cashEnabled && !_bankEnabled && !cardEnabled)

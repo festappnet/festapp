@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "70a9ea773fa3e677fb9b1e891f8410cc2dcdee9186961deb9da0617014fc0dc3",
+  "sourceDigest": "49913b13b9a6cd1fea6b69314c9f64e9ebf63ac99eb659b6341d06857973cf4e",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -5523,7 +5523,7 @@
     {
       "id": "forms.list",
       "name": "festapp_forms_list",
-      "description": "List the same form summary/capacity/response counts as administration. Server pages by ID; continue with nextCursor as after. Response counts use the canonical form FK; only rows without that FK use their retained historical UUID binding. No public links/keys, HTML or answers.",
+      "description": "List the same form summary/capacity/response counts as administration. is_open is only the manual switch, not current availability. registrationMode is the effective server state after the manual/time gate: closed means disabled or outside the scheduled window, blueprint means seating flow, regular means standard registration, waitlist means no public capacity with waitlist enabled, full means no public capacity without waitlist. is_open=true with registrationMode=closed is closed to registration. Server pages by ID; continue with nextCursor as after. Response counts use the canonical form FK; only rows without that FK use their retained historical UUID binding. No public links/keys, HTML or answers.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:forms:read"
