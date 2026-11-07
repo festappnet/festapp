@@ -1,4 +1,5 @@
 import 'package:festapp_core/payments.dart';
+import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/payments/payment_editor_registry.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:flutter/foundation.dart';
@@ -39,34 +40,38 @@ Map<String, dynamic> _recipient({bool paused = false}) => {
   'cardPaymentsActive': !paused,
 };
 
-FormEditBundle _bundle(String link, int unit, Map<String, dynamic>? payments) =>
-    FormEditBundle(
-      form: FormEditorDraft(
-        link: link,
-        title: 'Payment test',
-        occasionId: unit * 10,
-        occasionModel: OccasionModel(
-          unit: unit,
-          isOpen: true,
-          isHidden: false,
-          isPromoted: false,
+FormEditBundle _bundle(
+  String link,
+  int unit,
+  Map<String, dynamic>? payments, {
+  List<BankAccountModel> accounts = const [],
+}) => FormEditBundle(
+  form: FormEditorDraft(
+    link: link,
+    title: 'Payment test',
+    occasionId: unit * 10,
+    occasionModel: OccasionModel(
+      unit: unit,
+      isOpen: true,
+      isHidden: false,
+      isPromoted: false,
+    ),
+    data: {
+      if (payments != null) 'payments': {...payments},
+    },
+    relatedFields: [
+      FormFieldDraft(
+        productType: ProductTypeModel(
+          products: [ProductModel(currencyCode: 'CZK')],
         ),
-        data: {
-          if (payments != null) 'payments': {...payments},
-        },
-        relatedFields: [
-          FormFieldDraft(
-            productType: ProductTypeModel(
-              products: [ProductModel(currencyCode: 'CZK')],
-            ),
-          ),
-        ],
-        availableBankAccounts: [],
       ),
-      productTypes: [],
-      products: [],
-      availableBankAccounts: [],
-    );
+    ],
+    availableBankAccounts: accounts,
+  ),
+  productTypes: [],
+  products: [],
+  availableBankAccounts: accounts,
+);
 
 EditorActionBar _actions(WidgetTester tester) =>
     tester.widget<EditorActionBar>(find.byType(EditorActionBar));
@@ -103,6 +108,124 @@ void main() {
     );
   });
   tearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+
+  for (final currencies in [
+    <String>['CZK'],
+    <String>['EUR'],
+    <String>[],
+  ]) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'bank is the clean default; account currency eligibility is visible: $currencies',
+      (tester) async {
+        var saves = 0;
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: FormSettingsContent(
+              showCardPayments: false,
+              bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+              formLink: 'default-bank-test',
+              loadBundle: (link) async => _bundle(
+                link,
+                5,
+                null,
+                accounts: [
+                  BankAccountModel(
+                    id: 1,
+                    title: 'Účet pořadatele',
+                    supportedCurrencies: currencies,
+                  ),
+                ],
+              ),
+              saveForm: (_) async {
+                saves++;
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(_selection(tester), FormPaymentMethod.bank);
+        expect(_actions(tester).hasChanges, isFalse);
+        expect(saves, 0);
+        expect(
+          find.text(BankAccountStrings.missingAccountForCurrencies('CZK')),
+          currencies.contains('CZK') ? findsNothing : findsOneWidget,
+        );
+        if (!currencies.contains('CZK')) {
+          expect(
+            find.text(BankAccountStrings.askManagerForPaymentAccount),
+            findsOneWidget,
+          );
+        }
+        await _choose(tester, FormPaymentMethod.cash);
+        expect(_selection(tester), FormPaymentMethod.cash);
+        expect(_actions(tester).hasChanges, isTrue);
+        expect(saves, 0);
+      },
+    );
+  }
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'saved cash-only remains selected on open and after discarding a bank choice',
+    (tester) async {
+      var saves = 0;
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormSettingsContent(
+            showCardPayments: false,
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            formLink: 'saved-cash-test',
+            loadBundle: (link) async => _bundle(
+              link,
+              5,
+              {
+                'bankEnabled': false,
+                'cashEnabled': true,
+                'cashInstructions': 'Zaplaťte při příchodu u vstupu.',
+              },
+              accounts: [
+                BankAccountModel(
+                  id: 1,
+                  title: 'Účet pořadatele',
+                  supportedCurrencies: ['CZK'],
+                ),
+              ],
+            ),
+            saveForm: (_) async {
+              saves++;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(_selection(tester), FormPaymentMethod.cash);
+      expect(_actions(tester).hasChanges, isFalse);
+      expect(find.text('Zaplaťte při příchodu u vstupu.'), findsOneWidget);
+      await _choose(tester, FormPaymentMethod.bank);
+      expect(_selection(tester), FormPaymentMethod.bank);
+      expect(_actions(tester).hasChanges, isTrue);
+      final discard = find.descendant(
+        of: find.byType(EditorActionBar),
+        matching: find.byType(TextButton),
+      );
+      await tester.ensureVisible(discard);
+      await tester.tap(discard);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Common.discardChanges'.tr()),
+      );
+      await tester.pumpAndSettle();
+      expect(_selection(tester), FormPaymentMethod.cash);
+      expect(_actions(tester).hasChanges, isFalse);
+      expect(find.text('Zaplaťte při příchodu u vstupu.'), findsOneWidget);
+      expect(saves, 0);
+    },
+  );
 
   testWidgetsWithEnvironment(
     () => _environment,
@@ -151,7 +274,10 @@ void main() {
       await _actions(tester).onSave();
       await tester.pumpAndSettle();
       expect(saved!['bankEnabled'], false);
-      expect(saved!['providerConnections'], {'other': _connection, 'stripe': 'kept-other-binding'});
+      expect(saved!['providerConnections'], {
+        'other': _connection,
+        'stripe': 'kept-other-binding',
+      });
       expect(saved!.containsKey('stripeConnectionId'), isFalse);
       await _choose(tester, FormPaymentMethod.bank);
       await _actions(tester).onSave();
@@ -191,8 +317,12 @@ void main() {
       expect(find.byKey(const ValueKey('payment-method-bank')), findsOneWidget);
       expect(find.byKey(const ValueKey('payment-method-online')), findsNothing);
       expect(find.byKey(const ValueKey('payment-method-both')), findsNothing);
-      expect(tester.widget<PaymentMethodCards>(find.byType(PaymentMethodCards)).value,
-          FormPaymentMethod.bank);
+      expect(
+        tester
+            .widget<PaymentMethodCards>(find.byType(PaymentMethodCards))
+            .value,
+        FormPaymentMethod.bank,
+      );
       expect(reads, 0);
       expect(_actions(tester).hasChanges, isFalse);
     },

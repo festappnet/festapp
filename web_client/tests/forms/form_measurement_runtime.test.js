@@ -31,7 +31,7 @@ function fixture(t){
  t.after(()=>{transport.destroy();dom.window.close();});return{dom,transport,grant,message,ready:()=>ready,mismatches:()=>mismatches};
 }
 test('no grant means no iframe; ready/init/ACK bind origin, source, manifest, generation and instance',t=>{
- const f=fixture(t),r=f.transport;r.activate();assert.equal(r.frame,null);r.activate({...f.grant,consent:{analytics:true,marketing:false}});assert.equal(r.frame,null);
+ const f=fixture(t),r=f.transport;r.activate();assert.equal(r.frame,null);
  r.activate(f.grant);assert.equal(r.frame.getAttribute('sandbox'),'allow-scripts allow-same-origin');assert.equal(r.frame.referrerPolicy,'no-referrer');
  f.message('ack',{protocol:1});f.message('ack',{instance:'forged'});f.message('ack',{generation:6});assert.equal(f.ready(),0);
  f.message('ready');f.message('ack');assert.equal(f.ready(),1);assert.equal(r.track({event:'page_view'}),true);
@@ -47,22 +47,38 @@ for(const hidden of [false,true])test('expiry destroys the runtime even when hid
  const f=fixture(t);f.transport.activate({...f.grant,expiresAt:Date.now()+10});Object.defineProperty(f.dom.window.document,'hidden',{value:hidden});
  await new Promise(r=>setTimeout(r,30));assert.equal(f.transport.frame,null);assert.equal(f.transport.track({event:'page_view'}),false);
 });
+const unitScripts=f=>[...f.win.document.querySelectorAll('script')].filter(s=>s.textContent.includes('tagRuns') && s.id!=='measurement-config').length;
 function bootstrap(t,consent={analytics:true,marketing:true},manifestOverride=manifest){
  const boot={...config,manifest};const dom=new JSDOM('<head><script type="application/json" id="measurement-config"></script></head>',{url:runtime+'/runtime',runScripts:'outside-only'});
  const win=dom.window;win.document.getElementById('measurement-config').textContent=JSON.stringify({...boot,gtm_container:'GTM-AB12',scripts:'window.tagRuns=(window.tagRuns||0)+1'});win.eval(runtimeSource);
  const send=(type,extra={})=>win.dispatchEvent(new win.MessageEvent('message',{source:win.parent,origin:parent,data:{namespace:'festapp-measurement',protocol:2,type,manifest:manifestOverride,instance:'instance',generation:7,consent,context:{page_location:parent+'/form/summer',gclid:'click'},...extra}}));
  t.after(()=>win.close());return{win,send};
 }
-for(const consent of [null,false,true,{analytics:true},{marketing:true},{analytics:false,marketing:false}])test('bootstrap refuses Unit code and events for '+JSON.stringify(consent),t=>{
- const f=bootstrap(t,consent);f.send('init');f.send('event',{payload:purchase});assert.equal(f.win.tagRuns,undefined);assert.equal(f.win.document.querySelector('script[src]'),null);assert.equal(f.win.dataLayer.length,0);
+for(const [consent,ads] of [[null,'denied'],[false,'denied'],[true,'denied'],[{analytics:true},'denied'],[{marketing:true},'granted'],[{analytics:false,marketing:false},'denied']])test('bootstrap always runs Unit code and events for '+JSON.stringify(consent),t=>{
+ const f=bootstrap(t,consent);f.send('init');f.send('event',{payload:purchase});assert.equal(unitScripts(f),1);assert.ok(f.win.document.querySelector('script[src]').src.includes('GTM-AB12'));
+ assert.equal(f.win.dataLayer[0][1],'default');assert.equal(f.win.dataLayer[0][2].ad_storage,ads);assert.equal(f.win.dataLayer.filter(p=>p.event==='purchase').length,1);
+});
+test('a later choice updates Consent Mode and the event context without running Unit code again',t=>{
+ const f=bootstrap(t,false);f.send('init');f.send('consent',{consent:{analytics:true,marketing:true}});f.send('consent',{generation:6,consent:false});
+ const entries=[...f.win.dataLayer];const update=entries.filter(p=>p[0]==='consent' && p[1]==='update').at(-1);assert.equal(update[2].ad_user_data,'granted');
+ assert.equal(entries.filter(p=>p.event==='festapp_consent_update').length,1);assert.equal(unitScripts(f),1);
+ f.send('event',{payload:purchase});assert.equal(JSON.stringify(f.win.dataLayer.find(p=>p.event==='purchase').festapp_consent),'{"analytics":true,"marketing":true}');
+});
+test('runtime transport sends a later choice only after init',t=>{
+ const f=fixture(t),r=f.transport;const sent=[];r.activate(f.grant);const post=r.frame.contentWindow.postMessage;
+ Object.defineProperty(r.frame.contentWindow,'postMessage',{value:(data,...rest)=>{sent.push(data);return post?.call(r.frame.contentWindow,data,...rest);}});
+ r.updateConsent({analytics:true,marketing:true});assert.equal(sent.length,0);f.message('ready');
+ assert.equal(sent[0].type,'init');assert.equal(sent[0].consent.marketing,true,'init carries the newest choice');
+ r.updateConsent({analytics:false,marketing:false});assert.equal(sent.at(-1).type,'consent');assert.equal(r.frame!==null,true);
 });
 test('bootstrap rejects mismatched snapshot before code and establishes Consent Mode before script effects',t=>{
- const wrong=bootstrap(t,{analytics:true,marketing:true},{...manifest,runtime_revision:2});wrong.send('init');assert.equal(wrong.win.document.querySelector('script[src]'),null);
+ const wrong=bootstrap(t,false,{...manifest,runtime_revision:2});wrong.send('init');assert.equal(wrong.win.document.querySelector('script[src]'),null);
  const f=bootstrap(t);f.send('init');const entries=f.win.dataLayer;
  assert.equal(entries[0][0],'consent');assert.equal(entries[0][1],'default');assert.equal(entries[0][2].ad_storage,'granted');assert.equal(entries[1][1],'update');
  assert.equal(f.win.document.querySelectorAll('script[src]').length,1);assert.ok(f.win.document.querySelector('script[src]').src.includes('GTM-AB12'));
- f.send('event',{payload:{...purchase,user_data:{email:'PRIVATE@example.test',phone_number:'+420601234567'}}});
- assert.equal(entries.filter(p=>p.event==='purchase').length,1);assert.doesNotMatch(JSON.stringify(entries),/PRIVATE|601234567|"user_data"/);
+ f.send('event',{payload:{...purchase,user_data:{email:'buyer@example.test',phone_number:'+420601234567',first_name:'PRIVATE'}}});
+ assert.equal(entries.filter(p=>p.event==='purchase').length,1);assert.equal(JSON.stringify(entries.find(p=>p.event==='purchase').user_data),'{"email":"buyer@example.test","phone_number":"+420601234567"}');
+ assert.doesNotMatch(JSON.stringify(entries),/PRIVATE/);assert.equal(entries.at(-1).user_data,null,'the contact does not carry over to later events');
  f.send('event',{generation:6,payload:purchase});assert.equal(entries.filter(p=>p.event==='purchase').length,1);
 });
 test('Klaro saved-choice adapter rejects drafts and unavailable services; disconnect revokes',()=>{

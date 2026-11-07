@@ -69,15 +69,19 @@ void main() {
       find.byKey(ValueKey('payment-method-${method.name}'));
 
   testWidgets(
-    'bank and cash fill an aligned row, then stack on narrow screens',
+    'bank is the full-width primary choice and cash is a secondary radio row',
     (tester) async {
       await mount(tester, showOnline: false);
       final bank = tester.getRect(card(FormPaymentMethod.bank));
       final cash = tester.getRect(card(FormPaymentMethod.cash));
-      expect(bank.top, cash.top);
-      expect(bank.bottom, cash.bottom);
-      expect(bank.width, cash.width);
-      expect(cash.right - bank.left, 720);
+      expect(bank.width, 720);
+      expect(cash.width, 720);
+      expect(cash.top, greaterThan(bank.bottom));
+      expect(cash.height, lessThan(bank.height));
+      expect(
+        tester.widget(card(FormPaymentMethod.cash)),
+        isA<RadioListTile<FormPaymentMethod>>(),
+      );
       expect(tester.takeException(), isNull);
 
       await mount(tester, showOnline: false, width: 320, textScale: 2);
@@ -89,7 +93,7 @@ void main() {
     },
   );
 
-  testWidgets('four methods switch from stacked to aligned pairs at 600', (
+  testWidgets('online choices retain aligned pairs and stack with large text', (
     tester,
   ) async {
     for (final onlineFirst in [false, true]) {
@@ -98,9 +102,12 @@ void main() {
               FormPaymentMethod.online,
               FormPaymentMethod.bank,
               FormPaymentMethod.both,
-              FormPaymentMethod.cash,
             ]
-          : FormPaymentMethod.values;
+          : [
+              FormPaymentMethod.bank,
+              FormPaymentMethod.online,
+              FormPaymentMethod.both,
+            ];
       for (final width in [599.0, 600.0]) {
         await mount(tester, width: width, onlineFirst: onlineFirst);
         final cards = [
@@ -114,16 +121,18 @@ void main() {
             }
           }
         } else {
-          for (final start in [0, 2]) {
-            expect(cards[start].top, cards[start + 1].top);
-            expect(cards[start].bottom, cards[start + 1].bottom);
-            expect(cards[start].width, cards[start + 1].width);
-            expect(cards[start + 1].left, greaterThan(cards[start].right));
-            expect(cards[start + 1].right - cards[start].left, width);
-          }
+          expect(cards[0].top, cards[1].top);
+          expect(cards[0].bottom, cards[1].bottom);
+          expect(cards[0].width, cards[1].width);
+          expect(cards[1].left, greaterThan(cards[0].right));
+          expect(cards[1].right - cards[0].left, width);
           expect(cards[2].top, greaterThan(cards[0].bottom));
-          expect(cards[2].left, cards[0].left);
+          expect(cards[2].width, width);
         }
+        expect(
+          tester.getTopLeft(card(FormPaymentMethod.cash)).dy,
+          greaterThan(cards.last.bottom),
+        );
         expect(tester.takeException(), isNull);
       }
     }
@@ -138,6 +147,37 @@ void main() {
       expect(cards[index].width, 720);
     }
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('cash row is keyboard accessible and bank remains selectable', (
+    tester,
+  ) async {
+    FormPaymentMethod? chosen;
+    await mount(
+      tester,
+      showOnline: false,
+      onChanged: (value) => chosen = value,
+    );
+    await tester.tap(card(FormPaymentMethod.cash));
+    await tester.pump();
+    expect(chosen, FormPaymentMethod.cash);
+    expect(
+      tester
+          .widget<RadioGroup<FormPaymentMethod>>(
+            find.byType(RadioGroup<FormPaymentMethod>),
+          )
+          .groupValue,
+      FormPaymentMethod.cash,
+    );
+    await tester.tap(card(FormPaymentMethod.bank));
+    await tester.pump();
+    expect(chosen, FormPaymentMethod.bank);
+    Focus.of(tester.element(find.text(catalog['PaymentMethods']['cash'])))
+        .requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+    expect(chosen, FormPaymentMethod.cash);
   });
 
   testWidgets('selects exactly one policy with pointer and keyboard', (

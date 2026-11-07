@@ -6,25 +6,27 @@
     /* MEASUREMENT_CONTRACT */
     /* MEASUREMENT_CONSENT */
     const frames = new Map();
-    // A live revision-bound CMP source is required. Legacy setters cannot grant v2.
+    // The lease only proves that this helper is alive. Consent never gates measurement:
+    // the choice below is passed on as state for the organizer's tags.
     const revoke = (frame,record) => {
         record.lease=null;
         if(record.manifest) sendConsent(frame,record);
     };
     const readChoice = record => {
+        const m=record.manifest;
+        if(!m || !record.source)return measurementConsent(record.consent);
         try {
-            const m=record.manifest;
-            if(!m || !record.source || document.hidden)return null;
             const choice=record.source.read({organization:m.organization,unit:m.unit,
                 processingRevision:m.processing_revision,requiredPurposes:m.required_purposes});
-            return choice?.processingRevision===m.processing_revision && choice.analytics===true && choice.marketing===true ? choice:null;
-        }catch{return null;}
+            return measurementConsent(choice?.processingRevision===m.processing_revision ? choice:false);
+        }catch{return measurementConsent(false);}
     };
     const sendConsent = (frame,record) => frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,
         type:'measurement-consent',measurement:{protocol:2,manifest:record.manifest,leaseId:record.lease?.id,
-            ttl:record.lease?60000:0,consent:{analytics:!!record.lease,marketing:!!record.lease}}},record.origin);
+            ttl:record.lease?60000:0,consent:readChoice(record)}},record.origin);
     const syncConsent = (frame,record) => {
-        if(!frame.isConnected || !readChoice(record)){revoke(frame,record);return;}
+        if(!frame.isConnected){clearInterval(record.heartbeat);record.heartbeat=null;revoke(frame,record);return;}
+        record.heartbeat??=setInterval(()=>syncConsent(frame,record),20000);
         if(!record.lease)record.lease={id:crypto.randomUUID()};
         record.lease.until=Date.now()+60000;
         sendConsent(frame,record);
@@ -34,23 +36,22 @@
             const record=frames.get(frame);
             if(!record || typeof source?.read!=='function' || typeof source?.subscribe!=='function')return null;
             record.consentDispose?.();record.source=source;
-            const notify=()=>{revoke(frame,record);syncConsent(frame,record);};
+            const notify=()=>{if(record.manifest)syncConsent(frame,record);};
             let unsubscribe;
-            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;revoke(frame,record);return null;}
-            const timer=setInterval(()=>syncConsent(frame,record),20000);
-            const disconnect=()=>{clearInterval(timer);record.source=null;revoke(frame,record);try{unsubscribe?.();}catch{ /* Source teardown cannot restore permission. */ }};
-            record.consentDispose=disconnect;syncConsent(frame,record);return disconnect;
+            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;notify();return null;}
+            const disconnect=()=>{record.source=null;notify();try{unsubscribe?.();}catch{ /* Teardown only stops updates. */ }};
+            record.consentDispose=disconnect;notify();return disconnect;
         },
         connectKlaro(frame,manager) {
             const record=frames.get(frame);if(!record)return null;
-            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);});
+            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);if(record.manifest)syncConsent(frame,record);});
         },
         setMeasurementConsent(frame,granted) {
             const record=frames.get(frame);if(!record)return false;
-            record.consent=measurementConsent(granted);return true;
+            record.consent=measurementConsent(granted);if(record.manifest)syncConsent(frame,record);return true;
         }
     });
-    document.addEventListener('visibilitychange',()=>frames.forEach((record,frame)=>{revoke(frame,record);if(!document.hidden)syncConsent(frame,record);}));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)frames.forEach((record,frame)=>{if(record.manifest)syncConsent(frame,record);});});
     window.addEventListener('pagehide',()=>frames.forEach((record,frame)=>revoke(frame,record)));
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
     // The saved form owns appearance; the host only supplies presentation tokens.
@@ -300,7 +301,7 @@
             }
             if(data.type==='measurement-activate' || data.type==='analytics') {
                 const m=data.measurement;
-                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until || !readChoice(record) ||
+                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until ||
                     m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return;
                 if(data.type==='measurement-activate') {
                     record.lease.generation=m.generation;
@@ -310,8 +311,9 @@
                 if(frame.hasAttribute('data-festapp-datalayer')) {
                     const payload=analyticsPayload(data.payload);if(!payload)return;
                     window.dataLayer=window.dataLayer||[];
-                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null});
+                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null});
                     window.dataLayer.push(payload);
+                    if(['purchase','generate_lead'].includes(payload.event))window.dataLayer.push({user_data:null});
                 }
                 return;
             }

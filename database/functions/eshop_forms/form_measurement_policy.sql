@@ -59,7 +59,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  ) SELECT jsonb_build_object('requested_enabled',requested,'organization_allowed',allowed,
   'organization_enabled',organization_enabled,'unit_enabled',unit_enabled,
   'runtime_supported',supported,'eligible',requested AND allowed AND organization_enabled AND unit_enabled AND destination AND supported AND privacy_policy_valid,
-  'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',true,
+  'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',false,
   'blocked_reasons',to_jsonb(array_remove(ARRAY[
    CASE WHEN NOT requested THEN 'disabled' END,
    CASE WHEN NOT allowed THEN 'organization_not_enabled' END,
@@ -84,7 +84,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
   'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
   'form_link',f.link,'profile',r.runtime_profile,'required_purposes',jsonb_build_array('analytics','marketing'),
-  'enhanced_conversions_unavailable',true,
+  'enhanced_conversions_unavailable',false,
   'processing_revision',md5(jsonb_build_array(o.organization,u.id,u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_privacy_url',coalesce(u.data->'measurement_consent_version','1'::jsonb),r.runtime_profile,r.runtime_origin,
    r.parent_origins,r.collector_origins,r.revision,s->'policy_revision',u.data->'measurement_enabled',

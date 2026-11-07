@@ -55,14 +55,15 @@ export class EmbedBridge {
             } else if (data.type === 'measurement-consent' && data.measurement?.protocol===2) {
                 const value=data.measurement;
                 if(!sameMeasurementManifest(value.manifest,this.measurementManifest))return;
-                const granted=value.consent?.analytics===true && value.consent?.marketing===true && validId(value.leaseId);
+                // The lease proves a live helper. The purposes are only state for tags.
+                const granted=validId(value.leaseId);
                 const changed=this.leaseId!==value.leaseId;
                 if(changed)this.stop();
                 this.leaseId=granted?value.leaseId:null;
                 this.leaseUntil=granted?Date.now()+Math.min(60000,Math.max(0,Number(value.ttl)||0)):0;
                 this.win.clearTimeout(this.leaseTimer);
                 this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
-                this.consentNotify?.(granted?{...value.consent,leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
+                this.consentNotify?.(granted?{...measurementConsent(value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
             } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===2 &&
                 data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
                 sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {
@@ -128,6 +129,7 @@ export class EmbedBridge {
         else this.send('measurement-activate',{measurement:{protocol:2,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
     }
     renew(until) {this.measurementRuntime?.renew(Math.min(until,this.leaseUntil||0));}
+    updateConsent(consent) {this.measurementRuntime?.updateConsent(consent);}
     stop() {this.grant=null;this.hostActive=false;this.measurementRuntime?.stop();}
     track(input) {
         if(!this.grant || Date.now()>=this.leaseUntil)return false;

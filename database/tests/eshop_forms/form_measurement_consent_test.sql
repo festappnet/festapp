@@ -11,7 +11,7 @@ BEGIN
  VALUES(un,origin,'gtm-v1',ARRAY['https://tickets.example'],ARRAY['https://www.google-analytics.com'],1,'fixture','consent');
  before_policy:=public.form_measurement_runtime_internal(fid);
  PERFORM assert_eq(before_policy->'required_purposes','["analytics","marketing"]'::jsonb,'mixed profile requires both purposes');
- PERFORM assert_eq(before_policy->'enhanced_conversions_unavailable','true'::jsonb,'enhanced conversions are unavailable');
+ PERFORM assert_eq(before_policy->'enhanced_conversions_unavailable','false'::jsonb,'enhanced conversions are available');
  PERFORM assert_eq(public.project_configuration_settings_internal_v1('unit',(SELECT to_jsonb(u) FROM public.units u WHERE u.id=un))#>'{settings,measurement_consent_version}','1'::jsonb,'historical aggregate projection defaults to version 1');
  PERFORM assert_eq(public.form_measurement_unit_data_internal(un,'{}')->'measurement_consent_version','1'::jsonb,'public Unit projection defaults to version 1');
  INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(un,(x->>'actor')::uuid,true)

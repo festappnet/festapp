@@ -165,7 +165,7 @@ test('real dataLayer emits purchase only after backend confirmation and survives
   }finally{FormNetwork.submitOrder=original;dom.window.close();}
 });
 
-for(const pending of ['reservations','backend'])test(`real FormPage pending ${pending} keeps its original measurement grant through revoke/regrant`,async t=>{
+for(const pending of ['reservations','backend'])test(`real FormPage pending ${pending} keeps its original measurement grant across a replaced lease`,async t=>{
  const {fixture,purchase,settle}=await import('../support/measurement_fixture.js');const f=fixture(t);await f.start();
  const win=f.dom.window;Object.assign(globalThis,{window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent});win.scrollTo=()=>{};
  win.document.body.innerHTML='<div id="form-page-container"></div>';
@@ -178,10 +178,22 @@ for(const pending of ['reservations','backend'])test(`real FormPage pending ${pe
  page.analytics=f.layer;page.closePreview=()=>{};page.cleanup=()=>{};page.showFullScreenResult=()=>finished();
  t.mock.method(FormNetwork,'submitOrder',()=>new Promise(resolve=>resolveBackend=resolve));
  f.sent.length=0;page.submitOrder(win.document.createElement('form'),{});await settle();
- f.choose(false);f.choose({analytics:true,marketing:true});const afterGrant=f.sent.length;
+ f.choose({analytics:true,marketing:true,leaseId:'next'});const afterGrant=f.sent.length;
  if(pending==='reservations'){releaseReservations();await settle();}
  resolveBackend({success:true,data:{ticketOrder:{analytics:purchase}}});await resultShown;
  assert.equal(completed,1,'business completion is independent of measurement');
  assert.equal(f.sent.length,afterGrant,'stale completion sends neither conversion nor context');
  assert.doesNotMatch(JSON.stringify(f.sent),/PRIVATE|601234567/);
+});
+test('real FormPage sends the buyer contact on purchase whatever the visitor chose',async t=>{
+ const {fixture,purchase,settle}=await import('../support/measurement_fixture.js');const f=fixture(t,{consent:false});await f.start();
+ const win=f.dom.window;Object.assign(globalThis,{window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent});win.scrollTo=()=>{};
+ win.document.body.innerHTML='<div id="form-page-container"></div>';
+ const [{FormPage},{FormNetwork}]=await Promise.all([import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js')]);
+ const page=new FormPage('form-page-container');let finished;const shown=new Promise(resolve=>finished=resolve);
+ page.currentSession={payload:{form:'private',fields:[{5:'Buyer@Example.test'},{6:'+420601234567'}]},awaitPendingReservations:()=>Promise.resolve(),captureReservationCapability:()=>null,completeReservation:()=>{}};
+ page.analytics=f.layer;page.closePreview=()=>{};page.cleanup=()=>{};page.showFullScreenResult=()=>finished();
+ t.mock.method(FormNetwork,'submitOrder',async()=>({success:true,data:{ticketOrder:{analytics:purchase}}}));
+ f.sent.length=0;page.submitOrder(win.document.createElement('form'),{});await shown;await settle();
+ assert.deepEqual(f.sent.find(p=>p.event==='purchase').user_data,{email:'buyer@example.test',phone_number:'+420601234567'});
 });

@@ -14,7 +14,8 @@ export function hasBrowserSession(win) {
     } catch { return true; }
 }
 
-// The only owner of eligibility, role, consent, freshness and grant lifetime.
+// The only owner of eligibility, role, freshness and grant lifetime.
+// Consent is state for the organizer's container, never a condition to run.
 // Construction is inert. Sources and transports never decide to grant access.
 export class FormMeasurementSession {
     constructor({win=window, model, policySource, consentSource, identitySource, transport,
@@ -26,7 +27,8 @@ export class FormMeasurementSession {
     start() {
         if (this.started || this.disposed) return;
         this.started=true;
-        this.visibility=()=>{this.invalidate(); if (!this.win.document.hidden) this.refresh();};
+        // Hiding keeps the frame, so a tab switch does not run the container again.
+        this.visibility=()=>{if (!this.win.document.hidden) this.refresh();};
         this.pagehide=()=>{this.suspended=true; this.invalidate();};
         this.pageshow=()=>{this.suspended=false; this.invalidate(); this.refresh();};
         this.contextChanged=()=>{this.invalidate(); this.refresh();};
@@ -45,7 +47,7 @@ export class FormMeasurementSession {
     }
     identity() { return this.identitySource?.read?.() ?? (hasBrowserSession(this.win)?'authenticated':'anonymous'); }
     contextAllowed() {
-        try {return !this.disposed && !this.suspended && !this.win.document.hidden && this.entryAllowed &&
+        try {return !this.disposed && !this.suspended && this.entryAllowed &&
             !this.model.demoSimulation && publicFormLocation(this.win.location);} catch {return false;}
     }
     refresh() {
@@ -77,11 +79,13 @@ export class FormMeasurementSession {
                 if(this.disposed || this.consentBinding!==binding || manifest!==this.manifest) return;
                 if(value==null)this.consentConnected=false;
                 const next=measurementConsent(value);
-                if(next.analytics!==this.consent.analytics || next.marketing!==this.consent.marketing || value?.leaseId!==this.consent.leaseId) this.invalidate();
+                const changed=next.analytics!==this.consent.analytics || next.marketing!==this.consent.marketing;
+                if(value?.leaseId!==this.consent.leaseId) this.invalidate();
                 this.consent={...next,leaseId:value?.leaseId,expiresAt:value?.expiresAt};
+                if(changed)this.transport.updateConsent?.(next);
                 this.reconcile();
             });
-        } catch {this.consentConnected=false;this.consent=measurementConsent(false); this.invalidate();}
+        } catch {this.consentConnected=false;this.consent=measurementConsent(false);this.transport.updateConsent?.(this.consent);}
     }
     permitted() {
         const p=this.policy;
@@ -91,20 +95,20 @@ export class FormMeasurementSession {
         return hostAllowed && hostUnchanged && this.clock()>=(this.failureUntil||0) && this.contextAllowed() && this.identity()===this.verifiedIdentity && p?.visitor_role!=='staff' &&
             (this.identity()==='anonymous' || p?.visitor_role==='visitor') &&
             p?.enabled===true && p.organization_allowed===true && p.runtime_supported===true && p.eligible===true &&
-            !!this.manifest && this.clock()<this.until && this.consent.analytics && this.consent.marketing &&
+            !!this.manifest && this.clock()<this.until &&
             (!this.consent.expiresAt || this.clock()<this.consent.expiresAt);
     }
     reconcile() {
         if (this.disposed) return;
         // Identity is verified only by the matching policy request, never by a transport.
-        if (!this.permitted()) {if(this.grant)this.invalidate(); this.state='awaiting-consent'; return;}
+        if (!this.permitted()) {if(this.grant)this.invalidate(); this.state='blocked'; return;}
         const selection=this.transport.selection ? this.transport.selection() : 'runtime';
         if (!selection) {if(this.grant)this.invalidate(); return;}
         if(this.grant && this.grant.selection!==selection) this.invalidate();
         if(this.grant) return;
         const host=this.transport.hostContext?.() || null;
         const grant=this.grant={host:host?Object.freeze({...host}):null,runtimeOrigin:this.policy.runtime_origin,manifest:this.manifest,generation:this.generation,identity:this.identity(),selection,
-            consent:{analytics:true,marketing:true},leaseId:this.consent.leaseId};
+            consent:measurementConsent(this.consent),leaseId:this.consent.leaseId};
         this.state='starting';
         try {this.transport.activate({...grant,expiresAt:Math.min(this.until,this.consent.expiresAt||Infinity),
             onReady:()=>{if(this.grant===grant && this.permitted() && this.state==='starting'){this.state='active';this.onActive();}},

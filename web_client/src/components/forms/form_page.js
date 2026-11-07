@@ -931,7 +931,7 @@ export class FormPage extends Component {
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
         const submittedSession = this.currentSession;
-        const measurementOutcome=this.analytics?.captureSubmission();
+        const measurementOutcome=this.analytics?.captureSubmission(payload);
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
             await submittedSession?.awaitPendingReservations();

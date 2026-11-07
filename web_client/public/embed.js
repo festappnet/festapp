@@ -9,6 +9,8 @@
     const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
     const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
     const eventIdentity = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+    const contactEmail = value => typeof value === 'string' && value.length <= 254 && /^[^\s@\u0000-\u001f\u007f]+@[^\s@\u0000-\u001f\u007f]+\.[^\s@\u0000-\u001f\u007f]+$/.test(value);
+    const contactPhone = value => typeof value === 'string' && /^\+[1-9]\d{7,14}$/.test(value);
     const pageTypes = ['product', 'checkout', 'confirmation'];
 
     const measurementNamespace = 'festapp-measurement';
@@ -75,9 +77,21 @@
     const itemLabel = value => typeof value === 'string' && !unsafeText.test(value) ? value.trim().slice(0, 100) : '';
     const money = value => Number.isFinite(value) && value >= 0 && value <= 999999999 ? Math.round((value + Number.EPSILON) * 100) / 100 : null;
 
+    // Only these two bounded fields pass. Anything else, or a malformed value, is left out.
+    function contactUserData(input) {
+        const result = {};
+        if (contactEmail(input?.email)) result.email = input.email;
+        if (contactPhone(input?.phone_number)) result.phone_number = input.phone_number;
+        return Object.keys(result).length ? result : null;
+    }
+
     // Rebuild at every transport boundary. Never spread form, order or message data.
     function analyticsPayload(input) {
         if (!input || typeof input !== 'object') return null;
+        const withUserData = payload => {
+            const user_data = contactUserData(input.user_data);
+            return user_data ? {...payload, user_data} : payload;
+        };
         if (!input.event) {
             if (!pageTypes.includes(input.page_type)) return null;
             const result = {page_type: input.page_type, user_type: 'b2c'};
@@ -87,7 +101,7 @@
         if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
         if (input.event === 'generate_lead') {
             if (!['free_registration', 'waitlist'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
-            return ({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
+            return withUserData({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
         }
         const source = input.ecommerce;
         if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) ||
@@ -119,7 +133,7 @@
             ecommerce.transaction_id = source.transaction_id;
         }
         const result = {event: input.event, ecommerce};
-        return result;
+        return input.event === 'purchase' ? withUserData(result) : result;
     }
 
     // Identity of the SQL snapshot that actually supplies the runtime code.
@@ -163,25 +177,27 @@ function bindKlaroConsent(manager, setConsent) {
 }
 
     const frames = new Map();
-    // A live revision-bound CMP source is required. Legacy setters cannot grant v2.
+    // The lease only proves that this helper is alive. Consent never gates measurement:
+    // the choice below is passed on as state for the organizer's tags.
     const revoke = (frame,record) => {
         record.lease=null;
         if(record.manifest) sendConsent(frame,record);
     };
     const readChoice = record => {
+        const m=record.manifest;
+        if(!m || !record.source)return measurementConsent(record.consent);
         try {
-            const m=record.manifest;
-            if(!m || !record.source || document.hidden)return null;
             const choice=record.source.read({organization:m.organization,unit:m.unit,
                 processingRevision:m.processing_revision,requiredPurposes:m.required_purposes});
-            return choice?.processingRevision===m.processing_revision && choice.analytics===true && choice.marketing===true ? choice:null;
-        }catch{return null;}
+            return measurementConsent(choice?.processingRevision===m.processing_revision ? choice:false);
+        }catch{return measurementConsent(false);}
     };
     const sendConsent = (frame,record) => frame.contentWindow?.postMessage({namespace,protocol:1,instance:record.instance,
         type:'measurement-consent',measurement:{protocol:2,manifest:record.manifest,leaseId:record.lease?.id,
-            ttl:record.lease?60000:0,consent:{analytics:!!record.lease,marketing:!!record.lease}}},record.origin);
+            ttl:record.lease?60000:0,consent:readChoice(record)}},record.origin);
     const syncConsent = (frame,record) => {
-        if(!frame.isConnected || !readChoice(record)){revoke(frame,record);return;}
+        if(!frame.isConnected){clearInterval(record.heartbeat);record.heartbeat=null;revoke(frame,record);return;}
+        record.heartbeat??=setInterval(()=>syncConsent(frame,record),20000);
         if(!record.lease)record.lease={id:crypto.randomUUID()};
         record.lease.until=Date.now()+60000;
         sendConsent(frame,record);
@@ -191,23 +207,22 @@ function bindKlaroConsent(manager, setConsent) {
             const record=frames.get(frame);
             if(!record || typeof source?.read!=='function' || typeof source?.subscribe!=='function')return null;
             record.consentDispose?.();record.source=source;
-            const notify=()=>{revoke(frame,record);syncConsent(frame,record);};
+            const notify=()=>{if(record.manifest)syncConsent(frame,record);};
             let unsubscribe;
-            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;revoke(frame,record);return null;}
-            const timer=setInterval(()=>syncConsent(frame,record),20000);
-            const disconnect=()=>{clearInterval(timer);record.source=null;revoke(frame,record);try{unsubscribe?.();}catch{ /* Source teardown cannot restore permission. */ }};
-            record.consentDispose=disconnect;syncConsent(frame,record);return disconnect;
+            try{unsubscribe=source.subscribe(notify);}catch{record.source=null;notify();return null;}
+            const disconnect=()=>{record.source=null;notify();try{unsubscribe?.();}catch{ /* Teardown only stops updates. */ }};
+            record.consentDispose=disconnect;notify();return disconnect;
         },
         connectKlaro(frame,manager) {
             const record=frames.get(frame);if(!record)return null;
-            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);});
+            return bindKlaroConsent(manager,granted=>{record.consent=measurementConsent(granted);if(record.manifest)syncConsent(frame,record);});
         },
         setMeasurementConsent(frame,granted) {
             const record=frames.get(frame);if(!record)return false;
-            record.consent=measurementConsent(granted);return true;
+            record.consent=measurementConsent(granted);if(record.manifest)syncConsent(frame,record);return true;
         }
     });
-    document.addEventListener('visibilitychange',()=>frames.forEach((record,frame)=>{revoke(frame,record);if(!document.hidden)syncConsent(frame,record);}));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)frames.forEach((record,frame)=>{if(record.manifest)syncConsent(frame,record);});});
     window.addEventListener('pagehide',()=>frames.forEach((record,frame)=>revoke(frame,record)));
     const viewportHeight = () => Math.max(240, Math.min(4000, window.innerHeight));
     // The saved form owns appearance; the host only supplies presentation tokens.
@@ -457,7 +472,7 @@ function bindKlaroConsent(manager, setConsent) {
             }
             if(data.type==='measurement-activate' || data.type==='analytics') {
                 const m=data.measurement;
-                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until || !readChoice(record) ||
+                if(m?.protocol!==2 || !record.lease || Date.now()>=record.lease.until ||
                     m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return;
                 if(data.type==='measurement-activate') {
                     record.lease.generation=m.generation;
@@ -467,8 +482,9 @@ function bindKlaroConsent(manager, setConsent) {
                 if(frame.hasAttribute('data-festapp-datalayer')) {
                     const payload=analyticsPayload(data.payload);if(!payload)return;
                     window.dataLayer=window.dataLayer||[];
-                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null});
+                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null});
                     window.dataLayer.push(payload);
+                    if(['purchase','generate_lead'].includes(payload.event))window.dataLayer.push({user_data:null});
                 }
                 return;
             }

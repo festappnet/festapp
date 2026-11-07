@@ -464,6 +464,7 @@ test('new child uses one native reveal with a legacy host for end and nearest al
 });
 
 const measurement={organization:1,unit:2,form_link:'summer',processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']};
+const plain=value=>JSON.parse(JSON.stringify(value));
 function measurementHost() {
  const f=host(),{dom,frames:[frame],sent,message}=f;
  Object.defineProperty(dom.window.document,'hidden',{value:false,configurable:true});
@@ -472,42 +473,49 @@ function measurementHost() {
  send('measurement-context',{measurement:{protocol:2,manifest:measurement}});
  return {...f,frame,instance,send,last:()=>sent[0].at(-1)[0]};
 }
-test('old boolean/Klaro and protocol1 events never authorize measurement',()=>{
- const f=measurementHost();const {dom,frame,send}=f;let watcher;
- for(const choice of [true,{analytics:true,marketing:true},false]) {
-  dom.window.FestappEmbed.setMeasurementConsent(frame,choice);send('analytics',{payload:{event:'page_view'}});
- }
+test('a helper alone measures: lease without a CMP, setters and Klaro only pass the choice on',()=>{
+ const f=measurementHost();const {dom,frame,send,last}=f;let watcher;
+ const leaseId=last().measurement.leaseId;assert.ok(leaseId,'no CMP is needed for a lease');
+ assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});
+ send('analytics',{payload:{event:'page_view'}});assert.equal(dom.window.dataLayer,undefined,'protocol 1 event stays rejected');
+ dom.window.FestappEmbed.setMeasurementConsent(frame,{analytics:true,marketing:true});
+ assert.deepEqual(plain(last().measurement.consent),{analytics:true,marketing:true});assert.equal(last().measurement.leaseId,leaseId);
+ dom.window.FestappEmbed.setMeasurementConsent(frame,false);
+ assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});assert.equal(last().measurement.leaseId,leaseId,'refusal keeps measuring');
  const manager={confirmed:true,savedConsents:{analytics:true,marketing:true},getConsent:()=>true,watch:w=>watcher=w,unwatch(){}};
- const stop=dom.window.FestappEmbed.connectKlaro(frame,manager);watcher.update();send('analytics',{payload:{event:'page_view'}});stop();
- assert.equal(dom.window.dataLayer,undefined);dom.window.close();
+ const stop=dom.window.FestappEmbed.connectKlaro(frame,manager);watcher.update();
+ assert.deepEqual(plain(last().measurement.consent),{analytics:true,marketing:true});stop();dom.window.close();
 });
-test('live revision source binds lease, instance, generation and receiver reread; disconnect/revision invalidates',()=>{
+test('lease binds instance and generation; a revoked choice does not stop host events',()=>{
  const f=measurementHost(),{dom,frame,send,last}=f;let choice={processingRevision:'a',analytics:true,marketing:true},notify;
  const source={read:context=>{assert.equal(context.processingRevision,'a');return choice;},subscribe:fn=>{notify=fn;return ()=>{};}};
- const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,source);let leaseId=last().measurement.leaseId;assert.ok(leaseId);
+ const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,source);const leaseId=last().measurement.leaseId;assert.ok(leaseId);
  const measurementEnvelope=()=>({protocol:2,manifest:measurement,generation:7,leaseId});
- const emit=(m=measurementEnvelope(),origin,source)=>send('analytics',{measurement:m,payload:{event:'page_view',user_data:{email:'PRIVATE'}}},origin,source);
+ const emit=(m=measurementEnvelope(),origin,source)=>send('analytics',{measurement:m,payload:{event:'page_view'}},origin,source);
  emit();assert.equal(dom.window.dataLayer,undefined,'activate handshake required');
  send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.length,1);
  emit({...measurementEnvelope(),generation:6});emit({...measurementEnvelope(),leaseId:'stale'});emit(measurementEnvelope(),'https://evil.invalid');emit(measurementEnvelope(),undefined,{});
  assert.equal(dom.window.dataLayer.length,1);
- choice=null;emit();assert.equal(dom.window.dataLayer.length,1,'receiver rereads source before every push, without subscription notification');
- notify();choice={processingRevision:'a',analytics:true,marketing:true};notify();const old=leaseId;leaseId=last().measurement.leaseId;assert.notEqual(leaseId,old);
- emit();assert.equal(dom.window.dataLayer.length,1,'new lease must activate');send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.length,2);
- choice={...choice,processingRevision:'b'};emit();assert.equal(dom.window.dataLayer.length,2,'a global true cannot migrate to another processing revision');
- disconnect();emit();assert.equal(dom.window.dataLayer.length,2);assert(!JSON.stringify(dom.window.dataLayer).includes('PRIVATE'));dom.window.close();
+ choice=null;notify();assert.equal(last().measurement.leaseId,leaseId);assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});
+ emit();assert.equal(dom.window.dataLayer.length,2,'consent state never gates the event');
+ choice={...choice,processingRevision:'b'};
+ disconnect();emit();assert.equal(dom.window.dataLayer.length,3);dom.window.close();
 });
-test('unreadable, analytics-only or stale-revision source cannot create a lease',()=>{
- for(const choice of [null,{processingRevision:'a',analytics:true},{processingRevision:'b',analytics:true,marketing:true}]){
+test('unreadable, partial or stale-revision source keeps the lease and reports the real choice',()=>{
+ for(const [choice,consent] of [[null,{analytics:false,marketing:false}],[{processingRevision:'a',analytics:true},{analytics:true,marketing:false}],[{processingRevision:'b',analytics:true,marketing:true},{analytics:false,marketing:false}]]){
   const f=measurementHost();const disconnect=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>choice,subscribe:()=>()=>{}});
-  assert.equal(f.last().measurement.leaseId,undefined);disconnect();f.dom.window.close();
+  assert.ok(f.last().measurement.leaseId);assert.deepEqual(plain(f.last().measurement.consent),consent);disconnect();f.dom.window.close();
  }
 });
-test('contacts never enter host dataLayer even with a live lease',()=>{
- const f=measurementHost();const disconnect=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'a',analytics:true,marketing:true}),subscribe:()=>()=>{}});
+test('host dataLayer receives the contact only on conversions and clears it afterwards',()=>{
+ const f=measurementHost();
  const m={protocol:2,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};f.send('measurement-activate',{measurement:m});
- f.send('analytics',{measurement:m,payload:{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:'PRIVATE@example.test',phone_number:'+420601234567'}}});
- assert.equal(f.dom.window.dataLayer.filter(p=>p.event==='generate_lead').length,1);assert.doesNotMatch(JSON.stringify(f.dom.window.dataLayer),/PRIVATE|601234567|user_data/);disconnect();f.dom.window.close();
+ f.send('analytics',{measurement:m,payload:{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:'buyer@example.test',phone_number:'+420601234567',first_name:'PRIVATE'}}});
+ f.send('analytics',{measurement:m,payload:{event:'page_view',user_data:{email:'buyer2@example.test'}}});
+ const layer=f.dom.window.dataLayer;
+ assert.deepEqual(plain(layer.find(p=>p.event==='generate_lead').user_data),{email:'buyer@example.test',phone_number:'+420601234567'});
+ assert.equal(layer.find(p=>p.event==='page_view').user_data,undefined);
+ assert.deepEqual(plain(layer.at(-2)),{user_data:null});assert.doesNotMatch(JSON.stringify(layer),/PRIVATE|buyer2/);f.dom.window.close();
 });
 
 function child(){
@@ -718,15 +726,17 @@ test('saved form preference overrides hostile legacy markup in either loading or
     }
 });
 
-test('heartbeat rereads the live source; viewport cannot renew a lost source or old revision',()=>{
- let heartbeat;const f=host(false,win=>{Object.defineProperty(win.document,'hidden',{value:false});win.setInterval=callback=>{heartbeat=callback;return 1;};win.clearInterval=()=>{};});
+test('heartbeat keeps the lease and rereads the source; hiding the page changes nothing',()=>{
+ let heartbeat;const f=host(false,win=>{Object.defineProperty(win.document,'hidden',{value:true,configurable:true});win.setInterval=callback=>{heartbeat=callback;return 1;};win.clearInterval=()=>{};});
  const {dom,frames:[frame],sent,message}=f;const instance=sent[0][0][0].instance;
  const context=manifest=>message(frame,'https://tickets.invalid',envelope('measurement-context',instance,{measurement:{protocol:2,manifest}}),frame.contentWindow);
  context(measurement);let choice={processingRevision:'a',analytics:true,marketing:true},reads=0;
  const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,{read:()=>{reads++;return choice;},subscribe:()=>()=>{}});
- const lease=sent[0].at(-1)[0].measurement.leaseId;heartbeat();assert.equal(reads,2);assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);
- const before=reads;dom.window.dispatchEvent(new dom.window.Event('scroll'));assert.equal(reads,before,'layout does not renew choice');
- choice=null;heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,undefined);
- choice={processingRevision:'a',analytics:true,marketing:true};context({...measurement,processing_revision:'b'});heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,undefined,'old saved choice cannot become revision b');
- disconnect();const disconnectedReads=reads;heartbeat();assert.equal(reads,disconnectedReads,'disconnected source is never reread or revived');dom.window.close();
+ const lease=sent[0].at(-1)[0].measurement.leaseId;assert.ok(lease,'a hidden page still measures');
+ const before=reads;heartbeat();assert.ok(reads>before);assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);
+ dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange'));assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);
+ const layout=reads;dom.window.dispatchEvent(new dom.window.Event('scroll'));assert.equal(reads,layout,'layout does not read the choice');
+ choice=null;heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);assert.deepEqual(plain(sent[0].at(-1)[0].measurement.consent),{analytics:false,marketing:false});
+ context({...measurement,processing_revision:'b'});assert.notEqual(sent[0].at(-1)[0].measurement.leaseId,lease,'a new revision gets a new lease');
+ disconnect();const disconnectedReads=reads;heartbeat();assert.equal(reads,disconnectedReads,'disconnected source is never reread');dom.window.close();
 });

@@ -770,11 +770,11 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_conversion_datalayer_internal(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='6af5835022301ece535314356c0a9efb'),'current SQL source parity: public.form_conversion_datalayer_internal(bigint,text)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_copy_source_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='0fff049746a86488382290a67c8c9838'),'current SQL source parity: public.form_copy_source_rule(boolean,boolean)');
--- supabase/migrations/20261107110000_form_measurement_consent.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_measurement_runtime_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8a00cc9de72360c6c963700869e59fa5'),'current SQL source parity: public.form_measurement_runtime_internal(bigint)');
--- supabase/migrations/20261107110000_form_measurement_consent.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_measurement_status_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c83d1e52050f78f8e864d321589466a4'),'current SQL source parity: public.form_measurement_status_internal(bigint)');
--- supabase/migrations/20261107110000_form_measurement_consent.sql
+-- supabase/migrations/20261107130000_form_measurement_gtm_always.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_measurement_runtime_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0c8a884bbbb8eb25052b43ce8308d95d'),'current SQL source parity: public.form_measurement_runtime_internal(bigint)');
+-- supabase/migrations/20261107130000_form_measurement_gtm_always.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_measurement_status_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f26d6d2780f87c6cfa93f8a4309e6bc9'),'current SQL source parity: public.form_measurement_status_internal(bigint)');
+-- supabase/migrations/20261107130000_form_measurement_gtm_always.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_measurement_unit_data_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='3a9b56fa326740d4abc62a826345a67b'),'current SQL source parity: public.form_measurement_unit_data_internal(bigint,jsonb)');
 -- supabase/migrations/20261106220000_cash_reservations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_order_facts_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df505b9805ea5e7146b4d0de5ab58ebe'),'current SQL source parity: public.form_order_facts_internal(bigint)');
