@@ -31,8 +31,8 @@ features each event needs, including information pages, songbooks and group game
 
 ### Slunovrat 2026: the summer festival
 
-A real festival app powered by Festapp: browse the program, find venues around
-Opava and open artist details.
+For the summer Slunovrat festival in Opava (June 18-21, 2026), visitors can follow
+the program, find venues on the map and explore artist profiles.
 
 <table>
   <tr>
@@ -41,29 +41,31 @@ Opava and open artist details.
     <th align="center">Artist details</th>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/readme/slunovrat-ios-program.png" width="220" alt="Native iOS Slunovrat summer festival program in an iPhone simulator, with local English translation" /></td>
-    <td align="center"><img src="docs/images/readme/slunovrat-ios-map.png" width="220" alt="Native iOS Slunovrat summer festival venue map of Opava in an iPhone simulator" /></td>
-    <td align="center"><img src="docs/images/readme/slunovrat-ios-detail.png" width="220" alt="Native iOS Slunovrat summer artist detail in an iPhone simulator, with local English translation" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-program.png" width="220" alt="Slunovrat summer festival program" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-map.png" width="220" alt="Slunovrat festival venue map of Opava" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-detail.png" width="220" alt="Slunovrat artist profile for Vypsaná fiXa" /></td>
   </tr>
 </table>
 
-Festival Slunovrat's summer edition, **June 18-21, 2026**, captured directly
-from the native iOS app running in an **iPhone simulator**, in light mode.
-Public event text was translated into English only in the local capture build;
-artist and venue names retain their original spelling. The live event is unchanged.
-[Capture details](docs/images/readme/README.md).
-
-Previously synchronized data can be read offline. Authentication, payments and
-server-confirmed writes need a connection; native offline maps require a prepared
-map bundle. See the [feature reference](docs/overview/features.md) for details.
+Previously downloaded event information remains available offline. Sign-in and
+ticket purchases need an internet connection. Events can also include offline
+venue maps. See the [feature reference](docs/overview/features.md) for more.
 
 ## Ticketing for organizers
 
-![Existing Lucerna venue plan with ground-floor seating, boxes and two balconies in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
+### Venue overview
 
-The existing Lucerna hall template brings together ground-floor seating, boxes
-and two balconies around a stage and a large dance floor.
+![Lucerna seating plan with ground-floor seating, boxes and two balconies](docs/images/readme/tickets-seating-desktop.png)
 
+Manage seating across the ground floor, boxes and balconies, with a clear view
+of the stage and dance floor.
+
+### Seat selection up close
+
+![Close-up of the Lucerna seating plan showing individual tables, seats and a selected seat in Festapp Tickets](docs/images/readme/tickets-seating-detail.png)
+
+Zoom into the same plan to see individual seats around each numbered table
+and choose a specific place.
 
 - **Ticket sales and registration.** Build public forms with ticket types,
   prices, capacity limits and attendee questions; share a link or embed a form
@@ -77,7 +79,7 @@ and two balconies around a stage and a large dance floor.
 - **Event operations.** Coordinate volunteers, participant groups,
   accommodation and reception, with event-specific branding and permissions.
 
-![English order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
+![Order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
 
 Track orders and payments from the event administration.
 
