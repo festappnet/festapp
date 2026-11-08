@@ -70,7 +70,8 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
     final sub = _subs.where((s) => s.code == code).firstOrNull;
     if (sub == null) return null;
     final rich = sub.kind == EmailValueKind.richInline ||
-        sub.kind == EmailValueKind.richBlock;
+        sub.kind == EmailValueKind.richBlock ||
+        (!singleLine && sub.definition.bodyBlock);
     return TemplateAuthoringEntry(
         code: code,
         label: _label(sub),
@@ -79,7 +80,7 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
         repeatable: sub.definition.repeatable,
         example:
             rich ? sub.description : scenario?.values[code] ?? sub.defaultValue,
-        block: !singleLine && sub.kind == EmailValueKind.richBlock,
+        block: !singleLine && sub.definition.bodyBlock,
         url: sub.kind == EmailValueKind.url);
   }
 
@@ -125,7 +126,8 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   String get tokenLabel => EmailTemplatesStrings.variable;
   @override
   Widget? preview(BuildContext context, String code,
-      {ValueGetter<int>? occurrence}) {
+      {ValueGetter<int>? occurrence,
+      String Function(String)? wrapHtml}) {
     Widget render() {
       if (code == 'tickets') {
         return inlineTicketsEnabled
@@ -138,7 +140,11 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
               scenario?.values[code];
       return value == null
           ? Text(EmailTemplatesStrings.previewUnavailable)
-          : EmailPreviewHtml(html: value);
+          : EmailPreviewHtml(
+              html: scenario?.richCodes.contains(code) == false &&
+                      wrapHtml != null
+                  ? wrapHtml(value)
+                  : value);
     }
 
     return previewChanges == null

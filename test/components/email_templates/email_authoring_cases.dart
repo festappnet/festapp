@@ -35,7 +35,8 @@ void main() {
                 'waitlist_confirmation_heading',
                 'waitlist_confirmation_explanation',
               ];
-        final html = '<h2>{{${tokens.first}}}</h2><p>{{${tokens.last}}}</p>';
+        final html = '<h3 style="text-align:center">{{${tokens.first}}}</h3>'
+            '<p>{{${tokens.last}}}</p>';
         final provider = EmailAuthoringProvider(
           EmailTemplateModel(code: code),
           field: EmailTargetField.body,
@@ -56,12 +57,28 @@ void main() {
             reason: '$code/${scenario.tone}',
           );
           for (final token in tokens) {
-            expect(provider.entry(token), isNotNull, reason: token);
+            expect(provider.entry(token)?.block, isTrue, reason: token);
+            final subjectEntry = EmailAuthoringProvider(
+              EmailTemplateModel(code: code),
+              field: EmailTargetField.subject,
+              scenario: scenario,
+            ).entry(token)!;
+            expect(subjectEntry.block, isFalse);
+            expect(subjectEntry.rich, isFalse);
+            expect(EmailTemplateRules.definition(token).supports(EmailTargetField.subject),
+                isTrue);
+            expect(find.text(scenario.values[token]!, findRichText: true),
+                findsOneWidget, reason: '$code/${scenario.tone}/$token');
             expect(scenario.values[token], isNotEmpty, reason: token);
             expect(scenario.composeHtml(html), isNot(contains('{{$token}}')));
             expect(find.text('{{$token}}', findRichText: true), findsNothing);
           }
           expect(find.text(provider.unsupportedLabel), findsNothing);
+          final headingPreview = tester
+              .widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml))
+              .firstWhere((widget) => widget.html.contains(scenario.values[tokens.first]!));
+          expect(headingPreview.html,
+              '<h3 style="text-align:center">${scenario.values[tokens.first]}</h3>');
           expect(
             controller.html,
             html,

@@ -1342,7 +1342,9 @@ class _AtomicBlockBuilder implements ComponentBuilder {
         onMoveUp: controller.canMoveBlock(node.id, -1) ? () => controller.moveBlock(node.id, -1) : null,
         onMoveDown: controller.canMoveBlock(node.id, 1) ? () => controller.moveBlock(node.id, 1) : null,
         child: embedded?.builder(buildContext) ?? controller.authoring!.preview(buildContext,
-          (node as TemplateTokenBlock).code, occurrence: () => _templateOccurrence(controller, node.code, node)) ?? Text(controller.authoring!.sampleLabel))));
+          (node as TemplateTokenBlock).code,
+          occurrence: () => _templateOccurrence(controller, node.code, node),
+          wrapHtml: (html) => controller.wrapTokenPreview(node.id, html)) ?? Text(controller.authoring!.sampleLabel))));
   }
 }
 

@@ -17,6 +17,16 @@ class EmailVariableDefinition {
       field == EmailTargetField.body ||
       kind == EmailValueKind.text ||
       kind == EmailValueKind.url;
+
+  /// Plain dynamic paragraphs retain scalar substitution/subject semantics,
+  /// while the body editor presents their delivered copy as atomic sections.
+  bool get bodyBlock => kind == EmailValueKind.richBlock || const {
+    'waitlist_confirmation_heading',
+    'waitlist_confirmation_explanation',
+    'waitlist_offer_heading',
+    'waitlist_offer_instructions',
+    'waitlist_offer_instructions_single',
+  }.contains(code);
 }
 
 class EmailTitleMatch {

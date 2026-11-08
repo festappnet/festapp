@@ -31,6 +31,7 @@ import 'package:fstapp/components/email_templates/views/email_templates_settings
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/html/html_strings.dart';
+import 'package:fstapp/components/html/template_authoring.dart';
 import 'package:super_editor/super_editor.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -104,6 +105,46 @@ Future<void> openTemplate(
 }
 
 void main() {
+  testWidgets('waitlist offer dialog renders inherited wording as atomic blocks',
+      (tester) async {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+    tester.view.physicalSize = const Size(1400, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final examples = EmailPreviewExamples.fromJson(jsonDecode(
+        File('assets/email_templates/preview_examples.json').readAsStringSync()));
+    final pendingExamples = Completer<EmailPreviewExamples>();
+    const html = '<h2>{{waitlist_offer_heading}}</h2>'
+        '<p>Pro přihlášku <strong>{{order_symbol}}</strong> na '
+        '{{occasion_title}} nabízíme {{offered_places}}. Nabídka platí do '
+        '{{offer_expires_at}}.</p><p>{{waitlist_offer_instructions}}</p>'
+        '<p>{{offer_button}}</p>';
+    await openTemplate(tester,
+        code: 'waitlist_offer',
+        occasionTitle: 'Adventní duchovní obnova',
+        html: html,
+        previewExamplesLoader: () => pendingExamples.future,
+        authoringContextLoader: () async =>
+            const EmailAuthoringContext(senderAddress: 'info@example.invalid'));
+    final body = tester
+        .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .last.controller;
+    expect(body.editor.document.whereType<TemplateTokenBlock>(), hasLength(3));
+    pendingExamples.complete(examples);
+    await tester.pumpAndSettle();
+    final scenario = examples.scenariosFor('waitlist_offer').first;
+    for (final code in ['waitlist_offer_heading', 'waitlist_offer_instructions']) {
+      expect(find.text(scenario.values[code]!, findRichText: true), findsOneWidget);
+      expect(find.text('{{$code}}', findRichText: true), findsNothing);
+    }
+    expect(body.hasUnsupportedTokens, isFalse);
+    expect(body.hasUserChanges, isFalse);
+    expect(body.html, html);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   for (final mode in TicketDeliveryMode.values) {
     testWidgets('paid template previews delivery mode ${mode.value}', (
       tester,
