@@ -13,6 +13,11 @@ as an update, so the organizer's container decides what its tags may do. Missing
 broken CMP reports denied state. Absent/old embed helper or an unapproved host leaves
 measurement off while checkout/layout continue. No same-origin script fallback.
 
+The isolated `gtm-v1` frame sets Google's `cookie_flags` to
+`SameSite=None;Secure` before loading the container so Google collection works in
+this cross-site context. Consent Mode still determines whether storage is granted;
+the cookie setting does not grant either purpose.
+
 `purchase` and `generate_lead` carry `user_data` with the buyer's e-mail and E.164
 phone, allowlisted at every boundary and cleared after the event. Nothing else from
 form answers leaves, and contacts do not enter SQL conversion facts. Purchase means
