@@ -5,6 +5,16 @@ Zkopírujte kód do HTML bloku svého CMS. Při neuložené změně adresy se po
 poslední uložený odkaz. Nový formulář je nutné nejdříve uložit.
 
 Automatická výška používá iframe a externí `/embed.js` ze stejného tenantu.
+Helper ihned nastaví startovní výšku 120 px a poté ji přizpůsobuje obsahu,
+bez animace (také při reduced motion). Atribut `height="800"` zůstává jako
+fallback bez JavaScriptu, včetně stávajících WordPress pluginů. Pevné výšky
+se helper nedotýká. Nový helper posílá volitelné `minHeight: 120`; child bez
+něj zachová minimum 240 px pro kompatibilitu se staršími helpery protokolu 1.
+Rozsah `viewportHeight` se nemění. V režimu `?embed=1` je startovní plocha
+průhledná a bez loga; veřejný SEO souhrn je skrytý, aby neprosvítal při načítání. Aktualizační banner se v embedu nezobrazuje. Po připravení aplikace
+(`__FESTAPP_APP_READY__ === true`) kontroly verzí neobnovují stránku; běžná
+aktualizace počká na další načtení stránky. Samooprava startu včetně deep refresh,
+přepnutí verze před připravením aplikace a obnova rozbitého runtime zůstávají aktivní.
 Pevná výška ponechá iframe na 800 px s vlastním posouváním. Převzetí vzhledu
 funguje v obou režimech výšky, pokud CMS povoluje externí skript. Pokud jej
 zakazuje, zůstane pevná výška a vlastní vzhled formuláře. Výšku můžete v HTML upravit. Obě varianty obsahují odkaz pro otevření
@@ -56,11 +66,11 @@ Povolené typy a hodnoty:
 | Typ | Směr | Data |
 | --- | --- | --- |
 | ready | child -> parent | Žádná osobní ani obchodní data |
-| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné dataLayer: true a dataLayerUserData: true |
+| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné minHeight: 120, volitelné dataLayer: true a dataLayerUserData: true |
 | viewport | parent -> child | Stejné ID a výška 240-4000 CSS px |
 | theme | parent -> child | Stejné ID a volitelná prezentace theme |
 | analytics | child -> parent | Whitelistovaný objekt payload, viz Datová vrstva hostitele |
-| resize | child -> parent | Konečná výška 240-20000 CSS px |
+| resize | child -> parent | Konečná výška 240-20000 CSS px; s init.minHeight = 120 již od 120 px |
 | scroll-request | child -> parent | Konečné y 0-20000, volitelné block start/end/nearest a height 0-20000; host cíl omezuje na iframe |
 | scroll-save/scroll-restore/scroll-discard | child -> parent | Neosobní ID snapshotu vázané na konkrétní iframe; discard jej zruší bez posunu |
 

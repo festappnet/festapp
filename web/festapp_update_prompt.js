@@ -1,5 +1,7 @@
 (function initFestappUpdatePrompt() {
   if (window.__FESTAPP_LOCAL_DEVELOPMENT__) return;
+  const isEmbed = new URLSearchParams(window.location.search).get('embed') === '1';
+  const embedReady = () => isEmbed && window.__FESTAPP_APP_READY__ === true;
 
   const currentVersion = window.__FESTAPP_BUILD_VERSION__;
   const dismissedStorageKey = 'festappDismissedVersion';
@@ -155,7 +157,7 @@
   // If the user accepted a version but the old HTML returned, the normal
   // cutover has failed. Perform one clean, cache-busted restart and never
   // offer the same update banner again from that stale page.
-  async function recoverFailedCutover(latestVersion) {
+  async function recoverFailedCutover(latestVersion, onlyIfStalled = false) {
     if (!latestVersion || navigator.onLine === false ||
         sessionStorage.getItem(cleanRecoveryStorageKey) === latestVersion) {
       return false;
@@ -167,6 +169,7 @@
         if (registration) await registration.update();
       }
       await clearLegacyFlutterCaches();
+      if (onlyIfStalled && window.__FESTAPP_APP_READY__ === true) return false;
       const recoveryUrl = new URL(window.location.href);
       recoveryUrl.searchParams.set('festapp-recovery', latestVersion);
       window.location.replace(recoveryUrl.toString());
@@ -364,6 +367,7 @@
   }
 
   function showUpdateBanner(latestVersion, reason) {
+    if (isEmbed) return;
     if (document.getElementById(bannerId) ||
         sessionStorage.getItem(dismissedStorageKey) === latestVersion) {
       return;
@@ -612,6 +616,8 @@
   }
 
   async function checkVersion() {
+    // Keep startup recovery, but never interrupt an interactive embedded form.
+    if (embedReady()) return;
     reportClientVersion();
     if (checkInFlight || !currentVersion || navigator.onLine === false) {
       return;
@@ -637,6 +643,7 @@
       }
 
       const data = await response.json();
+      if (embedReady()) return;
       const latestVersion = data && data.version;
       if (!latestVersion) {
         return;
@@ -653,6 +660,7 @@
           ? await navigator.serviceWorker.getRegistration('/')
           : null;
         const activeVersion = await queryWorkerVersion(registration?.active);
+        if (embedReady()) return;
         if (activeVersion && activeVersion !== currentVersion) {
           // Once the app is interactive, an automatic controller cutover can
           // race with a tap and reload the tab after navigation has begun. Keep
@@ -672,7 +680,7 @@
       }
 
       if (sessionStorage.getItem(cutoverStorageKey) === latestVersion) {
-        await recoverFailedCutover(latestVersion);
+        await recoverFailedCutover(latestVersion, isEmbed);
         return;
       }
 

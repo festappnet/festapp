@@ -454,7 +454,7 @@ function bindKlaroConsent(manager, setConsent) {
         const viewportOffset = Math.max(0, Math.min(20000,
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {namespace, protocol: 1, type, instance: record.instance,
-            viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
+            minHeight: 120, viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
             dataLayer: frame.hasAttribute('data-festapp-datalayer'),
             measurementProtocol,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
@@ -525,6 +525,8 @@ function bindKlaroConsent(manager, setConsent) {
             if (!/^https?:$/.test(url.protocol) || url.origin === 'null') return;
             const record = { origin: url.origin, instance: `f_${crypto.randomUUID()}` };
             record.load = () => {stopHeartbeat(record);revoke(frame,record);record.manifest=null;send(frame,record,'init');};
+            // Keep the HTML height as the no-script fallback; only automatic embeds shrink.
+            if (frame.dataset.festappHeight !== 'fixed') frame.style.height = '120px';
             frames.set(frame, record);
             frame.addEventListener('load', record.load);
             send(frame, record, 'init');
@@ -580,7 +582,7 @@ function bindKlaroConsent(manager, setConsent) {
                 }
                 return;
             }
-            if (data.type === 'resize' && frame.dataset.festappHeight !== 'fixed' && Number.isFinite(data.height) && data.height >= 240 && data.height <= 20000) {
+            if (data.type === 'resize' && frame.dataset.festappHeight !== 'fixed' && Number.isFinite(data.height) && data.height >= 120 && data.height <= 20000) {
                 const height = Math.ceil(data.height);
                 if (frame.style.height !== `${height}px`) frame.style.height = `${height}px`;
             } else if (data.type === 'scroll-request' && Number.isFinite(data.y) && data.y >= 0 &&

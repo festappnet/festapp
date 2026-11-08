@@ -221,6 +221,11 @@
     global.addEventListener('pageshow', applyStartup);
 })(globalThis);
 </script>
+<script id="festapp-embed-startup">
+    if (new URLSearchParams(window.location.search).get('embed') === '1') {
+      document.documentElement.dataset.embedStartup = 'true';
+    }
+  </script>
   <style>
     html, body { background-color: #19243b; }
     .initial-logo:not([data-startup-logo-ready]) { visibility: hidden; }
@@ -433,6 +438,16 @@
   <script src="festapp_pwa_bridge.js" defer></script>
   <script src="festapp_update_prompt.js" defer></script>
 <noscript><style>#loader-content{display:none!important}</style></noscript>  <script src="/festapp_sale_opening_protection.js" defer></script>
+
+  <style>
+    /* Public SEO fallback is removed when the form is ready; never flash it in an embed. */
+    html[data-embed-startup] #public-seo-summary { display: none !important; }
+    /* Only the startup surface is transparent; the loaded form owns its design. */
+    html[data-embed-startup]:has(#loader-content:not([hidden])),
+    html[data-embed-startup]:has(#loader-content:not([hidden])) body,
+    html[data-embed-startup] #loader-content { background: transparent !important; }
+    html[data-embed-startup] #loader-content .initial-logo, html[data-embed-startup] #loader-content .loader { display: none !important; }
+  </style>
 </head>
 <body>
 

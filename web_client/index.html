@@ -89,6 +89,11 @@
     global.addEventListener('pageshow', applyStartup);
 })(globalThis);
 </script>
+<script id="festapp-embed-startup">
+    if (new URLSearchParams(window.location.search).get('embed') === '1') {
+      document.documentElement.dataset.embedStartup = 'true';
+    }
+  </script>
     <title>Akce a plesy - vstupenky online | vstupenky.online</title>
     <meta name="description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
     <meta name="robots" content="index, follow">
@@ -249,6 +254,16 @@
     </style>
 <noscript><style>#web-client-startup{display:none!important}</style></noscript>
   <script src="/festapp_sale_opening_protection.js" defer></script>
+
+  <style>
+    /* Public SEO fallback is removed when the form is ready; never flash it in an embed. */
+    html[data-embed-startup] #public-seo-summary { display: none !important; }
+    /* Only the startup surface is transparent; the loaded form owns its design. */
+    html[data-embed-startup]:has(#web-client-startup:not([hidden])),
+    html[data-embed-startup]:has(#web-client-startup:not([hidden])) body,
+    html[data-embed-startup] #web-client-startup { background: transparent !important; }
+    html[data-embed-startup] #web-client-startup .startup-spinner { display: none !important; }
+  </style>
 </head>
 <body>
     <div id="web-client-startup" role="status"

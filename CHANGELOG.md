@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Embedded forms start without branding, a colored splash or a flash of the public SEO summary, use a compact automatic height with a script-free fallback, and hide update prompts. Once ready, embedded forms defer version updates until the next page load while startup self-repair and corrupt-runtime recovery remain active.
+
 - Form measurement passes `gbraid`, `wbraid`, `sznclid`, `ttclid` and `msclkid` next to UTM, `gclid` and `fbclid`, and adds optional `item_category` (product type) and `item_brand` (occasion) to items in browser events and the server `purchase`. Value calculation and recorded conversion facts are unchanged.
 - Form measurement no longer waits for visitor consent: on eligible forms the frame loads GTM and organizer scripts at once, including embedded forms without a host CMP, and the notice only passes the choice to Google Consent Mode. `purchase` and `generate_lead` carry the buyer's e-mail and phone in `user_data`, and enhanced conversions are available again. Hiding the tab no longer restarts the container.
 - The consent notice follows the form design and has two layouts, a bottom bar (default) or a centered window, and an optional custom plain-text title and text on the Unit.

@@ -125,6 +125,7 @@ const context = {
   caches: cacheStorage,
   Response,
   URL,
+  URLSearchParams,
   window,
 };
 context.globalThis = context;
@@ -301,3 +302,84 @@ await burstListeners.get('focus')();
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(versionReads, 4, 'failed checks must remain immediately retryable');
 console.log('update_prompt_behavior.test: ok');
+
+
+// Fresh embedded pages retain recovery while background updates yield to edits.
+function embeddedPage({ready = false, stale = false, readyDuringUpdate = false} = {}) {
+  const listeners = new Map(), visibility = new Map(), scheduled = [], intervals = [];
+  const state = {reloads:0, fetches:0, banners:0};
+  const worker = {
+    state:'activated', scriptURL:'https://app.test/festapp_service_worker.js',
+    postMessage(message, ports = []) {
+      if (message.type === 'FESTAPP_QUERY_BUILD_VERSION') ports[0]?.reply({version:'2.0.0+2'});
+    },
+  };
+  const embedWindow = {
+    ...window, __FESTAPP_APP_READY__:ready,
+    location:{href:'https://app.test/form/a?embed=1',search:'?embed=1',
+      reload(){ state.reloads++; }, replace(){ state.reloads++; }},
+    addEventListener:(type, listener) => listeners.set(type,listener),
+    setTimeout:(listener,delay) => {scheduled.push({listener,delay});return scheduled.length;},
+    setInterval:listener => intervals.push(listener),
+    caches:{keys:async () => stale ? ['flutter-app-cache'] : [],delete:async () => true},
+  };
+  const embedStorage = storage();
+  vm.runInNewContext(source, {
+    ...context, window:embedWindow, sessionStorage:embedStorage, caches:embedWindow.caches,
+    document:{...document,body:{appendChild(){state.banners++;}},
+      addEventListener:(type,listener) => visibility.set(type,listener)},
+    navigator:{...navigator,serviceWorker:{controller:worker,addEventListener(){},
+      getRegistrations:async () => [],
+      getRegistration:async () => ({active:worker,update:async () => {
+        if (readyDuringUpdate) embedWindow.__FESTAPP_APP_READY__ = true;
+      }})}},
+    fetch:async () => {state.fetches++;return new Response(JSON.stringify({version:'2.0.0+2'}));},
+  });
+  return {win:embedWindow,listeners,visibility,scheduled,intervals,state,session:embedStorage};
+}
+const settle = () => new Promise(resolve => setImmediate(resolve));
+const embeddedReady = embeddedPage({ready:true});
+for (const name of ['recoverFestappStartup','prepareFestappNetworkReload','deepRefreshIfStale',
+  'cutOverToVersion','recoverFailedFestappCutover','clearLegacyFlutterCaches']) {
+  assert.equal(typeof embeddedReady.win[name], 'function', `embed must export ${name}`);
+}
+embeddedReady.listeners.get('load')();
+await settle();
+embeddedReady.session.setItem('festappCutoverVersion','2.0.0+2');
+embeddedReady.listeners.get('focus')();
+embeddedReady.visibility.get('visibilitychange')();
+embeddedReady.listeners.get('festapp-update-available')({detail:{version:'2.0.0+2'}});
+for (const timer of embeddedReady.scheduled.filter(timer => timer.delay === 3000)) timer.listener();
+for (const listener of embeddedReady.intervals) listener();
+await settle();
+assert.deepEqual(embeddedReady.state, {reloads:0, fetches:0, banners:0});
+assert.ok(embeddedReady.scheduled.some(timer => timer.delay === 20000), 'startup recovery must stay scheduled');
+const embeddedStartup = embeddedPage();
+embeddedStartup.listeners.get('festapp-update-available')({detail:{version:'2.0.0+2'}});
+assert.equal(embeddedStartup.state.banners,0,'embed must also suppress banners before ready');
+embeddedStartup.listeners.get('focus')();
+await settle();
+assert.equal(embeddedStartup.state.reloads,1,'embed before ready must cut over');
+assert.equal(embeddedStartup.session.getItem('festappCutoverVersion'),'2.0.0+2');
+assert.equal(embeddedStartup.state.banners,0);
+for (const failedCutover of [false, true]) {
+  const page = embeddedPage({readyDuringUpdate:true});
+  if (failedCutover) page.session.setItem('festappCutoverVersion','2.0.0+2');
+  page.listeners.get('focus')();
+  await settle();
+  assert.equal(page.win.__FESTAPP_APP_READY__,true);
+  assert.equal(page.state.reloads,0,'a check that started before ready must yield during worker preparation');
+  assert.equal(page.state.banners,0);
+}
+const embeddedStalled = embeddedPage();
+assert.equal(await embeddedStalled.win.recoverFestappStartup('embed-stalled'), true);
+assert.equal(embeddedStalled.state.reloads,1,'embed must retain exported startup recovery');
+const embeddedLegacy = embeddedPage({stale:true});
+embeddedLegacy.listeners.get('load')();
+await settle();
+assert.equal(embeddedLegacy.state.reloads,1,'embed load must retain legacy deep refresh');
+embeddedReady.listeners.get('error')({message:'Cannot define property ___dart_dispatch_record_ZxYxX_0_, object is not extensible'});
+await settle();
+assert.equal(embeddedReady.state.reloads,1,'runtime corruption must still recover after embed is ready');
+assert.equal(embeddedReady.state.banners,0);
+console.log('Embedded startup/recovery and ready-form update protection: ok');

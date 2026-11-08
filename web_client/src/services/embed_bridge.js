@@ -42,6 +42,8 @@ export class EmbedBridge {
                 this.origin = event.origin; this.instance = data.instance;
                 this.applyStylePreference();
                 this.autoHeight = data.autoHeight !== false;
+                // Older protocol-1 hosts reject resize messages below 240 px.
+                this.minHeight = data.minHeight === 120 ? 120 : 240;
                 this.scrollAlignment = data.scrollAlignment === true;
                 this.hostPrice = data.hostPrice === true;
                 this.dataLayer = data.dataLayer === true;
@@ -165,7 +167,7 @@ export class EmbedBridge {
         const body = this.win.document.body;
         const dialogBottom = [...body.querySelectorAll('dialog[open], .flatpickr-calendar.open')]
             .reduce((bottom, node) => Math.max(bottom, node.getBoundingClientRect().bottom + this.win.scrollY), 0);
-        const height = Math.max(240, Math.ceil(body.getBoundingClientRect().height), Math.ceil(dialogBottom));
+        const height = Math.max(this.minHeight ?? 240, Math.ceil(body.getBoundingClientRect().height), Math.ceil(dialogBottom));
         if (height !== this.height && Number.isFinite(height)) {
             this.height = height;
             this.send('resize', { height: Math.min(20000, height) });
