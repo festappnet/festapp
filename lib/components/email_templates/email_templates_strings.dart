@@ -56,6 +56,8 @@ class EmailTemplatesStrings {
 
   static String get subParticipantCount =>
       'EmailTemplates.subs.participantCount'.tr();
+  static String waitlistToneLabel(String code) =>
+      'EmailTemplates.subs.$code'.tr();
   static String get subManageWaitlistUrl =>
       'EmailTemplates.subs.manageWaitlistUrl'.tr();
   static String get subManageWaitlistButton =>

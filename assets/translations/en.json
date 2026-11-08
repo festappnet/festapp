@@ -1088,6 +1088,14 @@
   },
   "EmailTemplates": {
     "subs": {
+      "waitlist_confirmation_heading": "Waitlist confirmation heading",
+      "waitlist_confirmation_explanation": "Waitlist explanation",
+      "waitlist_offer_heading": "Place offer heading",
+      "waitlist_offer_instructions": "Offer acceptance instructions",
+      "waitlist_offer_instructions_single": "Single-person offer instructions",
+      "waitlist_offer_button_single": "Single-person confirmation button text",
+      "waitlist_offer_button_multiple": "Selected-people confirmation button text",
+      "waitlist_manage_button_label": "Waitlist management button text",
       "platformLinks": "Links for opening app on different platforms.",
       "appName": "The name of current Application",
       "email": "The email of the user",

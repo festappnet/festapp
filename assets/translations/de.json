@@ -1176,6 +1176,14 @@
   },
   "EmailTemplates": {
     "subs": {
+      "waitlist_confirmation_heading": "Überschrift der Wartelistenbestätigung",
+      "waitlist_confirmation_explanation": "Erläuterung zur Warteliste",
+      "waitlist_offer_heading": "Überschrift des Platzangebots",
+      "waitlist_offer_instructions": "Anleitung zur Annahme des Angebots",
+      "waitlist_offer_instructions_single": "Anleitung für das Angebot für eine Person",
+      "waitlist_offer_button_single": "Schaltflächentext zur Bestätigung einer Person",
+      "waitlist_offer_button_multiple": "Schaltflächentext zur Bestätigung ausgewählter Personen",
+      "waitlist_manage_button_label": "Schaltflächentext zur Verwaltung der Warteliste",
       "participantCount": "Anzahl der angemeldeten Personen",
       "manageWaitlistUrl": "Persönlicher Wartelistenlink",
       "manageWaitlistButton": "Wartelistenverwaltung (HTML-Schaltfläche)",

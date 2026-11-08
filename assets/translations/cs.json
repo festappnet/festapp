@@ -1088,6 +1088,14 @@
   },
   "EmailTemplates": {
     "subs": {
+      "waitlist_confirmation_heading": "Nadpis potvrzení čekání",
+      "waitlist_confirmation_explanation": "Vysvětlení čekání",
+      "waitlist_offer_heading": "Nadpis nabídky místa",
+      "waitlist_offer_instructions": "Pokyny k přijetí nabídky",
+      "waitlist_offer_instructions_single": "Pokyny k přijetí nabídky pro jednu osobu",
+      "waitlist_offer_button_single": "Text tlačítka pro potvrzení jedné osoby",
+      "waitlist_offer_button_multiple": "Text tlačítka pro potvrzení vybraných osob",
+      "waitlist_manage_button_label": "Text tlačítka pro správu čekání",
       "platformLinks": "Odkazy pro otevření aplikace na různých platformách.",
       "appName": "Název aktuální aplikace",
       "email": "E-mail uživatele",

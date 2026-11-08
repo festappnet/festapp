@@ -1178,6 +1178,14 @@
   },
   "EmailTemplates": {
     "subs": {
+      "waitlist_confirmation_heading": "Nagłówek potwierdzenia listy rezerwowej",
+      "waitlist_confirmation_explanation": "Wyjaśnienie oczekiwania",
+      "waitlist_offer_heading": "Nagłówek oferty miejsca",
+      "waitlist_offer_instructions": "Instrukcje przyjęcia oferty",
+      "waitlist_offer_instructions_single": "Instrukcje przyjęcia oferty dla jednej osoby",
+      "waitlist_offer_button_single": "Tekst przycisku potwierdzenia jednej osoby",
+      "waitlist_offer_button_multiple": "Tekst przycisku potwierdzenia wybranych osób",
+      "waitlist_manage_button_label": "Tekst przycisku zarządzania oczekiwaniem",
       "participantCount": "Liczba zapisanych osób",
       "manageWaitlistUrl": "Osobisty link do zarządzania oczekiwaniem",
       "manageWaitlistButton": "Przycisk zarządzania oczekiwaniem (HTML)",

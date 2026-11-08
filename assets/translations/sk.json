@@ -1202,6 +1202,14 @@
   },
   "EmailTemplates": {
     "subs": {
+      "waitlist_confirmation_heading": "Nadpis potvrdenia čakania",
+      "waitlist_confirmation_explanation": "Vysvetlenie čakania",
+      "waitlist_offer_heading": "Nadpis ponuky miesta",
+      "waitlist_offer_instructions": "Pokyny na prijatie ponuky",
+      "waitlist_offer_instructions_single": "Pokyny na prijatie ponuky pre jednu osobu",
+      "waitlist_offer_button_single": "Text tlačidla na potvrdenie jednej osoby",
+      "waitlist_offer_button_multiple": "Text tlačidla na potvrdenie vybraných osôb",
+      "waitlist_manage_button_label": "Text tlačidla na správu čakania",
       "participantCount": "Počet prihlásených osôb",
       "manageWaitlistUrl": "Osobný odkaz na správu čakania",
       "manageWaitlistButton": "Tlačidlo na správu čakania (HTML)",

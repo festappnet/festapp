@@ -227,6 +227,21 @@ class EmailTemplateModel {
 
   static List<EmailTemplateSub> get waitlistSubs => [
     ...orderOverviewSubs,
+    for (final code in const [
+      'waitlist_confirmation_heading',
+      'waitlist_confirmation_explanation',
+      'waitlist_offer_heading',
+      'waitlist_offer_instructions',
+      'waitlist_offer_instructions_single',
+      'waitlist_offer_button_single',
+      'waitlist_offer_button_multiple',
+      'waitlist_manage_button_label',
+    ])
+      EmailTemplateSub(
+        code: code,
+        description: EmailTemplatesStrings.waitlistToneLabel(code),
+        defaultValue: '',
+      ),
     EmailTemplateSub(
       code: 'order_symbol',
       description: OrdersStrings.gridOrderSymbol,

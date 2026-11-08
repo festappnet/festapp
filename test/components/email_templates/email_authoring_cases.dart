@@ -21,6 +21,68 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('waitlist tone variables are recognized and previewed without changing stored HTML', (tester) async {
+    final examples = EmailPreviewExamples.fromJson(
+      jsonDecode(
+        File('assets/email_templates/preview_examples.json').readAsStringSync(),
+      ),
+    );
+    for (final code in ['waitlist_confirmation', 'waitlist_offer']) {
+      for (final scenario in examples.scenariosFor(code)) {
+        final tokens = code == 'waitlist_offer'
+            ? ['waitlist_offer_heading', 'waitlist_offer_instructions']
+            : [
+                'waitlist_confirmation_heading',
+                'waitlist_confirmation_explanation',
+              ];
+        final html = '<h2>{{${tokens.first}}}</h2><p>{{${tokens.last}}}</p>';
+        final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: code),
+          field: EmailTargetField.body,
+          scenario: scenario,
+        );
+        final controller = RichHtmlEditorController(
+          initialHtml: html,
+          owner: const HtmlMediaOwner.none(),
+          authoring: provider,
+        );
+        try {
+          await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+              home: Scaffold(body: RichHtmlEditor(controller: controller))));
+          await tester.pump();
+          expect(
+            controller.hasUnsupportedTokens,
+            isFalse,
+            reason: '$code/${scenario.tone}',
+          );
+          for (final token in tokens) {
+            expect(provider.entry(token), isNotNull, reason: token);
+            expect(scenario.values[token], isNotEmpty, reason: token);
+            expect(scenario.composeHtml(html), isNot(contains('{{$token}}')));
+            expect(find.text('{{$token}}', findRichText: true), findsNothing);
+          }
+          expect(find.text(provider.unsupportedLabel), findsNothing);
+          expect(
+            controller.html,
+            html,
+            reason: 'editor labels must not replace the saved substitutions',
+          );
+          controller.reset('<p>{{custom_not_supported}}</p>');
+          await tester.pump();
+          expect(
+            controller.hasUnsupportedTokens,
+            isTrue,
+            reason: 'genuinely unknown data must remain preserved',
+          );
+          expect(find.text(provider.unsupportedLabel), findsOneWidget);
+        } finally {
+          await tester.pumpWidget(const SizedBox());
+          controller.dispose();
+        }
+      }
+    }
+  });
+
   testWidgets('ticket variable example shows the delivered QR structure',
       (tester) async {
     final provider = EmailAuthoringProvider(
