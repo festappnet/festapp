@@ -562,8 +562,8 @@ export class FormPage extends Component {
 
     // Delegated to ThemeService
     applyTheme(formModel) {
-        ThemeService.applyThemeFromModel(formModel);
         this.embedBridge?.setInheritStyle(formModel.embedInheritStyle);
+        ThemeService.applyThemeFromModel(formModel);
     }
 
     renderForm(formModel, showPreview, restoredDraft = null) {

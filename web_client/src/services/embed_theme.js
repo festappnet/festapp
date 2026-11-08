@@ -18,6 +18,7 @@ export class EmbedTheme {
     }
     apply(theme) {
         if (theme !== null && (typeof theme !== 'object' || !theme ||
+            (theme.colorScheme !== undefined && !['light', 'dark'].includes(theme.colorScheme)) ||
             !Object.entries(properties).every(([key, [, property]]) =>
                 typeof theme[key] === 'string' && theme[key].length <= 512 &&
                 this.win.CSS?.supports(property, theme[key])))) return;
@@ -39,21 +40,28 @@ export class EmbedTheme {
             }
         }
         this.presentation = theme === null ? null : {
-            ...Object.fromEntries(Object.keys(properties).map(key => [key, theme[key]])), fonts
+            ...Object.fromEntries(Object.keys(properties).map(key => [key, theme[key]])),
+            colorScheme:theme.colorScheme, fonts
         };
         this.#render();
     }
     #render() {
         const root = this.win.document.documentElement;
+        const previousScheme = root.dataset.embedColorScheme;
         const theme = this.enabled ? this.presentation : null;
         if (theme === null) {
             delete root.dataset.embedTheme;
+            delete root.dataset.embedColorScheme;
             for (const [name] of Object.values(properties)) root.style.removeProperty(`--embed-${name}`);
             this.clearFonts();
+            if (previousScheme !== undefined) this.win.dispatchEvent(new this.win.Event('festapp-embed-theme-changed'));
             return;
         }
         root.dataset.embedTheme = 'host';
+        if (theme.colorScheme) root.dataset.embedColorScheme = theme.colorScheme;
+        else delete root.dataset.embedColorScheme;
         for (const [key, [name]] of Object.entries(properties)) root.style.setProperty(`--embed-${name}`, theme[key]);
+        if (previousScheme !== root.dataset.embedColorScheme) this.win.dispatchEvent(new this.win.Event('festapp-embed-theme-changed'));
         const requested = new Set();
         if (this.win.FontFace && this.win.document.fonts) {
             for (const font of theme.fonts) {

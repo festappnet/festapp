@@ -62,11 +62,14 @@ test('embed canvas follows the host scheme before body/styles regardless of save
             const match = html.match(new RegExp(`<script id="${id}">([\\s\\S]*?)<\\/script>`));
             win.eval(match[1]);
         }
-        assert.equal(win.document.documentElement.style.colorScheme, hostDark ? 'dark' : 'light');
+        assert.equal(win.document.documentElement.style.colorScheme, 'light dark');
         assert.equal(win.document.documentElement.style.backgroundColor, 'transparent');
         win.__FESTAPP_APP_READY__ = true;
+        win.document.documentElement.dataset.embedTheme = 'host';
+        win.document.documentElement.dataset.embedColorScheme = hostDark ? 'dark' : 'light';
         win.FestappThemePreference.paintTheme(!hostDark);
-        assert.equal(win.document.documentElement.style.colorScheme, hostDark ? 'dark' : 'light',
+        assert.equal(win.document.body.classList.contains('dark-mode'), hostDark, 'host mode wins over the saved application mode');
+        assert.equal(win.document.documentElement.style.colorScheme, 'light dark',
             'transparent host-themed content must not regain an opaque browser canvas');
     }
 });
@@ -96,7 +99,7 @@ test('startup policy generation is deterministic and idempotent for both shells'
 
 
 for (const shell of ['web', 'web_client']) {
-    test(`${shell} startup hides branding only for explicit embed=1`, async () => {
+    test(`${shell} startup keeps compact branding for explicit embed=1`, async () => {
         const html = await readFile(new URL(`../../../${shell}/index.html`, import.meta.url), 'utf8');
         for (const query of ['?embed=1', '?embed=true', '']) {
             const dom = new JSDOM(html, {url:`https://tickets.invalid/form/a${query}`, runScripts:'outside-only'});
@@ -108,8 +111,10 @@ for (const shell of ['web', 'web_client']) {
             const embedded = shell === 'web_client' && query === '?embed=1';
             assert.equal(window.document.documentElement.hasAttribute('data-embed-startup'), embedded);
             const brand = window.document.querySelector(shell === 'web' ? '.initial-logo' : '.startup-spinner');
-            assert.equal(window.getComputedStyle(brand).display === 'none', embedded);
+            assert.notEqual(window.getComputedStyle(brand).display, 'none');
             if (embedded) {
+                assert.equal(window.getComputedStyle(brand).width, '60px');
+                assert.equal(window.getComputedStyle(brand).maxHeight, '48px');
                 const loader = shell === 'web' ? 'loader-content' : 'web-client-startup';
                 const rule = [...window.document.styleSheets].flatMap(sheet => [...sheet.cssRules])
                     .find(rule => rule.selectorText?.endsWith(`html[data-embed-startup] #${loader}`));

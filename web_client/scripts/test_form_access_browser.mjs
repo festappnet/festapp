@@ -15,18 +15,21 @@ const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
 const config = path.join(temporary, 'browser.json');
+const darkConfig = path.join(temporary, 'browser-dark.json');
 const followConfig = path.join(temporary, 'browser-follow.json');
 await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio', colorScheme: 'light' }));
+await writeFile(darkConfig, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio', colorScheme: 'dark' }));
 await writeFile(followConfig, JSON.stringify({ provider: null, plugins: [], autoConnect: false }));
 let browserIndex = 0;
 let session = `fa-${process.pid}`;
 let browserPhase = 'setup';
 const requests = [];
 let needsLaunch = false;
+let launchConfig = config;
 async function browser(...args) {
     const launch = needsLaunch;
     needsLaunch = false;
-    const invocation = isolatedBrowserInvocation({launch, session, launchConfig:config, followConfig, sourceEnv:process.env, args});
+    const invocation = isolatedBrowserInvocation({launch, session, launchConfig, followConfig, sourceEnv:process.env, args});
     const { stdout } = await execute('agent-browser', invocation.args, {timeout:30000, env:invocation.env});
     const result = JSON.parse(stdout);
     assert.equal(result.success, true, result.error);
@@ -64,7 +67,7 @@ let server;
 let versionRequests = 0;
 try {
     const shell = (await readFile(path.join(root, 'index.html'), 'utf8'))
-        .replace('<head>', `<head><script>if (new URLSearchParams(location.search).get('scenario') === 'embed-pending') localStorage.setItem('theme', 'dark');</script>`)
+        .replace('<head>', `<head><script>if (new URLSearchParams(location.search).get('scenario') === 'embed-pending') localStorage.setItem('theme', new URLSearchParams(location.search).get('saved') || 'dark');</script>`)
         .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"')
         .replace('</head>', `<script>
             const initialScenario = new URLSearchParams(location.search).get('scenario');
@@ -87,13 +90,29 @@ try {
                 });
             }
             if (fixtureScenario === 'embed-pending') {
-                let sampledFrames=0, paintedLoader=false, mismatchedColorScheme=false;
+                let sampledFrames=0, paintedLoader=false, logoSeen=false, logoContained=true, transparentStartup=true;
+                const childCanvases = new Set();
                 function samplePendingPaint() {
                     if (window.__fixtureFormPending) {
                         sampledFrames++;
-                        mismatchedColorScheme ||= getComputedStyle(document.documentElement).colorScheme === 'dark';
+                        const probe=document.createElement('i');
+                        probe.style.color='Canvas'; probe.style.display='none';
+                        document.documentElement.append(probe);
+                        childCanvases.add(getComputedStyle(probe).color);
+                        probe.remove();
                     }
                     if (window.__FESTAPP_APP_READY__ !== true) {
+                        const startup=document.querySelector('#web-client-startup');
+                        if (startup && getComputedStyle(startup).backgroundColor !== 'rgba(0, 0, 0, 0)') transparentStartup=false;
+                        const logo=startup?.querySelector('.startup-brand');
+                        if (logo) {
+                            const r=logo.getBoundingClientRect(); let shown=r.width>0 && r.height>0;
+                            for (let node=logo; shown && node; node=node.parentElement) {
+                                const style=getComputedStyle(node);
+                                shown=style.display!=='none' && style.visibility!=='hidden' && Number(style.opacity)!==0;
+                            }
+                            if (shown) { logoSeen=true; logoContained &&= r.height<=48 && r.width<=60 && r.width<=innerWidth; }
+                        }
                         const loader=document.querySelector('#form-page-container .sp-loader');
                         if (loader) {
                             const rect=loader.getBoundingClientRect();
@@ -113,7 +132,7 @@ try {
                     if (event.data !== 'fixture-pending-query') return;
                     function replyWhenSampled() {
                         if (!window.__fixtureFormPending || sampledFrames < 2) { requestAnimationFrame(replyWhenSampled); return; }
-                        event.source.postMessage({fixtureUpdateReport:{pending:true, sampledFrames, paintedLoader, mismatchedColorScheme}}, event.origin);
+                        event.source.postMessage({fixtureUpdateReport:{pending:true, sampledFrames, paintedLoader, logoSeen, logoContained, transparentStartup, childCanvases:[...childCanvases]}}, event.origin);
                     }
                     replyWhenSampled();
                 });
@@ -202,10 +221,10 @@ try {
                     const params = new URL(req.url, 'http://localhost').searchParams;
                     const helper = params.get('helper') === 'legacy' ? '/tests/fixtures/form_access/embed-main-06671ad.js'
                         : params.get('helper') === 'pr769' ? '/tests/fixtures/form_access/embed-pr769-987574b.js' : '/embed.js';
-                    const child = `http://localhost:${server.httpServer.address().port}/form/account-access?embed=1&scenario=${params.get('scenario') || 'embed-short'}`;
+                    const child = `http://localhost:${server.httpServer.address().port}/form/account-access?embed=1&scenario=${params.get('scenario') || 'embed-short'}&saved=${params.get('saved') || 'dark'}`;
                     const fixed = params.get('fixed') === '1';
                     res.setHeader('Content-Type', 'text/html');
-                    res.end(`<!doctype html><html><body style="margin:0"><header style="height:100px">Pořadatel</header><iframe data-festapp-embed ${fixed ? 'data-festapp-height="fixed"' : ''} src="${child}" style="width:100%;${fixed ? 'height:300px;max-height:300px' : ''}" height="${fixed ? 300 : 800}" title="Přihláška"></iframe><script>window.fixtureFrameLoads=0;window.fixtureBannerObserved=false;window.addEventListener("message",e=>{if(e.data?.fixtureBannerObserved)window.fixtureBannerObserved=true});document.querySelector("iframe").addEventListener("load",()=>window.fixtureFrameLoads++);window.addEventListener("message",e=>{if(e.data?.fixtureUpdateReport)window.fixtureUpdateReport=e.data.fixtureUpdateReport})</script>${params.get('helper') === 'none' ? '' : `<script src="${helper}"></script>`}</body></html>`); return;
+                    res.end(`<!doctype html><html><body style="margin:0;background:${params.get('palette') === 'dark' ? '#202020;color:#fff' : '#f2f2f2;color:#111'}"><header style="height:100px">Pořadatel</header><iframe data-festapp-embed ${fixed ? 'data-festapp-height="fixed"' : ''} src="${child}" style="width:100%;${fixed ? 'height:300px;max-height:300px' : ''}" height="${fixed ? 300 : 800}" title="Přihláška"></iframe><script>window.fixtureFrameLoads=0;window.fixtureBannerObserved=false;window.addEventListener("message",e=>{if(e.data?.fixtureBannerObserved)window.fixtureBannerObserved=true});document.querySelector("iframe").addEventListener("load",()=>window.fixtureFrameLoads++);window.addEventListener("message",e=>{if(e.data?.fixtureUpdateReport)window.fixtureUpdateReport=e.data.fixtureUpdateReport})</script>${params.get('helper') === 'none' ? '' : `<script src="${helper}"></script>`}</body></html>`); return;
                 }
                 if (req.url === '/__browser_startup') {
                     res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Browser startup</title>'); return;
@@ -256,6 +275,7 @@ try {
                 };
                 else if (name === 'get_form_by_link') data = { code: 200, data: {
                     id: 1, link: 'account-access', title: 'Account access regression',
+                    data: {design:{embed_inherit_style:true}},
                     is_open: !scenario.endsWith('closed'), header: '<p>Registration details</p>',
                     fields: [{ id: 1, type: 'email', title: 'E-mail', is_required: true },
                         ...(scenario.startsWith('embed-') ? [{id:2, type:'birth_date', title:'Datum narození', is_required:true},
@@ -274,18 +294,38 @@ try {
     // Hold the public form response after transport completes, so the real
     // shell/Main/child can paint while form data is still pending. No order or
     // subscription is submitted. The existing offline retry case stays below.
-    await openBrowser(`${origin}/__real_embed_host?scenario=embed-pending&helper=current&fixed=0`);
-    await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-pending-query", "*")');
-    await browser('wait', '--fn', 'window.fixtureUpdateReport?.pending && window.fixtureUpdateReport?.sampledFrames >= 2');
-    const pendingPaint = (await browser('eval', 'window.fixtureUpdateReport')).result;
-    assert.equal(pendingPaint.paintedLoader, false, 'embedded form must not paint its animated pending loader');
-    assert.equal(pendingPaint.mismatchedColorScheme, false, 'light host must not get a dark opaque iframe canvas from saved theme during startup');
-    await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
-    await browser('snapshot', '-i');
-    await browser('frame', '@e1');
-    await browser('wait', 'input[type=email]');
-    await browser('close');
-    console.log(`PASS: embedded form painted no animated loader during ${pendingPaint.sampledFrames} pending frames`);
+    for (const [palette, preference] of [['light','dark'], ['dark','light'], ['light','light'], ['dark','dark']]) {
+        launchConfig = preference === 'dark' ? darkConfig : config;
+        const saved = palette === 'dark' ? 'light' : 'dark';
+        await openBrowser(`${origin}/__real_embed_host?scenario=embed-pending&helper=current&fixed=0&palette=${palette}&saved=${saved}`);
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-pending-query", "*")');
+        await browser('wait', '--fn', 'window.fixtureUpdateReport?.pending && window.fixtureUpdateReport?.sampledFrames >= 2');
+        const pendingPaint = (await browser('eval', 'window.fixtureUpdateReport')).result;
+        assert.equal(pendingPaint.paintedLoader, false, 'embedded form must not paint its animated pending loader');
+        assert.equal(pendingPaint.logoSeen, true, 'embedded startup must display its branded loader');
+        assert.equal(pendingPaint.logoContained, true, 'embedded startup logo must fit within 60 by 48 pixels');
+        assert.equal(pendingPaint.transparentStartup, true, 'embedded startup background must remain transparent');
+        const iframeCanvas = (await browser('eval', `(() => {
+            const probe=document.createElement('i'); probe.style.color='Canvas';
+            probe.style.colorScheme=getComputedStyle(document.querySelector('iframe')).colorScheme;
+            document.body.append(probe); const color=getComputedStyle(probe).color; probe.remove(); return color;
+        })()`)).result;
+        assert.deepEqual(pendingPaint.childCanvases, [iframeCanvas], 'embedded child and host iframe must use the same canvas color during startup');
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
+        await browser('snapshot', '-i');
+        await browser('frame', '@e1');
+        await browser('wait', 'input[type=email]');
+        await browser('frame', 'main');
+        await browser('eval', `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette === 'dark'}}, "*")`);
+        await browser('wait', '--fn', 'window.fixtureUpdateReport?.themeMatch === true');
+        await browser('eval', `document.body.style.backgroundColor=${JSON.stringify(palette === 'dark' ? '#f2f2f2' : '#202020')}`);
+        await browser('eval', `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette !== 'dark'}}, "*")`);
+        await browser('wait', '--fn', `window.fixtureUpdateReport?.themeMatch === true && window.fixtureUpdateReport?.dark === ${palette !== 'dark'}`);
+        await browser('close');
+        console.log(`PASS: ${palette} host, ${preference} browser, opposite saved theme, startup logo and dynamic host theme`);
+
+    }
+    launchConfig = config;
 
     // Exercise the actual updater while a matching worker's readiness response is
     // held. Only transport is simulated; typing uses trusted browser input.

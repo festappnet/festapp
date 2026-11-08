@@ -145,7 +145,11 @@ export function createHostPresentation(onStylesReady) {
             const black = [0, 0, 0, 1], white = [255, 255, 255, 1];
             foreground = contrast(primary, black) >= contrast(primary, white) ? black : white;
         }
-        return {fontFamily: style.fontFamily, text: style.color, background: cssColor(background), primary: cssColor(primary),
+        const declaredScheme = style.colorScheme || 'normal';
+        const colorScheme = declaredScheme.includes('dark') && !declaredScheme.includes('light') ? 'dark'
+            : declaredScheme.includes('light') && !declaredScheme.includes('dark') ? 'light'
+            : luminance(background) < 0.179 ? 'dark' : 'light';
+        return {fontFamily: style.fontFamily, text: style.color, background: cssColor(background), colorScheme, primary: cssColor(primary),
             buttonText: cssColor(foreground), fonts: fontFaces(style.fontFamily)};
     };
     return presentation;

@@ -25,6 +25,28 @@ function host(nativePrice = false, configure = () => {}) {
 test('explicit form URL context only', () => {
     for (const [url, expected] of [['https://t.invalid/form/a?embed=1&preview=true', true], ['https://t.invalid/form/a?embed=true', false], ['https://t.invalid/admin?embed=1', false], ['https://t.invalid/form/?embed=1', false]]) assert.equal(isEmbed(new URL(url)), expected);
 });
+test('parent matches the default iframe canvas to the host before starting the child handshake', t => {
+    const {dom,frames,sent}=host();
+    t.after(()=>dom.window.close());
+    for(const [index,frame] of frames.entries()) {
+        assert.equal(frame.style.colorScheme,'light');
+        assert.equal(sent[index][0][0].theme.colorScheme,'light');
+        assert.equal(sent[index][0][0].type,'init');
+    }
+});
+test('parent exports an explicitly declared host scheme', t => {
+    const {dom,frames}=host(false,win=>{
+        const frames=win.document.querySelectorAll('iframe');
+        for (const [index,frame] of [...frames].entries()) {
+            const wrapper=win.document.createElement('section');
+            wrapper.style.colorScheme=index===0?'light':'dark';
+            frame.replaceWith(wrapper); wrapper.append(frame);
+        }
+    });
+    t.after(()=>dom.window.close());
+    assert.equal(frames[0].style.colorScheme,'light');
+    assert.equal(frames[1].style.colorScheme,'dark');
+});
 test('parent isolates two instances, rejects invalid source/origin/payload, and is idempotent', () => {
     const { dom, frames: [a,b], sent, message } = host();
     const id = sent[0][0][0].instance;

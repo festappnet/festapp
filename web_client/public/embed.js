@@ -508,10 +508,13 @@
         const black = [0, 0, 0, 1], white = [255, 255, 255, 1];
         foreground = contrast(primary, black) >= contrast(primary, white) ? black : white;
       }
+      const declaredScheme = style.colorScheme || "normal";
+      const colorScheme = declaredScheme.includes("dark") && !declaredScheme.includes("light") ? "dark" : declaredScheme.includes("light") && !declaredScheme.includes("dark") ? "light" : luminance(background) < 0.179 ? "dark" : "light";
       return {
         fontFamily: style.fontFamily,
         text: style.color,
         background: cssColor(background),
+        colorScheme,
         primary: cssColor(primary),
         buttonText: cssColor(foreground),
         fonts: fontFaces(style.fontFamily)
@@ -660,6 +663,7 @@
     const viewportHeight = () => Math.max(limits.legacyMinHeight, Math.min(limits.viewportMax, window.innerHeight));
     const presentation = createHostPresentation(() => refreshThemes());
     const send = (frame, record, type, theme = presentation(frame)) => {
+      if (theme !== false) frame.style.colorScheme = theme?.colorScheme || "light dark";
       const viewportOffset = Math.max(0, Math.min(
         limits.heightMax,
         (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top

@@ -30,6 +30,9 @@ if (!window.__festappEmbedV1) {
     const presentation = createHostPresentation(() => refreshThemes());
     // false omits presentation on scroll; null restores the service appearance.
     const send = (frame, record, type, theme = presentation(frame)) => {
+        // The element and child must advertise compatible canvas schemes.
+        // Resolve this from the host palette, never from the visitor's OS.
+        if (theme !== false) frame.style.colorScheme = theme?.colorScheme || 'light dark';
         const viewportOffset = Math.max(0, Math.min(limits.heightMax,
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {

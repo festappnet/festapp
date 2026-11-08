@@ -44,6 +44,10 @@ export class ThemeService {
             window.addEventListener('pageshow', event => {
                 if (event.persisted) syncPreference();
             });
+            window.addEventListener('festapp-embed-theme-changed', () => {
+                if (ThemeService._lastFormModel) ThemeService.applyThemeFromModel(ThemeService._lastFormModel);
+                else ThemeService.apply();
+            });
             window.addEventListener('focus', syncPreference);
         }
 
@@ -108,7 +112,13 @@ export class ThemeService {
     }
 
     static apply() {
-        if (ThemeService._lastFormModel) {
+        const root = document.documentElement;
+        const hostScheme = root.dataset.embedTheme === 'host' ? root.dataset.embedColorScheme : null;
+        if (['light', 'dark'].includes(hostScheme)) {
+            ThemeService.isDark = hostScheme === 'dark';
+        } else if (root.hasAttribute('data-embed-startup') && !ThemeService._lastFormModel) {
+            ThemeService.isDark = !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+        } else if (ThemeService._lastFormModel) {
             const formMode = ThemeService._lastFormModel.themeMode;
             // Automatic forms inherit the shared portal choice; only an
             // automatic portal choice delegates to the device preference.

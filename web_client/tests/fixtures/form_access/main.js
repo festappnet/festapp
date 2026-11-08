@@ -24,6 +24,15 @@ RouterService.navigateToFlutterRoute = async path => { window.__adminDestination
 if (scenario?.startsWith('embed-')) {
     const readyAtFocus = window.__FESTAPP_APP_READY__ === true;
     window.addEventListener('message', async event => {
+        if (event.data?.type === 'fixture-theme-check') {
+            const deadline = performance.now() + 3000;
+            while (document.body.classList.contains('dark-mode') !== event.data.dark && performance.now() < deadline) {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+            }
+            const dark = document.body.classList.contains('dark-mode');
+            event.source.postMessage({fixtureUpdateReport:{themeMatch:dark === event.data.dark, dark}}, event.origin);
+            return;
+        }
         if (event.data === 'fixture-inspect-update') {
             event.source.postMessage({fixtureUpdateReport:{inspection:true,
                 banner:!!document.getElementById('festapp-update-banner'),

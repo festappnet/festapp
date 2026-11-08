@@ -25,14 +25,14 @@
         const document = global.document;
         if (!document) return;
         const root = document.documentElement;
-        const mode = dark ? 'dark' : 'light';
         const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && root.hasAttribute('data-embed-startup');
+        const hostScheme = root.dataset.embedTheme === 'host' ? root.dataset.embedColorScheme : null;
+        if (['light', 'dark'].includes(hostScheme)) dark = hostScheme === 'dark';
+        const mode = dark ? 'dark' : 'light';
         // A scheme mismatch makes browsers replace an iframe's transparent
         // canvas with opaque black/white. The embedded media preference comes
         // from its host; a saved standalone app preference must not override it.
-        const canvasScheme = embedded
-            ? (global.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-            : mode;
+        const canvasScheme = embedded ? 'light dark' : mode;
         const color = document.querySelector('meta[name="theme-color"]');
         if (color) color.dataset.darkColor ||= color.content;
         const background = dark ? color?.dataset.darkColor || '#232529' : color?.dataset.lightColor || '#ffffff';
@@ -63,7 +63,8 @@
         if (global.__FESTAPP_APP_READY__) return;
         let storage;
         try { storage = global.localStorage; } catch { /* optional API */ }
-        paintTheme(isDark(readMode(storage), system?.matches));
+        const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && global.document.documentElement.hasAttribute('data-embed-startup');
+        paintTheme(embedded ? !!system?.matches : isDark(readMode(storage), system?.matches));
     }
     global.applyFestappStartupTheme = applyStartup;
     applyStartup();
@@ -72,4 +73,5 @@
         if (event.key === 'theme' || event.key === null) applyStartup();
     });
     global.addEventListener('pageshow', applyStartup);
+    global.addEventListener('festapp-embed-theme-changed', applyStartup);
 })(globalThis);

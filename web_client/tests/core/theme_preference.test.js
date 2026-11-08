@@ -6,6 +6,30 @@ import {FormModel} from '../../src/components/forms/form_models.js';
 import {AppConfig} from '../../src/app_config.js';
 import {SettingsWidget} from '../../src/components/forms/widgets/settings_widget.js';
 
+test('host-inherited form mode overrides saved and device modes and restores them on exit', t=>{
+ const dom=new JSDOM('<!doctype html><body></body>',{url:'https://fixture.invalid/form/a?embed=1'});
+ const previous=Object.fromEntries(['window','document','localStorage'].map(key=>[key,globalThis[key]]));
+ Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage});
+ dom.window.matchMedia=()=>({matches:true,addEventListener(){}});
+ ThemeService._lastFormModel=null;ThemeService._mediaQueryListener=null;
+ t.after(()=>{Object.assign(globalThis,previous);ThemeService._lastFormModel=null;ThemeService._mediaQueryListener=null;dom.window.close();});
+ localStorage.setItem('theme','dark');ThemeService.init();
+ const root=document.documentElement;
+ root.dataset.embedTheme='host';root.dataset.embedColorScheme='light';
+ ThemeService.applyThemeFromModel(new FormModel({data:{design:{theme_mode:'dark'}}}));
+ assert.equal(ThemeService.isDark,false);
+ assert.equal(document.body.classList.contains('dark-mode'),false);
+ root.dataset.embedColorScheme='dark';
+ window.dispatchEvent(new window.Event('festapp-embed-theme-changed'));
+ assert.equal(ThemeService.isDark,true);
+ root.dataset.embedColorScheme='light';
+ window.dispatchEvent(new window.Event('festapp-embed-theme-changed'));
+ assert.equal(ThemeService.isDark,false);
+ assert.equal(localStorage.getItem('theme'),'dark','host mode must never overwrite the app preference');
+ delete root.dataset.embedTheme;delete root.dataset.embedColorScheme;
+ ThemeService.apply();assert.equal(ThemeService.isDark,true);
+});
+
 test('manual theme controls both page and native controls independently of the OS', t=>{
  const dom=new JSDOM('<!doctype html><body><input type="checkbox"><select><option>Theme</option></select></body>',{url:'https://fixture.invalid'});
  const previous=Object.fromEntries(['window','document','localStorage'].map(key=>[key,globalThis[key]]));
