@@ -44,6 +44,7 @@ async function openBrowser(url, ready) {
         close: () => browser('close'),
         navigate: target => { browserPhase = 'navigation'; return browser('open', target); },
         currentUrl: async () => (await browser('get', 'url')).url,
+        waitForNavigation: target => { const expected = new URL(target); return browser('wait', '--url', `${expected.origin}${expected.pathname}*`); },
         targetUrl: url,
         normalizedUrl: normalizedUrl.href,
         ready,

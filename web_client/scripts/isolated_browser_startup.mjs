@@ -9,8 +9,9 @@ function lostSetupSession(error) {
     } catch { return false; }
 }
 
-export async function openIsolatedBrowser({ open, info, close, navigate, currentUrl, targetUrl, normalizedUrl, ready }, attempts = 3) {
+export async function openIsolatedBrowser({ open, info, close, navigate, currentUrl, waitForNavigation, targetUrl, normalizedUrl, ready }, attempts = 3) {
     for (let attempt = 0; attempt < attempts; attempt++) {
+        let observation;
         try {
             try {
                 await open();
@@ -20,6 +21,7 @@ export async function openIsolatedBrowser({ open, info, close, navigate, current
                 if (!(error.killed === true && error.signal === 'SIGTERM')) throw error;
             }
             const session = await info();
+            observation = {stage:'launch', pageCount:session.runtime?.pageCount ?? null, browserLaunched:session.runtime?.browserLaunched ?? null};
             if (session.runtime != null && session.runtime.pageCount !== 0) {
                 assert.equal(session.runtime.pageCount, 1, 'isolated local Chromium required');
                 if (!navigate) {
@@ -27,8 +29,20 @@ export async function openIsolatedBrowser({ open, info, close, navigate, current
                     return;
                 }
                 await navigate(targetUrl);
-                const after = await info();
-                const actualUrl = await currentUrl();
+                let after = await info();
+                let actualUrl = after.runtime?.pageCount === 1 ? await currentUrl() : null;
+                observation = {stage:'navigation', pageCount:after.runtime?.pageCount ?? null, browserLaunched:after.runtime?.browserLaunched ?? null, urlState:actualUrl === 'about:blank' ? 'blank' : actualUrl ? 'nonblank' : 'missing'};
+                // Chrome may report a live blank tab immediately after a
+                // navigation command while the destination is still committing.
+                // Wait for that already-started navigation only; never retry
+                // an interaction or accept an unexpected final URL.
+                if (after.runtime?.pageCount === 1 && actualUrl === 'about:blank' && waitForNavigation) {
+                    await waitForNavigation(targetUrl);
+                    after = await info();
+                    actualUrl = after.runtime?.pageCount === 1 ? await currentUrl() : null;
+                    observation = {stage:'navigation-wait', pageCount:after.runtime?.pageCount ?? null, browserLaunched:after.runtime?.browserLaunched ?? null, urlState:actualUrl === 'about:blank' ? 'blank' : actualUrl ? 'nonblank' : 'missing'};
+                }
+
                 if (after.runtime?.pageCount === 1 && (actualUrl === targetUrl || (normalizedUrl && actualUrl === normalizedUrl))) {
                     // Optional read-only initial readiness, before any page actions.
                     await ready?.();
@@ -39,11 +53,15 @@ export async function openIsolatedBrowser({ open, info, close, navigate, current
                     assert.fail(`Unexpected browser navigation: expected ${targetUrl}, got ${actualUrl}`);
                 }
             }
+            // Keep the actual pre-close evidence; querying the closed session
+            // later can launch a fresh blank browser and obscure the failure.
+            console.error('Isolated browser setup lost:', JSON.stringify({attempt:attempt + 1, ...observation}));
             await close();
         } catch (error) {
             // The CLI tears down its own browser on this exact setup failure.
             // Real UI assertion failures and errors after startup still propagate.
             if (!lostSetupSession(error)) throw error;
+            console.error('Isolated browser setup lost:', JSON.stringify({attempt:attempt + 1, ...observation, reason:'cdp-network-setup'}));
             await close();
         }
     }

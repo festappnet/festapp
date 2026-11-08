@@ -141,3 +141,35 @@ test('a different query remains an unexpected navigation',async()=>{
  browser.navigate=async()=>{};browser.currentUrl=async()=>browser.normalizedUrl+'?other=1';
  await assert.rejects(openIsolatedBrowser(browser),/Unexpected browser navigation/);assert.equal(browser.calls.includes('close'),false);
 });
+
+
+test('a live blank tab waits for its in-flight navigation before exact URL checks', async () => {
+ const browser=fixture(Array.from({length:3},()=>({runtime:{pageCount:1}})));
+ browser.targetUrl='http://127.0.0.1/test?scenario=guest';
+ browser.normalizedUrl='http://127.0.0.1/test';
+ const urls=['about:blank',browser.normalizedUrl];
+ browser.navigate=async()=>{browser.calls.push('navigate')};
+ browser.currentUrl=async()=>{browser.calls.push('url');return urls.shift()};
+ browser.waitForNavigation=async()=>{browser.calls.push('wait')};
+ await openIsolatedBrowser(browser);
+ assert.deepEqual(browser.calls,['open','info','navigate','info','url','wait','info','url']);
+});
+
+test('a delayed navigation still rejects an unexpected final URL', async () => {
+ const browser=fixture(Array.from({length:3},()=>({runtime:{pageCount:1}})));
+ browser.targetUrl='http://127.0.0.1/test';
+ const urls=['about:blank','http://127.0.0.1/other'];
+ browser.navigate=async()=>{}; browser.currentUrl=async()=>urls.shift();browser.waitForNavigation=async()=>{};
+ await assert.rejects(openIsolatedBrowser(browser),/Unexpected browser navigation/);
+ assert.equal(browser.calls.includes('close'),false);
+});
+
+
+test('a vanished page is not queried in a way that can relaunch a blank browser', async () => {
+ const browser=fixture([{runtime:{pageCount:1}},{runtime:{pageCount:0}},
+                        {runtime:{pageCount:1}},{runtime:{pageCount:1}}]);
+ browser.targetUrl='http://127.0.0.1/test'; browser.navigate=async()=>{};
+ let reads=0; browser.currentUrl=async()=>{reads++;return browser.targetUrl};
+ await openIsolatedBrowser(browser);
+ assert.equal(reads,1); assert.equal(browser.calls.filter(call=>call==='close').length,1);
+});
