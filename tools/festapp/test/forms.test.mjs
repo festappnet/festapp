@@ -2,8 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Operations} from '../src/operations/catalog.mjs';
 import {invokeFormOperation} from '../src/operations/forms.mjs';
-function fixture(data){let calls=0;const owner={root:'/tmp/form-boundary',profile:{name:'fixture',organizationId:3,tenantId:'fixture'},allowedOperations:['forms.inspect','forms.list','forms.save','forms.paymentOptions'],delegatedContext:async()=>({organizationId:3,unitId:8}),authorized:fn=>fn({rpc:async()=>{calls++;return{data,error:null};}},{userId:'00000000-0000-4000-8000-000000000001'})};return{ops:new Operations(owner),calls:()=>calls};}
+function fixture(data,error=null){let calls=0;const owner={root:'/tmp/form-boundary',profile:{name:'fixture',organizationId:3,tenantId:'fixture'},allowedOperations:['forms.inspect','forms.list','forms.save','forms.paymentOptions'],delegatedContext:async()=>({organizationId:3,unitId:8}),authorized:fn=>fn({rpc:async()=>{calls++;return{data,error};}},{userId:'00000000-0000-4000-8000-000000000001'})};return{ops:new Operations(owner),calls:()=>calls};}
 const state={form:{id:42,occasion:7,aggregate_version:0},fields:[],products:[],productTypes:[],productVersions:{},productTypeVersions:{}};
+test('form save explains missing account permission without exposing upstream details',async()=>{
+ const args={occasionId:7,commandId:'00000000-0000-4000-8000-000000000099',form:{id:42,expected_aggregate_version:0,expected_product_versions:{},expected_product_type_versions:{}}};
+ for(const message of ['form operation denied','form editor required','foreign form','unrecognized private server text']){
+  const f=fixture(null,{code:'42501',message,details:'private-upstream-detail'});
+  const result=await f.ops.invoke('forms.save',args);
+  assert.equal(result.error.code,'FORBIDDEN');
+  assert.match(result.error.message,/account.*form editor/i);
+  assert.match(result.error.message,/organizer.*verify your role/i);
+  assert.match(result.error.message,/OAuth.*does not/i);
+  assert.equal(result.error.retryable,false);assert.equal(f.calls(),1);
+  assert(!JSON.stringify(result).includes('private-upstream-detail'));
+ }
+});
 test('form projection omits internal fields while catalog output rejects unexpected keys',async()=>{
  for(const name of ['key','link']){
   const f=fixture({occasionId:7,authoring:{...state,form:{...state.form,[name]:'private-public-capability'}}});

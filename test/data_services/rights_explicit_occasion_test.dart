@@ -43,7 +43,39 @@ void main() {
   var bankRpcDispatches = 0;
   var unitUserUpdates = 0;
   var contextFailures = 0;
+  var formWriteAllowed = false;
   Completer<void>? contextGate;
+  const actor = '00000000-0000-4000-8000-000000000001';
+  Future<void> signInFixture() async {
+    final payload = base64Url.encode(
+      utf8.encode(
+        jsonEncode({
+          'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
+          'sub': actor,
+        }),
+      ),
+    );
+    await Supabase.instance.client.auth.recoverSession(
+      jsonEncode({
+        'access_token':
+            '${base64Url.encode(utf8.encode('{}'))}.$payload.signature',
+        'refresh_token': 'fixture-refresh',
+        'token_type': 'bearer',
+        'expires_in': 3600,
+        'user': {
+          'id': actor,
+          'aud': 'authenticated',
+          'role': 'authenticated',
+          'created_at': '2026-01-01T00:00:00Z',
+        },
+      }),
+    );
+    addTearDown(
+      () =>
+          Supabase.instance.client.auth.signOut(scope: SignOutScope.local),
+    );
+  }
+
   setUpAll(() async {
     PackageInfo.setMockInitialValues(
       appName: 'test',
@@ -108,6 +140,7 @@ void main() {
             if (context['unit_id'] != null) 'unit': {'id': context['unit_id']},
             'occasion_user': {'is_editor_view': true},
             'capabilities': {
+              'forms.write': formWriteAllowed,
               'navigation.administration': context['link'] != 'access-revoked',
               if (context['link'] == 'access-recovery')
                 'forms.catalog.read': true,
@@ -134,6 +167,7 @@ void main() {
     bankRpcDispatches = 0;
     unitUserUpdates = 0;
     contextFailures = 0;
+    formWriteAllowed = false;
     contextGate = null;
     final state = RightsContextFixture();
     addTearDown(state.dispose);
@@ -175,6 +209,51 @@ void main() {
       expect(contexts.single['link'], '2025we');
       expect(RightsService.currentLink, '2025we');
       expect(RightsService.canSeeAdministration(), isTrue);
+    },
+  );
+
+  test(
+    'revisiting the same occasion reloads promoted and revoked rights',
+    () async {
+      await signInFixture();
+      const access = RightsAdministrationAccess();
+      for (final allowed in [false, true, false]) {
+        formWriteAllowed = allowed;
+        await access.load('changed-unit-role', reservations: false);
+        expect(RightsService.hasCapability('forms.write'), allowed);
+      }
+      expect(contexts.length, 3);
+      expect(
+        contexts.every((data) => data['link'] == 'changed-unit-role'),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'explicit occasion revisit refreshes rights before publishing controls',
+    () async {
+      await RightsService.updateAppData(
+        link: 'same-occasion',
+        refreshOffline: false,
+      );
+      formWriteAllowed = true;
+      await RightsService.updateAppData(
+        link: 'same-occasion',
+        refreshOffline: false,
+      );
+      expect(RightsService.hasCapability('forms.write'), isTrue);
+      contextGate = Completer<void>();
+      formWriteAllowed = false;
+      final refresh = RightsService.updateAppData(
+        link: 'same-occasion',
+        refreshOffline: false,
+      );
+      expect(RightsService.hasCapability('forms.write'), isFalse);
+      contextGate!.complete();
+      await refresh;
+      expect(RightsService.hasCapability('forms.write'), isFalse);
+      expect(contexts.length, 3);
     },
   );
 
@@ -577,34 +656,7 @@ void main() {
     test(
       'administration retry reloads invalidated capabilities, revoked=$revoked',
       () async {
-        const actor = '00000000-0000-4000-8000-000000000001';
-        final payload = base64Url.encode(
-          utf8.encode(
-            jsonEncode({
-              'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
-              'sub': actor,
-            }),
-          ),
-        );
-        await Supabase.instance.client.auth.recoverSession(
-          jsonEncode({
-            'access_token':
-                '${base64Url.encode(utf8.encode('{}'))}.$payload.signature',
-            'refresh_token': 'fixture-refresh',
-            'token_type': 'bearer',
-            'expires_in': 3600,
-            'user': {
-              'id': actor,
-              'aud': 'authenticated',
-              'role': 'authenticated',
-              'created_at': '2026-01-01T00:00:00Z',
-            },
-          }),
-        );
-        addTearDown(
-          () =>
-              Supabase.instance.client.auth.signOut(scope: SignOutScope.local),
-        );
+        await signInFixture();
         final link = revoked ? 'access-revoked' : 'access-recovery';
         await RightsService.updateAppData(
           link: link,

@@ -108,6 +108,17 @@ for(const file of ['forms/create_form_test.sql','forms/delete_form_test.sql','es
  test('existing form regression: '+file,options,async t=>{const{db}=await setup(t);if(file==='eshop_forms/form_capacity_test.sql')await db.query('SET LOCAL ROLE postgres');await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/'+file,import.meta.url),'utf8'));});
 }
 
+test('MCP form save explains revoked editor rights and leaves the saved form unchanged',options,async t=>{
+ const{db,f}=await setup(t);const made=await create(db,f);const original=(await db.query('select title from forms where id=$1',[made.formId])).rows[0].title;
+ await db.query('update occasion_users set is_editor=false,is_editor_view=true,is_editor_order=false,is_editor_order_view=false,is_manager=false where occasion=$1',[f.occasion]);
+ await db.query('update unit_users set is_editor=false,is_manager=false,is_editor_view=true where unit=$1',[f.unit]);
+ await db.query('SET LOCAL ROLE authenticated');
+ const result=await executor(db,f).ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(made.authoring,{title:'Unauthorized change'})});
+ assert.equal(result.error.code,'FORBIDDEN',JSON.stringify(result));
+ assert.match(result.error.message,/organizer.*verify your role/i);assert.equal(result.error.retryable,false);
+ assert.equal((await db.query('select title from forms where id=$1',[made.formId])).rows[0].title,original);
+});
+
 test('form save uses the same typed author permission as create and the domain owner, and revocation denies replay',options,async t=>{
  const{db,f}=await setup(t);const made=await create(db,f);
  await db.query('update occasion_users set is_editor=false,is_editor_view=false,is_editor_order=false,is_editor_order_view=false,is_manager=false where occasion=$1',[f.occasion]);await db.query('update unit_users set is_editor=true,is_manager=false,is_editor_view=false where unit=$1',[f.unit]);

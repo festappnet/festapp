@@ -69,7 +69,7 @@ export class DelegatedOwner {
         if (['occasions.create','occasions.copy','occasions.setup.finalize'].includes(id)) {
             check(access.units.some(u => u.unitId === (id==='occasions.copy'?args.targetUnitId:args.unitId) && u.canCreateOccasions), 'FORBIDDEN');
         } else if (id.startsWith('units.settings.')) {
-            check(access.units.some(u => u.unitId === args.unitId), 'FORBIDDEN');
+            check(access.units.some(u => u.unitId === args.unitId), 'ORGANIZER_CONSENT_REQUIRED');
         } else if (id.startsWith('email_templates.') && args.entityType === 'unit') {
             check(access.units.some(u => u.unitId === args.entityId), 'FORBIDDEN');
         } else if (!access.units.length) {
@@ -94,7 +94,7 @@ export class DelegatedOwner {
     }
     async delegatedUnitContext(client, unitId) {
         const selection = accessSelection(this.current().access);
-        check(selection.units.some(u => u.unitId === unitId), 'FORBIDDEN');
+        check(selection.units.some(u => u.unitId === unitId), 'ORGANIZER_CONSENT_REQUIRED');
         return { organizationId: this.config.profile.organizationId, unitId };
     }
     async listAccess(client) {

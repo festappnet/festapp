@@ -867,6 +867,13 @@
       "sources": [
         "test/data_services/form_editor_rpc_test.dart"
       ]
+    },
+    "test/components/unit/unit_settings_save_test.dart": {
+      "kind": "environment",
+      "reason": "Actual organizer settings screen, root Supabase command transport and current rights require an isolated root client lifecycle.",
+      "sources": [
+        "test/components/unit/unit_settings_save_test.dart"
+      ]
     }
   }
 }
