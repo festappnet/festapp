@@ -173,3 +173,24 @@ test('a vanished page is not queried in a way that can relaunch a blank browser'
  await openIsolatedBrowser(browser);
  assert.equal(reads,1); assert.equal(browser.calls.filter(call=>call==='close').length,1);
 });
+
+
+test('exact CLI CDP loss during viewport and first frame check retries before interactions', async () => {
+ const browser=fixture(Array.from({length:4},()=>({runtime:{pageCount:1}})));
+ browser.targetUrl='http://127.0.0.1/host';
+ browser.navigate=async()=>{browser.calls.push('navigate')};
+ browser.currentUrl=async()=>browser.targetUrl;
+ let waits=0;
+ browser.ready=async()=>{
+  browser.calls.push('viewport'); browser.calls.push('frame-check');
+  if (++waits===1) throw Object.assign(new Error('CLI failed'),{
+   stdout:'{"error":"Failed to install browser network controls: CDP error (Fetch.enable): Session with given id not found.","success":false}\n'
+  });
+ };
+ await openIsolatedBrowser(browser);
+ browser.calls.push('interaction');
+ assert.equal(waits,2);
+ assert.equal(browser.calls.filter(c=>c==='close').length,1);
+ assert.deepEqual(browser.calls.filter(c=>['viewport','frame-check','interaction'].includes(c)),
+  ['viewport','frame-check','viewport','frame-check','interaction']);
+});

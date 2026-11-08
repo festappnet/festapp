@@ -193,9 +193,13 @@ try {
         ['embed-long', 'legacy', 1, 390],
     ]) {
         const before = versionRequests;
-        await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=${helper}&fixed=${fixed}`);
-        await browser('set', 'viewport', String(width), '844');
-        await browser('wait', '--fn', fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
+        await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=${helper}&fixed=${fixed}`, async () => {
+            // Viewport setup and the first read-only frame check are still
+            // pre-interaction startup. A detached CDP setup session here can
+            // use the launcher's bounded fresh-session recovery.
+            await browser('set', 'viewport', String(width), '844');
+            await browser('wait', '--fn', fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
+        });
         await browser('snapshot', '-i');
         await browser('frame', '@e1');
         await browser('wait', '.flatpickr-input + input');
