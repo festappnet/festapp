@@ -21,7 +21,7 @@ installRuntimeState(window);
 ${entry === 'web_client/index.html' ? "if (pageContext(window.location) === 'public-embed') document.documentElement.dataset.embedStartup = 'true';" : ''}
 })();
 </script>`;
-        updated = updated.replace(script, `${script}\n${bootstrap}`);
+        updated = updated.replace(script, `${bootstrap}\n${script}`);
         if (updated !== html) {
             if (check) throw new Error(`Startup bootstrap differs from its sources: ${entry}`);
             fs.writeFileSync(file, updated);

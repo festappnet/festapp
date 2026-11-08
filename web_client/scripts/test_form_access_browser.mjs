@@ -16,7 +16,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
 const config = path.join(temporary, 'browser.json');
 const followConfig = path.join(temporary, 'browser-follow.json');
-await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio' }));
+await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio', colorScheme: 'light' }));
 await writeFile(followConfig, JSON.stringify({ provider: null, plugins: [], autoConnect: false }));
 let browserIndex = 0;
 let session = `fa-${process.pid}`;
@@ -64,6 +64,7 @@ let server;
 let versionRequests = 0;
 try {
     const shell = (await readFile(path.join(root, 'index.html'), 'utf8'))
+        .replace('<head>', `<head><script>if (new URLSearchParams(location.search).get('scenario') === 'embed-pending') localStorage.setItem('theme', 'dark');</script>`)
         .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"')
         .replace('</head>', `<script>
             const initialScenario = new URLSearchParams(location.search).get('scenario');
@@ -86,9 +87,12 @@ try {
                 });
             }
             if (fixtureScenario === 'embed-pending') {
-                let sampledFrames=0, paintedLoader=false;
+                let sampledFrames=0, paintedLoader=false, mismatchedColorScheme=false;
                 function samplePendingPaint() {
-                    if (window.__fixtureFormPending) sampledFrames++;
+                    if (window.__fixtureFormPending) {
+                        sampledFrames++;
+                        mismatchedColorScheme ||= getComputedStyle(document.documentElement).colorScheme === 'dark';
+                    }
                     if (window.__FESTAPP_APP_READY__ !== true) {
                         const loader=document.querySelector('#form-page-container .sp-loader');
                         if (loader) {
@@ -109,7 +113,7 @@ try {
                     if (event.data !== 'fixture-pending-query') return;
                     function replyWhenSampled() {
                         if (!window.__fixtureFormPending || sampledFrames < 2) { requestAnimationFrame(replyWhenSampled); return; }
-                        event.source.postMessage({fixtureUpdateReport:{pending:true, sampledFrames, paintedLoader}}, event.origin);
+                        event.source.postMessage({fixtureUpdateReport:{pending:true, sampledFrames, paintedLoader, mismatchedColorScheme}}, event.origin);
                     }
                     replyWhenSampled();
                 });
@@ -275,6 +279,7 @@ try {
     await browser('wait', '--fn', 'window.fixtureUpdateReport?.pending && window.fixtureUpdateReport?.sampledFrames >= 2');
     const pendingPaint = (await browser('eval', 'window.fixtureUpdateReport')).result;
     assert.equal(pendingPaint.paintedLoader, false, 'embedded form must not paint its animated pending loader');
+    assert.equal(pendingPaint.mismatchedColorScheme, false, 'light host must not get a dark opaque iframe canvas from saved theme during startup');
     await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
     await browser('snapshot', '-i');
     await browser('frame', '@e1');

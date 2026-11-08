@@ -40,7 +40,7 @@ if (scenario?.startsWith('embed-')) {
             return;
         }
         if (event.data === 'fixture-check-validation') {
-            const shown = [...document.querySelectorAll('.form-field-error')]
+            const isShown = () => [...document.querySelectorAll('.form-field-error')]
                 .some(el => {
                     const rect = el.getBoundingClientRect();
                     if (!el.textContent.trim() || rect.width <= 0 || rect.height <= 0) return false;
@@ -50,7 +50,11 @@ if (scenario?.startsWith('embed-')) {
                     }
                     return true;
                 });
-            event.source.postMessage({fixtureUpdateReport:{validationShown:shown}}, event.origin);
+            const deadline = performance.now() + 2000;
+            while (!isShown() && performance.now() < deadline) {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+            }
+            event.source.postMessage({fixtureUpdateReport:{validationShown:isShown()}}, event.origin);
             return;
         }
         if (event.data !== 'fixture-check-update') return;

@@ -47,6 +47,30 @@ for (const shell of ['web', 'web_client']) {
     }
 }
 
+test('embed canvas follows the host scheme before body/styles regardless of saved app theme', async t => {
+    const html = await readFile(new URL('../../../web_client/index.html', import.meta.url), 'utf8');
+    assert.ok(html.indexOf('id="festapp-runtime-startup"') < html.indexOf('id="festapp-startup-theme"'),
+        'classify the embed before painting the startup theme');
+    for (const hostDark of [false, true]) {
+        const dom = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#232529" data-light-color="#ebf1f6"><meta name="color-scheme" content="light dark"></head></html>',
+            {url:'https://tickets.invalid/form/a?embed=1', runScripts:'outside-only'});
+        t.after(() => dom.window.close());
+        const win = dom.window;
+        win.localStorage.setItem('theme', hostDark ? 'light' : 'dark');
+        win.matchMedia = () => ({matches:hostDark, addEventListener(){}});
+        for (const id of ['festapp-runtime-startup', 'festapp-startup-theme']) {
+            const match = html.match(new RegExp(`<script id="${id}">([\\s\\S]*?)<\\/script>`));
+            win.eval(match[1]);
+        }
+        assert.equal(win.document.documentElement.style.colorScheme, hostDark ? 'dark' : 'light');
+        assert.equal(win.document.documentElement.style.backgroundColor, 'transparent');
+        win.__FESTAPP_APP_READY__ = true;
+        win.FestappThemePreference.paintTheme(!hostDark);
+        assert.equal(win.document.documentElement.style.colorScheme, hostDark ? 'dark' : 'light',
+            'transparent host-themed content must not regain an opaque browser canvas');
+    }
+});
+
 // Configuration embeds exactly one copy before first-paint metadata consumers.
 test('startup policy generation is deterministic and idempotent for both shells', async t => {
     const root = await mkdtemp(join(tmpdir(), 'festapp-startup-policy-'));

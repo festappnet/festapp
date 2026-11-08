@@ -26,17 +26,24 @@
         if (!document) return;
         const root = document.documentElement;
         const mode = dark ? 'dark' : 'light';
+        const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && root.hasAttribute('data-embed-startup');
+        // A scheme mismatch makes browsers replace an iframe's transparent
+        // canvas with opaque black/white. The embedded media preference comes
+        // from its host; a saved standalone app preference must not override it.
+        const canvasScheme = embedded
+            ? (global.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : mode;
         const color = document.querySelector('meta[name="theme-color"]');
         if (color) color.dataset.darkColor ||= color.content;
         const background = dark ? color?.dataset.darkColor || '#232529' : color?.dataset.lightColor || '#ffffff';
         root.dataset.startupTheme = mode;
-        root.style.colorScheme = mode;
-        root.style.backgroundColor = background;
+        root.style.colorScheme = canvasScheme;
+        root.style.backgroundColor = embedded && !global.__FESTAPP_APP_READY__ ? 'transparent' : background;
         root.style.setProperty('--festapp-startup-background', background);
         root.style.setProperty('--festapp-startup-foreground', dark ? '#bdbdbd' : '#000000');
         if (color) color.content = background;
         const scheme = document.querySelector('meta[name="color-scheme"]');
-        if (scheme) scheme.content = mode;
+        if (scheme) scheme.content = canvasScheme;
         if (document.body) {
             document.body.style.colorScheme = mode;
             document.body.classList.toggle('dark-mode', dark);
