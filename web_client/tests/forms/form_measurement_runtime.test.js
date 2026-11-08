@@ -13,6 +13,20 @@ const runtime='https://festival-measurement.pages.dev',parent='https://tickets.e
 const policy={...base,runtime_origin:runtime};const manifest=measurementManifest(policy,'summer');
 const config={organization:1,unit:2,form_id:3,form_link:'summer',runtime_origin:runtime,parent_origin:parent,profile:'gtm-v1',ancestor_origins:[parent],collector_origins:['https://www.google-analytics.com'],policy,gtm_container:'GTM-W9WRHWT9',scripts:'</script><script>window.test=1</script>'};
 const request=new Request(runtime+'/runtime?form=summer&parent='+encodeURIComponent(parent)),env={ORGANIZATION_ID:1,UNIT_ID:2};
+test('Worker fetch uses edge-supported redirects and never forwards credentials to a redirect target',async t=>{
+ const backendEnv={...env,FESTAPP_API_URL:'https://api.festapp.net',SUPABASE_SERVICE_ROLE_KEY:'fixture-server-credential'};
+ const upstream=t.mock.method(globalThis,'fetch',async(url,options)=>{
+  assert.equal(url,'https://api.festapp.net/rest/v1/rpc/get_form_measurement_runtime_config');
+  assert.equal(options.redirect,'manual','Cloudflare Workers rejects redirect:error before sending the request');
+  assert.equal(options.headers.authorization,'Bearer fixture-server-credential');
+  return Response.json(config);
+ });
+ assert.equal((await serveMeasurement(request,backendEnv)).status,200);
+ upstream.mock.mockImplementation(async()=>new Response(null,{status:302,headers:{location:'https://other.example/private'}}));
+ const redirected=await serveMeasurement(request,backendEnv);
+ assert.equal(redirected.status,404);assert.equal(await redirected.text(),'Measurement unavailable');
+ assert.equal(upstream.mock.callCount(),2,'a redirect never causes a second credential-bearing request');
+});
 test('Worker binds actual SQL manifest, escapes scoped config, preserves CSP and rejects malformed responses',async()=>{
  let args;const response=await serveMeasurement(request,env,async value=>{args=value;return config});
  assert.equal(response.status,200);assert.deepEqual(args,{p_form_link:'summer',p_organization:1,p_unit:2,p_runtime_origin:runtime,p_parent_origin:parent});

@@ -12,7 +12,7 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
     if (env.FESTAPP_API_URL !== 'https://api.festapp.net' || !env.SUPABASE_SERVICE_ROLE_KEY) throw Error('backend unavailable');
     const response = await fetch(env.FESTAPP_API_URL+'/rest/v1/rpc/get_form_measurement_runtime_config',{
         method:'POST',headers:{'content-type':'application/json',apikey:env.SUPABASE_SERVICE_ROLE_KEY,
-            authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY},body:JSON.stringify(args),signal:AbortSignal.timeout(8000),redirect:'error'});
+            authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY},body:JSON.stringify(args),signal:AbortSignal.timeout(8000),redirect:'manual'});
     if (!response.ok) throw Error('configuration unavailable');
     return response.json();
 }) {

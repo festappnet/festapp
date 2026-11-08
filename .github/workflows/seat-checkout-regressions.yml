@@ -109,9 +109,8 @@ jobs:
         env:
           FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL: ${{ env.DATABASE_URL }}
         run: python3 automation/ci/run.py step seat-authorization
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: '2.9.0'
+      - name: Install pinned Deno
+        run: bash automation/ci/deno.sh
       - name: Google broker admission against real SQL
         env:
           GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
@@ -132,9 +131,8 @@ jobs:
       FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
       - uses: actions/checkout@v7
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: '2.9.0'
+      - name: Install pinned Deno
+        run: bash automation/ci/deno.sh
       - name: Ticket preview colors and first-delivery intent
         run: python3 automation/ci/run.py step ticket-edge
       - id: sdk
