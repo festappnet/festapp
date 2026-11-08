@@ -48,6 +48,9 @@ window.addEventListener('message', event => {
         // keeps the saved choice when a container template sets its own default.
         gtag('consent','default',consentState(consent));
         gtag('consent','update',consentState(consent));
+        // This profile runs on a separate site inside the public form. Google's
+        // default SameSite cookie setting prevents collection in that context.
+        gtag('set',{cookie_flags:'SameSite=None;Secure'});
         dataLayer.push(consentContext());
         if (config.gtm_container) {
             dataLayer.push({'gtm.start':Date.now(),event:'gtm.js'});

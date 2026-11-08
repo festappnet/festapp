@@ -27,7 +27,9 @@ async function browser(...args) {
     assert.equal(result.success, true, result.error);
     return result.data;
 }
-async function openBrowser(url) {
+async function openBrowser(url, ready) {
+    // The fixture consumes this selector before the real router strips it.
+    const normalizedUrl=new URL(url);normalizedUrl.searchParams.delete('scenario');
     await openIsolatedBrowser({
         open: async () => {
             session = `fa-${process.pid}-${++browserIndex}`;
@@ -42,6 +44,8 @@ async function openBrowser(url) {
         navigate: target => { browserPhase = 'navigation'; return browser('open', target); },
         currentUrl: async () => (await browser('get', 'url')).url,
         targetUrl: url,
+        normalizedUrl: normalizedUrl.href,
+        ready,
     });
     browserPhase = 'page assertions';
 }
@@ -208,9 +212,8 @@ try {
         }
     }
     // Account login belongs to the catalogue; public forms stay unbranded.
-    await openBrowser(`${origin}/?scenario=guest-login`);
+    await openBrowser(`${origin}/?scenario=guest-login`,()=>browser('wait','--fn',visible('#universal-header')));
     await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
-    await browser('wait', '--fn', visible('#universal-header'));
     await browser('click', '.btn-sign-in');
     await browser('wait', '--fn', visible('#google-start'));
     await browser('click', '#google-start');

@@ -48,7 +48,8 @@ and Winter Edition mobile web gallery. English translations are local only.
   checkout. Public sync asset integrity and live event content remain intact.
 - Local app clock selects June 18; simulator status-bar time is normalized for
   presentation. Artist photos, names, times and venues come from public data.
-- The two ticketing screens retain their original source/fixture provenance.
+- The order-administration screen retains its original fixture provenance.
+  The Lucerna seating capture uses the existing reference template below.
 - Final screenshot details and native capture commands are recorded beside the
   images in `docs/images/readme/README.md`.
 
@@ -66,3 +67,35 @@ and Winter Edition mobile web gallery. English translations are local only.
 - Fetched upstream main at `db00d5c7b`. Its intervening measurement-protocol
   changes do not touch the captured native UI, images or README. Merged
   that main revision before updating PR #755; no capture checks were invalidated.
+
+### Existing Lucerna gallery selection
+
+The organizer screenshot uses the existing approved `reference-lucerna` template:
+ground-floor seating, boxes, two balconies, a stage and a large dance floor.
+All 1,066 seats use the original geometry and materials. English labels are
+rendered through the canonical text engine in a local fixture, with one selected
+seat at CZK 450. Capture source is `cd9dbe25b`; the PNG is 1440 x 900.
+
+### Two ready-made layouts and product copy
+
+The ticketing gallery shows the complete Lucerna hall and the existing approved
+`studio-arena` template, with 96 seats in four curved sectors around a central
+stage. Both PNGs are 1440 x 900. The README describes the app's features and
+omits capture, simulator and translation commentary. Source and capture facts
+remain in the media provenance document.
+
+### Arena chair orientation correction
+
+Corrected all 96 arena chairs in canonical template source `c1d4a28` so they
+face the central stage. The rendered-backrest regression failed before the
+change and passed afterward; source analysis and the full Flutter test suite
+passed. Replaced the arena screenshot with a fresh real-picker capture.
+Seat positions and the Lucerna screenshot are unchanged. Festapp vendor
+artifacts and production layouts are outside this documentation update.
+
+### Ticket designer replaces the second venue layout
+
+Keep the Lucerna overview for seat selection and replace Arena seating with
+the ticket designer. The gallery now covers distinct parts of the workflow:
+reserved seating, branded QR tickets, and order/payment administration. The
+README copy describes artwork, event details, seat information and QR admission.

@@ -19,51 +19,9 @@ portal.
 
 ![Festapp powers international and Czech ticketing services, and branded event apps such as Festival Slunovrat](docs/images/readme/festapp-platform.svg)
 
-The products share the same application and event backend. Each organization
-configures its branding and features; a festival app and a ticketing portal are
-different experiences built on Festapp.
-
-## The event app
-
-Festapp also gives attendees schedules, venue maps, news, workshop sign-ups
-and a personal program on Android, iOS and the web. Organizers choose which
-features each event needs, including information pages, songbooks and group games.
-
-### Slunovrat 2026: the summer festival
-
-A real festival app powered by Festapp: browse the program, find venues around
-Opava and open artist details.
-
-<table>
-  <tr>
-    <th align="center">Festival program</th>
-    <th align="center">Venue map</th>
-    <th align="center">Artist details</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/readme/slunovrat-ios-program.png" width="220" alt="Native iOS Slunovrat summer festival program in an iPhone simulator, with local English translation" /></td>
-    <td align="center"><img src="docs/images/readme/slunovrat-ios-map.png" width="220" alt="Native iOS Slunovrat summer festival venue map of Opava in an iPhone simulator" /></td>
-    <td align="center"><img src="docs/images/readme/slunovrat-ios-detail.png" width="220" alt="Native iOS Slunovrat summer artist detail in an iPhone simulator, with local English translation" /></td>
-  </tr>
-</table>
-
-Festival Slunovrat's summer edition, **June 18-21, 2026**, captured directly
-from the native iOS app running in an **iPhone simulator**, in light mode.
-Public event text was translated into English only in the local capture build;
-artist and venue names retain their original spelling. The live event is unchanged.
-[Capture details](docs/images/readme/README.md).
-
-Previously synchronized data can be read offline. Authentication, payments and
-server-confirmed writes need a connection; native offline maps require a prepared
-map bundle. See the [feature reference](docs/overview/features.md) for details.
+Each organization configures its branding and features on the shared platform.
 
 ## Ticketing for organizers
-
-![Reserved seating in Festapp Tickets](docs/images/readme/tickets-seating-desktop.png)
-
-Select seats on an interactive venue plan and see the price before continuing
-to checkout.
-
 
 - **Ticket sales and registration.** Build public forms with ticket types,
   prices, capacity limits and attendee questions; share a link or embed a form
@@ -77,14 +35,57 @@ to checkout.
 - **Event operations.** Coordinate volunteers, participant groups,
   accommodation and reception, with event-specific branding and permissions.
 
-![English order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
+### Design your venue
+
+![Lucerna seating plan with ground-floor seating, boxes and two balconies](docs/images/readme/tickets-seating-desktop.png)
+
+Create venue plans with tables, seating sections and balconies. Buyers choose
+their seats directly from your plan, as shown here in Lucerna's Grand Hall.
+
+### Design your tickets
+
+![Festapp ticket designer with a branded ticket and QR code](docs/images/readme/tickets-designer-desktop.png)
+
+Create tickets with your own artwork, event details and seat information.
+Each ticket includes a QR code for admission checks.
+
+### Orders and payments
+
+![Order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
 
 Track orders and payments from the event administration.
 
-The same platform powers [vstupenky.online](https://vstupenky.online/), its
-regional ticketing and registration portal. Website plugins and connectors
-live in the [integration directory](integrations/README.md), together with their
-setup instructions and publication status.
+Website plugins and connectors live in the
+[integration directory](integrations/README.md), together with their setup
+instructions and publication status.
+
+## The event app
+
+Attendees can browse schedules and venue maps, read news, sign up for workshops
+and save a personal program on Android, iOS and the web. Each event can include
+information pages, songbooks and group games.
+
+### Slunovrat 2026: the summer festival
+
+For the summer Slunovrat festival in Opava (June 18-21, 2026), visitors can follow
+the program, find venues on the map and explore artist profiles.
+
+<table>
+  <tr>
+    <th align="center">Festival program</th>
+    <th align="center">Venue map</th>
+    <th align="center">Artist details</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-program.png" width="220" alt="Slunovrat summer festival program" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-map.png" width="220" alt="Slunovrat festival venue map of Opava" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-detail.png" width="220" alt="Slunovrat artist profile for Vypsaná fiXa" /></td>
+  </tr>
+</table>
+
+Previously downloaded event information remains available offline. Sign-in and
+ticket purchases need an internet connection. Events can also include offline
+venue maps. See the [feature reference](docs/overview/features.md) for more.
 
 ## Start here
 
@@ -165,7 +166,3 @@ Festapp began with volunteers building an app for
 [Absolventský Velehrad](https://absolventskyvelehrad.cz) in 2023.
 [CHANGELOG.md](CHANGELOG.md) records development history. Updates are also
 shared in the [Czech WhatsApp channel](https://whatsapp.com/channel/0029Vb64lj91CYoUWARKf80R).
-
-JavaScript packages use pnpm 11.24.0 and their own frozen lockfiles. Run
-`pnpm install --frozen-lockfile` in the package directory, then use `pnpm run`
-or `pnpm exec`. See [Contributing](CONTRIBUTING.md) for the full workflow.

@@ -96,6 +96,13 @@ test('bootstrap rejects mismatched snapshot before code and establishes Consent 
  assert.doesNotMatch(JSON.stringify(entries),/PRIVATE/);assert.equal(entries.at(-1).user_data,null,'the contact does not carry over to later events');
  f.send('event',{generation:6,payload:purchase});assert.equal(entries.filter(p=>p.event==='purchase').length,1);
 });
+test('isolated Google tags receive cross-site cookie flags before loading without changing consent',t=>{
+ const f=bootstrap(t,false);f.send('init');const entries=[...f.win.dataLayer];
+ const cookieSettings=entries.findIndex(p=>p[0]==='set' && p[1]?.cookie_flags==='SameSite=None;Secure');
+ assert(cookieSettings>=0,'framed Google tags require explicit cross-site cookie flags');
+ assert(cookieSettings<entries.findIndex(p=>p.event==='gtm.js'));
+ assert.equal(entries[0][2].analytics_storage,'denied');assert.equal(entries[1][2].analytics_storage,'denied');
+});
 test('Klaro saved-choice adapter rejects drafts and unavailable services; disconnect revokes',()=>{
  let watcher;const sent=[];const manager={confirmed:false,savedConsents:{analytics:false},getConsent:()=>true,watch:value=>watcher=value,unwatch:value=>assert.equal(value,watcher)};
  const stop=bindKlaroConsent(manager,value=>sent.push(value));manager.confirmed=true;watcher.update();assert.deepEqual(sent.at(-1),{analytics:false,marketing:false});

@@ -63,19 +63,50 @@ isolated from the documentation branch.
 
 ## English ticketing examples
 
-`tickets-seating-desktop.png` and `tickets-admin-desktop.png` were captured on
-2026-11-07 from source `99dc29ae7` against a dedicated disposable local Supabase
-database. The canonical baseline, forward migrations and demo seed supplied
-English event, organizer, form, product and synthetic customer names. No live
-customer information is shown and no production data was changed.
+### Existing Lucerna hall template
 
-| Image | View | Viewport |
-| --- | --- | --- |
-| `tickets-seating-desktop.png` | Public web seat picker with a selected seat and price | 1100 x 750 |
-| `tickets-admin-desktop.png` | Flutter web order administration with synthetic orders | 1440 x 900 |
+`tickets-seating-desktop.png` was captured on 2026-11-07 from source
+`cd9dbe25b1deffb93d4554bc996086eb200967ee`, using the real public web-client
+seat picker at **1440 x 900**, in English and light mode, against a dedicated
+loopback-only disposable Supabase fixture. No production data was changed.
 
-Both captures use English UI and light appearance. The tenant's dark header and
-navigation are part of its light theme. The Flutter release fixture stubs external
-notification callbacks; the public client uses local Vite with the same isolated
-backend. Browser sessions were isolated and headless. The disposable project,
-owned servers and capture sessions were stopped after capture.
+The plan is the existing approved **`reference-lucerna`** gallery template,
+based on Lucerna's public organizer seating plans. It contains ground-floor
+seating, boxes, two balconies, a stage and a large dance floor. Its original
+seating geometry, colors and materials are preserved. See the
+[template reference notes](../../../vendor/blueprint/venue_seat_picker/doc/reference-templates.md).
+
+The local fixture translates the plan labels into English before rendering.
+Longer ground-floor labels use a smaller font to fit their original boxes;
+exact text resources are prepared by the canonical layout text engine.
+All **1,066 template seats** are bound to local products. One seat was selected
+through the actual picker, producing the visible `1x CZK 450` summary. This is
+a local fixture reservation, not a live sale or submitted checkout. No text
+or other pixels were painted over the screenshot.
+
+### Ticket designer
+
+`tickets-designer-desktop.png` replaces the second venue layout with the actual
+ticket designer, showing a branded ticket and its admission QR code. The local
+fixture uses English event and guest information.
+
+Captured on 2026-11-08 at **1440 x 1000**, from source `2a5da14db`, using a
+Flutter release build of `test/browser/full_app_e2e.dart`, a dedicated local
+Supabase fixture and the local `preview-ticket-layout` Edge Function. The
+application and browser are in English and light mode. The gala artwork is an
+existing public demo asset; the event, guest, table and QR are sample data.
+The price element is hidden in the fixture because sample-price formatting
+currently uses Czech text. No pixels were painted over the capture.
+
+### Order administration
+
+`tickets-admin-desktop.png` was captured on 2026-11-07 from source `99dc29ae7`
+using the real Flutter web app against a disposable local Supabase database,
+at **1440 x 900**, in English and light mode. The canonical baseline, migrations
+and demo seed supplied English event, organizer, form, product and synthetic
+customer names. No live customer information is shown. The fixture stubs
+external notification callbacks. The tenant's dark header/navigation belongs
+to its light theme.
+
+Both capture sessions were isolated and headless. The dedicated local servers,
+Supabase fixtures and owned browser sessions were stopped after capture.
