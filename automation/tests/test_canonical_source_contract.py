@@ -78,6 +78,18 @@ CREATE FUNCTION public.selected(p_id bigint) RETURNS text AS $$new$$ LANGUAGE sq
             with self.assertRaisesRegex(ValueError, 'not effective at release head'):
                 contract.render(root)
 
+    def test_additional_owner_uses_final_forward_and_rejects_source_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.make_release(root)
+            extra = root / 'database/functions/extra.sql'
+            extra.write_text('CREATE FUNCTION public.extra() RETURNS text AS $$next$$ LANGUAGE sql;')
+            (root / 'supabase/migrations/20260103000000.sql').write_text(extra.read_text())
+            self.assertIn("to_regprocedure('public.extra()')", contract.render(root, ['extra.sql']))
+            extra.write_text(extra.read_text().replace('$$next$$', '$$unreleased$$'))
+            with self.assertRaisesRegex(ValueError, 'not effective at release head'):
+                contract.render(root, ['extra.sql'])
+
     def test_retired_signature_is_checked_absent_and_cannot_be_revived(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

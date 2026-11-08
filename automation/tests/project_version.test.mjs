@@ -22,6 +22,7 @@ test('version generation stamps both HTML entry points before module loading', (
       path.join(root, 'automation/configure_version.js'));
     fs.copyFileSync(path.join(projectRoot, 'automation/lib/startup_theme.cjs'), path.join(root, 'automation/lib/startup_theme.cjs'));
     fs.copyFileSync(path.join(projectRoot, 'web_client/src/services/theme_preference.js'), path.join(root, 'web_client/src/services/theme_preference.js'));
+    fs.cpSync(path.join(projectRoot, 'web_client/src/runtime'), path.join(root, 'web_client/src/runtime'), {recursive:true});
     for (const entry of ['web/index.html', 'web_client/index.html']) {
       fs.writeFileSync(path.join(root, entry),
         '<meta name="color-scheme" content="light dark"><script>window.__FESTAPP_BUILD_VERSION__ = "old";</script>');

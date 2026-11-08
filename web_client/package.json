@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "node ../automation/configure_fonts.js .. --assets-only && vite",
-    "build": "node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
+    "build": "node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
-    "test": "node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node scripts/run_tests.mjs",
+    "test": "node scripts/build_runtime.mjs --check && node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node scripts/run_tests.mjs",
     "test:measurement-browser": "node scripts/test_form_measurement_browser.mjs",
     "test:form-interaction-browser": "node scripts/test_form_interaction_browser.mjs",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",

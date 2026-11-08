@@ -1,5 +1,5 @@
 DO $$
-DECLARE en_org bigint; cs_org bigint; en_unit bigint; cs_unit bigint; en_event bigint; cs_event bigint; en_form bigint; cs_form bigint;
+DECLARE en_org bigint; cs_org bigint; en_unit bigint; cs_unit bigint; en_event bigint; cs_event bigint; en_form bigint; cs_form bigint; cs_bank bigint;
 BEGIN
  INSERT INTO public.organizations(title,data) VALUES('EN default test','{"DEFAULT_FORM_PAYMENT_METHOD":"stripe","DEFAULT_LANGUAGE":"en"}') RETURNING id INTO en_org;
  INSERT INTO public.organizations(title) VALUES('CS default test') RETURNING id INTO cs_org;
@@ -13,7 +13,10 @@ BEGIN
  IF (SELECT data->'payments' FROM public.forms WHERE id=cs_form) IS NOT NULL THEN RAISE EXCEPTION 'Legacy default changed'; END IF;
  PERFORM public.validate_form_payment_configuration_internal(en_form);
  IF public.form_payment_availability_internal(en_form)->'available'<>'[]'::jsonb THEN RAISE EXCEPTION 'Unconnected EN draft offered a paid method'; END IF;
- IF public.form_payment_availability_internal(cs_form)->'available'<>'["bank"]'::jsonb THEN RAISE EXCEPTION 'CS bank regression'; END IF;
+ IF public.form_payment_availability_internal(cs_form)->'available'<>'[]'::jsonb THEN RAISE EXCEPTION 'Unconnected CS form offered bank'; END IF;
+ INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('CS receiver','FIO',ARRAY['CZK']) RETURNING id INTO cs_bank;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(cs_unit,cs_bank,0);
+ IF public.form_payment_availability_internal(cs_form)->'available'<>'["bank"]'::jsonb THEN RAISE EXCEPTION 'Configured CS bank regression'; END IF;
  UPDATE public.forms SET is_open=true WHERE id=en_form;
  BEGIN
   PERFORM public.validate_form_payment_configuration_internal(en_form);

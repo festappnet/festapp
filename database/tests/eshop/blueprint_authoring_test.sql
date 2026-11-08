@@ -39,7 +39,7 @@ BEGIN
  form_id:=(form#>>'{data,form,id}')::bigint;
  result:=public.update_form_client_sync_v1(jsonb_build_object('id',form_id,'occasion',oc,'title','Changed form','blueprint',bp,'expected_aggregate_version',0),gen_random_uuid());
  ASSERT result->>'code'='200',result::text;
- ASSERT (SELECT NOT is_open AND blueprint=bp AND deadline_duration_seconds=604800 AND data=(form#>'{data,form,data}') FROM public.forms WHERE id=form_id),'omitted settings survive canonical form association';
+ ASSERT (SELECT NOT is_open AND blueprint=bp AND deadline_duration_seconds IS NOT DISTINCT FROM (form#>>'{data,form,deadline_duration_seconds}')::bigint AND data=(form#>'{data,form,data}') FROM public.forms WHERE id=form_id),'omitted settings survive canonical form association';
  ASSERT public.update_form_client_sync_v1(jsonb_build_object('id',form_id,'occasion',oc,'expected_aggregate_version',0),gen_random_uuid())->>'status'='conflict';
  ASSERT NOT public.get_form_for_authoring_v1(form_id)::text LIKE '%"key"%';
 END $$;

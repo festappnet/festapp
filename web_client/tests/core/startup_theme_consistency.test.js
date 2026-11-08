@@ -52,6 +52,8 @@ test('startup policy generation is deterministic and idempotent for both shells'
     const root = await mkdtemp(join(tmpdir(), 'festapp-startup-policy-'));
     t.after(() => rm(root, {recursive:true, force:true}));
     await mkdir(join(root, 'web_client/src/services'), {recursive:true});
+    await mkdir(join(root, 'web_client/src/runtime'), {recursive:true});
+    for (const name of ['page_context.js','update_policy.js','worker_shell.js','runtime_state.js']) await writeFile(join(root, 'web_client/src/runtime', name), await readFile(new URL(`../../src/runtime/${name}`, import.meta.url)));
     await mkdir(join(root, 'web'), {recursive:true});
     await writeFile(join(root, 'web_client/src/services/theme_preference.js'), source);
     for (const shell of ['web', 'web_client']) {
@@ -67,3 +69,49 @@ test('startup policy generation is deterministic and idempotent for both shells'
         assert.ok(html.indexOf('name="color-scheme"')<html.indexOf('id="festapp-startup-theme"'));
     }
 });
+
+
+for (const shell of ['web', 'web_client']) {
+    test(`${shell} startup hides branding only for explicit embed=1`, async () => {
+        const html = await readFile(new URL(`../../../${shell}/index.html`, import.meta.url), 'utf8');
+        for (const query of ['?embed=1', '?embed=true', '']) {
+            const dom = new JSDOM(html, {url:`https://tickets.invalid/form/a${query}`, runScripts:'outside-only'});
+            const {window} = dom;
+            window.matchMedia = () => ({matches:false, addEventListener(){}});
+            window.eval(window.document.getElementById('festapp-runtime-startup').textContent);
+            window.eval(window.document.getElementById('festapp-startup-theme').textContent);
+            window.applyFestappStartupTheme();
+            const embedded = shell === 'web_client' && query === '?embed=1';
+            assert.equal(window.document.documentElement.hasAttribute('data-embed-startup'), embedded);
+            const brand = window.document.querySelector(shell === 'web' ? '.initial-logo' : '.startup-spinner');
+            assert.equal(window.getComputedStyle(brand).display === 'none', embedded);
+            if (embedded) {
+                const loader = shell === 'web' ? 'loader-content' : 'web-client-startup';
+                const rule = [...window.document.styleSheets].flatMap(sheet => [...sheet.cssRules])
+                    .find(rule => rule.selectorText?.endsWith(`html[data-embed-startup] #${loader}`));
+                assert.equal(rule.style.getPropertyValue('background'), 'transparent');
+                assert.equal(rule.style.getPropertyPriority('background'), 'important');
+            }
+            window.close();
+        }
+    });
+}
+
+
+for (const shell of ['web', 'web_client']) {
+    test(`${shell} hides the server-injected SEO summary only in explicit embed context`, async t => {
+        const html = await readFile(new URL(`../../../${shell}/index.html`, import.meta.url), 'utf8');
+        for (const query of ['?embed=1', '?embed=true', '']) {
+            const dom = new JSDOM(html, {url:`https://tickets.invalid/form/a${query}`, runScripts:'outside-only'});
+            t.after(() => dom.window.close());
+            const {window} = dom;
+            // Production HTML receives this public fallback before the app starts.
+            window.document.body.insertAdjacentHTML('afterbegin',
+                '<section id="public-seo-summary"><h1>KUŘÍN 2027 – Přihláška</h1><p>Letní tábor</p><p>3.–17. července 2027</p></section>');
+            window.eval(window.document.getElementById('festapp-runtime-startup').textContent);
+            const summary = window.document.getElementById('public-seo-summary');
+            assert.equal(window.getComputedStyle(summary).display === 'none', shell === 'web_client' && query === '?embed=1');
+            assert.equal(summary.querySelector('h1').textContent, 'KUŘÍN 2027 – Přihláška');
+        }
+    });
+}

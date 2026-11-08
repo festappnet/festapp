@@ -58,6 +58,7 @@ void main() {
       publishableKey: 'fixture',
       authOptions: const FlutterAuthClientOptions(
         autoRefreshToken: false,
+        detectSessionInUri: false,
         localStorage: EmptyLocalStorage(),
       ),
       httpClient: MockClient((request) async {

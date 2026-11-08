@@ -21,6 +21,34 @@ const client = {
 };
 SupabaseService.initialize = async () => { SupabaseService._client = client; };
 RouterService.navigateToFlutterRoute = async path => { window.__adminDestination = path; };
+if (scenario?.startsWith('embed-')) {
+    const readyAtFocus = window.__FESTAPP_APP_READY__ === true;
+    window.addEventListener('message', event => {
+        if (event.data === 'fixture-check-validation') {
+            const shown = [...document.querySelectorAll('.form-field-error')]
+                .some(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (!el.textContent.trim() || rect.width <= 0 || rect.height <= 0) return false;
+                    for (let node = el; node; node = node.parentElement) {
+                        const style = getComputedStyle(node);
+                        if (style.display === 'none' || style.visibility === 'hidden') return false;
+                    }
+                    return true;
+                });
+            event.source.postMessage({fixtureUpdateReport:{validationShown:shown}}, event.origin);
+            return;
+        }
+        if (event.data !== 'fixture-check-update') return;
+        const versionWasPending = window.__fixtureVersionPending === true;
+        window.__fixtureReleaseVersion?.();
+        window.dispatchEvent(new Event('focus'));
+        document.dispatchEvent(new Event('visibilitychange'));
+        window.dispatchEvent(new CustomEvent('festapp-update-available', {detail:{version:'new'}}));
+        setTimeout(() => event.source.postMessage({fixtureUpdateReport:{ready:window.__FESTAPP_APP_READY__, readyAtFocus, versionWasPending, draft:document.querySelector('input[type=email]')?.value, banner:!!document.getElementById('festapp-update-banner')}}, event.origin), 100);
+    });
+    window.dispatchEvent(new Event('focus'));
+    await new Promise(resolve => setTimeout(resolve, 500));
+}
 await import('../../../src/main.js');
 // Dynamic import completes after the browser's initial DOMContentLoaded.
 document.dispatchEvent(new Event('DOMContentLoaded'));

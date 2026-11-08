@@ -5,6 +5,16 @@ Zkopírujte kód do HTML bloku svého CMS. Při neuložené změně adresy se po
 poslední uložený odkaz. Nový formulář je nutné nejdříve uložit.
 
 Automatická výška používá iframe a externí `/embed.js` ze stejného tenantu.
+Helper ihned nastaví startovní výšku 120 px a poté ji přizpůsobuje obsahu,
+bez animace (také při reduced motion). Atribut `height="800"` zůstává jako
+fallback bez JavaScriptu, včetně stávajících WordPress pluginů. Pevné výšky
+se helper nedotýká. Nový helper posílá volitelné `minHeight: 120`; child bez
+něj zachová minimum 240 px pro kompatibilitu se staršími helpery protokolu 1.
+Rozsah `viewportHeight` se nemění. Na webclientových cestách `/form/:slug` a `/order` s přesným `?embed=1` je startovní plocha
+průhledná a bez loga; veřejný SEO souhrn je skrytý, aby neprosvítal při načítání. Aktualizační banner se v embedu nezobrazuje. Po připravení aplikace
+(`__FESTAPP_APP_READY__ === true`) kontroly verzí neobnovují stránku; běžná
+aktualizace počká na další načtení stránky. Samooprava startu včetně deep refresh,
+přepnutí verze před připravením aplikace a obnova rozbitého runtime zůstávají aktivní.
 Pevná výška ponechá iframe na 800 px s vlastním posouváním. Převzetí vzhledu
 funguje v obou režimech výšky, pokud CMS povoluje externí skript. Pokud jej
 zakazuje, zůstane pevná výška a vlastní vzhled formuláře. Výšku můžete v HTML upravit. Obě varianty obsahují odkaz pro otevření
@@ -56,11 +66,11 @@ Povolené typy a hodnoty:
 | Typ | Směr | Data |
 | --- | --- | --- |
 | ready | child -> parent | Žádná osobní ani obchodní data |
-| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné dataLayer: true a dataLayerUserData: true |
+| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné minHeight: 120, volitelné dataLayer: true a dataLayerUserData: true |
 | viewport | parent -> child | Stejné ID a výška 240-4000 CSS px |
 | theme | parent -> child | Stejné ID a volitelná prezentace theme |
 | analytics | child -> parent | Whitelistovaný objekt payload, viz Datová vrstva hostitele |
-| resize | child -> parent | Konečná výška 240-20000 CSS px |
+| resize | child -> parent | Konečná výška 240-20000 CSS px; s init.minHeight = 120 již od 120 px |
 | scroll-request | child -> parent | Konečné y 0-20000, volitelné block start/end/nearest a height 0-20000; host cíl omezuje na iframe |
 | scroll-save/scroll-restore/scroll-discard | child -> parent | Neosobní ID snapshotu vázané na konkrétní iframe; discard jej zruší bez posunu |
 
@@ -102,6 +112,35 @@ ani stav platby. Parent nemůže vybrat produkt/sedadlo, předvyplnit nebo odesl
 formulář. Handshake není autentizací organizátora a nechrání před samotným
 škodlivým hostitelským webem. Budoucí změny veřejného assetu musí zachovat
 protocol 1 nebo výslovně řešit migraci kontraktu.
+
+## Vlastníci implementace
+
+`web_client/src/runtime/page_context.js` klasifikuje podporované veřejné cesty;
+`runtime_state.js` drží startup stav a jediný navigační zámek. Inline bootstrap
+obou HTML shellů generuje `automation/lib/startup_theme.cjs`. Pouze webclientový
+shell má embed prezentaci a kompaktní lokalizovanou chybu s retry. Ready marker,
+událost `festapp-app-ready` a existující recovery globály zůstávají kompatibilní.
+
+`update_policy.js` rozhoduje o důvodu obnovy, `update_controller.js` provádí
+worker handshake a efekty a `update_banner.js` vykresluje běžnou aktualizaci.
+`web/festapp_update_prompt.js` je standalone generovaný výstup. Před každým
+navigačním efektem po čekání se znovu kontroluje aktuální ready stav. Výjimkami
+z odložení aktualizace jsou jednorázová obnova prokázaného poškození runtime
+a omezená migrace skutečně starých Flutter cache. Ruční retry při chybě
+startu opraví cache vstupního modulu a nepřenačte již připravenou stránku.
+
+`embed/protocol.js` vlastní základní wire kontrakt, `channel.js` připíná peer,
+origin a instanci. `EmbedBridge` skládá child layout, measurement a stávající
+`EmbedTheme`; formulář, validátor, přehled ceny a plánek používají jeho zachované
+rozhraní. Na hostiteli oddělují `host_layout`, `host_presentation`, `host_price`
+a `host_measurement` geometrii, vzhled, projekci ceny a scoped consent.
+Measurement pravidla dál patří `form_measurement_contract` a
+`FormMeasurementSession`. Staré disposery nesmějí zasáhnout novou vazbu.
+
+`host.js` se přes esbuild sestaví do jediného `/embed.js`; CMS nepotřebuje žádné
+runtime importy. `build_embed.mjs --check` a `build_runtime.mjs --check` odmítají
+generační drift. Externí protokol 1, `FestappEmbed`, atributy a HTML markup
+zůstávají podporované, včetně helperu s minimem 240 px a fallbacku 800 px.
 
 ## Lokální ověření
 
@@ -246,3 +285,10 @@ nebo runtime s novým klientem měření neaktivuje; samotný checkout funguje d
 Setter, Klaro a revision-aware source nahrazují jednu účinnou volbu. Odpojení
 zdroje neobnoví starší souhlas a nový scope vyžaduje novou nebo znovu ověřenou
 volbu. Změna iframe originu uklidí původní subscription i heartbeat.
+
+Veřejný web instaluje pouze webovou část offline shellu. Flutter HTML, loader,
+hlavní JS a všechny jeho deferred části se připraví atomicky až při skutečném
+vstupu do Flutter aplikace. Veřejný formulář ani jeho update/recovery požadavek
+je nestahují. Worker a per-version cache zůstávají společné; handshake nese
+`runtime: web | flutter`. Běžná Flutter aplikace je dostupná offline po svém
+online otevření, veřejný formulář má nezávislou webovou offline obnovu.

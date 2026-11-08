@@ -10,6 +10,7 @@
 DO $$
 DECLARE
     last_org_id BIGINT;
+    previous_order_count BIGINT;
     last_unit_id BIGINT;
     last_occasion_id BIGINT;
     last_form_id BIGINT;
@@ -142,6 +143,7 @@ BEGIN
     -- 4. Test ONLY Cash Account Scenario (Should Fail)
     -- Setup: Remove Standard Account linking, leave only Cash Account
     DELETE FROM eshop.unit_bank_accounts WHERE unit = last_unit_id AND bank_account = last_std_account_id;
+    SELECT count(*) INTO previous_order_count FROM eshop.orders WHERE form=last_form_id;
 
     -- Act & Assert
     -- Act
@@ -150,9 +152,12 @@ BEGIN
     -- Assert
     PERFORM assert_equals(
         (result_json->'code')::int,
-        1018,
-        'Should return error code 1018 (No available bank account)'
+        1013,
+        'Bank method without an eligible recipient is rejected by payment availability'
     );
+
+    PERFORM assert_equals(result_json->>'message','PAYMENT_METHOD_UNAVAILABLE','Cash account cannot satisfy bank availability');
+    PERFORM assert_equals((SELECT count(*) FROM eshop.orders WHERE form=last_form_id),previous_order_count,'Rejected bank checkout creates no order');
 
     -- Re-Raise Exception to rollback transaction? No, run_db_tests execution wraps it in transaction and rollsback anyway.
     -- But since we are in a DO block, we don't automatically trigger "ROLLBACK" unless we fail.

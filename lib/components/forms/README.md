@@ -431,3 +431,10 @@ are retained and conflicting older full saves fail with
 RPC signatures delegate to those readers with no capabilities and refuse new
 unsupported instructions. Setup, MCP, duplication and waitlist conversion use
 the same settings/finalization owners. See the [payment contract](../eshop/README.md#cash-payments-and-payment-deadlines).
+
+The web embed uses the shared page context and update policy in
+`web_client/src/runtime/`. `EmbedBridge` composes the validated channel, layout,
+measurement transport and `EmbedTheme`; the public step, price and scroll
+helpers retain their existing callers. `FormMeasurementSession` remains the
+measurement policy owner. The host projects the existing price widget and
+never computes an order total. Flutter has no embed presentation variant.

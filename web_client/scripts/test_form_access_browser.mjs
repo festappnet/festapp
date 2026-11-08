@@ -10,6 +10,7 @@ import path from 'node:path';
 import { createServer as createPortProbe } from 'node:net';
 import { createServer } from 'vite';
 import { openIsolatedBrowser } from './isolated_browser_startup.mjs';
+import { testPwaSplitBrowser } from './test_pwa_split_browser.mjs';
 const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
@@ -21,7 +22,7 @@ let browserPhase = 'setup';
 const requests = [];
 async function browser(...args) {
     const { stdout } = await execute('agent-browser', ['--config', config, '--namespace', session,
-        '--session', session, '--headed', 'false', '--allowed-domains', '127.0.0.1', '--json', ...args],
+        '--session', session, '--headed', 'false', '--allowed-domains', '127.0.0.1,localhost', '--json', ...args],
     { timeout: 30000, env: { ...process.env, AGENT_BROWSER_CONFIG: config, AGENT_BROWSER_PLUGINS: '[]', AGENT_BROWSER_DEFAULT_TIMEOUT: '8000' } });
     const result = JSON.parse(stdout);
     assert.equal(result.success, true, result.error);
@@ -50,9 +51,35 @@ async function openBrowser(url, ready) {
     browserPhase = 'page assertions';
 }
 let server;
+let versionRequests = 0;
 try {
     const shell = (await readFile(path.join(root, 'index.html'), 'utf8'))
-        .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"');
+        .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"')
+        .replace('</head>', `<script>
+            if (new URLSearchParams(location.search).get('scenario') === 'embed-error') {
+                Object.defineProperty(navigator, 'onLine', {value:false, configurable:true});
+                window.addEventListener('message', event => {
+                    if (event.data !== 'fixture-error-check') return;
+                    const button = document.querySelector('#web-client-startup button');
+                    const rect = button?.getBoundingClientRect();
+                    event.source.postMessage({fixtureUpdateReport:{failed:!!window.__FESTAPP_WEB_STARTUP_FAILURE__,
+                        buttonVisible:!!button && !button.hidden && rect.top >= 0 && rect.bottom <= innerHeight,
+                        enabled:!!button && !button.disabled, text:document.querySelector('#web-client-startup p')?.textContent,
+                        banner:!!document.getElementById('festapp-update-banner')}}, event.origin);
+                });
+            }
+            if (new URLSearchParams(location.search).get('scenario')?.startsWith('embed-')) {
+                const originalFetch = window.fetch;
+                window.fetch = function(input, init) {
+                    const response = originalFetch.call(this, input, init);
+                    if (!String(input).includes('/festapp-version.json?t=')) return response;
+                    return response.then(value => new Promise(resolve => {
+                        window.__fixtureVersionPending = true;
+                        window.__fixtureReleaseVersion = () => { window.__fixtureVersionPending = false; resolve(value); };
+                    }));
+                };
+            }
+        </script><script src="/__fixture-update.js"></script></head>`);
     // Vite treats port 0 as its default port; select a free positive port first.
     const portProbe = createPortProbe();
     await new Promise((resolve, reject) => {
@@ -71,6 +98,27 @@ try {
                 next();
             });
             server.middlewares.use(async (req, res, next) => {
+                if (req.url.startsWith('/__missing_entry.js')) {
+                    res.statusCode = 404; res.setHeader('Content-Type', 'text/plain'); res.end('missing fixture'); return;
+                }
+                if (req.url.startsWith('/__fixture-update.js')) {
+                    res.setHeader('Content-Type', 'application/javascript');
+                    res.end(await readFile(path.join(root, '../web/festapp_update_prompt.js'))); return;
+                }
+                if (req.url.startsWith('/festapp-version.json')) {
+                    versionRequests++;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({version:'fixture-new-version'})); return;
+                }
+                if (req.url.startsWith('/__real_embed_host')) {
+                    const params = new URL(req.url, 'http://localhost').searchParams;
+                    const helper = params.get('helper') === 'legacy' ? '/tests/fixtures/form_access/embed-main-06671ad.js'
+                        : params.get('helper') === 'pr769' ? '/tests/fixtures/form_access/embed-pr769-987574b.js' : '/embed.js';
+                    const child = `http://localhost:${server.httpServer.address().port}/form/account-access?embed=1&scenario=${params.get('scenario') || 'embed-short'}`;
+                    const fixed = params.get('fixed') === '1';
+                    res.setHeader('Content-Type', 'text/html');
+                    res.end(`<!doctype html><html><body style="margin:0"><header style="height:100px">Pořadatel</header><iframe data-festapp-embed ${fixed ? 'data-festapp-height="fixed"' : ''} src="${child}" style="width:100%;${fixed ? 'height:300px;max-height:300px' : ''}" height="${fixed ? 300 : 800}" title="Přihláška"></iframe><script>window.addEventListener("message",e=>{if(e.data?.fixtureUpdateReport)window.fixtureUpdateReport=e.data.fixtureUpdateReport})</script>${params.get('helper') === 'none' ? '' : `<script src="${helper}"></script>`}</body></html>`); return;
+                }
                 if (req.url === '/__browser_startup') {
                     res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Browser startup</title>'); return;
                 }
@@ -88,7 +136,10 @@ try {
                     res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;${colors}}iframe{display:block;width:100%;border:0}header{height:300px}footer{height:600px}</style></head><body><header>Organizer website</header><div ${native?'data-festapp-embed-host':''}><iframe data-festapp-embed src="/form/price-position?embed=1" height="800" title="Registration"></iframe></div><footer>Footer</footer><script src="/embed.js"></script></body></html>`);return;
                 }
                 if (req.url.startsWith('/form/account-access') || req.url === '/' || req.url.startsWith('/?')) {
-                    res.setHeader('Content-Type', 'text/html'); res.end(shell); return;
+                    res.setHeader('Content-Type', 'text/html');
+                    res.end(req.url.includes('scenario=embed-error')
+                        ? shell.replace('/tests/fixtures/form_access/main.js', '/__missing_entry.js')
+                        : shell); return;
                 }
                 if (/^\/assets\/translations\/(cs|en)\.json$/.test(req.url)) {
                     res.setHeader('Content-Type', 'application/json');
@@ -118,7 +169,9 @@ try {
                 else if (name === 'get_form_by_link') data = { code: 200, data: {
                     id: 1, link: 'account-access', title: 'Account access regression',
                     is_open: !scenario.endsWith('closed'), header: '<p>Registration details</p>',
-                    fields: [{ id: 1, type: 'email', title: 'E-mail', is_required: true }],
+                    fields: [{ id: 1, type: 'email', title: 'E-mail', is_required: true },
+                        ...(scenario.startsWith('embed-') ? [{id:2, type:'birth_date', title:'Datum narození', is_required:true},
+                            ...(scenario === 'embed-long' ? Array.from({length:18}, (_,i) => ({id:i+3,type:'text',title:`Otázka ${i+1}`,is_required:false})) : [])] : [])],
                 } };
                 else if (name === 'get_available_occasions') data = [];
                 else if (name === 'google-auth-start') data = args.operation === 'capability'
@@ -130,6 +183,59 @@ try {
     await server.listen();
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
     const visible = selector => `(() => { const e=document.querySelector(${JSON.stringify(selector)}); if(!e)return false; const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; })()`;
+    // Real shell, Main and form in a cross-origin host with the shipped and
+    // frozen PR 769 helpers. Backend transport and the version response alone
+    // are fixtures; the updater starts before the delayed Main import.
+    for (const [scenario, helper, fixed, width] of [
+        ['embed-long', 'none', 0, 320], ['embed-short', 'current', 0, 320],
+        ['embed-long', 'pr769', 0, 390], ['embed-long', 'legacy', 0, 1440],
+        ['embed-long', 'legacy', 1, 390],
+    ]) {
+        const before = versionRequests;
+        await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=${helper}&fixed=${fixed}`);
+        await browser('set', 'viewport', String(width), '844');
+        await browser('wait', '--fn', fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
+        await browser('snapshot', '-i');
+        await browser('frame', '@e1');
+        await browser('wait', '.flatpickr-input + input');
+        await browser('click', '.btn-submit');
+        await browser('frame', 'main');
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-validation", "*")');
+        await browser('wait', '--fn', 'window.fixtureUpdateReport?.validationShown === true');
+        await browser('snapshot', '-i');
+        await browser('frame', '@e1');
+        await browser('fill', 'input[type=email]', 'rozpracovano@example.test');
+        await browser('click', '.flatpickr-input + input');
+        await browser('wait', '.flatpickr-calendar.open');
+        await browser('click', '.flatpickr-day:not(.prevMonthDay):not(.nextMonthDay)');
+        assert.ok((await browser('get', 'value', '.flatpickr-input')).value);
+        assert.equal((await browser('get', 'value', 'input[type=email]')).value, 'rozpracovano@example.test');
+        await browser('frame', 'main');
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-update", "*")');
+        await browser('wait', '--fn', 'window.fixtureUpdateReport?.ready && window.fixtureUpdateReport?.versionWasPending && !window.fixtureUpdateReport?.readyAtFocus && window.fixtureUpdateReport?.draft === "rozpracovano@example.test" && !window.fixtureUpdateReport?.banner');
+        assert.ok(versionRequests > before, 'updater must execute a production version request before readiness');
+        if (fixed || helper === 'none') assert.equal((await browser('eval', 'document.querySelector("iframe").clientHeight')).result, fixed ? 300 : 800);
+        else if (scenario === 'embed-long') await browser('wait', '--fn', 'document.querySelector("iframe").clientHeight > 1200');
+        console.log(`PASS: real ${scenario}, ${helper} helper at ${width}px, cross-origin ${fixed ? 'fixed' : 'resizing'} frame, validation, calendar and update draft`);
+        await browser('close');
+    }
+    // Exercise the actual HTML failure UI while the helper's startup height is
+    // still in effect. A 404 keeps both retry attempts local and non-mutating.
+    await openBrowser(`${origin}/__real_embed_host?scenario=embed-error&helper=current&fixed=0`);
+    await browser('snapshot', '-i');
+    await browser('frame', '@e1');
+    await browser('wait', '#web-client-startup button');
+    await browser('click', '#web-client-startup button');
+    await browser('wait', '#web-client-startup button:not([disabled])');
+    await browser('click', '#web-client-startup button');
+    await browser('wait', '#web-client-startup button:not([disabled])');
+    await browser('frame', 'main');
+    assert.equal((await browser('eval', 'document.querySelector("iframe").clientHeight')).result, 120);
+    await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-error-check", "*")');
+    await browser('wait', '--fn', 'window.fixtureUpdateReport?.failed && window.fixtureUpdateReport?.buttonVisible && window.fixtureUpdateReport?.enabled && !!window.fixtureUpdateReport?.text && !window.fixtureUpdateReport?.banner');
+    console.log('PASS: real failed embed startup exposes retry inside the frame after two attempts');
+    await browser('close');
+    await testPwaSplitBrowser({browser, openBrowser, temporary});
     for (const scenario of ['guest-open', 'editor-open', 'editor-closed', 'unit-editor-open', 'unit-editor-closed', 'visitor-closed']) {
         await openBrowser(`${origin}/form/account-access?scenario=${scenario}`);
         await browser('wait', '--fn', '!document.getElementById("web-client-startup")');

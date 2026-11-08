@@ -77,6 +77,7 @@ case "$FESTAPP_SETUP_ENABLED" in
 esac
 # Pinned esbuild is also used for lexical compaction before immutable stamping.
 (cd web_client && pnpm install --frozen-lockfile)
+node web_client/scripts/build_runtime.mjs --check
 "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
 node automation/optimize_web_fonts.mjs build/web automation/project.conf
 node automation/compact_flutter_javascript.mjs build/web

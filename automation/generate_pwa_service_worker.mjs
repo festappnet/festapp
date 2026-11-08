@@ -27,7 +27,7 @@ if (forcedOccasionLink && !/^[a-zA-Z0-9_-]+$/.test(forcedOccasionLink)) {
 const outputName = 'festapp_service_worker.js';
 const manifest = await collectPwaShellManifest(buildDir);
 const assets = manifest.knownResources;
-const coreAssets = manifest.coreResources;
+const coreAssets = manifest.webCoreResources;
 const standaloneDocuments = manifest.standaloneDocuments;
 const flutterEntry = manifest.flutterEntry;
 const webClientEntry = manifest.webClientEntry;
@@ -41,6 +41,7 @@ const FONT_CACHE_NAME = 'festapp-used-fonts-v1';
 const OCCASION_MEDIA_CACHE_NAME = 'festapp-occasion-media-v1';
 const PRECACHE_URLS = ${JSON.stringify(assets, null, 2)};
 const CORE_URLS = ${JSON.stringify(coreAssets, null, 2)};
+const FLUTTER_CORE_URLS = ${JSON.stringify(manifest.flutterCoreResources, null, 2)};
 const FLUTTER_ENTRY = ${JSON.stringify(flutterEntry)};
 const FLUTTER_MAIN = ${JSON.stringify(manifest.flutterMain)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
@@ -127,10 +128,8 @@ function withStorageTimeout(promise) {
 
 async function precacheAtomically() {
   const cache = await caches.open(CACHE_NAME);
-  // Install every executable chunk atomically. Flutter defers routes into
-  // main.dart.js_<n>.part.js files; omitting an unvisited route can make an
-  // installed PWA stall when it is cold-started offline on that URL. Large
-  // non-code assets remain lazy so maps/media do not delay activation.
+  // A public installation owns only the complete web module graph. Flutter
+  // is prepared atomically on actual application entry, never by a public form.
   // A cached failed deployment response must not poison every install retry.
   await cache.addAll(CORE_URLS.map((url) => new Request(
     new URL(url, self.location.origin), { cache: 'no-store' })));
@@ -357,7 +356,36 @@ function scheduleExplicitShellPrune() {
   return scheduled;
 }
 
-async function repairCurrentAppShell(expectedVersion) {
+function requestedRuntime(event) {
+  if (event.data?.runtime === 'web') return 'web';
+  if (event.data?.runtime === 'flutter') return 'flutter';
+  // Existing public clients did not label queries. Use the same routing owner
+  // as navigation so every public document keeps web-only recovery.
+  try {
+    const pathname = new URL(event.source?.url).pathname;
+    if (cachedNavigationTarget(pathname) !== FLUTTER_ENTRY) return 'web';
+  } catch (_) {}
+  return 'flutter';
+}
+
+let flutterPreparation = null;
+function prepareFlutterShell() {
+  if (flutterPreparation) return flutterPreparation;
+  flutterPreparation = (async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const present = await Promise.all(FLUTTER_CORE_URLS.map(url => cache.match(url)));
+    if (present.every(Boolean)) return true;
+    const response = await fetch('/festapp-version.json?shell-prepare=' + encodeURIComponent(BUILD_VERSION), {cache:'no-store'});
+    if (!response.ok) return false;
+    const manifest = await response.json();
+    if (manifest.version !== BUILD_VERSION || '/' + manifest.main !== FLUTTER_MAIN) return false;
+    await cache.addAll(FLUTTER_CORE_URLS.map(url => new Request(new URL(url, self.location.origin), {cache:'no-store'})));
+    return true;
+  })().catch(() => false).finally(() => { flutterPreparation = null; });
+  return flutterPreparation;
+}
+
+async function repairCurrentAppShell(expectedVersion, runtime = 'flutter') {
   if (expectedVersion !== BUILD_VERSION) return { ok: false, reason: 'wrong-worker' };
   try {
     const response = await fetch('/festapp-version.json?shell-repair=' +
@@ -371,7 +399,8 @@ async function repairCurrentAppShell(expectedVersion) {
     // Cache.addAll commits the complete batch only after every download succeeds.
     // Preserve auth, application data and every other generation's offline shell.
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(CORE_URLS.map((url) => new Request(
+    const resources = runtime === 'web' ? CORE_URLS : [...CORE_URLS, ...FLUTTER_CORE_URLS];
+    await cache.addAll(resources.map((url) => new Request(
       new URL(url, self.location.origin), { cache: 'reload' })));
     return { ok: true, version: BUILD_VERSION };
   } catch (_) {
@@ -381,13 +410,20 @@ async function repairCurrentAppShell(expectedVersion) {
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'FESTAPP_REPAIR_APP_SHELL' && event.source?.id) {
-    event.waitUntil(repairCurrentAppShell(event.data.version).then((result) => {
+    event.waitUntil(repairCurrentAppShell(event.data.version, requestedRuntime(event)).then((result) => {
       event.ports?.[0]?.postMessage(result);
     }));
     return;
   }
   if (event.data?.type === 'FESTAPP_QUERY_BUILD_VERSION') {
-    event.ports?.[0]?.postMessage({ version: BUILD_VERSION });
+    const runtime = requestedRuntime(event);
+    if (runtime === 'web') {
+      event.ports?.[0]?.postMessage({version:BUILD_VERSION, runtime, ready:true});
+    } else {
+      event.waitUntil(prepareFlutterShell().then(ready => {
+        event.ports?.[0]?.postMessage({version:ready ? BUILD_VERSION : null, runtime, ready});
+      }));
+    }
     return;
   }
   if (event.data?.type === 'FESTAPP_SCANNER_SHELL_STATUS') {
@@ -741,6 +777,13 @@ self.addEventListener('fetch', (event) => {
     }
     const selectedCacheName = clientCacheNames.get(clientId) || CACHE_NAME;
     const cache = await caches.open(selectedCacheName);
+    if (request.mode === 'navigate' && selectedCacheName === CACHE_NAME &&
+        cachedNavigationTarget(url.pathname) === FLUTTER_ENTRY &&
+        !await cache.match(FLUTTER_ENTRY) && !await prepareFlutterShell()) {
+      // The deployment may have advanced since this public shell was installed.
+      // Let its current online Flutter HTML establish a new version handshake.
+      try { return await fetch(request, {cache:'no-store'}); } catch (_) { return Response.error(); }
+    }
     // The domain root belongs to the configured client, even when a prior
     // Flutter navigation left a stale document under / or /index.html.
     if (request.mode === 'navigate' && url.pathname === '/') {

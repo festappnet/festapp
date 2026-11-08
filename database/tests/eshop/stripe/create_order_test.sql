@@ -206,7 +206,7 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,errorCode}','STRIPE_PRICE_CHANGED','server guards the displayed quote');
  PERFORM assert_eq((SELECT count(*) FROM eshop.orders WHERE form=f),count_before,'price mismatch creates no order');
  result:=public.create_ticket_order_client_sync_v1(jsonb_set(payload,'{payment_method}','"bank"'),extensions.gen_random_uuid(),client);
- PERFORM assert_eq(result#>>'{data,message}','BANK_PAYMENT_NOT_CONFIGURED','Stripe-only cannot be bypassed with a bank payload');
+ PERFORM assert_eq(result#>>'{data,message}','PAYMENT_METHOD_UNAVAILABLE','Stripe-only cannot be bypassed with a bank payload');
  PERFORM assert_eq((SELECT count(*) FROM eshop.orders WHERE form=f),count_before,'disabled bank creates no order');
  -- Lost Session response: no synthetic Session or financial fact is needed
  -- to release an exhausted, overdue lookup. Later real money still survives.
@@ -258,6 +258,9 @@ BEGIN
  result:=public.create_ticket_order_client_sync_v1(payload,extensions.gen_random_uuid(),client);
  PERFORM assert_true(result#>>'{data,code}'<>'200','submit rechecks pause under receiver lock');
  UPDATE eshop.products SET price=0 WHERE id=p;
+ -- Both released clients confirm a zero-price checkout with the common bank
+ -- method, without a provider payment source or a card quote.
+ payload:=(payload-ARRAY['stripePaymentSource','stripe_connection_id','payment_surface','expected_payment_amount_minor','expected_payment_currency'])||'{"payment_method":"bank"}'::jsonb;
  result:=public.create_ticket_order_client_sync_v1(payload,extensions.gen_random_uuid(),client);
  PERFORM assert_eq(result#>>'{data,code}','200','free order needs no bank or Stripe account');
  oid:=(result#>>'{data,order,id}')::bigint;
@@ -293,8 +296,6 @@ BEGIN
  PERFORM assert_true(sync_claim->'source'='null'::jsonb,'history sync does not fabricate a new pay source');
  PERFORM assert_eq(public.get_stripe_order_pay_source_internal(attempt.order_id,command)#>>'{payment,method}','stripe','delayed confirmation uses current safe projection without expired bearer');
  UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=u;
- payload:=jsonb_set(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(encode(extensions.digest(extensions.gen_random_uuid()::text,'sha256'),'hex'))),
-  '{stripePaymentSource,returnHash}',to_jsonb(encode(extensions.digest(extensions.gen_random_uuid()::text,'sha256'),'hex')));
  result:=public.create_ticket_order_client_sync_v1(payload,extensions.gen_random_uuid(),extensions.gen_random_uuid());
  PERFORM assert_eq(result#>>'{data,code}','200','missing privacy URL never blocks checkout');
  PERFORM assert_true(result#>'{data,analytics}' IS NULL OR result#>'{data,analytics}'='null'::jsonb,'checkout without URL exports no conversion');

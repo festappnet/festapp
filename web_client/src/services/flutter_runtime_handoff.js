@@ -1,4 +1,4 @@
-const VERSION_QUERY = 'FESTAPP_QUERY_BUILD_VERSION';
+import {queryWorkerBuildVersion} from '../runtime/worker_shell.js';
 const ACTIVATE_WORKER = 'SKIP_WAITING';
 
 function bounded(promise, timeoutMs, timers) {
@@ -14,25 +14,6 @@ function bounded(promise, timeoutMs, timers) {
                 resolve(null);
             },
         );
-    });
-}
-
-async function queryWorkerVersion(worker, environment, timeoutMs) {
-    if (!worker || !environment.MessageChannel) return null;
-    return new Promise((resolve) => {
-        const channel = new environment.MessageChannel();
-        const timeout = environment.setTimeout(() => finish(null), timeoutMs);
-        function finish(value) {
-            environment.clearTimeout(timeout);
-            channel.port1.close?.();
-            resolve(value);
-        }
-        channel.port1.onmessage = (event) => finish(event.data?.version || null);
-        try {
-            worker.postMessage({ type: VERSION_QUERY }, [channel.port2]);
-        } catch (_) {
-            finish(null);
-        }
     });
 }
 
@@ -97,6 +78,7 @@ export async function prepareFlutterRuntime(overrides = {}) {
     }
 
     const timeoutMs = overrides.timeoutMs || 2000;
+    const shellTimeoutMs = overrides.timeoutMs || 120000;
     const response = await bounded(environment.fetch(
         `/festapp-version.json?handoff=${Date.now()}`,
         { cache: 'no-store', headers: { 'cache-control': 'no-cache' } },
@@ -111,11 +93,7 @@ export async function prepareFlutterRuntime(overrides = {}) {
 
     await bounded(registration.update(), timeoutMs, environment);
 
-    const activeVersion = await queryWorkerVersion(
-        registration.active,
-        environment,
-        timeoutMs,
-    );
+    const activeVersion = await queryWorkerBuildVersion(registration.active, 'flutter', environment, shellTimeoutMs);
     if (activeVersion === expectedVersion && serviceWorker.controller === registration.active) {
         return { strategy: 'current', version: expectedVersion };
     }
@@ -123,10 +101,10 @@ export async function prepareFlutterRuntime(overrides = {}) {
     const candidate = await waitUntilInstalled(
         registration.waiting || registration.installing,
         environment,
-        timeoutMs,
+        shellTimeoutMs,
     );
     if (candidate &&
-        await queryWorkerVersion(candidate, environment, timeoutMs) === expectedVersion &&
+        await queryWorkerBuildVersion(candidate, 'flutter', environment, shellTimeoutMs) === expectedVersion &&
         await activate(candidate, serviceWorker, environment, timeoutMs)) {
         return { strategy: 'activated', version: expectedVersion };
     }

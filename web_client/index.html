@@ -89,6 +89,96 @@
     global.addEventListener('pageshow', applyStartup);
 })(globalThis);
 </script>
+<script id="festapp-runtime-startup">
+// Generated from web_client/src/runtime.
+(function() {
+// Presentation only. This classification never grants identity or permissions.
+function pageContext(location) {
+    return location && (/^\/order$/.test(location.pathname) || /^\/form\/[^/]+\/?$/.test(location.pathname)) &&
+        new URLSearchParams(location.search).get('embed') === '1' ? 'public-embed' : 'full-page';
+}
+// Every asynchronous executor re-evaluates this immediately before its effect.
+function allowUpdate(reason, {context, phase}) {
+    switch (reason) {
+        case 'legacy-migration':
+        case 'corrupt-runtime': return true;
+        case 'startup':
+        case 'manual-startup': return phase !== 'ready';
+        case 'background':
+        case 'explicit-update': return context !== 'public-embed' || phase !== 'ready';
+        default: return false;
+    }
+}
+// Readiness belongs to a runtime shell, not merely to an installed worker.
+function queryWorkerBuildVersion(worker, runtime, win = window, timeoutMs = runtime === 'flutter' ? 120000 : 3000) {
+    const Channel = win.MessageChannel ?? globalThis.MessageChannel;
+    if (!worker || !Channel) return Promise.resolve(null);
+    return new Promise(resolve => {
+        const channel = new Channel();
+        let finished = false;
+        const timeout = win.setTimeout(() => finish(null), timeoutMs);
+        function finish(version) {
+            if (finished) return;
+            finished = true; win.clearTimeout(timeout); channel.port1.close?.(); resolve(version);
+        }
+        channel.port1.onmessage = event => finish(event.data?.version || null);
+        try { worker.postMessage({type:'FESTAPP_QUERY_BUILD_VERSION', runtime}, [channel.port2]); }
+        catch { finish(null); }
+    });
+}
+// Installed before paint and reused by the standalone recovery controller.
+function installRuntimeState(win) {
+    if (win.FestappRuntime) return win.FestappRuntime;
+    let phase = win.__FESTAPP_APP_READY__ === true ? 'ready' : 'starting';
+    let retrying = false;
+    let navigating = false;
+    const runtime = {
+        async prepareFlutterOffline(registration) {
+            for (const worker of [...new Set([registration.waiting, registration.installing, registration.active])]) {
+                if (worker && await queryWorkerBuildVersion(worker, 'flutter', win) === win.__FESTAPP_BUILD_VERSION__) return true;
+            }
+            throw new Error('Flutter offline shell is not ready for this build');
+        },
+        get retrying() { return retrying; },
+        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase}); },
+        navigate(reason, effect) {
+            if (!runtime.allowed(reason)) return false;
+            navigating = true;
+            effect();
+            return true;
+        },
+        get phase() { return win.__FESTAPP_APP_READY__ === true ? 'ready' : phase; },
+        markReady() {
+            if (runtime.phase === 'ready') return false;
+            phase = 'ready';
+            win.__FESTAPP_APP_READY__ = true;
+            delete win.__FESTAPP_WEB_STARTUP_FAILURE__;
+            win.dispatchEvent(new win.Event('festapp-app-ready'));
+            return true;
+        },
+        fail(reason) {
+            if (runtime.phase === 'ready') return false;
+            phase = 'failed';
+            win.__FESTAPP_WEB_STARTUP_FAILURE__ = reason;
+            return true;
+        },
+        async retry(prepare, navigate) {
+            if (retrying || !runtime.allowed('manual-startup')) return false;
+            retrying = true;
+            try {
+                await prepare();
+                return runtime.navigate('manual-startup', navigate);
+            } finally { retrying = false; }
+        }
+    };
+    win.FestappRuntime = runtime;
+    return runtime;
+}
+window.__FESTAPP_CLIENT_RUNTIME__ = 'web';
+installRuntimeState(window);
+if (pageContext(window.location) === 'public-embed') document.documentElement.dataset.embedStartup = 'true';
+})();
+</script>
     <title>Akce a plesy - vstupenky online | vstupenky.online</title>
     <meta name="description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
     <meta name="robots" content="index, follow">
@@ -154,14 +244,11 @@
         }
 
         window.markFestappAppReady = function() {
-            if (window.__FESTAPP_APP_READY__ === true) return;
-            window.__FESTAPP_APP_READY__ = true;
+            if (!window.FestappRuntime.markReady()) return;
             document.getElementById('web-client-startup')?.remove();
-            window.dispatchEvent(new Event('festapp-app-ready'));
         };
         window.failFestappWebClientStartup = function(reason) {
-            if (window.__FESTAPP_APP_READY__ === true) return;
-            window.__FESTAPP_WEB_STARTUP_FAILURE__ = reason;
+            if (!window.FestappRuntime.fail(reason)) return;
             const fallback = document.getElementById('web-client-startup');
             if (fallback) {
                 fallback.setAttribute('aria-label', startupCopy.failed);
@@ -178,6 +265,7 @@
             const button = document.querySelector('#web-client-startup button');
             if (button) button.disabled = true;
             try {
+                await window.FestappRuntime.retry(async function() {
                 // A browser can cache an entry-script 404 for four hours. Reload
                 // bypasses and replaces that native cache even without workers.
                 const entry = document.querySelector('script[type="module"][src]');
@@ -195,10 +283,11 @@
                     }
                 }
                 await window.prepareFestappNetworkReload?.();
-                window.location.reload();
+                }, function() { window.location.reload(); });
             } catch (error) {
-                if (button) button.disabled = false;
                 console.warn('Festapp web reload failed:', error);
+            } finally {
+                if (button) button.disabled = window.FestappRuntime.retrying;
             }
         };
         window.addEventListener('error', function(event) {
@@ -249,6 +338,20 @@
     </style>
 <noscript><style>#web-client-startup{display:none!important}</style></noscript>
   <script src="/festapp_sale_opening_protection.js" defer></script>
+
+  <style>
+    /* Public SEO fallback is removed when the form is ready; never flash it in an embed. */
+    html[data-embed-startup] #public-seo-summary { display: none !important; }
+    /* Only the startup surface is transparent; the loaded form owns its design. */
+    html[data-embed-startup]:has(#web-client-startup:not([hidden])),
+    html[data-embed-startup]:has(#web-client-startup:not([hidden])) body,
+    html[data-embed-startup] #web-client-startup { background: transparent !important; }
+    html[data-embed-startup] #web-client-startup .startup-spinner { display: none !important; }
+    /* The helper reserves 120 px before modules load. Retry must fit that slot. */
+    html[data-embed-startup] #web-client-startup { padding: 12px !important; font-size: 14px !important; }
+    html[data-embed-startup] #web-client-startup p { margin: 0 0 8px; }
+    html[data-embed-startup] #web-client-startup button { padding: 8px 12px !important; }
+  </style>
 </head>
 <body>
     <div id="web-client-startup" role="status"

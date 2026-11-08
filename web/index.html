@@ -221,6 +221,96 @@
     global.addEventListener('pageshow', applyStartup);
 })(globalThis);
 </script>
+<script id="festapp-runtime-startup">
+// Generated from web_client/src/runtime.
+(function() {
+// Presentation only. This classification never grants identity or permissions.
+function pageContext(location) {
+    return location && (/^\/order$/.test(location.pathname) || /^\/form\/[^/]+\/?$/.test(location.pathname)) &&
+        new URLSearchParams(location.search).get('embed') === '1' ? 'public-embed' : 'full-page';
+}
+// Every asynchronous executor re-evaluates this immediately before its effect.
+function allowUpdate(reason, {context, phase}) {
+    switch (reason) {
+        case 'legacy-migration':
+        case 'corrupt-runtime': return true;
+        case 'startup':
+        case 'manual-startup': return phase !== 'ready';
+        case 'background':
+        case 'explicit-update': return context !== 'public-embed' || phase !== 'ready';
+        default: return false;
+    }
+}
+// Readiness belongs to a runtime shell, not merely to an installed worker.
+function queryWorkerBuildVersion(worker, runtime, win = window, timeoutMs = runtime === 'flutter' ? 120000 : 3000) {
+    const Channel = win.MessageChannel ?? globalThis.MessageChannel;
+    if (!worker || !Channel) return Promise.resolve(null);
+    return new Promise(resolve => {
+        const channel = new Channel();
+        let finished = false;
+        const timeout = win.setTimeout(() => finish(null), timeoutMs);
+        function finish(version) {
+            if (finished) return;
+            finished = true; win.clearTimeout(timeout); channel.port1.close?.(); resolve(version);
+        }
+        channel.port1.onmessage = event => finish(event.data?.version || null);
+        try { worker.postMessage({type:'FESTAPP_QUERY_BUILD_VERSION', runtime}, [channel.port2]); }
+        catch { finish(null); }
+    });
+}
+// Installed before paint and reused by the standalone recovery controller.
+function installRuntimeState(win) {
+    if (win.FestappRuntime) return win.FestappRuntime;
+    let phase = win.__FESTAPP_APP_READY__ === true ? 'ready' : 'starting';
+    let retrying = false;
+    let navigating = false;
+    const runtime = {
+        async prepareFlutterOffline(registration) {
+            for (const worker of [...new Set([registration.waiting, registration.installing, registration.active])]) {
+                if (worker && await queryWorkerBuildVersion(worker, 'flutter', win) === win.__FESTAPP_BUILD_VERSION__) return true;
+            }
+            throw new Error('Flutter offline shell is not ready for this build');
+        },
+        get retrying() { return retrying; },
+        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase}); },
+        navigate(reason, effect) {
+            if (!runtime.allowed(reason)) return false;
+            navigating = true;
+            effect();
+            return true;
+        },
+        get phase() { return win.__FESTAPP_APP_READY__ === true ? 'ready' : phase; },
+        markReady() {
+            if (runtime.phase === 'ready') return false;
+            phase = 'ready';
+            win.__FESTAPP_APP_READY__ = true;
+            delete win.__FESTAPP_WEB_STARTUP_FAILURE__;
+            win.dispatchEvent(new win.Event('festapp-app-ready'));
+            return true;
+        },
+        fail(reason) {
+            if (runtime.phase === 'ready') return false;
+            phase = 'failed';
+            win.__FESTAPP_WEB_STARTUP_FAILURE__ = reason;
+            return true;
+        },
+        async retry(prepare, navigate) {
+            if (retrying || !runtime.allowed('manual-startup')) return false;
+            retrying = true;
+            try {
+                await prepare();
+                return runtime.navigate('manual-startup', navigate);
+            } finally { retrying = false; }
+        }
+    };
+    win.FestappRuntime = runtime;
+    return runtime;
+}
+window.__FESTAPP_CLIENT_RUNTIME__ = 'flutter';
+installRuntimeState(window);
+
+})();
+</script>
   <style>
     html, body { background-color: #19243b; }
     .initial-logo:not([data-startup-logo-ready]) { visibility: hidden; }
@@ -558,7 +648,11 @@
     window.festappOfflineReady = navigator.serviceWorker.register('/festapp_service_worker.js', {
       scope: '/',
       updateViaCache: 'none'
-    }).then(persistUsedFontResources).catch(function(error) {
+    }).then(async function(registration) {
+      await navigator.serviceWorker.ready;
+      await window.FestappRuntime.prepareFlutterOffline(registration);
+      return persistUsedFontResources();
+    }).catch(function(error) {
       console.warn('Festapp offline service worker registration failed:', error);
     });
   }
@@ -569,8 +663,7 @@
   // Dart can still be restoring the offline context or loading the occasion.
   // FestappBootstrap calls this only after the first usable app frame.
   window.markFestappAppReady = function() {
-    if (window.__FESTAPP_APP_READY__ === true) return;
-    window.__FESTAPP_APP_READY__ = true;
+    if (!window.FestappRuntime.markReady()) return;
     document.getElementById('public-seo-summary')?.remove();
     const loader = document.getElementById('loader-content');
     if (loader) {
@@ -578,13 +671,15 @@
       loader.style.pointerEvents = 'none';
       setTimeout(function() { loader.remove(); }, 400);
     }
-    window.dispatchEvent(new Event('festapp-app-ready'));
   };
 
   window.addEventListener('load', async function(ev) {
       try {
         if (window.festappLocalDevelopmentReady) {
           await window.festappLocalDevelopmentReady;
+        }
+        if (!window.__FESTAPP_LOCAL_DEVELOPMENT__ && window.festappOfflineReady) {
+          await window.festappOfflineReady;
         }
         window.prepareFestappFlutterBootstrap();
         {{flutter_js}}

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
 const read = p => fs.readFileSync(p, 'utf8');
 const manifest = JSON.parse(read('automation/canonical-operation-sources.json'));
@@ -120,4 +121,25 @@ test('payment lifecycle retains recovery history and provider-aware reconciliati
   assert.ok(historical.endsWith(recovery));
   execFileSync('python3', ['automation/assemble-payment-provider-integration-migration.py', '--check']);
   execFileSync('python3', ['automation/assemble-payment-provider-hardening-migration.py', '--check']);
+});
+
+test('installed payment integration cannot be rewritten and rejects changed historical bytes', () => {
+  const config = JSON.parse(read('automation/payment-provider-integration-migration.json'));
+  const target = `supabase/migrations/${config.migration}`;
+  const original = read(target);
+  const write = spawnSync('python3',['automation/assemble-payment-provider-integration-migration.py'],{encoding:'utf8'});
+  assert.notEqual(write.status,0);
+  assert.match(write.stderr,/immutable/);
+  assert.equal(read(target),original);
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'payment-history-guard-'));
+  try {
+    fs.mkdirSync(path.join(root,'automation'),{recursive:true});
+    fs.mkdirSync(path.join(root,'supabase/migrations'),{recursive:true});
+    fs.writeFileSync(path.join(root,'automation/payment-provider-integration-migration.json'),JSON.stringify(config));
+    fs.writeFileSync(path.join(root,target),original+'\n-- changed history\n');
+    const result=spawnSync('python3',['-c',
+      "import sys,importlib.util; from pathlib import Path; sys.path.insert(0,'automation'); spec=importlib.util.spec_from_file_location('integration','automation/assemble-payment-provider-integration-migration.py'); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); module.render(Path(sys.argv[1]))",root],{encoding:'utf8'});
+    assert.notEqual(result.status,0);
+    assert.match(result.stderr,/Installed payment integration migration bytes changed/);
+  } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });

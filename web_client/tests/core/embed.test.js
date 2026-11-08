@@ -35,9 +35,9 @@ test('parent isolates two instances, rejects invalid source/origin/payload, and 
     message(a, 'https://tickets.invalid', envelope('resize', id, {height: 400}), b.contentWindow);
     message(a, 'https://tickets.invalid', {...envelope('resize', id, {height: 400}), protocol: 2});
     message(a, 'https://tickets.invalid', envelope('resize', 'other', {height: 400}));
-    assert.equal(a.style.height, '');
+    assert.equal(a.style.height, '120px');
     message(a, 'https://tickets.invalid', envelope('resize', id, {height: 1240}));
-    assert.equal(a.style.height, '1240px'); assert.equal(b.style.height, '');
+    assert.equal(a.style.height, '1240px'); assert.equal(b.style.height, '120px');
     dom.window.eval(hostScript);
     const before = sent[0].length;
     message(a, 'https://tickets.invalid', envelope('ready'));
@@ -161,7 +161,7 @@ test('host supplies appearance and explicit mode independently of fixed height',
     assert.equal(theme.buttonText, 'rgb(250, 249, 245)');
     assert.ok(sent[1][0][0].theme);
     message(frame, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height:1500}));
-    assert.equal(frame.style.height, '');
+    assert.equal(frame.style.height, '120px');
     frame.dataset.festappStyle = 'default';
     message(frame, 'https://tickets.invalid', envelope('ready'));
     assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
@@ -171,7 +171,7 @@ test('host supplies appearance and explicit mode independently of fixed height',
     assert.equal(sent[0].at(-1)[0].styleMode,undefined);
     assert.equal(sent[0].findLast(([data])=>data.theme)?.[0].theme.fontFamily, theme.fontFamily);
     assert.ok(sent[1].at(-1)[0].theme);
-    assert.equal(other.style.height, '');
+    assert.equal(other.style.height, '120px');
     dom.window.close();
 });
 
@@ -814,4 +814,96 @@ test('cutover: bridge publishes the complete canonical manifest to the real help
   const context=f.sent.find(([message])=>message.type==='measurement-context')[0].measurement;
   assert.equal(context.protocol,measurementProtocol);assert.deepEqual(context.manifest,measurement);
  }finally{f.done();}
+});
+
+
+test('automatic height starts compactly, preserves no-script fallback and accepts short forms', () => {
+    const { dom, frames: [auto, fixed], sent, message } = host(false, win => {
+        win.document.querySelectorAll('iframe')[1].dataset.festappHeight = 'fixed';
+    });
+    assert.equal(auto.getAttribute('height'), '800');
+    assert.equal(auto.style.height, '120px');
+    assert.equal(fixed.getAttribute('height'), '800');
+    assert.equal(fixed.style.height, '');
+    assert.equal(sent[0][0][0].minHeight, 120);
+    for (const height of [119, -1, NaN, 20001]) {
+        message(auto, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height}));
+        assert.equal(auto.style.height, '120px');
+    }
+    for (const height of [170, 240, 1200]) {
+        message(auto, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height}));
+        assert.equal(auto.style.height, `${height}px`);
+        message(fixed, 'https://other.invalid', envelope('resize', sent[1][0][0].instance, {height}));
+        assert.equal(fixed.style.height, '');
+    }
+    dom.window.close();
+});
+
+test('short child forms negotiate a lower minimum only with a capable protocol-1 host', () => {
+    const dom = new JSDOM('<body>Checkout</body>', {url:'https://tickets.invalid/form/a?embed=1', pretendToBeVisual:true});
+    const win = dom.window;
+    globalThis.document = win.document; globalThis.window = win;
+    const sent = [], parent = {postMessage: data => sent.push(data)};
+    Object.defineProperty(win, 'parent', {value:parent});
+    win.ResizeObserver = class { observe() {} disconnect() {} };
+    win.requestAnimationFrame = () => 1;
+    win.cancelAnimationFrame = () => {};
+    win.document.body.getBoundingClientRect = () => ({height:170});
+    const bridge = new EmbedBridge(win); bridge.start();
+    for (const [minHeight, expected] of [[undefined,240], [120,170], [0,240], [119,240]]) {
+        win.dispatchEvent(new win.MessageEvent('message', {source:parent,origin:'https://host.invalid',
+            data:envelope('init','one',{viewportHeight:600,minHeight})}));
+        bridge.publishHeight();
+        assert.equal(sent.filter(data => data.type === 'resize').at(-1).height, expected);
+    }
+    bridge.destroy(); dom.window.close();
+    delete globalThis.window; delete globalThis.document;
+});
+
+test('repeated start and destroyed child cannot send or revive observers', async () => {
+    const dom = new JSDOM('<body>Form</body>', {url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+    const win=dom.window, sent=[];
+    let observed=0;
+    Object.defineProperty(win,'parent',{value:{postMessage:(...args)=>sent.push(args)}});
+    win.ResizeObserver=class {observe(){observed++;} disconnect(){}};
+    const bridge=new EmbedBridge(win);
+    bridge.start(); bridge.start();
+    assert.equal(observed,1);
+    bridge.destroy();
+    const count=sent.length;
+    win.dispatchEvent(new win.MessageEvent('message',{source:win.parent,origin:'https://host.invalid',
+        data:envelope('init','new',{viewportHeight:600})}));
+    win.dispatchEvent(new win.Event('pageshow')); bridge.start(); bridge.measure();
+    await new Promise(resolve=>win.setTimeout(resolve,220));
+    assert.equal(sent.length,count); assert.equal(observed,1);
+    win.close();
+});
+
+test('retired consent disposer cannot stop the current binding, page lifecycle renews its lease', () => {
+    const f=child();
+    try {
+        f.init({measurementProtocol,dataLayer:true});
+        const notify=()=>{};
+        const dispose=f.bridge.connectConsent(measurement,notify);
+        f.bridge.connectConsent(measurement,notify);
+        dispose();
+        const before=f.sent.length;
+        f.win.dispatchEvent(new f.win.Event('pagehide'));
+        f.win.dispatchEvent(new f.win.Event('pageshow'));
+        assert.ok(f.sent.length>before);
+        assert.equal(f.sent.at(-1)[0].type,'measurement-context');
+    } finally { f.done(); }
+});
+
+test('a replacement bridge owns the window and a retired destroy cannot clear its theme', () => {
+    const dom=new JSDOM('<body>Form</body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+    const win=dom.window; win.ResizeObserver=class {observe(){} disconnect(){}};
+    Object.defineProperty(win,'parent',{value:{postMessage(){}}});
+    const old=new EmbedBridge(win), current=new EmbedBridge(win);
+    old.start(); current.start();
+    win.document.documentElement.dataset.embedTheme='host';
+    old.destroy(); old.setInheritStyle(false); old.receiveTheme(null);
+    assert.equal(win.document.documentElement.dataset.embedTheme,'host');
+    assert.equal(old.selection(),null);
+    current.destroy(); win.close();
 });

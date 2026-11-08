@@ -1,39 +1,38 @@
 #!/usr/bin/env python3
-"""Check immutable hardening history and owners evolved by the integration forward."""
+"""Verify immutable payment history and effective forward-owned definitions."""
 from pathlib import Path
 import argparse
 import hashlib
 import importlib.util
 import json
+from generate_canonical_source_contract import render as source_contract
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     if not parser.parse_args().check:
-        raise SystemExit('Payment hardening migration is immutable; use the integration forward assembler')
+        raise SystemExit('Payment hardening migration is immutable; author a new forward migration')
     manifest = json.loads((ROOT / 'automation/payment-provider-hardening-migration.json').read_text())
     historical = ROOT / 'supabase/migrations' / manifest['migration']
-    if hashlib.sha256(historical.read_bytes()).hexdigest() != '95176f853212158111d5829e6bfb2ea005d7790e03f9d32eb1e9aef03d7da979':
-        raise SystemExit('Installed payment hardening migration bytes changed')
-    integration = json.loads((ROOT / 'automation/payment-provider-integration-migration.json').read_text())
-    reset_source = 'payment_providers/configuration.sql'
     reset = ROOT / 'supabase/migrations/20261106210000_restore_payment_configuration_null_resets.sql'
-    reset_header = '-- Restore released nullable payment settings; no provider activation or ACL expansion.\n-- SOURCE: ' + reset_source + '\n'
-    if reset.read_text() != reset_header + (ROOT / 'database/functions' / reset_source).read_text():
-        raise SystemExit('Payment nullable configuration forward does not match its canonical owner')
-    text = historical.read_text()
-    for source in manifest['sources']:
-        if source != reset_source and source not in integration['sources'] and (ROOT / 'database/functions' / source).read_text().rstrip() not in text:
-            raise SystemExit('Hardening owner needs an explicit integration forward: ' + source)
+    for target, expected in [
+        (historical, '95176f853212158111d5829e6bfb2ea005d7790e03f9d32eb1e9aef03d7da979'),
+        (reset, 'fc477ea3e8b7043dba1902bc67dd65385173411ea1a228a5d5a5cfc29689a46b'),
+    ]:
+        if target.is_symlink() or hashlib.sha256(target.read_bytes()).hexdigest() != expected:
+            raise SystemExit('Installed payment migration bytes changed: ' + target.name)
+    # Later cash policy forwards supersede the nullable-settings snapshot too.
+    # Validate current owners at the effective release head, not in old files.
+    source_contract(ROOT, additional_sources=manifest['sources'])
     spec = importlib.util.spec_from_file_location('payment_integration', ROOT / 'automation/assemble-payment-provider-integration-migration.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    target, expected = module.render()
-    if target.read_text() != expected:
-        raise SystemExit('Payment integration forward does not match current owners')
-    print('Immutable hardening history and current integration owners match')
+    module.render()
+    print('Immutable payment history and effective forward owners match')
+
 
 if __name__ == '__main__':
     main()

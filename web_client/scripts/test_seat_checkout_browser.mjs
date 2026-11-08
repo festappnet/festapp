@@ -15,7 +15,7 @@ assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname), 'Browser f
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-seat-checkout-'));
 const config = path.join(temporary, 'browser.json');
-await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false }));
+await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio' }));
 const session = `seat-checkout-${process.pid}`;
 const execute = promisify(execFile);
 const db = new pg.Client({ connectionString: url.href });

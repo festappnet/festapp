@@ -174,6 +174,14 @@ test(`offline handoff uses the selected main and recovery scripts (immutable she
     let installation;
     handlers.install({ waitUntil: (promise) => { installation = promise; } });
     await installation;
+    assert.ok(!entries.has('/main.dart.1.0.0-1.js'), 'public install must omit Flutter');
+    context.fetch = async () => Response.json({version:'1.0.0+1',main:'main.dart.1.0.0-1.js'});
+    let preparation, prepared;
+    handlers.message({data:{type:'FESTAPP_QUERY_BUILD_VERSION',runtime:'flutter'}, source:{id:'mobile',url:'https://app.test/login'},
+      ports:[{postMessage:value=>prepared=value}],waitUntil:value=>preparation=value});
+    await preparation;
+    assert.equal(prepared.ready,true);
+    context.fetch = async () => {throw new Error('offline mobile handoff');};
     function fetchThroughWorker(request) {
       let response;
       handlers.fetch({ request, clientId: 'mobile', resultingClientId: 'mobile',
