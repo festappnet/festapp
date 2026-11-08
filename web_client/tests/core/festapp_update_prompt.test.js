@@ -38,6 +38,7 @@ function boot({
     activeWorkerWithoutUpdate = false,
     activeWorkerVersion,
     appReady = false,
+    clientRuntime,
     cutoverVersion,
 } = {}) {
     const navigationErrors = [];
@@ -55,6 +56,7 @@ function boot({
         beforeParse(window) {
             window.__FESTAPP_BUILD_VERSION__ = buildVersion;
             window.__FESTAPP_APP_READY__ = appReady;
+            window.__FESTAPP_CLIENT_RUNTIME__ = clientRuntime;
             if (locale) window.localStorage.setItem('flutter.Locale', JSON.stringify(locale));
             if (cutoverVersion) {
                 window.sessionStorage.setItem('festappCutoverVersion', cutoverVersion);
@@ -434,6 +436,49 @@ describe('festapp_update_prompt.js', () => {
     });
 });
 
+
+for (const path of ['/form/a', '/form/a?embed=1', '/']) {
+    test(`pristine public web automatically activates a coherent new build without a banner: ${path}`, async t => {
+        const dom = boot({url:`https://csmostrava.festapp.net${path}`, appReady:true,
+            clientRuntime:'web', latestVersion:'2.0.0+2', waitingWorker:true});
+        t.after(() => dom.window.close());
+        dom.window.dispatchEvent(new dom.window.Event(path === '/' ? 'festapp-update-available' : 'focus'));
+        await flush();
+        assert.deepEqual([...dom.window.__skipWaitingMessages], ['SKIP_WAITING']);
+        assert.equal(dom.window.__navigationErrors.length, 1);
+        assert.equal(banner(dom.window), null);
+    });
+}
+
+test('public web draft is left alone when a new version exists', async t => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1', appReady:true,
+        clientRuntime:'web', latestVersion:'2.0.0+2', waitingWorker:true});
+    t.after(() => dom.window.close());
+    dom.window.FestappRuntime.protectDraft();
+    dom.window.dispatchEvent(new dom.window.Event('focus'));
+    await flush();
+    assert.equal(dom.window.__navigationErrors.length, 0);
+    assert.deepEqual([...dom.window.__skipWaitingMessages], []);
+    assert.equal(banner(dom.window), null);
+});
+
+test('typing during worker preparation cancels automatic activation and reload', async t => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a', appReady:true,
+        clientRuntime:'web', latestVersion:'2.0.0+2', waitingWorker:true});
+    t.after(() => dom.window.close());
+    let finish, started;
+    const preparing = new Promise(resolve => { started = resolve; });
+    dom.window.__registration.update = () => { started(); return new Promise(resolve => { finish = resolve; }); };
+    dom.window.dispatchEvent(new dom.window.Event('focus'));
+    await flush();
+    assert.equal(typeof finish, 'function', 'pristine web must prepare the new worker automatically');
+    await preparing;
+    dom.window.FestappRuntime.protectDraft();
+    finish(); await flush();
+    assert.deepEqual([...dom.window.__skipWaitingMessages], []);
+    assert.equal(dom.window.__navigationErrors.length, 0);
+    assert.equal(banner(dom.window), null);
+});
 
 test('ready embed preserves recovery exports but ignores all background update triggers', async () => {
     const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1', appReady:true,

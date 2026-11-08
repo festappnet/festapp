@@ -7,6 +7,7 @@ export function installRuntimeState(win) {
     let phase = win.__FESTAPP_APP_READY__ === true ? 'ready' : 'starting';
     let retrying = false;
     let navigating = false;
+    let draftProtected = false;
     const runtime = {
         async prepareFlutterOffline(registration) {
             for (const worker of [...new Set([registration.waiting, registration.installing, registration.active])]) {
@@ -15,7 +16,9 @@ export function installRuntimeState(win) {
             throw new Error('Flutter offline shell is not ready for this build');
         },
         get retrying() { return retrying; },
-        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase}); },
+        protectDraft() { draftProtected = true; },
+        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase,
+            publicWeb:win.__FESTAPP_CLIENT_RUNTIME__ === 'web', draftProtected}); },
         navigate(reason, effect) {
             if (!runtime.allowed(reason)) return false;
             navigating = true;
@@ -47,5 +50,12 @@ export function installRuntimeState(win) {
         }
     };
     win.FestappRuntime = runtime;
+    // Native forms include the sale-opening email field. Synthetic initialization
+    // does not protect an untouched page; custom form fields use protectDraft().
+    for (const type of ['beforeinput', 'input', 'change', 'submit']) {
+        win.addEventListener(type, event => {
+            if (event.isTrusted) runtime.protectDraft();
+        }, true);
+    }
     return runtime;
 }

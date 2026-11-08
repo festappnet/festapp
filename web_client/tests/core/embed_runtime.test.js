@@ -30,6 +30,21 @@ test('policy preserves explicit recovery exceptions and rejects unknown operatio
         assert.equal(allowUpdate('unrecognized',state),false);
     }
 });
+test('only real editing protects an otherwise ready public web page from automatic updates', () => {
+    const listeners = new Map();
+    const win = {__FESTAPP_CLIENT_RUNTIME__:'web', __FESTAPP_APP_READY__:true,
+        location:new URL('https://tickets.invalid/form/a?embed=1'),
+        addEventListener:(type, handler) => listeners.set(type, handler)};
+    const state = installRuntimeState(win);
+    assert.equal(state.allowed('automatic-update'), true);
+    listeners.get('input')({isTrusted:false});
+    assert.equal(state.allowed('automatic-update'), true, 'initialization must not look like a draft');
+    listeners.get('beforeinput')({isTrusted:true});
+    assert.equal(state.allowed('automatic-update'), false, 'protect before the first edit is applied');
+    assert.equal(state.allowed('legacy-migration'), false, 'routine legacy recovery must also preserve the draft');
+    assert.equal(state.allowed('corrupt-runtime'), true);
+});
+
 test('runtime owns readiness, late failures and concurrent retry/navigation', async () => {
     const win = new EventTarget(); win.Event = Event; win.location = new URL('https://tickets.invalid/form/a?embed=1');
     const state = installRuntimeState(win);

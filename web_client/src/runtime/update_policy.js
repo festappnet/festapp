@@ -1,6 +1,8 @@
 // Every asynchronous executor re-evaluates this immediately before its effect.
-export function allowUpdate(reason, {context, phase}) {
+export function allowUpdate(reason, {context, phase, publicWeb, draftProtected}) {
+    if (publicWeb && draftProtected && reason !== 'corrupt-runtime') return false;
     switch (reason) {
+        case 'automatic-update': return publicWeb === true && !draftProtected;
         case 'legacy-migration':
         case 'corrupt-runtime': return true;
         case 'startup':

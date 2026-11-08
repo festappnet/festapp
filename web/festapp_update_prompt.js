@@ -240,8 +240,11 @@
   }
 
   // src/runtime/update_policy.js
-  function allowUpdate(reason, { context, phase }) {
+  function allowUpdate(reason, { context, phase, publicWeb, draftProtected }) {
+    if (publicWeb && draftProtected && reason !== "corrupt-runtime") return false;
     switch (reason) {
+      case "automatic-update":
+        return publicWeb === true && !draftProtected;
       case "legacy-migration":
       case "corrupt-runtime":
         return true;
@@ -262,6 +265,7 @@
     let phase = win.__FESTAPP_APP_READY__ === true ? "ready" : "starting";
     let retrying = false;
     let navigating = false;
+    let draftProtected = false;
     const runtime = {
       async prepareFlutterOffline(registration) {
         for (const worker of [.../* @__PURE__ */ new Set([registration.waiting, registration.installing, registration.active])]) {
@@ -272,8 +276,16 @@
       get retrying() {
         return retrying;
       },
+      protectDraft() {
+        draftProtected = true;
+      },
       allowed(reason) {
-        return !navigating && allowUpdate(reason, { context: pageContext(win.location), phase: runtime.phase });
+        return !navigating && allowUpdate(reason, {
+          context: pageContext(win.location),
+          phase: runtime.phase,
+          publicWeb: win.__FESTAPP_CLIENT_RUNTIME__ === "web",
+          draftProtected
+        });
       },
       navigate(reason, effect) {
         if (!runtime.allowed(reason)) return false;
@@ -310,6 +322,11 @@
       }
     };
     win.FestappRuntime = runtime;
+    for (const type of ["beforeinput", "input", "change", "submit"]) {
+      win.addEventListener(type, (event) => {
+        if (event.isTrusted) runtime.protectDraft();
+      }, true);
+    }
     return runtime;
   }
 
@@ -318,6 +335,7 @@
     if (window.__FESTAPP_LOCAL_DEVELOPMENT__) return;
     const runtime = installRuntimeState(window);
     const embedded = () => pageContext(window.location) === "public-embed";
+    const publicWeb = () => window.__FESTAPP_CLIENT_RUNTIME__ === "web";
     let cutoverInFlight = false;
     const allowed = (reason) => runtime.allowed(reason);
     function navigate(reason, destination) {
@@ -445,8 +463,7 @@
       }
       return null;
     }
-    async function recoverFailedCutover(latestVersion, onlyIfStalled = false) {
-      const reason = onlyIfStalled ? "startup" : "background";
+    async function recoverFailedCutover(latestVersion, onlyIfStalled = false, reason = onlyIfStalled ? "startup" : "background") {
       if (!allowed(reason)) return false;
       if (cutoverInFlight || !latestVersion || navigator.onLine === false || sessionStorage.getItem(cleanRecoveryStorageKey) === latestVersion) {
         return false;
@@ -501,8 +518,9 @@
         if (!await hasStaleFlutterServiceWorker()) {
           return false;
         }
+        if (!allowed("legacy-migration")) return false;
         sessionStorage.setItem(guardKey, currentVersion || "1");
-        await clearLegacyFlutterCaches("explicit-update");
+        await clearLegacyFlutterCaches("legacy-migration");
         return navigate("legacy-migration");
       } catch (error) {
         console.warn("Festapp deep refresh failed:", error);
@@ -511,7 +529,7 @@
     }
     const showUpdateBanner = createUpdatePresentation({
       currentVersion,
-      canShow: () => !embedded(),
+      canShow: () => !embedded() && !publicWeb(),
       onReload: async (latestVersion) => {
         await clearLegacyFlutterCaches("explicit-update");
         const targetVersion = await networkBuildVersion() || latestVersion;
@@ -650,8 +668,9 @@
       }, 2e4);
     }
     async function checkVersion() {
+      const reason = publicWeb() ? "automatic-update" : "background";
       reportClientVersion();
-      if (!allowed("background")) return;
+      if (!allowed(reason)) return;
       if (checkInFlight || !currentVersion || navigator.onLine === false) {
         return;
       }
@@ -671,7 +690,7 @@
           return;
         }
         const data = await response.json();
-        if (!allowed("background")) return;
+        if (!allowed(reason)) return;
         const latestVersion = data && data.version;
         if (!latestVersion) {
           return;
@@ -680,8 +699,12 @@
         if (latestVersion === currentVersion) {
           const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration("/") : null;
           const activeVersion = await queryWorkerVersion(registration?.active);
-          if (!allowed("background")) return;
+          if (!allowed(reason)) return;
           if (activeVersion && activeVersion !== currentVersion) {
+            if (publicWeb()) {
+              await cutOverToVersion(currentVersion, false, false, reason);
+              return;
+            }
             if (window.__FESTAPP_APP_READY__ === true) {
               if (await getReadyWorkerForVersion(currentVersion)) {
                 showUpdateBanner(currentVersion, "legacy-cache");
@@ -695,7 +718,11 @@
           return;
         }
         if (sessionStorage.getItem(cutoverStorageKey) === latestVersion) {
-          await recoverFailedCutover(latestVersion, embedded());
+          await recoverFailedCutover(latestVersion, publicWeb() ? false : embedded(), reason);
+          return;
+        }
+        if (publicWeb()) {
+          await cutOverToVersion(latestVersion, false, false, reason);
           return;
         }
         if (window.__FESTAPP_APP_READY__ === true) {
@@ -743,7 +770,7 @@
     window.addEventListener("load", function() {
       deepRefreshIfStale().then(function(reloading) {
         if (!reloading) {
-          window.setTimeout(checkVersion, 3e3);
+          window.setTimeout(checkVersion, publicWeb() ? 0 : 3e3);
           scheduleStartupRecovery();
         }
       });
@@ -753,6 +780,11 @@
       checkVersion();
     });
     window.addEventListener("festapp-update-available", function(event) {
+      if (publicWeb()) {
+        lastVersionCheckAt = null;
+        checkVersion();
+        return;
+      }
       const detail = event.detail || {};
       showUpdateBanner(detail.version || currentVersion, detail.reason);
     });

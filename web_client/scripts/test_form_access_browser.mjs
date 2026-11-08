@@ -66,6 +66,54 @@ try {
     const shell = (await readFile(path.join(root, 'index.html'), 'utf8'))
         .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"')
         .replace('</head>', `<script>
+            const initialScenario = new URLSearchParams(location.search).get('scenario');
+            if (initialScenario === 'embed-update-pristine' || initialScenario === 'embed-update-dirty') {
+                sessionStorage.setItem('fixtureUpdateScenario', initialScenario);
+            }
+            const fixtureScenario = initialScenario || sessionStorage.getItem('fixtureUpdateScenario');
+            if (fixtureScenario === 'embed-update-pristine' || fixtureScenario === 'embed-update-dirty') {
+                new MutationObserver(() => {
+                    if (document.getElementById('festapp-update-banner')) {
+                        window.parent.postMessage({fixtureBannerObserved:true}, '*');
+                    }
+                }).observe(document.documentElement, {childList:true, subtree:true});
+                const register = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+                navigator.serviceWorker.register = (url, options) => register('/__fixture-update-worker.js', options);
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data === 'fixture-worker-query-pending') {
+                        window.parent.postMessage({fixtureUpdateReport:{workerQueryPending:true}}, '*');
+                    }
+                });
+            }
+            if (fixtureScenario === 'embed-pending') {
+                let sampledFrames=0, paintedLoader=false;
+                function samplePendingPaint() {
+                    if (window.__fixtureFormPending) sampledFrames++;
+                    if (window.__FESTAPP_APP_READY__ !== true) {
+                        const loader=document.querySelector('#form-page-container .sp-loader');
+                        if (loader) {
+                            const rect=loader.getBoundingClientRect();
+                            let visible=rect.width>0 && rect.height>0;
+                            for (let node=loader; visible && node; node=node.parentElement) {
+                                const style=getComputedStyle(node);
+                                visible=style.display!=='none' && style.visibility!=='hidden' && Number(style.opacity)!==0;
+                            }
+                            paintedLoader ||= visible;
+                        }
+                    }
+                    requestAnimationFrame(samplePendingPaint);
+                }
+                requestAnimationFrame(samplePendingPaint);
+                window.addEventListener('message', event => {
+                    if (event.data === 'fixture-release-form') { window.__fixtureReleaseForm?.(); return; }
+                    if (event.data !== 'fixture-pending-query') return;
+                    function replyWhenSampled() {
+                        if (!window.__fixtureFormPending || sampledFrames < 2) { requestAnimationFrame(replyWhenSampled); return; }
+                        event.source.postMessage({fixtureUpdateReport:{pending:true, sampledFrames, paintedLoader}}, event.origin);
+                    }
+                    replyWhenSampled();
+                });
+            }
             if (new URLSearchParams(location.search).get('scenario') === 'embed-error') {
                 Object.defineProperty(navigator, 'onLine', {value:false, configurable:true});
                 window.addEventListener('message', event => {
@@ -82,6 +130,13 @@ try {
                 const originalFetch = window.fetch;
                 window.fetch = function(input, init) {
                     const response = originalFetch.call(this, input, init);
+                    if (new URLSearchParams(location.search).get('scenario') === 'embed-pending' &&
+                        String(input).includes('/__form_access_rpc') && JSON.parse(init?.body || '{}').name === 'get_form_by_link') {
+                        return response.then(value => new Promise(resolve => {
+                            window.__fixtureFormPending = true;
+                            window.__fixtureReleaseForm = () => { window.__fixtureFormPending = false; resolve(value); };
+                        }));
+                    }
                     if (!String(input).includes('/festapp-version.json?t=')) return response;
                     return response.then(value => new Promise(resolve => {
                         window.__fixtureVersionPending = true;
@@ -111,6 +166,21 @@ try {
                 if (req.url.startsWith('/__missing_entry.js')) {
                     res.statusCode = 404; res.setHeader('Content-Type', 'text/plain'); res.end('missing fixture'); return;
                 }
+                if (req.url === '/__fixture-update-worker.js') {
+                    res.setHeader('Content-Type', 'application/javascript');
+                    res.end(`let pending;
+                        self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
+                        self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+                        self.addEventListener('message', event => {
+                            if (event.data?.type === 'FESTAPP_QUERY_BUILD_VERSION') {
+                                pending = event.ports[0];
+                                event.source.postMessage('fixture-worker-query-pending');
+                            } else if (event.data === 'fixture-release-worker' && pending) {
+                                pending.postMessage({version:'fixture-new-version',runtime:'web',ready:true});
+                                pending = null;
+                            }
+                        });`); return;
+                }
                 if (req.url === '/festapp_service_worker.js') {
                     res.setHeader('Content-Type', 'application/javascript');
                     res.end(await readFile(path.join(root, 'tests/fixtures/form_access/service_worker.js'))); return;
@@ -131,7 +201,7 @@ try {
                     const child = `http://localhost:${server.httpServer.address().port}/form/account-access?embed=1&scenario=${params.get('scenario') || 'embed-short'}`;
                     const fixed = params.get('fixed') === '1';
                     res.setHeader('Content-Type', 'text/html');
-                    res.end(`<!doctype html><html><body style="margin:0"><header style="height:100px">Pořadatel</header><iframe data-festapp-embed ${fixed ? 'data-festapp-height="fixed"' : ''} src="${child}" style="width:100%;${fixed ? 'height:300px;max-height:300px' : ''}" height="${fixed ? 300 : 800}" title="Přihláška"></iframe><script>window.addEventListener("message",e=>{if(e.data?.fixtureUpdateReport)window.fixtureUpdateReport=e.data.fixtureUpdateReport})</script>${params.get('helper') === 'none' ? '' : `<script src="${helper}"></script>`}</body></html>`); return;
+                    res.end(`<!doctype html><html><body style="margin:0"><header style="height:100px">Pořadatel</header><iframe data-festapp-embed ${fixed ? 'data-festapp-height="fixed"' : ''} src="${child}" style="width:100%;${fixed ? 'height:300px;max-height:300px' : ''}" height="${fixed ? 300 : 800}" title="Přihláška"></iframe><script>window.fixtureFrameLoads=0;window.fixtureBannerObserved=false;window.addEventListener("message",e=>{if(e.data?.fixtureBannerObserved)window.fixtureBannerObserved=true});document.querySelector("iframe").addEventListener("load",()=>window.fixtureFrameLoads++);window.addEventListener("message",e=>{if(e.data?.fixtureUpdateReport)window.fixtureUpdateReport=e.data.fixtureUpdateReport})</script>${params.get('helper') === 'none' ? '' : `<script src="${helper}"></script>`}</body></html>`); return;
                 }
                 if (req.url === '/__browser_startup') {
                     res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Browser startup</title>'); return;
@@ -197,6 +267,64 @@ try {
     await server.listen();
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
     const visible = selector => `(() => { const e=document.querySelector(${JSON.stringify(selector)}); if(!e)return false; const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; })()`;
+    // Hold the public form response after transport completes, so the real
+    // shell/Main/child can paint while form data is still pending. No order or
+    // subscription is submitted. The existing offline retry case stays below.
+    await openBrowser(`${origin}/__real_embed_host?scenario=embed-pending&helper=current&fixed=0`);
+    await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-pending-query", "*")');
+    await browser('wait', '--fn', 'window.fixtureUpdateReport?.pending && window.fixtureUpdateReport?.sampledFrames >= 2');
+    const pendingPaint = (await browser('eval', 'window.fixtureUpdateReport')).result;
+    assert.equal(pendingPaint.paintedLoader, false, 'embedded form must not paint its animated pending loader');
+    await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
+    await browser('snapshot', '-i');
+    await browser('frame', '@e1');
+    await browser('wait', 'input[type=email]');
+    await browser('close');
+    console.log(`PASS: embedded form painted no animated loader during ${pendingPaint.sampledFrames} pending frames`);
+
+    // Exercise the actual updater while a matching worker's readiness response is
+    // held. Only transport is simulated; typing uses trusted browser input.
+    for (const dirty of [false, true]) {
+        const scenario = dirty ? 'embed-update-dirty' : 'embed-update-pristine';
+        await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=current&fixed=0`);
+        await browser('snapshot', '-i');
+        await browser('frame', '@e1');
+        await browser('wait', 'input[type=email]');
+        await browser('frame', 'main');
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-start-update", "*")');
+        await browser('wait', '--fn', 'window.fixtureUpdateReport?.workerQueryPending === true');
+        if (dirty) {
+            await browser('snapshot', '-i');
+            await browser('frame', '@e1');
+            await browser('fill', 'input[type=email]', 'rozpracovano@example.test');
+            await browser('frame', 'main');
+        }
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-worker", "*")');
+        if (dirty) {
+            await browser('wait', '500');
+            assert.equal((await browser('eval', 'window.fixtureFrameLoads')).result, 1, 'dirty form must not reload');
+            await browser('snapshot', '-i');
+            await browser('frame', '@e1');
+            assert.equal((await browser('get', 'value', 'input[type=email]')).value, 'rozpracovano@example.test');
+
+        } else {
+            await browser('wait', '--fn', 'window.fixtureFrameLoads >= 2');
+            await browser('snapshot', '-i');
+            await browser('frame', '@e1');
+            await browser('wait', 'input[type=email]');
+
+        }
+        await browser('frame', 'main');
+        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-inspect-update", "*")');
+        await browser('wait', '--fn', 'window.fixtureUpdateReport?.inspection === true');
+        const inspection = (await browser('eval', 'window.fixtureUpdateReport')).result;
+        assert.equal(inspection.banner, false, 'embedded document must not show an update banner');
+        assert.equal((await browser('eval', 'window.fixtureBannerObserved')).result, false, 'update banner must never be painted');
+        if (dirty) assert.equal(inspection.draft, 'rozpracovano@example.test');
+        console.log(`PASS: ${dirty ? 'dirty draft protected during worker preparation' : 'pristine embedded form automatically updated without banner'}`);
+        await browser('close');
+    }
+
     // Real shell, Main and form in a cross-origin host with the shipped and
     // frozen PR 769 helpers. Backend transport and the version response alone
     // are fixtures; the updater starts before the delayed Main import.

@@ -3,7 +3,7 @@
 import { AppConfig } from '../../../src/app_config.js';
 import { SupabaseService } from '../../../src/services/supabase_service.js';
 import { RouterService } from '../../../src/services/router_service.js';
-const scenario = new URLSearchParams(location.search).get('scenario');
+const scenario = new URLSearchParams(location.search).get('scenario') || sessionStorage.getItem('fixtureUpdateScenario');
 AppConfig.isAppSupported = false;
 AppConfig.organization = 3;
 AppConfig.forceOccasionLink = null;
@@ -23,7 +23,22 @@ SupabaseService.initialize = async () => { SupabaseService._client = client; };
 RouterService.navigateToFlutterRoute = async path => { window.__adminDestination = path; };
 if (scenario?.startsWith('embed-')) {
     const readyAtFocus = window.__FESTAPP_APP_READY__ === true;
-    window.addEventListener('message', event => {
+    window.addEventListener('message', async event => {
+        if (event.data === 'fixture-inspect-update') {
+            event.source.postMessage({fixtureUpdateReport:{inspection:true,
+                banner:!!document.getElementById('festapp-update-banner'),
+                draft:document.querySelector('input[type=email]')?.value}}, event.origin);
+            return;
+        }
+        if (event.data === 'fixture-start-update') {
+            window.__fixtureReleaseVersion?.();
+            window.dispatchEvent(new Event('focus'));
+            return;
+        }
+        if (event.data === 'fixture-release-worker') {
+            (await navigator.serviceWorker.ready).active.postMessage('fixture-release-worker');
+            return;
+        }
         if (event.data === 'fixture-check-validation') {
             const shown = [...document.querySelectorAll('.form-field-error')]
                 .some(el => {

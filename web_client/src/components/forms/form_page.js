@@ -537,6 +537,11 @@ export class FormPage extends Component {
     }
 
     renderLoading() {
+        if (isEmbed()) {
+            this.host.innerHTML = '<span class="form-loading-status" role="status"></span>';
+            this.host.firstElementChild.textContent = CommonStrings.loading;
+            return;
+        }
         this.host.innerHTML = '<div class="sp-loader" role="status"></div>';
         this.host.firstElementChild.setAttribute('aria-label', CommonStrings.loading);
     }
@@ -570,7 +575,10 @@ export class FormPage extends Component {
         const session = new FormSession(formModel);
         this.currentSession = session;
         prepareOfferSession(session, formModel);
-        if (restoredDraft) session.restoreDraft(restoredDraft.previous, restoredDraft.spots);
+        if (restoredDraft) {
+            window.FestappRuntime?.protectDraft();
+            session.restoreDraft(restoredDraft.previous, restoredDraft.spots);
+        }
 
         // Subscribe to Validation Changes
         session.addEventListener('validation-changed', (e) => {
@@ -580,8 +588,14 @@ export class FormPage extends Component {
         // Initialize Widget (it subscribes itself)
         if (formModel.registrationMode !== 'waitlist') this.currentPriceWidget = new PriceWidget(session, this.host);
         FormRenderer.render(this.host, session, formModel, showPreview, {
-            onSubmit: (form, model) => this.validateAndSubmit(form, model),
-            onInteraction: () => this.analytics?.started(),
+            onSubmit: (form, model) => {
+                window.FestappRuntime?.protectDraft();
+                return this.validateAndSubmit(form, model);
+            },
+            onInteraction: () => {
+                window.FestappRuntime?.protectDraft();
+                this.analytics?.started();
+            },
             onInput: (e, form, model) => {
                 if (e.type === 'input') FormValidator.handleInputValidation(e, form, session);
 

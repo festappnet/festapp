@@ -43,6 +43,24 @@ test('form loading never leaves an empty page while the request is pending', asy
         await loading;
         assert.match(document.getElementById('form-page-container').textContent, /nenalezen/);
     });
+    await t.test('embedded pending form announces loading without an animated spinner', async t => {
+        window.history.replaceState(null, '', '/form/embed-test?embed=1');
+        const page = new FormPage('form-page-container');
+        t.after(() => {
+            page.clear();
+            window.history.replaceState(null, '', '/form/test');
+        });
+        let finish, started;
+        const pending = new Promise(resolve => { started = resolve; });
+        t.mock.method(DbForms, 'getFormByLink', () => new Promise(resolve => { finish = resolve; started(); }));
+        const loading = page.init('embed-test');
+        await pending;
+        assert.equal(page.host.querySelector('.sp-loader'), null);
+        assert.equal(page.host.querySelector('[role="status"]').textContent, 'Načítání...');
+        finish(null); await loading;
+        assert.equal(page.host.querySelector('[role="status"]'), null);
+        assert.match(page.host.textContent, /nenalezen/);
+    });
     await t.test('a failed request offers a retry that fetches again', async (t) => {
         let calls = 0;
         t.mock.method(DbForms, 'getFormByLink', async () => {

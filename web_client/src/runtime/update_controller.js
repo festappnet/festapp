@@ -7,6 +7,7 @@ export function initFestappUpdatePrompt() {
   if (window.__FESTAPP_LOCAL_DEVELOPMENT__) return;
   const runtime = installRuntimeState(window);
   const embedded = () => pageContext(window.location) === 'public-embed';
+  const publicWeb = () => window.__FESTAPP_CLIENT_RUNTIME__ === 'web';
   let cutoverInFlight = false;
   const allowed = reason => runtime.allowed(reason);
   function navigate(reason, destination) {
@@ -156,8 +157,7 @@ export function initFestappUpdatePrompt() {
   // If the user accepted a version but the old HTML returned, the normal
   // cutover has failed. Perform one clean, cache-busted restart and never
   // offer the same update banner again from that stale page.
-  async function recoverFailedCutover(latestVersion, onlyIfStalled = false) {
-    const reason = onlyIfStalled ? 'startup' : 'background';
+  async function recoverFailedCutover(latestVersion, onlyIfStalled = false, reason = onlyIfStalled ? 'startup' : 'background') {
     if (!allowed(reason)) return false;
     if (cutoverInFlight || !latestVersion || navigator.onLine === false ||
         sessionStorage.getItem(cleanRecoveryStorageKey) === latestVersion) {
@@ -227,8 +227,9 @@ export function initFestappUpdatePrompt() {
       if (!(await hasStaleFlutterServiceWorker())) {
         return false;
       }
+      if (!allowed('legacy-migration')) return false;
       sessionStorage.setItem(guardKey, currentVersion || '1');
-      await clearLegacyFlutterCaches('explicit-update');
+      await clearLegacyFlutterCaches('legacy-migration');
       return navigate('legacy-migration');
     } catch (error) {
       console.warn('Festapp deep refresh failed:', error);
@@ -237,7 +238,7 @@ export function initFestappUpdatePrompt() {
   }
 
   const showUpdateBanner = createUpdatePresentation({currentVersion,
-    canShow: () => !embedded(),
+    canShow: () => !embedded() && !publicWeb(),
     onReload: async latestVersion => {
       await clearLegacyFlutterCaches('explicit-update');
       // Keep the last working shell until the matching new worker is installed,
@@ -398,9 +399,11 @@ export function initFestappUpdatePrompt() {
   }
 
   async function checkVersion() {
-    // Keep startup recovery, but never interrupt an interactive embedded form.
+    // Public web updates silently until editing starts. Recheck the same guard
+    // after every asynchronous preparation, before activation and navigation.
+    const reason = publicWeb() ? 'automatic-update' : 'background';
     reportClientVersion();
-    if (!allowed('background')) return;
+    if (!allowed(reason)) return;
     if (checkInFlight || !currentVersion || navigator.onLine === false) {
       return;
     }
@@ -425,7 +428,7 @@ export function initFestappUpdatePrompt() {
       }
 
       const data = await response.json();
-      if (!allowed('background')) return;
+      if (!allowed(reason)) return;
       const latestVersion = data && data.version;
       if (!latestVersion) {
         return;
@@ -442,8 +445,12 @@ export function initFestappUpdatePrompt() {
           ? await navigator.serviceWorker.getRegistration('/')
           : null;
         const activeVersion = await queryWorkerVersion(registration?.active);
-        if (!allowed('background')) return;
+        if (!allowed(reason)) return;
         if (activeVersion && activeVersion !== currentVersion) {
+          if (publicWeb()) {
+            await cutOverToVersion(currentVersion, false, false, reason);
+            return;
+          }
           // Once the app is interactive, an automatic controller cutover can
           // race with a tap and reload the tab after navigation has begun. Keep
           // the working page intact and let the user choose when to refresh.
@@ -462,7 +469,12 @@ export function initFestappUpdatePrompt() {
       }
 
       if (sessionStorage.getItem(cutoverStorageKey) === latestVersion) {
-        await recoverFailedCutover(latestVersion, embedded());
+        await recoverFailedCutover(latestVersion, publicWeb() ? false : embedded(), reason);
+        return;
+      }
+
+      if (publicWeb()) {
+        await cutOverToVersion(latestVersion, false, false, reason);
         return;
       }
 
@@ -521,7 +533,7 @@ export function initFestappUpdatePrompt() {
     // hard reload, so skip the (now moot) passive version check for this load.
     deepRefreshIfStale().then(function(reloading) {
       if (!reloading) {
-        window.setTimeout(checkVersion, 3000);
+        window.setTimeout(checkVersion, publicWeb() ? 0 : 3000);
         scheduleStartupRecovery();
       }
     });
@@ -531,6 +543,11 @@ export function initFestappUpdatePrompt() {
     checkVersion();
   });
   window.addEventListener('festapp-update-available', function(event) {
+    if (publicWeb()) {
+      lastVersionCheckAt = null;
+      checkVersion();
+      return;
+    }
     const detail = event.detail || {};
     showUpdateBanner(detail.version || currentVersion, detail.reason);
   });

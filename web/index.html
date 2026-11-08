@@ -230,8 +230,10 @@ function pageContext(location) {
         new URLSearchParams(location.search).get('embed') === '1' ? 'public-embed' : 'full-page';
 }
 // Every asynchronous executor re-evaluates this immediately before its effect.
-function allowUpdate(reason, {context, phase}) {
+function allowUpdate(reason, {context, phase, publicWeb, draftProtected}) {
+    if (publicWeb && draftProtected && reason !== 'corrupt-runtime') return false;
     switch (reason) {
+        case 'automatic-update': return publicWeb === true && !draftProtected;
         case 'legacy-migration':
         case 'corrupt-runtime': return true;
         case 'startup':
@@ -264,6 +266,7 @@ function installRuntimeState(win) {
     let phase = win.__FESTAPP_APP_READY__ === true ? 'ready' : 'starting';
     let retrying = false;
     let navigating = false;
+    let draftProtected = false;
     const runtime = {
         async prepareFlutterOffline(registration) {
             for (const worker of [...new Set([registration.waiting, registration.installing, registration.active])]) {
@@ -272,7 +275,9 @@ function installRuntimeState(win) {
             throw new Error('Flutter offline shell is not ready for this build');
         },
         get retrying() { return retrying; },
-        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase}); },
+        protectDraft() { draftProtected = true; },
+        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase,
+            publicWeb:win.__FESTAPP_CLIENT_RUNTIME__ === 'web', draftProtected}); },
         navigate(reason, effect) {
             if (!runtime.allowed(reason)) return false;
             navigating = true;
@@ -304,6 +309,13 @@ function installRuntimeState(win) {
         }
     };
     win.FestappRuntime = runtime;
+    // Native forms include the sale-opening email field. Synthetic initialization
+    // does not protect an untouched page; custom form fields use protectDraft().
+    for (const type of ['beforeinput', 'input', 'change', 'submit']) {
+        win.addEventListener(type, event => {
+            if (event.isTrusted) runtime.protectDraft();
+        }, true);
+    }
     return runtime;
 }
 window.__FESTAPP_CLIENT_RUNTIME__ = 'flutter';
