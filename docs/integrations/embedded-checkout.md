@@ -11,9 +11,14 @@ fallback bez JavaScriptu, včetně stávajících WordPress pluginů. Pevné vý
 se helper nedotýká. Nový helper posílá volitelné `minHeight: 120`; child bez
 něj zachová minimum 240 px pro kompatibilitu se staršími helpery protokolu 1.
 Rozsah `viewportHeight` se nemění. Na webclientových cestách `/form/:slug` a `/order` s přesným `?embed=1` je startovní plocha
-průhledná a bez loga; veřejný SEO souhrn je skrytý, aby neprosvítal při načítání. Aktualizační banner se v embedu nezobrazuje. Po připravení aplikace
-(`__FESTAPP_APP_READY__ === true`) kontroly verzí neobnovují stránku; běžná
-aktualizace počká na další načtení stránky. Samooprava startu včetně deep refresh,
+průhledná s malým načítacím logem nejvýše 60 × 48 px; veřejný SEO souhrn je skrytý,
+aby neprosvítal při načítání. Při převzetí vzhledu se světlý/tmavý režim řídí
+hostitelskou stránkou, včetně jejího přepnutí, nikoliv osobním nastavením aplikace
+nebo režimem prohlížeče. Helper sjednotí barevné schéma iframe i jeho obsahu,
+aby Chrome nevykreslil neprůhledný canvas. Aktualizační banner se nezobrazuje.
+Nedotčený veřejný formulář se aktualizuje automaticky; po začátku vyplňování
+aktualizace počká na příští otevření a rozpracované údaje neruší.
+Samooprava startu včetně deep refresh,
 přepnutí verze před připravením aplikace a obnova rozbitého runtime zůstávají aktivní.
 Pevná výška ponechá iframe na 800 px s vlastním posouváním. Převzetí vzhledu
 funguje v obou režimech výšky, pokud CMS povoluje externí skript. Pokud jej

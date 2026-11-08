@@ -4,7 +4,7 @@
 
 - Public web/forms install only their web offline shell. Flutter executables are prepared atomically on actual app entry, preserving public form recovery without a Flutter download.
 
-- Embedded forms start without branding, a colored splash or a flash of the public SEO summary, use a compact automatic height with a script-free fallback, and hide update prompts. Once ready, embedded forms defer version updates until the next page load while startup self-repair and corrupt-runtime recovery remain active.
+- Embedded forms inherit the host page's light/dark appearance, show only a compact loading mark on a transparent startup surface, hide the SEO fallback and update prompts, and keep automatic height with a script-free fallback. Untouched public forms update automatically; editing protects the draft from reloads. Startup self-repair and corrupt-runtime recovery remain active.
 
 - Form measurement passes `gbraid`, `wbraid`, `sznclid`, `ttclid` and `msclkid` next to UTM, `gclid` and `fbclid`, and adds optional `item_category` (product type) and `item_brand` (occasion) to items in browser events and the server `purchase`. Value calculation and recorded conversion facts are unchanged.
 - Form measurement no longer waits for visitor consent: on eligible forms the frame loads GTM and organizer scripts at once, including embedded forms without a host CMP, and the notice only passes the choice to Google Consent Mode. `purchase` and `generate_lead` carry the buyer's e-mail and phone in `user_data`, and enhanced conversions are available again. Hiding the tab no longer restarts the container.
