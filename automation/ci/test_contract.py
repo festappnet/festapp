@@ -33,6 +33,7 @@ class MirrorContractTest(unittest.TestCase):
                         self.assertTrue(any(marker in run for marker in (
                             'GITHUB_OUTPUT', 'dart pub global activate fvm',
                             'sudo apt-get', 'bash automation/ci/browser.sh',
+                            'bash automation/ci/deno.sh',
                         )), f'Unmirrored command in {name}: {run}')
                 self.assertEqual(actual, lane['steps'])
                 referenced.extend(actual)

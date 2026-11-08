@@ -35,7 +35,7 @@ test('script-breaking text, wrong scope and malformed backend responses fail at 
  const request=new Request(origin+'/runtime?form=summer&parent='+encodeURIComponent(host));
  let response;
  t.mock.method(globalThis,'fetch',async(url,options)=>{
-  assert.equal(url,'https://api.festapp.net/rest/v1/rpc/get_form_measurement_runtime_config');assert.equal(options.redirect,'error');
+  assert.equal(url,'https://api.festapp.net/rest/v1/rpc/get_form_measurement_runtime_config');assert.equal(options.redirect,'manual');
   assert.equal(options.headers.authorization,'Bearer '+credential);assert.equal(JSON.parse(options.body).p_unit,2);
   return response;
  });
