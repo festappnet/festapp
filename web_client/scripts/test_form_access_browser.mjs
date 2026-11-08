@@ -111,6 +111,10 @@ try {
                 if (req.url.startsWith('/__missing_entry.js')) {
                     res.statusCode = 404; res.setHeader('Content-Type', 'text/plain'); res.end('missing fixture'); return;
                 }
+                if (req.url === '/festapp_service_worker.js') {
+                    res.setHeader('Content-Type', 'application/javascript');
+                    res.end(await readFile(path.join(root, 'tests/fixtures/form_access/service_worker.js'))); return;
+                }
                 if (req.url.startsWith('/__fixture-update.js')) {
                     res.setHeader('Content-Type', 'application/javascript');
                     res.end(await readFile(path.join(root, '../web/festapp_update_prompt.js'))); return;
