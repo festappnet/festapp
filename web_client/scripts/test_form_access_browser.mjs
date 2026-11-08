@@ -9,23 +9,31 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer as createPortProbe } from 'node:net';
 import { createServer } from 'vite';
-import { openIsolatedBrowser } from './isolated_browser_startup.mjs';
+import { isolatedBrowserInvocation, openIsolatedBrowser } from './isolated_browser_startup.mjs';
 import { testPwaSplitBrowser } from './test_pwa_split_browser.mjs';
 const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
 const config = path.join(temporary, 'browser.json');
+const followConfig = path.join(temporary, 'browser-follow.json');
 await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio' }));
+await writeFile(followConfig, JSON.stringify({ provider: null, plugins: [], autoConnect: false }));
 let browserIndex = 0;
 let session = `fa-${process.pid}`;
 let browserPhase = 'setup';
 const requests = [];
+let needsLaunch = false;
 async function browser(...args) {
-    const { stdout } = await execute('agent-browser', ['--config', config, '--namespace', session,
-        '--session', session, '--headed', 'false', '--allowed-domains', '127.0.0.1,localhost', '--json', ...args],
-    { timeout: 30000, env: { ...process.env, AGENT_BROWSER_CONFIG: config, AGENT_BROWSER_PLUGINS: '[]', AGENT_BROWSER_DEFAULT_TIMEOUT: '8000' } });
+    const launch = needsLaunch;
+    needsLaunch = false;
+    const invocation = isolatedBrowserInvocation({launch, session, launchConfig:config, followConfig, sourceEnv:process.env, args});
+    const { stdout } = await execute('agent-browser', invocation.args, {timeout:30000, env:invocation.env});
     const result = JSON.parse(stdout);
     assert.equal(result.success, true, result.error);
+    const lifecycle = result.data?.lifecycle;
+    if (!launch && (lifecycle?.launched || lifecycle?.relaunchedBrowser || lifecycle?.restartedBackground)) {
+        throw new Error('Owned browser restarted after launch; refusing to continue without its original launch controls');
+    }
     return result.data;
 }
 async function openBrowser(url, ready) {
@@ -34,6 +42,7 @@ async function openBrowser(url, ready) {
     await openIsolatedBrowser({
         open: async () => {
             session = `fa-${process.pid}-${++browserIndex}`;
+            needsLaunch = true;
             browserPhase = 'launch';
             // Verify a ready, isolated browser before starting page navigation.
             // A combined cold launch/navigation can otherwise hide which stage
@@ -187,6 +196,7 @@ try {
     // Real shell, Main and form in a cross-origin host with the shipped and
     // frozen PR 769 helpers. Backend transport and the version response alone
     // are fixtures; the updater starts before the delayed Main import.
+    let verifiedHostSessions = 0;
     for (const [scenario, helper, fixed, width] of [
         ['embed-long', 'none', 0, 320], ['embed-short', 'current', 0, 320],
         ['embed-long', 'pr769', 0, 390], ['embed-long', 'legacy', 0, 1440],
@@ -200,6 +210,12 @@ try {
             await browser('set', 'viewport', String(width), '844');
             await browser('wait', '--fn', fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
         });
+        // The launch-only domain filter must still reject disallowed loopback
+        // hosts after crossing origins; no request leaves the browser.
+        if (verifiedHostSessions++ < 2) {
+            const denied = (await browser('eval', `fetch('http://127.0.0.2:${server.httpServer.address().port}/blocked').then(()=>'allowed',e=>e.name)`)).result;
+            assert.equal(denied, 'SecurityError', 'launch-time network containment must persist');
+        }
         await browser('snapshot', '-i');
         await browser('frame', '@e1');
         await browser('wait', '.flatpickr-input + input');

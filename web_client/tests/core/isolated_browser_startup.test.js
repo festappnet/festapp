@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openIsolatedBrowser } from '../../scripts/isolated_browser_startup.mjs';
+import { isolatedBrowserInvocation, openIsolatedBrowser } from '../../scripts/isolated_browser_startup.mjs';
 
 function fixture(sessions) {
     const calls = [];
@@ -193,4 +193,18 @@ test('exact CLI CDP loss during viewport and first frame check retries before in
  assert.equal(browser.calls.filter(c=>c==='close').length,1);
  assert.deepEqual(browser.calls.filter(c=>['viewport','frame-check','interaction'].includes(c)),
   ['viewport','frame-check','viewport','frame-check','interaction']);
+});
+
+
+test('fresh sessions receive containment and later calls do not reapply launch settings', () => {
+ const sourceEnv={PATH:'/bin', AGENT_BROWSER_EXECUTABLE_PATH:'/owned/chrome', AGENT_BROWSER_ARGS:'--ignored', AGENT_BROWSER_ALLOWED_DOMAINS:'untrusted.test'};
+ const base={session:'owned',launchConfig:'/owned/launch.json',followConfig:'/owned/follow.json',sourceEnv,args:['snapshot','-i']};
+ const first=isolatedBrowserInvocation({...base,launch:true});
+ assert.ok(first.args.includes('--allowed-domains')); assert.ok(first.args.includes('--headed'));
+ assert.equal(first.env.AGENT_BROWSER_EXECUTABLE_PATH,'/owned/chrome');
+ assert.equal(first.env.AGENT_BROWSER_ALLOWED_DOMAINS,undefined); assert.equal(first.env.AGENT_BROWSER_ARGS,undefined);
+ const next=isolatedBrowserInvocation({...base,launch:false});
+ assert.ok(!next.args.includes('--allowed-domains')); assert.ok(!next.args.includes('--headed'));
+ assert.equal(next.env.AGENT_BROWSER_EXECUTABLE_PATH,undefined); assert.equal(next.env.AGENT_BROWSER_CONFIG,'/owned/follow.json');
+ assert.equal(next.env.AGENT_BROWSER_ALLOWED_DOMAINS,undefined); assert.equal(next.env.AGENT_BROWSER_ARGS,undefined);
 });

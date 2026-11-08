@@ -1,5 +1,22 @@
 import assert from 'node:assert/strict';
 
+// Launch settings belong to a fresh owned session. Re-sending them on every
+// CLI call makes agent-browser 0.39.4 reinstall network controls while transient
+// cross-origin targets are attaching. The daemon retains the original filter.
+export function isolatedBrowserInvocation({launch, session, launchConfig, followConfig, sourceEnv, args}) {
+    const config = launch ? launchConfig : followConfig;
+    const env = Object.fromEntries(Object.entries(sourceEnv).filter(([key]) => !key.startsWith('AGENT_BROWSER_')));
+    Object.assign(env, {AGENT_BROWSER_CONFIG: config, AGENT_BROWSER_PLUGINS:'[]', AGENT_BROWSER_DEFAULT_TIMEOUT:'8000'});
+    if (launch && sourceEnv.AGENT_BROWSER_EXECUTABLE_PATH) {
+        env.AGENT_BROWSER_EXECUTABLE_PATH = sourceEnv.AGENT_BROWSER_EXECUTABLE_PATH;
+    }
+    return {
+        args:['--config',config,'--namespace',session,'--session',session,'--json',
+            ...(launch ? ['--headed','false','--allowed-domains','127.0.0.1,localhost'] : []), ...args],
+        env,
+    };
+}
+
 // A CLI open response can outlive its daemon or its initial page. Recover only
 // before exercising the page, with a fresh task-owned session; never retry UI assertions.
 function lostSetupSession(error) {
