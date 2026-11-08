@@ -526,11 +526,13 @@ try {
   const resumedId = 'resumed-web-page';
   const resumedClient = { id: resumedId, url: 'https://app.test/events', postMessage() {} };
   clientsById.set(resumedId, resumedClient);
+  const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
+    .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
+  // Read the cached document before starting the fixture's short handshake
+  // deadline; cold disk I/O is not part of the client-version protocol.
   const pendingWebModule = dispatchFetch(
     new Request('https://app.test/web-assets/index.js'), resumedId,
   );
-  const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
-    .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
   const resumedPage = new JSDOM(bootstrapHtml, {
     url: 'https://app.test/events',
     runScripts: 'dangerously',
