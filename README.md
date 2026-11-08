@@ -60,11 +60,18 @@ venue maps. See the [feature reference](docs/overview/features.md) for more.
 Manage seating across the ground floor, boxes and balconies, with a clear view
 of the stage and dance floor.
 
-### Arena seating
+### Design your tickets
 
-![Concert arena with four curved seating sectors around a central stage](docs/images/readme/tickets-arena-desktop.png)
+![Festapp ticket designer with a branded ticket and QR code](docs/images/readme/tickets-designer-desktop.png)
 
-Seat the audience in four curved sectors around a central stage.
+Create tickets with your own artwork, event details and seat information.
+Each ticket includes a QR code for admission checks.
+
+### Orders and payments
+
+![Order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
+
+Track orders and payments from the event administration.
 
 - **Ticket sales and registration.** Build public forms with ticket types,
   prices, capacity limits and attendee questions; share a link or embed a form
@@ -77,10 +84,6 @@ Seat the audience in four curved sectors around a central stage.
   verify QR codes with the browser scanner.
 - **Event operations.** Coordinate volunteers, participant groups,
   accommodation and reception, with event-specific branding and permissions.
-
-![Order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
-
-Track orders and payments from the event administration.
 
 The same platform powers [vstupenky.online](https://vstupenky.online/), its
 regional ticketing and registration portal. Website plugins and connectors

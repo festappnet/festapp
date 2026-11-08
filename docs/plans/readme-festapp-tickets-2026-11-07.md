@@ -92,3 +92,10 @@ change and passed afterward; source analysis and the full Flutter test suite
 passed. Replaced the arena screenshot with a fresh real-picker capture.
 Seat positions and the Lucerna screenshot are unchanged. Festapp vendor
 artifacts and production layouts are outside this documentation update.
+
+### Ticket designer replaces the second venue layout
+
+Keep the Lucerna overview for seat selection and replace Arena seating with
+the ticket designer. The gallery now covers distinct parts of the workflow:
+reserved seating, branded QR tickets, and order/payment administration. The
+README copy describes artwork, event details, seat information and QR admission.

@@ -84,20 +84,19 @@ through the actual picker, producing the visible `1x CZK 450` summary. This is
 a local fixture reservation, not a live sale or submitted checkout. No text
 or other pixels were painted over the screenshot.
 
-### Existing arena template
+### Ticket designer
 
-`tickets-arena-desktop.png` is the **1440 x 900** candidate captured on 2026-11-07
-alongside the Lucerna comparison, using the same real public web-client picker,
-English locale, light theme and disposable local fixture. It shows the existing
-approved **`studio-arena`** template: 96 seats in four curved sectors around a
-central stage. Seat positions, colors and materials are preserved; all 96
-chair rotations were corrected by 180 degrees so their fronts face the stage.
-The replacement capture uses canonical template source `c1d4a28` from
-`festappnet/venue_seat_picker`, rendered by the same public picker. The source
-fix includes a regression test of every rendered chair backrest; it does not
-upgrade Festapp's vendored SDK or change saved production layouts.
-The complete plan is visible; no seat is selected in this view. It is a second
-ready-made venue layout, not a zoomed region of the Lucerna plan.
+`tickets-designer-desktop.png` replaces the second venue layout with the actual
+ticket designer, showing a branded ticket and its admission QR code. The local
+fixture uses English event and guest information.
+
+Captured on 2026-11-08 at **1440 x 1000**, from source `2a5da14db`, using a
+Flutter release build of `test/browser/full_app_e2e.dart`, a dedicated local
+Supabase fixture and the local `preview-ticket-layout` Edge Function. The
+application and browser are in English and light mode. The gala artwork is an
+existing public demo asset; the event, guest, table and QR are sample data.
+The price element is hidden in the fixture because sample-price formatting
+currently uses Czech text. No pixels were painted over the capture.
 
 ### Order administration
 
