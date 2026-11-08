@@ -53,7 +53,7 @@ venue maps. See the [feature reference](docs/overview/features.md) for more.
 
 ## Ticketing for organizers
 
-### Lucerna hall
+### Design your venue
 
 ![Lucerna seating plan with ground-floor seating, boxes and two balconies](docs/images/readme/tickets-seating-desktop.png)
 
