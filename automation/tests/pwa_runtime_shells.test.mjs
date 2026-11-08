@@ -45,21 +45,43 @@ async function fixture(t) {
       delete:async request=>data.delete(key(request))};
   }};
   const clients=new Map();
+  let skipWaiting=0,claimed=0;
   const self={location:new URL(origin+'/festapp_service_worker.js'),addEventListener:(type,fn)=>handlers[type]=fn,
-    clients:{matchAll:async()=>[...clients.values()],get:async id=>clients.get(id),claim:async()=>{}},skipWaiting:async()=>{}};
+    clients:{matchAll:async()=>[...clients.values()],get:async id=>clients.get(id),claim:async()=>{claimed++;}},skipWaiting:async()=>{skipWaiting++;}};
   vm.runInNewContext(source,{self,caches,fetch:network,Request,Response,URL,console,setTimeout,clearTimeout});
   const lifecycle=async type=>{let promise;handlers[type]({waitUntil:value=>promise=value});await promise;};
-  const message=async (data,url='/form/a')=>{let promise,reply;handlers.message({data,source:{id:'client',url:origin+url},
+  const message=async (data,url='/form/a',id='client')=>{let promise,reply;handlers.message({data,source:{id,url:origin+url},
     ports:[{postMessage:value=>reply=value}],waitUntil:value=>promise=value});await promise;return reply;};
   const navigate=async pathname=>{let response,pending;const request=new Request(origin+pathname);
     Object.defineProperty(request,'mode',{value:'navigate'});
     handlers.fetch({request,clientId:'',resultingClientId:'new-page',respondWith:value=>response=value,waitUntil:value=>pending=value});
     const result=await response;await pending;return result;};
-  return {manifest:await collectPwaShellManifest(root),requests,batches,stores,lifecycle,message,navigate,
+  return {manifest:await collectPwaShellManifest(root),requests,batches,stores,clients,lifecycle,message,navigate,
+    activation:()=>({skipWaiting,claimed}),
     offline:value=>offline=value,failPart:value=>failPart=value,
     cached:()=>[...stores.get('festapp-app-shell-1.2.3+4').keys()].map(url=>new URL(url).pathname)};
 }
 const flutter=url=>/main\.dart|^\/flutter|^\/canvaskit/.test(url);
+
+test('the ready-embed generation hands off on the next visit without reloading an open draft', async t => {
+  const f=await fixture(t);
+  const oldCache='festapp-app-shell-0.20.531+1042';
+  const old=new Map([['https://app.test/web-assets/form.js',new Response('old draft code')]]);
+  f.stores.set(oldCache,old);
+  const navigations=[];
+  f.clients.set('draft',{id:'draft',url:'https://app.test/form/a?embed=1',
+    postMessage(){},navigate:url=>{navigations.push(url);return Promise.resolve();}});
+  await f.message({type:'FESTAPP_CLIENT_VERSION',version:'0.20.531+1042'},'/form/a?embed=1','draft');
+  await f.lifecycle('install');
+  assert.equal(f.activation().skipWaiting,1,'old ready embeds cannot activate their successor themselves');
+  await f.lifecycle('activate');
+  assert.equal(f.activation().claimed,1);
+  assert.deepEqual(navigations,[],'claim must leave an open draft untouched');
+  assert.equal(await old.get('https://app.test/web-assets/form.js').clone().text(),'old draft code');
+  assert.equal(f.stores.get(oldCache),old,'retain the open client generation');
+  assert.equal(await (await f.navigate('/form/a?embed=1')).text(),'<html>Public form</html>');
+  assert.equal(f.requests.some(flutter),false);
+});
 
 test('public install, query, repair, navigation and offline reload never fetch Flutter',async t=>{
   const f=await fixture(t);await f.lifecycle('install');

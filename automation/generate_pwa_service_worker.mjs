@@ -86,9 +86,12 @@ const LEGACY_WEB_RECOVERY_CACHE_NAMES = new Set([
 // the old worker can keep serving the old web client that has no way to
 // activate its successor. Per-client cache pinning below keeps that open page
 // coherent, while its next full navigation deliberately enters the new shell.
-// Remove this bounded migration list once supported installations are newer
-// than 0.19.93+459.
+// Remove each bounded migration entry when its installed generation is no
+// longer supported.
 const HANDOFF_BOOTSTRAP_CACHE_NAMES = new Set([
+  // Ready embeds in this release suppress every update check. Claim without
+  // navigating their draft; the next normal visit enters the updated shell.
+  'festapp-app-shell-0.20.531+1042',
   // These installed routers predate the standalone order route. Claim without
   // reloading their forms so new navigations reach /order rather than home.
   'festapp-app-shell-0.20.222+706',
