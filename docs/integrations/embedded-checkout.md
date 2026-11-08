@@ -11,7 +11,8 @@ fallback bez JavaScriptu, včetně stávajících WordPress pluginů. Pevné vý
 se helper nedotýká. Nový helper posílá volitelné `minHeight: 120`; child bez
 něj zachová minimum 240 px pro kompatibilitu se staršími helpery protokolu 1.
 Rozsah `viewportHeight` se nemění. Na webclientových cestách `/form/:slug` a `/order` s přesným `?embed=1` je startovní plocha
-průhledná s malým načítacím logem nejvýše 60 × 48 px; veřejný SEO souhrn je skrytý,
+průhledná s černobílým symbolem bez názvu webu v boxu 48 × 48 px. Startovní výška
+120 px ponechává okolo symbolu prostor; veřejný SEO souhrn je skrytý,
 aby neprosvítal při načítání. Při převzetí vzhledu se světlý/tmavý režim řídí
 hostitelskou stránkou, včetně jejího přepnutí, nikoliv osobním nastavením aplikace
 nebo režimem prohlížeče. Helper sjednotí barevné schéma iframe i jeho obsahu,

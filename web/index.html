@@ -306,7 +306,8 @@ installRuntimeState(window);
         }
         for (const logo of document.querySelectorAll('.initial-logo, .startup-brand')) {
             logo.dataset.darkSrc ||= logo.getAttribute('src').replace(/-light\.svg$/, '.svg');
-            const source = logo.dataset.darkSrc;
+            const source = embedded && logo.classList.contains('startup-brand')
+                ? '/brand-symbol.svg' : logo.dataset.darkSrc;
             logo.setAttribute('src', !dark && /(?:loading-animation|loading-logo)\.svg$/.test(source)
                 ? source.replace(/\.svg$/, '-light.svg') : source);
             logo.dataset.startupLogoReady = '';

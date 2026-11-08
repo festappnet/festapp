@@ -113,8 +113,11 @@ for (const shell of ['web', 'web_client']) {
             const brand = window.document.querySelector(shell === 'web' ? '.initial-logo' : '.startup-spinner');
             assert.notEqual(window.getComputedStyle(brand).display, 'none');
             if (embedded) {
-                assert.equal(window.getComputedStyle(brand).width, '60px');
+                assert.equal(window.getComputedStyle(brand).width, '48px');
                 assert.equal(window.getComputedStyle(brand).maxHeight, '48px');
+                const symbol = brand.querySelector('.startup-brand');
+                assert.equal(symbol.getAttribute('src'), '/brand-symbol.svg');
+                assert.equal(window.getComputedStyle(symbol).filter, 'brightness(0)');
                 const loader = shell === 'web' ? 'loader-content' : 'web-client-startup';
                 const rule = [...window.document.styleSheets].flatMap(sheet => [...sheet.cssRules])
                     .find(rule => rule.selectorText?.endsWith(`html[data-embed-startup] #${loader}`));

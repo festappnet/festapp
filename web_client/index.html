@@ -174,7 +174,8 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
         }
         for (const logo of document.querySelectorAll('.initial-logo, .startup-brand')) {
             logo.dataset.darkSrc ||= logo.getAttribute('src').replace(/-light\.svg$/, '.svg');
-            const source = logo.dataset.darkSrc;
+            const source = embedded && logo.classList.contains('startup-brand')
+                ? '/brand-symbol.svg' : logo.dataset.darkSrc;
             logo.setAttribute('src', !dark && /(?:loading-animation|loading-logo)\.svg$/.test(source)
                 ? source.replace(/\.svg$/, '-light.svg') : source);
             logo.dataset.startupLogoReady = '';
@@ -368,7 +369,9 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     html[data-embed-startup]:has(#web-client-startup:not([hidden])) body,
     html[data-embed-startup] #web-client-startup { background: transparent !important; }
     html[data-embed-startup] #web-client-startup .startup-spinner { width: 24px; height: 24px; }
-    html[data-embed-startup] #web-client-startup .startup-spinner[data-loading-style="vstupenky-outline"] { width: 60px; height: auto; max-height: 48px; }
+    html[data-embed-startup] #web-client-startup .startup-spinner[data-loading-style="vstupenky-outline"] { width: 48px; height: 48px; max-height: 48px; aspect-ratio: 1; }
+    html[data-embed-startup] #web-client-startup .startup-brand { width: 48px; height: 48px; object-fit: contain; filter: brightness(0); }
+    html[data-embed-startup] body.dark-mode #web-client-startup .startup-brand { filter: brightness(0) invert(1); }
     /* The helper reserves 120 px before modules load. Retry must fit that slot. */
     html[data-embed-startup] #web-client-startup { padding: 12px !important; font-size: 14px !important; }
     html[data-embed-startup] #web-client-startup p { margin: 0 0 8px; }

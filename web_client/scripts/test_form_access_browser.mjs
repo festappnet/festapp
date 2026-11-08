@@ -90,8 +90,8 @@ try {
                 });
             }
             if (fixtureScenario === 'embed-pending') {
-                let sampledFrames=0, paintedLoader=false, logoSeen=false, logoContained=true, transparentStartup=true;
-                const childCanvases = new Set();
+                let sampledFrames=0, paintedLoader=false, logoSeen=false, logoLoaded=false, logoContained=true, transparentStartup=true;
+                const childCanvases = new Set(), logoSources = new Set(), logoFilters = new Set();
                 function samplePendingPaint() {
                     if (window.__fixtureFormPending) {
                         sampledFrames++;
@@ -111,7 +111,12 @@ try {
                                 const style=getComputedStyle(node);
                                 shown=style.display!=='none' && style.visibility!=='hidden' && Number(style.opacity)!==0;
                             }
-                            if (shown) { logoSeen=true; logoContained &&= r.height<=48 && r.width<=60 && r.width<=innerWidth; }
+                            if (shown) {
+                                logoSeen=true; logoLoaded ||= logo.complete && logo.naturalWidth>0;
+                                logoContained &&= r.height<=48 && r.width<=48 && r.width<=innerWidth && r.top>=24 && innerHeight-r.bottom>=24;
+                                logoSources.add(new URL(logo.src, location.href).pathname);
+                                logoFilters.add(getComputedStyle(logo).filter);
+                            }
                         }
                         const loader=document.querySelector('#form-page-container .sp-loader');
                         if (loader) {
@@ -130,9 +135,10 @@ try {
                 window.addEventListener('message', event => {
                     if (event.data === 'fixture-release-form') { window.__fixtureReleaseForm?.(); return; }
                     if (event.data !== 'fixture-pending-query') return;
+                    const deadline=performance.now()+2000;
                     function replyWhenSampled() {
-                        if (!window.__fixtureFormPending || sampledFrames < 2) { requestAnimationFrame(replyWhenSampled); return; }
-                        event.source.postMessage({fixtureUpdateReport:{pending:true, sampledFrames, paintedLoader, logoSeen, logoContained, transparentStartup, childCanvases:[...childCanvases]}}, event.origin);
+                        if ((!window.__fixtureFormPending || sampledFrames < 2 || !logoLoaded) && performance.now()<deadline) { requestAnimationFrame(replyWhenSampled); return; }
+                        event.source.postMessage({fixtureUpdateReport:{pending:!!window.__fixtureFormPending, sampledFrames, paintedLoader, logoSeen, logoLoaded, logoContained, transparentStartup, logoSources:[...logoSources], logoFilters:[...logoFilters], childCanvases:[...childCanvases]}}, event.origin);
                     }
                     replyWhenSampled();
                 });
@@ -303,7 +309,11 @@ try {
         const pendingPaint = (await browser('eval', 'window.fixtureUpdateReport')).result;
         assert.equal(pendingPaint.paintedLoader, false, 'embedded form must not paint its animated pending loader');
         assert.equal(pendingPaint.logoSeen, true, 'embedded startup must display its branded loader');
-        assert.equal(pendingPaint.logoContained, true, 'embedded startup logo must fit within 60 by 48 pixels');
+        assert.equal(pendingPaint.logoLoaded, true, 'embedded startup symbol must load');
+        assert.equal(pendingPaint.logoContained, true, 'embedded symbol must fit within 48px with 24px vertical breathing room');
+        assert.deepEqual(pendingPaint.logoSources, ['/brand-symbol.svg'], 'embedded startup must show the standalone symbol only');
+        assert.ok(pendingPaint.logoFilters.every(filter => filter.includes('brightness(0)') && (palette === 'dark' ? filter.includes('invert(1)') : !filter.includes('invert(1)'))),
+            'embedded symbol must be monochrome and contrast with the host theme');
         assert.equal(pendingPaint.transparentStartup, true, 'embedded startup background must remain transparent');
         const iframeCanvas = (await browser('eval', `(() => {
             const probe=document.createElement('i'); probe.style.color='Canvas';
