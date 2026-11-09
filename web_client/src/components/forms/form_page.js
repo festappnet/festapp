@@ -273,6 +273,7 @@ export class FormPage extends Component {
             }
             const handled = FormAvailabilityService.renderStatus(this.host, formModel, statusResult, {
                 showPreview,
+                onSaleOpening: () => this.startMeasurement(formModel, showPreview, 'sale_opening'),
                 onReload: () => this.init(link, { forceReload: true })
             });
 
@@ -571,6 +572,39 @@ export class FormPage extends Component {
         ThemeService.applyThemeFromModel(formModel);
     }
 
+    startMeasurement(formModel, showPreview = false, pageType = 'product') {
+        if (!showPreview && !this.analytics) {
+            const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,embedded:!!this.embedBridge,
+                campaign:()=>this.embedBridge?.measurementCampaign||{}});
+            const transport=this.embedBridge||runtime;
+            if(this.embedBridge) {
+                this.embedBridge.setMeasurementRuntime(runtime);
+            }
+            let identity=hasBrowserSession(window)?'authenticated':'anonymous';
+            const consentSource=this.embedBridge?{connect:(policy,notify)=>this.embedBridge.connectConsent(policy,notify)}:{
+                connect:(policy,notify)=>{
+                    let disposed=false,cleanup;
+                    if(policy?.visitor_role!=='staff') import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{
+                        if(!disposed)cleanup=startMeasurementConsent({model:formModel,setConsent:notify,host:this.host});
+                    }).catch(()=>{if(!disposed)notify(null);});
+                    return ()=>{disposed=true;cleanup?.();};
+                }
+            };
+            const measurement=this.measurementSession=new FormMeasurementSession({model:formModel,transport,consentSource,
+                entryAllowed:this.analyticsEntryAllowed,policySource:()=>DbForms.getMeasurementPolicy(formModel.link),
+                identitySource:{read:()=>identity,subscribe:notify=>{
+                    const subscription=SupabaseService.getClient().auth?.onAuthStateChange?.((_event,value)=>{
+                        const next=value?.user?.id||'anonymous';
+                        if(identity!==next){identity=next;notify();}
+                    })?.data?.subscription;
+                    return ()=>subscription?.unsubscribe();
+                }},onActive:()=>pageType==='sale_opening'?this.analytics?.page(pageType):this.analytics?.activate(this.currentSession)});
+            this.analytics=new FormDataLayer({model:formModel,sink:measurement});
+            measurement.start();
+        }
+        return this.analytics;
+    }
+
     renderForm(formModel, showPreview, restoredDraft = null) {
         this.setOverviewLayout(false);
         if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
@@ -616,35 +650,7 @@ export class FormPage extends Component {
             }
         });
 
-        if (!showPreview && !this.analytics) {
-            const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,
-                campaign:()=>this.embedBridge?.measurementCampaign||{}});
-            const transport=this.embedBridge||runtime;
-            if(this.embedBridge) {
-                this.embedBridge.setMeasurementRuntime(runtime);
-            }
-            let identity=hasBrowserSession(window)?'authenticated':'anonymous';
-            const consentSource=this.embedBridge?{connect:(policy,notify)=>this.embedBridge.connectConsent(policy,notify)}:{
-                connect:(policy,notify)=>{
-                    let disposed=false,cleanup;
-                    if(policy?.visitor_role!=='staff') import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{
-                        if(!disposed)cleanup=startMeasurementConsent({model:formModel,setConsent:notify,host:this.host});
-                    }).catch(()=>{if(!disposed)notify(null);});
-                    return ()=>{disposed=true;cleanup?.();};
-                }
-            };
-            const measurement=this.measurementSession=new FormMeasurementSession({model:formModel,transport,consentSource,
-                entryAllowed:this.analyticsEntryAllowed,policySource:()=>DbForms.getMeasurementPolicy(formModel.link),
-                identitySource:{read:()=>identity,subscribe:notify=>{
-                    const subscription=SupabaseService.getClient().auth?.onAuthStateChange?.((_event,value)=>{
-                        const next=value?.user?.id||'anonymous';
-                        if(identity!==next){identity=next;notify();}
-                    })?.data?.subscription;
-                    return ()=>subscription?.unsubscribe();
-                }},onActive:()=>this.analytics?.activate(this.currentSession)});
-            this.analytics=new FormDataLayer({model:formModel,sink:measurement});
-            measurement.start();
-        }
+        this.startMeasurement(formModel, showPreview);
         this.analytics?.observe(session);
         session.addEventListener('state-changed', () => {
             if (this.currentSession === session) this.analytics?.observe(session);

@@ -5,7 +5,7 @@ import { FormStrings } from '../form_strings.js';
 import { saleOpeningText, renderSaleOpening } from '../sale_opening_notifications.js';
 
 // One document owns order. Hydration occurs only after the common sanitizer.
-export function renderPresaleContent(container, model, onFinished, {preview = false} = {}) {
+export function renderPresaleContent(container, model, onFinished, {preview = false, onSaleOpening} = {}) {
     if (!preview && !model.enableCountdown) CountdownWidget.waitForOpening(model.startTime, onFinished);
     const doc = container.ownerDocument;
     const content = doc.createElement('div'); content.className = 'form-header form-presale-content';
@@ -37,7 +37,7 @@ export function renderPresaleContent(container, model, onFinished, {preview = fa
             if (!model.enableCountdown) { slot.remove(); continue; }
             CountdownWidget.render(slot, {...model, startTime: model.startTime, countdownTitle: ''}, preview ? () => {} : onFinished);
             slot.querySelector('.countdown-title')?.remove();
-        } else if (model.saleOpeningNotification?.canSubscribe || (preview && model.data?.sale_opening_notifications?.enabled && !model.data?.sale_opening_notifications?.collection_paused)) renderSaleOpening(slot, model, {preview});
+        } else if (model.saleOpeningNotification?.canSubscribe || (preview && model.data?.sale_opening_notifications?.enabled && !model.data?.sale_opening_notifications?.collection_paused)) renderSaleOpening(slot, model, {preview, analytics: !preview && model.saleOpeningNotification?.canSubscribe ? onSaleOpening?.() : null});
         else slot.remove();
     }
     const date = doc.createElement('p');

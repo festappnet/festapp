@@ -3,8 +3,8 @@ import {analyticsPayload, attributionContext, measurementId, measurementNamespac
 
 // Mechanical isolated transport. Only the session supplies a grant.
 export class FormMeasurementRuntime {
-    constructor({win=window, model, campaign=()=>({}), local=false}) {
-        Object.assign(this,{win,model,campaign,local});
+    constructor({win=window, model, campaign=()=>({}), embedded=false, local=false}) {
+        Object.assign(this,{win,model,campaign,embedded,local});
         this.onMessage=event=>{
             const data=event.data, grant=this.grant;
             if(!grant || !this.live() || event.source!==this.frame?.contentWindow || event.origin!==this.origin ||
@@ -23,7 +23,7 @@ export class FormMeasurementRuntime {
         const origin=measurementOrigin(grant.runtimeOrigin,this.local);
         if(!origin || origin===this.win.location.origin)return;
         const input={...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign(),
-            page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};
+            form_embedded:this.embedded, page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};
         this.context=attributionContext(input);if(!this.context)return;
         this.grant=grant;this.consent=grant.consent;this.origin=origin;this.instance=this.win.crypto.randomUUID();this.until=grant.expiresAt;
         const frame=this.frame=this.win.document.createElement('iframe');

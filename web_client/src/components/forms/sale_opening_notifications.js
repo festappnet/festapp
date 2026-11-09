@@ -29,7 +29,7 @@ export async function saleOpeningCommand(operation, payload, client = SupabaseSe
     }
     return data;
 }
-export function renderSaleOpening(container, model, {preview = false, scope = null, command = saleOpeningCommand} = {}) {
+export function renderSaleOpening(container, model, {preview = false, scope = null, command = saleOpeningCommand, analytics = null} = {}) {
     const doc = container.ownerDocument;
     const section = doc.createElement('section'); section.className = 'sale-opening-notification';
     const status = doc.createElement('p'); status.className = 'sale-opening-status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live','polite');
@@ -45,6 +45,7 @@ export function renderSaleOpening(container, model, {preview = false, scope = nu
         input = doc.createElement('input'); input.type = 'email'; input.autocomplete = 'email'; input.name = 'sale-opening-email';
         input.required = true; input.maxLength = 320; input.disabled = preview; input.className = 'form-control';
         input.placeholder = saleOpeningText('email'); input.setAttribute('aria-label', saleOpeningText('email'));
+        input.addEventListener('input', () => { if (!preview) analytics?.started(); });
         field.append(input); form.append(field);
     }
     form.append(button);
@@ -52,6 +53,8 @@ export function renderSaleOpening(container, model, {preview = false, scope = nu
         event.preventDefault(); if (preview || pending || completed) return;
         if (input && (!form.reportValidity() || !EmailSuffixConfirmation.validate(form, suffixStates))) return;
         const submittedEmail = input?.value.trim().toLowerCase();
+        let measured;
+        try { if (!scope) measured=analytics?.captureSaleOpening(submittedEmail); } catch { /* Measurement cannot affect subscription. */ }
         pending = true;
         button.disabled = true;
         if (input) input.disabled = true;
@@ -62,6 +65,7 @@ export function renderSaleOpening(container, model, {preview = false, scope = nu
             await command(scope?.operation || 'subscribe', scope ? {token: scope.token} : {formLink: model.link, email: submittedEmail, lang: LocalizationService.currentLocale});
             completed = true;
             status.dataset.state = 'success';
+            try { measured?.(); } catch { /* Measurement cannot affect subscription. */ }
             form.hidden = true; status.textContent = scope ? saleOpeningText('unsubscribed') : saleOpeningText('subscribed').replace('{email}', () => submittedEmail);
         } catch (error) {
             status.dataset.state = 'error';

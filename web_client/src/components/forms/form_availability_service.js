@@ -70,7 +70,7 @@ export class FormAvailabilityService {
         if (status === FormAvailabilityService.Status.BEFORE_START) {
             if (formModel.data?.design?.presale_header != null || formModel.enableCountdown || formModel.countdownTitle || formModel.saleOpeningNotification?.canSubscribe || formModel.data?.sale_opening_notifications?.enabled) {
                 container.replaceChildren();
-                renderPresaleContent(container, formModel, context.onReload);
+                renderPresaleContent(container, formModel, context.onReload, {onSaleOpening: context.onSaleOpening});
                 return true; // Stop flow
             }
             // If countdown disabled, fall through to Not Available

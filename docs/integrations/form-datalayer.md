@@ -142,6 +142,12 @@ has 1 to 256 characters, without controls or `@`. Any other query parameter keep
 outside measurement. Host
 campaign data is separately rebuilt during the pinned embed handshake; the raw
 host URL, unknown query values and capability URLs are never forwarded.
+`form_embedded` is a strict boolean in the runtime context, so it is in the
+initial context push before `gtm.js` and on every measurement event: `false` for
+direct visits, `true` when FormPage uses EmbedBridge (`?embed=1`), including
+sale-opening pages. Missing or non-boolean input becomes `false`. GTM can use it to
+skip `page_view` for embedded forms because the host page already counts the
+pageview. The host dataLayer transport is unchanged.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
 approved ecommerce events from dataLayer, and avoid duplicate automatic pageviews.
 
@@ -251,3 +257,27 @@ update before any later conversion, without mutating a previously pushed object.
 See [the runtime cutover contract](../../workers/form-measurement/README.md#canonical-protocol-and-choice-ownership)
 for ordered deployment, unsupported cached peers, and the intentionally retained
 historical test fixtures. New production code only accepts protocol 3.
+
+## Sale-opening notifications
+
+A BEFORE_START page with an actual notification sign-up (`canSubscribe`) uses
+`FormPage.startMeasurement`, the same policy, staff exclusion, entry rules and
+consent source as an open form: Klaro for direct visits, embedBridge for embeds.
+Preview, unavailable/full pages and sale-opening scope/unsubscribe pages do not
+start this stack. Presale content without an active sign-up stays unmeasured.
+
+| Event | Presale behavior |
+| --- | --- |
+| Initial push | `page_type: 'sale_opening'`, `user_type: 'b2c'`, language |
+| `page_view` | Once for the sale-opening page |
+| `form_start` | First e-mail input, once per visit |
+| `generate_lead` | Successful notification subscribe only, once per submission |
+
+The `generate_lead` allowlist is `free_registration`, `waitlist`, and
+`sale_opening_notification`. Notification leads carry `value: 0`, the first
+available form currency (the same default as checkout, CZK if none), a fresh UUID
+`event_id` and `user_data: {email}` trimmed and lowercased. The sender is captured
+before the request; a revoked/replaced measurement grant cannot send its result.
+Failures, preview and unsubscribe never emit a lead. These client subscription
+leads do not create an order or an `analytics.conversion_facts` record; that SQL
+kind constraint applies only to immutable order finalizer facts.

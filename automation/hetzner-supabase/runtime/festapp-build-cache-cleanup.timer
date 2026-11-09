@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly Festapp unused build cache cleanup
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=10min
+Persistent=true
+Unit=festapp-build-cache-cleanup.service
+
+[Install]
+WantedBy=timers.target

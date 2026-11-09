@@ -6,6 +6,7 @@ from unittest.mock import patch
 import tempfile
 import subprocess
 import fcntl
+import os
 import run as runner
 import yaml
 
@@ -49,6 +50,33 @@ class MirrorContractTest(unittest.TestCase):
 
 
 class RunnerSafetyTest(unittest.TestCase):
+    def test_browser_lane_preserves_explicit_executable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            browser = Path(directory) / 'Chrome for Testing'
+            browser.touch()
+            with patch.object(runner, 'CACHE', Path(directory)), \
+                 patch.dict(os.environ, {'AGENT_BROWSER_EXECUTABLE_PATH': str(browser)}, clear=True), \
+                 patch.object(runner, 'require_version'), \
+                 patch.object(runner.shutil, 'which', return_value='/unavailable/chrome'), \
+                 patch.object(runner.subprocess, 'check_output', side_effect=['test-head\n', b'']), \
+                 patch.object(runner.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as execute:
+                runner.local(['web-startup'])
+            env = execute.call_args.kwargs['env']
+            self.assertEqual(env['AGENT_BROWSER_EXECUTABLE_PATH'], str(browser))
+            self.assertEqual(env['CHROME_EXECUTABLE'], str(browser))
+
+    def test_invalid_explicit_browser_fails_before_running_checks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(runner, 'CACHE', Path(directory)), \
+                 patch.dict(os.environ, {'AGENT_BROWSER_EXECUTABLE_PATH': '/missing/chrome'}, clear=True), \
+                 patch.object(runner, 'require_version'), \
+                 patch.object(runner.shutil, 'which', return_value=__file__), \
+                 patch.object(runner.subprocess, 'check_output', side_effect=['test-head\n', b'']), \
+                 patch.object(runner.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as execute:
+                with self.assertRaisesRegex(RuntimeError, 'Chrome/Chromium'):
+                    runner.local(['web-startup'])
+            execute.assert_not_called()
+
     def test_shell_failure_stops_following_commands(self):
         with tempfile.TemporaryDirectory() as directory:
             marker = Path(directory) / 'must-not-exist'

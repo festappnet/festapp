@@ -37,9 +37,9 @@ test('Worker binds actual SQL manifest, escapes scoped config, preserves CSP and
   {...config,collector_origins:[parent]},{...config,collector_origins:['https://api.festapp.net']},{...config,collector_origins:['https://collect.example; script-src *']},{...config,scripts:'x'.repeat(5001)}])assert.equal((await serveMeasurement(request,env,async()=>bad)).status,404);
  assert.equal((await serveMeasurement(request,env,async()=>{throw Error('SECRET')})).status,404);
 });
-function fixture(t){
+function fixture(t,embedded=false){
  const dom=new JSDOM('<body></body>',{url:parent+'/form/summer?gclid=click',pretendToBeVisual:true});const model={link:'summer',data:{analytics:policy}};
- const transport=new FormMeasurementRuntime({win:dom.window,model});let ready=0,mismatches=0;
+ const transport=new FormMeasurementRuntime({win:dom.window,model,embedded,campaign:()=>({form_embedded:!embedded})});let ready=0,mismatches=0;
  const grant={runtimeOrigin:runtime,manifest,generation:7,consent:{analytics:true,marketing:true},expiresAt:Date.now()+60000,onReady:()=>ready++,onMismatch:()=>mismatches++};
  const message=(type,extra={})=>dom.window.dispatchEvent(new dom.window.MessageEvent('message',{source:transport.frame?.contentWindow,origin:runtime,
   data:{namespace:'festapp-measurement',protocol:measurementProtocol,type,manifest,instance:transport.instance,generation:7,...extra}}));
@@ -111,7 +111,7 @@ test('Klaro saved-choice adapter rejects drafts and unavailable services; discon
 test('attribution retains allowed campaign/click IDs and drops credentials and private contexts',()=>{
  assert.equal(measurementOrigin(runtime),runtime);for(const bad of ['https://tenant.runtime.example',runtime+'/',runtime+'?x=1','http://localhost:3000'])assert.equal(measurementOrigin(bad),null);
  const result=attributionContext({page_location:parent+'/form/summer',page_referrer:'https://ref.example/private?token=SECRET#hash',gclid:'click',gbraid:'app',utm_term:'PRIVATE@example.test',token:'SECRET'});
- assert.deepEqual(result,{page_location:parent+'/form/summer',page_referrer:'https://ref.example/',gclid:'click',gbraid:'app'});
+ assert.deepEqual(result,{page_location:parent+'/form/summer',form_embedded:false,page_referrer:'https://ref.example/',gclid:'click',gbraid:'app'});
  assert.equal(attributionContext({page_location:parent+'/form/summer?token=SECRET'}),null);
  for(const key of ['gclid','gbraid','wbraid','gad_source','gad_campaignid','srsltid','fbclid','sznclid','ttclid','msclkid']){
   assert.equal(campaignContext({[key]:'click'})[key],'click');assert.ok(measurementPageLocation({page_location:parent+'/form/summer',[key]:'click'}).includes(key+'=click'));
@@ -141,4 +141,21 @@ test('Klaro failed registration cleans its watcher and disposal is idempotent',(
  const manager={watch(w){watched=w;throw Error('partial registration');},unwatch(w){assert.equal(w,watched);unwatched++;}};
  assert.throws(()=>bindKlaroConsent(manager,()=>{}),/partial registration/);assert.equal(unwatched,1);
  manager.watch=w=>{watched=w;};const stop=bindKlaroConsent(manager,()=>{});stop();stop();assert.equal(unwatched,2);
+});
+
+for(const embedded of [false,true])test('runtime init carries parent embed state: '+embedded,t=>{
+ const f=fixture(t,embedded),r=f.transport;r.activate(f.grant);const sent=[];
+ r.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');
+ assert.equal(sent[0].context.form_embedded,embedded,'parent state overrides campaign input');
+});
+for(const value of [true,false,undefined,null,1,0,'true','false',{},[]])test('bootstrap sanitizes embed state in context pushes: '+JSON.stringify(value),t=>{
+ const expected=value===true,f=bootstrap(t,false);
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:value}});
+ const entries=f.win.dataLayer,initial=entries.find(p=>p.page_location);
+ assert.deepEqual(JSON.parse(JSON.stringify(initial)),{page_location:parent+'/form/summer',form_embedded:expected,festapp_consent:{analytics:false,marketing:false}});
+ assert(entries.indexOf(initial)<entries.findIndex(p=>p.event==='gtm.js'));
+ f.send('event',{payload:{event:'page_view',form_embedded:!expected}});
+ f.send('event',{payload:purchase});f.send('consent',{consent:true});
+ for(const event of ['page_view','purchase'])assert.equal(entries.find(p=>p.event===event).form_embedded,expected,'events carry context');
+ assert.equal(attributionContext({page_location:parent+'/form/summer',form_embedded:value}).form_embedded,expected);
 });
