@@ -2,6 +2,11 @@
 
 Datum: 2026-11-09
 Stav: Vlny 0-7 implementovány a lokálně ověřeny: 8/8 jobů, 36/36 units, neměnné vstupy. Seat matched behavior je 2,07x rychlejší; absolutní seat/browser cíle a hosted měření mají níže uvedený deficit.
+Oprava při release ověření: starší seat speedup2,07x je předběžný a bude nahrazen.
+Image Worker měl vlastní fallback55432 místo přidělené DB; nyní používá společný
+DATABASE_URL a ověřuje identitu lease. Opravené srovnání patří do evidence1053.
+Flutter i110 SQL provedení tím nejsou dotčeny.
+
 Verification: standard - mění se izolace, souběžnost a důvěryhodnost CI
 Autoritativní reference po aktualizaci mainu: `e3de2261a0717893b41b8cbfc955f9b47ed46da4`
 Původní měřicí reference: `570aa2a29c081393720b98cbc2c79355e6818fd0`

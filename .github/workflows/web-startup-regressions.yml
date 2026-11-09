@@ -27,3 +27,11 @@ jobs:
         run: bash automation/ci/browser.sh
       - name: Run canonical regression DAG
         run: python3 automation/ci/run.py lane web-startup
+      - name: Preserve canonical CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-${{ github.job }}-${{ github.run_attempt }}
+          path: ~/.cache/festapp-ci/runs
+          retention-days: 7
+          if-no-files-found: ignore

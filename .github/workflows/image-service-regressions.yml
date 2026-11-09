@@ -27,3 +27,11 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml
       - name: Run canonical regression DAG
         run: python3 automation/ci/run.py lane image-contract
+      - name: Preserve canonical CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-${{ github.job }}-${{ github.run_attempt }}
+          path: ~/.cache/festapp-ci/runs
+          retention-days: 7
+          if-no-files-found: ignore

@@ -168,6 +168,16 @@ only nonce-owned service/network resources are removed, including on failure.
 
 ## Final current-main matched results
 
+Correction discovered during release verification: the historical seat runs
+below did not prove the image Worker used its allocated database. Its separate
+legacy URL fell back to a foreign local port55432, which concealed the missing
+runtime binding. The 110 SQL-file executions and Flutter/browser observations
+remain recorded, but the nine-unit seat speedup is superseded pending a corrected
+comparison. The Worker now consumes the common `DATABASE_URL`, validates the
+active lease identity and has no guessed connection fallback. A real targeted
+run passed with the obsolete alias deliberately set to an invalid port.
+Corrected release measurements are retained in the release1053 evidence.
+
 | Scope | Control first / warm median | Candidate first / warm median |
 |---|---:|---:|
 | Flutter, same 295 semantic cases | 118.05 / 90.77 s | 89.60 / 58.07 s |

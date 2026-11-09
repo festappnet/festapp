@@ -36,6 +36,21 @@ class MirrorContractTest(unittest.TestCase):
             self.assertTrue(set(unit['after']).issubset(contract['steps']))
             self.assertTrue(set(unit['resources']).issubset(contract['resources']))
 
+    def test_every_hosted_lane_preserves_failure_evidence(self):
+        for job in runner.CONTRACT['jobs'].values():
+            workflow=yaml.safe_load((ROOT/'.github/workflows'/job['workflow']).read_text())
+            for name,lane in workflow['jobs'].items():
+                steps=lane['steps']
+                execution=[step for step in steps if 'automation/ci/run.py lane ' in step.get('run','')]
+                if not execution: continue
+                with self.subTest(workflow=job['workflow'],job=name):
+                    archives=[step for step in steps if step.get('uses')=='actions/upload-artifact@v7']
+                    self.assertEqual(len(archives),1)
+                    archive=archives[0]
+                    self.assertEqual(archive['if'],'always()')
+                    self.assertEqual(archive['with']['path'],'~/.cache/festapp-ci/runs')
+                    self.assertLess(steps.index(execution[0]),steps.index(archive))
+
     def test_actual_upgrade_and_email_recovery_are_required(self):
         contract=runner.CONTRACT
         self.assertIn('seat-upgrade',contract['jobs']['seat-checkout']['steps'])

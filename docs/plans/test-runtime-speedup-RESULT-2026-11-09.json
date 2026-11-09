@@ -1005,7 +1005,8 @@
       "executionSeconds": 333.5651527500013,
       "cleanupSeconds": 0.17461216601077467,
       "canonicalSeatSpanWithinSharedRunSeconds": 187.02,
-      "canonicalSeatSpanScope": "eleven step events including real upgrade/runtime gates and shared-run scheduling waits; not comparable to isolated nine-unit benchmark"
+      "canonicalSeatSpanScope": "eleven step events including real upgrade/runtime gates and shared-run scheduling waits; not comparable to isolated nine-unit benchmark",
+      "imageLifecycleOwnedLeaseVerified": false
     }
   },
   "browserToolchain": {
@@ -1099,7 +1100,9 @@
     "targetSeconds": 40,
     "targetDeficitSeconds": 12.121460333990399,
     "fallbackAtLeast2xMet": true,
-    "coldDefinition": "fresh owned project/template; image, pnpm and OS caches retained; all clone/start/stop and Node resolution included"
+    "coldDefinition": "fresh owned project/template; image, pnpm and OS caches retained; all clone/start/stop and Node resolution included",
+    "validForSpeedupClaim": false,
+    "supersededReason": "Historical image lifecycle transport used a legacy port fallback; both sides must be remeasured with each owned DB context. SQL110/109 and Flutter evidence unaffected."
   },
   "browserMatchedCurrentMain": {
     "runs": {
@@ -1285,5 +1288,13 @@
     "Browser combined medians138.80s exceed75s by63.80s; startup control failed, so startup speedup unproven.",
     "Hosted cold/exact-SHA CI not executed: sources are uncommitted and unpublished.",
     "No controlled before/after full-eight-job total; current full8outer340.12s only."
-  ]
+  ],
+  "releaseCorrection": {
+    "workerDatabaseContract": "common DATABASE_URL only; active lease project/database verified",
+    "legacyImageUrlFallbackRemoved": true,
+    "correctedLocalReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T202631-6e72098f93dd/receipt.json",
+    "obsoleteAliasDeliberatelyInvalid": true,
+    "correctedLocalUnitsPassed": 15,
+    "hostedEvidence": "All eight hosted lanes now archive run receipts, logs and timings even after failure."
+  }
 }

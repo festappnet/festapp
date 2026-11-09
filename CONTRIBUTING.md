@@ -532,3 +532,7 @@ Before submitting code for review, verify:
 - [ ] Auth check via `authorizeRequest()` for sensitive operations
 - [ ] Error responses include proper HTTP status codes
 - [ ] Shared code imported from `_shared/` (no duplication)
+
+Hosted canonical lanes archive their immutable run receipts, timings and unit logs
+for seven days, including failed runs. The artifact is named by job and attempt;
+local receipts keep the same structure under the documented CI cache.
