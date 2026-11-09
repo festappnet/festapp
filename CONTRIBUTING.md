@@ -85,6 +85,10 @@ and every web release build. Install its pinned runner with
 `pnpm add --global --allow-build=agent-browser agent-browser@0.39.4`.
 Use installed Chrome through `AGENT_BROWSER_EXECUTABLE_PATH` (or run
 `agent-browser install` when no system browser is available).
+The local CI mirror honors the same executable override for browser lanes;
+set it to the full executable path when using Chrome for Testing. Without an
+override, the mirror discovers system Chrome/Chromium. An invalid override fails
+before any checks run.
 `pnpm --dir web_client run test:form-access-browser` exercises the real HTML,
 Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin
