@@ -65,6 +65,7 @@ void main() {
         expect(code.contains('data-festapp-style="inherit"'), false);
         expect(code, contains('allow="clipboard-write"'));
         expect(code, contains('height="800"'));
+        expect(code, contains('color-scheme:light dark'));
         expect(code, isNot(contains('sandbox')));
         expect(code.contains('data-festapp-height="fixed"'), !automatic);
       }

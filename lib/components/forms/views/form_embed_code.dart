@@ -18,7 +18,7 @@ String formEmbedCode({
   final frame =
       '<iframe$marker src="$src" title="${escape.convert(title)}" '
       'allow="clipboard-write" height="800" '
-      'style="display:block;width:100%;max-width:100%;border:0" loading="lazy"></iframe>';
+      'style="display:block;width:100%;max-width:100%;border:0;color-scheme:light dark" loading="lazy"></iframe>';
   final fallback =
       '<a href="${escape.convert(publicUrl)}" target="_blank" '
       'rel="noopener noreferrer">${const HtmlEscape().convert(fallbackLabel)}</a>';
