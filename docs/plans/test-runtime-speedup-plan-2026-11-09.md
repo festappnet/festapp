@@ -1,8 +1,8 @@
 # Zásadní zrychlení testovacího prostředí a běhu sad Festapp
 
 Datum: 2026-11-09
-Stav: Vlny 0-7 implementovány a lokálně ověřeny: 8/8 jobů, 36/36 units, neměnné vstupy. Seat matched behavior je 2,07x rychlejší; absolutní seat/browser cíle a hosted měření mají níže uvedený deficit.
-Oprava při release ověření: starší seat speedup2,07x je předběžný a bude nahrazen.
+Stav: Implementováno, ověřeno a nasazeno jako0.20.542+1053. Opravený seat benchmark102,51 ->45,72 s (2,24x); Flutter90,77 ->58,07 s. Všech8 exact-SHA hosted kontrol prošlo. Zbývající absolutní seat/browser cíle jsou uvedené v RESULT.
+Oprava při release ověření: starší seat speedup2,07x je nahrazen níže uvedeným opraveným měřením.
 Image Worker měl vlastní fallback55432 místo přidělené DB; nyní používá společný
 DATABASE_URL a ověřuje identitu lease. Opravené srovnání patří do evidence1053.
 Flutter i110 SQL provedení tím nejsou dotčeny.
@@ -119,8 +119,9 @@ Browser measurement median33,18 ->31,65 s, startup candidate107,15 s;
 combined138,80 s překračuje75 s o63,80 s. Startup control poprvé selhal,
 není proto platné tvrdit jeho zrychlení. Warm clone median0,69 s a tři targeted
 SQL median2,23 s splňují samostatné limity. Detailní zdroje, memory, scope a
-zachované první failure jsou v RESULT dokumentu a JSON. Hosted exact-SHA a
-hosted cold měření nebyly vykonány, zdroje nejsou publikované.
+zachované první failure jsou v RESULT dokumentu a JSON. hosted cold výkon nebyl kontrolovaně porovnán. Tato část popisuje historický
+lokální stav; následný release0da72ea9f prošel8 exact-SHA hosted kontrolami
+a byl publikován i nasazen.
 
 ## Cíle a pravidla měření
 
@@ -276,15 +277,43 @@ První samostatná změna: vlna 0 a minimální runtime z vlny 1; příprava tem
 
 Neměřit po každém kosmetickém editu. Na vlnu jedna smysluplná funkční dávka, navíc výkonnostní experiment nutný pro její rozhodnutí. Nové měření opakovat pouze po změně krytých vstupů. Při nedosažení cíle popsat skutečný profil a upravit příslušnou vlnu; nesnižovat coverage ani nepřesouvat nutnou práci mimo měřený interval.
 
-Tento dokument autorizuje pouze plánování. Implementace, commit/push, změna CI a jakékoliv produkční operace vyžadují navazující zadání. Zrychlení CI nemění pravidla schválení PR nebo release gate. Návrat při implementaci má vrátit celý příslušný runtime/scheduler consumer slice na předchozí ověřenou cestu, ne ponechat potichu dvě soupeřící cesty nebo automatický fallback po nejasném selhání. Čisté cache lze bezpečně zahodit a znovu vygenerovat; produkce se netýkají.
+Původní plán sám autorizoval pouze plánování. Následné zadání uživatele autorizovalo implementaci a později publikaci a release1053. Tato historická autorizační hranice neopravňuje nové produkční operace. Zrychlení CI nemění pravidla schválení PR nebo release gate. Návrat při implementaci má vrátit celý příslušný runtime/scheduler consumer slice na předchozí ověřenou cestu, ne ponechat potichu dvě soupeřící cesty nebo automatický fallback po nejasném selhání. Čisté cache lze bezpečně zahodit a znovu vygenerovat; produkce se netýkají.
 
 ## Akceptace a konečný audit úplnosti
 
-- [ ] Nejprve doložen přínos pro stejná test ID, velikosti fixture a reálné hranice; výsledek není dosažen přesunutím přípravy mimo stopky.
-- [ ] Warm/cold, start/restore/replay/tail/fixture/assertion/wait/cleanup mají vlastní časy; srovnání zachová stejné revize kontrolních vstupů a toolchain.
-- [ ] Cache hit nikdy nevydává stav po testech za čistý základ; invalidace funguje i při přepsání migrace pod stejným názvem. Crash a nedůvěryhodný artifact nevytvoří použitelný template.
-- [ ] Multi-connection, COMMIT, singleton projector a cluster-global testy mají prokázanou izolaci; default pool netají first-attempt failure pomocí retry.
-- [ ] Flutter grouping zachovává cleanup, locale/Auth singleton boundaries a semantic inventory; browser grouping zachovává origins a negativní intervaly.
-- [ ] Každý veřejný bootstrap/test/CI vstup dosáhne stejného vlastníka; osm veřejných check names a exact-SHA release gate zůstávají platné. Nové email regression testy jsou skutečně vybrány.
-- [ ] Staré SQL bariéry, nepodmíněný replay, duplicitní workflow seznamy a přepisovaný jediný receipt jsou odstraněny nebo explicitně ponechány na hranici v ledgeru.
-- [ ] Za žádnou úsporu se nevydává dosud neměřený cíl; nesplněný časový cíl má konkrétní profil a navazující úkol místo oslabení testů.
+- [x] Nejprve doložen přínos pro stejná test ID, velikosti fixture a reálné hranice; výsledek není dosažen přesunutím přípravy mimo stopky.
+- [x] Warm/cold, start/restore/replay/tail/fixture/assertion/wait/cleanup mají vlastní časy; srovnání zachová stejné revize kontrolních vstupů a toolchain.
+- [x] Cache hit nikdy nevydává stav po testech za čistý základ; invalidace funguje i při přepsání migrace pod stejným názvem. Crash a nedůvěryhodný artifact nevytvoří použitelný template.
+- [x] Multi-connection, COMMIT, singleton projector a cluster-global testy mají prokázanou izolaci; default pool netají first-attempt failure pomocí retry.
+- [x] Flutter grouping zachovává cleanup, locale/Auth singleton boundaries a semantic inventory; browser grouping zachovává origins a negativní intervaly.
+- [x] Každý veřejný bootstrap/test/CI vstup dosáhne stejného vlastníka; osm veřejných check names a exact-SHA release gate zůstávají platné. Nové email regression testy jsou skutečně vybrány.
+- [x] Staré SQL bariéry, nepodmíněný replay, duplicitní workflow seznamy a přepisovaný jediný receipt jsou odstraněny nebo explicitně ponechány na hranici v ledgeru.
+- [x] Za žádnou úsporu se nevydává dosud neměřený cíl; nesplněný časový cíl má konkrétní profil a navazující úkol místo oslabení testů.
+
+## Opravené závěrečné měření pro release1053
+
+Stejných9 behavior units,110 SQL provedení109unique a oba skutečné image
+lifecycle scénáře nyní prokazatelně používají vlastní správnou DB. Osm prvních
+pokusů prošlo bez změny vstupů. Control first106,59 s a warm103,78/101,95/102,51 s;
+canonical DAG first67,43 s a warm45,72/44,90/46,95 s. Opravený medián102,51 ->45,72 s
+znamená2,24x zrychlení; fallback2x splněn, deficit proti40 s je5,72 s. Předchozí
+seat čísla slouží pouze auditu chybné vazby starého transportu. Flutter zůstává
+platný nezávislý benchmark. Detailní corrected release1053 JSON obsahuje přesné
+scope, SHA, URL kontrakty, memory a oddělené cold/warm podmínky. Source0da72ea9f
+prošel všemi8 hosted GitHub kontrolami; failure artefakty jsou nyní archivované.
+
+Schválený release je dokončen: main0da72ea9f, tenant9fac6c3e9,
+vstupenky.online0.20.542+1053. Všech8 exact-SHA hosted kontrol, lokální build,
+306 Node/31 browser testů a3 koherentní živé probes prošly. Publikované runtime
+změny a oprava vedlejší session jsou společně na produkci. Numerické poznámky
+jsou po deployi publikované na mainu a nemění nasazený immutable source.
+
+## Zbývající výkonnostní práce
+
+- Seat: odstranit zbývající5,72 s proti absolutnímu40s cíli podle profilů
+  contract/notifications/browser. Stejný inventář, upgrade a izolační hranice zachovat.
+- Browser: snížit znovu změřenou režii startů a CLI při zachování čerstvých kontextů,
+  původních originů a negativních pozorovacích oken. Aktuální combined median138,80 s
+  nesplňuje75s cíl. Nevykazovat neúspěšný control startup jako platné srovnání rychlosti.
+- Hosted výkon a full8 total: kontrolované párové srovnání nebylo provedeno;
+  úspěšných8 hosted kontrol je důkaz správnosti release, nikoli měření zrychlení.

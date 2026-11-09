@@ -1,12 +1,18 @@
 # Test runtime speedup - implementation and verification
 
-Implementation: waves 0-7 are installed in the isolated
-`/private/tmp/festapp-test-runtime-20261109` worktree, branch
-`perf/test-runtime-20261109`, based on
-`e3de2261a0717893b41b8cbfc955f9b47ed46da4` (latest fetched authoritative main).
+Implementation waves0-7 are published on canonical main. The verified deployed
+application source is `0da72ea9f799e1762533c16afd1c7d541f7b368b`, including the
+sibling occasion-user fix from `81e00bfdf8905b0144c5eb6caf58d25239a154b5`.
+The selected tenant is live at **0.20.542+1053**, with all eight required hosted
+checks, build validation and three consecutive coherent live probes passing.
+Final numerical/result updates follow as a documentation-only main commit;
+they do not change the deployed application source or require another deployment.
 The original user checkout and its unrelated work were preserved.
-Final local validation is complete: all eight jobs and all 36 units passed. No sources have been
-published and no production migration or deployment was performed.
+
+Authoritative performance: corrected seat median102.51 ->45.72 s (2.24x);
+Flutter median90.77 ->58.07 s (36%). The seat40s absolute target and the browser
+75s combined target remain unmet; the seat >=2x fallback is met. Original,
+superseded samples below are explicitly historical and retained for audit.
 
 ## Delivered contract
 
@@ -166,14 +172,39 @@ ownership and loopback publication remain; Auth needs a normal owned bridge
 for host HTTP access on Docker Desktop/Colima. Role credentials are restored and
 only nonce-owned service/network resources are removed, including on failure.
 
-## Final current-main matched results
+## Corrected comparison and release verification
+
+The authoritative corrected seat comparison is `release1053-seat-summary.json`.
+Both variants used their own validated disposable databases. The old control
+explicitly received its documented image lifecycle URL; the candidate consumed
+only the shared `DATABASE_URL`, verified its project/database lease identity and
+ignored a deliberately invalid obsolete alias. All eight first attempts passed,
+including both real image Worker cases and the same110SQL executions109unique.
+Source input digests stayed unchanged throughout each run.
+
+Control first106.59 s; warm103.78/101.95/102.51 s (median102.51 s).
+Candidate first67.43 s; warm45.72/44.90/46.95 s (median45.72 s).
+The corrected speedup is2.24x; the40 s target is missed by5.72 s,
+while the >=2x fallback is met. Scope remains nine behavior units; canonical
+upgrade/runtime and additive safety gates remain separately mandatory.
+Host RSS control1716-1728 MiB, candidate1729-1774 MiB; PostgreSQL peaks
+205-257 versus286-327 MiB with24-50 actual samples per run. Fresh-project first
+runs retain image, pnpm and OS caches; start/clone/release/stop and Node resolution
+are included.
+
+Corrected source `0da72ea9f799e1762533c16afd1c7d541f7b368b` passed all eight
+required hosted GitHub checks. Their workflows now preserve immutable receipts,
+unit logs and timings for seven days, including failed runs. The superseded
+comparison below is retained for audit and must not be used as the final result.
+
+## Historical comparison superseded by the corrected release1053 comparison
 
 Correction discovered during release verification: the historical seat runs
 below did not prove the image Worker used its allocated database. Its separate
 legacy URL fell back to a foreign local port55432, which concealed the missing
 runtime binding. The 110 SQL-file executions and Flutter/browser observations
-remain recorded, but the nine-unit seat speedup is superseded pending a corrected
-comparison. The Worker now consumes the common `DATABASE_URL`, validates the
+remain recorded, but the nine-unit seat speedup is superseded and replaced by the corrected
+comparison above. The Worker now consumes the common `DATABASE_URL`, validates the
 active lease identity and has no guessed connection fallback. A real targeted
 run passed with the obsolete alias deliberately set to an invalid port.
 Corrected release measurements are retained in the release1053 evidence.
@@ -215,7 +246,7 @@ The three explicitly scoped notification SQL files ran end-to-end in
 2.18/2.67/2.23 s, including automatic acquisition and cleanup. Both targeted
 thresholds are met; these figures are separate from full-suite performance.
 
-## Final mirror and exact source boundary
+## Historical local mirror and exact source boundary
 
 The final all-eight local mirror passed36/36 units and8/8 jobs with
 `complete=true`, `inputsUnchanged=true` and zero per-file manifest changes.
@@ -229,8 +260,9 @@ Tested HEAD is `e3de2261a0717893b41b8cbfc955f9b47ed46da4`, dirty source input SH
 The eleven canonical seat step events, including real upgrade/runtime gates and
 resource scheduling waits within the shared all-eight run, span187.02 s. This
 span is not comparable with the isolated nine-unit benchmark. No controlled
-before/after full-eight total or hosted cold runtime was measured. Sources
-remain uncommitted and unpublished; all task-owned runtime resources are stopped.
+before/after full-eight total or hosted cold runtime was measured. That earlier receipt covered then-uncommitted local sources; it is historical.
+The approved release is published and deployed as recorded below. All task-owned
+benchmark runtimes are stopped.
 
 Only this result pair and the authoritative plan receive final numerical
 updates after the passing receipt. A separate post-documentation manifest check
@@ -239,6 +271,28 @@ changed source archive are also retained under
 `/Users/miakh/Library/Caches/festapp-test-runtime-20261109/`.
 
 
-Hosted exact-SHA checks cannot attest uncommitted, unpublished local sources.
-A local mirror receipt is not a production release authorization or a substitute
-for canonical GitHub checks on an eventual published `baseMainSha`.
+The historical local receipt did not attest the later published source.
+Release1053 separately passed all eight canonical GitHub checks on its exact
+`baseMainSha`; local mirror success was not substituted for that release gate.
+
+## Approved release1053 completed
+
+Published shared source: `0da72ea9f799e1762533c16afd1c7d541f7b368b`, including
+sibling occasion-user fix `81e00bfdf8905b0144c5eb6caf58d25239a154b5`.
+Tenant `festapptickets` overlay: `9fac6c3e90c9ee99f2a84bd4a4ba9f3f505b54f8`.
+Live https://vstupenky.online is **0.20.542+1053**, verified by three consecutive
+coherent deployment probes after one local build and the supported direct upload.
+All eight required hosted jobs passed the exact source. The build retained306
+Node cases and31 real browser reports, all passing. Tenant ancestry, source-owned
+drift replay, release manifest and generated build checks passed.
+
+The exact canonical registry migration1800 and its ledger entry committed
+atomically after target/backup verification; selector0 and ledger1800/1900 were
+verified after deployment. No production fixtures or unrelated backend operations
+were run. The one-row protected backup is retained outside the repository.
+
+Sanitized deployment receipt, source readiness and corrected benchmark evidence:
+`/Users/miakh/Library/Caches/festapp-test-runtime-20261109/release-1053/`.
+The final numerical/result notes were published on main after release as a
+documentation-only change. They do not change the immutable deployed source
+or require another release.

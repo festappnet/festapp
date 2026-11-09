@@ -1,6 +1,6 @@
 {
-  "status": "implemented-local-validation-complete-with-target-deficits",
-  "baseMainSha": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+  "status": "implemented-verified-deployed-with-documented-target-deficits",
+  "baseMainSha": "81e00bfdf8905b0144c5eb6caf58d25239a154b5",
   "worktree": "/private/tmp/festapp-test-runtime-20261109",
   "branch": "perf/test-runtime-20261109",
   "implementedWaves": [
@@ -13,8 +13,8 @@
     6,
     7
   ],
-  "published": false,
-  "productionMutated": false,
+  "published": true,
+  "productionMutated": true,
   "providerParity": {
     "roles_equal": true,
     "role_memberships_equal": true,
@@ -54,7 +54,12 @@
     "startupAddedNodeTests": 2
   },
   "sqlDefaultConcurrency": 2,
-  "hostedExactShaGate": "not executed: source publication is not authorized",
+  "hostedExactShaGate": {
+    "status": "PASS",
+    "sourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "requiredJobsPassed": 8,
+    "attestationScope": "immutable deployed application source; subsequent result/plan updates are documentation only"
+  },
   "evidenceDirectory": "/private/tmp/festapp-runtime-evidence-20261109",
   "sqlDefaultRationale": "Lower memory when independent units overlap; final2/4/5 wall15.72/14.14/13.75s and PG container347.0/375.8/432.9MiB; prior matrix19.08/19.45/28.84s demonstrates host variability.",
   "serviceProofs": {
@@ -1284,10 +1289,10 @@
     "note": "Final numerical documentation is written after the exact-source mirror; separate manifest comparison proves no functional inputs changed."
   },
   "remainingTargets": [
-    "Matched seat median52.12s exceeds40s by12.12s; >=2x fallback met.",
+    "Corrected owned seat median45.72s exceeds40s by5.72s; >=2x fallback met.",
     "Browser combined medians138.80s exceed75s by63.80s; startup control failed, so startup speedup unproven.",
-    "Hosted cold/exact-SHA CI not executed: sources are uncommitted and unpublished.",
-    "No controlled before/after full-eight-job total; current full8outer340.12s only."
+    "Corrected hosted8 exact-SHA checks passed; no controlled hosted performance comparison.",
+    "No controlled before/after full-eight-job total."
   ],
   "releaseCorrection": {
     "workerDatabaseContract": "common DATABASE_URL only; active lease project/database verified",
@@ -1295,6 +1300,147 @@
     "correctedLocalReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T202631-6e72098f93dd/receipt.json",
     "obsoleteAliasDeliberatelyInvalid": true,
     "correctedLocalUnitsPassed": 15,
-    "hostedEvidence": "All eight hosted lanes now archive run receipts, logs and timings even after failure."
+    "hostedEvidence": "All eight hosted lanes now archive run receipts, logs and timings even after failure.",
+    "hostedSourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "hostedJobsPassed": 8,
+    "comparisonCorrected": true
+  },
+  "correctedMatchedSeatRelease1053": {
+    "sourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "controlMainSha": "81e00bfdf8905b0144c5eb6caf58d25239a154b5",
+    "validForSpeedupClaim": true,
+    "scope": "same nine behavior units;110SQL executions109unique;both real image lifecycle cases on each respective owned DB;separate upgrade/additive gates excluded",
+    "controlBinding": "Historical documented IMAGE_LIFECYCLE_DATABASE_URL explicitly points to the control-owned DATABASE_URL; no assertions or behavior altered",
+    "candidateBinding": "Common DATABASE_URL with live project/database lease assertions; obsolete alias deliberately invalid55999",
+    "allFirstAttemptsPassed": true,
+    "inputsUnchanged": true,
+    "runs": {
+      "control": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 106.58573841594625,
+          "peakSummedRssBytes": 1810284544,
+          "containerPeakSampledBytes": 246100787,
+          "containerSamples": 50,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-cold-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 103.77752016601153,
+          "peakSummedRssBytes": 1805647872,
+          "containerPeakSampledBytes": 269274316,
+          "containerSamples": 48,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-warm1-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 101.94922008301364,
+          "peakSummedRssBytes": 1798897664,
+          "containerPeakSampledBytes": 214853222,
+          "containerSamples": 47,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-warm2-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 102.50763483298942,
+          "peakSummedRssBytes": 1812234240,
+          "containerPeakSampledBytes": 245366784,
+          "containerSamples": 48,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-warm3-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        }
+      ],
+      "dag": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 67.42785808298504,
+          "peakSummedRssBytes": 1860665344,
+          "containerPeakSampledBytes": 321703116,
+          "containerSamples": 33,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-cold-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 45.715067374985665,
+          "peakSummedRssBytes": 1840136192,
+          "containerPeakSampledBytes": 337851187,
+          "containerSamples": 24,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-warm1-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 44.898031375021674,
+          "peakSummedRssBytes": 1812627456,
+          "containerPeakSampledBytes": 299578163,
+          "containerSamples": 24,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-warm2-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 46.95263337501092,
+          "peakSummedRssBytes": 1829683200,
+          "containerPeakSampledBytes": 342884352,
+          "containerSamples": 25,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-warm3-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        }
+      ]
+    },
+    "controlWarmMedianSeconds": 102.50763483298942,
+    "candidateWarmMedianSeconds": 45.715067374985665,
+    "speedup": 2.242316170993537,
+    "targetSeconds": 40,
+    "targetDeficitSeconds": 5.715067374985665,
+    "fallbackAtLeast2xMet": true,
+    "coldDefinition": "fresh owned project/template;image,pnpm and OS caches retained;Node,start,clone,release and clusterstop included"
+  },
+  "originalMeasurementBaseMainSha": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+  "release1053": {
+    "sourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "tenantSha": "9fac6c3e90c9ee99f2a84bd4a4ba9f3f505b54f8",
+    "tenantId": "festapptickets",
+    "version": "0.20.542+1053",
+    "liveUrl": "https://vstupenky.online",
+    "deploymentUrl": "https://2d738a83.vstupenkyonline.pages.dev",
+    "hostedRequiredChecksPassed": 8,
+    "buildStartupNodeCases": 306,
+    "buildStartupBrowserReports": 31,
+    "buildVerified": true,
+    "coherentLiveConsecutiveProbesPassed": 3,
+    "migration1800Present": true,
+    "migration1900Preserved": true,
+    "retiredRegistrySelectorCount": 0,
+    "deploymentMethod": "single local build followed by automation/deploy_direct.sh --skip-build --wrangler-oauth --branch prod/festapptickets",
+    "receipt": "/Users/miakh/Library/Caches/festapp-test-runtime-20261109/release-1053/deployment-receipt.json",
+    "postReleaseNumericalDocsOnly": true,
+    "postReleaseDocumentationPublished": true
+  },
+  "publishedMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+  "documentationPublication": {
+    "scope": "three result/plan files only; no runtime/workflow/tenant changes",
+    "deployedApplicationSourceUnchanged": true,
+    "newDeploymentRequired": false
   }
 }
