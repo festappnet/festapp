@@ -20,6 +20,9 @@ node --test \
   tests/core/backend_activation_service.test.js \
   tests/core/supabase_client_config.test.js \
   tests/core/early_form_load.test.js \
+  tests/core/initialize_core_services.test.js \
+  tests/core/home_startup.test.js \
+  tests/core/public_catalogue_recovery.test.js \
   tests/core/web_client_bootstrap.test.js \
   tests/core/pwa_client_adapter.test.js \
   tests/core/flutter_runtime_handoff.test.js \

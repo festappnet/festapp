@@ -1,3 +1,4 @@
+import {publicFormLocation} from '../../src/utils/public_form_location.js';
 import { register } from 'node:module';
 register('../css_loader.mjs', import.meta.url);
 import test from 'node:test';
@@ -22,7 +23,7 @@ for (const failed of [false, true]) test(`Google continuation owns one dialog af
     dom.window.failFestappWebClientStartup = reason => assert.fail(reason);
     await runInNewContext(source, {
         window:dom.window, document:dom.window.document, console,
-        isEmbed:()=>false, applyEmbedContext() {}, resolveScannerRoute:()=>null,
+        publicFormLocation, isEmbed:()=>false, applyEmbedContext() {}, resolveScannerRoute:()=>null,
         GoogleAuthService:{takeCallback:()=>({attempt:'fixture'}),complete:async()=>{
             if (failed) throw Error('provider_cancelled');
             return {status:'needs_profile'};
@@ -71,7 +72,7 @@ test('catalogue stays hidden while cards load, then startup reveals cards', asyn
     const noop = { init() {} };
     const startup = runInNewContext(source, {
         window, document, console, UnitPage,
-        isEmbed: () => false, applyEmbedContext() {},
+        publicFormLocation, isEmbed: () => false, applyEmbedContext() {},
         resolveScannerRoute: () => null,
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async () => {},
@@ -118,7 +119,7 @@ for (const fails of [false, true]) test(`organizer startup preserves static cont
     dom.window.markFestappAppReady = () => ready++;
     await runInNewContext(source, {
         window: dom.window, document: dom.window.document, console: { error() {} },
-        isEmbed: () => false, applyEmbedContext() {},
+        publicFormLocation, isEmbed: () => false, applyEmbedContext() {},
         resolveScannerRoute: () => null,
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async options => { assert.equal(options.isAppSupported, false); initializations++; if (fails) throw Error('offline'); },
@@ -148,7 +149,7 @@ test('startup runs when the module arrives after DOMContentLoaded', async t => {
     runInNewContext(source, {
         window: { ...dom.window, markFestappAppReady() { ready++; }, failFestappWebClientStartup: assert.fail },
         document: dom.window.document, console,
-        isEmbed: () => false, applyEmbedContext() {},
+        publicFormLocation, isEmbed: () => false, applyEmbedContext() {},
         resolveScannerRoute: () => null,
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async () => { initialized++; },
@@ -160,4 +161,40 @@ test('startup runs when the module arrives after DOMContentLoaded', async t => {
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(initialized, 1, 'late module must initialize services without another DOMContentLoaded');
     assert.equal(ready, 1);
+});
+
+for (const [path, deferred] of [
+    ['/form/example', true], ['/form/example?utm_source=organizer', true],
+    ['/form/example?embed=1', true], ['/', false], ['/events', false],
+    ['/form/example?preview=true', false], ['/form/example?admin=1', false],
+    ['/form/example?order_id=1&token=private', false],
+]) test(`document startup ${path} defers catalogue context=${deferred}`, async t => {
+    const {initializeCoreServices} = await import('../../src/startup/initialize_core_services.js');
+    const dom = new JSDOM('<div id="app"></div>', {url: 'https://tickets.invalid' + path});
+    t.after(() => dom.window.close());
+    const calls = [];
+    const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
+        .replace(/^import .*;\r?\n/gm, '').replace(/\/\/ Start[\s\S]*$/, 'Main.init();');
+    const noop = {init() {}};
+    await runInNewContext(source, {
+        window: dom.window, document: dom.window.document, console,
+        publicFormLocation, isEmbed: () => new URLSearchParams(dom.window.location.search).get('embed') === '1',
+        applyEmbedContext() {}, resolveScannerRoute: () => null,
+        GoogleAuthService: {takeCallback: () => null},
+        initializeCoreServices,
+        LocalizationService: {init: async () => calls.push('translations')},
+        SupabaseService: {initialize: async () => calls.push('backend')},
+        RightsService: {updateAppData: async () => calls.push('catalogue context')},
+        earlyFormLoad: {start() {calls.push('prefetch');}}, DbForms: {},
+        handleHelpAction: async () => false, handleOrganizerIntent: async () => null,
+        AppConfig: {isAppSupported: false}, ThemeService: noop, ImageLoader: noop,
+        RouterService: {
+            normalizeUrl: url => new URL(url).pathname,
+            preloadForm: async () => {},
+            handleInitialLoad: async () => {calls.push('route'); return true;},
+            initPopStateListener() {},
+        },
+    });
+    assert.deepEqual(calls, ['translations', 'backend', 'prefetch',
+        ...(deferred ? [] : ['catalogue context']), 'route']);
 });

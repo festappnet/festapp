@@ -3,7 +3,7 @@ export async function initializeCoreServices({
     supabaseService,
     rightsService,
     isAppSupported,
-    publicEmbed = false,
+    deferAppContext = false,
     onBackendReady = () => {},
 }) {
     // Translation state must exist before Supabase/Rights listeners can render
@@ -11,5 +11,5 @@ export async function initializeCoreServices({
     await localizationService.init();
     await supabaseService.initialize();
     onBackendReady();
-    if (!publicEmbed && !isAppSupported) await rightsService.updateAppData();
+    if (!deferAppContext && !isAppSupported) await rightsService.updateAppData();
 }

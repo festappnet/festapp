@@ -19,6 +19,7 @@ import { FeedbackFab } from './components/feedback/feedback_fab.js';
 import { ImageLoader } from './utils/image_loader.js';
 import { initializeCoreServices } from './startup/initialize_core_services.js';
 import { resolveScannerRoute } from './services/scanner_routes.js';
+import { publicFormLocation } from './utils/public_form_location.js';
 import { earlyFormLoad } from './startup/early_form_load.js';
 import { DbForms } from './components/forms/db_forms.js';
 
@@ -46,7 +47,8 @@ class Main {
                 rightsService: RightsService,
                 // Content pages need account context without a later router fetch.
                 isAppSupported: AppConfig.isAppSupported && document.body.dataset.page !== 'organizers',
-                publicEmbed: isEmbed(),
+                // FormPage owns its scoped rights; public forms do not need catalogue context.
+                deferAppContext: isEmbed() || publicFormLocation(window.location, {entry: true}),
                 onBackendReady: () => earlyFormLoad.start({win: window, service: SupabaseService, load: link => DbForms.getFormByLink(link)}),
             });
             ImageLoader.init(); // Initialize Image Loader
