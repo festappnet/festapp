@@ -123,6 +123,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           await (widget.previewExamplesLoader?.call() ??
               EmailPreviewExamples.loadForOccasion(
                 widget.emailTemplatesResponse.occasion,
+                inheritedTone: widget
+                    .emailTemplatesResponse
+                    .unit
+                    .data?['communication_tone'],
               ));
       if (!mounted) return;
       setState(() {
@@ -155,6 +159,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   s.locale == previous?.locale &&
                   s.tone == previous?.tone,
             )
+            .firstOrNull ??
+        _scenarios
+            .where((s) => s.tone == examples.context?.communicationTone)
             .firstOrNull ??
         _scenarios.firstOrNull;
     _bodyProvider.inlineTicketsEnabled =

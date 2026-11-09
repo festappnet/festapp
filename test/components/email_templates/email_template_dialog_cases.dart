@@ -145,6 +145,34 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('default waitlist preview follows the informal single application context', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final examples = EmailPreviewExamples.fromJson(
+      jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()),
+      context: const EmailPreviewContext(
+        occasionTitle: 'Duchovní obnova', communicationTone: 'informal',
+        ticketsEnabled: false, blueprintEnabled: false),
+    );
+    await openTemplate(tester, code: 'waitlist_offer', occasionTitle: 'Duchovní obnova',
+      html: '<h2>{{waitlist_offer_heading}}</h2><p>{{offered_places}}</p><p>{{waitlist_offer_instructions}}</p>{{offer_button}}',
+      previewExamplesLoader: () async => examples,
+      authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'poradatel@example.invalid'),
+    );
+    expect(find.text(EmailTemplatesStrings.toneName('informal')), findsOneWidget);
+    await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
+    await tester.tap(find.byIcon(Icons.preview_outlined).first);
+    await tester.pumpAndSettle();
+    final received = examples.scenariosFor('waitlist_offer').firstWhere((s) => s.tone == 'informal');
+    expect(find.byWidgetPredicate((w) => w is EmailPreviewHtml &&
+      w.html.contains(received.values['waitlist_offer_heading']!) &&
+      w.html.contains(received.values['offered_places']!) &&
+      w.html.contains(received.values['waitlist_offer_instructions']!)), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   for (final code in [
     'waitlist_confirmation',
     'waitlist_offer',

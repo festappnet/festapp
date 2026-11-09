@@ -259,6 +259,16 @@ for (const tone of communicationTones) {
           toneValues.waitlist_offer_button_multiple,
         ),
       },
+      singleApplicationTemplates: {
+        participant_count: "1",
+        participant_phrase: waitlistCountPhrase(1, "person"),
+        offered_count: "1",
+        offered_places: waitlistCountPhrase(1, "place"),
+        waitlist_offer_instructions: toneValues.waitlist_offer_instructions_single,
+        offer_button: waitlistActionLink(
+          escapeEmailHtml(fixture.offerUrl), toneValues.waitlist_offer_button_single,
+        ),
+      },
       requiredLinks: overviewRequiredLinks(fixture.overviewUrl),
     });
   }

@@ -17,6 +17,32 @@ void main() {
             EmailPreviewScenario.fromJson(Map<String, dynamic>.from(v as Map)),
       )
       .toList();
+  test('single application waitlist examples offer exactly one place', () {
+    for (final record in records.where(
+      (r) => r.templateCode.startsWith('waitlist'),
+    )) {
+      final single = record.withContext(
+        const EmailPreviewContext(
+          ticketsEnabled: false,
+          blueprintEnabled: false,
+        ),
+      );
+      expect(single.values['participant_count'], '1');
+      expect(single.values['participant_phrase'], '1 osobu');
+      expect(single.values['offered_count'], '1');
+      expect(single.values['offered_places'], '1 místo');
+      if (record.templateCode == 'waitlist_offer') {
+        expect(
+          single.values['offer_button'],
+          isNot(record.values['offer_button']),
+        );
+        expect(
+          single.values['waitlist_offer_instructions'],
+          isNot(record.values['waitlist_offer_instructions']),
+        );
+      }
+    }
+  });
   const context = EmailPreviewContext(
     occasionTitle: 'Ples ve Lhotě',
     deadline: '10. 11. 2026',

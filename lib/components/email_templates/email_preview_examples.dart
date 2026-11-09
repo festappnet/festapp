@@ -29,11 +29,11 @@ class EmailPreviewExamples {
               .loadString('assets/email_templates/preview_examples.json'))
           as Map<String, dynamic>);
   static Future<EmailPreviewExamples> loadForOccasion(
-      OccasionModel? occasion) async {
+      OccasionModel? occasion, {Object? inheritedTone}) async {
     final data = jsonDecode(await rootBundle
             .loadString('assets/email_templates/preview_examples.json'))
         as Map<String, dynamic>;
-    final result = await loadEmailPreviewContext(occasion);
+    final result = await loadEmailPreviewContext(occasion, inheritedTone: inheritedTone);
     return EmailPreviewExamples.fromJson(data,
         context: result.context, contextUnavailable: result.unavailable);
   }

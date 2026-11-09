@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:festapp_core/eshop.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:festapp_core/email_templates.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_preview_context_loader.dart';
@@ -18,6 +20,33 @@ ProductsEditBundle bundle(List<ProductModel> products) => ProductsEditBundle(
       forms: [],
     );
 void main() {
+  test(
+    'preview resolves form override and organizer inheritance canonically',
+    () async {
+      for (final formTone in [null, 'inherit', 'formal', 'informal']) {
+        final result = await loadEmailPreviewContext(
+          OccasionModel(id: 3, title: 'Duchovní obnova', link: 'obnova',
+            isOpen: true, isHidden: false, isPromoted: false),
+          inheritedTone: 'informal',
+          loadForms: (_) async => [
+            FormBundle(
+              definition: FormDefinition.fromJson({
+                'id': 1,
+                'data': {'communication_tone': formTone},
+              }),
+            ),
+          ],
+          loadProducts: (_) async => bundle([]),
+        );
+        expect(
+          result.context.communicationTone,
+          formTone == 'formal' ? 'formal' : 'informal',
+        );
+        expect(result.context.singleApplication, true);
+        expect(result.unavailable, false);
+      }
+    },
+  );
   for (final blueprintEnabled in [false, true]) {
     test(
         'application examples respect blueprint multiplicity $blueprintEnabled with and without a catalog',
@@ -139,7 +168,7 @@ void main() {
         link: 'concert');
     var requests = 0;
     final result =
-        await loadEmailPreviewContext(occasion, loadProducts: (link) async {
+        await loadEmailPreviewContext(occasion, loadForms: (_) async => [], loadProducts: (link) async {
       expect(link, 'concert');
       requests++;
       return bundle([
@@ -193,7 +222,7 @@ void main() {
           features: [TicketFeature(code: 'ticket', isEnabled: enabled)]);
       for (final denied in [false, true]) {
         final result =
-            await loadEmailPreviewContext(occasion, loadProducts: (_) async {
+            await loadEmailPreviewContext(occasion, loadForms: (_) async => [], loadProducts: (_) async {
           if (denied) throw StateError('denied');
           return bundle([
             ProductModel(
@@ -228,7 +257,7 @@ void main() {
             id: 42,
             title: 'Ples',
             link: 'ball'),
-        loadProducts: (_) async => throw StateError('not permitted'));
+        loadForms: (_) async => [], loadProducts: (_) async => throw StateError('not permitted'));
     expect(result.unavailable, isTrue);
     expect(result.context.products, isEmpty);
     expect(result.context.ticketsEnabled, isFalse);
@@ -236,7 +265,7 @@ void main() {
   });
   test('unit templates never query an unrelated occasion', () async {
     var called = false;
-    final result = await loadEmailPreviewContext(null, loadProducts: (_) async {
+    final result = await loadEmailPreviewContext(null, loadForms: (_) async => [], loadProducts: (_) async {
       called = true;
       return bundle([]);
     });
@@ -255,7 +284,7 @@ void main() {
             id: 42,
             title: 'Volný vstup',
             link: 'free'),
-        loadProducts: (_) async =>
+        loadForms: (_) async => [], loadProducts: (_) async =>
             bundle([ProductModel(id: 1, title: 'Zdarma', price: 0)]));
     expect(result.context.products, isEmpty);
     expect(result.unavailable, isFalse);
