@@ -35,8 +35,10 @@ BEGIN
  IF nullif(email_banner,'') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft email banner access denied'; END IF;
  SELECT coalesce(unit_data->>'email_banner',data->>'email_banner') INTO inherited_banner FROM public.organizations WHERE id=d.organization;
- tone:=coalesce(nullif(nullif(d.data->>'communicationTone',''),'inherit'),CASE WHEN unit_data->>'communication_tone'='informal' THEN 'informal' ELSE 'formal' END);
- IF tone NOT IN ('formal','informal') THEN RAISE invalid_parameter_value USING MESSAGE='Invalid tone'; END IF;
+ IF nullif(nullif(d.data->>'communicationTone',''),'inherit') IS NOT NULL
+  AND public.parse_communication_tone(d.data->>'communicationTone') IS NULL THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid tone'; END IF;
+ tone:=public.resolve_communication_tone(d.data->>'communicationTone',unit_data->>'communication_tone');
  IF coalesce(d.data->>'replyToMode','inherit') NOT IN ('inherit','custom') THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid reply mode'; END IF;
  reply_to:=CASE WHEN d.data->>'replyToMode'='custom' THEN btrim(d.data->>'replyToEmail') ELSE unit_data->>'reply_to' END;

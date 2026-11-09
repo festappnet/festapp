@@ -1,3 +1,5 @@
+import 'package:festapp_core/communication_tone.dart';
+
 import 'occasion_setup_review_row.dart';
 
 import 'package:fstapp/components/forms/email_validation.dart';
@@ -36,9 +38,8 @@ void initializeCommunicationDraft(
       : (data['formDraft'] as Map?)?['data'] as Map? ?? {};
   final values = <String, dynamic>{
     'communicationTone':
-        ['formal', 'informal'].contains(form['communication_tone'])
-        ? form['communication_tone']
-        : 'inherit',
+        CommunicationTone.parse(form['communication_tone']) ??
+        CommunicationTone.inherit,
     'replyToMode': 'inherit',
     'replyToEmail': '',
     'remindersMode': form['is_reminder_enabled'] is bool
@@ -82,8 +83,7 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
   final form = data['formDraft'];
   if (form is! Map) return;
   final meta = Map<String, dynamic>.from(form['data'] as Map? ?? {});
-  if (data['communicationTone'] == 'formal' ||
-      data['communicationTone'] == 'informal') {
+  if (CommunicationTone.parse(data['communicationTone']) != null) {
     meta['communication_tone'] = data['communicationTone'];
   } else {
     meta.remove('communication_tone');

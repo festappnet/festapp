@@ -116,6 +116,51 @@ void main() {
         find.text('Kód vstupenky: festapp-preview:INVALID-1'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  for (final templateCode in ['waitlist_confirmation', 'waitlist_offer']) {
+    testWidgets('$templateCode renders dynamic wording as preview blocks',
+        (tester) async {
+      final examples = EmailPreviewExamples.fromJson(jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync()));
+      final scenario = examples.scenariosFor(templateCode).first;
+      final heading = '${templateCode}_heading';
+      final instructions = templateCode == 'waitlist_offer'
+          ? 'waitlist_offer_instructions'
+          : 'waitlist_confirmation_explanation';
+      final html = '<h3 style="text-align:center">{{$heading}}</h3>'
+          '<p>{{$instructions}}</p>';
+      final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: templateCode),
+          field: EmailTargetField.body,
+          scenario: scenario);
+      final controller = RichHtmlEditorController(
+          initialHtml: html,
+          owner: const HtmlMediaOwner.none(),
+          authoring: provider);
+      await tester.pumpWidget(MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(body: RichHtmlEditor(controller: controller))));
+      await tester.pumpAndSettle();
+      for (final code in [heading, instructions]) {
+        expect(provider.entry(code)?.block, isTrue);
+        expect(scenario.values[code], isNotEmpty);
+        expect(find.text(scenario.values[code]!, findRichText: true),
+            findsOneWidget);
+        expect(find.text('{{$code}}', findRichText: true), findsNothing);
+      }
+      expect(controller.editor.document.whereType<TemplateTokenBlock>(),
+          hasLength(2));
+      final renderedHeading = tester
+          .widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml))
+          .firstWhere((widget) => widget.html.contains(scenario.values[heading]!));
+      expect(renderedHeading.html,
+          '<h3 style="text-align:center">${scenario.values[heading]}</h3>');
+      expect(controller.html, html);
+      expect(controller.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
   test('QR ticket variable stays hidden without enabled inline delivery', () {
     final provider = EmailAuthoringProvider(
         EmailTemplateModel(code: 'TICKET_ORDER_PAYMENT_DONE'),

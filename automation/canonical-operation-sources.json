@@ -395,6 +395,12 @@
     "eshop_forms/form_measurement_policy.sql",
     "eshop_forms/form_datalayer.sql",
     "eshop_forms/form_measurement_runtime.sql",
-    "notification_center/serving_contraction.sql"
+    "notification_center/serving_contraction.sql",
+    "others/communication_tone.sql",
+    "eshop_forms/get_effective_form_data.sql",
+    "occasion_setup/communication.sql",
+    "occasion_setup/email_preview.sql",
+    "eshop_waitlist/email_copy.sql",
+    "others/email_variable_contract.sql"
   ]
 }

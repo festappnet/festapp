@@ -57,21 +57,11 @@ BEGIN
 
   -- Authorization check
   IF v_occasion IS NOT NULL THEN
-    IF NOT EXISTS (
-     SELECT 1 FROM public.occasion_users
-     WHERE "user" = auth.uid()
-      AND occasion = v_occasion
-      AND is_manager = true
-    ) THEN
-     RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: Caller is not a manager for this occasion');
+    IF NOT public.can_manage_occasion_participants(v_occasion) THEN
+     RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: Cannot manage participants for this occasion');
     END IF;
   ELSE
-    IF NOT EXISTS (
-        SELECT 1 FROM public.unit_users
-        WHERE "user" = auth.uid()
-        AND unit = v_unit
-        AND is_manager = true
-    ) THEN
+    IF NOT public.can_manage_unit_users(v_unit) THEN
         RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: Caller is not a manager for this unit');
     END IF;
   END IF;

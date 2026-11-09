@@ -1,3 +1,8 @@
+import {
+  substituteEmailHtml,
+  substituteEmailSubject,
+} from "./emailTemplateComposition.ts";
+import { assertCanonicalEmailTemplate } from "./emailVariables.ts";
 import { styleEmailPlainValues } from "./emailPlainValueStyles.ts";
 import {
   completeEmailContent,
@@ -72,14 +77,6 @@ export class EmailTemplateNotFoundError extends Error {
   }
 }
 
-function substitute(value: string, substitutions: Record<string, unknown>) {
-  let result = value;
-  for (const [key, replacement] of Object.entries(substitutions)) {
-    result = result.replaceAll(`{{${key}}}`, String(replacement));
-  }
-  return result;
-}
-
 export type PreparedEmail = {
   from: string;
   to: string;
@@ -125,7 +122,10 @@ export async function renderEmail(
     !template || typeof template.subject !== "string" ||
     typeof template.html !== "string"
   ) throw new EmailTemplateNotFoundError(input.templateCode ?? "inline");
-  const subject = substitute(
+  assertCanonicalEmailTemplate(template.subject);
+  assertCanonicalEmailTemplate(template.html);
+  assertCanonicalEmailTemplate(resolved?.wrapper?.html);
+  const subject = substituteEmailSubject(
     template.subject,
     input.subjectSubstitutions ?? input.substitutions,
   );
@@ -138,7 +138,7 @@ export async function renderEmail(
       body.slice(first + marker.length).replaceAll(marker, "");
   }
   const html = styleEmailPlainValues(completeEmailContent(
-    substitute(body, input.substitutions),
+    substituteEmailHtml(body, input.substitutions),
     input.requiredLinks ?? [],
     resolved?.wrapper?.html,
   ));

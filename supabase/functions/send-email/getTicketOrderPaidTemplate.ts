@@ -1,9 +1,11 @@
+import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
+import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { getBaseOrderData } from "./shared.ts";
-import type { Tone } from "../_shared/translations/translations.ts";
+
 
 /**
  * Prepares the data required for the TICKET_ORDER_PAID email template.
@@ -17,7 +19,8 @@ export async function getTicketOrderPaidTemplate(
   reqData: any,
   authorizationHeader: string,
 ) {
-  const { orderId, requestSecret, lang = "cs" } = reqData.data;
+  const { orderId, requestSecret, lang: requestedLanguage } = reqData.data;
+  const lang = resolveEmailLanguage(requestedLanguage);
   const code = reqData.code;
 
   const attachments: any[] = [];
@@ -34,9 +37,7 @@ export async function getTicketOrderPaidTemplate(
   } = await getBaseOrderData(orderId, requestSecret, authorizationHeader);
 
   // 2. Get the communication tone
-  const tone: Tone = (form_data?.communication_tone === "informal")
-    ? "informal"
-    : "formal";
+  const tone = resolveCommunicationTone(form_data?.communication_tone);
 
   const totalAmount = Number(payment_info?.amount) || 0;
   const amountPaid = Number(payment_info?.paid) || 0;
@@ -80,8 +81,7 @@ export async function getTicketOrderPaidTemplate(
   }
 
   const subs = {
-    occasionTitle: occasion.title,
-      orderSymbol: order.order_symbol,
+    ...orderTemplateValues("TICKET_ORDER_PAYMENT_DONE", occasion.title, order.order_symbol, tone, lang),
     fullOrder: generateFullOrder(
       order.data,
       order.data.tickets,

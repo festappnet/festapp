@@ -1,3 +1,4 @@
+import { waitlistCountPhrase } from "./waitlistEmailCopy.ts";
 import assert from "node:assert/strict";
 import { renderEmail } from "./emailDelivery.ts";
 import { openEmail, sealEmail } from "./emailPayload.ts";
@@ -6,7 +7,6 @@ import { sha256Text, type WaitlistEmailSource } from "./waitlistEmail.ts";
 import {
   renderWaitlistEmail,
   waitlistCapabilityUrl,
-  waitlistCountPhrase,
   waitlistExpiryText,
   type WaitlistEmailRow,
   type WaitlistRenderContext,
@@ -103,9 +103,9 @@ async function fixture(offer = false) {
         return {
           template: {
             id: 1,
-            subject: "{{order_symbol}}",
+            subject: "{{orderSymbol}}",
             html:
-              "{{occasion_title}} {{participant_count}} {{manage_waitlist_button}} {{manage_waitlist_url}} {{offered_count}} {{offer_button}} {{offer_expires_at}}",
+              "{{occasionTitle}} {{participant_count}} {{manage_waitlist_button}} {{manage_waitlist_url}} {{offered_count}} {{offer_button}} {{offer_expires_at}}",
           },
           wrapper: {
             html: '<main data-wrapper="inherited">{{content}}</main>',

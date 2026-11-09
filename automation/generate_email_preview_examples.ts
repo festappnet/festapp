@@ -1,3 +1,7 @@
+import { waitlistEmailCopy, waitlistCountPhrase } from "../supabase/functions/_shared/waitlistEmailCopy.ts";
+import { emailVariableContract } from "../supabase/functions/_shared/emailVariables.ts";
+import { orderCommunication } from "../supabase/functions/_shared/emailCommunication.ts";
+import { communicationTones } from "../supabase/functions/_shared/communicationTone.ts";
 import { saleOpeningSubstitutions } from '../supabase/functions/_shared/saleOpeningPresentation.ts';
 import { confirmationPaymentSubstitutions, updateBalanceReasoning, paidPaymentSubstitutions, reminderBalanceReasoning } from "../supabase/functions/_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../supabase/functions/_shared/orderOverview.ts";
@@ -7,7 +11,6 @@ import { enTranslations } from "../supabase/functions/_shared/translations/trans
 import {
   generatePaymentDetails,
   renderAccountNumber,
-  type Tone,
 } from "../supabase/functions/_shared/translations/payment-details.helpers.ts";
 import {
   escapeEmailHtml,
@@ -31,8 +34,16 @@ const fixture = JSON.parse(
 const sources = [
   "automation/generate_email_preview_examples.ts",
   "automation/fixtures/email_preview/order.json",
+  "packages/festapp_contracts/email-variables.json",
+  "packages/festapp_contracts/waitlist-email-copy.json",
+  "packages/festapp_contracts/communication-tone.json",
   ...[
     "orderOverview.ts",
+    "communicationTone.ts",
+    "emailCommunication.ts",
+    "emailVariables.ts",
+    "emailTemplateComposition.ts",
+    "waitlistEmailCopy.ts",
     "orderEmailPresentation.ts",
     "paymentPresentation.ts",
     "translations/translations.ts",
@@ -83,7 +94,7 @@ const scalar = {
 for (const locale of ["cs", "en"] as const) {
   const tr = locale === "cs" ? csTranslations : enTranslations;
   const money = (n: number) => formatCurrency(n, "CZK");
-  for (const tone of ["formal", "informal"] as Tone[]) {
+  for (const tone of communicationTones) {
     for (
       const templateCode of [
         "TICKET_ORDER_CONFIRMATION",
@@ -150,6 +161,7 @@ for (const locale of ["cs", "en"] as const) {
           tone,
           values: {
             ...scalar,
+            orderCommunication: orderCommunication(templateCode, fixture.occasionTitle, tone, locale),
             // Delivery is optional; absent ticket content renders as an empty block.
             tickets: "",
             deadline: formatDatetime(payment.deadline, locale),
@@ -185,13 +197,6 @@ for (const locale of ["cs", "en"] as const) {
               lang: locale,
             }),
           },
-          richCodes: [
-            "fullOrder",
-            "balanceReasoning",
-            "changeOverview",
-            "paymentDetails",
-            "order_overview_button",
-          ],
           requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale),
         });
       }
@@ -216,33 +221,13 @@ for (const locale of ["cs", "en"] as const) {
       locale,
       tone: "formal",
       values: { ...scalar, appLinks: links, platformLinks: links },
-      richCodes: ["appLinks", "platformLinks"],
       requiredLinks: [],
     });
   }
 }
-// Tone copy is owned by the existing SQL producer. Read its literal CASE arms;
-// fail rather than silently inventing a duplicate vocabulary when its shape changes.
-const toneSql = await read(
-  "database/functions/eshop_waitlist/email_render_context.sql",
-);
-for (const tone of ["formal", "informal"] as const) {
-  const toneValues: Record<string, string> = {};
-  const section =
-    toneSql.split("SELECT jsonb_build_object(")[1].split(")\n FROM")[0];
-  for (
-    const m of section.matchAll(
-      /'([a-z_]+)',(?:CASE WHEN informal THEN '((?:[^']|'')*)' ELSE '((?:[^']|'')*)' END|'((?:[^']|'')*)')/g,
-    )
-  ) {
-    toneValues[m[1]] = (m[4] ?? (tone === "informal" ? m[2] : m[3])).replaceAll(
-      "''",
-      "'",
-    );
-  }
-  if (Object.keys(toneValues).length !== 8) {
-    throw new Error("Waitlist tone SQL shape changed");
-  }
+// Delivery SQL and offline examples are generated from the same vocabulary.
+for (const tone of communicationTones) {
+  const toneValues = waitlistEmailCopy[tone];
   for (const templateCode of ["waitlist_confirmation", "waitlist_offer"]) {
     records.push({
       templateCode,
@@ -251,12 +236,12 @@ for (const tone of ["formal", "informal"] as const) {
       tone,
       values: {
         ...toneValues,
-        order_symbol: fixture.orderSymbol,
-        occasion_title: fixture.occasionTitle,
+        orderSymbol: fixture.orderSymbol,
+        occasionTitle: fixture.occasionTitle,
         participant_count: "2",
-        participant_phrase: "2 osoby",
+        participant_phrase: waitlistCountPhrase(2, "person"),
         offered_count: "2",
-        offered_places: "2 místa",
+        offered_places: waitlistCountPhrase(2, "place"),
         offer_expires_at: "30. 10. 2026 18:00",
         ...overviewEmailSubstitutions(fixture.overviewUrl),
         order_overview_url: fixture.overviewUrl,
@@ -271,11 +256,6 @@ for (const tone of ["formal", "informal"] as const) {
           toneValues.waitlist_offer_button_multiple,
         ),
       },
-      richCodes: [
-        "order_overview_button",
-        "manage_waitlist_button",
-        "offer_button",
-      ],
       requiredLinks: overviewRequiredLinks(fixture.overviewUrl),
     });
   }
@@ -299,12 +279,11 @@ const moneyPattern = new RegExp(
 );
 for (const locale of ['cs','en','sk','de','pl','uk']) {
  for (const templateCode of ['sale_opening_opened']) {
-  for (const tone of ['formal','informal']) {
+  for (const tone of communicationTones) {
   records.push({templateCode, scenario: 'standard', locale, tone,
    values: saleOpeningSubstitutions(locale, locale === 'cs' ? 'Podzimní ples' : locale === 'sk' ? 'Jesenný ples' : locale === 'de' ? 'Herbstball' : locale === 'pl' ? 'Bal jesienny' : locale === 'uk' ? 'Осінній бал' : 'Autumn ball',
     'https://example.invalid/form/preview',
-    'https://example.invalid/form/preview#sale_opening=unsubscribe&token=preview', {tone}),
-   richCodes: ['sale_opening_action','sale_opening_unsubscribe'], requiredLinks: []});
+    'https://example.invalid/form/preview#sale_opening=unsubscribe&token=preview'), requiredLinks: []});
   }
  }
 }
@@ -329,6 +308,7 @@ for (const record of records) {
     }
   }
   const templates: Record<string, string> = {
+    orderCommunication: orderCommunication(record.templateCode, "{{preview_occasion}}", record.tone, record.locale),
     fullOrder: generateFullOrder(
       fixture.orderData,
       tickets,
@@ -343,6 +323,7 @@ for (const record of records) {
       : generateChangeOverview(changes, record.locale as "cs" | "en"),
   };
   record.contextDefaults = {
+    preview_occasion: fixture.occasionTitle,
     preview_product_0_title: fixture.tickets[0].products[0].title,
     preview_product_0_type: fixture.tickets[0].products[0].type_title,
     preview_product_1_title: fixture.tickets[1].products[0].title,
@@ -412,6 +393,10 @@ for (const record of records) {
 
 const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
+for (const record of records) {
+  record.richCodes = Object.keys(record.values).filter((code) =>
+    (emailVariableContract.variables as Record<string, { html: boolean }>)[code]?.html === true);
+}
 const paddedWrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
 const compositionFixtures = [
   { name: "custom fragment omits overview", html: "<p>Hello</p>", requiredLinks },

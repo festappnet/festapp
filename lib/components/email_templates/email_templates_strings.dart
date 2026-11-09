@@ -1,8 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 
+import '../forms/form_strings.dart';
+
 class EmailTemplatesStrings {
+  static String get orderCommunication =>
+      'EmailTemplates.authoring.labels.orderCommunication'.tr();
   static String get whenSent => 'EmailTemplates.authoring.whenSent'.tr();
-  static String get previewShort => 'EmailTemplates.authoring.previewShort'.tr();
+  static String get previewShort =>
+      'EmailTemplates.authoring.previewShort'.tr();
   static String get authoringContextUnavailable =>
       'EmailTemplates.authoring.authoringContextUnavailable'.tr();
   static String get previewSenderUnavailable =>
@@ -30,8 +35,11 @@ class EmailTemplatesStrings {
   static String get usedBlocks => 'EmailTemplates.authoring.usedBlocks'.tr();
   static String scenarioName(String value) =>
       'EmailTemplates.authoring.$value'.tr();
-  static String toneName(String value) =>
-      'EmailTemplates.authoring.$value'.tr();
+  static String toneName(String value) => switch (value) {
+    'formal' => FormStrings.toneFormal,
+    'informal' => FormStrings.toneInformal,
+    _ => 'EmailTemplates.authoring.$value'.tr(),
+  };
   static String get authoringHint =>
       'EmailTemplates.authoring.authoringHint'.tr();
   static String get insertVariable =>

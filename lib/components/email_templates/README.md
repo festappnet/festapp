@@ -96,6 +96,40 @@ slots and links remain part of the chosen wrapper design.
 
 ## Authoring and generated examples
 
+Communication tone is defined by `packages/festapp_contracts/communication-tone.json`.
+`automation/generate_communication_tone.py` produces the SQL, Dart and TypeScript
+adapters; web uses the same TypeScript module as Edge Functions. They resolve an
+explicit form/draft setting, then the organizer setting, then the platform default.
+Persisted form metadata and setup previews use the generated SQL resolver. Shared
+contract cases verify the same behavior in all runtimes, including invalid values.
+
+`_shared/emailCommunication.ts` owns introductions for all five global order
+templates. Delivery and generated previews insert the same `orderCommunication`
+HTML block. Payment presentation consumes the same resolved tone. Waitlist wording is generated from `packages/festapp_contracts/waitlist-email-copy.json`
+for SQL delivery/offer previews and TypeScript offline examples; the preview generator
+does not parse SQL source. Neutral messages need no artificial formal/informal wording branch.
+Scoped custom prose, formatting and custom payment instructions are preserved;
+only inserted dynamic blocks adapt to tone. The editor's scenario selector affects
+preview state, while form/organizer settings control actual delivery.
+
+`packages/festapp_contracts/email-variables.json` owns every supported template's
+canonical variables, value kinds, HTML/scalar distinction and repeatability.
+`automation/generate_email_variables.py` generates the TypeScript and Dart catalogs.
+The Flutter adapter supplies localized descriptions. Order identity is assembled
+by `orderIdentityValues` using only `orderSymbol` and `occasionTitle`.
+The forward data migration converts existing scoped/global templates, wrappers
+and draft overrides; storage constraints and the delivery guard reject retired
+placeholders. There is no runtime alias conversion. See the
+[cutover procedure](../../../docs/operations/email-template-variable-cutover.md).
+Delivery and preview substitute once, so a token-looking event title
+cannot trigger another substitution. The existing shared money/date formatters,
+order overview, payment presentation and capability-link owners remain the source
+for their respective values; the catalog does not recalculate business facts.
+Producers pass raw scalar values; the shared delivery renderer escapes catalogued
+text/URLs for HTML while leaving subjects plain and generated HTML blocks intact.
+Order overview rendering escapes its raw customer/product fields itself. Preview
+adapters must not pre-escape those same fields or maintain a second substitution loop.
+
 Email authoring uses native Super Editor action-tag composition and atomic
 placeholder objects. The editor serializes them only as existing `{{code}}`
 substitutions. Preview data and editor metadata never enter the saved HTML.

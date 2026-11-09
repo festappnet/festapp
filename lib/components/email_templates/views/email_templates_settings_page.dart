@@ -175,7 +175,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     final title = widget.emailTemplatesResponse.occasion?.title;
     final code = widget.template.substitutions
         .map((s) => s.code)
-        .where((code) => code == 'occasionTitle' || code == 'occasion_title')
+        .where((code) => code == 'occasionTitle')
         .firstOrNull;
     if (title == null || code == null) return;
     _suggestTimer = Timer(const Duration(milliseconds: 600), () {
@@ -327,7 +327,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 (s) => DropdownMenuItem(
                   value: s,
                   child: Text(
-                    '${EmailTemplatesStrings.scenarioName(s.scenario)} · ${s.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(s.tone)}',
+                    _scenarioLabel(s),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -842,15 +842,26 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                     tooltip: EmailTemplatesStrings.variableGuide,
                     icon: const Icon(Icons.info_outline, size: 20),
                   ),
-                  IconButton(
-                    onPressed: _showSampleSettings,
-                    tooltip:
-                        '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
-                    icon: Icon(
-                      _contextUnavailable || _previewError
-                          ? Icons.warning_amber_outlined
-                          : Icons.tune,
-                      size: 20,
+                  Flexible(
+                    child: Tooltip(
+                      message:
+                          '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
+                      child: TextButton.icon(
+                        onPressed: _showSampleSettings,
+                        icon: Icon(
+                          _contextUnavailable || _previewError
+                              ? Icons.warning_amber_outlined
+                              : Icons.tune,
+                          size: 20,
+                        ),
+                        label: Text(
+                          _scenario == null
+                              ? EmailTemplatesStrings.scenario
+                              : EmailTemplatesStrings.toneName(_scenario!.tone),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -940,7 +951,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             occasionId:
                                 widget.emailTemplatesResponse.occasion?.id,
                             unitId: widget.emailTemplatesResponse.unit.id!,
-                            organizationId: widget.emailTemplatesResponse.organization.id!,
+                            organizationId:
+                                widget.emailTemplatesResponse.organization.id!,
                             expectedRevision: widget.template.revision!,
                             code: widget.template.code!,
                           ));

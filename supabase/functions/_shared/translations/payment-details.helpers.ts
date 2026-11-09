@@ -13,10 +13,7 @@ export interface PaymentDetailsOptions {
   lang?: 'cs' | 'en';
 }
 
-/**
- * Defines the supported tones for translations.
- */
-export type Tone = 'formal' | 'informal';
+
 
 // Render short text runs so mail clients do not mistake an account for a phone
 // number. Tags add no spaces or invisible characters to the copyable value.

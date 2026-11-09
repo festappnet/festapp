@@ -37,7 +37,7 @@ GitHub and the mirror read the same ordered commands from
 The mirror runs sequentially, pins Node per job through pnpm, uses frozen JS
 lockfiles, and waits for an existing workstation Flutter task. Install pnpm
 11.24.0, FVM with the project SDK, Deno 2.9.0, Supabase CLI 2.111.0,
-Docker, psql, Chrome and agent-browser 0.39.4 first. PyYAML 6.0.3 is installed
+Docker, psql, Chrome and agent-browser 0.41.2 first. PyYAML 6.0.3 is installed
 in an isolated cached Python environment. No production environment file is loaded.
 
 The SQL lane rebuilds its own `festapp-ci-mirror` project on loopback port 55442
@@ -82,7 +82,7 @@ must pass; any additional failed GitHub Actions check also blocks release.
 
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
 and every web release build. Install its pinned runner with
-`pnpm add --global --allow-build=agent-browser agent-browser@0.39.4`.
+`pnpm add --global --allow-build=agent-browser agent-browser@0.41.2`.
 Use installed Chrome through `AGENT_BROWSER_EXECUTABLE_PATH` (or run
 `agent-browser install` when no system browser is available).
 The local CI mirror honors the same executable override for browser lanes;

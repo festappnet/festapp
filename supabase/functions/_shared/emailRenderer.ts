@@ -8,7 +8,7 @@ import {
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
-import { escapeTicketText, prepareTicketDelivery } from "./ticketDelivery.ts";
+import { prepareTicketDelivery } from "./ticketDelivery.ts";
 import { ticketEmailSubstitutions } from "./ticketEmail.ts";
 import { getTicketOrderConfirmationTemplate } from "../send-email/getTicketOrderConfirmationTemplate.ts";
 import { getTicketOrderReminderTemplate } from "../send-email/getTicketOrderReminderTemplate.ts";
@@ -99,14 +99,8 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        subjectSubstitutions: {
-          ...payment,
-          ...overviewEmailSubstitutions(overviewUrl, lang),
-        },
         substitutions: {
           ...payment,
-          occasionTitle: escapeTicketText(occasion.title),
-          orderSymbol: escapeTicketText(order.order_symbol),
           ...overviewEmailSubstitutions(overviewUrl, lang),
         },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,

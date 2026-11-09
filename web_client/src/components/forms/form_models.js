@@ -1,3 +1,4 @@
+import { resolveCommunicationTone } from '../../../../supabase/functions/_shared/communicationTone.ts';
 import { parseOrganizationIdentity } from './organization_identity.js';
 
 export class FormStatsModel {
@@ -290,7 +291,7 @@ export class FormModel {
     }
     
     get communicationTone() {
-        return this.data[FormModel.metaCommunicationTone];
+        return resolveCommunicationTone(this.data[FormModel.metaCommunicationTone]);
     }
 
     _parseColor(value) {

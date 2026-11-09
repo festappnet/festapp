@@ -1,11 +1,12 @@
+import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
+import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { getBaseOrderData } from "./shared.ts";
-import { translations } from "../_shared/translations/translations.ts";
 import { generateChangeOverview } from "../_shared/changeOverview.ts";
-import type { Tone } from "../_shared/translations/translations.ts"; // Import the Tone type
+
 
 /**
  * Prepares the data required for the TICKET_ORDER_UPDATE email template.
@@ -16,9 +17,7 @@ export async function getTicketOrderUpdateTemplate(
 ) {
   const { orderId, requestSecret, lang: requestedLanguage = "cs" } =
     reqData.data;
-  const lang = requestedLanguage in translations
-    ? requestedLanguage as keyof typeof translations
-    : "cs";
+  const lang = resolveEmailLanguage(requestedLanguage);
 
   const attachments: any[] = [];
 
@@ -35,9 +34,7 @@ export async function getTicketOrderUpdateTemplate(
   } = await getBaseOrderData(orderId, requestSecret, authorizationHeader);
 
   // 2. Get the communication tone
-  const tone: Tone = (form_data?.communication_tone === "informal")
-    ? "informal"
-    : "formal";
+  const tone = resolveCommunicationTone(form_data?.communication_tone);
 
   // 3. Calculate balance and generate a single, consolidated reasoning string
   const orderPrice = Number(order.price) || 0;
@@ -88,8 +85,7 @@ export async function getTicketOrderUpdateTemplate(
 
   // 6. Prepare final data for the email client
   const subs = {
-    occasionTitle: occasion.title,
-      orderSymbol: order.order_symbol,
+    ...orderTemplateValues("TICKET_ORDER_UPDATE", occasion.title, order.order_symbol, tone, lang),
     changeOverview: changeOverviewHtml,
     fullOrder: generateFullOrder(
       order.data,

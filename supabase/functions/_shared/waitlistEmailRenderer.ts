@@ -1,4 +1,7 @@
-import { overviewRequiredLinks, waitlistActionLink } from './emailActionLink.ts';
+import { waitlistCountPhrase } from "./waitlistEmailCopy.ts";
+import { orderIdentityValues } from "./emailCommunication.ts";
+import type { Tone } from "./communicationTone.ts";
+import { escapeEmailHtml, overviewRequiredLinks, waitlistActionLink } from './emailActionLink.ts';
 import { overviewEmailSubstitutions } from './orderEmailOverview.ts';
 import { openOrderOverviewUrl } from "./customerOrderAccess.ts";
 import {
@@ -40,19 +43,13 @@ export type WaitlistRenderContext = {
   offeredCount?: number;
   expiresAt?: string;
   timeZone?: string;
-  communicationTone?: "formal" | "informal";
+  communicationTone?: Tone;
   toneSubstitutions?: Record<string, string>;
   overviewSource?: { sealed: Record<string, string>; contentHash: string; tokenHash: string };
   manageEnvelope?: Record<string, string>;
   manageContentHash?: string;
   manageTokenHash?: string;
 };
-
-/** Complete Czech phrases keep custom numeric substitutions backward compatible. */
-export function waitlistCountPhrase(count: number, noun: "person" | "place"): string {
-  const forms = noun === "person" ? ["osobu", "osoby", "osob"] : ["místo", "místa", "míst"];
-  return `${count} ${forms[count === 1 ? 0 : count >= 2 && count <= 4 ? 1 : 2]}`;
-}
 
 export function waitlistExpiryText(expiresAt: string, timeZone: string): string {
   const date = new Date(expiresAt);
@@ -61,11 +58,6 @@ export function waitlistExpiryText(expiresAt: string, timeZone: string): string 
     timeZone, day: "numeric", month: "numeric", year: "numeric",
     hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   }).format(date).replace(/\s/g, "\u00a0");
-}
-
-function escapeHtml(value: unknown): string {
-  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
 /** Only a trusted tenant setting supplies the base. Personal pages prohibit referrers. */
@@ -190,10 +182,8 @@ export async function renderWaitlistEmail(
       await sha256Text(manageSource.token) !== context.manageTokenHash
     ) throw new Error("waitlist_manage_binding_invalid");
   }
-  const url = escapeHtml(
-    waitlistCapabilityUrl(context, source, row.data.offer_id),
-  );
-  const manageUrl = escapeHtml(waitlistCapabilityUrl(context, manageSource));
+  const url = waitlistCapabilityUrl(context, source, row.data.offer_id);
+  const manageUrl = waitlistCapabilityUrl(context, manageSource);
   let overviewUrl = "";
   if (source.version === 2 && context.overviewSource) {
     overviewUrl = await openOrderOverviewUrl(context, context.overviewSource);
@@ -204,24 +194,23 @@ export async function renderWaitlistEmail(
     throw new Error("waitlist_email_tone_context_invalid");
   }
   const substitutions: Record<string, string | number> = {
-    ...Object.fromEntries(toneKeys.map((key) => [key, escapeHtml(context.toneSubstitutions![key])])),
+    ...Object.fromEntries(toneKeys.map((key) => [key, context.toneSubstitutions![key]])),
     ...overviewEmailSubstitutions(overviewUrl),
-    order_symbol: escapeHtml(context.orderSymbol),
-    occasion_title: escapeHtml(source.occasionTitle),
+    ...orderIdentityValues(source.occasionTitle, context.orderSymbol),
     participant_count: offer
       ? context.participantCount!
       : source.participantCount,
-    waitlist_offer_instructions: escapeHtml(context.toneSubstitutions![offer && context.participantCount === 1 && context.offeredCount === 1 ? "waitlist_offer_instructions_single" : "waitlist_offer_instructions"]),
+    waitlist_offer_instructions: context.toneSubstitutions![offer && context.participantCount === 1 && context.offeredCount === 1 ? "waitlist_offer_instructions_single" : "waitlist_offer_instructions"],
     participant_phrase: waitlistCountPhrase(offer ? context.participantCount! : source.participantCount, "person"),
     manage_waitlist_url: manageUrl,
-    manage_waitlist_button: waitlistActionLink(manageUrl, escapeHtml(context.toneSubstitutions!.waitlist_manage_button_label)),
+    manage_waitlist_button: waitlistActionLink(escapeEmailHtml(manageUrl), escapeEmailHtml(context.toneSubstitutions!.waitlist_manage_button_label)),
     ...(offer
       ? {
         offered_count: context.offeredCount!,
         offered_places: waitlistCountPhrase(context.offeredCount!, "place"),
-        offer_expires_at: escapeHtml(waitlistExpiryText(source.expiresAt!, context.timeZone!)),
+        offer_expires_at: waitlistExpiryText(source.expiresAt!, context.timeZone!),
         offer_url: url,
-        offer_button: waitlistActionLink(url, escapeHtml(context.toneSubstitutions![context.offeredCount === 1 ? "waitlist_offer_button_single" : "waitlist_offer_button_multiple"])),
+        offer_button: waitlistActionLink(escapeEmailHtml(url), escapeEmailHtml(context.toneSubstitutions![context.offeredCount === 1 ? "waitlist_offer_button_single" : "waitlist_offer_button_multiple"])),
       }
       : {}),
   };

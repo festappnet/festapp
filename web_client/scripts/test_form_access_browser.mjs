@@ -313,7 +313,7 @@ try {
         assert.equal(pendingPaint.logoContained, true, 'embedded symbol must fit within 48px with 24px vertical breathing room');
         assert.deepEqual(pendingPaint.logoSources, ['/brand-symbol.svg'], 'embedded startup must show the standalone symbol only');
         assert.ok(pendingPaint.logoFilters.every(filter => filter.includes('brightness(0)') && (palette === 'dark' ? filter.includes('invert(1)') : !filter.includes('invert(1)'))),
-            'embedded symbol must be monochrome and contrast with the host theme');
+            `embedded symbol must be monochrome and contrast with the host theme: ${JSON.stringify({palette, preference, saved, logoFilters:pendingPaint.logoFilters})}`);
         assert.equal(pendingPaint.transparentStartup, true, 'embedded startup background must remain transparent');
         const iframeCanvas = (await browser('eval', `(() => {
             const probe=document.createElement('i'); probe.style.color='Canvas';

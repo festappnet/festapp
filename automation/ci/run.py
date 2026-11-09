@@ -58,14 +58,16 @@ def local(names):
             require_version(['deno', '--version'], '2.9.0')
         browser_jobs = {'seat-checkout', 'web-startup', 'client-contract'}
         if browser_jobs.intersection(names):
-            require_version(['agent-browser', '--version'], '0.39.4')
+            require_version(['agent-browser', '--version'], '0.41.2')
             browser = (os.environ.get('AGENT_BROWSER_EXECUTABLE_PATH') or
                        shutil.which('google-chrome') or shutil.which('chromium'))
             if not browser and sys.platform == 'darwin':
                 browser = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
             if not browser or not Path(browser).is_file():
                 raise RuntimeError('Install Chrome/Chromium before running browser lanes.')
-            os.environ['AGENT_BROWSER_EXECUTABLE_PATH'] = browser
+            # agent-browser discovers installed Chrome itself. Passing its executable
+            # explicitly stalls cross-origin target attachment on this workstation.
+            # Flutter's Chrome runner still needs the resolved executable path.
             os.environ['CHROME_EXECUTABLE'] = browser
         if 'image-contract' in names:
             venv = CACHE / 'python'

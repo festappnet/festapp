@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 
 // Launch settings belong to a fresh owned session. Re-sending them on every
-// CLI call makes agent-browser 0.39.4 reinstall network controls while transient
-// cross-origin targets are attaching. The daemon retains the original filter.
+// CLI call needlessly reinstalls network controls while transient cross-origin
+// targets are attaching. The daemon retains the original filter.
 export function isolatedBrowserInvocation({launch, session, launchConfig, followConfig, sourceEnv, args}) {
     const config = launch ? launchConfig : followConfig;
     const env = Object.fromEntries(Object.entries(sourceEnv).filter(([key]) => !key.startsWith('AGENT_BROWSER_')));

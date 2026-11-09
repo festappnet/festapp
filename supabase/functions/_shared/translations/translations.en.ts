@@ -1,3 +1,4 @@
+import type { Tone } from "../communicationTone.ts";
 import {
   bold,
   generatePaymentDetails,
@@ -6,7 +7,7 @@ import {
   spaceBeforeText,
   spaceAfterText
 } from './payment-details.helpers.ts';
-import type { Tone } from './payment-details.helpers.ts';
+
 
 export const enTranslations = {
   overpaid: (amount: string, _tone: Tone) => [

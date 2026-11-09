@@ -1,3 +1,4 @@
+import 'package:festapp_core/communication_tone.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:festapp_core/json_values.dart';
 
@@ -142,7 +143,8 @@ class FormDefinition {
         : occasionData;
 
     return FormDefinition(
-      measurementStatus: (json['measurement_status'] as Map?)?.cast<String, dynamic>(),
+      measurementStatus: (json['measurement_status'] as Map?)
+          ?.cast<String, dynamic>(),
       demoSimulation: json['demo_simulation'] == true,
       participantCapacity: json['participant_capacity'],
       waitlistEnabled: json['waitlist_enabled'] == true,
@@ -313,19 +315,22 @@ class FormDefinition {
   }
 
   /// One document; the historical wire name remains stable for released readers.
-  String? get presaleContent =>
-      countdownTitle;
+  String? get presaleContent => countdownTitle;
 
   FormDefinition withPresaleContent(String? value) => withCountdownTitle(value);
   String get presaleHeader =>
       _designData['presale_header'] as String? ??
       (enableCountdown ? 'date' : 'none');
   FormDefinition withPresaleHeader(String value) {
-    if (!const ['event_and_date', 'date', 'none'].contains(value )) {
-      throw ArgumentError.value(value , 'presaleHeader') ;
+    if (!const ['event_and_date', 'date', 'none'].contains(value)) {
+      throw ArgumentError.value(value, 'presaleHeader');
     }
-    return copyWith(data: {...?data, metaDesign: {..._designData, 'presale_header': value},
-      });
+    return copyWith(
+      data: {
+        ...?data,
+        metaDesign: {..._designData, 'presale_header': value},
+      },
+    );
   }
 
   String get countdownStyle {
@@ -502,7 +507,7 @@ class FormDefinition {
   static const String metaCommunicationTone = "communication_tone";
 
   String? get communicationTone {
-    return data?[metaCommunicationTone];
+    return CommunicationTone.resolve(data?[metaCommunicationTone]);
   }
 
   @override

@@ -1,5 +1,4 @@
 import { renderEmail } from "../_shared/emailDelivery.ts";
-import { escapeEmailHtml } from "../_shared/emailActionLink.ts";
 import examples from "../_shared/emailPreviewScenarios.json" with { type: "json" };
 
 export interface AuthoringPreviewDependencies {
@@ -29,12 +28,10 @@ export async function authoringPreviewResponse(input: any, authorization: string
   try {
     const resolved = await deps.read(authorization, input);
     if (!resolved?.template || !resolved.context) return reply({error: "Template access denied"}, 403);
-    const rich = new Set<string>(sample.richCodes);
-    const values = Object.fromEntries(Object.entries(sample.values).map(([k,v]) => [k, rich.has(k) ? v : escapeEmailHtml(String(v))]));
-    const subjectValues = Object.fromEntries(Object.entries(sample.values).filter(([k]) => !rich.has(k)));
+    const values = sample.values;
     const rendered = await renderEmail({
       to: "preview@example.invalid", from: deps.senderAddress, context: resolved.context,
-      templateCode: input.code, substitutions: values, subjectSubstitutions: subjectValues,
+      templateCode: input.code, substitutions: values,
       requiredLinks: sample.requiredLinks,
     }, async () => resolved);
     return reply({entityType:input.entityType, entityId:input.entityId, code:input.code,

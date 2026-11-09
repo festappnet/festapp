@@ -1,9 +1,10 @@
+import type { Tone } from "./communicationTone.ts";
 import {
   assertEquals,
   assertStringIncludes,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import * as presentation from "./orderEmailPresentation.ts";
-import { type Tone, translations } from "./translations/translations.ts";
+import { translations } from "./translations/translations.ts";
 import { formatCurrency } from "./utilities.ts";
 
 // Expected fixture was captured from the five literal producer text blocks

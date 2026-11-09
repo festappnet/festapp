@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/email_templates.dart';
+
 import '../html/template_authoring.dart';
 import 'email_template_model.dart';
 import 'email_templates_strings.dart';
@@ -35,19 +36,20 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   @override
   Set<String> get codes => _subs.map((s) => s.code).toSet();
   String _label(EmailTemplateSub sub) {
+    final code = sub.code;
     if (const {
       'fullOrder',
+      'orderCommunication',
       'balanceReasoning',
       'paymentDetails',
       'changeOverview',
       'platformLinks',
-      'appLinks'
-    }.contains(sub.code))
-      return 'EmailTemplates.authoring.labels.${sub.code}'.tr();
-    if (sub.code == 'order_symbol' || sub.code == 'orderSymbol')
+      'appLinks',
+    }.contains(code))
+      return 'EmailTemplates.authoring.labels.$code'.tr();
+    if (code == 'orderSymbol')
       return 'EmailTemplates.authoring.labels.orderSymbol'.tr();
     const aliases = {
-      'occasion_title': 'occasionTitle',
       'participant_count': 'participantCount',
       'manage_waitlist_url': 'manageWaitlistUrl',
       'manage_waitlist_button': 'manageWaitlistButton',
@@ -58,9 +60,9 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
       'participant_phrase': 'participantCount',
       'offered_places': 'offeredCount',
       'order_overview_url': 'orderOverviewUrl',
-      'order_overview_button': 'orderOverviewButton'
+      'order_overview_button': 'orderOverviewButton',
     };
-    final key = 'EmailTemplates.subs.${aliases[sub.code] ?? sub.code}';
+    final key = 'EmailTemplates.subs.${aliases[code] ?? code}';
     final value = key.tr();
     return value == key ? sub.description : value;
   }
@@ -69,41 +71,62 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   TemplateAuthoringEntry? entry(String code) {
     final sub = _subs.where((s) => s.code == code).firstOrNull;
     if (sub == null) return null;
-    final rich = sub.kind == EmailValueKind.richInline ||
+    final rich =
+        sub.kind == EmailValueKind.richInline ||
         sub.kind == EmailValueKind.richBlock ||
         (!singleLine && sub.definition.bodyBlock);
     return TemplateAuthoringEntry(
-        code: code,
-        label: _label(sub),
-        description: sub.description,
-        rich: rich,
-        repeatable: sub.definition.repeatable,
-        example:
-            rich ? sub.description : scenario?.values[code] ?? sub.defaultValue,
-        block: !singleLine && sub.definition.bodyBlock,
-        url: sub.kind == EmailValueKind.url);
+      code: code,
+      label: _label(sub),
+      description: sub.description,
+      rich: rich,
+      repeatable: sub.definition.repeatable,
+      example: rich
+          ? sub.description
+          : scenario?.values[code] ?? sub.defaultValue,
+      block: !singleLine && sub.definition.bodyBlock,
+      url: sub.kind == EmailValueKind.url,
+    );
   }
 
   @override
   List<TemplateAuthoringEntry> search(String query, Map<String, int> usage) =>
-      EmailTemplateRules.rank(_subs,
-              definition: (s) => s.definition,
-              label: _label,
-              query: query,
-              usage: usage,
-              field: field)
-          .map((s) => entry(s.code)!)
-          .toList();
+      EmailTemplateRules.rank(
+        _subs,
+        definition: (s) => s.definition,
+        label: _label,
+        query: query,
+        usage: usage,
+        field: field,
+      ).map((s) => entry(s.code)!).toList();
   @override
-  bool canTrigger(String text, int offset,
-          {bool inLink = false, bool inCode = false, bool composing = false}) =>
-      EmailTemplateRules.canTrigger(text, offset,
-          inLink: inLink, inCode: inCode, composing: composing);
+  bool canTrigger(
+    String text,
+    int offset, {
+    bool inLink = false,
+    bool inCode = false,
+    bool composing = false,
+  }) => EmailTemplateRules.canTrigger(
+    text,
+    offset,
+    inLink: inLink,
+    inCode: inCode,
+    composing: composing,
+  );
   @override
-  bool canInsert(String text, int offset,
-          {bool inLink = false, bool inCode = false, bool composing = false}) =>
-      EmailTemplateRules.canInsert(text, offset,
-          inLink: inLink, inCode: inCode, composing: composing);
+  bool canInsert(
+    String text,
+    int offset, {
+    bool inLink = false,
+    bool inCode = false,
+    bool composing = false,
+  }) => EmailTemplateRules.canInsert(
+    text,
+    offset,
+    inLink: inLink,
+    inCode: inCode,
+    composing: composing,
+  );
   @override
   String get helper => EmailTemplatesStrings.authoringHint;
   @override
@@ -125,31 +148,40 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   @override
   String get tokenLabel => EmailTemplatesStrings.variable;
   @override
-  Widget? preview(BuildContext context, String code,
-      {ValueGetter<int>? occurrence,
-      String Function(String)? wrapHtml}) {
+  Widget? preview(
+    BuildContext context,
+    String code, {
+    ValueGetter<int>? occurrence,
+    String Function(String)? wrapHtml,
+  }) {
     Widget render() {
       if (code == 'tickets') {
         return inlineTicketsEnabled
             ? TicketEmailPreview.inlineSample(
-                count: 1, includesPdf: includesPdfTickets)
+                count: 1,
+                includesPdf: includesPdfTickets,
+              )
             : const SizedBox.shrink();
       }
       final value =
           completion?.call()?.forToken(code, occurrence?.call() ?? 0) ??
-              scenario?.values[code];
+          scenario?.values[code];
       return value == null
           ? Text(EmailTemplatesStrings.previewUnavailable)
           : EmailPreviewHtml(
-              html: scenario?.richCodes.contains(code) == false &&
+              html:
+                  scenario?.richCodes.contains(code) == false &&
                       wrapHtml != null
                   ? wrapHtml(value)
-                  : value);
+                  : value,
+            );
     }
 
     return previewChanges == null
         ? render()
         : ListenableBuilder(
-            listenable: previewChanges!, builder: (context, child) => render());
+            listenable: previewChanges!,
+            builder: (context, child) => render(),
+          );
   }
 }

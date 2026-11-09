@@ -1,9 +1,9 @@
 /** Pure presentation shared by delivery and build-time editor examples. */
-export const escapeEmailHtml = (value: string) =>
-  value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll(
+export const escapeEmailHtml = (value: unknown) =>
+  String(value ?? '').replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll(
     "<",
     "&lt;",
-  ).replaceAll(">", "&gt;");
+  ).replaceAll(">", "&gt;").replaceAll("'", '&#39;');
 const overviewCopy = (lang: string) =>
   lang === "en"
     ? {
@@ -19,7 +19,7 @@ const overviewCopy = (lang: string) =>
 export function overviewEmailSubstitutions(url: string | null, lang = "cs") {
   const safe = url ? escapeEmailHtml(url) : "";
   return {
-    order_overview_url: safe,
+    order_overview_url: url ?? '',
     order_overview_button: safe
       ? `<a href="${safe}" rel="noreferrer noopener" referrerpolicy="no-referrer" style="display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4">${
         overviewCopy(lang).action

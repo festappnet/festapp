@@ -1,3 +1,4 @@
+import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
@@ -5,7 +6,6 @@ import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { formatCurrency, formatDatetime } from "../_shared/utilities.ts";
-import { translations } from "../_shared/translations/translations.ts";
 import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
 import { paymentRegistry } from "../_shared/payments/runtime.ts";
 import { paymentConfirmationBalance } from "../_shared/payments/email.ts";
@@ -61,9 +61,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     throw new Error("Queued ticket order payload is missing");
   }
   const requestedLanguage = String(task.data.lang ?? "cs");
-  const lang = requestedLanguage in translations
-    ? requestedLanguage as keyof typeof translations
-    : "cs";
+  const lang = resolveEmailLanguage(requestedLanguage);
   const order = await withOrderIdentity(ticketOrder.order, async (params) => {
     const { data, error } = await supabaseAdmin.rpc(
       "read_order_identity",

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "canonical order identity",
+    "subject": "{{orderSymbol}} - {{occasionTitle}}",
+    "html": "<p>{{orderSymbol}}: {{occasionTitle}}</p>",
+    "values": {
+      "orderSymbol": "ABC123",
+      "occasionTitle": "Akce & hosté <večer>"
+    },
+    "expectedSubject": "ABC123 - Akce & hosté <večer>",
+    "expectedHtml": "<p>ABC123: Akce &amp; hosté &lt;večer&gt;</p>"
+  },
+  {
+    "name": "scalar URL and text alongside trusted HTML",
+    "subject": "{{occasionTitle}}",
+    "html": "<a href='{{order_overview_url}}'>{{occasionTitle}}</a>{{orderCommunication}}",
+    "values": {
+      "occasionTitle": "Slavnost",
+      "order_overview_url": "https://example.invalid/order?a=1&b='2'",
+      "orderCommunication": "<p>Dobrý den</p>"
+    },
+    "expectedSubject": "Slavnost",
+    "expectedHtml": "<a href='https://example.invalid/order?a=1&amp;b=&#39;2&#39;'>Slavnost</a><p>Dobrý den</p>"
+  },
+  {
+    "name": "customer text never introduces another substitution",
+    "subject": "{{occasionTitle}} / {{orderSymbol}}",
+    "html": "<p>{{occasionTitle}} / {{orderSymbol}}</p>",
+    "values": {
+      "occasionTitle": "{{orderSymbol}}",
+      "orderSymbol": "ABC123"
+    },
+    "expectedSubject": "{{orderSymbol}} / ABC123",
+    "expectedHtml": "<p>{{orderSymbol}} / ABC123</p>"
+  },
+  {
+    "name": "HTML sections belong to the body",
+    "subject": "{{fullOrder}}",
+    "html": "{{fullOrder}}",
+    "values": {
+      "fullOrder": "<p>Přehled objednávky</p>"
+    },
+    "expectedSubject": "{{fullOrder}}",
+    "expectedHtml": "<p>Přehled objednávky</p>"
+  },
+  {
+    "name": "HTML blocks cannot replace attribute values",
+    "subject": "Test",
+    "html": "<a href=\"{{fullOrder}}\">{{orderCommunication}}</a>",
+    "values": {
+      "fullOrder": "<p>Obsah</p>",
+      "orderCommunication": "<p>Dobrý den</p>"
+    },
+    "expectedSubject": "Test",
+    "expectedHtml": "<a href=\"{{fullOrder}}\"><p>Dobrý den</p></a>"
+  },
+  {
+    "name": "raw elements and comments keep template-like text",
+    "subject": "Test",
+    "html": "<style>{{occasionTitle}}</style><!--{{orderSymbol}}--><p>{{occasionTitle}}</p>",
+    "values": {
+      "occasionTitle": "Akce",
+      "orderSymbol": "ABC"
+    },
+    "expectedSubject": "Test",
+    "expectedHtml": "<style>{{occasionTitle}}</style><!--{{orderSymbol}}--><p>Akce</p>"
+  }
+]

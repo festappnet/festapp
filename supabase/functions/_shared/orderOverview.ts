@@ -1,3 +1,4 @@
+import { escapeEmailHtml } from "./emailActionLink.ts";
 import { formatCurrency } from "./utilities.ts";
 import {
   aggregateMetaSurchargeSums,
@@ -7,7 +8,6 @@ import {
 } from "./metaSurcharge.ts";
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
-const escapeContact = (value: unknown) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
     const currencyFormat = (amount: number, currency: string) => formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
@@ -48,16 +48,16 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     const fullName = [name, surname].filter(Boolean).join(' ');
 
     if (fullName) {
-        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.name}: <strong>${fullName}</strong></div>`;
+        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.name}: <strong>${escapeEmailHtml(fullName)}</strong></div>`;
     }
     if (email) {
-        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.email}: <strong>${escapeContact(email)}</strong></div>`;
+        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.email}: <strong>${escapeEmailHtml(email)}</strong></div>`;
     }
     if (phone) {
-        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.phone}: <strong>${escapeContact(phone)}</strong></div>`;
+        personalInfoHtml += `<div style="margin-bottom:4px;">${tr.phone}: <strong>${escapeEmailHtml(phone)}</strong></div>`;
     }
     if (note) {
-        personalInfoHtml += `<div style="margin-top:8px;">${tr.orderNote}: <div><em>${note}</em></div></div>`;
+        personalInfoHtml += `<div style="margin-top:8px;">${tr.orderNote}: <div><em>${escapeEmailHtml(note)}</em></div></div>`;
     }
     if (personalInfoHtml) {
         personalInfoHtml = `<div style="margin-bottom: 24px;">${personalInfoHtml}</div>`;
@@ -100,19 +100,18 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             overallTotal += price;
             const formattedPrice = currencyFormat(price, product.currency_code || currencyCode);
 
-            const escape = (value: unknown) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-            const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escape).join(': ');
+            const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escapeEmailHtml).join(': ');
             const seating = [[tr.table, product.spot_group_title], [tr.seat, product.spot_title]]
                 .filter(([, value]) => value != null && String(value).trim() !== '')
-                .map(([label, value]) => `${label}: ${escape(value)}`).join(' · ');
-            const admission = product.is_standing ? [tr.standing, product.standing_area_title].filter(value => value != null && String(value).trim()).map(escape).join(': ') : seating;
+                .map(([label, value]) => `${label}: ${escapeEmailHtml(value)}`).join(' · ');
+            const admission = product.is_standing ? [tr.standing, product.standing_area_title].filter(value => value != null && String(value).trim()).map(escapeEmailHtml).join(': ') : seating;
             const seatingHtml = admission ? `<div style="margin-top: 4px; font-weight: 600;">${admission}</div>` : '';
 
             const rowStyle = 'style="border-bottom: 1px solid #e2e8f0;"';
 
             const metaText = buildMetaSurchargeText(product);
             const metaRow = metaText
-                ? `<tr><td colspan="2" style="padding: 0 0 8px 0; color: #555; font-size: 13px; font-style: italic;">${metaText}</td></tr>`
+                ? `<tr><td colspan="2" style="padding: 0 0 8px 0; color: #555; font-size: 13px; font-style: italic;">${escapeEmailHtml(metaText)}</td></tr>`
                 : '';
 
             return `
@@ -125,13 +124,13 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const ticketNote = ticket.note ? `
             <tr>
                 <td colspan="2" style="padding: 8px 0 4px 0; color: #555; font-size: 13px;">
-                    <em>${tr.itemNote}: ${ticket.note}</em>
+                    <em>${tr.itemNote}: ${escapeEmailHtml(ticket.note)}</em>
                 </td>
             </tr>` : '';
 
         return `
             <div style="margin-bottom: 24px;">
-                <p style="margin:0 0 12px 0;"><strong>${itemLabel} ${ticket.ticket_symbol}</strong></p>
+                <p style="margin:0 0 12px 0;"><strong>${itemLabel} ${escapeEmailHtml(ticket.ticket_symbol)}</strong></p>
                 <table style="width: 100%; border-collapse: collapse;">
                     <tbody>
                         ${productsRows}
@@ -166,7 +165,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     // --- 4. Final Assembly ---
     return `
         <div style="margin: 20px auto; padding: 24px; font-family: sans-serif; color: #333; background-color: #f9fafb; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <p style="font-size: 20px; font-weight: bold; margin: 0 0 16px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">${tr.overviewTitle}${orderSymbol ? ` ${orderSymbol}` : ''}</p>
+            <p style="font-size: 20px; font-weight: bold; margin: 0 0 16px 0; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">${tr.overviewTitle}${orderSymbol ? ` ${escapeEmailHtml(orderSymbol)}` : ''}</p>
             ${personalInfoHtml}
             ${ticketsDetails}
             ${totalSection}

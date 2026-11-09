@@ -1206,6 +1206,7 @@
       "recommended": "Recommended",
       "usedBlocks": "Already inserted sections",
       "labels": {
+        "orderCommunication": "Message introduction for the communication tone",
         "fullOrder": "Order details",
         "balanceReasoning": "Payment status",
         "paymentDetails": "Payment details",

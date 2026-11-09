@@ -1,3 +1,4 @@
+import 'package:festapp_core/communication_tone.dart';
 import 'package:fstapp/services/decimal_input.dart';
 import 'package:fstapp/components/payments/payment_connection_api.dart';
 import 'package:fstapp/components/payments/payment_editor_registry.dart';
@@ -84,7 +85,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String? _providerId;
   Map<String, dynamic> _savedPayments = {};
   bool get _onlinePaymentsVisible =>
-      widget.showCardPayments ?? _providers.any((provider) => provider.visible());
+      widget.showCardPayments ??
+      _providers.any((provider) => provider.visible());
   String _deadlineMode = 'inherit';
   bool _cashEnabled = false;
   bool _paymentSelectionChanged = false;
@@ -196,11 +198,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     return messages.isEmpty ? [FormStrings.measurementReady] : messages;
   }
 
-  String get _unitTone =>
-      RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
-          'informal'
-      ? 'informal'
-      : 'formal';
+  String get _unitTone => CommunicationTone.resolve(
+    RightsService.currentUnit()?.data?[Tb.units.data_communication_tone],
+  );
 
   @override
   void initState() {
@@ -306,8 +306,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       final payments = _form!.definition.data?['payments'];
       _bankEnabled = payments is! Map || payments['bankEnabled'] != false;
       _cashEnabled = payments is Map && payments['cashEnabled'] == true;
-      _cashInstructionsController.text = payments is Map ? payments['cashInstructions'] as String? ?? '' : '';
-      _deadlineMode = _form!.definition.data?['payment_deadline']?['mode'] as String? ?? (_form!.definition.deadlineDurationSeconds == null ? 'inherit' : 'custom');
+      _cashInstructionsController.text = payments is Map
+          ? payments['cashInstructions'] as String? ?? ''
+          : '';
+      _deadlineMode =
+          _form!.definition.data?['payment_deadline']?['mode'] as String? ??
+          (_form!.definition.deadlineDurationSeconds == null
+              ? 'inherit'
+              : 'custom');
       _savedPayments = Map<String, dynamic>.from(
         payments is Map ? payments : {},
       );
@@ -367,9 +373,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
       final savedTone =
           _form!.definition.data?[FormMetadata.metaCommunicationTone];
-      _communicationTone = savedTone == 'formal' || savedTone == 'informal'
-          ? savedTone as String
-          : 'inherit';
+      _communicationTone =
+          CommunicationTone.parse(savedTone) ?? CommunicationTone.inherit;
 
       _deadlineDaysController.text =
           (_form!.definition.effectiveDeadlineDurationSeconds(
@@ -459,7 +464,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         !_bankEnabled ||
         _paymentConnectionId != null) {
       _capturePaymentConfiguration();
-      metadata['payments'] = {..._savedPayments, 'bankEnabled': _bankEnabled, 'cashEnabled': _cashEnabled, 'cashInstructions': _cashInstructionsController.text, if (_cashEnabled) 'providerConnections': <String,String>{}};
+      metadata['payments'] = {
+        ..._savedPayments,
+        'bankEnabled': _bankEnabled,
+        'cashEnabled': _cashEnabled,
+        'cashInstructions': _cashInstructionsController.text,
+        if (_cashEnabled) 'providerConnections': <String, String>{},
+      };
     }
 
     if (_communicationTone == 'inherit') {
@@ -472,11 +483,17 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       metadata['analytics'] = {'enabled': _measurementEnabled};
     }
 
-    metadata['payment_deadline'] = {'mode': _cashEnabled ? 'none' : _deadlineMode};
+    metadata['payment_deadline'] = {
+      'mode': _cashEnabled ? 'none' : _deadlineMode,
+    };
     final days = int.tryParse(_deadlineDaysController.text);
     _form!.definition = _form!.definition.copyWith(
       data: metadata,
-      deadlineDurationSeconds: !_cashEnabled && _deadlineMode == 'custom' && days != null && days >= 0
+      deadlineDurationSeconds:
+          !_cashEnabled &&
+              _deadlineMode == 'custom' &&
+              days != null &&
+              days >= 0
           ? days * 86400
           : null,
     );
@@ -485,7 +502,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (widget.saveForm != null) {
         await widget.saveForm!(_form!);
       } else {
-        _form = await DbForms.updateForm(_form!, paymentSelectionChanged: _paymentSelectionChanged);
+        _form = await DbForms.updateForm(
+          _form!,
+          paymentSelectionChanged: _paymentSelectionChanged,
+        );
       }
       _savedLink = _form!.definition.link;
       if (!mounted) return;
@@ -922,16 +942,22 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
               if (id != null) _selectPaymentProvider(id);
             },
           ),
-        if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientLoading) const LinearProgressIndicator(),
+        if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientLoading)
+          const LinearProgressIndicator(),
         if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientFailed)
           Text(PaymentMethodStrings.reason('unavailable'))
-        else if (_onlinePaymentsVisible && !_cashEnabled && recipient == null && _paymentRecipientLoaded)
+        else if (_onlinePaymentsVisible &&
+            !_cashEnabled &&
+            recipient == null &&
+            _paymentRecipientLoaded)
           Text(PaymentMethodStrings.reason('not_configured')),
         if (_onlinePaymentsVisible && !_cashEnabled && compatibility != null)
           Text(PaymentMethodStrings.reason(compatibility)),
         PaymentMethodCards(
           showOnline: _onlinePaymentsVisible,
-          value: _cashEnabled ? FormPaymentMethod.cash : cardEnabled
+          value: _cashEnabled
+              ? FormPaymentMethod.cash
+              : cardEnabled
               ? (_bankEnabled
                     ? FormPaymentMethod.both
                     : FormPaymentMethod.online)
@@ -941,11 +967,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           onChanged: (method) => setState(() {
             _paymentSelectionChanged = true;
             _cashEnabled = method == FormPaymentMethod.cash;
-            _bankEnabled = method == FormPaymentMethod.bank || method == FormPaymentMethod.both;
-            if (_cashEnabled) { _deadlineMode = 'none'; _savedPayments['providerConnections'] = <String,String>{}; }
+            _bankEnabled =
+                method == FormPaymentMethod.bank ||
+                method == FormPaymentMethod.both;
+            if (_cashEnabled) {
+              _deadlineMode = 'none';
+              _savedPayments['providerConnections'] = <String, String>{};
+            }
             // Keep an explicitly configured recipient, including stale ones,
             // until the editor chooses its replacement below.
-            _paymentConnectionId = method == FormPaymentMethod.bank || method == FormPaymentMethod.cash
+            _paymentConnectionId =
+                method == FormPaymentMethod.bank ||
+                    method == FormPaymentMethod.cash
                 ? null
                 : (_paymentConnectionId ?? candidate);
           }),
@@ -954,8 +987,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           const SizedBox(height: 24),
           TextFormField(
             controller: _cashInstructionsController,
-            onChanged: (_) =>
-                setState(() => _paymentSelectionChanged = true),
+            onChanged: (_) => setState(() => _paymentSelectionChanged = true),
             maxLength: 1000,
             minLines: 2,
             maxLines: 4,
@@ -984,60 +1016,64 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           const SizedBox(height: 16),
         ],
         if (_onlinePaymentsVisible && !_cashEnabled) ...[
-        Text(
-          PaymentMethodStrings.text(_provider.titleKey),
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        if (!_paymentRecipientLoaded || _paymentRecipientFailed)
-          TextButton(
-            onPressed: _paymentRecipientLoading ? null : _loadPaymentRecipient,
-            child: Text(PaymentMethodStrings.text('checkAccount')),
+          Text(
+            PaymentMethodStrings.text(_provider.titleKey),
+            style: Theme.of(context).textTheme.titleSmall,
           ),
-        if (cardEnabled &&
-            _paymentRecipientLoaded &&
-            (recipient == null || candidate != _paymentConnectionId))
-          Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
-        if (recipient != null) ...[
-          if (recipient['modelVerified'] != true)
-            Text(PaymentMethodStrings.reason('model_unverified')),
-          if (recipient['name'] is String)
-            Text(
-              !cardEnabled || candidate != _paymentConnectionId
-                  ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
-                  : PaymentMethodStrings.recipient(recipient['name']),
-            ),
-          if (recipient['paused'] == true)
-            Text(PaymentMethodStrings.reason('paused')),
-          if (recipient['chargesEnabled'] != true ||
-              recipient['cardPaymentsActive'] != true)
-            Text(PaymentMethodStrings.reason(_provider.restrictedReason)),
-          if (cardEnabled && candidate != _paymentConnectionId) ...[
-            Text(PaymentMethodStrings.reason('recipient_changed')),
+          const SizedBox(height: 8),
+          if (!_paymentRecipientLoaded || _paymentRecipientFailed)
             TextButton(
-              onPressed: canSelect
-                  ? () => setState(() => _paymentConnectionId = candidate)
-                  : null,
-              child: Text(PaymentMethodStrings.text('selectRecipient')),
+              onPressed: _paymentRecipientLoading
+                  ? null
+                  : _loadPaymentRecipient,
+              child: Text(PaymentMethodStrings.text('checkAccount')),
             ),
-          ],
-        ],
-        if (cardEnabled) ...[
-          Text(PaymentMethodStrings.text('fullAmount')),
-          if (_form!.definition.payments != null)
-            Text(
-              PaymentMethodStrings.reservation(
-                FormPaymentOptions.fromJson(_form!.definition.payments)
-                    .reservationSeconds,
+          if (cardEnabled &&
+              _paymentRecipientLoaded &&
+              (recipient == null || candidate != _paymentConnectionId))
+            Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
+          if (recipient != null) ...[
+            if (recipient['modelVerified'] != true)
+              Text(PaymentMethodStrings.reason('model_unverified')),
+            if (recipient['name'] is String)
+              Text(
+                !cardEnabled || candidate != _paymentConnectionId
+                    ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
+                    : PaymentMethodStrings.recipient(recipient['name']),
               ),
+            if (recipient['paused'] == true)
+              Text(PaymentMethodStrings.reason('paused')),
+            if (recipient['chargesEnabled'] != true ||
+                recipient['cardPaymentsActive'] != true)
+              Text(PaymentMethodStrings.reason(_provider.restrictedReason)),
+            if (cardEnabled && candidate != _paymentConnectionId) ...[
+              Text(PaymentMethodStrings.reason('recipient_changed')),
+              TextButton(
+                onPressed: canSelect
+                    ? () => setState(() => _paymentConnectionId = candidate)
+                    : null,
+                child: Text(PaymentMethodStrings.text('selectRecipient')),
+              ),
+            ],
+          ],
+          if (cardEnabled) ...[
+            Text(PaymentMethodStrings.text('fullAmount')),
+            if (_form!.definition.payments != null)
+              Text(
+                PaymentMethodStrings.reservation(
+                  FormPaymentOptions.fromJson(_form!.definition.payments)
+                      .reservationSeconds,
+                ),
+              ),
+          ],
+          if (canConnect)
+            TextButton(
+              onPressed: () => pushRootPath(
+                context.router.root,
+                _provider.settingsPath(unit),
+              ),
+              child: Text(PaymentMethodStrings.text(_provider.setupKey)),
             ),
-        ],
-        if (canConnect)
-          TextButton(
-            onPressed: () =>
-                pushRootPath(context.router.root, _provider.settingsPath(unit)),
-            child: Text(PaymentMethodStrings.text(_provider.setupKey)),
-          ),
         ],
         const SizedBox(height: 16),
       ],
@@ -1208,44 +1244,79 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                               ),
                               const SizedBox(height: 24),
                               DropdownButtonFormField<String>(
-                                key: const ValueKey('form-payment-deadline-mode'),
-                                initialValue: _cashEnabled ? 'none' : _deadlineMode,
-                                items: [for (final mode in ['inherit', 'custom', 'none']) DropdownMenuItem(value: mode, child: Text(PaymentMethodStrings.text({'inherit':'deadlineInherit','custom':'deadlineCustom','none':'deadlineNone'}[mode]!)))],
-                                onChanged: !_canEdit || _cashEnabled ? null : (mode) => setState(() { _deadlineMode = mode!; _paymentSelectionChanged = true; }),
+                                key: const ValueKey(
+                                  'form-payment-deadline-mode',
+                                ),
+                                initialValue: _cashEnabled
+                                    ? 'none'
+                                    : _deadlineMode,
+                                items: [
+                                  for (final mode in [
+                                    'inherit',
+                                    'custom',
+                                    'none',
+                                  ])
+                                    DropdownMenuItem(
+                                      value: mode,
+                                      child: Text(
+                                        PaymentMethodStrings.text(
+                                          {
+                                            'inherit': 'deadlineInherit',
+                                            'custom': 'deadlineCustom',
+                                            'none': 'deadlineNone',
+                                          }[mode]!,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                                onChanged: !_canEdit || _cashEnabled
+                                    ? null
+                                    : (mode) => setState(() {
+                                        _deadlineMode = mode!;
+                                        _paymentSelectionChanged = true;
+                                      }),
                               ),
-                              if (!_cashEnabled && _deadlineMode == 'custom') TextFormField(
-                                enabled: _canEdit,
-                                controller: _deadlineDaysController,
-                                onChanged: (_) => setState(() => _paymentSelectionChanged = true),
-                                validator: (value) => _deadlineMode == 'custom' && (int.tryParse(value ?? '') == null)
-                                  ? CommonStrings.fieldCannotBeEmpty : null,
-                                decoration: InputDecoration(
-                                  labelText: FormStrings.labelDeadlineDays,
-                                  suffixIcon: IconButton(
-                                    tooltip: FormStrings.inheritDays(
+                              if (!_cashEnabled && _deadlineMode == 'custom')
+                                TextFormField(
+                                  enabled: _canEdit,
+                                  controller: _deadlineDaysController,
+                                  onChanged: (_) => setState(
+                                    () => _paymentSelectionChanged = true,
+                                  ),
+                                  validator: (value) =>
+                                      _deadlineMode == 'custom' &&
+                                          (int.tryParse(value ?? '') == null)
+                                      ? CommonStrings.fieldCannotBeEmpty
+                                      : null,
+                                  decoration: InputDecoration(
+                                    labelText: FormStrings.labelDeadlineDays,
+                                    suffixIcon: IconButton(
+                                      tooltip: FormStrings.inheritDays(
+                                        (_formFeature.deadlineDurationSeconds ??
+                                                604800) /
+                                            86400,
+                                      ),
+                                      icon: const Icon(Icons.restore),
+                                      onPressed: !_canEdit
+                                          ? null
+                                          : () => setState(() {
+                                              _deadlineMode = 'inherit';
+                                              _paymentSelectionChanged = true;
+                                            }),
+                                    ),
+                                    border: const OutlineInputBorder(),
+                                    helperText: FormStrings.inheritDays(
                                       (_formFeature.deadlineDurationSeconds ??
                                               604800) /
                                           86400,
                                     ),
-                                    icon: const Icon(Icons.restore),
-                                    onPressed: !_canEdit ? null : () => setState(() {
-                                      _deadlineMode = 'inherit';
-                                      _paymentSelectionChanged = true;
-                                    }),
+                                    helperMaxLines: 5,
                                   ),
-                                  border: const OutlineInputBorder(),
-                                  helperText: FormStrings.inheritDays(
-                                    (_formFeature.deadlineDurationSeconds ??
-                                            604800) /
-                                        86400,
-                                  ),
-                                  helperMaxLines: 5,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
                                 ),
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
-                              ),
                               const SizedBox(height: 24),
                               if (_showMeasurement) ...[
                                 ExpansionTile(

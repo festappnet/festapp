@@ -117,8 +117,8 @@ void main() {
         File('assets/email_templates/preview_examples.json').readAsStringSync()));
     final pendingExamples = Completer<EmailPreviewExamples>();
     const html = '<h2>{{waitlist_offer_heading}}</h2>'
-        '<p>Pro přihlášku <strong>{{order_symbol}}</strong> na '
-        '{{occasion_title}} nabízíme {{offered_places}}. Nabídka platí do '
+        '<p>Pro přihlášku <strong>{{orderSymbol}}</strong> na '
+        '{{occasionTitle}} nabízíme {{offered_places}}. Nabídka platí do '
         '{{offer_expires_at}}.</p><p>{{waitlist_offer_instructions}}</p>'
         '<p>{{offer_button}}</p>';
     await openTemplate(tester,
@@ -145,6 +145,117 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  for (final code in [
+    'waitlist_confirmation',
+    'waitlist_offer',
+    'TICKET_ORDER_CONFIRMATION',
+    'TICKET_ORDER_UPDATE',
+    'TICKET_ORDER_PAYMENT_DONE',
+    'TICKET_ORDER_REMINDER',
+    'TICKET_ORDER_STORNO',
+  ]) {
+    testWidgets('$code switches tone in the received preview and editor', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1200, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final sql = File(
+        code.startsWith('TICKET_')
+            ? 'database/seeds/order_symbol_email_defaults.sql'
+            : 'database/functions/eshop_waitlist/email_templates.sql',
+      ).readAsStringSync();
+      final html = RegExp("'$code','[^']*',\\s*'([^']*)'")
+          .firstMatch(sql)!
+          .group(1)!;
+      final examples = EmailPreviewExamples.fromJson(
+        jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync(),
+        ),
+      );
+      await openTemplate(
+        tester,
+        code: code,
+        occasionTitle: 'Podzimní slavnost',
+        html: html,
+        previewExamplesLoader: () async => examples,
+        authoringContextLoader: () async => const EmailAuthoringContext(
+          senderAddress: 'poradatel@example.invalid',
+          wrapperHtml: '<main>{{content}}</main>',
+        ),
+      );
+      final editor = tester
+          .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .last
+          .controller;
+      final original = editor.html;
+      final heading = code.startsWith('TICKET_')
+          ? 'orderCommunication'
+          : '${code}_heading';
+      final scenarios = examples.scenariosFor(code);
+      final formal = scenarios.firstWhere((s) => s.tone == 'formal');
+      final informal = scenarios.firstWhere((s) => s.tone == 'informal');
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is EmailPreviewHtml && w.html.contains(formal.values[heading]!),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(EmailTemplatesStrings.toneName('formal')),
+        findsOneWidget,
+      );
+      expect(find.text('{{$heading}}', findRichText: true), findsNothing);
+      await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
+      await tester.tap(find.byIcon(Icons.preview_outlined).first);
+      await tester.pumpAndSettle();
+      final selector = find.byWidgetPredicate(
+        (w) => w is DropdownButtonFormField<EmailPreviewScenario>,
+      );
+      await tester.tap(selector);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find
+            .text(
+              '${EmailTemplatesStrings.scenarioName(informal.scenario)} · ${informal.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(informal.tone)}',
+            )
+            .last,
+      );
+      await tester.pumpAndSettle();
+      final received = tester.widget<EmailReceivedMessage>(
+        find.byType(EmailReceivedMessage),
+      );
+      expect(received.html, contains(informal.values[heading]));
+      expect(received.html, isNot(contains(formal.values[heading])));
+      expect(received.html, isNot(contains('{{')));
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is EmailPreviewHtml &&
+              w.html.contains(informal.values[heading]!),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is EmailPreviewHtml && w.html.contains(formal.values[heading]!),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.text(EmailTemplatesStrings.toneName('informal')),
+        findsOneWidget,
+      );
+      expect(editor.html, original);
+      expect(editor.hasUserChanges, isFalse);
+    });
+  }
   for (final mode in TicketDeliveryMode.values) {
     testWidgets('paid template previews delivery mode ${mode.value}', (
       tester,

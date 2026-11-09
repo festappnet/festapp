@@ -1206,6 +1206,7 @@
       "recommended": "Doporučené",
       "usedBlocks": "Již vložené bloky",
       "labels": {
+        "orderCommunication": "Úvod zprávy podle tónu komunikace",
         "fullOrder": "Přehled objednávky",
         "balanceReasoning": "Stav platby",
         "paymentDetails": "Platební údaje",
