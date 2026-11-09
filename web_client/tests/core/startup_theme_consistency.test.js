@@ -147,3 +147,25 @@ for (const shell of ['web', 'web_client']) {
         }
     });
 }
+
+test('validated host appearance reveals the embedded startup symbol without enabling form inheritance', async t => {
+    const {EmbedTheme} = await import('../../src/services/embed_theme.js');
+    const dom = new JSDOM('<!doctype html><html data-embed-startup><head><meta name="theme-color" content="#232529" data-light-color="#fff"><meta name="color-scheme" content="light dark"></head><body><img class="startup-brand" src="/loading-animation.svg"></body></html>',
+        {url:'https://tickets.invalid/form/a?embed=1', runScripts:'outside-only'});
+    t.after(() => dom.window.close());
+    const win=dom.window;
+    win.__FESTAPP_CLIENT_RUNTIME__='web';
+    win.matchMedia=()=>({matches:true,addEventListener(){}});
+    win.CSS={supports:()=>true};
+    win.eval(source);
+    const logo=win.document.querySelector('.startup-brand');
+    assert.equal(logo.hasAttribute('data-startup-logo-ready'),false);
+    const theme=new EmbedTheme(win);
+    theme.apply({fontFamily:'sans-serif',text:'#111',background:'#fff',primary:'#000',buttonText:'#fff',colorScheme:'light'});
+    assert.equal(logo.hasAttribute('data-startup-logo-ready'),true);
+    assert.equal(win.document.body.classList.contains('dark-mode'),false);
+    assert.equal(win.document.documentElement.dataset.startupTheme,'light');
+    assert.equal(win.document.documentElement.dataset.embedTheme,undefined);
+    assert.equal(theme.enabled,false);
+    assert.equal(win.document.documentElement.style.backgroundColor,'transparent');
+});

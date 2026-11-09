@@ -36,6 +36,26 @@ class MirrorContractTest(unittest.TestCase):
             self.assertTrue(set(unit['after']).issubset(contract['steps']))
             self.assertTrue(set(unit['resources']).issubset(contract['resources']))
 
+    def test_inventory_uses_worktree_files_instead_of_deleted_index_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            tests=root/'web_client/tests/core';tests.mkdir(parents=True)
+            old=tests/'old.test.js';old.write_text('old')
+            subprocess.run(['git','add','web_client/tests/core/old.test.js'],cwd=root,check=True)
+            old.unlink()
+            (tests/'new.test.js').write_text('new')
+            contract={'sqlInventory':{'knownTests':[]},'knownTestInputs':['web_client/tests/core/new.test.js'],'sqlGroups':{}}
+            with patch.object(runner,'ROOT',root),patch.object(runner,'CONTRACT',contract):runner.inventory()
+            self.assertIn('old.test.js',subprocess.check_output(['git','ls-files'],cwd=root,text=True))
+
+    def test_browser_installer_matches_the_declared_playwright_version(self):
+        version=json.loads((ROOT/'web_client/package.json').read_text())['devDependencies']['playwright']
+        installer=(ROOT/'automation/ci/browser.sh').read_text()
+        self.assertIn('playwright@'+version,installer)
+        self.assertIn('playwright install --with-deps chromium',installer)
+        self.assertNotIn('agent-browser',installer)
+
     def test_every_hosted_lane_preserves_failure_evidence(self):
         for job in runner.CONTRACT['jobs'].values():
             workflow=yaml.safe_load((ROOT/'.github/workflows'/job['workflow']).read_text())
@@ -95,10 +115,10 @@ class RunnerSafetyTest(unittest.TestCase):
     def test_browser_lane_preserves_explicit_executable_and_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             browser=Path(directory)/'Chrome for Testing';browser.touch()
-            with patch.object(runner,'CACHE',Path(directory)),patch.dict(os.environ,{'AGENT_BROWSER_EXECUTABLE_PATH':str(browser)},clear=True),\
+            with patch.object(runner,'CACHE',Path(directory)),patch.dict(os.environ,{'CHROME_EXECUTABLE':str(browser)},clear=True),\
                  patch.object(runner,'require_version',return_value='fixture'),patch.object(runner,'_execute',return_value={}) as execute:
                 runner.local(['web-startup'])
-                self.assertEqual(os.environ['AGENT_BROWSER_EXECUTABLE_PATH'],str(browser))
+                self.assertEqual(os.environ['CHROME_EXECUTABLE'],str(browser))
             execute.assert_called_once()
             self.assertEqual(execute.call_args.args,(['web-startup'],))
             self.assertTrue(execute.call_args.kwargs['pinned'])
@@ -106,7 +126,7 @@ class RunnerSafetyTest(unittest.TestCase):
 
     def test_invalid_browser_fails_before_checks(self):
         with tempfile.TemporaryDirectory() as directory,patch.object(runner,'CACHE',Path(directory)),\
-             patch.dict(os.environ,{'AGENT_BROWSER_EXECUTABLE_PATH':'/missing/chrome'},clear=True),\
+             patch.dict(os.environ,{'CHROME_EXECUTABLE':'/missing/chrome'},clear=True),\
              patch.object(runner,'require_version'),patch.object(runner,'_execute') as execute:
             with self.assertRaisesRegex(RuntimeError,'Chrome'):runner.local(['web-startup'])
             execute.assert_not_called()

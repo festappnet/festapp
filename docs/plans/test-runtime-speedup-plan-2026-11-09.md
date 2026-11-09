@@ -330,3 +330,34 @@ CI testy nyní skutečně sbírá kanonický image-storage owner (25cases).
 Browserové batchování se po kontrolovaném měření neosvědčilo a bylo vyřazeno.
 Release1053 zůstává beze změny; nová změna se týká pouze spouštění testů.
 Podrobné výsledky a rozdílné benchmarkové rozsahy jsou v RESULT dokumentu a JSON.
+
+
+## Navazující kanonický browser a bezpečnostní opravy
+
+CLI/daemon cesta je nahrazena veřejným Playwright SDK1.65.0: jeden vlastněný
+headless Chromium na suite, čerstvý kontext na scénář, skutečné service workery,
+a proxy omezující veškeré fixture požadavky včetně popup/WS na schválené lokální
+originy. Starý helper ani setup retry nezůstává paralelní cestou. CONTRIBUTING
+popisuje instalaci připnutého managed browseru, Flutter má vlastní Chrome runner.
+
+Všech16 prvních pokusů při kontrolovaném srovnání prošlo. Warm mediány celéhostepu
+startup89,88 ->19,52 s (-78,3%) a measurement29,95 ->18,36 s (-38,7%); stejných31
+startup browser reportů a182+12 measurement scénářů. Chromium151 ->158 je součást
+změny toolchainu, cache jsou zahřáté, nejde o izolované měření samotného SDK ani
+celkové wall time všech8 jobs. Počty306 ->290 Node vysvětluje cutover ledger:
+26 odstraněných CLI implementation cases,9 native ownership a1 appearance regrese;
+ostatní aplikační test ID a multiplicity jsou stejné. Rychlejší driver odkryl
+skutečný first-paint race značky v embedu, opravený u existujícího vlastníka tématu.
+
+Součástí stejné změny jsou uživatelem požadované alerty305/307: scoped pnpm patch
+isomorphic-git1.38.6 a skutečné bezpečné checkout regrese ve WordPress CI lane.
+Experiment async DB commit20,79/20,83 s nepřinesl přínos a nebyl převzat.
+Tato větev nemění produkci1053. Sloučení respektuje povinný review na main;
+produkční release nadále vyžaduje všechny exact-SHA kanonické kontroly.
+
+Před publikací začleněn nový main6c41c82b3 (#774) včetně nových embed/CMS
+kontraktů; obě kolize zachovávají form_page_view přes native wait. Všech8
+kanonických local jobs znovu prošlo s neměnnými vstupy (receipt233734-f586dc66a7c1).
+Aktuální startup291 Node+31 browser, measurement193 Node+12 browser. Tabulka
+benchmarku výše patří výslovně k původnímu basebae4f2e29; nové testy nejsou
+odstraněny kvůli zachování historického počtu.

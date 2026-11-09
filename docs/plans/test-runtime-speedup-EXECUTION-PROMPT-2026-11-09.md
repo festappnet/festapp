@@ -1,5 +1,11 @@
 # Implementace zásadního zrychlení testů Festapp
 
+Stav: původní vlny 0-7 a release1053 jsou dokončené. Navazující nativní browser
+a opravy alertů305/307 jsou implementované a ověřené proti main #774; publikace
+respektuje povinné review. Aktuální výsledky, rozsahy benchmarků a receipts jsou
+v `test-runtime-speedup-RESULT-2026-11-09.md` a JSON vedle tohoto dokumentu.
+Následující text je původní implementační zadání, neopakujte dokončené vlny.
+
 Pracujte v čistém worktree repozitáře `/Users/miakh/source/festapp` z aktuálního `main`. Přečtěte AGENTS.md, CLAUDE.md, docs/architecture/ai_context.md, CONTRIBUTING.md a celý autoritativní plán:
 
 `docs/plans/test-runtime-speedup-plan-2026-11-09.md`

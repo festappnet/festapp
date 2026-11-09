@@ -1,23 +1,12 @@
 #!/usr/bin/env node
 // Isolated real Chromium, synthetic identity and broker; never production OAuth.
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdtemp, writeFile, rm, readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import {readFile} from 'node:fs/promises';
+import {createNativeBrowser} from './native_browser.mjs';
 import path from 'node:path';
 import { createServer } from 'vite';
-const execute = promisify(execFile);
-const temporary = await mkdtemp(path.join(tmpdir(),'festapp-mcp-browser-'));
-const config = path.join(temporary,'browser.json');
-await writeFile(config,JSON.stringify({provider:null,plugins:[],headed:false,autoConnect:false}));
-const session = `mcp-consent-${process.pid}`;
-let server;
-async function browser(...args) {
-    const { stdout } = await execute('agent-browser',['--config',config,'--headed','false','--session',session,'--json',...args],{timeout:30000,env:{...process.env,AGENT_BROWSER_CONFIG:config,AGENT_BROWSER_PLUGINS:'[]'}});
-    const result=JSON.parse(stdout); assert.equal(result.success,true,result.error); return result.data;
-}
-const evaluate=async source=>(await browser('eval',source)).result;
+const owner=await createNativeBrowser();let context,page,server;
+const evaluate=source=>page.evaluate(source);
 const measureContrast = async (selector, foreground, background) => evaluate(`(() => {
     const el = document.querySelector(${JSON.stringify(selector)}), style = getComputedStyle(el);
     const context = document.createElement('canvas').getContext('2d');
@@ -32,12 +21,13 @@ try {
         if(req.url==='/assets/translations/cs.json'){res.setHeader('content-type','application/json');res.end(await readFile(new URL('../../assets/translations/cs.json',import.meta.url)));return;} next();
     });}}]});
     await server.listen();
-    const fixtureUrl=`http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/mcp/index.html`;
+    const origin=`http://127.0.0.1:${server.httpServer.address().port}`;owner.allow(origin);context=await owner.context();page=await context.newPage();await owner.setTopLevelColorScheme(page,'light');
+    const fixtureUrl=`${origin}/tests/fixtures/mcp/index.html`;
     // Exercise the actual theme tokens at representative viewport widths.
     for (const dark of [false, true]) for (const width of [320, 390, 1280]) {
-        await browser('set','viewport',String(width),'900');
-        await browser('open',fixtureUrl+(dark?'?dark=1':''));
-        await browser('wait','--fn','window.consentFixture?.ready === true');
+        await page.setViewportSize({width,height:900});
+        await page.goto(fixtureUrl+(dark?'?dark=1':''));
+        await page.waitForFunction('window.consentFixture?.ready === true');
         assert.equal(await evaluate('document.body.classList.contains("dark-mode")'),dark);
         assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`consent overflow ${dark}/${width}`);
         const colors = await evaluate(`(() => {
@@ -50,108 +40,108 @@ try {
         })()`);
         assert.ok(colors.body >= 4.5 && colors.links.every(c=>c >= 4.5),`consent contrast ${dark}/${width}: ${JSON.stringify(colors)}`);
         assert.ok(await measureContrast('button[data-primary]', 'color', 'backgroundColor') >= 4.5, 'disabled text contrast');
-        await browser('press','Tab');
+        await page.keyboard.press('Tab');
         const focusContrast = await measureContrast(':focus-visible', 'outlineColor', 'page');
         assert.ok(focusContrast >= 3, `focus contrast ${dark}/${width}: ${focusContrast}`);
-        if (dark && (width===320 || width===1280)) await browser('screenshot',`/private/tmp/festapp-mcp-consent-dark-${width}.png`,'--full');
-        await browser('click','input[data-select-all]');
-        await browser('find','role','button','click','--name','Povolit a propojit');
-        await browser('wait','--fn','window.consentFixture.read().state === "connected"');
+
+        await page.locator('input[data-select-all]').first().click();
+        await page.getByRole('button',{name:'Povolit a propojit'}).click();
+        await page.waitForFunction('window.consentFixture.read().state === "connected"');
         assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`connected overflow ${dark}/${width}`);
         assert.equal(await evaluate('document.querySelector(".connection-page button").hasAttribute("data-primary")'),true,'close action is primary');
         assert.ok(await measureContrast('button[data-primary]', 'color', 'backgroundColor') >= 4.5, 'close text contrast');
-        await browser('hover','button[data-primary]');
-        await browser('wait','200');
+        await page.locator('button[data-primary]').first().hover();
+        await page.waitForTimeout(200);
         assert.ok(await measureContrast('button[data-primary]', 'color', 'backgroundColor') >= 4.5, 'hover text contrast');
         assert.equal(await evaluate('document.querySelector(".connection-page").textContent.includes("Codex")'),false,'connected copy is generic');
-        if (dark && (width===320 || width===1280)) await browser('screenshot',`/private/tmp/festapp-mcp-connected-dark-${width}.png`,'--full');
+
     }
-    await browser('open',fixtureUrl);
-    await browser('wait','--fn','window.consentFixture?.ready === true');
-    await browser('set','viewport','1280','1000');
-    await browser('snapshot','-i');
-    await browser('click','input[data-occasion="99"]');
-    await browser('snapshot','-i');
+    await page.goto(fixtureUrl);
+    await page.waitForFunction('window.consentFixture?.ready === true');
+    await page.setViewportSize({width:1280,height:1000});
+
+    await page.locator('input[data-occasion="99"]').first().click();
+
     assert.equal(await evaluate('document.querySelector("[data-select-all]").indeterminate'),true);
-    await browser('click','input[data-select-all]');
-    await browser('snapshot','-i');
+    await page.locator('input[data-select-all]').first().click();
+
     assert.deepEqual(await evaluate('consentFixture.read().selected'),[99,100]);
     assert.equal(await evaluate('consentFixture.read().operations.length'),1);
-    await browser('click','input[data-select-all]');
-    await browser('snapshot','-i');
+    await page.locator('input[data-select-all]').first().click();
+
     assert.equal(await evaluate('consentFixture.read().selected.length'),0);
-    await browser('click','input[data-select-all]');
-    await browser('snapshot','-i');
+    await page.locator('input[data-select-all]').first().click();
+
     assert.deepEqual(await evaluate('consentFixture.read().selected'),[99,100]);
-    await browser('find','role','button','click','--name','Povolit a propojit');
-    await browser('wait','--fn','window.consentFixture.read().state === "connected"');
+    await page.getByRole('button',{name:'Povolit a propojit'}).click();
+    await page.waitForFunction('window.consentFixture.read().state === "connected"');
     assert.deepEqual(await evaluate('consentFixture.read().operations.map(o=>o.operation)'),['details','approve','status']);
     assert.deepEqual(await evaluate('consentFixture.read().operations[1].access.selection.occasionIds'),[99,100]);
     assert.equal(await evaluate('consentFixture.read().openerIsNull'),true);
     assert.equal(await evaluate('consentFixture.read().popupClosed'),true);
     assert.equal(await evaluate('performance.getEntriesByType("resource").some(r=>/flutter|main\\.dart|canvaskit/.test(r.name))'),false);
-    await browser('open',fixtureUrl+'?many=1');
-    await browser('wait','--fn','window.consentFixture?.ready === true && window.consentFixture.read().state === "consent"');
-    await browser('snapshot','-i');
+    await page.goto(fixtureUrl+'?many=1');
+    await page.waitForFunction('window.consentFixture?.ready === true && window.consentFixture.read().state === "consent"');
+
     assert.equal(await evaluate('[...document.querySelectorAll("[data-unit-toggle]")].every(b=>b.getAttribute("aria-expanded")==="false")'),true);
-    await browser('click','[data-unit-toggle="3"]');
-    await browser('snapshot','-i');
-    await browser('click','input[data-occasion="99"]');
-    await browser('snapshot','-i');
+    await page.locator('[data-unit-toggle="3"]').first().click();
+
+    await page.locator('input[data-occasion="99"]').first().click();
+
     assert.equal(await evaluate(`document.querySelector('[data-unit-toggle="3"]').getAttribute('aria-expanded')`), 'true');
     assert.equal(await evaluate('document.activeElement.dataset.occasion'),'99');
-    await browser('press','Shift+Tab');
+    await page.keyboard.press('Shift+Tab');
     assert.equal(await evaluate('document.activeElement.dataset.unitToggle'),'3');
-    await browser('press','Enter');
-    await browser('snapshot','-i');
+    await page.keyboard.press('Enter');
+
     assert.equal(await evaluate(`document.querySelector('[data-unit-toggle="3"]').getAttribute('aria-expanded')`),'false');
-    await browser('press','Enter');
-    await browser('snapshot','-i');
+    await page.keyboard.press('Enter');
+
     assert.equal(await evaluate(`document.querySelector('[data-unit-toggle="3"]').getAttribute('aria-expanded')`),'true');
-    await browser('open',fixtureUrl+'?tree=1');
-    await browser('wait','--fn','window.consentFixture?.ready === true && window.consentFixture.read().state === "consent"');
-    await browser('set','viewport','320','900');
-    await browser('eval',"document.body.style.cssText='margin:0;background:#222629;color:#f3f3f3;font:16px system-ui'");
-    await browser('snapshot','-i');
+    await page.goto(fixtureUrl+'?tree=1');
+    await page.waitForFunction('window.consentFixture?.ready === true && window.consentFixture.read().state === "consent"');
+    await page.setViewportSize({width:320,height:900});
+    await page.evaluate("document.body.style.cssText='margin:0;background:#222629;color:#f3f3f3;font:16px system-ui'");
+
     assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,'tree fits mobile viewport');
     assert.equal(await evaluate('document.querySelector("[data-whole-unit]") === null'),true);
-    await browser('click','input[data-unit="3"]');
-    await browser('wait','--fn','window.consentFixture.read().access.units?.some(u=>u.unitId === 3)');
-    await browser('snapshot','-i');
-    await browser('click','input[data-unit="4"]');
-    await browser('snapshot','-i');
+    await page.locator('input[data-unit="3"]').first().click();
+    await page.waitForFunction('window.consentFixture.read().access.units?.some(u=>u.unitId === 3)');
+
+    await page.locator('input[data-unit="4"]').first().click();
+
     assert.deepEqual(await evaluate('consentFixture.read().access'),{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:true}],occasionIds:[]});
     assert.equal(await evaluate('[...document.querySelectorAll("[data-occasion]")].every(i=>i.checked && i.disabled)'),true);
     assert.equal(await evaluate('document.querySelector("[data-permission]") === null'),true);
     assert.equal(await evaluate('document.querySelector(".mcp-access-summary").textContent.includes("ruční platby")'),true);
-    await browser('screenshot','/private/tmp/festapp-mcp-tree-mobile.png','--full');
-    await browser('set','viewport','1280','1000');
-    await browser('screenshot','/private/tmp/festapp-mcp-tree-desktop.png','--full');
-    await browser('find','role','button','click','--name','Povolit a propojit');
-    await browser('wait','--fn','window.consentFixture.read().state === "connected"');
+
+    await page.setViewportSize({width:1280,height:1000});
+
+    await page.getByRole('button',{name:'Povolit a propojit'}).click();
+    await page.waitForFunction('window.consentFixture.read().state === "connected"');
     assert.equal(await evaluate('consentFixture.read().operations[1].access.selection.units.length'),2);
     assert.deepEqual(await evaluate('consentFixture.read().operations[1].access.permissions'),['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send']);
-    await browser('open',fixtureUrl.replace('/mcp/index.html','/connections/index.html'));
-    await browser('wait','--fn','window.connectionsFixture?.ready === true');
-    await browser('set','viewport','320','900');
-    await browser('eval',"document.head.insertAdjacentHTML('beforeend', '<link rel=stylesheet href=/src/theme_config.css>'); document.body.classList.add('dark-mode')");
-    await browser('wait','--fn','getComputedStyle(document.body).marginLeft === "0px"');
-    await browser('snapshot','-i');
+    await page.goto(fixtureUrl.replace('/mcp/index.html','/connections/index.html'));
+    await page.waitForFunction('window.connectionsFixture?.ready === true');
+    await page.setViewportSize({width:320,height:900});
+    await page.evaluate("document.head.insertAdjacentHTML('beforeend', '<link rel=stylesheet href=/src/theme_config.css>'); document.body.classList.add('dark-mode')");
+    await page.waitForFunction('getComputedStyle(document.body).marginLeft === "0px"');
+
     assert.ok(await measureContrast('.connection-page', 'color', 'page') >= 4.5, 'account text contrast');
     assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,'account connections fit mobile');
     assert.equal(await evaluate('document.body.textContent.includes("Způsoby přihlášení") && document.body.textContent.includes("Připojené aplikace")'),true);
-    await browser('click','[data-revoke="first-grant"]');
-    await browser('snapshot','-i');
+    await page.locator('[data-revoke="first-grant"]').first().click();
+
     assert.equal(await evaluate('document.activeElement.hasAttribute("data-confirm-revoke")'),true);
     assert.equal(await evaluate('connectionsFixture.read().operations.length'),1,'opening confirmation does not revoke');
-    await browser('screenshot','/private/tmp/festapp-account-connections-mobile.png','--full');
-    await browser('set','viewport','1280','1000');
-    await browser('screenshot','/private/tmp/festapp-account-connections-desktop.png','--full');
-    await browser('press','Enter');
-    await browser('wait','--fn','window.connectionsFixture.read().connections.length === 0');
-    await browser('snapshot','-i');
+
+    await page.setViewportSize({width:1280,height:1000});
+
+    await page.keyboard.press('Enter');
+    await page.waitForFunction('window.connectionsFixture.read().connections.length === 0');
+
     assert.deepEqual(await evaluate('connectionsFixture.read().operations[1]'),{operation:'connections.revoke',connectionId:'first-grant'});
-    await browser('click','[data-google-action]');
+    await page.locator('[data-google-action]').first().click();
     assert.deepEqual(await evaluate('connectionsFixture.read().googleCalls'),['unlink']);
     console.log('mcp-account-browser: pass (consent and account management; mobile/dark, keyboard, synthetic auth/broker)');
-} finally { await browser('close').catch(()=>{}); await server?.close(); await rm(temporary,{recursive:true,force:true}); }
+} finally { try { await owner.close(); } finally { await server?.close(); } }

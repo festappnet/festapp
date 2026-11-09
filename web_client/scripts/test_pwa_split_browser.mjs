@@ -29,7 +29,7 @@ navigator.serviceWorker.register('/festapp_service_worker.js', {scope:'/'}).then
 const flutterHtml = `<!doctype html><meta charset="utf-8"><title>Ukázka aplikace</title>
 <p id="state">aplikace</p><script src="/flutter_bootstrap.js"></script><script src="/main.dart.1.2.3-4.js"></script><script src="/main.dart.1.2.3-4.js_1.part.js"></script>`;
 
-export async function testPwaSplitBrowser({ browser, openBrowser, temporary }) {
+export async function testPwaSplitBrowser({ owner, session, temporary }) {
     const build = path.join(temporary, 'pwa-build');
     await mkdir(path.join(build, 'web-assets'), {recursive:true});
     await mkdir(path.join(build, 'canvaskit'), {recursive:true});
@@ -66,29 +66,30 @@ export async function testPwaSplitBrowser({ browser, openBrowser, temporary }) {
     });
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     const origin = `http://127.0.0.1:${server.address().port}`;
-    const evalResult = async code => (await browser('eval', code)).result;
+    owner.allow(origin);
+    const evalResult = code => session.page.evaluate(code);
     const cachePaths = () => evalResult(`(async () => {const c=await caches.open(${JSON.stringify('festapp-app-shell-'+version)}); return (await c.keys()).map(r=>new URL(r.url).pathname)})()`);
     const query = (runtime, type) => evalResult(`window.fixtureQuery(${JSON.stringify(runtime)},${JSON.stringify(type || 'FESTAPP_QUERY_BUILD_VERSION')})`);
     try {
-        await openBrowser(`${origin}/form/prihlaska`);
-        await browser('wait', '--fn', 'document.getElementById("state").textContent === "připraveno"');
+        await session.open(`${origin}/form/prihlaska`);
+        await session.page.waitForFunction('document.getElementById("state").textContent === "připraveno"');
         assert.deepEqual(await query('web'), {version, runtime:'web', ready:true});
         assert.deepEqual(await query('web', 'FESTAPP_REPAIR_APP_SHELL'), {ok:true, version});
         assert.deepEqual(await query(undefined), {version, runtime:'web', ready:true});
-        await browser('open', `${origin}/`);
-        await browser('wait', '--fn', 'document.getElementById("state").textContent === "připraveno"');
+        await session.page.goto(`${origin}/`);
+        await session.page.waitForFunction('document.getElementById("state").textContent === "připraveno"');
         assert.deepEqual(await query(undefined), {version, runtime:'web', ready:true});
         const publicFlutterRequests = requests.filter(p => /^\/(?:main\.dart(?:\.|$)|flutter(?:\.html|\.js|_bootstrap\.js)|canvaskit\/|assets\/(?!translations\/))/.test(p));
         const publicCache = await cachePaths();
         assert.deepEqual(publicFlutterRequests, [], 'public install and repair must not download Flutter');
         assert.deepEqual(publicCache.filter(p => flutterPaths.includes(p)), [], 'public cache must not eagerly hold Flutter');
-        await browser('set', 'offline', 'on');
-        await browser('open', `${origin}/form/offline`);
-        await browser('wait', 'input[name=jmeno]');
-        await browser('fill', 'input[name=jmeno]', 'Jana Nováková');
-        assert.equal((await browser('get','value','input[name=jmeno]')).value, 'Jana Nováková');
-        await browser('set', 'offline', 'off');
-        await browser('wait', '--fn', '!!navigator.serviceWorker.controller && !!window.fixtureQuery');
+        await session.context.setOffline(true);
+        await session.page.goto(`${origin}/form/offline`);
+        await session.page.locator('input[name=jmeno]').waitFor();
+        await session.page.locator('input[name=jmeno]').fill('Jana Nováková');
+        assert.equal((await session.page.locator('input[name=jmeno]').inputValue()), 'Jana Nováková');
+        await session.context.setOffline(false);
+        await session.page.waitForFunction('!!navigator.serviceWorker.controller && !!window.fixtureQuery');
         const webCacheBeforeFailure = await cachePaths();
         rejectPart = true;
         assert.deepEqual(await query('flutter'), {version:null, runtime:'flutter', ready:false});
@@ -99,28 +100,28 @@ export async function testPwaSplitBrowser({ browser, openBrowser, temporary }) {
         assert.deepEqual(await query('flutter'), {version, runtime:'flutter', ready:true});
         const cached = await cachePaths();
         for (const resource of flutterCore) assert.ok(cached.includes(resource), `missing prepared Flutter resource ${resource}`);
-        await browser('open', `${origin}/app/fixture`);
-        await browser('wait', '--fn', 'window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
-        await browser('set', 'offline', 'on');
-        await browser('open', `${origin}/app/offline`);
-        await browser('wait', '--fn', 'window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
+        await session.page.goto(`${origin}/app/fixture`);
+        await session.page.waitForFunction('window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
+        await session.context.setOffline(true);
+        await session.page.goto(`${origin}/app/offline`);
+        await session.page.waitForFunction('window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
         // A direct Flutter navigation also prepares a missing executable set.
-        await browser('set', 'offline', 'off');
-        await browser('open', `${origin}/form/prihlaska`);
-        await browser('wait', '--fn', '!!navigator.serviceWorker.controller');
+        await session.context.setOffline(false);
+        await session.page.goto(`${origin}/form/prihlaska`);
+        await session.page.waitForFunction('!!navigator.serviceWorker.controller');
         await evalResult(`(async () => {const c=await caches.open(${JSON.stringify('festapp-app-shell-'+version)}); for(const p of ${JSON.stringify(flutterCore)}) await c.delete(p); return true})()`);
-        await browser('open', `${origin}/app/direct`);
-        await browser('wait', '--fn', 'window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
+        await session.page.goto(`${origin}/app/direct`);
+        await session.page.waitForFunction('window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
         const directCache = await cachePaths();
         for (const resource of flutterCore) assert.ok(directCache.includes(resource), `direct navigation omitted ${resource}`);
         console.log(`PASS: public install and web repair: ${publicFlutterRequests.length} Flutter requests, ${publicCache.length} public cache entries; failed batch: 0 Flutter entries; successful query and direct navigation: ${flutterCore.length}/${flutterCore.length} Flutter core entries; offline public form fixture and simulated app entry`);
     } catch (error) {
         console.error('PWA fixture requests:', requests);
-        console.error('PWA fixture browser errors:', await browser('errors').catch(()=>null));
+        console.error('PWA fixture browser errors:', session.errors);
         throw error;
     } finally {
-        await browser('set', 'offline', 'off').catch(()=>{});
-        await browser('close').catch(()=>{});
+        await session.context?.setOffline(false).catch(()=>{});
+        await session.close().catch(()=>{});
         await new Promise(resolve => server.close(resolve));
     }
 }

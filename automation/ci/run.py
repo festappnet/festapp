@@ -84,7 +84,7 @@ def inventory():
     actual={str(path.relative_to(ROOT)) for path in (ROOT/'database/tests').rglob('*_test.sql')}
     expected=set(CONTRACT['sqlInventory']['knownTests'])
     paths=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard'],cwd=ROOT,text=True).splitlines()
-    current={path for path in paths if path.startswith(('database/tests/','web_client/tests/','automation/tests/','supabase/functions/','test/','test_dart/','tools/festapp/test/')) and path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart'))}
+    current={path for path in paths if (ROOT/path).is_file() and path.startswith(('database/tests/','web_client/tests/','automation/tests/','supabase/functions/','test/','test_dart/','tools/festapp/test/')) and path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart'))}
     recorded=set(CONTRACT['knownTestInputs'])
     if current!=recorded:
         raise ValueError('Test inventory ownership changed. New: '+str(sorted(current-recorded))+'; removed: '+str(sorted(recorded-current)))
@@ -210,12 +210,9 @@ def local(names):
             require_version(['pnpm','--version'],'11.24.0')
             if any(name in names for name in ('seat-checkout','ticket-preview-and-delivery','server-policy')):require_version(['deno','--version'],'2.9.0')
             if {'seat-checkout','web-startup','client-contract'}.intersection(names):
-                require_version(['agent-browser','--version'],'0.41.2')
-                browser=(os.environ.get('AGENT_BROWSER_EXECUTABLE_PATH') or shutil.which('google-chrome') or shutil.which('chromium'))
+                browser=(os.environ.get('CHROME_EXECUTABLE') or shutil.which('google-chrome') or shutil.which('chromium'))
                 if not browser and sys.platform=='darwin':browser='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
                 if not browser or not Path(browser).is_file():raise RuntimeError('Install Chrome/Chromium before browser lanes')
-                # Keep upstream native agent-browser discovery. Explicitly
-                # forcing Chrome stalls cross-origin attachment on this host.
                 os.environ['CHROME_EXECUTABLE']=browser
             if 'image-contract' in names:
                 venv=CACHE/'python'

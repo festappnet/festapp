@@ -7,6 +7,7 @@ settings:
 overrides:
   rimraf@5.0.10>glob: ^14.0.3
   express@4.22.2>qs: ^6.16.1
+  '@wp-playground/storage@3.1.60>isomorphic-git': 1.38.6
 
 importers:
 
@@ -887,8 +888,8 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  isomorphic-git@1.37.6:
-    resolution: {integrity: sha512-qr1NFCPsVTZ6YGqTXw0CzamnsHyH9QQ1OTEfeXIweSljRUMzuHFCJdUn0wc6OcjtTDns6knxjPb7N6LmJeftOA==}
+  isomorphic-git@1.38.6:
+    resolution: {integrity: sha512-lCmZ1m2R0LqbZ4QATtLCxhwNBQPNJc74R81dfyF90yLqP8xs2DZLedcnkVuRj6th/L2HYoIvWP5lBpS1ooAagw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -1892,7 +1893,7 @@ snapshots:
       '@php-wasm/universal': 3.1.60
       '@php-wasm/util': 3.1.60
       '@zip.js/zip.js': 2.7.57
-      isomorphic-git: 1.37.6
+      isomorphic-git: 1.38.6
       octokit: 3.1.2
       pako: 1.0.11
       sha.js: 2.4.12
@@ -2395,7 +2396,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-git@1.37.6:
+  isomorphic-git@1.38.6:
     dependencies:
       async-lock: 1.4.1
       clean-git-ref: 2.0.1

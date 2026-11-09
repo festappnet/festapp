@@ -15,7 +15,7 @@ node --test \
   tests/core/festapp_update_prompt.test.js \
   tests/core/startup_theme_consistency.test.js \
   ../automation/tests/web_profile_contract.test.mjs \
-  tests/core/isolated_browser_startup.test.js \
+  tests/core/native_browser.test.js \
   tests/core/browser_storage.test.js \
   tests/core/backend_activation_service.test.js \
   tests/core/supabase_client_config.test.js \

@@ -3,78 +3,43 @@ import {emitTiming, timed} from './test_timings.mjs';
 // Render the real production HTML shell and Main entrypoint in isolated Chromium.
 // Backend transport is fixture data; Google cryptography/SQL has a separate gate.
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer as createPortProbe } from 'node:net';
 import { build, createServer } from 'vite';
-import { isolatedBrowserInvocation, openIsolatedBrowser, instrumentBrowserCommands } from './isolated_browser_startup.mjs';
+import {createNativeBrowser} from './native_browser.mjs';
 import { testPwaSplitBrowser } from './test_pwa_split_browser.mjs';
-const execute = instrumentBrowserCommands(promisify(execFile), 'form_access_browser');
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
-const config = path.join(temporary, 'browser.json');
-const darkConfig = path.join(temporary, 'browser-dark.json');
-const followConfig = path.join(temporary, 'browser-follow.json');
-await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio', colorScheme: 'light' }));
-await writeFile(darkConfig, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio', colorScheme: 'dark' }));
-await writeFile(followConfig, JSON.stringify({ provider: null, plugins: [], autoConnect: false }));
-let browserIndex = 0;
-let session = `fa-${process.pid}`;
-let browserPhase = 'setup';
+let owner;
+let context, page, target;
+let colorScheme = 'light';
+const errors = [];
 const requests = [];
 const requestProfile = {total: 0, modules: 0, modulePaths: new Set()};
 const requestProfileStart = performance.now();
-let needsLaunch = false;
-let launchConfig = config;
-async function browser(...args) {
-    const launch = needsLaunch;
-    needsLaunch = false;
-    const invocation = isolatedBrowserInvocation({launch, session, launchConfig, followConfig, sourceEnv:process.env, args});
-    const { stdout } = await execute('agent-browser', invocation.args, {timeout:30000, env:invocation.env});
-    const result = JSON.parse(stdout);
-    const results = Array.isArray(result) ? result : [result];
-    for (const entry of results) {
-        assert.equal(entry.success, true, entry.error);
-        const lifecycle = (Array.isArray(result) ? entry.result : entry.data)?.lifecycle;
-        if (!launch && (lifecycle?.launched || lifecycle?.relaunchedBrowser || lifecycle?.restartedBackground)) {
-            throw new Error('Owned browser restarted after launch; refusing to continue without its original launch controls');
-        }
-    }
-    return Array.isArray(result) ? results.map(entry => entry.result) : result.data;
-}
-async function browserBatch(...commands) {
-    return browser('batch', '--bail', ...commands);
+async function closeContext() {
+    if (context) {const old=context;context=null;page=null;target=null;await old.close();}
 }
 async function openBrowser(url, ready) {
-    // The fixture consumes this selector before the real router strips it.
-    const normalizedUrl=new URL(url);normalizedUrl.searchParams.delete('scenario');
-    await openIsolatedBrowser({
-        open: async () => {
-            session = `fa-${process.pid}-${++browserIndex}`;
-            needsLaunch = true;
-            browserPhase = 'launch';
-            // Launch directly at the target; the setup helper still verifies
-            // the owned session, exact URL and readiness before page actions.
-            await browser('open', url);
-        },
-        info: () => browser('session', 'info'),
-        close: () => browser('close'),
-        navigate: target => { browserPhase = 'navigation'; return browser('open', target); },
-        currentUrl: async () => (await browser('get', 'url')).url,
-        waitForNavigation: target => { const expected = new URL(target); return browser('wait', '--url', `${expected.origin}${expected.pathname}*`); },
-        targetUrl: url,
-        launchAtTarget: true,
-        normalizedUrl: normalizedUrl.href,
-        ready,
-    });
-    browserPhase = 'page assertions';
+    await closeContext();
+    context=await owner.context();
+    page=await context.newPage();target=page;
+    await owner.setTopLevelColorScheme(page,colorScheme);
+    page.setDefaultTimeout(8000);
+    page.on('pageerror', error=>errors.push(error.message));
+    await page.goto(url,{waitUntil:'domcontentloaded'});
+    assert.equal(context.pages().length,1,'isolated browser context required');
+    const normalized=new URL(url);normalized.searchParams.delete('scenario');
+    assert.ok(page.url()===url || page.url()===normalized.href, 'unexpected navigation');
+    await ready?.();
 }
+const session = {get page(){return page;},get context(){return context;},get errors(){return errors;},open:openBrowser,close:closeContext};
 let server;
 let versionRequests = 0;
 try {
+    owner = await createNativeBrowser();
     // Bundle the real fixture entry once per run; no artifact is reused after
     // its inputs can change, and each scenario retains a fresh browser.
     const built = await timed('browser.fixture-build', () => build({
@@ -340,17 +305,21 @@ try {
         } }] });
     await timed('browser.server-start', () => server.listen(), {suite: 'form_access_browser'});
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
+    owner.allow(origin);owner.allow(`http://localhost:${server.httpServer.address().port}`);
     const visible = selector => `(() => { const e=document.querySelector(${JSON.stringify(selector)}); if(!e)return false; const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; })()`;
     // Hold the public form response after transport completes, so the real
     // shell/Main/child can paint while form data is still pending. No order or
     // subscription is submitted. The existing offline retry case stays below.
     for (const [palette, preference] of [['light','dark'], ['dark','light'], ['light','light'], ['dark','dark']]) {
-        launchConfig = preference === 'dark' ? darkConfig : config;
+        colorScheme = preference === 'dark' ? 'dark' : 'light';
         const saved = palette === 'dark' ? 'light' : 'dark';
         await openBrowser(`${origin}/__real_embed_host?scenario=embed-pending&helper=current&fixed=0&palette=${palette}&saved=${saved}`);
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-pending-query", "*")');
-        await browser('wait', '--fn', 'window.fixtureUpdateReport?.pending && window.fixtureUpdateReport?.sampledFrames >= 2');
-        const pendingPaint = (await browser('eval', 'window.fixtureUpdateReport')).result;
+        // The fixture query is a single message, so wait for the child's
+        // document load before sending it. Frame sampling already runs.
+        await page.waitForFunction(() => window.fixtureFrameLoads > 0);
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-pending-query", "*")');
+        await page.waitForFunction( 'window.fixtureUpdateReport?.pending && window.fixtureUpdateReport?.sampledFrames >= 2');
+        const pendingPaint = (await page.evaluate( 'window.fixtureUpdateReport'));
         assert.equal(pendingPaint.paintedLoader, false, 'embedded form must not paint its animated pending loader');
         assert.equal(pendingPaint.logoSeen, true, 'embedded startup must display its branded loader');
         assert.equal(pendingPaint.logoLoaded, true, 'embedded startup symbol must load');
@@ -359,64 +328,64 @@ try {
         assert.ok(pendingPaint.logoFilters.every(filter => filter.includes('brightness(0)') && (palette === 'dark' ? filter.includes('invert(1)') : !filter.includes('invert(1)'))),
             `embedded symbol must be monochrome and contrast with the host theme: ${JSON.stringify({palette, preference, saved, logoFilters:pendingPaint.logoFilters})}`);
         assert.equal(pendingPaint.transparentStartup, true, 'embedded startup background must remain transparent');
-        const iframeCanvas = (await browser('eval', `(() => {
+        const iframeCanvas = (await page.evaluate( `(() => {
             const probe=document.createElement('i'); probe.style.color='Canvas';
             probe.style.colorScheme=getComputedStyle(document.querySelector('iframe')).colorScheme;
             document.body.append(probe); const color=getComputedStyle(probe).color; probe.remove(); return color;
-        })()`)).result;
+        })()`));
         assert.deepEqual(pendingPaint.childCanvases, [iframeCanvas], 'embedded child and host iframe must use the same canvas color during startup');
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
-        await browser('snapshot', '-i');
-        await browserBatch('frame @e1', 'wait input[type=email]', 'frame main');
-        await browser('eval', `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette === 'dark'}}, "*")`);
-        await browser('wait', '--fn', 'window.fixtureUpdateReport?.themeMatch === true');
-        await browser('eval', `document.body.style.backgroundColor=${JSON.stringify(palette === 'dark' ? '#f2f2f2' : '#202020')}`);
-        await browser('eval', `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette !== 'dark'}}, "*")`);
-        await browser('wait', '--fn', `window.fixtureUpdateReport?.themeMatch === true && window.fixtureUpdateReport?.dark === ${palette !== 'dark'}`);
-        await browser('close');
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
+
+        target=page.frameLocator('iframe').first();await target.locator('input[type=email]').waitFor();target=page;
+        await page.evaluate( `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette === 'dark'}}, "*")`);
+        await page.waitForFunction( 'window.fixtureUpdateReport?.themeMatch === true');
+        await page.evaluate( `document.body.style.backgroundColor=${JSON.stringify(palette === 'dark' ? '#f2f2f2' : '#202020')}`);
+        await page.evaluate( `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette !== 'dark'}}, "*")`);
+        await page.waitForFunction( `window.fixtureUpdateReport?.themeMatch === true && window.fixtureUpdateReport?.dark === ${palette !== 'dark'}`);
+        await closeContext();
         console.log(`PASS: ${palette} host, ${preference} browser, opposite saved theme, startup logo and dynamic host theme`);
 
     }
-    launchConfig = config;
+    colorScheme = 'light';
 
     // Exercise the actual updater while a matching worker's readiness response is
     // held. Only transport is simulated; typing uses trusted browser input.
     for (const dirty of [false, true]) {
         const scenario = dirty ? 'embed-update-dirty' : 'embed-update-pristine';
         await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=current&fixed=0`);
-        await browser('snapshot', '-i');
-        await browserBatch('frame @e1', 'wait input[type=email]', 'frame main');
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-start-update", "*")');
-        await browser('wait', '--fn', 'window.fixtureUpdateReport?.workerQueryPending === true');
+
+        target=page.frameLocator('iframe').first();await target.locator('input[type=email]').waitFor();target=page;
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-start-update", "*")');
+        await page.waitForFunction( 'window.fixtureUpdateReport?.workerQueryPending === true');
         if (dirty) {
-            await browser('snapshot', '-i');
-            await browserBatch('frame @e1', 'fill input[type=email] rozpracovano@example.test', 'frame main');
+
+            target=page.frameLocator('iframe').first();await target.locator('input[type=email]').fill('rozpracovano@example.test');target=page;
         }
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-worker", "*")');
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-worker", "*")');
         if (dirty) {
-            await browser('wait', '500');
-            assert.equal((await browser('eval', 'window.fixtureFrameLoads')).result, 1, 'dirty form must not reload');
-            await browser('snapshot', '-i');
-            await browser('frame', '@e1');
-            assert.equal((await browser('get', 'value', 'input[type=email]')).value, 'rozpracovano@example.test');
+            await page.waitForTimeout(500);
+            assert.equal((await page.evaluate( 'window.fixtureFrameLoads')), 1, 'dirty form must not reload');
+
+            target=page.frameLocator('iframe').first();
+            assert.equal((await target.locator('input[type=email]').inputValue()), 'rozpracovano@example.test');
 
         } else {
-            await browser('wait', '--fn', 'window.fixtureFrameLoads >= 2');
-            await browser('snapshot', '-i');
-            await browser('frame', '@e1');
-            await browser('wait', 'input[type=email]');
+            await page.waitForFunction( 'window.fixtureFrameLoads >= 2');
+
+            target=page.frameLocator('iframe').first();
+            await target.locator('input[type=email]').waitFor();
 
         }
-        await browser('frame', 'main');
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-inspect-update", "*")');
-        await browser('wait', '--fn', 'window.fixtureUpdateReport?.inspection === true');
-        const [report, banner] = await browserBatch('eval window.fixtureUpdateReport', 'eval window.fixtureBannerObserved');
-        const inspection = report.result;
+        target=page;
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-inspect-update", "*")');
+        await page.waitForFunction( 'window.fixtureUpdateReport?.inspection === true');
+        const inspection = await page.evaluate('window.fixtureUpdateReport');
+        const banner = await page.evaluate('window.fixtureBannerObserved');
         assert.equal(inspection.banner, false, 'embedded document must not show an update banner');
-        assert.equal(banner.result, false, 'update banner must never be painted');
+        assert.equal(banner, false, 'update banner must never be painted');
         if (dirty) assert.equal(inspection.draft, 'rozpracovano@example.test');
         console.log(`PASS: ${dirty ? 'dirty draft protected during worker preparation' : 'pristine embedded form automatically updated without banner'}`);
-        await browser('close');
+        await closeContext();
     }
 
     // Real shell, Main and form in a cross-origin host with the shipped and
@@ -433,72 +402,78 @@ try {
             // Viewport setup and the first read-only frame check are still
             // pre-interaction startup. A detached CDP setup session here can
             // use the launcher's bounded fresh-session recovery.
-            await browser('set', 'viewport', String(width), '844');
-            await browser('wait', '--fn', fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
+            await page.setViewportSize({width, height:844});
+            await page.waitForFunction( fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
         });
         // The launch-only domain filter must still reject disallowed loopback
         // hosts after crossing origins; no request leaves the browser.
         if (verifiedHostSessions++ < 2) {
-            const denied = (await browser('eval', `fetch('http://127.0.0.2:${server.httpServer.address().port}/blocked').then(()=>'allowed',e=>e.name)`)).result;
+            const denied = (await page.evaluate( `fetch('http://127.0.0.2:${server.httpServer.address().port}/blocked').then(()=>'allowed',e=>e.name)`));
             assert.equal(denied, 'SecurityError', 'launch-time network containment must persist');
         }
-        await browser('snapshot', '-i');
-        await browser('frame', '@e1');
-        await browser('wait', '.flatpickr-input + input');
-        await browser('click', '.btn-submit');
-        await browser('frame', 'main');
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-validation", "*")');
-        await browser('wait', '--fn', 'window.fixtureUpdateReport?.validationShown === true');
-        await browser('snapshot', '-i');
-        await browserBatch('frame @e1', 'fill input[type=email] rozpracovano@example.test',
-            'click ".flatpickr-input + input"', 'wait .flatpickr-calendar.open',
-            'click .flatpickr-day:not(.prevMonthDay):not(.nextMonthDay)');
-        const [dateValue, emailValue] = await browserBatch('get value .flatpickr-input', 'get value input[type=email]');
-        assert.ok(dateValue.value);
-        assert.equal(emailValue.value, 'rozpracovano@example.test');
-        await browser('frame', 'main');
-        await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-update", "*")');
-        await browser('wait', '--fn', 'window.fixtureUpdateReport?.ready && window.fixtureUpdateReport?.versionWasPending && !window.fixtureUpdateReport?.readyAtFocus && window.fixtureUpdateReport?.draft === "rozpracovano@example.test" && !window.fixtureUpdateReport?.banner');
+
+        target=page.frameLocator('iframe').first();
+        await target.locator('.flatpickr-input + input').waitFor();
+        await target.locator('.btn-submit').click();
+        target=page;
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-validation", "*")');
+        await page.waitForFunction( 'window.fixtureUpdateReport?.validationShown === true');
+
+        target=page.frameLocator('iframe').first();
+        await target.locator('input[type=email]').fill('rozpracovano@example.test');
+        await target.locator('.flatpickr-input + input').click();
+        await target.locator('.flatpickr-calendar.open').waitFor();
+        await target.locator('.flatpickr-day:not(.prevMonthDay):not(.nextMonthDay)').first().click();
+        const dateValue=await target.locator('.flatpickr-input').first().inputValue();
+        const emailValue=await target.locator('input[type=email]').inputValue();
+        assert.ok(dateValue);
+        assert.equal(emailValue, 'rozpracovano@example.test');
+        target=page;
+        await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-update", "*")');
+        await page.waitForFunction( 'window.fixtureUpdateReport?.ready && window.fixtureUpdateReport?.versionWasPending && !window.fixtureUpdateReport?.readyAtFocus && window.fixtureUpdateReport?.draft === "rozpracovano@example.test" && !window.fixtureUpdateReport?.banner');
         assert.ok(versionRequests > before, 'updater must execute a production version request before readiness');
-        if (fixed || helper === 'none') assert.equal((await browser('eval', 'document.querySelector("iframe").clientHeight')).result, fixed ? 300 : 800);
-        else if (scenario === 'embed-long') await browser('wait', '--fn', 'document.querySelector("iframe").clientHeight > 1200');
+        if (fixed || helper === 'none') assert.equal((await page.evaluate( 'document.querySelector("iframe").clientHeight')), fixed ? 300 : 800);
+        else if (scenario === 'embed-long') await page.waitForFunction( 'document.querySelector("iframe").clientHeight > 1200');
         console.log(`PASS: real ${scenario}, ${helper} helper at ${width}px, cross-origin ${fixed ? 'fixed' : 'resizing'} frame, validation, calendar and update draft`);
-        await browser('close');
+        await closeContext();
     }
     // Exercise the actual HTML failure UI while the helper's startup height is
     // still in effect. A 404 keeps both retry attempts local and non-mutating.
     await openBrowser(`${origin}/__real_embed_host?scenario=embed-error&helper=current&fixed=0`);
-    await browser('snapshot', '-i');
-    await browserBatch('frame @e1', 'wait "#web-client-startup button"',
-        'click "#web-client-startup button"', 'wait "#web-client-startup button:not([disabled])"',
-        'click "#web-client-startup button"', 'wait "#web-client-startup button:not([disabled])"', 'frame main');
-    assert.equal((await browser('eval', 'document.querySelector("iframe").clientHeight')).result, 120);
-    await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-error-check", "*")');
-    await browser('wait', '--fn', 'window.fixtureUpdateReport?.failed && window.fixtureUpdateReport?.buttonVisible && window.fixtureUpdateReport?.enabled && !!window.fixtureUpdateReport?.text && !window.fixtureUpdateReport?.banner');
+
+    target=page.frameLocator('iframe').first();
+    await target.locator('#web-client-startup button').waitFor();
+    await target.locator('#web-client-startup button').click();
+    await target.locator('#web-client-startup button:not([disabled])').waitFor();
+    await target.locator('#web-client-startup button').click();
+    await target.locator('#web-client-startup button:not([disabled])').waitFor();target=page;
+    assert.equal((await page.evaluate( 'document.querySelector("iframe").clientHeight')), 120);
+    await page.evaluate( 'document.querySelector("iframe").contentWindow.postMessage("fixture-error-check", "*")');
+    await page.waitForFunction( 'window.fixtureUpdateReport?.failed && window.fixtureUpdateReport?.buttonVisible && window.fixtureUpdateReport?.enabled && !!window.fixtureUpdateReport?.text && !window.fixtureUpdateReport?.banner');
     console.log('PASS: real failed embed startup exposes retry inside the frame after two attempts');
-    await browser('close');
-    await testPwaSplitBrowser({browser, openBrowser, temporary});
+    await closeContext();
+    await testPwaSplitBrowser({owner, session, temporary});
     for (const scenario of ['guest-open', 'editor-open', 'editor-closed', 'unit-editor-open', 'unit-editor-closed', 'visitor-closed']) {
         await openBrowser(`${origin}/form/account-access?scenario=${scenario}`);
-        await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
-        await browser('wait', '--fn', `!(${visible('#universal-header')})`);
-        await browser('wait', '--fn', visible('#form-page-container'));
-        assert.equal((await browser('get', 'count', '#universal-header')).count, 1);
+        await page.waitForFunction( '!document.getElementById("web-client-startup")');
+        await page.waitForFunction( `!(${visible('#universal-header')})`);
+        await page.waitForFunction( visible('#form-page-container'));
+        assert.equal((await target.locator('#universal-header').count()), 1);
         const editor = scenario.startsWith('editor') || scenario.startsWith('unit-editor');
-        if (!scenario.endsWith('closed')) await browser('wait', '--fn', visible('#dynamic-form input'));
+        if (!scenario.endsWith('closed')) await page.waitForFunction( visible('#dynamic-form input'));
         if (editor) {
-            await browser('wait', '--fn', visible('.fab-edit'));
-            assert.equal((await browser('get', 'count', '.fab-edit')).count, 1);
-            await browser('click', '.fab-edit');
-            await browser('wait', '--fn', 'window.__adminDestination === "/fixture-event/reservations"');
+            await page.waitForFunction( visible('.fab-edit'));
+            assert.equal((await target.locator('.fab-edit').count()), 1);
+            await target.locator('.fab-edit').click();
+            await page.waitForFunction( 'window.__adminDestination === "/fixture-event/reservations"');
         } else {
-            assert.equal((await browser('get', 'count', '.fab-edit')).count, 0, 'visitors must not receive editor controls');
+            assert.equal((await target.locator('.fab-edit').count()), 0, 'visitors must not receive editor controls');
         }
-        if (scenario === 'guest-open') await browser('set', 'viewport', '390', '844');
+        if (scenario === 'guest-open') await page.setViewportSize({width:390,height:844});
         console.log(`PASS: ${scenario} - visible form, hidden site header and permitted editor access`);
         // Each identity gets a fresh browser and daemon namespace. Avoid both
         // detached navigation targets and reconnecting to a closing daemon.
-        await browser('close');
+        await closeContext();
     }
     // A long editor link must not widen the mobile layout viewport, which
     // otherwise moves the fixed price beyond the visible screen on Android.
@@ -507,13 +482,13 @@ try {
             const url=presentation==='regular' ? `${origin}/form/price-position`
                 : `${origin}/__price_position_host?native=${presentation==='native-embed'?1:0}`;
             await openBrowser(url);
-            await browser('set','viewport',String(width),'844');
+            await page.setViewportSize({width, height:844});
             const selector=presentation==='native-embed' ? '[data-festapp-embed-price] button' : '#floating-price-widget';
-            await browser('wait','--fn',presentation==='regular'
+            await page.waitForFunction(presentation==='regular'
                 ? '!!document.getElementById("floating-price-widget")'
                 : 'document.querySelector("iframe").clientHeight > 2000');
-            if(presentation==='native-embed') await browser('wait',selector);
-            if(presentation!=='regular') await browser('wait','--fn',`(() => {
+            if(presentation==='native-embed') await target.locator(selector).waitFor();
+            if(presentation!=='regular') await page.waitForFunction(`(() => {
                 const frame=document.querySelector('iframe');
                 const doc=frame.contentDocument;
                 const heading=doc.querySelector('.form-header');
@@ -523,8 +498,8 @@ try {
                 return heading.getBoundingClientRect().top+frame.getBoundingClientRect().top>=priceBottom+8;
             })()`);
             for(const y of [450,1000,700]) {
-                await browser('eval',`window.scrollTo(0,${y})`);
-                await browser('wait','--fn',`(() => {
+                await page.evaluate(`window.scrollTo(0,${y})`);
+                await page.waitForFunction(`(() => {
                     const frame=document.querySelector('iframe');
                     const doc=frame?frame.contentDocument:document;
                     const container=doc.getElementById('form-page-container');
@@ -538,15 +513,15 @@ try {
                 })()`);
             }
             console.log(`PASS: price position ${presentation} at ${width}px, down and up`);
-            await browser('close');
+            await closeContext();
         }
     }
     // Modern website palettes must retain their dark backdrop inside the frame.
     for (const width of [390,1280]) {
         for (const [palette,expected] of [['oklch',[19,33,57]],['p3',[15,52,79]]]) {
             await openBrowser(`${origin}/__price_position_host?native=1&palette=${palette}`);
-            await browser('set','viewport',String(width),'844');
-            await browser('wait','--fn',`(() => {
+            await page.setViewportSize({width, height:844});
+            await page.waitForFunction(`(() => {
                 const doc=document.querySelector('iframe')?.contentDocument;
                 if(doc?.documentElement.dataset.embedTheme!=='host')return false;
                 const computed=doc.defaultView.getComputedStyle(doc.documentElement).backgroundColor;
@@ -556,29 +531,25 @@ try {
                     && doc.documentElement.scrollWidth<=doc.documentElement.clientWidth+1;
             })()`);
             console.log(`PASS: inherited ${palette} palette at ${width}px retains a readable backdrop`);
-            await browser('close');
+            await closeContext();
         }
     }
     // Account login belongs to the catalogue; public forms stay unbranded.
-    await openBrowser(`${origin}/?scenario=guest-login`,()=>browser('wait','--fn',visible('#universal-header')));
-    await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
-    await browser('click', '.btn-sign-in');
-    await browser('wait', '--fn', visible('#google-start'));
-    await browser('click', '#google-start');
-    await browser('wait', '[data-provider-boundary]');
-    await browser('wait', '--fn', 'JSON.parse(sessionStorage.getItem("festapp-google-attempt-v1")).returnPath === "/"');
+    await openBrowser(`${origin}/?scenario=guest-login`,()=>page.waitForFunction(visible('#universal-header')));
+    await page.waitForFunction( '!document.getElementById("web-client-startup")');
+    await target.locator('.btn-sign-in').click();
+    await page.waitForFunction( visible('#google-start'));
+    await target.locator('#google-start').click();
+    await target.locator('[data-provider-boundary]').waitFor();
+    await page.waitForFunction( 'JSON.parse(sessionStorage.getItem("festapp-google-attempt-v1")).returnPath === "/"');
     console.log('PASS: catalogue login - visible Google action and provider handoff');
 } catch (error) {
-    console.error('Browser fixture failure:', { phase: browserPhase, requests });
-    console.error('Browser session:', await browser('session', 'info').catch(() => null));
-    console.error('Browser tabs:', await browser('tab').catch(() => null));
-    console.error('Browser errors:', await browser('errors').catch(() => null));
-    console.error('Browser snapshot:', await browser('snapshot', '-i').catch(() => null));
+    console.error('Browser fixture failure:', {requests, errors, url:page?.url()});
     throw error;
 } finally {
     emitTiming('browser.fixture-requests', requestProfileStart, {suite: 'form_access_browser', total: requestProfile.total,
         moduleRequests: requestProfile.modules, uniqueModules: requestProfile.modulePaths.size});
-    await browser('close').catch(() => {});
-    await server?.close();
-    await rm(temporary, { recursive: true, force: true });
+    try { await owner?.close(); } finally {
+        try { await server?.close(); } finally { await rm(temporary, { recursive: true, force: true }); }
+    }
 }

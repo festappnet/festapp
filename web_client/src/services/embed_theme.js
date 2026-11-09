@@ -43,6 +43,15 @@ export class EmbedTheme {
             ...Object.fromEntries(Object.keys(properties).map(key => [key, theme[key]])),
             colorScheme:theme.colorScheme, fonts
         };
+        const root = this.win.document.documentElement;
+        if (root.hasAttribute('data-embed-startup') && !this.win.__FESTAPP_APP_READY__) {
+            const next = this.presentation?.colorScheme;
+            const previous = this.win.__FESTAPP_EMBED_STARTUP_SCHEME__;
+            if (next === 'light' || next === 'dark') this.win.__FESTAPP_EMBED_STARTUP_SCHEME__ = next;
+            else delete this.win.__FESTAPP_EMBED_STARTUP_SCHEME__;
+            if (previous !== this.win.__FESTAPP_EMBED_STARTUP_SCHEME__)
+                this.win.dispatchEvent(new this.win.Event('festapp-embed-theme-changed'));
+        }
         this.#render();
     }
     #render() {

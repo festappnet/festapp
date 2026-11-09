@@ -2,37 +2,20 @@
 import {timed} from './test_timings.mjs';
 // Real browser + real SQL; local transport adapter replaces the Edge/REST gateway.
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import pg from 'pg';
 import { createServer } from 'vite';
-import {instrumentBrowserCommands} from './isolated_browser_startup.mjs';
+import {createNativeBrowser} from './native_browser.mjs';
 
 assert.ok(process.env.SEAT_CHECKOUT_DATABASE_URL, 'Set SEAT_CHECKOUT_DATABASE_URL to the bootstrapped local test database');
 const url = new URL(process.env.SEAT_CHECKOUT_DATABASE_URL);
 assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname), 'Browser fixtures require a loopback database');
 const root = path.resolve(import.meta.dirname, '..');
-const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-seat-checkout-'));
-const config = path.join(temporary, 'browser.json');
-await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio' }));
-const session = `seat-checkout-${process.pid}`;
-const execute = instrumentBrowserCommands(promisify(execFile), 'seat_checkout_browser');
+const owner=await createNativeBrowser();let context,page;
 const db = new pg.Client({ connectionString: url.href });
-let server;
-let fixture;
-let checkout;
-const calls = [];
-const offlineRecovery = process.argv.includes('--offline-recovery');
-async function browser(...args) {
-    const { stdout } = await execute('agent-browser', ['--config', config, '--headed', 'false',
-        '--session', session, '--allowed-domains', '127.0.0.1', '--json', ...args], { timeout: 30000, env: { ...process.env, AGENT_BROWSER_CONFIG: config, AGENT_BROWSER_PLUGINS: '[]', AGENT_BROWSER_DEFAULT_TIMEOUT: '8000' } });
-    const response = JSON.parse(stdout);
-    assert.equal(response.success, true, response.error);
-    return response.data;
-}
+let server,fixture,checkout;
+const calls=[];const offlineRecovery=process.argv.includes('--offline-recovery');
 try {
     await db.connect();
     const identity = await db.query('SELECT project FROM festapp_test_support.disposable_environment WHERE singleton');
@@ -90,24 +73,24 @@ try {
         plugins: [{ name: 'seat-checkout-fixture', configureServer(server) { server.middlewares.use(handleRpc); } }] });
     await timed('browser.server-start', () => server.listen(), {suite: 'seat_checkout_browser'});
     const port = server.httpServer.address().port;
-    await browser('open', `http://127.0.0.1:${port}/tests/fixtures/seat_checkout/index.html`);
-    assert.equal((await browser('session', 'info')).runtime.pageCount, 1, 'Use an isolated local browser');
-    await browser('wait', `input[name="${fixture.email}"]`);
-    await browser('snapshot', '-i');
-    await browser('fill', `input[name="${fixture.email}"]`, 'regression@example.invalid');
-    await browser('fill', `input[name="${fixture.name}"]`, 'Test');
-    await browser('fill', `input[name="${fixture.surname}"]`, 'Checkout');
+    const origin=`http://127.0.0.1:${port}`;owner.allow(origin);context=await owner.context();page=await context.newPage();await owner.setTopLevelColorScheme(page,'light');page.setDefaultTimeout(8000);
+    await page.goto(`${origin}/tests/fixtures/seat_checkout/index.html`);
+    assert.equal(context.pages().length,1,'Use an isolated local browser');
+    await page.locator(`input[name="${fixture.email}"]`).first().waitFor();
+    await page.locator(`input[name="${fixture.email}"]`).first().fill('regression@example.invalid');
+    await page.locator(`input[name="${fixture.name}"]`).first().fill('Test');
+    await page.locator(`input[name="${fixture.surname}"]`).first().fill('Checkout');
     // The reserved .invalid fixture deliberately needs the real email-suffix
     // confirmation. Preserve that confirmation through seat-widget rerenders
     // and the offline recovery below instead of bypassing email validation.
     const suffixWarning = '[data-email-suffix-warning]:not([hidden])';
-    await browser('wait', suffixWarning);
-    await browser('click', `${suffixWarning} button`);
-    await browser('wait', '--fn', '!document.querySelector("[data-email-suffix-warning]:not([hidden])")');
-    await browser('click', '.btn-blueprint-select');
+    await page.locator(suffixWarning).first().waitFor();
+    await page.locator(`${suffixWarning} button`).first().click();
+    await page.waitForFunction('!document.querySelector("[data-email-suffix-warning]:not([hidden])")');
+    await page.locator('.btn-blueprint-select').first().click();
     const seatSelector = `.venue-layout-viewer svg g:nth-child(1 of [data-node-id="${fixture.node}"])`;
-    await browser('wait', seatSelector);
-    const controls = (await browser('eval', `(() => {
+    await page.locator(seatSelector).first().waitFor();
+    const controls = (await page.evaluate(`(() => {
         const modal=document.querySelector('.blueprint-modal-container');
         const list=modal.querySelector('.venue-layout-viewer > [role="list"]');
         const bounds=list.getBoundingClientRect();
@@ -118,7 +101,7 @@ try {
             oldClass:button.className,buttonType:button.type,
             centered:Math.abs(b.x+b.width/2-innerWidth/2)<2,
             extraControls:!!modal.querySelector('.blueprint-modal-actions,.blueprint-state-legend')};
-    })()`)).result;
+    })()`));
     assert.ok(controls.listWidth<=1 && controls.listHeight<=1, 'Assistive seat list must not be visible');
     assert.equal(controls.buttons,1,'Keep the original single Continue button');
     assert.equal(controls.oldClass,'btn btn-primary btn-submit blueprint-btn-confirm');
@@ -126,12 +109,12 @@ try {
     assert.equal(controls.centered,true,'Continue keeps its original centered placement');
     assert.equal(controls.extraControls,false,'No new footer actions or legend');
 
-    await browser('wait', '--fn', "document.querySelector('.blueprint-modal-container').getAnimations().every(a=>a.playState!=='running')");
-    const fit=(await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result;
-    await browser('click', '.blueprint-zoom-button:first-child');
-    assert.notEqual((await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result,fit);
-    await browser('click', '.blueprint-zoom-reset');
-    const reset = (await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result;
+    await page.waitForFunction("document.querySelector('.blueprint-modal-container').getAnimations().every(a=>a.playState!=='running')");
+    const fit=(await page.evaluate("document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')"));
+    await page.locator('.blueprint-zoom-button:first-child').first().click();
+    assert.notEqual((await page.evaluate("document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")),fit);
+    await page.locator('.blueprint-zoom-reset').first().click();
+    const reset = (await page.evaluate("document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')"));
     const fitBounds = fit.trim().split(/\s+/).map(Number);
     const resetBounds = reset.trim().split(/\s+/).map(Number);
     assert.equal(fitBounds.length, 4);
@@ -142,44 +125,41 @@ try {
         `Reset restores fitted viewBox component ${index}: ${value} vs ${fitBounds[index]}`,
     ));
     const viewport="(() => {const s=document.querySelector('.venue-layout-viewer svg'),r=s.getBoundingClientRect();return JSON.stringify({x:r.x,y:r.y,width:r.width,height:r.height,camera:s.getAttribute('viewBox')})})()";
-    const beforeClick=(await browser('eval',viewport)).result;
-    await browser('snapshot', '-i');
-    await browser('click', seatSelector);
-    await browser('wait', '--fn', "document.querySelector('.blueprint-btn-confirm').disabled");
-    assert.equal((await browser('eval',viewport)).result,beforeClick,'Pending selection must not move or resize the map');
-    await browser('wait', '--fn', `document.querySelector('.ticket-item[data-seat-id="${fixture.seat}"]') !== null`);
+    const beforeClick=(await page.evaluate(viewport));
+    await page.locator(seatSelector).first().click();
+    await page.waitForFunction("document.querySelector('.blueprint-btn-confirm').disabled");
+    assert.equal((await page.evaluate(viewport)),beforeClick,'Pending selection must not move or resize the map');
+    await page.waitForFunction(`document.querySelector('.ticket-item[data-seat-id="${fixture.seat}"]') !== null`);
     // The seat appears optimistically. Wait for the real reservation response
     // before inspecting SQL on the fixture connection used by the RPC adapter.
-    await browser('wait', '--fn', "window.__seatCheckoutRpcResults?.has('select_spot') === true");
+    await page.waitForFunction("window.__seatCheckoutRpcResults?.has('select_spot') === true");
     assert.equal((await db.query('SELECT secret IS NOT NULL AS reserved FROM eshop.spots WHERE id=$1', [fixture.seat])).rows[0].reserved,
         true, 'The map click must reserve the actual SQL seat');
-    assert.equal((await browser('eval',viewport)).result,beforeClick,'Confirmed selection must retain camera and viewport');
+    assert.equal((await page.evaluate(viewport)),beforeClick,'Confirmed selection must retain camera and viewport');
     if (offlineRecovery) {
-        await browser('set', 'offline', 'on');
+        await context.setOffline(true);
         // The selection marker covers the seat group after selection. Dispatch
         // a real pointer gesture at its center, as a buyer would tap it.
-        const point = (await browser('eval', `(() => {const r=document.querySelector(${JSON.stringify(seatSelector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`)).result;
-        await browser('mouse', 'move', String(Math.round(point.x)), String(Math.round(point.y)));
-        await browser('mouse', 'down');
-        await browser('mouse', 'up');
-        await browser('wait', '--fn', "!document.querySelector('.blueprint-btn-confirm').disabled");
+        const point = (await page.evaluate(`(() => {const r=document.querySelector(${JSON.stringify(seatSelector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`));
+        await page.mouse.move(Math.round(point.x), Math.round(point.y));
+        await page.mouse.down();
+        await page.mouse.up();
+        await page.waitForFunction("!document.querySelector('.blueprint-btn-confirm').disabled");
         // Connectivity returns before checkout. The lost release must not be
         // replayed: a fresh read should confirm the original SQL hold instead.
-        await browser('set', 'offline', 'off');
+        await context.setOffline(false);
     }
-    await browser('click', '.blueprint-btn-confirm');
-    await browser('wait', '--fn', '!document.querySelector(".blueprint-modal-container")');
-    await browser('snapshot', '-i');
-    await browser('scrollintoview', '#dynamic-form .btn-submit');
-    await browser('click', '#dynamic-form .btn-submit');
-    await browser('wait', '.btn-submit-order');
-    await browser('snapshot', '-i');
-    await browser('scrollintoview', '.btn-submit-order');
-    await browser('wait', '--fn', `(() => { const b=document.querySelector('.btn-submit-order'); const r=b.getBoundingClientRect(); return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('.btn-submit-order')===b && document.getAnimations().every(a=>a.playState!=='running'); })()`);
-    await browser('click', '.btn-submit-order');
-    await browser('wait', '.result-title');
+    await page.locator('.blueprint-btn-confirm').first().click();
+    await page.waitForFunction('!document.querySelector(".blueprint-modal-container")');
+    await page.locator('#dynamic-form .btn-submit').first().scrollIntoViewIfNeeded();
+    await page.locator('#dynamic-form .btn-submit').first().click();
+    await page.locator('.btn-submit-order').first().waitFor();
+    await page.locator('.btn-submit-order').first().scrollIntoViewIfNeeded();
+    await page.waitForFunction(`(() => { const b=document.querySelector('.btn-submit-order'); const r=b.getBoundingClientRect(); return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('.btn-submit-order')===b && document.getAnimations().every(a=>a.playState!=='running'); })()`);
+    await page.locator('.btn-submit-order').first().click();
+    await page.locator('.result-title').first().waitFor();
     assert.equal(checkout?.result.code, 200, `Actual UI payload rejected: ${JSON.stringify(checkout?.result)}`);
-    await browser('wait', '.result-title.success-color');
+    await page.locator('.result-title.success-color').first().waitFor();
     assert.equal(Number(checkout.payload.ticket[0].spot), fixture.seat);
     assert.ok(calls.includes('select_spot'), 'Seat selection must invoke SQL');
     assert.equal(calls.filter(name => name === 'send-ticket-order').length, 1);
@@ -198,13 +178,12 @@ try {
     if (offlineRecovery) console.log('PASS: offline seat release -> reconnect -> authoritative recovery -> one successful order, original seat and answers retained');
 } catch (error) {
     console.error('SQL calls:', calls, 'checkout:', checkout?.result?.code);
-    console.error('Browser console:', await browser('console').catch(() => null));
-    console.error('Browser state:', await browser('get', 'text', 'body').catch(() => null));
-    console.error('Browser errors:', await browser('errors').catch(() => null));
+    console.error('Browser state:', await page?.locator('body').innerText().catch(() => null));
     throw error;
 } finally {
-    try { await browser('close'); } catch {}
-    await server?.close();
-    try { await db.query('ROLLBACK'); } finally { await db.end(); }
-    await rm(temporary, { recursive: true, force: true });
+    try { await owner.close(); } finally {
+        try { await server?.close(); } finally {
+            try { await db.query('ROLLBACK'); } finally { await db.end(); }
+        }
+    }
 }

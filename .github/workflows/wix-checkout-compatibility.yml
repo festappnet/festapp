@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'integrations/wix/**'
+      - 'integrations/wordpress/**'
       - 'web_client/src/components/forms/**'
       - 'web_client/src/components/eshop/db_orders.js'
       - 'web_client/src/components/eshop/ticket_order_identity.js'

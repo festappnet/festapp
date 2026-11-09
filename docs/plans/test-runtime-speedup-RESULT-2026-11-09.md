@@ -1,5 +1,9 @@
 # Test runtime speedup - implementation and verification
 
+Latest native-browser follow-up is prepared on `perf/test-runtime-native-browser-20261109`
+against main `bae4f2e29`. It is separate from the completed release1053 below.
+Its measured results and security fixes are recorded at the end of this document.
+
 Implementation waves0-7 are published on canonical main. The verified deployed
 application source is `0da72ea9f799e1762533c16afd1c7d541f7b368b`, including the
 sibling occasion-user fix from `81e00bfdf8905b0144c5eb6caf58d25239a154b5`.
@@ -337,3 +341,105 @@ change affects test tooling only. Production remains 0.20.542+1053; no backend,
 tenant overlay or deployed application was changed by this follow-up.
 Full source identities, receipts, load/swap snapshots and timings are in
 `/private/tmp/festapp-further-evidence/summary.json` and its sibling files.
+
+
+## Native browser cutover and WordPress security follow-up
+
+The declared public Playwright 1.65.0 SDK replaces the CLI/daemon test transport.
+Each suite owns one headless muted Chromium and each scenario receives a fresh
+nonpersistent context. An owned proxy contains page, popup, service-worker,
+WebSocket and CONNECT traffic to registered loopback fixture origins. Service
+workers remain enabled. Only the existing explicit `--live-gtm` diagnostic can
+add its exact approved Google Tag Manager origin; it was not run in this work.
+No private Playwright imports, CLI compatibility wrapper, setup retry or action
+retry remains in the canonical path. Interactive agent-browser tools are separate.
+Managed Chromium installation is documented in CONTRIBUTING.md and provisioned
+by the hosted browser setup; Flutter continues using its separate Chrome runner.
+
+A controlled comparison against `bae4f2e29` ran each of two canonical steps four
+times per driver. All 16 first attempts passed with unchanged inputs in each
+sample. Startup emitted identical 31 browser reports (30 form/PWA + CSP), and
+measurement retained 182 Node cases plus identical 12 browser reports.
+
+| Canonical step | Baseline first | Native first | Baseline warm samples | Native warm samples | Warm medians |
+|---|---:|---:|---|---|---|
+| web-startup | 125.54 s | 29.34 s | 89.88 / 87.53 / 97.55 s | 23.63 / 19.52 / 19.22 s | 89.88 -> 19.52 s (-78.3%, 4.60x) |
+| web-measurement | 37.64 s | 19.10 s | 29.04 / 31.68 / 29.95 s | 19.36 / 18.36 / 17.77 s | 29.95 -> 18.36 s (-38.7%) |
+
+Samples include pinned Node resolution, canonical step preparation, assertions,
+negative observation windows and cleanup. Dependency/browser/OS caches remain
+warm, including the first samples: these are not cold-cache claims. Baseline
+agent-browser 0.41.2 uses Chrome 151.0.7922.47; native uses managed Chromium
+158.0.8127.18 revision 1254. These are environment-specific complete toolchain
+comparisons, not an isolated estimate of transport overhead on one engine.
+The sum of warm step medians is 119.83 ->37.88 s; it is not measured whole-lane
+wall time or an all-eight-jobs benchmark. Individual RSS/source identities and
+reports are retained in the evidence JSON; no hosted speedup is inferred.
+
+Startup Node count changes from 306 to 290 because 26 CLI daemon/retry protocol
+implementation cases are retired, nine native lifecycle/isolation cases replace
+them, and one appearance regression is added. Every other subtest name and
+multiplicity remains equal. See [the cutover ledger](native-browser-test-cutover-ledger.md).
+The native owner tests exercise real page/SW/popup/WebSocket containment, fresh
+storage and service-worker state, IPv6, restricted options, in-flight sockets,
+launch failure, context-close failure and idempotent cleanup. Final consumer
+cleanup was hardened after timing; the successful scenario path is unchanged.
+
+The faster driver exposed an actual first-paint contrast race before the host
+appearance message. The existing appearance owner now keeps the embedded brand
+symbol unresolved until the existing validated host scheme arrives, without
+enabling form-style inheritance before application readiness. Status remains
+accessible and the embedded startup background remains transparent. Plain or
+legacy embeds without that message reveal the symbol at normal app readiness.
+Both generated index documents use the canonical startup-theme source. The test
+fixture waits for the child's document-load signal before its single readiness
+query, with sampling still beginning on the first animation frame; no sampled
+frames, assertion or observation window is removed.
+
+WordPress tooling fixes Dependabot 305 and 307 via a scoped pnpm override from
+isomorphic-git 1.37.6 to 1.38.6 in the actual Playground storage chain. Two inert,
+private-sandbox regressions reproduce the old symlink/dotdot checkout escapes
+and pass with the patch; ordinary checkout and existing rimraf/glob/Express/qs
+compatibility also pass (five cases, pinned Node 24.22.1, wp-env 12.0.0 boot smoke).
+The canonical WordPress compatibility lane installs and executes these cases.
+Alerts close only after merging to the default branch and GitHub rescanning.
+Patch authority: [isomorphic-git 1.38.6](https://github.com/isomorphic-git/isomorphic-git/releases/tag/v1.38.6).
+
+A separate owned-database full-history experiment compared scoped asynchronous
+commit with normal commit plus the same explicit durability fence. One pair
+measured 20.79 versus20.83 s with schema/ledger/reference/sequence parity. No
+useful gain was observed and no reduced-durability setting was adopted.
+
+Pre-cleanup canonical seat-checkout and web-startup passed all 16 units.
+The final runtime source then passed all eight canonical local jobs in 195.12 s
+with `complete=true` and `inputsUnchanged=true`. This is validation elapsed time,
+not a measured all-eight speedup. The immutable receipt is
+`20261109T233021-1ed1cdced017/receipt.json` in the local CI run directory.
+The CI framework owns and passes all 27 Python cases. The final metadata
+follow-up adds WordPress-only main pushes to the compatibility workflow trigger;
+targeted canonical image/compatibility checks cover that filter change.
+Main currently requires one approving review; this follow-up awaits that review
+and does not bypass it. All eight exact-SHA hosted gates remain required for
+any future production release.
+Production remains 0.20.542+1053. This follow-up creates no tenant overlay,
+backend migration or deployment. Durable evidence is retained at
+`/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/`.
+
+
+### Final main integration
+
+The mandatory pre-publication fetch found main advanced to
+`6c41c82b3c4c8785148f9c09e0af2cfb8fb43040` (#774). Its explicit embed measurement
+selection, host-state isolation, CMS adapters and new assertions are included.
+The two overlapping browser assertions keep the native API while expecting the
+new canonical `form_page_view` event. The controlled benchmark above predates
+that feature and remains explicitly a comparison against `bae4f2e29`; new main
+assertions are retained in final validation rather than removed to preserve the
+old case counts. All eight canonical lanes passed again after integration in 196.86 s, with
+`complete=true` and `inputsUnchanged=true`; receipt
+`20261109T233734-f586dc66a7c1/receipt.json`. Current startup has 291 passing Node
+cases and 31 browser reports; measurement has 193 passing Node cases plus 12
+browser reports (205 scenarios). Both Node groups have zero failures/skips.
+These new main assertions are additional to the historical timing inventory.
+The final edits after this receipt only record results. A separate read-only
+canonical live verifier and three coherent samples still confirm release1053.
