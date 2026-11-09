@@ -569,7 +569,7 @@ export class FormPage extends Component {
 
     startMeasurement(formModel, showPreview = false, pageType = 'product') {
         if (!showPreview && !this.analytics) {
-            const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,
+            const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,embedded:!!this.embedBridge,
                 campaign:()=>this.embedBridge?.measurementCampaign||{}});
             const transport=this.embedBridge||runtime;
             if(this.embedBridge) {

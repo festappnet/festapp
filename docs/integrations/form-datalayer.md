@@ -142,6 +142,12 @@ has 1 to 256 characters, without controls or `@`. Any other query parameter keep
 outside measurement. Host
 campaign data is separately rebuilt during the pinned embed handshake; the raw
 host URL, unknown query values and capability URLs are never forwarded.
+`form_embedded` is a strict boolean in the runtime context, so it is in the
+initial context push before `gtm.js` and on every measurement event: `false` for
+direct visits, `true` when FormPage uses EmbedBridge (`?embed=1`), including
+sale-opening pages. Missing or non-boolean input becomes `false`. GTM can use it to
+skip `page_view` for embedded forms because the host page already counts the
+pageview. The host dataLayer transport is unchanged.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
 approved ecommerce events from dataLayer, and avoid duplicate automatic pageviews.
 

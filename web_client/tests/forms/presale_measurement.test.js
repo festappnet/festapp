@@ -78,6 +78,6 @@ for(const role of ['anonymous','staff','ineligible'])test('shared presale stack 
  const model=new FormModel({link:'summer'});
  const layer=page.startMeasurement(model,false,'sale_opening');await settle();
  assert.equal(page.startMeasurement(model,false,'sale_opening'),layer,'one stack per page');
- assert.equal(attached,page.measurementRuntime);assert.equal(connected,1);
+ assert.equal(attached,page.measurementRuntime);assert.equal(attached.embedded,true);assert.equal(connected,1);
  assert.deepEqual(sent,role==='anonymous'?[{page_type:'sale_opening',user_type:'b2c'},{event:'page_view'}]:[]);
 });

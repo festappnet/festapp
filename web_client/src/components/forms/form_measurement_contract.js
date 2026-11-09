@@ -49,7 +49,7 @@ export function attributionContext(input) {
         const page = new URL(input.page_location);
         if (!['https:', 'http:'].includes(page.protocol) || page.username || page.password || page.search || page.hash ||
             !/^\/form\/[a-zA-Z0-9_-]+\/?$/.test(page.pathname)) return null;
-        const result = {page_location: page.href};
+        const result = {page_location: page.href, form_embedded: input.form_embedded === true};
         if (input.page_referrer) {
             const referrer = new URL(input.page_referrer);
             if (['https:', 'http:'].includes(referrer.protocol) && !referrer.username && !referrer.password)
