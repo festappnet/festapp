@@ -78,6 +78,7 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 == Changelog ==
 
 = 1.0.5 =
+* Prevent a dark iframe canvas before the shared helper loads.
 * Control embedded appearance only through the saved form setting; remove local overrides.
 
 = 1.0.4 =

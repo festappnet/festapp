@@ -27,6 +27,7 @@ test('public generator produces isolated service code without loading checkout',
   assert.equal(frame.style.width,'100%');
   assert.equal(frame.hasAttribute('width'),false);
   assert.equal(frame.style.maxWidth,'100%');
+  assert.equal(frame.style.colorScheme,'light dark','canvas must support the child before the deferred helper loads');
   assert.equal(frame.parentElement.hasAttribute('data-festapp-embed-host'),true);
   assert.equal(code.window.document.querySelector('script').src,'https://vstupenky.online/embed.js');
   assert.equal(code.window.document.querySelector('a').rel,'noopener noreferrer');
