@@ -114,8 +114,12 @@ Scripts cannot access checkout DOM or backend credentials. Layout/scroll/theme
 embed protocol 1 remains compatible; measurement protocol 1 grants are rejected.
 A missing/old helper preserves checkout but cannot activate new measurement.
 
-`data-festapp-datalayer` selects host-only transport; otherwise the Unit runtime is
-used. Both require an approved host and the current helper, nothing else: the helper
+Embeds use the host dataLayer transport by default. An absent or empty
+`data-festapp-datalayer` attribute, or any value other than `"false"`, selects host
+transport. Set `data-festapp-datalayer="false"` to use the Unit runtime instead.
+Changing the attribute live reinitializes the selected transport. Direct visits
+continue to use the Unit runtime and Klaro. Embeds show no consent bar in either mode. Both embed transports require an
+approved host and the current helper, nothing else: the helper
 issues a random local lease that only proves it is alive, and renews it on a heartbeat.
 A host CMP is optional. `FestappEmbed.connectKlaro(frame, manager)`,
 `setMeasurementConsent(frame, granted)` and
@@ -142,12 +146,16 @@ has 1 to 256 characters, without controls or `@`. Any other query parameter keep
 outside measurement. Host
 campaign data is separately rebuilt during the pinned embed handshake; the raw
 host URL, unknown query values and capability URLs are never forwarded.
-`form_embedded` is a strict boolean in the runtime context, so it is in the
-initial context push before `gtm.js` and on every measurement event: `false` for
-direct visits, `true` when FormPage uses EmbedBridge (`?embed=1`), including
-sale-opening pages. Missing or non-boolean input becomes `false`. GTM can use it to
-skip `page_view` for embedded forms because the host page already counts the
-pageview. The host dataLayer transport is unchanged.
+`form_embedded` is a strict boolean in the initial context push and every
+measurement event in both transports: `false` for direct visits and `true` for
+embeds (`?embed=1` / EmbedBridge), including sale-opening pages. Missing or
+non-boolean runtime context input becomes `false`; host transport always sets `true`.
+Direct visits emit `page_view`; embeds emit `form_page_view` instead in both host
+and Unit runtime transport, with the same once-per-`page_type` deduplication and
+page context. They never emit both for a page view. Host pushes add no
+`page_location` or host URL data. Ecommerce and `user_data` clearing pushes remain
+unchanged. Existing deployed Unit runtimes drop `form_page_view` until redeployed
+with the updated event allow-list.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
 approved ecommerce events from dataLayer, and avoid duplicate automatic pageviews.
 
@@ -269,7 +277,8 @@ start this stack. Presale content without an active sign-up stays unmeasured.
 | Event | Presale behavior |
 | --- | --- |
 | Initial push | `page_type: 'sale_opening'`, `user_type: 'b2c'`, language |
-| `page_view` | Once for the sale-opening page |
+| `page_view` | Direct visits only, once per page type (including sale-opening) |
+| `form_page_view` | Embeds only, both transports, once per page type (including sale-opening) |
 | `form_start` | First e-mail input, once per visit |
 | `generate_lead` | Successful notification subscribe only, once per submission |
 

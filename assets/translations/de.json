@@ -456,7 +456,7 @@
     "embedAction": "Auf eigener Website einbetten",
     "embedTitle": "Bestellformular",
     "embedFallback": "Bestellung in neuem Tab öffnen",
-    "embedHelp": "Fügen Sie den Code in das HTML Ihrer Website ein. Automatische Höhe und Website-Design benötigen ein externes Skript. Wenn Ihre Website es blockiert, verwenden Sie eine feste Höhe und das Formulardesign.",
+    "embedHelp": "Fügen Sie den Code in das HTML Ihrer Website ein. Automatische Höhe und Website-Design benötigen ein externes Skript. Wenn Ihre Website es blockiert, verwenden Sie eine feste Höhe und das Formulardesign. Die aktivierte Messung verwendet dataLayer, GTM und die Einwilligungsverwaltung Ihrer Website. Deaktivieren Sie die Option unten, um den in Festapp konfigurierten GTM zu verwenden. Eingebettete Formulare zeigen keine Einwilligungsleiste; genehmigen Sie den Website-Origin in den Messeinstellungen.",
     "embedSaveFirst": "Speichern Sie das Formular vor dem Einbetten.",
     "embedAutomatic": "Automatische Höhe (empfohlen)",
     "embedFixed": "Feste Höhe",
@@ -482,7 +482,8 @@
     "publicLinkPreview": "Vorschau des ungespeicherten Links",
     "automaticPublicLink": "Ein kurzer Link wird beim Speichern erstellt. Sie können einen eigenen Adressnamen eingeben.",
     "publicLinkHistoryHelp": "Bisherige Adressen funktionieren weiterhin.",
-    "embedOpenAppearance": "Formulargestaltung öffnen"
+    "embedOpenAppearance": "Formulargestaltung öffnen",
+    "embedHostDataLayer": "Messdaten an den dataLayer der Website senden"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Vorgenerierte Tickets",

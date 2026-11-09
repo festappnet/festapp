@@ -540,7 +540,7 @@
     "embedAction": "Vložit na vlastní web",
     "embedTitle": "Objednávkový formulář",
     "embedFallback": "Otevřít objednávku v nové záložce",
-    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška vyžaduje povolený externí skript. Pokud jej váš web blokuje, použijte pevnou výšku.",
+    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška a převzetí vzhledu vyžadují povolený externí skript. Pokud jej web blokuje, použijte pevnou výšku a vlastní vzhled formuláře. Měření posílá události do dataLayer Vašeho webu, souhlas řídí GTM a lišta souhlasu webu. Doména webu musí být schválená v nastavení měření. Volbou níže lze měření přepnout na GTM nastavený ve Festappu.",
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška bez skriptu",
@@ -549,7 +549,8 @@
     "measurementUnitDisabled": "Měření je pro tohoto pořadatele vypnuté. Uložené ID a skripty zůstanou zachovány.",
     "measurementFormUnitBlocked": "Měření je u pořadatele vypnuté. Volbu pro tento formulář můžete uložit; měření se spustí až po povolení u pořadatele a splnění dalších podmínek.",
     "measurementOpenUnitSettings": "Otevřít nastavení měření pořadatele",
-    "measurementAskUnitManager": "O povolení měření, nastavení GTM či skriptů a doplnění odkazu na zásady ochrany osobních údajů požádejte správce pořadatele."
+    "measurementAskUnitManager": "O povolení měření, nastavení GTM či skriptů a doplnění odkazu na zásady ochrany osobních údajů požádejte správce pořadatele.",
+    "embedHostDataLayer": "Posílat měření do dataLayer webu"
   },
   "OrderGridColumns": {
     "id": "Id",

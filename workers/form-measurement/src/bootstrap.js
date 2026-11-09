@@ -18,6 +18,7 @@ const consentState = ({analytics, marketing}) => {
 };
 
 function push(payload) {
+    if(payload.event === 'page_view' && context.form_embedded === true) payload.event = 'form_page_view';
     if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null});
     dataLayer.push({...consentContext(),...payload});
     if (['purchase','generate_lead'].includes(payload.event)) dataLayer.push({user_data:null});

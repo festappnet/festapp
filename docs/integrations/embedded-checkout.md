@@ -268,9 +268,16 @@ pořadatele. Události `purchase` a `generate_lead` nesou `user_data` s e-mailem
 telefonem. Za nastavení tagů a použití údajů odpovídá pořadatel. Porucha CMP ani
 starší helper nebrání nákupu ani layoutu.
 
-`data-festapp-datalayer` volí výhradně hostitelský transport. Bez atributu je cílem
-oddělený runtime jednotky. Obě cesty fungují bez dalšího kódu na webu. Napojení lišty
-je volitelné a předává jen stav souhlasu:
+Embed ve výchozím stavu posílá události do `window.dataLayer` hostitele, kde tagy
+řídí jeho vlastní GTM a CMP. Chybějící nebo prázdný `data-festapp-datalayer` i každá
+hodnota kromě `"false"` volí tuto cestu. `data-festapp-datalayer="false"` přepíná na
+oddělený runtime jednotky; změna atributu za běhu transport znovu inicializuje.
+Obě cesty vyžadují schválený origin a nezobrazují vlastní lištu souhlasu. Přímé
+návštěvy dál používají runtime a Klaro. Hostitelský kontext i každá událost nesou
+`form_embedded: true`; místo `page_view` se v obou transportech posílá
+`form_page_view` se stejnou deduplikací podle `page_type`. Přímé návštěvy zachovávají
+`page_view`.
+Napojení hostitelské lišty na runtime je volitelné a předává jen stav souhlasu:
 
 ```js
 const formular = document.querySelector('iframe[data-festapp-embed]');

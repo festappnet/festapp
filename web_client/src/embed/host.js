@@ -37,7 +37,7 @@ if (!window.__festappEmbedV1) {
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {
             minHeight: limits.minHeight, viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
-            dataLayer: frame.hasAttribute('data-festapp-datalayer'),
+            dataLayer: frame.getAttribute('data-festapp-datalayer') !== 'false',
             measurementProtocol,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};

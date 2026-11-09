@@ -50,7 +50,15 @@ revocation in a suspended process. Already delivered data cannot be recalled.
 
 ## Host CMP integration
 
-The helper measures on its own. A host CMP is optional and only reports the choice:
+Embeds use the host page's `window.dataLayer` by default, with its own GTM and CMP
+controlling tags through Consent Mode. An absent or empty `data-festapp-datalayer`,
+or any value other than `"false"`, selects this transport. To use the Unit runtime,
+set `data-festapp-datalayer="false"`; live attribute changes reinitialize transport.
+Both modes still require an approved host and show no consent bar inside the embed.
+Direct visits keep the Unit runtime and Klaro bar.
+
+For the Unit runtime opt-out, the helper measures on its own. A host CMP adapter is
+optional and only reports the choice (without one, runtime consent stays denied):
 
 ```js
 const disconnect = FestappEmbed.connectMeasurementConsent(frame, {

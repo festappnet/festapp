@@ -154,8 +154,17 @@ for(const value of [true,false,undefined,null,1,0,'true','false',{},[]])test('bo
  const entries=f.win.dataLayer,initial=entries.find(p=>p.page_location);
  assert.deepEqual(JSON.parse(JSON.stringify(initial)),{page_location:parent+'/form/summer',form_embedded:expected,festapp_consent:{analytics:false,marketing:false}});
  assert(entries.indexOf(initial)<entries.findIndex(p=>p.event==='gtm.js'));
+ const pageEvent=expected?'form_page_view':'page_view';
  f.send('event',{payload:{event:'page_view',form_embedded:!expected}});
  f.send('event',{payload:purchase});f.send('consent',{consent:true});
- for(const event of ['page_view','purchase'])assert.equal(entries.find(p=>p.event===event).form_embedded,expected,'events carry context');
+ assert.equal(entries.some(p=>p.event===(expected?'page_view':'form_page_view')),false);
+ for(const event of [pageEvent,'purchase'])assert.equal(entries.find(p=>p.event===event).form_embedded,expected,'events carry context');
  assert.equal(attributionContext({page_location:parent+'/form/summer',form_embedded:value}).form_embedded,expected);
+});
+
+for(const embedded of [false,true])test('runtime sends exactly one page event with the embedded name: '+embedded,t=>{
+ const f=fixture(t,embedded),r=f.transport,sent=[];r.activate(f.grant);
+ r.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');f.message('ack');
+ assert.equal(r.track({event:'page_view'}),true);
+ assert.deepEqual(sent.filter(m=>m.type==='event').map(m=>m.payload.event),[embedded?'form_page_view':'page_view']);
 });

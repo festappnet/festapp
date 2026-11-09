@@ -105,7 +105,7 @@
       if (typeof input.language === "string" && /^[a-z]{2}$/.test(input.language)) result2.language = input.language;
       return result2;
     }
-    if (["page_view", "form_start", "form_submit_error"].includes(input.event)) return { event: input.event };
+    if (["page_view", "form_page_view", "form_start", "form_submit_error"].includes(input.event)) return { event: input.event };
     if (input.event === "generate_lead") {
       if (!["free_registration", "waitlist", "sale_opening_notification"].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
       return withUserData({ event: "generate_lead", currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id });
@@ -341,12 +341,13 @@
           return true;
         }
         if (record.lease.generation !== m.generation) return true;
-        if (frame.hasAttribute("data-festapp-datalayer")) {
+        if (frame.getAttribute("data-festapp-datalayer") !== "false") {
           const payload = analyticsPayload(data.payload);
           if (!payload) return true;
+          if (payload.event === "page_view") payload.event = "form_page_view";
           window.dataLayer = window.dataLayer || [];
           if (payload.ecommerce || payload.event === "generate_lead") window.dataLayer.push({ ecommerce: null, user_data: null });
-          window.dataLayer.push(payload);
+          window.dataLayer.push({ ...payload, form_embedded: true });
           if (["purchase", "generate_lead"].includes(payload.event)) window.dataLayer.push({ user_data: null });
         }
         return true;
@@ -674,7 +675,7 @@
         viewportOffset,
         scrollAlignment: true,
         autoHeight: frame.dataset.festappHeight !== "fixed",
-        dataLayer: frame.hasAttribute("data-festapp-datalayer"),
+        dataLayer: frame.getAttribute("data-festapp-datalayer") !== "false",
         measurementProtocol,
         attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
         hostPrice: frame.parentElement?.hasAttribute("data-festapp-embed-host") === true

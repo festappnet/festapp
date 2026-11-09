@@ -491,7 +491,7 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 function measurementHost() {
  const f=host(),{dom,frames:[frame],sent,message}=f;
  Object.defineProperty(dom.window.document,'hidden',{value:false,configurable:true});
- frame.setAttribute('data-festapp-datalayer','');const instance=sent[0][0][0].instance;
+ const instance=sent[0][0][0].instance;
  const send=(type,values={},origin='https://tickets.invalid',source=frame.contentWindow)=>message(frame,origin,envelope(type,instance,values),source);
  send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:measurement}});
  return {...f,frame,instance,send,last:()=>sent[0].at(-1)[0]};
@@ -537,7 +537,7 @@ test('host dataLayer receives the contact only on conversions and clears it afte
  f.send('analytics',{measurement:m,payload:{event:'page_view',user_data:{email:'buyer2@example.test'}}});
  const layer=f.dom.window.dataLayer;
  assert.deepEqual(plain(layer.find(p=>p.event==='generate_lead').user_data),{email:'buyer@example.test',phone_number:'+420601234567'});
- assert.equal(layer.find(p=>p.event==='page_view').user_data,undefined);
+ assert.equal(layer.find(p=>p.event==='form_page_view').user_data,undefined);
  assert.deepEqual(plain(layer.at(-2)),{user_data:null});assert.doesNotMatch(JSON.stringify(layer),/PRIVATE|buyer2/);f.dom.window.close();
 });
 
@@ -928,4 +928,37 @@ test('a replacement bridge owns the window and a retired destroy cannot clear it
     assert.equal(win.document.documentElement.dataset.embedTheme,'host');
     assert.equal(old.selection(),null);
     current.destroy(); win.close();
+});
+
+
+test('host transport defaults to enabled and only literal false opts out, including live changes',async t=>{
+ const {dom,frames:[frame],sent}=host();t.after(()=>dom.window.close());
+ assert.equal(sent[0][0][0].dataLayer,true);
+ for(const [value,enabled] of [['false',false],['',true],['true',true],['FALSE',true],['other',true],['false',false],[null,true]]) {
+  const before=sent[0].filter(([m])=>m.type==='init').length;
+  if(value===null)frame.removeAttribute('data-festapp-datalayer');else frame.setAttribute('data-festapp-datalayer',value);
+  await new Promise(resolve=>setImmediate(resolve));
+  const inits=sent[0].filter(([m])=>m.type==='init');
+  assert.ok(inits.length>before);assert.equal(inits.at(-1)[0].dataLayer,enabled);
+ }
+});
+test('host context and every event carry strict form_embedded with no host URL data',()=>{
+ const f=measurementHost();
+ const m={protocol:measurementProtocol,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};
+ f.send('measurement-activate',{measurement:m});
+ const ecommerce={currency:'CZK',items:[{item_id:'product_11',item_name:'Koncert',price:100,quantity:1}]};
+ const payloads=[{page_type:'sale_opening',user_type:'b2c',language:'cs'},
+  ...['page_view','form_start','form_submit_error'].map(event=>({event})),
+  {event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist'},
+  ...['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','purchase'].map(event=>({event,ecommerce:{...ecommerce,payment_type:'bank_transfer',transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44'}}))];
+ for(const payload of payloads)f.send('analytics',{measurement:m,payload:{...payload,form_embedded:false,page_location:'https://host.invalid/private',page_referrer:'https://private.invalid'}});
+ const pushes=plain(f.dom.window.dataLayer),events=pushes.filter(p=>p.event||p.page_type);
+ assert.equal(events.length,payloads.length);
+ assert.equal(events.some(p=>p.event==='page_view'),false);assert.equal(events.filter(p=>p.event==='form_page_view').length,1);
+ assert.deepEqual(events[0],{page_type:'sale_opening',user_type:'b2c',language:'cs',form_embedded:true});
+ for(const payload of events){assert.equal(payload.form_embedded,true);assert.equal(payload.page_location,undefined);assert.equal(payload.page_referrer,undefined);}
+ for(const payload of pushes.filter(p=>!p.event&&!p.page_type))assert.ok(!('form_embedded' in payload),'clearing pushes stay unchanged');
+ f.frame.setAttribute('data-festapp-datalayer','false');
+ f.send('analytics',{measurement:m,payload:{event:'page_view'}});assert.equal(f.dom.window.dataLayer.length,pushes.length,'opt-out never writes host events');
+ f.dom.window.close();
 });

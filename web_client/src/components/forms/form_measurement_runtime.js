@@ -48,7 +48,7 @@ export class FormMeasurementRuntime {
         this.frame.contentWindow?.postMessage({namespace:measurementNamespace,protocol:measurementProtocol,type,instance:this.instance,
             generation:this.grant.generation,manifest:this.grant.manifest,...extra},this.origin);return true;
     }
-    track(input) {const payload=analyticsPayload(input);return this.ready===true && measurementId(this.instance) && !!payload && this.send('event',{payload});}
+    track(input) {const payload=analyticsPayload(input);if(payload?.event==='page_view' && this.context?.form_embedded===true)payload.event='form_page_view';return this.ready===true && measurementId(this.instance) && !!payload && this.send('event',{payload});}
     stop() {
         this.ready=false;this.initialized=false;this.grant=null;this.win.clearTimeout(this.expiry);this.win.clearTimeout(this.handshake);
         this.frame?.remove();this.frame=null;this.instance=null;

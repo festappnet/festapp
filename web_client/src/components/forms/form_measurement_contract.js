@@ -94,7 +94,7 @@ export function analyticsPayload(input) {
         if (typeof input.language === 'string' && /^[a-z]{2}$/.test(input.language)) result.language = input.language;
         return result;
     }
-    if (['page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
+    if (['page_view', 'form_page_view', 'form_start', 'form_submit_error'].includes(input.event)) return {event: input.event};
     if (input.event === 'generate_lead') {
         if (!['free_registration', 'waitlist', 'sale_opening_notification'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
         return withUserData({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});

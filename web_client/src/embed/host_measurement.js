@@ -117,11 +117,12 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
                     record.channel.send('measurement-ack', {measurement:m});return true;
                 }
                 if(record.lease.generation!==m.generation)return true;
-                if(frame.hasAttribute('data-festapp-datalayer')) {
+                if(frame.getAttribute('data-festapp-datalayer') !== 'false') {
                     const payload=analyticsPayload(data.payload);if(!payload)return true;
+                    if(payload.event==='page_view')payload.event='form_page_view';
                     window.dataLayer=window.dataLayer||[];
                     if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null});
-                    window.dataLayer.push(payload);
+                    window.dataLayer.push({...payload,form_embedded:true});
                     if(['purchase','generate_lead'].includes(payload.event))window.dataLayer.push({user_data:null});
                 }
                 return true;
