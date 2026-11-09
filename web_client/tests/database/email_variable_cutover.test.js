@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { assertLocalDatabaseUrl, assertDisposableDatabase } from './disposable_database.js';
 
 const url = process.env.DATABASE_URL;
-const migration = await fs.readFile(new URL('../../../supabase/migrations/20261109160000_canonical_email_variables.sql', import.meta.url), 'utf8');
+const migration = await fs.readFile(new URL('../../../supabase/migrations/20261109170000_system_email_variables.sql', import.meta.url), 'utf8');
 
 test('canonical variable cutover preserves custom sources, scopes and history and permanently rejects the retired format', { skip: !url }, async () => {
     assertLocalDatabaseUrl(url);
@@ -26,9 +26,9 @@ test('canonical variable cutover preserves custom sources, scopes and history an
         const author = (await db.query('SELECT id FROM auth.users LIMIT 1')).rows[0]?.id;
         assert.ok(author, 'Bootstrap must provide a synthetic account');
         const code = `CUTOVER_${randomUUID().replaceAll('-', '')}`;
-        const subject = 'Vlastní {{order_symbol}} - {{ occasion_title }}';
+        const subject = 'Vlastní {{order_symbol}} - {{ occasion_title }} - {{eventTitle}}';
         const html = '<p style="color:red">Vlastní text: {{order_symbol}} / {{orderSymbol}}; {{\noccasion_title\t}}.</p><!-- order_symbol outside a placeholder -->';
-        const expectedSubject = 'Vlastní {{orderSymbol}} - {{occasionTitle}}';
+        const expectedSubject = 'Vlastní {{orderSymbol}} - {{occasionTitle}} - {{occasionTitle}}';
         const expectedHtml = '<p style="color:red">Vlastní text: {{orderSymbol}} / {{orderSymbol}}; {{occasionTitle}}.</p><!-- order_symbol outside a placeholder -->';
         const scopes = [[null, null, null], [organization, null, null], [organization, unit, null], [organization, unit, occasion]];
         const ids = [];
@@ -36,9 +36,9 @@ test('canonical variable cutover preserves custom sources, scopes and history an
             'INSERT INTO public.email_templates(code,title,subject,html,organization,unit,occasion) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id',
             [code, 'Vlastní název', subject, html, ...scope],
         )).rows[0].id);
-        const wrapper = (await db.query("INSERT INTO public.email_wrappers(title,organization,unit,occasion,html) VALUES('Vlastní obálka',$1,$2,$3,$4) RETURNING id,created_at", [organization, unit, occasion, '<main>{{occasion_title}} {{content}}</main>'])).rows[0];
+        const wrapper = (await db.query("INSERT INTO public.email_wrappers(title,organization,unit,occasion,html) VALUES('Vlastní obálka',$1,$2,$3,$4) RETURNING id,created_at", [organization, unit, occasion, '<main>{{occasion_title}} {{eventUrl}} {{resetPasswordLink}} {{content}}</main>'])).rows[0];
         const draftId = randomUUID();
-        const data = { title: '{{order_symbol}} is event data, not a template', emailTemplateOverrides: { TICKET_ORDER_CONFIRMATION: { subject, html } }, arbitrary: { note: 'Beze změny' } };
+        const data = { title: '{{order_symbol}} {{eventTitle}} is event data, not a template', emailTemplateOverrides: { TICKET_ORDER_CONFIRMATION: { subject, html } }, arbitrary: { note: 'Beze změny' } };
         await db.query('INSERT INTO public.occasion_setup_drafts(id,unit,organization,author,data,revision) VALUES($1,$2,$3,$4,$5,7)', [draftId, unit, organization, author, data]);
         const historicalTables = ['email_messages', 'client_mutation_receipts', 'email_confirmation_receipts'];
         const history = async () => {
@@ -63,7 +63,7 @@ test('canonical variable cutover preserves custom sources, scopes and history an
             assert.deepEqual([row.organization, row.unit, row.occasion], scopes[i].map(v => v === null ? null : String(v)));
         });
         const savedWrapper = (await db.query('SELECT html,created_at FROM public.email_wrappers WHERE id=$1', [wrapper.id])).rows[0];
-        assert.equal(savedWrapper.html, '<main>{{occasionTitle}} {{content}}</main>');
+        assert.equal(savedWrapper.html, '<main>{{occasionTitle}} {{occasionAdminUrl}} {{resetLink}} {{content}}</main>');
         assert.deepEqual(savedWrapper.created_at, wrapper.created_at);
         const saved = (await db.query('SELECT data,revision FROM public.occasion_setup_drafts WHERE id=$1', [draftId])).rows[0];
         assert.equal(Number(saved.revision), 8);
@@ -77,6 +77,9 @@ test('canonical variable cutover preserves custom sources, scopes and history an
             ['UPDATE public.email_templates SET html=$1 WHERE id=$2', ['{{ occasion_title }}', ids[0]]],
             ['UPDATE public.email_wrappers SET html=$1 WHERE id=$2', ['{{order_symbol}}', wrapper.id]],
             ["UPDATE public.occasion_setup_drafts SET data=jsonb_set(data,'{emailTemplateOverrides,TICKET_ORDER_CONFIRMATION,subject}',to_jsonb($1::text)) WHERE id=$2", ['{{occasion_title}}', draftId]],
+            ['UPDATE public.email_templates SET subject=$1 WHERE id=$2', ['{{eventTitle}}', ids[0]]],
+            ['UPDATE public.email_wrappers SET html=$1 WHERE id=$2', ['{{eventUrl}}', wrapper.id]],
+            ['UPDATE public.email_templates SET html=$1 WHERE id=$2', ['{{resetPasswordLink}}', ids[0]]],
         ]) {
             await db.query('SAVEPOINT legacy_write');
             await assert.rejects(db.query(statement, parameters), error => error.code === '23514');

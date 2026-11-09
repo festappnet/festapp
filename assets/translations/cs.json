@@ -1126,7 +1126,10 @@
       "orderOverviewUrl": "Přehled objednávky - odkaz",
       "orderOverviewButton": "Přehled objednávky - tlačítko",
       "orderOverviewUrlDescription": "Osobní odkaz na aktuální stav objednávky, platby a historii změn.",
-      "orderOverviewButtonDescription": "Tlačítko „Zobrazit aktuální stav objednávky“. Pokud chybí, doplní se při odeslání automaticky."
+      "orderOverviewButtonDescription": "Tlačítko „Zobrazit aktuální stav objednávky“. Pokud chybí, doplní se při odeslání automaticky.",
+      "invitationUrl": "Odkaz na pozvánku",
+      "occasionAdminUrl": "Odkaz do správy akce",
+      "roleLabel": "Role v týmu"
     },
     "usage": {
       "resetPassword_title": "Obnovení hesla",
@@ -1152,7 +1155,11 @@
       "waitlistConfirmation_title": "Potvrzení náhradníka",
       "waitlistConfirmation_description": "Zájemce dostane e-mail po přihlášení do pořadníku náhradníků. Zatím nic neplatí ani nevybírá produkty.",
       "waitlistOffer_title": "Nabídka míst náhradníkovi",
-      "waitlistOffer_description": "Náhradník dostane e-mail, když mu pořadatel nabídne volná místa. Nabídka má termín přijetí; produkty si vybere při přijetí podle dostupnosti."
+      "waitlistOffer_description": "Náhradník dostane e-mail, když mu pořadatel nabídne volná místa. Nabídka má termín přijetí; produkty si vybere při přijetí podle dostupnosti.",
+      "teamInvitation_title": "Pozvánka do týmu",
+      "teamInvitation_description": "Pozvaný obdrží odkaz k přijetí role v týmu akce.",
+      "teamAccessNotice_title": "Přístup k akci",
+      "teamAccessNotice_description": "Člen týmu obdrží odkaz do správy akce. Zpráva nemění jeho heslo."
     },
     "title": "Šablony e-mailů",
     "settings": {

@@ -1126,7 +1126,10 @@
       "orderOverviewUrl": "Order overview - URL",
       "orderOverviewButton": "Order overview - button",
       "orderOverviewUrlDescription": "Personal link to the current order status, payments and change history.",
-      "orderOverviewButtonDescription": "The “View current order status” button. Automatically added when sending if absent."
+      "orderOverviewButtonDescription": "The “View current order status” button. Automatically added when sending if absent.",
+      "invitationUrl": "Invitation link",
+      "occasionAdminUrl": "Event administration link",
+      "roleLabel": "Team role"
     },
     "usage": {
       "resetPassword_title": "Reset Password",
@@ -1152,7 +1155,11 @@
       "waitlistConfirmation_title": "Waitlist confirmation",
       "waitlistConfirmation_description": "Sent after joining the waiting list. No payment or product selection is required yet.",
       "waitlistOffer_title": "Waitlist place offer",
-      "waitlistOffer_description": "Sent when the organizer offers places to someone on the waiting list. The offer has an acceptance deadline; products are selected on acceptance according to availability."
+      "waitlistOffer_description": "Sent when the organizer offers places to someone on the waiting list. The offer has an acceptance deadline; products are selected on acceptance according to availability.",
+      "teamInvitation_title": "Team invitation",
+      "teamInvitation_description": "The invitee receives a link to accept an event team role.",
+      "teamAccessNotice_title": "Event access notice",
+      "teamAccessNotice_description": "The team member receives an event administration link. This message does not change their password."
     },
     "title": "Email Templates",
     "settings": {

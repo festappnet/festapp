@@ -1,7 +1,7 @@
 # Canonical email variable cutover
 
-The only active identity placeholders are `{{orderSymbol}}` and
-`{{occasionTitle}}`. Their earlier spellings are not interpreted by the editor,
+The active catalog covers all 15 system template kinds, including team invitation/access messages. Identity placeholders are `{{orderSymbol}}`,
+`{{occasionTitle}}` and `{{occasionAdminUrl}}`. Their earlier spellings are not interpreted by the editor,
 preview or delivery renderer. The generated catalog has no alias map. Delivery
 rejects retired placeholders in authored templates before preparing a message.
 Customer data inserted during rendering is still literal data.
@@ -71,3 +71,23 @@ The test converts populated global/organization/unit/occasion custom templates,
 wrappers and drafts; checks unchanged history, scope and custom content; reapplies
 the migration; verifies the pause prerequisite and rejects legacy writes. It
 rolls the entire rehearsal back.
+
+## Internal system-template completion
+
+`20261109170000_system_email_variables.sql` is a forward-only continuation of
+the installed `20261109160000` migration. The earlier bytes are pinned and never
+regenerated. It converts team `eventTitle` to `occasionTitle` and `eventUrl` to
+`occasionAdminUrl` at every source scope, wrapper and draft override, then
+strengthens the same constraints. It uses the same pause/drain, backup and
+matching Functions/client deployment procedure above. Historical messages and
+receipts remain unchanged.
+
+Team producers now pass raw values to the shared composer; scalar fields are
+escaped once there, including application and occasion names and links. All
+registered system fields come from the catalog. Arbitrary values supplied by
+the external custom-message API retain their existing wire contract in that
+same composer; they cannot reintroduce retired placeholders into authored sources.
+
+The retired `ORDER_OVERVIEW` type remains data-only for historical identity
+retention; it has no first-party sender or registered editor preview. Password reset
+uses `resetLink` everywhere; forward17 also converts `resetPasswordLink`.

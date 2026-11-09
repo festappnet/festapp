@@ -64,5 +64,40 @@
     },
     "expectedSubject": "Test",
     "expectedHtml": "<style>{{occasionTitle}}</style><!--{{orderSymbol}}--><p>Akce</p>"
+  },
+  {
+    "name": "retired team names inside customer data remain literal",
+    "values": {
+      "occasionTitle": "{{eventTitle}} {{eventUrl}}"
+    },
+    "subject": "{{occasionTitle}}",
+    "html": "<p>{{occasionTitle}}</p>",
+    "expectedSubject": "{{eventTitle}} {{eventUrl}}",
+    "expectedHtml": "<p>{{eventTitle}} {{eventUrl}}</p>"
+  },
+  {
+    "name": "system team fields use canonical scalar escaping in preview and delivery",
+    "values": {
+      "appName": "A & B",
+      "occasionTitle": "Večer <E>",
+      "roleLabel": "Editor",
+      "occasionAdminUrl": "https://example.invalid/admin?a=1&b=2",
+      "invitationUrl": "https://example.invalid/invite?a=1&b=2"
+    },
+    "subject": "{{appName}} - {{occasionTitle}}",
+    "html": "<p>{{appName}} - {{occasionTitle}} - {{roleLabel}}</p><a href=\"{{occasionAdminUrl}}\">Správa</a><a href=\"{{invitationUrl}}\">Pozvánka</a>",
+    "expectedSubject": "A & B - Večer <E>",
+    "expectedHtml": "<p>A &amp; B - Večer &lt;E&gt; - Editor</p><a href=\"https://example.invalid/admin?a=1&amp;b=2\">Správa</a><a href=\"https://example.invalid/invite?a=1&amp;b=2\">Pozvánka</a>"
+  },
+  {
+    "name": "password reset links use the common scalar URL contract",
+    "subject": "{{email}}",
+    "html": "<a href=\"{{resetLink}}\">Obnovit heslo</a>",
+    "values": {
+      "email": "a&b@example.invalid",
+      "resetLink": "https://example.invalid/resetPassword?token=a&next=b"
+    },
+    "expectedSubject": "a&b@example.invalid",
+    "expectedHtml": "<a href=\"https://example.invalid/resetPassword?token=a&amp;next=b\">Obnovit heslo</a>"
   }
 ]

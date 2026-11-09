@@ -1,3 +1,4 @@
+import type { RegisteredEmailValues } from "../_shared/emailVariables.ts";
 import { emailRpc, prepareAccountEmail } from "../_shared/emailQueueClient.ts";
 import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
 import { translatePlatformLinks } from "../_shared/translatePlatformLinks.ts";
@@ -37,7 +38,10 @@ async function sha256(value: string): Promise<string> {
   ).join("");
 }
 
-async function consumeLimit(key: string, family: "reset.source" | "reset.account"): Promise<boolean> {
+async function consumeLimit(
+  key: string,
+  family: "reset.source" | "reset.account",
+): Promise<boolean> {
   const { data, error } = await supabaseAdmin.rpc(
     "consume_auth_abuse_v1",
     {
@@ -77,9 +81,14 @@ Deno.serve(async (req) => {
   // Only opt into an ingress-owned, stripped header after runtime verification.
   // Without it the shared source bucket fails closed instead of trusting XFF.
   const trustedHeader = Deno.env.get("FESTAPP_TRUSTED_IP_HEADER");
-  const sourceAddress = trustedHeader ? req.headers.get(trustedHeader) ?? "unknown" : "unknown";
+  const sourceAddress = trustedHeader
+    ? req.headers.get(trustedHeader) ?? "unknown"
+    : "unknown";
   try {
-    const sourceAllowed = await consumeLimit(`source:${sourceAddress}`, "reset.source");
+    const sourceAllowed = await consumeLimit(
+      `source:${sourceAddress}`,
+      "reset.source",
+    );
     if (!sourceAllowed) return json(origin);
     const accountAllowed = await consumeLimit(
       `account:${organizationId}:${userEmail}`,
@@ -148,15 +157,15 @@ Deno.serve(async (req) => {
 
   const context = { organization: organizationId };
 
-  const resetPasswordLink = `${defaultUrl}/resetPassword?token=${token}`;
+  const resetLink = `${defaultUrl}/resetPassword?token=${token}`;
 
   // Prepare substitutions
   const subs = {
     email: userData.data.email_readonly,
-    resetPasswordLink: resetPasswordLink,
+    resetLink,
     platformLinks: platformLinksHtml,
     appName: appName,
-  };
+  } satisfies RegisteredEmailValues;
 
   try {
     const emailInput = {

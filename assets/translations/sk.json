@@ -1236,12 +1236,15 @@
       "expiresAt": "Platnosť odkazu",
       "platformLinks": "Odkazy na aplikáciu",
       "orderCommunication": "Úvod správy podľa tónu komunikácie",
-        "fullOrder": "Prehľad objednávky",
+      "fullOrder": "Prehľad objednávky",
       "balanceReasoning": "Stav platby",
       "paymentDetails": "Platobné údaje",
       "changeOverview": "Zmeny objednávky",
       "orderOverviewUrlDescription": "Osobný odkaz na aktuálny stav objednávky, platby a históriu zmien.",
-      "orderOverviewButtonDescription": "Tlačidlo na zobrazenie aktuálneho stavu objednávky. Ak chýba, pri odoslaní sa doplní automaticky."
+      "orderOverviewButtonDescription": "Tlačidlo na zobrazenie aktuálneho stavu objednávky. Ak chýba, pri odoslaní sa doplní automaticky.",
+      "invitationUrl": "Odkaz na pozvánku",
+      "occasionAdminUrl": "Odkaz do správy podujatia",
+      "roleLabel": "Rola v tíme"
     },
     "usage": {
       "waitlistConfirmation_title": "Potvrdenie náhradníka",
@@ -1257,7 +1260,11 @@
       "ticketOrderUpdate_description": "Zákazník ju dostane, keď mu správca po úprave objednávky odošle aktualizáciu. Ukazuje zmeny a aktuálny stav platby.",
       "ticketOrderPaymentDone_description": "Zákazník ju dostane po potvrdení prijatej zálohy alebo doplatku zálohovej objednávky. Vstupenky sa odosielajú samostatne.",
       "ticketOrderPaymentReminder_description": "Zákazník ju dostane pred splatnosťou neuhradenej sumy, ak sú zapnuté pripomienky. Čas odoslania určuje nastavenie formulára alebo akcie.",
-      "ticketOrderStorno_description": "Zákazník ju dostane pri zrušení objednávky, ak správca zvolí odoslanie oznámenia."
+      "ticketOrderStorno_description": "Zákazník ju dostane pri zrušení objednávky, ak správca zvolí odoslanie oznámenia.",
+      "teamInvitation_title": "Pozvánka do tímu",
+      "teamInvitation_description": "Pozvaný dostane odkaz na prijatie roly v tíme podujatia.",
+      "teamAccessNotice_title": "Prístup k podujatiu",
+      "teamAccessNotice_description": "Člen tímu dostane odkaz do správy podujatia. Správa nemení jeho heslo."
     },
     "authoring": {
       "whenSent": "Kedy sa e-mail odosiela",

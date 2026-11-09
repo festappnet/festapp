@@ -255,6 +255,21 @@
       "repeatable": true,
       "html": false,
       "bodyBlock": true
+    },
+    "invitationUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "occasionAdminUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "roleLabel": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
     }
   },
   "templates": {
@@ -387,6 +402,18 @@
       "orderSymbol",
       "occasionTitle",
       "amount"
+    ],
+    "TEAM_INVITATION": [
+      "appName",
+      "occasionTitle",
+      "roleLabel",
+      "invitationUrl"
+    ],
+    "TEAM_ACCESS_NOTICE": [
+      "appName",
+      "occasionTitle",
+      "roleLabel",
+      "occasionAdminUrl"
     ]
   }
 }

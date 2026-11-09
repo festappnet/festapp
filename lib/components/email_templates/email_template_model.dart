@@ -1,3 +1,5 @@
+import 'package:easy_localization/easy_localization.dart';
+
 import '../forms/sale_opening_strings.dart';
 import '../forms/waitlist_strings.dart';
 import '../ticket_layout/ticket_delivery_strings.dart';
@@ -224,6 +226,17 @@ class EmailTemplateModel {
       appPlatformLinksSub,
       appLinksSub,
       appNameSub,
+      for (final entry in const {
+        'invitationUrl':
+            'https://example.invalid/team-invitation?token=preview',
+        'occasionAdminUrl': 'https://example.invalid/slavnost/admin',
+        'roleLabel': 'Editor',
+      }.entries)
+        EmailTemplateSub(
+          code: entry.key,
+          description: 'EmailTemplates.subs.${entry.key}'.tr(),
+          defaultValue: entry.value,
+        ),
       emailSub,
       nameSub,
       surnameSub,
@@ -400,6 +413,18 @@ class EmailTemplateModel {
 
   Map<String, dynamic> _usageDescription() {
     switch (code) {
+      case 'TEAM_INVITATION':
+      case 'TEAM_ACCESS_NOTICE':
+        final key = const {
+          'TEAM_INVITATION': 'teamInvitation',
+          'TEAM_ACCESS_NOTICE': 'teamAccessNotice',
+        }[code]!;
+        return {
+          'title': title?.trim().isNotEmpty == true
+              ? title!.trim()
+              : 'EmailTemplates.usage.${key}_title'.tr(),
+          'description': 'EmailTemplates.usage.${key}_description'.tr(),
+        };
       case 'sale_opening_opened':
         return {
           'title': SaleOpeningStrings.title,

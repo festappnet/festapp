@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Freeze a one-way rewrite of active template sources and reject the old format."""
 import json
+import hashlib
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+historical = ROOT / 'supabase/migrations/20261109160000_canonical_email_variables.sql'
+assert hashlib.sha256(historical.read_bytes()).hexdigest() == '8e85319731405efe5ce63c05ffcbc438112043efa6eb75680276832576e6eced', 'Installed variable cutover history is immutable'
 renames = json.loads((ROOT / 'automation/email-template-cutover/renames.json').read_text())
 assert all(re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', name) for pair in renames.items() for name in pair)
 expression = 'p_text'
@@ -85,7 +88,7 @@ DROP FUNCTION pg_temp.rename_email_template_overrides(jsonb);
 DROP FUNCTION pg_temp.rename_email_template_variables(text);
 DROP TABLE pg_temp.email_variable_cutover_counts;
 '''
-target = ROOT / 'supabase/migrations/20261109160000_canonical_email_variables.sql'
+target = ROOT / 'supabase/migrations/20261109170000_system_email_variables.sql'
 if '--check' in sys.argv:
     if not target.exists() or target.read_text() != content:
         raise SystemExit('Canonical email-variable cutover migration is stale')
