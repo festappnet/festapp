@@ -240,6 +240,14 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
     if (_isSaving) return;
     setState(() => _isSaving = true);
     await ExceptionHandler.guardVoid(context, futureFunction: () async {
+      // Trina keeps typed text in its editor until Enter or editor disposal.
+      // Commit through its public value API before any save hook reads rows.
+      final editor = widget.stateManager.textEditingController;
+      final cell = widget.stateManager.currentCell;
+      if (widget.stateManager.isEditing && editor != null && cell != null) {
+        widget.stateManager.changeCellValue(cell, editor.text);
+        widget.stateManager.setEditing(false);
+      }
       await controller.htmlSave.save(() async {
         final action = controller.actionsExtended?.saveAction?.action;
         if (action == null) {
