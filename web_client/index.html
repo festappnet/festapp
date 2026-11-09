@@ -369,8 +369,6 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     html[data-embed-startup]:has(#web-client-startup:not([hidden])) body,
     html[data-embed-startup] #web-client-startup { background: transparent !important; }
     html[data-embed-startup] #web-client-startup .startup-spinner { width: 24px; height: 24px; }
-    /* Keep the startup slot stable without flashing a brand before the form. */
-    html[data-embed-startup] #web-client-startup .startup-spinner { visibility: hidden; }
     html[data-embed-startup] #web-client-startup .startup-spinner[data-loading-style="vstupenky-outline"] { width: 48px; height: 48px; max-height: 48px; aspect-ratio: 1; }
     html[data-embed-startup] #web-client-startup .startup-brand { width: 48px; height: 48px; object-fit: contain; filter: brightness(0); }
     html[data-embed-startup] body.dark-mode #web-client-startup .startup-brand { filter: brightness(0) invert(1); }
