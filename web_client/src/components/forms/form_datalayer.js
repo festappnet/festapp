@@ -1,4 +1,5 @@
 import {analyticsPayload, currencies} from './form_measurement_contract.js';
+import {FormHelper} from './form_helper.js';
 import {isValidEmail} from '../../logic/email_address.js';
 import {normalizeE164Phone} from '../../utils/phone_formatter.js';
 
@@ -65,6 +66,20 @@ export class FormDataLayer {
             if(!this.#publishPage('confirmation',send))return;
             this.pageType='confirmation';
             if(send(contact?{...conversion,user_data:contact}:conversion))this.conversions.add(identity);
+        };
+    }
+
+    captureSaleOpening(email) {
+        const send=this.sink.capture();
+        const event_id=this.win.crypto.randomUUID();
+        const currency=FormHelper.getAvailableCurrencies(this.model)[0];
+        const normalized=String(email ?? '').trim().toLowerCase();
+        let completed=false;
+        return ()=>{
+            if(this.disposed || completed)return;
+            completed=true;
+            send({event:'generate_lead', lead_source:'sale_opening_notification', value:0, currency, event_id,
+                user_data:{email:isValidEmail(normalized)?normalized:null}});
         };
     }
 

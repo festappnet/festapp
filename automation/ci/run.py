@@ -59,7 +59,8 @@ def local(names):
         browser_jobs = {'seat-checkout', 'web-startup', 'client-contract'}
         if browser_jobs.intersection(names):
             require_version(['agent-browser', '--version'], '0.39.4')
-            browser = shutil.which('google-chrome') or shutil.which('chromium')
+            browser = (os.environ.get('AGENT_BROWSER_EXECUTABLE_PATH') or
+                       shutil.which('google-chrome') or shutil.which('chromium'))
             if not browser and sys.platform == 'darwin':
                 browser = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
             if not browser or not Path(browser).is_file():
