@@ -430,6 +430,11 @@ async function routeRequest(request, env) {
       if (!ORGANIZERS_ENABLED) return notFound();
       return Response.redirect(new URL("/" + url.search, url).href, 308);
     }
+    if (path.startsWith("/organizers-assets/")) {
+      if (!ORGANIZERS_ENABLED) return notFound();
+      const response = await serveAsset(env, request, path);
+      return response.ok ? response : notFound();
+    }
     if (ORGANIZERS_ENABLED) {
       if (["/", "/events", "/events/"].includes(path) && url.searchParams.get("create") === "1") {
         const target = new URL("/login", url); target.search = url.search;
@@ -624,6 +629,11 @@ export default {
       }
     }
     const headers = new Headers(response.headers);
+    // Transient module failures must never survive as four-hour browser-cache
+    // entries and prevent a later, complete deployment from starting.
+    if (response.status >= 400 && !/\bno-store\b/i.test(headers.get('cache-control') || '')) {
+      headers.set('cache-control', 'no-store, max-age=0');
+    }
     // Prevent a zone-wide automatic beacon from bypassing the public-only owner.
     // Cloudflare documents no-transform as suppressing automatic RUM injection.
     const isHtml = headers.get('content-type')?.includes('text/html');

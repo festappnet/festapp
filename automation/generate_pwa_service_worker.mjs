@@ -663,7 +663,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Public help belongs to the live website, including code and downloads.
-  if (url.pathname === '/napoveda' || url.pathname.startsWith('/napoveda/')) {
+  if (url.pathname.startsWith('/organizers-assets/') || url.pathname === '/napoveda' || url.pathname.startsWith('/napoveda/')) {
     event.respondWith(fetch(request));
     return;
   }

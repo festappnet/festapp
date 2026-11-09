@@ -13,6 +13,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'automation/release'), { recursive: true });
   mkdirSync(join(root, 'web_client'), { recursive: true });
+  cpSync(new URL('../../web_client/public', import.meta.url), join(root, 'web_client/public'), {recursive:true});
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
@@ -76,6 +77,12 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!html.includes('{{'));
   assert.ok(!html.includes('fonts.googleapis.com'));
   render(); assert.equal(readFileSync(output, 'utf8'), html);
+  mkdirSync(join(root, 'web_client/web-assets'), {recursive:true});
+  mkdirSync(join(root, 'web_client/assets/translations'), {recursive:true});
+  writeFileSync(join(root, 'web_client/web-assets/landing-test.js'), 'import "./account_header-cached.js";');
+  writeFileSync(join(root, 'web_client/web-assets/account_header-cached.js'), 'export const ready = true;');
+  writeFileSync(join(root, 'web_client/web-assets/index-fixture.css'), 'body{}');
+  writeFileSync(join(root, 'web_client/assets/translations/cs.json'), '{}');
   const builtIndex = join(root, 'web_client/built.html');
   writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link rel="stylesheet" href="/web-assets/index-fixture.css">');
   mkdirSync(join(root, 'web_client/.vite'), { recursive: true });
@@ -85,7 +92,12 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr);
   const bundled = readFileSync(bundleOutput, 'utf8');
-  assert.ok(bundled.includes('href="/web-assets/index-fixture.css"'));
+  const runtimeRoot = bundled.match(/src="(\/organizers-assets\/[a-f0-9]+\/)runtime\/landing-test.js"/)?.[1];
+  assert.ok(runtimeRoot, 'homepage uses the canonical versioned public runtime, avoiding cached app-chunk failures');
+  assert.ok(bundled.includes(`href="${runtimeRoot}runtime/index-fixture.css"`));
+  assert.equal(readFileSync(join(root, 'bundle', runtimeRoot, 'runtime/account_header-cached.js'), 'utf8'), 'export const ready = true;');
+  assert.ok(!bundled.includes('src="/web-assets/'));
+
   assert.ok(bundled.includes('https://fonts.googleapis.com/icon?family=Material+Icons'));
   assert.ok(!bundled.includes('css2?family=Roboto'));
   assert.equal(readFileSync(output, 'utf8'), html, 'compiled theme must not alter the deterministic source leaf');
@@ -163,6 +175,7 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
 
 test('English uses the same template, no Czech references, and requires real English recordings', t => {
   const root = mkdtempSync(join(tmpdir(), 'festapp-en-marketing-'));
+  cpSync(new URL('../../web_client/public', import.meta.url), join(root, 'web_client/public'), {recursive:true});
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'automation/release'), { recursive: true });
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));

@@ -46,6 +46,7 @@ const cleanOutputs = () => {
   fs.rmSync(path.join(path.dirname(target),'organizers/updates'),{recursive:true,force:true});
   fs.rmSync(path.join(path.dirname(target),'platform-updates.json'),{force:true});
   fs.rmSync(path.join(path.dirname(target),'co-je-nove/_assets'),{recursive:true,force:true});
+  fs.rmSync(path.join(path.dirname(target),'organizers-assets'),{recursive:true,force:true});
   if (process.argv.includes('--built-index')) fs.rmSync(path.join(path.dirname(target),'platform-updates-media'),{recursive:true,force:true});
   for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
 };
@@ -79,19 +80,19 @@ for (const media of process.argv.includes("--preview") ? [] : mediaPaths) {
   if (url.origin !== context.origin || !url.pathname.startsWith('/') || url.pathname.includes('..') || !fs.existsSync(path.join(process.argv.includes('--built-index') ? path.dirname(target) : path.join(root,'web'), url.pathname))) throw new Error(`Missing/foreign marketing media: ${media}`);
 }
 const builtIndexArg = process.argv.indexOf('--built-index');
-let themeLinks = '';
-let entryScript = '';
-if (builtIndexArg >= 0) {
-  const manifestPath = path.join(path.dirname(path.resolve(process.argv[builtIndexArg + 1])), '.vite/manifest.json');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  const entry = manifest['src/marketing/landing.js'];
-  if (!entry?.file) throw new Error('Built organizer page needs the Vite landing entry');
-  entryScript = `<script type="module" src="/${escape(entry.file)}"></script>`;
-  const builtIndex = fs.readFileSync(path.resolve(process.argv[builtIndexArg + 1]), 'utf8');
-  themeLinks = (builtIndex.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || [])
-    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag) || tag.includes("https://fonts.googleapis.com/icon?family=Material+Icons")).join('');
-  if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
-}
+// The homepage and its account header share the same public runtime owner as
+// help/update pages. A fresh deployment namespace also bypasses cached 404s
+// for unchanged shared chunk names from an earlier partial load.
+const marketingRuntime = builtIndexArg < 0
+  ? {assets: {}, assetRoot: '/', entryUrl: null, themeLinks: ''}
+  : publicRuntime(root, {
+  builtIndex: path.resolve(process.argv[builtIndexArg + 1]),
+  entry: 'src/marketing/landing.js', assetRoot: '/organizers-assets/', versioned: true,
+});
+const {themeLinks} = marketingRuntime;
+if (builtIndexArg >= 0 && !themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
+const entryScript = marketingRuntime.entryUrl
+  ? `<script type="module" src="${marketingRuntime.entryUrl}"></script>` : '';
 const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexArg<0?null:path.resolve(process.argv[builtIndexArg+1]),entry:'src/marketing/landing.js',assetRoot:'/co-je-nove/_assets/',versioned:true}):null;
 if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['media/'+asset.slice('/platform-updates-media/'.length)]=bytes;
   for (const page of context.pages) {
@@ -118,7 +119,12 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
 
   if (!projection.references?.length) body = body.replace(/<section id="reference"[\s\S]*?<\/section>/, "");
   if (page.id !== 'home') body = body.replace(/<main id="main">[\s\S]*?<\/main>/, '<main id="main">{{TOPIC_CONTENT}}</main>');
-  const content = substitute(body);
+  const content = substitute(body)
+    .replace('<header class="site-header auth-pending"', marketingRuntime.entryUrl
+      ? `<header class="site-header auth-pending" data-brand-asset-base="${escape(marketingRuntime.assetRoot)}"`
+      : '<header class="site-header auth-pending"')
+    .replace(/src="\/(brand-logo(?:-light)?\.svg)"/g,
+      (_, name) => `src="${escape(marketingRuntime.assetRoot + name)}"`);
   const canonical = page.canonical, title = page.title, description = page.description;
   const home = context.origin + '/';
   const structured = {'@context':'https://schema.org', '@graph':[
@@ -150,6 +156,7 @@ try {
     fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, output.html);
   }
   if (context.updates) fs.writeFileSync(path.join(staging,'platform-updates.json'),JSON.stringify(context.updates.feed)+'\n');
+  for(const [name,bytes]of Object.entries(marketingRuntime.assets)){const file=path.join(staging,marketingRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,updatesRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   cleanOutputs();
   if (context.updates) fs.renameSync(path.join(staging,'platform-updates.json'),path.join(path.dirname(target),'platform-updates.json'));
@@ -157,6 +164,7 @@ try {
   const runtimeOutput=path.join(path.dirname(target),'co-je-nove/_assets');
   fs.rmSync(runtimeOutput,{recursive:true,force:true});
   if(updatesRuntime)fs.cpSync(path.join(staging,'co-je-nove/_assets'),runtimeOutput,{recursive:true});
+  if (marketingRuntime.entryUrl) fs.cpSync(path.join(staging,'organizers-assets'),path.join(path.dirname(target),'organizers-assets'),{recursive:true});
   for (const {asset} of outputs) {
     const destination = asset === '/organizers-page' ? target : path.join(path.dirname(target), asset.slice(1));
     fs.mkdirSync(path.dirname(destination), {recursive:true});
