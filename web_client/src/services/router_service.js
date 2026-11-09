@@ -59,8 +59,10 @@ export class RouterService {
         await RouterService.mountForm(cleanLink);
     }
 
+    static preloadForm() { return import('../components/forms/form_page.js'); }
+
     static async mountForm(link) {
-        const { FormPage } = await import('../components/forms/form_page.js');
+        const { FormPage } = await RouterService.preloadForm();
         RouterService._formPage?.clear();
         RouterService._formPage = new FormPage('form-page-container');
         await RouterService._formPage.init(link, { onBack: RouterService.goBackProgrammatically });

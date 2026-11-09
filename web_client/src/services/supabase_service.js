@@ -24,6 +24,7 @@ export class SupabaseService {
     }
 
     static get endpoint() { return SupabaseService._backend?.supabaseUrl ?? null; }
+    static get isCanonicalBackend() { return SupabaseService._backend?.isCanonical === true; }
 
     // A prepared scanner can open its local shell without waiting for an Auth
     // refresh. Online RPCs still pass through initialize() before use.

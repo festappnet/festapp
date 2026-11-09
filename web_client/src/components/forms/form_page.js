@@ -1,4 +1,5 @@
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
+import { earlyFormLoad } from '../../startup/early_form_load.js';
 import { FormDataLayer } from './form_datalayer.js';
 import { publicFormLocation } from '../../utils/public_form_location.js';
 import {FormMeasurementSession, hasBrowserSession} from './form_measurement_session.js';
@@ -224,7 +225,11 @@ export class FormPage extends Component {
                 }
                 formModel = new FormModel(bundle.form);
                 formModel.offerBundle = bundle;
-            } else formModel = await DbForms.getFormByLink(link);
+            } else {
+                const early = earlyFormLoad.consume(link, {win: window, service: SupabaseService,
+                    disabled: options.forceReload || Boolean(this.saleOpeningScope)});
+                formModel = early ? await early ?? await DbForms.getFormByLink(link) : await DbForms.getFormByLink(link);
+            }
             if (loadGeneration !== this.loadGeneration) return;
 
             if (!formModel) {
