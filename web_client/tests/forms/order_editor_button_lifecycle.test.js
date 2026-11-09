@@ -113,3 +113,47 @@ test('countdown completion refetches the same link and leaving cancels its timer
   page.clear();
   assert.equal(CountdownWidget.timer, null);
 });
+
+test('sale opening while startup waits discards early closed state and renders a fresh open form', async t => {
+  t.mock.timers.enable({apis: ['Date'], now: Date.parse('2030-01-01T11:59:59Z')});
+  const dom = new JSDOM('<div id="form-page-container"></div>', {url: 'https://example.test/form/test?embed=1'});
+  Object.assign(globalThis, {window: dom.window, document: dom.window.document,
+    HTMLElement: dom.window.HTMLElement, CustomEvent: dom.window.CustomEvent});
+  window.scrollTo = () => {};
+  t.after(() => dom.window.close());
+  const [{FormPage}, {FormModel}, {DbForms}, {FormAvailabilityService},
+    {earlyFormLoad}, {SupabaseService}] = await Promise.all([
+    import('../../src/components/forms/form_page.js'),
+    import('../../src/components/forms/form_models.js'),
+    import('../../src/components/forms/db_forms.js'),
+    import('../../src/components/forms/form_availability_service.js'),
+    import('../../src/startup/early_form_load.js'),
+    import('../../src/services/supabase_service.js'),
+  ]);
+  const original = {backend: SupabaseService._backend, entry: earlyFormLoad.entry, started: earlyFormLoad.started};
+  t.after(() => {
+    SupabaseService._backend = original.backend;
+    earlyFormLoad.entry = original.entry;
+    earlyFormLoad.started = original.started;
+  });
+  SupabaseService._backend = {isCanonical: true};
+  earlyFormLoad.started = false;
+  const client = {auth: {getSession: async () => ({data: {session: null}})}};
+  t.mock.method(SupabaseService, 'getClient', () => client);
+  const stale = new FormModel({link: 'test', is_open: true, registrationMode: 'closed',
+    data: {schedule: {start_time: '2030-01-01T12:00:00Z'}}});
+  earlyFormLoad.start({win: window, service: SupabaseService, load: async () => stale});
+  await earlyFormLoad.entry.promise;
+  assert.equal(FormAvailabilityService.getStatus(stale).status, 'BEFORE_START');
+  t.mock.timers.tick(2000);
+  const fresh = new FormModel({link: 'test', is_open: true, registrationMode: 'regular', data: stale.data});
+  const fetch = t.mock.method(DbForms, 'getFormByLink', async () => fresh);
+  const page = new FormPage('form-page-container');
+  t.after(() => page.cleanup());
+  t.mock.method(page, 'applyTheme', () => {});
+  const render = t.mock.method(page, 'renderForm', () => {});
+  await page.init('test');
+  assert.equal(fetch.mock.calls.length, 1, 'stale early state must use the existing RPC fallback');
+  assert.equal(render.mock.calls[0].arguments[0], fresh);
+  assert.equal(FormAvailabilityService.getStatus(fresh).status, 'OPEN');
+});

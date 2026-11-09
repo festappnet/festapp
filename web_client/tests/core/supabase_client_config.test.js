@@ -123,3 +123,21 @@ test('failed cutover refresh does not advance the backend-origin marker', async 
   await assert.rejects(SupabaseService.initialize(), /offline/);
   assert.equal(values.get(SupabaseService.originMarkerKey), 'https://old.example.test');
 });
+
+test('anonymous request checks fail closed on auth errors and client replacement', async t => {
+  for (const response of [{data: {session: null}}, {data: {session: {user: {id: 'user'}}}},
+    {data: {}}, {}, {data: {session: null}, error: new Error('offline')}]) {
+    const client = {auth: {getSession: async () => response}};
+    const stub = t.mock.method(SupabaseService, 'getClient', () => client);
+    assert.equal(await SupabaseService.isAnonymousClient(client), response.data?.session === null && !response.error);
+    stub.mock.restore();
+  }
+  let finish, current;
+  const client = current = {auth: {getSession: () => new Promise(resolve => { finish = resolve; })}};
+  t.mock.method(SupabaseService, 'getClient', () => current);
+  const result = SupabaseService.isAnonymousClient(client);
+  current = {};
+  finish({data: {session: null}});
+  assert.equal(await result, false);
+  assert.equal(await SupabaseService.isAnonymousClient(client), false);
+});

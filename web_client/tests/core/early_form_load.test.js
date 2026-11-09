@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {EarlyFormLoad} from '../../src/startup/early_form_load.js';
+import {SupabaseService} from '../../src/services/supabase_service.js';
+import {FormModel} from '../../src/components/forms/form_models.js';
 import {initializeCoreServices} from '../../src/startup/initialize_core_services.js';
 
 function fixture(path = '/form/example?embed=1') {
     const win = {location: new URL(path, 'https://example.test')};
     let session = null, calls = 0;
     const client = {auth: {getSession: async () => ({data: {session}})}};
-    const service = {isCanonicalBackend: true, getClient: () => client};
+    const service = {isCanonicalBackend: true, getClient: () => client,
+        isAnonymousClient: SupabaseService.isAnonymousClient};
     const model = {link: 'example'};
     const args = {win, service, load: async link => { calls++; assert.equal(link, 'example'); return model; }};
     return {early: new EarlyFormLoad(), args, model, calls: () => calls++, count: () => calls,
@@ -23,7 +26,7 @@ test('starts before rights settle and consumes an in-flight request only once', 
         onBackendReady: () => f.early.start(f.args),
         rightsService: {updateAppData: async () => {
             assert.ok(f.early.entry.promise);
-            await Promise.resolve();
+            await new Promise(resolve => setImmediate(resolve));
             assert.equal(f.count(), 1);
         }}});
     const first = f.early.consume('example', f.args);
@@ -89,4 +92,59 @@ test('normal direct visits also reuse the early request', async () => {
     const f = fixture('/form/example'); f.early.start(f.args);
     assert.equal(await f.early.consume('example', f.args), f.model);
     assert.equal(f.count(), 1);
+});
+
+for (const boundary of ['start_time', 'end_time']) {
+    for (const pending of [false, true]) {
+        for (const offset of [0, 1]) {
+            test(`${boundary} crossed ${pending ? 'during RPC' : 'while startup waits'} invalidates at boundary + ${offset}`, async t => {
+                const at = Date.parse('2030-01-01T12:00:00Z');
+                let now = at - 1000;
+                t.mock.method(Date, 'now', () => now);
+                const f = fixture();
+                const stale = new FormModel({link: 'example', registrationMode: 'closed',
+                    data: {schedule: {[boundary]: new Date(at).toISOString()}}});
+                let finish;
+                f.args.load = () => new Promise(resolve => { finish = resolve; });
+                f.early.start(f.args);
+                await new Promise(resolve => setImmediate(resolve));
+                if (!pending) { finish(stale); await f.early.entry.promise; }
+                const result = f.early.consume('example', f.args);
+                now = at + offset;
+                if (pending) finish(stale);
+                assert.equal(await result, null, 'the caller must fetch fresh authoritative availability');
+                assert.equal(await f.early.consume('example', f.args), null);
+            });
+        }
+    }
+}
+
+test('unchanged availability windows and absent or invalid dates preserve reuse', async t => {
+    const at = Date.parse('2030-01-01T12:00:00Z');
+    let now = at;
+    t.mock.method(Date, 'now', () => now);
+    for (const schedule of [{}, {start_time: 'invalid', end_time: 'invalid'},
+        {start_time: new Date(at - 1000).toISOString()},
+        {start_time: new Date(at + 10000).toISOString(), end_time: new Date(at + 20000).toISOString()}]) {
+        now = at;
+        const f = fixture();
+        const model = new FormModel({link: 'example', data: {schedule}});
+        f.args.load = async () => model;
+        f.early.start(f.args);
+        await f.early.entry.promise;
+        now += 1000;
+        assert.equal(await f.early.consume('example', f.args), model);
+    }
+});
+
+test('session changes while RPC is pending invalidate the result', async () => {
+    const f = fixture();
+    let finish;
+    f.args.load = () => new Promise(resolve => { finish = resolve; });
+    f.early.start(f.args);
+    await new Promise(resolve => setImmediate(resolve));
+    const result = f.early.consume('example', f.args);
+    f.session({user: {id: 'signed-in'}});
+    finish(f.model);
+    assert.equal(await result, null);
 });

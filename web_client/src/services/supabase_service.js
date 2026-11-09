@@ -56,6 +56,13 @@ export class SupabaseService {
         return SupabaseService._client;
     }
 
+    // Bind the anonymous check to the exact client that owns the request.
+    static async isAnonymousClient(client) {
+        if (this.getClient() !== client) return false;
+        const {data, error} = await client.auth.getSession();
+        return !error && data?.session === null && this.getClient() === client;
+    }
+
     /// Refresh an existing browser session exactly when the configured backend
     /// origin changes. The refresh token is preserved by the stable storage
     /// namespace and exchanged for a JWT signed by the new Auth service before
