@@ -37,12 +37,15 @@ their canonical business facts and render from the converted template sources.
 4. Record the previous email pause state, pause `public.email_capacity`, and drain
    all `preparing`/`sending` work through the normal queue workflow. The migration
    locks the pause row and refuses an unpaused or undrained queue.
-5. Apply the exact reviewed SQL and migration-ledger entry in one transaction.
+5. Install the matching reviewed Functions bundle with the canonical installer,
+   then activate it with
+   `automation/hetzner-supabase/runtime/restart-production-functions.py`.
+   Preserve the existing container/environment and require the worker probe to
+   pass. Keep email paused. For variable-name retirement, the new guard and
+   canonical producers must run before converting the stored sources.
+6. Apply the exact reviewed SQL and migration-ledger entry in one transaction.
    Do not apply unrelated pending migrations. On SQL failure everything rolls
-   back; keep email paused while diagnosing it.
-6. Activate the matching Functions source with the approved
-   `automation/hetzner-supabase/runtime/restart-production-functions.py` workflow.
-   Preserve the existing container/environment. Publish the prepared selected
+   back; keep email paused while diagnosing it. Publish the prepared selected
    tenant client through its authorized local release path and existing gates.
 7. Verify zero remaining retired placeholders in active sources, all three CHECK
    constraints validated, the canonical catalog/client, and dry-rendered default
@@ -51,6 +54,12 @@ their canonical business facts and render from the converted template sources.
 8. Restore the original pause state only after all checks pass and record delivery
    health. Leave the queue paused on failure and repair the canonical path;
    do not silently restore an alias fallback or rewrite immutable mail receipts.
+
+Account/reset producers can prepare and seal a message before enqueueing it;
+pausing the worker does not stop that preparation. Functions-first ordering
+makes the new guard reject an old source during the brief conversion window,
+instead of letting an old producer seal a message with an unresolved new field.
+The verified forward17 rollout used this ordering.
 
 The migration is global to the selected backend's email template contract. A
 shared-backend release must account for every client that writes those sources;
