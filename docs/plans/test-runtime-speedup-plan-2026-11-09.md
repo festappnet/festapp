@@ -317,3 +317,16 @@ jsou po deployi publikované na mainu a nemění nasazený immutable source.
   nesplňuje75s cíl. Nevykazovat neúspěšný control startup jako platné srovnání rychlosti.
 - Hosted výkon a full8 total: kontrolované párové srovnání nebylo provedeno;
   úspěšných8 hosted kontrol je důkaz správnosti release, nikoli měření zrychlení.
+
+## Navazující optimalizace celé kanonické větve
+
+Celý příkazseat-checkout se všemi11 units včetně upgrade/runtime a přidaných
+safety testů: kontrolovaný medián79,40 ->70,98 s, tedy dalších10,6% dolů.
+Stejných110 SQL provedení109unique a oba image lifecycle scénáře prošly ve všech
+osmi prvních pokusech. Odstraněny jsou pouze falešné závislosti mezi izolovanými
+units; výhradní cluster operace chrání původní resourceclaimdbCluster2 a nový
+synchronizační regresní test. Paměťové/worker limity zůstávají stejné. Frameworkové
+CI testy nyní skutečně sbírá kanonický image-storage owner (25cases).
+Browserové batchování se po kontrolovaném měření neosvědčilo a bylo vyřazeno.
+Release1053 zůstává beze změny; nová změna se týká pouze spouštění testů.
+Podrobné výsledky a rozdílné benchmarkové rozsahy jsou v RESULT dokumentu a JSON.

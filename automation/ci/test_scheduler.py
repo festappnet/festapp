@@ -15,6 +15,31 @@ class SchedulerTest(unittest.TestCase):
         result=execute_dag(units,{'flutter':1},execute)
         self.assertEqual(peak,1);self.assertTrue(all(row['status']=='PASS' for row in result.values()))
 
+    def test_isolated_database_units_overlap_but_cluster_mutations_remain_exclusive(self):
+        together=threading.Barrier(2)
+        lock=threading.Lock()
+        active=0
+        peak=0
+        def execute(name,unit):
+            nonlocal active,peak
+            if name=='cluster-mutation':
+                with lock: self.assertEqual(active,0)
+                return
+            with lock:
+                active+=1
+                peak=max(peak,active)
+            try: together.wait(timeout=5)
+            finally:
+                with lock: active-=1
+        units={
+            'isolated-a':{'resources':{'dbCluster':1}},
+            'isolated-b':{'resources':{'dbCluster':1}},
+            'cluster-mutation':{'resources':{'dbCluster':2}},
+        }
+        result=execute_dag(units,{'dbCluster':2},execute,workers=3)
+        self.assertEqual(peak,2)
+        self.assertTrue(all(row['status']=='PASS' for row in result.values()),result)
+
     def test_failed_dependency_cannot_be_success_and_independent_work_finishes(self):
         executed=[]
         def execute(name,unit):

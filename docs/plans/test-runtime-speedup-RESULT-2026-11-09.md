@@ -9,7 +9,7 @@ Final numerical/result updates follow as a documentation-only main commit;
 they do not change the deployed application source or require another deployment.
 The original user checkout and its unrelated work were preserved.
 
-Authoritative performance: corrected seat median102.51 ->45.72 s (2.24x);
+Release1053 matched-nine performance: corrected seat median102.51 ->45.72 s (2.24x);
 Flutter median90.77 ->58.07 s (36%). The seat40s absolute target and the browser
 75s combined target remain unmet; the seat >=2x fallback is met. Original,
 superseded samples below are explicitly historical and retained for audit.
@@ -296,3 +296,44 @@ Sanitized deployment receipt, source readiness and corrected benchmark evidence:
 The final numerical/result notes were published on main after release as a
 documentation-only change. They do not change the immutable deployed source
 or require another release.
+
+## Further optimization: complete canonical seat lane
+
+A controlled interleaved comparison against main463abf71a measured the **entire
+canonical seat-checkout command**, including all eleven units, real history
+replay, runtime integration contracts and additive safety tests. This scope is
+broader than the earlier nine-unit benchmark and those times are not interchangeable.
+
+Control first 78.55 s; warm 74.99/79.40/79.95 s, median 79.40 s.
+Candidate first 66.98 s; warm 70.98/74.44/70.83 s, median 70.98 s.
+That is another 8.42 s or 10.6% improvement in the whole command. All eight first
+attempts passed, with 110 SQL executions / 109 unique, both actual image lifecycle
+cases and unchanged source inputs throughout each sample. Fresh-project first
+runs retain image, pnpm and OS caches. Startup, preparation, replay, assertions,
+release and cleanup remain inside measured elapsed time.
+
+The retained change removes false data dependencies between isolated contract,
+notification and browser units. They all depend on the validated database stage.
+The contract unit still consumes both database slots for cluster-wide changes;
+other units use independent lease-owned databases. Worker, browser, Flutter and
+3500 MiB RAM capacities are unchanged. A synchronizing scheduler test proves two
+ordinary database units overlap while a cluster mutation remains exclusive.
+The existing image-storage CI unit now discovers all 25 Python CI tests, including
+scheduler and telemetry tests, instead of running only the contract module.
+
+Measured host process-tree peaks were 1744-1920 MiB control and 1895-2053 MiB
+candidate; PostgreSQL peaks 300-347 versus 291-330 MiB, with 27-32 actual samples.
+Warm upgrade medians 20.16/20.16 s and runtime contracts 11.11/11.47 s show that
+mandatory correctness work still makes up much of the remaining command time.
+
+A separate browser batching experiment reduced 431 CLI invocations to 386 but
+showed no elapsed-time improvement: startup medians 86.29 versus 86.53 s. It was
+discarded; the browser harness is restored exactly to the measured baseline.
+All 306 Node cases, 31 browser reports and zero skips matched in each sample.
+
+Canonical local checks passed seat-checkout, web-startup and image-contract;
+the measurement gate retained 182 Node cases and 12 browser reports. The source
+change affects test tooling only. Production remains 0.20.542+1053; no backend,
+tenant overlay or deployed application was changed by this follow-up.
+Full source identities, receipts, load/swap snapshots and timings are in
+`/private/tmp/festapp-further-evidence/summary.json` and its sibling files.

@@ -218,7 +218,7 @@
       ]
     },
     "image-storage": {
-      "script": "python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'\npython3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'\npython3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'\nnode --check automation/image-migration/copy-assets.mjs\nnode automation/generate_storage_asset_migration.mjs --check\nnode --test automation/image-migration/tests/verified-copy.test.js\nnode --test automation/image-migration/tests/remote-r2.test.js\npython3 automation/ci/test_contract.py\n",
+      "script": "python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'\npython3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'\npython3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'\nnode --check automation/image-migration/copy-assets.mjs\nnode automation/generate_storage_asset_migration.mjs --check\nnode --test automation/image-migration/tests/verified-copy.test.js\nnode --test automation/image-migration/tests/remote-r2.test.js\npython3 -m unittest discover -s automation/ci -p 'test_*.py'\n",
       "after": [
         "image-preflight"
       ],
@@ -635,10 +635,7 @@
     "seat-contract": {
       "script": "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\n\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/forms-settings-postgres.test.mjs\npython3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n",
       "after": [
-        "occasion-lifecycle",
-        "seat-authorization",
-        "seat-google-auth",
-        "seat-measurement"
+        "seat-database"
       ],
       "resources": {
         "ramMiB": 900,
@@ -667,7 +664,7 @@
     "seat-notifications": {
       "script": "python3 automation/assemble-notification-center-migration.py --check\nnode --test automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock supabase/functions/_shared/notificationDispatcher_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n",
       "after": [
-        "seat-contract"
+        "seat-database"
       ],
       "resources": {
         "ramMiB": 900,
@@ -695,7 +692,7 @@
     "seat-browser": {
       "script": "pnpm --dir web_client run test:seat-checkout-browser --offline-recovery\n",
       "after": [
-        "seat-notifications"
+        "seat-database"
       ],
       "resources": {
         "ramMiB": 1800,

@@ -1442,5 +1442,265 @@
     "scope": "three result/plan files only; no runtime/workflow/tenant changes",
     "deployedApplicationSourceUnchanged": true,
     "newDeploymentRequired": false
+  },
+  "furtherCanonicalSeatOptimization": {
+    "baselineMainSha": "463abf71a3747467eb6ee40e27c3c8bff3c34942",
+    "scope": "full canonical seat-checkout lane, all eleven units including real upgrade/runtime and additive safety tests",
+    "allFirstAttemptsPassed": true,
+    "allInputsUnchangedDuringSamples": true,
+    "sqlExecutions": 110,
+    "sqlUniqueFiles": 109,
+    "lifecycleCasesPerRun": 2,
+    "controlWarmMedianSeconds": 79.40389233297901,
+    "candidateWarmMedianSeconds": 70.98373158299364,
+    "savedSeconds": 8.42016074998537,
+    "reductionPercent": 10.60421662287732,
+    "rawSamples": {
+      "seat-checkout": {
+        "control": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 78.55439583299449,
+            "peakSummedRssBytes": 2013331456,
+            "containerPeakSampledBytes": 364065587,
+            "containerSamples": 32,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214214-a5714d6848f4/receipt.json"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 74.9851176670054,
+            "peakSummedRssBytes": 1887010816,
+            "containerPeakSampledBytes": 315097088,
+            "containerSamples": 28,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214443-c1a46c36505c/receipt.json"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 79.40389233297901,
+            "peakSummedRssBytes": 1828323328,
+            "containerPeakSampledBytes": 324219699,
+            "containerSamples": 31,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214712-03c521f0fe3f/receipt.json"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 79.94690158299636,
+            "peakSummedRssBytes": 1934327808,
+            "containerPeakSampledBytes": 362387865,
+            "containerSamples": 31,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214949-2619dfd60a89/receipt.json"
+          }
+        ],
+        "candidate": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 66.98305312497541,
+            "peakSummedRssBytes": 2152939520,
+            "containerPeakSampledBytes": 313419366,
+            "containerSamples": 27,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214334-1923b53a4228/receipt.json"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 70.98373158299364,
+            "peakSummedRssBytes": 2028699648,
+            "containerPeakSampledBytes": 310168780,
+            "containerSamples": 27,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214559-2cf897efec4c/receipt.json"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 74.44391129200812,
+            "peakSummedRssBytes": 2000666624,
+            "containerPeakSampledBytes": 346554368,
+            "containerSamples": 29,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214833-b284e7309d1a/receipt.json"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 70.82792174996575,
+            "peakSummedRssBytes": 1986887680,
+            "containerPeakSampledBytes": 304716185,
+            "containerSamples": 27,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T215110-c9b776db2b45/receipt.json"
+          }
+        ]
+      },
+      "web-startup": {
+        "control": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 89.70097924995935,
+            "peakSummedRssBytes": 2005532672,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 86.0091222919873,
+            "peakSummedRssBytes": 2121515008,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 86.29454724997049,
+            "peakSummedRssBytes": 2187378688,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 96.52626395801781,
+            "peakSummedRssBytes": 2162556928,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          }
+        ],
+        "candidate": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 84.94323291699402,
+            "peakSummedRssBytes": 2178646016,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 86.53149020898854,
+            "peakSummedRssBytes": 2082717696,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 97.66046087502036,
+            "peakSummedRssBytes": 2154594304,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 85.68193075002637,
+            "peakSummedRssBytes": 2112864256,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          }
+        ]
+      }
+    },
+    "browserExperiment": {
+      "retained": false,
+      "controlWarmMedianSeconds": 86.29454724997049,
+      "candidateWarmMedianSeconds": 86.53149020898854,
+      "cliInvocationsControl": 431,
+      "cliInvocationsCandidate": 386,
+      "reason": "No measured elapsed-time gain; restored browser script exactly to baseline after all measurements."
+    },
+    "retainedFunctionalPaths": [
+      "automation/ci/checks.json",
+      "automation/ci/test_scheduler.py"
+    ],
+    "restoredFileNotExecutedBySeatLane": "web_client/scripts/test_form_access_browser.mjs",
+    "memory": {
+      "hostPeakControlMiB": [
+        1744,
+        1920
+      ],
+      "hostPeakCandidateMiB": [
+        1895,
+        2053
+      ],
+      "postgresPeakControlMiB": [
+        300,
+        347
+      ],
+      "postgresPeakCandidateMiB": [
+        291,
+        330
+      ],
+      "containerSamplesPerRun": [
+        27,
+        32
+      ]
+    },
+    "localValidation": {
+      "seatAndWebReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T212615-0b1a8e3027ac/receipt.json",
+      "imageReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T212933-8b24be83b9e8/receipt.json",
+      "ciFrameworkCases": 25,
+      "startupNodeCases": 306,
+      "startupBrowserReports": 31,
+      "measurementNodeCases": 182,
+      "measurementBrowserReports": 12
+    },
+    "productionUnchanged": {
+      "version": "0.20.542+1053",
+      "tenantSha": "9fac6c3e90c9ee99f2a84bd4a4ba9f3f505b54f8"
+    },
+    "evidenceDirectory": "/private/tmp/festapp-further-evidence"
   }
 }
