@@ -5,6 +5,7 @@ const config = JSON.parse(document.getElementById('measurement-config').textCont
 let instance;
 let generation;
 let context;
+let pageContext = null;
 let consent;
 const consentContext = () => ({...context, festapp_consent:{...consent}});
 window.dataLayer = [];
@@ -17,7 +18,10 @@ const consentState = ({analytics, marketing}) => {
     return {analytics_storage:analytics ? 'granted' : 'denied',ad_storage:ads,ad_user_data:ads,ad_personalization:ads};
 };
 
-function push(payload) {
+function push(input) {
+    const payload = measurementDataLayerPayload(input, {embedded: context.form_embedded, pageContext});
+    if (!payload) return;
+    if (!payload.event) pageContext = payload;
     if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null});
     dataLayer.push({...consentContext(),...payload});
     if (['purchase','generate_lead'].includes(payload.event)) dataLayer.push({user_data:null});
@@ -79,8 +83,7 @@ window.addEventListener('message', event => {
         gtag('consent','update',consentState(consent));
         dataLayer.push({event:'festapp_consent_update',festapp_consent:{...consent},...consent});
     } else if (message.type === 'event' && message.instance === instance && message.generation === generation) {
-        const payload = measurementDataLayerPayload(message.payload, {embedded: context.form_embedded});
-        if (payload) push(payload);
+        push(message.payload);
     }
 });
 reply('ready');

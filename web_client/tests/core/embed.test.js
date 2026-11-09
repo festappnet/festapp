@@ -516,13 +516,13 @@ test('lease binds instance and generation; a revoked choice does not stop host e
  const measurementEnvelope=()=>({protocol:measurementProtocol,manifest:measurement,generation:7,leaseId});
  const emit=(m=measurementEnvelope(),origin,source)=>send('analytics',{measurement:m,payload:{event:'page_view'}},origin,source);
  emit();assert.equal(dom.window.dataLayer,undefined,'activate handshake required');
- send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.length,1);
+ send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.filter(p=>p.event).length,1);
  emit({...measurementEnvelope(),generation:6});emit({...measurementEnvelope(),leaseId:'stale'});emit(measurementEnvelope(),'https://evil.invalid');emit(measurementEnvelope(),undefined,{});
- assert.equal(dom.window.dataLayer.length,1);
+ assert.equal(dom.window.dataLayer.filter(p=>p.event).length,1);
  choice=null;notify();assert.equal(last().measurement.leaseId,leaseId);assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});
- emit();assert.equal(dom.window.dataLayer.length,2,'consent state never gates the event');
+ emit();assert.equal(dom.window.dataLayer.filter(p=>p.event).length,2,'consent state never gates the event');
  choice={...choice,processingRevision:'b'};
- disconnect();emit();assert.equal(dom.window.dataLayer.length,3);dom.window.close();
+ disconnect();emit();assert.equal(dom.window.dataLayer.filter(p=>p.event).length,3);dom.window.close();
 });
 test('unreadable, partial or stale-revision source keeps the lease and reports the real choice',()=>{
  for(const [choice,consent] of [[null,{analytics:false,marketing:false}],[{processingRevision:'a',analytics:true},{analytics:true,marketing:false}],[{processingRevision:'b',analytics:true,marketing:true},{analytics:false,marketing:false}]]){
@@ -538,7 +538,7 @@ test('host dataLayer receives the contact only on conversions and clears it afte
  const layer=f.dom.window.dataLayer;
  assert.deepEqual(plain(layer.find(p=>p.event==='generate_lead').user_data),{email:'buyer@example.test',phone_number:'+420601234567'});
  assert.equal(layer.find(p=>p.event==='form_page_view').user_data,undefined);
- assert.deepEqual(plain(layer.at(-2)),{user_data:null});assert.doesNotMatch(JSON.stringify(layer),/PRIVATE|buyer2/);f.dom.window.close();
+ assert.deepEqual(plain(layer[layer.findIndex(p=>p.event==='generate_lead')+1]),{user_data:null,form_embedded:false});assert.doesNotMatch(JSON.stringify(layer),/PRIVATE|buyer2/);f.dom.window.close();
 });
 
 function child(){
@@ -934,7 +934,7 @@ test('a replacement bridge owns the window and a retired destroy cannot clear it
 test('host transport requires an explicit opt-in and live changes preserve the boundary',async t=>{
  const {dom,frames:[frame],sent}=host();t.after(()=>dom.window.close());
  assert.equal(sent[0][0][0].dataLayer,false);
- for(const [value,enabled] of [['false',false],['',true],['true',true],['FALSE',true],['other',true],['false',false],[null,false]]) {
+ for(const [value,enabled] of [['false',true],['',true],['true',true],['FALSE',true],['other',true],['false',true],[null,false]]) {
   const before=sent[0].filter(([m])=>m.type==='init').length;
   if(value===null)frame.removeAttribute('data-festapp-datalayer');else frame.setAttribute('data-festapp-datalayer',value);
   await new Promise(resolve=>setImmediate(resolve));
@@ -957,8 +957,72 @@ test('host context and every event carry strict form_embedded with no host URL d
  assert.equal(events.some(p=>p.event==='page_view'),false);assert.equal(events.filter(p=>p.event==='form_page_view').length,1);
  assert.deepEqual(events[0],{page_type:'sale_opening',user_type:'b2c',language:'cs',form_embedded:true});
  for(const payload of events){assert.equal(payload.form_embedded,true);assert.equal(payload.page_location,undefined);assert.equal(payload.page_referrer,undefined);}
- for(const payload of pushes.filter(p=>!p.event&&!p.page_type))assert.ok(!('form_embedded' in payload),'clearing pushes stay unchanged');
- f.frame.setAttribute('data-festapp-datalayer','false');
+ for(const payload of pushes.filter(p=>!p.event&&!p.page_type&&'form_embedded' in p))assert.equal(payload.form_embedded,false,'host marker is scoped to one measurement push');
+ f.frame.removeAttribute('data-festapp-datalayer');
  f.send('analytics',{measurement:m,payload:{event:'page_view'}});assert.equal(f.dom.window.dataLayer.length,pushes.length,'opt-out never writes host events');
  f.dom.window.close();
+});
+
+// Model the documented retained dataLayer state at each event, not just the
+// standalone push objects. GTM processes these messages in FIFO order.
+function retainedMeasurementHost(t) {
+ const f=host(),state={},events=[];
+ t.after(()=>f.dom.window.close());
+ const layer=f.dom.window.dataLayer=[];
+ layer.push=(...values)=>{
+  for(const value of values){Object.assign(state,value);if(value.event)events.push(plain(state));}
+  return Array.prototype.push.apply(layer,values);
+ };
+ const activate=(index,generation=1,manifest={...measurement,form_link:index===0?'a':'b'})=>{
+  const frame=f.frames[index],instance=f.sent[index][0][0].instance;
+  frame.setAttribute('data-festapp-datalayer','');
+  const send=(type,values)=>f.message(frame,new URL(frame.src).origin,envelope(type,instance,values));
+  send('measurement-context',{measurement:{protocol:measurementProtocol,manifest}});
+  const leaseId=f.sent[index].findLast(([m])=>m.type==='measurement-consent')[0].measurement.leaseId;
+  const grant={protocol:measurementProtocol,manifest,generation,leaseId};
+  send('measurement-activate',{measurement:grant});
+  return {send,grant,emit:payload=>send('analytics',{measurement:grant,payload})};
+ };
+ return {...f,layer,state,events,activate};
+}
+
+test('embedded marker does not leak into later native website events',t=>{
+ const f=retainedMeasurementHost(t),a=f.activate(0);
+ a.emit({page_type:'product',language:'cs'});
+ f.layer.push({event:'website_after_context'});
+ a.emit({event:'page_view'});
+ f.layer.push({event:'page_view'});
+ a.emit({event:'form_start'});
+ f.layer.push({event:'website_after_interaction'});
+ assert.deepEqual(f.events.map(({event,form_embedded})=>[event,form_embedded]),[
+  ['website_after_context',false],['form_page_view',true],['page_view',false],
+  ['form_start',true],['website_after_interaction',false]
+ ]);
+});
+
+test('interleaved embeds retain their own page context and clear it across grants',t=>{
+ const f=retainedMeasurementHost(t),a=f.activate(0),b=f.activate(1);
+ a.emit({page_type:'product',language:'cs'});
+ b.emit({page_type:'sale_opening',language:'en'});
+ a.emit({event:'page_view'});
+ b.emit({event:'form_start'});
+ a.emit({event:'form_start',page_type:'sale_opening',language:'de'});
+ assert.deepEqual(f.events.map(({event,page_type,language})=>[event,page_type,language]),[
+  ['form_page_view','product','cs'],['form_start','sale_opening','en'],['form_start','product','cs']
+ ]);
+ const next=f.activate(0,2);
+ a.emit({page_type:'confirmation',language:'de'}); // Retired generation cannot replace context.
+ next.emit({event:'form_start'});
+ assert.equal(f.events.at(-1).page_type,null);
+ assert.equal(f.events.at(-1).language,null);
+ next.emit({page_type:'checkout'});
+ b.emit({page_type:'sale_opening',language:'en'});
+ next.send('measurement-activate',{measurement:next.grant}); // Duplicate ACK preserves current context.
+ next.emit({event:'form_start'});
+ assert.equal(f.events.at(-1).page_type,'checkout');
+ assert.equal(f.events.at(-1).language,null,'missing language never borrows the other frame language');
+ const changed=f.activate(0,3,{...measurement,form_link:'a',processing_revision:'new-scope'});
+ changed.emit({event:'page_view'});
+ assert.equal(f.events.at(-1).page_type,null,'a new scope never reuses the prior page context');
+ assert.equal(f.events.at(-1).language,null);
 });

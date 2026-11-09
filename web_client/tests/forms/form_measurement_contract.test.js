@@ -46,9 +46,9 @@ test('the fixed consent text names advertising and sharing in every language',()
 test('dataLayer projection owns embedded event semantics without changing the wire contract', () => {
     const page = {event: 'page_view', form_embedded: 'untrusted', private: 'secret'};
     assert.deepEqual(analyticsPayload(page), {event: 'page_view'});
-    assert.deepEqual(measurementDataLayerPayload(page, {embedded: true}), {event: 'form_page_view', form_embedded: true});
+    assert.deepEqual(measurementDataLayerPayload(page, {embedded: true}), {page_type: null, user_type: 'b2c', language: null, event: 'form_page_view', form_embedded: true});
     for (const embedded of [false, undefined, 'true', 1]) {
-        assert.deepEqual(measurementDataLayerPayload(page, {embedded}), {event: 'page_view', form_embedded: false});
+        assert.deepEqual(measurementDataLayerPayload(page, {embedded}), {page_type: null, user_type: 'b2c', language: null, event: 'page_view', form_embedded: false});
     }
     assert.equal(page.event, 'page_view', 'projection does not mutate the source');
     assert.equal(analyticsPayload({event: 'form_page_view'}), null, 'destination event is not a wire event');
@@ -65,4 +65,17 @@ test('current wire events survive a pre-change protocol 3 receiver during a roll
         assert.equal(measurementDataLayerPayload(wire, {embedded: true}).event,
             event === 'page_view' ? 'form_page_view' : event);
     }
+});
+
+test('destination projection rebuilds scoped page context without trusting event or context extras',()=>{
+ const input={event:'form_start',page_type:'confirmation',language:'de'};
+ const pageContext={page_type:'product',language:'cs',user_type:'staff',email:'private@example.test',page_location:'https://private.invalid'};
+ assert.deepEqual(measurementDataLayerPayload(input,{embedded:true,pageContext}),
+  {page_type:'product',user_type:'b2c',language:'cs',event:'form_start',form_embedded:true});
+ for(const pageContext of [null,{page_type:'private',language:'de'}]){
+  assert.deepEqual(measurementDataLayerPayload(input,{embedded:true,pageContext}),
+   {page_type:null,user_type:'b2c',language:null,event:'form_start',form_embedded:true});
+ }
+ assert.deepEqual(measurementDataLayerPayload({page_type:'checkout'},{embedded:true,pageContext}),
+  {page_type:'checkout',user_type:'b2c',form_embedded:true},'a new page replaces prior context completely');
 });

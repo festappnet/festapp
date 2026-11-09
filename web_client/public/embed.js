@@ -140,10 +140,13 @@
     const result = { event: input.event, ecommerce };
     return input.event === "purchase" ? withUserData(result) : result;
   }
-  function measurementDataLayerPayload(input, { embedded = false } = {}) {
+  function measurementDataLayerPayload(input, { embedded = false, pageContext = null } = {}) {
     const payload = analyticsPayload(input);
     if (!payload) return null;
+    const page = payload.event ? analyticsPayload({ page_type: pageContext?.page_type, language: pageContext?.language }) : null;
+    const eventContext = payload.event ? { page_type: page?.page_type ?? null, user_type: "b2c", language: page?.language ?? null } : {};
     return {
+      ...eventContext,
       ...payload,
       ...payload.event === "page_view" && embedded === true ? { event: "form_page_view" } : {},
       form_embedded: embedded === true
@@ -203,7 +206,7 @@
   }
 
   // src/embed/host_measurement.js
-  var usesHostDataLayer = (frame) => frame.hasAttribute("data-festapp-datalayer") && frame.getAttribute("data-festapp-datalayer") !== "false";
+  var usesHostDataLayer = (frame) => frame.hasAttribute("data-festapp-datalayer");
   function createHostMeasurement({ frames, currentRecord, disposeRecord, scan }) {
     let suspended = false;
     const stopHeartbeat = (record) => {
@@ -226,6 +229,7 @@
     } });
     const revoke = (frame, record) => {
       record.lease = null;
+      record.pageContext = null;
       if (record.manifest && currentRecord(frame, record)) sendConsent(frame, record);
     };
     const syncConsent = (frame, record) => {
@@ -346,18 +350,20 @@
         const m = data.measurement;
         if (m?.protocol !== measurementProtocol || !record.lease || Date.now() >= record.lease.until || m.leaseId !== record.lease.id || !sameMeasurementManifest(m.manifest, record.manifest) || !Number.isSafeInteger(m.generation)) return true;
         if (data.type === "measurement-activate") {
+          if (record.lease.generation !== m.generation) record.pageContext = null;
           record.lease.generation = m.generation;
           record.channel.send("measurement-ack", { measurement: m });
           return true;
         }
         if (record.lease.generation !== m.generation) return true;
         if (usesHostDataLayer(frame)) {
-          const payload = measurementDataLayerPayload(data.payload, { embedded: true });
+          const payload = measurementDataLayerPayload(data.payload, { embedded: true, pageContext: record.pageContext });
           if (!payload) return true;
+          if (!payload.event) record.pageContext = payload;
           window.dataLayer = window.dataLayer || [];
           if (payload.ecommerce || payload.event === "generate_lead") window.dataLayer.push({ ecommerce: null, user_data: null });
           window.dataLayer.push(payload);
-          if (["purchase", "generate_lead"].includes(payload.event)) window.dataLayer.push({ user_data: null });
+          window.dataLayer.push({ ...["purchase", "generate_lead"].includes(payload.event) ? { user_data: null } : {}, form_embedded: false });
         }
         return true;
       }

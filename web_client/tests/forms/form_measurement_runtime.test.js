@@ -168,3 +168,14 @@ for(const embedded of [false,true])test('runtime preserves the wire page event a
  assert.equal(r.track({event:'page_view'}),true);
  assert.deepEqual(sent.filter(m=>m.type==='event').map(m=>m.payload.event),['page_view']);
 });
+
+test('isolated runtime attaches its validated page context to each event',t=>{
+ const f=bootstrap(t);f.send('init');
+ f.send('event',{payload:{page_type:'sale_opening',language:'cs'}});
+ f.send('event',{payload:{event:'form_start',page_type:'product',language:'de'}});
+ const event=f.win.dataLayer.find(p=>p.event==='form_start');
+ assert.equal(event.page_type,'sale_opening');assert.equal(event.language,'cs');
+ f.send('event',{payload:{page_type:'checkout'}});
+ f.send('event',{payload:{event:'form_submit_error'}});
+ assert.equal(f.win.dataLayer.find(p=>p.event==='form_submit_error').language,null);
+});

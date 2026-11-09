@@ -1,7 +1,7 @@
-import {measurementProtocol, measurementConsent, campaignContext, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
 // Presence is the long-lived public opt-in; absent preserves existing embeds.
-export const usesHostDataLayer = frame => frame.hasAttribute('data-festapp-datalayer') && frame.getAttribute('data-festapp-datalayer') !== 'false';
+export const usesHostDataLayer = frame => frame.hasAttribute('data-festapp-datalayer');
 
 export function createHostMeasurement({frames, currentRecord, disposeRecord, scan}) {
     let suspended = false;
@@ -17,6 +17,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             ttl:record.lease ? 60000 : 0, consent:readChoice(record)}});
     const revoke = (frame, record) => {
         record.lease = null;
+        record.pageContext = null;
         if (record.manifest && currentRecord(frame, record)) sendConsent(frame, record);
     };
     // Liveness belongs to the record, independently of the visitor's choice.
@@ -116,16 +117,20 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
                 if(m?.protocol!==measurementProtocol || !record.lease || Date.now()>=record.lease.until ||
                     m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return true;
                 if(data.type==='measurement-activate') {
+                    if(record.lease.generation!==m.generation)record.pageContext=null;
                     record.lease.generation=m.generation;
                     record.channel.send('measurement-ack', {measurement:m});return true;
                 }
                 if(record.lease.generation!==m.generation)return true;
                 if(usesHostDataLayer(frame)) {
-                    const payload=measurementDataLayerPayload(data.payload,{embedded:true});if(!payload)return true;
+                    const payload=measurementDataLayerPayload(data.payload,{embedded:true,pageContext:record.pageContext});if(!payload)return true;
+                    if(!payload.event)record.pageContext=payload;
                     window.dataLayer=window.dataLayer||[];
                     if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null});
                     window.dataLayer.push(payload);
-                    if(['purchase','generate_lead'].includes(payload.event))window.dataLayer.push({user_data:null});
+                    // The website shares this retained model. Scope our marker to
+                    // this push so later native website events cannot inherit it.
+                    window.dataLayer.push({...(['purchase','generate_lead'].includes(payload.event)?{user_data:null}:{}),form_embedded:false});
                 }
                 return true;
             }

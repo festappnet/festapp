@@ -136,7 +136,10 @@ a dynamic policy hash alone does not identify the executing JavaScript.
 `measurementDataLayerPayload` owns the sole destination projection, producing
 `form_page_view` for embeds and `page_view` for direct visits, with a strict
 `form_embedded` marker. Neither the embed bridge nor the runtime transport
-changes event names. Frozen pre-change protocol 3 receiver tests protect the
+changes event names. Receivers retain their own page context and the shared
+projection attaches it to each event. Host frame context is cleared on revocation
+and grant-generation changes. The host resets the embedded marker after each
+push so native website events do not inherit it. Frozen pre-change protocol 3 receiver tests protect the
 rolling-upgrade boundary. Existing receivers accept new senders and retain their
 previous page-event name until upgraded. Deploy receivers before the client to
 establish the new destination semantics without losing events.

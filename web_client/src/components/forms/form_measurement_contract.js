@@ -134,10 +134,18 @@ export function analyticsPayload(input) {
 
 // The sole projection from the stable wire contract to the destination dataLayer.
 // Transport peers keep page_view on the wire, including across rolling upgrades.
-export function measurementDataLayerPayload(input, {embedded = false} = {}) {
+export function measurementDataLayerPayload(input, {embedded = false, pageContext = null} = {}) {
     const payload = analyticsPayload(input);
     if (!payload) return null;
-    return {...payload,
+    // A shared host layer cannot infer an event's context from its last push:
+    // another embed may have published in between. Rebuild only public fields.
+    const page = payload.event
+        ? analyticsPayload({page_type: pageContext?.page_type, language: pageContext?.language})
+        : null;
+    const eventContext = payload.event
+        ? {page_type: page?.page_type ?? null, user_type: 'b2c', language: page?.language ?? null}
+        : {};
+    return {...eventContext, ...payload,
         ...(payload.event === 'page_view' && embedded === true ? {event: 'form_page_view'} : {}),
         form_embedded: embedded === true};
 }
