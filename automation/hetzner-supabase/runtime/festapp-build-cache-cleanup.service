@@ -1,0 +1,14 @@
+[Unit]
+Description=Festapp unused Docker build cache cleanup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/festapp-maintenance/prune-build-cache.sh
+TimeoutStartSec=10min
+Nice=15
+IOSchedulingClass=idle
+UMask=0077

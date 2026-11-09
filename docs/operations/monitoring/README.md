@@ -34,6 +34,10 @@ Only percentages and bounded reason codes enter Monitoring, never paths,
 process lists or credentials. The server is shared, so host alerts cover its
 resources regardless of which app consumes them.
 
+The host's hourly [build cache cleanup](BUILD-CACHE-CLEANUP.md) removes unused
+Docker build cache older than 24 hours, with best-effort cache and free-space
+targets. It preserves application images, containers, volumes and backups.
+
 Host installation: stage `automation/hetzner-supabase/monitoring/*` with
 `supabase/functions/_shared/monitoring-sdk/index.js` renamed `sdk.mjs`, its
 LICENSE and a SHA256SUMS manifest. Supply a protected `token` file, verify

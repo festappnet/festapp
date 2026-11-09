@@ -1,0 +1,62 @@
+{
+  "host": "festapp-supabase-rehearsal-01",
+  "runtime_database": "festapp_rehearsal_20260909220601",
+  "installed_at_utc": "2026-11-09T12:14:43Z",
+  "files": [
+    {
+      "path": "/opt/festapp-maintenance/prune-build-cache.sh",
+      "sha256": "e3a8e0051943a00b3f6845dfea7ae9d98a912eb7be007dcf866af77c1c883688",
+      "owner": "root:root",
+      "mode": "0755"
+    },
+    {
+      "path": "/etc/systemd/system/festapp-build-cache-cleanup.service",
+      "sha256": "97c03033d1d74e624efe85c3c8fde241434ddd1152fde5c1a28ed2b9d434816d",
+      "owner": "root:root",
+      "mode": "0644"
+    },
+    {
+      "path": "/etc/systemd/system/festapp-build-cache-cleanup.timer",
+      "sha256": "bdf75219eb4bc9504fefb7cd06e387676513b5a304023e333718f19b74ce6283",
+      "owner": "root:root",
+      "mode": "0644"
+    }
+  ],
+  "schedule": {
+    "cadence": "hourly",
+    "randomized_delay": "10min",
+    "persistent": true,
+    "enabled": true,
+    "active": true,
+    "next_run_utc": "2026-11-09T13:08:44Z"
+  },
+  "verification": {
+    "target_hostname": "festapp-supabase-rehearsal-01",
+    "current_database": "festapp_rehearsal_20260909220601",
+    "buildx_space_options_supported": true,
+    "staged_script_bash_n": "passed",
+    "staged_units_systemd_analyze_verify": "passed_with_host_xfs_scrub_cpuaccounting_deprecation_warnings",
+    "first_run_started_utc": "2026-11-09T12:14:20Z",
+    "first_run_exit_status": 0,
+    "first_run_result": "success",
+    "buildkit_reclaimed": "0B",
+    "filesystem": {
+      "mount": "/",
+      "size_bytes": 39956590592,
+      "used_bytes_before": 32242118656,
+      "used_bytes_after": 32242180096,
+      "available_bytes_before": 6055071744,
+      "available_bytes_after": 6055010304,
+      "usage_percent": 85
+    },
+    "container_start_status_restart_state_unchanged": true,
+    "docker_service_active": true,
+    "mock_guard_checks": {
+      "host_mismatch_fails_closed": "passed",
+      "database_mismatch_fails_closed": "passed",
+      "held_lock_skips_docker": "passed",
+      "successful_path_invokes_only_bounded_build_cache_prune": "passed",
+      "execution": "local mock-boundary harness; not live host activity"
+    }
+  }
+}
