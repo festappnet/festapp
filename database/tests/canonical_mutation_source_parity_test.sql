@@ -714,12 +714,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.effective_form_metadata_internal(jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='5bf72b9dc711d39b72369e839a795122'),'current SQL source parity: public.effective_form_metadata_internal(jsonb,jsonb)');
 -- supabase/migrations/20261103143000_occasion_setup_feedback.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.email_banner_wrapper_internal(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='9b8fe52ea2aa389d6742d4413aef5b84'),'current SQL source parity: public.email_banner_wrapper_internal(text,text)');
--- supabase/migrations/20261109160000_canonical_email_variables.sql
+-- supabase/migrations/20261109170000_system_email_variables.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.email_template_overrides_are_canonical(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c09701d812cae9dfa023f54bd18d98ed'),'current SQL source parity: public.email_template_overrides_are_canonical(jsonb)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.email_template_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='6501d868e3a245da411c8685a6c39406'),'current SQL source parity: public.email_template_read_rule(boolean,boolean)');
--- supabase/migrations/20261109160000_canonical_email_variables.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.email_template_variables_are_canonical(text)') AND md5(btrim(prosrc,E' \n\r\t'))='064064f782f89304b65c63ac0f042eb8'),'current SQL source parity: public.email_template_variables_are_canonical(text)');
+-- supabase/migrations/20261109170000_system_email_variables.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.email_template_variables_are_canonical(text)') AND md5(btrim(prosrc,E' \n\r\t'))='1b834c261e08f6f9b0dda16859429d20'),'current SQL source parity: public.email_template_variables_are_canonical(text)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.email_template_write_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='ace7a31980f690d9f854ab8c0474ae25'),'current SQL source parity: public.email_template_write_rule(boolean,boolean)');
 -- supabase/migrations/20261024120000_order_email_recovery.sql

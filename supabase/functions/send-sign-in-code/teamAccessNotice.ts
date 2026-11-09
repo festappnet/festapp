@@ -1,3 +1,4 @@
+import type { RegisteredEmailValues } from "../_shared/emailVariables.ts";
 import { AuthorizationCapabilities } from "../_shared/authorizationCapabilities.ts";
 import type { DeliverEmailInput } from "../_shared/emailDelivery.ts";
 
@@ -7,13 +8,6 @@ export type TeamAccess = {
   is_editor_view?: boolean;
   is_manager?: boolean;
 };
-function escape(value: string) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(
-    ">",
-    "&gt;",
-  )
-    .replaceAll('"', "&quot;").replaceAll("'", "&#39;");
-}
 
 /** A pre-existing team membership needs a notice, never a credential reset. */
 export async function sendTeamAccessNotice(input: {
@@ -34,7 +28,10 @@ export async function sendTeamAccessNotice(input: {
   authorize(): Promise<unknown>;
   deliver(input: DeliverEmailInput & { dedupeKey: string }): Promise<unknown>;
 }): Promise<void> {
-  if (input.access.capabilities?.[AuthorizationCapabilities.emailsTeamAccessNotice] !== true) throw new Error("not_a_team_member");
+  if (
+    input.access.capabilities
+      ?.[AuthorizationCapabilities.emailsTeamAccessNotice] !== true
+  ) throw new Error("not_a_team_member");
   await deps.authorize();
   const base = new URL(input.defaultUrl);
   if (
@@ -43,7 +40,7 @@ export async function sendTeamAccessNotice(input: {
   ) {
     throw new Error("invalid_organization_origin");
   }
-  const eventUrl = new URL(
+  const occasionAdminUrl = new URL(
     `/${encodeURIComponent(input.occasion.link)}/admin`,
     base,
   );
@@ -57,15 +54,15 @@ export async function sendTeamAccessNotice(input: {
       unit: input.occasion.unit,
     },
     substitutions: {
-      appName: escape(input.appName),
-      eventTitle: escape(input.occasion.title),
-      eventUrl: escape(eventUrl.toString()),
+      appName: input.appName,
+      occasionTitle: input.occasion.title,
+      occasionAdminUrl: occasionAdminUrl.toString(),
       roleLabel: input.access.is_manager
         ? "Správce"
         : input.access.is_editor
         ? "Editor"
         : "Pouze pro čtení",
-    },
+    } satisfies RegisteredEmailValues,
     dedupeKey:
       `team-access:${input.occasion.id}:${input.user}:${input.requestId}`,
   });

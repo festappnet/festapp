@@ -1210,12 +1210,15 @@
       "expiresAt": "Gültigkeit des Links",
       "platformLinks": "App-Links",
       "orderCommunication": "Nachrichteneinleitung je nach Anrede",
-        "fullOrder": "Bestelldetails",
+      "fullOrder": "Bestelldetails",
       "balanceReasoning": "Zahlungsstatus",
       "paymentDetails": "Zahlungsdaten",
       "changeOverview": "Bestelländerungen",
       "orderOverviewUrlDescription": "Persönlicher Link zum aktuellen Bestellstatus, zu Zahlungen und zum Änderungsverlauf.",
-      "orderOverviewButtonDescription": "Schaltfläche zum aktuellen Bestellstatus. Fehlt sie, wird sie beim Versand automatisch ergänzt."
+      "orderOverviewButtonDescription": "Schaltfläche zum aktuellen Bestellstatus. Fehlt sie, wird sie beim Versand automatisch ergänzt.",
+      "invitationUrl": "Einladungslink",
+      "occasionAdminUrl": "Link zur Veranstaltungsverwaltung",
+      "roleLabel": "Teamrolle"
     },
     "usage": {
       "waitlistConfirmation_title": "Wartelistenbestätigung",
@@ -1231,7 +1234,11 @@
       "ticketOrderUpdate_description": "Wird gesendet, wenn ein Administrator nach einer Änderung eine Bestellaktualisierung verschickt. Zeigt Änderungen und Zahlungsstatus.",
       "ticketOrderPaymentDone_description": "Wird nach Bestätigung der Anzahlung oder Restzahlung einer Anzahlungsbestellung gesendet. Tickets werden separat verschickt.",
       "ticketOrderPaymentReminder_description": "Wird vor Fälligkeit eines offenen Betrags gesendet, sofern Erinnerungen aktiviert sind. Den Zeitpunkt bestimmen die Formular- oder Veranstaltungseinstellungen.",
-      "ticketOrderStorno_description": "Wird bei Stornierung einer Bestellung gesendet, wenn der Administrator die Benachrichtigung des Kunden auswählt."
+      "ticketOrderStorno_description": "Wird bei Stornierung einer Bestellung gesendet, wenn der Administrator die Benachrichtigung des Kunden auswählt.",
+      "teamInvitation_title": "Einladung zum Team",
+      "teamInvitation_description": "Die eingeladene Person erhält einen Link zur Annahme einer Teamrolle.",
+      "teamAccessNotice_title": "Zugriff auf die Veranstaltung",
+      "teamAccessNotice_description": "Das Teammitglied erhält einen Link zur Veranstaltungsverwaltung. Die Nachricht ändert das Passwort nicht."
     },
     "authoring": {
       "authoringHint": "Geben Sie @ ein und wählen Sie Angaben für den Versand.",

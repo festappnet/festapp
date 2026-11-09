@@ -287,3 +287,13 @@ and the editor's selection/move/delete/history operations. Stored email blocks
 remain `{{code}}`, inline variables remain inline, and safe unknown HTML remains
 preserved content rather than a functional component. Generated preview scenarios
 cover the opening message in every supported language.
+
+The shared variable catalog covers all 15 registered system template kinds,
+including team invitation/access messages. Team producers
+supply raw canonical values; the common composer owns escaping for both
+preview and delivery. The forward system-variable migration preserves the
+installed earlier migration and converts existing sources at every scope.
+
+The retired `ORDER_OVERVIEW` type remains data-only for historical identity
+retention; it has no first-party sender or registered editor preview. Password reset
+uses `resetLink` everywhere; forward17 also converts `resetPasswordLink`.

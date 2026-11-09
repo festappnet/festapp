@@ -256,6 +256,21 @@ export const emailVariableContract = {
       "repeatable": true,
       "html": false,
       "bodyBlock": true
+    },
+    "invitationUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "occasionAdminUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "roleLabel": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
     }
   },
   "templates": {
@@ -388,11 +403,24 @@ export const emailVariableContract = {
       "orderSymbol",
       "occasionTitle",
       "amount"
+    ],
+    "TEAM_INVITATION": [
+      "appName",
+      "occasionTitle",
+      "roleLabel",
+      "invitationUrl"
+    ],
+    "TEAM_ACCESS_NOTICE": [
+      "appName",
+      "occasionTitle",
+      "roleLabel",
+      "occasionAdminUrl"
     ]
   }
 } as const;
+export type RegisteredEmailValues = Partial<Record<keyof typeof emailVariableContract.variables, unknown>>;
 export const emailVariablePattern = new RegExp(emailVariableContract.tokenPattern, 'g');
-const retiredEmailVariablePattern = new RegExp("\\{\\{\\s*(order_symbol|occasion_title)\\s*\\}\\}");
+const retiredEmailVariablePattern = new RegExp("\\{\\{\\s*(order_symbol|occasion_title|eventTitle|eventUrl|resetPasswordLink)\\s*\\}\\}");
 
 /** Reject the retired format; no legacy name is interpreted or converted. */
 export function assertCanonicalEmailTemplate(value: string | null | undefined): void {

@@ -31,6 +31,13 @@ void main() {
         ),
         throwsStateError,
       );
+      for (final retired in ['eventTitle', 'eventUrl', 'resetPasswordLink']) {
+        expect(() => scenario.composeSubject('{{$retired}}'), throwsStateError);
+        expect(
+          () => scenario.composeHtml('<p>{{$retired}}</p>'),
+          throwsStateError,
+        );
+      }
       expect(scenario.composeSubject('{{occasionTitle}}'), '{{order_symbol}}');
       expect(
         scenario.composeHtml('<p>{{occasionTitle}}</p>'),

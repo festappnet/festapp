@@ -203,15 +203,15 @@ GRANT EXECUTE ON FUNCTION public.accept_occasion_team_invitation(text,text) TO a
 
 -- Neutral default invitation content contains no account credential fields.
 INSERT INTO public.email_templates(code,subject,html)
-SELECT 'TEAM_INVITATION','Pozvánka ke správě akce - {{eventTitle}}',
- '<h2>Pozvánka do týmu akce {{eventTitle}}</h2><p>{{appName}} zve ke spolupráci na správě akce s oprávněním {{roleLabel}}.</p><p><a href="{{invitationUrl}}">Zobrazit a přijmout pozvánku</a></p><p>Pozvánka platí 14 dní. Přijetí vyžaduje přihlášení k pozvanému účtu nebo vytvoření nového účtu s vlastním heslem.</p>'
+SELECT 'TEAM_INVITATION','Pozvánka ke správě akce - {{occasionTitle}}',
+ '<h2>Pozvánka do týmu akce {{occasionTitle}}</h2><p>{{appName}} zve ke spolupráci na správě akce s oprávněním {{roleLabel}}.</p><p><a href="{{invitationUrl}}">Zobrazit a přijmout pozvánku</a></p><p>Pozvánka platí 14 dní. Přijetí vyžaduje přihlášení k pozvanému účtu nebo vytvoření nového účtu s vlastním heslem.</p>'
 WHERE NOT EXISTS(SELECT 1 FROM public.email_templates WHERE code='TEAM_INVITATION'
  AND organization IS NULL AND unit IS NULL AND occasion IS NULL);
 
 
 -- Existing team access notifications share no account-password transition.
 INSERT INTO public.email_templates(code,subject,html)
-SELECT 'TEAM_ACCESS_NOTICE','Přístup k akci - {{eventTitle}}',
- '<h2>Přístup k akci {{eventTitle}}</h2><p>V aplikaci {{appName}} je dostupná akce s oprávněním {{roleLabel}}.</p><p><a href="{{eventUrl}}">Otevřít správu akce</a></p><p>Přihlaste se svým účtem. Pokud heslo neznáte, použijte na přihlašovací stránce odkaz pro obnovu hesla. Tato zpráva heslo nemění.</p>'
+SELECT 'TEAM_ACCESS_NOTICE','Přístup k akci - {{occasionTitle}}',
+ '<h2>Přístup k akci {{occasionTitle}}</h2><p>V aplikaci {{appName}} je dostupná akce s oprávněním {{roleLabel}}.</p><p><a href="{{occasionAdminUrl}}">Otevřít správu akce</a></p><p>Přihlaste se svým účtem. Pokud heslo neznáte, použijte na přihlašovací stránce odkaz pro obnovu hesla. Tato zpráva heslo nemění.</p>'
 WHERE NOT EXISTS(SELECT 1 FROM public.email_templates WHERE code='TEAM_ACCESS_NOTICE'
  AND organization IS NULL AND unit IS NULL AND occasion IS NULL);

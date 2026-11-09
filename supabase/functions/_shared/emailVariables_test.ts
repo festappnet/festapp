@@ -15,31 +15,41 @@ Deno.test("identity producers expose only the canonical variables", () => {
   assert.equal(Object.hasOwn(emailVariableContract, "aliases"), false);
 });
 
-for (const part of ["subject", "html", "wrapper"]) {
-  Deno.test(`retired placeholders cannot enter email preparation through ${part}`, async () => {
-    await assert.rejects(
-      renderEmail({
-        to: "preview@example.invalid",
-        templateCode: "TICKET_ORDER_CONFIRMATION",
-        context: { organization: 1 },
-        substitutions: { orderSymbol: "ABC123", occasionTitle: "Slavnost" },
-      }, async () => ({
-        template: {
-          id: 1,
-          subject: part === "subject" ? "{{order_symbol}}" : "Test",
-          html: part === "html"
-            ? "{{ occasion_title }}"
-            : "<p>{{orderSymbol}}</p>",
-        },
-        wrapper: {
-          html: part === "wrapper"
-            ? "<main>{{occasion_title}} {{content}}</main>"
-            : "<main>{{content}}</main>",
-        },
-      })),
-      /noncanonical_email_template/,
-    );
-  });
+for (
+  const retired of [
+    "order_symbol",
+    "occasion_title",
+    "eventTitle",
+    "eventUrl",
+    "resetPasswordLink",
+  ]
+) {
+  for (const part of ["subject", "html", "wrapper"]) {
+    Deno.test(`retired placeholders cannot enter email preparation ${retired} through ${part}`, async () => {
+      await assert.rejects(
+        renderEmail({
+          to: "preview@example.invalid",
+          templateCode: "TICKET_ORDER_CONFIRMATION",
+          context: { organization: 1 },
+          substitutions: { orderSymbol: "ABC123", occasionTitle: "Slavnost" },
+        }, async () => ({
+          template: {
+            id: 1,
+            subject: part === "subject" ? `{{${retired}}}` : "Test",
+            html: part === "html"
+              ? `{{ ${retired} }}`
+              : "<p>{{orderSymbol}}</p>",
+          },
+          wrapper: {
+            html: part === "wrapper"
+              ? `<main>{{${retired}}} {{content}}</main>`
+              : "<main>{{content}}</main>",
+          },
+        })),
+        /noncanonical_email_template/,
+      );
+    });
+  }
 }
 
 Deno.test("retired-looking customer data remains literal and never becomes a template", async () => {

@@ -2,7 +2,7 @@
 enum EmailValueKind { text, url, richInline, richBlock }
 
 const emailVariablePattern = r'\{\{([A-Za-z_][A-Za-z_0-9]*)\}\}';
-final _retiredEmailVariablePattern = RegExp(r'\{\{\s*(order_symbol|occasion_title)\s*\}\}');
+final _retiredEmailVariablePattern = RegExp(r'\{\{\s*(order_symbol|occasion_title|eventTitle|eventUrl|resetPasswordLink)\s*\}\}');
 void assertCanonicalEmailTemplate(String? value) {
   if (value != null && _retiredEmailVariablePattern.hasMatch(value)) {
     throw StateError('noncanonical_email_template');
@@ -138,6 +138,18 @@ const emailTemplateVariables = <String, List<String>>{
     "orderSymbol",
     "occasionTitle",
     "amount"
+  ],
+  "TEAM_INVITATION": [
+    "appName",
+    "occasionTitle",
+    "roleLabel",
+    "invitationUrl"
+  ],
+  "TEAM_ACCESS_NOTICE": [
+    "appName",
+    "occasionTitle",
+    "roleLabel",
+    "occasionAdminUrl"
   ]
 };
 const emailVariableKinds = <String, EmailValueKind>{
@@ -191,6 +203,9 @@ const emailVariableKinds = <String, EmailValueKind>{
   'waitlist_offer_button_multiple': EmailValueKind.text,
   'waitlist_manage_button_label': EmailValueKind.text,
   'waitlist_offer_instructions_single': EmailValueKind.text,
+  'invitationUrl': EmailValueKind.url,
+  'occasionAdminUrl': EmailValueKind.url,
+  'roleLabel': EmailValueKind.text,
 };
 const nonRepeatableEmailVariables = <String>{'balanceReasoning', 'changeOverview', 'fullOrder', 'orderCommunication', 'paymentDetails', 'tickets'};
 const htmlEmailVariables = <String>{'appLinks', 'balanceReasoning', 'changeOverview', 'fullOrder', 'manage_waitlist_button', 'offer_button', 'orderCommunication', 'order_overview_button', 'paymentDetails', 'platformLinks', 'sale_opening_action', 'sale_opening_unsubscribe', 'tickets'};

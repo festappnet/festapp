@@ -34,6 +34,9 @@ const fixture = JSON.parse(
 const sources = [
   "automation/generate_email_preview_examples.ts",
   "automation/fixtures/email_preview/order.json",
+  "supabase/functions/send-sign-in-code/teamAccessNotice.ts",
+  "supabase/functions/send-reset-password-link/index.ts",
+  "supabase/functions/send-occasion-team-invitations/handler.ts",
   "packages/festapp_contracts/email-variables.json",
   "packages/festapp_contracts/waitlist-email-copy.json",
   "packages/festapp_contracts/communication-tone.json",
@@ -287,6 +290,19 @@ for (const locale of ['cs','en','sk','de','pl','uk']) {
   }
  }
 }
+for (const tone of communicationTones) {
+  const samples: Record<string,string> = {appName: 'Festapp Tickets', occasionTitle: fixture.occasionTitle,
+    roleLabel: 'Editor', invitationUrl: 'https://example.invalid/team-invitation?token=preview',
+    occasionAdminUrl: 'https://example.invalid/slavnost/admin'};
+  for (const templateCode of ['TEAM_INVITATION', 'TEAM_ACCESS_NOTICE'] as const) {
+    const values = Object.fromEntries(emailVariableContract.templates[templateCode].map(code => {
+      if (!(code in samples)) throw new Error(`Missing system preview value: ${code}`);
+      return [code, samples[code]];
+    }));
+    records.push({templateCode, scenario: 'standard', locale: 'cs', tone, values, requiredLinks: []});
+  }
+}
+
 for (const record of records) {
   if (!String(record.templateCode).startsWith("TICKET")) continue;
   const zero = record.scenario === "zero";

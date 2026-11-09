@@ -1212,12 +1212,15 @@
       "expiresAt": "Ważność linku",
       "platformLinks": "Linki do aplikacji",
       "orderCommunication": "Wstęp wiadomości zgodny z formą zwracania się",
-        "fullOrder": "Szczegóły zamówienia",
+      "fullOrder": "Szczegóły zamówienia",
       "balanceReasoning": "Stan płatności",
       "paymentDetails": "Dane płatności",
       "changeOverview": "Zmiany zamówienia",
       "orderOverviewUrlDescription": "Osobisty link do aktualnego stanu zamówienia, płatności i historii zmian.",
-      "orderOverviewButtonDescription": "Przycisk otwierający aktualny stan zamówienia. Jeśli go brakuje, zostanie dodany przy wysyłaniu."
+      "orderOverviewButtonDescription": "Przycisk otwierający aktualny stan zamówienia. Jeśli go brakuje, zostanie dodany przy wysyłaniu.",
+      "invitationUrl": "Link do zaproszenia",
+      "occasionAdminUrl": "Link do zarządzania wydarzeniem",
+      "roleLabel": "Rola w zespole"
     },
     "usage": {
       "waitlistConfirmation_title": "Potwierdzenie listy rezerwowej",
@@ -1233,7 +1236,11 @@
       "ticketOrderUpdate_description": "Wysyłana, gdy administrator po edycji zamówienia wysyła aktualizację. Pokazuje zmiany i bieżący stan płatności.",
       "ticketOrderPaymentDone_description": "Wysyłana po potwierdzeniu zaliczki lub dopłaty do zamówienia z zaliczką. Bilety są wysyłane osobno.",
       "ticketOrderPaymentReminder_description": "Wysyłana przed terminem niezapłaconej kwoty, jeśli przypomnienia są włączone. Termin wysyłki określają ustawienia formularza lub wydarzenia.",
-      "ticketOrderStorno_description": "Wysyłana przy anulowaniu zamówienia, jeśli administrator wybierze powiadomienie klienta."
+      "ticketOrderStorno_description": "Wysyłana przy anulowaniu zamówienia, jeśli administrator wybierze powiadomienie klienta.",
+      "teamInvitation_title": "Zaproszenie do zespołu",
+      "teamInvitation_description": "Zaproszona osoba otrzymuje link do przyjęcia roli w zespole wydarzenia.",
+      "teamAccessNotice_title": "Dostęp do wydarzenia",
+      "teamAccessNotice_description": "Członek zespołu otrzymuje link do zarządzania wydarzeniem. Wiadomość nie zmienia jego hasła."
     },
     "authoring": {
       "authoringHint": "Wpisz @ i wybierz dane uzupełniane przy wysyłaniu.",

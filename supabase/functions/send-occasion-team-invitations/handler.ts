@@ -1,3 +1,4 @@
+import type { RegisteredEmailValues } from "../_shared/emailVariables.ts";
 export type InvitationRecipient = {
   email: string;
   kind: "member" | "account" | "new";
@@ -24,11 +25,6 @@ export interface InvitationDependencies {
     args: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;
   token(): string;
-}
-
-export function htmlEscape(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
 export async function invitationTokenHash(token: string): Promise<string> {
@@ -116,13 +112,13 @@ export function createInvitationHandler(deps: InvitationDependencies) {
             unit: preview.event.unit,
           },
           substitutions: {
-            eventTitle: htmlEscape(preview.event.title),
+            occasionTitle: preview.event.title,
             roleLabel: recipient.role === "read_only"
               ? "Pouze pro čtení"
               : "Editor",
-            appName: htmlEscape(preview.organizationData.APP_NAME ?? "Festapp"),
-            invitationUrl: htmlEscape(url.toString()),
-          },
+            appName: preview.organizationData.APP_NAME ?? "Festapp",
+            invitationUrl: url.toString(),
+          } satisfies RegisteredEmailValues,
         });
         const queued = await deps.enqueue(authorization, {
           p_id: draftId,

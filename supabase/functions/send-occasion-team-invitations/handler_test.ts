@@ -1,3 +1,5 @@
+import { renderEmail } from "../_shared/emailDelivery.ts";
+import { emailVariableContract } from "../_shared/emailVariables.ts";
 import {
   assert,
   assertEquals,
@@ -69,8 +71,8 @@ Deno.test("safe invitation carries only link and requested role, never password"
   assert(!JSON.stringify(f.inputs).includes("password"));
   const input = f.inputs[0] as { substitutions: Record<string, string> };
   assertEquals(
-    input.substitutions.eventTitle,
-    "&lt;Event &quot;title&quot;&gt;",
+    input.substitutions.occasionTitle,
+    '<Event "title">',
   );
   assert(
     input.substitutions.invitationUrl.startsWith(
@@ -102,4 +104,41 @@ Deno.test("unauthorized and unsafe origin requests never prepare invitations", a
   f.preview.organizationData.DEFAULT_URL = "https://user:pass@tenant.test";
   assertEquals((await createInvitationHandler(f.deps)(request())).status, 422);
   assertEquals(f.inputs.length, 0);
+});
+
+Deno.test("team invitation producer and shared composer escape canonical values once", async () => {
+  const f = fixture();
+  f.preview.organizationData.APP_NAME = "A & B";
+  f.preview.event.title = "Večer <E>";
+  const rendered: Array<{ subject: string; html: string }> = [];
+  f.deps.prepare = async (input) => {
+    const available = new Set<string>(
+      emailVariableContract.templates.TEAM_INVITATION,
+    );
+    assert(
+      Object.keys(input.substitutions).every((code) => available.has(code)),
+    );
+    rendered.push(
+      await renderEmail(
+        input,
+        async () => ({
+          template: {
+            id: 1,
+            subject: "{{appName}} - {{occasionTitle}}",
+            html:
+              '<h2>{{occasionTitle}}</h2><p>{{appName}}</p><a href="{{invitationUrl}}">{{roleLabel}}</a>',
+          },
+        }),
+      ),
+    );
+    return { p_sealed: { ciphertext: "fixture" }, p_content_hash: "digest" };
+  };
+  assertEquals((await createInvitationHandler(f.deps)(request())).status, 200);
+  assertEquals(rendered.length, 2);
+  for (const message of rendered) {
+    assertEquals(message.subject, "A & B - Večer <E>");
+    assert(message.html.includes("A &amp; B"));
+    assert(message.html.includes("Večer &lt;E&gt;"));
+    assert(!message.html.includes("&amp;amp;"));
+  }
 });

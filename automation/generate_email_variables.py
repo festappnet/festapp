@@ -23,6 +23,7 @@ retired_pattern = r'\{\{\s*(' + retired + r')\s*\}\}'
 outputs = {
     'supabase/functions/_shared/emailVariables.ts': f'''// {banner}
 export const emailVariableContract = {js} as const;
+export type RegisteredEmailValues = Partial<Record<keyof typeof emailVariableContract.variables, unknown>>;
 export const emailVariablePattern = new RegExp(emailVariableContract.tokenPattern, 'g');
 const retiredEmailVariablePattern = new RegExp({json.dumps(retired_pattern)});
 
