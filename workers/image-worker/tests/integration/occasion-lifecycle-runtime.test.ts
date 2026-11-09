@@ -8,14 +8,15 @@ import {Client} from 'pg';
 import {readFileSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
 
-const databaseUrl = process.env.IMAGE_LIFECYCLE_DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl || !['localhost', '127.0.0.1', '::1', '[::1]'].includes(new URL(databaseUrl).hostname)) {
-  throw new Error('IMAGE_LIFECYCLE_DATABASE_URL must select a disposable local database');
+  throw new Error('DATABASE_URL must select a disposable local database; use automation/local_db/runtime.py exec');
 }
 
 describe('occasion copy/media/delete across workerd and SQL', () => {
   const db = new Client({connectionString: databaseUrl});
   let runtime: Miniflare;
+  let connected = false;
   let org: number, unit: number, source: number;
   const command = randomUUID();
   const sourceUrl = 'https://img.festapp.net/images/lifecycle-fixture.png';
@@ -31,8 +32,13 @@ describe('occasion copy/media/delete across workerd and SQL', () => {
   };
   beforeAll(async () => {
     await db.connect();
-    const marker = await db.query('SELECT project FROM festapp_test_support.disposable_environment');
+    connected = true;
+    const marker = await db.query('SELECT project, current_database() AS database FROM festapp_test_support.disposable_environment');
     expect(marker.rows[0]?.project).toMatch(/^festapp-/);
+    if (process.env.FESTAPP_DB_RUN_ID) {
+      expect(marker.rows[0]?.project).toBe(process.env.FESTAPP_LOCAL_DB_PROJECT_ID);
+      expect(marker.rows[0]?.database).toBe(`festapp_run_${process.env.FESTAPP_DB_RUN_ID}`);
+    }
     await db.query('BEGIN');
     await db.query(readFileSync('../../database/tests/helpers/assertions.sql', 'utf8'));
     // Exercise the final canonical deletion owner without changing the local baseline.
@@ -73,8 +79,7 @@ describe('occasion copy/media/delete across workerd and SQL', () => {
   }, 30_000);
   afterAll(async () => {
     await runtime?.dispose();
-    await db.query('ROLLBACK');
-    await db.end();
+    try { if (connected) await db.query('ROLLBACK'); } finally { await db.end(); }
   });
   const resume = (intent = command) => runtime.dispatchFetch('https://image-api.festapp.net/occasion-lifecycle', {
     method:'POST',headers:{Authorization:'Bearer fixture-actor','Content-Type':'application/json'},

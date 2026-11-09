@@ -54,8 +54,7 @@ never production.
 
 The complete image Worker integration suite also needs local GoTrue and
 PostgREST connected to that same marked disposable database. Supply its
-`SUPABASE_URL`, `SUPABASE_ANON_KEY` and `DATABASE_URL`, and set
-`IMAGE_LIFECYCLE_DATABASE_URL` to the same database before running
+`SUPABASE_URL`, `SUPABASE_ANON_KEY` and `DATABASE_URL` before running
 `pnpm --dir workers/image-worker run test:integration`. Missing or remote
 fixtures fail instead of silently skipping. The suite runs the actual Worker
 in workerd with local R2, native Images processing and a real rate limiter.

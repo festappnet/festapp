@@ -8,7 +8,7 @@
     "test": "vitest run tests/unit/ tests/integration/",
     "test:unit": "vitest run tests/unit/",
     "test:integration": "vitest run tests/integration/",
-    "test:lifecycle": "IMAGE_LIFECYCLE_DATABASE_URL=${IMAGE_LIFECYCLE_DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable} vitest run tests/integration/occasion-lifecycle-runtime.test.ts"
+    "test:lifecycle": "vitest run tests/integration/occasion-lifecycle-runtime.test.ts"
   },
   "dependencies": {
     "aws4fetch": "^1.0.20",
