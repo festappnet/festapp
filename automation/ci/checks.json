@@ -577,7 +577,7 @@
       ]
     },
     "seat-authorization": {
-      "script": "export FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL=\"$DATABASE_URL\"\nnode --test automation/tests/authorization_read_phase.test.mjs\nnode web_client/scripts/run_db_tests.js database/tests/users/occasion_user_creation_authorization_test.sql",
+      "script": "export FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL=\"$DATABASE_URL\"\nnode --test automation/tests/authorization_read_phase.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-authorization-1",
       "after": [
         "seat-database"
       ],
@@ -1058,6 +1058,11 @@
     "occasion-lifecycle-1": {
       "filters": [
         "database/tests/occasion_copy_lifecycle_test.sql"
+      ]
+    },
+    "seat-authorization-1": {
+      "filters": [
+        "database/tests/users/occasion_user_creation_authorization_test.sql"
       ]
     }
   },
