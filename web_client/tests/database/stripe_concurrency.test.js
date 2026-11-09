@@ -4,13 +4,14 @@ import pg from 'pg';
 import {execFileSync} from 'node:child_process';
 import {randomUUID, randomBytes, createHash} from 'node:crypto';
 import {assertDisposableDatabase} from './disposable_database.js';
+import {createTestWorkspace} from './runtime_workspace.js';
 const source=process.env.DATABASE_URL;
 const container=process.env.FESTAPP_STRIPE_TEST_CONTAINER || 'supabase_db_festapp-db-tests-pg15';
 async function connect(url){const c=new pg.Client({connectionString:url});await c.connect();await c.query("SET statement_timeout='25s'; SET lock_timeout='20s'; SET request.jwt.claim.role='service_role'; SET request.jwt.claim.sub=''; SET festapp.email_wake='scheduled'");return c;}
 const hash=s=>createHash('sha256').update(s).digest('hex');
 test('Stripe SQL authority serializes checkout, duplicate webhook and refund/admission races',{skip:!source},async()=>{
  const base=new URL(source);
- assert.ok(['127.0.0.1','localhost'].includes(base.hostname)&&base.port&&base.pathname==='/postgres','Only an explicit loopback PostgreSQL harness is allowed');
+ assert.ok(['127.0.0.1','localhost'].includes(base.hostname)&&base.port&&(/^\/(?:postgres|festapp_run_[0-9a-f]{32})$/).test(base.pathname),'Only an explicit loopback PostgreSQL harness is allowed');
  assert.match(container,/^supabase_db_festapp-[a-z0-9-]+$/);
  const local=JSON.parse(execFileSync('docker',['inspect',container],{encoding:'utf8'}))[0];
  assert.ok(local.NetworkSettings.Ports['5432/tcp'].some(binding=>binding.HostPort===base.port),'The named local Supabase container must own the database port');
@@ -20,21 +21,12 @@ test('Stripe SQL authority serializes checkout, duplicate webhook and refund/adm
   const project=(await identity.query('SELECT project FROM festapp_test_support.disposable_environment WHERE singleton')).rows[0].project;
   assert.equal(container,'supabase_db_'+project,'Container must match the owned disposable bootstrap identity');
  }finally{await identity.end();}
- const name='stripe_concurrency_'+randomUUID().replaceAll('-','');
+ const workspace=await createTestWorkspace();const name=workspace.database;
  const adminUrl=new URL(base);adminUrl.pathname='/template1';const admin=await connect(adminUrl.toString());
- const targetUrl=new URL(base);targetUrl.pathname='/'+name;targetUrl.username='supabase_admin';
+ const targetUrl=new URL(workspace.databaseUrl);targetUrl.username='supabase_admin';
  let control;const writers=[];
  try{
-  // A logical snapshot avoids disconnecting pg_cron/pg_net or other sessions.
-  // Scheduler extensions are intentionally absent in this isolated test database.
-  const dump=execFileSync('docker',['exec','-e','PGPASSWORD=postgres',container,'pg_dump','-U','postgres','-d','postgres','--no-owner','--exclude-schema=cron','--exclude-schema=net'],{maxBuffer:64*1024*1024}).toString()
-   .replace(/^CREATE EXTENSION IF NOT EXISTS (pg_cron|pg_net)[^;]*;/gm,'')
-   .replace(/^COMMENT ON EXTENSION (pg_cron|pg_net)[^;]*;/gm,'')
-   .replace(/^(GRANT|REVOKE) [^\n]* ON (?:FUNCTION|TABLE|SEQUENCE) (cron|net|graphql_public)\.[^;]*;/gm,'');
-  await admin.query(`CREATE DATABASE ${name} TEMPLATE template0`);
   control=await connect(targetUrl.toString());
-  await control.query('CREATE SCHEMA cron; CREATE SCHEMA net');
-  execFileSync('docker',['exec','-e','PGPASSWORD=postgres','-i',container,'psql','-U','supabase_admin','-d',name,'-v','ON_ERROR_STOP=1','-q'],{input:dump,maxBuffer:4*1024*1024});
   await control.query("SET request.jwt.claim.role='service_role'; SET request.jwt.claim.sub=''; SET festapp.email_wake='scheduled'");
   writers.push(await connect(targetUrl.toString()),await connect(targetUrl.toString()));
   const scalar=async(sql,args=[])=>Object.values((await control.query(sql,args)).rows[0])[0];
@@ -176,6 +168,6 @@ test('Stripe SQL authority serializes checkout, duplicate webhook and refund/adm
  }finally{
   if(control){await control.query('ROLLBACK').catch(()=>{});await control.end();}
   await Promise.all(writers.map(w=>w.end()));
-  await admin.query(`DROP DATABASE IF EXISTS ${name}`);await admin.end();
+  await admin.end();await workspace.release();
  }
 });

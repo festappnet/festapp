@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/drain_prepared_notifications.sql
 BEGIN;
 DO $$
 DECLARE org bigint;oc bigint;viewer uuid:=gen_random_uuid();other uuid:=gen_random_uuid();ev uuid;v jsonb;old jsonb;tok uuid;rev text;n integer;
@@ -12,7 +13,7 @@ BEGIN
  PERFORM public.project_notification_center(500);
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  v:=public.get_notification_center_view(org,oc);
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org,false);
  v:=public.get_notification_center_view(org,oc);tok:=(v->>'viewToken')::uuid;rev:=v->>'revision';
  PERFORM assert_eq(v->>'state','ready','prepared lifecycle ready');
  old:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>tok,p_revision=>rev);
@@ -44,7 +45,7 @@ BEGIN
  UPDATE public.notification_center_events SET occurred_at=clock_timestamp()-interval '31 days' WHERE id=ev;
  old:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>tok);
  PERFORM assert_eq(old->>'state','preparing','expiry/source debt is explicit');
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100);END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org);
  old:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>tok);
  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(old->'items','[]')) x WHERE x->>'state'='ready'),'expired activity removed from retained view');
  PERFORM public.prepare_notification_center_views(100);

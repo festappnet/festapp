@@ -1,0 +1,125 @@
+{
+  "date": "2026-11-09",
+  "kind": "planning-evidence-existing-runs-no-new-tests",
+  "repositoryReference": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+  "local": {
+    "sourceHead": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+    "dirty": true,
+    "preparedChangeCommit": "fe8bcdd8b618b78ffc83298077b99a11871f818e",
+    "lane": "seat-checkout",
+    "seconds": 107.96,
+    "steps": [
+      {
+        "name": "seat-install",
+        "seconds": 1.1
+      },
+      {
+        "name": "seat-database",
+        "seconds": 38.4
+      },
+      {
+        "name": "occasion-lifecycle",
+        "seconds": 7.9
+      },
+      {
+        "name": "seat-authorization",
+        "seconds": 0.2
+      },
+      {
+        "name": "seat-google-auth",
+        "seconds": 1.7
+      },
+      {
+        "name": "seat-measurement",
+        "seconds": 5.3
+      },
+      {
+        "name": "seat-contract",
+        "seconds": 34.8
+      },
+      {
+        "name": "seat-notifications",
+        "seconds": 13.6
+      },
+      {
+        "name": "seat-browser",
+        "seconds": 4.7
+      }
+    ],
+    "sqlRunnerInvocations": 13,
+    "sqlFileCompletions": 107,
+    "slowestSqlObserved": [
+      {
+        "file": "database/tests/notification_center/lifecycle_test.sql",
+        "elapsedMs": 3611
+      },
+      {
+        "file": "database/tests/notification_center/prepared_lifecycle_test.sql",
+        "elapsedMs": 3035
+      },
+      {
+        "file": "database/tests/notification_center/prepared_orders_test.sql",
+        "elapsedMs": 2706
+      },
+      {
+        "file": "database/tests/notification_center/open_latency_test.sql",
+        "elapsedMs": 2415
+      },
+      {
+        "file": "database/tests/notification_center/administration_visibility_test.sql",
+        "elapsedMs": 1510
+      },
+      {
+        "file": "database/tests/notification_center/current_participants_test.sql",
+        "elapsedMs": 1487
+      },
+      {
+        "file": "database/tests/notification_center/prepared_retention_test.sql",
+        "elapsedMs": 1447
+      },
+      {
+        "file": "database/tests/notification_center/prepared_wide_scope_test.sql",
+        "elapsedMs": 1361
+      },
+      {
+        "file": "database/tests/blueprint/seating_publication_test.sql",
+        "elapsedMs": 1187
+      },
+      {
+        "file": "database/tests/notification_center/presentation_test.sql",
+        "elapsedMs": 1181
+      }
+    ]
+  },
+  "github": {
+    "runId": 42624387792,
+    "sourceHead": "4e4229b26122967ada77ebe2e7364b1a1d3c2414",
+    "event": "pull_request",
+    "url": "https://github.com/festappnet/festapp/actions/runs/42624387792",
+    "seatCheckoutSeconds": 279,
+    "databaseStepSeconds": 125,
+    "observedMigrationApplyCount": 371,
+    "firstMigration": "2026-11-09T13:21:06.6985727Z",
+    "lastMigration": "2026-11-09T13:21:36.5847386Z",
+    "imagePulls": [
+      "supabase/postgres:15.8.1.085",
+      "supabase/realtime:v2.120.3",
+      "supabase/storage-api:v1.67.20",
+      "supabase/gotrue:v2.194.0"
+    ],
+    "seatContractSeconds": 59,
+    "notificationsSeconds": 31,
+    "ticketJobSeconds": 227,
+    "ticketClientSeconds": 157,
+    "webRunId": 42624387875,
+    "webJobSeconds": 174,
+    "webStartupStepSeconds": 98,
+    "webMeasurementStepSeconds": 49
+  },
+  "caveats": [
+    "Local and hosted runs use different revisions and machines; they are diagnostic examples, not a controlled before/after benchmark.",
+    "SQL per-file elapsed includes lock waits and cannot be summed into lane wall time.",
+    "The interval before the first migration includes downloading, starting and restoring prerequisites; it is not a pure image-download measurement.",
+    "No proposed speedup has been measured yet."
+  ]
+}

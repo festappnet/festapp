@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {timed} from './test_timings.mjs';
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
@@ -6,10 +7,11 @@ import {mkdtemp,writeFile,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createServer} from 'vite';
-import {openIsolatedBrowser} from './isolated_browser_startup.mjs';
-const cmp = process.argv.includes('--cmp');
+import {openIsolatedBrowser, instrumentBrowserCommands} from './isolated_browser_startup.mjs';
+let cmp = process.argv.includes('--cmp');
+const modes = process.argv.includes('--both') ? [false, true] : [cmp];
 const liveGtm = process.argv.includes('--live-gtm');
-const execute=promisify(execFile), root=path.resolve(import.meta.dirname,'..');
+const execute=instrumentBrowserCommands(promisify(execFile), 'form_measurement_browser'), root=path.resolve(import.meta.dirname,'..');
 const temp=await mkdtemp(path.join(tmpdir(),'form-measurement-'));
 const config=path.join(temp,'browser.json');
 await writeFile(config,JSON.stringify({provider:null,plugins:[],headed:false,autoConnect:false,args:'--mute-audio'}));
@@ -20,11 +22,14 @@ async function browser(...args) {
 }
 try {
  child=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'fixture-child',configureServer(s){s.middlewares.use((req,res,next)=>{if(!req.url.startsWith('/form/test'))return next();res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="en"><body><script type="module" src="/tests/fixtures/form_measurement/child.js"></script></body></html>')})}}]});
- await child.listen(); const childOrigin=`http://127.0.0.1:${child.httpServer.address().port}`;
+ await timed('browser.server-start', () => child.listen(), {suite: 'form_measurement_browser'}); const childOrigin=`http://127.0.0.1:${child.httpServer.address().port}`;
  childB=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'fixture-child-b',configureServer(s){s.middlewares.use((req,res,next)=>{if(!req.url.startsWith('/form/test'))return next();res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="en"><body><script type="module" src="/tests/fixtures/form_measurement/child.js"></script></body></html>')})}}]});
- await childB.listen();const childBOrigin=`http://127.0.0.1:${childB.httpServer.address().port}`;
+ await timed('browser.server-start', () => childB.listen(), {suite: 'form_measurement_browser'});const childBOrigin=`http://127.0.0.1:${childB.httpServer.address().port}`;
  host=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'fixture-host',configureServer(s){s.middlewares.use((req,res,next)=>{if(req.url==='/cmp/klaro.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');readFile(path.join(root,'node_modules/klaro/dist/klaro.js')).then(value=>res.end(value));return}if(req.url==='/away'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><title>Away</title>');return}if(!['/','/?private=1'].includes(req.url) && !(cmp && req.url.startsWith('/?cmp=1')))return next();const privateEntry=req.url.includes('private=1');res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body><iframe data-festapp-embed data-festapp-datalayer src="${childOrigin}/form/test?embed=1${privateEntry?'&token=private#secret':''}"></iframe><script>window.addEventListener('pageshow',e=>sessionStorage.setItem('fixture-pageshow',JSON.stringify({persisted:e.persisted,navigation:performance.getEntriesByType('navigation')[0]?.type})));window.heartbeats=new Set();const fixtureSetInterval=window.setInterval,fixtureClearInterval=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=fixtureSetInterval(fn,ms,...args);if(ms===20000)heartbeats.add(id);return id};window.clearInterval=id=>{heartbeats.delete(id);return fixtureClearInterval(id)};window.fixtureReadyCount=0;window.dataLayer=[];window.replies=new Map();window.addEventListener('message',e=>{if(e.data?.fixtureReady)fixtureReadyCount++;if(e.data?.fixtureReply){const f=window.replies.get(e.data.id);if(f){window.replies.delete(e.data.id);f(e.data)}}});window.call=(action,arg)=>new Promise((resolve,reject)=>{const id=crypto.randomUUID();window.replies.set(id,r=>r.error?reject(Error(r.error)):resolve(r.result));document.querySelector('iframe').contentWindow.postMessage({fixture:true,id,action,arg},'*');setTimeout(()=>reject(Error('fixture timeout '+action)),5000)});</script><script src="/embed.js"></script>${cmp?'<script>window.fixtureErrors=[];window.addEventListener("error",e=>fixtureErrors.push({message:e.message,source:e.filename,line:e.lineno,target:e.target?.src}),true)</script><script src="/cmp/klaro.js" onload="window.klaroLoaded=true" onerror="window.klaroLoaded=false"></script><script src="/tests/fixtures/form_measurement/klaro_host.js"></script>':''}</body></html>`)})}}]});
- await host.listen(); const origin=`http://127.0.0.1:${host.httpServer.address().port}`;
+ await timed('browser.server-start', () => host.listen(), {suite: 'form_measurement_browser'}); const origin=`http://127.0.0.1:${host.httpServer.address().port}`;
+ for (cmp of modes) {
+  try {
+   await timed('browser.scenario', async () => {
  await openIsolatedBrowser({open:async()=>{session=`fm-${process.pid}-${++index}`;await browser('open')},info:()=>browser('session','info'),close:()=>browser('close')});
  await browser('open',cmp?`${origin}/?cmp=1${liveGtm?'&live-gtm=1':''}`:origin); await browser('wait','--fn','!!window.FestappEmbed && !!document.querySelector("iframe")');
  const run=async code=>{const d=await browser('eval',`(async()=>{${code}})()`);return d.result};
@@ -68,5 +73,7 @@ try {
  await run("await call('denyHost');return true");await until(s=>s.state!=='active','unapproved host stops');await run("dataLayer.length=0;await call('view');return true");await new Promise(r=>setTimeout(r,150));assert.deepEqual(await run('return dataLayer'),[],'unapproved host cannot activate');
  await browser('open',`${origin}/?private=1`);await until(s=>s.instance,'private layout initialized');await new Promise(r=>setTimeout(r,300));assert.notEqual((await run("return await call('state')")).state,'active','private entry remains ineligible');assert.deepEqual(await run('return dataLayer'),[]);
  console.log(`PASS: ${cmp?'Klaro':'host'} always-on measurement, consent state, forged messages, private entry, contact allowlist and pending operations`);
-
-} finally { try{await browser('close')}catch{} await Promise.allSettled([host?.close(),child?.close(),childB?.close()]); await rm(temp,{recursive:true,force:true}); }
+   }, {suite: 'form_measurement_browser', scenario: cmp ? 'cmp' : 'host'});
+  } finally { try{await browser('close')}catch{} }
+ }
+} finally { await Promise.allSettled([host?.close(),child?.close(),childB?.close()]); await rm(temp,{recursive:true,force:true}); }

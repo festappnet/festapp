@@ -100,6 +100,7 @@ def materialize_history(destination, root=ROOT, include_email=False):
 
 def upgrade_local(database_url, root=ROOT):
     """Run the existing migration engine with recovered history; never install a snapshot over data."""
+    from ci.telemetry import phase
     from urllib.parse import urlsplit
     import tempfile
     import shutil
@@ -120,7 +121,8 @@ def upgrade_local(database_url, root=ROOT):
     if not set(required).issubset(recorded):
         raise ValueError('Database is older than the supported original baseline ledger; refusing upgrade')
     with tempfile.TemporaryDirectory(prefix='festapp-upgrade-') as temporary:
-        kit = materialize_history(Path(temporary), root)
+        with phase('database.history-materialization'):
+            kit = materialize_history(Path(temporary), root)
         forward = sorted((root / 'supabase/migrations').glob('*.sql'))
         (kit / 'supabase/config.toml').write_text('project_id = "festapp-local-upgrade"\n')
         added = set()
@@ -140,7 +142,8 @@ def upgrade_local(database_url, root=ROOT):
             migration_env = os.environ.copy()
             migration_env['PGOPTIONS'] = (migration_env.get('PGOPTIONS', '') +
                 ' -c request.jwt.claim.role=service_role').strip()
-            subprocess.run(['supabase', 'migration', 'up', '--workdir', str(kit), '--db-url', database_url, '--include-all'], check=True, env=migration_env)
+            with phase('database.migrate', beforeVersion=before):
+                subprocess.run(['supabase', 'migration', 'up', '--workdir', str(kit), '--db-url', database_url, '--include-all'], check=True, env=migration_env)
 
         for stage in sorted(load_manifest(root).get('upgradeStages', []), key=lambda stage: stage['beforeVersion']):
             if stage['beforeVersion'] in recorded:
@@ -153,7 +156,8 @@ def upgrade_local(database_url, root=ROOT):
                     break
                 if previous is not None and remaining >= previous:
                     raise ValueError('Upgrade backfill made no progress; inspect the disposable target')
-                subprocess.run(['psql', database_url, '-X', '-v', 'ON_ERROR_STOP=1', '-q', '-f', str(root / stage['backfill']['path'])], check=True, stdout=subprocess.DEVNULL)
+                with phase('database.backfill', beforeVersion=stage['beforeVersion']):
+                    subprocess.run(['psql', database_url, '-X', '-v', 'ON_ERROR_STOP=1', '-q', '-f', str(root / stage['backfill']['path'])], check=True, stdout=subprocess.DEVNULL)
                 previous = remaining
         migrate()
 

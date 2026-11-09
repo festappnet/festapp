@@ -5,6 +5,7 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_form_preview.dar
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
@@ -14,6 +15,13 @@ import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // These data/catalogue contracts intentionally have no translation catalog.
+  // Preserve all other warning/error diagnostics while avoiding tens of
+  // thousands of expected missing-label messages for the full font inventory.
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
   late Map<String, String> setupFontIds;
   setUpAll(() async { setupFontIds = await TicketFontCatalog.loadSetupFonts(); });
 

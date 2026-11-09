@@ -3,9 +3,16 @@ import pg from '../../../web_client/node_modules/pg/lib/index.js';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
-const ports = JSON.parse(execFileSync('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', 'supabase_db_festapp-security-remediation-20261016'], {encoding:'utf8'}));
-assert(ports['5432/tcp']?.some(binding => binding.HostPort === '55562'), 'Run only against the task-owned disposable database on port 55562');
-const db=new pg.Client({connectionString:'postgresql://postgres:postgres@127.0.0.1:55562/postgres?sslmode=disable'});
+const project=process.env.FESTAPP_LOCAL_DB_PROJECT_ID;
+assert.equal(project,'festapp-security-runtime-pg17');
+const configured=new URL(process.env.DATABASE_URL);
+assert.equal(configured.hostname,'127.0.0.1');assert.equal(configured.port,'55562');
+assert.equal(configured.pathname,'/festapp_run_'+process.env.FESTAPP_DB_RUN_ID);
+assert.match(configured.pathname,/^\/festapp_run_[a-f0-9]{32}$/);
+const container=JSON.parse(execFileSync('docker',['inspect','supabase_db_'+project],{encoding:'utf8'}))[0];
+assert.equal(container.Config.Labels['net.festapp.sql-runtime'],'2');
+assert(container.NetworkSettings.Ports['5432/tcp']?.some(binding=>binding.HostIp==='127.0.0.1'&&binding.HostPort==='55562'));
+const db=new pg.Client({connectionString:configured.href});
 const results=[];
 const q=(text,values=[])=>db.query(text,values);
 const one=async(text,values=[]) => (await q(text,values)).rows[0];
@@ -35,6 +42,12 @@ try{
  await q('INSERT INTO eshop.order_product_ticket("order",ticket) VALUES($1,$2)',[order,ticket]);
  await q('UPDATE public.occasion_users SET ticket=$1 WHERE occasion=$2 AND "user"=$3',[ticket,occ,users.owner]);
  async function rpc(name,args){return (await one(`SELECT public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) AS result`,args)).result;}
+ async function deniedAttendance(name,routine){
+  await q('SAVEPOINT denied_attendance');
+  try {await assert.rejects(as('anon',null,()=>rpc(routine,[event,users.owner])),{code:'42501'});}
+  finally {await q('ROLLBACK TO SAVEPOINT denied_attendance');}
+  results.push({name,value:'42501'});
+ }
  check('scan_null_rejected',(await as('anon',null,()=>rpc('scan_ticket',[symbol,null]))).code,401);
  check('scan_valid_unchanged',(await as('anon',null,()=>rpc('scan_ticket',[symbol,'doublecheck-valid-secret']))).code,200);
  check('scan_wrong_rejected',(await as('anon',null,()=>rpc('scan_ticket',[symbol,'wrong']))).code,401);
@@ -42,12 +55,12 @@ try{
  check('mark_null_rejected',(await as('anon',null,()=>rpc('update_ticket_to_used',[ticket,null]))).code,401);
  check('mark_null_no_state_change',(await one('SELECT state FROM eshop.tickets WHERE id=$1',[ticket])).state,'sent');
  check('mark_valid_unchanged',(await as('anon',null,()=>rpc('update_ticket_to_used',[ticket,'doublecheck-valid-secret']))).code,200);
- check('anonymous_signin_rejected',(await as('anon',null,()=>rpc('sign_user_to_event',[event,users.owner]))).code,403);
- check('anonymous_signout_rejected',(await as('anon',null,()=>rpc('sign_user_out_of_event',[event,users.owner]))).code,403);
+ await deniedAttendance('anonymous_signin_rejected','sign_user_to_event');
+ await deniedAttendance('anonymous_signout_rejected','sign_user_out_of_event');
  check('wrong_actor_rejected',(await as('authenticated',users.outsider,()=>rpc('sign_user_to_event',[event,users.fresh]))).code,403);
  check('wrong_actor_no_membership',(await one('SELECT count(*)::int AS n FROM public.occasion_users WHERE occasion=$1 AND "user"=$2',[occ,users.fresh])).n,0);
  check('owner_signin_unchanged',(await as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,users.owner]))).code,200);
- check('anonymous_signout_cannot_remove_existing',(await as('anon',null,()=>rpc('sign_user_out_of_event',[event,users.owner]))).code,403);
+ await deniedAttendance('anonymous_signout_cannot_remove_existing','sign_user_out_of_event');
  check('wrong_actor_signout_rejected',(await as('authenticated',users.outsider,()=>rpc('sign_user_out_of_event',[event,users.owner]))).code,403);
  check('denied_signout_preserves_attendance',(await one('SELECT count(*)::int AS n FROM public.event_users WHERE event=$1 AND "user"=$2',[event,users.owner])).n,1);
  check('duplicate_signin_unchanged',(await as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,users.owner]))).code,103);
@@ -62,14 +75,20 @@ try{
  await q("UPDATE public.occasions SET features='[{\"code\":\"workshops\",\"is_enabled\":false}]' WHERE id=$1",[occ]);
  check('disabled_workshops_unchanged',(await as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,users.owner]))).code,108);
  await q("UPDATE public.occasions SET features='[]' WHERE id=$1",[occ]);
- await q('UPDATE public.events SET max_participants=0 WHERE id=$1',[event]);
+ // Nonpositive capacity now means unlimited. Fill a real positive limit.
+ await q('UPDATE public.events SET max_participants=1 WHERE id=$1',[event]);
+ await q('INSERT INTO public.event_users(event,"user") VALUES($1,$2)',[event,users.editor]);
  check('full_event_unchanged',(await as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,users.owner]))).code,101);
+ await q('DELETE FROM public.event_users WHERE event=$1 AND "user"=$2',[event,users.editor]);
  await q('UPDATE public.events SET max_participants=10 WHERE id=$1',[event]);
 
  check('disabled_companions_rejected',(await as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,users.fresh]))).code,403);
  check('open_occasion_self_signup',(await as('authenticated',users.outsider,()=>rpc('sign_user_to_event',[event,users.outsider]))).code,200);
  check('open_occasion_creates_own_membership',(await one('SELECT count(*)::int AS n FROM public.occasion_users WHERE occasion=$1 AND "user"=$2',[occ,users.outsider])).n,1);
- check('null_subject_rejected',(await as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,null]))).code,403);
+ await q('SAVEPOINT invalid_attendance');
+ try {await assert.rejects(as('authenticated',users.owner,()=>rpc('sign_user_to_event',[event,null])),{code:'22023'});}
+ finally {await q('ROLLBACK TO SAVEPOINT invalid_attendance');}
+ results.push({name:'null_subject_rejected',value:'22023'});
  await q("UPDATE eshop.tickets SET state='sent' WHERE id=$1",[ticket]);
  await q('UPDATE public.occasions_hidden SET secret=NULL WHERE id=$1',[hidden]);
  check('missing_secret_scan_rejected',(await as('anon',null,()=>rpc('scan_ticket',[symbol,null]))).code,400);

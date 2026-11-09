@@ -37,7 +37,7 @@ test('two actual editor connections compete for one resource slot without overbo
    }catch(e){await c.query('ROLLBACK');throw e;}
   }));
   assert.equal(results.filter(r=>r.status==='fulfilled').length,1,JSON.stringify(results));
-  assert.equal(results.filter(r=>r.status==='rejected'&&r.reason.code==='23514').length,1);
+  assert.equal(results.filter(r=>r.status==='rejected'&&r.reason.code==='55000').length,1);
   assert.equal((await one('SELECT count(*)::int n FROM eshop.spots WHERE resource=$1',[res])).n,1);
  }finally{
   await db.query('ROLLBACK');

@@ -43,7 +43,5 @@ jobs:
           cache-dependency-path: |
             integrations/wix/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
-      - name: Install pinned Wix and checkout dependencies
-        run: python3 automation/ci/run.py step wix-install
-      - name: Verify wrapper and shared embed/storage contracts
-        run: python3 automation/ci/run.py step wix-contract
+      - name: Run canonical regression DAG
+        run: python3 automation/ci/run.py lane wix-checkout-compatibility

@@ -95,7 +95,14 @@ test('live legacy Auth counters are adopted without resetting attempt budgets', 
       CREATE TABLE public.external_login_rate_limits(key_hash text PRIMARY KEY,window_start timestamptz,hits integer);
       INSERT INTO public.password_reset_rate_limits VALUES(repeat('a',64),now(),3);
       INSERT INTO public.external_login_rate_limits VALUES(repeat('b',64),now(),100)`);
-    await c.query(await readFile(new URL('../../functions/abuse/auth.sql', import.meta.url), 'utf8'));
+    // Adoption belongs to immutable upgrade history. The current reusable
+    // handler deliberately has no legacy-table compatibility path.
+    const migration=await readFile(new URL('../../../supabase/migrations/20261016100000_abuse_admission.sql',import.meta.url),'utf8');
+    const marker='-- Source: database/functions/abuse/auth.sql\n';
+    assert.equal(migration.split(marker).length,2,'one historical Auth upgrade section');
+    const authUpgrade=migration.split(marker)[1].split('\n-- Source:')[0];
+    assert.match(authUpgrade,/DROP TABLE public\.password_reset_rate_limits;/);
+    await c.query(authUpgrade);
     await c.query(`SELECT set_config('request.jwt.claim.role','service_role',true)`);
     const { rows: [r] } = await c.query(`SELECT public.consume_auth_abuse_v1('reset.account',repeat('a',64)) AS reset,
       public.consume_auth_abuse_v1('google.global',repeat('b',64)) AS google`);

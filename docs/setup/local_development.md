@@ -22,38 +22,27 @@ production rows or secrets.
    ./automation/bootstrap_local_db.sh
    ```
 
-The command deletes and recreates only the Docker volume belonging to
-`festapp-db-tests-pg15`, starts PostgreSQL 15 on port `55432`, restores
-the manifest-owned baseline through `20260906140000`, records its 111 covered
-migration versions, applies newer forward migrations, and runs
-`supabase/seed.sql`.
-
-Database URL:
-
-```text
-postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
-```
-
-Stop and remove the isolated database with:
-
-```bash
-./automation/bootstrap_local_db.sh --stop
-```
+The command prepares or reuses a content-verified immutable PostgreSQL 15 base,
+then ordinary test commands acquire their own clean clone. The canonical owner is
+`automation/local_db/runtime.py`; it never reads `.env.local` or guesses another
+session's database. Default dedicated cluster: `festapp-sql-runtime`, loopback
+port 55542. The baseline/ledger and full supported history remain authoritative.
+Use `--upgrade` for an actual cold full replay, `--status` for leases/cache state,
+`--prune` for owned abandoned runs, and `--stop` to stop only an unleased runtime.
 
 ## Running tests
 
 ```bash
-# Override any DATABASE_URL supplied by .env.local.
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  ./automation/test_all.sh db
-
-# Run one SQL contract directly.
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  node web_client/scripts/run_db_tests.js database/tests/companion_contract_test.sql
-
-# Complete client suite (core + native Dart adapters + Flutter), no database.
+./automation/test_all.sh db
+node web_client/scripts/run_db_tests.js database/tests/companion_contract_test.sql
+python3 automation/local_db/runtime.py exec -- node --test web_client/tests/database/retired_waitlist_registry.test.js
 ./automation/test_client.sh
 ```
+
+No fixed behavior database URL is required: the wrappers acquire a unique
+workspace and close their pools before deleting it. An explicit marked local
+fixture remains supported for integration or supported-upgrade work. Empty SQL
+filters fail; diagnostic retries never erase the first-attempt verdict.
 
 First resolve root dependencies with `fvm flutter pub get`, then run
 `fvm dart pub get` inside `packages/festapp_core`. For a partial run use
@@ -117,11 +106,12 @@ refuses conflicting files, and never substitutes current source definitions.
 
 ## Production safety
 
-`bootstrap_local_db.sh` defaults to `127.0.0.1:55432` and its dedicated local
-Supabase project ID. Isolated checks may select a separate project, workdir and
-port with `FESTAPP_LOCAL_DB_PROJECT_ID`, `FESTAPP_LOCAL_DB_WORKDIR` and
-`FESTAPP_LOCAL_DB_PORT`. Scheduled cron execution is disabled before SQL restore. It does not read `DATABASE_URL`, link a remote project, or
-run `db push`. Testing against production is not part of the supported workflow.
+`bootstrap_local_db.sh` delegates to the owned runtime on 127.0.0.1:55542.
+Choose another owned project/port with `FESTAPP_LOCAL_DB_PROJECT_ID` and
+`FESTAPP_LOCAL_DB_PORT`. Cron execution is disabled and pg_net's worker uses an
+empty sink database. Unowned containers, non-loopback port mappings, mismatched
+markers and live leases prevent reuse or shutdown. No command links a remote
+project or runs `db push`; production is outside this workflow.
 
 ## Generated app fonts
 

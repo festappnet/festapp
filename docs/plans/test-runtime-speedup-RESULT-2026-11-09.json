@@ -1,0 +1,1289 @@
+{
+  "status": "implemented-local-validation-complete-with-target-deficits",
+  "baseMainSha": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+  "worktree": "/private/tmp/festapp-test-runtime-20261109",
+  "branch": "perf/test-runtime-20261109",
+  "implementedWaves": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "published": false,
+  "productionMutated": false,
+  "providerParity": {
+    "roles_equal": true,
+    "role_memberships_equal": true,
+    "cron_disabled_both": true,
+    "ledger_equal": true,
+    "extensions_equal": true,
+    "postgres_versions": [
+      "150008",
+      "150008"
+    ],
+    "schema_equal": true,
+    "schema_sha256": [
+      "8701b7e0e425afae2b63beab77bc6c99de378ffb960ef67ad544a475a4959947",
+      "8701b7e0e425afae2b63beab77bc6c99de378ffb960ef67ad544a475a4959947"
+    ],
+    "reference_rows_equal": {
+      "public.client_sync_component_sources": true
+    },
+    "unresolved_reference_counts": {
+      "public.client_sync_component_sources.source_relation": {
+        "left": 0,
+        "right": 0
+      }
+    },
+    "sequence_values_equal": true,
+    "ignored_catalog_schema": "supabase_migrations (ledger verified separately)"
+  },
+  "inventory": {
+    "sqlExecutions": 110,
+    "sqlUniqueIds": 109,
+    "flutterSemanticCases": 295,
+    "startupBrowserReports": 31,
+    "formAccessReports": 30,
+    "measurementScenarios": 194,
+    "startupNodeTests": 306,
+    "startupOriginalNodeTests": 304,
+    "startupAddedNodeTests": 2
+  },
+  "sqlDefaultConcurrency": 2,
+  "hostedExactShaGate": "not executed: source publication is not authorized",
+  "evidenceDirectory": "/private/tmp/festapp-runtime-evidence-20261109",
+  "sqlDefaultRationale": "Lower memory when independent units overlap; final2/4/5 wall15.72/14.14/13.75s and PG container347.0/375.8/432.9MiB; prior matrix19.08/19.45/28.84s demonstrates host variability.",
+  "serviceProofs": {
+    "pg17Security": "pg17-security-final-v6.log:11+1Node,28scanAttendance,6SQL PASS",
+    "email": "email-runtime-v2.log PASS",
+    "nativeAuth": "native-auth-final-v2.log PASS",
+    "abuse": "abuse-runtime-passed.log:43SQL+3Node+realnativeAuth PASS"
+  },
+  "historicalBeforeMainIntegration": {
+    "baseMainSha": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+    "sqlConcurrencyMatrix": [
+      {
+        "concurrency": 2,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 19.083290499984287,
+        "peakSummedRssBytes": 89833472,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            4.71484375,
+            5.09326171875,
+            6.06201171875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14415.12M  free = 944.88M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            5.91650390625,
+            5.3447265625,
+            6.12939453125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14543.88M  free = 816.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 4,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 19.454257624980528,
+        "peakSummedRssBytes": 180436992,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            5.6826171875,
+            5.3056640625,
+            6.11083984375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14545.62M  free = 814.38M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            6.408203125,
+            5.50830078125,
+            6.16455078125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15082.06M  free = 1301.94M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 5,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 28.841258999949787,
+        "peakSummedRssBytes": 83509248,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            6.408203125,
+            5.50830078125,
+            6.16455078125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15034.06M  free = 1349.94M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            8.7373046875,
+            6.197265625,
+            6.39306640625
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 14759.31M  free = 1624.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+        "coveredInputsUnchanged": true
+      }
+    ],
+    "sqlContainerSamplesFirstMatrix": "unavailable: Docker ANSI controls; corrected sampler regression passed; final matrix has27-31 valid samples",
+    "flutterControl": [
+      {
+        "run": "cold",
+        "seconds": 110.77156841603573,
+        "peakSummedRssBytes": 2506489856,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      },
+      {
+        "run": "warm-1",
+        "seconds": 80.41113370802486,
+        "peakSummedRssBytes": 2151989248,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      },
+      {
+        "run": "warm-2",
+        "seconds": 79.87895841698628,
+        "peakSummedRssBytes": 1950400512,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      },
+      {
+        "run": "warm-3",
+        "seconds": 109.18961449997732,
+        "peakSummedRssBytes": 1470087168,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      }
+    ],
+    "sqlFinalMemoryMatrix": [
+      {
+        "concurrency": 2,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 15.717003750032745,
+        "peakSummedRssBytes": 99876864,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            4.16552734375,
+            5.92236328125,
+            6.244140625
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 14769.88M  free = 1614.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            3.9248046875,
+            5.779296875,
+            6.18701171875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13964.31M  free = 1395.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 4,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 14.144293082994409,
+        "peakSummedRssBytes": 109068288,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            3.9248046875,
+            5.779296875,
+            6.18701171875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13964.31M  free = 1395.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            4.02734375,
+            5.70849609375,
+            6.15380859375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13932.31M  free = 1427.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 5,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 13.749731041956693,
+        "peakSummedRssBytes": 109723648,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            4.02734375,
+            5.70849609375,
+            6.15380859375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13924.31M  free = 1435.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            3.6455078125,
+            5.5419921875,
+            6.08642578125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13924.31M  free = 1435.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+        "coveredInputsUnchanged": true
+      }
+    ],
+    "flutterCandidate": [
+      {
+        "run": "cold",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/cold/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/cold/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 72.0506929999683,
+        "peakSummedRssBytes": 2676621312,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "970eee244ffbc46e2469d220d58a36c911f07543b2d6a4ed32dfce73731bb622",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            6.95849609375,
+            6.1181640625,
+            6.34912109375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14149.19M  free = 1210.81M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            5.73388671875,
+            5.9716796875,
+            6.27685546875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15799.50M  free = 584.50M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.04130866698687896
+      },
+      {
+        "run": "warm-1",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-1/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-1/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 63.88402158301324,
+        "peakSummedRssBytes": 1774206976,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "bf420c544895770bdf15a251562f7274062665d81bcd99ef3c0486e6666fc38a",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            5.73388671875,
+            5.9716796875,
+            6.27685546875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15791.50M  free = 592.50M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            7.2177734375,
+            6.28271484375,
+            6.36376953125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15985.94M  free = 398.06M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.02779295900836587
+      },
+      {
+        "run": "warm-2",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-2/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-2/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 56.1227184170275,
+        "peakSummedRssBytes": 1701429248,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "e2ee4f01f3644d016f5b302f55b8c907f1782099279acbe39990dd530f3d2d3b",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            7.3603515625,
+            6.32763671875,
+            6.37890625
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15969.94M  free = 414.06M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            8.140625,
+            6.6669921875,
+            6.4970703125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15721.88M  free = 662.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.039915083965752274
+      },
+      {
+        "run": "warm-3",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-3/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-3/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 48.13200558297103,
+        "peakSummedRssBytes": 1695744000,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "6791e30f917a92875ed4c4479c7f35e337e0380025264b37f6d3a5cd21b571ba",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            8.140625,
+            6.6669921875,
+            6.4970703125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15713.88M  free = 670.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            7.732421875,
+            6.78955078125,
+            6.5517578125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15353.88M  free = 1030.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.06450437498278916
+      },
+      {
+        "run": "reverse",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/reverse/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/reverse/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 44.41573270899244,
+        "peakSummedRssBytes": 1686781952,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "718c169139aca7aa53230c2ee54394a0bc4463cf0001cbe62eca3e5d92386168",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            7.732421875,
+            6.78955078125,
+            6.5517578125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15353.88M  free = 1030.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            6.26025390625,
+            6.52392578125,
+            6.46435546875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 14961.88M  free = 1422.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.028907750034704804
+      }
+    ],
+    "finalChecks": null
+  },
+  "flutterMatchedCurrentMain": [
+    {
+      "side": "control",
+      "run": "cold",
+      "code": 0,
+      "seconds": 118.047560875013,
+      "peakSummedRssBytes": 2570305536,
+      "slotWaitSeconds": 0.03129541699308902,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          6.1787109375,
+          7.28955078125,
+          6.9169921875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 17408.00M  used = 16577.25M  free = 830.75M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          7.013671875,
+          7.11328125,
+          6.88330078125
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 17431.12M  free = 1000.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "cold",
+      "code": 0,
+      "seconds": 89.60409083397826,
+      "peakSummedRssBytes": 2323677184,
+      "slotWaitSeconds": 0.03214866702910513,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          7.013671875,
+          7.11328125,
+          6.88330078125
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 17431.12M  free = 1000.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          8.767578125,
+          7.4560546875,
+          7.02197265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 16941.38M  free = 1490.62M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "control",
+      "run": "warm1",
+      "code": 0,
+      "seconds": 93.05567512498237,
+      "peakSummedRssBytes": 1856552960,
+      "slotWaitSeconds": 0.031165916996542364,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          8.767578125,
+          7.4560546875,
+          7.02197265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 16941.38M  free = 1490.62M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          8.8212890625,
+          8.15283203125,
+          7.36572265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 17408.00M  used = 15366.25M  free = 2041.75M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "warm1",
+      "code": 0,
+      "seconds": 52.6893790839822,
+      "peakSummedRssBytes": 1972273152,
+      "slotWaitSeconds": 0.02929858397692442,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          8.8212890625,
+          8.15283203125,
+          7.36572265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 15358.06M  free = 1025.94M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.98193359375,
+          7.48046875,
+          7.1630859375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 15230.06M  free = 1153.94M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "control",
+      "run": "warm2",
+      "code": 0,
+      "seconds": 90.76950979197863,
+      "peakSummedRssBytes": 1663139840,
+      "slotWaitSeconds": 0.027031125035136938,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          5.98193359375,
+          7.48046875,
+          7.1630859375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 15222.06M  free = 1161.94M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.75048828125,
+          6.99072265625,
+          7.00341796875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14941.94M  free = 1442.06M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "warm2",
+      "code": 0,
+      "seconds": 60.874180916987825,
+      "peakSummedRssBytes": 1708179456,
+      "slotWaitSeconds": 0.029287416953593493,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          5.60986328125,
+          6.94091796875,
+          6.9853515625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14941.94M  free = 1442.06M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.1083984375,
+          6.60498046875,
+          6.857421875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14953.12M  free = 1430.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "control",
+      "run": "warm3",
+      "code": 0,
+      "seconds": 86.72616945800837,
+      "peakSummedRssBytes": 1889615872,
+      "slotWaitSeconds": 0.027531208004802465,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          5.1083984375,
+          6.60498046875,
+          6.857421875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14937.12M  free = 1446.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          4.2939453125,
+          6.0078125,
+          6.60302734375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14915.75M  free = 1468.25M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "warm3",
+      "code": 0,
+      "seconds": 58.074119541968685,
+      "peakSummedRssBytes": 1804419072,
+      "slotWaitSeconds": 0.029872958024498075,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          4.2939453125,
+          6.0078125,
+          6.60302734375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14915.75M  free = 1468.25M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.560546875,
+          6.0654296875,
+          6.58203125
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14934.94M  free = 1449.06M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    }
+  ],
+  "currentMainChecks": {
+    "providerParity": "PASS",
+    "runtimeIntegration": {
+      "tests": 9,
+      "seconds": 12.904,
+      "result": "PASS"
+    },
+    "browserCorrectness": {
+      "nodeTests": 306,
+      "reports": 31,
+      "result": "PASS"
+    },
+    "mirror": {
+      "result": "PASS",
+      "jobs": 8,
+      "units": 36,
+      "complete": true,
+      "inputsUnchanged": true,
+      "perFileChangedInputs": 0,
+      "testedInputSha256": "c0ff5e89e75f2243b283bbb327614fd48fefe6ef7dbd13a850d7167c06053a94",
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T193539-edc7a4a13f01/receipt.json",
+      "archivedReceipt": "final-ci-receipt/receipt.json",
+      "outer": {
+        "exitCode": 0,
+        "seconds": 340.1222222080105,
+        "peakSummedRssBytes": 2705080320,
+        "headBefore": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "headAfter": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "filesChanged": []
+      },
+      "receiptSeconds": 338.92056958394824,
+      "preparationSeconds": 5.18080008396646,
+      "executionSeconds": 333.5651527500013,
+      "cleanupSeconds": 0.17461216601077467,
+      "canonicalSeatSpanWithinSharedRunSeconds": 187.02,
+      "canonicalSeatSpanScope": "eleven step events including real upgrade/runtime gates and shared-run scheduling waits; not comparable to isolated nine-unit benchmark"
+    }
+  },
+  "browserToolchain": {
+    "agentBrowser": "0.41.2",
+    "browserSelection": "native discovery; no forced executable path",
+    "removed": "0.39-specific iframe geometry helper"
+  },
+  "seatMatchedCurrentMain": {
+    "scope": "same nine behavior units;110 SQL executions109unique; separate additive safety/upgrade/runtime gates excluded",
+    "runs": {
+      "control": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 116.02545883395942,
+          "peakSummedRssBytes": 1991639040,
+          "containerPeakSampledBytes": 267386880,
+          "containerSamples": 54,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-cold-receipt.json"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 108.06943845801288,
+          "peakSummedRssBytes": 1812152320,
+          "containerPeakSampledBytes": 213490073,
+          "containerSamples": 51,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-warm1-receipt.json"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 108.08807066699956,
+          "peakSummedRssBytes": 1772290048,
+          "containerPeakSampledBytes": 248197939,
+          "containerSamples": 51,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-warm2-receipt.json"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 105.52408045798074,
+          "peakSummedRssBytes": 1929609216,
+          "containerPeakSampledBytes": 213280358,
+          "containerSamples": 50,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-warm3-receipt.json"
+        }
+      ],
+      "dag": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 73.93366625002818,
+          "peakSummedRssBytes": 1836482560,
+          "containerPeakSampledBytes": 328728576,
+          "containerSamples": 36,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-cold-receipt.json"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 52.1214603339904,
+          "peakSummedRssBytes": 1791000576,
+          "containerPeakSampledBytes": 308910489,
+          "containerSamples": 27,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-warm1-receipt.json"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 51.08769629098242,
+          "peakSummedRssBytes": 1745829888,
+          "containerPeakSampledBytes": 295279001,
+          "containerSamples": 26,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-warm2-receipt.json"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 52.802160207997076,
+          "peakSummedRssBytes": 1808056320,
+          "containerPeakSampledBytes": 317928243,
+          "containerSamples": 28,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-warm3-receipt.json"
+        }
+      ]
+    },
+    "controlWarmMedianSeconds": 108.06943845801288,
+    "candidateWarmMedianSeconds": 52.1214603339904,
+    "speedup": 2.073415398676707,
+    "targetSeconds": 40,
+    "targetDeficitSeconds": 12.121460333990399,
+    "fallbackAtLeast2xMet": true,
+    "coldDefinition": "fresh owned project/template; image, pnpm and OS caches retained; all clone/start/stop and Node resolution included"
+  },
+  "browserMatchedCurrentMain": {
+    "runs": {
+      "web-startup": {
+        "control": [
+          {
+            "run": "cold",
+            "exitCode": 1,
+            "seconds": 60.16789079201408,
+            "peakSummedRssBytes": 1619361792
+          }
+        ],
+        "candidate": [
+          {
+            "run": "cold",
+            "exitCode": 0,
+            "seconds": 113.4701766250073,
+            "peakSummedRssBytes": 1808809984
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 103.32724974997109,
+            "peakSummedRssBytes": 2192097280
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 107.14619708398823,
+            "peakSummedRssBytes": 1824456704
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 108.23258066701237,
+            "peakSummedRssBytes": 1820262400
+          }
+        ]
+      },
+      "web-measurement": {
+        "control": [
+          {
+            "run": "cold",
+            "exitCode": 0,
+            "seconds": 33.8012371250079,
+            "peakSummedRssBytes": 1600684032
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 32.498314291005954,
+            "peakSummedRssBytes": 1632026624
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 33.17894504102878,
+            "peakSummedRssBytes": 1644609536
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 34.73637462500483,
+            "peakSummedRssBytes": 1654800384
+          }
+        ],
+        "candidate": [
+          {
+            "run": "cold",
+            "exitCode": 0,
+            "seconds": 31.971686040982604,
+            "peakSummedRssBytes": 1554006016
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 31.649791667005047,
+            "peakSummedRssBytes": 1469874176
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 32.80172741599381,
+            "peakSummedRssBytes": 1459912704
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 29.691666208032984,
+            "peakSummedRssBytes": 1584578560
+          }
+        ]
+      }
+    },
+    "originalNodeTests": 304,
+    "additiveNodeTests": 2,
+    "browserReports": 31,
+    "measurementScenarios": 194,
+    "startupControlVerdict": "FAIL first attempt iframe validation timeout; no matched startup speedup claim",
+    "candidateStartupWarmMedianSeconds": 107.15,
+    "controlMeasurementWarmMedianSeconds": 33.18,
+    "candidateMeasurementWarmMedianSeconds": 31.65,
+    "candidateCombinedMedianSeconds": 138.8,
+    "targetSeconds": 75,
+    "targetDeficitSeconds": 63.8,
+    "coldDefinition": "first sampled invocation: fresh owned browsers/servers and fixture build; dependency/browser/Vite/OS caches retained; not a cold-cache measurement"
+  },
+  "warmTargetedCurrentMain": {
+    "identity": {
+      "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+      "dirty": true,
+      "inputSha256": "c0ff5e89e75f2243b283bbb327614fd48fefe6ef7dbd13a850d7167c06053a94",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64"
+    },
+    "inputsUnchanged": true,
+    "clusterStartAndPrepare": {
+      "seconds": 1.1219805829459801,
+      "mode": "behavior-template"
+    },
+    "acquisitions": [
+      {
+        "run": 1,
+        "acquireCloneSeconds": 1.054680917004589,
+        "mode": "behavior-template",
+        "fingerprint": "ae7092d564affa72ca71d2e65a0d54754d8e729954722330c3466c49a0309fa4",
+        "acquireReleaseSeconds": 1.1995413330150768
+      },
+      {
+        "run": 2,
+        "acquireCloneSeconds": 0.6941614999668673,
+        "mode": "behavior-template",
+        "fingerprint": "ae7092d564affa72ca71d2e65a0d54754d8e729954722330c3466c49a0309fa4",
+        "acquireReleaseSeconds": 0.8209982499829493
+      },
+      {
+        "run": 3,
+        "acquireCloneSeconds": 0.6541336659574881,
+        "mode": "behavior-template",
+        "fingerprint": "ae7092d564affa72ca71d2e65a0d54754d8e729954722330c3466c49a0309fa4",
+        "acquireReleaseSeconds": 0.7711339579545893
+      }
+    ],
+    "scope": [
+      "database/tests/notification_center/prepared_orders_test.sql",
+      "database/tests/notification_center/prepared_lifecycle_test.sql",
+      "database/tests/notification_center/contract_test.sql"
+    ],
+    "targeted": [
+      {
+        "run": 1,
+        "seconds": 2.1785946669988334,
+        "peakSummedRssBytes": 136871936,
+        "code": 0
+      },
+      {
+        "run": 2,
+        "seconds": 2.6678390839952044,
+        "peakSummedRssBytes": 141623296,
+        "code": 0
+      },
+      {
+        "run": 3,
+        "seconds": 2.226301999995485,
+        "peakSummedRssBytes": 154337280,
+        "code": 0
+      }
+    ],
+    "finalClusterStopSeconds": 0.14824608399067074,
+    "scopeLabel": "three targeted SQL files; separate from whole-suite performance"
+  },
+  "flutterEventProfile": "main-flutter/event-profile.json",
+  "postGateDocumentation": {
+    "onlyAllowedPaths": [
+      "docs/plans/test-runtime-speedup-RESULT-2026-11-09.md",
+      "docs/plans/test-runtime-speedup-RESULT-2026-11-09.json",
+      "docs/plans/test-runtime-speedup-plan-2026-11-09.md"
+    ],
+    "note": "Final numerical documentation is written after the exact-source mirror; separate manifest comparison proves no functional inputs changed."
+  },
+  "remainingTargets": [
+    "Matched seat median52.12s exceeds40s by12.12s; >=2x fallback met.",
+    "Browser combined medians138.80s exceed75s by63.80s; startup control failed, so startup speedup unproven.",
+    "Hosted cold/exact-SHA CI not executed: sources are uncommitted and unpublished.",
+    "No controlled before/after full-eight-job total; current full8outer340.12s only."
+  ]
+}

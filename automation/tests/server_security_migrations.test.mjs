@@ -24,8 +24,13 @@ test('online restore refuses mutable images, production mounts, network and pree
  assert.match(s, /'runtime_executed':bool\(a\.gateway_smoke\)/);
  assert.match(s, /add_argument\('\-\-gateway-smoke',action='store_true'\)/);
  const isolated=read('database/tests/security/run-local.sh');
- assert.match(isolated,/major_version = 17/);
- assert.match(read('automation/bootstrap_local_db.sh'),/postgresql:\/\/supabase_admin:postgres@127\.0\.0\.1/);
+ assert.match(isolated,/FESTAPP_TEST_PG_MAJOR=17/);
+ assert.match(isolated,/local_db\/runtime\.py/);
+ assert.match(read('automation/bootstrap_local_db.sh'),/local_db\/runtime\.py/);
+ const runtime=read('automation/local_db/runtime.py');
+ assert.match(runtime,/postgresql:\/\/\{user\}:postgres@127\.0\.0\.1/);
+ assert(runtime.includes("self.url('supabase_admin')"),'actual migration replay uses the local extension-owning admin');
+ assert(runtime.includes("'HostIp':'127.0.0.1'"),'runtime rejects non-loopback container mappings');
 });
 
 test('every definer in the security package declares its path and direct ACL',()=>{

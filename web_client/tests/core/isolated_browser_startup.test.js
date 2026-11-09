@@ -208,3 +208,32 @@ test('fresh sessions receive containment and later calls do not reapply launch s
  assert.equal(next.env.AGENT_BROWSER_EXECUTABLE_PATH,undefined); assert.equal(next.env.AGENT_BROWSER_CONFIG,'/owned/follow.json');
  assert.equal(next.env.AGENT_BROWSER_ALLOWED_DOMAINS,undefined); assert.equal(next.env.AGENT_BROWSER_ARGS,undefined);
 });
+
+
+test('direct target launch verifies isolation and URL without navigating twice', async () => {
+    const browser = fixture([{ runtime: { pageCount: 1 } }]);
+    browser.targetUrl = 'http://127.0.0.1/test?scenario=one';
+    browser.normalizedUrl = 'http://127.0.0.1/test';
+    browser.launchAtTarget = true;
+    browser.currentUrl = async () => { browser.calls.push('url'); return browser.normalizedUrl; };
+    browser.navigate = async () => { browser.calls.push('navigate'); };
+    browser.ready = async () => { browser.calls.push('ready'); };
+    await openIsolatedBrowser(browser);
+    assert.deepEqual(browser.calls, ['open', 'info', 'url', 'ready']);
+});
+
+test('direct target launch falls back only from a blank page and rejects a different URL', async () => {
+    const browser = fixture([{ runtime: { pageCount: 1 } }, { runtime: { pageCount: 1 } }]);
+    browser.targetUrl = 'http://127.0.0.1/test';
+    browser.launchAtTarget = true;
+    const urls = ['about:blank', browser.targetUrl];
+    browser.currentUrl = async () => urls.shift();
+    browser.navigate = async () => { browser.calls.push('navigate'); };
+    await openIsolatedBrowser(browser);
+    assert.equal(browser.calls.filter(call => call === 'navigate').length, 1);
+    const wrong = fixture([{ runtime: { pageCount: 1 } }]);
+    wrong.targetUrl = browser.targetUrl; wrong.launchAtTarget = true;
+    wrong.currentUrl = async () => 'http://127.0.0.1/other';
+    wrong.navigate = async () => { throw new Error('must not navigate'); };
+    await assert.rejects(openIsolatedBrowser(wrong), /Unexpected browser navigation/);
+});

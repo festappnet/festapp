@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 const repositoryRoot = new URL('../../', import.meta.url);
 const ports = JSON.parse(execFileSync('docker', ['inspect', '--format', '{{json .NetworkSettings.Ports}}', 'supabase_db_festapp-security-doublecheck-20261009'], {encoding:'utf8'}));
 assert(ports['5432/tcp']?.some(binding => binding.HostPort === '55552'), 'Run only against the task-owned disposable database on port 55552');
-const db=new pg.Client({connectionString:'postgresql://postgres:postgres@127.0.0.1:55552/postgres?sslmode=disable'});
+const db=new pg.Client({connectionString:process.env.DATABASE_URL});
 const results=[];
 const q=(text,values=[])=>db.query(text,values);
 const one=async(text,values=[]) => (await q(text,values)).rows[0];

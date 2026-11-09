@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "image": "public.ecr.aws/supabase/postgres:15.8.1.085",
+  "supabaseCli": "2.111.0",
+  "platform": "linux/arm64",
+  "provenance": "Clean supabase db start project festapp-runtime-provider; no app schema or application/production environment. pg_dump and pg_dumpall from pinned image. graphql wrapper is the exact provider extension-member source, omitted by pg_dump because its provider DDL hook is installed after extension creation.",
+  "files": {
+    "pg15.sql": "a8ebac65d61224b5b385698e6cf0b70d3a89702249e9086ff3457ec54c7bad03",
+    "roles.sql": "07d59959e092e70180457e2926363342a836f663ebcec77fc7376a14a23a3e78"
+  },
+  "schema": "pg15.sql"
+}

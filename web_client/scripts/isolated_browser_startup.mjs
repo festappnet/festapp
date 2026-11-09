@@ -1,4 +1,20 @@
 import assert from 'node:assert/strict';
+import {emitTiming, timed} from './test_timings.mjs';
+
+// Record only fixed phase names and counts, never command arguments or output.
+export function instrumentBrowserCommands(execute, suite) {
+    if (!process.env.FESTAPP_TIMINGS) return execute;
+    const started = performance.now();
+    let count = 0;
+    process.once('exit', () => emitTiming('browser.suite', started, {suite, commandCount: count}));
+    return (command, args, options) => {
+        if (command !== 'agent-browser') return execute(command, args, options);
+        count++;
+        const phase = args.includes('open') ? 'open' : args.includes('close') ? 'close' : 'cli';
+        return timed(`browser.${phase}`, () => execute(command, args, options), {suite});
+    };
+}
+
 
 // Launch settings belong to a fresh owned session. Re-sending them on every
 // CLI call needlessly reinstalls network controls while transient cross-origin
@@ -26,7 +42,7 @@ function lostSetupSession(error) {
     } catch { return false; }
 }
 
-export async function openIsolatedBrowser({ open, info, close, navigate, currentUrl, waitForNavigation, targetUrl, normalizedUrl, ready }, attempts = 3) {
+export async function openIsolatedBrowser({ open, info, close, navigate, currentUrl, waitForNavigation, targetUrl, normalizedUrl, ready, launchAtTarget = false }, attempts = 3) {
     for (let attempt = 0; attempt < attempts; attempt++) {
         let observation;
         try {
@@ -44,6 +60,16 @@ export async function openIsolatedBrowser({ open, info, close, navigate, current
                 if (!navigate) {
                     await ready?.();
                     return;
+                }
+                if (launchAtTarget) {
+                    const launchedUrl = await currentUrl();
+                    if (launchedUrl === targetUrl || (normalizedUrl && launchedUrl === normalizedUrl)) {
+                        await ready?.();
+                        return;
+                    }
+                    if (launchedUrl && launchedUrl !== 'about:blank') {
+                        assert.fail(`Unexpected browser navigation: expected ${targetUrl}, got ${launchedUrl}`);
+                    }
                 }
                 await navigate(targetUrl);
                 let after = await info();

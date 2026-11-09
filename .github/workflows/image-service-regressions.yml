@@ -23,13 +23,7 @@ jobs:
           node-version: '22.23.3'
           cache: pnpm
           cache-dependency-path: workers/image-worker/pnpm-lock.yaml
-      - name: Install image test dependencies
-        run: python3 automation/ci/run.py step image-install
-      - name: Verify every active origin, project and authorization contract
-        run: python3 automation/ci/run.py step image-policy
-      - name: Verify production deployment probe regressions
-        run: python3 automation/ci/run.py step image-preflight
       - name: Install Python YAML parser
         run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml
-      - name: Verify storage inventory, immutable copy and archive contracts
-        run: python3 automation/ci/run.py step image-storage
+      - name: Run canonical regression DAG
+        run: python3 automation/ci/run.py lane image-contract

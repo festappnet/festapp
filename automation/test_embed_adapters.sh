@@ -2,6 +2,27 @@
 # Real renderer code with only CMS APIs stubbed; no live CMS or external network.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+adapter_contract_root="$(mktemp -d "${TMPDIR:-/tmp}/festapp-embed-contracts.XXXXXX")"
+trap 'rm -rf "$adapter_contract_root"' EXIT
+# Exercise the real packagers and generated renderers without rewriting reviewed
+# release archives or their evidence in the source checkout.
+python3 - "$PWD" "$adapter_contract_root" <<'FIXTURE'
+from pathlib import Path
+import shutil
+import sys
+source,target=map(Path,sys.argv[1:])
+for cms in ('wordpress','joomla'):
+    original=source/'integrations'/cms
+    fixture=target/'integrations'/cms
+    for directory in ('scripts','shared'):
+        shutil.copytree(original/directory,fixture/directory,ignore=shutil.ignore_patterns('__pycache__','node_modules'))
+    for name in ('products.json','translations.json'):
+        if (original/name).is_file():shutil.copy2(original/name,fixture/name)
+    (fixture/'evidence').mkdir()
+(target/'integrations/tests').mkdir()
+shutil.copy2(source/'integrations/tests/embed-appearance-contract.php',target/'integrations/tests/embed-appearance-contract.php')
+FIXTURE
+cd "$adapter_contract_root"
 python3 integrations/wordpress/scripts/package.py
 python3 integrations/joomla/scripts/package.py
 # Stream only fixture sources: this works with isolated macOS Docker file sharing.

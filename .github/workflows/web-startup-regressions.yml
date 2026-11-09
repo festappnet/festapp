@@ -25,13 +25,5 @@ jobs:
           cache-dependency-path: web_client/pnpm-lock.yaml
       - name: Install isolated Chromium test runner
         run: bash automation/ci/browser.sh
-      - name: Install web test dependencies
-        run: python3 automation/ci/run.py step web-install
-      - name: Verify restricted WebViews and production module identity
-        run: python3 automation/ci/run.py step web-startup
-      - name: Verify consent-bound form measurement
-        run: python3 automation/ci/run.py step web-measurement
-      - name: Install public renderer dependencies
-        run: python3 automation/ci/run.py step renderer-install
-      - name: Verify deployment gates
-        run: python3 automation/ci/run.py step deploy-contract
+      - name: Run canonical regression DAG
+        run: python3 automation/ci/run.py lane web-startup

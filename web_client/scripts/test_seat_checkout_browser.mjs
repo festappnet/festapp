@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {timed} from './test_timings.mjs';
 // Real browser + real SQL; local transport adapter replaces the Edge/REST gateway.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -8,6 +9,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import pg from 'pg';
 import { createServer } from 'vite';
+import {instrumentBrowserCommands} from './isolated_browser_startup.mjs';
 
 assert.ok(process.env.SEAT_CHECKOUT_DATABASE_URL, 'Set SEAT_CHECKOUT_DATABASE_URL to the bootstrapped local test database');
 const url = new URL(process.env.SEAT_CHECKOUT_DATABASE_URL);
@@ -17,7 +19,7 @@ const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-seat-checkout-'));
 const config = path.join(temporary, 'browser.json');
 await writeFile(config, JSON.stringify({ provider: null, plugins: [], headed: false, autoConnect: false, args: '--mute-audio' }));
 const session = `seat-checkout-${process.pid}`;
-const execute = promisify(execFile);
+const execute = instrumentBrowserCommands(promisify(execFile), 'seat_checkout_browser');
 const db = new pg.Client({ connectionString: url.href });
 let server;
 let fixture;
@@ -86,7 +88,7 @@ try {
     };
     server = await createServer({ root, server: { host: '127.0.0.1', port: 0, strictPort: true }, logLevel: 'error',
         plugins: [{ name: 'seat-checkout-fixture', configureServer(server) { server.middlewares.use(handleRpc); } }] });
-    await server.listen();
+    await timed('browser.server-start', () => server.listen(), {suite: 'seat_checkout_browser'});
     const port = server.httpServer.address().port;
     await browser('open', `http://127.0.0.1:${port}/tests/fixtures/seat_checkout/index.html`);
     assert.equal((await browser('session', 'info')).runtime.pageCount, 1, 'Use an isolated local browser');

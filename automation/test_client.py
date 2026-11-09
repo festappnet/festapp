@@ -11,6 +11,26 @@ import tempfile
 import time
 
 from client_test_inventory import is_semantic_case
+from ci.resources import flutter_slot
+
+
+def event_profile(events, process_seconds):
+    starts = {e["test"]["id"]: e for e in events if e.get("type") == "testStart"}
+    suites = {e["suite"]["id"]: e["suite"] for e in events if e.get("type") == "suite"}
+    cases, loads = [], []
+    for end in events:
+        if end.get("type") != "testDone" or end["testID"] not in starts:
+            continue
+        start = starts[end["testID"]]
+        test = start["test"]
+        row = {"name": test["name"], "path": suites.get(test.get("suiteID"), {}).get("path"),
+               "seconds": (end["time"] - start["time"]) / 1000,
+               "result": end["result"], "skipped": end.get("skipped", False)}
+        (cases if is_semantic_case(test) else loads).append(row)
+    done = next((e for e in reversed(events) if e.get("type") == "done"), {})
+    return {"processOverheadSeconds": max(0, process_seconds - done.get("time", 0) / 1000),
+            "cases": cases, "frameworkEvents": loads}
+
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -50,6 +70,7 @@ def main():
         lanes.append(("adapters", ROOT, ["fvm", "dart", "test", "test_dart", "--reporter=json"]))
     for _, _, command in lanes:
         command.append(f"--concurrency={workers}")
+    flutter_owner = None
     processes = []
     children = []
     observers = ThreadPoolExecutor(max_workers=len(lanes))
@@ -59,6 +80,7 @@ def main():
         return code, time.monotonic() - lane_started
 
     def cancel(signum, _frame):
+        nonlocal flutter_owner
         for process in children:
             try:
                 os.killpg(process.pid, signal.SIGTERM)
@@ -84,6 +106,9 @@ def main():
                 if process.poll() is None:
                     raise
             process.wait()
+        if flutter_owner is not None:
+            flutter_owner.__exit__(None, None, None)
+            flutter_owner = None
         sys.exit(128 + signum)
 
     signal.signal(signal.SIGINT, cancel)
@@ -115,6 +140,9 @@ def main():
             for name, cwd, command in phase:
                 stdout = (output / f"{name}.jsonl").open("w")
                 stderr = (output / f"{name}.stderr").open("w")
+                if name == 'flutter':
+                    flutter_owner = flutter_slot()
+                    flutter_owner.__enter__()
                 lane_started = time.monotonic()
                 process = subprocess.Popen(command, cwd=cwd, stdout=stdout, stderr=stderr, start_new_session=True)
                 children.append(process)
@@ -123,6 +151,9 @@ def main():
                 pending.append(receipt)
             for receipt in pending:
                 receipt.result()
+            if flutter_owner is not None:
+                flutter_owner.__exit__(None, None, None)
+                flutter_owner = None
         failed = guard_code != 0
         results = {"architectureSuccess": guard_code == 0}
         for name, process, stdout, stderr, receipt in processes:
@@ -145,7 +176,8 @@ def main():
                              "testSeconds": done.get("time", 0) / 1000, "cases": len(test_ids),
                              "skipped": sum(e.get("skipped", False) for e in outcomes),
                              "failed": sum(e["result"] != "success" for e in outcomes),
-                             "suites": sum(e.get("type") == "suite" for e in events)}
+                             "suites": sum(e.get("type") == "suite" for e in events),
+                             "profile": event_profile(events, lane_seconds)}
             print(f"{name}: {'PASS' if success else 'FAIL'} ({results[name]['seconds']:.2f}s)", flush=True)
             if not success:
                 for event in events:

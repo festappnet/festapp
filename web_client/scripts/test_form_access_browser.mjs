@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {emitTiming, timed} from './test_timings.mjs';
 // Render the real production HTML shell and Main entrypoint in isolated Chromium.
 // Backend transport is fixture data; Google cryptography/SQL has a separate gate.
 import assert from 'node:assert/strict';
@@ -8,10 +9,10 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer as createPortProbe } from 'node:net';
-import { createServer } from 'vite';
-import { isolatedBrowserInvocation, openIsolatedBrowser } from './isolated_browser_startup.mjs';
+import { build, createServer } from 'vite';
+import { isolatedBrowserInvocation, openIsolatedBrowser, instrumentBrowserCommands } from './isolated_browser_startup.mjs';
 import { testPwaSplitBrowser } from './test_pwa_split_browser.mjs';
-const execute = promisify(execFile);
+const execute = instrumentBrowserCommands(promisify(execFile), 'form_access_browser');
 const root = path.resolve(import.meta.dirname, '..');
 const temporary = await mkdtemp(path.join(tmpdir(), 'festapp-form-access-'));
 const config = path.join(temporary, 'browser.json');
@@ -24,6 +25,8 @@ let browserIndex = 0;
 let session = `fa-${process.pid}`;
 let browserPhase = 'setup';
 const requests = [];
+const requestProfile = {total: 0, modules: 0, modulePaths: new Set()};
+const requestProfileStart = performance.now();
 let needsLaunch = false;
 let launchConfig = config;
 async function browser(...args) {
@@ -32,12 +35,18 @@ async function browser(...args) {
     const invocation = isolatedBrowserInvocation({launch, session, launchConfig, followConfig, sourceEnv:process.env, args});
     const { stdout } = await execute('agent-browser', invocation.args, {timeout:30000, env:invocation.env});
     const result = JSON.parse(stdout);
-    assert.equal(result.success, true, result.error);
-    const lifecycle = result.data?.lifecycle;
-    if (!launch && (lifecycle?.launched || lifecycle?.relaunchedBrowser || lifecycle?.restartedBackground)) {
-        throw new Error('Owned browser restarted after launch; refusing to continue without its original launch controls');
+    const results = Array.isArray(result) ? result : [result];
+    for (const entry of results) {
+        assert.equal(entry.success, true, entry.error);
+        const lifecycle = (Array.isArray(result) ? entry.result : entry.data)?.lifecycle;
+        if (!launch && (lifecycle?.launched || lifecycle?.relaunchedBrowser || lifecycle?.restartedBackground)) {
+            throw new Error('Owned browser restarted after launch; refusing to continue without its original launch controls');
+        }
     }
-    return result.data;
+    return Array.isArray(result) ? results.map(entry => entry.result) : result.data;
+}
+async function browserBatch(...commands) {
+    return browser('batch', '--bail', ...commands);
 }
 async function openBrowser(url, ready) {
     // The fixture consumes this selector before the real router strips it.
@@ -47,10 +56,9 @@ async function openBrowser(url, ready) {
             session = `fa-${process.pid}-${++browserIndex}`;
             needsLaunch = true;
             browserPhase = 'launch';
-            // Verify a ready, isolated browser before starting page navigation.
-            // A combined cold launch/navigation can otherwise hide which stage
-            // stalled, and prevents the existing empty-daemon recovery check.
-            await browser('open', new URL('/__browser_startup', url).href);
+            // Launch directly at the target; the setup helper still verifies
+            // the owned session, exact URL and readiness before page actions.
+            await browser('open', url);
         },
         info: () => browser('session', 'info'),
         close: () => browser('close'),
@@ -58,6 +66,7 @@ async function openBrowser(url, ready) {
         currentUrl: async () => (await browser('get', 'url')).url,
         waitForNavigation: target => { const expected = new URL(target); return browser('wait', '--url', `${expected.origin}${expected.pathname}*`); },
         targetUrl: url,
+        launchAtTarget: true,
         normalizedUrl: normalizedUrl.href,
         ready,
     });
@@ -66,6 +75,33 @@ async function openBrowser(url, ready) {
 let server;
 let versionRequests = 0;
 try {
+    // Bundle the real fixture entry once per run; no artifact is reused after
+    // its inputs can change, and each scenario retains a fresh browser.
+    const built = await timed('browser.fixture-build', () => build({
+        root, configFile: false, publicDir: false, mode: 'development', logLevel: 'error',
+        define: {'import.meta.env.DEV': 'true', 'import.meta.env.PROD': 'false',
+            'process.env.NODE_ENV': JSON.stringify('development')},
+        build: {write: false, minify: false, cssCodeSplit: true,
+            lib: {entry: path.join(root, 'tests/fixtures/form_access/main.js'), formats: ['es'], fileName: 'form-access'}},
+    }), {suite: 'form_access_browser'});
+    const outputs = (Array.isArray(built) ? built : [built]).flatMap(result => result.output);
+    const fixtureAssets = new Map();
+    for (const output of outputs) {
+        if (output.type === 'asset' && output.fileName.endsWith('.css')) {
+            // Vite's development server installs styles as modules. Preserve
+            // that timing for dynamically imported chunks rather than loading
+            // all styles eagerly at shell startup.
+            const styleName = `__fixture-style-${output.fileName}.js`;
+            fixtureAssets.set(styleName, `const style=document.createElement('style');style.textContent=${JSON.stringify(output.source.toString())};document.head.append(style);`);
+        }
+    }
+    for (const output of outputs) {
+        if (output.type !== 'chunk') continue;
+        const imports = [...(output.viteMetadata?.importedCss || [])]
+            .map(css => `import ${JSON.stringify(`./__fixture-style-${css}.js`)};`).join('\n');
+        fixtureAssets.set(output.fileName, `${imports}\n${output.code}`);
+    }
+    assert.ok(fixtureAssets.has('form-access.js'), 'expected fixture entry');
     const shell = (await readFile(path.join(root, 'index.html'), 'utf8'))
         .replace('<head>', `<head><script>if (new URLSearchParams(location.search).get('scenario') === 'embed-pending') localStorage.setItem('theme', new URLSearchParams(location.search).get('saved') || 'dark');</script>`)
         .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"')
@@ -186,12 +222,23 @@ try {
         plugins: [{ name: 'form-access-fixture', configureServer(server) {
             server.middlewares.use((req, res, next) => {
                 const record = { path: req.url.split('?')[0], state: 'pending' };
+                requestProfile.total++;
+                if (/\.(?:m?js)$/.test(record.path)) {
+                    requestProfile.modules++;
+                    requestProfile.modulePaths.add(record.path);
+                }
                 requests.push(record);
                 if (requests.length > 30) requests.shift();
                 res.once('finish', () => { record.state = res.statusCode; });
                 next();
             });
             server.middlewares.use(async (req, res, next) => {
+                const fixturePrefix = '/tests/fixtures/form_access/';
+                const fixtureName = req.url?.split('?')[0].slice(fixturePrefix.length);
+                const assetName = fixtureName === 'main.js' ? 'form-access.js' : fixtureName;
+                if (req.url?.startsWith(fixturePrefix) && fixtureAssets.has(assetName)) {
+                    res.setHeader('Content-Type', 'text/javascript'); res.end(fixtureAssets.get(assetName)); return;
+                }
                 if (req.url.startsWith('/__missing_entry.js')) {
                     res.statusCode = 404; res.setHeader('Content-Type', 'text/plain'); res.end('missing fixture'); return;
                 }
@@ -231,9 +278,6 @@ try {
                     const fixed = params.get('fixed') === '1';
                     res.setHeader('Content-Type', 'text/html');
                     res.end(`<!doctype html><html><body style="margin:0;background:${params.get('palette') === 'dark' ? '#202020;color:#fff' : '#f2f2f2;color:#111'}"><header style="height:100px">Pořadatel</header><iframe data-festapp-embed ${fixed ? 'data-festapp-height="fixed"' : ''} src="${child}" style="width:100%;${fixed ? 'height:300px;max-height:300px' : ''}" height="${fixed ? 300 : 800}" title="Přihláška"></iframe><script>window.fixtureFrameLoads=0;window.fixtureBannerObserved=false;window.addEventListener("message",e=>{if(e.data?.fixtureBannerObserved)window.fixtureBannerObserved=true});document.querySelector("iframe").addEventListener("load",()=>window.fixtureFrameLoads++);window.addEventListener("message",e=>{if(e.data?.fixtureUpdateReport)window.fixtureUpdateReport=e.data.fixtureUpdateReport})</script>${params.get('helper') === 'none' ? '' : `<script src="${helper}"></script>`}</body></html>`); return;
-                }
-                if (req.url === '/__browser_startup') {
-                    res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Browser startup</title>'); return;
                 }
                 if (req.url.startsWith('/form/price-position')) {
                     res.setHeader('Content-Type','text/html');
@@ -294,7 +338,7 @@ try {
                 res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ data, error: null }));
             });
         } }] });
-    await server.listen();
+    await timed('browser.server-start', () => server.listen(), {suite: 'form_access_browser'});
     const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
     const visible = selector => `(() => { const e=document.querySelector(${JSON.stringify(selector)}); if(!e)return false; const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden'; })()`;
     // Hold the public form response after transport completes, so the real
@@ -323,9 +367,7 @@ try {
         assert.deepEqual(pendingPaint.childCanvases, [iframeCanvas], 'embedded child and host iframe must use the same canvas color during startup');
         await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-form", "*")');
         await browser('snapshot', '-i');
-        await browser('frame', '@e1');
-        await browser('wait', 'input[type=email]');
-        await browser('frame', 'main');
+        await browserBatch('frame @e1', 'wait input[type=email]', 'frame main');
         await browser('eval', `document.querySelector("iframe").contentWindow.postMessage({type:"fixture-theme-check",dark:${palette === 'dark'}}, "*")`);
         await browser('wait', '--fn', 'window.fixtureUpdateReport?.themeMatch === true');
         await browser('eval', `document.body.style.backgroundColor=${JSON.stringify(palette === 'dark' ? '#f2f2f2' : '#202020')}`);
@@ -343,16 +385,12 @@ try {
         const scenario = dirty ? 'embed-update-dirty' : 'embed-update-pristine';
         await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=current&fixed=0`);
         await browser('snapshot', '-i');
-        await browser('frame', '@e1');
-        await browser('wait', 'input[type=email]');
-        await browser('frame', 'main');
+        await browserBatch('frame @e1', 'wait input[type=email]', 'frame main');
         await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-start-update", "*")');
         await browser('wait', '--fn', 'window.fixtureUpdateReport?.workerQueryPending === true');
         if (dirty) {
             await browser('snapshot', '-i');
-            await browser('frame', '@e1');
-            await browser('fill', 'input[type=email]', 'rozpracovano@example.test');
-            await browser('frame', 'main');
+            await browserBatch('frame @e1', 'fill input[type=email] rozpracovano@example.test', 'frame main');
         }
         await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-release-worker", "*")');
         if (dirty) {
@@ -372,9 +410,10 @@ try {
         await browser('frame', 'main');
         await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-inspect-update", "*")');
         await browser('wait', '--fn', 'window.fixtureUpdateReport?.inspection === true');
-        const inspection = (await browser('eval', 'window.fixtureUpdateReport')).result;
+        const [report, banner] = await browserBatch('eval window.fixtureUpdateReport', 'eval window.fixtureBannerObserved');
+        const inspection = report.result;
         assert.equal(inspection.banner, false, 'embedded document must not show an update banner');
-        assert.equal((await browser('eval', 'window.fixtureBannerObserved')).result, false, 'update banner must never be painted');
+        assert.equal(banner.result, false, 'update banner must never be painted');
         if (dirty) assert.equal(inspection.draft, 'rozpracovano@example.test');
         console.log(`PASS: ${dirty ? 'dirty draft protected during worker preparation' : 'pristine embedded form automatically updated without banner'}`);
         await browser('close');
@@ -411,13 +450,12 @@ try {
         await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-validation", "*")');
         await browser('wait', '--fn', 'window.fixtureUpdateReport?.validationShown === true');
         await browser('snapshot', '-i');
-        await browser('frame', '@e1');
-        await browser('fill', 'input[type=email]', 'rozpracovano@example.test');
-        await browser('click', '.flatpickr-input + input');
-        await browser('wait', '.flatpickr-calendar.open');
-        await browser('click', '.flatpickr-day:not(.prevMonthDay):not(.nextMonthDay)');
-        assert.ok((await browser('get', 'value', '.flatpickr-input')).value);
-        assert.equal((await browser('get', 'value', 'input[type=email]')).value, 'rozpracovano@example.test');
+        await browserBatch('frame @e1', 'fill input[type=email] rozpracovano@example.test',
+            'click ".flatpickr-input + input"', 'wait .flatpickr-calendar.open',
+            'click .flatpickr-day:not(.prevMonthDay):not(.nextMonthDay)');
+        const [dateValue, emailValue] = await browserBatch('get value .flatpickr-input', 'get value input[type=email]');
+        assert.ok(dateValue.value);
+        assert.equal(emailValue.value, 'rozpracovano@example.test');
         await browser('frame', 'main');
         await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-check-update", "*")');
         await browser('wait', '--fn', 'window.fixtureUpdateReport?.ready && window.fixtureUpdateReport?.versionWasPending && !window.fixtureUpdateReport?.readyAtFocus && window.fixtureUpdateReport?.draft === "rozpracovano@example.test" && !window.fixtureUpdateReport?.banner');
@@ -431,13 +469,9 @@ try {
     // still in effect. A 404 keeps both retry attempts local and non-mutating.
     await openBrowser(`${origin}/__real_embed_host?scenario=embed-error&helper=current&fixed=0`);
     await browser('snapshot', '-i');
-    await browser('frame', '@e1');
-    await browser('wait', '#web-client-startup button');
-    await browser('click', '#web-client-startup button');
-    await browser('wait', '#web-client-startup button:not([disabled])');
-    await browser('click', '#web-client-startup button');
-    await browser('wait', '#web-client-startup button:not([disabled])');
-    await browser('frame', 'main');
+    await browserBatch('frame @e1', 'wait "#web-client-startup button"',
+        'click "#web-client-startup button"', 'wait "#web-client-startup button:not([disabled])"',
+        'click "#web-client-startup button"', 'wait "#web-client-startup button:not([disabled])"', 'frame main');
     assert.equal((await browser('eval', 'document.querySelector("iframe").clientHeight')).result, 120);
     await browser('eval', 'document.querySelector("iframe").contentWindow.postMessage("fixture-error-check", "*")');
     await browser('wait', '--fn', 'window.fixtureUpdateReport?.failed && window.fixtureUpdateReport?.buttonVisible && window.fixtureUpdateReport?.enabled && !!window.fixtureUpdateReport?.text && !window.fixtureUpdateReport?.banner');
@@ -542,6 +576,8 @@ try {
     console.error('Browser snapshot:', await browser('snapshot', '-i').catch(() => null));
     throw error;
 } finally {
+    emitTiming('browser.fixture-requests', requestProfileStart, {suite: 'form_access_browser', total: requestProfile.total,
+        moduleRequests: requestProfile.modules, uniqueModules: requestProfile.modulePaths.size});
     await browser('close').catch(() => {});
     await server?.close();
     await rm(temporary, { recursive: true, force: true });

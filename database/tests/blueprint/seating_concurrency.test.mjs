@@ -1,16 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readFile,writeFile,mkdtemp,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
+import {readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {createTestWorkspace} from '../../../web_client/tests/database/runtime_workspace.js';
 import {assertLocalDatabaseUrl,assertDisposableDatabase} from '../../../web_client/tests/database/disposable_database.js';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');
 const url=process.env.DATABASE_URL;
 assertLocalDatabaseUrl(url);
-const cloneName=`festapp_seating_race_${randomUUID().replaceAll('-','')}`;
 async function connect(connectionString){const c=new Client({connectionString});await c.connect();return c;}
 async function identity(c,actor){await c.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.role','authenticated',false)",[actor]);}
 async function blocked(admin,pid){for(let n=0;n<150;n++){const r=await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid=$1',[pid]);if(r.rows[0]?.wait_event_type==='Lock')return;await new Promise(r=>setTimeout(r,20));}throw Error('second connection never reached lock wait');}
@@ -19,17 +18,9 @@ const rpc=async(c,sql,args=[])=>(await row(c,sql,args)).result;
 
 test('seating public commands: actual two-connection serial outcomes and permission revocation',{timeout:60000},async t=>{
  const admin=await connect(url);await assertDisposableDatabase(admin);
- const cloneUrl=new URL(url);cloneUrl.pathname=`/${cloneName}`;
+ const workspace=await createTestWorkspace();const cloneUrl=new URL(workspace.databaseUrl);const restoreUrl=new URL(cloneUrl);restoreUrl.username='supabase_admin';
  let db,left,right;
- const kit=await mkdtemp(`${tmpdir()}/festapp-seating-race-`);
  try{
-  // Clone checked dependencies, never reset the shared database or bootstrap a server.
-  execFileSync('pg_dump',[url,'--no-owner','--exclude-schema=cron','--file',`${kit}/snapshot.sql`],{stdio:'pipe'});
-  await writeFile(`${kit}/snapshot.sql`,(await readFile(`${kit}/snapshot.sql`,'utf8')).replace(/^SET transaction_timeout = 0;$/m,'').replace(/^CREATE EXTENSION IF NOT EXISTS pg_cron\b[^;]*;$/gm,'').replace(/^COMMENT ON EXTENSION pg_cron\b[^;]*;$/gm,'').replace(/^(?:REVOKE|GRANT).*ON FUNCTION graphql_public\.graphql\(.*$/gm,'').replace(/^(?:ALTER DEFAULT PRIVILEGES|REVOKE|GRANT).*\bcron\b.*$/gm,''));
-  await admin.query(`CREATE DATABASE ${cloneName} TEMPLATE template0`);
-  const restoreUrl=new URL(cloneUrl);restoreUrl.username='supabase_admin';
-  execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-f',`${kit}/snapshot.sql`],{stdio:'pipe'});
-  execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-c',`GRANT USAGE ON SCHEMA analytics TO postgres; GRANT ALL ON ALL TABLES IN SCHEMA public,eshop,analytics TO postgres; GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop,analytics TO postgres; DO $fix$ DECLARE r record; BEGIN FOR r IN SELECT p.oid::regprocedure f FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind IN ('f','w') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass AND d.objid=p.oid AND d.deptype='e') LOOP EXECUTE format('ALTER FUNCTION %s OWNER TO postgres',r.f); END LOOP; END $fix$;`],{stdio:'pipe'});
   [db,left,right]=await Promise.all([connect(cloneUrl.href),connect(cloneUrl.href),connect(cloneUrl.href)]);
   for(const source of ['database/tests/helpers/assertions.sql','database/tests/blueprint/fixtures.sql','database/tests/blueprint/seating_fixture.sql'])await db.query(await readFile(new URL(`../../../${source}`,import.meta.url),'utf8'));
   await right.query('SET ROLE authenticated');
@@ -225,6 +216,6 @@ print(chr(10).join(commands))`;
   });
  }finally{
   await Promise.allSettled([left,right,db].filter(Boolean).map(async c=>{await c.query('ROLLBACK');await c.end();}));
-  await admin.query(`DROP DATABASE IF EXISTS ${cloneName} WITH (FORCE)`);await admin.end();await rm(kit,{recursive:true,force:true});
+  await admin.end();await workspace.release();
  }
 });

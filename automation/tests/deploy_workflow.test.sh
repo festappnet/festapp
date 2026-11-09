@@ -32,7 +32,19 @@ if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/automation/
     echo "  FAIL: shared production build is missing WebView regression gate"
     fail=1
 fi
-if ! grep -F -q 'python3 automation/ci/run.py step web-startup' "$PROJECT_ROOT/.github/workflows/web-startup-regressions.yml"; then
+if ! python3 - "$PROJECT_ROOT" <<'WEBVIEW_CONTRACT'
+import json
+from pathlib import Path
+import sys
+root=Path(sys.argv[1])
+contract=json.loads((root/'automation/ci/checks.json').read_text())
+job=contract['jobs']['web-startup']
+workflow=(root/'.github/workflows'/job['workflow']).read_text()
+assert 'python3 automation/ci/run.py lane web-startup' in workflow
+assert 'web-startup' in job['steps']
+assert 'bash automation/test_web_startup.sh' in contract['steps']['web-startup']['script'].splitlines()
+WEBVIEW_CONTRACT
+then
     echo "  FAIL: main CI is missing WebView regressions"
     fail=1
 fi

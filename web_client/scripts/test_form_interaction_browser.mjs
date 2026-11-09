@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {timed} from './test_timings.mjs';
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
@@ -6,9 +7,9 @@ import {mkdtemp, writeFile, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createServer} from 'vite';
-import {openIsolatedBrowser} from './isolated_browser_startup.mjs';
+import {openIsolatedBrowser, instrumentBrowserCommands} from './isolated_browser_startup.mjs';
 
-const execute = promisify(execFile), root = path.resolve(import.meta.dirname, '..');
+const execute = instrumentBrowserCommands(promisify(execFile), 'form_interaction_browser'), root = path.resolve(import.meta.dirname, '..');
 const temp = await mkdtemp(path.join(tmpdir(), 'form-interaction-'));
 const config = path.join(temp, 'browser.json');
 await writeFile(config, JSON.stringify({provider:null, plugins:[], headed:false, autoConnect:false, args:'--mute-audio'}));
@@ -23,7 +24,7 @@ try {
         res.setHeader('content-type', 'text/html; charset=utf-8');
         res.end('<!doctype html><html lang="en"><body><main></main><script type="module" src="/tests/fixtures/form_measurement/interaction_host.js"></script></body></html>');
     }); }}]});
-    await server.listen();
+    await timed('browser.server-start', () => server.listen(), {suite: 'form_interaction_browser'});
     await openIsolatedBrowser({open:async()=>{session=`interaction-${process.pid}-${++index}`;await browser('open')}, info:()=>browser('session','info'), close:()=>browser('close')});
     await browser('open', `http://127.0.0.1:${server.httpServer.address().port}/form/test`);
     await browser('wait', '--fn', 'window.fixtureReady');
