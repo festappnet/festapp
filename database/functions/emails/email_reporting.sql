@@ -87,12 +87,17 @@ BEGIN
  WITH messages AS (
  SELECT m.*,public.email_reporting_state(m) reporting_state FROM public.email_messages m WHERE m.order_id=ANY(p_orders) AND m.occasion=p_occasion
   AND workflow_state NOT IN ('cancelled','expired')),
+ current_issues AS MATERIALIZED (
+ SELECT order_id,public.order_email_current_issues(order_id) issues FROM (SELECT DISTINCT order_id FROM messages) orders),
  ranked AS (
- SELECT *,CASE WHEN reporting_state IN ('complaint','bounce','reject','rendering_failure','unknown','dead','suppressed','retry_wait','post_action_failed') THEN 0
+ -- Historical failures remain visible in messages, but only unresolved failures
+ -- may outrank successfully delivered replacement messages in the indicator.
+ SELECT m.*,i.issues,CASE WHEN reporting_state IN ('complaint','bounce','reject','rendering_failure','unknown','dead','suppressed','retry_wait','post_action_failed')
+ AND EXISTS(SELECT 1 FROM jsonb_array_elements(i.issues) issue WHERE issue->>'message_id'=m.message_id::text) THEN 0
  WHEN workflow_state IN ('pending','preparing','sending','blocked') AND target_time<=now() THEN 1
- WHEN workflow_state='accepted' THEN 2 ELSE 3 END rank FROM messages)
+ WHEN workflow_state='accepted' AND reporting_state NOT IN ('complaint','bounce','reject','rendering_failure') THEN 2 ELSE 3 END rank FROM messages m JOIN current_issues i USING(order_id))
  SELECT coalesce(jsonb_object_agg(r.order_id,jsonb_build_object('state',r.reporting_state,'kind',r.message_kind,'recipient',r.recipient,'message_id',r.message_id,'at',coalesce(r.clicked_at,r.opened_at,r.delivered_at,r.accepted_at,r.created_at),
- 'current_issues',public.order_email_current_issues(r.order_id),'scheduled_at',r.target_time,'attention_count',(SELECT count(*) FROM ranked n WHERE n.order_id=r.order_id AND rank=0),'loaded_at',now(),
+ 'current_issues',r.issues,'scheduled_at',r.target_time,'attention_count',(SELECT count(*) FROM ranked n WHERE n.order_id=r.order_id AND rank=0),'loaded_at',now(),
  'messages',(SELECT coalesce(jsonb_agg(jsonb_build_object('kind',message_kind,'state',reporting_state,'at',coalesce(delivered_at,accepted_at,created_at)) ORDER BY created_at DESC),'[]') FROM ranked n WHERE n.order_id=r.order_id))
 ),'{}'::jsonb) INTO v_summary FROM (SELECT DISTINCT ON (order_id) * FROM ranked ORDER BY order_id,rank,created_at DESC,id DESC) r;
  SELECT v_summary||coalesce(jsonb_object_agg(o.id,jsonb_build_object('state','unavailable','messages','[]'::jsonb,
