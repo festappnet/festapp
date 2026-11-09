@@ -316,7 +316,7 @@
       ]
     },
     "wix-install": {
-      "script": "python3 automation/ci/run.py install integrations/wix\npython3 automation/ci/run.py install web_client\n",
+      "script": "python3 automation/ci/run.py install integrations/wix\npython3 automation/ci/run.py install integrations/wordpress\npython3 automation/ci/run.py install web_client\n",
       "after": [
         "image-storage",
         "deploy-contract",
@@ -338,7 +338,7 @@
       ]
     },
     "wix-contract": {
-      "script": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\nnode --test web_client/tests/forms/embed_appearance.test.js web_client/tests/components/help_embed_generator.test.js\nbash automation/test_embed_adapters.sh\n",
+      "script": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\nnode --test web_client/tests/forms/embed_appearance.test.js web_client/tests/components/help_embed_generator.test.js\npnpm --dir integrations/wordpress run test:dependencies\nbash automation/test_embed_adapters.sh\n",
       "after": [
         "wix-install"
       ],
@@ -2384,7 +2384,7 @@
     "web_client/tests/core/help_navigation.test.js",
     "web_client/tests/core/home_startup.test.js",
     "web_client/tests/core/initialize_core_services.test.js",
-    "web_client/tests/core/isolated_browser_startup.test.js",
+    "web_client/tests/core/native_browser.test.js",
     "web_client/tests/core/locale_preference.test.js",
     "web_client/tests/core/localized_rights_publication.test.js",
     "web_client/tests/core/marketing_account.test.js",

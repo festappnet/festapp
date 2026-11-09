@@ -282,7 +282,8 @@ installRuntimeState(window);
         if (!document) return;
         const root = document.documentElement;
         const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && root.hasAttribute('data-embed-startup');
-        const hostScheme = root.dataset.embedTheme === 'host' ? root.dataset.embedColorScheme : null;
+        const startupScheme = embedded && !global.__FESTAPP_APP_READY__ ? global.__FESTAPP_EMBED_STARTUP_SCHEME__ : null;
+        const hostScheme = startupScheme || (root.dataset.embedTheme === 'host' ? root.dataset.embedColorScheme : null);
         if (['light', 'dark'].includes(hostScheme)) dark = hostScheme === 'dark';
         const mode = dark ? 'dark' : 'light';
         // A scheme mismatch makes browsers replace an iframe's transparent
@@ -310,7 +311,11 @@ installRuntimeState(window);
                 ? '/brand-symbol.svg' : logo.dataset.darkSrc;
             logo.setAttribute('src', !dark && /(?:loading-animation|loading-logo)\.svg$/.test(source)
                 ? source.replace(/\.svg$/, '-light.svg') : source);
-            logo.dataset.startupLogoReady = '';
+            if (embedded && !global.__FESTAPP_APP_READY__ && logo.classList.contains('startup-brand') && !['light', 'dark'].includes(startupScheme)) {
+                delete logo.dataset.startupLogoReady;
+            } else {
+                logo.dataset.startupLogoReady = '';
+            }
         }
     }
     global.FestappThemePreference = Object.freeze({readMode, isDark, paintTheme});

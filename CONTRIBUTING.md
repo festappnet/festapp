@@ -38,14 +38,16 @@ failed dependency are `INCOMPLETE`, never successful skips. All eight public job
 names and exact-SHA release gates remain mandatory.
 
 Install pnpm 11.24.0, FVM/project SDK, Deno 2.9.0, Supabase CLI 2.111.0, Docker,
-psql, agent-browser 0.41.2 and Chrome/Chromium. The mirror pins Node per job
-and shares a frozen package install only within the same run when Node,
+psql and Chrome/Chromium for Flutter. After the frozen web-client install, run
+`pnpm --dir web_client exec playwright install chromium` to provision the managed
+browser pinned by the declared Playwright dependency. Hosted lanes install its
+system dependencies through `automation/ci/browser.sh`. The mirror pins Node per
+job and shares a frozen package install only within the same run when Node,
 manifests, lockfiles and the installed-module manifest match. Different Node
 versions cannot concurrently rewrite shared dependencies. It never copies
-`node_modules` between worktrees. Agent-browser uses native Chrome discovery;
-forcing its executable was observed to stall cross-origin attachment. Flutter's
-Chrome runner still receives `CHROME_EXECUTABLE`. PyYAML 6.0.3 is installed in
-an isolated cached Python environment.
+`node_modules` between worktrees. Flutter's separate Chrome runner receives
+`CHROME_EXECUTABLE`. PyYAML 6.0.3 is installed in an isolated cached Python
+environment.
 
 The PostgreSQL-only runtime is owned by `automation/local_db/runtime.py` and
 `test-base.json`. It uses a pinned Supabase image digest and verified provider
@@ -114,14 +116,16 @@ must pass; any additional failed GitHub Actions check also blocks release.
 
 
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
-and every web release build. Install its pinned runner with
-`pnpm add --global --allow-build=agent-browser agent-browser@0.41.2`.
-Let agent-browser discover its browser natively; use `agent-browser install`
-when no supported browser is installed. An explicit
-`AGENT_BROWSER_EXECUTABLE_PATH` remains available for deliberate diagnostics,
-but avoid forcing it for the pending cross-origin iframe gate: explicit browser
-launch stalled iframe actions on this workstation. The mirror validates an
-explicit override before running checks. Flutter Chrome discovery is separate.
+and every web release build. Install the frozen web-client dependencies and
+provision the browser with `pnpm --dir web_client exec playwright install chromium`.
+The declared Playwright SDK owns one headless, muted browser per suite and a fresh
+nonpersistent context per scenario. All fixture traffic, including service
+workers and WebSockets, passes through an owned proxy limited to registered
+loopback origins. The explicit measurement `--live-gtm` diagnostic additionally
+permits its exact approved Google Tag Manager origin; ordinary CI remains local.
+Theme fixtures set the main page preference through the public CDP session API,
+preserving cross-origin iframe media behavior. Interactive agent-browser use is
+separate from the deterministic test and release contract.
 `pnpm --dir web_client run test:form-access-browser` exercises the real HTML,
 Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin

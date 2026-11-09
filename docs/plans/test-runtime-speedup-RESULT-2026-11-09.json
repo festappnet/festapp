@@ -48,10 +48,15 @@
     "flutterSemanticCases": 295,
     "startupBrowserReports": 31,
     "formAccessReports": 30,
-    "measurementScenarios": 194,
-    "startupNodeTests": 306,
-    "startupOriginalNodeTests": 304,
-    "startupAddedNodeTests": 2
+    "measurementScenarios": 205,
+    "startupNodeTests": 291,
+    "startupOriginalNodeTests": 306,
+    "startupAddedNodeTests": 10,
+    "startupRetiredCliImplementationTests": 26,
+    "startupOriginalNodeTestsScope": "previous CLI harness; all non-CLI application subtest names and multiplicities retained",
+    "startupUpstreamAddedNodeTests": 1,
+    "measurementNodeTests": 193,
+    "scope": "Current Node/browser inventory after main #774; historical matched Flutter and SQL counts retain their documented benchmark scope."
   },
   "sqlDefaultConcurrency": 2,
   "hostedExactShaGate": {
@@ -1702,5 +1707,201 @@
       "tenantSha": "9fac6c3e90c9ee99f2a84bd4a4ba9f3f505b54f8"
     },
     "evidenceDirectory": "/private/tmp/festapp-further-evidence"
+  },
+  "nativeBrowserCutover": {
+    "status": "implemented-benchmarked-locally-verified-awaiting-review",
+    "baseMainSha": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+    "branch": "perf/test-runtime-native-browser-20261109",
+    "merged": false,
+    "productionChanged": false,
+    "driver": {
+      "baseline": "agent-browser 0.41.2 / Chrome 151.0.7922.47",
+      "candidate": "Playwright 1.65.0 / managed Chromium 158.0.8127.18 revision 1254"
+    },
+    "benchmark": {
+      "units": {
+        "web-startup": {
+          "baseline": {
+            "firstSeconds": 125.53751337499125,
+            "warmSeconds": [
+              89.87884495902108,
+              87.52602516597835,
+              97.5466917080339
+            ],
+            "warmMedianSeconds": 89.87884495902108,
+            "reportCount": 31,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": false,
+              "inputSha256": "f9317130aafa5b02a010cab92db4a8e84c497194a870cc36cf54e28bb8e45f18",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              2127511552,
+              2296758272,
+              2225963008,
+              2182725632
+            ]
+          },
+          "candidate": {
+            "firstSeconds": 29.340706125018187,
+            "warmSeconds": [
+              23.63435174996266,
+              19.520797500037588,
+              19.21607937500812
+            ],
+            "warmMedianSeconds": 19.520797500037588,
+            "reportCount": 31,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": true,
+              "inputSha256": "3531fec36f4159e464ae45a1c7a6417debc6179edd190126d52f2118220c1446",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              1473888256,
+              1866629120,
+              1649360896,
+              1628585984
+            ]
+          },
+          "warmReductionPercent": 78.28098757951574
+        },
+        "web-measurement": {
+          "baseline": {
+            "firstSeconds": 37.6370377499843,
+            "warmSeconds": [
+              29.038887915958185,
+              31.67947566701332,
+              29.950831833004486
+            ],
+            "warmMedianSeconds": 29.950831833004486,
+            "reportCount": 12,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": false,
+              "inputSha256": "f9317130aafa5b02a010cab92db4a8e84c497194a870cc36cf54e28bb8e45f18",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              1706803200,
+              1679081472,
+              1769209856,
+              1746157568
+            ]
+          },
+          "candidate": {
+            "firstSeconds": 19.10031800001161,
+            "warmSeconds": [
+              19.357172666990664,
+              18.357141249987762,
+              17.765232917037793
+            ],
+            "warmMedianSeconds": 18.357141249987762,
+            "reportCount": 12,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": true,
+              "inputSha256": "3531fec36f4159e464ae45a1c7a6417debc6179edd190126d52f2118220c1446",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              1520893952,
+              1395851264,
+              1337884672,
+              1729806336
+            ]
+          },
+          "warmReductionPercent": 38.70907708894079
+        }
+      },
+      "attempts": 16,
+      "allFirstAttemptsPassed": true,
+      "cachePolicy": "Dependency, browser and OS caches retained; first samples are not cold-cache samples. Includes pinned Node resolution and canonical step preparation/body/cleanup. Different browser engines are an intentional toolchain change; environment-specific comparison.",
+      "scope": "Two canonical steps measured separately; sum of their medians is not a measured whole-lane or all-eight-jobs elapsed time.",
+      "candidateAfterMeasurement": "Consumer cleanup hardened afterward; no scenarios/assertions/waits changed. Final functional validation covers that source.",
+      "evidenceDirectory": "/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/benchmark"
+    },
+    "localValidation": {
+      "seatAndStartupReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T231404-1bdb48235585/receipt.json",
+      "complete": true,
+      "inputsUnchanged": true,
+      "finalAllEight": {
+        "complete": true,
+        "inputsUnchanged": true,
+        "jobs": 8,
+        "seconds": 196.85638562496752,
+        "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T233734-f586dc66a7c1/receipt.json"
+      },
+      "ciFrameworkCases": 27,
+      "preMainAllEight": {
+        "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T233021-1ed1cdced017/receipt.json",
+        "durableCopy": "/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/final-all-eight-receipt.json",
+        "complete": true,
+        "inputsUnchanged": true,
+        "jobs": 8,
+        "seconds": 195.11858745798236,
+        "scope": "Final runtime source; afterward only WordPress workflow trigger filter and result documentation changed. Targeted canonical image/compatibility validation covers that metadata follow-up."
+      }
+    },
+    "security": {
+      "alerts": [
+        305,
+        307
+      ],
+      "advisories": [
+        "GHSA-9qw7-j9xw-fv9c",
+        "GHSA-cw2g-2vwq-88w6"
+      ],
+      "previousVersion": "1.37.6",
+      "patchedVersion": "1.38.6",
+      "scope": "@wp-playground/storage@3.1.60>isomorphic-git",
+      "oldVersionRegressions": "both fail",
+      "patchedDependencyCases": 5,
+      "patchedCasesPassed": true,
+      "githubAlertClosure": "awaits default-branch merge and rescan",
+      "wordpressOnlyPushTrigger": true
+    },
+    "discardedReplayExperiment": {
+      "syncCommitOnSeconds": 20.789060707960743,
+      "syncCommitOffSeconds": 20.825176333019044,
+      "scope": "One full-history pair including explicit durability fence; parity retained; no useful speedup observed. No reduced durability settings adopted."
+    },
+    "publicationBaseMainSha": "6c41c82b3c4c8785148f9c09e0af2cfb8fb43040",
+    "mainIntegration": {
+      "commit": "6c41c82b3c4c8785148f9c09e0af2cfb8fb43040",
+      "pullRequest": 774,
+      "changes": "Updated embed measurement contract and CMS adapters retained. Two driver conflicts resolved with native waitForFunction and upstream form_page_view assertions.",
+      "benchmarkScope": "The controlled matrix predates this upstream feature; retained as an explicit bae4f2e29 comparison. New upstream assertions are additional final validation, not omitted to preserve old counts.",
+      "validation": {
+        "complete": true,
+        "inputsUnchanged": true,
+        "jobs": 8,
+        "seconds": 196.85638562496752,
+        "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T233734-f586dc66a7c1/receipt.json"
+      }
+    },
+    "currentMainInventory": {
+      "startupNodeCases": 291,
+      "startupBrowserReports": 31,
+      "measurementNodeCases": 193,
+      "measurementBrowserReports": 12,
+      "measurementScenarios": 205,
+      "ciFrameworkCases": 27
+    },
+    "productionObservation": {
+      "version": "0.20.542+1053",
+      "coherentSamples": 3,
+      "canonicalVerifierPassed": true,
+      "receipt": "/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/live-version-observation.json"
+    }
   }
 }
