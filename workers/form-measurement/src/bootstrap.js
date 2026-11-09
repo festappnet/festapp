@@ -1,5 +1,5 @@
 import {measurementProtocol} from '../../../web_client/src/components/forms/form_measurement_contract.js';
-import {analyticsPayload, attributionContext, campaignKeys, measurementConsent, measurementPageLocation, measurementId, measurementNamespace, sameMeasurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
+import {measurementDataLayerPayload, attributionContext, campaignKeys, measurementConsent, measurementPageLocation, measurementId, measurementNamespace, sameMeasurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
 const config = JSON.parse(document.getElementById('measurement-config').textContent);
 let instance;
@@ -18,7 +18,6 @@ const consentState = ({analytics, marketing}) => {
 };
 
 function push(payload) {
-    if(payload.event === 'page_view' && context.form_embedded === true) payload.event = 'form_page_view';
     if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null});
     dataLayer.push({...consentContext(),...payload});
     if (['purchase','generate_lead'].includes(payload.event)) dataLayer.push({user_data:null});
@@ -80,7 +79,7 @@ window.addEventListener('message', event => {
         gtag('consent','update',consentState(consent));
         dataLayer.push({event:'festapp_consent_update',festapp_consent:{...consent},...consent});
     } else if (message.type === 'event' && message.instance === instance && message.generation === generation) {
-        const payload = analyticsPayload(message.payload);
+        const payload = measurementDataLayerPayload(message.payload, {embedded: context.form_embedded});
         if (payload) push(payload);
     }
 });

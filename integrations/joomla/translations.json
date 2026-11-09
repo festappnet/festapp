@@ -15,9 +15,13 @@
     "HEIGHT": "Initial or fixed height in pixels (240-4000)",
     "FALLBACK": "Open the form in a new tab",
     "SERVICE": "External service and privacy",
-    "DISCLOSURE": "Only visitors to a public page load the external form; this administrator page does not. Orders, payments, emails and admission remain in @@NAME@@. Joomla stores the public URL, accessible title and height settings, without service credentials or buyer orders. Appearance sharing may load website fonts inside the iframe. Review your website privacy notice and CSP. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Service offer</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Terms</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Privacy</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Support</a>",
+    "DISCLOSURE": "Only visitors to a public page load the external form; this administrator page does not. Orders, payments, emails and admission remain in @@NAME@@. Joomla stores the public URL, accessible title and height settings, without service credentials or buyer orders. Appearance sharing may load website fonts inside the iframe. Review your website privacy notice and CSP. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Service offer</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Terms</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Privacy</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Support</a> Website measurement is optional and exposes conversion contacts and transaction identifiers to page scripts. Existing modules retain Unit measurement.",
     "CACHE": "Module output caching is disabled so Joomla always loads the service helper in both height modes. Appearance is controlled only by the saved form setting in the service. The public link also works if the helper is blocked.",
-    "CENTRAL_APPEARANCE": "Appearance is managed in the saved form. <a href='@@ORIGIN@@/events?help=forms' target='_blank' rel='noopener noreferrer'>Open forms</a>, select the form, choose Design and save your changes."
+    "CENTRAL_APPEARANCE": "Appearance is managed in the saved form. <a href='@@ORIGIN@@/events?help=forms' target='_blank' rel='noopener noreferrer'>Open forms</a>, select the form, choose Design and save your changes.",
+    "MEASUREMENT": "Measurement destination",
+    "MEASUREMENT_UNIT": "Festapp Unit runtime (existing behavior)",
+    "MEASUREMENT_HOST": "Website dataLayer",
+    "MEASUREMENT_HELP": "Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp."
   },
   "cs-CZ": {
     "XML_DESCRIPTION": "Zveřejněte prodej vstupenek přes uložený veřejný formulář @@NAME@@. Vyžaduje samostatný účet pořadatele.",
@@ -35,8 +39,12 @@
     "HEIGHT": "Počáteční nebo pevná výška v pixelech (240-4000)",
     "FALLBACK": "Otevřít formulář v nové záložce",
     "SERVICE": "Externí služba a soukromí",
-    "DISCLOSURE": "Externí formulář načítají jen návštěvníci veřejné stránky; tato administrace jej nenačítá. Objednávky, platby, e-maily a odbavení zůstávají v @@NAME@@. Joomla ukládá veřejnou URL, přístupný název a nastavení výšky, nikoli přihlašovací údaje služby či objednávky kupujících. Převzetí vzhledu může načíst fonty webu uvnitř iframe. Zohledněte službu v informacích o soukromí a CSP webu. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Nabídka služby</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Podmínky</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Soukromí</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Podpora</a>",
+    "DISCLOSURE": "Externí formulář načítají jen návštěvníci veřejné stránky; tato administrace jej nenačítá. Objednávky, platby, e-maily a odbavení zůstávají v @@NAME@@. Joomla ukládá veřejnou URL, přístupný název a nastavení výšky, nikoli přihlašovací údaje služby či objednávky kupujících. Převzetí vzhledu může načíst fonty webu uvnitř iframe. Zohledněte službu v informacích o soukromí a CSP webu. <a href='@@OFFER@@' target='_blank' rel='noopener noreferrer'>Nabídka služby</a> | <a href='@@ORIGIN@@/terms/' target='_blank' rel='noopener noreferrer'>Podmínky</a> | <a href='@@ORIGIN@@/privacy/' target='_blank' rel='noopener noreferrer'>Soukromí</a> | <a href='@@ORIGIN@@/support/' target='_blank' rel='noopener noreferrer'>Podpora</a> Měření webu je volitelné a zpřístupňuje skriptům stránky kontakty při konverzi a identifikátory transakcí. Existující moduly zachovají měření v jednotce.",
     "CACHE": "Cache výstupu modulu je vypnutá, aby Joomla načetla pomocný skript v obou režimech výšky. Vzhled řídí pouze uložené nastavení formuláře ve službě. Veřejný odkaz funguje i při zablokování skriptu.",
-    "CENTRAL_APPEARANCE": "Vzhled nastavíte v uloženém formuláři. <a href='@@ORIGIN@@/events?help=forms' target='_blank' rel='noopener noreferrer'>Otevřete Formuláře</a>, vyberte formulář, přejděte na Vzhled a změnu uložte."
+    "CENTRAL_APPEARANCE": "Vzhled nastavíte v uloženém formuláři. <a href='@@ORIGIN@@/events?help=forms' target='_blank' rel='noopener noreferrer'>Otevřete Formuláře</a>, vyberte formulář, přejděte na Vzhled a změnu uložte.",
+    "MEASUREMENT": "Cíl měření",
+    "MEASUREMENT_UNIT": "Runtime jednotky Festapp (dosavadní chování)",
+    "MEASUREMENT_HOST": "dataLayer webu",
+    "MEASUREMENT_HELP": "Režim webu předává skriptům stránky měřicí události včetně e-mailu, telefonu a identifikátorů transakcí při konverzi. Nastavte značky a správce souhlasů webu. Režim jednotky vyžaduje napojení souhlasů. Doména webu musí být schválena ve Festappu."
   }
 }

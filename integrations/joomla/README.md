@@ -164,3 +164,15 @@ odeslání objednávky nebo výběru sedadla.
 Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávněný editor ho nastaví ve Vzhledu formuláře a formulář uloží. Všechna vložení použijí tuto volbu při příštím načtení bez výměny HTML. Nativní doplněk ukládá odkaz a své nastavení výšky či názvu, nikoli vlastní volbu vzhledu. Staré uložené atributy jsou neúčinné a nové verze je negenerují. Helper zůstává v obou režimech výšky; plánek sálu se nepřebarvuje.
 
 Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.
+
+
+## Measurement destination
+
+Existing blocks, shortcodes and modules retain the Unit runtime. Select Website
+dataLayer explicitly to use the website's tags and consent manager. The setting
+is `measurement="host"` or `measurement="unit"`; missing or invalid values select
+`unit`. Website mode shares bounded conversion contacts and transaction IDs with
+page scripts. It does not install tags, grant consent or enable measurement.
+Both modes require enabled Festapp measurement and an approved website origin.
+Unit mode requires a consent adapter. See the canonical
+[measurement contract](../../docs/integrations/form-datalayer.md).

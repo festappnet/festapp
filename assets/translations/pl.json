@@ -458,7 +458,7 @@
     "embedAction": "Osadź na swojej stronie",
     "embedTitle": "Formularz zamówienia",
     "embedFallback": "Otwórz zamówienie w nowej karcie",
-    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód; zatwierdź origin strony w ustawieniach pomiaru.",
+    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód; zatwierdź origin strony w ustawieniach pomiaru. Zdarzenia konwersji przekazują skryptom witryny także e-mail, telefon i identyfikator transakcji. Proszę sprawdzić tagi i informacje o prywatności. Tryb jednostki wymaga połączenia z menedżerem zgód.",
     "embedSaveFirst": "Zapisz formularz przed osadzeniem.",
     "embedAutomatic": "Automatyczna wysokość (zalecana)",
     "embedFixed": "Stała wysokość",

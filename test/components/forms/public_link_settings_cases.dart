@@ -61,7 +61,7 @@ void main() {
         expect(code, contains('Order &quot;tickets&quot;'));
         expect(code, contains('Open &lt;order&gt;'));
         expect(code.contains('data-festapp-embed'), isTrue);
-        expect(code, isNot(contains('data-festapp-datalayer')));
+        expect(code, contains('data-festapp-datalayer'));
         expect(code.contains('<script'), isTrue);
         expect(code.contains('data-festapp-style="inherit"'), false);
         expect(code, contains('allow="clipboard-write"'));
@@ -82,25 +82,28 @@ void main() {
     },
   );
 
-  test('embed measurement option adds only the runtime opt-out attribute', () {
-    for (final automatic in [true, false]) {
-      String code({bool hostDataLayer = true}) => formEmbedCode(
-        tenantUrl: 'https://tenant.example',
-        savedLink: 'saved',
-        title: 'Form',
-        fallbackLabel: 'Open',
-        automatic: automatic,
-        hostDataLayer: hostDataLayer,
-      );
-      final host = code();
-      expect(code(hostDataLayer: true), host);
-      expect(host, isNot(contains('data-festapp-datalayer')));
-      expect(
-        code(hostDataLayer: false),
-        host.replaceFirst(' src=', ' data-festapp-datalayer="false" src='),
-      );
-    }
-  });
+  test(
+    'embed measurement option explicitly opts into the website dataLayer',
+    () {
+      for (final automatic in [true, false]) {
+        String code({bool hostDataLayer = true}) => formEmbedCode(
+          tenantUrl: 'https://tenant.example',
+          savedLink: 'saved',
+          title: 'Form',
+          fallbackLabel: 'Open',
+          automatic: automatic,
+          hostDataLayer: hostDataLayer,
+        );
+        final host = code();
+        expect(code(hostDataLayer: true), host);
+        expect(host, contains('data-festapp-datalayer'));
+        expect(
+          code(hostDataLayer: false),
+          host.replaceFirst(' data-festapp-datalayer', ''),
+        );
+      }
+    },
+  );
 
   testWidgetsWithEnvironment(
     () => _environment,
@@ -135,7 +138,7 @@ void main() {
       expect(tester.widget<CheckboxListTile>(measurement).value, isFalse);
       expect(
         copiedCode(),
-        hostCode.replaceFirst(' src=', ' data-festapp-datalayer="false" src='),
+        hostCode.replaceFirst(' data-festapp-datalayer', ''),
       );
       await tester.ensureVisible(find.byType(DropdownButton<bool>));
       await tester.tap(find.byType(DropdownButton<bool>));
@@ -147,12 +150,12 @@ void main() {
       expect(copiedCode(), contains('/embed.js'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
       expect(copiedCode(), contains('allow="clipboard-write"'));
-      expect(copiedCode(), contains('data-festapp-datalayer="false"'));
+      expect(copiedCode(), isNot(contains('data-festapp-datalayer')));
       await tester.ensureVisible(measurement);
       await tester.tap(measurement);
       await tester.pumpAndSettle();
       expect(tester.widget<CheckboxListTile>(measurement).value, isTrue);
-      expect(copiedCode(), isNot(contains('data-festapp-datalayer')));
+      expect(copiedCode(), contains('data-festapp-datalayer'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
       await tester.ensureVisible(find.byType(DropdownButton<bool>));
       await tester.tap(find.byType(DropdownButton<bool>));

@@ -540,7 +540,7 @@
     "embedAction": "Embed on your website",
     "embedTitle": "Order form",
     "embedFallback": "Open order in a new tab",
-    "embedHelp": "Paste the code into your website HTML. Automatic height and website appearance require an external script. If your website blocks it, use fixed height and the form appearance. Enabled measurement uses the website dataLayer, GTM and consent manager. Turn the option below off to use the GTM configured in Festapp. Embeds show no consent bar; approve the website origin in measurement settings.",
+    "embedHelp": "Paste the code into your website HTML. Automatic height and website appearance require an external script. If your website blocks it, use fixed height and the form appearance. Enabled measurement uses the website dataLayer, GTM and consent manager. Turn the option below off to use the GTM configured in Festapp. Embeds show no consent bar; approve the website origin in measurement settings. Conversion events also share email, phone and transaction identifiers with website scripts. Review your tags and privacy notice. Unit mode requires a consent-manager adapter.",
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
     "embedFixed": "Fixed height without script",

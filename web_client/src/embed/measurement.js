@@ -63,7 +63,6 @@ export class EmbedMeasurement {
     track(input) {
         if(!this.grant || Date.now()>=this.leaseUntil)return false;
         const payload=analyticsPayload(input);if(!payload)return false;
-        if(payload.event==='page_view')payload.event='form_page_view';
         if(this.grant.selection==='runtime')return this.measurementRuntime.track(payload);
         if(!this.hostActive)return false;
         this.send('analytics',{measurement:{protocol:measurementProtocol,manifest:this.grant.manifest,generation:this.grant.generation,leaseId:this.grant.leaseId},payload});return true;

@@ -4,7 +4,7 @@ Tags: tickets, events, registration, embed, forms
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,15 +22,19 @@ Shortcode:
 Fixed height:
 [festapp_tickets url="https://tickets.festapp.net/form/saved-slug" mode="fixed" height="800"]
 
+Measurement defaults to the Festapp Unit runtime for existing and new blocks and shortcodes. To use the website's own tags and consent manager, select Website dataLayer in the block or use:
+[festapp_tickets url="https://tickets.festapp.net/form/saved-slug" measurement="host"]
+Use measurement="unit" to retain the Unit runtime. Missing or invalid values retain Unit mode. This setting selects a destination; it does not enable measurement or grant consent.
+
 Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance.
 
 Fixed and fallback height is limited to 240-4000 pixels. Automatic height follows the form content. Automatic mode uses the existing service helper. A standalone form link remains available without the helper. Multiple forms can appear on one page. Event settings, inventory, order processing, payments, ticket delivery and admission remain owned by Festapp Tickets. The plugin does not implement any payment gateway. Embedded payment methods and browser compatibility require verification for the particular event; card gateways and bank-app handoffs are not guaranteed.
 
 = External service and privacy =
 
-On a published page with a configured form, the visitor's browser connects to https://tickets.festapp.net to load /form/saved-slug?embed=1. Both height modes also load https://tickets.festapp.net/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. Customer contact details, order identifiers, payment instructions, authentication secrets and order submissions are not passed to WordPress.
+On a published page with a configured form, the visitor's browser connects to https://tickets.festapp.net to load /form/saved-slug?embed=1. Both height modes also load https://tickets.festapp.net/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In the default Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded.
 
-The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The WordPress plugin does not add analytics or tracking pixels. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
+The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and requires a host consent adapter. Both modes require an approved website origin and enabled measurement in Festapp. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
 
 Service: https://tickets.festapp.net/
 Terms: https://tickets.festapp.net/terms/
@@ -45,7 +49,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In Plugins > Add New > Upload Plugin, upload festapp-tickets-1.0.1.zip and activate it.
+1. In Plugins > Add New > Upload Plugin, upload festapp-tickets-1.0.2.zip and activate it.
 2. Click Get started in the plugin list, or open Settings > Festapp Tickets, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
@@ -77,10 +81,13 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
+= 1.0.2 =
+* Add an explicit measurement destination with conversion-sharing disclosure; retain Unit mode for existing embeds.
+
 = 1.0.1 =
 * Control embedded appearance only through the saved form setting; remove local overrides.
 
 == Upgrade Notice ==
 
-= 1.0.1 =
-No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.
+= 1.0.2 =
+Existing blocks and shortcodes retain Unit measurement. Website dataLayer sharing requires an explicit choice. No database migration.

@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.6\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.7\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -57,6 +57,9 @@ msgstr ""
 msgid "Fallback height without the helper (px)"
 msgstr ""
 
+msgid "Festapp Unit runtime (existing behavior)"
+msgstr ""
+
 msgid "Fixed"
 msgstr ""
 
@@ -76,6 +79,9 @@ msgid "Height (px)"
 msgstr ""
 
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
+msgstr ""
+
+msgid "Measurement destination"
 msgstr ""
 
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
@@ -126,7 +132,7 @@ msgstr ""
 msgid "The form is not configured. Enter a saved public https://vstupenky.online/form/ URL without extra parameters."
 msgstr ""
 
-msgid "The published form connects to vstupenky.online. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form."
+msgid "The published form connects to vstupenky.online and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. Website measurement is optional and shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
 msgstr ""
 
 msgid "Ticket sales - vstupenky.online"
@@ -142,6 +148,12 @@ msgid "Visitors buy tickets on your published page. Manage orders, payments and 
 msgstr ""
 
 msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
+msgstr ""
+
+msgid "Website dataLayer"
+msgstr ""
+
+msgid "Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp."
 msgstr ""
 
 msgid "vstupenky.online"

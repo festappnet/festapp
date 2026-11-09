@@ -1,5 +1,8 @@
-import {measurementProtocol, measurementConsent, campaignContext, measurementManifest, sameMeasurementManifest, analyticsPayload} from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol, measurementConsent, campaignContext, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
+// Presence is the long-lived public opt-in; absent preserves existing embeds.
+export const usesHostDataLayer = frame => frame.hasAttribute('data-festapp-datalayer') && frame.getAttribute('data-festapp-datalayer') !== 'false';
+
 export function createHostMeasurement({frames, currentRecord, disposeRecord, scan}) {
     let suspended = false;
     const stopHeartbeat = record => {
@@ -117,12 +120,11 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
                     record.channel.send('measurement-ack', {measurement:m});return true;
                 }
                 if(record.lease.generation!==m.generation)return true;
-                if(frame.getAttribute('data-festapp-datalayer') !== 'false') {
-                    const payload=analyticsPayload(data.payload);if(!payload)return true;
-                    if(payload.event==='page_view')payload.event='form_page_view';
+                if(usesHostDataLayer(frame)) {
+                    const payload=measurementDataLayerPayload(data.payload,{embedded:true});if(!payload)return true;
                     window.dataLayer=window.dataLayer||[];
                     if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null});
-                    window.dataLayer.push({...payload,form_embedded:true});
+                    window.dataLayer.push(payload);
                     if(['purchase','generate_lead'].includes(payload.event))window.dataLayer.push({user_data:null});
                 }
                 return true;

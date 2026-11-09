@@ -1,7 +1,7 @@
 import {EmbedChannel} from './channel.js';
 import {limits} from './protocol.js';
 import {measurementProtocol, campaignContext} from '../components/forms/form_measurement_contract.js';
-import {createHostMeasurement} from './host_measurement.js';
+import {createHostMeasurement, usesHostDataLayer} from './host_measurement.js';
 import {createHostPresentation} from './host_presentation.js';
 import {projectPrice} from './host_price.js';
 import {receiveHostLayout, installHostLayout} from './host_layout.js';
@@ -37,7 +37,7 @@ if (!window.__festappEmbedV1) {
             (window.visualViewport?.offsetTop || 0) - frame.getBoundingClientRect().top));
         const data = {
             minHeight: limits.minHeight, viewportHeight: viewportHeight(), viewportOffset, scrollAlignment: true, autoHeight: frame.dataset.festappHeight !== 'fixed',
-            dataLayer: frame.getAttribute('data-festapp-datalayer') !== 'false',
+            dataLayer: usesHostDataLayer(frame),
             measurementProtocol,
             attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
             hostPrice: frame.parentElement?.hasAttribute('data-festapp-embed-host') === true};

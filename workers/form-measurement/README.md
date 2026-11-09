@@ -50,14 +50,15 @@ revocation in a suspended process. Already delivered data cannot be recalled.
 
 ## Host CMP integration
 
-Embeds use the host page's `window.dataLayer` by default, with its own GTM and CMP
-controlling tags through Consent Mode. An absent or empty `data-festapp-datalayer`,
-or any value other than `"false"`, selects this transport. To use the Unit runtime,
-set `data-festapp-datalayer="false"`; live attribute changes reinitialize transport.
+New generated snippets explicitly opt into the host page's `window.dataLayer`
+with `data-festapp-datalayer`; its GTM and CMP control the tags. Unit mode omits
+the attribute, preserving existing embeds and working with older helpers.
+Live attribute changes reinitialize transport. WordPress/Joomla expose the same
+choice and retain Unit mode for missing or invalid settings.
 Both modes still require an approved host and show no consent bar inside the embed.
 Direct visits keep the Unit runtime and Klaro bar.
 
-For the Unit runtime opt-out, the helper measures on its own. A host CMP adapter is
+For Unit runtime measurement, the helper measures on its own. A host CMP adapter is
 optional and only reports the choice (without one, runtime consent stays denied):
 
 ```js
@@ -127,3 +128,15 @@ conversion facts. Existing disabled measurement is never enabled by migration.
 See the protocol fixture matrix and the dated implementation plan for the exact
 compatibility cases. `/runtime` and `/runtime.js` must be one immutable build;
 a dynamic policy hash alone does not identify the executing JavaScript.
+
+
+## Stable page-event contract
+
+`page_view` is the protocol 3 wire event. The shared contract's
+`measurementDataLayerPayload` owns the sole destination projection, producing
+`form_page_view` for embeds and `page_view` for direct visits, with a strict
+`form_embedded` marker. Neither the embed bridge nor the runtime transport
+changes event names. Frozen pre-change protocol 3 receiver tests protect the
+rolling-upgrade boundary. Existing receivers accept new senders and retain their
+previous page-event name until upgraded. Deploy receivers before the client to
+establish the new destination semantics without losing events.

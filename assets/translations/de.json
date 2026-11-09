@@ -456,7 +456,7 @@
     "embedAction": "Auf eigener Website einbetten",
     "embedTitle": "Bestellformular",
     "embedFallback": "Bestellung in neuem Tab öffnen",
-    "embedHelp": "Fügen Sie den Code in das HTML Ihrer Website ein. Automatische Höhe und Website-Design benötigen ein externes Skript. Wenn Ihre Website es blockiert, verwenden Sie eine feste Höhe und das Formulardesign. Die aktivierte Messung verwendet dataLayer, GTM und die Einwilligungsverwaltung Ihrer Website. Deaktivieren Sie die Option unten, um den in Festapp konfigurierten GTM zu verwenden. Eingebettete Formulare zeigen keine Einwilligungsleiste; genehmigen Sie den Website-Origin in den Messeinstellungen.",
+    "embedHelp": "Fügen Sie den Code in das HTML Ihrer Website ein. Automatische Höhe und Website-Design benötigen ein externes Skript. Wenn Ihre Website es blockiert, verwenden Sie eine feste Höhe und das Formulardesign. Die aktivierte Messung verwendet dataLayer, GTM und die Einwilligungsverwaltung Ihrer Website. Deaktivieren Sie die Option unten, um den in Festapp konfigurierten GTM zu verwenden. Eingebettete Formulare zeigen keine Einwilligungsleiste; genehmigen Sie den Website-Origin in den Messeinstellungen. Bei Conversions erhalten Website-Skripte auch E-Mail-Adresse, Telefonnummer und Transaktionskennung. Prüfen Sie Tags und Datenschutzhinweise. Der Einheitenmodus benötigt eine Anbindung an die Einwilligungsverwaltung.",
     "embedSaveFirst": "Speichern Sie das Formular vor dem Einbetten.",
     "embedAutomatic": "Automatische Höhe (empfohlen)",
     "embedFixed": "Feste Höhe",

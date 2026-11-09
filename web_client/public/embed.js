@@ -105,7 +105,7 @@
       if (typeof input.language === "string" && /^[a-z]{2}$/.test(input.language)) result2.language = input.language;
       return result2;
     }
-    if (["page_view", "form_page_view", "form_start", "form_submit_error"].includes(input.event)) return { event: input.event };
+    if (["page_view", "form_start", "form_submit_error"].includes(input.event)) return { event: input.event };
     if (input.event === "generate_lead") {
       if (!["free_registration", "waitlist", "sale_opening_notification"].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
       return withUserData({ event: "generate_lead", currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id });
@@ -139,6 +139,15 @@
     }
     const result = { event: input.event, ecommerce };
     return input.event === "purchase" ? withUserData(result) : result;
+  }
+  function measurementDataLayerPayload(input, { embedded = false } = {}) {
+    const payload = analyticsPayload(input);
+    if (!payload) return null;
+    return {
+      ...payload,
+      ...payload.event === "page_view" && embedded === true ? { event: "form_page_view" } : {},
+      form_embedded: embedded === true
+    };
   }
   function measurementManifest(policy, formLink) {
     if (!policy || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization < 1 || policy.unit < 1 || !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 1 || !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 1 || typeof policy.processing_revision !== "string" || !policy.processing_revision || policy.processing_revision.length > 128 || policy.profile !== "gtm-v1" || !measurementId(formLink) || JSON.stringify(policy.required_purposes) !== JSON.stringify(["analytics", "marketing"])) return null;
@@ -194,6 +203,7 @@
   }
 
   // src/embed/host_measurement.js
+  var usesHostDataLayer = (frame) => frame.hasAttribute("data-festapp-datalayer") && frame.getAttribute("data-festapp-datalayer") !== "false";
   function createHostMeasurement({ frames, currentRecord, disposeRecord, scan }) {
     let suspended = false;
     const stopHeartbeat = (record) => {
@@ -341,13 +351,12 @@
           return true;
         }
         if (record.lease.generation !== m.generation) return true;
-        if (frame.getAttribute("data-festapp-datalayer") !== "false") {
-          const payload = analyticsPayload(data.payload);
+        if (usesHostDataLayer(frame)) {
+          const payload = measurementDataLayerPayload(data.payload, { embedded: true });
           if (!payload) return true;
-          if (payload.event === "page_view") payload.event = "form_page_view";
           window.dataLayer = window.dataLayer || [];
           if (payload.ecommerce || payload.event === "generate_lead") window.dataLayer.push({ ecommerce: null, user_data: null });
-          window.dataLayer.push({ ...payload, form_embedded: true });
+          window.dataLayer.push(payload);
           if (["purchase", "generate_lead"].includes(payload.event)) window.dataLayer.push({ user_data: null });
         }
         return true;
@@ -675,7 +684,7 @@
         viewportOffset,
         scrollAlignment: true,
         autoHeight: frame.dataset.festappHeight !== "fixed",
-        dataLayer: frame.getAttribute("data-festapp-datalayer") !== "false",
+        dataLayer: usesHostDataLayer(frame),
         measurementProtocol,
         attribution: campaignContext(Object.fromEntries(new URLSearchParams(window.location.search))),
         hostPrice: frame.parentElement?.hasAttribute("data-festapp-embed-host") === true

@@ -23,6 +23,10 @@
                 el(components.SelectControl, {label: __('Form height', '@@SLUG@@'), value: a.mode,
                     options: [{label: __('Automatic', '@@SLUG@@'), value: 'auto'}, {label: __('Fixed', '@@SLUG@@'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
 
+                el(components.SelectControl, {label: __('Measurement destination', '@@SLUG@@'), value: a.measurement,
+                    options: [{label: __('Festapp Unit runtime (existing behavior)', '@@SLUG@@'), value: 'unit'}, {label: __('Website dataLayer', '@@SLUG@@'), value: 'host'}],
+                    onChange: (measurement) => props.setAttributes({measurement}),
+                    help: __('Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp.', '@@SLUG@@')}),
                 el('p', null, __('Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes.', '@@SLUG@@'), ' ', el('a', {href:'@@ORIGIN@@/events?help=forms',target:'_blank',rel:'noopener noreferrer'}, __('Open forms', '@@SLUG@@'))),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', '@@SLUG@@') : __('Fallback height without the helper (px)', '@@SLUG@@'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to @@NAME@@ and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor.', '@@SLUG@@')),

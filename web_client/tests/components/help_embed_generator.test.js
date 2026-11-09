@@ -21,7 +21,7 @@ test('public generator produces isolated service code without loading checkout',
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
-  assert.equal(frame.hasAttribute('data-festapp-datalayer'),false,'generated embeds use default host transport');
+  assert.equal(frame.hasAttribute('data-festapp-datalayer'),true,'generated embeds explicitly select host transport');
   assert.equal(frame.getAttribute('data-festapp-style'),null);
   assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.style.display,'block');
@@ -84,11 +84,11 @@ for(const english of [false,true])test('measurement option defaults to host and 
   for(const height of ['automatic','fixed']) {
     mode.value=height;mode.dispatchEvent(new win.Event('change'));
     submit(url);const host=form.querySelector('textarea').value;
-    assert.doesNotMatch(host,/data-festapp-datalayer/);
+    assert.match(host,/data-festapp-datalayer/);
     option.click();
     assert.equal(form.querySelector('[data-embed-output]').hidden,true,'changing the option invalidates the previous code');
     submit(url);const runtime=form.querySelector('textarea').value;
-    assert.equal(runtime,host.replace(' src=',' data-festapp-datalayer="false" src='));
+    assert.equal(runtime,host.replace(' data-festapp-datalayer',''));
     let copied;Object.defineProperty(win.navigator,'clipboard',{configurable:true,value:{writeText:async value=>{copied=value;}}});
     form.querySelector('[data-copy-embed]').click();await new Promise(resolve=>setImmediate(resolve));
     assert.equal(copied,runtime);

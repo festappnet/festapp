@@ -268,15 +268,22 @@ pořadatele. Události `purchase` a `generate_lead` nesou `user_data` s e-mailem
 telefonem. Za nastavení tagů a použití údajů odpovídá pořadatel. Porucha CMP ani
 starší helper nebrání nákupu ani layoutu.
 
-Embed ve výchozím stavu posílá události do `window.dataLayer` hostitele, kde tagy
-řídí jeho vlastní GTM a CMP. Chybějící nebo prázdný `data-festapp-datalayer` i každá
-hodnota kromě `"false"` volí tuto cestu. `data-festapp-datalayer="false"` přepíná na
-oddělený runtime jednotky; změna atributu za běhu transport znovu inicializuje.
+Nově generovaný kód předvolí `window.dataLayer` hostitele a výslovně přidá
+`data-festapp-datalayer`. Tagy a souhlasy pak řídí GTM a CMP webu. Bez atributu
+zůstává oddělený runtime jednotky, takže starší vložení po aktualizaci helperu
+nezmění příjemce údajů. Generátory při volbě jednotky atribut vynechají, což funguje
+i se staršími helpery. Změna atributu za běhu transport znovu inicializuje.
+WordPress a Joomla nabízejí volbu `measurement="host"` nebo `"unit"`; chybějící
+či neplatná volba zachová jednotku. Hostitelský režim zpřístupňuje skriptům stránky
+kontakty při konverzi a identifikátory transakcí. Volba transportu sama neuděluje
+souhlas ani nezapíná měření.
 Obě cesty vyžadují schválený origin a nezobrazují vlastní lištu souhlasu. Přímé
 návštěvy dál používají runtime a Klaro. Hostitelský kontext i každá událost nesou
 `form_embedded: true`; místo `page_view` se v obou transportech posílá
 `form_page_view` se stejnou deduplikací podle `page_type`. Přímé návštěvy zachovávají
-`page_view`.
+`page_view`. Na komunikačním kanálu zůstává vždy `page_view`; společný kontrakt
+přejmenovává událost až při zápisu do cílového dataLayer. Starší příjemci tak
+událost nezahodí a do své aktualizace zachovají dosavadní výstup.
 Napojení hostitelské lišty na runtime je volitelné a předává jen stav souhlasu:
 
 ```js

@@ -162,9 +162,9 @@ for(const value of [true,false,undefined,null,1,0,'true','false',{},[]])test('bo
  assert.equal(attributionContext({page_location:parent+'/form/summer',form_embedded:value}).form_embedded,expected);
 });
 
-for(const embedded of [false,true])test('runtime sends exactly one page event with the embedded name: '+embedded,t=>{
+for(const embedded of [false,true])test('runtime preserves the wire page event across receiver upgrades: '+embedded,t=>{
  const f=fixture(t,embedded),r=f.transport,sent=[];r.activate(f.grant);
  r.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');f.message('ack');
  assert.equal(r.track({event:'page_view'}),true);
- assert.deepEqual(sent.filter(m=>m.type==='event').map(m=>m.payload.event),[embedded?'form_page_view':'page_view']);
+ assert.deepEqual(sent.filter(m=>m.type==='event').map(m=>m.payload.event),['page_view']);
 });

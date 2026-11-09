@@ -33,7 +33,7 @@ test('host transport validates payload, pins target and carries revision/lease/g
     assert.equal(bridge.track({event:'page_view'}),false,'ACK required');
     message('measurement-ack',{measurement:sent.at(-1)[0].measurement});
     assert.equal(bridge.track({event:'page_view',token:'PRIVATE',user_data:{email:'PRIVATE'}}),true);
-    assert.deepEqual(sent.at(-1),[{namespace:'festapp-embed',protocol:1,instance:'one',type:'analytics',measurement:{protocol:measurementProtocol,manifest,generation:1,leaseId:'lease'},payload:{event:'form_page_view'}},'https://host.invalid']);
+    assert.deepEqual(sent.at(-1),[{namespace:'festapp-embed',protocol:1,instance:'one',type:'analytics',measurement:{protocol:measurementProtocol,manifest,generation:1,leaseId:'lease'},payload:{event:'page_view'}},'https://host.invalid']);
     assert.equal(bridge.track({event:'purchase'}),false);bridge.stop();assert.equal(bridge.track({event:'page_view'}),false);
 });
 test('real session activation waits for the host ACK and delivers initial funnel exactly once',async t=>{
@@ -51,9 +51,8 @@ test('real session activation waits for the host ACK and delivers initial funnel
     message('measurement-ack',{measurement:activation.measurement});
     assert.equal(activations,1,'onActive announces each usable grant once');
     layer.page('product');
-    assert.equal(sent.filter(([m])=>m.type==='analytics' && m.payload.event==='form_page_view').length,1);
-    assert.equal(sent.some(([m])=>m.type==='analytics' && m.payload.event==='page_view'),false);
-    assert.deepEqual(sent.filter(([message])=>message.type==='analytics').map(([message])=>message.payload.event).filter(Boolean),['form_page_view','view_item']);
+    assert.equal(sent.filter(([m])=>m.type==='analytics' && m.payload.event==='page_view').length,1);
+    assert.deepEqual(sent.filter(([message])=>message.type==='analytics').map(([message])=>message.payload.event).filter(Boolean),['page_view','view_item']);
 });
 
 test('live host/runtime switches revoke old grants and activate the selected transport',async t=>{
@@ -70,10 +69,10 @@ test('live host/runtime switches revoke old grants and activate the selected tra
     message('init',{viewportHeight:600,measurementProtocol,dataLayer:false});await settle();
     assert.equal(bridge.selection(),'runtime');assert.equal(session.state,'active');assert.equal(starts.length,1);
     assert.equal(oldHost({event:'page_view'}),false);
-    assert.equal(session.record({event:'page_view'}),true);assert.deepEqual(events,[{event:'form_page_view'}]);
+    assert.equal(session.record({event:'page_view'}),true);assert.deepEqual(events,[{event:'page_view'}]);
     const oldRuntime=session.capture(),before=stops;
     message('init',{viewportHeight:600,measurementProtocol,dataLayer:true});await settle();
     assert.equal(bridge.selection(),'host');assert.equal(session.state,'starting');assert.ok(stops>before);
     assert.equal(oldRuntime({event:'page_view'}),false);ack();assert.equal(session.state,'active');
-    assert.equal(session.record({event:'page_view'}),true);assert.equal(sent.at(-1)[0].payload.event,'form_page_view');
+    assert.equal(session.record({event:'page_view'}),true);assert.equal(sent.at(-1)[0].payload.event,'page_view');
 });

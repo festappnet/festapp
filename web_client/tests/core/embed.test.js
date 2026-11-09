@@ -491,7 +491,7 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 function measurementHost() {
  const f=host(),{dom,frames:[frame],sent,message}=f;
  Object.defineProperty(dom.window.document,'hidden',{value:false,configurable:true});
- const instance=sent[0][0][0].instance;
+ frame.setAttribute('data-festapp-datalayer','');const instance=sent[0][0][0].instance;
  const send=(type,values={},origin='https://tickets.invalid',source=frame.contentWindow)=>message(frame,origin,envelope(type,instance,values),source);
  send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:measurement}});
  return {...f,frame,instance,send,last:()=>sent[0].at(-1)[0]};
@@ -931,10 +931,10 @@ test('a replacement bridge owns the window and a retired destroy cannot clear it
 });
 
 
-test('host transport defaults to enabled and only literal false opts out, including live changes',async t=>{
+test('host transport requires an explicit opt-in and live changes preserve the boundary',async t=>{
  const {dom,frames:[frame],sent}=host();t.after(()=>dom.window.close());
- assert.equal(sent[0][0][0].dataLayer,true);
- for(const [value,enabled] of [['false',false],['',true],['true',true],['FALSE',true],['other',true],['false',false],[null,true]]) {
+ assert.equal(sent[0][0][0].dataLayer,false);
+ for(const [value,enabled] of [['false',false],['',true],['true',true],['FALSE',true],['other',true],['false',false],[null,false]]) {
   const before=sent[0].filter(([m])=>m.type==='init').length;
   if(value===null)frame.removeAttribute('data-festapp-datalayer');else frame.setAttribute('data-festapp-datalayer',value);
   await new Promise(resolve=>setImmediate(resolve));

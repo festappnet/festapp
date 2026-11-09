@@ -285,7 +285,7 @@
     "measurementFormUnitBlocked": "Pomiar jest wyłączony dla tego organizatora. Można zapisać ustawienie tego formularza. Pomiar będzie możliwy po włączeniu go dla organizatora i spełnieniu pozostałych warunków.",
     "measurementOpenUnitSettings": "Otwórz ustawienia pomiaru organizatora",
     "measurementAskUnitManager": "Proszę poprosić administratora organizatora o włączenie pomiaru, skonfigurowanie GTM lub skryptów i dodanie linku do polityki prywatności.",
-    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód; zatwierdź origin strony w ustawieniach pomiaru.",
+    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód; zatwierdź origin strony w ustawieniach pomiaru. Zdarzenia konwersji przekazują skryptom witryny także e-mail, telefon i identyfikator transakcji. Proszę sprawdzić tagi i informacje o prywatności. Tryb jednostki wymaga połączenia z menedżerem zgód.",
     "embedHostDataLayer": "Wysyłaj dane pomiarowe do dataLayer strony"
   },
   "FeatureTicket": {

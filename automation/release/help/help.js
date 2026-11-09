@@ -70,7 +70,7 @@
     const automatic = mode.value === 'automatic';
     const marker = ' data-festapp-embed' +
       (automatic ? '' : ' data-festapp-height="fixed"') +
-      (hostDataLayer.checked ? '' : ' data-festapp-datalayer="false"');
+      (hostDataLayer.checked ? ' data-festapp-datalayer' : '');
     // Match the child canvas from creation, before the deferred helper can run.
     const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" height="800" style="display:block;width:100%;max-width:100%;border:0;color-scheme:light dark" loading="lazy"></iframe>`;
     const link = `<p><a href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${text.link}</a></p>`;

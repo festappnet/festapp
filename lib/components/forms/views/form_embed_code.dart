@@ -16,7 +16,7 @@ String formEmbedCode({
   final src = escape.convert('$publicUrl?embed=1');
   final marker =
       ' data-festapp-embed${automatic ? '' : ' data-festapp-height="fixed"'}'
-      '${hostDataLayer ? '' : ' data-festapp-datalayer="false"'}';
+      '${hostDataLayer ? ' data-festapp-datalayer' : ''}';
   final frame =
       '<iframe$marker src="$src" title="${escape.convert(title)}" '
       'allow="clipboard-write" height="800" '

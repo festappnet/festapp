@@ -540,7 +540,7 @@
     "embedAction": "Vložit na vlastní web",
     "embedTitle": "Objednávkový formulář",
     "embedFallback": "Otevřít objednávku v nové záložce",
-    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška a převzetí vzhledu vyžadují povolený externí skript. Pokud jej web blokuje, použijte pevnou výšku a vlastní vzhled formuláře. Měření posílá události do dataLayer Vašeho webu, souhlas řídí GTM a lišta souhlasu webu. Doména webu musí být schválená v nastavení měření. Volbou níže lze měření přepnout na GTM nastavený ve Festappu.",
+    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška a převzetí vzhledu vyžadují povolený externí skript. Pokud jej web blokuje, použijte pevnou výšku a vlastní vzhled formuláře. Měření posílá události do dataLayer Vašeho webu, souhlas řídí GTM a lišta souhlasu webu. Doména webu musí být schválená v nastavení měření. Volbou níže lze měření přepnout na GTM nastavený ve Festappu. Při konverzi se skriptům webu předává také e-mail, telefon a identifikátor transakce. Zkontrolujte nastavení značek a informace o soukromí. Režim jednotky vyžaduje napojení lišty souhlasu.",
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška bez skriptu",
