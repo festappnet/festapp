@@ -6,6 +6,21 @@ import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 void main() {
+  for (final birthday in [null, '1970-01-01']) {
+    testWidgets('new-row roundtrip preserves optional birth date $birthday', (tester) async {
+      late BuildContext context;
+      await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+        home: Builder(builder: (value) { context = value; return const SizedBox(); })));
+      final row = OccasionUserModel.newRow(7)..data = {
+        Tb.occasion_users.data_email: 'grid@example.invalid',
+        if (birthday != null) Tb.occasion_users.data_birthDate: birthday,
+      };
+      final restored = OccasionUserModel.fromPlutoJson(row.toTrinaRow(context).toJson());
+      expect(restored.data?[Tb.occasion_users.data_birthDate],
+        birthday == null ? isNull : startsWith('1970-01-01'));
+    });
+  }
+
   testWidgets('admin grid preserves profile version and accommodation',
       (tester) async {
     const expectedAggregateVersion = 7;

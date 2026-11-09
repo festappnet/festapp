@@ -1,3 +1,5 @@
+import 'package:fstapp/components/_shared/person_fields_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/components/users/profile_commands.dart';
@@ -47,10 +49,12 @@ void main() {
 
   test('profile create uses the dedicated atomic command', () async {
     late String functionName;
+    late Map<String, dynamic> parameters;
     final commands = SupabaseProfileCommands.withTransport(
       ClientCommandTransport(
         (name, params) async {
           functionName = name;
+          parameters = params;
           return {
             'mutation': {
               'commandId': params['p_command_id'],
@@ -79,7 +83,39 @@ void main() {
     ));
 
     expect(functionName, 'create_occasion_user_client_sync_v1');
+    expect(parameters['p_occasion'], 7);
+    expect(parameters['p_profile']['occasion'], 7);
     expect(result.userId, '00000000-0000-0000-0000-000000000002');
+  });
+
+  test('invalid new email is a friendly field error before any RPC', () async {
+    var calls = 0;
+    final commands = SupabaseProfileCommands.withTransport(ClientCommandTransport(
+      (name, params) async { calls++; return null; }, maxAttempts: 1));
+    for (final email in [null, '', 'unfinished', 'j ana@example.invalid']) {
+      try {
+        await commands.create(OccasionUserModel(occasion: 7, data: {'email': email}));
+        fail('Invalid email was accepted');
+      } on AppError catch (error) {
+        expect(error.code, 400);
+        expect(ExceptionHandler.toFriendlyMessage(error), PersonFieldsStrings.emailInvalid);
+      }
+    }
+    expect(calls, 0);
+  });
+
+  test('canonical invalid-email rejection remains a friendly field error', () async {
+    final commands = SupabaseProfileCommands.withTransport(ClientCommandTransport(
+      (name, params) async => {
+        'mutation': {'commandId': params['p_command_id'], 'receiptId': params['p_command_id'],
+          'commitId': null, 'replayed': false, 'occurredAt': '2026-11-09T10:00:00Z'},
+        'status': 'rejected', 'code': 400,
+        'data': {'version': 0, 'message': 'INVALID_USER_EMAIL'},
+        'sync': {'replacements': <Object>[]},
+      }, maxAttempts: 1));
+    await expectLater(commands.create(OccasionUserModel(occasion: 7,
+      data: {'email': 'jana@example.invalid'})), throwsA(isA<AppError>()
+        .having((error) => ExceptionHandler.toFriendlyMessage(error), 'friendly message', PersonFieldsStrings.emailInvalid)));
   });
 
   test('profile delete carries the loaded aggregate version', () async {
