@@ -69,7 +69,7 @@
   var eventIdentity = (value) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   var contactEmail = (value) => typeof value === "string" && value.length <= 254 && /^[^\s@\u0000-\u001f\u007f]+@[^\s@\u0000-\u001f\u007f]+\.[^\s@\u0000-\u001f\u007f]+$/.test(value);
   var contactPhone = (value) => typeof value === "string" && /^\+[1-9]\d{7,14}$/.test(value);
-  var pageTypes = ["product", "checkout", "confirmation"];
+  var pageTypes = ["product", "checkout", "confirmation", "sale_opening"];
   var measurementId = (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
   function measurementConsent(input) {
     if (input === true) return { analytics: true, marketing: false };
@@ -107,7 +107,7 @@
     }
     if (["page_view", "form_start", "form_submit_error"].includes(input.event)) return { event: input.event };
     if (input.event === "generate_lead") {
-      if (!["free_registration", "waitlist"].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
+      if (!["free_registration", "waitlist", "sale_opening_notification"].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
       return withUserData({ event: "generate_lead", currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id });
     }
     const source = input.ecommerce;
