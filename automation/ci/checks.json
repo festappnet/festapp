@@ -2224,7 +2224,6 @@
     "test/components/occasion/setup_font_catalog_test.dart",
     "test/components/organization/authorization_projection_test.dart",
     "test/components/qa/program_qa_regression_test.dart",
-    "test/components/single_data_grid/active_cell_save_cases.dart",
     "test/components/unit/app_landing_screen_test.dart",
     "test/components/unit/unit_settings_save_test.dart",
     "test/components/users/login_startup_session_test.dart",
