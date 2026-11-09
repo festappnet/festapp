@@ -4,7 +4,7 @@ Tags: tickets, events, registration, embed, forms
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,7 +45,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.5.zip and activate it.
+1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.6.zip and activate it.
 2. Click Get started in the plugin list, or open Settings > vstupenky.online, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
@@ -77,8 +77,10 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
-= 1.0.5 =
+= 1.0.6 =
 * Prevent a dark iframe canvas before the shared helper loads.
+
+= 1.0.5 =
 * Control embedded appearance only through the saved form setting; remove local overrides.
 
 = 1.0.4 =
@@ -95,5 +97,5 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Upgrade Notice ==
 
-= 1.0.5 =
-No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.
+= 1.0.6 =
+No database migration. Existing form URLs, titles and height settings remain. The iframe declares its color scheme immediately, preventing a dark canvas while the shared helper loads.
