@@ -1,0 +1,11 @@
+{
+  "candidateVersion": "1.0.6",
+  "candidateZip": "vstupenky-online-1.0.6.zip",
+  "candidateZipSha256": "f1460c9f64a9891203cdc695dbb1cb6aefd9031360e52ee56d09a934d07efc76",
+  "candidateZipFiles": 12,
+  "sourceBaseSha": "f4347936d295b3c31bdc28732f3852fca392dce8",
+  "wordpressStableVersionBeforeRelease": "1.0.5",
+  "plannedGitHubReleaseUrl": "https://github.com/festappnet/festapp/releases/tag/wordpress-vstupenky-online-v1.0.6",
+  "plannedWordPressDownloadUrl": "https://downloads.wordpress.org/plugin/vstupenky-online.1.0.6.zip",
+  "published": false
+}

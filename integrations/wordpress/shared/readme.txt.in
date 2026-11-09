@@ -82,4 +82,4 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 == Upgrade Notice ==
 
 = @@VERSION@@ =
-No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.
+@@UPGRADE_NOTICE@@

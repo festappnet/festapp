@@ -7,6 +7,6 @@
   "directoryUrl": "https://wordpress.org/plugins/vstupenky-online/",
   "statusCheckedAt": "2026-11-06",
   "appearanceContract": "Saved form owns every embed; local overrides removed in the next package release",
-  "candidateVersion": "1.0.5",
-  "candidateSha256": "0dc246f5d0191af39ef26d12462f84edfd3bedcc57a0b21a5401a84721cca41c"
+  "candidateVersion": "1.0.6",
+  "candidateSha256": "f1460c9f64a9891203cdc695dbb1cb6aefd9031360e52ee56d09a934d07efc76"
 }
