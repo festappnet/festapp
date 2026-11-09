@@ -1,7 +1,6 @@
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { ticketEmailSubstitutions } from "../_shared/ticketEmail.ts";
 import {
-  escapeTicketText,
   prepareTicketDelivery,
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
@@ -159,11 +158,7 @@ export async function renderDraftPreview(context: any) {
     ticketBlock: isTickets ? delivery?.html ?? "" : undefined,
     subjectSubstitutions: isTickets ? ticketSubs : undefined,
     substitutions: isTickets
-      ? {
-        ...ticketSubs,
-        occasionTitle: escapeTicketText(context.title),
-        orderSymbol: escapeTicketText(order.order_symbol),
-      }
+      ? ticketSubs
       : {
         ...defaults,
         ...confirmationSubstitutions(

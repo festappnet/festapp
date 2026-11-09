@@ -251,3 +251,12 @@ Deno.test('bank none draft preview retains bank instructions with explicit null 
  assert(rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));assert(rendered.previewContext.deadline===null);
  assert(!rendered.html.includes(defaults.deadline));
 });
+
+Deno.test("ticket preview and delivery share raw identity values and escape them once", async () => {
+  const result = await renderDraftPreview({...context, title:"A & <B>",
+    messageType:"order_tickets", deliveryMode:"inline_qr", ticketsEnabled:false,
+    resolved:{template:{id:1,subject:"{{occasionTitle}}",html:"<h2>{{occasionTitle}}</h2><p>{{orderSymbol}}</p>"},wrapper:{html:"{{content}}"}}});
+  assert(result.subject === "A & <B>");
+  assert(result.html.includes("A &amp; &lt;B&gt;"));
+  assert(!result.html.includes("&amp;amp;"));
+});
