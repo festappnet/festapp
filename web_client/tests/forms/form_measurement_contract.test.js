@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {measurementConsent} from '../../src/components/forms/form_measurement_contract.js';
+import {measurementConsent, analyticsPayload, measurementDataLayerPayload} from '../../src/components/forms/form_measurement_contract.js';
 
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const read=path=>readFileSync(new URL('../../../'+path,import.meta.url),'utf8');
@@ -40,4 +40,42 @@ test('the fixed consent text names advertising and sharing in every language',()
         const strings=JSON.parse(read(`${root}/translations/${locale}.json`)).FeatureFormSettings;
         for(const key of ['measurementConsentTitle','measurementConsentDescription','measurementConsentMarketingDescription']) assert.match(strings[key],word,`${root} ${locale}.${key}`);
     }
+});
+
+
+test('dataLayer projection owns embedded event semantics without changing the wire contract', () => {
+    const page = {event: 'page_view', form_embedded: 'untrusted', private: 'secret'};
+    assert.deepEqual(analyticsPayload(page), {event: 'page_view'});
+    assert.deepEqual(measurementDataLayerPayload(page, {embedded: true}), {page_type: null, user_type: 'b2c', language: null, event: 'form_page_view', form_embedded: true});
+    for (const embedded of [false, undefined, 'true', 1]) {
+        assert.deepEqual(measurementDataLayerPayload(page, {embedded}), {page_type: null, user_type: 'b2c', language: null, event: 'page_view', form_embedded: false});
+    }
+    assert.equal(page.event, 'page_view', 'projection does not mutate the source');
+    assert.equal(analyticsPayload({event: 'form_page_view'}), null, 'destination event is not a wire event');
+    assert.equal(measurementDataLayerPayload({event: 'unknown'}, {embedded: true}), null);
+    assert.deepEqual(measurementDataLayerPayload({page_type: 'sale_opening', language: 'cs'}, {embedded: true}),
+        {page_type: 'sale_opening', user_type: 'b2c', language: 'cs', form_embedded: true});
+});
+
+test('current wire events survive a pre-change protocol 3 receiver during a rolling upgrade', async () => {
+    const previous = await import('../fixtures/measurement_protocol_3/contract.mjs');
+    for (const event of ['page_view', 'form_start', 'form_submit_error']) {
+        const wire = analyticsPayload({event});
+        assert.deepEqual(previous.analyticsPayload(wire), wire);
+        assert.equal(measurementDataLayerPayload(wire, {embedded: true}).event,
+            event === 'page_view' ? 'form_page_view' : event);
+    }
+});
+
+test('destination projection rebuilds scoped page context without trusting event or context extras',()=>{
+ const input={event:'form_start',page_type:'confirmation',language:'de'};
+ const pageContext={page_type:'product',language:'cs',user_type:'staff',email:'private@example.test',page_location:'https://private.invalid'};
+ assert.deepEqual(measurementDataLayerPayload(input,{embedded:true,pageContext}),
+  {page_type:'product',user_type:'b2c',language:'cs',event:'form_start',form_embedded:true});
+ for(const pageContext of [null,{page_type:'private',language:'de'}]){
+  assert.deepEqual(measurementDataLayerPayload(input,{embedded:true,pageContext}),
+   {page_type:null,user_type:'b2c',language:null,event:'form_start',form_embedded:true});
+ }
+ assert.deepEqual(measurementDataLayerPayload({page_type:'checkout'},{embedded:true,pageContext}),
+  {page_type:'checkout',user_type:'b2c',form_embedded:true},'a new page replaces prior context completely');
 });

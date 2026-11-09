@@ -50,5 +50,29 @@ test('real session activation waits for the host ACK and delivers initial funnel
     message('measurement-ack',{measurement:activation.measurement});
     message('measurement-ack',{measurement:activation.measurement});
     assert.equal(activations,1,'onActive announces each usable grant once');
+    layer.page('product');
+    assert.equal(sent.filter(([m])=>m.type==='analytics' && m.payload.event==='page_view').length,1);
     assert.deepEqual(sent.filter(([message])=>message.type==='analytics').map(([message])=>message.payload.event).filter(Boolean),['page_view','view_item']);
+});
+
+test('live host/runtime switches revoke old grants and activate the selected transport',async t=>{
+    const {dom,bridge,sent,message,consent}=fixture(t),starts=[],events=[];
+    let stops=0;
+    bridge.setMeasurementRuntime({activate:grant=>{starts.push(grant);grant.onReady();},stop:()=>stops++,updateConsent(){},track:payload=>{events.push(payload);return true;}});
+    const model={link:'summer',data:{analytics:{...policy,approved_hosts:['https://host.invalid']}}};
+    const session=new FormMeasurementSession({win:dom.window,model,transport:bridge,policySource:async()=>model.data.analytics,
+        consentSource:{connect:(policy,notify)=>bridge.connectConsent(policy,notify)},identitySource:{read:()=> 'anonymous'}});
+    t.after(()=>session.dispose());session.start();await settle();consent();await settle();
+    const ack=()=>message('measurement-ack',{measurement:sent.findLast(([m])=>m.type==='measurement-activate')[0].measurement});
+    ack();assert.equal(session.state,'active');assert.equal(session.grant.selection,'host');
+    const oldHost=session.capture();
+    message('init',{viewportHeight:600,measurementProtocol,dataLayer:false});await settle();
+    assert.equal(bridge.selection(),'runtime');assert.equal(session.state,'active');assert.equal(starts.length,1);
+    assert.equal(oldHost({event:'page_view'}),false);
+    assert.equal(session.record({event:'page_view'}),true);assert.deepEqual(events,[{event:'page_view'}]);
+    const oldRuntime=session.capture(),before=stops;
+    message('init',{viewportHeight:600,measurementProtocol,dataLayer:true});await settle();
+    assert.equal(bridge.selection(),'host');assert.equal(session.state,'starting');assert.ok(stops>before);
+    assert.equal(oldRuntime({event:'page_view'}),false);ack();assert.equal(session.state,'active');
+    assert.equal(session.record({event:'page_view'}),true);assert.equal(sent.at(-1)[0].payload.event,'page_view');
 });

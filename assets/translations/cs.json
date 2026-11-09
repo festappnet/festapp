@@ -603,14 +603,15 @@
     "embedAction": "Vložit na vlastní web",
     "embedTitle": "Objednávkový formulář",
     "embedFallback": "Otevřít objednávku v nové záložce",
-    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška a převzetí vzhledu vyžadují povolený externí skript. Pokud jej web blokuje, použijte pevnou výšku a vlastní vzhled formuláře.",
+    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška a převzetí vzhledu vyžadují povolený externí skript. Pokud jej web blokuje, použijte pevnou výšku a vlastní vzhled formuláře. Měření posílá události do dataLayer Vašeho webu, souhlas řídí GTM a lišta souhlasu webu. Doména webu musí být schválená v nastavení měření. Volbou níže lze měření přepnout na GTM nastavený ve Festappu. Při konverzi se skriptům webu předává také e-mail, telefon a identifikátor transakce. Zkontrolujte nastavení značek a informace o soukromí. Režim jednotky vyžaduje napojení lišty souhlasu.",
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
     "embedFixed": "Pevná výška",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
     "embedInheritStyleHelp": "Použije písmo, pozadí a barvy hostitelského webu pro všechna vložení tohoto formuláře. Změnu uložte s formulářem; projeví se při příštím načtení. Plánek sálu si ponechá vlastní vzhled.",
     "productsAndPrices": "Produkty a ceny",
-    "embedOpenAppearance": "Upravit vzhled formuláře"
+    "embedOpenAppearance": "Upravit vzhled formuláře",
+    "embedHostDataLayer": "Posílat měření do dataLayer webu"
   },
   "OrderGridColumns": {
     "id": "Id",

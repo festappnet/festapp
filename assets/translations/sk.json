@@ -476,7 +476,7 @@
     "embedAction": "Vložiť na vlastný web",
     "embedTitle": "Objednávkový formulár",
     "embedFallback": "Otvoriť objednávku na novej karte",
-    "embedHelp": "Vložte kód do HTML svojho webu. Automatická výška a prevzatie vzhľadu vyžadujú povolený externý skript. Ak ho web blokuje, použite pevnú výšku a vlastný vzhľad formulára.",
+    "embedHelp": "Vložte kód do HTML svojho webu. Automatická výška a prevzatie vzhľadu vyžadujú povolený externý skript. Ak ho web blokuje, použite pevnú výšku a vlastný vzhľad formulára. Meranie posiela udalosti do dataLayer Vášho webu, súhlas riadi GTM a lišta súhlasu webu. Doména webu musí byť schválená v nastavení merania. Voľbou nižšie možno meranie prepnúť na GTM nastavený vo Festappe. Pri konverzii sa skriptom webu odovzdáva aj e-mail, telefón a identifikátor transakcie. Skontrolujte nastavenie značiek a informácie o súkromí. Režim jednotky vyžaduje napojenie lišty súhlasu.",
     "embedSaveFirst": "Pred vložením na web formulár uložte.",
     "embedAutomatic": "Automatická výška (odporúčané)",
     "embedFixed": "Pevná výška",
@@ -502,7 +502,8 @@
     "publicLinkPreview": "Náhľad neuloženého odkazu",
     "automaticPublicLink": "Krátky odkaz sa vytvorí po uložení. Názov adresy môžete zadať ručne.",
     "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať.",
-    "embedOpenAppearance": "Upraviť vzhľad formulára"
+    "embedOpenAppearance": "Upraviť vzhľad formulára",
+    "embedHostDataLayer": "Posielať meranie do dataLayer webu"
   },
   "FeatureTicket": {
     "enablePregeneratedTickets": "Predgenerované vstupenky",

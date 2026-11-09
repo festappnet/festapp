@@ -99,6 +99,8 @@ class FormStrings {
   static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
+  static String get embedHostDataLayer =>
+      'FeatureFormSettings.embedHostDataLayer'.tr();
   static String get embedOpenAppearance =>
       'FeatureFormSettings.embedOpenAppearance'.tr();
 

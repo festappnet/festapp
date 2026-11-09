@@ -43,6 +43,9 @@ foreach ($products as [$element, $namespace, $origin]) {
         check($helper::settings(['url'=>$url, 'height'=>$input])['height'] === $expected, 'Height bounds');
     }
     check($helper::settings(['url'=>$url, 'height'=>[]])['height'] === 800, 'Malformed height');
+    foreach (['unit', 'host', 'invalid', ['host']] as $measurement) {
+        check(str_contains($helper::render(['url'=>$url, 'measurement'=>$measurement]), 'data-festapp-datalayer') === ($measurement === 'host'), 'Explicit measurement destination');
+    }
     $xml = simplexml_load_file(JPATH_ROOT . '/modules/' . $element . '/' . $element . '.xml');
     check((string)$xml->config->fields->fieldset[1]->field[0]['default'] === '0', 'Module cache disabled');
     $form = new Form($element);
@@ -57,7 +60,7 @@ foreach ($products as [$element, $namespace, $origin]) {
         $strings = parse_ini_file($ini);
         check(is_array($strings), 'Translation INI parses');
         $prefix = strtoupper($element);
-        foreach (['START','ONBOARDING','CENTRAL_APPEARANCE','URL','URL_HELP','TITLE','TITLE_HELP','MODE','AUTO','FIXED','HEIGHT','CACHE','DEFAULT_TITLE','INVALID_URL','FALLBACK','DISCLOSURE','SERVICE','XML_DESCRIPTION'] as $key) {
+        foreach (['START','ONBOARDING','CENTRAL_APPEARANCE','URL','URL_HELP','TITLE','TITLE_HELP','MODE','AUTO','FIXED','HEIGHT','MEASUREMENT','MEASUREMENT_HELP','MEASUREMENT_UNIT','MEASUREMENT_HOST','CACHE','DEFAULT_TITLE','INVALID_URL','FALLBACK','DISCLOSURE','SERVICE','XML_DESCRIPTION'] as $key) {
             check(isset($strings[$prefix . '_' . $key]) && $strings[$prefix . '_' . $key] !== '', 'Required translation: ' . $key);
         }
         check(!isset($strings[$prefix . '_INHERIT_STYLE']) && !isset($strings[$prefix . '_APPEARANCE']), 'No local appearance override translations');

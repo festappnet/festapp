@@ -21,6 +21,7 @@ test('public generator produces isolated service code without loading checkout',
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
+  assert.equal(frame.hasAttribute('data-festapp-datalayer'),true,'generated embeds explicitly select host transport');
   assert.equal(frame.getAttribute('data-festapp-style'),null);
   assert.equal(frame.getAttribute('allow'),'clipboard-write');
   assert.equal(frame.style.display,'block');
@@ -62,4 +63,36 @@ test('copy action copies the current prepared code',async t=>{
   const {dom,form,submit}=fixture(t);let copied;Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async value=>{copied=value;}}});
   submit('https://vstupenky.online/form/ples');form.querySelector('[data-copy-embed]').click();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(copied,form.querySelector('textarea').value);assert.match(form.querySelector('[role=status]').textContent,/zkopírován/);
+});
+
+test('both generator guides explain the measurement option and approved domain',t=>{
+ for(const english of [false,true]) {
+  const {dom}=fixture(t,english);
+  assert.match(dom.window.document.body.textContent,/dataLayer/);
+  assert.doesNotMatch(dom.window.document.body.textContent,/data-festapp-datalayer/);
+  assert.match(dom.window.document.body.textContent,/Doména webu musí být schválená|domain must be approved/);
+  assert.match(dom.window.document.body.textContent,/GTM nastavený ve Festappu|GTM configured in Festapp/);
+ }
+});
+
+for(const english of [false,true])test('measurement option defaults to host and toggles independently of height: '+(english?'en':'cs'),async t=>{
+  const {dom,form,submit}=fixture(t,english),win=dom.window;
+  const option=form.querySelector('[name=host-datalayer]'),mode=form.querySelector('[name=height-mode]');
+  const url=english?'https://example.test/form/my-event':'https://vstupenky.online/form/ples';
+  assert.equal(option.type,'checkbox');assert.equal(option.checked,true);
+  assert.match(option.closest('label').textContent,english?/Send measurement to the website dataLayer/:/Posílat měření do dataLayer webu/);
+  for(const height of ['automatic','fixed']) {
+    mode.value=height;mode.dispatchEvent(new win.Event('change'));
+    submit(url);const host=form.querySelector('textarea').value;
+    assert.match(host,/data-festapp-datalayer/);
+    option.click();
+    assert.equal(form.querySelector('[data-embed-output]').hidden,true,'changing the option invalidates the previous code');
+    submit(url);const runtime=form.querySelector('textarea').value;
+    assert.equal(runtime,host.replace(' data-festapp-datalayer',''));
+    let copied;Object.defineProperty(win.navigator,'clipboard',{configurable:true,value:{writeText:async value=>{copied=value;}}});
+    form.querySelector('[data-copy-embed]').click();await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(copied,runtime);
+    option.click();submit(url);
+    assert.equal(form.querySelector('textarea').value,host);
+  }
 });

@@ -44,6 +44,7 @@
   };
   const urlInput = form.querySelector('[name="form-url"]');
   const mode = form.querySelector('[name="height-mode"]');
+  const hostDataLayer = form.querySelector('[name="host-datalayer"]');
   const output = form.querySelector('[data-embed-output]');
   const code = output.querySelector('textarea');
   const status = form.querySelector('[role="status"]');
@@ -52,6 +53,7 @@
   const invalidate = () => { output.hidden = true; status.textContent = ''; error.textContent = ''; urlInput.removeAttribute('aria-invalid'); };
   urlInput.addEventListener('input', invalidate);
   mode.addEventListener('change', invalidate);
+  hostDataLayer.addEventListener('change', invalidate);
   form.addEventListener('submit', event => {
     event.preventDefault(); invalidate();
     let url;
@@ -67,7 +69,8 @@
     }
     const automatic = mode.value === 'automatic';
     const marker = ' data-festapp-embed' +
-      (automatic ? '' : ' data-festapp-height="fixed"');
+      (automatic ? '' : ' data-festapp-height="fixed"') +
+      (hostDataLayer.checked ? ' data-festapp-datalayer' : '');
     // Match the child canvas from creation, before the deferred helper can run.
     const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" height="800" style="display:block;width:100%;max-width:100%;border:0;color-scheme:light dark" loading="lazy"></iframe>`;
     const link = `<p><a href="${escape(url.href)}" target="_blank" rel="noopener noreferrer">${text.link}</a></p>`;

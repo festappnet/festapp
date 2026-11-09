@@ -2,7 +2,7 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "festapp-tickets/ticket-form",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "title": "Festapp Tickets",
   "category": "embed",
   "icon": "tickets-alt",
@@ -28,6 +28,14 @@
     "height": {
       "type": "number",
       "default": 800
+    },
+    "measurement": {
+      "type": "string",
+      "enum": [
+        "unit",
+        "host"
+      ],
+      "default": "unit"
     }
   },
   "supports": {

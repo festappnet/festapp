@@ -53,6 +53,22 @@ namespace {
                 }
             }
         }
+        foreach (['auto', 'fixed'] as $mode) {
+            foreach ([null, 'unit', 'host', 'HOST', 'invalid', ['host'], true, '<script>host</script>'] as $measurement) {
+                $params = ['url' => "$origin/form/ples-2027", 'mode' => $mode];
+                if ($measurement !== null) $params['measurement'] = $measurement;
+                foreach ([$wordpress($params), $shortcode($params), $joomla::render($params)] as $html) {
+                    check(str_contains($html, 'data-festapp-datalayer') === ($measurement === 'host'),
+                        'Only an explicit host choice shares analytics with the website');
+                    check(!str_contains($html, 'data-festapp-datalayer="false"'),
+                        'Unit choice stays safe with older presence-based helpers');
+                    check(!str_contains($html, '<script>'), 'Measurement input is never HTML');
+                    check(str_contains($html, 'data-festapp-height="fixed"') === ($mode === 'fixed'),
+                        'Measurement is independent of height');
+                    $count++;
+                }
+            }
+        }
         foreach ([$wordpress(['url' => "$origin/form/ples-2027"]),
                   $shortcode(['url' => "$origin/form/ples-2027"]),
                   $joomla::render(['url' => "$origin/form/ples-2027"])] as $html) {

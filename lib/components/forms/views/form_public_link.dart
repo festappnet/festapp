@@ -128,6 +128,7 @@ class _EmbedDialog extends StatefulWidget {
 
 class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
+  bool hostDataLayer = true;
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +138,7 @@ class _EmbedDialogState extends State<_EmbedDialog> {
       title: FormStrings.embedTitle,
       fallbackLabel: FormStrings.embedFallback,
       automatic: automatic,
+      hostDataLayer: hostDataLayer,
     );
     return AppAlertDialog(
       title: Text(FormStrings.embedAction),
@@ -175,6 +177,17 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                 ],
                 onChanged: (value) {
                   if (value != null) setState(() => automatic = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                key: const ValueKey('embed-host-datalayer'),
+                title: Text(FormStrings.embedHostDataLayer),
+                value: hostDataLayer,
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (value) {
+                  if (value != null) setState(() => hostDataLayer = value);
                 },
               ),
               const SizedBox(height: 12),

@@ -23,6 +23,10 @@
                 el(components.SelectControl, {label: __('Form height', 'vstupenky-online'), value: a.mode,
                     options: [{label: __('Automatic', 'vstupenky-online'), value: 'auto'}, {label: __('Fixed', 'vstupenky-online'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
 
+                el(components.SelectControl, {label: __('Measurement destination', 'vstupenky-online'), value: a.measurement,
+                    options: [{label: __('Festapp Unit runtime (existing behavior)', 'vstupenky-online'), value: 'unit'}, {label: __('Website dataLayer', 'vstupenky-online'), value: 'host'}],
+                    onChange: (measurement) => props.setAttributes({measurement}),
+                    help: __('Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp.', 'vstupenky-online')}),
                 el('p', null, __('Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes.', 'vstupenky-online'), ' ', el('a', {href:'https://vstupenky.online/events?help=forms',target:'_blank',rel:'noopener noreferrer'}, __('Open forms', 'vstupenky-online'))),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', 'vstupenky-online') : __('Fallback height without the helper (px)', 'vstupenky-online'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor.', 'vstupenky-online')),

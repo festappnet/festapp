@@ -177,3 +177,15 @@ z přesného kanonického commitu `main` po jeho CI kontrolách. Asset
 `evidence/vstupenky-online-package-inputs.json`. Po publikaci se porovnají bajty
 veřejného ZIPu s místním hashem. Jde o přímou distribuci vlastního balíčku;
 samo o sobě to nemění vydání ve WordPress.org ani globální distribuci.
+
+
+## Measurement destination
+
+Existing blocks, shortcodes and modules retain the Unit runtime. Select Website
+dataLayer explicitly to use the website's tags and consent manager. The setting
+is `measurement="host"` or `measurement="unit"`; missing or invalid values select
+`unit`. Website mode shares bounded conversion contacts and transaction IDs with
+page scripts. It does not install tags, grant consent or enable measurement.
+Both modes require enabled Festapp measurement and an approved website origin.
+Unit mode requires a consent adapter. See the canonical
+[measurement contract](../../docs/integrations/form-datalayer.md).
