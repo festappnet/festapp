@@ -1,3 +1,6 @@
+import 'package:festapp_core/forms.dart' show EmailAddress;
+import 'package:fstapp/components/_shared/person_fields_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:festapp_core/sync.dart';
@@ -97,6 +100,9 @@ class SupabaseProfileCommands implements ProfileCommands {
     if (occasion == null || profile.user != null) {
       throw ArgumentError('Creating a profile requires only an occasion ID');
     }
+    if (!EmailAddress.isValid(profile.data?['email']?.toString().trim())) {
+      throw _invalidEmail();
+    }
     return _invoke('create_occasion_user_client_sync_v1', {
       'p_occasion': occasion,
       'p_profile': profile.toUpdateJson(),
@@ -128,6 +134,9 @@ class SupabaseProfileCommands implements ProfileCommands {
         ? _transport.invokeIntent(
             '$actor:${parameters['p_occasion']}:$name', name, parameters)
         : _transport.invoke(name, parameters)));
+    if (response.status == 'rejected' && response.data['message'] == 'INVALID_USER_EMAIL') {
+      throw _invalidEmail();
+    }
     if (actor == _actorId()) {
       await response.applyConfirmedReplacements(expectedContextToken: token);
     }
@@ -138,3 +147,7 @@ class SupabaseProfileCommands implements ProfileCommands {
     );
   }
 }
+
+AppError _invalidEmail() => AppError(
+    code: 400, message: PersonFieldsStrings.emailInvalid,
+    rawJson: '{"code":400,"reason":"INVALID_USER_EMAIL"}');

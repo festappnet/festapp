@@ -130,7 +130,7 @@ class OccasionUserModel extends ITrinaRowModel {
     }
 
     return {
-      Tb.occasion_users.occasion: RightsService.currentOccasionId(),
+      Tb.occasion_users.occasion: occasion,
       Tb.occasion_users.user: user,
       Tb.occasion_users.is_editor: isEditor ?? false,
       Tb.occasion_users.is_editor_view: isEditorView ?? false,
@@ -248,7 +248,7 @@ class OccasionUserModel extends ITrinaRowModel {
       UserColumns.BIRTHDAY: TrinaCell(
           value: DateTime.tryParse(
                   data?[Tb.occasion_users.data_birthDate] ?? "") ??
-              DateTime.fromMicrosecondsSinceEpoch(0)),
+              ''),
       UserColumns.INVITED: TrinaCell(value: isInvited.toString()),
       UserColumns.APP_LINKS_SENT: TrinaCell(
           value: data?[Tb.occasion_users.data_appLinksSent].toString()),
@@ -297,10 +297,10 @@ class OccasionUserModel extends ITrinaRowModel {
   static OccasionUserModel fromPlutoJson(Map<String, dynamic> json) {
     DateTime? bd;
     var jsonTime = json[UserColumns.BIRTHDAY];
-    if (jsonTime != null && jsonTime is String) {
-      var birthDateString = json[UserColumns.BIRTHDAY];
-      var dateFormat = DateFormat(birthDateJsonFormat);
-      bd = dateFormat.parse(birthDateString);
+    if (jsonTime is String) {
+      if (jsonTime.trim().isNotEmpty) {
+        bd = DateFormat(birthDateJsonFormat).parse(jsonTime);
+      }
     } else {
       bd = jsonTime;
     }

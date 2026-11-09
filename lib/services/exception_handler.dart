@@ -8,8 +8,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'toast_helper.dart';
 
-// ... (AppError class remains the same) ...
-class AppError {
+class AppError implements Exception {
   final dynamic code;
   final String message;
   final String rawJson;
@@ -89,7 +88,7 @@ class ExceptionHandler {
     String? defaultMessage,
     bool showAsDialog = false,
   }) async {
-    final AppError? appError = _parsePostgrestException(error);
+    final AppError? appError = _parseAppError(error);
     if ((error is PostgrestException && error.code == '42501') ||
         (error is FunctionException && error.status == 403) ||
         appError?.code == 403 ||
@@ -132,16 +131,16 @@ class ExceptionHandler {
   }
 
   /// Returns a user-friendly message for any exception. Postgrest errors carrying
-  /// a JSON body are parsed; everything else falls back to [defaultMessage] or a
-  /// generic message.
+  /// a JSON body and typed application errors are parsed; everything else falls
+  /// back to [defaultMessage] or a generic message.
   static String toFriendlyMessage(Object error, {String? defaultMessage}) {
-    final parsed = _parsePostgrestException(error);
+    final parsed = _parseAppError(error);
     if (parsed != null) return parsed.message;
     return defaultMessage ?? CommonStrings.unexpectedError;
   }
 
-  // Helper methods _parsePostgrestException and _showErrorDialog remain the same...
-  static AppError? _parsePostgrestException(Object exception) {
+  static AppError? _parseAppError(Object exception) {
+    if (exception is AppError) return exception;
     if (exception is! PostgrestException) return null;
     if (exception.code == 'PT429') {
       return AppError(

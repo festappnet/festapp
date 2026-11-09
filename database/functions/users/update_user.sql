@@ -68,7 +68,7 @@ BEGIN
 
   -- Logic for finding or creating user
   IF v_user IS NULL THEN
-    v_email := input_data->'data'->>'email';
+    v_email := lower(btrim(input_data->'data'->>'email'));
 
     IF v_email IS NULL OR v_email = '' THEN
       RETURN jsonb_build_object('code', 400, 'message', 'Email is required to find or create a user.');
@@ -77,7 +77,7 @@ BEGIN
     -- Check if user exists
     SELECT id INTO existing_user_id
     FROM auth.users
-    WHERE email = v_org::text || '+' || v_email;
+    WHERE email = public.format_auth_email(v_org, v_email);
 
     IF existing_user_id IS NOT NULL THEN
       IF EXISTS(SELECT 1 FROM public.user_info WHERE id=existing_user_id AND organization IS DISTINCT FROM v_org) THEN
@@ -156,6 +156,9 @@ BEGIN
   );
 
 EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM = 'INVALID_USER_EMAIL' THEN
+    RETURN jsonb_build_object('code', 400, 'message', SQLERRM);
+  END IF;
   RETURN jsonb_build_object('code', 500, 'message', SQLERRM);
 END;
 $$ LANGUAGE plpgsql;

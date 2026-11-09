@@ -1962,12 +1962,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_unit_user(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='30f015851dd318e0d2b80d7f0fbdacd8'),'current SQL source parity: public.update_unit_user(jsonb)');
 -- supabase/migrations/20261027150000_people_group_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_unit_user_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='197b7f82f1b89a34b26f891bff1a2d51'),'current SQL source parity: public.update_unit_user_internal_v1(jsonb)');
--- supabase/migrations/20261109121500_user_creation_authorization.sql
+-- supabase/migrations/20261109190000_occasion_user_identity_resolution.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_user(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c7dfa8e66c80616d8d04f4d972ffb9b4'),'current SQL source parity: public.update_user(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(to_regprocedure('public.update_user(uuid,bigint,jsonb)') IS NULL,'retired SQL identity remains absent: public.update_user(uuid,bigint,jsonb)');
--- supabase/migrations/20261109121500_user_creation_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_user_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='6ee7d4204e57dd2ea839658dd46b8b83'),'current SQL source parity: public.update_user_internal_v1(jsonb)');
+-- supabase/migrations/20261109190000_occasion_user_identity_resolution.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_user_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f8cde5e88a1d99da7120faf4a2b16dd4'),'current SQL source parity: public.update_user_internal_v1(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(to_regprocedure('public.upsert_event_user(integer,uuid)') IS NULL,'retired SQL identity remains absent: public.upsert_event_user(integer,uuid)');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
