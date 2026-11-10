@@ -1,66 +1,77 @@
 # CI input reuse
 
 All eight canonical check names remain required on the exact release main SHA.
-A green job means either the full lane executed, or its selector verified a
-previous successful execution covering identical inputs. This changes test
-execution, not release admission, build provenance or live deployment checks.
+A green job means either its complete lane executed or the selector verified a
+previous successful execution with identical inputs. Targeted local tests precede
+publication. GitHub owns complete authoritative verification. The full local
+mirror remains available explicitly for diagnosis and offline work.
 
-## Pull requests and releases
+## One dependency map
 
-- Draft PRs skip the expensive regression jobs. GitHub does not allow merging a
-  draft. Marking Ready for review triggers all lanes on the current merge ref.
-- A newer PR update cancels obsolete runs of the same workflow and PR. Converting
-  back to draft also cancels them. Main and deployment runs are not cancelled.
-- Later ready-PR updates and main pushes run changed lanes; unchanged lanes can
-  reuse executed main evidence. PR evidence is never promoted into main evidence.
-  A lane changed anywhere in the PR may therefore run again on subsequent updates.
-- Manual workflow dispatch and `merge_group` always execute the full lanes.
-  Merge queue support does not enable a queue or change repository protection.
-- The first run after introducing/changing this policy executes all lanes.
-  There is no compatible old execution marker from which to inherit evidence.
-- The local mirror continues to run the explicitly selected affected lanes.
+`checks.json` owns job inputs, independent documentation paths, scenario inventory
+and the seven-day reuse limit. `run.py affected` and `selection.py fingerprint`
+use the same `owners()` function. Unknown paths and unregistered tests select
+all jobs. Shared contracts have all consumers. Known Flutter package paths include
+locks and manifests; unknown packages remain conservative. Git tree entries bind
+content, path, mode, additions, removals and renames. There is no second component
+map or step-level copy of inputs.
 
-## Conservative dependency boundary
+`image-policy` owns the image worker typecheck and unit suite once. Server policy
+retains MCP/auth tests. All source startup/WebView scenarios remain in CI;
+production builders verify their exact canonical CI source and assembled tenant
+artifact instead of repeating that source suite.
 
-`automation/ci/inputs.json` classifies independent components. Every path outside
-those explicit components is shared by every lane. New packages and unknown
-paths therefore invalidate every lane. Shared contracts, automation, workflow
-files, root dependency locks, SDK configuration and assets remain shared inputs.
-Known Flutter packages include their package-local manifests and locks.
-Repository documentation under `docs/` has no runtime lane consumers; its edits
-alone do not invalidate a test result. Generated public help under `automation/`
-is still a shared input, and package-local README contracts retain their owners.
+## Direct execution evidence
 
-Within each component, the policy lists all consuming lanes. The current map is
-intentionally broad: all Flutter source changes also invalidate seat checkout;
-all SQL/Edge changes invalidate ticket and image contracts. Narrowing a component
-requires checking cross-component file reads and adding invalidation coverage.
+The existing immutable receipt includes repository ID, workflow definition digest,
+run/job ID and attempt, event, actual checkout SHA/tree, lane input digest,
+runner image/architecture, declared tool versions and full scenario inventory.
+The receipt is usable only for a complete, clean, unchanged execution whose
+entire declared unit inventory passed. Local and legacy receipts cannot attest
+hosted execution.
 
-The selector hashes Git tree records (path, mode and object ID) for every lane
-input. Content edits, renames, executable modes, additions, deletions and submodule
-pins count. It compares the actual checkout tree, including the PR merge result,
-against ancestors on the first-parent main side. It does not use file modification
-times, changed-file counts or a previous local development receipt.
+The selector independently verifies GitHub repository/run/attempt/job/artifact
+bindings, the job's final success and execution step, artifact expiry and GitHub's
+SHA-256 digest of the downloaded archive. It reads bounded JSON without extracting
+ZIP paths. Receipt claims alone never authorize reuse. Missing/deleted artifacts,
+API errors, unknown origins, malformed evidence or a newer unresolved failed or
+pending run cause execution. Reuse never creates another executed receipt, never
+chains through a reused job and never refreshes the original run's seven-day age.
 
-## Evidence and failure behavior
+Internal PR evidence can be consumed on subsequent PR updates or main even when
+merge, squash or rebase changes commit identities. The actual checkout digest
+must match. For PRs the tested commit must be the synthetic merge of the API head
+and a canonical main ancestor, with the computed merge tree matching its tree.
+This does not infer checkout identity from `run.head_sha`. Forks and changes to
+the producer/selector/workflow policy force execution. The protected definitions
+must equal current canonical main. The first rollout therefore runs all lanes
+and establishes a new baseline; old incomplete receipts are not grandfathered.
 
-Only successful push/manual workflow executions on main, from this workflow and
-within seven days, qualify. The latest check attempt must pass and belong to that
-run. The job API must also report the final `All lane tests executed` step as
-successful. A job which only reused evidence cannot become an execution baseline
-or renew its age. A newer failed or pending matching run/check prevents falling
-back to an older success. A shallow/missing history, unavailable API, absent
-permissions, expired evidence or malformed response runs tests instead.
+Drafts remain deferred. Ready-for-review, reruns, manual dispatch and `merge_group` force
+execution. Merge queue support does not activate a queue or change protection.
+The job summary links the original execution and input fingerprint. Exact-main
+release admission still rejects missing, skipped, pending or failed current jobs.
 
-All dependency/SDK installation and test steps share the selector's condition.
-Checkout and selection still run for unchanged lanes. The summary links the
-actual executed check and records its source SHA and input SHA-256. Existing
-release admission still rejects missing, skipped, pending or failed current jobs,
-including extra failed checks; there is no deploy bypass. The tenant cannot edit
-the selector, its dependency map, the job contract or the release gate relative
-to its canonical main source.
+## Tenant build and upload continuation
 
-This is conservative selection, not a claim that external dependencies never
-change: locked tool versions are inputs, reuse is bounded to seven days, and a
-manual workflow dispatch forces fresh verification. Runtime savings depend on
-which components changed and have not yet been measured on GitHub.
+All hosting adapters enter `build_web_bundle.sh`, which requires exact-source CI
+before compilation. CI owns the full source startup suite. Build-time runtime
+manifest checks and final `verify_web_build.mjs` retain tenant/backend identity,
+CSP, legal/support, immutable versions and module-entry checks. Flutter commands
+use the workstation slot. Direct deployment also rechecks the source gate before
+upload and runs its canonical live probe.
+
+After complete artifact verification, the existing `festapp-version.json` gains
+a `buildReceipt`. It binds main/tenant SHA, tenant ID/config, target, actual source
+and generated bytes, toolchain, flags and all output bytes. The version manifest
+is hashed without its receipt field to avoid a circular digest. Inputs are
+captured before compilation and compared again at sealing. Already sealed
+artifacts cannot be relabelled. Before rebuilding, a sealed predecessor is moved
+under a distinct receipt digest in `build/web-artifacts/`; it is never overwritten. `--skip-build` requires this receipt, final bundle
+verification and all normal source/preflight/upload gates. Missing or differing
+evidence rejects reuse and requires a fresh build; no new bypass flag exists.
+
+Direct release attempts write build/upload/live-probe phases through existing
+`telemetry.py` to the CI cache. Hosted receipts retain lane/preparation timings.
+Real PR/main promotion and production timing remain separate authorized checks;
+local fixtures establish correctness, not a measured production speedup.

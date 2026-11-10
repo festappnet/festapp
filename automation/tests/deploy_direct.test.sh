@@ -36,10 +36,10 @@ require_executable "$BUILD_SH"
 
 # The deploy script owns the complete release path: canonical build, conf-driven
 # project/branch selection, direct upload, and repeated custom-domain verification.
-require_text "$DEPLOY_SH" 'bash automation/cloudflare_build.sh' 'deploy invokes the canonical web build'
+require_text "$DEPLOY_SH" 'release.build bash automation/cloudflare_build.sh' 'deploy invokes the canonical web build'
 require_text "$DEPLOY_SH" 'node automation/cloudflare/ensure-pages-project.mjs' 'deploy ensures project, runtime variables, and custom domain'
 require_text "$DEPLOY_SH" "^CLOUDFLARE_PROJECT_NAME=" 'deploy reads the Pages project from project.conf'
-require_text "$DEPLOY_SH" 'pnpm dlx wrangler@latest pages deploy build/web' 'deploy uploads build/web with Wrangler'
+require_text "$DEPLOY_SH" 'release.upload pnpm dlx wrangler@latest pages deploy build/web' 'deploy uploads build/web with Wrangler'
 require_text "$DEPLOY_SH" '--project-name "${PROJECT_NAME}"' 'Wrangler project name is configuration-driven'
 require_text "$DEPLOY_SH" '--branch "${BRANCH}"' 'deploy tags the current production branch'
 require_text "$DEPLOY_SH" '--branch) BRANCH_OVERRIDE="$2"' 'detached deploy accepts an explicit production branch'
@@ -51,6 +51,9 @@ require_text "$DEPLOY_SH" 'unset CLOUDFLARE_API_TOKEN CF_API_TOKEN' 'OAuth canno
 require_text "$DEPLOY_SH" 'wrangler@latest pages project list --json' 'OAuth verifies the existing Pages project before upload'
 require_text "$DEPLOY_SH" 'domains.includes(`${projectName}.pages.dev`)' 'OAuth requires the canonical Pages hostname'
 require_text "$DEPLOY_SH" 'domains.includes(domain)' 'OAuth requires the configured custom domain binding'
+
+require_text "$DEPLOY_SH" 'python3 automation/release/build_receipt.py verify cloudflare' 'prebuilt artifact identity is verified'
+require_text "$BUILD_SH" 'python3 automation/release/build_receipt.py seal cloudflare' 'completed Cloudflare artifact is sealed'
 
 # The generated worker remains the single routing owner for every web entry point.
 for needle in '/sitemap.xml' '/form/' 'WEB_CLIENT_INDEX' 'FLUTTER_ENTRY' 'AUTH_BRIDGE' 'FORCED_OCCASION_PATH' 'FORCE_OCCASION_LINK' 'get_available_occasions' 'get_occasion_seo_data'; do

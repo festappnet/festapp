@@ -371,7 +371,11 @@ test('web deployment verifies selected receivers before build and again before u
       'CLOUDFLARE_PROJECT_NAME=test-project\nDOMAIN=tickets.example\nVERSION=1.2.3+4\nBACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=3\n');
     await writeFile(join(directory,'build/web/_worker.js'),'worker');
     const executable = async (name,body) => writeFile(join(directory,'bin',name),'#!/bin/bash\nset -eu\n'+body,{mode:0o755});
-    await executable('python3','echo gate >> calls\n');
+    await executable('python3',`if [ "$1" = automation/ci/telemetry.py ]; then
+      shift 2
+      exec "$@"
+    fi
+    echo gate >> calls\n`);
     await executable('pnpm','echo upload >> calls\n');
     await executable('node',`if [ "$1" = automation/verify_measurement_runtimes.mjs ]; then
       [[ "$*" = 'automation/verify_measurement_runtimes.mjs --organization 3 --require-probe' ]]

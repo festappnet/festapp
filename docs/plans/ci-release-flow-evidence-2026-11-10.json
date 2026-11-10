@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "status": "local-implementation-verified-not-published",
+  "baseMainSha": "bdea2039cfa2332e5e746b2ca4c462bc12a6c612",
+  "authorization": "User explicitly accepted wave 1 policy in this session. No commit/push/merge/production build or deployment authorized.",
+  "inventory": {
+    "jobsBefore": [
+      "image-contract",
+      "web-startup",
+      "wix-checkout-compatibility",
+      "navigation-interactions",
+      "server-policy",
+      "client-contract",
+      "seat-checkout",
+      "ticket-preview-and-delivery"
+    ],
+    "jobsAfter": [
+      "image-contract",
+      "web-startup",
+      "wix-checkout-compatibility",
+      "navigation-interactions",
+      "server-policy",
+      "client-contract",
+      "seat-checkout",
+      "ticket-preview-and-delivery"
+    ],
+    "unitsBefore": 36,
+    "unitsAfter": 34,
+    "knownTestInputsBefore": 956,
+    "knownTestInputsAfter": 957,
+    "removedTestInputs": [],
+    "addedTestInputs": [
+      "automation/tests/bundle_entries.test.mjs"
+    ],
+    "sqlTests": 409,
+    "sqlInventoryUnchanged": true,
+    "sqlGroupsUnchanged": true,
+    "removedUnits": [
+      "image-server-install",
+      "image-server-policy"
+    ],
+    "changedRetainedUnitScripts": [
+      "deploy-contract"
+    ]
+  },
+  "validation": [
+    {
+      "command": "/tmp/festapp-ci-release-flow-venv/bin/python -m unittest discover -s automation/ci -p test_*.py",
+      "result": "PASS",
+      "tests": 52,
+      "seconds": 5.393,
+      "log": "/tmp/festapp-ci-final.log"
+    },
+    {
+      "command": "bash automation/tests/deploy_workflow.test.sh",
+      "result": "PASS",
+      "log": "/tmp/festapp-ci-workflow-final.log"
+    },
+    {
+      "command": "bash automation/tests/deploy_direct.test.sh",
+      "result": "PASS",
+      "log": "/tmp/festapp-ci-direct-final.log"
+    },
+    {
+      "command": "node --test automation/tests/bundle_entries.test.mjs",
+      "result": "PASS",
+      "tests": 1,
+      "seconds": 0.085630292,
+      "log": "/tmp/festapp-ci-bundle-final.log"
+    },
+    {
+      "command": "bash -n changed build/deploy scripts; node --check automation/verify_web_build.mjs; git diff --check; python3 automation/ci/run.py inventory",
+      "result": "PASS"
+    },
+    {
+      "command": "/tmp/festapp-ci-release-flow-venv/bin/python -m unittest discover -s automation/ci -p test_build_receipt.py",
+      "result": "PASS",
+      "tests": 3,
+      "seconds": 0.492,
+      "log": "/tmp/festapp-ci-receipt-final.log",
+      "reason": "Final preservation behavior verifies refusal of altered reuse while allowing a fresh build and retaining diagnostic bytes."
+    }
+  ],
+  "externalReadOnlyEvidence": {
+    "runId": 42874037095,
+    "repositoryId": 617831877,
+    "jobId": 130032668759,
+    "artifactId": 13791365800,
+    "artifactDigestPresent": true,
+    "runPullRequestsArrayEmpty": true
+  },
+  "notExecuted": [
+    "source publication",
+    "new hosted execution receipts",
+    "actual internal PR merge/main reuse",
+    "selected-tenant production build",
+    "production upload retry",
+    "live browser smoke",
+    "three comparable end-to-end release timings"
+  ],
+  "performance": {
+    "measuredEndToEndBeforeSeconds": null,
+    "measuredEndToEndAfterSeconds": null,
+    "claimedSpeedup": null,
+    "note": "Local contract timings are not release performance measurements."
+  },
+  "skill": {
+    "canonical": "/Users/miakh/source/development-tools/vendor/codex-skills/festapp-web-release/SKILL.md",
+    "installer": "scripts/install-skills.sh",
+    "installedSymlinkVerified": true
+  }
+}

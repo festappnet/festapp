@@ -73,8 +73,9 @@ deployment. An HTTP 200 alone is not proof that a legal route exists.
 
 ## Normal tenant upgrade
 
-1. Develop and validate shared behavior with the affected canonical CI mirror
-   lanes. After publishing main, run `python3 automation/ci/release_gate.py
+1. Develop and validate shared behavior with targeted local tests. GitHub
+   owns authoritative complete lane verification; the full local mirror is
+   optional unless explicitly requested. After publishing main, run `python3 automation/ci/release_gate.py
    --source-sha <full-main-sha>` and require all eight GitHub jobs to pass for
    that exact commit before creating/pushing the overlay. Missing or failed
    checks, including pre-existing failures, block release. Current jobs may

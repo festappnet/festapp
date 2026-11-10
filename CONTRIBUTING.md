@@ -91,20 +91,24 @@ limits and the retirement ledger are recorded in
 
 ### Required web release CI gate
 
-Before publishing shared changes, run the affected lanes from
-`automation/test_ci.sh`, not a substitute list of hand-picked tests. Before a
+Before publishing shared changes, run targeted local tests of the affected
+behavior. GitHub performs authoritative complete lane verification; a duplicate
+full local mirror is not required. `automation/test_ci.sh` remains an explicit
+full mirror for diagnosis, offline work and requested full verification. Before a
 web release, all eight jobs in `automation/ci/checks.json` must finish successfully
 in GitHub on the exact canonical `baseMainSha`. Each job either executes its
 complete lane or verifies identical inputs against actually executed, successful
-main CI no older than seven days. Reused evidence is recorded in the job summary;
+main or internal-PR CI execution artifacts no older than seven days. Reused
+evidence is recorded in the job summary;
 it cannot refresh its own age. Missing evidence or an uncertain impact runs tests.
 A failed baseline is still a blocked release. A build or local receipt does not
 replace this gate. See [CI input reuse](docs/architecture/ci_input_reuse.md).
 
 Draft pull requests do not start these expensive regression jobs. Switching to
 Ready for review runs every lane. Subsequent ready-PR updates and main pushes
-reuse only proven unchanged main inputs; changed or unknown inputs run their
-lanes. Manual workflow dispatch and merge-queue checks always run full lanes.
+reuse only directly executed, artifact-verified identical inputs from main
+or internal PRs; changed or unknown inputs run their lanes. Manual workflow
+dispatch, reruns and merge-queue checks always run full lanes.
 New PR updates cancel superseded runs of that PR, without cancelling main runs.
 The local mirror still executes explicitly selected lanes without GitHub reuse.
 

@@ -6,10 +6,34 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from telemetry import input_identity, phase, run_directory, write_receipt, measured_process
-from telemetry import ContainerMemory
+from telemetry import ContainerMemory, execution_identity
+import selection
 
 
 class TelemetryTest(unittest.TestCase):
+    def test_hosted_identity_records_actual_checkout_and_api_outage_does_not_block_tests(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            subprocess.run(['git','init','-q',str(root)],check=True)
+            subprocess.run(['git','-C',str(root),'-c','user.name=Test','-c','user.email=test@example.invalid',
+                            'commit','--allow-empty','-qm','actual checkout'],check=True)
+            sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+            contract={'jobs':{'fixture':{'workflow':'fixture.yml','node':'22.23.3','inputs':['**']}},
+                      'knownTestInputs':[]}
+            env={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'fixture/repo','GITHUB_REPOSITORY_ID':'7',
+                 'GITHUB_RUN_ID':'123','GITHUB_RUN_ATTEMPT':'2','GITHUB_EVENT_NAME':'pull_request',
+                 'GITHUB_SHA':'untrusted-head-metadata'}
+            with patch.dict(os.environ,env),patch.object(selection,'ROOT',root), \
+                 patch.object(selection,'api',return_value={'jobs':[{'name':'fixture','id':456}]}) as api:
+                identity=execution_identity(root,'fixture',contract)
+                self.assertEqual(identity['checkoutSha'],sha)
+                self.assertNotEqual(identity['checkoutSha'],env['GITHUB_SHA'])
+                self.assertEqual(identity['jobId'],456)
+                self.assertEqual(identity['attempt'],2)
+                api.assert_called_once_with('fixture/repo','actions/runs/123/attempts/2/jobs?per_page=100')
+                api.side_effect=OSError('offline')
+                self.assertIsNone(execution_identity(root,'fixture',contract))
+
     def test_docker_stream_cursor_controls_do_not_discard_memory_samples(self):
         with patch('telemetry.subprocess.Popen') as popen:
             popen.return_value.stdout=['\x1b[H{"MemUsage":"212.7MiB / 3.814GiB"}\x1b[K\n']

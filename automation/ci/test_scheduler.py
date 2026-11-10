@@ -49,6 +49,19 @@ class SchedulerTest(unittest.TestCase):
         self.assertEqual(result['blocked']['status'],'INCOMPLETE')
         self.assertNotIn('blocked',executed);self.assertEqual(result['independent']['status'],'PASS')
 
+    def test_failed_transitive_chain_keeps_receipts_in_reverse_declaration_order(self):
+        executed=[]
+        def execute(name,unit):
+            executed.append(name)
+            if name=='bad':raise RuntimeError('original test failure')
+        units={'last':{'after':['middle']},'middle':{'after':['bad']},'bad':{},'independent':{}}
+        result=execute_dag(units,{},execute)
+        self.assertEqual(result['bad']['status'],'FAIL')
+        self.assertEqual(result['middle']['status'],'INCOMPLETE')
+        self.assertEqual(result['last']['status'],'INCOMPLETE')
+        self.assertEqual(result['independent']['status'],'PASS')
+        self.assertCountEqual(executed,['bad','independent'])
+
     def test_cycles_unknown_dependencies_and_excess_claims_are_rejected(self):
         for units in [{'a':{'after':['b']},'b':{'after':['a']}},{'a':{'after':['unknown']}},{'a':{'resources':{'ram':2}}}]:
             with self.assertRaises(ValueError):execute_dag(units,{'ram':1},lambda *_:None)

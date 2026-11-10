@@ -41,14 +41,17 @@ repository.
   build unless the user explicitly requests that execution path.
 - Preserve canonical main/tenant ancestry, drift checks, build verification and
   coherent live-version probes when deploying locally.
-- Before source publication, run affected canonical CI mirror lanes from
-  `automation/test_ci.sh`. Before creating/pushing a tenant overlay or deploying,
+- Before source publication, run targeted local tests of the affected behavior.
+  GitHub owns authoritative full lane verification; the explicit local mirror
+  `automation/test_ci.sh` remains available for diagnosis and offline work.
+  Before creating/pushing a tenant overlay or deploying,
   require all canonical GitHub CI jobs to succeed on its exact `baseMainSha`
   using `automation/ci/release_gate.py`. Missing, pending, failed or skipped
   checks block release, including pre-existing failures. Do not bypass the gate
   or substitute targeted tests/build success. A current successful job may
-  attest unchanged inputs using `automation/ci/selection.py`; only actually
-  executed, successful main tests within seven days can supply that evidence.
+  attest unchanged inputs using `automation/ci/selection.py`; only verified
+  direct successful executions from main or internal PRs within seven days can
+  supply that evidence. Reused jobs cannot become execution evidence.
   Draft PRs defer these lanes until Ready for review. See `CONTRIBUTING.md`.
 
 

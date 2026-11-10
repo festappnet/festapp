@@ -8,6 +8,14 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+CANONICAL_RELEASE_FILES = (
+    'automation/ci/checks.json', 'automation/ci/release_gate.py',
+    'automation/ci/selection.py', 'automation/ci/run.py',
+    'automation/ci/telemetry.py', 'automation/ci/resources.py',
+    'automation/release/build_receipt.py', 'automation/build_web_bundle.sh',
+    'automation/cloudflare_build.sh', 'automation/ci_build.sh',
+    'automation/verify_web_build.mjs', 'automation/lib/verify_bundle_entries.mjs',
+)
 
 
 def git(*args):
@@ -75,8 +83,7 @@ def release_source():
     if git('status', '--porcelain', '--untracked-files=normal'):
         raise RuntimeError('Release requires a clean checkout, including untracked source files')
     # The tenant cannot weaken the required job set or the gate itself.
-    for name in ('automation/ci/checks.json', 'automation/ci/release_gate.py',
-                 'automation/ci/selection.py', 'automation/ci/inputs.json'):
+    for name in CANONICAL_RELEASE_FILES:
         if subprocess.check_output(['git', 'show', f'{sha}:{name}'], cwd=ROOT) != (ROOT / name).read_bytes():
             raise RuntimeError(f'Release gate must match canonical main: {name}')
     return sha

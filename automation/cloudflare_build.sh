@@ -756,9 +756,11 @@ if count != 1:
 pathlib.Path(worker_path).write_text(source, encoding="utf-8")
 PY
 
-node automation/verify_web_build.mjs build/web \
+python3 automation/ci/telemetry.py release.artifact-checks node automation/verify_web_build.mjs build/web \
   "$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')" \
   automation/project.conf cloudflare
+
+python3 automation/release/build_receipt.py seal cloudflare
 
 echo "Build complete. Output in build/web"
 ls -la build/web | head -25

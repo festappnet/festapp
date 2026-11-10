@@ -42,6 +42,8 @@ jobs:
             integrations/wix/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
       - name: Run canonical regression DAG
+        env:
+          GH_TOKEN: ${{ github.token }}
         if: steps.selection.outputs.run == 'true'
         run: python3 automation/ci/run.py lane wix-checkout-compatibility
       - name: All lane tests executed

@@ -65,8 +65,8 @@ class ReleaseCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'automation/ci').mkdir(parents=True)
-            for name in ['automation/ci/release_gate.py', 'automation/ci/selection.py',
-                         'automation/ci/inputs.json', 'automation/deploy_direct.sh']:
+            for name in [*gate.CANONICAL_RELEASE_FILES, 'automation/deploy_direct.sh']:
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
                 (root / name).write_bytes((gate.ROOT / name).read_bytes())
             (root / 'automation/ci/checks.json').write_text(json.dumps({'jobs': {'seat-checkout': {}}}))
             def git(*args):
@@ -74,7 +74,7 @@ class ReleaseCliTest(unittest.TestCase):
             git('init', '-q')
             git('config', 'user.email', 'test@example.invalid')
             git('config', 'user.name', 'Release fixture')
-            (root / '.gitignore').write_text('/bin/\n/checks.json\n/upload-must-not-run\n')
+            (root / '.gitignore').write_text('/bin/\n/checks.json\n/upload-must-not-run\n__pycache__/\n')
             git('add', '.')
             git('commit', '-qm', 'canonical source')
             sha = git('rev-parse', 'HEAD')
