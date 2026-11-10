@@ -153,7 +153,7 @@ The banner must identify the organizer, purposes, services in the organizer's GT
 the isolated `*.pages.dev` runtime and Festapp as processor, and explain withdrawal.
 The organizer retains consent evidence in the website CMP. A partner's banner
 cannot be assumed to cover the organizer. Explicit adapters remain independent of
-the switch. The switch is part of the manifest and processing revision.
+the switch. The switch is part of the manifest and processing revision. A missing or false switch preserves the pre-bridge fingerprint; only true adds the bridge marker.
 
 When enabled, the helper reads `google_tag_data.ics.entries`, then only Arguments
 `consent default/update` commands in `window.dataLayer` if ICS is unavailable.
@@ -374,6 +374,80 @@ consent. Escape in Settings discards the draft. Reopened Settings always offer
 Decline; after a saved decision focus returns to the floating Consent settings
 button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
+
+## Live consent transfer to a new tab
+
+Explicit marked links can share a saved website CMP record with the standalone
+form. The Unit must enable `measurement_consent_bridge` and approve the exact
+host origin. The website notice and its archived CMP configuration must cover
+this Unit's form, purposes, destinations, recipients and processing revision.
+An opt-in switch is configuration, not evidence that a visitor confirmed a notice.
+Google Consent Mode alone does not prove this record or its revision.
+
+Register a live source after `embed.js` loads with
+`FestappEmbed.connectMeasurementSource({read(scope), subscribe(notify)})`.
+It uses the same record contract as `connectMeasurementConsent(frame, source)`.
+`scope` contains `organization`, `unit`, `processingRevision` and the two
+`requiredPurposes`. `read` must return null unless the visitor's **saved** CMP
+record covers that exact organization, Unit and revision. A valid record returns
+`{processingRevision, analytics, marketing}`. Read the revision from that saved
+record; never echo the requested revision into an old decision. Subscribe must
+return a disposer and notify after updates, withdrawal and record removal.
+The source owner must also enforce the website record's own expiry in read.
+
+```js
+// Integrate these methods with your CMP's saved records and update events.
+const disconnect = FestappEmbed.connectMeasurementSource({
+  read(scope) {
+    const saved = websiteCmp.savedPurchaseRecord();
+    if (!saved || saved.organization !== scope.organization ||
+        saved.unit !== scope.unit || saved.processingRevision !== scope.processingRevision ||
+        saved.expiresAt <= Date.now()) return null;
+    return saved;
+  },
+  subscribe(notify) { return websiteCmp.onSavedRecordChange(notify); }
+});
+```
+
+`disconnect()` retires that source. Replacement, broken subscriptions and explicit
+disconnect remain denied; they never restore Google's automatic fallback. The
+global source also supplies existing automatic Unit iframe bindings; explicit
+per-frame adapters keep precedence. Existing embeds with no global source ever
+registered retain their existing automatic bridge behavior.
+
+The `festapp-consent-link` protocol 1 uses the clicked WindowProxy, exact origins,
+a random nonce, normalized scope and increasing sequence. Only HTTPS is allowed
+(loopback HTTP only during local HTTP development). The form captures and clears
+its helper opener before policy loading. Unmarked windows do not participate.
+The host accepts the initial request only within 60 seconds of the marked click;
+the child waits at most 1500 ms without scroll locking, then shows local consent.
+No URL tokens, cookies or new backend RPCs carry the choice.
+
+A valid response establishes a renewable lease of at most 60 seconds. The host
+rereads the saved scoped source on updates and every 20 seconds. Withdrawal
+updates the choice; unknown records, source replacement/disconnect, page departure
+or maximum 24-hour visit end terminate the channel. The form rejects old sequence,
+wrong peer/origin/scope and expired responses. Visibility/pageshow also check the
+absolute deadline. FormMeasurementSession limits runtime lifetime to both policy
+and source deadlines, including renewals and shortened leases; delayed browser
+timers cannot authorize another capture after expiry.
+
+Klaro holds imported choices only in its visit model. Heartbeats preserve an open
+draft; source changes clamp it and replace the Escape baseline. Missing source or
+lease expiry revokes the import and restores the ordinary local notice. Reloads
+and new tabs require a fresh marked click. Historical prototype source cookies
+are retired before publishing choices. Explicit local saves use the existing
+180-day cookie and atomically detach the remote channel and lease. Another tab's
+saved local decision wins when the link checks it; ordinary open Klaro tabs are
+not continuously synchronized.
+
+Successful transfer shows the floating settings button. Saving there makes a
+local decision; Escape closes settings without saving. Link helpers preserve
+modifier clicks, downloads, explicit noopener/noreferrer and referrer policies.
+Without a referrer, opener or COOP-compatible connection, local consent remains
+available. The click handler can suppress GTM Just Links validation triggers;
+measure checkout with form events instead. See the
+[link markup](embedded-checkout.md#převzetí-živé-volby-cookies).
 
 ## First-party attribution and CMS defaults
 

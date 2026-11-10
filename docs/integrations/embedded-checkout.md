@@ -331,3 +331,42 @@ vstupu do Flutter aplikace. Veřejný formulář ani jeho update/recovery požad
 je nestahují. Worker a per-version cache zůstávají společné; handshake nese
 `runtime: web | flutter`. Běžná Flutter aplikace je dostupná offline po svém
 online otevření, veřejný formulář má nezávislou webovou offline obnovu.
+
+## Převzetí živé volby cookies
+
+Web s `embed.js` může předat uloženou volbu svého CMP do samostatného formuláře:
+
+```html
+<script defer src="https://vstupenky.online/embed.js"></script>
+<a data-festapp-consent-link target="_blank"
+   href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
+```
+
+Samotný odkaz ani Consent Mode nestačí. Pořadatel zapne
+`measurement_consent_bridge`, schválí origin webu a napojí živý zdroj přes
+`FestappEmbed.connectMeasurementSource`. Zdroj vrací uložený záznam CMP jen pro
+odpovídající organizaci, jednotku a revizi zpracování. Revize musí být součástí
+uložené volby, nesmí se pouze převzít z příchozí žádosti. Lišta webu a archivovaná
+konfigurace CMP musí výslovně pokrývat i nákup ve formuláři se stejnými účely,
+příjemci, zásadami a možností odvolání. Technický přepínač tuto evidenci nenahrazuje.
+
+Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
+karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,
+referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Bez
+referreru, propojení oken nebo při omezení COOP se zobrazí běžná místní lišta.
+Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
+
+Převzetí čeká nejvýše 1500 ms. Pak platí pouze pro aktuální návštěvu, nejvýše
+24 hodin, a průběžně se obnovuje krátkou vazbou na živý zdroj. Odvolání na webu
+se přenese; zánik záznamu, odpojení zdroje, opuštění webu nebo vypršení vazby
+ukončí převzetí a obnoví místní lištu. Žádné převzaté souhlasy se nezapisují do
+cookies. Obnovená nebo další karta vyžaduje nové předání. Vlastní volba uložená
+ve formuláři má přednost a zůstává v cookie na 180 dní.
+
+Po převzetí je dostupné plovoucí tlačítko nastavení. Uložení odpojí vzdálený zdroj;
+Escape zavře neuložené nastavení. Obnovení vazby nepřepíše rozpracovanou volbu.
+Klaro místní volby mezi již otevřenými kartami nepřenáší průběžně. Kliknutí helperu
+může potlačit GTM Just Links trigger s validací; nákup měřte událostmi formuláře.
+
+Přesný kontrakt zdroje a protokolu je v
+[dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).

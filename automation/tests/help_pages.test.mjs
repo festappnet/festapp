@@ -83,6 +83,12 @@ test('public guides render crawlable linked documents, code generator without un
  assert.equal(fs.readdirSync(path.join(target,'assets')).some(name=>name.endsWith('.zip')),false,'plugin ZIP payloads stay out of help; link to the public directory');
  const joomla=fs.readFileSync(path.join(target,'joomla/index.html'),'utf8');assert.match(joomla,/Přístupný název iframe/);assert.match(joomla,/Uložený veřejný odkaz na formulář/);
  const wix=fs.readFileSync(path.join(target,'wix/index.html'),'utf8');assert.match(wix,/Add to Site/);assert.match(wix,/Přístupný název formuláře/);
+ const measurement=fs.readFileSync(path.join(target,'mereni-formularu/index.html'),'utf8');
+ const presetName=measurement.match(/href="\/napoveda\/assets\/(festapp-host-gtm\.[a-f0-9]+\.json)" download/)[1];
+ const presetBytes=fs.readFileSync(path.join(target,'assets',presetName));
+ assert.deepEqual(presetBytes,fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json')),'public download is the validated canonical preset');
+ assert.ok(JSON.parse(presetBytes).containerVersion.tag.every(tag=>tag.paused),'customer imports start paused');
+ assert.ok(embed.includes('/napoveda/mereni-formularu/'),'embed generator guide leads to measurement setup');
  const before=fs.readFileSync(path.join(target,'index.html'));run=render();assert.equal(run.status,0,run.stderr);assert.deepEqual(fs.readFileSync(path.join(target,'index.html')),before);
  const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
  assert.equal(english.status,0,english.stderr);
@@ -101,6 +107,8 @@ test('public guides render crawlable linked documents, code generator without un
    const local=match[1].slice('/napoveda/'.length);assert.ok(fs.existsSync(local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local)),match[1]);
   }
  }
+ const enMeasurement=fs.readFileSync(path.join(target,'form-measurement/index.html'),'utf8');
+ assert.ok(enMeasurement.includes(presetName),'both languages download one canonical preset');
  const refused=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en'],{encoding:'utf8'});
  assert.notEqual(refused.status,0,'English publication requires completed localized evidence');
  assert.ok(fs.existsSync(path.join(target,'index.html')),'invalid invocation does not delete the preview');

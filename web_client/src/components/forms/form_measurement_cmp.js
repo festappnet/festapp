@@ -1,5 +1,6 @@
 import klaro from 'klaro';
-import {bindKlaroConsent} from './form_measurement_consent.js';
+import {prepareConsentLink, requestLinkedConsent} from './form_consent_link.js';
+import {applyKlaroVisitChoice, bindKlaroConsent} from './form_measurement_consent.js';
 import {FormStrings} from './form_strings.js';
 import {AppConfig} from '../../app_config.js';
 import {ColorUtils} from '../../utils/color_utils.js';
@@ -41,6 +42,7 @@ function privacyUrl(value) {
 }
 
 export function startMeasurementConsent({win = window, model, setConsent, host}) {
+    prepareConsentLink(win);
     const policy = model.data?.analytics;
     if (!Number.isSafeInteger(policy?.organization) || !Number.isSafeInteger(policy?.unit)) return () => {};
     const privacy = privacyUrl(policy.privacy_url);
@@ -55,7 +57,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
     const config = {
         version:1, elementID:'festapp-measurement-consent',
         storageName:`festapp-measurement-${policy.organization}-${policy.unit}-${policy.processing_revision}`,
-        storageMethod:'cookie', cookieExpiresAfterDays:180,
+        storageMethod:'cookie', cookieExpiresAfterDays:180, cookiePath:'/',
         lang, fallbackLang:lang,
         // In Klaro 0.7.21 mustConsent forces the detailed modal. The modal
         // notice itself has no close action or backdrop dismissal.
@@ -78,7 +80,9 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
                 description:FormStrings.measurementConsentMarketingDescription,purposes:[],default:false,required:false},
         ],
     };
-    let manager, unbind, choices, activeLayer, opener, draft;
+    let manager, unbind, choices, activeLayer, opener, draft, stopLink, remoteLease, remoteChoice, effectiveChoice;
+    // Remote choice lives only in this controller; local saves keep Klaro storage.
+    let imported = false;
     const hadConsentSpace = win.document.body.classList.contains('festapp-consent-space');
     win.document.body.classList.add('festapp-consent-space');
     let focusTimer, disposed = false;
@@ -226,6 +230,22 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
         }
     };
     const observer = new win.MutationObserver(enhance);
+    const metadataName = config.storageName + '-source';
+    const retireImport = () => {
+        imported = false;
+        win.queueMicrotask(enhance);
+        remoteLease = null; remoteChoice = null;
+    };
+    const expireImportedChoice = () => {
+        if (disposed || !imported || hasLocalChoice()) return;
+        retireImport(); draft = {analytics:false, marketing:false};
+        applyKlaroVisitChoice(manager, null);
+        showNormal();
+    };
+    const publishChoice = choice => {
+        effectiveChoice = choice;
+        setConsent(imported ? {...choice, ...remoteLease} : choice);
+    };
     const style = win.document.createElement('style');
     const colors = noticeColors(win);
     // Both layouts are the same blocking Klaro notice; the bar only docks it to the bottom.
@@ -310,6 +330,8 @@ ${layout}`;
         win.document.removeEventListener('click', rememberOpener, true);
         win.document.removeEventListener('keydown', onKeydown, true);
         restoreInert();
+        stopLink?.();
+        imported = false;
         unlock(); style.remove();
         if (!hadConsentSpace) win.document.body.classList.remove('festapp-consent-space');
         win.document.getElementById(config.elementID)?.remove();
@@ -317,20 +339,26 @@ ${layout}`;
         try { unbind?.(); } catch { /* Cleanup still restores the page. */ }
         if(unavailable)try { setConsent(null); } catch { /* Keep unavailable sources retryable. */ }
     };
-    const watcher = {update:() => { win.queueMicrotask(enhance); }};
+    const watcher = {update:(_manager, event) => {
+        win.queueMicrotask(enhance);
+        if (event === 'saveConsents') { retireImport(); stopLink?.(); }
+    }};
     try {
         win.document.head.append(style);
         observer.observe(win.document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['tabindex']});
         win.document.addEventListener('click', rememberOpener, true);
         win.document.addEventListener('keydown', onKeydown, true);
         manager = klaro.getManager(config);
-        manager.watch(watcher);
-        unbind = bindKlaroConsent(manager, granted => setConsent(granted));
-        if (!manager.confirmed) {
-            locked = true;
-            for (const {node} of scroll) node.style.overflow = 'hidden';
-            klaro.show(config,false);
+        // A browser-session cookie crosses visits. Discard every older import
+        // before publishing a choice, including malformed source metadata.
+        if (win.document.cookie.split('; ').some(value => value.startsWith(metadataName + '='))) {
+            manager.resetConsents();
+            win.document.cookie = `${metadataName}=; Max-Age=0; Path=/; SameSite=Lax`;
         }
+        if (manager.store.get() === null) manager.resetConsents();
+        else { manager.loadConsents(); manager.savedConsents = {...manager.consents}; }
+        manager.watch(watcher);
+        unbind = bindKlaroConsent(manager, publishChoice);
     } catch {
         fail(true);
         return () => setConsent(false);
@@ -357,6 +385,42 @@ ${layout}`;
     // Body, not the form host: transformed form containers would anchor a
     // fixed element to themselves instead of the viewport.
     (win.document.body || host).append(choices);
-    enhance();
+    const showNormal = () => {
+        if (manager.confirmed) return;
+        try {
+            klaro.show(config,false);
+            locked = true;
+            for (const {node} of scroll) node.style.overflow = 'hidden';
+        } catch { fail(true); }
+    };
+    // Reload the cookie immediately before accepting: another tab's saved local
+    // choice wins even when this manager was created before that choice.
+    const hasLocalChoice = () => {
+        if (manager.store.get() === null) return false;
+        manager.loadConsents();
+        manager.savedConsents = {...manager.consents};
+        retireImport();
+        manager.applyConsents();
+        return manager.confirmed === true;
+    };
+    try {
+        enhance();
+        stopLink = requestLinkedConsent({win, policy, hasChoice:hasLocalChoice, settled:showNormal, revoke:expireImportedChoice,
+            accept:(choice, metadata) => {
+                if (hasLocalChoice()) return;
+                const unchanged = imported && remoteChoice.analytics === choice.analytics && remoteChoice.marketing === choice.marketing;
+                imported = true;
+                remoteLease = {leaseId:metadata.leaseId, expiresAt:metadata.expiresAt};
+                remoteChoice = {...choice};
+                if (unchanged) { publishChoice(effectiveChoice); return; }
+                const editing = !!rootNode()?.querySelector('.cm-modal');
+                const previousDraft = {...manager.consents};
+                draft = {...choice};
+                // Clamp an open draft before publishing a source grant. A heartbeat
+                // never restores a switch the visitor has just turned off.
+                applyKlaroVisitChoice(manager, choice, editing ? previousDraft : null);
+            }});
+        if (!stopLink.pending) showNormal();
+    } catch { showNormal(); }
     return () => {fail(); choices.remove();};
 }

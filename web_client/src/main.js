@@ -1,3 +1,4 @@
+import './startup/consent_link_prepare.js';
 import { isEmbed, applyEmbedContext } from './services/embed_context.js';
 import './embed.css';
 import { handleHelpAction } from './startup/help_action.js';

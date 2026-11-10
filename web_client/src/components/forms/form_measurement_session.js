@@ -64,7 +64,7 @@ export class FormMeasurementSession {
             if (changed || !this.consentConnected || this.consentStaff!==(policy?.visitor_role==='staff')) this.connectConsent();
             this.win.clearTimeout(this.expiry);
             this.expiry=this.win.setTimeout(()=>{this.invalidate();},Math.max(0,this.until-this.clock()));
-            this.transport.renew?.(this.until);
+            this.transport.renew?.(this.consentDeadline());
             this.reconcile();
         }).catch(()=>{
             if (!this.disposed && generation===this.generation) {this.until=0; this.invalidate();}
@@ -78,15 +78,20 @@ export class FormMeasurementSession {
             this.disconnectConsent=this.consentSource.connect(this.policy,value=>{
                 if(this.disposed || this.consentBinding!==binding || manifest!==this.manifest) return;
                 if(value==null)this.consentConnected=false;
-                const next=measurementConsent(value);
+                const leased = value?.leaseId !== undefined || value?.expiresAt !== undefined;
+                const validLease = !leased || (typeof value.leaseId === 'string' && value.leaseId.length > 0 &&
+                    Number.isFinite(value.expiresAt) && value.expiresAt > this.clock() && value.expiresAt <= this.clock()+60000);
+                const next=measurementConsent(validLease ? value : false);
                 const changed=next.analytics!==this.consent.analytics || next.marketing!==this.consent.marketing;
                 if(value?.leaseId!==this.consent.leaseId) this.invalidate();
-                this.consent={...next,leaseId:value?.leaseId,expiresAt:value?.expiresAt};
-                if(changed)this.transport.updateConsent?.(next);
+                this.consent={...next,leaseId:value?.leaseId,expiresAt:validLease ? value?.expiresAt : 0};
+                if (validLease && this.grant) this.transport.renew?.(this.consentDeadline());
+                if(changed && validLease)this.transport.updateConsent?.(next);
                 this.reconcile();
             });
         } catch {this.consentConnected=false;this.consent=measurementConsent(false);this.transport.updateConsent?.(this.consent);}
     }
+    consentDeadline() { return Math.min(this.until, this.consent.expiresAt ?? Infinity); }
     permitted() {
         const p=this.policy;
         const host=this.transport.hostContext?.() || null;
@@ -96,7 +101,7 @@ export class FormMeasurementSession {
             (this.identity()==='anonymous' || p?.visitor_role==='visitor') &&
             p?.enabled===true && p.organization_allowed===true && p.runtime_supported===true && p.eligible===true &&
             !!this.manifest && this.clock()<this.until &&
-            (!this.consent.expiresAt || this.clock()<this.consent.expiresAt);
+            (this.consent.expiresAt === undefined || (Number.isFinite(this.consent.expiresAt) && this.clock()<this.consent.expiresAt && this.consent.expiresAt<=this.clock()+60000));
     }
     reconcile() {
         if (this.disposed) return;
@@ -110,7 +115,7 @@ export class FormMeasurementSession {
         const grant=this.grant={host:host?Object.freeze({...host}):null,runtimeOrigin:this.policy.runtime_origin,manifest:this.manifest,generation:this.generation,identity:this.identity(),selection,
             consent:measurementConsent(this.consent),leaseId:this.consent.leaseId};
         this.state='starting';
-        try {this.transport.activate({...grant,expiresAt:Math.min(this.until,this.consent.expiresAt||Infinity),
+        try {this.transport.activate({...grant,expiresAt:this.consentDeadline(),
             onReady:()=>{if(this.grant===grant && this.permitted() && this.state==='starting'){this.state='active';this.onActive();}},
             onMismatch:()=>{if(this.grant===grant){this.failureUntil=this.clock()+20000;this.invalidate();this.refresh();}}});}
         catch {this.invalidate();}

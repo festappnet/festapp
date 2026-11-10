@@ -118,6 +118,17 @@
     "preview": "en/embed/01-generated-code"
   },
   {
+    "id": "measurement",
+    "category": "integrations",
+    "slug": "form-measurement",
+    "title": "How to configure form measurement",
+    "seoTitle": "How to configure form measurement",
+    "description": "Website and Unit measurement, visitor consent, the GTM preset and conversion checks.",
+    "label": "Form measurement",
+    "workflow": "administration",
+    "preview": "en/embed/01-generated-code"
+  },
+  {
     "id": "wix",
     "category": "integrations",
     "slug": "wix",
