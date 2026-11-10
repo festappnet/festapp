@@ -6,8 +6,8 @@ DO $$
 DECLARE unit_id bigint; org bigint; other_org bigint; oc bigint; other_oc bigint; oid bigint; other_oid bigint;
  hidden uuid:=gen_random_uuid(); visible uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); message uuid;
 BEGIN
- INSERT INTO public.organizations(title) VALUES('Notification visibility') RETURNING id INTO org;
- INSERT INTO public.organizations(title) VALUES('Other notification tenant') RETURNING id INTO other_org;
+ INSERT INTO public.organizations(title,data) VALUES('Notification visibility','{"IS_APP_SUPPORTED":true}') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Other notification tenant','{"IS_APP_SUPPORTED":true}') RETURNING id INTO other_org;
  INSERT INTO auth.users(id) VALUES(hidden),(visible),(outsider);
  INSERT INTO public.user_info(id,organization,email_readonly)
  VALUES(hidden,org,' Hidden@Example.Invalid '),(visible,org,'visible@example.invalid'),(outsider,other_org,'outside@example.invalid');

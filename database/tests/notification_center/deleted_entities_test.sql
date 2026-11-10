@@ -10,8 +10,8 @@ DECLARE org bigint; other_org bigint; unit_id bigint; oc bigint; other_oc bigint
 BEGIN
  PERFORM create_user_for_test('notification-delete-owner','notification-delete-owner@example.invalid');
  actor:=get_user_id('notification-delete-owner');
- INSERT INTO public.organizations(title) VALUES('Notification deletion') RETURNING id INTO org;
- INSERT INTO public.organizations(title) VALUES('Untouched notification tenant') RETURNING id INTO other_org;
+ INSERT INTO public.organizations(title,data) VALUES('Notification deletion','{"IS_APP_SUPPORTED":true}') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Untouched notification tenant','{"IS_APP_SUPPORTED":true}') RETURNING id INTO other_org;
  UPDATE public.user_info SET organization=org WHERE id=actor;
  INSERT INTO auth.users(id) VALUES(member),(remaining);
  INSERT INTO public.user_info(id,organization) VALUES(member,org),(remaining,org);
