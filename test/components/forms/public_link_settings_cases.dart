@@ -188,7 +188,10 @@ void main() {
       );
       await tester.tap(find.text(FormStrings.embedAction));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('embed-open-appearance')));
+      final openAppearance = find.byKey(const ValueKey('embed-open-appearance'));
+      await tester.ensureVisible(openAppearance);
+      await tester.pumpAndSettle();
+      await tester.tap(openAppearance);
       await tester.pumpAndSettle();
       expect(opened, 1);
       expect(find.byKey(const ValueKey('embed-open-appearance')), findsNothing);

@@ -252,6 +252,8 @@
     "measurementConsentCustomText": "Własny tekst informacji",
     "measurementConsentCustomTextHelp": "Proszę zostawić puste dla domyślnego tekstu: {text}. Własny tekst jest wyświetlany we wszystkich językach jako zwykły tekst.",
     "measurementFormHelp": "Używa ustawień pomiaru tej jednostki.",
+    "measurementConsentBridge": "Przejmij zgodę z banera zatwierdzonych stron",
+    "measurementConsentBridgeConfirmation": "Włączając tę opcję, potwierdzają Państwo, że prowadzą jako administrator wszystkie strony zatwierdzone do pomiaru, a ich baner zgody wyraźnie obejmuje także formularz na vstupenky.online, jego cele, pomiar organizatora w domenie *.pages.dev oraz Festapp jako podmiot przetwarzający. Zgodę musi być można na stronie w każdej chwili wycofać.",
     "measurementUnitHelp": "Wspólne ustawienia dla wszystkich formularzy organizatora. Proszę włączyć każdy formularz osobno.",
     "measurementUnitEnabled": "Zezwól na pomiar dla tego organizatora",
     "measurementOrganizationHelp": "Udostępnia ustawienia pomiaru organizatorom w tej organizacji. Wyłączenie zatrzyma pomiar wszystkich ich formularzy i zachowa ustawienia.",
@@ -285,7 +287,7 @@
     "measurementFormUnitBlocked": "Pomiar jest wyłączony dla tego organizatora. Można zapisać ustawienie tego formularza. Pomiar będzie możliwy po włączeniu go dla organizatora i spełnieniu pozostałych warunków.",
     "measurementOpenUnitSettings": "Otwórz ustawienia pomiaru organizatora",
     "measurementAskUnitManager": "Proszę poprosić administratora organizatora o włączenie pomiaru, skonfigurowanie GTM lub skryptów i dodanie linku do polityki prywatności.",
-    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód; zatwierdź origin strony w ustawieniach pomiaru. Zdarzenia konwersji przekazują skryptom witryny także e-mail, telefon i identyfikator transakcji. Proszę sprawdzić tagi i informacje o prywatności. Tryb jednostki wymaga połączenia z menedżerem zgód.",
+    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód; zatwierdź origin strony w ustawieniach pomiaru. Zdarzenia konwersji przekazują skryptom witryny także e-mail, telefon i identyfikator transakcji. Proszę sprawdzić tagi i informacje o prywatności. W trybie jednostki mogą Państwo w ustawieniach pomiaru organizatora włączyć przejmowanie zgody z banera zatwierdzonych stron; w przeciwnym razie przekazywany jest brak zgody.",
     "embedHostDataLayer": "Wysyłaj dane pomiarowe do dataLayer strony"
   },
   "FeatureTicket": {

@@ -125,6 +125,8 @@ void main() {
         false,
       ),
       ('cleared code', 'poradatel@example.invalid', '', false),
+      ('enable consent bridge', 'poradatel@example.invalid', '', false),
+      ('disable consent bridge', 'poradatel@example.invalid', '', false),
       (
         'rejected save',
         'poradatel@example.invalid',
@@ -142,6 +144,7 @@ void main() {
             'reply_to': replyTo,
             'timezone': 'Europe/Prague',
             'measurement_enabled': false,
+            if (name == 'disable consent bridge') 'measurement_consent_bridge': true,
             'measurement_privacy_url': 'https://organizer.example/privacy',
             'measurement_scripts':
                 '<script>window.savedMeasurement = 1;</script>',
@@ -183,6 +186,11 @@ void main() {
         final settings = tester.widget<UnitMeasurementSettings>(
           find.byType(UnitMeasurementSettings),
         );
+        expect(settings.consentBridge, name == 'disable consent bridge');
+        if (name.contains('consent bridge')) {
+          settings.onConsentBridgeChanged!(name == 'enable consent bridge');
+          await tester.pumpAndSettle();
+        }
         final code = find.byWidgetPredicate(
           (w) =>
               w is TextFormField && w.controller == settings.scriptsController,
@@ -199,6 +207,10 @@ void main() {
           reason: 'the Save button must dispatch the changed settings',
         );
         expect(saves.single['p_expected_version'], 4);
+        expect(
+          ((saves.single['p_unit_data'] as Map)['settings'] as Map)['measurement_consent_bridge'],
+          name == 'enable consent bridge',
+        );
         expect(
           ((saves.single['p_unit_data'] as Map)['settings'] as Map)['reply_to'],
           replyTo.isEmpty ? null : replyTo,

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "9b6737079eb4ea88a2114238d08b3caccddfb551c0e11beceb03aeefadf0eb0e",
+  "sourceDigest": "3097e250deee54bea3e23fec5a06e4f9d885114229e018b911d313923a200e32",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -15956,7 +15956,7 @@
     {
       "id": "units.settings.save",
       "name": "festapp_units_settings_save",
-      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned analytics/measurement configuration, including the GTM container ID and custom tracking code, with explicit organizer consent and live manager authorization. Measurement configuration uses measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Visitor consent does not gate measurement: on an eligible form GTM and Unit scripts load at once, and the choice is passed as Consent Mode state for the organizer's container. Successful browser purchase/generate_lead events can carry bounded buyer email/phone to approved measurement recipients, also under denied choice. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
+      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned analytics/measurement configuration, including the GTM container ID and custom tracking code, with explicit organizer consent and live manager authorization. measurement_consent_bridge defaults to false; enable it only when the organizer operates the host website as the same controller and its banner explicitly covers the embedded form and measurement services. Explicit adapters remain available independently. Measurement configuration uses measurement_consent_bridge, measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Visitor consent does not gate measurement: on an eligible form GTM and Unit scripts load at once, and the choice is passed as Consent Mode state for the organizer's container. Successful browser purchase/generate_lead events can carry bounded buyer email/phone to approved measurement recipients, also under denied choice. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -16112,6 +16112,9 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 2147483647
+                  },
+                  "measurement_consent_bridge": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false

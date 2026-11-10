@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Embedded forms in Unit runtime mode can take over the website's Consent Mode choice when the organizer enables it and confirms that the banner of its approved websites covers the form; existing settings stay off. Marketing requires all three ad consents and stays denied with TCF. Revocation is read from Google's tag state every 250 ms or from dataLayer every second; website mode detaches the bridge.
+
 - Public web/forms install only their web offline shell. Flutter executables are prepared atomically on actual app entry, preserving public form recovery without a Flutter download.
 
 - Embedded forms inherit the host page's light/dark appearance, show only a compact monochrome symbol on a transparent startup surface, hide the SEO fallback and update prompts, and keep automatic height with a script-free fallback. Untouched public forms update automatically; editing protects the draft from reloads. Startup self-repair and corrupt-runtime recovery remain active.

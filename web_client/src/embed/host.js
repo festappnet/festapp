@@ -92,6 +92,7 @@ if (!window.__festappEmbedV1) {
         scan();
         for (const mutation of mutations) {
             if (['data-festapp-datalayer'].includes(mutation.attributeName) && frames.has(mutation.target)) {
+                measurement.syncConsent(mutation.target, frames.get(mutation.target));
                 send(mutation.target, frames.get(mutation.target), 'init', false);
             }
         }

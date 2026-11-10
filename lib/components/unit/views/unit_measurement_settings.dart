@@ -6,6 +6,8 @@ import 'package:material_ui/material_ui.dart';
 /// The owning screen saves these fields through the canonical Unit aggregate.
 class UnitMeasurementSettings extends StatelessWidget {
   final bool enabled;
+  final bool consentBridge;
+  final ValueChanged<bool>? onConsentBridgeChanged;
   final String consentLayout;
   final bool canEdit;
   final TextEditingController gtmController;
@@ -20,6 +22,8 @@ class UnitMeasurementSettings extends StatelessWidget {
   const UnitMeasurementSettings({
     super.key,
     required this.enabled,
+    this.consentBridge = false,
+    this.onConsentBridgeChanged,
     required this.consentLayout,
     required this.canEdit,
     required this.gtmController,
@@ -74,6 +78,13 @@ class UnitMeasurementSettings extends StatelessWidget {
         onChanged: canEdit ? onEnabledChanged : null,
       ),
       if (!enabled) Text(FormStrings.measurementUnitDisabled),
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(FormStrings.measurementConsentBridge),
+        subtitle: Text(FormStrings.measurementConsentBridgeConfirmation),
+        value: consentBridge,
+        onChanged: canEdit ? onConsentBridgeChanged : null,
+      ),
       const SizedBox(height: 16),
       TextFormField(
         controller: gtmController,
