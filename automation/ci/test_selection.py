@@ -17,6 +17,16 @@ BASE = 'b' * 40
 URL = 'https://github.com/fixture/repo/actions/runs/123'
 
 
+class ApiTransportTest(unittest.TestCase):
+    def test_repository_root_has_no_trailing_slash_and_nested_endpoints_keep_separator(self):
+        with patch.object(selection.subprocess,'check_output',return_value='{"id":7}') as call:
+            self.assertEqual(selection.api('fixture/repo',''),{'id':7})
+            self.assertEqual(call.call_args.args[0],['gh','api','repos/fixture/repo'])
+            selection.api('fixture/repo','actions/runs',paginate=True)
+            self.assertEqual(call.call_args.args[0],['gh','api','--paginate','--slurp',
+                                                    'repos/fixture/repo/actions/runs'])
+
+
 class InputTreeTest(unittest.TestCase):
     def test_real_git_tree_invalidates_content_modes_names_deletions_and_unknowns(self):
         with tempfile.TemporaryDirectory() as directory:
