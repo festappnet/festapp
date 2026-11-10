@@ -121,6 +121,7 @@ def host_state():
 
 def _execute(names, *, pinned=False, command_started=None):
     started=time.monotonic() if command_started is None else command_started
+    ci_inventory_lanes=set(json.loads((ROOT/'automation/client_test_inventory.json').read_text()).get('ci_cases',{}))
     directory=run_directory(CACHE)
     env={**os.environ,'CI':'true','FESTAPP_CI_RUN_DIRECTORY':str(directory),'FESTAPP_TIMINGS':str(directory/'timings.jsonl')}
     identity=input_identity(ROOT)
@@ -157,8 +158,8 @@ def _execute(names, *, pinned=False, command_started=None):
             if code:
                 print('\n'.join(log.read_text().splitlines()[-35:]),file=sys.stderr)
                 raise RuntimeError(f'{name} exited {code}; log: {log}')
-            if name=='ticket-client':
-                subprocess.run([sys.executable,'automation/client_test_inventory.py','check-ci',unit_env['FESTAPP_CLIENT_RESULTS'],'ticket-client'],cwd=ROOT,check=True)
+            if name in ci_inventory_lanes:
+                subprocess.run([sys.executable,'automation/client_test_inventory.py','check-ci',unit_env['FESTAPP_CLIENT_RESULTS'],name],cwd=ROOT,check=True)
             return {'log':str(log),'exitCode':code,'seconds':seconds,'peakSummedRssBytes':peak,
                     'workspace':lease['database'] if lease else None,'node':version,'resources':unit.get('resources',{})}
         if name in CONTRACT.get('databaseUnits',[]):

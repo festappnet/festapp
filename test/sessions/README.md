@@ -20,3 +20,7 @@ semantic baseline. Do not reset private SDK internals to make suites shareable.
 Use `automation/test_client.sh` for the complete gate. Its worker/RSS policy and
 targeted commands live in [Contributing](../../CONTRIBUTING.md#c-client-tests);
 fixture responsibilities live in [fixture contracts](../support/fixtures/README.md).
+
+The CI-only compatible navigation subset is registered outside default test
+discovery in `automation/testing/navigation_default.dart`. It reuses this same
+scoped helper; its original case inventory is enforced by the canonical CI owner.
