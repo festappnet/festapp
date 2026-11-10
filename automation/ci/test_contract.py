@@ -56,6 +56,35 @@ class MirrorContractTest(unittest.TestCase):
         self.assertIn('playwright install --with-deps chromium',installer)
         self.assertNotIn('agent-browser',installer)
 
+    def test_flutter_browser_contracts_have_one_owner_and_semantic_inventory(self):
+        steps=runner.CONTRACT['steps']
+        for source in ('test/browser/browser_preference_store_test.dart',
+                       'test/components/html/html_image_preview_cases.dart'):
+            owners=[name for name,unit in steps.items() if source in unit['script']]
+            self.assertEqual(owners,['image-client-browser'])
+        command=steps['image-client-browser']['script'].splitlines()
+        self.assertEqual(len(command),1)
+        self.assertIn('--platform chrome',command[0])
+        self.assertIn('--concurrency=1',command[0])
+        inventory=json.loads((ROOT/'automation/client_test_inventory.json').read_text())
+        self.assertTrue({'ticket-client','navigation-contract','image-client-browser'}
+                        .issubset(inventory['ci_cases']))
+        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']),6)
+        self.assertIn('automation/testing/navigation_default.dart',
+                      steps['navigation-contract']['script'])
+
+    def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
+        pattern='automation/client_test_inventory.*'
+        for name in ('navigation-interactions','client-contract','ticket-preview-and-delivery'):
+            lane=runner.CONTRACT['jobs'][name]
+            self.assertIn(pattern,lane['inputs'])
+            workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
+            triggers=workflow.get('on',workflow.get(True))
+            for event in ('push','pull_request'):
+                paths=triggers[event].get('paths')
+                if paths is not None:
+                    self.assertIn(pattern,paths,(name,event))
+
     def test_every_hosted_lane_preserves_failure_evidence(self):
         for job in runner.CONTRACT['jobs'].values():
             workflow=yaml.safe_load((ROOT/'.github/workflows'/job['workflow']).read_text())

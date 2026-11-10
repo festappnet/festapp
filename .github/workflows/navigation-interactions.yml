@@ -18,10 +18,17 @@ on:
       - 'lib/components/schedule/**'
       - 'lib/components/timeline/**'
       - 'test/components/navigation/**'
+      - 'automation/testing/navigation_default.dart'
+      - 'test/support/register_client_suites.dart'
+      - 'test/support/fixtures/**'
+      - 'test/components/users/profile_commands_cases.dart'
+      - 'test/components/users/occasion_user_grid_cases.dart'
+      - 'test/components/single_data_grid/**'
       - 'test/components/schedule/**'
       - 'test/components/breadcrumb_row_cases.dart'
       - 'test/support/navigation_fixture.dart'
       - 'automation/ci/**'
+      - 'automation/client_test_inventory.*'
       - '.github/workflows/navigation-interactions.yml'
   push:
     branches: [main]
@@ -41,7 +48,14 @@ on:
       - 'lib/components/schedule/**'
       - 'lib/components/timeline/**'
       - 'test/components/navigation/**'
+      - 'automation/testing/navigation_default.dart'
+      - 'test/support/register_client_suites.dart'
+      - 'test/support/fixtures/**'
+      - 'test/components/users/profile_commands_cases.dart'
+      - 'test/components/users/occasion_user_grid_cases.dart'
+      - 'test/components/single_data_grid/**'
       - 'automation/ci/**'
+      - 'automation/client_test_inventory.*'
       - '.github/workflows/navigation-interactions.yml'
 permissions:
   contents: read

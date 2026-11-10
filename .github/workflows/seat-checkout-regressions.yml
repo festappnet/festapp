@@ -70,6 +70,7 @@ on:
       - 'web_client/tests/fixtures/form_access/**'
       - 'web_client/tests/fixtures/seat_checkout/**'
       - 'automation/ci/**'
+      - 'automation/client_test_inventory.*'
       - '.github/workflows/seat-checkout-regressions.yml'
   pull_request:
     branches: [main]
