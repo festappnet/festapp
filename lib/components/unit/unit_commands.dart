@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract interface class UnitCommands {
   Future<UnitModel> save(UnitModel unit);
   Future<void> saveUser(UnitUserModel user);
+  Future<void> ensureMembership(int unitId, String userId);
   Future<void> deleteUserAccess(int unitId, String userId);
 }
 
@@ -20,6 +21,29 @@ class SupabaseUnitCommands implements UnitCommands {
   SupabaseUnitCommands.withTransport(this._transport);
 
   final ClientCommandTransport _transport;
+
+  @override
+  Future<void> ensureMembership(int unitId, String userId) async {
+    final actor = RightsService.currentUser()?.id;
+    final token = ClientSyncRuntime.mutationContextToken;
+    final response = ClientCommandResponse.from(
+      await _transport.invokeIntent(
+        '$actor:$unitId:unit-membership:$userId',
+        'add_user_to_unit_client_sync_v1',
+        {'p_unit': unitId, 'p_user': userId},
+      ),
+    );
+    if (response.code != 200) {
+      if (response.code == 403) {
+        await RightsService.refreshAfterAuthorizationDenial();
+      }
+      throw StateError('Organizer membership was rejected');
+    }
+    if (actor != RightsService.currentUser()?.id ||
+        !ClientSyncRuntime.isCurrentMutationContext(token)) {
+      throw StateError('Reload organizer members after context change');
+    }
+  }
 
   @override
   Future<void> saveUser(UnitUserModel user) async {

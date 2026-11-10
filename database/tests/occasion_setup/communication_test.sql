@@ -37,7 +37,7 @@ BEGIN
  context:=public.get_occasion_setup_communication(draft);
  PERFORM assert_false((context->>'canManage')::boolean,'Editor cannot manage unit defaults');
  PERFORM assert_true(context->'unit'='null'::jsonb,'Editor never receives full unit data or its edit version');
- PERFORM assert_eq(context->'defaults','{"replyTo":"unit@test.local","tone":"informal","remindersEnabled":true,"leadSeconds":86400}'::jsonb,'Editor receives only safe defaults');
+ PERFORM assert_eq(context->'defaults','{"replyTo":"unit@test.local","tone":"informal","remindersEnabled":true,"leadSeconds":86400,"walletReady":false}'::jsonb,'Editor receives only safe defaults');
  bank_info:=public.get_occasion_setup_bank_accounts(draft);
  payload:=d->'data'||jsonb_build_object('title','Inherited communication','start','2090-06-01T18:00:00Z','end','2090-06-02T02:00:00Z',
   'reviewConfirmed',true,'formEnabled',true,'formLinkAutomatic',true,

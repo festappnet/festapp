@@ -707,7 +707,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth' ||
       url.pathname === '/settings/mcp-connect' || url.pathname === '/settings/connections' ||
       new RegExp('^/(?:app/)?payments/[a-z][a-z0-9_-]{0,31}/(?:pay|return)$').test(url.pathname) ||
-      ['/stripe/connect/callback','/app/stripe/connect/callback','/stripe/pay','/app/stripe/pay','/stripe/return','/app/stripe/return'].includes(url.pathname)) {
+      ['/wallet','/wallet/','/stripe/connect/callback','/app/stripe/connect/callback','/stripe/pay','/app/stripe/pay','/stripe/return','/app/stripe/return'].includes(url.pathname)) {
     const callbackClient = event.resultingClientId || event.clientId;
     if (request.mode === 'navigate' && callbackClient) {
       clientCacheNames.delete(callbackClient);

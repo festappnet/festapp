@@ -30,6 +30,13 @@ class Main {
             ThemeService.init();
             // Vite also preloads the chunk's CSS. Failure leaves routing's normal retry.
             if (/^\/form\/[^/]+\/?$/.test(window.location.pathname)) RouterService.preloadForm().catch(() => {});
+            if (window.location.pathname === '/wallet') {
+                await LocalizationService.init();
+                await RouterService.handleInitialLoad();
+                RouterService.initPopStateListener();
+                window.markFestappAppReady?.();
+                return;
+            }
             // A prepared scanner must mount its local shell before optional
             // account refresh or rights startup can require network access.
             const scannerRoute = resolveScannerRoute(RouterService.normalizeUrl(window.location.href));

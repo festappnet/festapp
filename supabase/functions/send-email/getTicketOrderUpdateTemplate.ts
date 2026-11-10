@@ -1,7 +1,7 @@
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
-import { updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
+import { confirmedNetPayment, updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { getBaseOrderData } from "./shared.ts";
@@ -38,7 +38,7 @@ export async function getTicketOrderUpdateTemplate(
 
   // 3. Calculate balance and generate a single, consolidated reasoning string
   const orderPrice = Number(order.price) || 0;
-  const amountPaid = Number(payment_info?.paid) || 0;
+  const amountPaid = confirmedNetPayment(payment_info);
   const balance = orderPrice - amountPaid;
   const currency = order.currency_code || "CZK";
   const balanceReasoning = updateBalanceReasoning(

@@ -47,6 +47,22 @@ void main() {
       expect(legacy.onlyValid().hasTicketTimeline, isFalse);
     },
   );
+  test('daily signed correction stays received and net deposits survive parsing', () {
+    final response = reportResponse();
+    response['report']['timeline']['payments'] = [
+      {'day': '2026-11-10', 'currency': 'CZK', 'received': '-50.25', 'returned': '300.00'},
+    ];
+    response['report']['money_by_currency'][0].addAll({
+      'deposit_received_net': '649.75',
+      'beyond_deposit_received_net': '0.00',
+    });
+    final report = OccasionReport.fromResponse(response);
+    expect(report.paymentDays.single.received, '-50.25');
+    expect(report.paymentDays.single.returned, '300.00');
+    expect(report.money.first.amounts['deposit_received_net'], '649.75');
+    response['report']['timeline']['payments'][0]['returned'] = '-300.00';
+    expect(() => OccasionReport.fromResponse(response), throwsA(isA<ReportUnavailable>()));
+  });
   test('report snapshots own response collections across filtered views', () {
     final response = reportResponse();
     final report = OccasionReport.fromResponse(response);

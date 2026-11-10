@@ -151,9 +151,11 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         fact(total, overviewText('total'), (isCardPaymentMethod(order.payment?.method) ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
         const payment = order.payment;
         if (!isCardPaymentMethod(payment?.method) && payment) {
-            if (payment.totalOutstanding > 0 || payment.returned > 0 || payment.overpaid > 0) {
+            if (payment.totalOutstanding > 0 || payment.returned > 0 || payment.overpaid > 0 || payment.pending > 0) {
                 const amounts = line(card, 'dl', ''); amounts.className = 'overview-amounts';
                 fact(amounts, overviewText('received'), money(payment.received, order.currency));
+                if (payment.net != null) fact(amounts, overviewText('net'), money(payment.net, order.currency));
+                if (payment.pending > 0) fact(amounts, overviewText('pendingRefund'), money(payment.pending, order.currency));
                 fact(amounts, overviewText('totalOutstanding'), money(payment.totalOutstanding, order.currency));
                 for (const key of ['returned', 'overpaid']) if (payment[key] > 0) fact(amounts, overviewText(key), money(payment[key], order.currency));
             }

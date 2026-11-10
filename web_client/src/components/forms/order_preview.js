@@ -323,7 +323,7 @@ export class OrderPreview {
         
         // We use passed pricing data to display logic properly
         const totalPriceData = priceData;
-        const cardPricing = paymentConnectors.values().some(connector => connector.availability(formModel.payments ?? {}, isEmbed() ? 'embed' : 'web').configured);
+        const cardPricing = paymentConnectors.values().filter(connector => connector.hostedCheckout).some(connector => connector.availability(formModel.payments ?? {}, isEmbed() ? 'embed' : 'web').configured);
 
         const personalInfo = [];
 

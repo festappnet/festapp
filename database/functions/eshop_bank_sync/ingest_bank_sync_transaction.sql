@@ -17,6 +17,7 @@ DECLARE
   v_receipt jsonb;
   v_source_id bigint;
   v_command_id bigint;
+  v_refund jsonb;
 BEGIN
   PERFORM public.require_service_role();
   IF p_consumer_app_id IS DISTINCT FROM 'festapp' OR nullif(p_instance_id,'') IS NULL
@@ -101,7 +102,7 @@ BEGIN
       IF v_amount<0 THEN v_outcome:='stored_outgoing';
       ELSIF v_amount=0 THEN v_outcome:='stored_zero';
       ELSE
-        v_match:=public.match_bank_transaction(v_tx.id);
+        v_match:=public.payment_provider_call_internal('bank','observe_payment',jsonb_build_object('transactionId',v_tx.id));
         v_outcome:=v_match->>'verdict';
         IF v_outcome NOT IN ('paired','unmatched','ambiguous','ineligible','already_paired') OR v_outcome IS NULL THEN
           RAISE EXCEPTION 'BANK_SYNC_MATCHER_INVALID_RESULT';
@@ -124,7 +125,10 @@ BEGIN
       IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_IDENTITY_CONFLICT'; END IF;
     END IF;
   END IF;
-  v_receipt:=jsonb_build_object('ok',true,'receipt_version',1,'delivery_id',v_delivery,'outcome',v_outcome);
+  IF v_tx.id IS NOT NULL AND v_tx.amount<0 AND v_outcome IN ('stored_outgoing','already_ingested') THEN
+    v_refund:=public.payment_provider_call_internal('bank','observe_refund',jsonb_build_object('transactionId',v_tx.id));
+  END IF;
+  v_receipt:=jsonb_build_object('ok',true,'receipt_version',1,'delivery_id',v_delivery,'outcome',v_outcome,'refund',v_refund);
   UPDATE eshop.bank_sync_inbox SET outcome=v_outcome,receipt=v_receipt,committed_at=now()
     WHERE instance_id=p_instance_id AND consumer_app_id=p_consumer_app_id AND delivery_id=v_delivery;
   UPDATE eshop.bank_sync_connections SET receiver_commit_at=now(),

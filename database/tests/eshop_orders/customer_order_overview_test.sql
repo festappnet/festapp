@@ -210,7 +210,9 @@ BEGIN
  UPDATE eshop.orders SET currency_code='CZK' WHERE id=child;
  UPDATE eshop.payment_info SET paid=1200,returned=100 WHERE id=pid;
  r:=public.customer_order_payment_internal(child);
- PERFORM assert_eq((r->>'overpaid')::numeric,200::numeric,'overpayment');
+ PERFORM assert_eq((r->>'received')::numeric,1200::numeric,'gross receipt stays separate from returns');
+ PERFORM assert_eq((r->>'net')::numeric,1100::numeric,'confirmed refund reduces net');
+ PERFORM assert_eq((r->>'overpaid')::numeric,100::numeric,'overpayment is net of confirmed returns');
  PERFORM assert_eq((r->>'returned')::numeric,100::numeric,'returned independent');
  PERFORM assert_eq((r->>'totalOutstanding')::numeric,0::numeric,'refund is not another demand');
  UPDATE eshop.payment_info SET paid_externally=100 WHERE id=pid;

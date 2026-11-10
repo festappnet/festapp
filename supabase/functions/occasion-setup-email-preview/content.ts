@@ -134,6 +134,9 @@ export async function renderDraftPreview(context: any) {
         );
       };
     });
+    if (context.walletEnabled !== false && context.walletReady === true && context.ticketsEnabled === true) {
+      delivery.html += '<p>Google Wallet - ukázka nabídky u každé vstupenky (' + tickets.length + ')</p>';
+    }
     // Admission QR stays deliberately invalid; only its human-readable sample
     // code is shown. Production delivery continues to show the real symbol.
     delivery.html = delivery.html.replaceAll("festapp-preview:", "");

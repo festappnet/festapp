@@ -16,20 +16,23 @@ class SetupEmailPreviewRequest {
     this.draft,
     this.messageType,
     this.deliveryMode,
-    this.sampleTicketCount,
-  );
+    this.sampleTicketCount, [
+    this.walletEnabled,
+  ]);
   final SetupPreviewRevision draft;
   final String messageType;
   final String? deliveryMode;
   final int sampleTicketCount;
+  final bool? walletEnabled;
   String get key =>
-      '${draft.id}/${draft.revision}/$messageType/$deliveryMode/$sampleTicketCount';
+      '${draft.id}/${draft.revision}/$messageType/$deliveryMode/$sampleTicketCount/$walletEnabled';
   Map<String, dynamic> get rpcParams => {
     'p_id': draft.id,
     'p_expected_revision': draft.revision,
     'p_message_type': messageType,
     'p_occasion': null,
     'p_delivery_mode': deliveryMode,
+    'p_wallet_enabled': walletEnabled,
   };
   Map<String, dynamic> get edgeBody => {
     'draftId': draft.id,
@@ -37,6 +40,7 @@ class SetupEmailPreviewRequest {
     'messageType': messageType,
     'sampleTicketCount': sampleTicketCount,
     if (deliveryMode != null) 'deliveryMode': deliveryMode,
+    if (walletEnabled != null) 'walletEnabled': walletEnabled,
   };
 }
 
@@ -103,7 +107,13 @@ class SetupEmailPreviewCoordinator {
 
     final draft = await confirmRevision();
     checkCurrent();
-    final request = SetupEmailPreviewRequest(draft, message, delivery, count);
+    final request = SetupEmailPreviewRequest(
+      draft,
+      message,
+      delivery,
+      count,
+      (snapshot['ticketDraft'] as Map?)?['wallet_enabled'] != false,
+    );
     final operation = _pending.putIfAbsent(request.key, () async {
       try {
         return await Future.sync(() => read(request));

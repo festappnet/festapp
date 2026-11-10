@@ -219,3 +219,14 @@ Deno.test('bank none keeps deposit amounts but never inherits feature deadline t
     assertEquals(/7 |nejpozději|due by|days before|undefined|null/.test(paid),false);
   }
 });
+
+Deno.test('confirmed net drives paid and balance copy after partial/full refund', () => {
+  for (const lang of ['cs','en']) {
+    const info={payment_method:'cash',amount:1000,paid:'1000.00',returned:'300.00',currency_code:'CZK',data:{payment_policy:{mode:'none'}}};
+    assertEquals(presentation.confirmedNetPayment(info),700);
+    const text=presentation.paidPaymentSubstitutions(1000,presentation.confirmedNetPayment(info),'CZK',[],lang,'formal',info).balanceReasoning;
+    assertStringIncludes(text,formatCurrency(300,'CZK'));
+    assertEquals(presentation.confirmedNetPayment({...info,returned:'1000.00'}),0);
+    assertEquals(presentation.confirmedNetPayment({...info,returned:'1200.00'}),-200);
+  }
+});

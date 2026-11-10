@@ -160,6 +160,7 @@ BEGIN
   UPDATE eshop.orders_history SET created_by=NULL WHERE created_by=v_user;
   UPDATE eshop.bank_account_requests SET created_by=NULL WHERE created_by=v_user;
   UPDATE eshop.transactions SET created_by=NULL WHERE created_by=v_user;
+  UPDATE eshop.refund_requests SET created_by=NULL WHERE created_by=v_user;
   UPDATE public.client_commits SET actor_id=NULL, actor_display=NULL WHERE actor_id=v_user;
   DELETE FROM public.event_feedback WHERE "user"=v_user;
 

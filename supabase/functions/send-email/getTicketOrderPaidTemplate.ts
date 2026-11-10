@@ -1,7 +1,7 @@
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
-import { paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
+import { confirmedNetPayment, paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { getBaseOrderData } from "./shared.ts";
@@ -40,7 +40,7 @@ export async function getTicketOrderPaidTemplate(
   const tone = resolveCommunicationTone(form_data?.communication_tone);
 
   const totalAmount = Number(payment_info?.amount) || 0;
-  const amountPaid = Number(payment_info?.paid) || 0;
+  const amountPaid = confirmedNetPayment(payment_info);
   const currency = order.currency_code || "CZK";
 
   const paymentPresentation = paidPaymentSubstitutions(

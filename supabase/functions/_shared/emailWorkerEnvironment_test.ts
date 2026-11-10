@@ -73,3 +73,11 @@ Deno.test('only the subscription boundary receives Turnstile configuration', () 
     assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)),{DEFAULT_EMAIL:'sender'});
   }
 });
+
+Deno.test('only Wallet owners receive signing credentials and only its public handler receives the origin allowlist', () => {
+  const environment={GOOGLE_WALLET_SERVICE_ACCOUNT:'private-fixture',GOOGLE_WALLET_ALLOWED_ORIGINS:'https://tenant.invalid',DEFAULT_EMAIL:'sender'};
+  assertEquals(Object.fromEntries(emailWorkerEnvironment('ticket-wallet',environment)),environment);
+  assertEquals(Object.fromEntries(emailWorkerEnvironment('sync-ticket-wallet',environment)),{GOOGLE_WALLET_SERVICE_ACCOUNT:'private-fixture',DEFAULT_EMAIL:'sender'});
+  for(const service of ['payment-operation','process-email-queue','send-custom-email','fetch-http-data','unknown'])
+    assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)),{DEFAULT_EMAIL:'sender'});
+});

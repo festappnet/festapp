@@ -1,3 +1,4 @@
+import { requireHostedPayment } from "../_shared/payments/contracts.ts";
 import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
@@ -73,8 +74,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
   const attachments: Attachment[] = [];
-  if (paymentRegistry.has(paymentInfo.payment_method)) {
-    const binding=paymentRegistry.resolve(paymentInfo.payment_method);
+  if (paymentRegistry.hasHosted(paymentInfo.payment_method)) {
+    const binding=requireHostedPayment(paymentRegistry.resolve(paymentInfo.payment_method));
     if (!binding.order) throw new Error("payment_email_not_configured");
     const source=await binding.order.readSource(order.id,task.data.command_id);
     const sourcePayment=(source as {payment?:{status?:string}})?.payment;

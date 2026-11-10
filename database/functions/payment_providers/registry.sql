@@ -20,7 +20,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,exte
 $$;
 CREATE OR REPLACE FUNCTION public.payment_method_is_online_internal(p_method text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT public.payment_method_registered_internal(p_method) AND p_method NOT IN ('bank','cash');
+ SELECT coalesce((SELECT hosted_checkout FROM eshop.payment_providers WHERE provider_key=p_method),false);
 $$;
 REVOKE ALL ON FUNCTION public.payment_method_is_online_internal(text) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.strip_payment_sources_internal(p_input jsonb)
@@ -93,7 +93,7 @@ CREATE OR REPLACE FUNCTION public.provider_unit_features_internal(p_unit bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE r record; result jsonb:='{}'; current jsonb;
 BEGIN
- FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE handler IS NOT NULL ORDER BY provider_key LOOP
+ FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE hosted_checkout ORDER BY provider_key LOOP
   BEGIN
    current:=public.payment_provider_call_internal(r.provider_key,'unit_feature',jsonb_build_object('unitId',p_unit));
    IF jsonb_typeof(current) IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_PROJECTION_INVALID'; END IF;
@@ -108,7 +108,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,ex
 DECLARE r record; fields jsonb:='{}'; current jsonb; features jsonb;
 BEGIN
  features:=public.provider_unit_features_internal(p_unit);
- FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE handler IS NOT NULL ORDER BY provider_key LOOP
+ FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE hosted_checkout ORDER BY provider_key LOOP
   BEGIN
    current:=public.payment_provider_call_internal(r.provider_key,'unit_fields',jsonb_build_object('unitId',p_unit));
    IF jsonb_typeof(current) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_PROJECTION_INVALID'; END IF;
@@ -127,17 +127,13 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,ex
 DECLARE r record; current jsonb; providers jsonb:='{}'; available jsonb:='[]'; config jsonb; bank boolean; cash boolean; configured boolean; enabled boolean;
 BEGIN
  SELECT data->'payments' INTO config FROM public.forms WHERE id=p_form;
- bank:=FOUND AND coalesce(config->'bankEnabled','true'::jsonb)='true'::jsonb;
- cash:=config->'cashEnabled'='true'::jsonb;
- bank:=bank AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
-   JOIN eshop.unit_bank_accounts link ON link.unit=o.unit JOIN eshop.bank_accounts b ON b.id=link.bank_account
-   WHERE f.id=p_form AND (f.bank_account IS NULL OR f.bank_account=b.id) AND b.type IS DISTINCT FROM 'CASH'
-   AND NOT EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type
-    WHERE ff.form=f.id AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false)
-    AND p.price>0 AND NOT coalesce(b.supported_currencies,'{}'::text[]) @> ARRAY[trim(p.currency_code)]));
- IF bank THEN available:=jsonb_build_array('bank'); END IF;
- IF cash THEN available:=jsonb_build_array('cash'); END IF;
- FOR r IN SELECT provider_key,legacy_connection_field FROM eshop.payment_providers WHERE handler IS NOT NULL ORDER BY provider_key LOOP
+ current:=public.payment_provider_call_internal('bank','form_availability',jsonb_build_object('formId',p_form));
+ bank:=coalesce((current->>'available')::boolean,false);
+ current:=public.payment_provider_call_internal('cash','form_availability',jsonb_build_object('formId',p_form));
+ cash:=coalesce((current->>'available')::boolean,false);
+ IF bank THEN available:=available||jsonb_build_array('bank'); END IF;
+ IF cash THEN available:=available||jsonb_build_array('cash'); END IF;
+ FOR r IN SELECT provider_key,legacy_connection_field FROM eshop.payment_providers WHERE hosted_checkout ORDER BY provider_key LOOP
   configured:=nullif(config#>>ARRAY['providerConnections',r.provider_key],'') IS NOT NULL OR nullif(config->>r.legacy_connection_field,'') IS NOT NULL;
   BEGIN
    PERFORM public.payment_provider_connection_internal(config,r.provider_key);
@@ -180,16 +176,16 @@ BEGIN
  connections:=coalesce(config->'providerConnections','{}'::jsonb);
  IF jsonb_typeof(connections)<>'object' THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
  FOR entry IN SELECT * FROM jsonb_each(connections) LOOP
-  IF jsonb_typeof(entry.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=entry.key AND handler IS NOT NULL) THEN
+  IF jsonb_typeof(entry.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=entry.key AND hosted_checkout) THEN
    RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
   PERFORM (entry.value#>>'{}')::uuid;
  END LOOP;
  IF config->'bankEnabled'='false'::jsonb AND config->'cashEnabled'<>'true'::jsonb
-  AND NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE handler IS NOT NULL AND public.payment_provider_connection_internal(config,provider_key) IS NOT NULL)
+  AND NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE hosted_checkout AND public.payment_provider_connection_internal(config,provider_key) IS NOT NULL)
   AND EXISTS(SELECT 1 FROM public.forms f JOIN public.form_fields ff ON ff.form=f.id JOIN eshop.products p ON p.product_type=ff.product_type
    WHERE f.id=p_form AND f.is_open AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false) AND p.price>0) THEN
   RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INCOMPLETE'; END IF;
- FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE handler IS NOT NULL LOOP
+ FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE hosted_checkout LOOP
   IF public.payment_provider_connection_internal(config,r.provider_key) IS NOT NULL THEN
    PERFORM public.payment_provider_call_internal(r.provider_key,'validate_form',jsonb_build_object('formId',p_form));
   END IF;
@@ -199,7 +195,7 @@ CREATE OR REPLACE FUNCTION public.provider_form_editor_fields_internal(p_unit bi
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE r record; fields jsonb:='{}'; current jsonb;
 BEGIN
- FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE handler IS NOT NULL ORDER BY provider_key LOOP
+ FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE hosted_checkout ORDER BY provider_key LOOP
   BEGIN
    current:=public.payment_provider_call_internal(r.provider_key,'form_editor_fields',jsonb_build_object('unitId',p_unit,'occasionId',p_occasion,'livemode',p_livemode));
    IF jsonb_typeof(current) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_PROJECTION_INVALID'; END IF;
@@ -217,3 +213,10 @@ REVOKE ALL ON FUNCTION public.payment_provider_call_internal(text,text,jsonb),pu
  public.provider_payment_movements_internal(bigint),public.form_payment_availability_internal(bigint),
  public.payment_provider_connection_internal(jsonb,text),public.strip_form_payment_connections_internal(jsonb),
  public.provider_unit_public_fields_internal(bigint),public.provider_unit_features_internal(bigint),public.validate_form_payment_configuration_internal(bigint),public.provider_form_editor_fields_internal(bigint,bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Verification semantics are installed capabilities, never provider-name tests.
+CREATE OR REPLACE FUNCTION public.payment_method_verification_internal(p_method text)
+RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT verification FROM eshop.payment_providers WHERE provider_key=p_method;
+$$;
+REVOKE ALL ON FUNCTION public.payment_method_verification_internal(text) FROM PUBLIC,anon,authenticated,service_role;

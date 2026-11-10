@@ -3,26 +3,29 @@ CREATE OR REPLACE FUNCTION public.customer_order_payment_internal(p_order bigint
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH facts AS (
  SELECT o.*,p.payment_method,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
+ coalesce(p.paid,0)-coalesce(p.returned,0) net,
+ (SELECT coalesce(sum(r.amount),0) FROM eshop.refund_requests r WHERE r.payment_info=p.id AND r.status IN ('pending','processing','unknown')) pending,
  p.data->'payment_policy' payment_policy,p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
  b.account_number,b.account_number_human_readable,
  coalesce(nullif(trim(b.creditor_name),''),(SELECT left(trim(regexp_replace(org.title,'[[:space:][:cntrl:]]+',' ','g')),70) FROM public.occasions occ JOIN public.organizations org ON org.id=occ.organization WHERE occ.id=o.occasion)) creditor_name,
  CASE WHEN o.state='preparing_payment' THEN 'preparing'
  WHEN o.state='storno' THEN 'cancelled'
+ WHEN o.state='expired' THEN 'expired'
  WHEN o.state='waitlisted' AND p.id IS NULL THEN 'not_required_yet'
  WHEN o.price=0 THEN 'free'
  WHEN p.id IS NULL OR p.currency_code IS DISTINCT FROM o.currency_code OR p.amount IS NULL OR p.amount<0 OR coalesce(p.paid,0)<0 OR coalesce(p.paid_externally,0)<>0
   OR (o.state IN ('paid','sent') AND o.price>0 AND coalesce(p.paid,0)=0) THEN 'unknown'
- WHEN coalesce(p.paid,0)>=p.amount THEN 'fully_paid'
- WHEN coalesce(p.paid,0)=0 THEN 'unpaid'
- WHEN p.deposit_amount>0 AND p.paid>=p.deposit_amount THEN 'deposit_paid'
+ WHEN coalesce(p.paid,0)-coalesce(p.returned,0)>=p.amount THEN 'fully_paid'
+ WHEN coalesce(p.paid,0)-coalesce(p.returned,0)<=0 THEN 'unpaid'
+ WHEN p.deposit_amount>0 AND coalesce(p.paid,0)-coalesce(p.returned,0)>=p.deposit_amount THEN 'deposit_paid'
  ELSE 'partially_paid' END status
  FROM eshop.orders o LEFT JOIN eshop.payment_info p ON p.id=o.payment_info
  LEFT JOIN eshop.bank_accounts b ON b.id=p.bank_account WHERE o.id=p_order),
- due AS (SELECT *,greatest(amount-received,0) outstanding,
- CASE WHEN deposit_amount>received THEN greatest(deposit_amount-received,0) ELSE greatest(amount-received,0) END due_now,
- CASE WHEN deposit_amount>received THEN deposit_deadline ELSE deadline END due_at FROM facts)
- SELECT CASE WHEN public.payment_method_is_online_internal(payment_method) THEN public.provider_order_payment_projection_internal(p_order) ELSE jsonb_build_object('method',payment_method,'deadlinePolicy',payment_policy->>'mode','instructions',jsonb_build_object('cashInstructions',payment_policy->>'cashInstructions'),'currency',trim(currency_code),'paid',received,'remaining',outstanding,'status',status,'amount',amount,'received',received,'returned',returned,
- 'totalOutstanding',outstanding,'overpaid',greatest(received-amount,0),'depositAmount',deposit_amount,
+ due AS (SELECT *,greatest(amount-net,0) outstanding,
+ CASE WHEN deposit_amount>net THEN greatest(deposit_amount-net,0) ELSE greatest(amount-net,0) END due_now,
+ CASE WHEN deposit_amount>net THEN deposit_deadline ELSE deadline END due_at FROM facts)
+ SELECT CASE WHEN public.payment_method_is_online_internal(payment_method) THEN public.provider_order_payment_projection_internal(p_order)||jsonb_build_object('net',net,'pending',pending,'totalOutstanding',outstanding,'overpaid',greatest(net-amount,0)) ELSE jsonb_build_object('method',payment_method,'deadlinePolicy',payment_policy->>'mode','instructions',jsonb_build_object('cashInstructions',payment_policy->>'cashInstructions'),'currency',trim(currency_code),'paid',received,'remaining',outstanding,'status',status,'amount',amount,'received',received,'returned',returned,'net',net,'pending',pending,
+ 'totalOutstanding',outstanding,'overpaid',greatest(net-amount,0),'depositAmount',deposit_amount,
  'depositDeadline',deposit_deadline,'finalDeadline',deadline,
  'dueNow',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN due_now ELSE 0 END,
  'dueAt',due_at,'overdue',coalesce(due_at<statement_timestamp() AND due_now>0,false),
@@ -38,8 +41,8 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
  'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
   'date',t.date::date,'recordedAt',t.created_at,'amount',t.amount,'currency',trim(t.currency),
-  'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
-  ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
+  'kind',CASE WHEN m.voided THEN 'payment_adjustment_voided' WHEN m.is_refund THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
+  ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t JOIN LATERAL public.payment_transaction_movements_internal(due.payment_info) m ON m.transaction_id=t.id WHERE t.payment_info=due.payment_info),
  'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
  END FROM due;
 $$;
@@ -119,11 +122,11 @@ BEGIN
   FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
   WHERE w.order_id=root.id AND w.form_id=f.id AND s.form_id=f.id AND s.outcome IN ('accepted','declined','cancelled','expired')
   UNION ALL
-  SELECT t.created_at,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
+  SELECT t.created_at,'4'||t.id::text,jsonb_build_object('kind',CASE WHEN m.voided THEN 'payment_adjustment_voided' WHEN m.is_refund THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END,
    'at',t.created_at,'timeKind','recorded','amount',t.amount,'currency',trim(t.currency),'symbol',o.order_symbol,
    'paymentMethod',CASE WHEN b.type='CASH' THEN 'cash' WHEN nullif(trim(b.account_number),'') IS NOT NULL THEN 'bank' END,
    'recipientAccount',CASE WHEN b.type<>'CASH' THEN coalesce(nullif(trim(b.account_number_human_readable),''),nullif(trim(b.account_number),'')) END)
-  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info LEFT JOIN eshop.bank_accounts b ON b.id=t.bank_account_id WHERE o.id=ANY(ids) AND t.created_at IS NOT NULL
+  FROM eshop.orders o JOIN eshop.transactions t ON t.payment_info=o.payment_info JOIN LATERAL public.payment_transaction_movements_internal(o.payment_info) m ON m.transaction_id=t.id LEFT JOIN eshop.bank_accounts b ON b.id=t.bank_account_id WHERE o.id=ANY(ids) AND t.created_at IS NOT NULL
   UNION ALL
   SELECT h.created_at,'3'||h.id::text,jsonb_build_object(
    'kind',CASE WHEN h.state IS DISTINCT FROM h.previous_state THEN 'order_'||h.state ELSE 'order_changed' END,

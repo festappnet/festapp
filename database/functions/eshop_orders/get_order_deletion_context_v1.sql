@@ -40,6 +40,26 @@ BEGIN
       WHERE target_order_id=p_order OR source_order_id=p_order) THEN
     RAISE EXCEPTION 'ORDER_HAS_WAITLIST_HISTORY';
   END IF;
+  IF p_command_id IS NOT NULL THEN
+    -- A committed fence survives the gap between this RPC and external invoice
+    -- deletion. Financial commands check it under the same order lock.
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
+    SELECT o.occasion,oc.unit,o.state,pi.variable_symbol INTO v_occasion,v_unit,v_state,v_vs
+    FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion
+    LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=p_order;
+    IF v_occasion IS NULL OR NOT public.can_delete_orders(v_occasion) THEN
+      RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required';
+    END IF;
+  END IF;
+  PERFORM public.check_order_refund_delete_internal(p_order);
+  IF p_command_id IS NOT NULL THEN
+    INSERT INTO eshop.order_deletion_fences(order_id,command_id,created_by)
+    VALUES(p_order,p_command_id,auth.uid()) ON CONFLICT(order_id) DO NOTHING;
+    IF NOT EXISTS(SELECT 1 FROM eshop.order_deletion_fences WHERE order_id=p_order
+      AND command_id=p_command_id AND created_by=auth.uid()) THEN
+      RAISE EXCEPTION 'ORDER_DELETION_IN_PROGRESS';
+    END IF;
+  END IF;
   -- Metadata reads do not charge. External deletion attempts share the order
   -- mutation burst budget before credentials/provider work; final SQL charges
   -- its own mutation and item count through the existing command boundary.

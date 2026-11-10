@@ -1,6 +1,7 @@
 // ticket_feature.dart
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
+
 import 'feature.dart';
 import 'feature_constants.dart';
 
@@ -14,8 +15,10 @@ enum TicketDeliveryMode {
   bool get includesPdf => this != inlineQr;
   static TicketDeliveryMode parse(Object? value, {bool present = true}) {
     if (!present) return pdfAttachment;
-    return values.firstWhere((mode) => mode.value == value,
-        orElse: () => throw FormatException('Invalid ticket delivery mode'));
+    return values.firstWhere(
+      (mode) => mode.value == value,
+      orElse: () => throw FormatException('Invalid ticket delivery mode'),
+    );
   }
 }
 
@@ -26,6 +29,8 @@ class TicketFeature extends Feature {
   String? ticketBackground;
   String? ticketType;
   TicketDeliveryMode deliveryMode;
+  bool walletEnabled;
+  Map<String, dynamic>? walletAppearance;
   bool pregeneratedTickets;
   bool? canScanManually;
   bool? showHiddenNote;
@@ -40,6 +45,8 @@ class TicketFeature extends Feature {
     this.ticketBackground,
     this.ticketType,
     this.deliveryMode = TicketDeliveryMode.pdfAttachment,
+    this.walletEnabled = true,
+    this.walletAppearance,
     this.pregeneratedTickets = false,
     this.canScanManually,
     this.showHiddenNote,
@@ -47,20 +54,27 @@ class TicketFeature extends Feature {
 
   factory TicketFeature.fromJson(Map<String, dynamic> json) {
     return TicketFeature(
-      code: json[FeatureConstants.metaCode],
-      isEnabled: json[FeatureConstants.metaIsEnabled] ?? false,
-      ticketLightColor: json[FeatureConstants.ticketLightColor],
-      ticketDarkColor: json[FeatureConstants.ticketDarkColor],
-      ticketBackground: json[FeatureConstants.ticketBackground],
-      ticketType: json[FeatureConstants.ticketType],
-      deliveryMode: TicketDeliveryMode.parse(
+        code: json[FeatureConstants.metaCode],
+        isEnabled: json[FeatureConstants.metaIsEnabled] ?? false,
+        ticketLightColor: json[FeatureConstants.ticketLightColor],
+        ticketDarkColor: json[FeatureConstants.ticketDarkColor],
+        ticketBackground: json[FeatureConstants.ticketBackground],
+        ticketType: json[FeatureConstants.ticketType],
+        deliveryMode: TicketDeliveryMode.parse(
           json[FeatureConstants.ticketDeliveryMode],
-          present: json.containsKey(FeatureConstants.ticketDeliveryMode)),
-      pregeneratedTickets:
-          json[FeatureConstants.ticketPregeneratedTickets] == true,
-      canScanManually: json[FeatureConstants.ticketCanScanManually] ?? false,
-      showHiddenNote: json[FeatureConstants.ticketShowHiddenNote] ?? false,
-    )
+          present: json.containsKey(FeatureConstants.ticketDeliveryMode),
+        ),
+        walletAppearance: json['wallet_appearance'] == null
+            ? null
+            : Map<String, dynamic>.from(json['wallet_appearance'] as Map),
+        walletEnabled: json.containsKey(FeatureConstants.ticketWalletEnabled)
+            ? json[FeatureConstants.ticketWalletEnabled] as bool
+            : true,
+        pregeneratedTickets:
+            json[FeatureConstants.ticketPregeneratedTickets] == true,
+        canScanManually: json[FeatureConstants.ticketCanScanManually] ?? false,
+        showHiddenNote: json[FeatureConstants.ticketShowHiddenNote] ?? false,
+      )
       ..layout = json[FeatureConstants.ticketLayout] == null
           ? null
           : copyTicketJson(json[FeatureConstants.ticketLayout])
@@ -74,9 +88,11 @@ class TicketFeature extends Feature {
     final data = {
       FeatureConstants.metaCode: code,
       FeatureConstants.ticketDeliveryMode: deliveryMode.value,
+      FeatureConstants.ticketWalletEnabled: walletEnabled,
       FeatureConstants.ticketPregeneratedTickets: pregeneratedTickets,
       FeatureConstants.metaIsEnabled: isEnabled,
     };
+    if (walletAppearance != null) data['wallet_appearance'] = walletAppearance!;
     if (ticketLightColor != null) {
       data[FeatureConstants.ticketLightColor] = ticketLightColor!;
     }
@@ -113,8 +129,8 @@ class TicketFeature extends Feature {
 
   Map<String, dynamic>? get layoutChange =>
       const DeepCollectionEquality().equals(layout, _savedLayout)
-          ? null
-          : {'expected': _savedLayout, 'next': layout};
+      ? null
+      : {'expected': _savedLayout, 'next': layout};
   void markLayoutSaved() {
     _savedLayout = layout == null ? null : copyTicketJson(layout!);
   }

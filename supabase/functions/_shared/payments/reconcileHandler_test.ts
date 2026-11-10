@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { AuthError } from "../authError.ts";
 import { PaymentRegistry } from "./registry.ts";
 import { paymentReconcileHandler } from "./reconcileHandler.ts";
-import type { PaymentDependencies } from "./contracts.ts";
+import type { HostedPaymentDependencies } from "./contracts.ts";
 
 Deno.test("machine recovery authenticates before constructing any provider", async () => {
   let constructed = false;
@@ -15,7 +15,7 @@ Deno.test("machine recovery authenticates before constructing any provider", asy
 });
 Deno.test("a missing credential cannot starve another registered recovery queue", async () => {
   let purged = false;
-  const healthy: PaymentDependencies = {
+  const healthy: HostedPaymentDependencies = {
     connector: {id: "healthy", displayName: "Healthy", validateCheckoutUrl: v => v,
       createOrRecoverCheckout: () => { throw new Error("unexpected create"); },
       checkout: () => { throw new Error("unexpected checkout"); },

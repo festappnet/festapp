@@ -1,3 +1,28 @@
+-- Prevent intentional suspension while issued bank instructions still reserve
+-- funds. Connection -> canonical order locks match ingest; prepare holds the
+-- order lock and checks connection state before issuing its immutable snapshot.
+CREATE OR REPLACE FUNCTION public.check_bank_refund_source_operation_internal(p_account bigint)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE accounts bigint[];
+BEGIN
+ PERFORM 1 FROM eshop.bank_sync_connections c WHERE c.bank_account_id=p_account
+  OR c.id IN(SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_account)
+  ORDER BY c.id FOR UPDATE;
+ SELECT array_agg(DISTINCT id) INTO accounts FROM (
+  SELECT p_account id UNION ALL SELECT c.bank_account_id FROM eshop.bank_sync_connections c
+   WHERE c.id IN(SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_account)
+  UNION ALL SELECT a.bank_account_id FROM eshop.bank_sync_account_aliases a
+   JOIN eshop.bank_sync_connections c ON c.id=a.connection_id WHERE c.bank_account_id=p_account
+ ) scope;
+ PERFORM public.lock_order_capacity_scope_internal(ARRAY(
+  SELECT o.id FROM eshop.orders o JOIN eshop.payment_info p ON p.id=o.payment_info WHERE p.bank_account=ANY(accounts) ORDER BY o.id));
+ IF EXISTS(SELECT 1 FROM eshop.refund_requests r JOIN eshop.payment_info p ON p.id=r.payment_info
+  WHERE p.bank_account=ANY(accounts) AND r.status IN ('pending','processing','unknown')) THEN
+  RAISE EXCEPTION 'BANK_ACCOUNT_HAS_PENDING_REFUND';
+ END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.check_bank_refund_source_operation_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.get_bank_sync_connection(p_bank_account_id bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_result jsonb;
@@ -20,6 +45,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE v_operation eshop.bank_sync_operations%ROWTYPE; v_inserted integer;
 BEGIN
   PERFORM public.check_is_admin_for_bank_account(p_account_id);
+  IF p_operation='suspend' THEN PERFORM public.check_bank_refund_source_operation_internal(p_account_id); END IF;
   INSERT INTO eshop.bank_sync_operations(id,bank_account_id,actor,operation,payload_sha256,state)
     VALUES(p_id,p_account_id,auth.uid(),p_operation,p_hash,'pending') ON CONFLICT DO NOTHING;
   GET DIAGNOSTICS v_inserted=ROW_COUNT;
@@ -44,6 +70,8 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE v_op eshop.bank_sync_operations%ROWTYPE; v_account eshop.bank_accounts%ROWTYPE; v_conn eshop.bank_sync_connections%ROWTYPE;
 BEGIN
   PERFORM public.require_service_role();
+  SELECT * INTO v_op FROM eshop.bank_sync_operations WHERE id=p_id;
+  IF v_op.operation='suspend' THEN PERFORM public.check_bank_refund_source_operation_internal(v_op.bank_account_id); END IF;
   UPDATE eshop.bank_sync_operations SET state='running',lease_token=gen_random_uuid(),updated_at=now() WHERE id=p_id
     AND (state IN ('pending','uncertain','failed') OR (state='running' AND updated_at<now()-interval '5 minutes'))
     RETURNING * INTO v_op;

@@ -9,6 +9,14 @@ void main() {
     returnPath: '/payments/return',
     checkoutHost: 'pay.example',
   );
+  test('builtin registration has no fake hosted checkout and follows server capabilities', () {
+    final bank = paymentConnectors.get('bank')!;
+    expect(bank.hostedCheckout, isNull);
+    expect(bank.confirmation, PaymentConfirmation.bankEvent);
+    expect(paymentConnectors.containsHosted('cash'), isFalse);
+    expect(() => bank.checkoutUri('https://example.com/pay'), throwsStateError);
+    expect(FormPaymentOptions.fromJson({'available': ['bank'], 'bank': {'available': false}}).available, isEmpty);
+  });
   test('Barion sandbox redirect rejects live host, duplicate scope and arbitrary paths', () {
     expect(paymentConnectors.contains('barion'), isTrue);
     expect(barionPaymentConnector.checkoutUri('https://secure.test.barion.com/Pay?Id=${'a' * 32}').host, 'secure.test.barion.com');
@@ -25,7 +33,7 @@ void main() {
   test(
     'another provider has its own checkout policy and isolated availability',
     () {
-      final registry = PaymentConnectorRegistry([connector]);
+      final registry = PaymentConnectorRegistry([paymentConnectors.get('bank')!, connector]);
       expect(registry.contains('stripe'), isFalse);
       expect(
         connector.checkoutUri('https://pay.example/42').host,

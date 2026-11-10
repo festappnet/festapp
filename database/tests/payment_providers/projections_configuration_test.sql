@@ -11,12 +11,12 @@ BEGIN
  IF p_operation='unit_feature' THEN RETURN 'false'; END IF;
  RAISE EXCEPTION 'unexpected operation';
 END $$;
-INSERT INTO eshop.payment_providers(provider_key,handler,source_field)
- VALUES('aaa_gateway','public.test_isolated_provider(text,jsonb)'::regprocedure,'aaaSource');
+INSERT INTO eshop.payment_providers(provider_key,handler,source_field,hosted_checkout)
+ VALUES('aaa_gateway','public.test_isolated_provider(text,jsonb)'::regprocedure,'aaaSource',true);
 CREATE FUNCTION public.test_failed_provider(p_operation text,p_args jsonb)
 RETURNS jsonb LANGUAGE plpgsql SET search_path=public,extensions AS $$ BEGIN RAISE EXCEPTION 'private provider diagnostic'; END $$;
-INSERT INTO eshop.payment_providers(provider_key,handler,source_field)
- VALUES('zzz_failed','public.test_failed_provider(text,jsonb)'::regprocedure,'zzzSource');
+INSERT INTO eshop.payment_providers(provider_key,handler,source_field,hosted_checkout)
+ VALUES('zzz_failed','public.test_failed_provider(text,jsonb)'::regprocedure,'zzzSource',true);
 DO $$
 DECLARE fx jsonb:=public.scanner_test_fixture(1); f bigint:=(fx->>'form')::bigint; u bigint; bank bigint; value jsonb; before_value jsonb; saved jsonb; recipient_id text:='12345678-1234-4234-8234-123456789abc';
 BEGIN
@@ -46,8 +46,8 @@ BEGIN
  PERFORM assert_eq(value#>>'{providerFields,aaa_gateway,stripe_preview_enabled}','collision','colliding field stays in its namespace');
  saved:=jsonb_build_object('bankEnabled',false,'stripeConnectionId',recipient_id,'providerConnections',jsonb_build_object('aaa_gateway',recipient_id));
  -- Restore registration only for legacy alias validation.
- INSERT INTO eshop.payment_providers(provider_key,handler,source_field,legacy_connection_field)
- VALUES('stripe','public.stripe_payment_provider_internal(text,jsonb)'::regprocedure,'stripePaymentSource','stripeConnectionId');
+ INSERT INTO eshop.payment_providers(provider_key,handler,source_field,legacy_connection_field,hosted_checkout)
+ VALUES('stripe','public.stripe_payment_provider_internal(text,jsonb)'::regprocedure,'stripePaymentSource','stripeConnectionId',true);
  value:=public.merge_form_payments_internal(saved,NULL);
  PERFORM assert_true(NOT value ? 'stripeConnectionId','only canonical provider map is stored');
  PERFORM assert_eq(value#>>'{providerConnections,stripe}',recipient_id,'legacy recipient preserved');
@@ -77,6 +77,6 @@ BEGIN
  PERFORM assert_true(NOT value ? 'paymentMethod','both is not stored as another authority');
  PERFORM assert_eq(value#>>'{payments,providerConnections,aaa_gateway}',recipient_id,'draft roundtrip preserves provider identity');
  PERFORM assert_true(public.normalize_setup_payments_internal('{"paymentMethod":"stripe"}')->'paymentRepairRequired'='true'::jsonb,'ambiguous draft requires repair');
- DELETE FROM eshop.payment_providers WHERE handler IS NOT NULL;
+ DELETE FROM eshop.payment_providers WHERE hosted_checkout;
  PERFORM assert_eq(public.form_payment_availability_internal(f)->'available','["bank"]'::jsonb,'bank works with zero online providers');
 END $$;

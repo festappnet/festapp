@@ -23,7 +23,7 @@ BEGIN
         v_unit_id BIGINT;
     BEGIN
         -- Fetch payment info for this order
-        SELECT pi.deposit_amount, pi.amount, pi.paid
+        SELECT pi.deposit_amount, pi.amount, coalesce(pi.paid,0)-coalesce(pi.returned,0)
         INTO v_deposit_amount, v_total_amount, v_total_paid
         FROM eshop.payment_info pi
         JOIN eshop.orders o ON o.payment_info = pi.id

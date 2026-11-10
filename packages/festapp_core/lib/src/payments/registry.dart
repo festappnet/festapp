@@ -14,9 +14,17 @@ class PaymentConnectorRegistry {
   }
   final _connectors = <String, PaymentConnector>{};
   PaymentConnector? get(dynamic id) => _connectors[id];
+  PaymentConnector? getHosted(dynamic id) => containsHosted(id) ? get(id) : null;
+  bool containsHosted(dynamic id) => get(id)?.hostedCheckout != null;
+  Iterable<PaymentConnector> get hosted => values.where((c) => c.hostedCheckout != null);
   bool contains(dynamic id) => get(id) != null;
   Iterable<PaymentConnector> get values => _connectors.values;
 }
 
 /// Composition root. Domain views select a connector from the server projection.
-final paymentConnectors = PaymentConnectorRegistry([stripePaymentConnector, barionPaymentConnector]);
+final paymentConnectors = PaymentConnectorRegistry([
+  const PaymentConnector(id: 'bank', labelKey: 'bank', hintKey: 'bankHint', confirmation: PaymentConfirmation.bankEvent,
+    currencies: ['CZK', 'EUR', 'USD']),
+  const PaymentConnector(id: 'cash', labelKey: 'cash', hintKey: 'cashHint', confirmation: PaymentConfirmation.localCommit),
+  stripePaymentConnector, barionPaymentConnector,
+]);

@@ -120,11 +120,11 @@ BEGIN
 
     -- Recalculate order state
     SELECT CASE
-        WHEN COALESCE(pi.paid, 0) >= new_order_price AND new_order_price > 0 THEN 'paid'
+        WHEN COALESCE(pi.paid, 0)-COALESCE(pi.returned,0) >= new_order_price AND new_order_price > 0 THEN 'paid'
         WHEN new_order_price <= 0 THEN 'paid'
         ELSE 'ordered'
     END INTO new_state
-    FROM (SELECT COALESCE((SELECT paid FROM eshop.payment_info WHERE id=ord.payment_info),0) AS paid) pi;
+    FROM eshop.payment_info pi WHERE pi.id=ord.payment_info;
 
     -- 6. Build the new order_ids.data JSON
     new_data := jsonb_set(

@@ -1,3 +1,5 @@
+import '../payment_operation_strings.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/eshop/models/tb_eshop.dart';
@@ -23,6 +25,7 @@ class TransactionModel extends ITrinaRowModel {
   String? ss;
   String? userIdentification;
   String? transactionType;
+  bool isRefund, voided;
   String? performedBy;
   String? comment;
   int? commandId;
@@ -60,6 +63,8 @@ class TransactionModel extends ITrinaRowModel {
     this.ss,
     this.userIdentification,
     this.transactionType,
+    this.isRefund = false,
+    this.voided = false,
     this.performedBy,
     this.comment,
     this.commandId,
@@ -95,15 +100,16 @@ class TransactionModel extends ITrinaRowModel {
       ss: json[TbEshop.transactions.ss],
       userIdentification: json[TbEshop.transactions.user_identification],
       transactionType: json[TbEshop.transactions.transaction_type],
+      isRefund: json['isRefund'] == true,
+      voided: json['voided'] == true,
       performedBy: json[TbEshop.transactions.performed_by],
       comment: json[TbEshop.transactions.comment],
       commandId: json[TbEshop.transactions.command_id],
       bankAccountId: json[TbEshop.transactions.bank_account_id],
       paymentInfo: json[TbEshop.transactions.payment_info],
       createdAt: json[TbEshop.transactions.created_at] != null
-          ? DateTime.parse(
-              json[TbEshop.transactions.created_at],
-            ).toOccasionTime()
+          ? DateTime.parse(json[TbEshop.transactions.created_at])
+                .toOccasionTime()
           : null,
       messageForRecipient: json[TbEshop.transactions.message_for_recipient],
       counterAccountName: json[TbEshop.transactions.counter_account_name],
@@ -150,7 +156,11 @@ class TransactionModel extends ITrinaRowModel {
           value: userIdentification ?? "",
         ),
         TbEshop.transactions.transaction_type: TrinaCell(
-          value: transactionType == 'manual'
+          value: voided
+              ? PaymentOperationStrings.text('voided')
+              : isRefund
+              ? PaymentOperationStrings.text('refund')
+              : transactionType == 'manual'
               ? OrdersStrings.transactionTypeCash
               : (transactionType ?? ""),
         ),
@@ -208,6 +218,8 @@ class TransactionModel extends ITrinaRowModel {
       ss: json[TbEshop.transactions.ss],
       userIdentification: json[TbEshop.transactions.user_identification],
       transactionType: json[TbEshop.transactions.transaction_type],
+      isRefund: json['isRefund'] == true,
+      voided: json['voided'] == true,
       performedBy: json[TbEshop.transactions.performed_by],
       comment: json[TbEshop.transactions.comment],
       commandId: json[TbEshop.transactions.command_id],

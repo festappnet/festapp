@@ -1,6 +1,6 @@
 import {
   type PaymentClaim,
-  type PaymentDependencies,
+  type HostedPaymentDependencies,
   PaymentError,
   type RecoveryAttempt,
   type RecoveryConnection,
@@ -18,7 +18,7 @@ export type PaymentReconcileResult = {
  * neither a maintenance failure nor its budget can suppress queued payments.
  */
 export async function reconcilePayments(
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
   now = Date.now,
 ): Promise<PaymentReconcileResult[]> {
   const started = now();

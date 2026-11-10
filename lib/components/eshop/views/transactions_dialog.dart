@@ -15,7 +15,9 @@ import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 
-import 'cash_payment_flow.dart';
+import 'payment_operation_flow.dart';
+import '../models/payment_operation_context.dart';
+import '../payment_operation_strings.dart';
 import 'order_payment_bank_options.dart';
 import '../models/order_payment_actions.dart';
 import '../models/order_model.dart';
@@ -42,6 +44,7 @@ class OrderPaymentsContent extends StatefulWidget {
 
 class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   List<TransactionModel> _transactions = [];
+  PaymentOperationContext _operations = const PaymentOperationContext();
   PaymentInfoModel? _payment;
   bool _isLoading = true;
   String? _orderState;
@@ -74,6 +77,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
         _payment = transactionObject.paymentInfo;
         _orderState = transactionObject.orderState;
         _actions = transactionObject.actions;
+        _operations = transactionObject.paymentOperations;
         _isLoading = false;
       });
     } else {
@@ -83,11 +87,12 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
     }
   }
 
-  Future<void> _addCashPayment() async {
-    if (!_canEdit || !_actions.canAddCash) return;
-    final changed = await showOrderCashPaymentDialog(
+  Future<void> _paymentOperation({bool refund = false}) async {
+    if (!(refund ? _operations.canRefund : _operations.canRecord)) return;
+    final changed = await showOrderPaymentOperationDialog(
       context,
       orderId: widget.orderId,
+      refund: refund,
       unitId: widget.unitId ?? RightsService.currentUnit()!.id!,
     );
     if (changed == true) {
@@ -152,8 +157,8 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                     runSpacing: 10,
                     children: [
                       ElevatedButton(
-                        onPressed: _canEdit && _actions.canAddCash
-                            ? _addCashPayment
+                        onPressed: _operations.canRecord
+                            ? () => _paymentOperation()
                             : null,
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(
@@ -166,10 +171,41 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                         ),
                         child: Text(OrdersStrings.addPayment),
                       ),
+                      ElevatedButton(
+                        onPressed: _operations.canRefund
+                            ? () => _paymentOperation(refund: true)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(PaymentOperationStrings.text('refund')),
+                      ),
                     ],
                   ),
                 ),
               ),
+              if (_payment != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Wrap(
+                    spacing: 24,
+                    runSpacing: 8,
+                    children: [
+                      Text(
+                        '${PaymentOperationStrings.text('net')}: ${Utilities.formatPrice(context, _payment!.net, currencyCode: _payment!.currencyCode, decimalDigits: 2)}',
+                      ),
+                      Text(
+                        '${PaymentOperationStrings.text('pending')}: ${Utilities.formatPrice(context, double.tryParse(_operations.pending) ?? 0, currencyCode: _payment!.currencyCode, decimalDigits: 2)}',
+                      ),
+                    ],
+                  ),
+                ),
               OrderPaymentBankOptions(
                 actions: OrderPaymentActions(
                   historyAccounts: _actions.historyAccounts,
@@ -251,7 +287,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                OrdersStrings.paid,
+                                PaymentOperationStrings.text('received'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -365,9 +401,11 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                                                       fontSize: 16,
                                                     ),
                                                   ),
-                                                  if (transaction
-                                                          .transactionType ==
-                                                      'manual')
+                                                  if (transaction.isRefund ||
+                                                      transaction.voided ||
+                                                      transaction
+                                                              .transactionType ==
+                                                          'manual')
                                                     Row(
                                                       children: [
                                                         Icon(
@@ -378,8 +416,23 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                                                         ),
                                                         SizedBox(width: 8),
                                                         Text(
-                                                          OrdersStrings
-                                                              .transactionTypeCash,
+                                                          transaction.voided
+                                                              ? PaymentOperationStrings.text(
+                                                                  'voided',
+                                                                )
+                                                              : transaction
+                                                                    .isRefund
+                                                              ? PaymentOperationStrings.text(
+                                                                  'refund',
+                                                                )
+                                                              : (transaction.amount ??
+                                                                        0) <
+                                                                    0
+                                                              ? PaymentOperationStrings.text(
+                                                                  'correction',
+                                                                )
+                                                              : OrdersStrings
+                                                                    .transactionTypeCash,
                                                           style: TextStyle(
                                                             fontWeight:
                                                                 FontWeight.bold,

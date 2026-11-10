@@ -86,6 +86,7 @@ BEGIN
    'payment_method',(SELECT payment_method FROM eshop.payment_info WHERE id=o.payment_info)),
   'capabilities',jsonb_build_object('write',coalesce(public.can_write_orders(o.occasion),false),'allowedActions',actions),
   'payment',public.customer_order_payment_internal(o.id)-'transactions',
+  'paymentOperations',public.payment_method_context_internal(o.id),
   -- Authorized admin metadata stays readable after payment. Never issue or
   -- regenerate instructions as a side effect of viewing an order.
   'bankPaymentDetails',(SELECT jsonb_build_object(

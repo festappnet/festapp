@@ -18,6 +18,8 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'PAYMENT_INFO_NOT_FOUND'; END IF;
   IF NOT public.can_manage_bank_account(v_bank_account_id) THEN
     RAISE insufficient_privilege USING MESSAGE='Bank transaction write access denied'; END IF;
+  IF NOT public.can_manage_bank_account((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id)) THEN
+    RAISE insufficient_privilege USING MESSAGE='Source bank transaction write access denied'; END IF;
   PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
   IF NOT EXISTS (SELECT 1 FROM eshop.transactions t
     WHERE t.id = p_transaction_id AND t.payment_info = p_payment_info_id) THEN

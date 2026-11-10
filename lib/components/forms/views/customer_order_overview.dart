@@ -126,7 +126,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                                       paragraph(
                                           '${text('orderState')}: ${text(order['state'] ?? 'unknown')}'),
                                       paragraph(
-                                          '${text('total')}: ${money(order['total'], order['currency'], card: paymentConnectors.contains(order['payment']?['method']))}'),
+                                          '${text('total')}: ${money(order['total'], order['currency'], card: paymentConnectors.containsHosted(order['payment']?['method']))}'),
                                       for (final item in order['items'] ?? []) ...[
                                         paragraph(
                                             '${item['title'] ?? ''}: ${money(item['price'], item['currency'])}'),
@@ -157,7 +157,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                     ]))));
   }
 
-  List<Widget> _payment(Map payment, dynamic currency) => paymentConnectors.contains(payment['method'])
+  List<Widget> _payment(Map payment, dynamic currency) => paymentConnectors.containsHosted(payment['method'])
       ? [
           CardPaymentStatus(payment: {
             ...payment.cast<String, dynamic>(),
@@ -169,11 +169,13 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
               style: Theme.of(context).textTheme.titleMedium),
           for (final key in [
             'received',
+            if (payment['net'] != null) 'net',
+            if ((num.tryParse('${payment['pending']}') ?? 0) > 0) 'pendingRefund',
             'totalOutstanding',
             'returned',
             'overpaid'
           ])
-            paragraph('${text(key)}: ${money(payment[key], currency)}'),
+            paragraph('${text(key)}: ${money(payment[key == 'pendingRefund' ? 'pending' : key], currency)}'),
           if (payment['instructionsAvailable'] == true) ...[
             paragraph(
                 '${text('dueNow')}: ${money(payment['dueNow'], currency)}'),

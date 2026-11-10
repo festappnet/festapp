@@ -18,8 +18,11 @@ for source in SOURCES:
     content += '\n-- Source: ' + source + '\n' + (ROOT / source).read_text() + '\n'
 content = content.rstrip() + '\n'
 target = ROOT / 'supabase/migrations/20261109140000_email_communication.sql'
-if '--check' in sys.argv:
-    if not target.exists() or target.read_text() != content:
-        raise SystemExit('Email communication migration differs from canonical sources')
-else:
-    target.write_text(content)
+if '--check' not in sys.argv:
+ raise SystemExit('Installed email communication migration is immutable; author a new forward migration')
+import hashlib
+from generate_canonical_source_contract import render
+if target.is_symlink() or hashlib.sha256(target.read_bytes()).hexdigest()!='a1e0d901199a475c31bd120de486dcb2f0277fbfea3f99aab8c387dd46065f85':
+ raise SystemExit('Installed email communication migration bytes changed')
+render(ROOT,additional_sources=[source.removeprefix('database/functions/') for source in SOURCES if source.startswith('database/functions/')])
+print('Immutable email communication history and effective owners match')

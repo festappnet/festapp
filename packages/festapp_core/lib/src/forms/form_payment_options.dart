@@ -22,7 +22,7 @@ class FormPaymentOptions {
     if (value == null)
       return FormPaymentOptions._(const ['bank'], const {}, 1860);
     final providers = <String, ProviderPaymentOptions>{};
-    for (final connector in registry.values) {
+    for (final connector in registry.hosted) {
       final all = value['providers'];
       final raw = all is Map && all[connector.id] is Map
           ? all[connector.id] as Map
@@ -64,10 +64,16 @@ class FormPaymentOptions {
         value['available'] is List
             ? (value['available'] as List)
                   .whereType<String>()
-                  .where((id) => id == 'cash' ? value['cash'] is Map && value['cash']['available'] == true : id == 'bank'
-                      ? (value['bank'] is! Map || value['bank']['available'] == true)
-                      : registry!.contains(id) && (value['providers'] is! Map ||
-                          (value['providers'][id] is Map && value['providers'][id]['available'] == true)))
+                  .where((id) {
+                    final connector = registry!.get(id);
+                    if (connector == null) return false;
+                    if (connector.hostedCheckout == null) {
+                      final projected = value[id];
+                      return projected is Map ? projected['available'] == true : id == 'bank';
+                    }
+                    return value['providers'] is! Map ||
+                        (value['providers'][id] is Map && value['providers'][id]['available'] == true);
+                  })
                   .toSet()
             : const <String>[],
       ),
@@ -79,7 +85,7 @@ class FormPaymentOptions {
   List<String> availableFor(String surface) => List.unmodifiable(
     available.where(
       (method) =>
-          method == 'cash' || method == 'bank' ||
+          !providers.containsKey(method) ||
           (providers[method]?.connectionId != null &&
               providers[method]!.supportedSurfaces.contains(surface)),
     ),

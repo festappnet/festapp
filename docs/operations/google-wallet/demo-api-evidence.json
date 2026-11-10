@@ -1,0 +1,37 @@
+{
+  "environment": "disposable local ticket / real Google demo issuer",
+  "productionActivated": false,
+  "scannerRpc": {
+    "firstAdmission": "accepted",
+    "secondAdmission": "conflict/already_used"
+  },
+  "googleReadbacks": [
+    {
+      "stage": "update",
+      "apiUpdated": true,
+      "objectId": "3388000000023240663.festapp_144eaa76b087e7661fb2fd87d3a8ff4888abf6e6a48519ac571411047c67d1a2",
+      "remoteState": "active",
+      "qrMatches": true,
+      "hasUsers": true
+    },
+    {
+      "stage": "verify-used",
+      "apiUpdated": true,
+      "objectId": "3388000000023240663.festapp_144eaa76b087e7661fb2fd87d3a8ff4888abf6e6a48519ac571411047c67d1a2",
+      "remoteState": "completed",
+      "qrMatches": true,
+      "hasUsers": true
+    },
+    {
+      "stage": "storno",
+      "apiUpdated": true,
+      "objectId": "3388000000023240663.festapp_144eaa76b087e7661fb2fd87d3a8ff4888abf6e6a48519ac571411047c67d1a2",
+      "remoteState": "inactive",
+      "qrMatches": true,
+      "hasUsers": true
+    }
+  ],
+  "opticalSimulationVerified": true,
+  "physicalCameraScanVerified": false,
+  "opticalSimulationEvidence": "optical-scan-evidence.json"
+}

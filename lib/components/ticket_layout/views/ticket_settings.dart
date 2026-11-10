@@ -1,6 +1,8 @@
 import 'package:fstapp/components/features/features_strings.dart';
 import '../ticket_delivery_strings.dart';
 import 'ticket_delivery_selector.dart';
+import 'ticket_wallet_selector.dart';
+import 'ticket_wallet_appearance_editor.dart';
 import 'ticket_delivery_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -70,6 +72,15 @@ class _TicketSettingsState extends State<TicketSettings> {
       refresh();
   }
 
+  bool _walletReady = false;
+  Future<void> _loadWalletReady() async {
+    final organization = RightsService.currentOccasion()?.organization;
+    if (organization == null) return;
+    try {
+      final ready = await Supabase.instance.client.rpc('ticket_wallet_ready', params: {'p_organization': organization});
+      if (mounted) setState(() => _walletReady = ready == true);
+    } catch (_) { /* Optional integration stays unavailable. */ }
+  }
   Future<void>? _loading;
   String? _thumbnailKey;
   String get _contextKey => jsonEncode([
@@ -98,6 +109,7 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   void initState() {
     super.initState();
+    _loadWalletReady();
     RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
     try {
       _authChanges = Supabase.instance.client.auth.onAuthStateChange
@@ -305,12 +317,19 @@ class _TicketSettingsState extends State<TicketSettings> {
                 _refresh(() => widget.feature.deliveryMode = mode);
                 if (mode.includesPdf && widget.showPreview) refresh();
               }),
+          TicketWalletSelector(value: widget.feature.walletEnabled,
+              enabled: widget.feature.isEnabled && !widget.readOnly,
+              ready: _walletReady,
+              onChanged: (value) => _refresh(() => widget.feature.walletEnabled = value)),
           const SizedBox(height: 4),
           if (widget.feature.isEnabled && widget.occasionId > 0)
             TicketDeliveryPreview(
                 revision: jsonEncode([
                   TicketLayoutService.identityKey(),
                   widget.occasionId,
+                  widget.feature.walletEnabled,
+                  _walletReady,
+                  widget.feature.deliveryMode.value,
                   RightsService.currentOccasion()?.aggregateVersion
                 ]),
                 mode: widget.feature.deliveryMode,
@@ -321,12 +340,20 @@ class _TicketSettingsState extends State<TicketSettings> {
                     'p_expected_revision': null,
                     'p_message_type': 'order_tickets',
                     'p_occasion': widget.occasionId,
-                    'p_delivery_mode': null,
+                    'p_delivery_mode': widget.feature.deliveryMode.value,
+                    'p_wallet_enabled': widget.feature.walletEnabled,
                   });
                   return Map<String, dynamic>.from(data as Map);
                 }),
           const SizedBox(height: 16),
         ],
+        TicketWalletAppearanceEditor(
+            feature: widget.feature,
+            occasion: widget.previewOccasion?.toJson() ?? RightsService.currentOccasion()?.toJson() ?? {},
+            occasionId: widget.occasionId > 0 ? widget.occasionId : null,
+            unitId: widget.service.setupUnitId,
+            readOnly: widget.readOnly,
+            onChanged: (appearance) => _refresh(() => widget.feature.walletAppearance = appearance)),
         CheckboxListTile(
             value: widget.feature.pregeneratedTickets,
             title: Text(FeaturesStrings.enablePregeneratedTickets),

@@ -3085,6 +3085,116 @@
       "anon": false,
       "authenticated": false,
       "service_role": false
+    },
+    "public.ticket_wallet_projection_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.refresh_ticket_wallet_term_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.wake_ticket_wallet_worker()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.claim_ticket_wallet(bigint,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.reserve_ticket_wallet_request(bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_ticket_wallet(bigint,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_health()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_ready(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.ticket_wallet_fingerprint(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.prepare_ticket_wallet(uuid,bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.resolve_ticket_wallet(text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.manage_ticket_wallet(bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.claim_payment_refund(uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.complete_payment_refund(uuid,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_recoverable_payment_refunds()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_payment_operation_context(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.command_payment_operation(jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_payment_operation(jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_record_order_cash(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_prepare_order_bank_refund(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_prepare_order_provider_refund(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3115,7 +3225,16 @@
     "database/functions/payment_providers/configuration.sql",
     "database/functions/inventory/delegated_assignments.sql",
     "database/functions/eshop_forms/unit_measurement_approval.sql",
-    "database/functions/eshop_forms/form_measurement_support.sql"
+    "database/functions/eshop_forms/form_measurement_support.sql",
+    "database/functions/ticket_wallet/projection.sql",
+    "database/functions/ticket_wallet/worker.sql",
+    "database/functions/ticket_wallet/sync.sql",
+    "database/functions/ticket_wallet/settings.sql",
+    "database/functions/ticket_wallet/capabilities.sql",
+    "database/functions/payment_providers/refund_dispatch.sql",
+    "database/functions/payment_providers/operations.sql",
+    "database/functions/user_permissions/payment_operations.sql",
+    "database/functions/occasion_setup/email_preview.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

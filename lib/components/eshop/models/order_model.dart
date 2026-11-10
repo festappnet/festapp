@@ -1,3 +1,4 @@
+import 'payment_operation_context.dart';
 import 'package:festapp_core/payments.dart';
 import 'waitlist_summary_model.dart';
 import '../../forms/waitlist_strings.dart';
@@ -83,7 +84,7 @@ class OrderModel extends ITrinaRowModel {
           expiredState,
         ].contains(state) ||
         payment?.bankAccount == null ||
-        (payment!.amount ?? 0) <= (payment.paid ?? 0)) {
+        (payment!.amount ?? 0) <= payment.net) {
       return null;
     }
     return payment.bankSyncWarning;
@@ -99,9 +100,12 @@ class OrderModel extends ITrinaRowModel {
   // Read-only payment method supplied by authorized order/history projections.
   String? paymentMethod;
   String? paymentChannel;
+  PaymentOperationContext paymentOperations;
   bool get isProviderPayment =>
-      paymentConnectors.contains(paymentInfoModel?.paymentMethod ?? paymentMethod);
-  int get amountDecimalDigits => isProviderPayment ? 2 : 0;
+      paymentConnectors.containsHosted(paymentInfoModel?.paymentMethod ?? paymentMethod);
+  int get amountDecimalDigits => isProviderPayment ||
+      [price, paymentInfoModel?.amount, paymentInfoModel?.net, paymentInfoModel?.returned]
+          .any((value) => value != null && value % 1 != 0) ? 2 : 0;
   String? noteHidden;
   Map<String, dynamic>? emailDelivery;
 
@@ -231,6 +235,7 @@ class OrderModel extends ITrinaRowModel {
     this.currencyCode,
     this.paymentMethod,
     this.paymentChannel,
+    this.paymentOperations = const PaymentOperationContext(),
     this.noteHidden,
     this.form,
     this.relatedTickets,
@@ -274,6 +279,7 @@ class OrderModel extends ITrinaRowModel {
       currencyCode: json[TbEshop.orders.currency_code],
       paymentMethod: json['payment_method'] as String?,
       paymentChannel: json['paymentChannel'] as String?,
+      paymentOperations: PaymentOperationContext.fromJson(json['paymentOperations'] as Map? ?? const {}),
       state: json[TbEshop.orders.state],
       formKey: orderData is Map<String, dynamic>
           ? orderData[TbEshop.orders.data_form]
@@ -353,8 +359,8 @@ class OrderModel extends ITrinaRowModel {
                   decimalDigits: amountDecimalDigits)
               : ""),
       EshopColumnIds.PAYMENT_INFO_PAID: TrinaCell(
-          value: paymentInfoModel?.paid != null
-              ? Utilities.formatPrice(context, paymentInfoModel!.paid!,
+          value: paymentInfoModel != null
+              ? Utilities.formatPrice(context, paymentInfoModel!.net,
                   currencyCode: paymentInfoModel!.currencyCode,
                   decimalDigits: amountDecimalDigits)
               : ""),

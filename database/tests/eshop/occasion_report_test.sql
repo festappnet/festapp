@@ -34,7 +34,9 @@ BEGIN
   INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state,payment_info) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,100,'paid',p3) RETURNING id INTO o4;
   INSERT INTO eshop.orders(order_sequence, order_symbol, occasion,price,state) VALUES(public.next_order_sequence(occ), public.generate_order_symbol(), occ,NULL,'future'),(public.next_order_sequence(occ), public.generate_order_symbol(), occ,0,NULL);
   INSERT INTO eshop.transactions(date,amount,currency,bank_account_id,payment_info,transaction_type)
-    VALUES(now(),40,'CZK',bank,p1,'manual'),(now(),-20,'CZK',bank,p1,'manual');
+    VALUES(now(),40,'CZK',bank,p1,'manual'),(now(),80,'CZK',bank,p1,'bank'),(now(),-20,'CZK',bank,p1,'return'),
+      (now(),30,'EUR',bank,p2,'bank'),(now(),-5,'EUR',bank,p2,'return'),
+      (now(),25,'CZK',bank,p3,'bank'),(now(),40,'CZK',bank,p4,'bank'),(now(),-10,'CZK',bank,p4,'return');
   INSERT INTO eshop.products(title,occasion) VALUES('Same title',occ) RETURNING id INTO product1;
   INSERT INTO eshop.products(title,occasion) VALUES('Same title',occ) RETURNING id INTO product2;
   INSERT INTO eshop.tickets(occasion,state) VALUES(occ,'paid') RETURNING id INTO ticket_id;
@@ -95,7 +97,7 @@ BEGIN
   r:=public.get_report_ws('report-metrics');
   RESET ROLE;
   PERFORM assert_true(r->'report'->'timeline'->'orders' @> '[{"day":"2026-10-02","currency":"CZK","count":1}]', 'Prague order day at UTC midnight boundary');
-  PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-01","currency":"CZK","received":"40.00","returned":"20.00"}]','shared payment transactions counted once');
+  PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-01","currency":"CZK","received":"120.00","returned":"20.00"}]','shared payment transactions counted once');
   PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-03","currency":"CZK","received":"12.50","returned":"0"}]','partial bank payment on still ordered order');
   PERFORM assert_true(r->'report'->'timeline'->'payments' @> '[{"day":"2026-10-03","currency":"EUR","received":"10.00"}]','currencies remain separate');
   UPDATE eshop.orders SET currency_code='EUR' WHERE id=o2;
@@ -114,7 +116,7 @@ BEGIN
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');
   RESET ROLE;
-  PERFORM assert_true(r->'report'->'warnings' @> '[{"code":"negative_other_received","count":1}]','negative other visible');
+  PERFORM assert_true(r->'report'->'warnings' @> '[{"code":"payment_total_without_ledger","count":3}]','stale summaries are visible while reports use actual movements');
   DELETE FROM public.occasion_users WHERE occasion=occ AND "user"=u;
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');

@@ -1,7 +1,7 @@
 import { orderTemplateValues, resolveEmailLanguage } from "./emailCommunication.ts";
 import { resolveCommunicationTone } from "./communicationTone.ts";
 /** Ticket delivery reuses the canonical payment presentation and order text. */
-import { paidPaymentSubstitutions } from "./orderEmailPresentation.ts";
+import { confirmedNetPayment, paidPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import { generateFullOrder } from "./orderOverview.ts";
 export function ticketEmailSubstitutions(data: any, requestedLanguage = "cs") {
   const lang = resolveEmailLanguage(requestedLanguage);
@@ -11,7 +11,7 @@ export function ticketEmailSubstitutions(data: any, requestedLanguage = "cs") {
     ...orderTemplateValues("TICKET_ORDER_PAYMENT_DONE", occasion.title, order.order_symbol, tone, lang),
     ...paidPaymentSubstitutions(
       Number(payment_info?.amount ?? order.price ?? 0),
-      Number(payment_info?.paid ?? order.price ?? 0),
+      confirmedNetPayment(payment_info, Number(order.price ?? 0)),
       order.currency_code ?? "CZK",
       occasion.features ?? [],
       lang,

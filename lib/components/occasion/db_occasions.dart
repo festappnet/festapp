@@ -164,6 +164,7 @@ class DbOccasions {
           'appearance': {
             'background': ticket.ticketBackground,
             'ticket_type': ticket.ticketType,
+            if (ticket.walletAppearance != null) 'wallet_appearance': ticket.walletAppearance,
           },
         }),
       ) as Map,

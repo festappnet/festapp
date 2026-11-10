@@ -2,6 +2,11 @@
 <html lang="cs">
 <head>
   <script>
+    // Remove a Wallet capability before any external resource or analytics executes.
+    if (/^\/wallet\/?$/.test(window.location.pathname)) {
+      window.__festappWalletToken = /^[a-f0-9]{64}$/.test(window.location.hash.slice(1)) ? window.location.hash.slice(1) : '';
+      window.history.replaceState(window.history.state, '', '/wallet');
+    }
     // Capture personal sale links before routing, resources or analytics.
     (function () {
       const target = new URL(window.location.href);

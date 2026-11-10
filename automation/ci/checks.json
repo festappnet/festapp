@@ -263,7 +263,7 @@
       }
     },
     "web-startup": {
-      "script": "bash automation/test_web_startup.sh\n",
+      "script": "bash automation/test_web_startup.sh\n\npnpm --dir web_client exec node --test tests/components/ticket_wallet_page.test.js\n",
       "after": [
         "web-install"
       ],
@@ -410,7 +410,7 @@
       }
     },
     "seat-contract": {
-      "script": "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\n\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\npython3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n",
+      "script": "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\n\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\npython3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\npython3 automation/assemble-payment-operations-migration.py --check\nnode --test database/tests/eshop/payment_operations_concurrency.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -421,7 +421,7 @@
       }
     },
     "seat-notifications": {
-      "script": "python3 automation/assemble-notification-center-migration.py --check\nnode --test automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock supabase/functions/_shared/notificationDispatcher_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n",
+      "script": "python3 automation/assemble-notification-center-migration.py --check\nnode --test automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock supabase/functions/_shared/notificationDispatcher_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
       "after": [
         "seat-database"
       ],
@@ -442,7 +442,7 @@
       }
     },
     "ticket-edge": {
-      "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-sign-in-code/teamAccessNotice_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n",
+      "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-sign-in-code/teamAccessNotice_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/googleWallet_test.ts supabase/functions/_shared/ticketWallet_test.ts supabase/functions/_shared/ticketWalletEmail_test.ts\n",
       "after": [],
       "resources": {
         "ramMiB": 1100
@@ -468,7 +468,7 @@
       }
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -557,7 +557,8 @@
         "legacy_ticket_offer_test",
         "blueprint/resource_admission_test",
         "database/tests/eshop_orders/payment_lifecycle_",
-        "database/tests/eshop_orders/payment_product_transition_regression_test.sql"
+        "database/tests/eshop_orders/payment_product_transition_regression_test.sql",
+        "database/tests/eshop_orders/refund_"
       ]
     },
     "seat-contract-2": {
@@ -702,6 +703,7 @@
       "database/tests/bank_account_sync_test.sql",
       "database/tests/bank_account_unlink_test.sql",
       "database/tests/blueprint/authorization_test.sql",
+      "database/tests/blueprint/automatic_form_binding_test.sql",
       "database/tests/blueprint/canonical_storage_test.sql",
       "database/tests/blueprint/canonical_text_resources_test.sql",
       "database/tests/blueprint/capacity_resources_test.sql",
@@ -712,7 +714,6 @@
       "database/tests/blueprint/legacy_ticket_offer_test.sql",
       "database/tests/blueprint/resource_admission_test.sql",
       "database/tests/blueprint/seating_assignment_test.sql",
-      "database/tests/blueprint/automatic_form_binding_test.sql",
       "database/tests/blueprint/seating_context_test.sql",
       "database/tests/blueprint/staged_tenant_readers_test.sql",
       "database/tests/blueprint/table_edge_counts_test.sql",
@@ -889,6 +890,8 @@
       "database/tests/eshop_orders/payment_lifecycle_matrix_test.sql",
       "database/tests/eshop_orders/payment_product_transition_regression_test.sql",
       "database/tests/eshop_orders/per_ticket_personal_answer_isolation_test.sql",
+      "database/tests/eshop_orders/refund_deletion_fence_test.sql",
+      "database/tests/eshop_orders/refund_financial_projections_test.sql",
       "database/tests/eshop_orders/required_seat_checkout_test.sql",
       "database/tests/eshop_orders/required_ticket_spot_transport_test.sql",
       "database/tests/eshop_orders/ticket_multiselect_product_transport_test.sql",
@@ -975,6 +978,7 @@
       "database/tests/occasion_setup/sales_test.sql",
       "database/tests/occasion_setup/sources_test.sql",
       "database/tests/occasion_setup/ticket_delivery_test.sql",
+      "database/tests/occasion_setup/ticket_wallet_test.sql",
       "database/tests/occasion_setup/usability_test.sql",
       "database/tests/operations/authoring_write_fences_test.sql",
       "database/tests/operations/configuration_version_writers_test.sql",
@@ -993,6 +997,7 @@
       "database/tests/organization_verification/profile_test.sql",
       "database/tests/organization_verification/public_projection_test.sql",
       "database/tests/others/sync_via_http_test.sql",
+      "database/tests/payment_providers/bank_refund_contract_test.sql",
       "database/tests/payment_providers/cash_command_guards_test.sql",
       "database/tests/payment_providers/cash_configuration_lifecycle_test.sql",
       "database/tests/payment_providers/cash_history_access_test.sql",
@@ -1002,7 +1007,9 @@
       "database/tests/payment_providers/cash_setup_roundtrip_test.sql",
       "database/tests/payment_providers/connector_contract_test.sql",
       "database/tests/payment_providers/effects_test.sql",
+      "database/tests/payment_providers/payment_operations_test.sql",
       "database/tests/payment_providers/projections_configuration_test.sql",
+      "database/tests/payment_providers/refund_provider_dispatch_test.sql",
       "database/tests/payment_providers/setup_and_revision_test.sql",
       "database/tests/performance/get_occasions_payload_size_test.sql",
       "database/tests/performance/unit_dashboard_test.sql",
@@ -1316,6 +1323,7 @@
     "database/tests/eshop/orders/fakturoid_deletion_context_test.sql",
     "database/tests/eshop/orders/update_order_state_test.sql",
     "database/tests/eshop/orders/update_ticket_products_ws_test.sql",
+    "database/tests/eshop/payment_operations_concurrency.test.mjs",
     "database/tests/eshop/payment_product_transition_concurrency.test.mjs",
     "database/tests/eshop/payment_reference_reservations_test.sql",
     "database/tests/eshop/product_authoring_versions_test.sql",
@@ -1403,6 +1411,8 @@
     "database/tests/eshop_orders/payment_lifecycle_matrix_test.sql",
     "database/tests/eshop_orders/payment_product_transition_regression_test.sql",
     "database/tests/eshop_orders/per_ticket_personal_answer_isolation_test.sql",
+    "database/tests/eshop_orders/refund_deletion_fence_test.sql",
+    "database/tests/eshop_orders/refund_financial_projections_test.sql",
     "database/tests/eshop_orders/required_seat_checkout_test.sql",
     "database/tests/eshop_orders/required_ticket_spot_transport_test.sql",
     "database/tests/eshop_orders/ticket_multiselect_product_transport_test.sql",
@@ -1492,6 +1502,7 @@
     "database/tests/occasion_setup/sales_test.sql",
     "database/tests/occasion_setup/sources_test.sql",
     "database/tests/occasion_setup/ticket_delivery_test.sql",
+    "database/tests/occasion_setup/ticket_wallet_test.sql",
     "database/tests/occasion_setup/usability_test.sql",
     "database/tests/operations/authoring_write_fences_test.sql",
     "database/tests/operations/configuration_version_writers_test.sql",
@@ -1510,6 +1521,7 @@
     "database/tests/organization_verification/profile_test.sql",
     "database/tests/organization_verification/public_projection_test.sql",
     "database/tests/others/sync_via_http_test.sql",
+    "database/tests/payment_providers/bank_refund_contract_test.sql",
     "database/tests/payment_providers/cash_command_guards_test.sql",
     "database/tests/payment_providers/cash_configuration_lifecycle_test.sql",
     "database/tests/payment_providers/cash_history_access_test.sql",
@@ -1519,7 +1531,9 @@
     "database/tests/payment_providers/cash_setup_roundtrip_test.sql",
     "database/tests/payment_providers/connector_contract_test.sql",
     "database/tests/payment_providers/effects_test.sql",
+    "database/tests/payment_providers/payment_operations_test.sql",
     "database/tests/payment_providers/projections_configuration_test.sql",
+    "database/tests/payment_providers/refund_provider_dispatch_test.sql",
     "database/tests/payment_providers/setup_and_revision_test.sql",
     "database/tests/performance/get_occasions_payload_size_test.sql",
     "database/tests/performance/unit_dashboard_test.sql",
@@ -1626,6 +1640,7 @@
     "supabase/functions/_shared/emailWorkerEnvironment_test.ts",
     "supabase/functions/_shared/googleAuthFlow_test.ts",
     "supabase/functions/_shared/googleAuthProtocol_test.ts",
+    "supabase/functions/_shared/googleWallet_test.ts",
     "supabase/functions/_shared/invitationDelivery_test.ts",
     "supabase/functions/_shared/issueExistingUserSession_test.ts",
     "supabase/functions/_shared/layoutFontFamily_test.ts",
@@ -1647,8 +1662,10 @@
     "supabase/functions/_shared/payments/checkout_test.ts",
     "supabase/functions/_shared/payments/contracts_test.ts",
     "supabase/functions/_shared/payments/email_test.ts",
+    "supabase/functions/_shared/payments/operationHandler_test.ts",
     "supabase/functions/_shared/payments/reconcileHandler_test.ts",
     "supabase/functions/_shared/payments/reconcile_test.ts",
+    "supabase/functions/_shared/payments/refunds_test.ts",
     "supabase/functions/_shared/runtime_resource_metrics_test.ts",
     "supabase/functions/_shared/saleOpeningEmail_test.ts",
     "supabase/functions/_shared/stripe/connect_test.ts",
@@ -1672,6 +1689,8 @@
     "supabase/functions/_shared/ticketTemplateImport_test.ts",
     "supabase/functions/_shared/ticketText_test.ts",
     "supabase/functions/_shared/ticketTheme_test.ts",
+    "supabase/functions/_shared/ticketWalletEmail_test.ts",
+    "supabase/functions/_shared/ticketWallet_test.ts",
     "supabase/functions/_shared/unitVerificationEmail_test.ts",
     "supabase/functions/_shared/waitlistEmailRenderer_test.ts",
     "supabase/functions/_shared/waitlistEmail_test.ts",
@@ -1882,6 +1901,7 @@
     "web_client/tests/components/public_actions_keyboard.test.js",
     "web_client/tests/components/reference_carousel.test.js",
     "web_client/tests/components/text_field_builder.test.js",
+    "web_client/tests/components/ticket_wallet_page.test.js",
     "web_client/tests/components/topic_tools.test.js",
     "web_client/tests/components/user_header_admin_loading.test.js",
     "web_client/tests/components/user_header_admin_navigation.test.js",

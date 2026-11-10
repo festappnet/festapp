@@ -40,6 +40,33 @@ Manual mark-paid does not enqueue delivery. See the
 [payment lifecycle plan](../../../docs/plans/payment-lifecycle-unification-plan-2026-10-29.md)
 for the transition, history and concurrency contracts.
 
+## Unified payment operations
+
+The plus and minus actions use `payment-operation`, which authenticates the user
+and delegates to `command_payment_operation`. SQL resolves the installed connector
+and its capabilities for the stored order/account/currency. Context and previews
+are server-owned. The dialog retains its original command and draft across an
+uncertain result; closing a prepared bank instruction does not cancel it.
+
+Cash confirmation creates an audited negative CASH movement. Bank preparation
+creates an immutable recipient instruction and reservation, using the original
+VS or stored EUR RF; only BankSync confirms the actual debit. External dispatch
+uses the original connector payment and its existing verified ledger. UI states
+must distinguish prepared, pending and confirmed. Barion refund writes remain
+unavailable; unsupported currencies/codecs never get a fake QR.
+
+The grid shows net confirmed payment. Detail/report/public order projections
+separate received, refunded, net and pending; pending reserves availability
+without reducing confirmed money. `payment_financial_totals_internal` and the
+shared transaction movement classifier own the calculation. Historical negative
+manual corrections retain their meaning. Cash refund corrections are explicit
+and audited; generic transaction deletion cannot remove refund history.
+
+Refund reservations/history protect order deletion and source unlinking. Cancelled
+or expired orders update finance without reviving tickets or payment reminders.
+See [payment connector ownership](../../../docs/architecture/payment-providers.md)
+and [local execution evidence](../../../docs/plans/cash-refunds-RESULT-2026-11-10.md).
+
 ## Gotchas
 
 - **Stringly Typed**: `OrderModel` fields mapped from `Tb` class strings. Renames break silently.

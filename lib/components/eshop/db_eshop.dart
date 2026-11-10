@@ -1,3 +1,4 @@
+import 'models/payment_operation_context.dart';
 import 'models/order_payment_actions.dart';
 
 import 'package:fstapp/app_config.dart';
@@ -425,10 +426,12 @@ class GetTransactionsForOrderResponse {
   final PaymentInfoModel? paymentInfo;
   final List<TransactionModel> transactions;
   final OrderPaymentActions actions;
+  final PaymentOperationContext paymentOperations;
 
   GetTransactionsForOrderResponse({
     this.orderState,
     this.actions = const OrderPaymentActions(),
+    this.paymentOperations = const PaymentOperationContext(),
     required this.paymentInfo,
     required this.transactions,
   });
@@ -457,6 +460,9 @@ class GetTransactionsForOrderResponse {
 
     return GetTransactionsForOrderResponse(
       orderState: json['order_state'] as String?,
+      paymentOperations: PaymentOperationContext.fromJson(
+        json['paymentOperations'] as Map? ?? const {},
+      ),
       actions: OrderPaymentActions.fromJson(
         json['actions'] as Map? ?? const {},
       ),
