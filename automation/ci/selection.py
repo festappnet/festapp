@@ -24,7 +24,7 @@ def git(*args):
 def api(repository, endpoint, paginate=False):
     return json.loads(subprocess.check_output(
         ['gh', 'api', *(['--paginate', '--slurp'] if paginate else []),
-         f'repos/{repository}/{endpoint}'], cwd=ROOT, text=True))
+         f'repos/{repository}' + (f'/{endpoint}' if endpoint else '')], cwd=ROOT, text=True))
 
 
 def owners(path, contract):
