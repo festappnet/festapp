@@ -136,7 +136,7 @@ void main() {
               body: SingleChildScrollView(
                   child: RichHtmlEditor(controller: controller)))));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.info_outline), findsNothing);
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
       final before = tester.getRect(find.byType(EmailPreviewHtml));
       final primary = Theme.of(tester.element(find.byType(RichHtmlEditor))).colorScheme.primary;
       Finder outline(Color color, double width) => find.byWidgetPredicate((widget) {
@@ -153,7 +153,7 @@ void main() {
       expect(outline(primary.withValues(alpha: .7), 1.5), findsOneWidget);
       await mouse.moveTo(Offset.zero);
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.info_outline), findsNothing);
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
       expect(controller.focusNode.hasFocus, isFalse);
       await tester.tapAt(before.topLeft + const Offset(20, 20));
       await tester.pumpAndSettle();

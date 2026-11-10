@@ -13,6 +13,7 @@ import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/template_authoring.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:super_editor/super_editor.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 
@@ -100,6 +101,117 @@ void main() {
     }
   });
 
+  for (final code in EmailTemplateModel.substitutionDefinitions.keys) {
+    for (final field in EmailTargetField.values) {
+      testWidgets(
+        '$code $field toolbar chooser stays visible with offscreen caret',
+        (tester) async {
+          final provider = EmailAuthoringProvider(
+            EmailTemplateModel(code: code),
+            field: field,
+          );
+          final source = field == EmailTargetField.subject
+              ? '<p>${'Long subject ' * 100}</p>'
+              : '${'<p>Long email paragraph</p>' * 40}<p>End</p>';
+          final controller = RichHtmlEditorController(
+            initialHtml: source,
+            owner: const HtmlMediaOwner.none(),
+            authoring: provider,
+          );
+          await tester.pumpWidget(
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  child: RichHtmlEditor(controller: controller),
+                ),
+              ),
+            ),
+          );
+          await tester.tap(find.byIcon(Icons.alternate_email));
+          await tester.pumpAndSettle();
+          expect(controller.hasUserChanges, isFalse);
+          expect(find.byType(TextField).hitTestable(), findsOneWidget);
+          final entries = provider.search('', const {});
+          if (entries.isEmpty) {
+            expect(find.text(provider.emptyLabel), findsOneWidget);
+            await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+            await tester.pumpAndSettle();
+            await tester.pumpWidget(const SizedBox());
+            controller.dispose();
+            return;
+          }
+          final entry = entries.firstWhere((e) => !e.block);
+          await tester.enterText(find.byType(TextField), entry.code);
+          await tester.pumpAndSettle();
+          await tester.testTextInput.receiveAction(TextInputAction.done);
+          await tester.pumpAndSettle();
+          expect(controller.html, contains('{{${entry.code}}}'));
+          expect(find.byType(TextField), findsNothing);
+          await tester.pumpWidget(const SizedBox());
+          controller.dispose();
+        },
+      );
+    }
+  }
+  testWidgets('inline variable info responds to actual editor taps', (
+    tester,
+  ) async {
+    final provider = EmailAuthoringProvider(
+      EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
+      field: EmailTargetField.body,
+    );
+    final controller = RichHtmlEditorController(
+      initialHtml: '<p>Hello {{occasionTitle}}</p>',
+      owner: const HtmlMediaOwner.none(),
+      authoring: provider,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: RichHtmlEditor(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.info_outline));
+    await tester.pumpAndSettle();
+    expect((tester.widget<AppAlertDialog>(find.byType(AppAlertDialog)).content as Text).data,
+        provider.entry('occasionTitle')!.description);
+    expect(controller.hasUserChanges, isFalse);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+  final checkedVariables = <String>{};
+  final infoExamples = EmailPreviewExamples.fromJson(jsonDecode(
+      File('assets/email_templates/preview_examples.json').readAsStringSync()));
+  for (final template in EmailTemplateModel.substitutionDefinitions.entries) {
+    for (final sub in template.value) {
+      if (!checkedVariables.add(sub.code)) continue;
+      for (final inline in [false, true]) {
+        testWidgets('${sub.code} info works in ${inline ? 'inline' : 'standalone'} content', (tester) async {
+          final provider = EmailAuthoringProvider(EmailTemplateModel(code: template.key),
+              field: EmailTargetField.body, scenario: infoExamples.scenariosFor(template.key).first)
+            ..inlineTicketsEnabled = true;
+          final controller = RichHtmlEditorController(
+              initialHtml: inline ? '<p>Before {{${sub.code}}} after</p>' : '<p>{{${sub.code}}}</p>',
+              owner: const HtmlMediaOwner.none(), authoring: provider);
+          await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+              home: Scaffold(body: SingleChildScrollView(child: RichHtmlEditor(controller: controller)))));
+          await tester.pumpAndSettle();
+          expect(find.byIcon(Icons.info_outline), findsOneWidget);
+          await tester.tapAt(tester.getCenter(find.byIcon(Icons.info_outline)));
+          await tester.pumpAndSettle();
+          expect(find.byType(AppAlertDialog), findsOneWidget);
+          expect((tester.widget<AppAlertDialog>(find.byType(AppAlertDialog)).content as Text).data,
+              provider.entry(sub.code)!.description);
+          expect(controller.hasUserChanges, isFalse);
+          await tester.pumpWidget(const SizedBox());
+          controller.dispose();
+        }, variant: TargetPlatformVariant({TargetPlatform.android, TargetPlatform.macOS}));
+      }
+    }
+  }
   testWidgets('ticket variable example shows the delivered QR structure',
       (tester) async {
     final provider = EmailAuthoringProvider(
