@@ -159,9 +159,11 @@ export function measurementManifest(policy, formLink) {
         policy.profile !== 'gtm-v1' || !measurementId(formLink) ||
         JSON.stringify(policy.required_purposes) !== JSON.stringify(['analytics', 'marketing'])) return null;
     return {measurement_protocol:measurementProtocol, organization:policy.organization, unit:policy.unit, form_link:formLink,
+        measurement_consent_bridge:policy.measurement_consent_bridge === true,
         processing_revision:policy.processing_revision, runtime_revision:policy.runtime_revision,
         policy_revision:policy.policy_revision, profile:policy.profile, required_purposes:['analytics','marketing']};
 }
 export const sameMeasurementManifest = (a,b) => !!a && !!b &&
     ['measurement_protocol','organization','unit','form_link','processing_revision','runtime_revision','policy_revision','profile','required_purposes']
-        .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key]));
+        .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key])) &&
+    (a.measurement_consent_bridge === true) === (b.measurement_consent_bridge === true);

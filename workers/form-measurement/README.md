@@ -59,7 +59,24 @@ Both modes still require an approved host and show no consent bar inside the emb
 Direct visits keep the Unit runtime and Klaro bar.
 
 For Unit runtime measurement, the helper measures on its own. A host CMP adapter is
-optional and only reports the choice (without one, runtime consent stays denied):
+optional and only reports the choice. Automatic reading requires the Unit opt-in `measurement_consent_bridge`, disabled
+by default, including for existing organizers. Enabling it confirms that the host
+website and form have the same controller and the website banner explicitly
+covers the embedded vstupenky.online form, purposes, GTM services, `*.pages.dev`
+runtime and Festapp as processor. The organizer retains CMP consent evidence.
+The switch changes processing_revision and is included in the manifest.
+Marketing requires explicit grants for all three ad consent types; missing types
+mean denied. TCF presence (`__tcfapi`) always denies marketing without reading TCF;
+analytics follows Consent Mode. ICS is polled every 250 ms, Arguments commands in
+dataLayer every second with incremental scanning. Arrays are ignored. A withdrawal
+can race a purchase within that 250 ms or 1 s window; browser suspension can extend
+it. Delivered data cannot be recalled. Website mode unsubscribes polling and Unit
+mode reconnects. A changed Unit or processing revision stays denied until a new
+binding. See the full host consent contract for banner and adapter requirements.
+An explicit adapter replaces that source, including after disconnection. Website
+transport keeps consent in the host's GTM. See the
+[host consent contract](../../docs/integrations/form-datalayer.md#runtime-consent-and-transport).
+For a revision-aware explicit source:
 
 ```js
 const disconnect = FestappEmbed.connectMeasurementConsent(frame, {

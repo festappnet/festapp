@@ -10,6 +10,8 @@ import '../unit_measurement_approval.dart';
 /// The owning screen saves these fields through the canonical Unit aggregate.
 class UnitMeasurementSettings extends StatelessWidget {
   final bool enabled;
+  final bool consentBridge;
+  final ValueChanged<bool>? onConsentBridgeChanged;
   final String consentLayout;
   final bool canEdit;
   final bool hasStoredTitle;
@@ -32,6 +34,8 @@ class UnitMeasurementSettings extends StatelessWidget {
   const UnitMeasurementSettings({
     super.key,
     required this.enabled,
+    this.consentBridge = false,
+    this.onConsentBridgeChanged,
     required this.consentLayout,
     required this.canEdit,
     this.hasStoredTitle = false,
@@ -93,6 +97,13 @@ class UnitMeasurementSettings extends StatelessWidget {
             ),
           ),
         ],
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(FormStrings.measurementConsentBridge),
+          subtitle: Text(FormStrings.measurementConsentBridgeConfirmation),
+          value: consentBridge,
+          onChanged: canEdit ? onConsentBridgeChanged : null,
+        ),
         if (enabled && loadingApproval) ...[
           const SizedBox(height: 8),
           Text(CommonStrings.loading),

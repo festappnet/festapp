@@ -32,8 +32,8 @@ REVOKE ALL ON analytics.organization_policy FROM PUBLIC,anon,authenticated,servi
 -- the single canonical Unit configuration; browsers never get raw script data.
 CREATE OR REPLACE FUNCTION public.form_measurement_unit_data_internal(p_unit bigint,p_data jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT CASE WHEN public.can_manage_unit_configuration(p_unit) THEN jsonb_build_object('measurement_consent_version',1)||coalesce(p_data,'{}'::jsonb)
-  ELSE (jsonb_build_object('measurement_consent_version',1)||coalesce(p_data,'{}'::jsonb))-'measurement_gtm_container'-'measurement_scripts' END;
+ SELECT CASE WHEN public.can_manage_unit_configuration(p_unit) THEN jsonb_build_object('measurement_consent_version',1,'measurement_consent_bridge',false)||coalesce(p_data,'{}'::jsonb)
+  ELSE (jsonb_build_object('measurement_consent_version',1,'measurement_consent_bridge',false)||coalesce(p_data,'{}'::jsonb))-'measurement_gtm_container'-'measurement_scripts' END;
 $$;
 REVOKE ALL ON FUNCTION public.form_measurement_unit_data_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -81,16 +81,19 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('enabled',s->'requested_enabled','organization_allowed',s->'organization_allowed',
   'runtime_supported',s->'runtime_supported','eligible',s->'eligible','organization',o.organization,'unit',u.id,
   'runtime_origin',CASE WHEN s->'eligible'='true'::jsonb THEN r.runtime_origin END,
+  'measurement_consent_bridge',coalesce(u.data->'measurement_consent_bridge'='true'::jsonb,false),
   'privacy_url',CASE WHEN s->'eligible'='true'::jsonb THEN u.data->>'measurement_privacy_url' END,
   'consent_notice',CASE WHEN s->'eligible'='true'::jsonb THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
    'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
   'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
   'measurement_protocol',3,'form_link',f.link,'profile',r.runtime_profile,'required_purposes',jsonb_build_array('analytics','marketing'),
   'enhanced_conversions_unavailable',false,
-  'processing_revision',md5(jsonb_build_array(3,o.organization,u.id,u.data->'measurement_gtm_container',u.data->'measurement_scripts',
+  -- Append the opt-in only when enabled to preserve existing saved choices.
+  'processing_revision',md5((jsonb_build_array(3,o.organization,u.id,u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_privacy_url',coalesce(u.data->'measurement_consent_version','1'::jsonb),r.runtime_profile,r.runtime_origin,
    r.parent_origins,r.collector_origins,r.revision,s->'policy_revision',u.data->'measurement_enabled',
-   org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')::text),
+   org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')
+   ||CASE WHEN u.data->'measurement_consent_bridge'='true'::jsonb THEN jsonb_build_array(true) ELSE '[]'::jsonb END)::text),
   'configuration_revision',md5(jsonb_build_array(u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_enabled',org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')::text),
   'runtime_revision',coalesce(r.revision,0),'policy_revision',s->'policy_revision','valid_for_seconds',60,'consent_required',true)

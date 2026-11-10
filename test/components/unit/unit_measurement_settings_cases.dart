@@ -14,7 +14,7 @@ void main() {
   WidgetEnvironmentFixture.register();
 
   for (final canEdit in [true, false]) {
-    testWidgets('destinations remain discoverable when off; canEdit=$canEdit', (
+    testWidgets('destinations and consent bridge opt-in when off; canEdit=$canEdit', (
       tester,
     ) async {
       final fixture = WidgetEnvironmentFixture(
@@ -34,6 +34,7 @@ void main() {
       addTearDown(gtm.dispose);
       addTearDown(scripts.dispose);
       bool enabled = false;
+      bool consentBridge = false;
       String layout = 'bar';
       final consentTitle = TextEditingController();
       final consentText = TextEditingController();
@@ -50,6 +51,9 @@ void main() {
                 builder: (context, setState) => Form(
                   child: UnitMeasurementSettings(
                     enabled: enabled,
+                    consentBridge: consentBridge,
+                    onConsentBridgeChanged: (value) =>
+                        setState(() => consentBridge = value),
                     consentLayout: layout,
                     consentTitleController: consentTitle,
                     consentTextController: consentText,
@@ -99,6 +103,19 @@ void main() {
           field.validator!(invalid),
           FormStrings.measurementPrivacyUrlInvalid,
         );
+      }
+      final bridgeSwitch = find.widgetWithText(
+        SwitchListTile, FormStrings.measurementConsentBridge,
+      );
+      final bridge = tester.widget<SwitchListTile>(bridgeSwitch);
+      expect(bridge.value, isFalse);
+      expect(bridge.onChanged == null, !canEdit);
+      expect(find.text(FormStrings.measurementConsentBridgeConfirmation), findsOneWidget);
+      if (canEdit) {
+        await tester.ensureVisible(bridgeSwitch);
+        await tester.tap(bridgeSwitch);
+        await tester.pumpAndSettle();
+        expect(consentBridge, isTrue);
       }
       final enabledSwitch = find.widgetWithText(
         SwitchListTile,

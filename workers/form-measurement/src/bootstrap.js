@@ -56,6 +56,7 @@ window.addEventListener('message', event => {
         // keeps the saved choice when a container template sets its own default.
         gtag('consent','default',consentState(consent));
         gtag('consent','update',consentState(consent));
+        gtag('set','ads_data_redaction',true);
         // This profile runs on a separate site inside the public form. Google's
         // default SameSite cookie setting prevents collection in that context.
         gtag('set',{cookie_flags:'SameSite=None;Secure'});
@@ -85,6 +86,7 @@ window.addEventListener('message', event => {
     } else if (message.type === 'consent' && message.instance === instance && message.generation === generation) {
         consent = measurementConsent(message.consent);
         gtag('consent','update',consentState(consent));
+        gtag('set','ads_data_redaction',true);
         dataLayer.push({event:'festapp_consent_update',festapp_consent:{...consent},...consent});
     } else if (message.type === 'event' && message.instance === instance && message.generation === generation) {
         push(message.payload);

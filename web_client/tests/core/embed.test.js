@@ -799,8 +799,8 @@ test('cutover: record owns Klaro subscription and ignores retired watcher update
  }finally{f.dom.window.close();}
 });
 test('cutover: retired record heartbeat is removed on origin replacement and pagehide',async()=>{
- const timers=new Map();let n=0;
- const f=host(false,win=>{win.setInterval=fn=>{timers.set(++n,fn);return n;};win.clearInterval=id=>timers.delete(id);});
+ const timers=new Map(),polls=new Map();let n=0;
+ const f=host(false,win=>{win.setInterval=(fn,delay)=>{(delay===1000?polls:timers).set(++n,fn);return n;};win.clearInterval=id=>{timers.delete(id);polls.delete(id);};});
  const frame=f.frames[0],instance=f.sent[0][0][0].instance;
  const context=(id=instance,origin='https://tickets.invalid')=>f.message(frame,origin,envelope('measurement-context',id,{measurement:{protocol:measurementProtocol,manifest:measurement}}));
  try{
@@ -813,6 +813,7 @@ test('cutover: retired record heartbeat is removed on origin replacement and pag
   f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pagehide',{persisted:true}));assert.equal(timers.size,0);
   f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pageshow',{persisted:true}));assert.equal(timers.size,1);
   frame.remove();await new Promise(resolve=>setImmediate(resolve));assert.equal(timers.size,0);
+  assert.equal(polls.size,0,'consent polling stops with the last embed');
  }finally{f.dom.window.close();}
 });
 
@@ -834,7 +835,7 @@ test('cutover: bridge publishes the complete canonical manifest to the real help
   f.bridge.connectConsent(measurement,()=>{});
   f.init({measurementProtocol,dataLayer:true});
   const context=f.sent.find(([message])=>message.type==='measurement-context')[0].measurement;
-  assert.equal(context.protocol,measurementProtocol);assert.deepEqual(context.manifest,measurement);
+  assert.equal(context.protocol,measurementProtocol);assert.deepEqual(context.manifest,{...measurement,measurement_consent_bridge:false});
  }finally{f.done();}
 });
 

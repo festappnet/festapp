@@ -1,10 +1,12 @@
 import {measurementProtocol, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
+import {createHostConsentMode} from './host_consent_mode.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
 // Presence is the long-lived public opt-in; absent preserves existing embeds.
 export const usesHostDataLayer = frame => frame.hasAttribute('data-festapp-datalayer');
 
 export function createHostMeasurement({frames, currentRecord, disposeRecord, scan}) {
     let suspended = false;
+    const consentMode = createHostConsentMode(window);
     const stopHeartbeat = record => {
         clearInterval(record.heartbeat);
         record.heartbeat = null;
@@ -24,6 +26,15 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
     const syncConsent = (frame, record) => {
         if (!currentRecord(frame, record)) { disposeRecord(frame, record); return; }
         if (suspended || !record.manifest) return;
+        const automatic = !record.explicitChoice && !usesHostDataLayer(frame) && record.manifest.measurement_consent_bridge === true;
+        if (!automatic && !record.explicitChoice && record.choice) record.choice.dispose();
+        if (!record.choice && automatic) {
+            bindChoice(frame, record, notify => ({
+                read:scopedChoice(record, () => usesHostDataLayer(frame) ? false : consentMode.read()),
+                dispose:consentMode.subscribe(() => { if (!usesHostDataLayer(frame)) notify(); }),
+            }), false);
+            return;
+        }
         record.heartbeat ??= setInterval(() => syncConsent(frame, record), 20000);
         record.lease ??= {id:crypto.randomUUID()};
         record.lease.until = Date.now() + 60000;
@@ -39,8 +50,9 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         };
     };
     // All public choice adapters install one binding. Retired callbacks are inert.
-    const bindChoice = (frame, record, connect) => {
+    const bindChoice = (frame, record, connect, explicit = true) => {
         if (!currentRecord(frame, record)) return null;
+        if (explicit) record.explicitChoice = true;
         record.choice?.dispose();
         const binding = {read:() => false};
         record.choice = binding;

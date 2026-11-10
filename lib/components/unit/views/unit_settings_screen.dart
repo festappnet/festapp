@@ -67,6 +67,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   bool _isLoadingMeasurementApproval = false;
   bool _measurementApprovalLoadFailed = false;
   bool _isRequestingMeasurement = false;
+  bool _measurementConsentBridge = false;
   String _measurementConsentLayout = 'bar';
   final _measurementConsentTitleController = TextEditingController();
   final _measurementConsentTextController = TextEditingController();
@@ -289,6 +290,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     );
 
     _measurementEnabled = _unit.data?['measurement_enabled'] == true;
+    _measurementConsentBridge = _unit.data?['measurement_consent_bridge'] == true;
     _measurementConsentLayout =
         _unit.data?['measurement_consent_layout'] == 'modal' ? 'modal' : 'bar';
     // Unset title/text show the default prefilled; see _consentOverride.
@@ -367,6 +369,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     pendingUnit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
       pendingUnit.data!['measurement_enabled'] = _measurementEnabled;
+      pendingUnit.data!['measurement_consent_bridge'] = _measurementConsentBridge;
       pendingUnit.data!['measurement_consent_layout'] =
           _measurementConsentLayout;
       // Omission preserves unloaded metadata; explicit null clears an edited field.
@@ -743,6 +746,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         if (_organizationMeasurementEnabled) ...[
                           const SizedBox(height: 32),
                           UnitMeasurementSettings(
+                            consentBridge: _measurementConsentBridge,
+                            onConsentBridgeChanged: (value) =>
+                                setState(() => _measurementConsentBridge = value),
                             approval: _measurementApproval,
                             loadingApproval: _isLoadingMeasurementApproval,
                             approvalLoadFailed: _measurementApprovalLoadFailed,

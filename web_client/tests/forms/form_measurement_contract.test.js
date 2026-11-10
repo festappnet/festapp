@@ -9,7 +9,7 @@ const root=fileURLToPath(new URL('../../../',import.meta.url));
 const read=path=>readFileSync(new URL('../../../'+path,import.meta.url),'utf8');
 
 test('cross-language limits, capability projection and canonical migration are current',()=>{
-    for(const script of ['generate_form_measurement_limits.py','generate_authorization_projection.py','generate_authorization_capabilities.py','assemble-form-measurement-migration.py','assemble-configuration-migration.py','assemble-form-measurement-consent-migration.py']){
+    for(const script of ['generate_form_measurement_limits.py','generate_authorization_projection.py','generate_authorization_capabilities.py','assemble-form-measurement-migration.py','assemble-configuration-migration.py','assemble-form-measurement-consent-migration.py','assemble-form-measurement-consent-bridge-migration.py']){
         execFileSync('python3',['automation/'+script,'--check'],{cwd:root,stdio:'pipe'});
     }
 });

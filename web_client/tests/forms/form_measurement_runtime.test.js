@@ -98,6 +98,7 @@ test('bootstrap rejects mismatched snapshot before code and establishes Consent 
 });
 test('isolated Google tags receive cross-site cookie flags before loading without changing consent',t=>{
  const f=bootstrap(t,false);f.send('init');const entries=[...f.win.dataLayer];
+ assert.ok(entries.some(p=>p[0]==='set' && p[1]==='ads_data_redaction' && p[2]===true));
  const cookieSettings=entries.findIndex(p=>p[0]==='set' && p[1]?.cookie_flags==='SameSite=None;Secure');
  assert(cookieSettings>=0,'framed Google tags require explicit cross-site cookie flags');
  assert(cookieSettings<entries.findIndex(p=>p.event==='gtm.js'));

@@ -30,6 +30,10 @@ class FormStrings {
       'FeatureFormSettings.measurementOrganizationHelp'.tr();
   static String get measurementUnitEnabled =>
       'FeatureFormSettings.measurementUnitEnabled'.tr();
+  static String get measurementConsentBridge =>
+      'FeatureFormSettings.measurementConsentBridge'.tr();
+  static String get measurementConsentBridgeConfirmation =>
+      'FeatureFormSettings.measurementConsentBridgeConfirmation'.tr();
   static String get measurementUnitHelp =>
       'FeatureFormSettings.measurementUnitHelp'.tr();
   static String get measurementFormHelp =>

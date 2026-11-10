@@ -109,3 +109,15 @@ test('form inspect accepts the canonical no_privacy_policy measurement block',as
  assert.equal(result.ok,true,JSON.stringify(result));
  assert.deepEqual(result.data.authoring.form.measurement_status.blocked_reasons,['no_privacy_policy']);
 });
+
+test('organizer consent bridge configuration accepts only explicit booleans and preserves omission', async () => {
+ const {configurationDescriptors,configurationDataSchemas} = await import('../src/operations/configuration.mjs');
+ const input = configurationDescriptors.find(d => d.id === 'units.settings.save').input;
+ const args = {unitId:8,commandId:'00000000-0000-4000-8000-000000000099',expectedVersion:0};
+ for (const value of [true,false]) {
+  assert.equal(input.parse({...args,changes:{settings:{measurement_consent_bridge:value}}}).changes.settings.measurement_consent_bridge,value);
+  assert.equal(configurationDataSchemas['units.settings.inspect'].parse({entityType:'unit',entityId:8,aggregateVersion:0,title:'Pořadatel',settings:{measurement_consent_bridge:value}}).settings.measurement_consent_bridge,value);
+ }
+ assert.deepEqual(input.parse({...args,changes:{settings:{}}}).changes.settings,{});
+ for (const value of [null,'true',1]) assert.equal(input.safeParse({...args,changes:{settings:{measurement_consent_bridge:value}}}).success,false);
+});

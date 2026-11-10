@@ -866,7 +866,7 @@
       ]
     },
     "seat-measurement": {
-      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\n",
+      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -894,7 +894,7 @@
       ]
     },
     "web-measurement": {
-      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
+      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
       "after": [
         "web-startup"
       ],
@@ -2536,7 +2536,8 @@
     "web_client/tests/services/seo_service.test.js",
     "web_client/tests/services/stripe_callback_bootstrap.test.js",
     "web_client/tests/utils/html_sanitize.test.js",
-    "web_client/tests/utils/image_url_helper.test.js"
+    "web_client/tests/utils/image_url_helper.test.js",
+    "web_client/tests/core/host_consent_mode.test.js"
   ],
   "sqlSharedSetups": [
     "database/tests/blueprint/fixtures.sql"

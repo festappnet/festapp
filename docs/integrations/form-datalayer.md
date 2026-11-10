@@ -143,9 +143,37 @@ approved host and the current helper, nothing else: the helper
 issues a random local lease that only proves it is alive, and renews it on a heartbeat.
 A host CMP is optional. `FestappEmbed.connectKlaro(frame, manager)`,
 `setMeasurementConsent(frame, granted)` and
-`connectMeasurementConsent(frame, source)` all pass the choice on as state; without
-one the state is denied and measurement runs. In the host transport the host's own
-Consent Mode gates its tags. See the
+`connectMeasurementConsent(frame, source)` all pass the choice on as state and
+always replace the automatic source, including after disconnection. Automatic reading
+requires the organizer's Unit setting `measurement_consent_bridge: true`, disabled
+by default for new and existing organizers. Enable it with “Use consent from my
+website banner” only when the organizer operates the host website as the same
+controller and its banner explicitly covers the embedded vstupenky.online form.
+The banner must identify the organizer, purposes, services in the organizer's GTM,
+the isolated `*.pages.dev` runtime and Festapp as processor, and explain withdrawal.
+The organizer retains consent evidence in the website CMP. A partner's banner
+cannot be assumed to cover the organizer. Explicit adapters remain independent of
+the switch. The switch is part of the manifest and processing revision.
+
+When enabled, the helper reads `google_tag_data.ics.entries`, then only Arguments
+`consent default/update` commands in `window.dataLayer` if ICS is unavailable.
+Arrays are ignored. Regional defaults stay denied until a CMP update. Analytics
+requires explicit granted `analytics_storage`; marketing requires all three of
+`ad_storage`, `ad_user_data` and `ad_personalization` explicitly granted. Missing or
+broken values mean denied. If `__tcfapi` is present, marketing is always denied;
+TCF is never read or forwarded, while analytics follows Consent Mode.
+
+ICS is polled every 250 ms; dataLayer every second, scanning only new entries and
+resetting state when replaced or shortened. Withdrawal can therefore race a
+purchase within the remaining 250 ms or 1 s window, and browser suspension can
+extend it. Already delivered data cannot be recalled. Switching to website mode
+unsubscribes the source; returning to Unit mode subscribes again. Choices bind to
+the first organization, Unit and processing revision; a changed scope stays
+denied until a fresh binding (for example, a newly loaded embed).
+The read-only bridge changes no eligibility or approved-host checks and writes no
+Google state. Measurement runs regardless
+of the choice. In the host transport the host's own Consent Mode gates its tags;
+the automatic bridge does not apply. See the
 [runtime integration example](../../workers/form-measurement/README.md#host-cmp-integration).
 
 `capture()` returns a sender bound forever to the original active grant; inactive
@@ -193,7 +221,7 @@ transaction identifiers to page scripts; its editor and privacy notice disclose
 that boundary. It installs no tags and does not grant consent or enable
 measurement. The approved-origin, eligibility, staff and live-lease gates apply
 to both choices. Website tags and the website CMP own consent in host mode;
-Unit mode needs an explicit consent adapter to leave the denied state.
+Unit mode reads website Consent Mode only after the organizer opts in; an explicit adapter replaces it.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
 approved ecommerce events from dataLayer, and avoid duplicate automatic pageviews.
 
