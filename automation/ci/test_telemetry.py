@@ -18,7 +18,7 @@ class TelemetryTest(unittest.TestCase):
             subprocess.run(['git','-C',str(root),'-c','user.name=Test','-c','user.email=test@example.invalid',
                             'commit','--allow-empty','-qm','actual checkout'],check=True)
             sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
-            contract={'jobs':{'fixture':{'workflow':'fixture.yml','node':'22.23.3','inputs':['**']}},
+            contract={'jobs':{'fixture':{'workflow':'fixture.yml','node':'22.23.4','inputs':['**']}},
                       'knownTestInputs':[]}
             env={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'fixture/repo','GITHUB_REPOSITORY_ID':'7',
                  'GITHUB_RUN_ID':'123','GITHUB_RUN_ATTEMPT':'2','GITHUB_EVENT_NAME':'pull_request',

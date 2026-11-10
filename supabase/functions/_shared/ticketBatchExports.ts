@@ -1,5 +1,5 @@
 import { PageSizes, PDFDocument } from "npm:pdf-lib";
-import { zipSync } from "npm:fflate@0.8.2";
+import { zipSync } from "npm:fflate@0.8.3";
 import { documentLimits } from "./documentLimits.ts";
 import {
   type BatchObjectStore,
