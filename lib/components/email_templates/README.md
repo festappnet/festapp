@@ -131,7 +131,11 @@ Order overview rendering escapes its raw customer/product fields itself. Preview
 adapters must not pre-escape those same fields or maintain a second substitution loop.
 
 Email authoring uses native Super Editor action-tag composition and atomic
-placeholder objects. The editor serializes them only as existing `{{code}}`
+placeholder objects. The explicit variable chooser follows its toolbar button,
+so an expanded or offscreen document selection cannot hide it; typed `@` queries
+still follow the caret. Every variable exposes an information action, including
+empty block previews. Inline actions use the editor's native tap delegate because
+inline widget gestures do not receive document taps. The editor serializes them only as existing `{{code}}`
 substitutions. Preview data and editor metadata never enter the saved HTML.
 The portable rules and preview composer live in `festapp_core/email_templates.dart`;
 localized authoring labels remain in the Flutter adapter. Required overview actions
