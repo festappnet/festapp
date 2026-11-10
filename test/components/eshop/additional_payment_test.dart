@@ -199,7 +199,10 @@ void main() {
                 builder: (context) => TrinaGrid(
                   columns: EshopColumns.generateColumns(
                     context,
-                    [EshopColumnIds.PAYMENT_INFO_PAID],
+                    [
+                      EshopColumnIds.PAYMENT_INFO_PAID,
+                      EshopColumnIds.PAYMENT_INFO_RETURNED,
+                    ],
                     data: {
                       'unitId': 9,
                       EshopColumnIds.PAYMENT_INFO_PAID: refresh,
@@ -214,6 +217,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    final plusRect = tester.getRect(find.byIcon(Icons.add_circle_outline));
+    final minusRect = tester.getRect(find.byIcon(Icons.remove_circle_outline));
+    expect(
+      plusRect.right,
+      lessThan(minusRect.left),
+      reason: 'Payment and refund actions belong to separate grid columns',
+    );
+    final grid = tester.widget<TrinaGrid>(find.byType(TrinaGrid));
+    expect(
+      minusRect.left - plusRect.left,
+      greaterThanOrEqualTo(grid.columns.first.width - 1),
+    );
   }
 
   Finder plus() => find.widgetWithIcon(IconButton, Icons.add_circle_outline);

@@ -1069,81 +1069,75 @@ class EshopColumns {
             width: 50,
           ),
         ],
-        EshopColumnIds.PAYMENT_INFO_PAID: (Map<String, dynamic> data) => [
-      TrinaColumn(
-        readOnly: true,
-        enableEditingMode: true,
-        title: OrdersStrings.gridPaid,
-        field: EshopColumnIds.PAYMENT_INFO_PAID,
-        type: TrinaColumnType.text(),
-        textAlign: TrinaColumnTextAlign.end,
-        width: 200,
-        renderer: (ctx) {
-          final val = ctx.cell.value?.toString() ?? "";
-          final model = OrderGridFilters.order(ctx.row);
-          final operations =
-              model?.paymentInfoModel?.paymentOperations ??
-              model?.paymentOperations;
-          Future<void> open(bool refund) async {
-            final unitId = data['unitId'] as int?;
-            final orderId =
-                ctx.row.cells[EshopColumnIds.ORDER_ID]?.value as int?;
-            if (unitId == null || orderId == null || !context.mounted) return;
-            final changed = await showOrderPaymentOperationDialog(
-              context,
-              orderId: orderId,
-              unitId: unitId,
-              refund: refund,
-            );
-            if (changed == true) {
-              final refresh = data[EshopColumnIds.PAYMENT_INFO_PAID];
-              if (refresh is Future<void> Function()) await refresh();
-            }
-          }
+        for (final paymentField in [
+          EshopColumnIds.PAYMENT_INFO_PAID,
+          EshopColumnIds.PAYMENT_INFO_RETURNED,
+        ])
+          paymentField: (Map<String, dynamic> data) => [
+            TrinaColumn(
+              readOnly: true,
+              enableEditingMode: true,
+              title: paymentField == EshopColumnIds.PAYMENT_INFO_PAID
+                  ? OrdersStrings.gridPaid
+                  : OrdersStrings.gridReturned,
+              field: paymentField,
+              type: TrinaColumnType.text(),
+              textAlign: TrinaColumnTextAlign.end,
+              width: 140,
+              renderer: (ctx) {
+                final val = ctx.cell.value?.toString() ?? "";
+                final model = OrderGridFilters.order(ctx.row);
+                final operations =
+                    model?.paymentInfoModel?.paymentOperations ??
+                    model?.paymentOperations;
+                Future<void> open(bool refund) async {
+                  final unitId = data['unitId'] as int?;
+                  final orderId =
+                      ctx.row.cells[EshopColumnIds.ORDER_ID]?.value as int?;
+                  if (unitId == null || orderId == null || !context.mounted) return;
+                  final changed = await showOrderPaymentOperationDialog(
+                    context,
+                    orderId: orderId,
+                    unitId: unitId,
+                    refund: refund,
+                  );
+                  if (changed == true) {
+                    final refresh = data[EshopColumnIds.PAYMENT_INFO_PAID];
+                    if (refresh is Future<void> Function()) await refresh();
+                  }
+                }
 
-          Widget action(bool refund) {
-            final enabled =
-                (refund ? operations?.canRefund : operations?.canRecord) ==
-                true;
-            return SizedBox(
-              width: 32,
-              child: IconButton(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                tooltip: refund
-                    ? PaymentOperationStrings.text('refund')
-                    : OrdersStrings.addPayment,
-                onPressed: enabled ? () => open(refund) : null,
-                icon: Icon(
-                  refund
-                      ? Icons.remove_circle_outline
-                      : Icons.add_circle_outline,
-                  size: 18,
-                ),
-              ),
-            );
-          }
+                Widget action(bool refund) {
+                  final enabled =
+                      (refund ? operations?.canRefund : operations?.canRecord) ==
+                      true;
+                  return SizedBox(
+                    width: 32,
+                    child: IconButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      tooltip: refund
+                          ? PaymentOperationStrings.text('refund')
+                          : OrdersStrings.addPayment,
+                      onPressed: enabled ? () => open(refund) : null,
+                      icon: Icon(
+                        refund
+                            ? Icons.remove_circle_outline
+                            : Icons.add_circle_outline,
+                        size: 18,
+                      ),
+                    ),
+                  );
+                }
 
-          return Row(
-            children: [
-              action(false),
-              action(true),
-              Expanded(child: Text(val, textAlign: TextAlign.end)),
-            ],
-          );
-        },
-      ),
-    ],
-    EshopColumnIds.PAYMENT_INFO_RETURNED: [
-          TrinaColumn(
-            readOnly: true,
-            enableEditingMode: true,
-            title: OrdersStrings.gridReturned,
-            field: EshopColumnIds.PAYMENT_INFO_RETURNED,
-            type: TrinaColumnType.text(),
-            textAlign: TrinaColumnTextAlign.end,
-            width: 80,
-          ),
-        ],
+                return Row(
+                  children: [
+                    action(paymentField == EshopColumnIds.PAYMENT_INFO_RETURNED),
+                    Expanded(child: Text(val, textAlign: TextAlign.end)),
+                  ],
+                );
+              },
+            ),
+          ],
         EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL: [
           TrinaColumn(
             readOnly: true,

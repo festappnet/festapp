@@ -328,6 +328,103 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets(
+    'refund exposes bank QR before submitting and preserves cash choice',
+    (tester) async {
+      Map<String, dynamic>? submitted;
+      await operation(
+        tester,
+        refund: true,
+        context: PaymentOperationContext(
+          available: '1000.00',
+          currency: 'EUR',
+          methods: [
+            ...cashContext.methods,
+            const PaymentOperationMethod(
+              id: 'bank',
+              displayName: 'Bank',
+              refund: true,
+              verification: 'bank_event',
+            ),
+          ],
+        ),
+        submit: (input) async {
+          submitted = input;
+          return {
+            'request': {
+              'id': 'refund-qr',
+              'verification': 'bank_event',
+              'status': 'pending',
+              'instructions': {
+                'payload': 'BCD\n002\n1\nSCT',
+                'amount': '50.00',
+              },
+            },
+          };
+        },
+      );
+      expect(find.byKey(const ValueKey('refundMethod_cash')), findsOneWidget);
+      expect(find.byKey(const ValueKey('refundMethod_bank')), findsOneWidget);
+      expect(find.byIcon(Icons.qr_code_2), findsOneWidget);
+      expect(submitted, isNull);
+      await tester.tap(find.byKey(const ValueKey('refundMethod_bank')));
+      await tester.pumpAndSettle();
+      expect(submitted, isNull);
+      await tester.enterText(find.byKey(const ValueKey('paymentAmount')), '50');
+      await tester.enterText(
+        find.widgetWithText(
+          TextFormField,
+          PaymentOperationStrings.text('recipientName'),
+        ),
+        'Jana Novakova',
+      );
+      await tester.enterText(
+        find.widgetWithText(
+          TextFormField,
+          PaymentOperationStrings.text('recipientIban'),
+        ),
+        'CZ6508000000192000145399',
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final generate = find.widgetWithText(
+        ElevatedButton,
+        PaymentOperationStrings.text('prepareBank'),
+      );
+      await tester.ensureVisible(generate);
+      await tester.tap(generate);
+      await tester.pumpAndSettle();
+      expect(submitted?['operation'], 'prepare_refund');
+      expect(submitted?['method'], 'bank');
+      expect(submitted?['amount'], '50');
+      expect(
+        find.text(PaymentOperationStrings.text('bankPrepared')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('unavailable bank QR is explained and cannot be selected', (
+    tester,
+  ) async {
+    await operation(tester, refund: true);
+    final bank = tester.widget<ListTile>(
+      find.byKey(const ValueKey('refundMethod_bank')),
+    );
+    expect(bank.enabled, isFalse);
+    expect(bank.onTap, isNull);
+    expect(
+      find.text(PaymentOperationStrings.text('bankUnavailable')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<ListTile>(find.byKey(const ValueKey('refundMethod_cash')))
+          .selected,
+      isTrue,
+    );
+  });
+
   testWidgets('new plus rejects negative and overprecision without dispatch', (
     tester,
   ) async {

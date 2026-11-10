@@ -3061,12 +3061,16 @@
         "UNKNOWN": "Die Aktion konnte nicht abgeschlossen werden. Aktualisieren Sie die aktuellen Daten."
     },
     "PaymentOperations": {
+    "refundMethod": "Erstattungsart",
+    "bankHint": "Bereiten Sie eine Überweisung an den Empfänger vor. Senden Sie das Geld in Ihrer Banking-App; die Erstattung wird erst nach Zuordnung der Bankbuchung bestätigt.",
+    "cashHint": "Erfassen Sie Bargeld, das Sie dem Empfänger bereits übergeben haben.",
+    "bankUnavailable": "Bankerstattungen sind für diese Bestellung nicht verfügbar. Sie benötigen eine Berechtigung und ein Konto mit unterstützter Zahlungssynchronisierung.",
         "refund": "Geld erstatten",
         "available": "Erstattbarer Betrag",
         "pending": "Ausstehende Erstattung",
         "net": "Netto bezahlt",
         "received": "Eingegangen",
-        "prepareBank": "Überweisungs-QR vorbereiten",
+        "prepareBank": "Zahlungs-QR-Code erstellen",
         "recordCashRefund": "Bargelderstattung erfassen",
         "refundVia": "Erstatten über",
         "processing": "In Bearbeitung",
