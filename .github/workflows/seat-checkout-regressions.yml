@@ -46,9 +46,9 @@ jobs:
           version: 2.111.0
       - run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
         if: steps.selection.outputs.run == 'true'
-      - name: Install isolated Chromium test runner
+      - name: Prepare isolated browser and database image
         if: steps.selection.outputs.run == 'true'
-        run: bash automation/ci/browser.sh
+        run: bash automation/ci/prepare-seat.sh
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh
