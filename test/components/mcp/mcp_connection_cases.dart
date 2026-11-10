@@ -253,7 +253,7 @@ void main() {
     expect(find.text(AppConfig.getUserPrefix('fixture@invalid')), findsNothing);
     expect(callback.closed, true);
   });
-  testWidgets('whole organizer and creation require two explicit choices',
+  testWidgets('whole organizer uses available user rights without a function checklist',
       (tester) async {
     Map<String, dynamic>? approved;
     final callback = _CallbackWindow();
@@ -269,6 +269,7 @@ void main() {
             'client': 'Codex',
             'applicationType': 'native',
             'canRequestCreate': true,
+            'requestedPermissions': ['festapp:forms:read', 'festapp:forms:write'],
             'units': [
               {
                 'id': 3,
@@ -295,16 +296,15 @@ void main() {
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
     expect(find.text('Fixture occasion'), findsNothing);
-    final checkbox =
-        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
-    expect(checkbox.value, false);
-    await tester.ensureVisible(find.byType(CheckboxListTile));
-    await tester.tap(find.widgetWithText(CheckboxListTile, 'McpConnection.allowCreate'));
-    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNothing);
     await tester.ensureVisible(find.text('McpConnection.approve'));
     await tester.tap(find.text('McpConnection.approve'));
     await tester.pumpAndSettle();
-    expect(approved, {'type': 'unit', 'unitId': 3, 'canCreateOccasions': true});
+    expect(approved, {
+      'consentVersion': 2,
+      'selection': {'type': 'unit', 'unitId': 3, 'canCreateOccasions': true},
+      'permissions': ['festapp:forms:read', 'festapp:forms:write'],
+    });
     expect(callback.closed, true);
   });  testWidgets(
       'occasions are grouped by unit and sorted without broadening selection',

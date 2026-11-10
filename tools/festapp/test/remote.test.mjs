@@ -93,9 +93,11 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     r = await f.browser(r.headers.get('location'));
     const consent = await r.text();
     assert.match(consent, /Povolit přístup/);
+    assert.match(consent, /name="consentVersion" value="3"/);
+    assert.doesNotMatch(consent, /type="checkbox" name="(?:permission|create)"/);
     assert.match(consent, /value="7"/);
     assert.doesNotMatch(consent, /value="8"/);
-    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), permission: scope.split(' ').filter(s => MCP_SCOPES.includes(s)), ...consentFields, ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: occasionIds ?? '7' }) });
+    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), consentVersion: '3', ...consentFields, ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: occasionIds ?? '7' }) });
     assert.equal(r.status, consentStatus);
     if (consentStatus !== 303) return;
     let redirect = r.headers.get('location');
@@ -624,7 +626,8 @@ test('two delegated actors on one process keep their refresh sessions and identi
 
 test('organizer consent needs requested create scope; read consent never exposes creation', async t => {
     const denied = await setup(t);
-    await assert.rejects(connect(denied, { unitId: 3, create: true }), /403/);
+    const attempted = await connect(denied, { unitId: 3, create: true });
+    assert(!attempted.tokens.scope.split(' ').includes(CREATE_SCOPE));
     const f = await setup(t);
     const { tokens } = await connect(f, { unitId: 3 });
     const token = await f.provider.AccessToken.find(tokens.access_token);
@@ -1784,11 +1787,11 @@ test('trusted native client metadata uses normal PKCE, consent, MCP and refresh'
 });
 
 
-test('declining requested creation and functional scopes completes one consent without a loop', async t => {
+test('an in-flight older consent still honors explicit declined scopes without a loop', async t => {
     const f = await setup(t, { native: true });
     const { tokens } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback',
         scope: READ_SCOPE + ' ' + CREATE_SCOPE + ' festapp:forms:read festapp:forms:write',
-        consentFields: { permission: ['festapp:forms:read'] } });
+        consentFields: { consentVersion: '2', permission: ['festapp:forms:read'] } });
     assert(tokens.access_token);
     assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
     assert(!tokens.scope.split(' ').includes('festapp:forms:write'));
@@ -1861,7 +1864,7 @@ test('general metadata clients can consent to the complete operation catalog', a
     const f = await setup(t, { clientMetadataDocuments: { allowedOrigins: ['https://desktop.fixture.test'], dataProfile: 'operator' },
         metadataFetch: async () => reply(nativeMetadata()) });
     const { tokens } = await connect(f, { clientId: nativeMetadataId,
-        callbackUri: 'http://127.0.0.1:51789/oauth/callback', scope: DOMAIN_SCOPES.join(' '), unitId: 3, create: true });
+        callbackUri: 'http://127.0.0.1:51789/oauth/callback', scope: DOMAIN_SCOPES.join(' '), unitId: 3 });
     const grant = f.storage.values('Delegation')[0];
     assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
     assert.equal(grant.access.canCreateOccasions, true);

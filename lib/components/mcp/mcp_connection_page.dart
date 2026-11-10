@@ -40,7 +40,6 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
   final _selected = <int>{};
   bool _wholeUnit = false;
   int? _unitId;
-  bool _allowCreate = false;
   bool _loading = false;
   bool _busy = false;
   bool _failed = false;
@@ -54,19 +53,35 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
   bool get _loggedIn => (widget.isLoggedIn ?? AuthService.isLoggedIn)();
   bool get _validRequest =>
       RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(widget.request ?? '');
+  Map<String, dynamic> get _selection => _wholeUnit
+      ? {
+          'type': 'unit',
+          'unitId': _unitId,
+          'canCreateOccasions':
+              _details?['canRequestCreate'] == true &&
+              (_details?['units'] as List? ?? []).any(
+                (unit) =>
+                    unit['id'] == _unitId && unit['canCreateOccasions'] == true,
+              ),
+        }
+      : {'type': 'occasions', 'occasionIds': _selected.toList()};
+
   Future<Map<String, dynamic>> call(String operation) =>
       (widget.requester ?? McpConnectionService.request)(
-          widget.request!,
-          operation,
-          operation == 'approve'
-              ? (_wholeUnit
+        widget.request!,
+        operation,
+        operation == 'approve'
+            ? (_details?.containsKey('requestedPermissions') == true
                   ? {
-                      'type': 'unit',
-                      'unitId': _unitId,
-                      'canCreateOccasions': _allowCreate
+                      'consentVersion': 2,
+                      'selection': _selection,
+                      'permissions': List<String>.from(
+                        _details!['requestedPermissions'] as List,
+                      ),
                     }
-                  : {'type': 'occasions', 'occasionIds': _selected.toList()})
-              : {});
+                  : _selection)
+            : {},
+      );
 
   @override
   void initState() {
@@ -185,8 +200,6 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
       group.value
           .sort((a, b) => byName(a['title'].toString(), b['title'].toString()));
     }
-    final unitCanCreate =
-        units.any((u) => u['id'] == _unitId && u['canCreateOccasions'] == true);
     return Scaffold(
       appBar: AppBar(title: Text('${AppConfig.appName} - ${text('title')}')),
       body: Center(
@@ -232,7 +245,7 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                           const SizedBox(height: 8),
                           Text(_email),
                           const SizedBox(height: 16),
-                          Text(text('scope')),
+                          Text(text('sameRights')),
                           const SizedBox(height: 16),
                           if (units.isNotEmpty) ...[
                             SwitchListTile(
@@ -244,7 +257,6 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                                   ? null
                                   : (value) => setState(() {
                                         _wholeUnit = value;
-                                        _allowCreate = false;
                                         _unitId ??= units.first['id'] as int;
                                       }),
                             ),
@@ -262,21 +274,8 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                                     ? null
                                     : (value) => setState(() {
                                           _unitId = value;
-                                          _allowCreate = false;
-                                        }),
+                                          }),
                               ),
-                              if (_details!['canRequestCreate'] == true &&
-                                  unitCanCreate)
-                                CheckboxListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(text('allowCreate')),
-                                  subtitle: Text(text('allowCreateHint')),
-                                  value: _allowCreate,
-                                  onChanged: _busy
-                                      ? null
-                                      : (value) => setState(
-                                          () => _allowCreate = value == true),
-                                ),
                             ],
                           ],
                           if (!_wholeUnit)
