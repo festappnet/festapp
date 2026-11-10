@@ -143,3 +143,21 @@ push so native website events do not inherit it. Frozen pre-change protocol 3 re
 rolling-upgrade boundary. Existing receivers accept new senders and retain their
 previous page-event name until upgraded. Deploy receivers before the client to
 establish the new destination semantics without losing events.
+
+## Consent storage exceptions and keyboard behavior
+
+All seven Consent Mode types are explicit. `security_storage` and
+`functionality_storage` remain `granted`, including before a choice and after
+Decline. Organizer tags requiring `functionality_storage` therefore run without
+consent. Analytics storage follows analytics; ad storage, ad user data, ad
+personalization and personalization storage follow marketing.
+Mapping content personalization (`personalization_storage`) to marketing is an
+intentional organizer choice; the organizer's privacy information must describe
+this purpose together with advertising.
+
+The initial central notice is blocking: Escape focuses the notice without saving
+a choice or closing it. Decline is available for a decision without optional
+consent. Escape in Settings discards the draft. Reopened Settings always offer
+Decline; after a saved decision focus returns to the floating Consent settings
+button. The button is fixed at the bottom left, with reserved scroll clearance.
+Custom notice text always retains a fixed explanation of how to change consent.

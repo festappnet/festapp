@@ -14,6 +14,14 @@ class FormStrings {
       'FeatureFormSettings.measurementUnitDisabled'.tr();
   static String get measurementActivationHelp =>
       'FeatureFormSettings.measurementActivationHelp'.tr();
+  static String get measurementApprovalRequired =>
+      'FeatureFormSettings.measurementApprovalRequired'.tr();
+  static String get measurementApprovalRequest =>
+      'FeatureFormSettings.measurementApprovalRequest'.tr();
+  static String measurementApprovalRequested(String date) =>
+      'FeatureFormSettings.measurementApprovalRequested'.tr(
+        namedArgs: {'date': date},
+      );
   static String get gtmContainer => 'FeatureFormSettings.gtmContainer'.tr();
   static String get gtmHelp => 'FeatureFormSettings.gtmHelp'.tr();
   static String get measurementOrganizationEnabled =>
@@ -34,10 +42,16 @@ class FormStrings {
       'FeatureFormSettings.measurementOrganizationBlocked'.tr();
   static String get measurementRuntimeBlocked =>
       'FeatureFormSettings.measurementRuntimeBlocked'.tr();
+  static String get measurementPlatformBlocked =>
+      'FeatureFormSettings.measurementPlatformBlocked'.tr();
   static String get measurementAdvanced =>
       'FeatureFormSettings.measurementAdvanced'.tr();
   static String get measurementNoDestination =>
       'FeatureFormSettings.measurementNoDestination'.tr();
+  static String get measurementRequestNoRecipient =>
+      'FeatureFormSettings.measurementRequestNoRecipient'.tr();
+  static String get measurementNotificationOriginMissing =>
+      'FeatureFormSettings.measurementNotificationOriginMissing'.tr();
   static String get measurementReady =>
       'FeatureFormSettings.measurementReady'.tr();
   static String get measurementConsentLayout =>
@@ -49,19 +63,19 @@ class FormStrings {
   static String get measurementConsentCustomTitle =>
       'FeatureFormSettings.measurementConsentCustomTitle'.tr();
   static String get measurementConsentCustomTitleHelp =>
-      'FeatureFormSettings.measurementConsentCustomTitleHelp'.tr(
-        namedArgs: {
-          'text': 'FeatureFormSettings.measurementConsentTitle'.tr(),
-        },
-      );
+      'FeatureFormSettings.measurementConsentCustomTitleHelp'.tr();
   static String get measurementConsentCustomText =>
       'FeatureFormSettings.measurementConsentCustomText'.tr();
   static String get measurementConsentCustomTextHelp =>
-      'FeatureFormSettings.measurementConsentCustomTextHelp'.tr(
-        namedArgs: {
-          'text': 'FeatureFormSettings.measurementConsentDescription'.tr(),
-        },
-      );
+      'FeatureFormSettings.measurementConsentCustomTextHelp'.tr();
+  static String get measurementConsentRestoreDefault =>
+      'FeatureFormSettings.measurementConsentRestoreDefault'.tr();
+  /// Defaults shown prefilled in the Unit editor; saving them unchanged stores
+  /// null so visitors keep the default in their own language.
+  static String get measurementConsentDefaultTitle =>
+      'FeatureFormSettings.measurementConsentTitle'.tr();
+  static String get measurementConsentDefaultText =>
+      'FeatureFormSettings.measurementConsentDescription'.tr();
   static String get measurementPrivacyUrlRequired =>
       'FeatureFormSettings.measurementPrivacyUrlRequired'.tr();
   static String get measurementNoPrivacyPolicy =>

@@ -1,6 +1,9 @@
 import 'package:festapp_core/communication_tone.dart';
 
 import 'unit_measurement_settings.dart';
+import '../unit_measurement_approval.dart';
+
+import 'package:fstapp/services/exception_handler.dart';
 
 import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
@@ -60,11 +63,19 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   String? _selectedTimezone;
   String _communicationTone = 'formal';
   bool _measurementEnabled = false;
+  UnitMeasurementApproval? _measurementApproval;
+  bool _isLoadingMeasurementApproval = false;
+  bool _measurementApprovalLoadFailed = false;
+  bool _isRequestingMeasurement = false;
   String _measurementConsentLayout = 'bar';
   final _measurementConsentTitleController = TextEditingController();
   final _measurementConsentTextController = TextEditingController();
+  final _restoredConsent = <TextEditingController>{};
+  String? _storedConsentTitle;
+  String? _storedConsentText;
+  String _initialConsentTitle = '';
+  String _initialConsentText = '';
   final _measurementPrivacyUrlController = TextEditingController();
-  final _measurementTileController = ExpansibleController();
   final _measurementGtmController = TextEditingController();
   final _measurementScriptsController = TextEditingController();
   bool get _organizationMeasurementEnabled =>
@@ -98,7 +109,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _measurementPrivacyUrlController.dispose();
     _measurementConsentTitleController.dispose();
     _measurementConsentTextController.dispose();
-    _measurementTileController.dispose();
     _measurementScriptsController.dispose();
     super.dispose();
   }
@@ -198,6 +208,71 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         });
       }
     }
+    if (mounted && _organizationMeasurementEnabled) {
+      await _loadMeasurementApproval();
+    }
+  }
+
+  Future<void> _loadMeasurementApproval() async {
+    if (_isLoadingMeasurementApproval || _unit.id == null) return;
+    setState(() {
+      _isLoadingMeasurementApproval = true;
+      _measurementApprovalLoadFailed = false;
+    });
+    try {
+      final approval = await ExceptionHandler.guard(
+        context,
+        futureFunction: () => DbUnits.getMeasurementApproval(_unit.id!),
+      );
+      if (mounted) {
+        setState(() {
+          _measurementApproval = approval;
+          _measurementApprovalLoadFailed = approval == null;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingMeasurementApproval = false);
+    }
+  }
+
+  Future<void> _requestMeasurementApproval() async {
+    if (!_canEdit ||
+        _isSaving ||
+        _isRequestingMeasurement ||
+        _unit.id == null) {
+      return;
+    }
+    setState(() => _isRequestingMeasurement = true);
+    try {
+      final approval = await ExceptionHandler.guard(
+        context,
+        futureFunction: () async {
+          try {
+            return await DbUnits.requestMeasurementApproval(_unit.id!);
+          } catch (error) {
+            final detail = error.toString();
+            final message = detail.contains('measurement_request_no_recipient')
+                ? FormStrings.measurementRequestNoRecipient
+                : detail.contains('measurement_notification_origin_missing')
+                ? FormStrings.measurementNotificationOriginMissing
+                : null;
+            if (message != null) {
+              throw AppError(
+                code: 'measurement_request',
+                message: message,
+                rawJson: '{}',
+              );
+            }
+            rethrow;
+          }
+        },
+      );
+      if (mounted && approval != null) {
+        setState(() => _measurementApproval = approval);
+      }
+    } finally {
+      if (mounted) setState(() => _isRequestingMeasurement = false);
+    }
   }
   // ... (existing code omitted) ...
 
@@ -216,10 +291,15 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _measurementEnabled = _unit.data?['measurement_enabled'] == true;
     _measurementConsentLayout =
         _unit.data?['measurement_consent_layout'] == 'modal' ? 'modal' : 'bar';
+    // Unset title/text show the default prefilled; see _consentOverride.
+    _storedConsentTitle = _unit.data?['measurement_consent_title'] as String?;
+    _storedConsentText = _unit.data?['measurement_consent_text'] as String?;
     _measurementConsentTitleController.text =
-        _unit.data?['measurement_consent_title'] as String? ?? '';
+        _storedConsentTitle ?? FormStrings.measurementConsentDefaultTitle;
     _measurementConsentTextController.text =
-        _unit.data?['measurement_consent_text'] as String? ?? '';
+        _storedConsentText ?? FormStrings.measurementConsentDefaultText;
+    _initialConsentTitle = _measurementConsentTitleController.text;
+    _initialConsentText = _measurementConsentTextController.text;
     _measurementPrivacyUrlController.text =
         _unit.data?['measurement_privacy_url'] as String? ?? '';
     _measurementGtmController.text =
@@ -237,6 +317,23 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
   }
 
+  /// Untouched fields keep what was stored (null stays null, so visitors keep
+  /// the default in their own language, independent of the editor's locale).
+  /// An edit back to the default text, e.g. "Obnovit výchozí", stores null.
+  String _consentOverride(
+    TextEditingController controller,
+    String? stored,
+    String initial,
+    String fallback,
+  ) {
+    final value = controller.text.trim();
+    if (_restoredConsent.contains(controller) && value == fallback.trim()) {
+      return '';
+    }
+    if (value == initial.trim()) return stored?.trim() ?? '';
+    return value == fallback.trim() ? '' : value;
+  }
+
   Future<void> _saveSettings() async {
     if (_isSaving ||
         !RightsService.hasCapability(
@@ -244,12 +341,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         )) {
       return;
     }
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      if (_organizationMeasurementEnabled) {
-        _measurementTileController.expand();
-      }
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
       _isSaving = true;
@@ -281,11 +373,21 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
       for (final (key, value) in [
         (
           'measurement_consent_title',
-          _measurementConsentTitleController.text.trim(),
+          _consentOverride(
+            _measurementConsentTitleController,
+            _storedConsentTitle,
+            _initialConsentTitle,
+            FormStrings.measurementConsentDefaultTitle,
+          ),
         ),
         (
           'measurement_consent_text',
-          _measurementConsentTextController.text.trim(),
+          _consentOverride(
+            _measurementConsentTextController,
+            _storedConsentText,
+            _initialConsentText,
+            FormStrings.measurementConsentDefaultText,
+          ),
         ),
         (
           'measurement_privacy_url',
@@ -300,6 +402,17 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
     try {
       await DbUnits.updateUnit(pendingUnit);
+      _storedConsentTitle =
+          pendingUnit.data!['measurement_consent_title'] as String?;
+      _storedConsentText =
+          pendingUnit.data!['measurement_consent_text'] as String?;
+      _measurementConsentTitleController.text =
+          _storedConsentTitle ?? FormStrings.measurementConsentDefaultTitle;
+      _measurementConsentTextController.text =
+          _storedConsentText ?? FormStrings.measurementConsentDefaultText;
+      _restoredConsent.clear();
+      _initialConsentTitle = _measurementConsentTitleController.text;
+      _initialConsentText = _measurementConsentTextController.text;
       _unit
         ..title = pendingUnit.title
         ..data = pendingUnit.data
@@ -627,6 +740,37 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                               OccasionSettingsStrings.timezonesLoading,
                             ),
                           ),
+                        if (_organizationMeasurementEnabled) ...[
+                          const SizedBox(height: 32),
+                          UnitMeasurementSettings(
+                            approval: _measurementApproval,
+                            loadingApproval: _isLoadingMeasurementApproval,
+                            approvalLoadFailed: _measurementApprovalLoadFailed,
+                            onRetryApproval: _loadMeasurementApproval,
+                            requestingApproval: _isRequestingMeasurement,
+                            onRequestApproval: _requestMeasurementApproval,
+                            enabled: _measurementEnabled,
+                            consentLayout: _measurementConsentLayout,
+                            hasStoredTitle: _storedConsentTitle != null,
+                            hasStoredText: _storedConsentText != null,
+                            onRestore: (controller) =>
+                                _restoredConsent.add(controller),
+                            consentTitleController:
+                                _measurementConsentTitleController,
+                            consentTextController:
+                                _measurementConsentTextController,
+                            onConsentLayoutChanged: (value) => setState(
+                              () => _measurementConsentLayout = value,
+                            ),
+                            canEdit: _canEdit && !_isSaving,
+                            privacyUrlController:
+                                _measurementPrivacyUrlController,
+                            gtmController: _measurementGtmController,
+                            scriptsController: _measurementScriptsController,
+                            onEnabledChanged: (value) =>
+                                setState(() => _measurementEnabled = value),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         if (_canEdit)
                           Row(
@@ -681,26 +825,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         },
                       ),
                     const SizedBox(height: 48),
-                    if (_organizationMeasurementEnabled) ...[
-                      UnitMeasurementSettings(
-                        enabled: _measurementEnabled,
-                        consentLayout: _measurementConsentLayout,
-                        consentTitleController:
-                            _measurementConsentTitleController,
-                        consentTextController:
-                            _measurementConsentTextController,
-                        onConsentLayoutChanged: (value) =>
-                            setState(() => _measurementConsentLayout = value),
-                        canEdit: _canEdit && !_isSaving,
-                        privacyUrlController: _measurementPrivacyUrlController,
-                        controller: _measurementTileController,
-                        gtmController: _measurementGtmController,
-                        scriptsController: _measurementScriptsController,
-                        onEnabledChanged: (value) =>
-                            setState(() => _measurementEnabled = value),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
                     if (StripeFeature.canActivate &&
                         RightsService.currentUnit()?.id == _unit.id)
                       ExpansionTile(
