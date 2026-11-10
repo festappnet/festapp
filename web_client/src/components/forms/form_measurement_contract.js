@@ -18,22 +18,6 @@ export function measurementConsent(input) {
     return {analytics: input?.analytics === true, marketing: input?.marketing === true};
 }
 
-// Optional host cookie snapshot, scoped to the current purposes at every boundary.
-export function measurementHostIdentity(input, choice) {
-    const consent = measurementConsent(choice), result = {};
-    if (!input || typeof input !== 'object' || Array.isArray(input)) return result;
-    for (const [name, value] of Object.entries(input)) {
-        const analytics = /^_ga(?:_[A-Z0-9]+)?$/.test(name);
-        const marketing = ['_gcl_aw', '_gcl_gb', '_gcl_au', '_fbp', '_fbc'].includes(name);
-        if ((analytics && consent.analytics || marketing && consent.marketing) &&
-            typeof value === 'string' && value.length <= 512 && /^[A-Za-z0-9._$-]+$/.test(value)) {
-            result[name] = value;
-            if (Object.keys(result).length === 10) break;
-        }
-    }
-    return result;
-}
-
 // Pages project hostnames are separate sites on the Public Suffix List. A
 // shared workers.dev account or sibling custom domains are not this profile.
 export function measurementOrigin(value, local = false) {
@@ -48,18 +32,8 @@ export function measurementOrigin(value, local = false) {
 
 // The single campaign/click allowlist for the URL gate, host handshake and runtime.
 export const campaignKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id', 'gclid', 'gbraid', 'wbraid', 'gad_source', 'gad_campaignid', 'srsltid', 'fbclid', 'sznclid', 'ttclid', 'msclkid'];
-// Direct visits may pass linker and preview signals to the runtime URL only.
+// Tolerated on arrival but never forwarded: cross-domain linker and GTM Preview signal.
 export const measurementSignalKeys = ['_gl', 'gtm_debug'];
-export function measurementSignals(input) {
-    const result = {};
-    for (const key of measurementSignalKeys) {
-        const value = input?.[key];
-        if (typeof value === 'string' && value.length >= 1 && value.length <= (key === '_gl' ? 2048 : 256) &&
-            !/[@\u0000-\u001f\u007f-\u009f]/.test(value) &&
-            (key !== '_gl' || /^[A-Za-z0-9*._-]+$/.test(value))) result[key] = value;
-    }
-    return result;
-}
 const unsafeText = /[@\u0000-\u001f\u007f-\u009f]/;
 
 export function campaignContext(input) {

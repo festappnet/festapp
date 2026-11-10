@@ -2,6 +2,8 @@
 # Real renderer code with only CMS APIs stubbed; no live CMS or external network.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+node integrations/measurement/build_gtm_preset.mjs --check
+node --test web_client/tests/core/host_gtm_preset.test.js
 adapter_contract_root="$(mktemp -d "${TMPDIR:-/tmp}/festapp-embed-contracts.XXXXXX")"
 trap 'rm -rf "$adapter_contract_root"' EXIT
 # Exercise the real packagers and generated renderers without rewriting reviewed

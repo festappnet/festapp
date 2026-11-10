@@ -1,4 +1,4 @@
-import {campaignKeys, measurementSignalKeys, measurementSignals} from '../components/forms/form_measurement_contract.js';
+import {campaignKeys, measurementSignalKeys} from '../components/forms/form_measurement_contract.js';
 
 export function publicFormLocation(location, {entry = false} = {}) {
     if (!location || !/^\/form\/[a-zA-Z0-9_-]+\/?$/.test(location.pathname)) return false;
@@ -12,12 +12,9 @@ export function publicFormLocation(location, {entry = false} = {}) {
 export function publicFormAttributionSearch(location) {
     if (!location || !/^\/form\/[a-zA-Z0-9_-]+\/?$/.test(location.pathname)) return '';
     const result = new URLSearchParams();
-    const query = new URLSearchParams(location.search);
-    for (const [key, value] of query) {
+    for (const [key, value] of new URLSearchParams(location.search)) {
         if (['lang', ...campaignKeys].includes(key)) result.append(key, value);
     }
-    // Keep direct linker signals through router normalization until runtime init.
-    if (query.get('embed') !== '1') for (const [key,value] of Object.entries(measurementSignals(Object.fromEntries(query)))) result.set(key,value);
     const search = result.toString();
     return search ? `?${search}` : '';
 }

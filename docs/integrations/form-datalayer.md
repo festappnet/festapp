@@ -185,62 +185,9 @@ failure never controls business success.
 
 ## Attribution and GTM profile
 
-In Unit mode only, an embedded host helper attaches an optional `hostIdentity`
-cookie snapshot to each live choice message. Analytics allows raw `_ga` and
-`_ga_<ID>` values (uppercase letters and digits in ID). Marketing allows raw
-`_gcl_aw`, `_gcl_gb`, `_gcl_au`, `_fbp` and `_fbc`. No choice means no cookie
-read or transfer. Every boundary rebuilds an allowlisted snapshot of at most ten
-values, each at most 512 characters using letters, digits, dots, underscores,
-dollar signs and hyphens. Cookies never enter dataLayer or form URLs. Website
-mode uses the website's own tags and does not transfer this identity.
-
-The isolated runtime deletes existing host-only and `Domain=location.hostname`
-variants, both partitioned and unpartitioned, before writing a copy with
-`Domain=location.hostname; Path=/; SameSite=None; Secure; Partitioned`.
-It requires exactly one matching value in `document.cookie`; ambiguous or blocked
-`_ga` storage uses `GA1.<n>.<a>.<b>` as gtag `client_id: <a>.<b>` fallback.
-With analytics consent, a host `_ga` snapshot and a different existing frame
-client ID, frame `_ga_<ID>` cookies absent from that snapshot are removed to avoid attaching a new client to an old session.
-GA cookies use two years. `_gcl_*` values with a readable `GCL.<seconds>` timestamp
-and `_fbc` values with a readable `fb.1.<milliseconds>` timestamp use only the
-remaining part of 90 days from that timestamp, capped at 90 days. Expired copies
-are deleted. Other advertising values use 90 days because their original expiry
-is unavailable through `document.cookie`. This cannot preserve an unknown shorter
-expiry configured by the host.
-
-Revoking a purpose deletes all four cookie variants, including cookies created
-by tags. Marketing revocation also removes all click IDs from the frame URL and clears
-`_gcl_*` localStorage entries. Click IDs are written to the frame URL only with
-marketing consent and restored on a later grant. Cookie
-`_gcl_aw` never supplies a URL gclid; Ads reads the copied cookie directly.
-Identity refreshes copy cookies silently; only a changed analytics or marketing
-choice emits Consent Mode update and `festapp_consent_update`. A loaded Google
-tag may retain its client ID in memory after revocation; no undocumented
-`client_id: undefined` reset is attempted. Already delivered data cannot be recalled.
-For GA session continuity the website and organizer must use the same G-
-measurement ID. Browser policy can prevent continuity. Attribution remains best
-effort and has no effect on orders or payments.
-
-For direct form visits only, `_gl` and `gtm_debug` from the form address are
-validated and copied to the isolated runtime URL before GTM loads. `_gl` is
-forwarded only with both analytics and marketing consent and removed from the frame URL on
-revocation. `gtm_debug` does not identify a visitor and remains available. Values have
-1 to 256 characters (`_gl`: up to 2048) without controls or `@`; `_gl` additionally accepts only
-letters, digits, asterisks, dots, underscores and hyphens. These signals never
-enter dataLayer or `page_location`. Embeds never forward either signal from
-host or form URLs because GA4 iframe linking is unsupported. The website and
-organizer still need compatible Google linker configuration for direct visits;
-passing a signal alone does not guarantee attribution. After runtime initialization,
-the form removes `_gl` from its address while keeping it in memory for consent
-updates. Embeds adopting website identity omit the website referrer from context.
-Configure website and checkout domains together in GA4 cross-domain settings
-and review unwanted referrals. GTM Preview in a cross-site
-frame does not connect reliably and is not supported.
-
-
 The runtime validates a canonical public form URL without query/hash and a
 referrer origin only, then adds only allowlisted campaign parameters to the
-`page_location` query sent to dataLayer. With marketing consent, the click IDs are also copied into the frame URL, because Ads and Meta tags read click IDs from the document. Campaign/click values use one bounded allowlist
+`page_location` query sent to dataLayer. The same values are copied into the frame URL, because Ads and Meta tags read click IDs from the document. Campaign/click values use one bounded allowlist
 (`campaignKeys` in the shared contract): `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`,
 `utm_content`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `sznclid`, `ttclid` and `msclkid`. Each value
 has 1 to 256 characters, without controls or `@`. Any other query parameter keeps a standalone form
@@ -427,3 +374,21 @@ consent. Escape in Settings discards the draft. Reopened Settings always offer
 Decline; after a saved decision focus returns to the floating Consent settings
 button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
+
+## First-party attribution and CMS defaults
+
+For website attribution, select website dataLayer mode and configure the host
+GTM container. Host tags use the website's own native identity and CMP. Festapp
+does not read, copy or extend GA/GCL/Meta cookies or set a global client_id.
+The independent Unit runtime remains available with its existing isolation; it
+does not guarantee continuity with the website's visitor/session attribution.
+
+New WordPress inserter blocks explicitly serialize `measurement: host`, new
+Joomla modules without a bound setting preselect host, and fresh Wix widgets
+without an existing form URL select host. Existing blocks, legacy shortcodes,
+modules and widgets retain their saved destination or the unit fallback. Native
+website tags and consent must be configured before enabling host measurement.
+
+A paused, importable website GTM preset and setup instructions are available in
+[`integrations/measurement`](../../integrations/measurement/README.md). Configure
+and preview merchant destinations before publishing.

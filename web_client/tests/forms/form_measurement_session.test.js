@@ -132,12 +132,3 @@ test('a delayed expiry timer cannot let policy renewal revive the expired grant'
  now+=61000;assert.equal(expired({event:'page_view'}),false,'expiry is checked before sending, independent of timers');
  await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(expired({event:'page_view'}),false,'renewal creates a new grant after elapsed expiry');
 });
-
-test('session carries optional identity on activation and refreshes it without a choice change',async t=>{
- const first={analytics:true,hostIdentity:{_ga:'GA1.1.123.456',_fbp:'denied'}};
- const f=fixture(t,{consent:first}),updates=[];f.transport.updateConsent=(choice,identity)=>updates.push(identity);const identities=[];f.transport.updateIdentity=identity=>identities.push(identity);await f.start();
- assert.deepEqual(f.starts[0].hostIdentity,{_ga:'GA1.1.123.456'});
- f.choose({analytics:true,hostIdentity:{_ga:'GA1.1.123.789'}});
- assert.deepEqual(identities.at(-1),{_ga:'GA1.1.123.789'});assert.equal(updates.length,1);assert.equal(f.starts.length,1);
- f.choose(false);assert.deepEqual(updates.at(-1),{});
-});

@@ -1027,18 +1027,3 @@ test('interleaved embeds retain their own page context and clear it across grant
  assert.equal(f.events.at(-1).page_type,null,'a new scope never reuses the prior page context');
  assert.equal(f.events.at(-1).language,null);
 });
-
-test('host sends raw identity only for granted purposes in Unit mode',()=>{
- const f=host();const frame=f.frames[0];try {
-  f.dom.window.document.cookie='_ga=GA1.1.123.456; Path=/';
-  f.dom.window.document.cookie='_fbp=fb.1.123.456; Path=/';
-  const sendContext=()=>f.message(frame,'https://tickets.invalid',envelope('measurement-context',f.sent[0][0][0].instance,{measurement:{protocol:measurementProtocol,manifest:measurement}}));
-  sendContext();assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.hostIdentity),{});
-  f.dom.window.FestappEmbed.setMeasurementConsent(frame,true);
-  assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.hostIdentity),{_ga:'GA1.1.123.456'});
-  f.dom.window.FestappEmbed.setMeasurementConsent(frame,{marketing:true});
-  assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.hostIdentity),{_fbp:'fb.1.123.456'});
-  frame.setAttribute('data-festapp-datalayer','');sendContext();
-  assert.equal(f.sent[0].at(-1)[0].measurement.hostIdentity,undefined);
- } finally {f.dom.window.close();}
-});

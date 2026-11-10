@@ -75,19 +75,6 @@
     if (input === true) return { analytics: true, marketing: false };
     return { analytics: input?.analytics === true, marketing: input?.marketing === true };
   }
-  function measurementHostIdentity(input, choice) {
-    const consent = measurementConsent(choice), result = {};
-    if (!input || typeof input !== "object" || Array.isArray(input)) return result;
-    for (const [name, value] of Object.entries(input)) {
-      const analytics = /^_ga(?:_[A-Z0-9]+)?$/.test(name);
-      const marketing = ["_gcl_aw", "_gcl_gb", "_gcl_au", "_fbp", "_fbc"].includes(name);
-      if ((analytics && consent.analytics || marketing && consent.marketing) && typeof value === "string" && value.length <= 512 && /^[A-Za-z0-9._$-]+$/.test(value)) {
-        result[name] = value;
-        if (Object.keys(result).length === 10) break;
-      }
-    }
-    return result;
-  }
   var campaignKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id", "gclid", "gbraid", "wbraid", "gad_source", "gad_campaignid", "srsltid", "fbclid", "sznclid", "ttclid", "msclkid"];
   var unsafeText = /[@\u0000-\u001f\u007f-\u009f]/;
   function campaignContext(input) {
@@ -333,19 +320,6 @@
 
   // src/embed/host_measurement.js
   var usesHostDataLayer = (frame) => frame.hasAttribute("data-festapp-datalayer");
-  function readHostMeasurementIdentity(doc, consent) {
-    if (!consent?.analytics && !consent?.marketing && consent !== true) return {};
-    try {
-      const pairs = doc.cookie.split(";").map((part) => {
-        const index = part.indexOf("=");
-        return index < 0 ? ["", ""] : [part.slice(0, index).trim(), part.slice(index + 1)];
-      });
-      const cookies = Object.fromEntries(pairs.filter(([name]) => pairs.filter(([key]) => key === name).length === 1));
-      return measurementHostIdentity(cookies, consent);
-    } catch {
-      return {};
-    }
-  }
   function createHostMeasurement({ frames, currentRecord, disposeRecord, scan }) {
     let suspended = false;
     const consentMode = createHostConsentMode(window);
@@ -360,17 +334,13 @@
         return measurementConsent(false);
       }
     };
-    const sendConsent = (frame, record) => {
-      const consent = record.lease ? readChoice(record) : measurementConsent(false);
-      record.channel.send("measurement-consent", { measurement: {
-        protocol: measurementProtocol,
-        manifest: record.manifest,
-        leaseId: record.lease?.id,
-        ttl: record.lease ? 6e4 : 0,
-        consent,
-        ...!usesHostDataLayer(frame) ? { hostIdentity: readHostMeasurementIdentity(document, consent) } : {}
-      } });
-    };
+    const sendConsent = (frame, record) => record.channel.send("measurement-consent", { measurement: {
+      protocol: measurementProtocol,
+      manifest: record.manifest,
+      leaseId: record.lease?.id,
+      ttl: record.lease ? 6e4 : 0,
+      consent: readChoice(record)
+    } });
     const revoke = (frame, record) => {
       record.lease = null;
       record.pageContext = null;
