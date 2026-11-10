@@ -311,11 +311,96 @@ List<(List<double>, List<double>)> _pathSegments(LayoutNode n) {
 /// returned to the mode handler, which owns availability feedback and actions.
 enum LayoutTapDisposition { activate, block, ignore }
 
+// One broad phase for both physical collision hulls and rendered hit contours.
+// Only the geometry supplied by the owning index differs.
+class _LayoutBoundsIndex {
+  final double cellSize;
+  final _cells = <(int, int), List<String>>{};
+  final _large = <String>[];
+  _LayoutBoundsIndex(this.cellSize);
+
+  void add(String id, Map<String, double> bounds) {
+    final left = (bounds['x']! / cellSize).floor();
+    final top = (bounds['y']! / cellSize).floor();
+    final right = ((bounds['x']! + bounds['width']!) / cellSize).floor();
+    final bottom = ((bounds['y']! + bounds['height']!) / cellSize).floor();
+    if ((right - left + 1) * (bottom - top + 1) > 4096) {
+      _large.add(id);
+      return;
+    }
+    for (var x = left; x <= right; x++) {
+      for (var y = top; y <= bottom; y++) {
+        (_cells[(x, y)] ??= []).add(id);
+      }
+    }
+  }
+
+  List<String> query(Map<String, double> bounds) {
+    final found = <String>{..._large};
+    for (
+      var x = (bounds['x']! / cellSize).floor();
+      x <= ((bounds['x']! + bounds['width']!) / cellSize).floor();
+      x++
+    ) {
+      for (
+        var y = (bounds['y']! / cellSize).floor();
+        y <= ((bounds['y']! + bounds['height']!) / cellSize).floor();
+        y++
+      ) {
+        found.addAll(_cells[(x, y)] ?? const <String>[]);
+      }
+    }
+    return found.toList()..sort();
+  }
+}
+
+/// Physical placement policy, independent of appearance and pointer hit areas.
+/// Groups contribute through their children; ordinary artwork is decorative.
+bool isLayoutObstacle(LayoutNode node) =>
+    node.kind == 'seat' ||
+    node.kind == 'table' ||
+    node.kind == 'furniture' ||
+    node.properties['obstacle'] == true ||
+    node.properties['role'] == 'obstacle';
+
+/// Immutable physical hulls and spatial queries for every obstacle kind.
+/// Pointer selection retains [LayoutSpatialIndex]'s precise rendered contours.
+class LayoutCollisionIndex {
+  final VenueLayoutDocument document;
+  final Map<String, List<double>> matrices;
+  final _hulls = <String, List<List<double>>>{};
+  final _publishedHulls = <String, List<List<double>>>{};
+  final _bounds = _LayoutBoundsIndex(128);
+
+  LayoutCollisionIndex(this.document) : matrices = worldMatrices(document) {
+    for (final node in document.nodes.where(isLayoutObstacle)) {
+      final hull = worldHull(node, matrices[node.id]!);
+      _hulls[node.id] = hull;
+      _bounds.add(node.id, boundsOfPoints(hull));
+    }
+  }
+
+  /// Returns a stable read-only hull without exposing mutable cache contents.
+  List<List<double>> hullFor(String nodeId) => _publishedHulls.putIfAbsent(
+    nodeId,
+    () => List.unmodifiable(
+      _hulls[nodeId]!.map((point) => List<double>.unmodifiable(point)),
+    ),
+  );
+
+  List<String> query(Map<String, double> bounds) => _bounds.query(bounds);
+}
+
+final _collisionIndices = Expando<LayoutCollisionIndex>();
+
+/// Reuses derived physical geometry only for the same immutable document.
+LayoutCollisionIndex collisionIndexFor(VenueLayoutDocument document) =>
+    _collisionIndices[document] ??= LayoutCollisionIndex(document);
+
 class LayoutSpatialIndex {
   final VenueLayoutDocument document;
   final Map<String, List<double>> matrices;
-  final Map<String, List<LayoutNode>> _cells = {};
-  final List<LayoutNode> _large = [];
+  late final _LayoutBoundsIndex _bounds = _LayoutBoundsIndex(cellSize);
   final Map<String, int> _paintRanks = {};
   final Map<String, LayoutNode> _nodes = {};
   final _hitContours = <String, List<List<List<double>>>>{};
@@ -351,19 +436,7 @@ class LayoutSpatialIndex {
       b['y'] = b['y']! - padding;
       b['width'] = b['width']! + padding * 2;
       b['height'] = b['height']! + padding * 2;
-      final x = (b['x']! / cellSize).floor(),
-          y = (b['y']! / cellSize).floor(),
-          r = ((b['x']! + b['width']!) / cellSize).floor(),
-          bot = ((b['y']! + b['height']!) / cellSize).floor();
-      if ((r - x + 1) * (bot - y + 1) > 4096) {
-        _large.add(n);
-        continue;
-      }
-      for (var i = x; i <= r; i++) {
-        for (var j = y; j <= bot; j++) {
-          (_cells['$i,$j'] ??= []).add(n);
-        }
-      }
+      _bounds.add(n.id, b);
     }
   }
 
@@ -575,24 +648,7 @@ class LayoutSpatialIndex {
     return selectionTarget?.call(id) ?? id;
   }
 
-  List<String> query(Map<String, double> b) {
-    final result = <String>{};
-    for (
-      var x = (b['x']! / cellSize).floor();
-      x <= ((b['x']! + b['width']!) / cellSize).floor();
-      x++
-    ) {
-      for (
-        var y = (b['y']! / cellSize).floor();
-        y <= ((b['y']! + b['height']!) / cellSize).floor();
-        y++
-      ) {
-        result.addAll((_cells['$x,$y'] ?? []).map((n) => n.id));
-      }
-    }
-    result.addAll(_large.map((n) => n.id));
-    return result.toList()..sort();
-  }
+  List<String> query(Map<String, double> bounds) => _bounds.query(bounds);
 }
 
 final _indexCache = Expando<LayoutSpatialIndex>();
@@ -691,21 +747,15 @@ bool polygonContainsHull(List<List<double>> polygon, List<List<double>> hull) {
 }
 
 List<List<String>> layoutCollisions(VenueLayoutDocument d) {
-  final index = LayoutSpatialIndex(d),
+  final index = collisionIndexFor(d),
       nodes = {for (final n in d.nodes) n.id: n},
       out = <List<String>>[],
       seen = <String>{};
-  bool physical(LayoutNode n) =>
-      n.kind == 'seat' ||
-      n.kind == 'table' ||
-      n.kind == 'furniture' ||
-      n.properties['obstacle'] == true ||
-      n.properties['role'] == 'obstacle';
-  for (final n in d.nodes.where(physical)) {
-    final hull = worldHull(n, index.matrices[n.id]!);
+  for (final n in d.nodes.where(isLayoutObstacle)) {
+    final hull = index.hullFor(n.id);
     for (final id in index.query(boundsOfPoints(hull))) {
       final other = nodes[id]!;
-      if (id == n.id || !physical(other)) continue;
+      if (id == n.id || !isLayoutObstacle(other)) continue;
       bool ancestor(String a, LayoutNode child) {
         var p = nodes[child.parentId];
         while (p != null) {
@@ -718,7 +768,7 @@ List<List<String>> layoutCollisions(VenueLayoutDocument d) {
       if (ancestor(n.id, other) || ancestor(other.id, n)) continue;
       final pair = [n.id, id]..sort();
       if (!seen.add(pair.join('/'))) continue;
-      if (polygonsOverlap(hull, worldHull(other, index.matrices[id]!))) {
+      if (polygonsOverlap(hull, index.hullFor(id))) {
         out.add(pair);
       }
     }

@@ -462,8 +462,9 @@ VenueLayoutDocument reflowTable(
   final extent =
       max(seating.width, seating.height) + seating.gap + seating.spacing;
   final body = nodeBounds(d, originalTable);
-  final neighbors = d.nodes.any((n) => !own.contains(n.id) && _chairObstacle(n))
-      ? spatialIndexFor(d).query({
+  final neighbors =
+      d.nodes.any((n) => !own.contains(n.id) && isLayoutObstacle(n))
+      ? collisionIndexFor(d).query({
           'x': body['x']! - extent,
           'y': body['y']! - extent,
           'width': body['width']! + extent * 2,
@@ -472,7 +473,7 @@ VenueLayoutDocument reflowTable(
       : <String>{};
   final externalHulls = [
     for (final id in neighbors)
-      if (!own.contains(id) && _chairObstacle(nodeIndex[id]!))
+      if (!own.contains(id) && isLayoutObstacle(nodeIndex[id]!))
         worldHull(
           nodeIndex[id]!,
           multiplyMatrix(inverse, worldMatrices(d)[id]!),
@@ -772,25 +773,18 @@ List<Map<String, dynamic>> _canvasChairPerimeterSlots(
   return out;
 }
 
-bool _chairObstacle(LayoutNode n) =>
-    n.kind == 'seat' ||
-    n.kind == 'table' ||
-    n.kind == 'furniture' ||
-    n.properties['obstacle'] == true ||
-    n.properties['role'] == 'obstacle';
-
 bool _tableBodiesClear(
   VenueLayoutDocument d,
   Set<String> tableIds,
-  LayoutSpatialIndex index,
+  LayoutCollisionIndex index,
   Map<String, LayoutNode> byId,
 ) {
   for (final table in d.nodes.where((n) => tableIds.contains(n.id))) {
     final own = layoutSubtree(d, {table.id});
     final hull = worldHull(table, index.matrices[table.id]!);
     for (final id in index.query(boundsOfPoints(hull))) {
-      if (own.contains(id) || !_chairObstacle(byId[id]!)) continue;
-      if (polygonsOverlap(hull, worldHull(byId[id]!, index.matrices[id]!))) {
+      if (own.contains(id) || !isLayoutObstacle(byId[id]!)) continue;
+      if (polygonsOverlap(hull, index.hullFor(id))) {
         return false;
       }
     }
@@ -800,17 +794,19 @@ bool _tableBodiesClear(
 
 bool _tableChairsClear(VenueLayoutDocument d, Set<String> tableIds) {
   if (tableIds.isEmpty) return true;
-  final index = spatialIndexFor(d), byId = {for (final n in d.nodes) n.id: n};
+  final index = collisionIndexFor(d), byId = {for (final n in d.nodes) n.id: n};
   if (!_tableBodiesClear(d, tableIds, index, byId)) return false;
   for (final seat in d.nodes.where(
     (n) => n.kind == 'seat' && tableIds.contains(n.parentId),
   )) {
     final hull = worldHull(seat, index.matrices[seat.id]!);
     for (final id in index.query(boundsOfPoints(hull))) {
-      if (id == seat.id || id == seat.parentId || !_chairObstacle(byId[id]!)) {
+      if (id == seat.id ||
+          id == seat.parentId ||
+          !isLayoutObstacle(byId[id]!)) {
         continue;
       }
-      if (polygonsOverlap(hull, worldHull(byId[id]!, index.matrices[id]!))) {
+      if (polygonsOverlap(hull, index.hullFor(id))) {
         return false;
       }
     }
@@ -1824,7 +1820,7 @@ class _SeatFitSearch {
   final double spacing, rowSpacing;
   final List<List<double>>? boundary;
   final bool Function()? cancelled;
-  late final LayoutSpatialIndex index = spatialIndexFor(document);
+  late final LayoutCollisionIndex index = collisionIndexFor(document);
   late final Map<String, LayoutNode> nodes = {
     for (final n in document.nodes) n.id: n,
   };
@@ -1880,14 +1876,10 @@ class _SeatFitSearch {
         if (!blocked) {
           for (final id in index.query(boundsOfPoints(hull))) {
             final other = nodes[id]!;
-            if (other.kind != 'seat' &&
-                other.kind != 'table' &&
-                other.kind != 'furniture' &&
-                other.properties['obstacle'] != true &&
-                other.properties['role'] != 'obstacle') {
+            if (!isLayoutObstacle(other)) {
               continue;
             }
-            if (polygonsOverlap(hull, worldHull(other, index.matrices[id]!))) {
+            if (polygonsOverlap(hull, index.hullFor(id))) {
               blocked = true;
               break;
             }
