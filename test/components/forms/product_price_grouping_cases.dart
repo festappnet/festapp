@@ -116,6 +116,17 @@ void main() {
       final name = find.descendant(
           of: find.byType(TicketProductEditorRow), matching: input('Název'));
       expect(tester.getRect(name).top, tester.getRect(input('Cena')).top);
+      await tester.enterText(name, 'Odvoz do Žimrovic');
+      await tester.pump();
+      expect(changes, greaterThan(2));
+      expect(field.definition.productType!.products!.single.title,
+          'Odvoz do Žimrovic');
+      final changesAfterRename = changes;
+      await tester.enterText(name, 'Režijní náklady akce');
+      await tester.pump();
+      expect(changes, greaterThan(changesAfterRename));
+      expect(field.definition.productType!.products!.single.title,
+          'Režijní náklady akce');
       expect(tester.takeException(), isNull);
     });
   }

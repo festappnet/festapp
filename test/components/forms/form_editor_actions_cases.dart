@@ -1,3 +1,6 @@
+import 'package:fstapp/components/forms/form_strings.dart';
+import 'package:fstapp/components/forms/widgets_editor/product_type_editor.dart';
+import 'package:fstapp/components/forms/widgets_editor/ticket_product_editor_row.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -281,6 +284,95 @@ void main() {
       );
     }
   }
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'product group edits update the actual Save button and revert cleanly',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.formsWrite: true},
+        occasionUser: OccasionUserModel(isEditorOrder: true),
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final product = ProductModel(
+        id: 10, title: 'Bez odvozu', price: 0, currencyCode: 'CZK',
+        isHidden: false,
+      );
+      final group = ProductTypeModel(id: 3, title: 'Odvoz', products: [product]);
+      final field = FormFieldDraft(
+        id: 5, title: 'Odvoz', type: 'product_type', productType: group,
+        isTicketField: true, isRequired: false, isHidden: false, data: {},
+      );
+      final form = FormEditorDraft(
+        occasionId: 1, link: 'test', relatedFields: [
+          FormFieldDraft(id: 4, type: 'ticket', data: {'max_tickets': 1}),
+          field,
+        ],
+      );
+      await _environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: FormEditorContent(
+          formLink: 'test', loadBundle: (_) async => FormEditBundle(
+            form: form, productTypes: [group], products: [product],
+            availableBankAccounts: [],
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      final save = find.widgetWithText(FilledButton, 'Common.save'.tr());
+      void expectSave(bool enabled) => expect(
+        tester.widget<FilledButton>(save).onPressed,
+        enabled ? isNotNull : isNull,
+      );
+      Future<void> editAndRestore(Finder input, String changed, String original) async {
+        await tester.ensureVisible(input);
+        await tester.enterText(input, changed);
+        await tester.pumpAndSettle();
+        expectSave(true);
+        await tester.enterText(input, original);
+        await tester.pumpAndSettle();
+        expectSave(false);
+      }
+      expectSave(false);
+      final row = find.byType(TicketProductEditorRow);
+      Finder productInput(String label) => find.descendant(
+        of: row, matching: find.byWidgetPredicate(
+          (widget) => widget is TextField && widget.decoration?.labelText == label,
+        ),
+      );
+      await editAndRestore(productInput('Název'), 'Žimrovice', 'Bez odvozu');
+      await editAndRestore(productInput('Cena'), '150', '0');
+      await editAndRestore(find.byWidgetPredicate(
+        (widget) => widget is TextField &&
+            widget.decoration?.labelText == FormStrings.productTypeTitle,
+      ), 'Doprava domů', 'Odvoz');
+      final groupEditor = find.byType(ProductTypeEditor);
+      final toggles = find.descendant(of: groupEditor,
+        matching: find.byWidgetPredicate((widget) => widget is Switch || widget is Checkbox));
+      for (var i = 0; i < toggles.evaluate().length; i++) {
+        await tester.ensureVisible(toggles.at(i));
+        await tester.tap(toggles.at(i));
+        await tester.pumpAndSettle();
+        expectSave(true);
+        await tester.tap(toggles.at(i));
+        await tester.pumpAndSettle();
+        expectSave(false);
+      }
+      final defaultChoice = find.descendant(of: groupEditor,
+          matching: find.byType(Radio<String>));
+      await tester.ensureVisible(defaultChoice);
+      await tester.tap(defaultChoice);
+      await tester.pumpAndSettle();
+      expectSave(true);
+      await tester.tap(defaultChoice);
+      await tester.pumpAndSettle();
+      expectSave(false);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgetsWithEnvironment(
     () => _environment,
     'failed loading leaves the spinner and retry recovers',

@@ -428,8 +428,6 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                         border: const UnderlineInputBorder(),
                       ),
                       onChanged: (val) {
-                        // Update the model, but DO NOT call refresh().
-                        // The controller handles the UI update.
                         ptField.definition = ptField.definition.copyWith(
                           title: val,
                         );
@@ -438,6 +436,7 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                             title: val,
                           ),
                         );
+                        refresh();
                       },
                     ),
                   ),
