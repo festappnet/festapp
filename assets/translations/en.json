@@ -4089,7 +4089,7 @@
     "showOccasions": "Show events ({count})",
     "hideOccasions": "Hide events ({count})",
     "accessSummary": "What this connection allows",
-    "sameRights": "Within your selection, the application can use the following features. Your current user rights always apply.",
+    "sameRights": "Application access follows your current user rights for the selected events. The server checks them for every action.",
     "regionalPlatform": "This connection applies to {portal}, powered by the shared {platform} platform.",
     "baseAccess": "Read your identity, available events and ticket artwork",
     "sensitiveActionsHint": "Before cancelling orders, changing payments or sending tickets, the application should verify your specific instruction.",

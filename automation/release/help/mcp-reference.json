@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "de4d84ee1e77ea655b5b5f26ab56d8cfad14026a7b7783495db798ae3c82d18d",
+  "sourceDigest": "9b6737079eb4ea88a2114238d08b3caccddfb551c0e11beceb03aeefadf0eb0e",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -1045,7 +1045,9 @@
         "inventory.pools.list",
         "inventory.contexts.list",
         "inventory.pools.inspect",
-        "inventory.resources.list"
+        "inventory.resources.list",
+        "inventory.spots.list",
+        "inventory.slots.list"
       ],
       "requires": []
     },
@@ -1056,7 +1058,8 @@
         "en": "Edit stock pools, contexts and resources"
       },
       "operations": [
-        "inventory.change"
+        "inventory.change",
+        "inventory.assignments.save"
       ],
       "requires": [
         "festapp:inventory:read"
@@ -7619,6 +7622,113 @@
       }
     },
     {
+      "id": "inventory.assignments.save",
+      "name": "festapp_inventory_assignments_save",
+      "description": "Apply an explicitly approved batch of stock spot assignments through the same atomic command and receipt as the administration editor. Each change supplies the original old_spot_id and requested new_spot_id (null clears), target resource_id, nullable resource_slot_id and inventory_context_id. Preserve original IDs; do not replace a stale baseline with a fresh one before saving. The domain owner enforces context, slot, holds, capacity and all-or-nothing changes. Retry an uncertain result with the identical command UUID and payload. An assignment-changed conflict requires rereading and a new decision. Does not create orders, alter ticket ownership, charge or send email.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:inventory:read",
+        "festapp:inventory:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "changes": {
+            "minItems": 1,
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "resource_id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "resource_slot_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "inventory_context_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "old_spot_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "new_spot_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "resource_id",
+                "resource_slot_id",
+                "inventory_context_id",
+                "old_spot_id",
+                "new_spot_id"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "occasionId",
+          "commandId",
+          "changes"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "id": "inventory.change",
       "name": "festapp_inventory_change",
       "description": "Save or delete a stock pool/resource through the same single receipt and domain command as administration. Save pool settings with their occasion and original version (null for new). Omit/null contexts to preserve them; an array completely replaces contexts, including removal of omitted rows. Obtain the complete settings via pool inspect before editing. Capacity reductions/context deletion/resource or pool deletion preserve sold or currently held spots and can reject. Resource save replaces title/capacity/rules and can move it between pools in the same occasion under existing allocation rules. Obtain approval of the exact save/removal; retry an uncertain result with identical commandId and payload. Conflicts require a fresh read and a new decision. Does not create orders or alter payments.",
@@ -8248,6 +8358,96 @@
       "id": "inventory.resources.list",
       "name": "festapp_inventory_resources_list",
       "description": "Read administration resource settings, capacity, booking rules and original versions in bounded ID pages within an actual stock pool. No raw spots, slot list or reservation secrets. Capacity is supply, not a checkout availability promise. Use nextCursor as after; pages are not a frozen snapshot.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:inventory:read"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "poolId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "after": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "default": 50,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "occasionId",
+          "poolId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "inventory.slots.list",
+      "name": "festapp_inventory_slots_list",
+      "description": "Read a bounded ID page of named slots belonging to one authorized stock resource. The same resource-slot identities are used by the administration assignment editor. Continue with nextCursor; no customers or reservation credentials.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:inventory:read"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "resourceId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "after": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "default": 50,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "occasionId",
+          "resourceId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "inventory.spots.list",
+      "name": "festapp_inventory_spots_list",
+      "description": "Read a bounded ID page of physical stock spots and their current context/resource/slot assignments. Includes allocation/active-hold flags, not customer data, ticket capabilities or hold secrets. Use these IDs and original assignments with inventory.assignments.save. Pages are read-time facts, not a frozen snapshot or reservation promise.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:inventory:read"

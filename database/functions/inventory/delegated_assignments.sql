@@ -1,0 +1,89 @@
+-- Delegation/read projections over the existing UI spot-assignment command.
+-- No allocation calculation, secondary receipt or customer/hold capability export.
+CREATE OR REPLACE FUNCTION public.get_inventory_spot_page(
+ p_occasion bigint,p_organization bigint,p_unit bigint,p_pool bigint,p_after bigint DEFAULT NULL,p_limit integer DEFAULT 50)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE ids bigint[];rows jsonb;next_id bigint;
+BEGIN
+ IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR p_after IS NOT NULL AND p_after<1 THEN
+  RAISE invalid_parameter_value USING MESSAGE='invalid inventory page'; END IF;
+ PERFORM public.check_operator_order_scope_internal_v1(p_occasion,p_organization,p_unit);
+ PERFORM 1 FROM public.inventory_pools WHERE id=p_pool AND occasion=p_occasion FOR SHARE;
+ IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='inventory pool unavailable'; END IF;
+ SELECT coalesce(array_agg(id ORDER BY id),'{}') INTO ids FROM (
+  SELECT s.id FROM eshop.spots s JOIN public.inventory_contexts c ON c.id=s.inventory_context
+  WHERE s.occasion=p_occasion AND c.inventory_pool=p_pool AND (p_after IS NULL OR s.id>p_after)
+  ORDER BY s.id LIMIT p_limit+1) page;
+ IF cardinality(ids)>p_limit THEN ids:=ids[1:p_limit];next_id:=ids[p_limit]; END IF;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',s.id,'title',s.title,'inventoryContextId',s.inventory_context,
+  'resourceId',s.resource,'resourceSlotId',s.resource_slot,'allocated',s.order_product_ticket IS NOT NULL,
+  'held',coalesce(s.order_product_ticket IS NULL AND s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp(),false)) ORDER BY s.id),'[]')
+ INTO rows FROM eshop.spots s WHERE s.id=ANY(ids) AND s.occasion=p_occasion;
+ PERFORM public.check_operator_order_scope_internal_v1(p_occasion,p_organization,p_unit);
+ RETURN jsonb_build_object('occasionId',p_occasion,'poolId',p_pool,'spots',rows,'nextCursor',next_id,'readAt',clock_timestamp());
+END $$;
+REVOKE ALL ON FUNCTION public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_inventory_resource_slot_page(
+ p_occasion bigint,p_organization bigint,p_unit bigint,p_resource bigint,p_after bigint DEFAULT NULL,p_limit integer DEFAULT 50)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE ids bigint[];rows jsonb;next_id bigint;
+BEGIN
+ IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR p_after IS NOT NULL AND p_after<1 THEN
+  RAISE invalid_parameter_value USING MESSAGE='invalid inventory page'; END IF;
+ PERFORM public.check_operator_order_scope_internal_v1(p_occasion,p_organization,p_unit);
+ PERFORM 1 FROM public.resources WHERE id=p_resource AND occasion=p_occasion FOR SHARE;
+ IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='inventory resource unavailable'; END IF;
+ SELECT coalesce(array_agg(id ORDER BY id),'{}') INTO ids FROM (
+  SELECT id FROM public.resource_slots WHERE resource=p_resource AND (p_after IS NULL OR id>p_after)
+  ORDER BY id LIMIT p_limit+1) page;
+ IF cardinality(ids)>p_limit THEN ids:=ids[1:p_limit];next_id:=ids[p_limit]; END IF;
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'resourceId',resource,'title',title) ORDER BY id),'[]')
+ INTO rows FROM public.resource_slots WHERE id=ANY(ids) AND resource=p_resource;
+ PERFORM public.check_operator_order_scope_internal_v1(p_occasion,p_organization,p_unit);
+ RETURN jsonb_build_object('occasionId',p_occasion,'resourceId',p_resource,'slots',rows,'nextCursor',next_id,'readAt',clock_timestamp());
+END $$;
+REVOKE ALL ON FUNCTION public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.check_inventory_assignment_entities_internal(p_occasion bigint,p_spots bigint[],p_resources bigint[])
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spots) AND occasion IS DISTINCT FROM p_occasion)
+  OR EXISTS(SELECT 1 FROM public.resources WHERE id=ANY(p_resources) AND occasion IS DISTINCT FROM p_occasion) THEN
+  RAISE insufficient_privilege USING MESSAGE='inventory assignment outside occasion'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.check_inventory_assignment_entities_internal(bigint,bigint[],bigint[]) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.manage_inventory_assignments(
+ p_occasion bigint,p_organization bigint,p_unit bigint,p_changes jsonb,p_command_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE spots bigint[];resources bigint[];receipt_occasion bigint;result jsonb;
+BEGIN
+ IF p_changes IS NULL OR jsonb_typeof(p_changes)<>'array' OR jsonb_array_length(p_changes) NOT BETWEEN 1 AND 1000
+  OR p_command_id IS NULL OR octet_length(p_changes::text)>1048576 THEN
+  RAISE invalid_parameter_value USING MESSAGE='invalid inventory assignment batch'; END IF;
+ PERFORM public.check_operator_order_scope_internal_v1(p_occasion,p_organization,p_unit,true);
+ SELECT ARRAY(SELECT DISTINCT e.value::bigint FROM jsonb_array_elements(p_changes) c CROSS JOIN LATERAL jsonb_each_text(c) e
+  WHERE e.key IN ('old_spot_id','new_spot_id') AND nullif(e.value,'') IS NOT NULL),
+  ARRAY(SELECT DISTINCT (c->>'resource_id')::bigint FROM jsonb_array_elements(p_changes) c) INTO spots,resources;
+ -- Missing entities may still have a valid durable receipt. Bind replay to its
+ -- stored occasion; the original owner checks the actor, intent hash and UUID.
+ SELECT occasion INTO receipt_occasion FROM public.client_mutation_receipts
+ WHERE command_id=p_command_id AND actor_id=auth.uid() AND command_name='inventory.spots.assign';
+ IF FOUND AND receipt_occasion IS DISTINCT FROM p_occasion THEN
+  RAISE insufficient_privilege USING MESSAGE='inventory receipt outside occasion'; END IF;
+ PERFORM public.check_inventory_assignment_entities_internal(p_occasion,spots,resources);
+ -- Preserve the canonical receipt-before-parent lock order used by the UI.
+ result:=public.update_spot_assignments_client_sync_v1(p_changes,p_command_id);
+ -- Replay returns before the writer's parent locks. Lock only to recheck the
+ -- current stored bindings; replay itself changes no printed ticket content.
+ PERFORM public.lock_spot_assignment_scope_internal(p_spots=>spots,p_resources=>resources,
+  p_financial=>false,p_products=>'{}'::bigint[],p_preserve_print=>false);
+ PERFORM public.check_inventory_assignment_entities_internal(p_occasion,spots,resources);
+ PERFORM public.check_operator_order_scope_internal_v1(p_occasion,p_organization,p_unit,true);
+ RETURN result-'sync';
+END $$;
+REVOKE ALL ON FUNCTION public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid) TO authenticated;

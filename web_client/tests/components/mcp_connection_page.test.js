@@ -2,6 +2,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
+import { MCP_SCOPES } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 let dom, Page, resumeUrl;
 const request = 'R'.repeat(43);
 const issuer = 'https://mcp.vstupenky.online';
@@ -194,26 +195,30 @@ test('overlapping router imports mount only the latest consent instance',async()
 });
 
 
-test('one informed approval includes exactly the displayed requested capabilities',async()=>{
- const permissions=['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
+test('general consent uses current user rights without a functional checklist',async()=>{
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',occasions:[{id:99,title:'Ples'}],requestedPermissions:MCP_SCOPES}:{resumeUrl:resume,issuer}})});
  await f.page.init();
- assert.equal(f.page.canApprove,false);
  assert.equal(f.container.querySelector('[data-permission]'),null);
- assert.match(f.container.textContent,/kontaktní údaje/);
- assert.match(f.container.textContent,/ruční platby/);
- assert.match(f.container.textContent,/e-mailem/);
- assert.match(f.container.textContent,/Vyberte alespoň/);
- f.container.querySelector('[data-occasion="99"]').click();
+ assert.equal(f.container.querySelector('[data-allow-create]'),null);
+ assert.match(f.container.textContent,/aktuálními.*právy/);
+ assert.doesNotMatch(f.container.textContent,/Vyberte povolené funkce|festapp:/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions:MCP_SCOPES});
+});
+test('organizer selection includes its available creation rights without another toggle',async()=>{
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',units:[{id:4,title:'Testovací organizace',canCreateOccasions:true}],occasions:[{id:99,title:'Ples',unitId:4}],canRequestCreate:true,requestedPermissions:[]}:{resumeUrl:resume,issuer}})});
+ await f.page.init();f.container.querySelector('[data-unit="4"]').click();
+ assert.equal(f.container.querySelector('[data-allow-create]'),null);
+ assert.equal(f.page.access.units[0].canCreateOccasions,true);
  await f.page.finish('approve');
- assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions});
+ assert.deepEqual(f.calls.at(-1).access.selection.units,[{unitId:4,canCreateOccasions:true}]);
 });
 test('a narrow OAuth request stays narrow and invalid scope dependencies fail closed',async()=>{
  let requestedPermissions=['festapp:orders:read'];
  const f=fixture({invoke:()=>({data:{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions}})});
- await f.page.init();assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read']);
+ await f.page.init();assert.deepEqual(f.page.details.requestedPermissions,['festapp:orders:read']);
  assert.doesNotMatch(f.container.textContent,/Zapisovat ruční platby|Odesílat zákazníkům|Před rušením/);
- requestedPermissions=[];await f.page.init();assert.equal(f.page.selectedPermissions.size,0);
+ requestedPermissions=[];await f.page.init();assert.equal(f.page.details.requestedPermissions.length,0);
  requestedPermissions=['festapp:payments:write'];await f.page.init();assert.equal(f.page.state,'error');
 });
 test('organizers start collapsed above two groups; disclosure preserves selection and focus',async()=>{
@@ -238,85 +243,94 @@ test('organizers start collapsed above two groups; disclosure preserves selectio
  }
 });
 
-test('product-only consent displays and submits exactly the new catalog scopes without requiring order access', async () => {
- const permissions=['festapp:products:read','festapp:products:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
+for (const [name, permissions] of [
+  [
+    "product-only consent displays and submits exactly the new catalog scopes without requiring order access",
+    [
+      "festapp:products:read",
+      "festapp:products:write"
+    ]
+  ],
+  [
+    "schedule consent is explicit and preserves all registry dependencies",
+    [
+      "festapp:products:read",
+      "festapp:product-schedules:read",
+      "festapp:product-schedules:write"
+    ]
+  ],
+  [
+    "standing preparation consent is separate from product edits",
+    [
+      "festapp:products:read",
+      "festapp:standing-inventory:write"
+    ]
+  ],
+  [
+    "inventory summaries display and persist only their explicit read consent",
+    [
+      "festapp:inventory:read"
+    ]
+  ],
+  [
+    "stock authoring consent names stock settings and retains only requested permissions",
+    [
+      "festapp:inventory:read",
+      "festapp:inventory:write"
+    ]
+  ],
+  [
+    "product choices require the requested explicit authoring-read consent",
+    [
+      "festapp:products:read",
+      "festapp:product-options:read"
+    ]
+  ],
+  [
+    "seat consent distinguishes lifecycle reads from changing blocked bindings",
+    [
+      "festapp:seats:read",
+      "festapp:seats:block"
+    ]
+  ],
+  [
+    "temporary-hold release consent is distinct from blocking seats",
+    [
+      "festapp:seats:read",
+      "festapp:seats:release-holds"
+    ]
+  ],
+  [
+    "seat swap consent explicitly includes changing the order total",
+    [
+      "festapp:seats:read",
+      "festapp:orders:read",
+      "festapp:seats:swap"
+    ]
+  ],
+  [
+    "seat order consent includes original ticket replacement and customer reads without broader writes",
+    [
+      "festapp:seats:read",
+      "festapp:orders:read",
+      "festapp:seats:create-orders"
+    ]
+  ],
+  [
+    "configuration consent names four separate permissions without expanding existing grants",
+    [
+      "festapp:occasion-settings:read",
+      "festapp:occasion-settings:write",
+      "festapp:unit-settings:read",
+      "festapp:unit-settings:write"
+    ]
+  ]
+]) test('internal request stays bounded: '+name,async()=>{
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',occasions:[{id:99,title:'Ples'}],requestedPermissions:permissions}:{resumeUrl:resume,issuer}})});
  await f.page.init();assert.equal(f.page.state,'consent');
- assert.match(f.container.textContent,/produkty/);
+ assert.equal(f.container.querySelector('[data-permission]'),null);
+ assert.doesNotMatch(f.container.textContent,/festapp:/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
- assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('schedule consent is explicit and preserves all registry dependencies',async()=>{
- const permissions=['festapp:products:read','festapp:product-schedules:read','festapp:product-schedules:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();assert.equal(f.page.state,'consent');
- assert.match(f.container.textContent,/cenové vlny/);
- f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
- assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-
-test('standing preparation consent is separate from product edits',async()=>{
- const permissions=['festapp:products:read','festapp:standing-inventory:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/stání/);
- f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
- assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('inventory summaries display and persist only their explicit read consent',async()=>{
- const permissions=['festapp:inventory:read'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst sklady, kapacity, nastavení a obsazení kontextů/);
- f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
- assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('stock authoring consent names stock settings and retains only requested permissions',async()=>{
- const permissions=['festapp:inventory:read','festapp:inventory:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Upravovat sklady, jejich kontexty a zdroje/);
- f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('product choices require the requested explicit authoring-read consent',async()=>{
- const permissions=['festapp:products:read','festapp:product-options:read'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst dostupné typy produktů a skladové volby/);
- f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('seat consent distinguishes lifecycle reads from changing blocked bindings',async()=>{
- const permissions=['festapp:seats:read','festapp:seats:block'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst místa a jejich provozní stav/);assert.match(f.container.textContent,/Blokovat a odblokovat vybraná místa/);f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('temporary-hold release consent is distinct from blocking seats',async()=>{
- const permissions=['festapp:seats:read','festapp:seats:release-holds'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Uvolňovat dočasné rezervace vybraných míst/);assert(!f.container.textContent.includes('Blokovat a odblokovat vybraná místa'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('seat swap consent explicitly includes changing the order total',async()=>{
- const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:swap'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Prohazovat místa vstupenek a upravovat cenu objednávky/);assert(!f.container.textContent.includes('Uvolňovat dočasné rezervace vybraných míst'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('seat order consent includes original ticket replacement and customer reads without broader writes',async()=>{
- const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:create-orders'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();assert.equal(f.page.state,'consent');
- assert.match(f.container.textContent,/Vytvářet objednávky z míst a nahrazovat původní vstupenky/);
- assert.match(f.container.textContent,/kontaktní údaje/);
- assert(!f.container.textContent.includes('Prohazovat místa vstupenek a upravovat cenu objednávky'));
- f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
- assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
-});
-
-test('configuration consent names four separate permissions without expanding existing grants',async()=>{
- const permissions=['festapp:occasion-settings:read','festapp:occasion-settings:write','festapp:unit-settings:read','festapp:unit-settings:write'];
- const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
- await f.page.init();
- for(const text of ['Číst nastavení akce a hry','Měnit nastavení akce','Číst nastavení pořadatele','Měnit nastavení pořadatele']) assert(f.container.textContent.includes(text));
- f.container.querySelector('[data-occasion="99"]').click();
- await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
  assert.deepEqual(f.calls.at(-1).access.selection,{type:'occasions',occasionIds:[99]});
 });

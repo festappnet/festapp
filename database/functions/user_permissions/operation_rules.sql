@@ -306,12 +306,12 @@ $$;
 REVOKE ALL ON FUNCTION public.demo_own_work_rule(boolean,boolean,boolean,boolean) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.demo_own_work_rule(boolean,boolean,boolean,boolean) TO postgres;
 
--- Closed-occasion enrolment intentionally combines the target user's raw
--- unit roles with the actor's occasion-admin fact. Role propagation itself
--- keeps the original unit flags and is not a new permission store.
-CREATE OR REPLACE FUNCTION public.closed_occasion_enrolment_rule(p_target_manager boolean,p_target_editor boolean,p_target_viewer boolean,p_actor_admin boolean)
+-- Closed-occasion enrolment combines the target's existing unit membership
+-- with the actor's canonical participant-management decision. Target role
+-- propagation remains separate and never copies the actor's privileges.
+CREATE OR REPLACE FUNCTION public.closed_occasion_enrolment_rule(p_target_manager boolean,p_target_editor boolean,p_target_viewer boolean,p_actor_can_manage boolean)
 RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
- SELECT public.unit_discovery_rule(p_target_editor,p_target_manager,p_target_viewer) OR coalesce(p_actor_admin,false);
+ SELECT public.unit_discovery_rule(p_target_editor,p_target_manager,p_target_viewer) OR coalesce(p_actor_can_manage,false);
 $$;
 REVOKE ALL ON FUNCTION public.closed_occasion_enrolment_rule(boolean,boolean,boolean,boolean) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.closed_occasion_enrolment_rule(boolean,boolean,boolean,boolean) TO postgres;
