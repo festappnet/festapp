@@ -3,6 +3,7 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -50,7 +51,7 @@ class MirrorContractTest(unittest.TestCase):
             self.assertIn('python3 automation/ci/run.py lane '+name,commands)
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or any(marker in command for marker in
-                    ('automation/ci/selection.py ',"echo 'All lane tests executed'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/deno.sh')),command)
+                    ('automation/ci/selection.py ',"echo 'All lane tests executed'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]
             self.assertEqual(node,[lane['node']])
@@ -78,7 +79,7 @@ class MirrorContractTest(unittest.TestCase):
         version=json.loads((ROOT/'web_client/package.json').read_text())['devDependencies']['playwright']
         installer=(ROOT/'automation/ci/browser.sh').read_text()
         self.assertIn('playwright@'+version,installer)
-        self.assertIn('playwright install --with-deps chromium',installer)
+        self.assertIn('playwright install --with-deps --only-shell chromium',installer)
         self.assertNotIn('agent-browser',installer)
 
     def test_flutter_browser_contracts_have_one_owner_and_semantic_inventory(self):
@@ -144,6 +145,52 @@ class MirrorContractTest(unittest.TestCase):
 
 
 class RunnerSafetyTest(unittest.TestCase):
+    def test_seat_provisioning_overlaps_downloads_and_requires_both_successes(self):
+        for browser_exit,image_exit,major in [(0,0,'15'),(17,0,'15'),(0,19,'17'),(17,19,'17')]:
+            with self.subTest(browser=browser_exit,image=image_exit),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory)
+                for relative in ('automation/ci/prepare-seat.sh','automation/ci/browser.sh','automation/local_db/test-base.json'):
+                    target=root/relative;target.parent.mkdir(parents=True,exist_ok=True)
+                    shutil.copyfile(ROOT/relative,target)
+                binary=root/'bin';binary.mkdir()
+                for name in ('docker','pnpm'):
+                    tool=binary/name
+                    tool.write_text('''#!/usr/bin/env python3
+import os, pathlib, sys, time
+root=pathlib.Path(os.environ['PROVISION_FIXTURE'])
+name=pathlib.Path(sys.argv[0]).name
+other='pnpm' if name=='docker' else 'docker'
+(root/(name+'.started')).write_text(' '.join(sys.argv[1:]))
+for _ in range(200):
+    if (root/(other+'.started')).exists(): break
+    time.sleep(.01)
+else: sys.exit(91)
+(root/(name+'.finished')).touch()
+sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
+''')
+                    tool.chmod(0o755)
+                chrome=binary/'google-chrome';chrome.touch();chrome.chmod(0o755)
+                env={**os.environ,'PATH':str(binary)+os.pathsep+os.environ['PATH'],
+                     'PROVISION_FIXTURE':directory,'BROWSER_EXIT':str(browser_exit),'IMAGE_EXIT':str(image_exit),
+                     'FESTAPP_TEST_PG_MAJOR':major,'GITHUB_ENV':str(root/'github-env')}
+                result=subprocess.run(['bash',str(root/'automation/ci/prepare-seat.sh')],env=env,timeout=10,capture_output=True,text=True)
+                self.assertEqual(result.returncode,browser_exit or image_exit,result.stderr)
+                self.assertTrue((root/'docker.finished').exists())
+                self.assertTrue((root/'pnpm.finished').exists())
+                config=json.loads((ROOT/'automation/local_db/test-base.json').read_text())
+                self.assertEqual((root/'docker.started').read_text(),'pull '+config['providers'][major]['image'])
+                self.assertIn('--only-shell chromium',(root/'pnpm.started').read_text())
+
+    def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):
+        units=runner.selected_units(['ticket-preview-and-delivery'])
+        self.assertEqual(units['ticket-install']['after'],[])
+        self.assertEqual(units['ticket-core']['after'],['ticket-install'])
+        self.assertEqual(units['ticket-client']['after'],['ticket-core'])
+        budget=runner.CONTRACT['resources']['ramMiB']
+        edge=units['ticket-edge']['resources']['ramMiB']
+        self.assertLessEqual(edge+units['ticket-install']['resources']['ramMiB'],budget)
+        self.assertGreater(edge+units['ticket-client']['resources']['ramMiB'],budget)
+
     def test_total_receipt_includes_preflight_and_pinned_runtime_resolution(self):
         contract={'jobs':{'wix-checkout-compatibility':{'node':'fixture','steps':['fixture-unit']}},
                   'steps':{'fixture-unit':{'script':'true','after':[],'resources':{}}},'resources':{}}
