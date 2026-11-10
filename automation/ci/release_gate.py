@@ -14,10 +14,18 @@ def git(*args):
     return subprocess.check_output(['git', *args], cwd=ROOT, text=True).strip()
 
 
+# Informational monitors of deployed state. A failing drift check must not block
+# the release that repairs the drift.
+INFORMATIONAL_CHECKS = {'measurement-runtime-drift'}
+
+
 def problems(checks, required, sha):
     latest = {}
     for check in checks:
         if check.get('head_sha') != sha or check.get('app', {}).get('slug') != 'github-actions':
+            continue
+        if (check['name'] in INFORMATIONAL_CHECKS and check['name'] not in required
+                and check.get('_workflow_path') == '.github/workflows/measurement-runtime-drift.yml'):
             continue
         name = check['name']
         if name not in latest or check['id'] > latest[name]['id']:
@@ -30,6 +38,32 @@ def problems(checks, required, sha):
         elif check['status'] != 'completed' or check.get('conclusion') != 'success':
             failures.append(f'{name}: {check["status"]}/{check.get("conclusion")} {check.get("html_url", "")}')
     return failures
+
+
+def identify_informational_workflows(checks, repository):
+    """Check-runs lack workflow paths; resolve their suite via Actions runs.
+
+    Missing metadata or unavailable lookup fails closed: the check still blocks.
+    """
+    paths = {}
+    for check in checks:
+        if check.get('name') not in INFORMATIONAL_CHECKS:
+            continue
+        suite = check.get('check_suite', {}).get('id')
+        if not isinstance(suite, int):
+            continue
+        if suite not in paths:
+            paths[suite] = None
+            try:
+                data = json.loads(subprocess.check_output(['gh', 'api',
+                    f'repos/{repository}/actions/runs?check_suite_id={suite}&per_page=100'],
+                    cwd=ROOT, text=True, stderr=subprocess.DEVNULL))
+                runs = [r for r in data['workflow_runs'] if r.get('check_suite_id') == suite]
+                if len(runs) == 1:
+                    paths[suite] = runs[0].get('path')
+            except (subprocess.CalledProcessError, OSError, ValueError, KeyError):
+                pass
+        check['_workflow_path'] = paths[suite]
 
 
 def release_source():
@@ -59,6 +93,7 @@ def main():
     pages = json.loads(subprocess.check_output(['gh', 'api', '--paginate', '--slurp',
         f'repos/{repository}/commits/{sha}/check-runs?per_page=100'], cwd=ROOT, text=True))
     checks = [check for page in pages for check in page['check_runs']]
+    identify_informational_workflows(checks, repository)
     required = json.loads((ROOT / 'automation/ci/checks.json').read_text())['jobs']
     failures = problems(checks, required, sha)
     if failures:

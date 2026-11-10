@@ -34,7 +34,12 @@
         "automation/lib/**",
         "automation/release/platform_updates/**",
         "automation/tests/deploy*",
-        "packages/festapp_contracts/**"
+        "packages/festapp_contracts/**",
+        "workers/form-measurement/**",
+        "automation/deploy_measurement_runtimes.sh",
+        "automation/verify_measurement_runtimes.mjs",
+        "automation/tests/measurement_runtimes.test.mjs",
+        ".github/workflows/measurement-runtime-drift.yml"
       ]
     },
     "wix-checkout-compatibility": {
@@ -301,7 +306,7 @@
       ]
     },
     "deploy-contract": {
-      "script": "bash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\n",
+      "script": "bash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\n",
       "after": [
         "renderer-install"
       ],
@@ -317,7 +322,12 @@
         "automation/lib/**",
         "automation/release/platform_updates/**",
         "automation/tests/deploy*",
-        "packages/festapp_contracts/**"
+        "packages/festapp_contracts/**",
+        "workers/form-measurement/**",
+        "automation/deploy_measurement_runtimes.sh",
+        "automation/verify_measurement_runtimes.mjs",
+        "automation/tests/measurement_runtimes.test.mjs",
+        ".github/workflows/measurement-runtime-drift.yml"
       ]
     },
     "wix-install": {
@@ -1624,6 +1634,7 @@
     "automation/tests/ios_candidate_release_contract.test.mjs",
     "automation/tests/legacy_origin_redirect.test.mjs",
     "automation/tests/local_release_manifest.test.mjs",
+    "automation/tests/measurement_runtimes.test.mjs",
     "automation/tests/monitoring_router.test.mjs",
     "automation/tests/netlify_canonical_provider_origin.test.mjs",
     "automation/tests/netlify_retirement.test.mjs",

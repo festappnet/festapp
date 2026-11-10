@@ -2,7 +2,7 @@ import {FORM_MEASUREMENT_SCRIPT_LIMIT} from '../../../web_client/src/components/
 import {runtimeSource} from './runtime_source.mjs';
 import {measurementOrigin, measurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
-const headers = {'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
+const headers = {'x-festapp-runtime-build': typeof BUILD_ID === 'undefined' ? 'unbuilt' : BUILD_ID,'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
     'permissions-policy':'camera=(), microphone=(), geolocation=(), payment=()', 'cross-origin-opener-policy':'same-origin'};
 const json = value => JSON.stringify(value).replace(/</g,'\\u003c').replace(/[\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16));
 const origin = value => {
