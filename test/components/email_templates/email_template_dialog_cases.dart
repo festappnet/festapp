@@ -238,8 +238,15 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('{{$heading}}', findRichText: true), findsNothing);
-      await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
-      await tester.tap(find.byIcon(Icons.preview_outlined).first);
+      final header = find.ancestor(
+        of: find.text(EmailTemplatesStrings.emailTemplateContent),
+        matching: find.byType(Row),
+      ).first;
+      final settings = find.widgetWithIcon(TextButton, Icons.tune);
+      expect(tester.getRect(settings).right,
+          closeTo(tester.getRect(header).right, 1));
+      await tester.ensureVisible(settings);
+      await tester.tap(settings);
       await tester.pumpAndSettle();
       final selector = find.byWidgetPredicate(
         (w) => w is DropdownButtonFormField<EmailPreviewScenario>,
@@ -254,6 +261,17 @@ void main() {
             .last,
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(CommonStrings.close).last);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byIcon(Icons.preview_outlined),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byIcon(Icons.preview_outlined).first);
+      await tester.pumpAndSettle();
+      expect(selector, findsNothing);
+      expect(find.text(EmailTemplatesStrings.previewScope), findsNothing);
       final received = tester.widget<EmailReceivedMessage>(
         find.byType(EmailReceivedMessage),
       );

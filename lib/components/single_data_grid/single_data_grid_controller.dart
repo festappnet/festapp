@@ -445,9 +445,19 @@ class SingleDataGridController<T extends ITrinaRowModel> {
               ),
             );
           }
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: rowChildren,
+          return IconButtonTheme(
+            data: IconButtonThemeData(
+              style: IconButton.styleFrom(
+                minimumSize: const Size.square(32),
+                maximumSize: const Size.square(32),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: rowChildren,
+            ),
           );
         },
       );

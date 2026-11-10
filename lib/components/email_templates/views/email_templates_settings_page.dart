@@ -447,9 +447,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_authoringContext != null)
-                    Text(EmailTemplatesStrings.previewScope)
-                  else ...[
+                  if (_authoringContext == null) ...[
                     Text(EmailTemplatesStrings.authoringContextUnavailable),
                     if (_authoringContextLoading)
                       const LinearProgressIndicator()
@@ -465,8 +463,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                         },
                       ),
                   ],
-                  _sampleControls(onChanged: () => update(() {})),
-                  const SizedBox(height: 16),
+                  if (_authoringContext == null) const SizedBox(height: 16),
                   if (_authoringContext != null)
                     if (widget.template.code == 'TICKET_ORDER_PAYMENT_DONE')
                       TicketEmailPreview(
@@ -844,31 +841,40 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                   ),
-                  IconButton(
-                    onPressed: _showVariableHelp,
-                    tooltip: EmailTemplatesStrings.variableGuide,
-                    icon: const Icon(Icons.info_outline, size: 20),
-                  ),
                   Flexible(
-                    child: Tooltip(
-                      message:
-                          '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
-                      child: TextButton.icon(
-                        onPressed: _showSampleSettings,
-                        icon: Icon(
-                          _contextUnavailable || _previewError
-                              ? Icons.warning_amber_outlined
-                              : Icons.tune,
-                          size: 20,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          onPressed: _showVariableHelp,
+                          tooltip: EmailTemplatesStrings.variableGuide,
+                          icon: const Icon(Icons.info_outline, size: 20),
                         ),
-                        label: Text(
-                          _scenario == null
-                              ? EmailTemplatesStrings.scenario
-                              : EmailTemplatesStrings.toneName(_scenario!.tone),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Flexible(
+                          child: Tooltip(
+                            message:
+                                '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
+                            child: TextButton.icon(
+                              onPressed: _showSampleSettings,
+                              icon: Icon(
+                                _contextUnavailable || _previewError
+                                    ? Icons.warning_amber_outlined
+                                    : Icons.tune,
+                                size: 20,
+                              ),
+                              label: Text(
+                                _scenario == null
+                                    ? EmailTemplatesStrings.scenario
+                                    : EmailTemplatesStrings.toneName(
+                                        _scenario!.tone,
+                                      ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ],

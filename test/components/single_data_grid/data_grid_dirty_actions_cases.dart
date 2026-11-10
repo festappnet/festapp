@@ -76,6 +76,11 @@ void main() {
     }
 
     enabled(false);
+    expect(
+      tester.getCenter(find.byIcon(Icons.delete_forever)).dy,
+      closeTo(tester.getCenter(find.text('Original')).dy, 1),
+      reason: 'The delete icon stays vertically centered in the compact row',
+    );
     bool actionEnabled(String text) =>
         tester
             .widget<ElevatedButton>(find.widgetWithText(ElevatedButton, text))
