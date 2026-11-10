@@ -22,6 +22,7 @@ import '../../support/fixtures/localization_log_fixture.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_preview_examples.dart';
@@ -621,6 +622,34 @@ void main() {
       },
     );
   }
+  testWidgets('body toolbar chooser is usable in a long template dialog', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await openTemplate(tester, occasionTitle: 'Ples',
+        html: '<p>{{orderCommunication}}</p><p>{{balanceReasoning}}</p>'
+            '<p>{{fullOrder}}</p><p>Signature</p>');
+    final bodyController = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+    final textNode = bodyController.editor.document.whereType<TextNode>().last;
+    bodyController.editor.execute([
+      ChangeSelectionRequest(DocumentSelection(
+          base: DocumentPosition(nodeId: textNode.id, nodePosition: const TextNodePosition(offset: 0)),
+          extent: DocumentPosition(nodeId: textNode.id, nodePosition: const TextNodePosition(offset: 5))),
+          SelectionChangeType.expandSelection, SelectionReason.userInteraction),
+    ]);
+    final button = find.byIcon(Icons.alternate_email).last;
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField).hitTestable(), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'amount');
+    await tester.pumpAndSettle();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+    expect(body.html, contains('{{amount}}'));
+    await tester.pumpWidget(const SizedBox());
+    debugDefaultTargetPlatformOverride = null;
+  });
   testWidgets('Escape closes mention menu before pristine parent', (
     tester,
   ) async {

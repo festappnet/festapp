@@ -3,6 +3,19 @@ import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'html_strings.dart';
 
+Future<void> showHtmlAtomicBlockInfo(
+  BuildContext context, {
+  required String label,
+  required String description,
+}) => showDialog<void>(
+  context: context,
+  builder: (context) => AppAlertDialog(
+    title: Text(label),
+    content: Text(description),
+    onClose: () => Navigator.pop(context),
+  ),
+);
+
 /// Shared interaction shell for HTML slots and block template variables.
 /// Serialized identity, document transactions and movement bounds stay outside.
 class HtmlAtomicBlock extends StatefulWidget {
@@ -44,7 +57,10 @@ class _HtmlAtomicBlockState extends State<HtmlAtomicBlock> {
             onTap: widget.onSelect,
             child: Stack(
               children: [
-                widget.child,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 40),
+                  child: widget.child,
+                ),
                 if (active)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -60,50 +76,46 @@ class _HtmlAtomicBlockState extends State<HtmlAtomicBlock> {
                       ),
                     ),
                   ),
-                if (active)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Material(
-                      color: colors.surfaceContainerHigh,
-                      elevation: 2,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip: widget.label,
-                            icon: const Icon(Icons.info_outline, size: 18),
-                            onPressed: () => showDialog<void>(
-                              context: context,
-                              builder: (context) => AppAlertDialog(
-                                title: Text(widget.label),
-                                content: Text(widget.description),
-                                onClose: () => Navigator.pop(context),
-                              ),
-                            ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Material(
+                    color: colors.surfaceContainerHigh,
+                    elevation: 2,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: widget.label,
+                          icon: const Icon(Icons.info_outline, size: 18),
+                          onPressed: () => showHtmlAtomicBlockInfo(
+                            context,
+                            label: widget.label,
+                            description: widget.description,
                           ),
-                          if (widget.onDelete != null) ...[
-                            IconButton(
-                              tooltip: HtmlStrings.moveUp,
-                              onPressed: widget.onMoveUp,
-                              icon: const Icon(Icons.arrow_upward, size: 18),
-                            ),
-                            IconButton(
-                              tooltip: HtmlStrings.moveDown,
-                              onPressed: widget.onMoveDown,
-                              icon: const Icon(Icons.arrow_downward, size: 18),
-                            ),
-                            IconButton(
-                              tooltip: MaterialLocalizations.of(context)
-                                  .deleteButtonTooltip,
-                              onPressed: widget.onDelete,
-                              icon: const Icon(Icons.close, size: 18),
-                            ),
-                          ],
+                        ),
+                        if (active && widget.onDelete != null) ...[
+                          IconButton(
+                            tooltip: HtmlStrings.moveUp,
+                            onPressed: widget.onMoveUp,
+                            icon: const Icon(Icons.arrow_upward, size: 18),
+                          ),
+                          IconButton(
+                            tooltip: HtmlStrings.moveDown,
+                            onPressed: widget.onMoveDown,
+                            icon: const Icon(Icons.arrow_downward, size: 18),
+                          ),
+                          IconButton(
+                            tooltip: MaterialLocalizations.of(context)
+                                .deleteButtonTooltip,
+                            onPressed: widget.onDelete,
+                            icon: const Icon(Icons.close, size: 18),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
+                ),
               ],
             ),
           ),
