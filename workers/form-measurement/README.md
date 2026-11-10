@@ -209,7 +209,7 @@ no deployment is running before removing a stale `measurement-runtime-deploy.loc
 Wrangler is pinned to **4.159.0** in the script, matching the published
 [Cloudflare release](https://github.com/cloudflare/workers-sdk/releases/tag/wrangler%404.159.0).
 Use pnpm 11.24.0. `automation/deploy_direct.sh` should also pin Wrangler in a
-separate change; this release leaves that script untouched.
+separate change; this release preserves that version choice and adds receiver gates.
 `CLOUDFLARE_ACCOUNT_ID` defaults to the same Festapp account as the direct web
 deploy. The env file is parsed only for `CLOUDFLARE_API_TOKEN`, never executed.
 It accepts optional `export`, quoted values and trailing comments; missing, empty

@@ -1,7 +1,7 @@
 # Unified measurement configuration and release
 
 Date: 2026-11-10
-Status: Implementation complete; validation and release in progress
+Status: Implementation and local validation complete; publication and release pending
 Verification: standard; canonical release gates remain mandatory
 
 ## Outcome and scope
@@ -139,3 +139,13 @@ remains undocumented and isolated behind the existing fail-closed adapter.
 - Approved backend changes, runtime Unit 17 and only festapptickets web deployed.
 - Coherent live-version/build/legal probes and email health pass; exact revisions,
   migration ledger, prior deployment IDs and any limitation recorded at handoff.
+
+## Local execution evidence
+
+All eight canonical mirror jobs passed on code commit
+`e1442c74007fa2665c08a4ae628eeb541fdc396f`, with clean inputs and
+`inputsUnchanged=true`. Receipt:
+`~/Library/Caches/festapp-ci/runs/20261110T162429-cc988f3a1a54/receipt.json`.
+The source includes 16 targeted deployment tests and eight release-gate tests.
+Independent standards/spec review approved the final code after correcting the
+configured-probe exception path. Subsequent changes are documentation only.
