@@ -1413,7 +1413,15 @@
     "confirmation_sent": "Potwierdzenie wysłane",
     "waitlist_entered": "Dodano do listy oczekujących",
     "withinDeadline": "W terminie płatności",
-    "standing": "Miejsce stojące"
+    "standing": "Miejsce stojące",
+    "not_required_yet_informal": "Płatność jeszcze nie jest wymagana",
+    "waitingExplanation_informal": "Jesteś na liście oczekujących. Gdy zwolni się miejsce, wyślemy ofertę e-mailem.",
+    "offerReady_informal": "Masz ofertę wolnych miejsc. Potwierdź ją przed upływem terminu.",
+    "offerEmail_informal": "Aby przyjąć lub odrzucić ofertę, użyj pierwotnego linku w wiadomości e-mail.",
+    "statusAbove_informal": "Aktualny status zamówienia i płatności znajduje się powyżej.",
+    "failed_informal": "Nie udało się odświeżyć przeglądu. Spróbuj ponownie.",
+    "downloadFailed_informal": "Nie udało się pobrać biletu. Spróbuj ponownie.",
+    "unavailable_informal": "Zamówienie mogło zostać usunięte lub link jest już nieważny. Jeśli potrzebujesz pomocy, skontaktuj się z organizatorem wydarzenia."
   },
   "OccasionSetup": {
     "setupDetails": {

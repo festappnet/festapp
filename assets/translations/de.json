@@ -1411,7 +1411,15 @@
     "confirmation_sent": "Bestätigung versendet",
     "waitlist_entered": "Zur Warteliste hinzugefügt",
     "withinDeadline": "Innerhalb der Zahlungsfrist",
-    "standing": "Stehplatz"
+    "standing": "Stehplatz",
+    "not_required_yet_informal": "Noch keine Zahlung erforderlich",
+    "waitingExplanation_informal": "Du stehst auf der Warteliste. Sobald Plätze frei werden, erhältst du ein Angebot per E-Mail.",
+    "offerReady_informal": "Plätze sind für dich verfügbar. Bestätige das Angebot vor Ablauf der Frist.",
+    "offerEmail_informal": "Verwende zum Annehmen oder Ablehnen den ursprünglichen Angebotslink in der E-Mail.",
+    "statusAbove_informal": "Den aktuellen Bestell- und Zahlungsstatus findest du oben.",
+    "failed_informal": "Die Übersicht konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+    "downloadFailed_informal": "Das Ticket konnte nicht heruntergeladen werden. Bitte erneut versuchen.",
+    "unavailable_informal": "Die Bestellung wurde möglicherweise gelöscht oder der Link ist nicht mehr gültig. Wenn du Hilfe benötigst, wende dich an den Veranstalter."
   },
   "OccasionSetup": {
     "setupDetails": {

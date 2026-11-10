@@ -83,6 +83,13 @@ BEGIN
  PERFORM assert_true(NOT source::text LIKE '%'||view_token||'%','resolver SQL contains no raw token');
  r:=public.get_customer_order_overview(view_token,oid);
  PERFORM assert_eq(r->>'code','200'::text,'view available while waiting');
+ PERFORM assert_eq(r#>>'{root,communicationTone}','formal'::text,'overview defaults to formal');
+ UPDATE public.units SET data=coalesce(data,'{}')||'{"communication_tone":"informal"}'::jsonb WHERE id=(x->>'unit')::bigint;
+ PERFORM assert_eq(public.get_customer_order_overview(view_token,oid)#>>'{root,communicationTone}','informal'::text,'overview inherits organizer tone');
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"communication_tone":"formal"}'::jsonb WHERE id=(x->>'form')::bigint;
+ PERFORM assert_eq(public.get_customer_order_overview(view_token,oid)#>>'{root,communicationTone}','formal'::text,'overview respects form override');
+ UPDATE public.forms SET data=data-'communication_tone' WHERE id=(x->>'form')::bigint;
+
  PERFORM assert_eq(jsonb_array_length(r->'orders'),0,'waiting is not free order');
  PERFORM assert_eq(jsonb_array_length(r->'people'),2,'two stable tickets');
  PERFORM assert_eq(public.get_customer_order_overview(view_token,other)->>'code','403'::text,'wrong root and tenant denied');
