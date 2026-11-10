@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 
-import 'seating_transition_models.dart';
-import 'seating_transition_transport.dart';
+import 'seating_models.dart';
+import 'seating_transport.dart';
 
-class SeatingTransitionController extends ChangeNotifier {
-  SeatingTransitionController({
+class SeatingController extends ChangeNotifier {
+  SeatingController({
     required this.transport,
     required this.occasionId,
     required this.blueprintId,
   });
-  final SeatingTransitionTransport transport;
+  final SeatingTransport transport;
   final int occasionId, blueprintId;
   Map<String, dynamic>? workspace;
   SeatingContext? context;
@@ -80,33 +80,11 @@ class SeatingTransitionController extends ChangeNotifier {
     try {
       if (discover || workspace == null)
         workspace = await transport.workspace(occasionId, blueprintId);
-      if (discover) {
-        recovering = true;
-        _notify();
-        var changed = false;
-        for (final form in seatingRows(workspace!['forms'])) {
-          try {
-            changed =
-                await transport.recoverStart(
-                  seatingInt(form['id']),
-                  blueprintId,
-                ) ||
-                changed;
-          } on SeatingRejection catch (e) {
-            error = e.reason;
-          }
-        }
-        if (changed)
-          workspace = await transport.workspace(occasionId, blueprintId);
-        recovering = false;
-      }
-      final transitions = seatingRows(workspace!['transitions'])
-          .where(
-            (t) => t['blueprintId'] == blueprintId && t['state'] != 'cancelled',
-          )
+      final forms = seatingRows(workspace!['forms'])
+          .where((form) => form['blueprintId'] == blueprintId)
           .toList();
-      if (transitions.isNotEmpty) {
-        final id = transitions.first['id'] as String;
+      if (forms.isNotEmpty) {
+        final id = blueprintId;
         if (discover) {
           recovering = true;
           _notify();
@@ -245,18 +223,16 @@ class SeatingTransitionController extends ChangeNotifier {
   String seatTitle(int? id) => id == null
       ? ''
       : context?.seats.where((s) => s.id == id).firstOrNull?.title ?? '#$id';
-  Future<SeatingPreview?> preview({bool publication = false}) async {
+  Future<SeatingPreview?> preview() async {
     if (busy || uncertain || context == null) return null;
     loading = true;
     error = null;
     _notify();
     try {
-      return publication
-          ? await transport.previewPublication(context!.transitionId)
-          : await transport.previewAssignments(
-              context!.transitionId,
-              pairs.values.toList(),
-            );
+      return await transport.previewAssignments(
+        context!.blueprintId,
+        pairs.values.toList(),
+      );
     } on SeatingRejection catch (e) {
       error = e.reason;
     } catch (_) {
@@ -268,28 +244,11 @@ class SeatingTransitionController extends ChangeNotifier {
     return null;
   }
 
-  Future<bool> commit(SeatingPreview preview, {bool publication = false}) =>
-      _mutate(
-        publication
-            ? 'publish_seating_transitions'
-            : 'set_ticket_seat_assignments',
-        {
-          'p_transition': context!.transitionId,
-          'p_fingerprint': preview.fingerprint,
-          if (publication)
-            'p_transition_ids': preview.transitionIds
-          else
-            'p_mappings': pairs.values.map((p) => p.toJson()).toList(),
-        },
-      );
-  Future<bool> start(int formId) => _mutate('start_seating_configuration', {
-    'p_form': formId,
-    'p_blueprint': blueprintId,
-  });
-  Future<bool> cancelConfiguration() =>
-      _mutate('cancel_seating_configuration', {
-        'p_transition': context!.transitionId,
-        'p_expected_revision': context!.revision,
+  Future<bool> commit(SeatingPreview preview) =>
+      _mutate('set_ticket_seat_assignments', {
+        'p_blueprint': context!.blueprintId,
+        'p_fingerprint': preview.fingerprint,
+        'p_mappings': pairs.values.map((p) => p.toJson()).toList(),
       });
   Future<bool> recover() async {
     if (committing) return false;

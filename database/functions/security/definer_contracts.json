@@ -2858,11 +2858,11 @@
     },
     "f7edaa05d427681fe0904cb4cb2fb400ffd944c2fb2962cedbd452492b085262": {
       "signature": "public.can_read_seating_status(bigint)",
-      "source": "database/functions/user_permissions/seating_transition_operations.sql"
+      "source": "database/functions/user_permissions/seating_operations.sql"
     },
     "49f28786f42a1fcfd28bfca12fbf150aa3440c844fd4fb115d878f956f536ef1": {
       "signature": "public.can_assign_existing_admissions(bigint)",
-      "source": "database/functions/user_permissions/seating_transition_operations.sql"
+      "source": "database/functions/user_permissions/seating_operations.sql"
     },
     "8b1f0f3cb68a99f5d53090335dfff18c0a60a2f15093edb1eb0996d73920f8fd": {
       "signature": "public.get_blueprint_for_edit(text,bigint)",
@@ -2871,38 +2871,6 @@
     "6507df59b6d4f9af16c327682229cd2841d034c40883882bff9d3bc5aa80ea57": {
       "signature": "public.get_blueprint_for_edit(text)",
       "source": "database/functions/eshop/get_blueprint_for_edit.sql"
-    },
-    "0e876954292b464268f1331328feb4c465cb305e289bff2b826f3b85df8be9d2": {
-      "signature": "public.get_seating_workspace(bigint,bigint)",
-      "source": "database/functions/blueprint/seating_transition_context.sql"
-    },
-    "33601e971ea5cc22e7100fc88138165646206c1c1ef01f69b75daa9e1341c402": {
-      "signature": "public.get_seating_transition_context(uuid,text,text,bigint,integer)",
-      "source": "database/functions/blueprint/seating_transition_context.sql"
-    },
-    "3a77bad29feb7b1cdaaa8cdf78f346bbb2d5689ba4738f6118644d0b3dd621a4": {
-      "signature": "public.preview_ticket_seat_assignment(uuid,jsonb)",
-      "source": "database/functions/blueprint/seating_assignment.sql"
-    },
-    "b4698e7462c785731bcfe86d0d70c35f0f9dbad84a78d90a61d0c5c8dd7ad18d": {
-      "signature": "public.set_ticket_seat_assignments(uuid,jsonb,text,uuid)",
-      "source": "database/functions/blueprint/seating_assignment.sql"
-    },
-    "e60795f95bdff40113ceed5d2a962fa090f9c457e0409cf2661c5d5971ee4bbc": {
-      "signature": "public.start_seating_configuration(bigint,bigint,uuid)",
-      "source": "database/functions/blueprint/seating_transition_lifecycle.sql"
-    },
-    "1ad321accc1f9dcc851d1af973a68b2b4bef762d48a85b16552285c4acd4ca37": {
-      "signature": "public.cancel_seating_configuration(uuid,bigint,uuid)",
-      "source": "database/functions/blueprint/seating_transition_lifecycle.sql"
-    },
-    "40ae0959cdaeca3f52b366307a28de3603d32a2037687bbd33b1346ad3324c02": {
-      "signature": "public.preview_seating_publication(uuid)",
-      "source": "database/functions/blueprint/seating_publication.sql"
-    },
-    "bfc4c403a2f77689ec489cec73d8583836c1ce5f85ff6efe3e316e192b5ae1e4": {
-      "signature": "public.publish_seating_transitions(uuid,uuid[],text,uuid)",
-      "source": "database/functions/blueprint/seating_publication.sql"
     },
     "e6e5f0eb2f101a172107a8d2967f6963fb34ad93eacfd60a7342ed0bb759c3d2": {
       "signature": "public.effective_form_metadata_internal(jsonb,jsonb)",
@@ -2979,6 +2947,22 @@
     "1ff3e54956d018f8f4620fea3fee13e0e419fb64dcec7a62d0ab4386f92911a2": {
       "signature": "public.request_unit_measurement_approval(bigint)",
       "source": "database/functions/eshop_forms/unit_measurement_approval.sql"
+    },
+    "0e876954292b464268f1331328feb4c465cb305e289bff2b826f3b85df8be9d2": {
+      "signature": "public.get_seating_workspace(bigint,bigint)",
+      "source": "database/functions/blueprint/seating_context.sql"
+    },
+    "47d5d7fc95a01b4a90d86aa8080bfa90f65da29cf00fe4bdeee2cdefba6f94d5": {
+      "signature": "public.get_blueprint_seating_context(bigint,text,text,bigint,integer)",
+      "source": "database/functions/blueprint/seating_context.sql"
+    },
+    "3e1d7e89a43b8e7a836b70f98ebb5adc9cc3434a58a89c9ef72a6b5cfeccb30d": {
+      "signature": "public.preview_ticket_seat_assignment(bigint,jsonb)",
+      "source": "database/functions/blueprint/seating_assignment.sql"
+    },
+    "ad9f8122d47b53fc2ea12b373683abd2bc2e85066d22a4c30a8e901adc29a149": {
+      "signature": "public.set_ticket_seat_assignments(bigint,jsonb,text,uuid)",
+      "source": "database/functions/blueprint/seating_assignment.sql"
     }
   }
 }

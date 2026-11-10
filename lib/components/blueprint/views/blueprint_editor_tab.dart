@@ -12,9 +12,9 @@ import '../../navigation/route_visibility.dart';
 import '../blueprint_model.dart';
 import '../blueprint_focus_target.dart';
 import '../blueprint_strings.dart';
-import '../seating_transition_models.dart';
-import '../seating_transition_transport.dart';
-import '../seating_transition_strings.dart';
+import '../seating_models.dart';
+import '../seating_transport.dart';
+import '../seating_strings.dart';
 import 'blueprint_layout_host.dart';
 
 /// Tracks only this mounted occasion's visible main Blueprint route. A new
@@ -160,7 +160,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
       if (_invalidPlan) throw StateError('Invalid blueprint target');
       final occasion = RightsService.currentOccasionId();
       if (occasion == null) throw StateError('Missing occasion');
-      final workspace = await SeatingTransitionTransport(
+      final workspace = await SeatingTransport(
         Supabase.instance.client,
       ).workspace(occasion, planId);
       if (!mounted ||
@@ -229,7 +229,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
           children: [
             Text(
               _plans.length > 1
-                  ? SeatingTransitionStrings.text('choosePlan')
+                  ? SeatingStrings.text('choosePlan')
                   : BlueprintStrings.layoutUnavailable,
               style: Theme.of(context).textTheme.titleLarge,
             ),
@@ -239,7 +239,7 @@ class _BlueprintTabState extends State<BlueprintTab> {
                 title: Text(plan['title']?.toString() ?? '#${plan['id']}'),
                 subtitle: plan['valid'] == true
                     ? null
-                    : Text(SeatingTransitionStrings.text('repairPlan')),
+                    : Text(SeatingStrings.text('repairPlan')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   _focusTarget = null;

@@ -1,3 +1,6 @@
+> Historical document: the separate plan publication workflow is superseded by
+> the [saved form plan contract](../../lib/components/blueprint/README.md#saved-form-plans-and-existing-admissions).
+
 # Seating transition transport contract - revision 1
 
 All public RPCs use named `p_*` arguments below. Read/preview returns `{code:200,data:{...}}`; mutation returns the existing ClientCommandTransport receipt envelope, whose `data` contains `{transitionId,context}` or `{transitionIds,context}`. Typed terminal rejection is the normal rejected receipt with `data.reason` and `data.blockers`. UUID and exact request must be retained for replay. SQL permissions always derive from stored scope.

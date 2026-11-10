@@ -175,23 +175,22 @@
     },
     {
       "component": "private_inventory",
-      "relation": "public.form_seating_transitions",
-      "scopeResolver": "form_seating_transitions.occasion",
+      "relation": "public.forms",
+      "scopeResolver": "forms.occasion",
       "trackedColumns": [
-        "form",
         "blueprint",
-        "state",
-        "revision"
+        "participant_capacity",
+        "waitlist_enabled",
+        "capacity_revision"
       ],
       "writers": [
+        "update_form_client_sync_v1",
+        "update_blueprint_client_sync_v1",
         "save_occasion_client_sync_v1",
-        "start_seating_configuration",
-        "cancel_seating_configuration",
-        "set_ticket_seat_assignments",
-        "publish_seating_transitions"
+        "set_ticket_seat_assignments"
       ],
       "legacy": [],
-      "testFactory": "database/tests/blueprint/seating_transition_test.sql"
+      "testFactory": "database/tests/blueprint/automatic_form_binding_test.sql"
     }
   ],
   "functions": [
@@ -812,7 +811,6 @@
   "registrySource": "database/operations/canonical_mutation_contraction.sql",
   "retirementState": "contraction prepared; exact signatures removed only under validated G3/G4",
   "registrySources": [
-    "database/operations/canonical_mutation_contraction.sql",
-    "database/functions/blueprint/seating_transition_sync.sql"
+    "database/operations/canonical_mutation_contraction.sql"
   ]
 }

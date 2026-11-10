@@ -1,4 +1,4 @@
-// The organizer protocol is owned by seating_transition SQL, not the renderer.
+// The organizer protocol uses the saved form binding, not a separate lifecycle.
 Map<String, dynamic> seatingMap(Object? value) =>
     Map<String, dynamic>.from(value as Map);
 List<Map<String, dynamic>> seatingRows(Object? value) =>
@@ -78,10 +78,8 @@ class SeatingMapping {
 
 class SeatingContext {
   SeatingContext(Map<String, dynamic> json)
-    : transitionId = json['transitionId'] as String,
-      blueprintId = seatingInt(json['blueprintId']),
+    : blueprintId = seatingInt(json['blueprintId']),
       revision = seatingInt(json['revision']),
-      state = json['state'] as String,
       capabilities = SeatingCapabilities(seatingMap(json['capabilities'])),
       counts = seatingMap(json['counts'])
           .map((k, v) => MapEntry(k, seatingInt(v))),
@@ -89,9 +87,7 @@ class SeatingContext {
       seats = seatingRows(json['seats']).map(SeatingSeat.new).toList(),
       compatibility = seatingRows(json['compatibility']),
       cohort = seatingRows(json['cohort']),
-      nextCursor = (json['nextCursor'] as num?)?.toInt(),
-      publicationAvailable = json['publicationAvailable'] == true;
-  final String transitionId, state;
+      nextCursor = (json['nextCursor'] as num?)?.toInt();
   final int blueprintId, revision;
   final SeatingCapabilities capabilities;
   final Map<String, int> counts;
@@ -99,7 +95,6 @@ class SeatingContext {
   final List<SeatingSeat> seats;
   final List<Map<String, dynamic>> compatibility, cohort;
   final int? nextCursor;
-  final bool publicationAvailable;
   bool get allAssigned =>
       (counts['unassigned'] ?? 0) == 0 && (counts['blocked'] ?? 0) == 0;
   int get admitted => [
@@ -114,14 +109,9 @@ class SeatingPreview {
   SeatingPreview(Map<String, dynamic> json)
     : fingerprint = json['fingerprint'] as String,
       blockers = seatingRows(json['blockers']),
-      mappings = seatingRows(json['mappings']),
-      forms = seatingRows(json['forms']),
-      catalog = seatingRows(json['catalog']),
-      transitionIds = (json['transitionIds'] as List? ?? const [])
-          .cast<String>();
+      mappings = seatingRows(json['mappings']);
   final String fingerprint;
-  final List<Map<String, dynamic>> blockers, mappings, forms, catalog;
-  final List<String> transitionIds;
+  final List<Map<String, dynamic>> blockers, mappings;
   bool get ready => blockers.isEmpty;
 }
 

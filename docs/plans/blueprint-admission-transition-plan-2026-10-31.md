@@ -1,3 +1,6 @@
+> Historical document: the separate plan publication workflow is superseded by
+> the [saved form plan contract](../../lib/components/blueprint/README.md#saved-form-plans-and-existing-admissions).
+
 # Seating transition for existing admissions
 
 Date: 2026-10-31

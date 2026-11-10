@@ -1,9 +1,9 @@
 -- test-setup: database/tests/blueprint/fixtures.sql
 -- test-setup: database/tests/blueprint/seating_fixture.sql
 DO $$
-DECLARE f jsonb; tid uuid; p jsonb; r jsonb; replay jsonb; cmd uuid:=gen_random_uuid(); snapshot jsonb; finance jsonb; c jsonb; m jsonb; s bigint; iid bigint; ticket bigint;
+DECLARE f jsonb; tid bigint; p jsonb; r jsonb; replay jsonb; cmd uuid:=gen_random_uuid(); snapshot jsonb; finance jsonb; c jsonb; m jsonb; s bigint; iid bigint; ticket bigint;
 BEGIN
- f:=public.seating_test_fixture_internal();tid:=(f->>'transition')::uuid;
+ f:=public.seating_test_fixture_internal();tid:=(f->>'blueprint')::bigint;
  SELECT jsonb_agg(to_jsonb(o) ORDER BY o.id) INTO snapshot FROM eshop.orders o WHERE occasion=(f->>'occasion')::bigint;
  UPDATE eshop.products SET price=999,title='Changed catalog' WHERE id=(f->>'product')::bigint;
  SET LOCAL ROLE authenticated;
@@ -14,7 +14,7 @@ BEGIN
  replay:=public.set_ticket_seat_assignments(tid,f->'mappings',p->>'fingerprint',cmd);
  PERFORM public.assert_eq(replay,r,'exact replay recovers receipt');
  BEGIN PERFORM public.set_ticket_seat_assignments(tid,f->'mappings','changed',cmd); RAISE EXCEPTION 'changed UUID payload accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- c:=public.get_seating_transition_context(tid)->'data';
+ c:=public.get_blueprint_seating_context(tid)->'data';
  PERFORM public.assert_eq((c#>>'{counts,assigned}')::int,9,'all assigned');
  PERFORM public.assert_eq((c#>>'{counts,unassigned}')::int,0,'no outstanding seats');
  PERFORM public.assert_eq((c#>>'{counts,waiting}')::int,1,'waiting remains');
@@ -42,9 +42,9 @@ BEGIN
  PERFORM public.assert_true((SELECT order_product_ticket IS NULL FROM eshop.spots WHERE id=s),'released exact seat');
 END $$;
 DO $$
-DECLARE f jsonb; tr uuid; p jsonb; r jsonb; mappings jsonb; first_pair jsonb; second_pair jsonb; second_form bigint; second_order bigint; spots bigint[]; unit uuid:=gen_random_uuid(); pool bigint; ctx bigint; iid bigint; oid bigint;
+DECLARE f jsonb; tr bigint; p jsonb; r jsonb; mappings jsonb; first_pair jsonb; second_pair jsonb; second_form bigint; second_order bigint; spots bigint[]; unit uuid:=gen_random_uuid(); pool bigint; ctx bigint; iid bigint; oid bigint;
 BEGIN
- f:=public.seating_test_fixture_internal(2,0);tr:=(f->>'transition')::uuid;spots:=ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(f->'spots'));
+ f:=public.seating_test_fixture_internal(2,0);tr:=(f->>'blueprint')::bigint;spots:=ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(f->'spots'));
  UPDATE eshop.blueprint_seat_bindings SET selection_unit=unit WHERE spot=ANY(spots[1:2]);
  first_pair:=f->'mappings'->0;second_pair:=f->'mappings'->1;
  SET LOCAL ROLE authenticated;
@@ -55,7 +55,7 @@ BEGIN
  INSERT INTO public.forms(occasion,title,is_open) VALUES((f->>'occasion')::bigint,'Second source',true) RETURNING id INTO second_form;
  SELECT "order" INTO second_order FROM eshop.order_product_ticket WHERE id=(second_pair->>'admissionItemId')::bigint;
  UPDATE eshop.orders SET form=second_form WHERE id=second_order;
- r:=public.start_seating_configuration(second_form,(f->>'blueprint')::bigint,gen_random_uuid());
+ UPDATE public.forms SET blueprint=(f->>'blueprint')::bigint WHERE id=second_form;
  SET LOCAL ROLE authenticated;
  p:=public.preview_ticket_seat_assignment(tr,f->'mappings')->'data';
  PERFORM public.assert_eq(jsonb_array_length(p->'revisions'),2,'two source revisions reviewed');
@@ -63,7 +63,7 @@ BEGIN
  PERFORM public.assert_eq(r->>'status','applied','mixed-form atomic couch committed');
  RESET ROLE;
  -- Context-linked seat exchanges the purchased PIC allocation, never doubles it.
- f:=public.seating_test_fixture_internal(1,0);tr:=(f->>'transition')::uuid;iid:=(f#>>'{mappings,0,admissionItemId}')::bigint;
+ f:=public.seating_test_fixture_internal(1,0);tr:=(f->>'blueprint')::bigint;iid:=(f#>>'{mappings,0,admissionItemId}')::bigint;
  SELECT "order" INTO oid FROM eshop.order_product_ticket WHERE id=iid;
  INSERT INTO public.inventory_pools(occasion,sellable_capacity) VALUES((f->>'occasion')::bigint,1) RETURNING id INTO pool;
  INSERT INTO public.inventory_contexts(inventory_pool) VALUES(pool) RETURNING id INTO ctx;
@@ -81,9 +81,9 @@ BEGIN
  PERFORM public.assert_eq((SELECT count(*)::int FROM eshop.spots WHERE order_product_ticket=iid AND inventory_context=ctx),1,'reconciliation preserves PIC exchange');
 END $$;
 DO $$
-DECLARE f jsonb; tr uuid; req jsonb; r jsonb; p jsonb; area uuid:=gen_random_uuid(); pool bigint; ctx bigint; res bigint; oid bigint; seat bigint; item bigint;
+DECLARE f jsonb; tr bigint; req jsonb; r jsonb; p jsonb; area uuid:=gen_random_uuid(); pool bigint; ctx bigint; res bigint; oid bigint; seat bigint; item bigint;
 BEGIN
- f:=public.seating_test_fixture_internal(1,0);tr:=(f->>'transition')::uuid;item:=(f#>>'{mappings,0,admissionItemId}')::bigint;
+ f:=public.seating_test_fixture_internal(1,0);tr:=(f->>'blueprint')::bigint;item:=(f#>>'{mappings,0,admissionItemId}')::bigint;
  SELECT "order" INTO oid FROM eshop.order_product_ticket WHERE id=item;
  INSERT INTO public.inventory_pools(occasion,title,type,sellable_capacity) VALUES((f->>'occasion')::bigint,'Standing','generic',5) RETURNING id INTO pool;
  INSERT INTO public.inventory_contexts(inventory_pool,title) VALUES(pool,'Standing') RETURNING id INTO ctx;
@@ -100,26 +100,26 @@ BEGIN
  IF r->>'status'<>'applied' THEN RAISE EXCEPTION 'standing fixture rejected %',r; END IF;
  PERFORM public.assert_eq(r->>'status','applied','canonical saved standing-only area');
  SET LOCAL ROLE authenticated;
- r:=public.get_seating_transition_context(tr)->'data';
+ r:=public.get_blueprint_seating_context(tr)->'data';
  PERFORM public.assert_eq((r#>>'{counts,standing}')::int,1,'existing PIC allocation is standing coverage');
  RESET ROLE;
  UPDATE eshop.tickets SET state='used' WHERE id=(f#>>'{mappings,0,ticketId}')::bigint;
  SET LOCAL ROLE authenticated;
- r:=public.get_seating_transition_context(tr)->'data';
+ r:=public.get_blueprint_seating_context(tr)->'data';
  PERFORM public.assert_eq((r#>>'{counts,standing}')::int,1,'used valid standing remains covered');
  RESET ROLE;
  UPDATE eshop.tickets SET state='ordered' WHERE id=(f#>>'{mappings,0,ticketId}')::bigint;
  UPDATE eshop.spots SET product=(f->>'product')::bigint WHERE id=(f#>>'{mappings,0,targetSpotId}')::bigint;
  SET LOCAL ROLE authenticated;
- r:=public.get_seating_transition_context(tr)->'data';
+ r:=public.get_blueprint_seating_context(tr)->'data';
  PERFORM public.assert_eq(r#>>'{items,0,reason}','PLACEMENT_MODE_AMBIGUOUS','mixed seat/standing SKU blocked without guessing');
  RESET ROLE;
 END $$;
 
 DO $$
-DECLARE f jsonb; tr uuid; p jsonb; r jsonb; m jsonb; spot_a bigint; spot_b bigint; item bigint;
+DECLARE f jsonb; tr bigint; p jsonb; r jsonb; m jsonb; spot_a bigint; spot_b bigint; item bigint;
 BEGIN
- f:=public.seating_test_fixture_internal(1,0);tr:=(f->>'transition')::uuid;
+ f:=public.seating_test_fixture_internal(1,0);tr:=(f->>'blueprint')::bigint;
  p:=public.preview_ticket_seat_assignment(tr,f->'mappings')->'data';
  r:=public.set_ticket_seat_assignments(tr,f->'mappings',p->>'fingerprint',gen_random_uuid());
  spot_a:=(f#>>'{spots,0}')::bigint;spot_b:=(f#>>'{spots,1}')::bigint;item:=(f#>>'{mappings,0,admissionItemId}')::bigint;
@@ -138,9 +138,9 @@ BEGIN
 END $$;
 
 DO $$
-DECLARE f jsonb; tr uuid; p jsonb; r jsonb; first_two jsonb; m jsonb; a bigint; b bigint; c bigint; unit uuid:=gen_random_uuid();
+DECLARE f jsonb; tr bigint; p jsonb; r jsonb; first_two jsonb; m jsonb; a bigint; b bigint; c bigint; unit uuid:=gen_random_uuid();
 BEGIN
- f:=public.seating_test_fixture_internal(3,0);tr:=(f->>'transition')::uuid;
+ f:=public.seating_test_fixture_internal(3,0);tr:=(f->>'blueprint')::bigint;
  a:=(f#>>'{spots,0}')::bigint;b:=(f#>>'{spots,1}')::bigint;c:=(f#>>'{spots,2}')::bigint;
  UPDATE eshop.blueprint_seat_bindings SET selection_unit=unit WHERE spot IN(a,b);
  first_two:=jsonb_build_array(f->'mappings'->0,f->'mappings'->1);

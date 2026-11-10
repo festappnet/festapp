@@ -3,10 +3,10 @@ import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'seating_transition_models.dart';
+import 'seating_models.dart';
 
-class SeatingTransitionTransport {
-  SeatingTransitionTransport(SupabaseClient client)
+class SeatingTransport {
+  SeatingTransport(SupabaseClient client)
     : this.withTransport(
         (name, params) => client.rpc(name, params: params),
         ClientCommandTransport.supabase(
@@ -15,16 +15,11 @@ class SeatingTransitionTransport {
           retrySerialization: true,
         ),
       );
-  SeatingTransitionTransport.withTransport(this._rpc, this._commands);
+  SeatingTransport.withTransport(this._rpc, this._commands);
   final ClientCommandRpc _rpc;
   final ClientCommandTransport _commands;
   String? get principalBinding => _commands.principalBinding;
-  static const operations = [
-    'start_seating_configuration',
-    'set_ticket_seat_assignments',
-    'publish_seating_transitions',
-    'cancel_seating_configuration',
-  ];
+  static const operations = ['set_ticket_seat_assignments'];
 
   Future<Map<String, dynamic>> _read(
     String name,
@@ -52,13 +47,13 @@ class SeatingTransitionTransport {
     {'p_occasion': occasion, 'p_blueprint': blueprint},
   );
   Future<SeatingContext> context(
-    String id, {
+    int id, {
     String search = '',
     String? category,
     int? after,
   }) async => SeatingContext(
-    await _read('get_seating_transition_context', {
-      'p_transition': id,
+    await _read('get_blueprint_seating_context', {
+      'p_blueprint': id,
       'p_search': search,
       'p_category': category,
       'p_after': after,
@@ -66,16 +61,13 @@ class SeatingTransitionTransport {
     }),
   );
   Future<SeatingPreview> previewAssignments(
-    String id,
+    int id,
     List<SeatingMapping> mappings,
   ) async => SeatingPreview(
     await _read('preview_ticket_seat_assignment', {
-      'p_transition': id,
+      'p_blueprint': id,
       'p_mappings': mappings.map((m) => m.toJson()).toList(),
     }),
-  );
-  Future<SeatingPreview> previewPublication(String id) async => SeatingPreview(
-    await _read('preview_seating_publication', {'p_transition': id}),
   );
 
   Future<Map<String, dynamic>> mutate(
@@ -101,24 +93,13 @@ class SeatingTransitionTransport {
     return response.data;
   }
 
-  Future<bool> recoverStart(int formId, int blueprintId) async {
-    if (_commands.principalBinding == null) return false;
-    final intent = await _commands.pendingIntent(
-      'start_seating_configuration',
-      {'p_form': formId, 'p_blueprint': blueprintId},
-    );
-    if (intent == null) return false;
-    await _accept(ClientCommandResponse.from(await _commands.resume(intent)));
-    return true;
-  }
-
   // Recover the persisted exact bytes before allowing a new reviewed command.
-  Future<bool> recover(String id) async {
+  Future<bool> recover(int id) async {
     if (_commands.principalBinding == null) return false;
     var recovered = false;
-    for (final operation in operations.skip(1)) {
+    for (final operation in operations) {
       final intent = await _commands.pendingIntent(operation, {
-        'p_transition': id,
+        'p_blueprint': id,
       });
       if (intent != null) {
         await _accept(

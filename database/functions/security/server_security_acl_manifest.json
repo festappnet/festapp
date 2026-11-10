@@ -2961,37 +2961,17 @@
       "authenticated": true,
       "service_role": true
     },
-    "public.get_seating_transition_context(uuid,text,text,bigint,integer)": {
+    "public.get_blueprint_seating_context(bigint,text,text,bigint,integer)": {
       "anon": false,
       "authenticated": true,
       "service_role": true
     },
-    "public.preview_ticket_seat_assignment(uuid,jsonb)": {
+    "public.preview_ticket_seat_assignment(bigint,jsonb)": {
       "anon": false,
       "authenticated": true,
       "service_role": true
     },
-    "public.set_ticket_seat_assignments(uuid,jsonb,text,uuid)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.start_seating_configuration(bigint,bigint,uuid)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.cancel_seating_configuration(uuid,bigint,uuid)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.preview_seating_publication(uuid)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": true
-    },
-    "public.publish_seating_transitions(uuid,uuid[],text,uuid)": {
+    "public.set_ticket_seat_assignments(bigint,jsonb,text,uuid)": {
       "anon": false,
       "authenticated": true,
       "service_role": true

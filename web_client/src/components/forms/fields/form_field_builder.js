@@ -60,13 +60,11 @@ export class FormFieldBuilder {
                  }
                  break;
             case 'spot':
-                // Simple fallback: If options exist, use Radio, else Text (hidden id?)
-                // Usually spots are handled via UI map, but for basic data flow:
-                if (field.options && field.options.length > 0) {
-                    fieldComponent = RadioFieldBuilder.create(field, formModel, onInteraction);
-                } else {
-                    fieldComponent = TextFieldBuilder.create(field, formModel);
-                }
+                // A seat is selected through the saved plan, never as free text.
+                fieldComponent = document.createElement('div');
+                fieldComponent.className = 'form-field-error';
+                fieldComponent.setAttribute('role', 'alert');
+                fieldComponent.textContent = `${FormStrings.seatSelection}: ${FormStrings.unavailable}`;
                 break;
             case 'ticket':
                 fieldComponent = TicketFieldBuilder.create(field, formModel, session, onInteraction);
