@@ -28,6 +28,8 @@ class SeatingSummary extends StatelessWidget {
               (data.counts['waiting'] ?? 0) + (data.counts['offered'] ?? 0) ==
                   0))
         return const SizedBox.shrink();
+      if (data.allAssigned && controller.error == null)
+        return const SizedBox.shrink();
       final message = data.admitted == 0
           ? 'noAdmissions'
           : data.allAssigned

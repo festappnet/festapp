@@ -288,7 +288,8 @@ publication state, or activation command.
 Existing admissions are projected from saved plan associations, current admission offers and actual placements
 through `seating_admissions_internal(blueprint_id)`. `eshop.spots.order_product_ticket` remains
 the sole physical placement authority. The worklist includes unpaid admissions
-and accepted offers; waiting/offered tickets stay distinct. Exact item-to-seat
+and accepted offers; waiting/offered tickets stay distinct. The plan summary is hidden
+when no unassigned or blocked admissions remain, including with a waitlist. Exact item-to-seat
 preview/commit preserves purchased snapshots, money, ticket identity and QR.
 Complete before/after atomic units are explicit, including across forms sharing
 the same plan. Used/printed/ambiguous admissions remain visible and protected.

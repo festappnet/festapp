@@ -324,7 +324,7 @@ void main() {
     );
     expect(await first, isTrue);
   });
-  testWidgets('summary keeps waiting separate from all-assigned success', (
+  testWidgets('summary disappears after assignment, including waiting-only queues', (
     tester,
   ) async {
     final f = Fixture()..data = contextData(unassigned: 0);
@@ -354,8 +354,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('All assigned'), findsOneWidget);
-    expect(find.text('Waiting: 1 · Offered: 0'), findsOneWidget);
+    expect(find.byKey(const ValueKey('seating-summary')), findsNothing);
+    expect(find.text('Assign seats'), findsNothing);
     f.data['counts'] = {
       'unassigned': 0,
       'assigned': 0,
@@ -367,10 +367,47 @@ void main() {
     await f.controller.load();
     await tester.pump();
     expect(
-      find.text('Waiting: 1 · Offered: 0'),
-      findsOneWidget,
-      reason: 'A waiting-only queue stays reachable without a publication step',
+      find.byKey(const ValueKey('seating-summary')),
+      findsNothing,
+      reason: 'The plan has no admissions needing a seat',
     );
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('summary remains visible for unassigned or blocked admissions', (
+    tester,
+  ) async {
+    final f = Fixture();
+    addTearDown(f.controller.dispose);
+    final env = WidgetEnvironmentFixture(
+      locale: const Locale('en'),
+      translations: {
+        'Seating': {
+          'workRemaining': 'Admissions need seats',
+          'unassigned': 'Unassigned',
+          'blocked': 'Blocked',
+          'waiting': 'Waiting',
+          'offered': 'Offered',
+          'open': 'Assign seats',
+        },
+      },
+    );
+    for (final blocked in [false, true]) {
+      f.data = contextData(unassigned: blocked ? 0 : 1);
+      if (blocked) (f.data['counts'] as Map<String, dynamic>)['blocked'] = 1;
+      await f.controller.load(discover: true);
+      await env.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: SeatingSummary(
+              controller: f.controller,
+              open: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.byKey(const ValueKey('seating-summary')), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
   });
   testWidgets('mobile workspace keeps the queue visible below the canvas', (
