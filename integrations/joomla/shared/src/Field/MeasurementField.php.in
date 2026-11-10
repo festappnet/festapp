@@ -1,0 +1,21 @@
+<?php
+/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */
+namespace Festapp\Module\@@NAMESPACE@@\Site\Field;
+
+use Joomla\CMS\Form\Field\ListField;
+
+defined('_JEXEC') or die;
+
+/** Only a new module gets Website mode; saved modules keep the unit fallback. */
+class MeasurementField extends ListField
+{
+    protected $type = 'Measurement';
+
+    protected function getInput()
+    {
+        if (!(int) $this->form->getValue('id') && $this->form->getValue('measurement', 'params') === null) {
+            $this->value = 'host';
+        }
+        return parent::getInput();
+    }
+}

@@ -124,7 +124,7 @@ test('settings validate before any writes, serialize readbacks and stop on a fai
   await assert.rejects(saveSettings(api, {'form-url':'https://evil.invalid/form/a'}));
   assert.equal(calls.length, 0);
   await saveSettings(api, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Test','inherit-style':'false'});
-  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title']]);
+  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title'],['set','measurement'],['get','measurement']]);
   assert.equal(data['inherit-style'], undefined);
   const writes=[];
   await assert.rejects(saveSettings({async setProp(name) {writes.push(name);},async getProp() {return 'unexpected';}}, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`}));
@@ -153,7 +153,7 @@ test('settings wait for propagated readback before writing sibling properties', 
       return value;
     },
   }, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Delayed','inherit-style':'false'});
-  assert.deepEqual(confirmed, ['form-url', 'form-title']);
+  assert.deepEqual(confirmed, ['form-url', 'form-title', 'measurement']);
 });
 
 test('settings page fails closed outside editor and surfaces save success', async () => {
@@ -255,8 +255,26 @@ test('settings leave stale appearance properties inert and expose no local contr
     assert.equal(dom.window.document.getElementById('inherit-style'),null);
     dom.window.document.querySelector('form').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
     await tick();
-    assert.deepEqual(writes,['form-url','form-title']);
+    assert.deepEqual(writes,['form-url','form-title','measurement']);
     assert.equal(values['inherit-style'],'false','existing stored data is never reinterpreted as authority');
     assert.match(dom.window.document.getElementById('status').textContent,/Uloženo/);
   } finally {dom.window.close();}
+});
+
+test('measurement defaults preserve old widgets and allow explicit website mode',async()=>{
+ assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/a`}).measurement,'unit');
+ assert.equal(settingsFrom({'form-url':`${SERVICE_ORIGIN}/form/a`,measurement:'host'}).measurement,'host');
+ const dom=new JSDOM('<body></body>');registerTicketElement(dom.window,async()=>'Site');
+ try {
+  const e=dom.window.document.createElement(TAG_NAME);e.setAttribute('form-url',`${SERVICE_ORIGIN}/form/a`);dom.window.document.body.append(e);await tick();
+  const frame=e.querySelector('iframe');assert.equal(frame.hasAttribute('data-festapp-datalayer'),false);
+  e.setAttribute('measurement','host');assert.equal(frame.hasAttribute('data-festapp-datalayer'),true);
+  e.setAttribute('measurement','unit');assert.equal(frame.hasAttribute('data-festapp-datalayer'),false);
+ } finally {dom.window.close();}
+});
+for(const existing of [true,false])test('settings default only new widgets to host: existing='+existing,async()=>{
+ const dom=new JSDOM(readFileSync(new URL('../src/settings.html',import.meta.url),'utf8'));
+ try {await initSettings(dom.window.document,{getProp:async name=>existing&&name==='form-url'?`${SERVICE_ORIGIN}/form/a`:''});
+ assert.equal(dom.window.document.querySelector('[name="measurement"]').value,existing?'unit':'host');
+ } finally {dom.window.close();}
 });

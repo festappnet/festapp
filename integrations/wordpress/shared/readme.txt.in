@@ -17,12 +17,12 @@ This is a frontend integration with the @@MARKET@@ @@NAME@@ service. You need an
 Create and save a form in @@NAME@@. Copy its public URL, then insert the @@NAME@@ block and paste the URL. Publish the page. Use only @@ORIGIN@@/form/saved-slug, without query parameters or fragments. The editor shows local controls, never a remote administration screen.
 
 Shortcode:
-[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" title="Tickets for our event"]
+[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" title="Tickets for our event" measurement="host"]
 
 Fixed height:
-[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" mode="fixed" height="800"]
+[@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" mode="fixed" height="800" measurement="host"]
 
-Measurement defaults to the Festapp Unit runtime for existing and new blocks and shortcodes. To use the website's own tags and consent manager, select Website dataLayer in the block or use:
+New blocks and the shortcode examples use Website dataLayer, recommended for websites with their own GTM and consent banner. Existing blocks and shortcodes without a measurement setting retain the Festapp Unit runtime:
 [@@SHORTCODE@@ url="@@ORIGIN@@/form/saved-slug" measurement="host"]
 Use measurement="unit" to retain the Unit runtime. Missing or invalid values retain Unit mode. This setting selects a destination; it does not enable measurement or grant consent.
 
@@ -32,9 +32,9 @@ Fixed and fallback height is limited to 240-4000 pixels. Automatic height follow
 
 = External service and privacy =
 
-On a published page with a configured form, the visitor's browser connects to @@ORIGIN@@ to load /form/saved-slug?embed=1. Both height modes also load @@ORIGIN@@/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In the default Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded.
+On a published page with a configured form, the visitor's browser connects to @@ORIGIN@@ to load /form/saved-slug?embed=1. Both height modes also load @@ORIGIN@@/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded.
 
-The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and requires a host consent adapter. Both modes require an approved website origin and enabled measurement in Festapp. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
+The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and reads the website Consent Mode unless an explicit consent adapter is connected. Both modes require an approved website origin and enabled measurement in Festapp. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
 
 Service: @@ORIGIN@@/
 Terms: @@ORIGIN@@/terms/

@@ -448,3 +448,21 @@ Without a referrer, opener or COOP-compatible connection, local consent remains
 available. The click handler can suppress GTM Just Links validation triggers;
 measure checkout with form events instead. See the
 [link markup](embedded-checkout.md#převzetí-živé-volby-cookies).
+
+## First-party attribution and CMS defaults
+
+For website attribution, select website dataLayer mode and configure the host
+GTM container. Host tags use the website's own native identity and CMP. Festapp
+does not read, copy or extend GA/GCL/Meta cookies or set a global client_id.
+The independent Unit runtime remains available with its existing isolation; it
+does not guarantee continuity with the website's visitor/session attribution.
+
+New WordPress inserter blocks explicitly serialize `measurement: host`, new
+Joomla modules without a bound setting preselect host, and fresh Wix widgets
+without an existing form URL select host. Existing blocks, legacy shortcodes,
+modules and widgets retain their saved destination or the unit fallback. Native
+website tags and consent must be configured before enabling host measurement.
+
+A paused, importable website GTM preset and setup instructions are available in
+[`integrations/measurement`](../../integrations/measurement/README.md). Configure
+and preview merchant destinations before publishing.
