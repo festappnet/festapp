@@ -1,4 +1,4 @@
-import '../blueprint/seating_transition_strings.dart';
+import '../blueprint/seating_strings.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -88,7 +88,6 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   String? occasionLink;
   bool _isLoading = true;
   bool _isSaving = false;
-  bool _savedBlueprintEnabled = false;
 
   // Form fields state
   late String? _title;
@@ -162,7 +161,6 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   void _initializeFormState() {
     if (occasion == null) return;
 
-    _savedBlueprintEnabled = occasion!.features.any((f) => f.code == 'blueprint' && f.isEnabled);
     _title = occasion!.title;
     _placeName = occasion!.data?[Tb.occasions.data_place_name] as String?;
     _linkValue = occasion!.link;
@@ -271,9 +269,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           occasion!.data![Tb.occasions.data_timezone] = _selectedTimezone;
 
           // 5. Persist the changes to the database.
-          final newlyEnabled = !_savedBlueprintEnabled && occasion!.features.any((f) => f.code == 'blueprint' && f.isEnabled);
           await DbOccasions.updateOccasion(occasion!);
-          _savedBlueprintEnabled = occasion!.features.any((f) => f.code == 'blueprint' && f.isEnabled);
           if (mounted)
             setState(() {
               _savedLink = occasion!.link;
@@ -287,7 +283,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
           if (mounted && occasion!.link != null) {
             // Show a success message.
             ToastHelper.Show(
-                context, newlyEnabled ? SeatingTransitionStrings.text('enabledNotice') : "${CommonStrings.saved}: ${occasion!.title!}");
+                context, "${CommonStrings.saved}: ${occasion!.title!}");
 
             await refreshSavedOccasion(
               router: context.router,
@@ -353,7 +349,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
         }
         for (final code in ['ASSIGNMENTS_EXIST', 'MODE_CHANGED']) {
           if (message.contains(code)) {
-            message = SeatingTransitionStrings.reason(code);
+            message = SeatingStrings.reason(code);
             break;
           }
         }

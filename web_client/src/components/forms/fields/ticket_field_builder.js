@@ -54,6 +54,13 @@ export class TicketFieldBuilder {
 
         // Subscription for reactivity handled below
         const hasSpotField = subFields.some(f => f.type === 'spot');
+        if (hasSpotField && !formModel.blueprint) {
+            errorDiv.setAttribute('role', 'alert');
+            errorDiv.textContent = `${FormStrings.seatSelection}: ${FormStrings.unavailable}`;
+            errorDiv.style.display = '';
+            return container;
+        }
+
 
         
         // Mode Logic

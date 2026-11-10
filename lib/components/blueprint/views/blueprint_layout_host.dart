@@ -1,8 +1,8 @@
-import '../seating_transition_controller.dart';
-import '../seating_transition_transport.dart';
-import '../seating_transition_panel.dart';
-import '../seating_transition_models.dart';
-import '../seating_transition_strings.dart';
+import '../seating_controller.dart';
+import '../seating_transport.dart';
+import '../seating_panel.dart';
+import '../seating_models.dart';
+import '../seating_strings.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -71,7 +71,7 @@ class BlueprintLayoutHost extends StatefulWidget {
   final BlueprintModel source;
   final Set<String> focusNodeIds;
   final int focusRevision;
-  final SeatingTransitionTransport? seatingTransport;
+  final SeatingTransport? seatingTransport;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final BlueprintLayoutAssetResolver? assetResolver;
   final Future<BlueprintModel?> Function() reload;
@@ -84,7 +84,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   final _hostFocus = FocusNode(debugLabel: 'Blueprint host actions');
   late _BlueprintScreenMode _screenMode;
   Set<String> _commercialSelection = {};
-  SeatingTransitionController? _seating;
+  SeatingController? _seating;
   bool _seatingOpen = false;
   final Map<String, GlobalKey> _commercialRowKeys = {};
   bool _showIndividualCommercialSeats = false;
@@ -133,8 +133,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _loadAssets();
     final blueprintId = controller.snapshot.blueprintId;
     if (blueprintId != null) {
-      _seating = SeatingTransitionController(
-        transport: widget.seatingTransport ?? SeatingTransitionTransport(Supabase.instance.client),
+      _seating = SeatingController(
+        transport: widget.seatingTransport ?? SeatingTransport(Supabase.instance.client),
         occasionId: controller.snapshot.occasionId, blueprintId: blueprintId,
       )..addListener(_seatingChanged);
       _seating!.load(discover: true);
@@ -163,7 +163,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (forms.length == 1) { form = forms.single; }
     else {
       form = await showDialog<Map<String, dynamic>>(context: context, builder: (dialogContext) => AppSimpleDialog(
-        onClose: () => Navigator.pop(dialogContext), title: Text(SeatingTransitionStrings.text('waiting')),
+        onClose: () => Navigator.pop(dialogContext), title: Text(SeatingStrings.text('waiting')),
         children: [for (final f in forms) SimpleDialogOption(onPressed: () => Navigator.pop(dialogContext, f), child: Text(f['title']?.toString() ?? '#${f['id']}'))],
       ));
     }
@@ -2055,7 +2055,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                           onDismiss: () => setState(() => _message = null),
                           child: Column(children: [
                             if (_seating != null && !_seatingOpen)
-                              SeatingTransitionSummary(controller: _seating!, open: _openSeating,
+                              SeatingSummary(controller: _seating!, open: _openSeating,
                                 onWaitlist: seatingRows(_seating?.workspace?['forms']).any((f) => f['link'] is String) ? _openSeatingWaitlist : null),
                             if (_assetsFailed)
                               TextButton(
@@ -2065,7 +2065,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                             Expanded(
                                 child: AbsorbPointer(
                                     absorbing: _busy || _assetsFailed,
-                                    child: SeatingWorkspaceFrame(active: _seatingOpen, panel: _seatingOpen ? SeatingTransitionPanel(
+                                    child: SeatingWorkspaceFrame(active: _seatingOpen, panel: _seatingOpen ? SeatingPanel(
                                           controller: _seating!, onClose: () => setState(() => _seatingOpen = false),
                                           onWaitlist: seatingRows(_seating?.workspace?['forms']).any((f) => f['link'] is String) ? _openSeatingWaitlist : null,
                                           onCommitted: _refresh,

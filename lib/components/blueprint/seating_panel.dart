@@ -2,20 +2,20 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-import 'seating_transition_controller.dart';
-import 'seating_transition_models.dart';
-import 'seating_transition_strings.dart';
+import 'seating_controller.dart';
+import 'seating_models.dart';
+import 'seating_strings.dart';
 
-String _t(String key) => SeatingTransitionStrings.text(key);
+String _t(String key) => SeatingStrings.text(key);
 
-class SeatingTransitionSummary extends StatelessWidget {
-  const SeatingTransitionSummary({
+class SeatingSummary extends StatelessWidget {
+  const SeatingSummary({
     super.key,
     required this.controller,
     required this.open,
     this.onWaitlist,
   });
-  final SeatingTransitionController controller;
+  final SeatingController controller;
   final VoidCallback open;
   final VoidCallback? onWaitlist;
   @override
@@ -23,14 +23,12 @@ class SeatingTransitionSummary extends StatelessWidget {
     animation: controller,
     builder: (context, _) {
       final data = controller.context;
-      if (controller.workspace == null && controller.error == null)
+      if (data == null ||
+          (data.admitted == 0 &&
+              (data.counts['waiting'] ?? 0) + (data.counts['offered'] ?? 0) ==
+                  0))
         return const SizedBox.shrink();
-      if (data?.state == 'published' ||
-          controller.workspace?['status'] == 'published')
-        return const SizedBox.shrink();
-      final message = data == null
-          ? 'chooseForm'
-          : data.admitted == 0
+      final message = data.admitted == 0
           ? 'noAdmissions'
           : data.allAssigned
           ? 'allAssigned'
@@ -46,7 +44,7 @@ class SeatingTransitionSummary extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(_t(message)),
-            if (data != null) ...[
+            ...[
               Text('${_t('unassigned')}: ${data.counts['unassigned'] ?? 0}'),
               if ((data.counts['blocked'] ?? 0) > 0)
                 Text('${_t('blocked')}: ${data.counts['blocked']}'),
@@ -71,24 +69,24 @@ class SeatingTransitionSummary extends StatelessWidget {
   );
 }
 
-class SeatingTransitionPanel extends StatefulWidget {
-  const SeatingTransitionPanel({
+class SeatingPanel extends StatefulWidget {
+  const SeatingPanel({
     super.key,
     required this.controller,
     required this.onClose,
     this.onWaitlist,
     this.onCommitted,
   });
-  final SeatingTransitionController controller;
+  final SeatingController controller;
   final VoidCallback onClose;
   final VoidCallback? onWaitlist;
   final Future<void> Function()? onCommitted;
   @override
-  State<SeatingTransitionPanel> createState() => _SeatingTransitionPanelState();
+  State<SeatingPanel> createState() => _SeatingPanelState();
 }
 
-class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
-  SeatingTransitionController get c => widget.controller;
+class _SeatingPanelState extends State<SeatingPanel> {
+  SeatingController get c => widget.controller;
   late final _search = TextEditingController(text: c.search);
   final _scroll = ScrollController();
   int? _lastSelected;
@@ -120,8 +118,8 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
     super.dispose();
   }
 
-  Future<void> _review({bool publication = false}) async {
-    final preview = await c.preview(publication: publication);
+  Future<void> _review() async {
+    final preview = await c.preview();
     if (!mounted || preview == null) return;
     final pairs = List<SeatingMapping>.of(c.pairs.values);
     var submitting = false;
@@ -136,7 +134,7 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
             onClose: () {
               if (!submitting) Navigator.pop(dialogContext);
             },
-            title: Text(_t(publication ? 'publicationTitle' : 'reviewTitle')),
+            title: Text(_t('reviewTitle')),
             content: SizedBox(
               width: 580,
               child: SingleChildScrollView(
@@ -144,38 +142,9 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _t(publication ? 'publicationExplanation' : 'unchanged'),
-                    ),
+                    Text(_t('unchanged')),
                     const SizedBox(height: 16),
-                    if (publication) ...[
-                      for (final form in preview.forms)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                form['title']?.toString() ??
-                                    '${_t('form')} #${form['id']}',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              Text(
-                                '${_t('oldCapacity')}: ${form['participantCapacity'] ?? _t('unlimited')}',
-                              ),
-                              Text(
-                                '${_t('newCapacity')}: ${form['capacity'] ?? '-'} · ${_t('available')}: ${form['available'] ?? '-'}',
-                              ),
-                            ],
-                          ),
-                        ),
-                      for (final product in preview.catalog)
-                        Text(
-                          '${product['title'] ?? product['productTitle'] ?? product['productId']} · ${_t('available')}: ${product['available'] ?? '-'}',
-                        ),
-                    ] else
-                      for (final pair in pairs)
-                        _pairRow(pair, removable: false),
+                    for (final pair in pairs) _pairRow(pair, removable: false),
                     for (final blocker in preview.blockers)
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
@@ -207,14 +176,11 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                     ? null
                     : () async {
                         setDialogState(() => submitting = true);
-                        final saved = await c.commit(
-                          preview,
-                          publication: publication,
-                        );
+                        final saved = await c.commit(preview);
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                         if (saved) await widget.onCommitted?.call();
                       },
-                child: Text(_t(publication ? 'confirmPublish' : 'confirm')),
+                child: Text(_t('confirm')),
               ),
             ],
           ),
@@ -228,7 +194,7 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
     if (blocker['spotId'] != null)
       '${_t('seat')} ${c.seatTitle((blocker['spotId'] as num).toInt())}',
     if (blocker['formId'] != null) '${_t('form')} #${blocker['formId']}',
-    SeatingTransitionStrings.reason(blocker['reason']?.toString() ?? 'UNKNOWN'),
+    SeatingStrings.reason(blocker['reason']?.toString() ?? 'UNKNOWN'),
   ].join(' · ');
 
   Widget _pairRow(SeatingMapping pair, {bool removable = true}) {
@@ -251,36 +217,11 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
     );
   }
 
-  Future<void> _cancelConfiguration() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AppAlertDialog(
-        onClose: () => Navigator.pop(context, false),
-        title: Text(_t('cancelConfiguration')),
-        content: Text(_t('cancelExplanation')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(CommonStrings.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(_t('cancelConfiguration')),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await c.cancelConfiguration();
-  }
-
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: c,
     builder: (context, _) {
       final data = c.context;
-      final configure = SeatingCapabilities(
-        seatingMap(c.workspace?['capabilities'] ?? const {}),
-      ).configure;
       return ListView(
         key: const ValueKey('seating-worklist'),
         controller: _scroll,
@@ -317,7 +258,7 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                SeatingTransitionStrings.reason(c.error!),
+                SeatingStrings.reason(c.error!),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -336,46 +277,11 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
           if (data == null)
             Text(
               _t(
-                c.workspace?['status'] == 'published'
-                    ? 'published'
-                    : c.workspace?['status'] == 'no_source'
-                    ? 'no_source'
-                    : c.workspace?['status'] == 'repair_plan'
+                c.workspace?['status'] == 'repair_plan'
                     ? 'repairPlan'
-                    : configure
-                    ? 'chooseForm'
-                    : 'configureRequired',
+                    : 'no_source',
               ),
             ),
-          if (configure &&
-              !c.uncertain &&
-              data?.state != 'published' &&
-              c.workspace?['status'] != 'published') ...[
-            for (final form in seatingRows(
-              c.workspace?['forms'],
-            ).where((f) => f['transitionId'] == null))
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  form['title'] as String? ?? '${_t('form')} #${form['id']}',
-                ),
-                subtitle: form['reason'] == null
-                    ? null
-                    : Text(
-                        SeatingTransitionStrings.reason(
-                          form['reason'].toString(),
-                        ),
-                      ),
-                trailing: form['canStart'] != true
-                    ? null
-                    : TextButton(
-                        onPressed: c.busy
-                            ? null
-                            : () => c.start(seatingInt(form['id'])),
-                        child: Text(_t('start')),
-                      ),
-              ),
-          ],
           if (data != null) ...[
             if (c.requestedUnit.isNotEmpty)
               ListTile(
@@ -389,7 +295,6 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                 ),
               ),
 
-            if (data.state == 'published') Text(_t('published')),
             Wrap(
               spacing: 8,
               runSpacing: 4,
@@ -411,9 +316,7 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                   ),
               ],
             ),
-            if (data.state == 'organizer_managed' &&
-                data.allAssigned &&
-                data.admitted > 0)
+            if (data.allAssigned && data.admitted > 0)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(_t('allAssigned')),
@@ -504,7 +407,7 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                   selected: c.selected?.itemId == item.itemId,
                   title: Text(item.label),
                   subtitle: Text(
-                    '${_t('form')} #${item.formId} · ${_t('order')} #${item.orderSymbol}\n${item.productTitle}${item.spotId == null ? '' : ' · ${c.seatTitle(item.spotId)}'}${item.reason == null ? '' : '\n${SeatingTransitionStrings.reason(item.reason!)}'}',
+                    '${_t('form')} #${item.formId} · ${_t('order')} #${item.orderSymbol}\n${item.productTitle}${item.spotId == null ? '' : ' · ${c.seatTitle(item.spotId)}'}${item.reason == null ? '' : '\n${SeatingStrings.reason(item.reason!)}'}',
                   ),
                   leading: c.pairs.containsKey(item.itemId)
                       ? const Icon(Icons.pending_actions)
@@ -546,36 +449,19 @@ class _SeatingTransitionPanelState extends State<SeatingTransitionPanel> {
                           '#${product['productId']}',
                     ),
                     subtitle: Text(
-                      '${_t('admissions')}: ${product['admissions']} · ${_t('seats')}: ${product['seats']} · ${_t('standing')}: ${product['standing'] == true ? _t('standing') : '-'}${product['reason'] == null ? '' : '\n${product['reason'] == 'PRODUCT_MISMATCH' ? _t('productCoverageMissing') : SeatingTransitionStrings.reason(product['reason'].toString())}'}',
+                      '${_t('admissions')}: ${product['admissions']} · ${_t('seats')}: ${product['seats']} · ${_t('standing')}: ${product['standing'] == true ? _t('standing') : '-'}${product['reason'] == null ? '' : '\n${product['reason'] == 'PRODUCT_MISMATCH' ? _t('productCoverageMissing') : SeatingStrings.reason(product['reason'].toString())}'}',
                     ),
                   ),
                 if (data.capabilities.configure &&
                     data.compatibility.any(
-                        (product) => product['reason'] == 'PRODUCT_MISMATCH'))
+                      (product) => product['reason'] == 'PRODUCT_MISMATCH',
+                    ))
                   TextButton(
                     onPressed: c.busy || c.uncertain ? null : widget.onClose,
                     child: Text(_t('editSeatProducts')),
                   ),
               ],
             ),
-            if (data.capabilities.configure &&
-                data.publicationAvailable &&
-                data.state == 'organizer_managed') ...[
-              const Divider(),
-              OutlinedButton(
-                onPressed: c.busy || c.uncertain
-                    ? null
-                    : () => _review(publication: true),
-                child: Text(_t('publish')),
-              ),
-              if ((data.counts['assigned'] ?? 0) == 0)
-                TextButton(
-                  onPressed: c.busy || c.uncertain
-                      ? null
-                      : _cancelConfiguration,
-                  child: Text(_t('cancelConfiguration')),
-                ),
-            ],
           ],
         ],
       );

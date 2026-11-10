@@ -74,6 +74,14 @@ BEGIN
     INSERT INTO public.form_fields(title, type, is_required, form, "order", product_type, is_ticket_field)
     VALUES ('Spot', 'product_type', false, new_form_id, 2, new_product_type_id, true);
 
+    IF EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occasion_id AND
+      jsonb_path_exists(features,'$[*] ? (@.code == "blueprint" && @.is_enabled == true)')) THEN
+      INSERT INTO public.form_fields(form,type,is_ticket_field,is_required,is_hidden,"order")
+      VALUES(new_form_id,'spot',true,true,false,-1);
+      PERFORM public.sync_form_blueprint_internal(new_form_id);
+      SELECT to_jsonb(f) INTO new_form FROM public.forms f WHERE id=new_form_id;
+    END IF;
+
     -- Return the raw data of the newly created form
     PERFORM public.notification_center_form_created_internal(new_form_id);
     RETURN new_form;
