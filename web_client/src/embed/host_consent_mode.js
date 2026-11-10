@@ -58,12 +58,47 @@ function createReader(win) {
     };
 }
 export const readHostConsentMode = win => createReader(win)();
+// Whether the website exposes any Consent Mode state at all. Without it a linked
+// visit has no source and keeps the form's own notice.
+export function hasHostConsentMode(win) {
+    try {
+        const entries = win.google_tag_data?.ics?.entries;
+        // A Google tag without Consent Mode still creates entries, but only with
+        // `implicit` flags; only a default or an update means the website set consent.
+        if (entries !== undefined) {
+            if (!object(entries)) return true;
+            if (Object.values(entries).some(entry => !object(entry) || entry.default !== undefined || entry.update !== undefined)) return true;
+        }
+        const layer = win.dataLayer;
+        return Array.isArray(layer) && layer.some(command => Object.prototype.toString.call(command) === '[object Arguments]' && command[0] === 'consent');
+    } catch { return false; }
+}
+
+// Linked visits only: the website has decided once its CMP sent any update, or
+// the projected state grants a purpose (a CMP restoring a saved choice as the
+// default). Denied or missing defaults alone are undecided; regional defaults
+// stay denied and decide nothing. The automatic iframe bridge does not use this.
+export function hostConsentModeDecided(win) {
+    if (!hasHostConsentMode(win)) return false;
+    try {
+        const entries = win.google_tag_data?.ics?.entries;
+        const updated = (object(entries) && Object.values(entries).some(entry => object(entry) && entry.update !== undefined)) ||
+            (Array.isArray(win.dataLayer) && win.dataLayer.some(command => Object.prototype.toString.call(command) === '[object Arguments]' &&
+                command[0] === 'consent' && command[1] === 'update' && object(command[2])));
+        if (updated) return true;
+        const choice = readHostConsentMode(win);
+        return choice.analytics || choice.marketing;
+    } catch { return false; }
+}
 
 // Polling keeps the host page untouched: no dataLayer or push interception.
 // Each listener is notified only when the projected choice changes.
-export function createHostConsentMode(win) {
+// `linked` reads null while the website is undecided, so a linked visit also
+// ends when a decided state is cleared. The iframe bridge keeps the default.
+export function createHostConsentMode(win, {linked = false} = {}) {
     const listeners = new Set();
-    const read = createReader(win);
+    const reader = createReader(win);
+    const read = linked ? () => { const choice = reader(); return hostConsentModeDecided(win) ? choice : null; } : reader;
     let timer = null, last = null, delay = null;
     const schedule = () => {
         let next = 1000;

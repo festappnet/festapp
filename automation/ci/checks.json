@@ -498,7 +498,7 @@
       }
     },
     "web-measurement": {
-      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
+      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_gcm.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
       "after": [
         "web-startup"
       ],
@@ -2003,6 +2003,7 @@
     "web_client/tests/forms/embed_appearance.test.js",
     "web_client/tests/forms/field_html_security.test.js",
     "web_client/tests/forms/form_consent_link.test.js",
+    "web_client/tests/forms/form_consent_link_gcm.test.js",
     "web_client/tests/forms/form_data_reader.test.js",
     "web_client/tests/forms/form_datalayer.test.js",
     "web_client/tests/forms/form_loading.test.js",
