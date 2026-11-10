@@ -45,6 +45,8 @@ jobs:
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/browser.sh
       - name: Run canonical regression DAG
+        env:
+          GH_TOKEN: ${{ github.token }}
         if: steps.selection.outputs.run == 'true'
         run: python3 automation/ci/run.py lane web-startup
       - name: All lane tests executed

@@ -12,5 +12,11 @@ def flutter_slot():
     with (directory/'flutter.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
         while 'flutter_tools.snapshot' in subprocess.check_output(['ps','-axo','args='],text=True):
-            print('Waiting for the workstation Flutter task...',flush=True);time.sleep(5)
+            print('Waiting for the workstation Flutter task...',file=__import__('sys').stderr,flush=True);time.sleep(5)
         yield
+
+
+if __name__ == '__main__':
+    import sys
+    with flutter_slot():
+        sys.exit(subprocess.call(sys.argv[1:]))

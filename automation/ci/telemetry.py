@@ -33,6 +33,35 @@ def input_identity(root):
             'platform': platform.platform(), 'machine': platform.machine()}
 
 
+def execution_identity(root, lane, contract):
+    """Hosted identity enriches the existing receipt, never a local attestation."""
+    if os.environ.get('GITHUB_ACTIONS') != 'true':
+        return None
+    from selection import api, definition, fingerprint, toolchain
+    repository = os.environ['GITHUB_REPOSITORY']
+    run_id = int(os.environ['GITHUB_RUN_ID'])
+    attempt = int(os.environ['GITHUB_RUN_ATTEMPT'])
+    try:
+        jobs = api(repository, f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')['jobs']
+        job = [job for job in jobs if job['name'] == lane]
+        if len(job) != 1:
+            return None
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
+        # An API outage removes transferable evidence, not test execution.
+        return None
+    def git(*args):
+        return subprocess.check_output(['git', *args], cwd=root, text=True).strip()
+    sha = git('rev-parse', 'HEAD')
+    return {'schemaVersion': 1, 'state': 'executed', 'lane': lane,
+            'repositoryId': int(os.environ['GITHUB_REPOSITORY_ID']),
+            'runId': run_id, 'attempt': attempt, 'jobId': job[0]['id'],
+            'event': os.environ['GITHUB_EVENT_NAME'],
+            'workflow': '.github/workflows/' + contract['jobs'][lane]['workflow'],
+            'definition': definition(sha), 'checkoutSha': sha, 'tree': git('rev-parse', 'HEAD^{tree}'),
+            'inputSha256': fingerprint(sha, lane, contract), 'toolchain': toolchain(lane, contract),
+            'inventory': contract['knownTestInputs']}
+
+
 def emit(name, started, destination=None, **fields):
     destination = destination or os.environ.get('FESTAPP_TIMINGS')
     event = {'name': name, 'pid': os.getpid(), 'clock': 'system-monotonic',

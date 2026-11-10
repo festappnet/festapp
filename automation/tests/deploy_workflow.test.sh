@@ -27,9 +27,9 @@ fi
 
 fail=0
 
-# Every production build must pass the same regressions as main CI.
-if ! grep -F -q 'bash automation/test_web_startup.sh' "$PROJECT_ROOT/automation/build_web_bundle.sh"; then
-    echo "  FAIL: shared production build is missing WebView regression gate"
+# Every production adapter requires source CI; CI owns source regressions.
+if ! grep -F -q 'python3 automation/ci/release_gate.py' "$PROJECT_ROOT/automation/build_web_bundle.sh"; then
+    echo "  FAIL: shared production build is missing exact-source CI gate"
     fail=1
 fi
 if ! python3 - "$PROJECT_ROOT" <<'WEBVIEW_CONTRACT'

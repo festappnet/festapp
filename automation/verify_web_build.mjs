@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {verifyBundleEntries} from './lib/verify_bundle_entries.mjs';
 import { verifyMarketingBundle } from './release/organizers/verify.mjs';
 
 import assert from 'node:assert/strict';
@@ -48,6 +49,7 @@ assert.match(
 );
 assert.ok(webClientHtml.includes('web-client-startup'),
   'Web client HTML must remain visible when its entry module cannot load');
+await verifyBundleEntries(buildDir, webClientHtml);
 const authBridgeEntry = target === 'cloudflare' ? 'auth_bridge' : 'auth_bridge.html';
 const [flutterHtml, main, versionedMain, worker, siteManifestText, authBridge] = await Promise.all([
   readFile(path.join(buildDir, flutterEntry), 'utf8'),

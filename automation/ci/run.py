@@ -3,7 +3,6 @@
 import argparse
 import fcntl
 import hashlib
-import fnmatch
 import platform
 import json
 import os
@@ -13,7 +12,8 @@ import shutil
 import subprocess
 import sys
 import time
-from telemetry import input_identity, phase, measured_process, run_directory, write_receipt, emit
+from telemetry import execution_identity, input_identity, phase, measured_process, run_directory, write_receipt, emit
+from selection import owners
 from scheduler import execute_dag
 from resources import flutter_slot
 from contextlib import nullcontext
@@ -100,13 +100,7 @@ def affected(paths):
     if not paths:return list(CONTRACT['jobs'])
     selected=set()
     for path in paths:
-        # New tests cannot disappear behind an existing domain prefix.
-        if path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart')) and path not in CONTRACT['knownTestInputs']:
-            return list(CONTRACT['jobs'])
-        matches={job for job,value in CONTRACT['jobs'].items()
-                 if any(fnmatch.fnmatch(path,pattern) for pattern in value['inputs'])}
-        if path.startswith(('automation/ci/','.github/workflows/')) or not matches:
-            return list(CONTRACT['jobs'])
+        matches=owners(path,CONTRACT)
         selected.update(matches)
     return [name for name in CONTRACT['jobs'] if name in selected]
 
@@ -127,6 +121,8 @@ def _execute(names, *, pinned=False, command_started=None):
     identity=input_identity(ROOT)
     receipt={**identity,'selectedJobs':names,'scope':'full' if set(names)==set(CONTRACT['jobs']) else 'partial',
              'complete':False,'jobs':[],'units':{},'hostStart':host_state(),'memoryMethod':'250ms sampled host process-tree RSS; Docker VM excluded. Container memory sampled separately.'}
+    if len(names)==1 and not pinned:
+        receipt['execution']=execution_identity(ROOT,names[0],CONTRACT)
     nodes={}
     if pinned:
         for version in {CONTRACT['jobs'][name]['node'] for name in names}:

@@ -62,6 +62,24 @@ class MirrorContractTest(unittest.TestCase):
             self.assertTrue(set(unit['after']).issubset(contract['steps']))
             self.assertTrue(set(unit['resources']).issubset(contract['resources']))
 
+    def test_worker_suite_has_one_owner_and_no_cross_workflow_dependency(self):
+        scripts = {name: unit['script'] for name, unit in runner.CONTRACT['steps'].items()}
+        self.assertEqual([name for name, script in scripts.items()
+                          if 'pnpm run typecheck && pnpm run test:unit' in script], ['image-policy'])
+        self.assertNotIn('image-server-policy', scripts)
+        self.assertEqual(runner.CONTRACT['steps']['mcp-auth-install']['after'], [])
+        for name, lane in runner.CONTRACT['jobs'].items():
+            for unit in lane['steps']:
+                # Wix already serializes the local mirror's shared package install;
+                # hosted jobs have isolated worktrees. New ownership must stay local.
+                if unit != 'wix-install':
+                    self.assertTrue(set(runner.CONTRACT['steps'][unit]['after']) <= set(lane['steps']))
+        for entrypoint in ('automation/cloudflare_build.sh','automation/ci_build.sh'):
+            self.assertIn('automation/build_web_bundle.sh',(ROOT/entrypoint).read_text())
+        builder=(ROOT/'automation/build_web_bundle.sh').read_text()
+        self.assertLess(builder.index('python3 automation/ci/release_gate.py'),
+                        builder.index('rm -rf'))
+
     def test_inventory_uses_worktree_files_instead_of_deleted_index_entries(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
@@ -135,7 +153,8 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_webview_release_gate_is_shared(self):
         self.assertIn('bash automation/test_web_startup.sh',runner.CONTRACT['steps']['web-startup']['script'])
-        self.assertIn('bash automation/test_web_startup.sh',(ROOT/'automation/build_web_bundle.sh').read_text())
+        self.assertNotIn('bash automation/test_web_startup.sh',(ROOT/'automation/build_web_bundle.sh').read_text())
+        self.assertIn('python3 automation/ci/release_gate.py',(ROOT/'automation/build_web_bundle.sh').read_text())
 
     def test_unknown_changed_source_and_new_test_choose_full_suite(self):
         for path in ['new/unknown.dart','database/tests/new_feature/new_test.sql','web_client/tests/new_browser.test.js']:
