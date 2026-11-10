@@ -19,8 +19,8 @@ export function installHostConsentLink(win, productOrigin) {
             if (!isConsentLinkOrigin(url.origin, isLocalConsentLink(win)) || !isConsentLinkOrigin(win.location.origin, isLocalConsentLink(win)) || url.origin !== productOrigin || !/^\/form\/[^/]+\/?$/.test(url.pathname)) return;
             const child = win.open(url.href, `festapp-consent-link-${win.crypto.randomUUID()}`);
             if (!child) return; // Popup blocked: keep native navigation.
-            for (const [old, timer] of opened) if (old.closed) { win.clearTimeout(timer); opened.delete(old); }
-            opened.set(child, win.setTimeout(() => opened.delete(child), 60000));
+            for (const [old, record] of opened) if (old.closed || Date.now() >= record.until) { win.clearTimeout(record.timer); opened.delete(old); }
+            opened.set(child, {until:Date.now()+60000, timer:win.setTimeout(() => opened.delete(child), 60000)});
             event.preventDefault();
         } catch { /* Links remain usable if the optional bridge fails. */ }
     };
@@ -30,8 +30,10 @@ export function installHostConsentLink(win, productOrigin) {
             if (event.origin !== productOrigin || event.source === win || !opened.has(event.source) ||
                 data?.namespace !== consentLinkNamespace || data.protocol !== 1 || data.type !== 'request' ||
                 typeof data.nonce !== 'string' || !/^[a-f0-9-]{36}$/.test(data.nonce)) return;
-            win.clearTimeout(opened.get(event.source));
+            const record = opened.get(event.source);
+            win.clearTimeout(record.timer);
             opened.delete(event.source);
+            if (Date.now() >= record.until) return;
             const choice = readHostConsentMode(win, {unknownAsNull:true});
             if (!choice) {
                 event.source.postMessage({namespace:consentLinkNamespace, protocol:1, type:'response', nonce:data.nonce, choice:null}, event.origin);
@@ -43,5 +45,5 @@ export function installHostConsentLink(win, productOrigin) {
     };
     win.document.addEventListener('click', click);
     win.addEventListener('message', receive);
-    return () => { win.document.removeEventListener('click', click); win.removeEventListener('message', receive); for (const timer of opened.values()) win.clearTimeout(timer); opened.clear(); };
+    return () => { win.document.removeEventListener('click', click); win.removeEventListener('message', receive); for (const record of opened.values()) win.clearTimeout(record.timer); opened.clear(); };
 }

@@ -1,6 +1,6 @@
 import klaro from 'klaro';
-import {isConsentLinkOrigin, isLocalConsentLink, hasConsentLinkPeer, prepareConsentLink, requestLinkedConsent} from './form_consent_link.js';
-import {bindKlaroConsent} from './form_measurement_consent.js';
+import {isConsentLinkOrigin, isLocalConsentLink, prepareConsentLink, requestLinkedConsent} from './form_consent_link.js';
+import {applyKlaroVisitChoice, bindKlaroConsent} from './form_measurement_consent.js';
 import {FormStrings} from './form_strings.js';
 import {AppConfig} from '../../app_config.js';
 import {ColorUtils} from '../../utils/color_utils.js';
@@ -80,7 +80,9 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
                 description:FormStrings.measurementConsentMarketingDescription,purposes:[],default:false,required:false},
         ],
     };
-    let manager, unbind, choices, activeLayer, opener, draft, stopLink, persistentSet, expiryTimer, importing = false;
+    let manager, unbind, choices, activeLayer, opener, draft, stopLink, expiryTimer;
+    // Remote choice lives only in this controller; local saves keep Klaro storage.
+    let imported = false;
     const hadConsentSpace = win.document.body.classList.contains('festapp-consent-space');
     win.document.body.classList.add('festapp-consent-space');
     let focusTimer, disposed = false;
@@ -230,30 +232,24 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
     const observer = new win.MutationObserver(enhance);
     const importTtl = 24 * 60 * 60 * 1000;
     const metadataName = config.storageName + '-source';
-    const readMetadata = () => {
-        const raw = win.document.cookie.split('; ').find(value => value.startsWith(metadataName + '='));
-        try { return raw ? JSON.parse(decodeURIComponent(raw.slice(metadataName.length + 1))) : null; } catch { return null; }
-    };
-    const clearMetadata = () => {
-        try { win.document.cookie = `${metadataName}=; Max-Age=0; Path=/; SameSite=Lax`; } catch { /* Metadata cannot interrupt a local choice. */ }
+    const retireImport = () => {
+        imported = false;
         win.queueMicrotask(enhance);
         win.clearTimeout(expiryTimer);
     };
+    const expireImportedChoice = () => {
+        if (disposed || !imported || hasLocalChoice()) return;
+        retireImport();
+        applyKlaroVisitChoice(manager, null);
+        showNormal();
+    };
     const trackImport = metadata => {
-        // A website removed from the approved hosts no longer covers the form.
-        if (metadata?.session === true && !policy.approved_hosts?.includes(metadata.origin)) {
-            manager.resetConsents(); clearMetadata(); showNormal(); return;
-        }
         if (!isConsentLinkOrigin(metadata?.origin, isLocalConsentLink(win)) || !policy.approved_hosts?.includes(metadata.origin) ||
-            metadata.session !== true || !Number.isFinite(metadata.importedAt) || metadata.importedAt > Date.now() || Date.now() - metadata.importedAt >= importTtl) return;
+            metadata.session !== true || !Number.isFinite(metadata.importedAt) || metadata.importedAt > Date.now() || Date.now() - metadata.importedAt >= importTtl) {
+            expireImportedChoice(); return;
+        }
         win.clearTimeout(expiryTimer);
-        // Another tab may have replaced this import with a local choice meanwhile:
-        // only expire the very import this timer was created for.
-        expiryTimer = win.setTimeout(() => {
-            const current = readMetadata();
-            if (current?.importedAt !== metadata.importedAt || current?.origin !== metadata.origin) { win.queueMicrotask(enhance); return; }
-            manager.resetConsents(); clearMetadata(); showNormal();
-        }, Math.max(0, importTtl - (Date.now() - metadata.importedAt)));
+        expiryTimer = win.setTimeout(expireImportedChoice, Math.max(0, importTtl - (Date.now() - metadata.importedAt)));
     };
     const style = win.document.createElement('style');
     const colors = noticeColors(win);
@@ -340,7 +336,7 @@ ${layout}`;
         win.document.removeEventListener('keydown', onKeydown, true);
         restoreInert();
         stopLink?.(); win.clearTimeout(expiryTimer);
-        if (persistentSet) manager.store.set = persistentSet;
+        imported = false;
         unlock(); style.remove();
         if (!hadConsentSpace) win.document.body.classList.remove('festapp-consent-space');
         win.document.getElementById(config.elementID)?.remove();
@@ -350,7 +346,7 @@ ${layout}`;
     };
     const watcher = {update:(_manager, event) => {
         win.queueMicrotask(enhance);
-        if (event === 'saveConsents' && !importing) { clearMetadata(); stopLink?.(); }
+        if (event === 'saveConsents') { retireImport(); stopLink?.(); }
     }};
     try {
         win.document.head.append(style);
@@ -358,21 +354,14 @@ ${layout}`;
         win.document.addEventListener('click', rememberOpener, true);
         win.document.addEventListener('keydown', onKeydown, true);
         manager = klaro.getManager(config);
-        // Retire the earlier experiment's persistent imports before exposing consent.
-        const metadata = readMetadata();
-        if (metadata && (metadata.session !== true || !Number.isFinite(metadata.importedAt) ||
-            metadata.importedAt > Date.now() || Date.now() - metadata.importedAt >= importTtl ||
-            policy.measurement_consent_bridge !== true || hasConsentLinkPeer(win) ||
-            !policy.approved_hosts?.includes(metadata.origin))) {
-            manager.resetConsents(); clearMetadata();
+        // A browser-session cookie crosses visits. Discard every older import
+        // before publishing a choice, including malformed source metadata.
+        if (win.document.cookie.split('; ').some(value => value.startsWith(metadataName + '='))) {
+            manager.resetConsents();
+            win.document.cookie = `${metadataName}=; Max-Age=0; Path=/; SameSite=Lax`;
         }
         if (manager.store.get() === null) manager.resetConsents();
         else { manager.loadConsents(); manager.savedConsents = {...manager.consents}; }
-        persistentSet = manager.store.set.bind(manager.store);
-        manager.store.set = value => {
-            if (importing) win.document.cookie = `${config.storageName}=${value}; Path=/; SameSite=Lax${win.location.protocol === 'https:' ? '; Secure' : ''}`;
-            else persistentSet(value);
-        };
         manager.watch(watcher);
         unbind = bindKlaroConsent(manager, granted => setConsent(granted));
     } catch {
@@ -413,29 +402,20 @@ ${layout}`;
     // choice wins even when this manager was created before that choice.
     const hasLocalChoice = () => {
         if (manager.store.get() === null) return false;
-        if (readMetadata()) return false;
         manager.loadConsents();
         manager.savedConsents = {...manager.consents};
+        retireImport();
         manager.applyConsents();
-        return manager.confirmed === true && !readMetadata();
+        return manager.confirmed === true;
     };
     try {
-        if (manager.confirmed) trackImport(readMetadata());
         enhance();
         stopLink = requestLinkedConsent({win, policy, hasChoice:hasLocalChoice, settled:showNormal,
             accept:(choice, metadata) => {
                 if (hasLocalChoice()) return;
-                importing = true;
-                try {
-                    // Write metadata first, so a failed session write cannot leave
-                    // a persistent imported choice without its provenance.
-                    win.document.cookie = `${metadataName}=${encodeURIComponent(JSON.stringify(metadata))}; Path=/; SameSite=Lax${win.location.protocol === 'https:' ? '; Secure' : ''}`;
-                    manager.updateConsent('analytics', choice.analytics);
-                    manager.updateConsent('marketing', choice.marketing);
-                    manager.saveAndApplyConsents('consent-link');
-                    trackImport(metadata);
-                    enhance();
-                } finally { importing = false; }
+                imported = true;
+                applyKlaroVisitChoice(manager, choice);
+                trackImport(metadata);
             }});
         if (!stopLink.pending) showNormal();
     } catch { showNormal(); }

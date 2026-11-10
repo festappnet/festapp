@@ -395,20 +395,19 @@ handler. The saved WindowProxy, registry and origin checks establish the peer ev
 two choice booleans plus the protocol envelope and nonce, or `choice: null` when the host has no choice, so the normal notice can appear immediately. Scope identifiers and
 revision appear only in the request. No URL parameters or tokens are added.
 
-The real Klaro store binds the imported choice to organization, Unit and processing
-revision using session cookies for both choice and source metadata. Imported choices
-expire 24 hours after `importedAt`, including after browser session restore. Expiry
-resets the choice and shows the normal notice. Every new helper opening clears a
-previous import before publishing any consent and reads the current website choice
-again. While waiting, consent stays denied; failure, unknown state or timeout
-leaves the old import cancelled and shows the normal notice. A direct visit within
-the cookie session and 24 hour limit can retain the import. A choice saved directly in the form
-keeps its existing 180 day lifetime and always wins, including a newer cookie from
-another tab. Legacy persistent imports are discarded on startup.
+The verified remote choice is applied to Klaro's in-memory choice/draft model
+through the existing consent adapter, without saving it. It belongs only to the
+current controller visit and processing scope, with a maximum 24-hour lifetime.
+A reload or another tab needs a new transfer, otherwise it shows the normal
+notice. All older prototype source cookies, including malformed metadata, are
+retired before binding grants. Only an explicit local choice is persisted with
+the existing 180-day lifetime. Another tab's newer local cookie wins and is never
+deleted by an import expiry. The import marker owns lifetime only; the consent
+adapter remains the single source of effective choice. No store monkeypatch is used.
 Successful import shows no consent bar or import notice. The floating Consent settings
 button remains available, just as after a saved local choice, and opens the settings
 to change the choice. Escape returns focus to that button without saving changes.
-Local saving removes the import metadata. With an eligible opener the normal
+Local saving retires the import lifetime. With an eligible opener the normal
 notice waits at most 1500 ms without locking scroll; unsuccessful transfer then
 shows the normal notice. No order or payment code participates.
 

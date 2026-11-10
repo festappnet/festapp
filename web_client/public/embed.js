@@ -169,11 +169,11 @@
         if (!isConsentLinkOrigin(url.origin, isLocalConsentLink(win)) || !isConsentLinkOrigin(win.location.origin, isLocalConsentLink(win)) || url.origin !== productOrigin || !/^\/form\/[^/]+\/?$/.test(url.pathname)) return;
         const child = win.open(url.href, `festapp-consent-link-${win.crypto.randomUUID()}`);
         if (!child) return;
-        for (const [old, timer] of opened) if (old.closed) {
-          win.clearTimeout(timer);
+        for (const [old, record] of opened) if (old.closed || Date.now() >= record.until) {
+          win.clearTimeout(record.timer);
           opened.delete(old);
         }
-        opened.set(child, win.setTimeout(() => opened.delete(child), 6e4));
+        opened.set(child, { until: Date.now() + 6e4, timer: win.setTimeout(() => opened.delete(child), 6e4) });
         event.preventDefault();
       } catch {
       }
@@ -182,8 +182,10 @@
       try {
         const data = event.data;
         if (event.origin !== productOrigin || event.source === win || !opened.has(event.source) || data?.namespace !== consentLinkNamespace || data.protocol !== 1 || data.type !== "request" || typeof data.nonce !== "string" || !/^[a-f0-9-]{36}$/.test(data.nonce)) return;
-        win.clearTimeout(opened.get(event.source));
+        const record = opened.get(event.source);
+        win.clearTimeout(record.timer);
         opened.delete(event.source);
+        if (Date.now() >= record.until) return;
         const choice = readHostConsentMode(win, { unknownAsNull: true });
         if (!choice) {
           event.source.postMessage({ namespace: consentLinkNamespace, protocol: 1, type: "response", nonce: data.nonce, choice: null }, event.origin);
@@ -205,7 +207,7 @@
     return () => {
       win.document.removeEventListener("click", click);
       win.removeEventListener("message", receive);
-      for (const timer of opened.values()) win.clearTimeout(timer);
+      for (const record of opened.values()) win.clearTimeout(record.timer);
       opened.clear();
     };
   }

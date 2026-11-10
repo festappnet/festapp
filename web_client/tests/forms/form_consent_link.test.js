@@ -70,6 +70,13 @@ test('form rejects expired nonce even before the scheduled timer callback',()=>{
  const f=fixture(),now=Date.now;
  try {const start=Date.now();Date.now=()=>start+1501;f.reply();assert.equal(f.accepted.length,0);}finally{Date.now=now;f.close();}
 });
+test('host rejects an expired tracked window even when its cleanup timer was suspended',()=>{
+ const f=hostFixture(),now=Date.now;
+ try {
+  const start=Date.now();Date.now=()=>start;f.win.dataLayer=[gtagCmd('consent','update',{analytics_storage:'granted'})];f.click();
+  Date.now=()=>start+60001;f.reply();assert.equal(f.replies.length,0);
+ }finally{Date.now=now;f.close();}
+});
 test('host accepts tracked window after early opener detachment',()=>{
  const f=hostFixture();try{f.win.dataLayer=[gtagCmd('consent','update',{analytics_storage:'granted'})];f.click();f.child.opener=null;f.reply();assert.equal(f.replies.length,1);}finally{f.close();}
 });

@@ -438,7 +438,7 @@ test('linked choice uses real Klaro persistence, floating settings and local rev
   assert.equal(requests.length,1);
   win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests[0].data.nonce,analytics:true,marketing:true}}));
   await settle();assert.deepEqual(grants.at(-1),both);assert.equal(win.document.body.style.overflow,'');
-  assert(win.document.cookie.includes('festapp-measurement-1-2-a='));assert(win.document.cookie.includes('-source='));
+  assert.equal(win.document.cookie,'','import is limited to this visit');
   assert.equal(win.document.querySelector('[data-festapp-consent-imported]'),null);
   const fab=win.document.querySelector('.festapp-consent-fab');assert.equal(fab.hidden,false);
   assert.equal(win.document.querySelector('.cookie-modal-notice'),null);
@@ -479,13 +479,12 @@ test('new local choice in another Klaro instance takes precedence over pending i
   cleanA();cleanB();
  }finally{a.close();b.close();}
 });
-test('import cookies are session-only, refresh from host, and disappear after session ends',async()=>{
+test('import stays in the current visit without writing shared cookies',async()=>{
  const {CookieJar}=await import('jsdom');const jar=new CookieJar();
  const a=linkedTab(jar);
  try{
   const cleanup=a.start();a.reply();await settle();
-  const cookies=jar.getCookiesSync('https://tickets.example');assert.equal(cookies.length,2);
-  for(const cookie of cookies)assert.equal(cookie.expires,'Infinity',cookie.key);
+  const cookies=jar.getCookiesSync('https://tickets.example');assert.equal(cookies.length,0);
   assert.deepEqual(a.grants.at(-1),{analytics:true,marketing:false});
   assert.equal(a.win.document.querySelector('.festapp-consent-fab').hidden,false);
   assert.equal(a.win.document.querySelector('[data-festapp-consent-imported]'),null);
@@ -550,10 +549,10 @@ for(const enabled of [false,undefined])test(`organizer switch ${enabled} keeps n
  const f=linkedTab();try{const clean=f.win.startFixture(cs(),{setConsent:g=>f.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example'],enabled===undefined?null:enabled);await settle();assert.equal(f.requests.length,0);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.opener,null);clean();}finally{f.close();}
 });
 
-test('direct reload without a new peer retains an unexpired import',async()=>{
+test('a later visit without a new peer never reuses an imported choice',async()=>{
  const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
  try{const cleanA=a.start();a.reply(true,true);await settle();cleanA();const b=linkedTab(jar);b.win.opener=null;
-  try{const cleanB=b.start();await settle();assert.equal(b.requests.length,0);assert.deepEqual(b.grants.at(-1),both);assert.equal(b.win.document.querySelector('.festapp-consent-fab').hidden,false);assert.equal(b.win.document.querySelector('[data-festapp-consent-imported]'),null);cleanB();}finally{b.close();}
+  try{const cleanB=b.start();await settle();assert.equal(b.requests.length,0);assert.ok(b.grants.every(g=>!g || !g.analytics && !g.marketing));assert.ok(b.win.document.querySelector('.cookie-modal-notice'));assert.equal(b.win.document.querySelector('[data-festapp-consent-imported]'),null);cleanB();}finally{b.close();}
  }finally{a.close();}
 });
 test('an import from a website no longer approved is revoked on the next load',async()=>{
@@ -601,5 +600,30 @@ test('floating settings after import gets focus back after Escape',async()=>{
   assert.equal(change.hidden,false);assert.equal(f.win.document.querySelector('.cookie-modal-notice'),null);
   assert.equal(f.win.document.cookie.split('; ').find(c=>c.includes('-source=')),metadata,'Escape preserves import metadata');
   assert.deepEqual(f.grants.at(-1),{analytics:true,marketing:false},'Escape discards the draft');clean();
+ }finally{f.close();}
+});
+
+test('import expiry preserves and adopts a newer local choice from another tab',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar),b=linkedTab(jar);
+ let expire;const timer=a.win.setTimeout.bind(a.win);
+ a.win.setTimeout=(fn,ms,...args)=>ms>23*60*60*1000?(expire=fn,123):timer(fn,ms,...args);
+ try{
+  const cleanA=a.start();a.reply();await settle();b.win.opener=null;
+  const cleanB=b.start();await settle();b.win.document.querySelector('.cm-btn-success').click();await settle();
+  const cookie=b.win.document.cookie;assert.ok(cookie);expire();await settle();
+  assert.equal(b.win.document.cookie,cookie,'remote expiry never deletes a different tab local choice');
+  assert.deepEqual(a.grants.at(-1),both);cleanA();cleanB();
+ }finally{a.close();b.close();}
+});
+test('import settings draft revokes immediately and Escape restores choice and focus without persistence',async()=>{
+ const f=linkedTab();try{
+  const clean=f.start();f.reply(true,true);await settle();
+  const change=f.win.document.querySelector('.festapp-consent-fab');change.click();await settle();
+  f.win.document.querySelector('#service-item-analytics').click();await settle();
+  assert.deepEqual(f.grants.at(-1),{analytics:false,marketing:true});
+  key(f.win,f.win.document.activeElement,'Escape');await settle();
+  assert.deepEqual(f.grants.at(-1),both);assert.equal(f.win.document.cookie,'');
+  assert.equal(f.win.document.activeElement,change);change.click();await settle();
+  assert.equal(f.win.document.querySelector('#service-item-analytics').checked,true);clean();
  }finally{f.close();}
 });

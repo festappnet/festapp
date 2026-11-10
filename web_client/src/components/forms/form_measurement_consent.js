@@ -1,3 +1,18 @@
+import {measurementConsent} from './form_measurement_contract.js';
+
+// Keep the pinned Klaro 0.7.21 choice/draft model at this adapter boundary.
+// Confirm a verified remote choice only in that model, without saveConsents or
+// storage changes. Null retires the visit choice without deleting shared cookies.
+export function applyKlaroVisitChoice(manager, choice) {
+    const purposes = measurementConsent(choice);
+    manager.confirmed = false;
+    manager.savedConsents = {...purposes};
+    manager.updateConsent('analytics', purposes.analytics);
+    manager.updateConsent('marketing', purposes.marketing);
+    manager.confirmed = choice !== null;
+    manager.applyConsents();
+}
+
 // The same saved-choice adapter is used by standalone Klaro and embedding hosts.
 // It only reports the saved choice; a changed draft is never reported as a grant.
 export function bindKlaroConsent(manager, setConsent) {

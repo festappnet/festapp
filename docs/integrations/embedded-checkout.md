@@ -363,12 +363,12 @@ vypnutém měření. Starší okna otevřená jinak se nemění a na přenos ne�
 Host uvolní evidované okno při první platné žádosti, případně po 60 s.
 Povolené jsou HTTPS originy; HTTP loopback pouze na lokální vývojové stránce.
 
-Převzatá volba platí nejvýše 24 hodin od importu a současně nejdéle po relaci
-cookies. Obnova relace prohlížečem tuto lhůtu neprodlužuje. Při novém přenosu se
-starý import zruší ještě před zveřejněním stavu souhlasu. Do odpovědi je stav
-neuděleno; chyba, neznámá volba nebo timeout zobrazí běžnou lištu. Napřímo v téže
-relaci může platit import mladší 24 hodin. Vlastní volba uložená ve formuláři má
-vždy přednost a zůstává platná 180 dní jako dosud.
+Převzatá volba platí pouze pro aktuální návštěvu formuláře, nejvýše 24 hodin.
+Zůstává v paměti controlleru a neukládá se do cookies ani jiného sdíleného úložiště.
+Obnovení stránky nebo nová karta vyžaduje nové předání; bez něj se zobrazí běžná
+lišta. Starší experimentální importy v cookie se zruší před zveřejněním souhlasu,
+včetně neplatných metadat. Jen vlastní volba uložená ve formuláři se ukládá jako
+dosud na 180 dní a má přednost i před čekajícím přenosem.
 
 Po úspěšném převzetí formulář nezobrazí lištu ani upozornění. Stejně jako po
 vlastní uložené volbě zůstává viditelné plovoucí tlačítko nastavení souhlasu,
