@@ -39,10 +39,14 @@ names and exact-SHA release gates remain mandatory.
 
 Install pnpm 11.24.0, FVM/project SDK, Deno 2.9.0, Supabase CLI 2.111.0, Docker,
 psql and Chrome/Chromium for Flutter. After the frozen web-client install, run
-`pnpm --dir web_client exec playwright install chromium` to provision the managed
+`pnpm --dir web_client exec playwright install --only-shell chromium` to provision the managed
 browser pinned by the declared Playwright dependency. Hosted lanes install its
-system dependencies through `automation/ci/browser.sh`. The mirror pins Node per
-job and shares a frozen package install only within the same run when Node,
+system dependencies through `automation/ci/browser.sh`, downloading only the
+headless shell used by the native suites. Seat CI overlaps this provisioning
+with pulling the digest-pinned database image through
+`automation/ci/prepare-seat.sh`; both must succeed before the lane runs.
+Ticket Edge checks run alongside client preparation; all units remain required.
+The mirror pins Node per job and shares a frozen package install only within the same run when Node,
 manifests, lockfiles and the installed-module manifest match. Different Node
 versions cannot concurrently rewrite shared dependencies. It never copies
 `node_modules` between worktrees. Flutter's separate Chrome runner receives
