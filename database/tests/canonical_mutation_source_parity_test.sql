@@ -1608,6 +1608,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.occasion_list_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7ecb040f0c43bb540a15e2ab868ac31e'),'current SQL source parity: public.occasion_list_read_rule(boolean,boolean)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.occasion_media_upload_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='ace7a31980f690d9f854ab8c0474ae25'),'current SQL source parity: public.occasion_media_upload_rule(boolean,boolean)');
+-- supabase/migrations/20261110233000_ticket_wallet_reserved_route.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.occasion_reserved_public_paths_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='278e52b02ba8c796e09f10bb5893589e'),'current SQL source parity: public.occasion_reserved_public_paths_internal()');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.occasion_staff_navigation_rule(boolean,boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='6c7cfeabfb173e0283543f575272d4d8'),'current SQL source parity: public.occasion_staff_navigation_rule(boolean,boolean,boolean,boolean,boolean)');
 -- supabase/migrations/20261026190000_form_authoring.sql

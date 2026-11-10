@@ -17,6 +17,7 @@ const disabled = [
   '/unit-ball/event', '/demo/eventEdit/42', '/demo/reception', '/demo/cleaning/1', '/map-editor',
 ];
 const preserved = [
+  '/wallet', '/wallet/',
   '/team-invitation', '/team-invitation/',
   '/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/',
   '/', '/napoveda/', '/events', '/events/', '/order', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',

@@ -43,6 +43,9 @@ BEGIN
  BEGIN
   PERFORM public.reserve_public_link_internal('occasion',a,'admin'); RAISE EXCEPTION 'Reserved path allowed';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN
+  PERFORM public.reserve_public_link_internal('occasion',a,'wallet'); RAISE EXCEPTION 'Wallet path allowed as an occasion slug';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  response:=public.create_form_client_sync_v1(first_link,'','Registration',gen_random_uuid());
  f:=(response#>>'{data,form,id}')::bigint;
  PERFORM assert_true((response#>>'{data,form,link}') ~ '^[23456789abcdefghjkmnpqrstuvwxyz]{8}$','short form code');
