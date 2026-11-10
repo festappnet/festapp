@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.create_occasion_domain_command_internal_v1(p_c
 AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_unit bigint; v_organization bigint;
   v_occasion bigint; v_begin jsonb; v_hash text; v_commit public.client_commits%ROWTYPE;
-  v_entity jsonb;
+  v_entity jsonb; v_membership jsonb;
 BEGIN
   IF p_config IS NULL OR jsonb_typeof(p_config)<>'object'
     OR octet_length(p_config::text)>1048576
@@ -36,6 +36,13 @@ BEGIN
     WHERE o.id=currval(pg_get_serial_sequence('public.occasions','id'));
   IF v_occasion IS NULL THEN
     RAISE data_exception USING MESSAGE='occasion create returned no aggregate'; END IF;
+  -- The first administration visit normally enrolls the actor with the unit's
+  -- existing roles. Creation must be usable before that transport-specific
+  -- visit, using that same enrollment owner inside this one transaction.
+  -- This is deliberately after receipt replay: retries never restore roles.
+  v_membership:=public.add_user_to_occasion_internal_v1(v_occasion,v_actor);
+  IF v_membership->>'code' IS DISTINCT FROM '200' THEN
+    RAISE insufficient_privilege USING MESSAGE='occasion creator enrollment denied'; END IF;
   INSERT INTO public.client_aggregate_versions
     (aggregate_type,scope_type,scope_id,aggregate_id,version)
   VALUES ('occasion','occasion',v_occasion,v_occasion::text,1);

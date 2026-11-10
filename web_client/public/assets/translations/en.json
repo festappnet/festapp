@@ -3854,6 +3854,8 @@
     "showOccasions": "Show events ({count})",
     "hideOccasions": "Hide events ({count})",
     "accessSummary": "What this connection allows",
+    "choosePermissions": "Choose allowed functions",
+    "permissionsHint": "Enabling a function includes its required permissions. Disabling a permission also removes functions that require it.",
     "sameRights": "Within your selection, the application can use the following features. Your current user rights always apply.",
     "regionalPlatform": "This connection applies to {portal}, powered by the shared {platform} platform.",
     "baseAccess": "Read your identity, available events and ticket artwork",

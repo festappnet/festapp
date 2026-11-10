@@ -504,8 +504,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_initial_occasion_form_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='8b0eb03e0562962eb20072527ea48b57'),'current SQL source parity: public.create_initial_occasion_form_internal_v1(bigint,text,text)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_occasion_client_sync_v1(uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bc5c707d2445c5d2d7e5a4f11549b517'),'current SQL source parity: public.create_occasion_client_sync_v1(uuid,jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_occasion_domain_command_internal_v1(uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='9d228b745318cff268a1f48abc4ffdae'),'current SQL source parity: public.create_occasion_domain_command_internal_v1(uuid,jsonb)');
+-- supabase/migrations/20261110120000_mcp_creation_membership.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_occasion_domain_command_internal_v1(uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e25176ae48d6619eaeb81a0d04fcc3df'),'current SQL source parity: public.create_occasion_domain_command_internal_v1(uuid,jsonb)');
 -- supabase/migrations/20261027150000_people_group_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1a0c4ab0245cd18e175cd8fa10aa90e4'),'current SQL source parity: public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql

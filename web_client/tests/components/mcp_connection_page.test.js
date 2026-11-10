@@ -2,6 +2,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
+import { MCP_SCOPES } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 let dom, Page, resumeUrl;
 const request = 'R'.repeat(43);
 const issuer = 'https://mcp.vstupenky.online';
@@ -199,7 +200,7 @@ test('one informed approval includes exactly the displayed requested capabilitie
  const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl: resume, issuer}})});
  await f.page.init();
  assert.equal(f.page.canApprove,false);
- assert.equal(f.container.querySelector('[data-permission]'),null);
+ assert.equal(f.container.querySelectorAll('[data-permission]').length,permissions.length);
  assert.match(f.container.textContent,/kontaktní údaje/);
  assert.match(f.container.textContent,/ruční platby/);
  assert.match(f.container.textContent,/e-mailem/);
@@ -207,6 +208,58 @@ test('one informed approval includes exactly the displayed requested capabilitie
  f.container.querySelector('[data-occasion="99"]').click();
  await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions});
+});
+test('partial consent keeps only inventory read and an occasion, without granting create or write',async()=>{
+ const permissions=['festapp:inventory:read','festapp:inventory:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',units:[{id:4,title:'Testovací organizace',canCreateOccasions:true}],occasions:[{id:99,title:'Taneční víkend',unitId:4}],canRequestCreate:true,requestedPermissions:permissions}:{resumeUrl:resume,issuer}})});
+ await f.page.init();
+ const write=f.container.querySelector('[data-permission="festapp:inventory:write"]');
+ assert(write,'functional scopes must be selectable in the actual tenant consent component');
+ write.click();
+ f.container.querySelector('[data-occasion="99"]').click();
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions:['festapp:inventory:read']});
+});
+test('removing a prerequisite removes dependent writes and approving no functions remains explicit',async()=>{
+ const permissions=['festapp:orders:read','festapp:orders:write','festapp:payments:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',occasions:[{id:99,title:'Ples'}],requestedPermissions:permissions}:{resumeUrl:resume,issuer}})});
+ await f.page.init();
+ const read=f.container.querySelector('[data-permission="festapp:orders:read"]');assert(read);
+ read.click();
+ assert.equal(f.page.selectedPermissions.size,0);
+ assert.equal(f.container.querySelector('[data-permission="festapp:payments:write"]').checked,false);
+ f.container.querySelector('[data-permission="festapp:orders:read"]').click();
+ assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read']);
+ f.container.querySelector('[data-permission="festapp:orders:write"]').click();
+ assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read','festapp:orders:write']);
+ f.container.querySelector('[data-permission="festapp:orders:read"]').click();
+ f.container.querySelector('[data-permission="festapp:payments:write"]').click();
+ assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read','festapp:payments:write']);
+ f.container.querySelector('[data-permission="festapp:orders:read"]').click();
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions:[]});
+});
+test('whole-organizer consent can decline creation independently and does not reselect it',async()=>{
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',units:[{id:4,title:'Testovací organizace',canCreateOccasions:true}],occasions:[{id:99,title:'Ples',unitId:4}],canRequestCreate:true,requestedPermissions:[]}:{resumeUrl:resume,issuer}})});
+ await f.page.init();f.container.querySelector('[data-unit="4"]').click();
+ const create=f.container.querySelector('[data-allow-create="4"]');assert(create);assert.equal(create.checked,true);
+ create.click();
+ assert.equal(f.page.access.units[0].canCreateOccasions,false);
+ f.container.querySelector('[data-unit-toggle="4"]').click();
+ assert.equal(f.container.querySelector('[data-allow-create="4"]').checked,false);
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.selection.units,[{unitId:4,canCreateOccasions:false}]);
+});
+test('every requested catalog permission stays selectable and transitive dependencies remain consistent',async()=>{
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',occasions:[{id:99,title:'Ples'}],requestedPermissions:MCP_SCOPES}:{resumeUrl:resume,issuer}})});
+ await f.page.init();assert.equal(f.container.querySelectorAll('[data-permission]').length,MCP_SCOPES.length);
+ f.container.querySelector('[data-permission="festapp:orders:read"]').click();
+ for(const scope of ['festapp:refund-decisions:read','festapp:refund-decisions:write'])
+  assert.equal(f.container.querySelector(`[data-permission="${scope}"]`).checked,false);
+ f.container.querySelector('[data-permission="festapp:refund-decisions:write"]').click();
+ for(const scope of ['festapp:orders:read','festapp:refund-decisions:read','festapp:refund-decisions:write'])
+  assert.equal(f.container.querySelector(`[data-permission="${scope}"]`).checked,true);
+ assert.equal(f.container.querySelector('[data-permission="festapp:orders:write"]').checked,false);
 });
 test('a narrow OAuth request stays narrow and invalid scope dependencies fail closed',async()=>{
  let requestedPermissions=['festapp:orders:read'];
