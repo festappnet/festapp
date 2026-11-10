@@ -67,3 +67,9 @@ The final navigation subset also passed all 76 original cases in reverse order.
 No production application implementation or backend schema is changed. The
 release is explicitly requested; exact merged-main GitHub gates, tenant drift,
 one local build and coherent live probes remain required before completion.
+
+The final ownership follow-up ensures changes to the shared semantic checker or
+inventory snapshots trigger all three owning workflows. A regression protects
+those source filters; canonical image-contract validation passed with immutable
+inputs in receipt `20261110T014300-98f90e2bed14` (29 Python CI cases). This
+follow-up changes only workflow metadata, the framework regression and notes.

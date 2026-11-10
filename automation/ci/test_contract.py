@@ -73,6 +73,18 @@ class MirrorContractTest(unittest.TestCase):
         self.assertIn('automation/testing/navigation_default.dart',
                       steps['navigation-contract']['script'])
 
+    def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
+        pattern='automation/client_test_inventory.*'
+        for name in ('navigation-interactions','client-contract','ticket-preview-and-delivery'):
+            lane=runner.CONTRACT['jobs'][name]
+            self.assertIn(pattern,lane['inputs'])
+            workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
+            triggers=workflow.get('on',workflow.get(True))
+            for event in ('push','pull_request'):
+                paths=triggers[event].get('paths')
+                if paths is not None:
+                    self.assertIn(pattern,paths,(name,event))
+
     def test_every_hosted_lane_preserves_failure_evidence(self):
         for job in runner.CONTRACT['jobs'].values():
             workflow=yaml.safe_load((ROOT/'.github/workflows'/job['workflow']).read_text())
