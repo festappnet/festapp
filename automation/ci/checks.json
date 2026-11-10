@@ -468,7 +468,7 @@
       }
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart test/components/blueprint/blueprint_template_groups_test.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -1763,6 +1763,7 @@
     "test/components/bank_accounts/order_bank_sync_warning_test.dart",
     "test/components/bank_accounts/unit_bank_accounts_load_test.dart",
     "test/components/blueprint/blueprint_host_margin_pan_test.dart",
+    "test/components/blueprint/blueprint_template_groups_test.dart",
     "test/components/blueprint/blueprint_toolbar_test.dart",
     "test/components/eshop/additional_payment_test.dart",
     "test/components/eshop/empty_orders_test.dart",

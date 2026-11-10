@@ -1,8 +1,12 @@
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 /// Physical assemblies may nest below a stable commercial group.
-String? blueprintCommercialGroupFor(LayoutNode seat, VenueLayoutDocument document,
-    {required Map<String, int> groupProducts, String? currentGroupId}) {
+String? blueprintCommercialGroupFor(
+  LayoutNode seat,
+  VenueLayoutDocument document, {
+  required Map<String, int> groupProducts,
+  String? currentGroupId,
+}) {
   final nodes = {for (final node in document.nodes) node.id: node};
   final ancestors = <LayoutNode>[];
   final seen = <String>{};
@@ -18,6 +22,11 @@ String? blueprintCommercialGroupFor(LayoutNode seat, VenueLayoutDocument documen
   }
   for (final node in ancestors) {
     if (groupProducts.containsKey(node.id)) return node.id;
+  }
+  // Template sections describe rooms, not commercial tables. Without an
+  // explicit business binding, each physical assembly owns its own seats.
+  for (final node in ancestors) {
+    if (node.kind == 'table' || node.kind == 'furniture') return node.id;
   }
   for (final node in ancestors) {
     if (node.kind == 'group') return node.id;
