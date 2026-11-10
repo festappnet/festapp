@@ -429,14 +429,14 @@ test('floating settings reserve clearance for focused form controls and clean up
 test('linked choice uses real Klaro persistence, floating settings and local revocation',async()=>{
  const dom=new JSDOM('<html lang="cs"><body><main></main></body></html>',{url:'https://tickets.example/form/test',referrer:'https://organizer.example/event',runScripts:'outside-only',pretendToBeVisual:true});
  const win=dom.window, grants=[],requests=[];
- win.name='festapp-consent-link-00000000-0000-0000-0000-000000000000';win.opener={postMessage:(data,origin)=>requests.push({data,origin})};
+ win.name='festapp-consent-link-00000000-0000-0000-0000-000000000000';win.opener={postMessage:(data,origin)=>{if(data.type==='request')requests.push({data,origin})}};
  const translations=JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json',import.meta.url)));
  try {
   const peer=win.opener;
   win.eval(bundle.outputFiles[0].text);
-  let cleanup=win.startFixture(translations,{setConsent:g=>grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);
+  let cleanup=win.startFixture(translations,{setConsent:g=>grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);
   assert.equal(requests.length,1);
-  win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests[0].data.nonce,analytics:true,marketing:true}}));
+  win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests[0].data.nonce,scope:requests[0].data.scope,sequence:1,expiresAt:Date.now()+60000,choice:{analytics:true,marketing:true}}}));
   await settle();assert.deepEqual(grants.at(-1),both);assert.equal(win.document.body.style.overflow,'');
   assert.equal(win.document.cookie,'','import is limited to this visit');
   assert.equal(win.document.querySelector('[data-festapp-consent-imported]'),null);
@@ -445,7 +445,7 @@ test('linked choice uses real Klaro persistence, floating settings and local rev
   fab.click();await settle();
   const root=win.document.querySelector('#festapp-measurement-consent');root.querySelector('#service-item-analytics').click();root.querySelector('#service-item-marketing').click();root.querySelector('.cm-btn-accept').click();await settle();
   assert.deepEqual(grants.at(-1),none);assert.equal(win.document.querySelector('[data-festapp-consent-imported]'),null);assert(!win.document.cookie.includes('-source='));
-  cleanup();cleanup=win.startFixture(translations,{setConsent:g=>grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);
+  cleanup();cleanup=win.startFixture(translations,{setConsent:g=>grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);
   await settle();assert.equal(requests.length,1,'saved local choice prevents a new import');assert.deepEqual(grants.at(-1),none);cleanup();
  } finally {win.close();}
 });
@@ -455,9 +455,9 @@ test('linked choice uses real Klaro persistence, floating settings and local rev
 function linkedTab(cookieJar) {
  const dom=new JSDOM('<html lang="cs"><body style="overflow:auto"><main></main></body></html>',{url:'https://tickets.example/form/test',referrer:'https://organizer.example/event',cookieJar,runScripts:'outside-only',pretendToBeVisual:true});
  const win=dom.window,requests=[],grants=[];
- const peer={postMessage:data=>requests.push(data)};win.name='festapp-consent-link-00000000-0000-0000-0000-000000000000';win.opener=peer;
+ let sequence=0; const peer={postMessage:data=>{if(data.type==='request')requests.push(data)}};win.name='festapp-consent-link-00000000-0000-0000-0000-000000000000';win.opener=peer;
  win.eval(bundle.outputFiles[0].text);
- return {win,requests,grants,unknown:()=>win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests.at(-1)?.nonce,choice:null}})),start:()=>win.startFixture(cs(),{setConsent:g=>grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']),reply:(analytics=true,marketing=false)=>win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests.at(-1)?.nonce,analytics,marketing}})),close:()=>win.close()};
+ return {win,requests,grants,unknown:()=>win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'end',nonce:requests.at(-1)?.nonce,scope:requests.at(-1)?.scope,sequence:++sequence}})),start:()=>win.startFixture(cs(),{setConsent:g=>grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://organizer.example']),reply:(analytics=true,marketing=false)=>win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests.at(-1)?.nonce,scope:requests.at(-1)?.scope,sequence:++sequence,expiresAt:Date.now()+60000,choice:{analytics,marketing}}})),close:()=>win.close()};
 }
 test('pending exchange has no blocking notice or scroll lock, timeout restores notice',async()=>{
  const f=linkedTab();let expire;
@@ -536,7 +536,7 @@ for (const response of ['timeout','unknown','refusal']) test(`old imported grant
   }finally{b.close();}
  }finally{a.close();}
 });
-test('24 hour imported choice expires even when browser session cookies survive',async()=>{
+test('source lease expires even when browser session cookies survive',async()=>{
  const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
  try{
   const cleanA=a.start();a.reply(true,true);await settle();cleanA();
@@ -546,7 +546,7 @@ test('24 hour imported choice expires even when browser session cookies survive'
  }finally{a.close();}
 });
 for(const enabled of [false,undefined])test(`organizer switch ${enabled} keeps normal CMP`,async()=>{
- const f=linkedTab();try{const clean=f.win.startFixture(cs(),{setConsent:g=>f.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example'],enabled===undefined?null:enabled);await settle();assert.equal(f.requests.length,0);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.opener,null);clean();}finally{f.close();}
+ const f=linkedTab();try{const clean=f.win.startFixture(cs(),{setConsent:g=>f.grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://organizer.example'],enabled===undefined?null:enabled);await settle();assert.equal(f.requests.length,0);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.opener,null);clean();}finally{f.close();}
 });
 
 test('a later visit without a new peer never reuses an imported choice',async()=>{
@@ -560,7 +560,7 @@ test('an import from a website no longer approved is revoked on the next load',a
  try{const cleanA=a.start();a.reply(true,true);await settle();assert.equal(a.win.document.querySelector('.festapp-consent-fab').hidden,false);
   const change=a.win.document.querySelector('.festapp-consent-fab');assert.ok(change.getAttribute('aria-label'),'Change has an accessible name');cleanA();
   const b=linkedTab(jar);b.win.opener=null;
-  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://other.example']);await settle();
+  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://other.example']);await settle();
    assert.equal(b.win.document.querySelector('[data-festapp-consent-imported]'),null);
    assert.ok(b.win.document.querySelector('.cookie-modal-notice'),'the normal notice asks again');
    assert.notDeepEqual(b.grants.at(-1),{analytics:true,marketing:true});cleanB();}finally{b.close();}
@@ -570,16 +570,16 @@ test('an import from a removed website never reaches the transport on the next l
  const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
  try{const cleanA=a.start();a.reply(true,true);await settle();cleanA();
   const b=linkedTab(jar);b.win.opener=null;
-  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://other.example']);await settle();
+  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://other.example']);await settle();
    assert.ok(!b.grants.some(g=>g&&g.analytics&&g.marketing),'no intermediate grant from the stale import');cleanB();}finally{b.close();}
  }finally{a.close();}
 });
 test('an expiry timer of an old import keeps a newer local choice from another tab',async()=>{
  const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);let expire;
- const original=a.win.setTimeout.bind(a.win);a.win.setTimeout=(fn,ms,...args)=>ms>3600000?(expire=fn,999):original(fn,ms,...args);
+ const original=a.win.setTimeout.bind(a.win);a.win.setTimeout=(fn,ms,...args)=>ms>=59000 && ms<=60000?(expire=fn,999):original(fn,ms,...args);
  try{const cleanA=a.start();a.reply(true,true);await settle();assert.equal(typeof expire,'function');
   const b=linkedTab(jar);b.win.opener=null;
-  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);await settle();
+  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g && typeof g==='object'?{analytics:g.analytics,marketing:g.marketing}:g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);await settle();
    b.win.document.querySelector('.festapp-consent-fab').click();await settle();
    b.win.document.querySelector('.cn-decline, .cm-btn-decline').click();await settle();
    const saved=()=>b.win.document.cookie.split('; ').find(c=>c.startsWith('festapp-measurement-1-2-a='));
@@ -606,7 +606,7 @@ test('floating settings after import gets focus back after Escape',async()=>{
 test('import expiry preserves and adopts a newer local choice from another tab',async()=>{
  const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar),b=linkedTab(jar);
  let expire;const timer=a.win.setTimeout.bind(a.win);
- a.win.setTimeout=(fn,ms,...args)=>ms>23*60*60*1000?(expire=fn,123):timer(fn,ms,...args);
+ a.win.setTimeout=(fn,ms,...args)=>ms>=59000 && ms<=60000?(expire=fn,123):timer(fn,ms,...args);
  try{
   const cleanA=a.start();a.reply();await settle();b.win.opener=null;
   const cleanB=b.start();await settle();b.win.document.querySelector('.cm-btn-success').click();await settle();
@@ -623,7 +623,26 @@ test('import settings draft revokes immediately and Escape restores choice and f
   assert.deepEqual(f.grants.at(-1),{analytics:false,marketing:true});
   key(f.win,f.win.document.activeElement,'Escape');await settle();
   assert.deepEqual(f.grants.at(-1),both);assert.equal(f.win.document.cookie,'');
+  for(let i=0;i<20 && f.win.document.activeElement!==change;i++) await settle();
   assert.equal(f.win.document.activeElement,change);change.click();await settle();
   assert.equal(f.win.document.querySelector('#service-item-analytics').checked,true);clean();
  }finally{f.close();}
+});
+
+test('source heartbeats preserve a dirty draft and withdrawal updates Escape baseline',async()=>{
+ const f=linkedTab();try{
+ const clean=f.start();f.reply(true,true);await settle();
+ f.win.document.querySelector('.festapp-consent-fab').click();await settle();
+ f.win.document.querySelector('#service-item-analytics').click();await settle();
+ f.reply(true,true);await settle();assert.deepEqual(f.grants.at(-1),{analytics:false,marketing:true});
+ assert.equal(f.win.document.querySelector('#service-item-analytics').checked,false);
+ f.reply(false,false);await settle();key(f.win,f.win.document.activeElement,'Escape');await settle();
+ assert.deepEqual(f.grants.at(-1),none);assert.equal(f.win.document.cookie,'');clean();
+ }finally{f.close()}
+});
+test('source disconnect removes imported grant and restores normal choice',async()=>{
+ const f=linkedTab();try{const clean=f.start();f.reply(true,true);await settle();f.unknown();await settle();
+ assert.deepEqual(f.grants.at(-1),none);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.document.cookie,'');
+ f.reply(true,true);await settle();assert.deepEqual(f.grants.at(-1),none);clean();
+ }finally{f.close()}
 });

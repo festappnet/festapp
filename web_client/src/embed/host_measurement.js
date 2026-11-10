@@ -1,10 +1,11 @@
+import {consentScope, readConsentSource} from '../components/forms/measurement_consent_source.js';
 import {measurementProtocol, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
 // Presence is the long-lived public opt-in; absent preserves existing embeds.
 export const usesHostDataLayer = frame => frame.hasAttribute('data-festapp-datalayer');
 
-export function createHostMeasurement({frames, currentRecord, disposeRecord, scan}) {
+export function createHostMeasurement({frames, currentRecord, disposeRecord, scan, consentSource}) {
     let suspended = false;
     const consentMode = createHostConsentMode(window);
     const stopHeartbeat = record => {
@@ -29,9 +30,14 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         const automatic = !record.explicitChoice && !usesHostDataLayer(frame) && record.manifest.measurement_consent_bridge === true;
         if (!automatic && !record.explicitChoice && record.choice) record.choice.dispose();
         if (!record.choice && automatic) {
+            const legacyRead = scopedChoice(record, () => consentMode.read());
             bindChoice(frame, record, notify => ({
-                read:scopedChoice(record, () => usesHostDataLayer(frame) ? false : consentMode.read()),
-                dispose:consentMode.subscribe(() => { if (!usesHostDataLayer(frame)) notify(); }),
+                read:manifest => usesHostDataLayer(frame) ? false : consentSource?.configured
+                    ? consentSource.read(consentScope(manifest)) : legacyRead(manifest),
+                dispose:(() => {
+                    const a = consentMode.subscribe(notify), b = consentSource?.subscribe(notify);
+                    return () => { a(); b?.(); };
+                })(),
             }), false);
             return;
         }
@@ -80,10 +86,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             return bindChoice(frame, record, notify => {
                 const dispose = source.subscribe(notify);
                 return {dispose, read:manifest => {
-                    if (!manifest) return false;
-                    const choice = source.read({organization:manifest.organization, unit:manifest.unit,
-                        processingRevision:manifest.processing_revision, requiredPurposes:manifest.required_purposes});
-                    return choice?.processingRevision === manifest.processing_revision ? choice : false;
+                    return readConsentSource(source, consentScope(manifest));
                 }};
             });
         },

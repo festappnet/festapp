@@ -57,36 +57,7 @@ function createReader(win) {
         }
     };
 }
-// Consent link import: only purposes the website's CMP explicitly updated count;
-// defaults (banner still open) and unrelated updates are not the visitor's
-// choice. Same strict mapping as the bridge. null = no explicit choice.
-function readExplicitHostConsent(win) {
-    try {
-        const updated = new Set(), state = {};
-        const entries = win.google_tag_data?.ics?.entries;
-        if (entries !== undefined) {
-            if (!object(entries)) return null;
-            for (const key of keys) {
-                const entry = entries[key];
-                if (!object(entry) || entry.update === undefined) continue;
-                updated.add(key); state[key] = entry.update === true;
-            }
-        } else {
-            const layer = win.dataLayer;
-            if (!Array.isArray(layer)) return null;
-            for (const command of layer) {
-                if (Object.prototype.toString.call(command) !== '[object Arguments]') continue;
-                const [kind, action, values] = command;
-                if (kind !== 'consent' || action !== 'update' || !object(values)) continue;
-                for (const key of keys) if (Object.hasOwn(values, key)) { updated.add(key); state[key] = values[key] === 'granted'; }
-            }
-        }
-        if (!updated.size) return null;
-        return {...project(state), ...(typeof win.__tcfapi !== 'undefined' ? {marketing:false} : {})};
-    } catch { return null; }
-}
-export const readHostConsentMode = (win, {unknownAsNull = false} = {}) =>
-    unknownAsNull ? readExplicitHostConsent(win) : createReader(win)();
+export const readHostConsentMode = win => createReader(win)();
 
 // Polling keeps the host page untouched: no dataLayer or push interception.
 // Each listener is notified only when the projected choice changes.

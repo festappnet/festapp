@@ -1,5 +1,5 @@
 import klaro from 'klaro';
-import {isConsentLinkOrigin, isLocalConsentLink, prepareConsentLink, requestLinkedConsent} from './form_consent_link.js';
+import {prepareConsentLink, requestLinkedConsent} from './form_consent_link.js';
 import {applyKlaroVisitChoice, bindKlaroConsent} from './form_measurement_consent.js';
 import {FormStrings} from './form_strings.js';
 import {AppConfig} from '../../app_config.js';
@@ -80,7 +80,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
                 description:FormStrings.measurementConsentMarketingDescription,purposes:[],default:false,required:false},
         ],
     };
-    let manager, unbind, choices, activeLayer, opener, draft, stopLink, expiryTimer;
+    let manager, unbind, choices, activeLayer, opener, draft, stopLink, remoteLease, remoteChoice, effectiveChoice;
     // Remote choice lives only in this controller; local saves keep Klaro storage.
     let imported = false;
     const hadConsentSpace = win.document.body.classList.contains('festapp-consent-space');
@@ -230,26 +230,21 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
         }
     };
     const observer = new win.MutationObserver(enhance);
-    const importTtl = 24 * 60 * 60 * 1000;
     const metadataName = config.storageName + '-source';
     const retireImport = () => {
         imported = false;
         win.queueMicrotask(enhance);
-        win.clearTimeout(expiryTimer);
+        remoteLease = null; remoteChoice = null;
     };
     const expireImportedChoice = () => {
         if (disposed || !imported || hasLocalChoice()) return;
-        retireImport();
+        retireImport(); draft = {analytics:false, marketing:false};
         applyKlaroVisitChoice(manager, null);
         showNormal();
     };
-    const trackImport = metadata => {
-        if (!isConsentLinkOrigin(metadata?.origin, isLocalConsentLink(win)) || !policy.approved_hosts?.includes(metadata.origin) ||
-            metadata.session !== true || !Number.isFinite(metadata.importedAt) || metadata.importedAt > Date.now() || Date.now() - metadata.importedAt >= importTtl) {
-            expireImportedChoice(); return;
-        }
-        win.clearTimeout(expiryTimer);
-        expiryTimer = win.setTimeout(expireImportedChoice, Math.max(0, importTtl - (Date.now() - metadata.importedAt)));
+    const publishChoice = choice => {
+        effectiveChoice = choice;
+        setConsent(imported ? {...choice, ...remoteLease} : choice);
     };
     const style = win.document.createElement('style');
     const colors = noticeColors(win);
@@ -335,7 +330,7 @@ ${layout}`;
         win.document.removeEventListener('click', rememberOpener, true);
         win.document.removeEventListener('keydown', onKeydown, true);
         restoreInert();
-        stopLink?.(); win.clearTimeout(expiryTimer);
+        stopLink?.();
         imported = false;
         unlock(); style.remove();
         if (!hadConsentSpace) win.document.body.classList.remove('festapp-consent-space');
@@ -363,7 +358,7 @@ ${layout}`;
         if (manager.store.get() === null) manager.resetConsents();
         else { manager.loadConsents(); manager.savedConsents = {...manager.consents}; }
         manager.watch(watcher);
-        unbind = bindKlaroConsent(manager, granted => setConsent(granted));
+        unbind = bindKlaroConsent(manager, publishChoice);
     } catch {
         fail(true);
         return () => setConsent(false);
@@ -410,12 +405,20 @@ ${layout}`;
     };
     try {
         enhance();
-        stopLink = requestLinkedConsent({win, policy, hasChoice:hasLocalChoice, settled:showNormal,
+        stopLink = requestLinkedConsent({win, policy, hasChoice:hasLocalChoice, settled:showNormal, revoke:expireImportedChoice,
             accept:(choice, metadata) => {
                 if (hasLocalChoice()) return;
+                const unchanged = imported && remoteChoice.analytics === choice.analytics && remoteChoice.marketing === choice.marketing;
                 imported = true;
-                applyKlaroVisitChoice(manager, choice);
-                trackImport(metadata);
+                remoteLease = {leaseId:metadata.leaseId, expiresAt:metadata.expiresAt};
+                remoteChoice = {...choice};
+                if (unchanged) { publishChoice(effectiveChoice); return; }
+                const editing = !!rootNode()?.querySelector('.cm-modal');
+                const previousDraft = {...manager.consents};
+                draft = {...choice};
+                // Clamp an open draft before publishing a source grant. A heartbeat
+                // never restores a switch the visitor has just turned off.
+                applyKlaroVisitChoice(manager, choice, editing ? previousDraft : null);
             }});
         if (!stopLink.pending) showNormal();
     } catch { showNormal(); }

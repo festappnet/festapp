@@ -1,5 +1,7 @@
 # Measurement 781/782: current PR review and implementation
 
+> Historical first-slice review. Remaining work is superseded by [the executed merge-readiness plan](measurement-merge-readiness-plan-2026-11-10.md).
+
 Date: 2026-11-10
 Status: targeted corrections prepared; neither complete feature approved for release
 Verification: standard for consent, identity and public messaging boundaries

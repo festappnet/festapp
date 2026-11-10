@@ -332,10 +332,9 @@ je nestahují. Worker a per-version cache zůstávají společné; handshake nes
 `runtime: web | flutter`. Běžná Flutter aplikace je dostupná offline po svém
 online otevření, veřejný formulář má nezávislou webovou offline obnovu.
 
-## Experimentální převzetí volby cookies
+## Převzetí živé volby cookies
 
-Ve větvi issue #782 lze na stránce s `embed.js` výslovně povolit převzetí volby
-Consent Mode do samostatného formuláře:
+Web s `embed.js` může předat uloženou volbu svého CMP do samostatného formuláře:
 
 ```html
 <script defer src="https://vstupenky.online/embed.js"></script>
@@ -343,47 +342,31 @@ Consent Mode do samostatného formuláře:
    href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
 ```
 
-Pořadatel musí v liště svého webu výslovně uvést, že „volba platí i pro nákup na
-vstupenky.online“, se shodnými účely, příjemci a zásadami ochrany osobních údajů.
-Pořadatel musí zapnout `measurement_consent_bridge` v nastavení měření jednotky; samotný schválený origin nestačí. Vypnutý přepínač zachovává původní processing revision; zapnutí ji změní. Lišta musí uvádět pořadatele jako správce, Festapp jako zpracovatele, služby GTM, izolovaný runtime `*.pages.dev`, platnost převzetí 24 hodin a způsob odvolání. Origin webu musí být schválen v measurement policy jednotky. Skript načtěte přímo
-z produktového originu formuláře, nikoli z kopie na webu pořadatele.
+Samotný odkaz ani Consent Mode nestačí. Pořadatel zapne
+`measurement_consent_bridge`, schválí origin webu a napojí živý zdroj přes
+`FestappEmbed.connectMeasurementSource`. Zdroj vrací uložený záznam CMP jen pro
+odpovídající organizaci, jednotku a revizi zpracování. Revize musí být součástí
+uložené volby, nesmí se pouze převzít z příchozí žádosti. Lišta webu a archivovaná
+konfigurace CMP musí výslovně pokrývat i nákup ve formuláři se stejnými účely,
+příjemci, zásadami a možností odvolání. Technický přepínač tuto evidenci nenahrazuje.
 
-Helper zachytí pouze obyčejné kliknutí na označený odkaz s `target="_blank"`
-na `/form/<slug>` stejného originu jako skript. Použije `window.open` s vazbou
-`opener`, kterou moderní prohlížeče u běžného `_blank` implicitně vypínají.
-Explicitní `rel="noopener"` a `rel="noreferrer"` bez ohledu na velikost písmen, `referrerpolicy="no-referrer"` na odkazu, meta referrer `no-referrer`, stažení a kliknutí s modifikátory nemění. Blokované nové okno ponechá nativnímu odkazu. Odkaz ve stejné kartě
-nemá původní stránku jako opener, a proto se souhlas nepřenese. Bez referreru,
-například při `Referrer-Policy: no-referrer`, se také zobrazí běžná lišta.
-Politika COOP může vazbu opener přerušit a přenos znemožnit.
+Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
+karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,
+referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Bez
+referreru, propojení oken nebo při omezení COOP se zobrazí běžná místní lišta.
+Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
 
-Helper otevře okno s názvem `festapp-consent-link-<nonce>`. Formulář zruší veřejnou
-vazbu `opener` hned při startu, před načtením policy nebo lišty; soukromý odkaz
-na původní okno slouží pouze výměně zpráv. To platí i při chybě policy nebo
-vypnutém měření. Starší okna otevřená jinak se nemění a na přenos nečekají.
-Host uvolní evidované okno při první platné žádosti, případně po 60 s.
-Povolené jsou HTTPS originy; HTTP loopback pouze na lokální vývojové stránce.
+Převzetí čeká nejvýše 1500 ms. Pak platí pouze pro aktuální návštěvu, nejvýše
+24 hodin, a průběžně se obnovuje krátkou vazbou na živý zdroj. Odvolání na webu
+se přenese; zánik záznamu, odpojení zdroje, opuštění webu nebo vypršení vazby
+ukončí převzetí a obnoví místní lištu. Žádné převzaté souhlasy se nezapisují do
+cookies. Obnovená nebo další karta vyžaduje nové předání. Vlastní volba uložená
+ve formuláři má přednost a zůstává v cookie na 180 dní.
 
-Převzatá volba platí pouze pro aktuální návštěvu formuláře, nejvýše 24 hodin.
-Zůstává v paměti controlleru a neukládá se do cookies ani jiného sdíleného úložiště.
-Obnovení stránky nebo nová karta vyžaduje nové předání; bez něj se zobrazí běžná
-lišta. Starší experimentální importy v cookie se zruší před zveřejněním souhlasu,
-včetně neplatných metadat. Jen vlastní volba uložená ve formuláři se ukládá jako
-dosud na 180 dní a má přednost i před čekajícím přenosem.
+Po převzetí je dostupné plovoucí tlačítko nastavení. Uložení odpojí vzdálený zdroj;
+Escape zavře neuložené nastavení. Obnovení vazby nepřepíše rozpracovanou volbu.
+Klaro místní volby mezi již otevřenými kartami nepřenáší průběžně. Kliknutí helperu
+může potlačit GTM Just Links trigger s validací; nákup měřte událostmi formuláře.
 
-Po úspěšném převzetí formulář nezobrazí lištu ani upozornění. Stejně jako po
-vlastní uložené volbě zůstává viditelné plovoucí tlačítko nastavení souhlasu,
-přes které lze volbu změnit. Uložení odstraní metadata převzetí; Escape vrátí
-fokus na plovoucí tlačítko bez uložení změn. Při výměně čeká na lištu nejvýše 1500 ms
-bez zamknutí scrollu. Pořadatel musí archivovat znění lišty webu a konfiguraci CMP
-s výslovným zahrnutím nákupu na vstupenky.online. Geografická pravidla CMP
-(například OneTrust, Cookiebot) mohou poslat `granted` i bez interakce návštěvníka;
-převzetí tuto situaci nerozliší. Pořadatel musí zajistit odpovídající volbu v CMP.
-
-Podrobnosti protokolu a omezení jsou v [kontraktu měření](form-datalayer.md#experimental-consent-transfer-to-a-new-tab).
-
-Klaro průběžně nesynchronizuje místní volby a text mezi již otevřenými kartami;
-nová místní volba má přednost při odpovědi přenosu. Zachycení kliknutí používá
-`preventDefault` a může potlačit GTM trigger „Just Links“ s kontrolou validace.
-Souhlas pořadatele zatím nemá auditní záznam osoby, času a verze potvrzeného textu.
-Consent Mode nenese uloženou revizi návštěvníkovy volby; samotný rozsah žádosti
-nedokládá novou volbu po změně revize. Tato omezení vyžadují další návrh evidence.
+Přesný kontrakt zdroje a protokolu je v
+[dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).

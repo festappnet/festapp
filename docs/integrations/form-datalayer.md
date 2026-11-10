@@ -375,63 +375,76 @@ Decline; after a saved decision focus returns to the floating Consent settings
 button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
 
-## Experimental consent transfer to a new tab
+## Live consent transfer to a new tab
 
-On the issue #782 experiment, a website with `embed.js` can opt individual links
-into transferring its Consent Mode choice to the standalone form. See the
-[link markup and opener limitations](embedded-checkout.md#experimentální-převzetí-volby-cookies).
-The organizer must explicitly tell visitors in its website notice that the choice also
-applies to purchases on vstupenky.online, covering the same purposes, recipients
-and privacy policy. The same Unit opt-in `measurement_consent_bridge: true` is required for links; `approved_hosts` alone grants no transfer. The notice must identify the organizer as controller, Festapp as processor, GTM services and the isolated `*.pages.dev` runtime, the 24 hour transfer lifetime and withdrawal controls. Consent Mode is a technical state, not proof of that notice.
+Explicit marked links can share a saved website CMP record with the standalone
+form. The Unit must enable `measurement_consent_bridge` and approve the exact
+host origin. The website notice and its archived CMP configuration must cover
+this Unit's form, purposes, destinations, recipients and processing revision.
+An opt-in switch is configuration, not evidence that a visitor confirmed a notice.
+Google Consent Mode alone does not prove this record or its revision.
 
-The separate `festapp-consent-link` protocol 1 uses exact origins, a cryptographic
-nonce, a single response and a 1500 ms deadline. Only HTTPS origins are accepted
-(loopback HTTP is accepted only from a local HTTP development page). The helper names its popup `festapp-consent-link-<nonce>`. At startup, before policy or CMP loading, the form captures the peer privately and immediately clears its public opener; the host releases its window reference on the
-first valid request, or after 60 seconds if no request arrives. The form requires a helper-marked window, a captured peer
-and a referrer origin in policy `approved_hosts`, the existing public projection
-of `parent_origins`. The transfer adds no new backend RPC; it uses the existing policy opt-in. The host uses the origin
-of the executing `embed.js` and accepts only windows opened by its opted-in click
-handler. The saved WindowProxy, registry and origin checks establish the peer even after the form detaches its opener. The response contains only
-two choice booleans plus the protocol envelope and nonce, or `choice: null` when the host has no choice, so the normal notice can appear immediately. Scope identifiers and
-revision appear only in the request. No URL parameters or tokens are added.
+Register a live source after `embed.js` loads with
+`FestappEmbed.connectMeasurementSource({read(scope), subscribe(notify)})`.
+It uses the same record contract as `connectMeasurementConsent(frame, source)`.
+`scope` contains `organization`, `unit`, `processingRevision` and the two
+`requiredPurposes`. `read` must return null unless the visitor's **saved** CMP
+record covers that exact organization, Unit and revision. A valid record returns
+`{processingRevision, analytics, marketing}`. Read the revision from that saved
+record; never echo the requested revision into an old decision. Subscribe must
+return a disposer and notify after updates, withdrawal and record removal.
+The source owner must also enforce the website record's own expiry in read.
 
-The verified remote choice is applied to Klaro's in-memory choice/draft model
-through the existing consent adapter, without saving it. It belongs only to the
-current controller visit and processing scope, with a maximum 24-hour lifetime.
-A reload or another tab needs a new transfer, otherwise it shows the normal
-notice. All older prototype source cookies, including malformed metadata, are
-retired before binding grants. Only an explicit local choice is persisted with
-the existing 180-day lifetime. Another tab's newer local cookie wins and is never
-deleted by an import expiry. The import marker owns lifetime only; the consent
-adapter remains the single source of effective choice. No store monkeypatch is used.
-Successful import shows no consent bar or import notice. The floating Consent settings
-button remains available, just as after a saved local choice, and opens the settings
-to change the choice. Escape returns focus to that button without saving changes.
-Local saving retires the import lifetime. With an eligible opener the normal
-notice waits at most 1500 ms without locking scroll; unsuccessful transfer then
-shows the normal notice. No order or payment code participates.
+```js
+// Integrate these methods with your CMP's saved records and update events.
+const disconnect = FestappEmbed.connectMeasurementSource({
+  read(scope) {
+    const saved = websiteCmp.savedPurchaseRecord();
+    if (!saved || saved.organization !== scope.organization ||
+        saved.unit !== scope.unit || saved.processingRevision !== scope.processingRevision ||
+        saved.expiresAt <= Date.now()) return null;
+    return saved;
+  },
+  subscribe(notify) { return websiteCmp.onSavedRecordChange(notify); }
+});
+```
 
-The organizer must archive the website notice wording and CMP configuration that
-covered purchases on vstupenky.online. Geo rules in CMPs such as OneTrust and
-Cookiebot can send `update granted` without visitor interaction. The transfer
-cannot distinguish that from an explicit choice; the organizer must ensure its
-CMP and notice provide the required choice for these purchases.
+`disconnect()` retires that source. Replacement, broken subscriptions and explicit
+disconnect remain denied; they never restore Google's automatic fallback. The
+global source also supplies existing automatic Unit iframe bindings; explicit
+per-frame adapters keep precedence. Existing embeds with no global source ever
+registered retain their existing automatic bridge behavior.
 
-Consent Mode does not disclose the original choice's age or whether the host
-notice covered this purchase. This experiment cannot attest either. It snapshots
-the current state once; subsequent changes on the website are not synchronized.
-Missing state is not imported as a refusal. Explicit denied state can be imported.
+The `festapp-consent-link` protocol 1 uses the clicked WindowProxy, exact origins,
+a random nonce, normalized scope and increasing sequence. Only HTTPS is allowed
+(loopback HTTP only during local HTTP development). The form captures and clears
+its helper opener before policy loading. Unmarked windows do not participate.
+The host accepts the initial request only within 60 seconds of the marked click;
+the child waits at most 1500 ms without scroll locking, then shows local consent.
+No URL tokens, cookies or new backend RPCs carry the choice.
 
-Local choices in another tab take precedence when a transfer response arrives.
-Outside a transfer, Klaro does not continuously synchronize open tabs: their
-in-memory choices can differ until reload. The host click handler
-uses `preventDefault`, which can suppress GTM “Just Links” triggers with validation;
-measure the purchase from form events instead. Case-insensitive `noopener` and
-`noreferrer` tokens, and link/meta `no-referrer` policies preserve native navigation.
-Legacy `window.open` windows are left unchanged and never wait for this protocol.
+A valid response establishes a renewable lease of at most 60 seconds. The host
+rereads the saved scoped source on updates and every 20 seconds. Withdrawal
+updates the choice; unknown records, source replacement/disconnect, page departure
+or maximum 24-hour visit end terminate the channel. The form rejects old sequence,
+wrong peer/origin/scope and expired responses. Visibility/pageshow also check the
+absolute deadline. FormMeasurementSession limits runtime lifetime to both policy
+and source deadlines, including renewals and shortened leases; delayed browser
+timers cannot authorize another capture after expiry.
 
-The Unit switch currently records configuration and revision, without an audit
-record of who accepted the notice coverage, when, or which text version. The
-host's Consent Mode snapshot also carries no saved processing revision; the
-request scope does not prove fresh visitor confirmation after a revision change.
-These remain experiment limitations requiring a separate evidence/adapter design.
+Klaro holds imported choices only in its visit model. Heartbeats preserve an open
+draft; source changes clamp it and replace the Escape baseline. Missing source or
+lease expiry revokes the import and restores the ordinary local notice. Reloads
+and new tabs require a fresh marked click. Historical prototype source cookies
+are retired before publishing choices. Explicit local saves use the existing
+180-day cookie and atomically detach the remote channel and lease. Another tab's
+saved local decision wins when the link checks it; ordinary open Klaro tabs are
+not continuously synchronized.
+
+Successful transfer shows the floating settings button. Saving there makes a
+local decision; Escape closes settings without saving. Link helpers preserve
+modifier clicks, downloads, explicit noopener/noreferrer and referrer policies.
+Without a referrer, opener or COOP-compatible connection, local consent remains
+available. The click handler can suppress GTM Just Links validation triggers;
+measure checkout with form events instead. See the
+[link markup](embedded-checkout.md#převzetí-živé-volby-cookies).

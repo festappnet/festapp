@@ -132,3 +132,17 @@ test('a delayed expiry timer cannot let policy renewal revive the expired grant'
  now+=61000;assert.equal(expired({event:'page_view'}),false,'expiry is checked before sending, independent of timers');
  await f.session.refresh();assert.equal(f.session.state,'active');assert.equal(expired({event:'page_view'}),false,'renewal creates a new grant after elapsed expiry');
 });
+
+test('policy refresh and unchanged source renewals clamp the runtime deadline',async t=>{
+ const now=Date.now(),f=fixture(t,{clock:()=>now,consent:{analytics:true,marketing:true,leaseId:'source',expiresAt:now+10000}}),renewals=[];
+ f.transport.renew=until=>renewals.push(until);await f.start();await f.session.refresh();
+ assert.equal(renewals.at(-1),now+10000);
+ const generation=f.session.generation;
+ f.choose({analytics:true,marketing:true,leaseId:'source',expiresAt:now+5000});
+ assert.equal(renewals.at(-1),now+5000);assert.equal(f.session.generation,generation);
+ f.choose({analytics:true,marketing:true,leaseId:'source',expiresAt:now+20000});
+ assert.equal(renewals.at(-1),now+20000);
+});
+for(const expiresAt of [0,NaN,Infinity,-1]) test('malformed source deadline cannot become unlimited '+expiresAt,async t=>{
+ const f=fixture(t,{consent:{analytics:true,marketing:true,leaseId:'source',expiresAt}});await f.start();assert.equal(f.transport.grant,null);
+});

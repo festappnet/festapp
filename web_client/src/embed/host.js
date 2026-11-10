@@ -1,3 +1,4 @@
+import {createConsentSourceRegistry} from '../components/forms/measurement_consent_source.js';
 import {installHostConsentLink} from './host_consent_link.js';
 import {EmbedChannel} from './channel.js';
 import {limits} from './protocol.js';
@@ -9,10 +10,11 @@ import {receiveHostLayout, installHostLayout} from './host_layout.js';
 
 if (!window.__festappEmbedV1) {
     window.__festappEmbedV1 = true;
+    const consentSource = createConsentSourceRegistry();
     // Capture synchronously while the classic embed script is executing.
     try {
         const productOrigin = new URL(document.currentScript.src, document.baseURI).origin;
-        installHostConsentLink(window, productOrigin);
+        installHostConsentLink(window, productOrigin, consentSource);
     } catch { /* No trusted script origin, no consent link bridge. */ }
     const frames = new Map();
     const currentRecord = (frame, record) => {
@@ -30,8 +32,8 @@ if (!window.__festappEmbedV1) {
         frame.removeEventListener('load', record.load);
         record.priceLayer?.remove();
     };
-    const measurement = createHostMeasurement({frames, currentRecord, disposeRecord, scan:() => scan()});
-    window.FestappEmbed = measurement.api;
+    const measurement = createHostMeasurement({frames, currentRecord, disposeRecord, scan:() => scan(), consentSource});
+    window.FestappEmbed = Object.freeze({...measurement.api, connectMeasurementSource:source => consentSource.connect(source)});
     const viewportHeight = () => Math.max(limits.legacyMinHeight, Math.min(limits.viewportMax, window.innerHeight));
     const presentation = createHostPresentation(() => refreshThemes());
     // false omits presentation on scroll; null restores the service appearance.

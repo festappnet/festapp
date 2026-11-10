@@ -1,3 +1,4 @@
+import {consentScope, sameConsentScope} from './measurement_consent_source.js';
 const namespace = 'festapp-consent-link';
 const peers = new WeakMap();
 export const hasConsentLinkPeer = win => !!peers.get(win);
@@ -17,48 +18,60 @@ export function isConsentLinkOrigin(origin, local = false) {
             (local && url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname)));
     } catch { return false; }
 }
-// Policy approved_hosts is the public projection of the Unit's parent_origins.
-export function requestLinkedConsent({win, policy, hasChoice, accept, settled = () => {}}) {
-    let timer, active = true, requested = false;
+// A linked visit owns a renewable source lease, never a persisted local choice.
+export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = () => {}, settled = () => {}}) {
+    let timer, active = true, requested = false, connected = false, sequence = 0;
+    let origin, peer, nonce, until, scope, visitUntil;
     const stop = () => {
         if (!active) return;
         active = false;
         win.removeEventListener('message', receive);
+        win.removeEventListener('pagehide', disconnect);
+        win.removeEventListener('pageshow', check);
+        win.document.removeEventListener('visibilitychange', check);
         if (timer !== undefined) win.clearTimeout(timer);
-        if (isConsentLinkWindow(win)) {
-            peers.delete(win);
-            try { win.opener = null; } catch { /* Restricted WindowProxy. */ }
+        peers.delete(win);
+        if (requested) {
+            try { peer.postMessage({namespace, protocol:1, type:'detach', nonce}, origin); } catch { /* Closed source. */ }
+            settled();
         }
-        if (requested) settled();
     };
-    let origin, peer, nonce, until;
+    const disconnect = () => { const wasConnected = connected; stop(); if (wasConnected) revoke(); };
+    const check = () => { if (active && Date.now() >= until) disconnect(); };
     const receive = event => {
         const data = event.data;
         try {
-            if (!active || Date.now() >= until) { stop(); return; }
+            if (!active) return;
+            if (Date.now() >= until) { disconnect(); return; }
             if (event.source !== peer || event.origin !== origin || data?.namespace !== namespace || data.protocol !== 1 ||
-                data.type !== 'response' || data.nonce !== nonce) return;
-            if (data.choice === null) { stop(); return; }
-            if (typeof data.analytics !== 'boolean' || typeof data.marketing !== 'boolean') return;
+                data.nonce !== nonce || !sameConsentScope(scope, data.scope) ||
+                !Number.isSafeInteger(data.sequence) || data.sequence <= sequence) return;
             if (hasChoice()) { stop(); return; }
-            try { accept({analytics:data.analytics, marketing:data.marketing}, {origin, importedAt:Date.now(), session:true}); }
-            finally { stop(); }
-        } catch { stop(); /* The normal CMP remains available. */ }
+            if (data.type === 'end') { disconnect(); return; }
+            if (data.type !== 'response' || typeof data.choice?.analytics !== 'boolean' || typeof data.choice?.marketing !== 'boolean' ||
+                !Number.isFinite(data.expiresAt) || data.expiresAt <= Date.now() || data.expiresAt > Date.now()+60000) return;
+            sequence = data.sequence; connected = true;
+            until = Math.min(visitUntil, data.expiresAt);
+            win.clearTimeout(timer); timer = win.setTimeout(disconnect, until-Date.now());
+            peers.delete(win);
+            accept(data.choice, {origin, leaseId:nonce, expiresAt:until});
+        } catch { disconnect(); }
     };
+    Object.defineProperty(stop, 'pending', {get:() => requested && active && !connected});
     try {
         prepareConsentLink(win);
-        peer = peers.get(win);
-        if (!isConsentLinkWindow(win) || win.parent !== win || !peer || policy.measurement_consent_bridge !== true || hasChoice()) { stop(); return stop; }
+        peer = peers.get(win); scope = consentScope(policy);
+        if (!scope || !isConsentLinkWindow(win) || win.parent !== win || !peer || policy.measurement_consent_bridge !== true || hasChoice()) { stop(); return stop; }
         origin = new URL(win.document.referrer).origin;
         if (!isConsentLinkOrigin(origin, isLocalConsentLink(win)) || !policy.approved_hosts?.includes(origin)) { stop(); return stop; }
-        nonce = win.crypto.randomUUID();
-        until = Date.now() + 1500;
+        nonce = win.crypto.randomUUID(); until = Date.now() + 1500; visitUntil = Date.now()+24*60*60*1000;
         win.addEventListener('message', receive);
+        win.addEventListener('pagehide', disconnect);
+        win.addEventListener('pageshow', check);
+        win.document.addEventListener('visibilitychange', check);
         requested = true;
-        timer = win.setTimeout(stop, 1500);
-        peer.postMessage({namespace, protocol:1, type:'request', nonce, processing_revision:policy.processing_revision,
-            organization:policy.organization, unit:policy.unit}, origin);
-    } catch { stop(); }
-    stop.pending = requested && active;
+        timer = win.setTimeout(disconnect, 1500);
+        peer.postMessage({namespace, protocol:1, type:'request', nonce, scope}, origin);
+    } catch { disconnect(); }
     return stop;
 }
