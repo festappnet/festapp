@@ -77,7 +77,9 @@ deployment. An HTTP 200 alone is not proof that a legal route exists.
    lanes. After publishing main, run `python3 automation/ci/release_gate.py
    --source-sha <full-main-sha>` and require all eight GitHub jobs to pass for
    that exact commit before creating/pushing the overlay. Missing or failed
-   checks, including pre-existing failures, block release. See CONTRIBUTING.md.
+   checks, including pre-existing failures, block release. Current jobs may
+   reuse verified unchanged lane inputs under `ci_input_reuse.md`; a skipped
+   whole job is not a pass. See CONTRIBUTING.md.
 2. Merge the exact verified main commit forward into the production branch.
 3. Reapply only tenant source/data overlay paths from the pre-cutover tip.
 4. Run `automation/apply_config.sh automation/project.conf` from the fresh main

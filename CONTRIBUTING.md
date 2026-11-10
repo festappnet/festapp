@@ -79,7 +79,7 @@ are comparable, unrelated `monotonicStart` values are not.
 
 `python3 automation/ci/run.py affected <paths...>` reports explicit affected job
 recommendations. Unknown paths/tests request the full set; new test files must
-have explicit inventory ownership. Required release jobs always run every unit.
+have explicit inventory ownership. Executed release lanes always run every required unit; input reuse is admitted as described below.
 No source publication or production deployment is implied by these local tools.
 A dirty receipt is development evidence, not a release attestation. Measurements,
 limits and the retirement ledger are recorded in
@@ -90,9 +90,19 @@ limits and the retirement ledger are recorded in
 Before publishing shared changes, run the affected lanes from
 `automation/test_ci.sh`, not a substitute list of hand-picked tests. Before a
 web release, all eight jobs in `automation/ci/checks.json` must finish successfully
-in GitHub on the exact canonical `baseMainSha`. A failed baseline is still a
-blocked release; document and fix it before continuing. A successful build,
-local test receipt, another SHA, or a previous run does not replace this gate.
+in GitHub on the exact canonical `baseMainSha`. Each job either executes its
+complete lane or verifies identical inputs against actually executed, successful
+main CI no older than seven days. Reused evidence is recorded in the job summary;
+it cannot refresh its own age. Missing evidence or an uncertain impact runs tests.
+A failed baseline is still a blocked release. A build or local receipt does not
+replace this gate. See [CI input reuse](docs/architecture/ci_input_reuse.md).
+
+Draft pull requests do not start these expensive regression jobs. Switching to
+Ready for review runs every lane. Subsequent ready-PR updates and main pushes
+reuse only proven unchanged main inputs; changed or unknown inputs run their
+lanes. Manual workflow dispatch and merge-queue checks always run full lanes.
+New PR updates cancel superseded runs of that PR, without cancelling main runs.
+The local mirror still executes explicitly selected lanes without GitHub reuse.
 
 After publishing main, inspect it before creating/pushing a tenant overlay:
 

@@ -1,91 +1,65 @@
 name: Navigation interaction regressions
 on:
-  workflow_dispatch:
-  pull_request:
-    paths:
-      - 'lib/app_router.dart'
-      - 'lib/router_service.dart'
-      - 'lib/app_config.dart'
-      - 'lib/components/_shared/app_panel_helper.dart'
-      - 'lib/components/navigation/**'
-      - 'lib/components/occasion/db_occasions.dart'
-      - 'lib/components/occasion/occasion_creation_helper.dart'
-      - 'lib/components/occasion/occasion_creation_notice.dart'
-      - 'lib/components/unit/**'
-      - 'lib/router_service.dart'
-      - 'test/components/occasion/occasion_list_refresh_test.dart'
-      - 'test/components/unit/**'
-      - 'lib/components/schedule/**'
-      - 'lib/components/timeline/**'
-      - 'test/components/navigation/**'
-      - 'automation/testing/navigation_default.dart'
-      - 'test/support/register_client_suites.dart'
-      - 'test/support/fixtures/**'
-      - 'test/components/users/profile_commands_cases.dart'
-      - 'test/components/users/occasion_user_grid_cases.dart'
-      - 'test/components/single_data_grid/**'
-      - 'test/components/schedule/**'
-      - 'test/components/breadcrumb_row_cases.dart'
-      - 'test/support/navigation_fixture.dart'
-      - 'automation/ci/**'
-      - 'automation/client_test_inventory.*'
-      - '.github/workflows/navigation-interactions.yml'
   push:
     branches: [main]
-    paths:
-      - 'lib/app_router.dart'
-      - 'lib/router_service.dart'
-      - 'lib/app_config.dart'
-      - 'lib/components/_shared/app_panel_helper.dart'
-      - 'lib/components/navigation/**'
-      - 'lib/components/occasion/db_occasions.dart'
-      - 'lib/components/occasion/occasion_creation_helper.dart'
-      - 'lib/components/occasion/occasion_creation_notice.dart'
-      - 'lib/components/unit/**'
-      - 'lib/router_service.dart'
-      - 'test/components/occasion/occasion_list_refresh_test.dart'
-      - 'test/components/unit/**'
-      - 'lib/components/schedule/**'
-      - 'lib/components/timeline/**'
-      - 'test/components/navigation/**'
-      - 'automation/testing/navigation_default.dart'
-      - 'test/support/register_client_suites.dart'
-      - 'test/support/fixtures/**'
-      - 'test/components/users/profile_commands_cases.dart'
-      - 'test/components/users/occasion_user_grid_cases.dart'
-      - 'test/components/single_data_grid/**'
-      - 'automation/ci/**'
-      - 'automation/client_test_inventory.*'
-      - '.github/workflows/navigation-interactions.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
+  actions: read
+  checks: read
 jobs:
   navigation-interactions:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select verified CI inputs
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/selection.py navigation-interactions
       - id: sdk
+        if: steps.selection.outputs.run == 'true'
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
+        if: steps.selection.outputs.run == 'true'
         with:
           flutter-version: ${{ steps.sdk.outputs.version }}
           cache: true
       - name: Use the installed SDK through FVM
+        if: steps.selection.outputs.run == 'true'
         run: |
           dart pub global activate fvm 4.1.2
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - uses: pnpm/action-setup@v6
+        if: steps.selection.outputs.run == 'true'
         with:
           version: 11.24.0
       - uses: actions/setup-node@v7
+        if: steps.selection.outputs.run == 'true'
         with:
           node-version: '22.23.3'
       - name: Run canonical regression DAG
+        if: steps.selection.outputs.run == 'true'
         run: python3 automation/ci/run.py lane navigation-interactions
+      - name: All lane tests executed
+        if: steps.selection.outputs.run == 'true'
+        run: echo 'All lane tests executed'
       - name: Preserve canonical CI evidence
         if: always()
         uses: actions/upload-artifact@v7

@@ -65,7 +65,8 @@ class ReleaseCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'automation/ci').mkdir(parents=True)
-            for name in ['automation/ci/release_gate.py', 'automation/deploy_direct.sh']:
+            for name in ['automation/ci/release_gate.py', 'automation/ci/selection.py',
+                         'automation/ci/inputs.json', 'automation/deploy_direct.sh']:
                 (root / name).write_bytes((gate.ROOT / name).read_bytes())
             (root / 'automation/ci/checks.json').write_text(json.dumps({'jobs': {'seat-checkout': {}}}))
             def git(*args):

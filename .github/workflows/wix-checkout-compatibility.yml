@@ -2,42 +2,39 @@ name: Wix checkout compatibility
 on:
   push:
     branches: [main]
-    paths:
-      - 'integrations/wix/**'
-      - 'integrations/wordpress/**'
-      - 'web_client/src/components/forms/**'
-      - 'web_client/src/components/eshop/db_orders.js'
-      - 'web_client/src/components/eshop/ticket_order_identity.js'
-      - 'assets/translations/**'
-      - 'web_client/public/assets/translations/**'
-      - 'web_client/tests/forms/**'
-      - 'web_client/tests/fixtures/embedded-checkout/**'
-      - 'web_client/tests/components/db_orders_command_identity.test.js'
-      - 'web_client/src/components/blueprint/**'
-      - 'web_client/src/services/embed*'
-      - 'web_client/src/services/browser_storage.js'
-      - 'web_client/public/embed.js'
-      - 'web_client/package.json'
-      - 'web_client/pnpm-*.yaml'
-      - 'web_client/tests/core/embed.test.js'
-      - 'web_client/tests/core/browser_storage.test.js'
-      - 'web_client/tests/forms/reservation_capability_store.test.js'
-      - 'automation/ci/**'
-      - '.github/workflows/wix-checkout-compatibility.yml'
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  merge_group:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
+  actions: read
+  checks: read
 jobs:
   wix-checkout-compatibility:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select verified CI inputs
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/selection.py wix-checkout-compatibility
       - uses: pnpm/action-setup@v6
+        if: steps.selection.outputs.run == 'true'
         with:
           version: 11.24.0
       - uses: actions/setup-node@v7
+        if: steps.selection.outputs.run == 'true'
         with:
           node-version: '24.22.1'
           cache: pnpm
@@ -45,7 +42,11 @@ jobs:
             integrations/wix/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
       - name: Run canonical regression DAG
+        if: steps.selection.outputs.run == 'true'
         run: python3 automation/ci/run.py lane wix-checkout-compatibility
+      - name: All lane tests executed
+        if: steps.selection.outputs.run == 'true'
+        run: echo 'All lane tests executed'
       - name: Preserve canonical CI evidence
         if: always()
         uses: actions/upload-artifact@v7

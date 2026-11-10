@@ -1,0 +1,103 @@
+{
+  "maxAgeDays": 7,
+  "components": [
+    {
+      "prefixes": ["docs/"],
+      "jobs": []
+    },
+    {
+      "prefixes": [
+        "lib/",
+        "test/",
+        "test_dart/",
+        "integration_test/"
+      ],
+      "jobs": [
+        "client-contract",
+        "navigation-interactions",
+        "ticket-preview-and-delivery",
+        "seat-checkout"
+      ]
+    },
+    {
+      "prefixes": [
+        "packages/android_file_picker/",
+        "packages/desktop_drop/",
+        "packages/festapp_core/",
+        "packages/file_picker/",
+        "packages/file_picker_darwin/",
+        "packages/file_picker_linux/",
+        "packages/file_picker_platform_interface/",
+        "packages/file_picker_web/",
+        "packages/maplibre_android/",
+        "packages/maplibre_ios/",
+        "packages/maplibre_platform_interface/",
+        "packages/nm/",
+        "packages/super_native_extensions/",
+        "packages/venue_seat_picker/",
+        "packages/windows_file_picker/"
+      ],
+      "jobs": [
+        "client-contract",
+        "navigation-interactions",
+        "ticket-preview-and-delivery",
+        "seat-checkout"
+      ]
+    },
+    {
+      "prefixes": [
+        "web_client/"
+      ],
+      "jobs": [
+        "web-startup",
+        "wix-checkout-compatibility",
+        "server-policy",
+        "seat-checkout"
+      ]
+    },
+    {
+      "prefixes": [
+        "database/",
+        "supabase/"
+      ],
+      "jobs": [
+        "image-contract",
+        "web-startup",
+        "server-policy",
+        "client-contract",
+        "seat-checkout",
+        "ticket-preview-and-delivery"
+      ]
+    },
+    {
+      "prefixes": [
+        "workers/"
+      ],
+      "jobs": [
+        "image-contract",
+        "web-startup",
+        "server-policy",
+        "client-contract",
+        "seat-checkout",
+        "ticket-preview-and-delivery"
+      ]
+    },
+    {
+      "prefixes": [
+        "integrations/wix/"
+      ],
+      "jobs": [
+        "wix-checkout-compatibility"
+      ]
+    },
+    {
+      "prefixes": [
+        "tools/festapp/"
+      ],
+      "jobs": [
+        "server-policy",
+        "seat-checkout"
+      ]
+    }
+  ]
+}
