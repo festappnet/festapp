@@ -39,6 +39,7 @@ export function previewHandler(readContext: ReadContext) {
           )) ||
         (input.sampleTicketCount != null &&
           ![1, 3].includes(input.sampleTicketCount)) ||
+        (input.walletEnabled != null && typeof input.walletEnabled !== "boolean") ||
         (input.deliveryMode != null &&
           !["pdf_attachment", "inline_qr", "both"].includes(
             input.deliveryMode,
@@ -51,6 +52,7 @@ export function previewHandler(readContext: ReadContext) {
             "messageType",
             "sampleTicketCount",
             "deliveryMode",
+            "walletEnabled",
           ].includes(key)
         )
       ) {
@@ -65,6 +67,7 @@ export function previewHandler(readContext: ReadContext) {
         p_message_type: input.messageType ?? "order_confirmation",
         p_occasion: input.occasionId ?? null,
         p_delivery_mode: input.deliveryMode ?? null,
+        p_wallet_enabled: input.walletEnabled ?? null,
       });
       if (error) {
         const status = (error.code === "PT409" ||

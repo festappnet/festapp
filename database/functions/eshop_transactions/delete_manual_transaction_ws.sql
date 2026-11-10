@@ -19,6 +19,8 @@ BEGIN
   IF NOT public.can_manage_unit_bank_accounts(v_unit_id) THEN
     RAISE insufficient_privilege USING MESSAGE='Cash correction requires unit manager'; END IF;
 
+  IF EXISTS(SELECT 1 FROM eshop.refund_settlements WHERE transaction_id=p_transaction_id) THEN
+    RAISE EXCEPTION 'REFUND_SETTLEMENT_REQUIRES_EXPLICIT_CORRECTION'; END IF;
   PERFORM public.apply_transaction_pairing(
     p_transaction_id, NULL, 'manual_delete_unlink', 'user'
   );

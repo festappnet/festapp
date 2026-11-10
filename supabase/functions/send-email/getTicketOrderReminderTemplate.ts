@@ -1,6 +1,6 @@
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
-import { reminderBalanceReasoning, depositReminderBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
+import { confirmedNetPayment, reminderBalanceReasoning, depositReminderBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { formatCurrency, formatIBAN } from "../_shared/utilities.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
@@ -51,7 +51,7 @@ export async function getTicketOrderReminderTemplate(
   if (isDepositReminder) {
     // --- DEPOSIT REMAINDER REMINDER ---
     const totalAmount = Number(payment_info?.amount) || 0;
-    const amountPaid = Number(payment_info?.paid) || 0;
+    const amountPaid = confirmedNetPayment(payment_info);
     const remainingAmount = totalAmount - amountPaid;
 
     if (remainingAmount <= 0) {
@@ -129,7 +129,7 @@ export async function getTicketOrderReminderTemplate(
   } else {
     // --- REGULAR PAYMENT REMINDER ---
     const orderPrice = Number(order.price) || 0;
-    const amountPaid = Number(payment_info?.paid) || 0;
+    const amountPaid = confirmedNetPayment(payment_info);
     const balance = orderPrice - amountPaid;
 
     if (balance <= 0) {

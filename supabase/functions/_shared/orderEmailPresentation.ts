@@ -7,6 +7,10 @@ import { translations } from "./translations/translations.ts";
 // Pure email presentation over committed payment facts. Producers own access,
 // eligibility, attachments and sending; preview fixtures use these same branches.
 type Fields = Record<string, any>;
+export function confirmedNetPayment(payment: Fields | null | undefined, fallback = 0): number {
+  return Number(payment?.paid ?? fallback) - Number(payment?.returned ?? 0);
+}
+
 const translation = (lang: string) =>
   translations[lang as keyof typeof translations] || translations.cs;
 

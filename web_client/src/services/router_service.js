@@ -152,6 +152,25 @@ export class RouterService {
     // Initial Load Check
     static async handleInitialLoad() {
         RouterService.disposeMcpPage();
+        if (window.location.pathname === '/wallet') {
+            const {TicketWalletPage} = await import('../components/ticket_wallet_page.js');
+            const {SupabaseService} = await import('./supabase_service.js');
+            await SupabaseService.initialize();
+            document.getElementById('app')?.style.setProperty('display','none');
+            RouterService._walletPage?.clear();
+            RouterService._walletPage = new TicketWalletPage(document.getElementById('form-page-container'), {
+                locale: document.documentElement.lang,
+                invoke: async body => {
+                    const {data,error} = await SupabaseService.getClient().functions.invoke('ticket-wallet',{body});
+                    if(error) {
+                        try {return await error.context.json();} catch {throw new Error('wallet_retry');}
+                    }
+                    return data;
+                },
+            });
+            await RouterService._walletPage.init();
+            return true;
+        }
         const mcpGeneration = RouterService._mcpGeneration;
         // The callback owns its continuation dialog until the user finishes or
         // cancels. App-supported tenants must not hand it off to Flutter.

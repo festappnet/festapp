@@ -8,7 +8,7 @@ export class CardPaymentController {
         if(access?.kind && access.kind !== 'pay')return null;
         const token=access?.token;
         const connector=(options.registry??paymentConnectors).get(result?.payment?.method);
-        if(!connector||typeof token!=='string'||!/^[a-f0-9]{64}$/.test(token))return null;
+        if(!connector?.hostedCheckout||typeof token!=='string'||!/^[a-f0-9]{64}$/.test(token))return null;
         try{
             const url=new URL(result.payment_access.url);
             if(url.protocol!=='https:'||url.username||url.password||url.search||!url.pathname.endsWith(connector.payPath)||url.hash!==`#pay=${token}`)return null;
@@ -18,7 +18,7 @@ export class CardPaymentController {
     constructor(token,url,payment,{invoke,onPayment=()=>{},navigate=url=>window.location.assign(url),remember,registry=paymentConnectors}={}) {
         Object.assign(this,{token,url,payment,onPayment,navigate,remember,busy:false,disposed:false});
         this.connector=registry.get(payment?.method);
-        if(!this.connector)throw new Error('payment_connector_unavailable');
+        if(!this.connector?.hostedCheckout)throw new Error('payment_connector_unavailable');
         this.invoke=invoke??(async body=>{
             const {data,error}=await SupabaseService.getClient().functions.invoke('payment-checkout',{body:{...body,provider:this.connector.id}});
             if(error)throw new Error('payment_unavailable');

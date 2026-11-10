@@ -1,0 +1,45 @@
+{
+  "captureSource": "Actual saved Google Wallet card rendered in the authorized Google account",
+  "mode": "Screenshot pixels supplied as a simulated camera frame; no physical camera",
+  "captureSha256": "68e6fb238d3da3959ffd6732978a5bbaa11503785965c701a16bc4869ef7229d",
+  "width": 364,
+  "height": 364,
+  "productionScannerInput": true,
+  "decoder": "jsqr 1.4.0 via ScannerInput.frame and decodeQRCodes",
+  "decodedSymbolMatchesOriginal": true,
+  "ticketId": 347,
+  "firstAdmission": "accepted",
+  "secondAdmission": "conflict",
+  "secondReason": "already_used",
+  "ticketState": "used",
+  "physicalCameraTested": false,
+  "captureMetadata": {
+    "devicePixelRatio": 2,
+    "googleCanvasBackingPixels": [
+      294,
+      294
+    ],
+    "googleCanvasCssPixels": [
+      150,
+      150
+    ],
+    "surroundingMarginCssPixels": 16
+  },
+  "googleReadback": {
+    "method": "independent Google REST GET",
+    "objectId": "3388000000023240663.festapp_136ea6ded981d20c39f54f0f0aaae9701adb2fc050c1006357c08c36d0da9564",
+    "state": "completed",
+    "hasUsers": true,
+    "qrMatches": true
+  },
+  "savedCardUiVerified": {
+    "account": "authorized issuer administrator",
+    "controls": [
+      "Unarchive all",
+      "Remove",
+      "Remove all"
+    ],
+    "addPreview": false,
+    "explicitCompletedLabel": false
+  }
+}

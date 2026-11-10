@@ -52,6 +52,25 @@ BEGIN
   PERFORM 1 FROM eshop.payment_info WHERE id IN (v_old_payment_info_id,p_payment_info_id)
   ORDER BY id FOR UPDATE;
 
+  -- A settled movement is immutable through the generic attach/unlink API.
+  -- Cash voids and evidenced bank reclassification have their explicit owner.
+  IF EXISTS(SELECT 1 FROM eshop.refund_settlements WHERE transaction_id=p_transaction_id)
+     AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id THEN
+    RAISE EXCEPTION 'REFUND_SETTLEMENT_REQUIRES_EXPLICIT_CORRECTION';
+  END IF;
+  IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0
+     AND NOT EXISTS(SELECT 1 FROM eshop.bank_accounts b WHERE b.id=v_transaction.bank_account_id
+       AND upper(b.type)='CASH' AND v_transaction.transaction_type='manual'
+       AND v_transaction.ingest_source='manual') THEN
+    RAISE EXCEPTION 'OUTGOING_REQUIRES_REFUND_CLASSIFICATION';
+  END IF;
+  IF v_old_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id THEN
+    PERFORM public.assert_payment_refund_reservations_internal(v_old_payment_info_id,greatest(v_transaction.amount,0));
+  END IF;
+  IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0 THEN
+    PERFORM public.assert_payment_refund_reservations_internal(p_payment_info_id,-v_transaction.amount);
+  END IF;
+
   IF p_actor_kind='user' THEN
     FOR v_order_id IN SELECT id FROM eshop.orders
       WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id) ORDER BY id LOOP

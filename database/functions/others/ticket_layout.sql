@@ -207,13 +207,19 @@ BEGIN
       -- Older clients omitting the attribute cannot reset an explicit choice.
       IF NOT p_create AND NOT (f ? 'delivery_mode') AND old_ticket ? 'delivery_mode' THEN
         f:=f||jsonb_build_object('delivery_mode',old_ticket->'delivery_mode'); END IF;
+      IF NOT p_create AND NOT (f ? 'wallet_enabled') AND old_ticket ? 'wallet_enabled' THEN
+        f:=f||jsonb_build_object('wallet_enabled',old_ticket->'wallet_enabled'); END IF;
+      IF NOT p_create AND NOT (f ? 'wallet_appearance') AND old_ticket ? 'wallet_appearance' THEN
+        f:=f||jsonb_build_object('wallet_appearance',old_ticket->'wallet_appearance'); END IF;
+      PERFORM public.validate_ticket_wallet_appearance(f);
+      PERFORM public.ticket_wallet_enabled(f);
       PERFORM public.ticket_delivery_mode(f);
       IF p_create AND p_change IS NULL THEN next_layout:=f->'layout'; IF next_layout IS NOT NULL THEN PERFORM public.validate_ticket_layout(next_layout); END IF; END IF;
       f:=f-'layout'; IF next_layout IS NOT NULL THEN f:=f||jsonb_build_object('layout',next_layout); END IF;
     END IF;
     result:=result||jsonb_build_array(f);
   END LOOP;
-  IF NOT found_ticket AND (next_layout IS NOT NULL OR old_ticket ? 'delivery_mode') THEN result:=result||jsonb_build_array((coalesce(old_ticket,'{}'::jsonb) || jsonb_build_object('code','ticket','is_enabled',false) || CASE WHEN next_layout IS NOT NULL THEN jsonb_build_object('layout',next_layout) ELSE '{}'::jsonb END)); END IF;
+  IF NOT found_ticket AND (next_layout IS NOT NULL OR old_ticket ? 'delivery_mode' OR old_ticket ? 'wallet_enabled' OR old_ticket ? 'wallet_appearance') THEN result:=result||jsonb_build_array((coalesce(old_ticket,'{}'::jsonb) || jsonb_build_object('code','ticket','is_enabled',false) || CASE WHEN next_layout IS NOT NULL THEN jsonb_build_object('layout',next_layout) ELSE '{}'::jsonb END)); END IF;
   RETURN result;
 END;
 $$;
@@ -247,10 +253,11 @@ DECLARE result jsonb:='[]'; feature jsonb; background text; old_background text;
 BEGIN
  IF p_appearance IS NULL THEN RETURN p_features; END IF;
  IF jsonb_typeof(p_appearance) IS DISTINCT FROM 'object'
-  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_appearance) k WHERE k NOT IN ('background','ticket_type'))
+  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_appearance) k WHERE k NOT IN ('background','ticket_type','wallet_appearance'))
   OR (p_appearance ? 'ticket_type' AND p_appearance->>'ticket_type' IS NOT NULL
     AND p_appearance->>'ticket_type' NOT IN ('wide','named')) THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid ticket appearance'; END IF;
+ PERFORM public.validate_ticket_wallet_appearance(p_appearance);
  SELECT f->>'background' INTO old_background FROM jsonb_array_elements(p_features) f WHERE f->>'code'='ticket';
  background:=p_appearance->>'background';
  IF background IS NOT NULL AND background IS DISTINCT FROM old_background AND NOT EXISTS(

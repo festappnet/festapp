@@ -117,7 +117,7 @@ BEGIN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
    ELSIF path='payments.providerConnections' THEN
     IF jsonb_typeof(v)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid provider connections'; END IF;
-    IF EXISTS(SELECT 1 FROM jsonb_each(v) x WHERE jsonb_typeof(x.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=x.key AND handler IS NOT NULL)) THEN
+    IF EXISTS(SELECT 1 FROM jsonb_each(v) x WHERE jsonb_typeof(x.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=x.key AND hosted_checkout)) THEN
      RAISE invalid_parameter_value USING MESSAGE='unknown payment provider'; END IF;
     PERFORM (x.value#>>'{}')::uuid FROM jsonb_each(v) x;
    ELSIF path='variable_symbol.starting_number' THEN

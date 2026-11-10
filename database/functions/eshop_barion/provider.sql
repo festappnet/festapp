@@ -6,7 +6,17 @@ DECLARE a eshop.barion_attempts; c eshop.barion_connections; o eshop.orders; pi 
  result jsonb; input jsonb; binding uuid; amount numeric; stamp timestamptz:=date_trunc('second',clock_timestamp());
  received bigint; refunded bigint; status text; admission text; expiry timestamptz;
 BEGIN
- IF p_operation IN ('unit_feature','unit_fields') THEN RETURN CASE WHEN p_operation='unit_feature' THEN 'false'::jsonb ELSE '{}'::jsonb END;
+ IF p_operation='operation_capabilities' THEN
+  RETURN jsonb_build_object('id','barion','displayName','Barion sandbox','record',false,'refund',false,
+   'verification','verified_provider_observation','reason','refund_write_unavailable');
+ ELSIF p_operation='refund_binding' THEN RETURN NULL;
+ ELSIF p_operation='refund_observed' THEN
+  RETURN to_jsonb(EXISTS(SELECT 1 FROM eshop.barion_attempts a JOIN eshop.barion_movements m ON m.attempt_id=a.id
+   WHERE a.order_id=(p_args->>'orderId')::bigint AND m.kind='refund' AND m.provider_id=p_args->>'refundId'
+    AND EXISTS(SELECT 1 FROM eshop.refund_requests r WHERE r.id=(p_args->>'requestId')::uuid
+      AND r.order_id=a.order_id AND r.payment_info=a.payment_info_id AND r.method='barion'
+      AND r.currency=m.currency AND r.amount*100=m.amount_minor)));
+ ELSIF p_operation IN ('unit_feature','unit_fields') THEN RETURN CASE WHEN p_operation='unit_feature' THEN 'false'::jsonb ELSE '{}'::jsonb END;
  ELSIF p_operation='setup_recipients' THEN RETURN '[]'::jsonb;
  ELSIF p_operation='form_editor_fields' THEN RETURN '{}'::jsonb;
  ELSIF p_operation IN ('form_availability','validate_form') THEN
@@ -101,4 +111,4 @@ BEGIN
  RAISE EXCEPTION 'BARION_OPERATION_UNSUPPORTED';
 END $$;
 REVOKE ALL ON FUNCTION public.barion_payment_provider_internal(text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
-INSERT INTO eshop.payment_providers(provider_key,handler,source_field) VALUES('barion','public.barion_payment_provider_internal(text,jsonb)'::regprocedure,'barionPaymentSource') ON CONFLICT(provider_key) DO UPDATE SET handler=excluded.handler,source_field=excluded.source_field;
+INSERT INTO eshop.payment_providers(provider_key,handler,source_field,hosted_checkout,operation_mode,verification) VALUES('barion','public.barion_payment_provider_internal(text,jsonb)'::regprocedure,'barionPaymentSource',true,'remote','verified_provider_observation') ON CONFLICT(provider_key) DO UPDATE SET handler=excluded.handler,source_field=excluded.source_field,hosted_checkout=true,operation_mode=excluded.operation_mode,verification=excluded.verification;

@@ -9,6 +9,7 @@ import 'dart:convert';
 import '../../email_templates/email_preview_examples.dart';
 import '../../features/ticket_feature.dart';
 import '../../ticket_layout/views/ticket_delivery_selector.dart';
+import '../../ticket_layout/views/ticket_wallet_selector.dart';
 import '../../ticket_layout/views/ticket_delivery_preview.dart';
 
 import 'dart:async';
@@ -333,6 +334,20 @@ class _OccasionSetupCommunicationState
                 },
               }),
             ),
+            TicketWalletSelector(
+              value:
+                  (widget.data['ticketDraft'] as Map?)?['wallet_enabled'] !=
+                  false,
+              enabled:
+                  (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false,
+              ready: defaults['walletReady'] == true,
+              onChanged: (value) => widget.onChanged({
+                'ticketDraft': {
+                  ...?widget.data['ticketDraft'] as Map?,
+                  'wallet_enabled': value,
+                },
+              }),
+            ),
             if (widget.loadPreview != null &&
                 (widget.data['ticketDraft'] as Map?)?['is_enabled'] !=
                     false) ...[
@@ -341,6 +356,8 @@ class _OccasionSetupCommunicationState
                 examples: widget.previewExamples,
                 revision: jsonEncode({
                   'draftId': widget.draftId,
+                  'ticketDraft': widget.data['ticketDraft'],
+                  'walletReady': defaults['walletReady'],
                   'sourceId': widget.data['sourceId'],
                   'copyEmails': widget.data['copyEmails'],
                   'emailBanner': widget.data['emailBanner'],

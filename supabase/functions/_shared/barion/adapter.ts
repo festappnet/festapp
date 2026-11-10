@@ -3,8 +3,8 @@ import {
   decodeCommitReceipt,
   decodePaymentClaim,
   type DispatchClaim,
-  type PaymentConnector,
-  type PaymentDependencies,
+  type HostedCheckoutConnector,
+  type HostedPaymentDependencies,
   PaymentError,
   type PaymentStore,
   record,
@@ -18,10 +18,10 @@ export type BarionDependencies = {
   rpc(operation: string, args: Record<string, unknown>): Promise<unknown>;
   allowedOrigins: readonly string[];
   verifyPlatform(): Promise<void>;
-  openSource: PaymentDependencies["openSource"];
+  openSource: HostedPaymentDependencies["openSource"];
   prepareSource(): Promise<unknown>;
 };
-export class BarionPaymentConnector implements PaymentConnector {
+export class BarionPaymentConnector implements HostedCheckoutConnector {
   readonly id = "barion";
   readonly displayName = "Barion sandbox";
   readonly recoveryRequiresSource = false;
@@ -79,7 +79,7 @@ export class BarionPaymentConnector implements PaymentConnector {
 }
 export function barionPaymentAdapter(
   deps: BarionDependencies,
-): PaymentDependencies {
+): HostedPaymentDependencies {
   const rpc = deps.rpc;
   const claim = async (operation: string, args: Record<string, unknown>) =>
     decodePaymentClaim(await rpc(operation, args), "barion");
@@ -151,7 +151,7 @@ export function barionPaymentAdapter(
       await rpc("fail", { attemptId, lease });
     },
   };
-  const binding: PaymentDependencies = {
+  const binding: HostedPaymentDependencies = {
     livemode: false,
     allowedOrigins: deps.allowedOrigins,
     routes: {
@@ -180,7 +180,7 @@ export function barionPaymentAdapter(
  */
 export async function barionWebhook(
   request: Request,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
   rpc: BarionDependencies["rpc"],
 ) {
   if (request.method !== "POST") {

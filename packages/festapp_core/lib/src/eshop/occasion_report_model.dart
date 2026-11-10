@@ -20,10 +20,8 @@ class ReportPaymentDay {
       currency = json['currency'] as String,
       received = json['received'] as String,
       returned = json['returned'] as String {
-    if ([
-      received,
-      returned,
-    ].any((v) => !RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(v))) {
+    if (!RegExp(r'^-?\d+(\.\d{1,2})?$').hasMatch(received) ||
+        !RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(returned)) {
       throw const FormatException('Invalid daily payment');
     }
   }
@@ -71,6 +69,8 @@ class ReportMoney {
         ])
           key: json[key] as String,
         for (final key in const [
+          'deposit_received_net',
+          'beyond_deposit_received_net',
           'stripe_received',
           'stripe_refunded',
           'disputed',

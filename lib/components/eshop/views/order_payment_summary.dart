@@ -1,4 +1,5 @@
 import '../../forms/payment_method_strings.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../../services/payment_deadline.dart';
@@ -9,6 +10,7 @@ import '../../forms/order_overview_strings.dart';
 import '../../forms/widgets_view/card_payment_status.dart';
 import '../order_detail_strings.dart';
 import '../orders_strings.dart';
+import '../payment_operation_strings.dart';
 
 /// Compact presentation of server financial facts; never recalculates a balance.
 class OrderPaymentSummary extends StatelessWidget {
@@ -140,13 +142,40 @@ class OrderPaymentSummary extends StatelessWidget {
           if (payment['method'] == 'cash') ...[
             Text(PaymentMethodStrings.text('cash')),
             if (payment['instructionsAvailable'] == true)
-              Text(payment['instructions']?['cashInstructions']?.toString().isNotEmpty == true
-                ? payment['instructions']['cashInstructions'] as String
-                : PaymentMethodStrings.text('cashInstructionsDefault')),
+              Text(
+                payment['instructions']?['cashInstructions']
+                            ?.toString()
+                            .isNotEmpty ==
+                        true
+                    ? payment['instructions']['cashInstructions'] as String
+                    : PaymentMethodStrings.text('cashInstructionsDefault'),
+              ),
           ],
           if (hint != null)
             Padding(padding: const EdgeInsets.only(top: 6), child: Text(hint)),
           if (returned != null && returned > 0) fact('vraceno', returned),
+          if (payment['net'] != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                children: [
+                  Expanded(child: Text(PaymentOperationStrings.text('net'))),
+                  Text(money(payment['net'])),
+                ],
+              ),
+            ),
+          if ((_number(payment['pending']) ?? 0) > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(PaymentOperationStrings.text('pending')),
+                  ),
+                  Text(money(payment['pending'])),
+                ],
+              ),
+            ),
           if (showPaymentDue && outstanding != null && outstanding > 0)
             fact('zbyva_k_uhrade', outstanding),
           if (showPaymentDue &&

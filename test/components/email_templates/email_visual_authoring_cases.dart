@@ -121,7 +121,7 @@ void main() {
     expect(second.top - first.bottom, closeTo(40, 1));
   });
   for (final brightness in Brightness.values) {
-    testWidgets('fidelity component chrome is transient without content movement $brightness',
+    testWidgets('component info stays visible while selection chrome is transient $brightness',
         (tester) async {
       final controller = RichHtmlEditorController(
           initialHtml: '<p>{{fullOrder}}</p>',

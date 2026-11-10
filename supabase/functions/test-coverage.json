@@ -608,6 +608,32 @@
         "supabase/functions/_shared/barion/adapter_test.ts"
       ],
       "abusePolicy": []
+    },
+    "payment-operation": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/operationHandler_test.ts",
+        "supabase/functions/_shared/payments/refunds_test.ts"
+      ]
+    },
+    "ticket-wallet": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/ticketWallet_test.ts",
+        "supabase/functions/_shared/googleWallet_test.ts"
+      ]
+    },
+    "sync-ticket-wallet": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/ticketWallet_test.ts"
+      ]
     }
   },
   "excluded": {

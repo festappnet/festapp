@@ -10,6 +10,19 @@ import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
+  test('existing unit member joins through the retry-safe command', () async {
+    final commands = SupabaseUnitCommands.withTransport(
+      ClientCommandTransport((name, params) async {
+        expect(name, 'add_user_to_unit_client_sync_v1');
+        expect(params['p_unit'], 4);
+        expect(params['p_user'], '00000000-0000-0000-0000-000000000002');
+        expect(params['p_command_id'], isNotEmpty);
+        return commandResponseFixture(params['p_command_id'] as String);
+      }, maxAttempts: 1),
+    );
+    await commands.ensureMembership(4, '00000000-0000-0000-0000-000000000002');
+  });
+
   test('unit save carries the unit-scoped aggregate version', () async {
     late String functionName;
     late Map<String, dynamic> parameters;

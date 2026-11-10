@@ -1,5 +1,5 @@
 import { checkoutHandoff, checkoutPayment } from "./checkout.ts";
-import { type PaymentDependencies, PaymentError, record } from "./contracts.ts";
+import { type HostedPaymentDependencies, PaymentError, record } from "./contracts.ts";
 
 export const paymentHeaders = {
   "Cache-Control": "no-store",
@@ -32,7 +32,7 @@ export async function readPaymentBytes(request: Request, limit: number) {
 
 export async function paymentHandler(
   request: Request,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
   readOnly = false,
 ) {
   const origin = request.headers.get("Origin");

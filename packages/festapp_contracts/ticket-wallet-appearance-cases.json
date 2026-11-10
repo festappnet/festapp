@@ -1,0 +1,95 @@
+[
+  {
+    "name": "default",
+    "feature": {},
+    "data": {},
+    "expected": {}
+  },
+  {
+    "name": "saved design",
+    "feature": {
+      "layout": {
+        "templates": {
+          "wide": {
+            "canvasColor": "123ABC"
+          }
+        }
+      },
+      "background": "https://img.festapp.net/images/art.png"
+    },
+    "data": {
+      "logo": "https://a.img.festapp.net/images/logo.png"
+    },
+    "expected": {
+      "backgroundColor": "#123abc",
+      "logo": "https://a.img.festapp.net/images/logo.png?f=png",
+      "heroImage": "https://img.festapp.net/images/art.png?f=png"
+    }
+  },
+  {
+    "name": "named template",
+    "feature": {
+      "ticket_type": "named",
+      "layout": {
+        "templates": {
+          "wide": {
+            "canvasColor": "111111"
+          },
+          "named": {
+            "canvasColor": "FEDCBA"
+          }
+        }
+      }
+    },
+    "data": {},
+    "expected": {
+      "backgroundColor": "#fedcba"
+    }
+  },
+  {
+    "name": "local preset stays local",
+    "feature": {
+      "background": "https://img.festapp.net/ticket-presets/v1/palette-112233-445566-gala-v1.png",
+      "layout": {
+        "templates": {
+          "wide": {
+            "canvasColor": "transparent"
+          }
+        }
+      }
+    },
+    "data": {
+      "logo": "https://img.festapp.net/private/key.png?token=secret"
+    },
+    "expected": {}
+  },
+  {
+    "name": "no external or authenticated images",
+    "feature": {
+      "background": "https://external.invalid/image.png",
+      "lightColor": "bad"
+    },
+    "data": {
+      "logo": "https://user:secret@img.festapp.net/images/logo.png"
+    },
+    "expected": {}
+  },
+  {
+    "name": "overrides and removal",
+    "feature": {
+      "background": "https://img.festapp.net/images/art.png",
+      "wallet_appearance": {
+        "background_color": "#216ACF",
+        "logo": "https://img.festapp.net/images/custom.png",
+        "hero_image": null
+      }
+    },
+    "data": {
+      "logo": "https://img.festapp.net/images/event.png"
+    },
+    "expected": {
+      "backgroundColor": "#216acf",
+      "logo": "https://img.festapp.net/images/custom.png?f=png"
+    }
+  }
+]

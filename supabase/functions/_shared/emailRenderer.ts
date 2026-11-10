@@ -9,6 +9,7 @@ import {
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
+import { prepareWalletEmail } from "./ticketWalletEmail.ts";
 import { prepareTicketDelivery } from "./ticketDelivery.ts";
 import { ticketEmailSubstitutions } from "./ticketEmail.ts";
 import { getTicketOrderConfirmationTemplate } from "../send-email/getTicketOrderConfirmationTemplate.ts";
@@ -97,6 +98,15 @@ export async function renderQueuedEmail(
         return await prepareTicketRenderer(...args);
       },
     );
+    // Read before optional preparation; begin_email_send fences any later preference change.
+    const walletSettings = result.data.wallet;
+    const walletFingerprint = walletSettings.fingerprint;
+    let walletHtml = '';
+    try {
+      walletHtml = await prepareWalletEmail(row, delivery.tickets, walletSettings.feature, emailRpc);
+    } catch {
+      console.warn('ticket_wallet_email_unavailable');
+    }
     const lang = row.data?.lang ?? "cs";
     const payment = ticketEmailSubstitutions(result.data, lang);
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
@@ -117,10 +127,11 @@ export async function renderQueuedEmail(
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
         attachments: delivery.attachments,
-        ticketBlock: delivery.html,
+        ticketBlock: delivery.html + walletHtml,
       }),
       postAction: {
-        ...(overviewUrl ? { tracking_policy: "disabled" } : {}),
+        ...((overviewUrl || walletHtml) ? { tracking_policy: "disabled" } : {}),
+        wallet_fingerprint: walletFingerprint,
         ticket_ids: delivery.tickets.map((t: any) => t.id),
       },
     };

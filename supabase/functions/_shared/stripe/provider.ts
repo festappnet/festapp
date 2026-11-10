@@ -3,10 +3,14 @@
  */
 import {
   type CheckoutSnapshot,
+  type RefundSnapshot,
+  type RefundObservation,
   PaymentError,
   record,
 } from "../payments/contracts.ts";
-export { type CheckoutSnapshot, record } from "../payments/contracts.ts";
+export { type CheckoutSnapshot,
+  type RefundSnapshot,
+  type RefundObservation, record } from "../payments/contracts.ts";
 
 export class StripeBoundaryError extends PaymentError {
   constructor(code: string, retryable = false) {
@@ -361,6 +365,60 @@ export class StripeProvider {
       data: page.data as Record<string, unknown>[],
       nextCursor: nextCursor as string | null,
     };
+  }
+  private async validateRefundBinding(s: RefundSnapshot) {
+    if (!/^[a-zA-Z0-9_-]{8,128}$/.test(s.attemptId) || s.providerId !== "stripe" || s.livemode !== this.options.livemode ||
+        !accountPattern.test(s.accountId) || !/^pi_[A-Za-z0-9]+$/.test(s.paymentId) ||
+        !/^[a-f0-9-]{36}$/.test(s.requestId) ||
+        !Number.isSafeInteger(s.amountMinor) || s.amountMinor <= 0 ||
+        !["CZK", "EUR", "PLN", "USD", "GBP"].includes(s.currency) ||
+        !Number.isSafeInteger(s.createdAt) || s.createdAt > this.now() ||
+        !/^[a-zA-Z0-9:_-]{8,255}$/.test(s.idempotencyKey)) fail("stripe_refund_binding_invalid");
+    const payment = await this.request(`/payment_intents/${s.paymentId}`, s.accountId);
+    if (payment.object !== "payment_intent" || payment.id !== s.paymentId ||
+        payment.livemode !== s.livemode || payment.currency !== s.currency.toLowerCase() ||
+        payment.status !== "succeeded" || record(payment.metadata).festapp_attempt !== s.attemptId || !Number.isSafeInteger(payment.amount_received) ||
+        Number(payment.amount_received) < s.amountMinor) fail("stripe_refund_binding_invalid");
+  }
+  private refundObservation(s: RefundSnapshot, value: unknown): RefundObservation {
+    const refund = record(value);
+    if (refund.object !== "refund" || !/^re_[A-Za-z0-9]+$/.test(String(refund.id)) ||
+        refund.payment_intent !== s.paymentId || refund.amount !== s.amountMinor ||
+        refund.currency !== s.currency.toLowerCase() ||
+        record(refund.metadata).festapp_refund !== s.requestId ||
+        !["pending", "requires_action", "succeeded", "failed", "canceled"].includes(String(refund.status)))
+      fail("stripe_refund_identity_mismatch");
+    return {status: refund.status === "requires_action" ? "action_required" : refund.status === "canceled" ? "cancelled"
+      : refund.status as "pending" | "succeeded" | "failed", refundId: refund.id as string,
+      amountMinor: s.amountMinor, currency: s.currency, dispatchUncertain: false};
+  }
+  /** Exactly one durable intent and idempotency key. The caller marks dispatch
+   * before this method, and every later attempt uses read-only recovery. */
+  async requestRefund(s: RefundSnapshot): Promise<RefundObservation> {
+    await this.validateRefundBinding(s);
+    if (this.now() - s.createdAt >= 23 * 3600) fail("refund_requires_reconciliation");
+    return this.refundObservation(s, await this.request("/refunds", s.accountId,
+      new URLSearchParams({payment_intent: s.paymentId, amount: String(s.amountMinor),
+        "metadata[festapp_refund]": s.requestId}), s.idempotencyKey));
+  }
+  async recoverRefund(s: RefundSnapshot, state: Readonly<Record<string, string | null>>): Promise<RefundObservation> {
+    await this.validateRefundBinding(s);
+    if (state.refundId) {
+      if (!/^re_[A-Za-z0-9]+$/.test(state.refundId)) fail("stripe_refund_identity_mismatch");
+      return this.refundObservation(s, await this.request(`/refunds/${state.refundId}`, s.accountId));
+    }
+    const cursor = state.refundCursor;
+    if (cursor && !/^re_[A-Za-z0-9]+$/.test(cursor)) fail("stripe_refund_identity_mismatch");
+    const page = await this.request(`/refunds?payment_intent=${s.paymentId}&limit=100${cursor ? `&starting_after=${cursor}` : ""}`, s.accountId);
+    if (!Array.isArray(page.data) || page.data.length > 100 || typeof page.has_more !== "boolean") fail("provider_response_invalid");
+    const matches = page.data.filter(value => record(record(value).metadata).festapp_refund === s.requestId);
+    if (matches.length > 1) fail("stripe_multiple_refunds_require_resolution");
+    if (matches.length === 1) return this.refundObservation(s, matches[0]);
+    const nextCursor = page.has_more ? record(page.data.at(-1)).id : null;
+    if (page.has_more && !/^re_[A-Za-z0-9]+$/.test(String(nextCursor))) fail("provider_response_invalid");
+    // Even an empty complete list does not prove a previous write never happened.
+    return {status: "unknown", dispatchUncertain: true,
+      connectorState: {refundCursor: nextCursor as string | null}};
   }
   async disputes(s: CheckoutSnapshot, intentId: string) {
     this.validateSnapshot(s);

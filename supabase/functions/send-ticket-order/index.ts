@@ -10,7 +10,7 @@ import {
 import { executeConfirmedSeatOrder } from "./confirmedReplacement.ts";
 import { prepareFakturoidTicketOrder } from "./fakturoidPreparation.ts";
 import { fakturoidGateway } from "./fakturoid.ts";
-import { type PaymentDependencies } from "../_shared/payments/contracts.ts";
+import { type HostedPaymentDependencies, requireHostedPayment } from "../_shared/payments/contracts.ts";
 import { prepareOrderDelivery } from "../_shared/payments/orderDelivery.ts";
 import { paymentRegistry } from "../_shared/payments/runtime.ts";
 
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (paymentRegistry.has(replacement?.inputData?.payment_method)) {
+    if (paymentRegistry.hasHosted(replacement?.inputData?.payment_method)) {
       return Response.json({ error: "STRIPE_REPLACEMENT_UNSUPPORTED" }, {
         status: 400,
         headers: corsHeaders,
@@ -125,11 +125,11 @@ Deno.serve(async (req) => {
     const preparedOrder = directOrderDetails
       ? { ...directOrderDetails }
       : directOrderDetails;
-    let paymentDependencies: PaymentDependencies | undefined;
+    let paymentDependencies: HostedPaymentDependencies | undefined;
     if (preparedOrder) {
       paymentRegistry.stripOrderSources(preparedOrder);
-      if (paymentRegistry.has(preparedOrder.payment_method)) {
-        paymentDependencies = paymentRegistry.resolve(preparedOrder.payment_method);
+      if (paymentRegistry.hasHosted(preparedOrder.payment_method)) {
+        paymentDependencies = requireHostedPayment(paymentRegistry.resolve(preparedOrder.payment_method));
         if (!paymentDependencies.order) throw new Error("payment_order_not_configured");
         preparedOrder[paymentDependencies.order.sourceField] = await paymentDependencies.order.prepareSource();
       }
@@ -308,8 +308,8 @@ Deno.serve(async (req) => {
     );
     const order = ticketOrder.order;
     let providerResult: Record<string, unknown> | undefined;
-    if (paymentRegistry.has(order?.payment_info?.payment_method)) {
-      const binding = paymentDependencies ?? paymentRegistry.resolve(order.payment_info.payment_method);
+    if (paymentRegistry.hasHosted(order?.payment_info?.payment_method)) {
+      const binding = paymentDependencies ?? requireHostedPayment(paymentRegistry.resolve(order.payment_info.payment_method));
       if (!binding.order) throw new Error("payment_order_not_configured");
       const source = await binding.order.readSource(order.id, commandId);
       providerResult = await prepareOrderDelivery(

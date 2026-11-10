@@ -48,7 +48,7 @@ void rememberPaymentLink(
       !RegExp(r'^[a-f0-9]{64}$').hasMatch(token)) {
     return;
   }
-  if (!uri.path.endsWith(connector.payPath)) return;
+  if (connector.hostedCheckout == null || !uri.path.endsWith(connector.payPath)) return;
   final state = web.window.history.state.dartify();
   web.window.history.replaceState(
     {
@@ -70,6 +70,7 @@ Uri? paymentHandoffUri(
   PaymentConnector? connector,
 }) {
   if (connector == null ||
+      connector.hostedCheckout == null ||
       value == null ||
       token == null ||
       !RegExp(r'^[a-f0-9]{64}$').hasMatch(token))

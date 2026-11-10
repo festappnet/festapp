@@ -116,11 +116,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     setState(() => _isLoading = false);
     _loadingController.stop();
     _mainController.forward();
-    if (_isSuccess && !paymentConnectors.contains(_orderData?['payment']?['method'])) {
+    if (_isSuccess && !paymentConnectors.containsHosted(_orderData?['payment']?['method'])) {
       _observeDelivery();
     }
     if (_isSuccess &&
-        paymentConnectors.contains(_orderData?['payment']?['method']) &&
+        paymentConnectors.containsHosted(_orderData?['payment']?['method']) &&
         _payToken != null &&
         _orderData?['checkout_url'] is String) {
       try {
@@ -311,7 +311,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
         ? paymentHandoffUri(_orderData?['payment_access']?['url'],
             _orderData?['payment_access']?['token'], connector: paymentConnectors.get(payment is Map ? payment['method'] : null))
         : null;
-    if (_isSuccess && payment is Map && paymentConnectors.contains(payment['method'])) {
+    if (_isSuccess && payment is Map && paymentConnectors.containsHosted(payment['method'])) {
       return SingleChildScrollView(
           child: Column(
         mainAxisSize: MainAxisSize.min,

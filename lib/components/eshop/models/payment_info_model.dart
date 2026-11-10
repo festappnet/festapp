@@ -1,3 +1,5 @@
+import 'payment_operation_context.dart';
+
 import 'package:festapp_core/payments.dart';
 import 'package:festapp_core/eshop.dart';
 export 'package:festapp_core/eshop.dart' show BankSyncWarning, BankSyncContact;
@@ -14,10 +16,14 @@ class PaymentInfoModel {
   DateTime? depositDeadline;
   double? paid;
   double? returned;
+  double? pending;
+  double? explicitNet;
+  PaymentOperationContext paymentOperations;
+  double get net => explicitNet ?? (paid ?? 0) - (returned ?? 0);
   DateTime? deadline;
   String? currencyCode;
   String? paymentMethod;
-  bool get isProvider => paymentConnectors.contains(paymentMethod);
+  bool get isProvider => paymentConnectors.containsHosted(paymentMethod);
   Map<String, dynamic>? data;
   bool? isReminderSent;
   BankSyncWarning? bankSyncWarning;
@@ -25,6 +31,9 @@ class PaymentInfoModel {
   factory PaymentInfoModel.fromJson(Map<String, dynamic> json) {
     final data = json[TbEshop.payment_info.data] as Map<String, dynamic>?;
     return PaymentInfoModel(
+      paymentOperations: PaymentOperationContext.fromJson(
+        json['paymentOperations'] as Map? ?? const {},
+      ),
       bankSyncWarning: json['bank_sync_warning'] is Map<String, dynamic>
           ? BankSyncWarning.fromJson(json['bank_sync_warning'])
           : null,
@@ -49,6 +58,8 @@ class PaymentInfoModel {
       paid: json[TbEshop.payment_info.paid] != null
           ? double.tryParse(json[TbEshop.payment_info.paid].toString())
           : null,
+      pending: double.tryParse('${json['pending'] ?? 0}'),
+      explicitNet: double.tryParse('${json['net'] ?? ''}'),
       returned: json[TbEshop.payment_info.returned] != null
           ? double.tryParse(json[TbEshop.payment_info.returned].toString())
           : null,
@@ -76,6 +87,9 @@ class PaymentInfoModel {
     this.depositDeadline,
     this.paid,
     this.returned,
+    this.pending,
+    this.explicitNet,
+    this.paymentOperations = const PaymentOperationContext(),
     this.deadline,
     this.currencyCode,
     this.paymentMethod,

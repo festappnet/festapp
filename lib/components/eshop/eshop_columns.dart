@@ -37,7 +37,6 @@ import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/data_services/rights_service.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -49,7 +48,8 @@ import 'views/order_history_dialog.dart';
 import 'views/order_state_display.dart';
 import 'views/order_state_cell.dart';
 import 'package:fstapp/components/features/features_strings.dart';
-import 'views/cash_payment_flow.dart';
+import 'views/payment_operation_flow.dart';
+import 'payment_operation_strings.dart';
 
 bool canToggleTicketUsage(String? formattedState) => ![
       OrderModel.stornoState,
@@ -1070,60 +1070,70 @@ class EshopColumns {
           ),
         ],
         EshopColumnIds.PAYMENT_INFO_PAID: (Map<String, dynamic> data) => [
-              TrinaColumn(
-                readOnly: true,
-                enableEditingMode: true,
-                title: OrdersStrings.gridPaid,
-                field: EshopColumnIds.PAYMENT_INFO_PAID,
-                type: TrinaColumnType.text(),
-                textAlign: TrinaColumnTextAlign.end,
-                width: 150,
-                renderer: (ctx) {
-                  final val = ctx.cell.value?.toString() ?? "";
-                  final canUpdate = RightsService.canUpdateOrders() &&
-                      OrderGridFilters.orderCanReceivePayment(ctx.row);
-                  return Row(
-                    children: [
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: !canUpdate
-                            ? null
-                            : () async {
-                                int? unitId = data["unitId"] as int?;
-                                if (unitId == null) {
-                                  ToastHelper.Show(
-                                      context, "Unit ID not found.",
-                                      severity: ToastSeverity.NotOk);
-                                  return;
-                                }
+      TrinaColumn(
+        readOnly: true,
+        enableEditingMode: true,
+        title: OrdersStrings.gridPaid,
+        field: EshopColumnIds.PAYMENT_INFO_PAID,
+        type: TrinaColumnType.text(),
+        textAlign: TrinaColumnTextAlign.end,
+        width: 200,
+        renderer: (ctx) {
+          final val = ctx.cell.value?.toString() ?? "";
+          final model = OrderGridFilters.order(ctx.row);
+          final operations =
+              model?.paymentInfoModel?.paymentOperations ??
+              model?.paymentOperations;
+          Future<void> open(bool refund) async {
+            final unitId = data['unitId'] as int?;
+            final orderId =
+                ctx.row.cells[EshopColumnIds.ORDER_ID]?.value as int?;
+            if (unitId == null || orderId == null || !context.mounted) return;
+            final changed = await showOrderPaymentOperationDialog(
+              context,
+              orderId: orderId,
+              unitId: unitId,
+              refund: refund,
+            );
+            if (changed == true) {
+              final refresh = data[EshopColumnIds.PAYMENT_INFO_PAID];
+              if (refresh is Future<void> Function()) await refresh();
+            }
+          }
 
-                                final orderId = ctx.row.cells[EshopColumnIds.ORDER_ID]?.value as int?;
-                                if (orderId == null || !context.mounted) return;
-                                final changed = await showOrderCashPaymentDialog(context,
-                                    orderId: orderId, unitId: unitId);
-                                if (changed == true) {
-                                  final refresh = data[EshopColumnIds.PAYMENT_INFO_PAID];
-                                  if (refresh is Future<void> Function()) await refresh();
-                                }
-                              },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: Icon(Icons.add_circle_outline,
-                              size: 18,
-                              color: canUpdate
-                                  ? Colors.grey
-                                  : Colors.grey.withOpacity(0.3)),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(val, textAlign: TextAlign.end),
-                      ),
-                    ],
-                  );
-                },
+          Widget action(bool refund) {
+            final enabled =
+                (refund ? operations?.canRefund : operations?.canRecord) ==
+                true;
+            return SizedBox(
+              width: 32,
+              child: IconButton(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                tooltip: refund
+                    ? PaymentOperationStrings.text('refund')
+                    : OrdersStrings.addPayment,
+                onPressed: enabled ? () => open(refund) : null,
+                icon: Icon(
+                  refund
+                      ? Icons.remove_circle_outline
+                      : Icons.add_circle_outline,
+                  size: 18,
+                ),
               ),
+            );
+          }
+
+          return Row(
+            children: [
+              action(false),
+              action(true),
+              Expanded(child: Text(val, textAlign: TextAlign.end)),
             ],
-        EshopColumnIds.PAYMENT_INFO_RETURNED: [
+          );
+        },
+      ),
+    ],
+    EshopColumnIds.PAYMENT_INFO_RETURNED: [
           TrinaColumn(
             readOnly: true,
             enableEditingMode: true,

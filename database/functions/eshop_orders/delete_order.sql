@@ -70,6 +70,8 @@ BEGIN
     RAISE EXCEPTION 'Order not found or occasion changed.';
   END IF;
 
+  PERFORM public.check_order_refund_delete_internal(order_id);
+
   -- Delete attention while message identities still exist. Cascading recipients
   -- and deliveries make every overview, count and badge agree immediately.
   PERFORM public.notification_center_prepared_delete_events(ARRAY(SELECT * FROM public.notification_center_prepared_order_events(delete_order_internal_v1.order_id)));

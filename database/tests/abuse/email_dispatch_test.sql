@@ -36,6 +36,6 @@ BEGIN
  PERFORM public.enqueue_paid_order_tickets(oid);
  claim:=public.claim_email();
  PERFORM assert_eq((claim->>'order_id')::bigint,oid,'existing paid class is selected from the same queue');
- PERFORM public.prepare_email((claim->>'message_id')::uuid,(claim->>'lease_token')::uuid,'{"ciphertext":"fixture"}','{}');
+ PERFORM public.prepare_email((claim->>'message_id')::uuid,(claim->>'lease_token')::uuid,'{"ciphertext":"fixture"}',jsonb_build_object('wallet_fingerprint',public.ticket_wallet_fingerprint(occ)));
  PERFORM assert_eq(public.begin_email_send((claim->>'attempt_id')::uuid,(claim->>'lease_token')::uuid)->>'disposition','send','paid delivery has bounded recipient capacity separate from bulk');
 END $$;

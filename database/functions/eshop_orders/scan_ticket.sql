@@ -251,7 +251,7 @@ BEGIN
     -----------------------------------------------------
     -- 6E. Fetch deposit info for deposit orders
     -----------------------------------------------------
-    SELECT pi.deposit_amount, pi.paid, pi.amount
+    SELECT pi.deposit_amount, coalesce(pi.paid,0)-coalesce(pi.returned,0), pi.amount
     INTO v_deposit_amount, v_paid, v_amount
     FROM eshop.payment_info pi
     JOIN eshop.orders o ON o.payment_info = pi.id

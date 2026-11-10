@@ -29,7 +29,7 @@ class CardPaymentStatus extends StatefulWidget {
       ? payment['status'] as String
       : 'unknown';
   static bool canContinue(Map payment) =>
-      paymentConnectors.contains(payment['method']) &&
+      paymentConnectors.containsHosted(payment['method']) &&
       {'open', 'declined', 'preparing'}.contains(stateOf(payment)) &&
       !{'hold', 'revoked'}.contains(payment['admissionState']) &&
       payment['allowedActions'] is List &&

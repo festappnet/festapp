@@ -1,7 +1,17 @@
+import 'package:fstapp/components/eshop/views/report_timeline_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/views/report_number_format.dart';
 
 void main() {
+  test(
+    'signed received corrections retain exact cents in chart and labels',
+    () {
+      expect(reportMinorUnits('-12.50'), BigInt.from(-1250));
+      expect(reportMinorUnits('-0.50'), BigInt.from(-50));
+      expect(reportChartAmount(BigInt.from(-50), 'EUR'), '-0,50 EUR');
+      expect(reportChartAmount(BigInt.from(-1250), 'CZK'), '-12,50 CZK');
+    },
+  );
   test('money retains exact cents beyond double precision', () {
     expect(
       formatReportNumber('12345678901234567890.12', locale: 'cs'),

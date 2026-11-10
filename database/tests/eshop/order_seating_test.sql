@@ -1,5 +1,5 @@
 DO $$
-DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); view_token text:=encode(extensions.gen_random_bytes(32),'hex');
+DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; unrelated_bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); view_token text:=encode(extensions.gen_random_bytes(32),'hex');
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Seating test') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO unit_id;
@@ -59,6 +59,9 @@ BEGIN
  PERFORM assert_eq(public.get_customer_order_overview(repeat('0',64),ord)->>'code','403','Invalid capability still denied');
  PERFORM assert_eq(public.order_tickets_with_seating_internal(other_ord,original),original,'Foreign order cannot resolve standing metadata');
  UPDATE public.forms SET blueprint=NULL WHERE id=fid;
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,original)#>>'{0,products,0,standing_area_title}','Parket VIP','Unique allocated inventory context resolves historical unbound forms');
+ INSERT INTO eshop.blueprints(organization,occasion,title) VALUES(org,occ,'Other hall') RETURNING id INTO unrelated_bp;
+ UPDATE public.forms SET blueprint=unrelated_bp WHERE id=fid;
  PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,original),original,'Unrelated form blueprint cannot identify standing');
  UPDATE public.forms SET blueprint=bp WHERE id=fid;
  UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;

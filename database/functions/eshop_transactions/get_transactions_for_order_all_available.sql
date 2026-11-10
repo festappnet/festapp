@@ -26,7 +26,8 @@ BEGIN
             FROM eshop.payment_info pi
             WHERE pi.id = payment_info_id
         )
-        AND t.payment_info IS NULL
+        AND t.payment_info IS NULL AND t.amount>0
+        AND NOT EXISTS(SELECT 1 FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
     );
 END;
 $$;

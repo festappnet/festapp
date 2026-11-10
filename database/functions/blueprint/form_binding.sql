@@ -12,7 +12,11 @@ BEGIN
  bp:=f.blueprint;
  IF NOT EXISTS(SELECT 1 FROM public.form_fields WHERE form=f.id AND type='spot' AND NOT is_hidden) THEN
    -- An explicitly disabled selector returns to ordinary product choices.
-   IF NOT EXISTS(SELECT 1 FROM public.form_fields WHERE form=f.id AND type='spot' AND is_hidden) THEN RETURN; END IF;
+   IF NOT EXISTS(SELECT 1 FROM public.form_fields WHERE form=f.id AND type='spot' AND is_hidden) THEN
+     -- Enabling the editor must not publish a retained inactive plan over an
+     -- ordinary capacity/waitlist form. Preserve legacy unbounded bindings.
+     IF f.participant_capacity IS NULL OR f.blueprint IS NULL THEN RETURN; END IF;
+   END IF;
    bp:=NULL;
  ELSE
  IF bp IS NULL THEN

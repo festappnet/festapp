@@ -16,6 +16,12 @@ BEGIN
         'order', to_jsonb(o.*) || jsonb_build_object('data', o.data || jsonb_build_object(
           'tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))),
         'occasion', to_jsonb(occ.*)||jsonb_build_object('locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=occ.organization),'cs')),
+        -- Same statement snapshot as the ticket feature used by delivery.
+        'wallet', jsonb_build_object(
+          'feature',(SELECT f FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'),
+          'fingerprint',coalesce(((SELECT f->>'is_enabled' FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'))::boolean,false)::text
+            ||'/'||public.ticket_wallet_enabled((SELECT f FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'))::text
+            ||'/'||public.ticket_wallet_ready(occ.organization)::text),
         'payment_info', to_jsonb(pi.*),
         'bank_account', CASE
             WHEN upper(o.currency_code) = 'EUR'

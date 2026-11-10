@@ -523,12 +523,13 @@ async function routeRequest(request, env) {
 
     // OAuth handoffs and account management must reach the correct adapter and never enter HTML caches.
     const paymentPrivateRoute = /^\/(?:app\/)?(?:stripe\/(?:connect\/callback|pay|return)|payments\/[a-z][a-z0-9_-]{0,31}\/(?:pay|return))$/.test(path);
-    if (path === "/login" || path === "/login/" || paymentPrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
+    const walletPrivateRoute = path === "/wallet" || path === "/wallet/";
+    if (path === "/login" || path === "/login/" || walletPrivateRoute || paymentPrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
       const entry = paymentPrivateRoute || path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
       // The browser retains callback parameters; the static asset fetch needs none.
       const assetUrl = new URL(request.url);
       assetUrl.search = "";
-      const res = await serveAsset(env, paymentPrivateRoute ? new Request(assetUrl) : request, entry);
+      const res = await serveAsset(env, paymentPrivateRoute || walletPrivateRoute ? new Request(assetUrl) : request, entry);
       const response = htmlResponse(res.body, res.headers, 200, entry === FLUTTER_ENTRY ? "flutter" : "webclient");
       response.headers.set("cache-control", "no-store");
       response.headers.set("referrer-policy", "no-referrer");

@@ -19,7 +19,7 @@ class PaymentLinkInbox {
 
   static String? routeForPath(String path) {
     final canonical = path.startsWith('/app/') ? path.substring(4) : path;
-    for (final connector in paymentConnectors.values) {
+    for (final connector in paymentConnectors.hosted) {
       if ([
         connector.payPath,
         connector.returnPath,
@@ -33,7 +33,7 @@ class PaymentLinkInbox {
 
   PaymentConnector? _connector(String path) {
     final canonical = path.startsWith('/app/') ? path.substring(4) : path;
-    for (final connector in registry.values) {
+    for (final connector in registry.hosted) {
       if ([
         connector.payPath,
         connector.returnPath,

@@ -1,21 +1,26 @@
 # Payment provider connectors
 
-Implemented 2026-11-06. Stripe is the first installed connector. The bank-transfer
-ledger remains the existing bank domain. Barion has a sandbox-only connector,
-with production sales disabled. No platform commission is introduced.
+The installed-method registry covers bank, cash and external connectors for both
+payment directions. SQL owns installation, authorization, reservations and facts;
+runtime registries provide explicit implementations of the installed capabilities.
+Hosted checkout is optional. Barion remains sandbox-only with refund writes
+unavailable. Unified payment operations are implemented locally; this does not
+record a production migration or activation.
 
 ## Ownership
 
 - `_shared/payments/checkout.ts` owns checkout orchestration, leases, safe retries,
   recovery pagination and normalized settlement observations. It does not import
   a provider SDK, know provider hosts or call provider-named SQL RPCs.
-- `PaymentConnector` reads verified external state and maps it to checkout,
+- `HostedCheckoutConnector` reads verified external state and maps it to checkout,
   payment, refund and dispute facts. `PaymentStore` owns the provider's atomic
   persistence, account/mode binding, capability storage and ingestion calls.
   The production Stripe implementation is `connectors/stripe.ts`.
 - `_shared/payments/registry.ts` is a strict allowlist of lazy factories. Its
-  composition root is `runtime.ts`. Unknown IDs and mismatched connector IDs
-  fail closed. Connection and webhook protocols belong to the connector.
+  composition root is `runtime.ts`. `PaymentConnector` is the shared identity;
+  `PaymentMethodBinding.hostedCheckout` contains the provider-only dependencies.
+  Bank/cash have no fake checkout URLs, mode or bearer-source implementation.
+  Unknown IDs and mismatched connector IDs fail closed. Connection and webhook protocols belong to the connector.
 - `_shared/payments/orderDelivery.ts` and `email.ts` handle common order delivery
   and confirmation rendering. Provider source fields, paths and URL policies are
   supplied by the registered binding.
@@ -25,11 +30,62 @@ with production sales disabled. No platform commission is introduced.
   identifier and binds business values as parameters.
 - `packages/festapp_core/lib/payments.dart` exposes provider descriptors and the
   Dart registry. The web client has its own browser registry with Stripe and sandbox Barion adapters.
-  Shared views resolve the saved payment method; they do not assume Stripe.
+  They include bank/cash. Shared views resolve the saved method and test its
+  hosted-checkout capability, rather than assuming registration means a gateway.
 - Flutter payment pages, gateway/connection API and native link inbox live under
   `lib/components/payments`. `payment_editor_registry.dart` is the composition
   root for provider-specific authoring capabilities, currencies and setup links.
   Form settings retain other providers' account bindings when editing one.
+
+## Shared incoming and outgoing operations
+
+`command_payment_operation(input_data,p_command_id)` owns `record_payment`,
+`prepare_refund`, `cancel_pending` and `correct_record`. Context and amount-specific
+previews come from `get_payment_operation_context` and `preview_payment_operation`.
+They enforce typed, stored-scope policies before mutation and receipt replay.
+The authenticated `payment-operation` Edge endpoint adds presentation only:
+validated recipient, shared SPD/EPC encoding, and the original immutable reference.
+The same registered SQL handlers supply incoming form availability/configuration
+and operation capabilities. A capability is unavailable unless its actual source,
+currency, identity, permission and adapter requirements hold.
+
+| Method | Preparation/execution | Financial confirmation |
+|---|---|---|
+| Cash | Atomic authorized negative CASH row plus request/settlement | Local SQL commit |
+| Bank | Immutable recipient instruction and reservation; no bank API transfer | Authenticated BankSync debit in the original physical-account namespace |
+| External connector | Durable intent followed by leased dispatch or read-only recovery | Existing connector ledger and `apply_provider_payment_effects_internal` |
+
+`refund_requests` record intent, immutable binding and reservation. They are not
+a second ledger. Unique `refund_settlements.transaction_id` classifies existing
+cash/bank movements, retaining raw bank identity and type. The shared movement
+classification preserves historical signed manual corrections as corrections.
+Financial projections expose received/refunded/net/pending separately. Net may
+be negative after a real excessive debit; preparation never changes confirmed
+received/refunded/net. Storno/expired orders retain their admission lifecycle.
+
+Bank preparation requires canonical original reference ownership and active
+account identity protection. CZK SPD uses the saved VS; EUR EPC uses the saved
+RF. No refund allocator or extra matching token exists. USD has supported import
+and manual instructions without pretending that SPD/EPC supports it. Invalid,
+missing or changed bank references are explicit deviations requiring authorized
+evidence-based repair. No amount/name/time heuristic selects the order.
+Cancelling an instruction releases its reservation only after the operator
+confirms no bank transfer was submitted; it cannot revoke an external bank order.
+Later real debits remain visible, including repeated or excessive transfers.
+
+External recovery is part of `payment-reconcile`, using service-only
+`claim_payment_refund`/`complete_payment_refund` and the existing attempt ingestion.
+A dispatch result is metadata until the matching provider refund movement exists.
+Stripe validates the original PaymentIntent/account/mode/currency, uses one
+stable key and recovers uncertain writes by reading. It never renews a write
+after the retention window. Barion can observe external refunds but advertises
+no application-initiated write capability. SQL `refund_write_enabled` defaults false for external connectors. Real merchant
+permissions and live readiness must be independently verified before explicit
+activation; offline transport-contract tests never enable writes.
+
+Refund history blocks hard deletion before external cleanup; source disconnection
+cannot remove a pending binding. General pairing/delete paths cannot bypass
+refund classification, reserved-money checks or explicit cash correction audit.
 
 ## Financial and security invariants
 
@@ -47,7 +103,7 @@ webhook signature validation to their registered implementation.
 
 ## Installing another provider
 
-1. Implement `PaymentConnector` and `PaymentStore`; register their factory in
+1. Implement `HostedCheckoutConnector` and `PaymentStore`; register their factory in
    `runtime.ts` with the private order-source field. Add provider-specific
    onboarding and raw webhook validation. Match the provider's real account,
    settlement, retry, expiry, refund and dispute semantics.
@@ -91,9 +147,19 @@ movement contract.
 
 `20261106120000_payment_provider_connectors.sql` and its exact reproducible inputs
 are frozen under `docs/plans/payment-provider-hardening/history/`. The original
-assembler verifies history and refuses regeneration. New changes are assembled
-from `automation/payment-provider-hardening-migration.json` into
-`20261106160000_payment_provider_hardening.sql`:
+assembler verifies history and refuses regeneration. Their historical bytes remain immutable. The current unified forward is
+`20261110140000_payment_operations.sql`, assembled from the explicit ordered
+`automation/payment-operations-migration.json`. Historical cash, integration,
+hardening and Barion assemblers verify frozen historical source blocks only for
+owners explicitly superseded by that manifest, then verify the entire current
+forward. Other source parity checks remain active. They refuse regeneration of
+installed history; evolve the current forward instead:
+
+```sh
+python3 automation/assemble-payment-operations-migration.py --check
+```
+
+Historical checks remain available:
 
 ```sh
 python3 automation/assemble-payment-provider-migration.py --check
@@ -173,7 +239,7 @@ records seven additional regression cases and the current 155-test Deno result.
 ## Barion sandbox boundary
 
 `_shared/barion/{provider,facts,adapter,environment}.ts` implements the bounded
-sandbox protocol and `PaymentConnector`/`PaymentStore`. SQL storage is independent
+sandbox protocol and `HostedCheckoutConnector`/`PaymentStore`. SQL storage is independent
 under `eshop_barion/`. All financial effects delegate to the existing common SQL
 owner; no second paid/storno/admission/email implementation exists. SQL/Edge/Dart/
 JS register `barion` explicitly. Browser paths use `/payments/barion/{pay,return}`

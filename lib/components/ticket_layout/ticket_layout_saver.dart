@@ -26,6 +26,7 @@ class TicketLayoutSaver {
     ticket.layout = draft.layout;
     ticket.ticketBackground = draft.ticketBackground;
     ticket.ticketType = draft.ticketType;
+    ticket.walletAppearance = draft.walletAppearance;
     await persist(fresh);
     current.aggregateVersion = fresh.aggregateVersion;
   }

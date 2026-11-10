@@ -154,7 +154,7 @@ BEGIN
    OR coalesce((v_feature->>'is_enabled')::boolean,false)=false
    OR coalesce((v_form.data->>'is_reminder_enabled')::boolean,(v_feature->>'reminder_is_enabled')::boolean,true)=false THEN RETURN false; END IF;
   IF (p_message.data->>'is_deposit_reminder')::boolean IS TRUE THEN
-   RETURN v_order.state IN ('paid','sent') AND v_pi.deposit_amount IS NOT NULL AND v_pi.paid<v_pi.amount
+   RETURN v_order.state IN ('paid','sent') AND v_pi.deposit_amount IS NOT NULL AND coalesce(v_pi.paid,0)-coalesce(v_pi.returned,0)<v_pi.amount
     AND (v_deposit->>'is_enabled')::boolean IS TRUE AND v_deposit->>'deposit_deadline' IS DISTINCT FROM 'on_site';
   END IF;
   RETURN v_order.state='ordered' AND v_pi.deadline IS NOT NULL AND coalesce((v_pi.data->>'current_version_reminded')::boolean,false)=false;
@@ -275,6 +275,14 @@ BEGIN
    last_error='offer_snapshot_changed' WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now(),
    error_code='offer_snapshot_changed' WHERE attempt_id=p_attempt;
+  RETURN jsonb_build_object('disposition','deferred');
+ END IF;
+ -- Only unstarted provider attempts can discard a stale Wallet snapshot.
+ IF v_row.message_kind='order_tickets' AND v_row.post_action->>'wallet_fingerprint'
+  IS DISTINCT FROM public.ticket_wallet_fingerprint(v_row.occasion) THEN
+  UPDATE public.email_messages SET workflow_state='pending',target_time=now(),prepared=NULL,prepared_hash=NULL,prepared_at=NULL,
+   post_action=post_action-'wallet_fingerprint',lease_token=NULL,lease_until=NULL,last_error='wallet_snapshot_changed' WHERE id=v_row.id;
+  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='wallet_snapshot_changed' WHERE attempt_id=p_attempt;
   RETURN jsonb_build_object('disposition','deferred');
  END IF;
  v_rate:=CASE WHEN v_cap.shared_account THEN least(v_cap.max_rate*0.8,v_cap.allocated_rate) ELSE v_cap.max_rate*0.8 END*v_cap.rate_factor;

@@ -21,11 +21,11 @@ test('Flutter map documents allow OSM identification without overriding callback
 });
 test('real generated hosting router chooses the correct callback adapter and disables proof caching',async()=>{
  const paths=[];const env={ASSETS:{fetch:async(request)=>{const p=new URL(request.url).pathname;paths.push(p);return new Response(p,{headers:{'content-type':'application/octet-stream'}});}}};
- for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter'],['/settings/mcp-connect','/webclient'],['/settings/connections','/webclient']]){
+ for(const [path,entry]of [['/wallet','/webclient'],['/wallet/','/webclient'],['/google-auth','/webclient'],['/app/google-auth','/flutter'],['/settings/mcp-connect','/webclient'],['/settings/connections','/webclient']]){
   const response=await worker.fetch(new Request('https://tenant.invalid'+path+'?google_code=proof&google_attempt=fixture'),env);
   assert.equal(await response.text(),entry);assert.ok(response.headers.get('cache-control').split(',').map(value=>value.trim()).includes('no-store'));assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(response.headers.get('location'),null);
  }
- assert.deepEqual(paths,['/webclient','/flutter','/webclient','/webclient']);
+ assert.deepEqual(paths,['/webclient','/webclient','/webclient','/flutter','/webclient','/webclient']);
  const aasa=await worker.fetch(new Request('https://tenant.invalid/.well-known/apple-app-site-association'),env);assert.equal(aasa.headers.get('content-type'),'application/json');
 });
 

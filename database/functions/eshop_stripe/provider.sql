@@ -6,7 +6,33 @@ DECLARE input jsonb; connection uuid; payment_id bigint; attempt uuid; expires t
  amount numeric; currency text; target bigint; result jsonb;
 BEGIN
  target:=(p_args->>'orderId')::bigint;
- IF p_operation='projection' THEN RETURN public.stripe_order_payment_projection_internal(target);
+ IF p_operation='operation_capabilities' THEN
+  result:=public.stripe_payment_provider_internal('refund_binding',p_args);
+  RETURN jsonb_build_object('id','stripe','displayName','Stripe','record',false,'refund',result IS NOT NULL,
+   'verification','verified_provider_observation','reason',CASE WHEN result IS NULL THEN 'original_payment_unavailable' ELSE NULL END);
+ ELSIF p_operation='refund_binding' THEN
+  -- Refunds bind to one evidenced original payment, never a checkout URL or client identity.
+  SELECT jsonb_build_object('attemptId',a.id,'accountId',c.account_id,'livemode',a.livemode,
+   'paymentId',a.payment_intent_id,'currency',a.currency,'amountMinor',a.amount_minor) INTO result
+  FROM eshop.stripe_checkout_attempts a JOIN eshop.stripe_connections c ON c.id=a.connection_id
+  JOIN eshop.orders o ON o.id=a.order_id AND o.payment_info=a.payment_info_id
+  JOIN eshop.payment_info pi ON pi.id=a.payment_info_id AND pi.stripe_connection_id=c.id
+  WHERE a.order_id=target AND a.payment_intent_id IS NOT NULL AND c.livemode=a.livemode
+   AND c.organization_id=a.organization_id AND c.unit_id=a.unit_id AND pi.payment_method='stripe' AND pi.currency_code::text=a.currency AND pi.amount*100=a.amount_minor
+   AND c.state IN ('connected','restricted') AND c.model_verified
+   AND a.currency IN ('CZK','EUR','PLN','USD','GBP')
+   AND EXISTS(SELECT 1 FROM eshop.stripe_payment_movements m WHERE m.attempt_id=a.id AND m.kind='payment' AND m.provider_id=a.payment_intent_id AND m.currency=a.currency AND m.amount_minor=a.amount_minor)
+   AND 1=(SELECT count(*) FROM eshop.stripe_checkout_attempts x WHERE x.order_id=target AND EXISTS(
+    SELECT 1 FROM eshop.stripe_payment_movements m WHERE m.attempt_id=x.id AND m.kind='payment'));
+  RETURN result;
+ ELSIF p_operation='refund_observed' THEN
+  RETURN to_jsonb(EXISTS(SELECT 1 FROM eshop.stripe_checkout_attempts a
+   JOIN eshop.stripe_payment_movements m ON m.attempt_id=a.id AND m.connection_id=a.connection_id
+   WHERE a.order_id=target AND m.kind='refund' AND m.provider_id=p_args->>'refundId'
+    AND EXISTS(SELECT 1 FROM eshop.refund_requests r WHERE r.id=(p_args->>'requestId')::uuid
+      AND r.order_id=a.order_id AND r.payment_info=a.payment_info_id AND r.method='stripe'
+      AND r.currency=m.currency AND r.amount*100=m.amount_minor)));
+ ELSIF p_operation='projection' THEN RETURN public.stripe_order_payment_projection_internal(target);
  ELSIF p_operation='attach_source' THEN
   PERFORM public.attach_stripe_order_pay_source_internal(target,(p_args->>'commandId')::uuid,p_args->'source'); RETURN NULL;
  ELSIF p_operation='initialize_payment' THEN
@@ -93,8 +119,8 @@ REVOKE ALL ON FUNCTION public.stripe_payment_provider_internal(text,jsonb) FROM 
 DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='eshop.payment_info'::regclass AND conname='payment_info_stripe_connection_identity') THEN
 ALTER TABLE eshop.payment_info ADD CONSTRAINT payment_info_stripe_connection_identity CHECK(
  (payment_method='stripe')=(stripe_connection_id IS NOT NULL)); END IF; END $$;
-INSERT INTO eshop.payment_providers(provider_key,handler,source_field,legacy_connection_field)
- VALUES('stripe','public.stripe_payment_provider_internal(text,jsonb)'::regprocedure,'stripePaymentSource','stripeConnectionId') ON CONFLICT(provider_key) DO UPDATE SET handler=excluded.handler,source_field=excluded.source_field,legacy_connection_field=excluded.legacy_connection_field;
+INSERT INTO eshop.payment_providers(provider_key,handler,source_field,legacy_connection_field,hosted_checkout,operation_mode,verification)
+ VALUES('stripe','public.stripe_payment_provider_internal(text,jsonb)'::regprocedure,'stripePaymentSource','stripeConnectionId',true,'remote','verified_provider_observation') ON CONFLICT(provider_key) DO UPDATE SET handler=excluded.handler,source_field=excluded.source_field,legacy_connection_field=excluded.legacy_connection_field,hosted_checkout=excluded.hosted_checkout,operation_mode=excluded.operation_mode,verification=excluded.verification;
 DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='eshop.payment_info'::regclass AND conname='payment_info_registered_method') THEN
 ALTER TABLE eshop.payment_info ADD CONSTRAINT payment_info_registered_method
  FOREIGN KEY(payment_method) REFERENCES eshop.payment_providers(provider_key); END IF; END $$;

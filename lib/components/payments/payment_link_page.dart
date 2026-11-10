@@ -19,7 +19,7 @@ class PaymentPayPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PaymentLinkPage(
     key: ValueKey(providerId),
-    connector: paymentConnectors.get(providerId),
+    connector: paymentConnectors.getHosted(providerId),
     returnOnly: false,
   );
 }
@@ -34,7 +34,7 @@ class PaymentReturnPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PaymentLinkPage(
     key: ValueKey(providerId),
-    connector: paymentConnectors.get(providerId),
+    connector: paymentConnectors.getHosted(providerId),
     returnOnly: true,
   );
 }

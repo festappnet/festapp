@@ -380,3 +380,16 @@ for (const locale of ['cs', 'sk', 'de', 'uk', 'en', 'pl']) {
         }
     });
 }
+
+test('pending refund remains separate from confirmed received and net facts', t => {
+    const host = setup(t), data = fixture();
+    Object.assign(data.orders[0].payment, {received:1000,returned:0,net:1000,pending:300,totalOutstanding:0,dueNow:0,instructionsAvailable:false});
+    renderOrderOverview(host,data);
+    const amounts = host.querySelector('.overview-amounts');
+    assert.ok(amounts);
+    assert.match(amounts.textContent,/net/);
+    assert.match(amounts.textContent,/pendingRefund/);
+    assert.match(amounts.textContent,/300,00/);
+    assert.equal(host.querySelector('.overview-refunded'),null);
+    assert.equal(host.querySelectorAll('button').length,0);
+});

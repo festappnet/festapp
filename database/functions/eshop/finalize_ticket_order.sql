@@ -246,7 +246,7 @@ BEGIN
         IF calculated_price=0 THEN
           bank_account_id:=NULL;
           INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method) VALUES(0,first_currency_code,now,v_payment_method) RETURNING id INTO payment_info_id;
-        ELSIF public.payment_method_is_online_internal(v_payment_method) THEN
+        ELSE
           v_provider_payment:=public.payment_provider_call_internal(v_payment_method,'initialize_payment',jsonb_build_object(
             'formId',form_id,'input',input_data,'amount',calculated_price,'currency',first_currency_code,'deposit',v_total_deposit,'createdAt',now));
           payment_info_id:=(v_provider_payment->>'paymentInfoId')::bigint;
@@ -255,13 +255,6 @@ BEGIN
               AND provider_payment.amount=calculated_price AND provider_payment.currency_code=first_currency_code) THEN
             RAISE EXCEPTION 'PAYMENT_PROVIDER_PREPARATION_INVALID'; END IF;
           bank_account_id:=NULL;
-        ELSE
-          IF input_data->>'payment_type' = 'full' THEN v_total_deposit:=0; END IF;
-          INSERT INTO eshop.payment_info(amount,deposit_amount,currency_code,created_at,payment_method)
-          VALUES(calculated_price,NULLIF(v_total_deposit,0),first_currency_code,now,v_payment_method)
-          RETURNING id INTO payment_info_id;
-
-
         END IF;
 
         UPDATE eshop.payment_info SET data=coalesce(data,'{}')||jsonb_build_object('payment_policy',v_payment_policy-'durationSeconds') WHERE id=payment_info_id;

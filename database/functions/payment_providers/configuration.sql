@@ -30,7 +30,7 @@ BEGIN
   IF incoming->>'stripeConnectionId' IS NOT NULL THEN connections:=connections||jsonb_build_object('stripe',incoming->>'stripeConnectionId'); END IF;
  END IF;
  FOR r IN SELECT * FROM jsonb_each(connections) LOOP
-  IF jsonb_typeof(r.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=r.key AND handler IS NOT NULL) THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
+  IF jsonb_typeof(r.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=r.key AND hosted_checkout) THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
   PERFORM (r.value#>>'{}')::uuid;
  END LOOP;
  saved:=jsonb_build_object('bankEnabled',coalesce(incoming->'bankEnabled',saved->'bankEnabled'),'providerConnections',connections,
@@ -71,7 +71,7 @@ BEGIN
  IF d.id IS NULL OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit)
   OR NOT EXISTS(SELECT 1 FROM public.user_info WHERE id=auth.uid() AND organization=d.organization) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
- FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE handler IS NOT NULL ORDER BY provider_key LOOP
+ FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE hosted_checkout ORDER BY provider_key LOOP
   BEGIN
    recipients:=public.payment_provider_call_internal(r.provider_key,'setup_recipients',jsonb_build_object('unitId',d.unit));
    IF jsonb_typeof(recipients) IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_PROJECTION_INVALID'; END IF;
