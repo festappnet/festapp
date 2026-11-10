@@ -159,22 +159,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     return status?['organization_enabled'] == true;
   }
 
-  /// Only people who run measurement need this warning, and only when the
-  /// missing link is what stops a form that is otherwise set up.
-  bool get _showMeasurementPrivacyWarning {
-    final status = _form?.definition.measurementStatus;
-    final reasons = status?['blocked_reasons'];
-    return _measurementEnabled &&
-        status?['unit_enabled'] == true &&
-        reasons is List &&
-        reasons.contains('no_privacy_policy') &&
-        !reasons.contains('no_destination') &&
-        (_canManageMeasurement ||
-            RightsService.hasCapability(
-              AuthorizationCapabilities.unitSettingsWrite,
-            ));
-  }
-
   List<String> get _measurementStatusMessages {
     final status = _form?.definition.measurementStatus;
     final reasons = status?['blocked_reasons'];
@@ -182,10 +166,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (!_measurementEnabled) FormStrings.measurementDisabled,
       if (status?['unit_enabled'] != true)
         FormStrings.measurementFormUnitBlocked,
-      if (_measurementEnabled && status?['organization_allowed'] != true)
-        FormStrings.measurementOrganizationBlocked,
-      if (_measurementEnabled && status?['runtime_supported'] != true)
-        FormStrings.measurementRuntimeBlocked,
+      // One plain-language reason for both platform gates (policy, runtime).
+      if (_measurementEnabled &&
+          (status?['organization_allowed'] != true ||
+              status?['runtime_supported'] != true))
+        RightsService.hasCapability(AuthorizationCapabilities.unitSettingsWrite)
+            ? FormStrings.measurementPlatformBlocked
+            : FormStrings.measurementAskUnitManager,
       if (_measurementEnabled &&
           reasons is List &&
           reasons.contains('no_destination'))
@@ -195,7 +182,32 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           reasons.contains('no_privacy_policy'))
         FormStrings.measurementNoPrivacyPolicy,
     ];
-    return messages.isEmpty ? [FormStrings.measurementReady] : messages;
+    return messages.isEmpty &&
+            status?['eligible'] == true &&
+            (reasons is List && reasons.isEmpty) &&
+            _form?.definition.data?['analytics']?['enabled'] == _measurementEnabled
+        ? [FormStrings.measurementReady]
+        : messages;
+  }
+
+  Widget _measurementStatusRow(BuildContext context, String message) {
+    final scheme = Theme.of(context).colorScheme;
+    final (icon, color) = message == FormStrings.measurementReady
+        ? (Icons.check_circle_outline, scheme.primary)
+        : message == FormStrings.measurementDisabled
+        ? (Icons.info_outline, scheme.onSurfaceVariant)
+        : (Icons.warning_amber_rounded, scheme.error);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message)),
+        ],
+      ),
+    );
   }
 
   String get _unitTone => CommunicationTone.resolve(
@@ -1319,76 +1331,58 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                 ),
                               const SizedBox(height: 24),
                               if (_showMeasurement) ...[
-                                ExpansionTile(
-                                  initiallyExpanded: false,
-                                  tilePadding: EdgeInsets.zero,
-                                  expandedCrossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  title: Text(
-                                    FormStrings.measurementTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .titleLarge,
+                                Text(
+                                  FormStrings.measurementTitle,
+                                  style: Theme.of(innerContext)
+                                      .textTheme
+                                      .titleLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(FormStrings.measurementEnabled),
+                                  subtitle: Text(
+                                    FormStrings.measurementFormHelp,
                                   ),
-                                  subtitle: _showMeasurementPrivacyWarning
-                                      ? Text(
-                                          FormStrings
-                                              .measurementNoPrivacyPolicy,
-                                          style: TextStyle(
-                                            color: Theme.of(innerContext)
-                                                .colorScheme
-                                                .error,
-                                          ),
+                                  value: _measurementEnabled,
+                                  onChanged: _canEdit && _canManageMeasurement
+                                      ? (value) => setState(
+                                          () => _measurementEnabled = value,
                                         )
                                       : null,
-                                  children: [
-                                    SwitchListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(
-                                        FormStrings.measurementEnabled,
-                                      ),
-                                      subtitle: Text(
-                                        FormStrings.measurementFormHelp,
-                                      ),
-                                      value: _measurementEnabled,
-                                      onChanged:
-                                          _canEdit && _canManageMeasurement
-                                          ? (value) => setState(
-                                              () => _measurementEnabled = value,
-                                            )
-                                          : null,
-                                    ),
-                                    for (final message
-                                        in _measurementStatusMessages)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(message),
-                                      ),
-                                    if (RightsService.currentUnit()?.id !=
-                                            null &&
-                                        RightsService.hasCapability(
-                                          AuthorizationCapabilities
-                                              .unitSettingsWrite,
-                                        ))
-                                      TextButton(
-                                        onPressed: () => pushRootPath(
-                                          context.router.root,
-                                          '/unit/${RightsService.currentUnit()!.id}/edit/settings',
-                                        ),
-                                        child: Text(
-                                          FormStrings
-                                              .measurementOpenUnitSettings,
-                                        ),
-                                      )
-                                    else
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          FormStrings.measurementAskUnitManager,
-                                        ),
-                                      ),
-                                  ],
                                 ),
+                                for (final message
+                                    in _measurementStatusMessages)
+                                  _measurementStatusRow(innerContext, message),
+                                const SizedBox(height: 8),
+                                if (RightsService.currentUnit()?.id != null &&
+                                    RightsService.hasCapability(
+                                      AuthorizationCapabilities
+                                          .unitSettingsWrite,
+                                    ))
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton.icon(
+                                      icon: const Icon(Icons.tune, size: 18),
+                                      label: Text(
+                                        FormStrings.measurementOpenUnitSettings,
+                                      ),
+                                      onPressed: () => pushRootPath(
+                                        context.router.root,
+                                        '/unit/${RightsService.currentUnit()!.id}/edit/settings',
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      FormStrings.measurementAskUnitManager,
+                                      style: Theme.of(innerContext)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                  ),
                                 const SizedBox(height: 24),
                                 const Divider(),
                                 const SizedBox(height: 16),

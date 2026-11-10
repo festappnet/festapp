@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/unit/views/unit_measurement_settings.dart';
+import 'package:fstapp/components/unit/unit_measurement_approval.dart';
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -12,7 +14,7 @@ void main() {
   WidgetEnvironmentFixture.register();
 
   for (final canEdit in [true, false]) {
-    testWidgets('destinations remain discoverable when off; canEdit=$canEdit', (
+    testWidgets('destinations and consent bridge opt-in when off; canEdit=$canEdit', (
       tester,
     ) async {
       final fixture = WidgetEnvironmentFixture(
@@ -32,6 +34,7 @@ void main() {
       addTearDown(gtm.dispose);
       addTearDown(scripts.dispose);
       bool enabled = false;
+      bool consentBridge = false;
       String layout = 'bar';
       final consentTitle = TextEditingController();
       final consentText = TextEditingController();
@@ -48,6 +51,9 @@ void main() {
                 builder: (context, setState) => Form(
                   child: UnitMeasurementSettings(
                     enabled: enabled,
+                    consentBridge: consentBridge,
+                    onConsentBridgeChanged: (value) =>
+                        setState(() => consentBridge = value),
                     consentLayout: layout,
                     consentTitleController: consentTitle,
                     consentTextController: consentText,
@@ -68,11 +74,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text(FormStrings.measurementTitle), findsOneWidget);
-      expect(find.text(FormStrings.gtmContainer), findsNothing);
-      expect(find.byType(SwitchListTile), findsNothing);
-      await tester.tap(find.text(FormStrings.measurementTitle));
-      await tester.pumpAndSettle();
       expect(find.text(FormStrings.gtmContainer), findsOneWidget);
+      expect(
+        find.widgetWithText(SwitchListTile, FormStrings.measurementUnitEnabled),
+        findsOneWidget,
+      );
       expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
       final gtmField = find.byWidgetPredicate(
         (widget) => widget is TextFormField && widget.controller == gtm,
@@ -100,6 +106,19 @@ void main() {
           field.validator!(invalid),
           FormStrings.measurementPrivacyUrlInvalid,
         );
+      }
+      final bridgeSwitch = find.widgetWithText(
+        SwitchListTile, FormStrings.measurementConsentBridge,
+      );
+      final bridge = tester.widget<SwitchListTile>(bridgeSwitch);
+      expect(bridge.value, isFalse);
+      expect(bridge.onChanged == null, !canEdit);
+      expect(find.text(FormStrings.measurementConsentBridgeConfirmation), findsOneWidget);
+      if (canEdit) {
+        await tester.ensureVisible(bridgeSwitch);
+        await tester.tap(bridgeSwitch);
+        await tester.pumpAndSettle();
+        expect(consentBridge, isTrue);
       }
       final enabledSwitch = find.widgetWithText(
         SwitchListTile,
@@ -142,18 +161,30 @@ void main() {
         await tester.pumpAndSettle();
         expect(enabled, isTrue);
         final enabledPrivacyField = tester.widget<TextFormField>(privacyField);
-        expect(enabledPrivacyField.validator!(''), FormStrings.measurementPrivacyUrlRequired);
-        expect(enabledPrivacyField.validator!('https://organizer.example/privacy'), isNull);
+        expect(
+          enabledPrivacyField.validator!(''),
+          FormStrings.measurementPrivacyUrlRequired,
+        );
+        expect(
+          enabledPrivacyField.validator!('https://organizer.example/privacy'),
+          isNull,
+        );
         gtm.clear();
         scripts.clear();
         expect(enabledPrivacyField.validator!(''), isNull);
         scripts.text = '<script>/* saved */</script>';
-        expect(enabledPrivacyField.validator!(''), FormStrings.measurementPrivacyUrlRequired);
+        expect(
+          enabledPrivacyField.validator!(''),
+          FormStrings.measurementPrivacyUrlRequired,
+        );
         gtm.text = 'GTM-ABCD';
         await tester.tap(enabledSwitch);
         await tester.pumpAndSettle();
         expect(enabled, isFalse);
-        expect(tester.widget<TextFormField>(privacyField).validator!(''), isNull);
+        expect(
+          tester.widget<TextFormField>(privacyField).validator!(''),
+          isNull,
+        );
         expect(gtm.text, 'GTM-ABCD');
         expect(scripts.text, '<script>/* saved */</script>');
       }
@@ -186,7 +217,6 @@ void main() {
       final gtm = TextEditingController(text: 'GTM-ABCD');
       final privacy = TextEditingController(text: url);
       final scripts = TextEditingController();
-      final tile = ExpansibleController();
       final consentTitle = TextEditingController();
       final consentText = TextEditingController();
       addTearDown(consentTitle.dispose);
@@ -194,7 +224,6 @@ void main() {
       addTearDown(gtm.dispose);
       addTearDown(privacy.dispose);
       addTearDown(scripts.dispose);
-      addTearDown(tile.dispose);
       final form = GlobalKey<FormState>();
       await fixture.pumpWidget(
         tester,
@@ -215,7 +244,6 @@ void main() {
                   gtmController: gtm,
                   scriptsController: scripts,
                   privacyUrlController: privacy,
-                  controller: tile,
                   onEnabledChanged: (_) {},
                 ),
               ),
@@ -226,7 +254,7 @@ void main() {
       await tester.pumpAndSettle();
       final warning = find.text(FormStrings.measurementNoPrivacyPolicy);
       expect(warning, warned ? findsOneWidget : findsNothing);
-      expect(find.text(FormStrings.gtmContainer), findsNothing);
+      expect(find.text(FormStrings.gtmContainer), findsOneWidget);
       final required = enabled && url.isEmpty;
       expect(form.currentState!.validate(), !required);
       if (warned) {
@@ -237,13 +265,109 @@ void main() {
         await tester.pump();
         expect(warning, findsOneWidget);
         expect(form.currentState!.validate(), isFalse);
-        tile.expand();
-        await tester.pumpAndSettle();
+        await tester.pump();
         expect(
           find.text(FormStrings.measurementPrivacyUrlRequired),
           findsOneWidget,
         );
       }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  for (final (name, enabled, canEdit, approved, requested, busy) in [
+    ('missing approval', true, true, false, false, false),
+    ('sent request', true, true, false, true, false),
+    ('approved', true, true, true, false, false),
+    ('measurement off', false, true, false, false, false),
+    ('read only', true, false, false, false, false),
+    ('sending request', true, true, false, false, true),
+  ]) {
+    testWidgets('platform approval: $name', (tester) async {
+      final fixture = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations: jsonDecode(
+          File('assets/translations/cs.json').readAsStringSync(),
+        ) as Map<String, dynamic>,
+      );
+      final controllers = List.generate(5, (_) => TextEditingController());
+      for (final controller in controllers) {
+        addTearDown(controller.dispose);
+      }
+      final requestedAt = DateTime.utc(2026, 11, 9, 12);
+      var requests = 0;
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          supportedLocales: const [Locale('cs')],
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMeasurementSettings(
+                enabled: enabled,
+                consentLayout: 'bar',
+                canEdit: canEdit,
+                gtmController: controllers[0],
+                scriptsController: controllers[1],
+                privacyUrlController: controllers[2],
+                consentTitleController: controllers[3],
+                consentTextController: controllers[4],
+                onEnabledChanged: (_) {},
+                onConsentLayoutChanged: (_) {},
+                requestingApproval: busy,
+                approval: UnitMeasurementApproval.fromJson({
+                  'approved': approved,
+                  'organization_allowed': approved,
+                  'runtime_supported': approved,
+                  'requested_at': requested
+                      ? requestedAt.toIso8601String()
+                      : null,
+                }),
+                onRequestApproval: () => requests++,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final button = find.widgetWithText(
+        OutlinedButton,
+        FormStrings.measurementApprovalRequest,
+      );
+      if (enabled && !approved) {
+        expect(button, findsOneWidget);
+        expect(
+          tester.widget<OutlinedButton>(button).onPressed != null,
+          canEdit && !requested && !busy,
+        );
+        expect(
+          find.text(
+            requested
+                ? FormStrings.measurementApprovalRequested(
+                    DateFormat.yMd('cs').format(requestedAt.toLocal()),
+                  )
+                : FormStrings.measurementApprovalRequired,
+          ),
+          findsOneWidget,
+        );
+        if (canEdit && !requested && !busy) {
+          await tester.ensureVisible(button);
+          await tester.tap(button);
+          expect(requests, 1);
+        }
+      } else {
+        expect(button, findsNothing);
+        expect(
+          find.text(FormStrings.measurementApprovalRequired),
+          findsNothing,
+        );
+      }
+      expect(find.text(FormStrings.gtmContainer), findsOneWidget);
+      expect(
+        find.text(FormStrings.measurementUnitDisabled),
+        enabled ? findsNothing : findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });

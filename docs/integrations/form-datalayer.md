@@ -48,12 +48,21 @@ Units store nullable `measurement_privacy_url` as an absolute HTTPS URL without 
 
 ## Database authority
 
+With Unit measurement enabled, Unit managers can request missing platform approval
+once from **Měření** in Unit settings. The persisted request notifies every current
+administrator of the Unit's organization with a delivery email; retries send no
+additional notices. The settings show the localized request date while waiting.
+Platform operators still approve manually through `analytics.organization_policy`
+and `analytics.unit_runtime`; submitting a request grants no measurement permission.
+
 The private `analytics` schema contains exactly these measurement tables:
 
 - `analytics.organization_policy`: platform permission, revision and operator
   evidence. Missing means denied.
 - `analytics.unit_runtime`: the approved deployment origin/profile, permitted
   parent/ancestor and collector origins, revision and operator evidence.
+- `analytics.unit_measurement_request`: one request per Unit, with its timestamp
+  and requesting user; deleted with the Unit.
 - `analytics.conversion_facts`: immutable finalizer facts with non-authorizing
   event UUIDs, keyed by order and conversion kind.
 
@@ -84,8 +93,13 @@ only disposal is terminal. `FormDataLayer` owns catalogue, funnel, baseline and
 visit deduplication. It has no policy/Auth/consent decisions or timer.
 
 Standalone uses the real Klaro UI with analytics and marketing services, off by
-default. The translated notice keeps bar/modal styling, equal buttons, privacy URL
-and plain custom text. It blocks the page, not measurement. Saved choice belongs to
+default. The translated notice offers Decline, Accept and Settings in both bar and modal
+layouts, with equal prominence for Decline and Accept, a privacy URL and plain
+custom text. Settings opens the per-purpose dialog before any decision; the
+floating Consent settings button remains available for later changes.
+The dialog also shows an always-on, disabled necessary-data row for form
+operation, security and remembering the choice. This informational row is not a
+Klaro service, adds nothing to stored consent and maps to no Consent Mode signal. The notice blocks the page, not measurement. Saved choice belongs to
 organization + Unit + `processing_revision`. Staff is unmeasured. Signed-in visitors
 wait for a matching policy/role response.
 
@@ -105,7 +119,9 @@ Runtime protocol 3 (`festapp-measurement`) compares the actual SQL/Worker manife
 with the accepted policy before init can insert any Unit code. Scope, form link,
 processing/runtime/policy revisions and profile must match. Ready/init/ACK bind
 source window, origin, instance and generation. Consent Mode default/update precede
-GTM, all denied without a saved choice; every event also carries `festapp_consent`.
+GTM, optional types denied without a saved choice; every event also carries `festapp_consent`.
+Every Consent Mode type is set explicitly: `functionality_storage` is always granted
+(an explicit owner decision), `personalization_storage` follows marketing like the `ad_*` types.
 Custom HTML tags such as Meta Pixel and Unit scripts do not read Consent Mode: require
 consent on the tag in GTM, or read `festapp_consent` and `festapp_consent_update`.
 
@@ -127,9 +143,37 @@ approved host and the current helper, nothing else: the helper
 issues a random local lease that only proves it is alive, and renews it on a heartbeat.
 A host CMP is optional. `FestappEmbed.connectKlaro(frame, manager)`,
 `setMeasurementConsent(frame, granted)` and
-`connectMeasurementConsent(frame, source)` all pass the choice on as state; without
-one the state is denied and measurement runs. In the host transport the host's own
-Consent Mode gates its tags. See the
+`connectMeasurementConsent(frame, source)` all pass the choice on as state and
+always replace the automatic source, including after disconnection. Automatic reading
+requires the organizer's Unit setting `measurement_consent_bridge: true`, disabled
+by default for new and existing organizers. Enable it with “Use consent from my
+website banner” only when the organizer operates the host website as the same
+controller and its banner explicitly covers the embedded vstupenky.online form.
+The banner must identify the organizer, purposes, services in the organizer's GTM,
+the isolated `*.pages.dev` runtime and Festapp as processor, and explain withdrawal.
+The organizer retains consent evidence in the website CMP. A partner's banner
+cannot be assumed to cover the organizer. Explicit adapters remain independent of
+the switch. The switch is part of the manifest and processing revision.
+
+When enabled, the helper reads `google_tag_data.ics.entries`, then only Arguments
+`consent default/update` commands in `window.dataLayer` if ICS is unavailable.
+Arrays are ignored. Regional defaults stay denied until a CMP update. Analytics
+requires explicit granted `analytics_storage`; marketing requires all three of
+`ad_storage`, `ad_user_data` and `ad_personalization` explicitly granted. Missing or
+broken values mean denied. If `__tcfapi` is present, marketing is always denied;
+TCF is never read or forwarded, while analytics follows Consent Mode.
+
+ICS is polled every 250 ms; dataLayer every second, scanning only new entries and
+resetting state when replaced or shortened. Withdrawal can therefore race a
+purchase within the remaining 250 ms or 1 s window, and browser suspension can
+extend it. Already delivered data cannot be recalled. Switching to website mode
+unsubscribes the source; returning to Unit mode subscribes again. Choices bind to
+the first organization, Unit and processing revision; a changed scope stays
+denied until a fresh binding (for example, a newly loaded embed).
+The read-only bridge changes no eligibility or approved-host checks and writes no
+Google state. Measurement runs regardless
+of the choice. In the host transport the host's own Consent Mode gates its tags;
+the automatic bridge does not apply. See the
 [runtime integration example](../../workers/form-measurement/README.md#host-cmp-integration).
 
 `capture()` returns a sender bound forever to the original active grant; inactive
@@ -177,7 +221,7 @@ transaction identifiers to page scripts; its editor and privacy notice disclose
 that boundary. It installs no tags and does not grant consent or enable
 measurement. The approved-origin, eligibility, staff and live-lease gates apply
 to both choices. Website tags and the website CMP own consent in host mode;
-Unit mode needs an explicit consent adapter to leave the denied state.
+Unit mode reads website Consent Mode only after the organizer opts in; an explicit adapter replaces it.
 Containers must map `page_location`, `page_referrer`, campaign/click data and
 approved ecommerce events from dataLayer, and avoid duplicate automatic pageviews.
 
@@ -312,3 +356,21 @@ before the request; a revoked/replaced measurement grant cannot send its result.
 Failures, preview and unsubscribe never emit a lead. These client subscription
 leads do not create an order or an `analytics.conversion_facts` record; that SQL
 kind constraint applies only to immutable order finalizer facts.
+
+## Consent storage exceptions and keyboard behavior
+
+All seven Consent Mode types are explicit. `security_storage` and
+`functionality_storage` remain `granted`, including before a choice and after
+Decline. Organizer tags requiring `functionality_storage` therefore run without
+consent. Analytics storage follows analytics; ad storage, ad user data, ad
+personalization and personalization storage follow marketing.
+Mapping content personalization (`personalization_storage`) to marketing is an
+intentional organizer choice; the organizer's privacy information must describe
+this purpose together with advertising.
+
+The initial central notice is blocking: Escape focuses the notice without saving
+a choice or closing it. Decline is available for a decision without optional
+consent. Escape in Settings discards the draft. Reopened Settings always offer
+Decline; after a saved decision focus returns to the floating Consent settings
+button. The button is fixed at the bottom left, with reserved scroll clearance.
+Custom notice text always retains a fixed explanation of how to change consent.

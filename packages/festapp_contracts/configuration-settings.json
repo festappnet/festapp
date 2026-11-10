@@ -78,6 +78,9 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 2147483647
+    },
+    "measurement_consent_bridge": {
+      "type": "boolean"
     }
   },
   "features": {

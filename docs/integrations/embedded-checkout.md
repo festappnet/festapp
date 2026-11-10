@@ -292,8 +292,27 @@ FestappEmbed.setMeasurementConsent(formular, {analytics: true, marketing: false}
 ```
 
 Pro průběžné čtení uložené volby slouží `connectKlaro(formular, manager)` nebo
-`connectMeasurementConsent(formular, zdroj)`. Bez signálu je stav `denied` a měření
-běží. Změna volby měření nezastaví ani nespustí znovu.
+`connectMeasurementConsent(formular, zdroj)`. Explicitní adaptér má vždy přednost
+před automatickým mostem a jeho odpojení automatický zdroj neobnoví.
+Automatický most vyžaduje zapnutí „Převzít souhlas z lišty schválených webů“ v nastavení
+měření pořadatele (`measurement_consent_bridge`). Výchozí stav je vypnuto i pro
+existující pořadatele. Zapnutím pořadatel potvrzuje, že web a formulář provozuje
+jako stejný správce a lišta výslovně pokrývá formulář na vstupenky.online, účely,
+služby GTM pořadatele, runtime `*.pages.dev` a Festapp jako zpracovatele. Musí
+vysvětlovat odvolání; důkaz souhlasu uchovává pořadatel v CMP webu. Cizí partnerský
+web tuto podmínku automaticky nesplňuje. Přepínač je součástí manifestu a revize
+zpracování. Explicitní adaptéry fungují nezávisle na přepínači.
+
+Most čte ICS každých 250 ms, jinak pouze nové příkazy Arguments v dataLayer každou
+sekundu; pole ignoruje. Při zkrácení či výměně dataLayer začne znovu. Analytika
+vyžaduje `analytics_storage`, marketing explicitní udělení všech tří typů
+`ad_storage`, `ad_user_data` a `ad_personalization`. Chybějící stav znamená denied.
+Regionální default bez aktualizace znamená denied. Přítomnost `__tcfapi` vždy
+zamítne marketing; TCF most nečte, analytiku určuje Consent Mode.
+Odvolání těsně před nákupem může dorazit až za 250 ms nebo 1 s; uspání prohlížeče
+může okno prodloužit. Již předaná data nelze odvolat. Režim web zdroj odpojí,
+návrat do režimu jednotky jej znovu připojí. Změna jednotky či revize zůstane denied
+do nového navázání zdroje, například načtením nového vložení. Měření běží i při denied.
 
 Layout/scroll/theme zůstávají na protokolu 1. Měření používá protokol 2 a staré
 měřicí zprávy odmítá. Události se nefrontují. Již přijatá data nelze odvolat. Povolené kampaně se filtrují,

@@ -9,7 +9,7 @@ const root=fileURLToPath(new URL('../../../',import.meta.url));
 const read=path=>readFileSync(new URL('../../../'+path,import.meta.url),'utf8');
 
 test('cross-language limits, capability projection and canonical migration are current',()=>{
-    for(const script of ['generate_form_measurement_limits.py','generate_authorization_projection.py','generate_authorization_capabilities.py','assemble-form-measurement-migration.py','assemble-configuration-migration.py','assemble-form-measurement-consent-migration.py']){
+    for(const script of ['generate_form_measurement_limits.py','generate_authorization_projection.py','generate_authorization_capabilities.py','assemble-form-measurement-migration.py','assemble-configuration-migration.py','assemble-form-measurement-consent-migration.py','assemble-form-measurement-consent-bridge-migration.py']){
         execFileSync('python3',['automation/'+script,'--check'],{cwd:root,stdio:'pipe'});
     }
 });
@@ -34,11 +34,11 @@ test('consent state grants only strict true purposes and a boolean stays analyti
     assert.deepEqual(measurementConsent({marketing:true,extra:true}),{analytics:false,marketing:true});
 });
 
-test('the fixed consent text names advertising and sharing in every language',()=>{
+test('the default notice and advertising purpose name advertising in every language',()=>{
     const words={cs:/reklam/i,en:/advertising/i,sk:/reklam/i,de:/werb/i,pl:/reklam/i,uk:/реклам/i};
     for(const [locale,word] of Object.entries(words)) for(const root of ['assets','web_client/public/assets']) {
         const strings=JSON.parse(read(`${root}/translations/${locale}.json`)).FeatureFormSettings;
-        for(const key of ['measurementConsentTitle','measurementConsentDescription','measurementConsentMarketingDescription']) assert.match(strings[key],word,`${root} ${locale}.${key}`);
+        for(const key of ['measurementConsentDescription','measurementConsentMarketingDescription']) assert.match(strings[key],word,`${root} ${locale}.${key}`);
     }
 });
 

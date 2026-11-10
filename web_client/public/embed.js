@@ -159,6 +159,7 @@
       organization: policy.organization,
       unit: policy.unit,
       form_link: formLink,
+      measurement_consent_bridge: policy.measurement_consent_bridge === true,
       processing_revision: policy.processing_revision,
       runtime_revision: policy.runtime_revision,
       policy_revision: policy.policy_revision,
@@ -166,7 +167,119 @@
       required_purposes: ["analytics", "marketing"]
     };
   }
-  var sameMeasurementManifest = (a, b) => !!a && !!b && ["measurement_protocol", "organization", "unit", "form_link", "processing_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key]));
+  var sameMeasurementManifest = (a, b) => !!a && !!b && ["measurement_protocol", "organization", "unit", "form_link", "processing_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
+
+  // src/embed/host_consent_mode.js
+  var keys = ["analytics_storage", "ad_storage", "ad_user_data", "ad_personalization"];
+  var object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+  var project = (state) => ({
+    analytics: state.analytics_storage === true,
+    marketing: state.ad_storage === true && state.ad_user_data === true && state.ad_personalization === true
+  });
+  function createReader(win) {
+    let layerRef, lastEntry, index = 0, defaults = {}, updates = {}, regional = /* @__PURE__ */ new Set();
+    return () => {
+      try {
+        const entries = win.google_tag_data?.ics?.entries;
+        if (entries !== void 0) {
+          if (!object(entries)) return project({});
+          const state2 = {};
+          for (const key of keys) {
+            const entry = entries[key];
+            if (entry === void 0) continue;
+            if (!object(entry)) {
+              state2[key] = false;
+              continue;
+            }
+            const value = entry.update !== void 0 ? entry.update : entry.default;
+            if (value === void 0) continue;
+            state2[key] = value === true;
+          }
+          return { ...project(state2), ...typeof win.__tcfapi !== "undefined" ? { marketing: false } : {} };
+        }
+        const layer = win.dataLayer;
+        if (!Array.isArray(layer)) return project({});
+        if (layer !== layerRef || layer.length < index || index > 0 && layer[index - 1] !== lastEntry) {
+          layerRef = layer;
+          index = 0;
+          defaults = {};
+          updates = {};
+          regional = /* @__PURE__ */ new Set();
+        }
+        while (index < layer.length) {
+          const command = layer[index++];
+          lastEntry = command;
+          if (Object.prototype.toString.call(command) !== "[object Arguments]") continue;
+          const [kind, action, values] = command;
+          if (kind !== "consent" || !["default", "update"].includes(action) || !object(values)) continue;
+          if (action === "default" && "region" in values) {
+            for (const key of keys) if (Object.hasOwn(values, key)) regional.add(key);
+            continue;
+          }
+          const target = action === "update" ? updates : defaults;
+          for (const key of keys) if (Object.hasOwn(values, key)) target[key] = values[key] === "granted";
+        }
+        const state = { ...defaults, ...updates };
+        for (const key of regional) if (!Object.hasOwn(updates, key)) state[key] = false;
+        return { ...project(state), ...typeof win.__tcfapi !== "undefined" ? { marketing: false } : {} };
+      } catch {
+        layerRef = void 0;
+        lastEntry = void 0;
+        index = 0;
+        defaults = {};
+        updates = {};
+        regional = /* @__PURE__ */ new Set();
+        return project({});
+      }
+    };
+  }
+  function createHostConsentMode(win) {
+    const listeners = /* @__PURE__ */ new Set();
+    const read = createReader(win);
+    let timer = null, last = null, delay = null;
+    const schedule = () => {
+      let next = 1e3;
+      try {
+        if (win.google_tag_data?.ics) next = 250;
+      } catch {
+      }
+      if (timer !== null && next === delay) return;
+      if (timer !== null) win.clearInterval(timer);
+      delay = next;
+      timer = win.setInterval(tick, delay);
+    };
+    const tick = () => {
+      if (!listeners.size) return;
+      schedule();
+      const next = JSON.stringify(read());
+      if (next === last) return;
+      last = next;
+      for (const listener of listeners) {
+        try {
+          listener();
+        } catch {
+        }
+      }
+    };
+    return {
+      read() {
+        return read();
+      },
+      subscribe(listener) {
+        listeners.add(listener);
+        last ??= JSON.stringify(read());
+        schedule();
+        return () => {
+          listeners.delete(listener);
+          if (!listeners.size && timer !== null) {
+            win.clearInterval(timer);
+            timer = null;
+            last = null;
+          }
+        };
+      }
+    };
+  }
 
   // src/components/forms/form_measurement_consent.js
   function bindKlaroConsent(manager, setConsent) {
@@ -209,6 +322,7 @@
   var usesHostDataLayer = (frame) => frame.hasAttribute("data-festapp-datalayer");
   function createHostMeasurement({ frames, currentRecord, disposeRecord, scan }) {
     let suspended = false;
+    const consentMode = createHostConsentMode(window);
     const stopHeartbeat = (record) => {
       clearInterval(record.heartbeat);
       record.heartbeat = null;
@@ -238,6 +352,17 @@
         return;
       }
       if (suspended || !record.manifest) return;
+      const automatic = !record.explicitChoice && !usesHostDataLayer(frame) && record.manifest.measurement_consent_bridge === true;
+      if (!automatic && !record.explicitChoice && record.choice) record.choice.dispose();
+      if (!record.choice && automatic) {
+        bindChoice(frame, record, (notify) => ({
+          read: scopedChoice(record, () => usesHostDataLayer(frame) ? false : consentMode.read()),
+          dispose: consentMode.subscribe(() => {
+            if (!usesHostDataLayer(frame)) notify();
+          })
+        }), false);
+        return;
+      }
       record.heartbeat ??= setInterval(() => syncConsent(frame, record), 2e4);
       record.lease ??= { id: crypto.randomUUID() };
       record.lease.until = Date.now() + 6e4;
@@ -252,8 +377,9 @@
         return scope === scopeOf(manifest) ? read() : false;
       };
     };
-    const bindChoice = (frame, record, connect) => {
+    const bindChoice = (frame, record, connect, explicit = true) => {
       if (!currentRecord(frame, record)) return null;
+      if (explicit) record.explicitChoice = true;
       record.choice?.dispose();
       const binding = { read: () => false };
       record.choice = binding;
@@ -770,6 +896,7 @@
       scan();
       for (const mutation of mutations) {
         if (["data-festapp-datalayer"].includes(mutation.attributeName) && frames.has(mutation.target)) {
+          measurement.syncConsent(mutation.target, frames.get(mutation.target));
           send(mutation.target, frames.get(mutation.target), "init", false);
         }
       }

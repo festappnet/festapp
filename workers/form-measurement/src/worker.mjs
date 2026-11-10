@@ -2,7 +2,7 @@ import {FORM_MEASUREMENT_SCRIPT_LIMIT} from '../../../web_client/src/components/
 import {runtimeSource} from './runtime_source.mjs';
 import {measurementOrigin, measurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
-const headers = {'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
+const headers = {'x-festapp-runtime-build': typeof BUILD_ID === 'undefined' ? 'unbuilt' : BUILD_ID,'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
     'permissions-policy':'camera=(), microphone=(), geolocation=(), payment=()', 'cross-origin-opener-policy':'same-origin'};
 const json = value => JSON.stringify(value).replace(/</g,'\\u003c').replace(/[\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16));
 const origin = value => {
@@ -20,7 +20,11 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
     const local=env.LOCAL_TEST === true && ['localhost','127.0.0.1'].includes(url.hostname);
     const fail=()=>new Response('Measurement unavailable',{status:404,headers});
     if (request.method!=='GET' || !measurementOrigin(url.origin,local)) return fail();
-    if (url.pathname==='/runtime.js' && !url.search) return new Response(runtimeSource,{headers:{...headers,'content-type':'application/javascript; charset=utf-8'}});
+    if (url.pathname==='/runtime.js' && !url.search) return new Response(runtimeSource,{headers:{...headers,
+        'x-festapp-runtime-organization':/^[1-9]\d*$/.test(String(env.ORGANIZATION_ID))?String(env.ORGANIZATION_ID):'unavailable',
+        'x-festapp-runtime-unit':/^[1-9]\d*$/.test(String(env.UNIT_ID))?String(env.UNIT_ID):'unavailable',
+        'x-festapp-runtime-backend':env.FESTAPP_API_URL==='https://api.festapp.net'?env.FESTAPP_API_URL:'unavailable',
+        'content-type':'application/javascript; charset=utf-8'}});
     if (url.pathname!=='/runtime' || [...url.searchParams.keys()].some(k=>!['form','parent'].includes(k))) return fail();
     const form=url.searchParams.get('form'),parent=origin(url.searchParams.get('parent'));
     if (!/^[a-zA-Z0-9_-]{1,80}$/.test(form||'') || !parent || parent===url.origin ||

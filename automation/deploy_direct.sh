@@ -99,6 +99,13 @@ set +a
 export CF_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
 export CF_PROJECT="$PROJECT_NAME"
 export BRANCH
+# Only the selected tenant's registered receivers are release prerequisites.
+# This probes public HTTP responses without executing tags or creating events.
+verify_measurement_receivers() {
+  node automation/verify_measurement_runtimes.mjs \
+    --organization "${BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID:-}" --require-probe
+}
+verify_measurement_receivers
 if [ "$USE_WRANGLER_OAUTH" -eq 1 ]; then
   # OAuth is deliberately a routine-deploy path only. It may update an already
   # bound Pages project, but it must not silently create projects or DNS.
@@ -134,6 +141,7 @@ fi
 
 # Recheck immediately before the irreversible upload (a rerun may have failed).
 python3 automation/ci/release_gate.py
+verify_measurement_receivers
 
 echo "Deploying build/web to Cloudflare Pages project '${PROJECT_NAME}'..."
 pnpm dlx wrangler@latest pages deploy build/web \

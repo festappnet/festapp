@@ -89,7 +89,7 @@ test('runtime transport sends a later choice only after init',t=>{
 test('bootstrap rejects mismatched snapshot before code and establishes Consent Mode before script effects',t=>{
  const wrong=bootstrap(t,false,{...manifest,runtime_revision:2});wrong.send('init');assert.equal(wrong.win.document.querySelector('script[src]'),null);
  const f=bootstrap(t);f.send('init');const entries=f.win.dataLayer;
- assert.equal(entries[0][0],'consent');assert.equal(entries[0][1],'default');assert.equal(entries[0][2].ad_storage,'granted');assert.equal(entries[1][1],'update');
+ assert.equal(entries[0][0],'consent');assert.equal(entries[0][1],'default');assert.equal(entries[0][2].ad_storage,'granted');assert.equal(entries[1][1],'update');assert.equal(entries[0][2].personalization_storage,'granted');assert.equal(entries[0][2].functionality_storage,'granted');assert.equal(entries[0][2].security_storage,'granted');
  assert.equal(f.win.document.querySelectorAll('script[src]').length,1);assert.ok(f.win.document.querySelector('script[src]').src.includes('GTM-AB12'));
  f.send('event',{payload:{...purchase,user_data:{email:'buyer@example.test',phone_number:'+420601234567',first_name:'PRIVATE'}}});
  assert.equal(entries.filter(p=>p.event==='purchase').length,1);assert.equal(JSON.stringify(entries.find(p=>p.event==='purchase').user_data),'{"email":"buyer@example.test","phone_number":"+420601234567"}');
@@ -98,10 +98,12 @@ test('bootstrap rejects mismatched snapshot before code and establishes Consent 
 });
 test('isolated Google tags receive cross-site cookie flags before loading without changing consent',t=>{
  const f=bootstrap(t,false);f.send('init');const entries=[...f.win.dataLayer];
+ assert.ok(entries.some(p=>p[0]==='set' && p[1]==='ads_data_redaction' && p[2]===true));
  const cookieSettings=entries.findIndex(p=>p[0]==='set' && p[1]?.cookie_flags==='SameSite=None;Secure');
  assert(cookieSettings>=0,'framed Google tags require explicit cross-site cookie flags');
  assert(cookieSettings<entries.findIndex(p=>p.event==='gtm.js'));
  assert.equal(entries[0][2].analytics_storage,'denied');assert.equal(entries[1][2].analytics_storage,'denied');
+ for(const entry of entries.slice(0,2)) assert.deepEqual({...entry[2]},{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',functionality_storage:'granted',security_storage:'granted',personalization_storage:'denied'},'every Consent Mode type is explicit');
 });
 test('Klaro saved-choice adapter rejects drafts and unavailable services; disconnect revokes',()=>{
  let watcher;const sent=[];const manager={confirmed:false,savedConsents:{analytics:false},getConsent:()=>true,watch:value=>watcher=value,unwatch:value=>assert.equal(value,watcher)};

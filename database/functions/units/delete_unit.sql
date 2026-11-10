@@ -28,7 +28,7 @@ BEGIN
        SET unit = NULL,
            workflow_state = CASE WHEN workflow_state IN ('pending','retry_wait','blocked','preparing')
                                  THEN 'cancelled' ELSE workflow_state END
-     WHERE unit = p_unit_id AND message_kind = 'custom' AND code = 'UNIT_VERIFICATION_REQUEST';
+     WHERE unit = p_unit_id AND message_kind = 'custom' AND code IN ('UNIT_VERIFICATION_REQUEST','MEASUREMENT_APPROVAL_REQUEST');
 
     DELETE FROM public.unit_users WHERE unit = p_unit_id;
     DELETE FROM public.units WHERE id = p_unit_id;

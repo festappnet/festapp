@@ -29,7 +29,7 @@ try {
  for(const lang of ['cs','en']) {
   await page.goto(`${parent}/form/test?runtime=${encodeURIComponent(origin)}&cmp=1&lang=${lang}`);await page.waitForFunction('!!document.querySelector(".cookie-modal-notice")');
   const notice=await run(`({buttons:[...document.querySelectorAll('.cookie-modal-notice button')].map(x=>x.innerText),href:document.querySelector('.cookie-modal-notice a').getAttribute('href'),frames:document.querySelectorAll('iframe').length})`);
-  assert.deepEqual(notice.buttons,lang==='cs'?['Odmítnout','Přijmout']:['Decline','Accept']);assert.equal(notice.href,'https://organizer.example/privacy');assert.equal(notice.frames,0);await run('(cleanupCmp(),true)');
+  assert.deepEqual(notice.buttons,lang==='cs'?['Odmítnout','Přijmout','Nastavení']:['Decline','Accept','Settings']);assert.equal(notice.href,'https://organizer.example/privacy');assert.equal(notice.frames,0);await run('(cleanupCmp(),true)');
  }
  for(const privacy of ['', 'javascript:alert(1)', 'https://user:pass@example.com']) {
   await page.goto(`${parent}/form/test?runtime=${encodeURIComponent(origin)}&cmp=1&privacy=${encodeURIComponent(privacy)}`);await page.waitForFunction('!!window.cleanupCmp');assert.equal(await run('document.querySelector("#festapp-measurement-consent, .btn-text, iframe")'),null);

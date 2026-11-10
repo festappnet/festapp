@@ -3085,6 +3085,26 @@
       "anon": false,
       "authenticated": false,
       "service_role": false
+    },
+    "public.unit_measurement_approval_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_unit_measurement_approval(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.request_unit_measurement_approval(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.form_measurement_runtime_supported_internal(text,text,text[])": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3113,7 +3133,9 @@
     "database/functions/eshop_barion/runtime.sql",
     "database/functions/eshop_stripe/reconciliation.sql",
     "database/functions/payment_providers/configuration.sql",
-    "database/functions/inventory/delegated_assignments.sql"
+    "database/functions/inventory/delegated_assignments.sql",
+    "database/functions/eshop_forms/unit_measurement_approval.sql",
+    "database/functions/eshop_forms/form_measurement_support.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

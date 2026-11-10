@@ -5,7 +5,7 @@ DECLARE settings jsonb; features jsonb; f jsonb; safe_f jsonb; k text; result js
  spec jsonb:=public.configuration_settings_contract_internal_v1();
 BEGIN
  SELECT COALESCE(jsonb_object_agg(key,value),'{}') INTO settings FROM jsonb_each(COALESCE(NULLIF(row_data->'data','null'::jsonb),'{}')) WHERE spec->kind ? key;
- IF kind='unit' THEN settings:=jsonb_build_object('measurement_consent_version',1)||settings; END IF;
+ IF kind='unit' THEN settings:=jsonb_build_object('measurement_consent_version',1,'measurement_consent_bridge',false)||settings; END IF;
  result:=jsonb_build_object('entityType',kind,'entityId',(row_data->>'id')::bigint,
   'aggregateVersion',COALESCE((row_data->>'aggregate_version')::bigint,0),'title',row_data->'title','settings',settings);
  IF kind='occasion' THEN

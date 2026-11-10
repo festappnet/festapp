@@ -393,6 +393,7 @@
     "notification_center/capacity.sql",
     "notification_center/deleted_entities.sql",
     "notification_center/maintenance.sql",
+    "eshop_forms/form_measurement_support.sql",
     "eshop_forms/form_measurement_policy.sql",
     "eshop_forms/form_datalayer.sql",
     "eshop_forms/form_measurement_runtime.sql",

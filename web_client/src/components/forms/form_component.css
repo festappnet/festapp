@@ -805,6 +805,12 @@ body.dark-mode .surcharge-info {
 .overview-payment-link { display: inline-block; margin-block-start: 8px; color: var(--primary-color, #1565c0); text-underline-offset: 3px; }
 .overview-payment-details, .order-overview .result-payment-more { scroll-margin-block-start: 24px; }
 
+.festapp-consent-fab { position:fixed; left:16px; bottom:16px; z-index:900; display:inline-flex; align-items:center; gap:0; height:44px; min-width:44px; padding:0 10px; border:0; border-radius:22px; background:var(--card-bg,#fff); color:var(--text-color,#222); box-shadow:0 2px 10px rgba(0,0,0,.18); font:inherit; font-size:14px; cursor:pointer; opacity:.85; transition:opacity .15s, gap .2s; }
+.festapp-consent-fab-label { max-width:0; overflow:hidden; white-space:nowrap; transition:max-width .2s; }
+.festapp-consent-fab:is(:hover,:focus-visible) { opacity:1; gap:8px; }
+.festapp-consent-fab:is(:hover,:focus-visible) .festapp-consent-fab-label { max-width:220px; }
+.festapp-consent-fab:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { .festapp-consent-fab, .festapp-consent-fab-label { transition:none; } }
 .organization-identity-slot { margin:8px auto 0; padding:0 16px; max-width:850px; text-align:center; color:var(--text-color,#222); }
 .organization-identity-button { border:0; background:transparent; color:inherit; font:inherit; font-size:14px; min-height:44px; padding:8px; cursor:pointer; overflow-wrap:anywhere; }
 .organization-identity-button:focus-visible { outline:2px solid currentColor; outline-offset:2px; border-radius:4px; }
@@ -901,3 +907,8 @@ body[data-shared-appearance] { background: var(--form-background); }
 @media (prefers-reduced-motion: reduce) {
     .sale-opening-form[aria-busy="true"] > .btn::before { animation: none; }
 }
+
+/* 44px button + 16px offset + 16px clearance; scroll focused fields above it. */
+body.festapp-consent-space { padding-bottom:76px; }
+html:has(body.festapp-consent-space) { scroll-padding-bottom:76px; }
+body.festapp-consent-space :is(input,button,select,textarea,a[href],[tabindex]) { scroll-margin-bottom:76px; }

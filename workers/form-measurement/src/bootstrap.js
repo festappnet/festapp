@@ -15,7 +15,11 @@ window.dataLayer = [];
 function gtag() { dataLayer.push(arguments); }
 const consentState = ({analytics, marketing}) => {
     const ads = marketing ? 'granted' : 'denied';
-    return {analytics_storage:analytics ? 'granted' : 'denied',ad_storage:ads,ad_user_data:ads,ad_personalization:ads};
+    // Explicit values for every Consent Mode type: unset types count as granted
+    // in GTM. The owner keeps functionality and security storage granted;
+    // personalization follows the marketing choice.
+    return {analytics_storage:analytics ? 'granted' : 'denied',ad_storage:ads,ad_user_data:ads,ad_personalization:ads,
+        functionality_storage:'granted',security_storage:'granted',personalization_storage:ads};
 };
 
 function push(input) {
@@ -52,6 +56,7 @@ window.addEventListener('message', event => {
         // keeps the saved choice when a container template sets its own default.
         gtag('consent','default',consentState(consent));
         gtag('consent','update',consentState(consent));
+        gtag('set','ads_data_redaction',true);
         // This profile runs on a separate site inside the public form. Google's
         // default SameSite cookie setting prevents collection in that context.
         gtag('set',{cookie_flags:'SameSite=None;Secure'});
@@ -81,6 +86,7 @@ window.addEventListener('message', event => {
     } else if (message.type === 'consent' && message.instance === instance && message.generation === generation) {
         consent = measurementConsent(message.consent);
         gtag('consent','update',consentState(consent));
+        gtag('set','ads_data_redaction',true);
         dataLayer.push({event:'festapp_consent_update',festapp_consent:{...consent},...consent});
     } else if (message.type === 'event' && message.instance === instance && message.generation === generation) {
         push(message.payload);
