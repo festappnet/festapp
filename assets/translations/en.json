@@ -3757,7 +3757,15 @@
     "confirmation_sent": "Confirmation sent",
     "waitlist_entered": "Added to the waiting list",
     "withinDeadline": "Within the payment deadline",
-    "standing": "Standing"
+    "standing": "Standing",
+    "not_required_yet_informal": "No payment required yet",
+    "waitingExplanation_informal": "You are on the waiting list. We will email you an offer when places become available.",
+    "offerReady_informal": "Places are available for you. Confirm the offer before the deadline.",
+    "offerEmail_informal": "Use the original offer link in your email to accept or decline.",
+    "statusAbove_informal": "See the current order and payment status above.",
+    "failed_informal": "Could not update the overview. Please retry.",
+    "downloadFailed_informal": "Could not download the ticket. Please try again.",
+    "unavailable_informal": "The order may have been deleted or the link is no longer valid. If you need help, contact the event organizer."
   },
   "Scanner": {
     "entry_intro": "Connect this device to an event to start checking tickets.",

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { LocalizationService } from '../../src/services/localization_service.js';
 import { loadOrderOverview, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
@@ -353,3 +354,29 @@ test('cash overview preserves remaining balance and instructions with no bank or
  assert.equal(host.querySelector('script'),null);assert.equal(host.querySelector('.overview-state-deadline'),null);
  assert.equal(host.querySelector('.result-payment-qr'),null);assert.doesNotMatch(host.textContent,/123\/0100|VS:|IBAN/);
 });
+
+for (const locale of ['cs', 'sk', 'de', 'uk', 'en', 'pl']) {
+    test(`overview uses effective tone in waiting, offers and refresh errors: ${locale}`, async t => {
+        const host = setup(t);
+        const original = LocalizationService.translations;
+        LocalizationService.translations = JSON.parse(readFileSync(new URL(`../../../assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+        t.after(() => { LocalizationService.translations = original; });
+        const strings = LocalizationService.translations.OrderOverview;
+        for (const tone of ['formal', 'informal', undefined, 'invalid']) {
+            const data = fixture();
+            data.root.communicationTone = tone;
+            data.orders = []; data.offers = [];
+            const suffix = tone === 'informal' ? '_informal' : '';
+            renderOrderOverview(host, data);
+            assert.ok(host.querySelector('.overview-status').textContent.includes(strings[`not_required_yet${suffix}`]));
+            assert.ok(host.querySelector('.overview-status').textContent.includes(strings[`waitingExplanation${suffix}`]));
+            assert.ok(host.querySelector('.overview-history-card').textContent.includes(strings[`waitingExplanation${suffix}`]));
+            data.offers = [{ pendingPlaces: 1 }];
+            renderOrderOverview(host, data);
+            assert.ok(host.textContent.includes(strings[`offerReady${suffix}`]));
+            assert.ok(host.textContent.includes(strings[`offerEmail${suffix}`]));
+            await loadOrderOverview(host, { overview: async () => { throw new Error('offline'); } }, {}, null, false, true);
+            assert.equal(host.querySelector('[role=alert]').textContent, strings[`failed${suffix}`]);
+        }
+    });
+}

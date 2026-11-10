@@ -3759,7 +3759,15 @@
     "confirmation_sent": "Potvrzení odesláno",
     "waitlist_entered": "Zařazeno na čekací listinu",
     "withinDeadline": "V termínu úhrady",
-    "standing": "Stání"
+    "standing": "Stání",
+    "not_required_yet_informal": "Zatím nic neplatíš",
+    "waitingExplanation_informal": "Jsi na čekací listině. Až se uvolní místo, pošleme ti nabídku e-mailem.",
+    "offerReady_informal": "Máš nabídku volných míst. Přijetí je potřeba potvrdit do uvedeného termínu.",
+    "offerEmail_informal": "Pro přijetí nebo odmítnutí použij původní odkaz nabídky v e-mailu.",
+    "statusAbove_informal": "Aktuální stav objednávky a platby najdeš výše.",
+    "failed_informal": "Přehled se nepodařilo aktualizovat. Zkus to znovu.",
+    "downloadFailed_informal": "Vstupenku se nepodařilo stáhnout. Zkus to znovu.",
+    "unavailable_informal": "Objednávka mohla být smazána nebo odkaz již není platný. Pokud potřebuješ pomoc, kontaktuj pořadatele akce."
   },
   "Scanner": {
     "entry_intro": "Připojte toto zařízení k akci a začněte kontrolovat vstupenky.",

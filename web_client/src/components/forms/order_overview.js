@@ -6,8 +6,9 @@ import { PublicOrderStrings } from './public_order_strings.js';
 import {paymentMethodText} from './payment_method_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
 import { presentPayment } from '../../../../supabase/functions/_shared/paymentPresentation.ts';
+import { resolveCommunicationTone } from '../../../../supabase/functions/_shared/communicationTone.ts';
 import { LocalizationService } from '../../services/localization_service.js';
-export const overviewText = key => LocalizationService.tr(`OrderOverview.${key}`);
+export const overviewText = (key, tone) => PublicOrderStrings.text(`OrderOverview.${key}`, tone);
 export function parseOrderLocation(location) {
     if (location.pathname !== '/order' || location.hash) return null;
     const params = new URLSearchParams(location.search || '');
@@ -32,7 +33,8 @@ function section(host, title, className = '') {
 function fact(list, label, value) {
     const row = line(list, 'div', ''); line(row, 'dt', label); line(row, 'dd', value);
 }
-function renderOrderState(host, order, includeReference = true, hasTickets = false, onRefresh = null) {
+function renderOrderState(host, order, includeReference = true, hasTickets = false, onRefresh = null, tone = 'formal') {
+    const overviewText = key => PublicOrderStrings.text(`OrderOverview.${key}`, tone);
     const payment = order.payment;
     if (isCardPaymentMethod(payment?.method)) {
         const statusHost = line(host, 'section', '');
@@ -69,6 +71,9 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
     return text;
 }
 export function renderOrderOverview(host, data, onContinue, offerInPage = false, onDownload = null, onRefresh = null) {
+    const tone = resolveCommunicationTone(data.root.communicationTone);
+    host._overviewTone = tone;
+    const overviewText = key => PublicOrderStrings.text(`OrderOverview.${key}`, tone);
     host.replaceChildren(); host.classList.add('order-overview');
     line(host, 'h1', `${overviewText('title')} ${data.root.symbol}`);
     line(host, 'p', data.root.title || '').className = 'overview-event-title';
@@ -82,7 +87,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         if (!data.orders.length) line(summary, 'p', overviewText('not_required_yet'));
     }
     const paymentLinks = new Map();
-    for (const order of data.orders) paymentLinks.set(order.id, renderOrderState(summary, order, !singleOrder, data.root.hasTickets, onRefresh));
+    for (const order of data.orders) paymentLinks.set(order.id, renderOrderState(summary, order, !singleOrder, data.root.hasTickets, onRefresh, tone));
     if (!waiting && !data.orders.length) line(summary, 'p', overviewText('withdrawn'));
     for (const offer of data.offers.filter(o => o.pendingPlaces > 0)) line(summary, 'p', `${overviewText('offeredPlaces')}: ${offer.pendingPlaces} · ${overviewText('validUntil')}: ${date(offer.expiresAt)}`);
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
@@ -217,7 +222,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
     const current = line(timeline, 'li', ''); current.className = 'overview-timeline-current';
     line(current, 'strong', overviewText('currentStatus'));
     if (waiting) line(current, 'p', overviewText(activeOffer ? 'offerReady' : 'waitingExplanation'));
-    for (const order of data.orders) renderOrderState(current, order, data.orders.length > 1, data.root.hasTickets);
+    for (const order of data.orders) renderOrderState(current, order, data.orders.length > 1, data.root.hasTickets, null, tone);
     if (!waiting && !data.orders.length) line(current, 'p', overviewText('withdrawn'));
 }
 
@@ -287,10 +292,10 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         host.replaceChildren();
         if (unavailable) {
             line(host, 'h1', overviewText('unavailableTitle'));
-            line(host, 'p', overviewText('unavailable')).setAttribute('role', 'alert');
+            line(host, 'p', overviewText('unavailable', host._overviewTone)).setAttribute('role', 'alert');
             return;
         }
-        line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');
+        line(host, 'p', overviewText('failed', host._overviewTone)).setAttribute('role', 'alert');
         const retry = line(host, 'button', LocalizationService.tr('Common.retry')); retry.type = 'button';
         retry.onclick = () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity);
     } finally {

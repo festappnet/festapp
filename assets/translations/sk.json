@@ -1438,7 +1438,15 @@
     "confirmation_sent": "Potvrdenie odoslané",
     "waitlist_entered": "Zaradené na čakaciu listinu",
     "withinDeadline": "V termíne úhrady",
-    "standing": "Státie"
+    "standing": "Státie",
+    "not_required_yet_informal": "Zatiaľ nič neplatíš",
+    "waitingExplanation_informal": "Si na čakacej listine. Keď sa uvoľní miesto, pošleme ti ponuku e-mailom.",
+    "offerReady_informal": "Máš ponuku voľných miest. Potvrď ju do uvedeného termínu.",
+    "offerEmail_informal": "Na prijatie alebo odmietnutie použi pôvodný odkaz ponuky v e-maile.",
+    "statusAbove_informal": "Aktuálny stav objednávky a platby nájdeš vyššie.",
+    "failed_informal": "Prehľad sa nepodarilo aktualizovať. Skús to znova.",
+    "downloadFailed_informal": "Vstupenku sa nepodarilo stiahnuť. Skús to znova.",
+    "unavailable_informal": "Objednávka mohla byť vymazaná alebo odkaz už nie je platný. Ak potrebuješ pomoc, kontaktuj organizátora podujatia."
   },
   "OccasionSetup": {
     "setupDetails": {
