@@ -370,6 +370,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_form_authoring_scope_internal(bigint,bigint,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7f88101aaa1e4e10cdf13f29fce7198e'),'current SQL source parity: public.check_form_authoring_scope_internal(bigint,bigint,bigint,text,boolean)');
 -- supabase/migrations/20261106220000_cash_reservations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_form_order_scope_internal(bigint,bigint,bigint,bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='af877e52ba28bef41fa8bc35a436f7ab'),'current SQL source parity: public.check_form_order_scope_internal(bigint,bigint,bigint,bigint,boolean)');
+-- supabase/migrations/20261110110000_mcp_inventory_assignments.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_inventory_assignment_entities_internal(bigint,bigint[],bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='506fb5832526140ea27d9e983c8c987f'),'current SQL source parity: public.check_inventory_assignment_entities_internal(bigint,bigint[],bigint[])');
 -- supabase/migrations/20261023200000_inventory_authoring_commands.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_inventory_entity_scope_internal(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c1465cd28c33864b168a824f1ca7f434'),'current SQL source parity: public.check_inventory_entity_scope_internal(bigint,bigint,bigint)');
 -- supabase/migrations/20261027190000_finance_authoring.sql
@@ -958,8 +960,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pools_by_occasion_link(text)') AND md5(btrim(prosrc,E' \n\r\t'))='9b1f65ce4ce5cff0c3b223d43c4d5a10'),'current SQL source parity: public.get_inventory_pools_by_occasion_link(text)');
 -- supabase/migrations/20261023200000_inventory_authoring_commands.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_resource_rows_internal(bigint,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='cb9c04261a921ecdab0e9cecca607541'),'current SQL source parity: public.get_inventory_resource_rows_internal(bigint,bigint[],boolean)');
+-- supabase/migrations/20261110110000_mcp_inventory_assignments.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='f7dd9487b3681cba5cb7dbc91f047ca0'),'current SQL source parity: public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer)');
 -- supabase/migrations/20261023200000_inventory_authoring_commands.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_resources(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='0a312bc2ca020a351290f674e4ff0c73'),'current SQL source parity: public.get_inventory_resources(bigint,bigint,bigint,bigint,bigint,integer)');
+-- supabase/migrations/20261110110000_mcp_inventory_assignments.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='48f27b52036d700ab81ed2c1532b0f3c'),'current SQL source parity: public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer)');
 -- supabase/migrations/20261106220000_cash_reservations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_is_admin_on_bank_account(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='3c23162aed59349ae1a91201cbb1b242'),'current SQL source parity: public.get_is_admin_on_bank_account(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -1288,6 +1294,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_game_settings(bigint,bigint,bigint,uuid,bigint,timestamp with time zone,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='df0d657d4dcca26cf508a04a2a3c4fe1'),'current SQL source parity: public.manage_game_settings(bigint,bigint,bigint,uuid,bigint,timestamp with time zone,timestamp with time zone)');
 -- supabase/migrations/20261023200000_inventory_authoring_commands.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_inventory(bigint,bigint,bigint,text,jsonb,uuid,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='e97ce5fe3a9877dd17eb7e867e005288'),'current SQL source parity: public.manage_inventory(bigint,bigint,bigint,text,jsonb,uuid,boolean)');
+-- supabase/migrations/20261110110000_mcp_inventory_assignments.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e6f86de7c91fd0ff058bbd5a3be3d47b'),'current SQL source parity: public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid)');
 -- supabase/migrations/20261107110000_form_measurement_consent.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_occasion_public_link(bigint,bigint,bigint,uuid,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='d33fe5fdefd5a228a9cf272e91344903'),'current SQL source parity: public.manage_occasion_public_link(bigint,bigint,bigint,uuid,bigint,text)');
 -- supabase/migrations/20261105033000_mcp_setup_finalization_conflict.sql

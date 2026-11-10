@@ -3065,6 +3065,26 @@
       "anon": false,
       "authenticated": true,
       "service_role": true
+    },
+    "public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.check_inventory_assignment_entities_internal(bigint,bigint[],bigint[])": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3092,7 +3112,8 @@
     "database/functions/eshop_barion/connections.sql",
     "database/functions/eshop_barion/runtime.sql",
     "database/functions/eshop_stripe/reconciliation.sql",
-    "database/functions/payment_providers/configuration.sql"
+    "database/functions/payment_providers/configuration.sql",
+    "database/functions/inventory/delegated_assignments.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

@@ -5,7 +5,7 @@ import { digest } from '../src/context/profile.mjs';
 import { createRateLimiter } from '../src/remote/rate-limit.mjs';
 import {canonicalPreview} from './render-fixture.mjs';
 import {receipt as layoutReceipt} from './layout-fixture.mjs';
-import {MCP_PERMISSIONS} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
+import {DOMAIN_SCOPES,MCP_PERMISSIONS} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { PROTOCOL_VERSION_META_KEY, CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY } from '@modelcontextprotocol/server';
 import {invokeFormOperation} from '../src/operations/forms.mjs';
 import test from 'node:test';
@@ -36,7 +36,7 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false } = {}) {
+async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
     const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -44,6 +44,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     const storage = await openRemoteStorage(root, key);
     const server = httpServer();
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    t.after(async () => { await new Promise(resolve => server.close(resolve)); await storage.close(); await rm(root, { recursive: true, force: true }); });
     const issuer = `http://127.0.0.1:${server.address().port}`;
     const raw = configuration(issuer);
     if (webCallback) raw.clients[0].redirectUris = [webCallback];
@@ -52,17 +53,17 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
     if (publicClient) { raw.clients[0].id = 'arbitrary-summary-client'; raw.clients[0].dataProfile = 'order-summary'; }
     if (genericClients) raw.clients = raw.clients.map((c, i) => ({ ...c, id: i ? 'browser-fixture' : 'desktop-fixture', name: i ? 'Browser application' : 'Desktop application' }));
+    if (clientMetadataDocuments) raw.clientMetadataDocuments = clientMetadataDocuments;
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
     const parsedConfig = parseRemoteConfig(raw);
     const config = canonical ? { ...parsedConfig, profile: { ...parsedConfig.profile, kind: 'canonical' } } : parsedConfig;
     const audit = [];
-    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r), rateLimiter });
+    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r), rateLimiter, metadataFetch });
     server.on('request', service.app);
-    t.after(async () => { await new Promise(resolve => server.close(resolve)); await storage.close(); await rm(root, { recursive: true, force: true }); });
     const jar = new Map();
     const browser = async (path, body, extra = {}) => {
         const r = await fetch(new URL(path, issuer), { redirect: 'manual',
-            method: body ? 'POST' : 'GET', body: body && new URLSearchParams(body),
+            method: body ? 'POST' : 'GET', body: body && new URLSearchParams(Object.entries(body).flatMap(([key,value]) => [value].flat().map(v => [key,String(v)]))),
             headers: { cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; '),
                 ...(body ? { origin: issuer } : {}), ...extra } });
         for (const c of r.headers.getSetCookie()) {
@@ -73,7 +74,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
@@ -94,7 +95,7 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     assert.match(consent, /Povolit přístup/);
     assert.match(consent, /value="7"/);
     assert.doesNotMatch(consent, /value="8"/);
-    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), ...consentFields, ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: '7' }) });
+    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), permission: scope.split(' ').filter(s => MCP_SCOPES.includes(s)), ...consentFields, ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: occasionIds ?? '7' }) });
     assert.equal(r.status, consentStatus);
     if (consentStatus !== 303) return;
     let redirect = r.headers.get('location');
@@ -1737,4 +1738,155 @@ test('markerless existing encrypted OAuth session upgrades and refreshes through
     const next = await response.json();
     assert.equal((await jsonRpc(f, next.access_token, 'tools/list')).status, 200);
     assert.equal(recovered.get('Delegation', current.id).expiresAt, historical.expiresAt);
+});
+
+
+const nativeMetadataId = 'https://desktop.fixture.test/client.json';
+const nativeMetadataPolicy = () => ({ allowedOrigins: ['https://desktop.fixture.test'],
+    dataProfile: 'operator', allowedScopes: [READ_SCOPE, 'festapp:forms:read'] });
+const nativeMetadata = () => ({ client_id: nativeMetadataId, client_name: 'Desktop fixture',
+    application_type: 'native', redirect_uris: ['http://127.0.0.1/oauth/callback'],
+    token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'] });
+
+test('trusted native client metadata uses normal PKCE, consent, MCP and refresh', async t => {
+    const requests = [];
+    const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async (url, options) => {
+        requests.push({ url, options });
+        return reply(nativeMetadata());
+    } });
+    const discovery = await (await fetch(f.issuer + '/.well-known/oauth-authorization-server')).json();
+    assert.equal(discovery.client_id_metadata_document_supported, true);
+    assert.equal(discovery.registration_endpoint, undefined);
+    const { tokens } = await connect(f, { clientId: nativeMetadataId,
+        callbackUri: 'http://127.0.0.1:51789/oauth/callback', scope: READ_SCOPE + ' festapp:forms:read' });
+    assert(requests.length > 0);
+    assert(requests.every(r => r.url === nativeMetadataId && r.options.redirect === 'manual'));
+    assert(requests.every(r => !r.options.headers.has('authorization')), 'Metadata fetch must never inherit a Supabase bearer');
+    const refresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: nativeMetadataId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource,
+    }) });
+    assert.equal(refresh.status, 200, await refresh.clone().text());
+    const next = await refresh.json();
+    const client = new Client({ name: 'metadata-client-regression', version: '1' });
+    t.after(() => client.close());
+    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: 'Bearer ' + next.access_token } },
+    }));
+    const tools = (await client.listTools()).tools;
+    assert(tools.some(t => t.name === 'festapp_forms_inspect'));
+    assert(!tools.some(t => t.name === 'festapp_forms_save'));
+    assert.equal((await client.callTool({ name: 'festapp_context_inspect', arguments: {} })).structuredContent.ok, true);
+    f.config.clientMetadataDocuments.allowedOrigins.length = 0;
+    const denied = await fetch(f.config.resource, { method: 'POST', headers: {
+        authorization: 'Bearer ' + next.access_token, 'content-type': 'application/json', accept: 'application/json, text/event-stream',
+    }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) });
+    assert.equal(denied.status, 401);
+});
+
+
+test('declining requested creation and functional scopes completes one consent without a loop', async t => {
+    const f = await setup(t, { native: true });
+    const { tokens } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback',
+        scope: READ_SCOPE + ' ' + CREATE_SCOPE + ' festapp:forms:read festapp:forms:write',
+        consentFields: { permission: ['festapp:forms:read'] } });
+    assert(tokens.access_token);
+    assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
+    assert(!tokens.scope.split(' ').includes('festapp:forms:write'));
+    assert(tokens.scope.split(' ').includes('festapp:forms:read'));
+    const grant = f.storage.values('Delegation')[0];
+    assert.deepEqual(grant.permissions, ['festapp:forms:read']);
+    assert.deepEqual(grant.access, { type: 'occasions', occasionIds: [7] });
+    const rejected = await f.provider.Grant.find(grant.id);
+    assert(rejected.getRejectedResourceScope(f.config.resource).split(' ').includes(CREATE_SCOPE));
+    assert(rejected.getRejectedResourceScope(f.config.resource).split(' ').includes('festapp:forms:write'));
+});
+
+
+function metadataAuthorization(f, clientId = nativeMetadataId, callback = 'http://127.0.0.1:51789/oauth/callback') {
+    return '/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: callback,
+        scope: READ_SCOPE, resource: f.config.resource, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43), state: 'fixture-state' });
+}
+
+test('metadata trust is checked before fetch and static discovery does not advertise CIMD', async t => {
+    let calls = 0;
+    const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async () => { calls++; return reply(nativeMetadata()); } });
+    for (const id of ['https://untrusted.fixture.test/client.json', 'https://desktop.fixture.test/']) {
+        const r = await f.browser(metadataAuthorization(f, id));
+        assert.equal(r.status, 400);
+        assert.match(await r.text(), /invalid_client/);
+    }
+    assert.equal(calls, 0);
+    const disabled = await setup(t);
+    assert.equal((await (await fetch(disabled.issuer + '/.well-known/oauth-authorization-server')).json()).client_id_metadata_document_supported, undefined);
+});
+
+test('provider rejects forged metadata identities, web callbacks, secrets and forbidden capabilities', async t => {
+    const variants = [
+        { client_id: 'https://desktop.fixture.test/other.json' },
+        { application_type: 'web', redirect_uris: ['https://desktop.fixture.test/callback'] },
+        { redirect_uris: ['http://evil.fixture.test/oauth/callback'] },
+        { redirect_uris: ['http://localhost/oauth/callback'] },
+        { token_endpoint_auth_method: 'client_secret_post', client_secret: 'never-render-this' },
+        { response_types: ['token'] },
+        { scope: READ_SCOPE + ' festapp:forms:write' },
+    ];
+    for (const change of variants) await t.test(JSON.stringify(Object.keys(change)), async t => {
+        const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async () => reply({ ...nativeMetadata(), ...change }) });
+        const r = await f.browser(metadataAuthorization(f), undefined, { accept: 'text/html' });
+        if (r.status === 303) {
+            const rejected = new URL(r.headers.get('location'));
+            assert.equal(rejected.pathname, '/oauth/callback');
+            assert(rejected.searchParams.get('error'));
+            assert(!rejected.searchParams.has('code'));
+        } else {
+            assert.equal(r.status, 400);
+            assert.doesNotMatch(await r.text(), /never-render-this/);
+        }
+        assert.equal(f.storage.values('Delegation').length, 0);
+    });
+});
+
+test('OAuth callback errors expose only safe classified guidance', async t => {
+    const f = await setup(t, { native: true });
+    const path = metadataAuthorization(f, 'codex-fixture', 'http://127.0.0.1:51789/wrong?private=never-render-this');
+    const r = await f.browser(path, undefined, { accept: 'text/html' });
+    assert.equal(r.status, 400);
+    const html = await r.text();
+    assert.match(html, /invalid_redirect_uri/);
+    assert.doesNotMatch(html, /never-render-this|code_challenge|fixture-state/);
+});
+
+
+test('general metadata clients can consent to the complete operation catalog', async t => {
+    const f = await setup(t, { clientMetadataDocuments: { allowedOrigins: ['https://desktop.fixture.test'], dataProfile: 'operator' },
+        metadataFetch: async () => reply(nativeMetadata()) });
+    const { tokens } = await connect(f, { clientId: nativeMetadataId,
+        callbackUri: 'http://127.0.0.1:51789/oauth/callback', scope: DOMAIN_SCOPES.join(' '), unitId: 3, create: true });
+    const grant = f.storage.values('Delegation')[0];
+    assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
+    assert.equal(grant.access.canCreateOccasions, true);
+    const client = new Client({ name: 'complete-general-client', version: '1' });
+    t.after(() => client.close());
+    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: 'Bearer ' + tokens.access_token } },
+    }));
+    const tools = (await client.listTools()).tools;
+    for (const name of ['festapp_occasions_create', 'festapp_forms_save', 'festapp_inventory_assignments_save',
+        'festapp_products_save', 'festapp_profiles_save', 'festapp_orders_cancel'])
+        assert(tools.some(t => t.name === name), 'General client operation missing: ' + name);
+});
+
+
+test('standalone full-function consent accepts all 100 supported occasion selections', async t => {
+    const occasionIds = [7, ...Array.from({ length: 99 }, (_, i) => Number.MAX_SAFE_INTEGER - i)];
+    const f = await setup(t, { native: true, fetchImpl: url => url.pathname === '/rest/v1/rpc/get_operator_access_v1'
+        ? reply({ units: [{ id: 3, title: 'Testovací pořadatel', canCreateOccasions: true }],
+            occasions: occasionIds.map((id, i) => ({ id, title: 'Testovací akce ' + i, unitId: 3, capabilities: { 'ticket_layouts.read': true } })) }) : undefined });
+    const { tokens } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback',
+        scope: DOMAIN_SCOPES.join(' '), occasionIds });
+    assert(tokens.access_token);
+    const grant = f.storage.values('Delegation')[0];
+    assert.deepEqual(grant.access.occasionIds, occasionIds);
+    assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
+    assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
 });

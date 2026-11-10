@@ -76,8 +76,8 @@ export const MCP_PERMISSIONS = Object.freeze({
     'festapp:seats:cancel-tickets': { label: 'seatsCancelTickets', operations: ['seats.preview_cancel','seats.cancel_tickets'], requires: ['festapp:seats:read','festapp:orders:read'] },
     'festapp:seats:swap': { label: 'seatsSwap', operations: ['seats.preview_swap','seats.swap'], requires: ['festapp:seats:read','festapp:orders:read'] },
     'festapp:seats:block': { label: 'seatsBlock', operations: ['seats.preview_block','seats.block'], requires: ['festapp:seats:read'] },
-    'festapp:inventory:read': { label: 'inventoryRead', operations: ['inventory.pools.list','inventory.contexts.list','inventory.pools.inspect','inventory.resources.list'], requires: [] },
-    'festapp:inventory:write': { label: 'inventoryWrite', operations: ['inventory.change'], requires: ['festapp:inventory:read'] },
+    'festapp:inventory:read': { label: 'inventoryRead', operations: ['inventory.pools.list','inventory.contexts.list','inventory.pools.inspect','inventory.resources.list','inventory.spots.list','inventory.slots.list'], requires: [] },
+    'festapp:inventory:write': { label: 'inventoryWrite', operations: ['inventory.change','inventory.assignments.save'], requires: ['festapp:inventory:read'] },
     'festapp:standing-inventory:write': { label: 'standingInventoryWrite', operations: ['inventory.prepare_standing'], requires: ['festapp:products:read'] },
     'festapp:product-schedules:read': { label: 'productSchedulesRead', operations: ['product_schedules.list'], requires: ['festapp:products:read'] },
     'festapp:product-schedules:write': { label: 'productSchedulesWrite', operations: ['product_schedules.change'], requires: ['festapp:products:read', 'festapp:product-schedules:read'] },
@@ -89,6 +89,7 @@ export const MCP_SCOPES = Object.freeze(Object.keys(MCP_PERMISSIONS));
 // These names are existing external OAuth contracts, shared by every host.
 export const READ_SCOPE = 'festapp:ticket-layouts:read';
 export const CREATE_SCOPE = 'festapp:occasions:create';
+export const DOMAIN_SCOPES = Object.freeze([READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES]);
 export const READ_OPERATIONS = Object.freeze(['context.inspect', 'access.inspect', 'ticket_layouts.inspect']);
 export function scopesForOperation(operation) {
     if (READ_OPERATIONS.includes(operation)) return [READ_SCOPE];

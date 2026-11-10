@@ -2959,6 +2959,18 @@
     "b42ac5feef6032bf833d3b8b824dc5d9a6a5d07f0b6279e2a795a03f744b85f6": {
       "signature": "public.can_read_bank_transactions(bigint)",
       "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "699fc9768136420542913d895f5f23ab31785c6d586538334b62bf55a36507f6": {
+      "signature": "public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/inventory/delegated_assignments.sql"
+    },
+    "679919fc615dc318f4755acba3b6a26c87b929f7d2f2f387867eebd762cf0dd0": {
+      "signature": "public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/inventory/delegated_assignments.sql"
+    },
+    "92d1f5fd9cbb80433c4efb11f9b7eb6dfabbd267c838b601b2a20d922dedcef2": {
+      "signature": "public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid)",
+      "source": "database/functions/inventory/delegated_assignments.sql"
     }
   }
 }
