@@ -28,8 +28,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.add_user_to_occasion(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='a244c5c8aec2b4ecf5e0ea557ea5341d'),'current SQL source parity: public.add_user_to_occasion(bigint,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.add_user_to_occasion_client_sync_v1(bigint,uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='56e1141a440a9e0ddb5ba0aa3170b316'),'current SQL source parity: public.add_user_to_occasion_client_sync_v1(bigint,uuid,uuid)');
--- supabase/migrations/20261105120000_notification_center_prepared_views.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.add_user_to_occasion_internal_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='1fafaa156db99de6a7d0abbc2c9c1ce4'),'current SQL source parity: public.add_user_to_occasion_internal_v1(bigint,uuid)');
+-- supabase/migrations/20261110130000_closed_occasion_managed_enrolment.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.add_user_to_occasion_internal_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='8b3d64abd3ad17d036dad40f46e1feea'),'current SQL source parity: public.add_user_to_occasion_internal_v1(bigint,uuid)');
 -- supabase/migrations/20261024010000_organization_notification_center.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.adjust_spot_capacity_for_pool(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d95a5a962c7a5c1f4c3595fee5efeb20'),'current SQL source parity: public.adjust_spot_capacity_for_pool(bigint)');
 -- supabase/migrations/20261026190000_form_authoring.sql
@@ -426,8 +426,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.client_activity_read_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='002ce7bce477126bcdab9e94db022734'),'current SQL source parity: public.client_activity_read_rule(boolean,boolean,boolean)');
 -- supabase/migrations/20261026190000_form_authoring.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.client_commit_read_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='229306cbca2f8a160f4d66b2598fc127'),'current SQL source parity: public.client_commit_read_rule(boolean,boolean,boolean)');
--- supabase/migrations/20261026190000_form_authoring.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.closed_occasion_enrolment_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='ffa3f9d9dca6876035aeab5bb8969076'),'current SQL source parity: public.closed_occasion_enrolment_rule(boolean,boolean,boolean,boolean)');
+-- supabase/migrations/20261110130000_closed_occasion_managed_enrolment.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.closed_occasion_enrolment_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='9f7f53c36711c06eb5a130dc339b325b'),'current SQL source parity: public.closed_occasion_enrolment_rule(boolean,boolean,boolean,boolean)');
 -- supabase/migrations/20261023230000_ticketing_profiles.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.commit_stripe_checkout_session_internal(uuid,uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='66b994a13462a5fdee1c789eb3752c7f'),'current SQL source parity: public.commit_stripe_checkout_session_internal(uuid,uuid,text,text,bigint)');
 -- supabase/migrations/20261022170000_stripe_connections.sql
@@ -1112,8 +1112,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_details_for_generating(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9ba9b0ca73d1962300dddcb28bb9cb29'),'current SQL source parity: public.get_ticket_details_for_generating(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='48ec81f2cb122a32f6674d8ef09a1c5b'),'current SQL source parity: public.get_ticket_layout_for_authoring_v1(bigint)');
--- supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_write_contract_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='4be170346c8be5868e3c9adc522ceb8b'),'current SQL source parity: public.get_ticket_layout_write_contract_v1()');
+-- supabase/migrations/20261110130000_closed_occasion_managed_enrolment.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_write_contract_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='e3aa006c0cd413304e2eb60aaa8b058d'),'current SQL source parity: public.get_ticket_layout_write_contract_v1()');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticketing_product_versions_internal_v1(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='566a904c1297bc2de12938376b8b8b9e'),'current SQL source parity: public.get_ticketing_product_versions_internal_v1(bigint,text)');
 -- supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql
