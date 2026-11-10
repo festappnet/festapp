@@ -303,8 +303,7 @@
         "embedHelp": "Vložte kód do HTML svojho webu. Automatická výška a prevzatie vzhľadu vyžadujú povolený externý skript. Ak ho web blokuje, použite pevnú výšku a vlastný vzhľad formulára. Meranie posiela udalosti do dataLayer Vášho webu, súhlas riadi GTM a lišta súhlasu webu. Doména webu musí byť schválená v nastavení merania. Voľbou nižšie možno meranie prepnúť na GTM nastavený vo Festappe. Pri konverzii sa skriptom webu odovzdáva aj e-mail, telefón a identifikátor transakcie. Skontrolujte nastavenie značiek a informácie o súkromí. V režime jednotky môžete v nastaveniach merania organizátora zapnúť prevzatie súhlasu z lišty schválených webov, inak sa odovzdáva stav neudelené.",
         "embedHostDataLayer": "Posielať meranie do dataLayer webu",
         "measurementConsentBridge": "Prevziať súhlas z lišty schválených webov",
-        "measurementConsentBridgeConfirmation": "Zapnutím potvrdzujete, že všetky weby schválené na meranie prevádzkujete Vy ako prevádzkovateľ a ich lišta súhlasu výslovne zahŕňa aj formulár na vstupenky.online, jeho účely, meranie organizátora na doméne *.pages.dev a Festapp ako sprostredkovateľa. Súhlas musí byť na webe možné kedykoľvek odvolať.",
-        "measurementConsentChange": "Zmeniť"
+        "measurementConsentBridgeConfirmation": "Zapnutím potvrdzujete, že všetky weby schválené na meranie prevádzkujete Vy ako prevádzkovateľ a ich lišta súhlasu výslovne zahŕňa aj formulár na vstupenky.online, jeho účely, meranie organizátora na doméne *.pages.dev a Festapp ako sprostredkovateľa. Súhlas musí byť na webe možné kedykoľvek odvolať."
     },
     "FeatureTicket": {
         "scanCameraInstruction": "Namierte kameru na kód účastníka na overenie vstupu.",

@@ -520,8 +520,7 @@
         "embedOpenAppearance": "Upraviť vzhľad formulára",
         "embedHostDataLayer": "Posielať meranie do dataLayer webu",
         "measurementConsentBridge": "Prevziať súhlas z lišty schválených webov",
-        "measurementConsentBridgeConfirmation": "Zapnutím potvrdzujete, že všetky weby schválené na meranie prevádzkujete Vy ako prevádzkovateľ a ich lišta súhlasu výslovne zahŕňa aj formulár na vstupenky.online, jeho účely, meranie organizátora na doméne *.pages.dev a Festapp ako sprostredkovateľa. Súhlas musí byť na webe možné kedykoľvek odvolať.",
-        "measurementConsentChange": "Zmeniť"
+        "measurementConsentBridgeConfirmation": "Zapnutím potvrdzujete, že všetky weby schválené na meranie prevádzkujete Vy ako prevádzkovateľ a ich lišta súhlasu výslovne zahŕňa aj formulár na vstupenky.online, jeho účely, meranie organizátora na doméne *.pages.dev a Festapp ako sprostredkovateľa. Súhlas musí byť na webe možné kedykoľvek odvolať."
     },
     "FeatureTicket": {
         "enablePregeneratedTickets": "Predgenerované vstupenky",

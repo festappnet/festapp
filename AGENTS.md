@@ -46,7 +46,10 @@ repository.
   require all canonical GitHub CI jobs to succeed on its exact `baseMainSha`
   using `automation/ci/release_gate.py`. Missing, pending, failed or skipped
   checks block release, including pre-existing failures. Do not bypass the gate
-  or substitute targeted tests/build success. See `CONTRIBUTING.md`.
+  or substitute targeted tests/build success. A current successful job may
+  attest unchanged inputs using `automation/ci/selection.py`; only actually
+  executed, successful main tests within seven days can supply that evidence.
+  Draft PRs defer these lanes until Ready for review. See `CONTRIBUTING.md`.
 
 
 ## JavaScript package manager

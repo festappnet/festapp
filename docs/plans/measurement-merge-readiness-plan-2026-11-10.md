@@ -1,7 +1,7 @@
 # Measurement merge readiness
 
 Date: 2026-11-10
-Status: execution in progress
+Status: implementation complete; exact-head validation is recorded in PR readiness evidence
 Verification: standard, with the affected canonical CI mirror lanes
 
 This plan supersedes the remaining-work section of the current-PR investigation.
@@ -129,3 +129,13 @@ revision-aware visitor record retains local consent fallback; no unsafe automati
 coverage is synthesized. The GTM preset still needs merchant-specific IDs, terms
 and preview before that merchant publishes it; test import is not an account's
 real conversion-attribution proof.
+
+## Implemented decisions
+
+Both branches include canonical main cc5ff807c. The final preset was imported
+into nonproduction GTM (see PR 785 integrations/measurement/VALIDATION.md).
+The link uses a revision-aware saved source and absolute sender deadlines;
+policy refresh and unchanged source updates clamp the existing runtime owner.
+The accumulated PR diff also contained unrelated reversions of canonical CI
+input reuse. Both branches restore those files from current main. No legacy
+identity copying, parallel lifetime engine or alternate consent store remains.

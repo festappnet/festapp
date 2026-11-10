@@ -500,8 +500,7 @@
         "embedOpenAppearance": "Formulargestaltung öffnen",
         "embedHostDataLayer": "Messdaten an den dataLayer der Website senden",
         "measurementConsentBridge": "Einwilligung aus dem Banner freigegebener Websites übernehmen",
-        "measurementConsentBridgeConfirmation": "Mit dem Einschalten bestätigen Sie, dass Sie alle für die Messung freigegebenen Websites als Verantwortlicher betreiben und deren Einwilligungsbanner ausdrücklich auch das Formular auf vstupenky.online, seine Zwecke, die Messung des Veranstalters auf der Domain *.pages.dev und Festapp als Auftragsverarbeiter abdeckt. Die Einwilligung muss auf der Website jederzeit widerrufen werden können.",
-        "measurementConsentChange": "Ändern"
+        "measurementConsentBridgeConfirmation": "Mit dem Einschalten bestätigen Sie, dass Sie alle für die Messung freigegebenen Websites als Verantwortlicher betreiben und deren Einwilligungsbanner ausdrücklich auch das Formular auf vstupenky.online, seine Zwecke, die Messung des Veranstalters auf der Domain *.pages.dev und Festapp als Auftragsverarbeiter abdeckt. Die Einwilligung muss auf der Website jederzeit widerrufen werden können."
     },
     "FeatureTicket": {
         "enablePregeneratedTickets": "Vorgenerierte Tickets",
