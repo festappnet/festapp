@@ -5242,12 +5242,16 @@
         "UNKNOWN": "The operation could not be completed. Refresh the current context."
     },
     "PaymentOperations": {
+    "refundMethod": "Refund method",
+    "bankHint": "Prepare a transfer to the recipient. Send the money in your banking app; the refund is confirmed only after the bank transaction is matched.",
+    "cashHint": "Record cash you have already handed to the recipient.",
+    "bankUnavailable": "Bank refunds are unavailable for this order. They require permission and an account with supported payment synchronization.",
         "refund": "Refund money",
         "available": "Available to refund",
         "pending": "Pending refund",
         "net": "Net received",
         "received": "Received",
-        "prepareBank": "Prepare transfer QR",
+        "prepareBank": "Generate payment QR code",
         "recordCashRefund": "Record cash refund",
         "refundVia": "Refund via",
         "processing": "Processing",

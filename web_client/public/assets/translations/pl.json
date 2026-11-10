@@ -3063,12 +3063,16 @@
         "UNKNOWN": "Nie udało się zakończyć operacji. Proszę odświeżyć aktualne dane."
     },
     "PaymentOperations": {
+    "refundMethod": "Sposób zwrotu",
+    "bankHint": "Przygotuj przelew na konto odbiorcy. Wyślij pieniądze w aplikacji bankowej; zwrot zostanie potwierdzony dopiero po dopasowaniu transakcji bankowej.",
+    "cashHint": "Zarejestruj gotówkę już przekazaną odbiorcy.",
+    "bankUnavailable": "Zwrot bankowy jest niedostępny dla tego zamówienia. Wymaga uprawnień i konta z obsługiwaną synchronizacją płatności.",
         "refund": "Zwrócić pieniądze",
         "available": "Dostępne do zwrotu",
         "pending": "Oczekujący zwrot",
         "net": "Zapłacono netto",
         "received": "Otrzymano",
-        "prepareBank": "Przygotować QR przelewu",
+        "prepareBank": "Wygeneruj kod QR płatności",
         "recordCashRefund": "Zapisać zwrot gotówki",
         "refundVia": "Zwrócić przez",
         "processing": "Przetwarzanie",

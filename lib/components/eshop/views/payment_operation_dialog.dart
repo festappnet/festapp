@@ -429,6 +429,90 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
     );
   }
 
+  bool get _supportsBankQr => const {'CZK', 'EUR'}.contains(widget.currency);
+
+  Widget _refundMethods(bool locked) {
+    final methods = _context.methods
+        .where((method) => method.refund || method.id == 'bank')
+        .toList();
+    // Keep bank instructions discoverable when only cash recording is allowed.
+    // Availability still comes exclusively from the server capabilities.
+    if (!methods.any((method) => method.id == 'bank') &&
+        methods.any((method) => method.id == 'cash')) {
+      methods.add(
+        const PaymentOperationMethod(
+          id: 'bank',
+          displayName: 'Bank',
+          verification: 'bank_event',
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            PaymentOperationStrings.text('refundMethod'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          for (final method in methods)
+            ListTile(
+              key: ValueKey('refundMethod_${method.id}'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              selected: method.id == _method,
+              selectedTileColor: Theme.of(context)
+                  .colorScheme
+                  .secondaryContainer,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              enabled: !locked && method.refund,
+              leading: Icon(
+                method.verification == 'bank_event'
+                    ? (_supportsBankQr
+                          ? Icons.qr_code_2
+                          : Icons.account_balance_outlined)
+                    : method.id == 'cash'
+                    ? Icons.payments_outlined
+                    : Icons.credit_card,
+              ),
+              title: Text(
+                method.verification == 'bank_event'
+                    ? PaymentOperationStrings.text(
+                        _supportsBankQr ? 'prepareBank' : 'prepareTransfer',
+                      )
+                    : method.id == 'cash'
+                    ? PaymentOperationStrings.text('cash')
+                    : method.displayName,
+              ),
+              subtitle: method.verification == 'bank_event'
+                  ? Text(
+                      PaymentOperationStrings.text(
+                        method.refund ? 'bankHint' : 'bankUnavailable',
+                      ),
+                    )
+                  : method.id == 'cash'
+                  ? Text(PaymentOperationStrings.text('cashHint'))
+                  : null,
+              trailing: Icon(
+                method.id == _method
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+              ),
+              onTap: locked || !method.refund
+                  ? null
+                  : () {
+                      setState(() => _method = method.id);
+                      _draftChanged();
+                    },
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final locked = _saving || _frozenPayload != null;
@@ -468,7 +552,8 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                             ),
                           const SizedBox(height: 12),
                         ],
-                        if (_methods.length > 1)
+                        if (widget.refund) _refundMethods(locked),
+                        if (!widget.refund && _methods.length > 1)
                           DropdownButtonFormField<String>(
                             initialValue: _method,
                             isExpanded: true,
@@ -728,7 +813,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                           ? OrdersStrings.addPayment
                           : _bank
                           ? PaymentOperationStrings.text(
-                              const {'CZK', 'EUR'}.contains(widget.currency)
+                              _supportsBankQr
                                   ? 'prepareBank'
                                   : 'prepareTransfer',
                             )

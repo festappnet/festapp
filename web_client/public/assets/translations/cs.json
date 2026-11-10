@@ -5244,12 +5244,16 @@
         "UNKNOWN": "Operaci se nepodařilo dokončit. Obnovte aktuální údaje."
     },
     "PaymentOperations": {
+    "refundMethod": "Způsob vrácení",
+    "bankHint": "Připravte převod na účet příjemce. Peníze odešlete ve své bankovní aplikaci; vrácení se potvrdí až po spárování bankovního pohybu.",
+    "cashHint": "Zaznamenejte hotovost, kterou jste již předali příjemci.",
+    "bankUnavailable": "Bankovní vrácení pro tuto objednávku není dostupné. Vyžaduje oprávnění a účet s podporovanou synchronizací plateb.",
         "refund": "Vrátit peníze",
         "available": "Lze vrátit",
         "pending": "Čeká na vrácení",
         "net": "Čistě uhrazeno",
         "received": "Přijato",
-        "prepareBank": "Připravit QR převod",
+        "prepareBank": "Vygenerovat platební QR kód",
         "recordCashRefund": "Zaznamenat vrácení hotovosti",
         "refundVia": "Vrátit přes",
         "processing": "Zpracovává se",

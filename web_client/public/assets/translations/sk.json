@@ -3088,12 +3088,16 @@
         "UNKNOWN": "Operáciu sa nepodarilo dokončiť. Obnovte aktuálne údaje."
     },
     "PaymentOperations": {
+    "refundMethod": "Spôsob vrátenia",
+    "bankHint": "Pripravte prevod na účet príjemcu. Peniaze odošlite vo svojej bankovej aplikácii; vrátenie sa potvrdí až po spárovaní bankového pohybu.",
+    "cashHint": "Zaznamenajte hotovosť, ktorú ste už odovzdali príjemcovi.",
+    "bankUnavailable": "Bankové vrátenie pre túto objednávku nie je dostupné. Vyžaduje oprávnenie a účet s podporovanou synchronizáciou platieb.",
         "refund": "Vrátiť peniaze",
         "available": "Možno vrátiť",
         "pending": "Čaká na vrátenie",
         "net": "Čistá úhrada",
         "received": "Prijaté",
-        "prepareBank": "Pripraviť QR prevod",
+        "prepareBank": "Vygenerovať platobný QR kód",
         "recordCashRefund": "Zaznamenať vrátenie hotovosti",
         "refundVia": "Vrátiť cez",
         "processing": "Spracúva sa",
