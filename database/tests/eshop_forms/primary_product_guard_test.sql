@@ -63,4 +63,28 @@ BEGIN
  INSERT INTO public.form_fields(form,type,product_type,is_ticket_field) VALUES(fm,'product_type',optional_type,true) RETURNING id INTO optional_field;
  result:=public.update_form_internal_v1(payload||jsonb_build_object('deleted_field_ids',jsonb_build_array(optional_field)));
  PERFORM assert_eq((result->>'code')::integer,200,'Unused optional group can still be deleted');
+
+ -- Duplicated seated forms can attach the primary catalog to the ticket
+ -- container itself, with separate food/transport groups beneath it.
+ DELETE FROM public.form_fields WHERE id=field_id;
+ UPDATE public.form_fields SET product_type=pt,is_hidden=false WHERE id=parent;
+ INSERT INTO public.form_fields(form,type,product_type,is_ticket_field)
+ VALUES(fm,'product_type',optional_type,true) RETURNING id INTO optional_field;
+ result:=public.update_form_internal_v1(payload||jsonb_build_object('is_open',true,
+   'form_fields',jsonb_build_array(
+     jsonb_build_object('id',parent,'type','ticket','product_type_id',pt,'is_hidden',false),
+     jsonb_build_object('id',optional_field,'type','product_type','product_type_id',optional_type,
+       'is_ticket_field',true,'is_hidden',false))));
+ PERFORM assert_eq((result->>'code')::integer,200,
+   'Opening a form whose ticket container owns the primary group must succeed');
+ PERFORM assert_true((SELECT is_open FROM public.forms WHERE id=fm),'Opening is persisted');
+ result:=public.update_form_internal_v1(payload||jsonb_build_object('form_fields',jsonb_build_array(
+   jsonb_build_object('id',parent,'type','ticket','product_type_id',pt,'is_hidden',true))));
+ PERFORM assert_eq(result->>'message','FORM_DELETE_primary_product','Cannot hide ticket-owned primary group');
+ result:=public.update_form_internal_v1(payload||jsonb_build_object('deleted_field_ids',jsonb_build_array(parent)));
+ PERFORM assert_eq(result->>'message','FORM_DELETE_primary_product','Cannot delete ticket-owned primary group');
+ BEGIN
+   PERFORM public.update_product_client_sync_v1(jsonb_build_object('id',second,'is_hidden',true),gen_random_uuid());
+   RAISE EXCEPTION 'Last ticket-owned primary option hiding accepted';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'FORM_DELETE_primary_product' THEN RAISE; END IF; END;
 END $$;
