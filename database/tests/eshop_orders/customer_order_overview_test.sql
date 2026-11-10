@@ -3,6 +3,12 @@
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
+-- File-local identities keep parallel waitlist fixtures from sharing abuse locks.
+DO $$ DECLARE alias text:='overview_'||gen_random_uuid(); BEGIN
+ PERFORM create_user_for_test(alias,alias||'@example.invalid');
+ PERFORM set_config('festapp.test_overview_actor',get_user_id(alias)::text,true);
+ PERFORM set_config('festapp.test_overview_email',gen_random_uuid()||'@example.invalid',true);
+END $$;
 CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN
@@ -17,25 +23,25 @@ BEGIN
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Admission',pt,100,'CZK',oc) RETURNING id INTO prod;
  INSERT INTO form_fields(form,product_type,type) VALUES(f,pt,'product_type');
- SELECT id INTO actor FROM auth.users ORDER BY id LIMIT 1;
+ actor:=current_setting('festapp.test_overview_actor')::uuid;
  IF actor IS NULL THEN RAISE EXCEPTION 'Bootstrap auth user required'; END IF;
  INSERT INTO occasion_users(occasion,"user",is_editor_order,is_editor_order_view,is_editor) VALUES(oc,actor,true,true,true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  RETURN jsonb_build_object('organization',org,'unit',un,'occasion',oc,'form',f,'key',fk,'type',pt,'product',prod,'actor',actor,'link',suffix);
 END $$;
 CREATE FUNCTION pg_temp.checkout(x jsonb,tickets bigint[] DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT jsonb_build_object('form',x->'key','email','regression@example.invalid','ticket',
+ SELECT jsonb_build_object('form',x->'key','email',current_setting('festapp.test_overview_email'),'ticket',
  CASE WHEN tickets IS NULL THEN jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))
  ELSE (SELECT jsonb_agg(jsonb_build_object('ticketId',id,'fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM unnest(tickets) id) END);
 $$;
 CREATE FUNCTION pg_temp.delivery(code text,token text,oid bigint DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$
- SELECT jsonb_build_object('orderId',oid,'recipient','regression@example.invalid','templateCode',code,
+ SELECT jsonb_build_object('orderId',oid,'recipient',current_setting('festapp.test_overview_email'),'templateCode',code,
  'tokenHash',encode(extensions.digest(token,'sha256'),'hex'),'contentHash',repeat('f',64),'sealed',jsonb_build_object('ciphertext','sealed-test-double'));
 $$;
 CREATE FUNCTION pg_temp.register(x jsonb,n integer,token text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE r jsonb; payload jsonb;
 BEGIN
- payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
+ payload:=jsonb_build_object('form',x->'key','email',current_setting('festapp.test_overview_email'),'tickets',(SELECT jsonb_agg(jsonb_build_object('fields','[]'::jsonb)) FROM generate_series(1,n)));
  r:=public.execute_waitlist_command_client_sync_v1('register',payload,gen_random_uuid(),gen_random_uuid(),NULL,jsonb_build_array(pg_temp.delivery('waitlist_confirmation',coalesce(token,encode(extensions.gen_random_bytes(32),'hex')))));
  IF r#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Register failed %',r; END IF;
  RETURN jsonb_build_object('order',(r#>>'{data,order,id}')::bigint,'response',r,'payload',payload);
@@ -65,7 +71,7 @@ CREATE FUNCTION pg_temp.ticket_ids(p_order bigint) RETURNS bigint[] LANGUAGE sql
 $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); y jsonb:=pg_temp.fixture(1); r jsonb; oid bigint; regular bigint; other bigint;
- ids bigint[]; w jsonb; child bigint; aborted_child bigint; view_token text:=repeat('a',64); manage text:=repeat('b',64); offer_token text:=repeat('c',64);
+ ids bigint[]; w jsonb; child bigint; aborted_child bigint; view_token text:=encode(extensions.gen_random_bytes(32),'hex'); manage text:=encode(extensions.gen_random_bytes(32),'hex'); offer_token text:=encode(extensions.gen_random_bytes(32),'hex');
  delivery jsonb:=jsonb_build_object('tokenHash',encode(extensions.digest(view_token,'sha256'),'hex'),'sealed',jsonb_build_object('ciphertext','synthetic'),'contentHash',repeat('f',64));
  answer_field bigint; pid bigint; status text; raw text; source jsonb; replay jsonb; command uuid:=gen_random_uuid();
 BEGIN
@@ -78,7 +84,7 @@ BEGIN
  source:=public.resolve_customer_order_access_v1(manage,oid,NULL,command,delivery);
  replay:=public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery);
  PERFORM assert_eq(source->'source',replay->'source','bootstrap converges to existing encrypted source');
- PERFORM assert_eq(public.get_order_email_overview_source_v1(oid,'regression@example.invalid',gen_random_uuid())->'source',source->'source','ordinary email reuses initial waitlist token');
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(oid,current_setting('festapp.test_overview_email'),gen_random_uuid())->'source',source->'source','ordinary email reuses initial waitlist token');
  PERFORM assert_eq((SELECT count(*) FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash) WHERE c.order_id=oid),1::bigint,'single generation');
  PERFORM assert_true(NOT source::text LIKE '%'||view_token||'%','resolver SQL contains no raw token');
  r:=public.get_customer_order_overview(view_token,oid);
@@ -135,7 +141,7 @@ BEGIN
  PERFORM assert_true(NOT r::text LIKE '%ticket_symbol%' AND NOT r ? 'data' AND NOT r ? 'allowedActions','allowlist only');
  BEGIN PERFORM public.resolve_customer_order_access_v1(offer_token,oid,(w->>'id')::uuid,gen_random_uuid(),delivery); RAISE EXCEPTION 'terminal bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='terminal bootstrap' THEN RAISE; END IF; END;
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'completed manage bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='completed manage bootstrap' THEN RAISE; END IF; END;
- PERFORM assert_eq(public.get_order_email_overview_source_v1(child,'regression@example.invalid',gen_random_uuid())->'source',source->'source','split child email reuses root token');
+ PERFORM assert_eq(public.get_order_email_overview_source_v1(child,current_setting('festapp.test_overview_email'),gen_random_uuid())->'source',source->'source','split child email reuses root token');
  -- Product order follows form fields, regardless of stored JSON array order.
  DECLARE extra_type bigint; extra_product bigint; stable_items jsonb;
  BEGIN
@@ -246,15 +252,15 @@ BEGIN
  RAISE NOTICE 'PASS overview scope, partial/full, payment matrix, ticket refresh, expiry and revocation';
 END $$;
 DO $$
-DECLARE x jsonb:=pg_temp.fixture(NULL); o eshop.orders; first_source jsonb; replay jsonb; payment_before eshop.payment_info; token text:=repeat('e',64);
+DECLARE x jsonb:=pg_temp.fixture(NULL); o eshop.orders; first_source jsonb; replay jsonb; payment_before eshop.payment_info; token text:=encode(extensions.gen_random_bytes(32),'hex');
  delivery jsonb:=jsonb_build_object('tokenHash',encode(extensions.digest(token,'sha256'),'hex'),'contentHash',repeat('f',64),'sealed',jsonb_build_object('ciphertext','synthetic'));
 BEGIN
  PERFORM public.create_ticket_order_internal_v1(pg_temp.checkout(x));
  SELECT * INTO STRICT o FROM eshop.orders WHERE form=(x->>'form')::bigint;
- first_source:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid());
+ first_source:=public.get_order_email_overview_source_v1(o.id,current_setting('festapp.test_overview_email'),gen_random_uuid());
  PERFORM assert_true(first_source->'source'='null'::jsonb,'first ordinary confirmation needs a source');
- first_source:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery);
- replay:=public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery);
+ first_source:=public.get_order_email_overview_source_v1(o.id,current_setting('festapp.test_overview_email'),gen_random_uuid(),delivery);
+ replay:=public.get_order_email_overview_source_v1(o.id,current_setting('festapp.test_overview_email'),gen_random_uuid(),delivery);
  PERFORM assert_eq(replay->'source',first_source->'source','ordinary email retry preserves exact source');
  PERFORM assert_eq(public.get_customer_order_overview(token,o.id)->>'code','200'::text,'ordinary order has public overview');
  -- Exercise both released RPC signatures with the same genuinely issued view capability.
@@ -285,7 +291,7 @@ BEGIN
   RAISE EXCEPTION 'recipient bypass';
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='recipient bypass' THEN RAISE; END IF; END;
  UPDATE eshop.waitlist_capabilities SET revoked_at=now() WHERE token_hash=delivery->>'tokenHash';
- PERFORM assert_true(public.get_order_email_overview_source_v1(o.id,'regression@example.invalid',gen_random_uuid(),delivery) IS NULL,'revoked token never replaced automatically');
+ PERFORM assert_true(public.get_order_email_overview_source_v1(o.id,current_setting('festapp.test_overview_email'),gen_random_uuid(),delivery) IS NULL,'revoked token never replaced automatically');
  PERFORM assert_true(NOT has_function_privilege('authenticated','public.get_order_email_overview_source_v1(bigint,text,uuid,jsonb)','EXECUTE'),'issuance remains service only');
  RAISE NOTICE 'PASS stable ordinary and waitlist email links; no standalone delivery';
 END $$;

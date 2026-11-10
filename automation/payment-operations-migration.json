@@ -1,5 +1,5 @@
 {
-  "migration": "20261110240000_payment_operations.sql",
+  "migration": "20261110231000_payment_operations.sql",
   "sources": [
     "payment_providers/operations_schema.sql",
     "user_permissions/payment_operations.sql",

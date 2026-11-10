@@ -2065,7 +2065,10 @@
   "sqlSerialResources": {
     "database/tests/notification_center/": "notification-projector",
     "database/tests/eshop_orders/payment_lifecycle_": "payment-lifecycle",
-    "database/tests/eshop_orders/payment_product_transition_regression_test.sql": "payment-lifecycle"
+    "database/tests/eshop_orders/payment_product_transition_regression_test.sql": "payment-lifecycle",
+    "database/tests/eshop/product_price_": "product-price-scheduler",
+    "database/tests/eshop/product_authoring_versions_test.sql": "product-price-scheduler",
+    "database/tests/eshop/integration/product_price_scheduling_flow_test.sql": "product-price-scheduler"
   },
   "sqlSetupResources": {
     "database/tests/helpers/high_volume_email_fixture.sql": "email-fixture-policy",
