@@ -665,11 +665,16 @@ try {
     'activation responses must carry the public CORS contract',
   );
   assert.match(sharedBuild, /cd web_client && pnpm install --frozen-lockfile/);
-  assert.match(sharedBuild, /bash automation\/test_web_startup\.sh/);
-  assert.match(sharedBuild, /cd web_client && pnpm run build/);
-  assert.ok(sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
-    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && pnpm run build'),
-    'install dependencies, verify startup, then build the public client');
+  assert.match(sharedBuild, /python3 automation\/ci\/release_gate\.py/);
+  assert.doesNotMatch(sharedBuild, /bash automation\/test_web_startup\.sh/);
+  const ciContract = JSON.parse(await readFile(path.join(projectRoot, 'automation/ci/checks.json'), 'utf8'));
+  assert.ok(ciContract.jobs['web-startup'].steps.includes('web-startup'));
+  assert.match(ciContract.steps['web-startup'].script, /bash automation\/test_web_startup\.sh/);
+  assert.match(sharedBuild, /release\.web-client-build pnpm run build/);
+  assert.ok(sharedBuild.indexOf('python3 automation/ci/release_gate.py') < sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile')
+    && sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check')
+    && sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check') < sharedBuild.indexOf('release.web-client-build pnpm run build'),
+    'verify canonical source CI, install dependencies, check tenant runtime, then build the public client');
   assert.match(sharedBuild, /apply_config\.sh/);
   assert.match(sharedBuild, /emit_version_manifest\.sh/);
   assert.match(sharedBuild, /verify_web_build\.mjs/);

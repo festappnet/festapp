@@ -14,11 +14,15 @@ def execute_dag(units, capacities, execute, workers=3):
     with ThreadPoolExecutor(max_workers=workers) as pool:
         while pending or running:
             # A failed dependency is INCOMPLETE, never a successful skipped unit.
-            for name,unit in list(pending.items()):
-                dependencies=unit.get('after',[])
-                if any(dep in results and results[dep]['status']!='PASS' for dep in dependencies):
-                    results[name]={'status':'INCOMPLETE','reason':'failed dependency','seconds':0}
-                    del pending[name]
+            changed=True
+            while changed:
+                changed=False
+                for name,unit in list(pending.items()):
+                    dependencies=unit.get('after',[])
+                    if any(dep in results and results[dep]['status']!='PASS' for dep in dependencies):
+                        results[name]={'status':'INCOMPLETE','reason':'failed dependency','seconds':0}
+                        del pending[name]
+                        changed=True
             for name,unit in list(pending.items()):
                 if len(running)>=workers: break
                 if not all(dep in results and results[dep]['status']=='PASS' for dep in unit.get('after',[])): continue
