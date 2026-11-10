@@ -2971,6 +2971,14 @@
     "92d1f5fd9cbb80433c4efb11f9b7eb6dfabbd267c838b601b2a20d922dedcef2": {
       "signature": "public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid)",
       "source": "database/functions/inventory/delegated_assignments.sql"
+    },
+    "8226b0aa154572ba43194c8f8c24c7c36f72b319bada8ffe3e3211fea2ae2c49": {
+      "signature": "public.get_unit_measurement_approval(bigint)",
+      "source": "database/functions/eshop_forms/unit_measurement_approval.sql"
+    },
+    "1ff3e54956d018f8f4620fea3fee13e0e419fb64dcec7a62d0ab4386f92911a2": {
+      "signature": "public.request_unit_measurement_approval(bigint)",
+      "source": "database/functions/eshop_forms/unit_measurement_approval.sql"
     }
   }
 }

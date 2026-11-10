@@ -25,8 +25,8 @@ for (const lang of ['cs','sk','en','de','pl','uk']) test(`actual Klaro first cho
   const cleanup=win.startFixture(translations,{setConsent:granted=>grants.push(plain(granted))});
   await settle();
   const root=win.document.querySelector('#festapp-measurement-consent');
-  assert.deepEqual([...root.querySelectorAll('button')].map(b=>b.textContent),[strings.measurementConsentDecline,strings.measurementConsentAccept]);
-  const buttons=[...root.querySelectorAll('button')];
+  assert.deepEqual([...root.querySelectorAll('button')].map(b=>b.textContent),[strings.measurementConsentDecline,strings.measurementConsentAccept,strings.measurementConsentSettings]);
+  const buttons=[...root.querySelectorAll('.cn-buttons button')];
   for(const property of ['backgroundColor','color','fontWeight','padding','minWidth'])
    assert.equal(win.getComputedStyle(buttons[0])[property],win.getComputedStyle(buttons[1])[property]);
   assert.equal(root.querySelectorAll('input').length,0);
@@ -35,24 +35,28 @@ for (const lang of ['cs','sk','en','de','pl','uk']) test(`actual Klaro first cho
   assert.equal(win.document.body.style.overflow,'hidden');
   const visibleText=[...root.querySelectorAll('p,h1,h2,button')].map(n=>n.textContent).join(' ');
   assert(!/<tr-|počítače/.test(visibleText));
-  console.log(JSON.stringify({lang,text:visibleText,buttons:[...root.querySelectorAll('button')].map(b=>b.textContent)}));
   assert.deepEqual(grants.at(-1),none,'nothing is granted before a choice');
   root.querySelector('.cm-btn-success').click();await settle();
   assert.deepEqual(grants.at(-1),both);assert.equal(win.document.body.style.overflow,'auto');
-  win.document.querySelector('main button').click();await settle();
+  const fab=win.document.querySelector('.festapp-consent-fab');
+  assert.equal(fab.parentNode,win.document.body,'floating button is anchored to the viewport');
+  assert.equal(fab.getAttribute('aria-label'),strings.measurementConsentChoices);
+  fab.click();await settle();
   assert(!/<tr-|počítače|missing/.test(root.textContent));
   const toggle=name=>root.querySelector(`#service-item-${name}`);
-  assert.equal(root.querySelectorAll('input[type=checkbox]').length,2,'one toggle per purpose, no toggle-all row');
+  assert.equal(root.querySelectorAll('input[type=checkbox]:not(:disabled)').length,2,'one toggle per purpose, no toggle-all row');
   for(const text of [strings.measurementConsentService,strings.measurementConsentAnalyticsDescription,strings.measurementConsentMarketing,strings.measurementConsentMarketingDescription]) assert(root.textContent.includes(text),text);
+  assertNecessary(root,strings);
   assert.equal(toggle('analytics').checked,true);assert.equal(toggle('marketing').checked,true);
   toggle('marketing').click();await settle();assert.deepEqual(grants.at(-1),{analytics:true,marketing:false},'unsaved denial fails closed');
   root.querySelector('.cm-btn-accept').click();await settle();assert.deepEqual(grants.at(-1),{analytics:true,marketing:false});
-  win.document.querySelector('main button').click();await settle();
+  win.document.querySelector('.festapp-consent-fab').click();await settle();
   assert.equal(toggle('marketing').checked,false);
   toggle('analytics').click();await settle();assert.deepEqual(grants.at(-1),none);
   toggle('marketing').click();await settle();assert.deepEqual(grants.at(-1),none,'draft grant is not saved consent');
   root.querySelector('.cm-btn-accept').click();await settle();assert.deepEqual(grants.at(-1),{analytics:false,marketing:true});
   cleanup();assert.equal(win.document.body.style.overflow,'auto');assert.equal(grants.at(-1),false);
+  assert.equal(win.document.querySelector('.festapp-consent-fab'),null,'cleanup removes the floating button');
  } finally { win.close(); }
 });
 test('a choice saved before the marketing purpose existed is asked again and grants nothing',async()=>{
@@ -96,20 +100,28 @@ test('both layouts are the same mandatory notice; bar is the default and only do
   assert.ok(root.querySelector('.cookie-modal-notice'));assert.ok(root.querySelector('.cm-bg'));assert.equal(root.querySelectorAll('.hide').length,0);
   assert.equal(win.document.body.style.overflow,'hidden');assert.deepEqual(grants.at(-1),none);
   root.querySelector('.cm-bg').click();await settle();assert.ok(root.querySelector('.cookie-modal-notice'),'the backdrop does not dismiss it');
-  assert.deepEqual([...root.querySelectorAll('.cookie-modal-notice button')].map(b=>b.textContent),['Odmítnout','Přijmout']);
+  assert.deepEqual([...root.querySelectorAll('.cookie-modal-notice button')].map(b=>b.textContent),['Odmítnout','Přijmout','Nastavení']);
   cleanup();win.close();
  }
 });
 
-test('custom title and text replace the defaults; buttons, purposes and policy link stay fixed',async()=>{
+test('custom text retains fixed withdrawal information, purposes and policy link',async()=>{
  const strings=cs().FeatureFormSettings;
  const {win,root,cleanup}=await notice({layout:'bar',title:'Vlastní nadpis',text:'Vlastní {neznámé} {privacyPolicy} text'});
  assert.equal(root.querySelector('#id-cookie-title').textContent,'Vlastní nadpis');
  const text=root.querySelector('#id-cookie-notice').textContent;assert.match(text,/^Vlastní neznámé privacyPolicy text/);assert.ok(!text.includes(strings.measurementConsentDescription));
  assert.equal(root.querySelector('.cookie-modal-notice a').getAttribute('href'),'https://organizer.example/privacy');
  assert.equal(root.querySelector('.cookie-modal-notice a').textContent,strings.measurementConsentPrivacy);
- win.document.querySelector('main button').click();await settle();
- assert.ok(root.textContent.includes('Vlastní nadpis'));for(const key of ['measurementConsentService','measurementConsentMarketing','measurementConsentMarketingDescription'])assert.ok(root.textContent.includes(strings[key]),key);
+ assert.equal(root.querySelector('.cookie-modal-notice a').target,'_blank','the standalone form keeps the visitor on the form');
+ assert.ok(root.querySelector('.cookie-modal-notice a').relList.contains('noopener'));
+ win.document.querySelector('.festapp-consent-fab').click();await settle();
+ for (const link of root.querySelectorAll('a[href]')) assert.equal(link.target,'_blank','dialog links open in a new tab too');
+ // The settings dialog keeps its own fixed heading; the custom title belongs to the notice.
+ assert.ok(root.textContent.includes(strings.measurementConsentModalTitle));
+ assert.ok(root.querySelector('.cm-header').textContent.includes('Vlastní neznámé'),'organizer text stays in the settings dialog');
+ assert.ok(root.querySelector('.cm-header').textContent.includes(strings.measurementConsentModalDescription));
+ assert.ok(text.includes(strings.measurementConsentChangeChoice));
+ assert.ok(root.querySelector('.cm-header').textContent.includes(strings.measurementConsentChangeChoice));for(const key of ['measurementConsentService','measurementConsentMarketing','measurementConsentMarketingDescription'])assert.ok(root.textContent.includes(strings[key]),key);
  cleanup();win.close();
  for(const blank of [{title:'',text:'  '},{title:null,text:null},{title:1,text:{}}]) {
   const value=await notice(blank);assert.equal(value.root.querySelector('#id-cookie-title').textContent,strings.measurementConsentTitle);assert.ok(value.root.textContent.includes(strings.measurementConsentDescription));value.cleanup();value.win.close();
@@ -122,7 +134,7 @@ test('custom text is inert plain text in the notice and the settings',async()=>{
  await settle();
  const check=()=>{assert.equal(root.querySelector('img'),null);assert.equal(root.querySelector('script'),null);assert.equal(win.pwned,undefined);};
  check();assert.ok(root.querySelector('#id-cookie-notice').textContent.includes('<img src=x'));
- win.document.querySelector('main button').click();await settle();check();cleanup();win.close();
+ win.document.querySelector('.festapp-consent-fab').click();await settle();check();cleanup();win.close();
 });
 
 test('form design is used only while text and buttons stay readable',async()=>{
@@ -132,7 +144,7 @@ test('form design is used only while text and buttons stay readable',async()=>{
  assert.ok(branded.css.includes('font-family:var(--font-family-base,inherit)'));branded.cleanup();branded.win.close();
  for(const unreadable of ['--card-bg:#ffffff;--text-color:#eeeeee;--primary-color:#ffcc00;--btn-text-color:#000000','--card-bg:#ffffff;--text-color:#000000;--primary-color:#ffcc00;--btn-text-color:#ffffff','--card-bg:#fff;--text-color:#000;--primary-color:rgb(0,0,0)}body{display:none;--btn-text-color:#fff','']) {
   const value=await notice({},unreadable);
-  assert.ok(value.css.includes('--notice-primary:var(--primary-color,#4465a6)'),unreadable);assert.ok(value.css.includes('--notice-button:#fff'));value.cleanup();value.win.close();
+  assert.ok(value.css.includes('--notice-primary:#4465a6'),unreadable);assert.ok(value.css.includes('--notice-button:#fff'));value.cleanup();value.win.close();
  }
 });
 
@@ -169,6 +181,7 @@ for (const value of ['https://organizer.example/privacy?lang=cs', '', null,
   } else {
    assert.equal(dom.window.document.querySelector('#festapp-measurement-consent'),null);
    assert.equal(dom.window.document.querySelector('main').children.length,0);
+   assert.equal(dom.window.document.querySelector('.festapp-consent-fab'),null);
    assert.equal(dom.window.document.querySelector('iframe'),null);
    assert.equal(dom.window.document.body.style.overflow,'');
    assert.equal(dom.window.document.documentElement.style.overflow,'');
@@ -176,4 +189,239 @@ for (const value of ['https://organizer.example/privacy?lang=cs', '', null,
   }
   cleanup();
  } finally { dom.window.close(); }
+});
+
+function assertNecessary(root, strings) {
+ const row=root.querySelector('.festapp-necessary');
+ assert.ok(row.textContent.includes(strings.measurementConsentNecessary));
+ assert.ok(row.textContent.includes(strings.measurementConsentNecessaryDescription));
+ // Informational row: always active, no control that could look like a choice.
+ assert.equal(row.querySelector('input'),null);
+ assert.equal(row.querySelector('.festapp-always').textContent,strings.measurementConsentAlwaysActive);
+ assert.equal(row.parentNode.firstElementChild,row,'necessary row is listed first');
+}
+for (const layout of ['bar','modal']) test(`notice settings opens choices without granting; ${layout}`,async()=>{
+ const {win,root,grants,cleanup}=await notice({layout});
+ try {
+  const settings=root.querySelector('.cm-btn-lern-more');
+  assert.equal(settings.textContent,'Nastavení');assert.equal(settings.type,'button');
+  settings.focus();assert.equal(win.document.activeElement,settings);
+  settings.click();await settle();
+  assertNecessary(root,cs().FeatureFormSettings);
+  assert.equal(root.querySelector('#service-item-analytics').checked,false);
+  assert.equal(root.querySelector('#service-item-marketing').checked,false);
+  assert.deepEqual(grants.at(-1),none);
+  assert.equal(win.document.body.style.overflow,'hidden');
+  root.querySelector('#service-item-marketing').click();await settle();
+  assert.deepEqual(grants.at(-1),none);
+  root.querySelector('.cm-btn-accept').click();await settle();
+  assert.deepEqual(grants.at(-1),{analytics:false,marketing:true});
+  assert.equal(win.document.body.style.overflow,'');
+  assert.deepEqual(savedCookie(win),{analytics:false,marketing:true});
+ } finally {cleanup();win.close();}
+});
+function savedCookie(win) {
+ const value=win.document.cookie.split('; ').find(c=>c.startsWith('festapp-measurement-1-2-a='));
+ return JSON.parse(decodeURIComponent(value.slice(value.indexOf('=')+1)));
+}
+for(const action of ['decline','accept','save']) test(`necessary row preserves stored ${action} choice`,async()=>{
+ const {win,root,grants,cleanup}=await notice();
+ try {
+  if(action==='save') {root.querySelector('.cm-btn-lern-more').click();await settle();assertNecessary(root,cs().FeatureFormSettings);root.querySelector('.cm-btn-accept').click();}
+  else root.querySelector(action==='decline'?'.cn-decline':'.cm-btn-success').click();
+  await settle();const expected=action==='accept'?both:none;
+  assert.deepEqual(grants.at(-1),expected);assert.deepEqual(savedCookie(win),expected);
+  cleanup();
+  const again=win.startFixture(cs(),{setConsent:value=>grants.push(plain(value))});await settle();
+  assert.equal(win.document.querySelector('.cookie-modal-notice'),null);
+  assert.deepEqual(grants.at(-1),expected);again();
+ } finally {cleanup();win.close();}
+});
+for(const lang of ['cs','en','de','pl','sk','uk']) test(`measurement defaults mirrored in ${lang}`,()=>{
+ const canonical=JSON.parse(readFileSync(new URL(`../../../assets/translations/${lang}.json`,import.meta.url))).FeatureFormSettings;
+ const published=JSON.parse(readFileSync(new URL(`../../public/assets/translations/${lang}.json`,import.meta.url))).FeatureFormSettings;
+ for(const key of Object.keys(canonical).filter(k=>k.startsWith('measurementConsent')))assert.equal(published[key],canonical[key],key);
+});
+
+function key(win, target, value, shiftKey=false) {
+ target.dispatchEvent(new win.KeyboardEvent('keydown',{key:value,shiftKey,bubbles:true,cancelable:true}));
+}
+function assertDialog(win, layer) {
+ assert.equal(layer.getAttribute('role'),'dialog');
+ assert.equal(layer.getAttribute('aria-modal'),'true');
+ assert.ok(win.document.getElementById(layer.getAttribute('aria-labelledby'))?.textContent);
+}
+test('both layers isolate the page, hide the floating button and contain Tab focus',async()=>{
+ const {win,root,cleanup}=await notice();
+ try {
+  const main=win.document.querySelector('main'),fab=win.document.querySelector('.festapp-consent-fab');
+  const preserved=win.document.createElement('aside');preserved.setAttribute('inert','original');win.document.body.append(preserved);
+  const added=win.document.createElement('section');win.document.body.append(added);await settle();
+  const layer=root.querySelector('.cookie-modal-notice');assertDialog(win,layer);
+  assert.equal(layer.tabIndex,-1);assert.equal(layer.hasAttribute('autofocus'),false);
+  assert.equal(win.document.activeElement,layer,'the notice itself takes focus without a ring on the link');
+  key(win,layer,'Tab');assert.equal(win.document.activeElement,root.querySelector('a'));
+  assert.equal(main.hasAttribute('inert'),true);assert.equal(added.hasAttribute('inert'),true);assert.equal(fab.hidden,true);
+  const settings=root.querySelector('.cm-btn-lern-more');settings.focus();key(win,settings,'Tab');
+  assert.equal(win.document.activeElement,root.querySelector('a'));
+  key(win,win.document.activeElement,'Tab',true);assert.equal(win.document.activeElement,settings);
+  settings.click();await settle();
+  const modal=root.querySelector('.cm-modal');assertDialog(win,modal);
+  const save=modal.querySelector('.cm-btn-accept');save.focus();key(win,save,'Tab');assert.equal(win.document.activeElement,modal.querySelector('.hide'));
+  key(win,win.document.activeElement,'Tab',true);assert.equal(win.document.activeElement,save);
+  assert.equal(main.hasAttribute('inert'),true);assert.equal(fab.hidden,true);
+  save.click();await settle();assert.equal(main.hasAttribute('inert'),false);assert.equal(added.hasAttribute('inert'),false);
+  assert.equal(preserved.getAttribute('inert'),'original');assert.equal(fab.hidden,false);
+  fab.click();await settle();assert.equal(main.hasAttribute('inert'),true);assert.equal(fab.hidden,true);
+  cleanup();assert.equal(main.hasAttribute('inert'),false);assert.equal(preserved.getAttribute('inert'),'original');
+ } finally {cleanup();win.close();}
+});
+test('purpose switches remain keyboard operable after changes and Klaro re-renders',async()=>{
+ const {win,root,cleanup,css}=await notice();
+ try {
+  root.querySelector('.cm-btn-lern-more').click();await settle();
+  for(const name of ['analytics','marketing']) {
+   const input=root.querySelector(`#service-item-${name}`);assert.equal(input.tabIndex,0);
+   input.focus();key(win,input,' ');await settle();assert.equal(input.checked,true);assert.equal(input.tabIndex,0);
+   key(win,input,' ');await settle();assert.equal(input.checked,false);
+   input.tabIndex=-1;await settle();assert.equal(input.tabIndex,0,'repairs Klaro tabindex on re-render');
+  }
+  assert.match(css,/:focus-visible \+ \.cm-list-label \.slider \{outline:2px/);
+  assert.match(css,/\.cm-switch \.slider \{[^}]*background:color-mix\(in srgb,var\(--notice-text\) 55%,var\(--notice-surface\)\)/,'off track stays readable but distinct from the on state');
+ } finally {cleanup();win.close();}
+});
+for(const confirmed of [false,true]) test(`Escape cancels draft and returns focus, confirmed=${confirmed}`,async()=>{
+ const {win,root,cleanup,grants}=await notice();
+ try {
+  if(confirmed){root.querySelector('.cm-btn-success').click();await settle();}
+  let opener=confirmed?win.document.querySelector('.festapp-consent-fab'):root.querySelector('.cm-btn-lern-more');
+  opener.focus();opener.click();await settle();
+  root.querySelector('#service-item-analytics').click();await settle();
+  const cookie=win.document.cookie;
+  key(win,win.document.activeElement,'Escape');await settle();
+  assert.equal(root.querySelector('.cm-modal'),null);
+  assert.equal(!!root.querySelector('.cookie-modal-notice'),!confirmed);
+  assert.equal(win.document.cookie,cookie,'Escape never persists the draft');
+  if(!confirmed)assert.equal(win.document.cookie,'');
+  opener=confirmed?opener:root.querySelector('.cm-btn-lern-more');assert.equal(win.document.activeElement,opener);
+  assert.deepEqual(grants.at(-1),confirmed?both:none,'cancel restores the saved consent');
+  opener.click();await settle();assert.equal(root.querySelector('#service-item-analytics').checked,confirmed,'cancel restores switch state');
+  root.querySelector('.hide').click();await settle();assert.equal(win.document.activeElement,confirmed?opener:root.querySelector('.cm-btn-lern-more'));
+ } finally {cleanup();win.close();}
+});
+test('light primary retains filled buttons and uses readable text for outlines, links and switches',async()=>{
+ const {win,css,cleanup}=await notice({},'--card-bg:#ffffff;--text-color:#222222;--primary-color:#ffd400;--btn-text-color:#000000');
+ try {
+  for(const value of ['--notice-primary:#ffd400','--notice-button:#000000','--notice-accent:#222222'])assert.ok(css.includes(value),value);
+  assert.match(css,/a \{color:var\(--notice-accent\);text-decoration:underline;text-underline-offset:2px/);
+  assert.match(css,/\.cm-btn-lern-more \{[^}]*color:var\(--notice-accent\)/);
+  assert.match(css,/\.cm-btn-accept \{[^}]*color:var\(--notice-accent\)/);
+  assert.match(css,/:checked \+ \.cm-list-label \.slider \{background:var\(--notice-accent\)/);
+  assert.match(css,/\.cm-header \.hide \{[^}]*width:44px;height:44px/);
+ } finally {cleanup();win.close();}
+});
+for(const [lang,label,phrase] of [
+ ['cs','Přijmout vše','k měření a personalizované reklamě'],['en','Accept all','for analytics and personalised advertising'],
+ ['de','Alle akzeptieren','für Analysen und personalisierte Werbung'],['pl','Akceptuj wszystkie','do analityki i reklamy spersonalizowanej'],
+ ['sk','Prijať všetko','na meranie a personalizovanú reklamu'],['uk','Прийняти все','для аналітики та персоналізованої реклами'],
+]) test(`dialog footer follows visual order and distinguishes accept all in ${lang}`,async()=>{
+ const translations=JSON.parse(readFileSync(new URL(`../../../assets/translations/${lang}.json`,import.meta.url)));
+ const strings=translations.FeatureFormSettings;
+ const dom=new JSDOM(`<html lang="${lang}"><head></head><body><main></main></body></html>`,{url:'https://tickets.example/form/summer',runScripts:'outside-only',pretendToBeVisual:true});
+ const win=dom.window;let cleanup;
+ try {
+  win.eval(bundle.outputFiles[0].text);cleanup=win.startFixture(translations,{setConsent(){}});await settle();
+  const root=win.document.querySelector('#festapp-measurement-consent');
+  assert.ok(root.textContent.includes(phrase));assert.equal(root.querySelector('.cm-btn-success').textContent,strings.measurementConsentAccept);
+  root.querySelector('.cm-btn-lern-more').click();await settle();
+  const footer=root.querySelector('.cm-footer-buttons');
+  assert.deepEqual([...footer.querySelectorAll('button')].map(b=>b.textContent),[strings.measurementConsentDecline,label,strings.measurementConsentSave]);
+  root.querySelector('#service-item-analytics').click();await settle();
+  assert.deepEqual([...footer.querySelectorAll('button')].map(b=>b.textContent),[strings.measurementConsentDecline,label,strings.measurementConsentSave]);
+ } finally {cleanup?.();win.close();}
+});
+
+
+test('first settings save focuses the floating button and reopened Decline saves denial',async()=>{
+ const {win,root,grants,cleanup}=await notice({layout:'modal'});
+ try {
+  root.querySelector('.cm-btn-lern-more').click();await settle();
+  root.querySelector('#service-item-analytics').click();
+  root.querySelector('#service-item-marketing').click();
+  root.querySelector('.cm-btn-accept').click();await settle();
+  assert.deepEqual(grants.at(-1),both);
+  const fab=win.document.querySelector('.festapp-consent-fab');
+  assert.equal(fab.hidden,false);assert.equal(win.document.activeElement,fab);
+  fab.click();await settle();
+  const decline=root.querySelector('.cm-modal .cn-decline');
+  assert.ok(decline);decline.click();await settle();
+  assert.deepEqual(grants.at(-1),none);assert.equal(win.document.activeElement,fab);
+  assert.equal(root.querySelector('.cm-modal'),null);
+ } finally {cleanup();win.close();}
+});
+
+for (const layout of ['bar','modal']) test(`Decline during confirmation persists across a page reload; ${layout}`,async()=>{
+ const {win,root,grants,cleanup}=await notice({layout});
+ let reloaded;
+ try {
+  root.querySelector('.cm-btn-lern-more').click();await settle();
+  root.querySelector('.cm-btn-accept-all').click();await settle();
+  assert.equal(root.querySelector('.cm-btn-accept').disabled,true);
+  assert.deepEqual(savedCookie(win),both);
+  root.querySelector('.cm-modal .cn-decline').click();await settle();
+  assert.deepEqual(grants.at(-1),none);
+  assert.deepEqual(savedCookie(win),none);
+  assert.equal(root.querySelector('.cm-modal'),null);
+  const fab=win.document.querySelector('.festapp-consent-fab');
+  assert.equal(win.document.activeElement,fab);
+  assert.equal(win.document.body.style.overflow,'');
+  assert.equal(win.document.querySelector('main').hasAttribute('inert'),false);
+  await new Promise(resolve=>setTimeout(resolve,850));
+  assert.deepEqual(savedCookie(win),none,'the pending confirmation cannot restore the earlier choice');
+  reloaded=new JSDOM('<html lang="cs"><body><main></main></body></html>',{
+   url:win.location.href,runScripts:'outside-only',pretendToBeVisual:true,
+  });
+  // Transfer the browser cookie into a fresh realm with a new Klaro manager.
+  reloaded.window.document.cookie=win.document.cookie;
+  reloaded.window.eval(bundle.outputFiles[0].text);
+  const restored=[];
+  const stop=reloaded.window.startFixture(cs(),{setConsent:value=>restored.push(plain(value))});
+  await settle();
+  assert.deepEqual(restored.at(-1),none);
+  assert.equal(reloaded.window.document.querySelector('.cookie-modal-notice'),null);
+  stop();
+ } finally {cleanup();win.close();reloaded?.window.close();}
+});
+
+test('central notice Escape keeps choice pending and focuses the notice',async()=>{
+ const {win,root,grants,cleanup}=await notice({layout:'modal'});
+ try {
+  root.querySelector('a').focus();
+  const event=new win.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true});
+  win.document.activeElement.dispatchEvent(event);await settle();
+  assert.equal(event.defaultPrevented,true);
+  assert.equal(win.document.activeElement,root.querySelector('.cookie-modal-notice'));
+  assert.equal(win.document.body.style.overflow,'hidden');
+  assert.deepEqual(grants.at(-1),none);assert.equal(win.document.cookie,'');
+ } finally {cleanup();win.close();}
+});
+
+test('description and header text keep full opacity at the minimum contrast palette',async()=>{
+ const {win,root,cleanup}=await notice({},'--card-bg:#ffffff;--text-color:#767676;--primary-color:#000000;--btn-text-color:#ffffff');
+ try {
+  root.querySelector('.cm-btn-lern-more').click();await settle();
+  for(const node of root.querySelectorAll('.cm-list-description,.cm-header p')) {
+   const opacity=win.getComputedStyle(node).opacity;
+   assert.ok(opacity==='' || Number(opacity)===1,opacity);
+  }
+ } finally {cleanup();win.close();}
+});
+
+test('floating settings reserve clearance for focused form controls and clean up',async()=>{
+ const {win,cleanup}=await notice({});
+ const css=readFileSync(new URL('../../src/components/forms/form_component.css',import.meta.url),'utf8');
+ assert.match(css,/body\.festapp-consent-space\s*\{[^}]*padding-bottom:76px/);
+ assert.match(css,/scroll-padding-bottom:76px/);assert.match(css,/scroll-margin-bottom:76px/);
+ assert.ok(win.document.body.classList.contains('festapp-consent-space'));
+ cleanup();assert.equal(win.document.body.classList.contains('festapp-consent-space'),false);win.close();
 });

@@ -15,7 +15,11 @@ window.dataLayer = [];
 function gtag() { dataLayer.push(arguments); }
 const consentState = ({analytics, marketing}) => {
     const ads = marketing ? 'granted' : 'denied';
-    return {analytics_storage:analytics ? 'granted' : 'denied',ad_storage:ads,ad_user_data:ads,ad_personalization:ads};
+    // Explicit values for every Consent Mode type: unset types count as granted
+    // in GTM. The owner keeps functionality and security storage granted;
+    // personalization follows the marketing choice.
+    return {analytics_storage:analytics ? 'granted' : 'denied',ad_storage:ads,ad_user_data:ads,ad_personalization:ads,
+        functionality_storage:'granted',security_storage:'granted',personalization_storage:ads};
 };
 
 function push(input) {

@@ -1,6 +1,7 @@
 import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
+import { measurementApprovalEmail } from "./measurementApprovalEmail.ts";
 import {
   orderEmailOverviewUrl,
   overviewEmailSubstitutions,
@@ -64,6 +65,16 @@ export async function renderQueuedEmail(
   ) {
     return {
       prepared: unitVerificationEmail(
+        row.recipient,
+        row.data,
+        Deno.env.get("DEFAULT_EMAIL") ?? "",
+      ),
+      postAction: { tracking_policy: "disabled" },
+    };
+  }
+  if (row.message_kind === "custom" && row.code === "MEASUREMENT_APPROVAL_REQUEST") {
+    return {
+      prepared: measurementApprovalEmail(
         row.recipient,
         row.data,
         Deno.env.get("DEFAULT_EMAIL") ?? "",

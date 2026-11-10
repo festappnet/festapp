@@ -866,7 +866,7 @@
       ]
     },
     "seat-measurement": {
-      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\n",
+      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -1366,6 +1366,7 @@
       "database/tests/eshop_forms/form_capacity_schema_test.sql",
       "database/tests/eshop_forms/form_capacity_test.sql",
       "database/tests/eshop_forms/form_editor_deletion_test.sql",
+      "database/tests/eshop_forms/form_measurement_approval_request_test.sql",
       "database/tests/eshop_forms/form_measurement_consent_test.sql",
       "database/tests/eshop_forms/form_measurement_conversion_matrix_test.sql",
       "database/tests/eshop_forms/form_measurement_purchase_test.sql",
@@ -1878,6 +1879,7 @@
     "database/tests/eshop_forms/form_capacity_schema_test.sql",
     "database/tests/eshop_forms/form_capacity_test.sql",
     "database/tests/eshop_forms/form_editor_deletion_test.sql",
+    "database/tests/eshop_forms/form_measurement_approval_request_test.sql",
     "database/tests/eshop_forms/form_measurement_consent_test.sql",
     "database/tests/eshop_forms/form_measurement_conversion_matrix_test.sql",
     "database/tests/eshop_forms/form_measurement_purchase_test.sql",
@@ -2132,6 +2134,7 @@
     "supabase/functions/_shared/layoutTextEdgeRuntime_test.ts",
     "supabase/functions/_shared/layoutTextPreparation_test.ts",
     "supabase/functions/_shared/layoutTextShaper_test.ts",
+    "supabase/functions/_shared/measurementApprovalEmail_test.ts",
     "supabase/functions/_shared/metaSurcharge_test.ts",
     "supabase/functions/_shared/monitoring_test.ts",
     "supabase/functions/_shared/notificationCenterHealth_test.ts",

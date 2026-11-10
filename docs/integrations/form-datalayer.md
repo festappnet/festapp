@@ -48,12 +48,21 @@ Units store nullable `measurement_privacy_url` as an absolute HTTPS URL without 
 
 ## Database authority
 
+With Unit measurement enabled, Unit managers can request missing platform approval
+once from **Měření** in Unit settings. The persisted request notifies every current
+administrator of the Unit's organization with a delivery email; retries send no
+additional notices. The settings show the localized request date while waiting.
+Platform operators still approve manually through `analytics.organization_policy`
+and `analytics.unit_runtime`; submitting a request grants no measurement permission.
+
 The private `analytics` schema contains exactly these measurement tables:
 
 - `analytics.organization_policy`: platform permission, revision and operator
   evidence. Missing means denied.
 - `analytics.unit_runtime`: the approved deployment origin/profile, permitted
   parent/ancestor and collector origins, revision and operator evidence.
+- `analytics.unit_measurement_request`: one request per Unit, with its timestamp
+  and requesting user; deleted with the Unit.
 - `analytics.conversion_facts`: immutable finalizer facts with non-authorizing
   event UUIDs, keyed by order and conversion kind.
 
@@ -84,8 +93,13 @@ only disposal is terminal. `FormDataLayer` owns catalogue, funnel, baseline and
 visit deduplication. It has no policy/Auth/consent decisions or timer.
 
 Standalone uses the real Klaro UI with analytics and marketing services, off by
-default. The translated notice keeps bar/modal styling, equal buttons, privacy URL
-and plain custom text. It blocks the page, not measurement. Saved choice belongs to
+default. The translated notice offers Decline, Accept and Settings in both bar and modal
+layouts, with equal prominence for Decline and Accept, a privacy URL and plain
+custom text. Settings opens the per-purpose dialog before any decision; the
+floating Consent settings button remains available for later changes.
+The dialog also shows an always-on, disabled necessary-data row for form
+operation, security and remembering the choice. This informational row is not a
+Klaro service, adds nothing to stored consent and maps to no Consent Mode signal. The notice blocks the page, not measurement. Saved choice belongs to
 organization + Unit + `processing_revision`. Staff is unmeasured. Signed-in visitors
 wait for a matching policy/role response.
 
@@ -105,7 +119,9 @@ Runtime protocol 3 (`festapp-measurement`) compares the actual SQL/Worker manife
 with the accepted policy before init can insert any Unit code. Scope, form link,
 processing/runtime/policy revisions and profile must match. Ready/init/ACK bind
 source window, origin, instance and generation. Consent Mode default/update precede
-GTM, all denied without a saved choice; every event also carries `festapp_consent`.
+GTM, optional types denied without a saved choice; every event also carries `festapp_consent`.
+Every Consent Mode type is set explicitly: `functionality_storage` is always granted
+(an explicit owner decision), `personalization_storage` follows marketing like the `ad_*` types.
 Custom HTML tags such as Meta Pixel and Unit scripts do not read Consent Mode: require
 consent on the tag in GTM, or read `festapp_consent` and `festapp_consent_update`.
 
@@ -312,3 +328,21 @@ before the request; a revoked/replaced measurement grant cannot send its result.
 Failures, preview and unsubscribe never emit a lead. These client subscription
 leads do not create an order or an `analytics.conversion_facts` record; that SQL
 kind constraint applies only to immutable order finalizer facts.
+
+## Consent storage exceptions and keyboard behavior
+
+All seven Consent Mode types are explicit. `security_storage` and
+`functionality_storage` remain `granted`, including before a choice and after
+Decline. Organizer tags requiring `functionality_storage` therefore run without
+consent. Analytics storage follows analytics; ad storage, ad user data, ad
+personalization and personalization storage follow marketing.
+Mapping content personalization (`personalization_storage`) to marketing is an
+intentional organizer choice; the organizer's privacy information must describe
+this purpose together with advertising.
+
+The initial central notice is blocking: Escape focuses the notice without saving
+a choice or closing it. Decline is available for a decision without optional
+consent. Escape in Settings discards the draft. Reopened Settings always offer
+Decline; after a saved decision focus returns to the floating Consent settings
+button. The button is fixed at the bottom left, with reserved scroll clearance.
+Custom notice text always retains a fixed explanation of how to change consent.

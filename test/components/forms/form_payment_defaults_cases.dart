@@ -120,10 +120,8 @@ void main() {
             SwitchListTile,
             FormStrings.measurementEnabled,
           );
-          expect(toggle, findsNothing);
-          final measurementSection = find.text(FormStrings.measurementTitle);
-          await tester.ensureVisible(measurementSection);
-          await tester.tap(measurementSection);
+          // A regular section like the others: no expansion step.
+          await tester.ensureVisible(find.text(FormStrings.measurementTitle));
           await tester.pumpAndSettle();
           expect(tester.widget<SwitchListTile>(toggle).value, false);
           expect(
@@ -161,8 +159,9 @@ void main() {
             await tester.ensureVisible(toggle);
             await tester.tap(toggle);
             await tester.pumpAndSettle();
+            // Platform policy and runtime gates show as one plain reason.
             expect(
-              find.text(FormStrings.measurementRuntimeBlocked),
+              find.text(FormStrings.measurementPlatformBlocked),
               findsOneWidget,
             );
             await save();
@@ -274,10 +273,13 @@ void main() {
 
   for (final (name, manager, formOn, unitOn, reasons, warned) in [
     ('missing link', true, true, true, ['no_privacy_policy'], true),
-    ('form editor only', false, true, true, ['no_privacy_policy'], false),
+    ('form editor only', false, true, true, ['no_privacy_policy'], true),
     ('form off', true, false, true, ['disabled', 'no_privacy_policy'], false),
-    ('unit off', true, true, false, ['unit_disabled', 'no_privacy_policy'], false),
-    ('no destination', true, true, true, ['no_destination', 'no_privacy_policy'], false),
+    ('unit off', true, true, false, ['unit_disabled', 'no_privacy_policy'], true),
+    ('no destination', true, true, true, ['no_destination', 'no_privacy_policy'], true),
+    ('platform block editor', false, true, true, ['platform_block'], false),
+    ('unsaved enable', true, false, true, <String>[], false),
+    ('unknown block', true, true, true, ['future_block'], false),
     ('link present', true, true, true, <String>[], false),
   ]) {
     testWidgetsWithEnvironment(
@@ -317,6 +319,9 @@ void main() {
             'organization_enabled': true,
             'unit_enabled': unitOn,
             'blocked_reasons': reasons,
+            'eligible': reasons.isEmpty,
+            'organization_allowed': name != 'platform block editor',
+            'runtime_supported': name != 'platform block editor',
           },
         );
         await _environment.pumpWidget(
@@ -341,6 +346,23 @@ void main() {
           find.text(FormStrings.measurementNoPrivacyPolicy),
           warned ? findsOneWidget : findsNothing,
         );
+        await tester.ensureVisible(find.text(FormStrings.measurementTitle));
+        expect(find.text(FormStrings.measurementReady),
+            reasons.isEmpty && formOn ? findsOneWidget : findsNothing);
+        if (name == 'platform block editor') {
+          expect(find.text(FormStrings.measurementPlatformBlocked), findsNothing);
+          expect(find.text(FormStrings.measurementAskUnitManager), findsWidgets);
+        }
+        if (name == 'unsaved enable') {
+          final toggle = find.widgetWithText(SwitchListTile, FormStrings.measurementEnabled);
+          await tester.ensureVisible(toggle);
+          await tester.tap(toggle);
+          await tester.pumpAndSettle();
+          expect(find.text(FormStrings.measurementReady), findsNothing);
+        }
+        if (formOn && reasons.contains('no_privacy_policy')) {
+          expect(find.text(FormStrings.measurementNoPrivacyPolicy), findsWidgets);
+        }
         expect(tester.takeException(), isNull);
       },
     );

@@ -30,6 +30,13 @@ void main() {
     final saves = <Map<String, dynamic>>[];
     var updates = 0;
     var rejectSave = false;
+    var rejectApproval = false;
+    String? approvalError;
+    var rejectApprovalRead = false;
+    var approvalRequests = 0;
+    var approvalReads = 0;
+    late Map<String, dynamic> approval;
+    final toasts = <MethodCall>[];
     setUpAll(() async {
       tz.OccasionTimeContext.initializeTimeZones();
       PackageInfo.setMockInitialValues(
@@ -43,6 +50,36 @@ void main() {
         Object body;
         if (request.url.path.endsWith('/get_unit_for_edit')) {
           body = {'code': 200, 'data': stored};
+        } else if (request.url.path.endsWith(
+          '/get_unit_measurement_approval',
+        )) {
+          approvalReads++;
+          if (rejectApprovalRead) {
+            return http.Response(
+              '{"code":"PGRST202","message":"RPC missing"}',
+              404,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          body = approval;
+        } else if (request.url.path.endsWith(
+          '/request_unit_measurement_approval',
+        )) {
+          expect(jsonDecode(request.body), {'p_unit': 7});
+          approvalRequests++;
+          if (rejectApproval || approvalError != null) {
+            return http.Response(
+              jsonEncode({
+                'code': 'P0001',
+                'message': approvalError ?? 'RPC missing',
+              }),
+              404,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          approval = {...approval, 'requested_at': '2026-11-09T12:00:00Z'};
+          body = approval;
         } else if (request.url.path == '/rest/v1/occasions') {
           return http.Response(
             '[]',
@@ -98,10 +135,25 @@ void main() {
       saves.clear();
       updates = 0;
       rejectSave = false;
+      rejectApproval = false;
+      approvalError = null;
+      rejectApprovalRead = false;
+      approvalRequests = 0;
+      approvalReads = 0;
+      approval = {
+        'approved': false,
+        'organization_allowed': false,
+        'runtime_supported': false,
+        'requested_at': null,
+      };
+      toasts.clear();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
             const MethodChannel('PonnamKarthik/fluttertoast'),
-            (_) async => true,
+            (call) async {
+              toasts.add(call);
+              return true;
+            },
           );
     });
     tearDown(() {
@@ -111,6 +163,11 @@ void main() {
             null,
           );
     });
+    final csDefaultTitle =
+        ((jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+                    as Map)['FeatureFormSettings']
+                as Map)['measurementConsentTitle']
+            as String;
     for (final (name, replyTo, edited, rejected) in [
       (
         'set Reply-To',
@@ -124,6 +181,7 @@ void main() {
         '<script>window.savedMeasurement = 2;</script>',
         false,
       ),
+      ('restore default', 'poradatel@example.invalid', '', false),
       ('cleared code', 'poradatel@example.invalid', '', false),
       (
         'rejected save',
@@ -145,6 +203,9 @@ void main() {
             'measurement_privacy_url': 'https://organizer.example/privacy',
             'measurement_scripts':
                 '<script>window.savedMeasurement = 1;</script>',
+            // A deliberate override identical to today's default must survive
+            // saving other fields; an unset text must stay unset (null).
+            'measurement_consent_title': csDefaultTitle,
           },
         };
         final unit = UnitModel.fromJson(Map<String, dynamic>.from(stored));
@@ -175,14 +236,22 @@ void main() {
         );
         await tester.pumpAndSettle();
         await tester.ensureVisible(find.text(FormStrings.measurementTitle));
-        await tester.tap(find.text(FormStrings.measurementTitle));
-        await tester.pumpAndSettle();
         await tester.ensureVisible(find.text(FormStrings.measurementAdvanced));
         await tester.tap(find.text(FormStrings.measurementAdvanced));
         await tester.pumpAndSettle();
         final settings = tester.widget<UnitMeasurementSettings>(
           find.byType(UnitMeasurementSettings),
         );
+        if (name == 'restore default') {
+          final restore = find.widgetWithText(
+            TextButton,
+            FormStrings.measurementConsentRestoreDefault,
+          ).first;
+          await tester.ensureVisible(restore);
+          await tester.tap(restore);
+          await tester.pumpAndSettle();
+          expect(settings.consentTitleController.text, csDefaultTitle);
+        }
         final code = find.byWidgetPredicate(
           (w) =>
               w is TextFormField && w.controller == settings.scriptsController,
@@ -208,6 +277,13 @@ void main() {
               as Map)['measurement_scripts'],
           edited.isEmpty ? null : edited,
         );
+        final savedSettings =
+            (saves.single['p_unit_data'] as Map)['settings'] as Map;
+        expect(
+          savedSettings['measurement_consent_title'],
+          name == 'restore default' ? isNull : csDefaultTitle,
+        );
+        expect(savedSettings['measurement_consent_text'], isNull);
         final expected = rejected
             ? '<script>window.savedMeasurement = 1;</script>'
             : edited.isEmpty
@@ -217,6 +293,118 @@ void main() {
         expect(unit.data?['measurement_scripts'], expected);
         expect(unit.aggregateVersion, rejected ? 4 : 5);
         expect(updates, rejected ? 0 : 1);
+        expect(tester.takeException(), isNull);
+        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+
+    for (final failure in [
+      'none',
+      'request RPC',
+      'read RPC',
+      'measurement_request_no_recipient',
+      'measurement_notification_origin_missing',
+    ]) {
+      testWidgets('measurement approval persists and handles $failure', (
+        tester,
+      ) async {
+        approvalError = failure.startsWith('measurement_') ? failure : null;
+        rejectApproval = failure == 'request RPC' || approvalError != null;
+        rejectApprovalRead = failure == 'read RPC';
+        stored = {
+          'id': 7,
+          'title': 'Slavnostní ples',
+          'aggregate_version': 4,
+          'data': {'measurement_enabled': true, 'timezone': 'Europe/Prague'},
+        };
+        final rights = RightsContextFixture(
+          context: OccasionLinkModel.fromJson({
+            'code': 200,
+            'unit': {'id': 7},
+            'organization': {'FORM_MEASUREMENT_ENABLED': true},
+            'capabilities': {'unit.settings.write': true},
+          }),
+        );
+        addTearDown(rights.dispose);
+        final environment = WidgetEnvironmentFixture(
+          locale: const Locale('cs'),
+          translations: jsonDecode(
+            File('assets/translations/cs.json').readAsStringSync(),
+          ) as Map<String, dynamic>,
+        );
+        Future<void> load() async {
+          await environment.pumpWidget(
+            tester,
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: UnitSettingsScreen(
+                unit: UnitModel.fromJson(stored),
+                onUnitUpdated: () {},
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await load();
+        final button = find.widgetWithText(
+          OutlinedButton,
+          FormStrings.measurementApprovalRequest,
+        );
+        if (rejectApprovalRead) {
+          expect(button, findsNothing);
+          expect(toasts, isNotEmpty);
+          final retry = find.widgetWithText(OutlinedButton, CommonStrings.retry);
+          await tester.ensureVisible(retry);
+          // A repeated failure must leave another attempt available.
+          await tester.tap(retry);
+          await tester.pumpAndSettle();
+          expect(approvalReads, 2);
+          expect(tester.widget<OutlinedButton>(retry).onPressed, isNotNull);
+          expect(approvalRequests, 0);
+          rejectApprovalRead = false;
+          await tester.tap(retry);
+          await tester.pumpAndSettle();
+          expect(approvalReads, 3);
+          expect(retry, findsNothing);
+        }
+        await tester.ensureVisible(button);
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+        expect(approvalRequests, 1);
+        expect(
+          tester.widget<OutlinedButton>(button).onPressed == null,
+          !rejectApproval,
+        );
+        if (rejectApproval) {
+          expect(toasts, isNotEmpty);
+          if (approvalError != null) {
+            final message = approvalError == 'measurement_request_no_recipient'
+                ? FormStrings.measurementRequestNoRecipient
+                : FormStrings.measurementNotificationOriginMissing;
+            expect(toasts.last.arguments.toString(), contains(message));
+          }
+        } else {
+          expect(
+            find.textContaining('Čeká na potvrzení platformou.'),
+            findsOneWidget,
+          );
+          await tester.pumpWidget(const SizedBox.shrink());
+          await load();
+          expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+          expect(
+            find.textContaining('Čeká na potvrzení platformou.'),
+            findsOneWidget,
+          );
+          expect(
+            approvalRequests,
+            1,
+            reason: 'reload must read the request without resending',
+          );
+        }
+        expect(find.text(FormStrings.gtmContainer), findsOneWidget);
+        expect(find.text(FormStrings.measurementAdvanced), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pump(const Duration(seconds: 3));
         await tester.pumpWidget(const SizedBox.shrink());
