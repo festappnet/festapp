@@ -4083,6 +4083,8 @@
     "showOccasions": "Zobrazit akce ({count})",
     "hideOccasions": "Skrýt akce ({count})",
     "accessSummary": "Co propojení umožní",
+    "choosePermissions": "Vyberte povolené funkce",
+    "permissionsHint": "Zapnutí funkce zahrne i její nutná oprávnění. Vypnutí oprávnění odebere také funkce, které je vyžadují.",
     "sameRights": "Ve vybraném rozsahu může aplikace používat následující funkce. Vždy ji omezují Vaše aktuální uživatelská práva.",
     "regionalPlatform": "Toto připojení platí pro {portal}, který běží na společné platformě {platform}.",
     "baseAccess": "Číst identitu, dostupné akce a vzhled vstupenek",

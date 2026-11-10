@@ -1,3 +1,4 @@
+import { clientPolicy } from './client-policy.mjs';
 import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
 import { join } from 'node:path';
@@ -23,7 +24,7 @@ export class DelegatedOwner {
         this.config = config;
         this.storage = storage;
         this.token = token;
-        this.orderSummaryOnly = config.clients.find(client => client.id === token.clientId)?.dataProfile === 'order-summary';
+        this.orderSummaryOnly = clientPolicy(config, token.clientId)?.dataProfile === 'order-summary';
         const grant = this.current();
         this.session = boundOwner(config, storage, grant.binding, options);
         this.profile = this.session.profile;
@@ -53,7 +54,7 @@ export class DelegatedOwner {
         const t = this.token;
         const grant = this.storage.get('Delegation', t.grantId);
         check(connectionActive(grant) && grant.userId === t.accountId &&
-            this.config.clients.some(c => c.id === grant.clientId) &&
+            clientPolicy(this.config, grant.clientId) &&
             grant.clientId === t.clientId && grant.profileBinding === this.config.profile.binding &&
             t.exp * 1000 > Date.now() &&
             t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&

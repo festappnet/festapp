@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-10",
+  "status": "implementation_and_local_validation_complete",
+  "worktree": "/Users/miakh/source/festapp-mcp-completion",
+  "branch": "fix/mcp-completion-20261110",
+  "baseMainSha": "4038713b933c111064f481f54a6d84893de2de0c",
+  "releaseAttestation": false,
+  "productionSourceDeployed": false,
+  "productionMigrationApplied": false,
+  "catalog": {
+    "before": 193,
+    "after": 196,
+    "functionalPermissions": 83,
+    "inventoryActions": 109,
+    "accountOnlyUIActions": [
+      "action-003",
+      "action-004"
+    ],
+    "addedOperations": [
+      "inventory.spots.list",
+      "inventory.slots.list",
+      "inventory.assignments.save"
+    ],
+    "generalOperatorFunctionalCeiling": null,
+    "publicChatGPTPolicyUnchanged": true
+  },
+  "architecture": {
+    "clientPolicyOwner": "tools/festapp/src/remote/client-policy.mjs",
+    "permissionContract": "packages/festapp_contracts/mcp-permissions.mjs",
+    "adapterEntryPoint": "tools/festapp/src/operations/catalog.mjs: Operations",
+    "assignmentDomainOwner": "public.update_spot_assignments_client_sync_v1",
+    "newReceiptStore": false,
+    "serviceRoleDomainWriter": false
+  },
+  "localFeatures": [
+    "Trusted native CIMD using pinned oidc-provider with separate metadata fetch and fail-closed policy",
+    "Shared partial-consent rejection handling prevents repeated authorization prompts",
+    "Standalone consent displays and submits translated functional choices",
+    "Non-mutating Inspector configuration CLI follows the complete shared scope catalog",
+    "Safe classified OAuth errors without reflected parameters or credentials",
+    "Scoped bounded inventory reads and canonical UI-command/receipt adapter"
+  ],
+  "validation": {
+    "canonicalCommand": "python3 automation/ci/run.py step mcp-auth-contract",
+    "node": {
+      "passed": 124,
+      "failed": 0
+    },
+    "web": {
+      "passed": 51,
+      "failed": 0
+    },
+    "deno": {
+      "passed": 15,
+      "failed": 0
+    },
+    "postgresAdapterTests": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "sqlRegressionFiles": {
+      "passed": 2,
+      "failed": 0,
+      "files": [
+        "database/tests/eshop/spot_assignment_boundaries_test.sql",
+        "database/tests/canonical_mutation_source_parity_test.sql"
+      ]
+    },
+    "sourceMigrationParity": true,
+    "generatedReferenceCurrent": true,
+    "postgresCases": [
+      "same UI/MCP receipt after response loss",
+      "exact replay",
+      "stale original assignment rejection",
+      "capacity failure rolls back whole batch",
+      "replay after resource deletion",
+      "cross-occasion read/write/replay denial",
+      "live role revocation blocks replay",
+      "secret omission and bounded keysets",
+      "private helper and role grants",
+      "real concurrent UI/MCP same-command contention: receipt-before-parent lock order, one receipt"
+    ],
+    "consentBoundary": "100 supported occasion IDs plus all functional permissions accepted; rejected creation scope stays ungranted"
+  },
+  "liveUI": {
+    "client": "@modelcontextprotocol/inspector 2.14.0",
+    "browser": "Main Chrome via Panerelay",
+    "negotiatedProtocolVersion": "2025-11-25",
+    "occasionId": 1072645,
+    "formId": 625,
+    "formVersion": 3,
+    "fieldCount": 5,
+    "formOpen": false,
+    "legitimateDescription": "Napište nám požadavky na taneční večer.",
+    "exactReplay": "unchanged version 3 and five fields",
+    "staleVersion": "FORM_CHANGED_RELOAD_REQUIRED; rejected text not saved",
+    "readOnlyGrantToolCount": 5,
+    "readOnlyGrantWritesAbsent": true,
+    "crossScopeRead": "FORBIDDEN without private data",
+    "permittedRead": "passed",
+    "actualAdminReload": "passed",
+    "newTestGrantsRevoked": true,
+    "taskOAuthCopiesCleared": true,
+    "inspectorStopped": true,
+    "evidenceDirectory": "/Users/miakh/Downloads/festapp-mcp-ui-20261110/completion"
+  },
+  "liveConfiguration": {
+    "clientId": "festapp-inspector",
+    "removedArtificialEightScopeCeiling": true,
+    "configSha256": "8cefd3bf25c79c6d7ad1b5028aacb7531025fec6b4685ec437fdda3869770f2f",
+    "serverImageUnchanged": "sha256:261c3c5288554bc3e7e6393a5094ff40f157a975556f2556cb32189646e2738f",
+    "health": "healthy",
+    "existingClientsUnchanged": true,
+    "existingGrantsNotExpanded": true
+  },
+  "remainingReleaseSteps": [
+    "Run normal source publication/release gates",
+    "Apply additive migration 20261110110000_mcp_inventory_assignments.sql before the updated MCP image",
+    "Deploy the updated standalone MCP image including canonical Czech translations",
+    "Activate native CIMD only with explicitly approved metadata origins and data profile"
+  ],
+  "limits": [
+    "Local source coverage is not exhaustive production execution of every tool",
+    "New OAuth fixes, CIMD support and three inventory tools are not yet deployed",
+    "Remote web clients use existing static HTTPS registrations; native CIMD does not enable remote-web metadata clients"
+  ],
+  "deploymentAuthorized": true
+}

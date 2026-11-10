@@ -1,3 +1,4 @@
+import { clientPolicy } from './client-policy.mjs';
 import { connectionActive, connectionIssuable } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { activeConnections, verifyConnectionChoice } from './connection-choice.mjs';
 import { verifyConsent } from './consent.mjs';
@@ -68,7 +69,8 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         const proof = await userOwner.withAccessToken(accessToken, async (backend, context) => ({
             userId: context.userId, available: await available(userOwner, backend, context.userId),
         }));
-        const client = config.clients.find(c => c.id === flow.clientId);
+        const client = clientPolicy(config, flow.clientId);
+        check(client, 'FORBIDDEN');
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
             ...(config.regionalPortal ? { regionalPortal: config.regionalPortal } : {}),
             connections: activeConnections(storage, proof.userId, flow.clientId, config.profile.binding), tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });

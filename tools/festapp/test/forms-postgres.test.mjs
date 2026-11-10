@@ -12,6 +12,36 @@ test('forms executor creates a closed draft and returns only the administration 
  t.diagnostic('form create/inspect JSON '+JSON.stringify(ex.calls));
 });
 
+test('a delegated event creator can copy its form before any administration visit, without widening inherited roles',options,async t=>{
+ const {db,f}=await setup(t);
+ await db.query('SET LOCAL ROLE authenticated');
+ const commandId=randomUUID(),config={unit:f.unit,organization:f.org,title:'Taneční víkend',is_hidden:true,is_open:false,
+  start_time:'2030-11-28T08:00:00Z',end_time:'2030-11-29T17:00:00Z'};
+ const made=(await db.query('select create_delegated_occasion_client_sync_v1($1,$2) value',[commandId,config])).rows[0].value;
+ assert.equal(made.code,200,JSON.stringify(made));const occasion=made.data.occasionId;
+ const rights=(await db.query('select can_copy_form_target($1) copy,(can_read_orders($1) and can_write_orders($1)) inventory',[occasion])).rows[0];
+ assert.equal(rights.copy,true,'creation must initialize the same inherited membership as the first admin visit');
+ assert.equal(rights.inventory,true);
+ const source=await create(db,{...f,occasion});
+ const ex=executor(db,f),args={occasionId:occasion,sourceOccasionId:occasion,sourceFormId:source.formId,locale:'cs',commandId:randomUUID()};
+ const copied=await ex.ops.invoke('forms.duplicate',args);assert.equal(copied.ok,true,JSON.stringify(copied));
+ assert.equal((await ex.ops.invoke('forms.duplicate',args)).data.formId,copied.data.formId);
+ // An idempotent creation replay must not restore roles revoked afterwards.
+ await db.query('RESET ROLE');await db.query('update occasion_users set is_editor=false,is_editor_order=false where occasion=$1 and "user"=$2',[occasion,f.actor]);
+ await db.query('SET LOCAL ROLE authenticated');
+ assert.equal((await db.query('select create_delegated_occasion_client_sync_v1($1,$2) value',[commandId,config])).rows[0].value.data.occasionId,occasion);
+ assert.equal((await db.query('select can_copy_form_target($1) allowed',[occasion])).rows[0].allowed,false);
+ assert.equal((await ex.ops.invoke('forms.duplicate',args)).error.code,'FORBIDDEN');
+ for(const roles of [{is_manager:true,is_editor:false,is_editor_view:false},{is_manager:false,is_editor:true,is_editor_view:false}]){
+  await db.query('RESET ROLE');
+  await db.query('update unit_users set is_manager=$1,is_editor=$2,is_editor_view=$3 where unit=$4 and "user"=$5',[roles.is_manager,roles.is_editor,roles.is_editor_view,f.unit,f.actor]);
+  await db.query('SET LOCAL ROLE authenticated');
+  const next=(await db.query('select create_delegated_occasion_client_sync_v1($1,$2) value',[randomUUID(),{...config,title:'Jiný taneční víkend'}])).rows[0].value;
+  const inherited=(await db.query('select is_manager,is_editor,is_editor_view,is_editor_order,is_editor_order_view from occasion_users where occasion=$1 and "user"=$2',[next.data.occasionId,f.actor])).rows[0];
+  assert.deepEqual(inherited,{...roles,is_editor_order:roles.is_editor,is_editor_order_view:roles.is_editor_view});
+ }
+});
+
 test('bounded summaries share UI counts, tolerate malformed historical bindings and omit keys, links, data and unrelated products',options,async t=>{
  const{db,f}=await setup(t);const first=await create(db,f);await db.query('insert into forms(occasion,title) select $1,\'Form \x27||n from generate_series(1,104)n',[f.occasion]);
  const type=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Unrelated','food') returning id",[f.occasion])).rows[0].id);await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code) select $1,$2,'Unrelated '||n,1,'CZK' from generate_series(1,125)n",[f.occasion,type]);
