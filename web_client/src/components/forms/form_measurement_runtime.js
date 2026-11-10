@@ -26,7 +26,13 @@ export class FormMeasurementRuntime {
             form_embedded:this.embedded, page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};
         this.context=attributionContext(input);if(!this.context)return;
         if(this.embedded && grant.host?.origin && this.context.page_referrer && new URL(this.context.page_referrer).hostname===new URL(grant.host.origin).hostname)delete this.context.page_referrer;
-        this.directSignals=measurementSignals(input);
+        // Entry signals outlive frame recreation: ready removes _gl from the
+        // address bar before a later consent update. Never reuse them in a
+        // different destination or processing scope of this controller.
+        const signalScope=JSON.stringify([origin,grant.manifest.organization,grant.manifest.unit,grant.manifest.form_link,grant.manifest.processing_revision]);
+        if(this.signalScope===undefined)this.directSignals=measurementSignals(input);
+        else if(this.signalScope!==signalScope)this.directSignals={};
+        this.signalScope=signalScope;
         this.consent=measurementConsent(grant.consent);
         if(!this.embedded)Object.assign(this.context,this.signals());
         this.grant=grant;this.hostIdentity=this.embedded?measurementHostIdentity(grant.hostIdentity,this.consent):{};this.origin=origin;this.instance=this.win.crypto.randomUUID();this.until=grant.expiresAt;

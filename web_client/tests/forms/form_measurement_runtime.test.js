@@ -45,6 +45,18 @@ function fixture(t,embedded=false){
   data:{namespace:'festapp-measurement',protocol:measurementProtocol,type,manifest,instance:transport.instance,generation:7,...extra}}));
  t.after(()=>{transport.destroy();dom.window.close();});return{dom,transport,grant,message,ready:()=>ready,mismatches:()=>mismatches};
 }
+for(const scopeChanged of [false,true])test('entry linker survives recreation only in its original processing scope: '+scopeChanged,t=>{
+ const f=fixture(t),r=f.transport,sent=[];
+ f.dom.window.history.replaceState(null,'',parent+'/form/summer?_gl=1*entry&gtm_debug=1');
+ const grant={...f.grant,consent:{analytics:false,marketing:false}};
+ r.activate(grant);r.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');
+ assert.equal(new URL(f.dom.window.location.href).searchParams.has('_gl'),false);
+ r.stop();const next={...grant,manifest:scopeChanged?{...manifest,processing_revision:'changed'}:manifest};
+ r.activate(next);r.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready',{manifest:next.manifest});
+ assert.equal(sent.at(-1).context._gl,undefined,'denied purposes never forward the retained linker');
+ r.updateConsent({analytics:true,marketing:true});
+ assert.equal(sent.at(-1).signals._gl,scopeChanged?undefined:'1*entry');
+});
 test('no grant means no iframe; ready/init/ACK bind origin, source, manifest, generation and instance',t=>{
  const f=fixture(t),r=f.transport;r.activate();assert.equal(r.frame,null);
  r.activate(f.grant);assert.equal(r.frame.getAttribute('sandbox'),'allow-scripts allow-same-origin');assert.equal(r.frame.referrerPolicy,'no-referrer');
