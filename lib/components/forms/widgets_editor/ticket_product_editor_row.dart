@@ -68,6 +68,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
     _titleController.addListener(() {
       widget.replaceProduct(
           widget.product.copyWith(title: _titleController.text));
+      widget.onChanged?.call();
     });
     _priceController.addListener(() {
       final text = _priceController.text.replaceAll(RegExp(r'\s+'), '');
@@ -104,8 +105,10 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       }
       // Keep the entered value on the model — backend validates on save and surfaces
       // a server-side error toast if the value is still invalid at submit time.
-      widget.replaceProduct(widget.product.withDepositAmount(
-          (deposit != null && deposit > 0) ? deposit : null));
+      final amount = (deposit != null && deposit > 0) ? deposit : null;
+      if (widget.product.depositAmount != amount) {
+        widget.replaceProduct(widget.product.withDepositAmount(amount));
+      }
     });
   }
 
