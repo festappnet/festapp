@@ -139,3 +139,13 @@ policy refresh and unchanged source updates clamp the existing runtime owner.
 The accumulated PR diff also contained unrelated reversions of canonical CI
 input reuse. Both branches restore those files from current main. No legacy
 identity copying, parallel lifetime engine or alternate consent store remains.
+
+## Latest issue 787
+
+The final issue inventory added organizer-facing help. PR 786 includes PR 785
+as a dependency so help downloads the same canonical GTM artifact; merge 785
+first. Added Czech/English help source, navigation and embed-guide links,
+content-hashed preset delivery and render/download regression coverage. Existing
+English preview/publication restrictions remain. The six help contract suites
+now run in the canonical deploy-contract unit. No account or production writes
+are required by this documentation change.

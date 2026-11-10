@@ -35,6 +35,10 @@ const digest = data => createHash('sha256').update(data).digest('hex').slice(0,1
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const runtime=publicRuntime(root,{builtIndex:arg('--built-index'),entry:'src/marketing/help.js',assetRoot:helpRoot+'assets/'});
 const assets = {...runtime.assets};
+const measurementPreset = fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json'));
+const measurementPresetName = `festapp-host-gtm.${digest(measurementPreset)}.json`;
+assets[measurementPresetName] = measurementPreset;
+const measurementPresetUrl = helpRoot+'assets/'+measurementPresetName;
 const mcpReference = readMcpReference(root);
 const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
 assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
@@ -101,7 +105,7 @@ const videoLink = id => {
 const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
-    .replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
+    .replaceAll('{{MEASUREMENT_PRESET}}',measurementPresetUrl).replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
     .replace('{{MCP_REFERENCE}}', () => renderMcpReference(mcpReference,locale))
     .replace('{{MCP_PROMPTS}}', () => renderMcpPrompts(mcpReference,mcpPrompts,locale))
     .replace(/\{\{PREVIEW:([a-z0-9/-]+)\}\}/g, (_,id) => previewImage(id))

@@ -118,6 +118,17 @@
     "preview": "cs/embed/01-generated-code"
   },
   {
+    "id": "measurement",
+    "category": "integrations",
+    "slug": "mereni-formularu",
+    "title": "Jak nastavit měření formulářů",
+    "seoTitle": "Jak nastavit měření formulářů",
+    "description": "Měření na webu nebo v jednotce, souhlas návštěvníka, šablona GTM a ověření konverzí.",
+    "label": "Měření formulářů",
+    "workflow": "administration",
+    "preview": "cs/embed/01-generated-code"
+  },
+  {
     "id": "wix",
     "category": "integrations",
     "slug": "wix",

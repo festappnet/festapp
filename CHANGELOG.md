@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Organizer help now explains website and Unit measurement, saved consent sources, GTM setup and troubleshooting in Czech and English source, with a download of the paused canonical host preset. English publication keeps its existing preview gate.
+
 - New WordPress, Joomla and Wix embeds select website measurement; saved content retains its existing destination.
 
 - Embedded forms in Unit runtime mode can take over the website's Consent Mode choice when the organizer enables it and confirms that the banner of its approved websites covers the form; existing settings stay off. Marketing requires all three ad consents and stays denied with TCF. Revocation is read from Google's tag state every 250 ms or from dataLayer every second; website mode detaches the bridge.
