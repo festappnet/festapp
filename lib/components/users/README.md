@@ -1,5 +1,18 @@
 # Users Component
 
+## Participant enrolment ownership
+
+`add_user_to_occasion_internal_v1` owns membership admission and target role
+projection for account creation, existing-account enrolment, imports and other
+scoped commands. Its callers authorize their operation before entering this
+private owner. `closed_occasion_enrolment_rule` receives the target's existing
+unit membership facts and the actor's canonical
+`can_manage_occasion_participants` decision. Closed registration still permits
+an authorized manager to add ordinary participants. It does not grant those
+participants unit membership or copy the manager's roles. Public self-enrolment
+continues to respect closure. New and existing accounts follow the same rule;
+replay rechecks the caller's current permission.
+
 ## Reception ownership
 
 Reception is a default-disabled per-occasion feature. Its role lives only in
@@ -51,10 +64,10 @@ map projection used for the signed-in user's profile.
 
 - `get_users_from_occasion_with_orders` -- full user-ticket-order-form graph as dictionary maps
 - `get_occasion_users_for_edit` -- occasion users with forms for admin editing
-- `create_user_in_organization_with_data_ws` -- creates user account with initial data
-- `add_user_to_occasion` -- adds existing user to an occasion
+- `create_occasion_user_client_sync_v1` -- resolves or creates an account and saves its occasion profile atomically
+- `add_user_to_occasion_client_sync_v1` -- adds an existing account through the same private enrolment owner
 - `import_users_from_tickets_ws` -- bulk-creates users from ticket data
-- `update_user` -- updates user profile for an occasion
+- `save_profile_client_sync_v1` -- updates the occasion profile through the scoped command
 
 ## Users Editor Performance
 
