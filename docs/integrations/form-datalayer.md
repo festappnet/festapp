@@ -153,7 +153,7 @@ The banner must identify the organizer, purposes, services in the organizer's GT
 the isolated `*.pages.dev` runtime and Festapp as processor, and explain withdrawal.
 The organizer retains consent evidence in the website CMP. A partner's banner
 cannot be assumed to cover the organizer. Explicit adapters remain independent of
-the switch. The switch is part of the manifest and processing revision.
+the switch. The switch is part of the manifest and processing revision. A missing or false switch preserves the pre-bridge fingerprint; only true adds the bridge marker.
 
 When enabled, the helper reads `google_tag_data.ics.entries`, then only Arguments
 `consent default/update` commands in `window.dataLayer` if ICS is unavailable.
@@ -374,3 +374,65 @@ consent. Escape in Settings discards the draft. Reopened Settings always offer
 Decline; after a saved decision focus returns to the floating Consent settings
 button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
+
+## Experimental consent transfer to a new tab
+
+On the issue #782 experiment, a website with `embed.js` can opt individual links
+into transferring its Consent Mode choice to the standalone form. See the
+[link markup and opener limitations](embedded-checkout.md#experimentální-převzetí-volby-cookies).
+The organizer must explicitly tell visitors in its website notice that the choice also
+applies to purchases on vstupenky.online, covering the same purposes, recipients
+and privacy policy. The same Unit opt-in `measurement_consent_bridge: true` is required for links; `approved_hosts` alone grants no transfer. The notice must identify the organizer as controller, Festapp as processor, GTM services and the isolated `*.pages.dev` runtime, the 24 hour transfer lifetime and withdrawal controls. Consent Mode is a technical state, not proof of that notice.
+
+The separate `festapp-consent-link` protocol 1 uses exact origins, a cryptographic
+nonce, a single response and a 1500 ms deadline. Only HTTPS origins are accepted
+(loopback HTTP is accepted only from a local HTTP development page). The helper names its popup `festapp-consent-link-<nonce>`. At startup, before policy or CMP loading, the form captures the peer privately and immediately clears its public opener; the host releases its window reference on the
+first valid request, or after 60 seconds if no request arrives. The form requires a helper-marked window, a captured peer
+and a referrer origin in policy `approved_hosts`, the existing public projection
+of `parent_origins`. The transfer adds no new backend RPC; it uses the existing policy opt-in. The host uses the origin
+of the executing `embed.js` and accepts only windows opened by its opted-in click
+handler. The saved WindowProxy, registry and origin checks establish the peer even after the form detaches its opener. The response contains only
+two choice booleans plus the protocol envelope and nonce, or `choice: null` when the host has no choice, so the normal notice can appear immediately. Scope identifiers and
+revision appear only in the request. No URL parameters or tokens are added.
+
+The real Klaro store binds the imported choice to organization, Unit and processing
+revision using session cookies for both choice and source metadata. Imported choices
+expire 24 hours after `importedAt`, including after browser session restore. Expiry
+resets the choice and shows the normal notice. Every new helper opening clears a
+previous import before publishing any consent and reads the current website choice
+again. While waiting, consent stays denied; failure, unknown state or timeout
+leaves the old import cancelled and shows the normal notice. A direct visit within
+the cookie session and 24 hour limit can retain the import. A choice saved directly in the form
+keeps its existing 180 day lifetime and always wins, including a newer cookie from
+another tab. Legacy persistent imports are discarded on startup.
+Successful import shows no consent bar or import notice. The floating Consent settings
+button remains available, just as after a saved local choice, and opens the settings
+to change the choice. Escape returns focus to that button without saving changes.
+Local saving removes the import metadata. With an eligible opener the normal
+notice waits at most 1500 ms without locking scroll; unsuccessful transfer then
+shows the normal notice. No order or payment code participates.
+
+The organizer must archive the website notice wording and CMP configuration that
+covered purchases on vstupenky.online. Geo rules in CMPs such as OneTrust and
+Cookiebot can send `update granted` without visitor interaction. The transfer
+cannot distinguish that from an explicit choice; the organizer must ensure its
+CMP and notice provide the required choice for these purchases.
+
+Consent Mode does not disclose the original choice's age or whether the host
+notice covered this purchase. This experiment cannot attest either. It snapshots
+the current state once; subsequent changes on the website are not synchronized.
+Missing state is not imported as a refusal. Explicit denied state can be imported.
+
+Local choices in another tab take precedence when a transfer response arrives.
+Outside a transfer, Klaro does not continuously synchronize open tabs: their
+in-memory choices can differ until reload. The host click handler
+uses `preventDefault`, which can suppress GTM “Just Links” triggers with validation;
+measure the purchase from form events instead. Case-insensitive `noopener` and
+`noreferrer` tokens, and link/meta `no-referrer` policies preserve native navigation.
+Legacy `window.open` windows are left unchanged and never wait for this protocol.
+
+The Unit switch currently records configuration and revision, without an audit
+record of who accepted the notice coverage, when, or which text version. The
+host's Consent Mode snapshot also carries no saved processing revision; the
+request scope does not prove fresh visitor confirmation after a revision change.
+These remain experiment limitations requiring a separate evidence/adapter design.

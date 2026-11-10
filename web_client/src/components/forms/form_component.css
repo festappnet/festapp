@@ -805,6 +805,8 @@ body.dark-mode .surcharge-info {
 .overview-payment-link { display: inline-block; margin-block-start: 8px; color: var(--primary-color, #1565c0); text-underline-offset: 3px; }
 .overview-payment-details, .order-overview .result-payment-more { scroll-margin-block-start: 24px; }
 
+/* Consent taken over from the organizer website (issue #782): one row with a
+   44px Change button (WCAG 2.5.8) styled like the banner's Settings button. */
 .festapp-consent-fab { position:fixed; left:16px; bottom:16px; z-index:900; display:inline-flex; align-items:center; gap:0; height:44px; min-width:44px; padding:0 10px; border:0; border-radius:22px; background:var(--card-bg,#fff); color:var(--text-color,#222); box-shadow:0 2px 10px rgba(0,0,0,.18); font:inherit; font-size:14px; cursor:pointer; opacity:.85; transition:opacity .15s, gap .2s; }
 .festapp-consent-fab-label { max-width:0; overflow:hidden; white-space:nowrap; transition:max-width .2s; }
 .festapp-consent-fab:is(:hover,:focus-visible) { opacity:1; gap:8px; }

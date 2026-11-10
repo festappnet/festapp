@@ -1,3 +1,4 @@
+import {installHostConsentLink} from './host_consent_link.js';
 import {EmbedChannel} from './channel.js';
 import {limits} from './protocol.js';
 import {measurementProtocol, campaignContext} from '../components/forms/form_measurement_contract.js';
@@ -8,6 +9,11 @@ import {receiveHostLayout, installHostLayout} from './host_layout.js';
 
 if (!window.__festappEmbedV1) {
     window.__festappEmbedV1 = true;
+    // Capture synchronously while the classic embed script is executing.
+    try {
+        const productOrigin = new URL(document.currentScript.src, document.baseURI).origin;
+        installHostConsentLink(window, productOrigin);
+    } catch { /* No trusted script origin, no consent link bridge. */ }
     const frames = new Map();
     const currentRecord = (frame, record) => {
         if (frames.get(frame) !== record || !frame.isConnected) return false;

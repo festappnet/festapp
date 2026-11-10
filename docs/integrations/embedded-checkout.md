@@ -331,3 +331,59 @@ vstupu do Flutter aplikace. Veřejný formulář ani jeho update/recovery požad
 je nestahují. Worker a per-version cache zůstávají společné; handshake nese
 `runtime: web | flutter`. Běžná Flutter aplikace je dostupná offline po svém
 online otevření, veřejný formulář má nezávislou webovou offline obnovu.
+
+## Experimentální převzetí volby cookies
+
+Ve větvi issue #782 lze na stránce s `embed.js` výslovně povolit převzetí volby
+Consent Mode do samostatného formuláře:
+
+```html
+<script defer src="https://vstupenky.online/embed.js"></script>
+<a data-festapp-consent-link target="_blank"
+   href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
+```
+
+Pořadatel musí v liště svého webu výslovně uvést, že „volba platí i pro nákup na
+vstupenky.online“, se shodnými účely, příjemci a zásadami ochrany osobních údajů.
+Pořadatel musí zapnout `measurement_consent_bridge` v nastavení měření jednotky; samotný schválený origin nestačí. Vypnutý přepínač zachovává původní processing revision; zapnutí ji změní. Lišta musí uvádět pořadatele jako správce, Festapp jako zpracovatele, služby GTM, izolovaný runtime `*.pages.dev`, platnost převzetí 24 hodin a způsob odvolání. Origin webu musí být schválen v measurement policy jednotky. Skript načtěte přímo
+z produktového originu formuláře, nikoli z kopie na webu pořadatele.
+
+Helper zachytí pouze obyčejné kliknutí na označený odkaz s `target="_blank"`
+na `/form/<slug>` stejného originu jako skript. Použije `window.open` s vazbou
+`opener`, kterou moderní prohlížeče u běžného `_blank` implicitně vypínají.
+Explicitní `rel="noopener"` a `rel="noreferrer"` bez ohledu na velikost písmen, `referrerpolicy="no-referrer"` na odkazu, meta referrer `no-referrer`, stažení a kliknutí s modifikátory nemění. Blokované nové okno ponechá nativnímu odkazu. Odkaz ve stejné kartě
+nemá původní stránku jako opener, a proto se souhlas nepřenese. Bez referreru,
+například při `Referrer-Policy: no-referrer`, se také zobrazí běžná lišta.
+Politika COOP může vazbu opener přerušit a přenos znemožnit.
+
+Helper otevře okno s názvem `festapp-consent-link-<nonce>`. Formulář zruší veřejnou
+vazbu `opener` hned při startu, před načtením policy nebo lišty; soukromý odkaz
+na původní okno slouží pouze výměně zpráv. To platí i při chybě policy nebo
+vypnutém měření. Starší okna otevřená jinak se nemění a na přenos nečekají.
+Host uvolní evidované okno při první platné žádosti, případně po 60 s.
+Povolené jsou HTTPS originy; HTTP loopback pouze na lokální vývojové stránce.
+
+Převzatá volba platí nejvýše 24 hodin od importu a současně nejdéle po relaci
+cookies. Obnova relace prohlížečem tuto lhůtu neprodlužuje. Při novém přenosu se
+starý import zruší ještě před zveřejněním stavu souhlasu. Do odpovědi je stav
+neuděleno; chyba, neznámá volba nebo timeout zobrazí běžnou lištu. Napřímo v téže
+relaci může platit import mladší 24 hodin. Vlastní volba uložená ve formuláři má
+vždy přednost a zůstává platná 180 dní jako dosud.
+
+Po úspěšném převzetí formulář nezobrazí lištu ani upozornění. Stejně jako po
+vlastní uložené volbě zůstává viditelné plovoucí tlačítko nastavení souhlasu,
+přes které lze volbu změnit. Uložení odstraní metadata převzetí; Escape vrátí
+fokus na plovoucí tlačítko bez uložení změn. Při výměně čeká na lištu nejvýše 1500 ms
+bez zamknutí scrollu. Pořadatel musí archivovat znění lišty webu a konfiguraci CMP
+s výslovným zahrnutím nákupu na vstupenky.online. Geografická pravidla CMP
+(například OneTrust, Cookiebot) mohou poslat `granted` i bez interakce návštěvníka;
+převzetí tuto situaci nerozliší. Pořadatel musí zajistit odpovídající volbu v CMP.
+
+Podrobnosti protokolu a omezení jsou v [kontraktu měření](form-datalayer.md#experimental-consent-transfer-to-a-new-tab).
+
+Klaro průběžně nesynchronizuje místní volby a text mezi již otevřenými kartami;
+nová místní volba má přednost při odpovědi přenosu. Zachycení kliknutí používá
+`preventDefault` a může potlačit GTM trigger „Just Links“ s kontrolou validace.
+Souhlas pořadatele zatím nemá auditní záznam osoby, času a verze potvrzeného textu.
+Consent Mode nenese uloženou revizi návštěvníkovy volby; samotný rozsah žádosti
+nedokládá novou volbu po změně revize. Tato omezení vyžadují další návrh evidence.

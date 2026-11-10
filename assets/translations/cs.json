@@ -628,7 +628,8 @@
         "embedOpenAppearance": "Upravit vzhled formuláře",
         "embedHostDataLayer": "Posílat měření do dataLayer webu",
         "measurementConsentBridge": "Převzít souhlas z lišty schválených webů",
-        "measurementConsentBridgeConfirmation": "Zapnutím potvrzujete, že všechny weby schválené pro měření provozujete Vy jako správce a jejich lišta souhlasu výslovně zahrnuje i formulář na vstupenky.online, jeho účely, měření pořadatele na doméně *.pages.dev a Festapp jako zpracovatele. Souhlas musí jít na webu kdykoli odvolat."
+        "measurementConsentBridgeConfirmation": "Zapnutím potvrzujete, že všechny weby schválené pro měření provozujete Vy jako správce a jejich lišta souhlasu výslovně zahrnuje i formulář na vstupenky.online, jeho účely, měření pořadatele na doméně *.pages.dev a Festapp jako zpracovatele. Souhlas musí jít na webu kdykoli odvolat.",
+        "measurementConsentChange": "Změnit"
     },
     "OrderGridColumns": {
         "id": "Id",

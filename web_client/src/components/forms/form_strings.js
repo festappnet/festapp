@@ -12,6 +12,7 @@ export class FormStrings {
     static get currencySelectLabel() { return LocalizationService.tr('FormsFeature.inWhatCurrency'); }
 
     // Form Settings Feature
+    static get measurementConsentChange() { return LocalizationService.tr('FeatureFormSettings.measurementConsentChange'); }
     static get measurementConsentTitle() { return LocalizationService.tr('FeatureFormSettings.measurementConsentTitle'); }
     static get measurementConsentAccept() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAccept'); }
     static get measurementConsentAcceptAll() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAcceptAll'); }

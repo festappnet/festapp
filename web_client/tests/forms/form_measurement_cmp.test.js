@@ -7,9 +7,9 @@ import {JSDOM} from 'jsdom';
 const bundle = await build({stdin:{contents:`
 import {startMeasurementConsent} from './src/components/forms/form_measurement_cmp.js';
 import {LocalizationService} from './src/services/localization_service.js';
-window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice) => {
+window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice, approved_hosts, measurement_consent_bridge = true) => {
  LocalizationService.translations = translations;
- return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
+ return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,30));
 const none={analytics:false,marketing:false},both={analytics:true,marketing:true};
@@ -424,4 +424,182 @@ test('floating settings reserve clearance for focused form controls and clean up
  assert.match(css,/scroll-padding-bottom:76px/);assert.match(css,/scroll-margin-bottom:76px/);
  assert.ok(win.document.body.classList.contains('festapp-consent-space'));
  cleanup();assert.equal(win.document.body.classList.contains('festapp-consent-space'),false);win.close();
+});
+
+test('linked choice uses real Klaro persistence, floating settings and local revocation',async()=>{
+ const dom=new JSDOM('<html lang="cs"><body><main></main></body></html>',{url:'https://tickets.example/form/test',referrer:'https://organizer.example/event',runScripts:'outside-only',pretendToBeVisual:true});
+ const win=dom.window, grants=[],requests=[];
+ win.name='festapp-consent-link-00000000-0000-0000-0000-000000000000';win.opener={postMessage:(data,origin)=>requests.push({data,origin})};
+ const translations=JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json',import.meta.url)));
+ try {
+  const peer=win.opener;
+  win.eval(bundle.outputFiles[0].text);
+  let cleanup=win.startFixture(translations,{setConsent:g=>grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);
+  assert.equal(requests.length,1);
+  win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests[0].data.nonce,analytics:true,marketing:true}}));
+  await settle();assert.deepEqual(grants.at(-1),both);assert.equal(win.document.body.style.overflow,'');
+  assert(win.document.cookie.includes('festapp-measurement-1-2-a='));assert(win.document.cookie.includes('-source='));
+  assert.equal(win.document.querySelector('[data-festapp-consent-imported]'),null);
+  const fab=win.document.querySelector('.festapp-consent-fab');assert.equal(fab.hidden,false);
+  assert.equal(win.document.querySelector('.cookie-modal-notice'),null);
+  fab.click();await settle();
+  const root=win.document.querySelector('#festapp-measurement-consent');root.querySelector('#service-item-analytics').click();root.querySelector('#service-item-marketing').click();root.querySelector('.cm-btn-accept').click();await settle();
+  assert.deepEqual(grants.at(-1),none);assert.equal(win.document.querySelector('[data-festapp-consent-imported]'),null);assert(!win.document.cookie.includes('-source='));
+  cleanup();cleanup=win.startFixture(translations,{setConsent:g=>grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);
+  await settle();assert.equal(requests.length,1,'saved local choice prevents a new import');assert.deepEqual(grants.at(-1),none);cleanup();
+ } finally {win.close();}
+});
+
+// Each realm creates its own real Klaro manager; the cookie jar is shared just
+// like two tabs on the same product origin.
+function linkedTab(cookieJar) {
+ const dom=new JSDOM('<html lang="cs"><body style="overflow:auto"><main></main></body></html>',{url:'https://tickets.example/form/test',referrer:'https://organizer.example/event',cookieJar,runScripts:'outside-only',pretendToBeVisual:true});
+ const win=dom.window,requests=[],grants=[];
+ const peer={postMessage:data=>requests.push(data)};win.name='festapp-consent-link-00000000-0000-0000-0000-000000000000';win.opener=peer;
+ win.eval(bundle.outputFiles[0].text);
+ return {win,requests,grants,unknown:()=>win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests.at(-1)?.nonce,choice:null}})),start:()=>win.startFixture(cs(),{setConsent:g=>grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']),reply:(analytics=true,marketing=false)=>win.dispatchEvent(new win.MessageEvent('message',{source:peer,origin:'https://organizer.example',data:{namespace:'festapp-consent-link',protocol:1,type:'response',nonce:requests.at(-1)?.nonce,analytics,marketing}})),close:()=>win.close()};
+}
+test('pending exchange has no blocking notice or scroll lock, timeout restores notice',async()=>{
+ const f=linkedTab();let expire;
+ const original=f.win.setTimeout.bind(f.win);
+ f.win.setTimeout=(fn,ms,...args)=>ms===1500?(expire=fn,123):original(fn,ms,...args);
+ try{
+  const cleanup=f.start();await settle();assert.equal(f.win.document.querySelector('.cookie-modal-notice'),null);assert.equal(f.win.document.body.style.overflow,'auto');
+  expire();await settle();assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.document.body.style.overflow,'hidden');assert.equal(f.win.opener,null);cleanup();
+ }finally{f.close();}
+});
+test('new local choice in another Klaro instance takes precedence over pending import',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar();
+ const a=linkedTab(jar),b=linkedTab(jar);
+ try{
+  const cleanA=a.start();b.win.opener=null;const cleanB=b.start();await settle();
+  b.win.document.querySelector('.cn-decline').click();await settle();
+  a.reply(true,true);await settle();assert.deepEqual(a.grants.at(-1),none);assert.equal(a.win.opener,null);
+  assert.equal(a.win.document.querySelector('[data-festapp-consent-imported]'),null);
+  cleanA();cleanB();
+ }finally{a.close();b.close();}
+});
+test('import cookies are session-only, refresh from host, and disappear after session ends',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar();
+ const a=linkedTab(jar);
+ try{
+  const cleanup=a.start();a.reply();await settle();
+  const cookies=jar.getCookiesSync('https://tickets.example');assert.equal(cookies.length,2);
+  for(const cookie of cookies)assert.equal(cookie.expires,'Infinity',cookie.key);
+  assert.deepEqual(a.grants.at(-1),{analytics:true,marketing:false});
+  assert.equal(a.win.document.querySelector('.festapp-consent-fab').hidden,false);
+  assert.equal(a.win.document.querySelector('[data-festapp-consent-imported]'),null);
+  cleanup();
+  const b=linkedTab(jar);try{const clean=b.start();assert.equal(b.requests.length,1);b.reply(false,false);await settle();assert.deepEqual(b.grants.at(-1),none);clean();}finally{b.close();}
+  // Ending the browser cookie session discards all session cookies.
+  jar.removeAllCookiesSync();const c=linkedTab(jar);c.win.opener=null;
+  try{const clean=c.start();await settle();assert.deepEqual(c.grants.at(-1),none);assert.ok(c.win.document.querySelector('.cookie-modal-notice'));clean();}finally{c.close();}
+ }finally{a.close();}
+});
+test('legacy persistent import is discarded while a local choice remains persistent',async()=>{
+ const f=linkedTab();
+ try{
+  f.win.opener=null;
+  f.win.document.cookie='festapp-measurement-1-2-a='+encodeURIComponent(JSON.stringify(both))+'; Path=/; Max-Age=15552000';
+  f.win.document.cookie='festapp-measurement-1-2-a-source='+encodeURIComponent(JSON.stringify({origin:'https://organizer.example',importedAt:Date.now()}))+'; Path=/; Max-Age=15552000';
+  const clean=f.start();await settle();assert.deepEqual(f.grants.at(-1),none);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));
+  f.win.document.querySelector('.cm-btn-success').click();await settle();assert.deepEqual(f.grants.at(-1),both);assert(!f.win.document.cookie.includes('-source='));clean();
+ }finally{f.close();}
+});
+test('saving locally replaces session expiry with 180 days and survives session end',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
+ try{
+  const clean=a.start();a.reply();await settle();
+  a.win.document.querySelector('.festapp-consent-fab').click();await settle();
+  a.win.document.querySelector('.cm-btn-accept').click();await settle();
+  const cookies=jar.getCookiesSync('https://tickets.example');assert.equal(cookies.length,1);assert.notEqual(cookies[0].expires,'Infinity');
+  assert.ok(cookies[0].expires.getTime()>Date.now()+179*86400000);clean();
+  const b=linkedTab(jar);b.win.opener=null;
+  try{const cleanB=b.start();await settle();assert.deepEqual(b.grants.at(-1),{analytics:true,marketing:false});assert.equal(b.win.document.querySelector('.cookie-modal-notice'),null);cleanB();}finally{b.close();}
+ }finally{a.close();}
+});
+
+for (const response of ['timeout','unknown','refusal']) test(`old imported grant stays denied during refresh and after ${response}`,async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
+ try{
+  const cleanA=a.start();a.reply(true,true);await settle();assert.deepEqual(a.grants.at(-1),both);cleanA();
+  const b=linkedTab(jar);let expire;const timer=b.win.setTimeout.bind(b.win);
+  b.win.setTimeout=(fn,ms,...args)=>ms===1500?(expire=fn,123):timer(fn,ms,...args);
+  try{
+   const cleanB=b.start();await settle();assert.ok(b.grants.length);assert.ok(b.grants.every(g=>!g || (!g.analytics && !g.marketing)));
+   assert.equal(b.win.document.querySelector('[data-festapp-consent-imported]'),null);
+   if(response==='timeout')expire();
+   else if(response==='refusal')b.reply(false,false);
+   else b.unknown();
+   await settle();assert.deepEqual(b.grants.at(-1),none);
+   if(response!=='refusal'){assert.ok(b.win.document.querySelector('.cookie-modal-notice'));assert.ok(!b.win.document.cookie.includes('-source='));}
+   cleanB();
+  }finally{b.close();}
+ }finally{a.close();}
+});
+test('24 hour imported choice expires even when browser session cookies survive',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
+ try{
+  const cleanA=a.start();a.reply(true,true);await settle();cleanA();
+  const b=linkedTab(jar);b.win.opener=null;
+  b.win.document.cookie='festapp-measurement-1-2-a-source='+encodeURIComponent(JSON.stringify({origin:'https://organizer.example',session:true,importedAt:Date.now()-86400001}))+'; Path=/';
+  try{const cleanB=b.start();await settle();assert.ok(b.grants.every(g=>!g || !g.analytics && !g.marketing));assert.ok(b.win.document.querySelector('.cookie-modal-notice'));assert.ok(!b.win.document.cookie.includes('-source='));cleanB();}finally{b.close();}
+ }finally{a.close();}
+});
+for(const enabled of [false,undefined])test(`organizer switch ${enabled} keeps normal CMP`,async()=>{
+ const f=linkedTab();try{const clean=f.win.startFixture(cs(),{setConsent:g=>f.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example'],enabled===undefined?null:enabled);await settle();assert.equal(f.requests.length,0);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.opener,null);clean();}finally{f.close();}
+});
+
+test('direct reload without a new peer retains an unexpired import',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
+ try{const cleanA=a.start();a.reply(true,true);await settle();cleanA();const b=linkedTab(jar);b.win.opener=null;
+  try{const cleanB=b.start();await settle();assert.equal(b.requests.length,0);assert.deepEqual(b.grants.at(-1),both);assert.equal(b.win.document.querySelector('.festapp-consent-fab').hidden,false);assert.equal(b.win.document.querySelector('[data-festapp-consent-imported]'),null);cleanB();}finally{b.close();}
+ }finally{a.close();}
+});
+test('an import from a website no longer approved is revoked on the next load',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
+ try{const cleanA=a.start();a.reply(true,true);await settle();assert.equal(a.win.document.querySelector('.festapp-consent-fab').hidden,false);
+  const change=a.win.document.querySelector('.festapp-consent-fab');assert.ok(change.getAttribute('aria-label'),'Change has an accessible name');cleanA();
+  const b=linkedTab(jar);b.win.opener=null;
+  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://other.example']);await settle();
+   assert.equal(b.win.document.querySelector('[data-festapp-consent-imported]'),null);
+   assert.ok(b.win.document.querySelector('.cookie-modal-notice'),'the normal notice asks again');
+   assert.notDeepEqual(b.grants.at(-1),{analytics:true,marketing:true});cleanB();}finally{b.close();}
+ }finally{a.close();}
+});
+test('an import from a removed website never reaches the transport on the next load',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);
+ try{const cleanA=a.start();a.reply(true,true);await settle();cleanA();
+  const b=linkedTab(jar);b.win.opener=null;
+  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://other.example']);await settle();
+   assert.ok(!b.grants.some(g=>g&&g.analytics&&g.marketing),'no intermediate grant from the stale import');cleanB();}finally{b.close();}
+ }finally{a.close();}
+});
+test('an expiry timer of an old import keeps a newer local choice from another tab',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar(),a=linkedTab(jar);let expire;
+ const original=a.win.setTimeout.bind(a.win);a.win.setTimeout=(fn,ms,...args)=>ms>3600000?(expire=fn,999):original(fn,ms,...args);
+ try{const cleanA=a.start();a.reply(true,true);await settle();assert.equal(typeof expire,'function');
+  const b=linkedTab(jar);b.win.opener=null;
+  try{const cleanB=b.win.startFixture(cs(),{setConsent:g=>b.grants.push(plain(g))},'https://organizer.example/privacy',undefined,['https://organizer.example']);await settle();
+   b.win.document.querySelector('.festapp-consent-fab').click();await settle();
+   b.win.document.querySelector('.cn-decline, .cm-btn-decline').click();await settle();
+   const saved=()=>b.win.document.cookie.split('; ').find(c=>c.startsWith('festapp-measurement-1-2-a='));
+   const before=saved();assert.ok(before,'local decline saved');
+   expire();await settle();
+   assert.equal(saved(),before,'the old timer must not reset the newer local choice');cleanB();}finally{b.close();}
+  cleanA();
+ }finally{a.close();}
+});
+test('floating settings after import gets focus back after Escape',async()=>{
+ const f=linkedTab();try{const clean=f.start();f.reply(true,false);await settle();
+  const change=f.win.document.querySelector('.festapp-consent-fab');change.focus();change.click();await settle();
+  assert.ok(f.win.document.querySelector('.cm-modal'));
+  const metadata=f.win.document.cookie.split('; ').find(c=>c.includes('-source='));
+  f.win.document.querySelector('#service-item-analytics').click();
+  f.win.document.dispatchEvent(new f.win.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));await settle();
+  assert.equal(f.win.document.activeElement,change,'focus returns to the floating settings button');
+  assert.equal(change.hidden,false);assert.equal(f.win.document.querySelector('.cookie-modal-notice'),null);
+  assert.equal(f.win.document.cookie.split('; ').find(c=>c.includes('-source=')),metadata,'Escape preserves import metadata');
+  assert.deepEqual(f.grants.at(-1),{analytics:true,marketing:false},'Escape discards the draft');clean();
+ }finally{f.close();}
 });

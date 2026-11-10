@@ -502,7 +502,8 @@
         "embedOpenAppearance": "Zmień wygląd formularza",
         "embedHostDataLayer": "Wysyłaj dane pomiarowe do dataLayer strony",
         "measurementConsentBridge": "Przejmij zgodę z banera zatwierdzonych stron",
-        "measurementConsentBridgeConfirmation": "Włączając tę opcję, potwierdzają Państwo, że prowadzą jako administrator wszystkie strony zatwierdzone do pomiaru, a ich baner zgody wyraźnie obejmuje także formularz na vstupenky.online, jego cele, pomiar organizatora w domenie *.pages.dev oraz Festapp jako podmiot przetwarzający. Zgodę musi być można na stronie w każdej chwili wycofać."
+        "measurementConsentBridgeConfirmation": "Włączając tę opcję, potwierdzają Państwo, że prowadzą jako administrator wszystkie strony zatwierdzone do pomiaru, a ich baner zgody wyraźnie obejmuje także formularz na vstupenky.online, jego cele, pomiar organizatora w domenie *.pages.dev oraz Festapp jako podmiot przetwarzający. Zgodę musi być można na stronie w każdej chwili wycofać.",
+        "measurementConsentChange": "Zmień"
     },
     "FeatureTicket": {
         "enablePregeneratedTickets": "Wstępnie wygenerowane bilety",

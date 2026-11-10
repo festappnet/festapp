@@ -567,7 +567,8 @@
         "measurementAskUnitManager": "Ask the organizer’s manager to enable measurement, configure GTM or scripts, and add a privacy policy URL.",
         "embedHostDataLayer": "Send measurement to the website dataLayer",
         "measurementConsentBridge": "Take over consent from the banner of approved websites",
-        "measurementConsentBridgeConfirmation": "By enabling this, you confirm that you operate all websites approved for measurement as the controller and that their consent banner explicitly covers the form on vstupenky.online, its purposes, the organizer measurement on the *.pages.dev domain and Festapp as processor. Visitors must be able to withdraw consent on the website at any time."
+        "measurementConsentBridgeConfirmation": "By enabling this, you confirm that you operate all websites approved for measurement as the controller and that their consent banner explicitly covers the form on vstupenky.online, its purposes, the organizer measurement on the *.pages.dev domain and Festapp as processor. Visitors must be able to withdraw consent on the website at any time.",
+        "measurementConsentChange": "Change"
     },
     "OrderGridColumns": {
         "id": "Id",
