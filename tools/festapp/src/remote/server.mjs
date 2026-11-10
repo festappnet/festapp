@@ -113,7 +113,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     provider.on('server_error', () => audit({ event: 'issuer_error' }));
     const app = express();
     app.disable('x-powered-by');
-    // Keep the existing resource/device budget alongside functional checkboxes.
+    // Keep the existing resource/device budget for supported selections.
     const form = express.urlencoded({ extended: false, limit: '8kb', parameterLimit: 110 + MCP_SCOPES.length });
     const active = new Map();
     const artifacts = new PreviewArtifacts();
@@ -241,7 +241,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         f.permissions = MCP_SCOPES.filter(s => String(d.params.scope ?? '').split(' ').includes(s));
         storage.put('Connect', d.uid, f, 600);
         return res.type('html').send(consentForm({ csrf: f.csrf, client,
-            permissions: f.permissions, connections: activeConnections(storage, f.userId, d.params.client_id, config.profile.binding), action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, canRequestCreate: canRequestCreate(d), selectedTenant: config.profile.tenantId }));
+            connections: activeConnections(storage, f.userId, d.params.client_id, config.profile.binding), action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, selectedTenant: config.profile.tenantId }));
     };
     app.get('/connect/:uid', (req, res) => renderConnect(req, res));
     app.post('/connect/:uid/login', form, async (req, res) => {
@@ -271,7 +271,9 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             await loginOwner(d.uid).logout(); storage.remove('Connect', d.uid);
             return provider.interactionFinished(req, res, { error: 'access_denied' }, { mergeWithLastSubmission: false });
         }
-        const selection = req.body.unit ? { type: 'unit', unitId: Number(req.body.unit), canCreateOccasions: req.body.create === '1' }
+        const selection = req.body.unit ? { type: 'unit', unitId: Number(req.body.unit), canCreateOccasions: req.body.consentVersion === '3'
+            ? canRequestCreate(d) && f.available?.units.some(u => u.id === Number(req.body.unit) && u.canCreateOccasions) === true
+            : req.body.create === '1' }
             : { type: 'occasions', occasionIds: [req.body.occasion].flat().map(Number) };
         // The standalone select also submits in New device mode. Validate every
         // supplied ID before discarding that unused, owned selection.
@@ -281,8 +283,10 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const connection = req.body.mode === undefined && req.body.durationDays === undefined ? undefined : { mode: req.body.mode ?? 'new',
             ...(req.body.durationDays !== undefined ? { durationDays: Number(req.body.durationDays) } : {}),
             ...(req.body.mode === 'replace' ? { connectionId: req.body.connectionId } : {}), name: req.body.name };
-        const permissions = verifyPermissions(req.body.permission === undefined ? [] : [req.body.permission].flat(),
-            String(d.params.scope ?? '').split(' '));
+        // Functions follow the validated OAuth request, not another user role matrix.
+        // Honor narrower approvals from pages already open before this UI change.
+        const permissions = verifyPermissions(req.body.consentVersion === '3' ? f.permissions
+            : req.body.permission === undefined ? [] : [req.body.permission].flat(), String(d.params.scope ?? '').split(' '));
         return completeConsent(req, res, d, { ...f, permissions, connection }, selection);
     });
     const manage = (req, res) => {

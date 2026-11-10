@@ -43,7 +43,6 @@ export class McpConnectionPage {
         this.request = new URL(browser.location.href).searchParams.get('request');
         this.selected = new Set();
         this.selectedUnits = new Map();
-        this.selectedPermissions = new Set();
         this.expandedUnits = new Map();
         this.generation = 0;
         this.busy = false;
@@ -54,7 +53,7 @@ export class McpConnectionPage {
 
     async call(operation) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: [...this.selectedPermissions], ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
+            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: this.details?.requestedPermissions ?? [], ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -72,39 +71,10 @@ export class McpConnectionPage {
             (this.connection.mode === 'new' && this.details.connections?.length && !this.connection.name.trim()))) return false;
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
         const units = this.details?.units || [];
-        if ([...this.selectedPermissions].some(p => !this.details?.requestedPermissions?.includes(p))) return false;
-        if (!validPermissions([...this.selectedPermissions])) return false;
+        if (!validPermissions(this.details?.requestedPermissions ?? [])) return false;
         return this.selected.size + this.selectedUnits.size > 0 && this.selected.size <= 100 && this.selectedUnits.size <= 100 &&
             [...this.selected].every(id => ids.has(id)) && [...this.selectedUnits].every(([id, create]) =>
                 units.some(u => u.id === id && (!create || (this.details.canRequestCreate && u.canCreateOccasions))));
-    }
-
-    setPermission(scope, enabled) {
-        if (this.busy || !this.details.requestedPermissions.includes(scope)) return;
-        if (enabled) {
-            const include = permission => {
-                if (!this.details.requestedPermissions.includes(permission)) return;
-                MCP_PERMISSIONS[permission].requires.forEach(include);
-                this.selectedPermissions.add(permission);
-            };
-            include(scope);
-        } else {
-            this.selectedPermissions.delete(scope);
-            // Iterate to a fixed point: a removed prerequisite can invalidate
-            // several levels of dependent permissions in the shared catalog.
-            let changed;
-            do {
-                changed = false;
-                for (const permission of this.selectedPermissions) {
-                    if (MCP_PERMISSIONS[permission].requires.some(required => !this.selectedPermissions.has(required))) {
-                        this.selectedPermissions.delete(permission);
-                        changed = true;
-                    }
-                }
-            } while (changed);
-        }
-        this.render();
-        this.container.querySelector(`[data-permission="${scope}"]`)?.focus();
     }
 
     dispose() { this.generation++; }
@@ -147,9 +117,8 @@ export class McpConnectionPage {
                 const permissions = this.details.requestedPermissions ?? [];
                 if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p))) throw new Error('Invalid permissions');
                 if (!validPermissions(permissions)) throw new Error('Invalid permissions');
-                // Start with the requested set; only the explicit choice below
-                // reaches the issuer. Existing issued grants are never changed.
-                this.selectedPermissions = new Set(permissions);
+                // OAuth scopes remain an internal client contract. One approval
+                // delegates the requested functions; live SQL still owns user rights.
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
@@ -291,8 +260,7 @@ export class McpConnectionPage {
                             add('p', this.text('connectionExpiry', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(c.expiresAt)) }), item);
                             for (const u of c.access.units) add('p', this.text(u.canCreateOccasions ? 'connectionOrganizerCreate' : 'connectionOrganizer', { id: u.unitId }), item);
                             for (const id of c.access.occasionIds) add('p', this.text('connectionOccasion', { id }), item);
-                            add('p', this.text('baseAccess'), item);
-                            for (const p of c.permissions) if (MCP_PERMISSIONS[p]) add('p', this.text(MCP_PERMISSIONS[p].label), item);
+                            add('p', this.text('sameRights'), item);
                         }
                         add('p', this.text('replaceHint'), section);
                     }
@@ -365,14 +333,6 @@ export class McpConnectionPage {
                 const selectedCount = group.occasions.filter(o => this.selected.has(o.id)).length;
                 const status = add('p', this.text(whole ? 'wholeOrganizerSelected' : 'groupSelection', { selected: selectedCount, count: group.occasions.length }), section);
                 status.className = 'mcp-organizer-hint';
-                if (whole && this.details.canRequestCreate === true && group.unit?.canCreateOccasions === true) {
-                    const create = checkbox(this.text('allowCreate'), creates, () => {
-                        this.selectedUnits.set(id, create.checked);
-                        this.render();
-                        this.container.querySelector(`[data-allow-create="${id}"]`)?.focus();
-                    }, section);
-                    create.dataset.allowCreate = id;
-                }
                 const hint = add('p', this.text(!group.unit ? 'individualOnlyHint' : creates ? 'organizerCreateHint' : 'organizerReadHint'), section);
                 hint.className = 'mcp-organizer-hint';
                 hint.id = `mcp-unit-hint-${id ?? 'individual'}`;
@@ -412,22 +372,6 @@ export class McpConnectionPage {
             summary.className = 'mcp-access-summary';
             add('h2', this.text('accessSummary'), summary);
             add('p', this.text('sameRights'), summary);
-            const capabilities = add('ul', '', summary);
-            add('li', this.text('baseAccess'), capabilities);
-            if (this.details.requestedPermissions?.length) {
-                const functions = add('fieldset', '', summary);
-                functions.disabled = this.busy;
-                add('legend', this.text('choosePermissions'), functions);
-                add('p', this.text('permissionsHint'), functions);
-                for (const scope of this.details.requestedPermissions) {
-                    const input = checkbox(this.text(MCP_PERMISSIONS[scope].label), this.selectedPermissions.has(scope),
-                        event => this.setPermission(scope, event.target.checked), functions);
-                    input.dataset.permission = scope;
-                }
-            }
-            if ([...this.selectedPermissions].some(scope => scope !== 'festapp:orders:read')) {
-                add('p', this.text('sensitiveActionsHint'), summary);
-            }
             const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
             selectionSummary.className = 'mcp-selection-summary';
             add('p', this.text('duration', { appName: AppConfig.appName }));
