@@ -38,6 +38,11 @@ contraction deletes functions, not that history or its source facts.
 
 ## Publication, projection and workers
 
+Participant rows require the organization setting `IS_APP_SUPPORTED=true`;
+ticketing-only organizations retain order notifications. The app-support forward
+migration invalidates existing participant projections, including read history
+and badges, without deleting source events.
+
 Publication captures eligible recipients. Hidden membership suppresses personal
 participant enrollment; authorized order/waitlist activity and its delivery
 incidents remain visible for hidden buyers. Unrelated hidden personal email stays

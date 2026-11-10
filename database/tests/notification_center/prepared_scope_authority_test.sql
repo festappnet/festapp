@@ -10,8 +10,8 @@ DO $$
 DECLARE org bigint;other_org bigint;un bigint;oc bigint;demo bigint;foreign_oc bigint;bank bigint;demo_bank bigint;conn bigint;alias_bank bigint;foreign_bank bigint;foreign_unit bigint;
  users uuid[]:=ARRAY[gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid()];usr uuid;occasion_id bigint;kind text;affected bigint[];rights text[];e public.notification_center_events;expected boolean;actual boolean;checks integer:=0;
 BEGIN
- INSERT INTO public.organizations(title) VALUES('Oprávnění oznámení') RETURNING id INTO org;
- INSERT INTO public.organizations(title) VALUES('Jiný pořadatel') RETURNING id INTO other_org;
+ INSERT INTO public.organizations(title,data) VALUES('Oprávnění oznámení','{"IS_APP_SUPPORTED":true}') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Jiný pořadatel','{"IS_APP_SUPPORTED":true}') RETURNING id INTO other_org;
  INSERT INTO auth.users(id) SELECT unnest(users);
  INSERT INTO public.user_info(id,organization) SELECT u,org FROM unnest(users) u;
  INSERT INTO public.units(title,organization) VALUES('Pořadatel',org) RETURNING id INTO un;

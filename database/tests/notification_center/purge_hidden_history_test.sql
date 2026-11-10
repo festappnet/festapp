@@ -4,8 +4,8 @@ DO $$
 DECLARE org bigint; other_org bigint; oc bigint; viewer uuid:=gen_random_uuid(); hidden_user uuid:=gen_random_uuid();
  hidden_event uuid; visible_event uuid; other_event uuid; batch uuid;
 BEGIN
- INSERT INTO public.organizations(title) VALUES('Purge hidden notifications') RETURNING id INTO org;
- INSERT INTO public.organizations(title) VALUES('Untouched organization') RETURNING id INTO other_org;
+ INSERT INTO public.organizations(title,data) VALUES('Purge hidden notifications','{"IS_APP_SUPPORTED":true}') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Untouched organization','{"IS_APP_SUPPORTED":true}') RETURNING id INTO other_org;
  INSERT INTO auth.users(id) VALUES(viewer),(hidden_user);
  INSERT INTO public.user_info(id,organization) VALUES(viewer,org),(hidden_user,org);
  INSERT INTO public.organization_users(organization,"user",is_hidden) VALUES(org,hidden_user,true);
