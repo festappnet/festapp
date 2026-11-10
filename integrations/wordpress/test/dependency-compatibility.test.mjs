@@ -17,6 +17,8 @@ const expressRequire = createRequire(playground.resolve('express/package.json'))
 const qs = expressRequire('qs');
 const storage = createRequire(playground.resolve('@wp-playground/storage'));
 const git = storage('isomorphic-git');
+const cliUtil = createRequire(playground.resolve('@php-wasm/cli-util/package.json'));
+const {XMLParser} = cliUtil('fast-xml-parser');
 
 test('wp-env rimraf retains async and sync glob cleanup without deleting unrelated paths', async () => {
   const root = await mkdtemp(join(tmpdir(), 'festapp-wp-deps-'));
@@ -124,4 +126,11 @@ test('Playground checkout rejects a raw dotdot tree entry without escaping its w
     await assert.rejects(git.checkout({fs, dir, ref: 'unsafe', force: true}), {code: 'UnsafeFilepathError'});
     assert.equal(await readFile(join(root, 'sentinel.txt'), 'utf8'), 'preserved');
   } finally { await rm(root, {recursive: true, force: true}); }
+});
+
+test('PHP WASM XML parser retains WordPress release metadata parsing', () => {
+  const parser = new XMLParser();
+  assert.deepEqual(parser.parse('<rss><channel><item><title>WordPress 6.6</title><link>https://example.invalid/wordpress.zip</link></item></channel></rss>'), {
+    rss: {channel: {item: {title: 'WordPress 6.6', link: 'https://example.invalid/wordpress.zip'}}},
+  });
 });

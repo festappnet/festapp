@@ -2,7 +2,7 @@
   "jobs": {
     "image-contract": {
       "workflow": "image-service-regressions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "image-install",
         "image-policy",
@@ -20,7 +20,7 @@
     },
     "web-startup": {
       "workflow": "web-startup-regressions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "web-install",
         "web-startup",
@@ -59,7 +59,7 @@
     },
     "navigation-interactions": {
       "workflow": "navigation-interactions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "navigation-install",
         "navigation-contract"
@@ -95,7 +95,7 @@
     },
     "server-policy": {
       "workflow": "image-upload-regressions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "mcp-auth-install",
         "mcp-auth-contract"
@@ -109,7 +109,7 @@
     },
     "client-contract": {
       "workflow": "image-upload-regressions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "image-client-install",
         "image-client-adapter",
@@ -148,7 +148,7 @@
     },
     "seat-checkout": {
       "workflow": "seat-checkout-regressions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "seat-install",
         "seat-upgrade",
@@ -181,7 +181,7 @@
     },
     "ticket-preview-and-delivery": {
       "workflow": "seat-checkout-regressions.yml",
-      "node": "22.23.3",
+      "node": "22.23.4",
       "steps": [
         "ticket-edge",
         "ticket-install",

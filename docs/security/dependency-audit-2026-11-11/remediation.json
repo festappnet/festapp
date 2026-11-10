@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-11",
+  "scope": "Local WordPress tooling and Edge fflate remediation; no deployment",
+  "wordpress": {
+    "audit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "test_output": "$ node --test test/dependency-compatibility.test.mjs\n✔ wp-env rimraf retains async and sync glob cleanup without deleting unrelated paths (23.565ms)\n✔ Playground Express retains extended query parsing with patched qs (58.683166ms)\n✔ Playground Git retains init, commit and checkout with patched isomorphic-git (51.127792ms)\n✔ PHP WASM XML parser retains WordPress release metadata parsing (2.261292ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 478.570958\n"
+  },
+  "edge": {
+    "audit_output": "No known vulnerabilities found\n",
+    "test_output": "Check supabase/functions/_shared/ticketBatchExports_test.ts\nrunning 4 tests from ./supabase/functions/_shared/ticketBatchExports_test.ts\nA4 export crops empty original page and packs nine real tickets onto three sheets at physical size ... ok (24ms)\na complete 200-ticket batch downloads as one 50-page A4 document ... ok (143ms)\nZIP contains each original frozen PDF byte for byte in ordinal order ... ok (8ms)\nexport rejects corrupt/missing bytes, foreign keys, incomplete sequence, invalid crop and output overflow ... ok (1ms)\n\nok | 4 passed | 0 failed (182ms)\n\n"
+  }
+}

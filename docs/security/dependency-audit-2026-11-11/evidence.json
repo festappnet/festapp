@@ -1,0 +1,1148 @@
+{
+  "date": "2026-11-11",
+  "scope": "Current local working tree; no deployment or live artifact verification",
+  "head": "742d614b722bbe619b3a095f66605bd4bb536006",
+  "pnpm_version": "11.24.0",
+  "pnpm": [
+    {
+      "directory": "automation/image-migration",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "automation/release/platform_updates",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "integrations/wix",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "integrations/wordpress",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 1,
+        "moderate": 2,
+        "high": 1,
+        "critical": 0
+      },
+      "advisories": [
+        {
+          "module_name": "isomorphic-git",
+          "severity": "moderate",
+          "title": "isomorphic-git: Path traversal via a \"..\" tree-entry name writes files outside the working directory on clone/checkout",
+          "vulnerable_versions": "<=1.38.5",
+          "patched_versions": ">=1.38.6",
+          "url": "https://github.com/advisories/GHSA-cw2g-2vwq-88w6",
+          "findings": [
+            {
+              "version": "1.37.6",
+              "paths": [
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/blueprints>@wp-playground/storage>isomorphic-git",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/storage>isomorphic-git",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/tools>@wp-playground/blueprints>@wp-playground/storage>isomorphic-git"
+              ],
+              "dev": true,
+              "optional": false,
+              "bundled": false
+            }
+          ]
+        },
+        {
+          "module_name": "isomorphic-git",
+          "severity": "moderate",
+          "title": "isomorphic-git: Circular symbolic references cause non-terminating resolution (DoS)",
+          "vulnerable_versions": "<=1.38.5",
+          "patched_versions": ">=1.38.6",
+          "url": "https://github.com/advisories/GHSA-96wc-2m84-2cj7",
+          "findings": [
+            {
+              "version": "1.37.6",
+              "paths": [
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/blueprints>@wp-playground/storage>isomorphic-git",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/storage>isomorphic-git",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/tools>@wp-playground/blueprints>@wp-playground/storage>isomorphic-git"
+              ],
+              "dev": true,
+              "optional": false,
+              "bundled": false
+            }
+          ]
+        },
+        {
+          "module_name": "isomorphic-git",
+          "severity": "high",
+          "title": "isomorphic-git: Arbitrary file write outside of working tree via directory symlink during checkout (potential RCE)",
+          "vulnerable_versions": "<=1.38.5",
+          "patched_versions": ">=1.38.6",
+          "url": "https://github.com/advisories/GHSA-9qw7-j9xw-fv9c",
+          "findings": [
+            {
+              "version": "1.37.6",
+              "paths": [
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/blueprints>@wp-playground/storage>isomorphic-git",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/storage>isomorphic-git",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/tools>@wp-playground/blueprints>@wp-playground/storage>isomorphic-git"
+              ],
+              "dev": true,
+              "optional": false,
+              "bundled": false
+            }
+          ]
+        },
+        {
+          "module_name": "fast-xml-parser",
+          "severity": "low",
+          "title": "fast-xml-parser: Quadratic CPU consumption scanning unterminated stop-node tags",
+          "vulnerable_versions": "<=5.11.2",
+          "patched_versions": ">=5.12.0",
+          "url": "https://github.com/advisories/GHSA-474x-hrwr-fgx4",
+          "findings": [
+            {
+              "version": "5.11.2",
+              "paths": [
+                ".>@wordpress/env>@wp-playground/cli>@php-wasm/cli-util>fast-xml-parser",
+                ".>@wordpress/env>@wp-playground/cli>@php-wasm/node>@php-wasm/cli-util>fast-xml-parser",
+                ".>@wordpress/env>@wp-playground/cli>@wp-playground/tools>@php-wasm/node>@php-wasm/cli-util>fast-xml-parser"
+              ],
+              "dev": true,
+              "optional": false,
+              "bundled": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "directory": "tools/festapp",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "web_client",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "workers/image-worker",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "workers/self-hosted-monitor",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "workers/supabase-legacy-keepalive",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "workers/sync-publisher",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    },
+    {
+      "directory": "workers/sync-worker",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "advisories": []
+    }
+  ],
+  "osv": {
+    "unique_ecosystem_name_version_counts": {
+      "Pub": 412,
+      "npm": 83,
+      "crates.io": 204,
+      "RubyGems": 102
+    },
+    "findings": [
+      {
+        "ecosystem": "npm",
+        "package": "fflate",
+        "version": "0.8.2",
+        "files": [
+          "supabase/functions/deno.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-px8p-9vwx-vf98",
+            "summary": "fflate unzipSync can enter an infinite loop when parsing malformed ZIP64 archives",
+            "aliases": [
+              "CVE-2026-45820"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "fflate",
+                  "ecosystem": "npm",
+                  "purl": "pkg:npm/fflate"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.4.5"
+                      },
+                      {
+                        "fixed": "0.4.9"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-px8p-9vwx-vf98/GHSA-px8p-9vwx-vf98.json"
+                }
+              },
+              {
+                "package": {
+                  "name": "fflate",
+                  "ecosystem": "npm",
+                  "purl": "pkg:npm/fflate"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.5.0"
+                      },
+                      {
+                        "fixed": "0.5.4"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-px8p-9vwx-vf98/GHSA-px8p-9vwx-vf98.json"
+                }
+              },
+              {
+                "package": {
+                  "name": "fflate",
+                  "ecosystem": "npm",
+                  "purl": "pkg:npm/fflate"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.6.0"
+                      },
+                      {
+                        "fixed": "0.6.11"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-px8p-9vwx-vf98/GHSA-px8p-9vwx-vf98.json"
+                }
+              },
+              {
+                "package": {
+                  "name": "fflate",
+                  "ecosystem": "npm",
+                  "purl": "pkg:npm/fflate"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.7.0"
+                      },
+                      {
+                        "fixed": "0.7.5"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-px8p-9vwx-vf98/GHSA-px8p-9vwx-vf98.json"
+                }
+              },
+              {
+                "package": {
+                  "name": "fflate",
+                  "ecosystem": "npm",
+                  "purl": "pkg:npm/fflate"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.8.0"
+                      },
+                      {
+                        "fixed": "0.8.3"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-px8p-9vwx-vf98/GHSA-px8p-9vwx-vf98.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "anyhow",
+        "version": "1.0.86",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "RUSTSEC-2026-0190",
+            "summary": "Unsoundness in `Error::downcast_mut()`",
+            "aliases": [],
+            "affected": [
+              {
+                "package": {
+                  "name": "anyhow",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/anyhow"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.0.0-0"
+                      },
+                      {
+                        "fixed": "1.0.103"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affected_functions": null,
+                  "affects": {
+                    "arch": [],
+                    "os": [],
+                    "functions": [
+                      "anyhow::Error::downcast_mut"
+                    ]
+                  }
+                },
+                "database_specific": {
+                  "categories": [
+                    "memory-corruption"
+                  ],
+                  "cvss": null,
+                  "informational": "unsound",
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0190.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "atty",
+        "version": "0.2.14",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-g98v-hv3f-hcfr",
+            "summary": "atty potential unaligned read",
+            "aliases": [
+              "RUSTSEC-2021-0145"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "atty",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/atty"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0"
+                      },
+                      {
+                        "last_affected": "0.2.14"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2023/06/GHSA-g98v-hv3f-hcfr/GHSA-g98v-hv3f-hcfr.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2021-0145",
+            "summary": "Potential unaligned read",
+            "aliases": [
+              "GHSA-g98v-hv3f-hcfr"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "atty",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/atty"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.0.0-0"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affected_functions": null,
+                  "affects": {
+                    "arch": [],
+                    "functions": [],
+                    "os": [
+                      "windows"
+                    ]
+                  }
+                },
+                "database_specific": {
+                  "categories": [],
+                  "cvss": null,
+                  "informational": "unsound",
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2021-0145.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2024-0375",
+            "summary": "`atty` is unmaintained",
+            "aliases": [],
+            "affected": [
+              {
+                "package": {
+                  "name": "atty",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/atty"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.0.0-0"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affected_functions": null,
+                  "affects": {
+                    "arch": [],
+                    "functions": [],
+                    "os": []
+                  }
+                },
+                "database_specific": {
+                  "categories": [],
+                  "cvss": null,
+                  "informational": "unmaintained",
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2024-0375.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "bytes",
+        "version": "1.6.0",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-434x-w66g-qw3r",
+            "summary": "bytes has integer overflow in BytesMut::reserve",
+            "aliases": [
+              "CVE-2026-25541",
+              "RUSTSEC-2026-0007"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "bytes",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/bytes"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "1.2.1"
+                      },
+                      {
+                        "fixed": "1.11.1"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/02/GHSA-434x-w66g-qw3r/GHSA-434x-w66g-qw3r.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2026-0007",
+            "summary": "Integer overflow in `BytesMut::reserve`",
+            "aliases": [
+              "CVE-2026-25541",
+              "GHSA-434x-w66g-qw3r"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "bytes",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/bytes"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "1.2.1"
+                      },
+                      {
+                        "fixed": "1.11.1"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affected_functions": null,
+                  "affects": {
+                    "functions": [],
+                    "arch": [],
+                    "os": []
+                  }
+                },
+                "database_specific": {
+                  "categories": [
+                    "memory-corruption"
+                  ],
+                  "cvss": null,
+                  "informational": null,
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0007.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "glib",
+        "version": "0.17.10",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-wrw7-89jp-8q8g",
+            "summary": "Unsoundness in `Iterator` and `DoubleEndedIterator` impls for `glib::VariantStrIter`",
+            "aliases": [
+              "RUSTSEC-2024-0429"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "glib",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/glib"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.15.0"
+                      },
+                      {
+                        "fixed": "0.20.0"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2024/12/GHSA-wrw7-89jp-8q8g/GHSA-wrw7-89jp-8q8g.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2024-0429",
+            "summary": "Unsoundness in `Iterator` and `DoubleEndedIterator` impls for `glib::VariantStrIter`",
+            "aliases": [
+              "GHSA-wrw7-89jp-8q8g"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "glib",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/glib"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.15.0"
+                      },
+                      {
+                        "fixed": "0.20.0"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affects": {
+                    "arch": [],
+                    "functions": [
+                      "glib::VariantStrIter::last",
+                      "glib::VariantStrIter::next",
+                      "glib::VariantStrIter::next_back",
+                      "glib::VariantStrIter::nth",
+                      "glib::VariantStrIter::nth_back"
+                    ],
+                    "os": []
+                  },
+                  "affected_functions": null
+                },
+                "database_specific": {
+                  "categories": [],
+                  "cvss": null,
+                  "informational": "unsound",
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2024-0429.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "idna",
+        "version": "0.5.0",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-h97m-ww89-6jmq",
+            "summary": "`idna` accepts Punycode labels that do not produce any non-ASCII when decoded",
+            "aliases": [
+              "CVE-2024-12224",
+              "RUSTSEC-2024-0421"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "idna",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/idna"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0"
+                      },
+                      {
+                        "fixed": "1.0.0"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2024/12/GHSA-h97m-ww89-6jmq/GHSA-h97m-ww89-6jmq.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2024-0421",
+            "summary": "`idna` accepts Punycode labels that do not produce any non-ASCII when decoded",
+            "aliases": [
+              "CVE-2024-12224",
+              "GHSA-h97m-ww89-6jmq"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "idna",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/idna"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.0.0-0"
+                      },
+                      {
+                        "fixed": "1.0.0"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affected_functions": null,
+                  "affects": {
+                    "functions": [],
+                    "os": [],
+                    "arch": []
+                  }
+                },
+                "database_specific": {
+                  "categories": [
+                    "privilege-escalation"
+                  ],
+                  "cvss": null,
+                  "informational": null,
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2024-0421.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "pin-utils",
+        "version": "0.1.0",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "RUSTSEC-2026-0441",
+            "summary": "`pin-utils` is unmaintained",
+            "aliases": [],
+            "affected": [
+              {
+                "package": {
+                  "name": "pin-utils",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/pin-utils"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.0.0-0"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affects": {
+                    "os": [],
+                    "functions": [],
+                    "arch": []
+                  },
+                  "affected_functions": null
+                },
+                "database_specific": {
+                  "categories": [],
+                  "cvss": null,
+                  "informational": "unmaintained",
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0441.json"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "proc-macro-error",
+        "version": "1.0.4",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "RUSTSEC-2024-0370",
+            "summary": "proc-macro-error is unmaintained",
+            "aliases": [],
+            "affected": [
+              {
+                "package": {
+                  "name": "proc-macro-error",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/proc-macro-error"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.0.0-0"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affects": {
+                    "os": [],
+                    "functions": [],
+                    "arch": []
+                  },
+                  "affected_functions": null
+                },
+                "database_specific": {
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2024-0370.json",
+                  "categories": [],
+                  "cvss": null,
+                  "informational": "unmaintained"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "rand",
+        "version": "0.8.5",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-cq8v-f236-94qc",
+            "summary": "Rand is unsound with a custom logger using rand::rng()",
+            "aliases": [
+              "RUSTSEC-2026-0097"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "rand",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/rand"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.9.0"
+                      },
+                      {
+                        "fixed": "0.9.3"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/04/GHSA-cq8v-f236-94qc/GHSA-cq8v-f236-94qc.json"
+                }
+              },
+              {
+                "package": {
+                  "name": "rand",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/rand"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.10.0"
+                      },
+                      {
+                        "fixed": "0.10.1"
+                      }
+                    ]
+                  }
+                ],
+                "versions": [
+                  "0.10.0"
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/04/GHSA-cq8v-f236-94qc/GHSA-cq8v-f236-94qc.json"
+                }
+              },
+              {
+                "package": {
+                  "name": "rand",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/rand"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.7.0"
+                      },
+                      {
+                        "fixed": "0.8.6"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/04/GHSA-cq8v-f236-94qc/GHSA-cq8v-f236-94qc.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2026-0097",
+            "summary": "Rand is unsound with a custom logger using `rand::rng()`",
+            "aliases": [
+              "GHSA-cq8v-f236-94qc"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "rand",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/rand"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.7.0"
+                      },
+                      {
+                        "fixed": "0.8.6"
+                      },
+                      {
+                        "introduced": "0.9.0"
+                      },
+                      {
+                        "fixed": "0.9.3"
+                      },
+                      {
+                        "introduced": "0.10.0"
+                      },
+                      {
+                        "fixed": "0.10.1"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affects": {
+                    "arch": [],
+                    "os": [],
+                    "functions": [
+                      "rand::rng",
+                      "rand::thread_rng"
+                    ]
+                  },
+                  "affected_functions": null
+                },
+                "database_specific": {
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0097.json",
+                  "categories": [],
+                  "cvss": null,
+                  "informational": "unsound"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ecosystem": "crates.io",
+        "package": "time",
+        "version": "0.3.36",
+        "files": [
+          "packages/super_native_extensions/rust/Cargo.lock"
+        ],
+        "advisories": [
+          {
+            "id": "GHSA-r6v5-fh4h-64xc",
+            "summary": "time vulnerable to stack exhaustion Denial of Service attack",
+            "aliases": [
+              "CVE-2026-25727",
+              "RUSTSEC-2026-0009"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "time",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/time"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.3.6"
+                      },
+                      {
+                        "fixed": "0.3.47"
+                      }
+                    ]
+                  }
+                ],
+                "database_specific": {
+                  "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/02/GHSA-r6v5-fh4h-64xc/GHSA-r6v5-fh4h-64xc.json"
+                }
+              }
+            ]
+          },
+          {
+            "id": "RUSTSEC-2026-0009",
+            "summary": "Denial of Service via Stack Exhaustion",
+            "aliases": [
+              "CVE-2026-25727",
+              "GHSA-r6v5-fh4h-64xc"
+            ],
+            "affected": [
+              {
+                "package": {
+                  "name": "time",
+                  "ecosystem": "crates.io",
+                  "purl": "pkg:cargo/time"
+                },
+                "ranges": [
+                  {
+                    "type": "SEMVER",
+                    "events": [
+                      {
+                        "introduced": "0.3.6"
+                      },
+                      {
+                        "fixed": "0.3.47"
+                      }
+                    ]
+                  }
+                ],
+                "ecosystem_specific": {
+                  "affects": {
+                    "arch": [],
+                    "functions": [
+                      "time::Date::parse",
+                      "time::OffsetDateTime::parse",
+                      "time::PrimitiveDateTime::parse",
+                      "time::Time::parse",
+                      "time::UtcDateTime::parse",
+                      "time::UtcOffset::parse",
+                      "time::parsing::Parsed::parse_item"
+                    ],
+                    "os": []
+                  },
+                  "affected_functions": null
+                },
+                "database_specific": {
+                  "informational": null,
+                  "source": "https://github.com/rustsec/advisory-db/blob/osv/crates/RUSTSEC-2026-0009.json",
+                  "categories": [
+                    "denial-of-service"
+                  ],
+                  "cvss": "CVSS:4.0/AV:N/AC:H/AT:N/PR:L/UI:A/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "deno_audit": "╭ fflate unzipSync can enter an infinite loop when parsing malformed ZIP64 archives\n│ Severity:   moderate\n│ Package:    fflate\n│ Vulnerable: >=0.8.0 <0.8.3\n╰ Info:       https://github.com/advisories/GHSA-px8p-9vwx-vf98\n\nFound 1 vulnerabilities\nSeverity: 0 low, 1 moderate, 0 high, 0 critical\n",
+  "runtime_online_check": "runtime pins valid: self-hosted/v0.8.0, 11 immutable images\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: dockerCompose is no longer latest stable\n\n'5.7.0' !== '5.5.0'\n\n    at verifyOnline (file:///Users/miakh/source/festapp/automation/hetzner-supabase/runtime/verify-pins.mjs:46:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///Users/miakh/source/festapp/automation/hetzner-supabase/runtime/verify-pins.mjs:33:40 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: '5.7.0',\n  expected: '5.5.0',\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v26.8.1\n"
+}

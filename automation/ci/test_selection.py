@@ -131,7 +131,7 @@ class ReusePolicyTest(unittest.TestCase):
                         status='completed', conclusion='success', html_url=URL+'/job/456',
                         steps=[dict(name='All lane tests executed', conclusion='success')])
         self.tools = dict(RUNNER_OS='Linux',RUNNER_ARCH='X64',ImageOS='ubuntu24',ImageVersion='fixture',
-                          node='22.23.3',pnpm='11.24.0',python='fixture')
+                          node='22.23.4',pnpm='11.24.0',python='fixture')
         self.receipt = dict(complete=True, dirty=False, inputsUnchanged=True,
                             selectedJobs=['image-contract'],
                             units={unit: {'status':'PASS'} for unit in CONTRACT['jobs']['image-contract']['steps']},
