@@ -15,6 +15,31 @@ ROOT=Path(__file__).resolve().parents[2]
 
 
 class MirrorContractTest(unittest.TestCase):
+    def test_selection_covers_provisioning_tests_and_execution_evidence(self):
+        contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
+        for name, lane in contract['jobs'].items():
+            with self.subTest(job=name):
+                workflow = yaml.safe_load((ROOT / '.github/workflows' / lane['workflow']).read_text())
+                triggers = workflow.get('on', workflow.get(True))
+                self.assertNotIn('paths', triggers['push'])
+                self.assertIn('ready_for_review', triggers['pull_request']['types'])
+                self.assertIn('converted_to_draft', triggers['pull_request']['types'])
+                self.assertIn('merge_group', triggers)
+                self.assertEqual(workflow['concurrency']['cancel-in-progress'],
+                                 "${{ github.event_name == 'pull_request' }}")
+                self.assertIn('github.event.pull_request.number', workflow['concurrency']['group'])
+                job = workflow['jobs'][name]
+                self.assertIn('!github.event.pull_request.draft', job['if'])
+                steps = job['steps']
+                self.assertEqual(steps[0]['with']['fetch-depth'], 0)
+                self.assertEqual(steps[1]['id'], 'selection')
+                self.assertEqual(steps[-2]['name'], 'All lane tests executed')
+                for step in steps[2:]:
+                    if step.get('uses', '').startswith('actions/upload-artifact@'):
+                        self.assertEqual(step['if'], 'always()')
+                        continue
+                    self.assertEqual(step['if'], "steps.selection.outputs.run == 'true'")
+
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
         self.assertEqual(len(contract['jobs']),8)
@@ -25,7 +50,7 @@ class MirrorContractTest(unittest.TestCase):
             self.assertIn('python3 automation/ci/run.py lane '+name,commands)
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or any(marker in command for marker in
-                    ('GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/deno.sh')),command)
+                    ('automation/ci/selection.py ',"echo 'All lane tests executed'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/deno.sh')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]
             self.assertEqual(node,[lane['node']])

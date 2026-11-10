@@ -75,7 +75,8 @@ def release_source():
     if git('status', '--porcelain', '--untracked-files=normal'):
         raise RuntimeError('Release requires a clean checkout, including untracked source files')
     # The tenant cannot weaken the required job set or the gate itself.
-    for name in ('automation/ci/checks.json', 'automation/ci/release_gate.py'):
+    for name in ('automation/ci/checks.json', 'automation/ci/release_gate.py',
+                 'automation/ci/selection.py', 'automation/ci/inputs.json'):
         if subprocess.check_output(['git', 'show', f'{sha}:{name}'], cwd=ROOT) != (ROOT / name).read_bytes():
             raise RuntimeError(f'Release gate must match canonical main: {name}')
     return sha
