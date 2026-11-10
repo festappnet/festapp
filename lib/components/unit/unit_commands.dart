@@ -55,12 +55,14 @@ class SupabaseUnitCommands implements UnitCommands {
     final response = ClientCommandResponse.from(
       await _transport.invokeIntent(
         '$context:${user.unit}:unit-user:${user.user}',
-        'save_unit_user_client_sync_v1',
+        'manage_member_access',
         {
-          'p_unit': user.unit,
-          'p_user': user.user,
-          'p_expected_version': user.aggregateVersion,
-          'p_changes': {...changes, 'kind': 'editor'},
+          'p_request': {
+            'scope': {'type': 'unit', 'id': user.unit},
+            'operation': 'save_member', 'communication': 'none',
+            'userId': user.user, 'expectedVersion': user.aggregateVersion,
+            'changes': {...changes, 'kind': 'editor'},
+          },
         },
       ),
     );

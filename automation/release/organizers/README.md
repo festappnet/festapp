@@ -138,3 +138,15 @@ and `poster`/`mobilePoster` at the same files instead of committing copies.
 The Czech `seat-select` chapter shares one portrait video and poster in both
 layouts. Historical storyboard references resolve against their recorded Git
 revision and retain the original export filenames.
+
+## Media page
+
+The Czech profile registers `/pro-media` in the same public page registry as
+the homepage, sitemap and shared footer. `press.mjs` renders the project
+summary, capabilities, media contact and downloads; `press.css` only extends
+that page. Its approved static logo allowlist reads the canonical
+`assets/brand/vstupenky-online` masters. The renderer stages the individual
+SVG/PNG files, Czech usage notes, project text and a reproducible ZIP under
+`/organizers-media/press-kit/`. Concepts, font sources and animations are not
+published. Switching to a profile without the media page removes this output.
+The downloads stay outside the application cache with other marketing media.

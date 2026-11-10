@@ -18,7 +18,8 @@
     "get_notification_center_timeline_group_updates",
     "get_notification_center_overview",
     "get_notification_center_daily_overview",
-    "mark_notification_center_item_read"
+    "mark_notification_center_item_read",
+    "enqueue_occasion_setup_invitation"
   ],
   "sync_tables": [
     "external_sync_sources",
@@ -1087,11 +1088,6 @@
       "service_role": false
     },
     "public.preview_occasion_setup_invitations(uuid,text[])": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
-    "public.enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text)": {
       "anon": false,
       "authenticated": true,
       "service_role": false
@@ -2259,7 +2255,7 @@
     "public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb)": {
       "anon": false,
       "authenticated": true,
-      "service_role": true
+      "service_role": false
     },
     "public.get_occasion_user_command_data_v1(bigint,uuid)": {
       "anon": false,
@@ -3195,6 +3191,111 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.member_access_preview_internal_v1(jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.preview_member_access(uuid,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.invalidate_member_access_invitations_internal_v1(bigint,bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.manage_member_access(uuid,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.access_invitation_valid_internal_v1(public.access_invitations)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_access_invitation(text)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.accept_access_invitation(text,text)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.revoke_access_invitation(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_member_access_status(text,bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.resend_access_invitation(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_manage_member_access_as_actor_internal_v1(uuid,text,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.can_manage_member_access(text,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.lock_member_access_internal_v1(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.stage_member_access_email(uuid,uuid,text,text,jsonb,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.can_offer_member_access_as_actor_internal_v1(uuid,text,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.ensure_unit_membership_internal_v1(bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.add_user_to_unit_client_sync_v1(bigint,uuid,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.save_unit_member_internal_v1(bigint,uuid,uuid,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.save_profile_internal_v1(bigint,uuid,uuid,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.create_occasion_member_internal_v1(bigint,uuid,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.add_user_to_unit(bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {

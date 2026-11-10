@@ -11,6 +11,7 @@ BEGIN
     IF NOT public.can_manage_unit_users(unit_id) THEN
       RAISE insufficient_privilege USING MESSAGE='unit manager required';
     END IF;
+    PERFORM public.invalidate_member_access_invitations_internal_v1(unit_id,NULL,usr);
     DELETE FROM unit_users
     WHERE "user" = usr AND unit = unit_id;
 

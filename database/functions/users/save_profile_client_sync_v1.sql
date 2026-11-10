@@ -1,5 +1,5 @@
 -- Canonical profile command: receipt, version and companion effects have one owner.
-CREATE OR REPLACE FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb)
+CREATE OR REPLACE FUNCTION public.save_profile_internal_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -67,7 +67,13 @@ BEGIN
     '{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.save_profile_internal_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) FROM PUBLIC,anon;
+
+REVOKE ALL ON FUNCTION public.save_profile_internal_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+
+REVOKE ALL ON FUNCTION public.save_profile_internal_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.save_profile_client_sync_v1(p_occasion bigint,p_user uuid,p_command_id uuid,p_expected_version bigint,p_profile jsonb) RETURNS jsonb
+LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$ SELECT public.save_profile_internal_v1(p_occasion,p_user,p_command_id,p_expected_version,p_profile); $$;
 REVOKE ALL ON FUNCTION public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) TO authenticated,service_role;

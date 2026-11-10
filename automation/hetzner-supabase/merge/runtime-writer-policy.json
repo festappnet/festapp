@@ -447,6 +447,14 @@
         "google-wallet-api"
       ],
       "mutates_authority": true
+    },
+    "manage-member-access": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "email-queue"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {

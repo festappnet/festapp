@@ -301,3 +301,21 @@ installed earlier migration and converts existing sources at every scope.
 The retired `ORDER_OVERVIEW` type remains data-only for historical identity
 retention; it has no first-party sender or registered editor preview. Password reset
 uses `resetLink` everywhere; forward17 also converts `resetPasswordLink`.
+
+## Member access messages
+
+Manual unit/occasion access uses `manage-member-access` and the SQL owner in
+`database/functions/people/`. `TEAM_INVITATION` offers scoped permissions;
+`TEAM_ACCESS_NOTICE` reports existing access; `SIGN_IN_CODE` remains the supported
+participant password message. Team messages never reset an existing password.
+Unit scope cannot request participant credentials. A plain profile save sends
+nothing. Setup forwards only its explicitly confirmed recipient selection.
+
+The existing resolver, inherited wrapper, renderer, recipient admission,
+encrypted snapshot and queue own delivery. Common role/title/link substitutions
+retain `occasionTitle`, `roleLabel`, `invitationUrl` and `occasionAdminUrl` for existing
+custom templates, including unit messages. The forward migration only adjusts
+byte-identical system defaults; customized global/tenant/unit/occasion content
+is preserved. Queue/provider/delivery facts and invitation acceptance are
+separate projections; neither membership nor provider acceptance proves inbox
+reading. Historical participant sending evidence remains valid.

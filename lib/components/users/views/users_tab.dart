@@ -1,3 +1,5 @@
+import 'package:fstapp/components/users/views/member_access_dialog.dart';
+import 'package:fstapp/components/users/member_access_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
@@ -114,6 +116,8 @@ class _UsersTabState extends State<UsersTab> {
 
   SingleDataGridController<OccasionUserModel> _createController() {
     final headerActions = [
+      if (RightsService.canUpdateUsers()) DataGridAction(name: MemberAccessStrings.text('title'),
+        action: (SingleDataGridController p0, [_]) => MemberAccessDialog.show(context, 'occasion', RightsService.currentOccasionId()!)),
       if (RightsService.hasCapability(
         AuthorizationCapabilities.participantsWrite,
       ))

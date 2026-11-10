@@ -64,8 +64,7 @@ DECLARE resource public.occasions; recipient uuid:=(p_context->>'recipient_user'
 BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO resource FROM public.occasions WHERE id=(p_context->>'occasion')::bigint FOR SHARE;
- IF NOT FOUND OR coalesce((p_kind='app_links' AND p_code='APP_LINKS')
-   OR (p_kind='custom' AND p_code='TEAM_ACCESS_NOTICE'),false) IS NOT TRUE
+ IF NOT FOUND OR coalesce(p_kind='app_links' AND p_code='APP_LINKS',false) IS NOT TRUE
    OR p_actor IS NULL OR public.is_demo_occasion(resource.id)
    OR (p_context->>'organization')::bigint IS DISTINCT FROM resource.organization
    OR (p_context->>'unit')::bigint IS DISTINCT FROM resource.unit

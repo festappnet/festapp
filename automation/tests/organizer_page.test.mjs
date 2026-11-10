@@ -17,6 +17,9 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
+  mkdirSync(join(root,'web_client/public'),{recursive:true});
+  for (const name of ['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg']) cpSync(new URL('../../web_client/public/'+name,import.meta.url),join(root,'web_client/public',name));
+  cpSync(new URL('../../assets/brand/vstupenky-online',import.meta.url),join(root,'assets/brand/vstupenky-online'),{recursive:true,filter:source=>!['concepts','source','tools'].includes(source.split('/').pop())});
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web/organizers-media',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
@@ -87,6 +90,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link rel="stylesheet" href="/web-assets/index-fixture.css">');
   mkdirSync(join(root, 'web_client/.vite'), { recursive: true });
   writeFileSync(join(root, 'web_client/.vite/manifest.json'), JSON.stringify({'src/marketing/landing.js': {file: 'web-assets/landing-test.js'}}));
+  mkdirSync(join(root,'web_client/web-assets'),{recursive:true});
+  mkdirSync(join(root,'web_client/assets/translations'),{recursive:true});
   const bundleOutput = join(root, 'bundle/organizers-page');
   cpSync(join(root,'web/organizers-media'),join(root,'bundle/organizers-media'),{recursive:true});
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
@@ -116,6 +121,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
 
   writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=false\nDOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
   render(); assert.equal(existsSync(output), false);
+  assert.equal(existsSync(join(root,'web/organizers/press')),false);
+  assert.equal(existsSync(join(root,'web/organizers-media/press-kit')),false);
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('cloudflareinsights.com'));
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('href="/pro-poradatele"'));
 });
@@ -128,7 +135,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
   writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
   writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
   writeFileSync(config, readFileSync(new URL('../project.conf',import.meta.url),'utf8'));
-  for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
+  for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations','organizers/press']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
   for (const asset of ['organizers/updates/cs/index','organizers/updates/en/index']) {mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture');}
   writeFileSync(join(root,'organizer-pages.json'),JSON.stringify(publicManifest(resolveContext(readConfig(config)))));
   writeFileSync(join(root,'platform-updates.json'),JSON.stringify({schemaVersion:1,items:[]}));

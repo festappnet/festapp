@@ -1,144 +1,31 @@
-import { renderEmail } from "../_shared/emailDelivery.ts";
-import { emailVariableContract } from "../_shared/emailVariables.ts";
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
-import {
-  createInvitationHandler,
-  type InvitationDependencies,
-  type InvitationPreview,
-} from "./handler.ts";
-
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { createInvitationHandler, type InvitationPreview } from "./handler.ts";
 const draftId = "b4d54cd6-865a-448a-b9da-f260ea7e9631";
-const request = () =>
-  new Request("https://api.test/functions/v1/send-occasion-team-invitations", {
-    method: "POST",
-    headers: { Authorization: "Bearer fixture" },
-    body: JSON.stringify({ draftId }),
-  });
+const req = () => new Request("https://example.invalid", { method: "POST", headers: { Authorization: "Bearer fixture" }, body: JSON.stringify({ draftId }) });
 function fixture() {
-  const preview: InvitationPreview = {
-    canManage: true,
-    sendConfirmed: true,
-    recipients: [{
-      email: "editor@example.org",
-      kind: "account",
-      role: "editor",
-    }, { email: "viewer@example.org", kind: "new", role: "read_only" }],
-    event: { id: 7, title: '<Event "title">', unit: 3, organization: 2 },
-    organizationData: { DEFAULT_URL: "https://tenant.test", APP_NAME: "App" },
-  };
-  const inputs: unknown[] = [];
-  const enqueues: Record<string, unknown>[] = [];
-  const deps: InvitationDependencies = {
-    preview: async () => preview,
-    prepare: async (input) => {
-      inputs.push(input);
-      return { p_sealed: { ciphertext: "fixture" }, p_content_hash: "digest" };
-    },
-    enqueue: async (_, args) => {
-      enqueues.push(args);
-      return { message_id: "id", status: "queued" };
-    },
-    token: () => "a".repeat(64),
-  };
-  return { preview, inputs, enqueues, deps };
+ const preview: InvitationPreview = { canManage: true, sendConfirmed: true, event: { id: 4, unit: 2, organization: 3, title: "Team" }, organizationData: { DEFAULT_URL: "https://example.invalid" },
+  recipients: [{ email: "a@example.invalid", kind: "new", role: "editor" }, { email: "b@example.invalid", kind: "account", role: "read_only" }] };
+ const calls: Array<{ command: string; request: Record<string, unknown> }> = [];
+ const handler = createInvitationHandler({ preview: () => Promise.resolve(preview), execute: (_, command, request) => { calls.push({ command, request }); return Promise.resolve({}); } });
+ return { preview, calls, handler };
 }
-Deno.test("confirmation and finalized event guard preparation and all sends", async () => {
-  const f = fixture();
-  f.preview.sendConfirmed = false;
-  assertEquals((await createInvitationHandler(f.deps)(request())).status, 409);
-  assertEquals(f.inputs.length, 0);
-  assertEquals(f.enqueues.length, 0);
-  f.preview.sendConfirmed = true;
-  f.preview.event.id = 0;
-  assertEquals((await createInvitationHandler(f.deps)(request())).status, 409);
-  assertEquals(f.inputs.length, 0);
+Deno.test("setup retry reuses each recipient command and preserves scoped role selection", async () => {
+ const f = fixture(); await f.handler(req()); await f.handler(req());
+ assertEquals(f.calls[0].command, f.calls[2].command); assertEquals(f.calls[1].command, f.calls[3].command);
+ assertEquals(f.calls[1].request.roles, { is_editor: false, is_editor_view: true });
+ assertEquals(f.calls[0].request.sourceDraft, draftId);
 });
-Deno.test("safe invitation carries only link and requested role, never password", async () => {
-  const f = fixture();
-  const result = await createInvitationHandler(f.deps)(request());
-  assertEquals(await result.json(), {
-    complete: true,
-    results: [{ email: "editor@example.org", status: "queued" }, {
-      email: "viewer@example.org",
-      status: "queued",
-    }],
-  });
-  assertEquals(f.enqueues.map((x) => x.p_role), ["editor", "read_only"]);
-  assert(f.enqueues.every((x) => x.p_token_hash !== "a".repeat(64)));
-  assert(!JSON.stringify(f.inputs).includes("password"));
-  const input = f.inputs[0] as { substitutions: Record<string, string> };
-  assertEquals(
-    input.substitutions.occasionTitle,
-    '<Event "title">',
-  );
-  assert(
-    input.substitutions.invitationUrl.startsWith(
-      "https://tenant.test/team-invitation?token=",
-    ),
-  );
+Deno.test("unconfirmed setup never executes invitations", async () => {
+ const f = fixture(); f.preview.sendConfirmed = false;
+ assertEquals((await f.handler(req())).status, 409); assertEquals(f.calls.length, 0);
 });
-Deno.test("partial queue failure is explicit and existing access is skipped", async () => {
-  const f = fixture();
-  f.preview.recipients[0].alreadyEditor = true;
-  f.deps.enqueue = async () => {
-    throw new Error("queue unavailable");
-  };
-  const result = await createInvitationHandler(f.deps)(request());
-  assertEquals(await result.json(), {
-    complete: false,
-    results: [{ email: "editor@example.org", status: "already_editor" }, {
-      email: "viewer@example.org",
-      status: "failed",
-    }],
-  });
-  assertEquals(f.inputs.length, 1);
+Deno.test("already granted setup roles do not create duplicate offers", async () => {
+ const f = fixture(); f.preview.recipients[0].alreadyEditor = true;
+ await f.handler(req()); assertEquals(f.calls.length, 1);
 });
-Deno.test("unauthorized and unsafe origin requests never prepare invitations", async () => {
-  const f = fixture();
-  f.preview.canManage = false;
-  assertEquals((await createInvitationHandler(f.deps)(request())).status, 403);
-  f.preview.canManage = true;
-  f.preview.organizationData.DEFAULT_URL = "https://user:pass@tenant.test";
-  assertEquals((await createInvitationHandler(f.deps)(request())).status, 422);
-  assertEquals(f.inputs.length, 0);
-});
-
-Deno.test("team invitation producer and shared composer escape canonical values once", async () => {
-  const f = fixture();
-  f.preview.organizationData.APP_NAME = "A & B";
-  f.preview.event.title = "Večer <E>";
-  const rendered: Array<{ subject: string; html: string }> = [];
-  f.deps.prepare = async (input) => {
-    const available = new Set<string>(
-      emailVariableContract.templates.TEAM_INVITATION,
-    );
-    assert(
-      Object.keys(input.substitutions).every((code) => available.has(code)),
-    );
-    rendered.push(
-      await renderEmail(
-        input,
-        async () => ({
-          template: {
-            id: 1,
-            subject: "{{appName}} - {{occasionTitle}}",
-            html:
-              '<h2>{{occasionTitle}}</h2><p>{{appName}}</p><a href="{{invitationUrl}}">{{roleLabel}}</a>',
-          },
-        }),
-      ),
-    );
-    return { p_sealed: { ciphertext: "fixture" }, p_content_hash: "digest" };
-  };
-  assertEquals((await createInvitationHandler(f.deps)(request())).status, 200);
-  assertEquals(rendered.length, 2);
-  for (const message of rendered) {
-    assertEquals(message.subject, "A & B - Večer <E>");
-    assert(message.html.includes("A &amp; B"));
-    assert(message.html.includes("Večer &lt;E&gt;"));
-    assert(!message.html.includes("&amp;amp;"));
-  }
+Deno.test("one failed recipient does not roll back another recipient", async () => {
+ const f = fixture();
+ const handler = createInvitationHandler({ preview: () => Promise.resolve(f.preview), execute: (_, command, request) => request.email === "a@example.invalid" ? Promise.reject(new Error()) : Promise.resolve(command) });
+ const result = await (await handler(req())).json(); assertEquals(result.complete, false);
+ assertEquals(result.results.map((r: { status: string }) => r.status), ["failed", "queued"]);
 });

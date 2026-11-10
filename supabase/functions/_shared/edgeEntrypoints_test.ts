@@ -76,6 +76,7 @@ const optionEntrypoints = [
   "send-email",
   "send-reset-password-link",
   "send-sign-in-code",
+  "manage-member-access",
   "send-ticket-order",
   "wix-checkout-context",
   "waitlist-commands",
@@ -195,7 +196,7 @@ Deno.test("send-sign-in-code rejects invalid identities before changing a passwo
       body: "{}",
     }),
   );
-  assertEquals(response.status, 400);
+  assertEquals(response.status, 401);
 });
 
 Deno.test("send-tickets rejects invalid input before privileged reads", async () => {

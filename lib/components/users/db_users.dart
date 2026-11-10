@@ -399,12 +399,8 @@ class DbUsers {
   static Future<void> addUserToOccasion(String id, int occasion) =>
       _profileCommands.ensureMembership(occasion, id);
 
-  static Future<void> addUserToUnit(String id, int unit) async {
-    await _supabase.rpc("add_user_to_unit", params: {
-      "usr": id,
-      "unit_id": unit,
-    });
-  }
+  static Future<void> addUserToUnit(String id, int unit) =>
+      _unitCommands.ensureMembership(unit, id);
 
   static Future<void> importOccasionUsersFromCsv(
       List<Map<String, dynamic>> rows, List<String> deleteUserIds) async {

@@ -1,294 +1,35 @@
-import { AuthorizationCapabilities } from "../_shared/authorizationCapabilities.ts";
-import { authorizeRequest } from "../_shared/auth.ts";
-import { sendTeamAccessNotice } from "./teamAccessNotice.ts";
-import { generateSignInCode } from "../_shared/signInCode.ts";
-import {
-  awaitEmailAccepted,
-  EmailAcceptancePendingError,
-  emailRpc,
-  enqueueAndAwaitEmail,
-  prepareAccountEmail,
-} from "../_shared/emailQueueClient.ts";
-import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
-import { translatePlatformLinks } from "../_shared/translatePlatformLinks.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
-
-const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-const supabaseAdmin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
-
-Deno.serve(async (req) => {
+// Supported participant credential producer and old HTTP acceptance contract.
+// Domain intent, trusted preparation and atomic enqueue live in access management.
+import { executeMemberAccess } from "../manage-member-access/handler.ts";
+import { memberAccessDependencies } from "../manage-member-access/dependencies.ts";
+import { accessCommandId } from "../_shared/accessCommandId.ts";
+import { awaitEmailAccepted, EmailAcceptancePendingError } from "../_shared/emailQueueClient.ts";
+const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Content-Type": "application/json" };
+Deno.serve(async req => {
+  if (req.method === "OPTIONS") return new Response("{}", { headers });
+  if (req.method !== "POST") return new Response("{}", { headers, status: 405 });
+  const authorization = req.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ")) return new Response("{}", { headers, status: 401 });
   try {
-    if (req.method === "OPTIONS") {
-      return new Response("ok", { headers: corsHeaders });
+    const body = await req.json();
+    if (typeof body.usr !== "string" || !Number.isSafeInteger(body.oc)) return new Response("{}", { headers, status: 400 });
+    const commandId = await accessCommandId(`sign-in:${body.oc}:${body.usr}:${body.requestId ?? Math.floor(Date.now() / 300000)}`);
+    const request = { scope: { type: "occasion", id: body.oc }, userId: body.usr, operation: "send_invitation", communication: "notify_existing_access" };
+    const preview = await memberAccessDependencies.preview(authorization, await accessCommandId(commandId + ":probe"), request);
+    if (preview.replay) {
+      const id = (preview.replay.data as { communication?: { messageId?: string } })?.communication?.messageId;
+      if (id) await awaitEmailAccepted(id);
+      return new Response(JSON.stringify({ user: body.usr, code: 200, status: "sent" }), { headers });
     }
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 405,
-      });
-    }
-
-    const reqData = await req.json();
-    const userId = reqData.usr; // ID of the user to invite
-    const occasionId = reqData.oc; // ID of the occasion
-    if (
-      typeof userId !== "string" ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-        .test(userId) ||
-      !Number.isSafeInteger(occasionId) || occasionId <= 0
-    ) {
-      return new Response(
-        JSON.stringify({ error: "Invalid input parameters" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        },
-      );
-    }
-
-    const supabaseUser = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      },
-    );
-
-    // Generate a 6-digit sign in code.
-    const code = generateSignInCode();
-
-    // Retrieve occasion user data.
-    const occasionUser = await supabaseAdmin
-      .rpc("get_sign_in_recipient_context_v1", {
-        p_user: userId,
-        p_occasion: occasionId,
-      });
-
-    if (!occasionUser.data) {
-      console.error("User is not part of the occasion.");
-      return new Response(
-        JSON.stringify({ error: "User is not part of the occasion" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 404,
-        },
-      );
-    }
-
-    // Retrieve the occasion's organization.
-    const { data: occasionData, error: occasionError } = await supabaseAdmin
-      .from("occasions")
-      .select("organization,unit,link,title")
-      .eq("id", occasionId)
-      .single();
-
-    if (occasionError) {
-      console.error("Occasion not found.");
-      return new Response(JSON.stringify({ error: "Occasion not found" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 404,
-      });
-    }
-
-    const organizationId = occasionData.organization;
-
-    // Get organization config.
-    const orgData = await supabaseAdmin
-      .from("organizations")
-      .select("data")
-      .eq("id", organizationId)
-      .single();
-
-    const orgConfig = orgData.data!.data;
-    const appName = orgConfig.APP_NAME || "DefaultAppName";
-    const defaultLang = orgConfig.DEFAULT_LANGUAGE || "en";
-    const platforms = orgConfig.PLATFORMS || [];
-
-    const platformLinksHtml = translatePlatformLinks(platforms, defaultLang);
-
-    const context = { organization: organizationId, occasion: occasionId };
-
-    const { data: userProfile, error: userProfileError } = await supabaseAdmin
-      .from("user_info")
-      .select("email_readonly,name,surname")
-      .eq("id", userId)
-      .single();
-
-    if (userProfileError || !userProfile?.email_readonly) {
-      return new Response(JSON.stringify({ error: "User profile not found" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      });
-    }
-
-    const subs = {
-      name: userProfile.name,
-      surname: userProfile.surname,
-      code: code,
-      email: userProfile.email_readonly,
-      appName: appName,
-      platformLinks: platformLinksHtml,
-    };
-
-    const { data: userEmail, error: emailError } = await supabaseAdmin.rpc(
-      "get_user_delivery_email",
-      { p_user: userId },
-    );
-
-    if (emailError || !userEmail) {
-      console.error("Failed to get user's email:", emailError);
-      return new Response(
-        JSON.stringify({ error: "Failed to get user's email" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        },
-      );
-    }
-
-    if (
-      occasionUser.data.capabilities
-        ?.[AuthorizationCapabilities.emailsTeamAccessNotice] === true
-    ) {
-      let noticeActorId: string;
-      await sendTeamAccessNotice({
-        access: occasionUser.data,
-        occasion: { id: occasionId, ...occasionData },
-        user: userId,
-        email: userEmail,
-        defaultUrl: orgConfig.DEFAULT_URL,
-        appName,
-        requestId: typeof reqData.requestId === "string"
-          ? reqData.requestId
-          : String(Math.floor(Date.now() / 300000)),
-      }, {
-        authorize: async () => {
-          const identity = await authorizeRequest({
-            authorizationHeader: req.headers.get("Authorization"),
-            occasionId,
-            permission: "manageUsers",
-          });
-          noticeActorId = identity.user.id;
-        },
-        deliver: (input) =>
-          enqueueAndAwaitEmail(input, {
-            enqueuePrepared: (parameters) =>
-              emailRpc("enqueue_participant_notice_for_actor_v1", {
-                ...parameters,
-                p_actor: noticeActorId,
-              }),
-          }),
-      });
-      return new Response(
-        JSON.stringify({ user: userId, code: 200, status: "sent" }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    try {
-      const emailInput = {
-        to: userEmail,
-        recipientUser: userId,
-        templateCode: "SIGN_IN_CODE",
-        context,
-        substitutions: subs,
-        from: `${appName} | Festapp <${_DEFAULT_EMAIL}>`,
-      };
-
-      const snapshot = await prepareAccountEmail(emailInput);
-      const { data: queued, error: queueError } = await supabaseUser.rpc(
-        "reset_password_and_enqueue_email",
-        {
-          p_user: userId,
-          p_password: code,
-          p_occasion: occasionId,
-          ...snapshot,
-          p_dedupe: `sign-in:${userId}:${occasionId}:${
-            reqData.requestId ?? Math.floor(Date.now() / 300000)
-          }`,
-          p_expires: new Date(Date.now() + 600000).toISOString(),
-        },
-      );
-      if (queueError) {
-        throw new Error("Password change or email enqueue failed");
-      }
-      await awaitEmailAccepted(queued.message_id);
-      const delivery = { logged: true };
-      if (!delivery.logged) {
-        return new Response(
-          JSON.stringify({
-            user: userId,
-            code: 202,
-            status: "sent_unrecorded",
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          },
-        );
-      }
-    } catch (error) {
-      if (error instanceof EmailTemplateNotFoundError) {
-        return new Response(
-          JSON.stringify({ error: "Email template not found" }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 404,
-          },
-        );
-      }
-      throw error;
-    }
-
-    return new Response(
-      JSON.stringify({ user: userId, code: 200, status: "sent" }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      },
-    );
+    const member = preview.member ?? {};
+    if (!member.is_manager && !member.is_editor && !member.is_editor_view) request.communication = "participant_credentials";
+    // A credential retry has a different intent than the first mode probe.
+    const result = await executeMemberAccess(memberAccessDependencies, authorization, commandId, request);
+    const messageId = (result.data as { communication: { messageId: string } }).communication.messageId;
+    await awaitEmailAccepted(messageId);
+    return new Response(JSON.stringify({ user: body.usr, code: 200, status: "sent" }), { headers });
   } catch (error) {
-    if (error instanceof EmailAcceptancePendingError) {
-      return new Response(
-        JSON.stringify({
-          code: 202,
-          status: "queued",
-          messageId: error.messageId,
-        }),
-        {
-          status: 202,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-    if (error instanceof Error && "code" in error && error.code === "42501") {
-      return new Response(JSON.stringify({ error: "forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    console.error("Unexpected error:", error);
-    return new Response(
-      JSON.stringify({ error: "Unexpected error occurred" }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      },
-    );
+    if (error instanceof EmailAcceptancePendingError) return new Response(JSON.stringify({ code: 202, status: "queued", messageId: error.messageId }), { headers, status: 202 });
+    return new Response(JSON.stringify({ error: "invitation_failed" }), { headers, status: 403 });
   }
 });

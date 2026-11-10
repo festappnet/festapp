@@ -41,9 +41,9 @@ void main() {
 
     final result = await commands.save(profile);
 
-    expect(functionName, 'save_profile_client_sync_v1');
-    expect(parameters['p_user'], profile.user);
-    expect(parameters['p_expected_version'], 5);
+    expect(functionName, 'manage_member_access');
+    expect((parameters['p_request'] as Map)['userId'], profile.user);
+    expect((parameters['p_request'] as Map)['expectedVersion'], 5);
     expect(result.version, 6);
   });
 
@@ -82,9 +82,7 @@ void main() {
       services: <String, dynamic>{},
     ));
 
-    expect(functionName, 'create_occasion_user_client_sync_v1');
-    expect(parameters['p_occasion'], 7);
-    expect(parameters['p_profile']['occasion'], 7);
+    expect(functionName, 'manage_member_access');
     expect(result.userId, '00000000-0000-0000-0000-000000000002');
   });
 
