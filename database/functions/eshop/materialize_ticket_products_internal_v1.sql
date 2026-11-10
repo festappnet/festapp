@@ -109,7 +109,7 @@ BEGIN
                         )::text;
                 END IF;
 
-                PERFORM public.assert_published_admission_seating_internal(form_id,product_id,spot_id);
+                PERFORM public.assert_admission_seating_internal(form_id,product_id,spot_id);
 
                 IF COALESCE(product_data.maximum, 0) > 0 THEN
                     SELECT COUNT(*) INTO ordered_count

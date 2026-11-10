@@ -60,11 +60,12 @@ BEGIN
  PERFORM public.assert_eq((SELECT count(*)::int FROM eshop.blueprint_seat_bindings a JOIN eshop.blueprint_seat_bindings b ON a.spot=b.spot WHERE a.blueprint=original_bp AND b.blueprint=copied_bp),0,'copy uses new spot IDs');
  PERFORM public.assert_eq((SELECT count(*)::int FROM eshop.spots WHERE blueprint=copied_bp AND (secret IS NOT NULL OR order_product_ticket IS NOT NULL)),0,'copy clears reservations and orders');
  PERFORM public.assert_eq((SELECT count(*)::int FROM eshop.spots s JOIN eshop.products p ON p.id=s.product WHERE s.blueprint=copied_bp AND p.occasion=copied_occ),4,'copy remaps products within occasion');
- -- Enabling seating prepares an organizer workspace without publishing the form.
+ -- Enabling seat selection connects the saved plan without a publication step.
  UPDATE public.forms SET blueprint=NULL WHERE id=(f->>'form')::bigint;
+ INSERT INTO public.form_fields(form,type,is_ticket_field,is_hidden) VALUES((f->>'form')::bigint,'spot',true,false);
  PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',original_occ,'features',jsonb_build_array(jsonb_build_object('code','blueprint','is_enabled',true))));
- PERFORM public.assert_true((SELECT blueprint IS NULL FROM public.forms WHERE id=(f->>'form')::bigint),'configuration does not publish seats');
- SELECT blueprint INTO new_bp FROM public.form_seating_transitions WHERE form=(f->>'form')::bigint AND state='organizer_managed';
+ PERFORM public.assert_eq((SELECT blueprint FROM public.forms WHERE id=(f->>'form')::bigint),original_bp,'enabling seating connects the saved plan');
+ SELECT blueprint INTO new_bp FROM public.forms WHERE id=(f->>'form')::bigint;
  PERFORM public.assert_eq(new_bp,original_bp,'configuration reuses the unambiguous canonical plan');
  PERFORM public.assert_eq((SELECT layout FROM eshop.blueprints WHERE id=new_bp),source_layout,'configuration preserves saved geometry');
 END $$;

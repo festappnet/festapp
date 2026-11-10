@@ -133,8 +133,6 @@ SET search_path = public, extensions
              OR EXISTS(SELECT 1 FROM eshop.spots WHERE occasion=occ_id AND blueprint IS NOT NULL AND
                (order_product_ticket IS NOT NULL OR (secret IS NOT NULL AND secret_expiration_time>clock_timestamp()))) THEN
              RAISE EXCEPTION 'ASSIGNMENTS_EXIST'; END IF;
-           UPDATE public.form_seating_transitions SET state='cancelled',revision=revision+1,finished_by=auth.uid(),finished_at=clock_timestamp()
-             WHERE occasion=occ_id AND state='organizer_managed';
          END IF;
 
          UPDATE public.occasions
@@ -216,28 +214,6 @@ SET search_path = public, extensions
          UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',occ_id,input_data->>'link',true) WHERE id=occ_id RETURNING * INTO updated_occ;
      END IF;
 
-     -- Enabling the editor does not switch bounded registrations to seat sales.
-     -- Detach inactive, retained plans only on activation; keep their documents
-     -- and every registration/offer intact for an explicit later form switch.
-     IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
-       IF NOT jsonb_path_exists(coalesce(old_features,'[]'::jsonb), '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
-         FOR v_form_id IN SELECT id FROM public.forms
-           WHERE occasion=occ_id AND blueprint IS NOT NULL
-           ORDER BY id FOR UPDATE LOOP
-           UPDATE public.forms SET blueprint=NULL,updated_at=now WHERE id=v_form_id;
-           INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
-           VALUES('form','occasion',occ_id,v_form_id::text,1)
-           ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
-           SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
-         END LOOP;
-       END IF;
-       -- Validate actual seat-selling forms, rather than a fictitious plan on
-       -- every form in the occasion. Form assignment retains the same guards.
-       FOR v_form_id IN SELECT id FROM public.forms WHERE occasion=occ_id AND blueprint IS NOT NULL ORDER BY id LOOP
-         PERFORM public.check_form_capacity_settings_internal(v_form_id, '{}'::jsonb);
-       END LOOP;
-     END IF;
-
      PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
      --
      -- Post-update/insert feature handling
@@ -295,15 +271,9 @@ SET search_path = public, extensions
              RETURNING id INTO new_blueprint_id;
          END IF;
 
-         -- Start only an unambiguous, valid organizer configuration. Choosing a
-         -- target/repairing legacy data remains possible after feature enabling.
-         IF (SELECT count(*) FROM eshop.blueprints WHERE occasion=occ_id)=1
-           AND (SELECT layout->>'schemaVersion' FROM eshop.blueprints WHERE id=new_blueprint_id)='2'
-           AND NOT EXISTS(SELECT 1 FROM public.forms WHERE blueprint=new_blueprint_id)
-           AND (SELECT count(*) FROM public.forms WHERE occasion=occ_id)=1 THEN
-           SELECT id INTO v_form_id FROM public.forms WHERE occasion=occ_id;
-           PERFORM public.start_seating_configuration_internal(v_form_id,new_blueprint_id);
-         END IF;
+         -- Saved seat selectors use the plan immediately. Ordinary forms keep
+         -- their product choices, capacity and waitlist until that selector is enabled.
+         PERFORM public.sync_form_blueprint_internal(id) FROM public.forms WHERE occasion=occ_id ORDER BY id;
      END IF;
  END;
  $$;

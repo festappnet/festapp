@@ -273,34 +273,39 @@ font and size. Individual differences remain local overrides. Table labels use t
 centered, shrink-to-fit label box by default.
 
 
-## Existing admissions
+## Saved form plans and existing admissions
 
-`form_seating_transitions` records organizer configuration and lifecycle, while
-`eshop.spots.order_product_ticket` remains the sole physical placement authority.
-Enabling editing leaves public sales unchanged. A valid unambiguous source/plan
-starts organizer-managed seating; otherwise organizers choose or repair a target.
-The server derives the current worklist from ticket/item/order ownership, including
-unpaid admissions and accepted offers. All assigned is a successful operating mode
-with waiting/offered tickets shown separately.
+`forms.blueprint` is the only form-to-plan association. A saved schema-2 plan is
+available immediately to enabled seat selectors, including the editor preview.
+Ordinary plan saves, form saves, new forms and enabling the blueprint feature use
+`sync_form_blueprint_internal`. An existing association is preserved; an unbound
+selector uses the sole valid plan. Multiple candidates require an explicit plan
+selection instead of silently choosing a different hall. Explicitly hidden seat
+selectors retain ordinary product choices. Form schedules and open/closed flags
+remain the only public sales gate. There is no separate plan publication action,
+publication state, or activation command.
 
-Exact item-to-seat preview/commit preserves purchased snapshots, money, ticket
-identity and QR. Complete before/after atomic units are explicit, including across
-forms in one target cohort. Generic inventory allocation excludes canonical seat
-bindings and retains explicit placements. Standing coverage uses existing PIC
-allocations and saved area bindings. Used/printed/ambiguous rights are never
-silently changed or omitted. Current reads enrich historical JSON through
-`order_tickets_with_seating_internal`; old downloaded PDFs do not update themselves.
+Existing admissions are projected from saved plan associations, current admission offers and actual placements
+through `seating_admissions_internal(blueprint_id)`. `eshop.spots.order_product_ticket` remains
+the sole physical placement authority. The worklist includes unpaid admissions
+and accepted offers; waiting/offered tickets stay distinct. Exact item-to-seat
+preview/commit preserves purchased snapshots, money, ticket identity and QR.
+Complete before/after atomic units are explicit, including across forms sharing
+the same plan. Used/printed/ambiguous admissions remain visible and protected.
+Commands retain actor/UUID/payload-bound receipts, live authorization rechecks,
+and advisory/form/source-parent locks; uncertain outcomes replay the frozen
+request. Generic inventory allocation preserves explicit placements and standing
+coverage continues to use saved area bindings and existing PIC allocations.
 
-Optional publication reviews the entire target cohort and dependent admission
-sources, requires resolved queues/payment preparation and full current coverage,
-and explicitly confirms effective sales capacity. It preserves form schedules and
-open/closed state. Ordinary source authoring and every product materializer enforce
-the published addressed-admission contract. Closing the workspace leaves placements
-intact; explicit cancellation requires no placements or conflicting holds.
+A plan change or selector disable cannot abandon ordered seats or live holds.
+Existing capacity and waitlist validation remains authoritative and rejects
+incompatible configuration instead of silently removing capacity or waiting
+entries. Current email/history reads resolve the same saved association through
+`order_tickets_with_seating_internal`; previously downloaded PDFs stay unchanged.
 
-Aggregate context allows form authors or order readers; private rows require order
-read and assignment additionally requires order write. Configuration/publication
-requires form authoring. Commands share actor/UUID/payload-bound receipts and
-advisory/form/source-parent locks; uncertain outcomes replay the frozen request.
-See [transport contract](../../../docs/plans/blueprint-admission-transition-CONTRACT-2026-11-01.md)
-and [implementation plan](../../../docs/plans/blueprint-admission-transition-plan-2026-10-31.md).
+The forward cutover is assembled by
+`automation/assemble-automatic-seating-migration.py`. It migrates existing enabled seat selectors
+to `forms.blueprint`, preserves ordinary registrations and their waiting lists, rejects conflicting/foreign associations,
+and removes the obsolete publication table and RPCs without touching placements,
+orders, ticket identities or financial data. Historical migration files remain
+immutable. Superseded transition plans are historical records of the removed flow.

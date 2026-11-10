@@ -694,6 +694,7 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Prepare a success response
         ----------------------------------------------------------------------------
+        PERFORM public.sync_form_blueprint_internal(form_id);
         PERFORM public.assert_form_seating_source_internal(form_id);
         result := JSONB_BUILD_OBJECT(
             'code', 200,

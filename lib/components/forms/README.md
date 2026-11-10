@@ -20,6 +20,14 @@ must still be selected; neither an empty selection nor an optional add-on can
 replace the required fee. Enabled or missing ticket containers retain the
 admission-product requirement.
 
+## Saved seat selection
+
+Seat selection uses the form's saved `blueprint` association immediately after
+ordinary plan/form Save, including preview. It has no independent publication
+step; the form's existing availability settings control sales. See the
+[plan association owner](../blueprint/README.md#saved-form-plans-and-existing-admissions).
+Missing associations never render as a free-text seat field.
+
 ## Gotchas
 
 - **Never hardcode field IDs**. Find fields by `type` or `data` attributes -- IDs are generated.

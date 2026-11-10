@@ -729,7 +729,7 @@
         "test/components/bank_accounts/bank_failure_diagnostic_cases.dart",
         "test/components/bank_accounts/connection_refresh_cases.dart",
         "test/components/blueprint/blueprint_focus_navigation_cases.dart",
-        "test/components/blueprint/seating_transition_cases.dart",
+        "test/components/blueprint/seating_cases.dart",
         "test/components/eshop/order_detail_split_pane_cases.dart",
         "test/components/eshop/order_grid_activation_revision_cases.dart",
         "test/components/forms/form_creation_visibility_cases.dart",

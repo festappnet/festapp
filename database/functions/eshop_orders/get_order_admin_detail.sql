@@ -24,7 +24,9 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  LEFT JOIN eshop.blueprint_seat_bindings sb ON sb.spot=s.id AND sb.blueprint=s.blueprint
  LEFT JOIN public.forms f ON f.id=x.form AND f.occasion=x.occasion
  LEFT JOIN eshop.blueprint_area_bindings ab ON s.blueprint IS NULL AND ab.inventory_context=s.inventory_context AND ab.product=x.product
-   AND (ab.blueprint=f.blueprint OR EXISTS(SELECT 1 FROM public.form_seating_transitions tr WHERE tr.form=f.id AND tr.blueprint=ab.blueprint AND tr.state='organizer_managed'))
+   AND ab.blueprint=coalesce(f.blueprint,(SELECT min(candidate.blueprint) FROM eshop.blueprint_area_bindings candidate
+     JOIN eshop.blueprints target ON target.id=candidate.blueprint WHERE candidate.inventory_context=s.inventory_context
+       AND candidate.product=x.product AND target.occasion=x.occasion HAVING count(DISTINCT candidate.blueprint)=1))
  LEFT JOIN eshop.blueprints b ON b.id=coalesce(s.blueprint,ab.blueprint) AND b.occasion=x.occasion
  )
  SELECT coalesce(jsonb_agg(jsonb_build_object(
@@ -44,12 +46,12 @@ REVOKE ALL ON FUNCTION public.order_admin_places_internal(bigint) FROM PUBLIC,an
 -- payment, form, or email projections just to validate its read consistency token.
 CREATE OR REPLACE FUNCTION public.order_admin_placement_internal(p_order bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; places jsonb; tickets jsonb; plans jsonb; tr uuid;
+DECLARE o eshop.orders; places jsonb; tickets jsonb; plans jsonb; tr bigint;
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  IF o.id IS NULL THEN RETURN NULL; END IF;
  places:=public.order_admin_places_internal(o.id);
- SELECT id INTO tr FROM public.form_seating_transitions WHERE form=o.form AND state='organizer_managed';
+ SELECT min(b.id) INTO tr FROM eshop.blueprints b CROSS JOIN LATERAL public.blueprint_seating_sources_internal(b.id) source WHERE b.occasion=o.occasion AND source.form_id=o.form HAVING count(*)=1;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'ticket_symbol',t.ticket_symbol,'state',t.state,
   'note',t.note,'note_hidden',t.note_hidden,'data',t.data,
   'snapshot',coalesce((SELECT v FROM jsonb_array_elements(coalesce(o.data->'tickets','[]')) v WHERE v->>'id'=t.id::text),

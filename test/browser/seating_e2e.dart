@@ -10,17 +10,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
-import 'package:fstapp/components/blueprint/seating_transition_controller.dart';
-import 'package:fstapp/components/blueprint/seating_transition_models.dart';
-import 'package:fstapp/components/blueprint/seating_transition_panel.dart';
-import 'package:fstapp/components/blueprint/seating_transition_transport.dart';
+import 'package:fstapp/components/blueprint/seating_controller.dart';
+import 'package:fstapp/components/blueprint/seating_models.dart';
+import 'package:fstapp/components/blueprint/seating_panel.dart';
+import 'package:fstapp/components/blueprint/seating_transport.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_plan_editor.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_controller.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_saver.dart';
 import 'package:fstapp/components/forms/supabase_form_commands.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
-import 'package:fstapp/components/blueprint/seating_transition_strings.dart';
+import 'package:fstapp/components/blueprint/seating_strings.dart';
 
 const _endpoint = String.fromEnvironment('SEATING_E2E_REST_URL');
 const _jwt = String.fromEnvironment('SEATING_E2E_JWT');
@@ -29,23 +29,16 @@ const _jwt = String.fromEnvironment('SEATING_E2E_JWT');
 final _scenario = Uri.base.queryParameters['scenario'] ?? 'original';
 int get _occasion => switch (_scenario) {
   'original' => const int.fromEnvironment('SEATING_E2E_OCCASION'),
-  'publication' => const int.fromEnvironment(
-    'SEATING_E2E_PUBLICATION_OCCASION',
-  ),
   'pagination' => const int.fromEnvironment('SEATING_E2E_PAGINATION_OCCASION'),
   _ => throw StateError('Unknown local seating scenario'),
 };
 int get _blueprint => switch (_scenario) {
   'original' => const int.fromEnvironment('SEATING_E2E_BLUEPRINT'),
-  'publication' => const int.fromEnvironment(
-    'SEATING_E2E_PUBLICATION_BLUEPRINT',
-  ),
   'pagination' => const int.fromEnvironment('SEATING_E2E_PAGINATION_BLUEPRINT'),
   _ => throw StateError('Unknown local seating scenario'),
 };
 String get _link => switch (_scenario) {
   'original' => const String.fromEnvironment('SEATING_E2E_LINK'),
-  'publication' => const String.fromEnvironment('SEATING_E2E_PUBLICATION_LINK'),
   'pagination' => const String.fromEnvironment('SEATING_E2E_PAGINATION_LINK'),
   _ => throw StateError('Unknown local seating scenario'),
 };
@@ -94,7 +87,7 @@ Future<void> main() async {
   );
   await EasyLocalization.ensureInitialized();
   final plan = await _loadPlan();
-  final transport = SeatingTransitionTransport.withTransport(
+  final transport = SeatingTransport.withTransport(
     _rpc,
     ClientCommandTransport(
       _rpc,
@@ -117,7 +110,7 @@ Future<void> main() async {
 class _App extends StatelessWidget {
   const _App({required this.plan, required this.transport});
   final BlueprintModel plan;
-  final SeatingTransitionTransport transport;
+  final SeatingTransport transport;
   @override
   Widget build(BuildContext context) => MaterialApp(
     locale: context.locale,
@@ -134,7 +127,7 @@ class _App extends StatelessWidget {
 class _Workspace extends StatefulWidget {
   const _Workspace({required this.plan, required this.transport});
   final BlueprintModel plan;
-  final SeatingTransitionTransport transport;
+  final SeatingTransport transport;
   @override
   State<_Workspace> createState() => _WorkspaceState();
 }
@@ -155,7 +148,7 @@ class _WorkspaceState extends State<_Workspace> {
   );
   bool _open = false;
   String? _error;
-  late final seating = SeatingTransitionController(
+  late final seating = SeatingController(
     transport: widget.transport,
     occasionId: _occasion,
     blueprintId: _blueprint,
@@ -194,7 +187,7 @@ class _WorkspaceState extends State<_Workspace> {
         } catch (_) {
           if (mounted)
             setState(
-              () => _error = SeatingTransitionStrings.text('UNAVAILABLE'),
+              () => _error = SeatingStrings.text('UNAVAILABLE'),
             );
         }
       },
@@ -213,7 +206,7 @@ class _WorkspaceState extends State<_Workspace> {
         child: Column(
           children: [
             if (!_open)
-              SeatingTransitionSummary(
+              SeatingSummary(
                 controller: seating,
                 open: _openWorkspace,
               ),
@@ -221,7 +214,7 @@ class _WorkspaceState extends State<_Workspace> {
             Expanded(
               child: SeatingWorkspaceFrame(
                 active: _open,
-                panel: SeatingTransitionPanel(
+                panel: SeatingPanel(
                   controller: seating,
                   onClose: () => setState(() => _open = false),
                   onCommitted: _refresh,
@@ -241,7 +234,7 @@ class _WorkspaceState extends State<_Workspace> {
                             } catch (_) {
                               if (mounted)
                                 setState(
-                                  () => _error = SeatingTransitionStrings.text(
+                                  () => _error = SeatingStrings.text(
                                     'UNAVAILABLE',
                                   ),
                                 );

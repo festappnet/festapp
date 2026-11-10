@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:fstapp/components/blueprint/seating_transition_controller.dart';
-import 'package:fstapp/components/blueprint/seating_transition_models.dart';
-import 'package:fstapp/components/blueprint/seating_transition_panel.dart';
-import 'package:fstapp/components/blueprint/seating_transition_transport.dart';
+import 'package:fstapp/components/blueprint/seating_controller.dart';
+import 'package:fstapp/components/blueprint/seating_models.dart';
+import 'package:fstapp/components/blueprint/seating_panel.dart';
+import 'package:fstapp/components/blueprint/seating_transport.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 import '../../support/fixtures/client_command_response_fixture.dart';
@@ -21,10 +21,9 @@ Map<String, dynamic> contextData({
   int waiting = 1,
   List<Map<String, dynamic>>? items,
 }) => {
-  'transitionId': 't1',
+  'formId': 20,
   'blueprintId': 10,
   'revision': 1,
-  'state': 'organizer_managed',
   'capabilities': {
     'readHolders': read,
     'assign': assign,
@@ -52,7 +51,6 @@ Map<String, dynamic> contextData({
   'compatibility': [],
   'cohort': [],
   'nextCursor': null,
-  'publicationAvailable': configure,
 };
 Map<String, dynamic> admission(int id, {int form = 20}) => {
   'ticketId': id,
@@ -70,7 +68,7 @@ class Fixture {
   Map<String, dynamic> data = contextData();
   final calls = <Map<String, dynamic>>[];
   Future<Object?> Function(String, Map<String, dynamic>)? mutate;
-  late final transport = SeatingTransitionTransport.withTransport(
+  late final transport = SeatingTransport.withTransport(
     read,
     ClientCommandTransport((name, params) async {
       calls.add({'name': name, ...params});
@@ -79,7 +77,7 @@ class Fixture {
           : await mutate!(name, params);
     }, maxAttempts: 1),
   );
-  late final controller = SeatingTransitionController(
+  late final controller = SeatingController(
     transport: transport,
     occasionId: 1,
     blueprintId: 10,
@@ -89,14 +87,13 @@ class Fixture {
       return {
         'code': 200,
         'data': {
-          'transitions': [
-            {'id': 't1', 'blueprintId': 10, 'state': 'organizer_managed'},
+          'forms': [
+            {'id': 20, 'blueprintId': 10},
           ],
-          'forms': [],
           'capabilities': data['capabilities'],
         },
       };
-    if (name == 'get_seating_transition_context')
+    if (name == 'get_blueprint_seating_context')
       return {'code': 200, 'data': data};
     if (name == 'preview_ticket_seat_assignment')
       return {
@@ -134,7 +131,7 @@ void main() {
       final env = WidgetEnvironmentFixture(
         locale: const Locale('en'),
         translations: {
-          'SeatingTransition': {
+          'Seating': {
             'productCoverageMissing':
                 'Assign the purchased product in the plan and save.',
             'editSeatProducts': 'Edit seat products',
@@ -147,7 +144,7 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: 340,
-              child: SeatingTransitionPanel(
+              child: SeatingPanel(
                 controller: f.controller,
                 onClose: () {
                   closed++;
@@ -293,7 +290,7 @@ void main() {
       addTearDown(f.controller.dispose);
       await f.controller.load(discover: true);
       expect(f.controller.canAssign, isTrue);
-      expect(f.controller.context!.publicationAvailable, isFalse);
+      expect(f.controller.context!.capabilities.configure, isFalse);
     },
   );
   test(
@@ -336,7 +333,7 @@ void main() {
     final env = WidgetEnvironmentFixture(
       locale: const Locale('en'),
       translations: {
-        'SeatingTransition': {
+        'Seating': {
           'allAssigned': 'All assigned',
           'unassigned': 'Unassigned',
           'waiting': 'Waiting',
@@ -349,7 +346,7 @@ void main() {
       tester,
       MaterialApp(
         home: Scaffold(
-          body: SeatingTransitionSummary(
+          body: SeatingSummary(
             controller: f.controller,
             open: () {},
             onWaitlist: () {},
@@ -359,6 +356,21 @@ void main() {
     );
     expect(find.text('All assigned'), findsOneWidget);
     expect(find.text('Waiting: 1 · Offered: 0'), findsOneWidget);
+    f.data['counts'] = {
+      'unassigned': 0,
+      'assigned': 0,
+      'standing': 0,
+      'blocked': 0,
+      'waiting': 1,
+      'offered': 0,
+    };
+    await f.controller.load();
+    await tester.pump();
+    expect(
+      find.text('Waiting: 1 · Offered: 0'),
+      findsOneWidget,
+      reason: 'A waiting-only queue stays reachable without a publication step',
+    );
     expect(tester.takeException(), isNull);
   });
   testWidgets('mobile workspace keeps the queue visible below the canvas', (
@@ -403,7 +415,7 @@ void main() {
             'discardChanges': 'Discard changes',
             'close': 'Close',
           },
-          'SeatingTransition': {
+          'Seating': {
             'saveDraft': 'Save layout?',
             'saveDraftDetail': 'Use the saved plan',
           },
@@ -471,7 +483,7 @@ void main() {
         locale: const Locale('en'),
         translations: {
           'Common': {'cancel': 'Cancel', 'close': 'Close'},
-          'SeatingTransition': {
+          'Seating': {
             'review': 'Review assignments',
             'reviewTitle': 'Confirm exact assignments',
             'confirm': 'Assign reviewed seats',
@@ -484,10 +496,7 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: 340,
-              child: SeatingTransitionPanel(
-                controller: f.controller,
-                onClose: () {},
-              ),
+              child: SeatingPanel(controller: f.controller, onClose: () {}),
             ),
           ),
         ),
@@ -544,48 +553,26 @@ void main() {
     (tester) async {
       final f = Fixture();
       addTearDown(f.controller.dispose);
-      f.controller.workspace = {
-        'status': 'published',
-        'capabilities': {'configure': true},
-        'forms': [
-          {
-            'id': 20,
-            'title': 'Existing form',
-            'canStart': false,
-            'reason': 'TARGET_ALREADY_PUBLIC',
-          },
-        ],
-      };
+      await f.controller.load(discover: true);
       final env = WidgetEnvironmentFixture(
         locale: const Locale('en'),
-        translations: {
-          'SeatingTransition': {
-            'published': 'Public seat selection is active.',
-            'start': 'Use this form',
-          },
-        },
+        translations: const {},
       );
       await env.pumpWidget(
         tester,
         MaterialApp(
           home: Scaffold(
-            body: Column(
-              children: [
-                SeatingTransitionSummary(controller: f.controller, open: () {}),
-                Expanded(
-                  child: SeatingTransitionPanel(
-                    controller: f.controller,
-                    onClose: () {},
-                  ),
-                ),
-              ],
-            ),
+            body: SeatingPanel(controller: f.controller, onClose: () {}),
           ),
         ),
       );
-      expect(find.byKey(const ValueKey('seating-summary')), findsNothing);
-      expect(find.text('Public seat selection is active.'), findsOneWidget);
-      expect(find.text('Use this form'), findsNothing);
+      expect(find.byKey(const ValueKey('seating-worklist')), findsOneWidget);
+      expect(f.controller.context!.blueprintId, 10);
+      expect(
+        f.calls,
+        isEmpty,
+        reason: 'Opening an attached plan needs no activation command',
+      );
     },
   );
 }

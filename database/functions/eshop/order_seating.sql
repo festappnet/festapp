@@ -23,7 +23,9 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
      FROM eshop.order_product_ticket x JOIN eshop.spots s ON s.order_product_ticket=x.id
      JOIN eshop.orders o ON o.id=x."order" AND o.occasion=s.occasion
      LEFT JOIN public.forms f ON f.id=o.form AND f.occasion=o.occasion
-     LEFT JOIN eshop.blueprint_area_bindings ab ON ab.blueprint=coalesce(f.blueprint,(SELECT tr.blueprint FROM public.form_seating_transitions tr WHERE tr.form=f.id AND tr.state='organizer_managed'))
+     LEFT JOIN eshop.blueprint_area_bindings ab ON ab.blueprint=coalesce(f.blueprint,(SELECT min(candidate.blueprint) FROM eshop.blueprint_area_bindings candidate
+       JOIN eshop.blueprints target ON target.id=candidate.blueprint WHERE candidate.inventory_context=s.inventory_context
+         AND candidate.product=x.product AND target.occasion=o.occasion HAVING count(DISTINCT candidate.blueprint)=1))
        AND ab.inventory_context=s.inventory_context AND ab.product=x.product
      LEFT JOIN eshop.blueprints b ON b.id=ab.blueprint AND b.occasion=o.occasion
      LEFT JOIN LATERAL (SELECT n AS node FROM jsonb_array_elements(coalesce(b.layout->'nodes','[]')) n
