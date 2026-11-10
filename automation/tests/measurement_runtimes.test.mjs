@@ -12,9 +12,16 @@ import {verifyRuntimes, sha256} from '../verify_measurement_runtimes.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const entry = {project: 'festapp-measurement-unit-17', organization: 3, unit: 17};
+const scopeHeaders = {
+  'x-festapp-runtime-organization': '3', 'x-festapp-runtime-unit': '17',
+  'x-festapp-runtime-backend': 'https://api.festapp.net',
+};
+const productionBindings = {ORGANIZATION_ID:{type:'plain_text',value:'3'},
+  UNIT_ID:{type:'plain_text',value:'17'}, FESTAPP_API_URL:{type:'plain_text',value:'https://api.festapp.net'}};
 
 test('registry accepts public scope and rejects malformed, extra and duplicate entries', async () => {
-  assert.deepEqual(await readRuntimes(entry.project), [entry]);
+  assert.deepEqual(await readRuntimes(entry.project), [{...entry,probe:{form:'hwnsne2t',parent:'https://kurin.skauting.cz'}}]);
+  assert.deepEqual(await readRuntimes(undefined, 999999), []);
   await assert.rejects(readRuntimes('unknown'), /Unknown/);
   for (const invalid of [null, {}, [], [null], [{...entry, extra: true}],
     [{...entry, project: 'bad/project'}], [{...entry, unit: 0}],
@@ -42,7 +49,7 @@ test('public probe handles matching bytes, drift, HTTP failure, timeout and prop
         calls.push({url, options});
         const body = scenario.bodies[calls.length - 1];
         if (body === null) throw new DOMException('timeout', 'TimeoutError');
-        return new Response(typeof body === 'number' ? '' : body, {status: typeof body === 'number' ? body : 200, headers: {'x-festapp-runtime-build': 'a'.repeat(64)}});
+        return new Response(typeof body === 'number' ? '' : body, {status: typeof body === 'number' ? body : 200, headers: {...scopeHeaders, 'x-festapp-runtime-build': 'a'.repeat(64)}});
       },
     });
     assert.equal(results[0].ok, scenario.ok);
@@ -85,7 +92,7 @@ test('worker build is deterministic, serves the exact receiver and rejects stale
     execFileSync(process.execPath, [script]);
     assert.equal(await readFile(artifact, 'utf8'), first);
     const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(first).toString('base64'));
-    const response = await worker.fetch(new Request(`https://${entry.project}.pages.dev/runtime.js`), {});
+    const response = await worker.fetch(new Request(`https://${entry.project}.pages.dev/runtime.js`), {ORGANIZATION_ID:'3',UNIT_ID:'17',FESTAPP_API_URL:'https://api.festapp.net'});
     const {runtimeSource} = await import('../../workers/form-measurement/src/runtime_source.mjs');
     assert.equal(response.status, 200);
     const buildId = await measurementBuildId(new URL('file://' + directory + '/'));
@@ -117,6 +124,8 @@ test('deployment dry run is offline, skips credentials, build and Wrangler', asy
     assert.doesNotMatch(result.stderr, /UNEXPECTED/);
     const unknown = spawnSync('bash', ['automation/deploy_measurement_runtimes.sh', '--dry-run', '--only', 'unknown'], {cwd: root});
     assert.notEqual(unknown.status, 0);
+    const implicit = spawnSync('bash', ['automation/deploy_measurement_runtimes.sh', '--dry-run'], {cwd: root});
+    assert.equal(implicit.status, 2, 'deployment never silently selects all organizers');
   } finally { await rm(directory, {recursive: true, force: true}); }
 });
 
@@ -124,7 +133,7 @@ test('matching receiver bytes require the exact worker build identity', async ()
   for (const header of [null, 'b'.repeat(64), 'a'.repeat(64)]) {
     const [result] = await verifyRuntimes([entry], {
       expectedSource: 'receiver', expectedBuildId: 'a'.repeat(64), attempts: 1, log() {},
-      fetchImpl: async () => new Response('receiver', {headers: header ? {'x-festapp-runtime-build': header} : {}}),
+      fetchImpl: async () => new Response('receiver', {headers: {...scopeHeaders, ...(header ? {'x-festapp-runtime-build': header} : {})}}),
     });
     assert.equal(result.ok, header === 'a'.repeat(64));
   }
@@ -159,6 +168,7 @@ test('deploy path binds canonical main, discovers production branches, locks, an
     await executable('pnpm', '[[ "$1" = dlx && "$2" = wrangler@4.159.0 ]]\nshift 2\nexec wrangler "$@"\n');
     await executable('wrangler', `echo "$*" >> calls
       case "$*" in
+        'auth token --json') echo '{"type":"oauth","token":"test-oauth-bearer"}';;
         'pages project list --json') if [ \"\${FIX_NO_BRANCH-0}\" = 1 ]; then echo '[{\"Project Name\":\"${entry.project}\"}]'; exit 0; fi; echo '[{"Project Name":"${entry.project}","Production Branch":"production"},{"Project Name":"${second.project}","production_branch":"release"}]';;
         'pages deployment list '*) echo history >> calls; if [ \"\${FIX_EMPTY_HISTORY-0}\" = 1 ]; then echo '[]'; else echo '[{"Id":"newest-inactive-id"}]'; fi;;
         'pages deploy '*) cat >/dev/null; exit \"\${FIX_UPLOAD-0}\";;
@@ -169,12 +179,12 @@ test('deploy path binds canonical main, discovers production branches, locks, an
         if [ "\${FIX_DEPLOYMENT_HTTP_ERROR-0}" = 1 ]; then exit 22; fi
         echo "{\\"success\\":true,\\"result\\":{\\"id\\":\\"\${FIX_DEPLOYMENT_ID-previous-production-id}\\",\\"environment\\":\\"\${FIX_DEPLOYMENT_ENV-production}\\",\\"latest_stage\\":{\\"status\\":\\"\${FIX_DEPLOYMENT_STATUS-success}\\"}}}"
       elif [ "\${FIX_FIRST-0}" = 1 ]; then
-        echo '{"success":true,"result":{"production_branch":"production","canonical_deployment":null}}'
+        echo '{"success":true,"result":{"deployment_configs":{"production":{"env_vars":${JSON.stringify(productionBindings)}}},"production_branch":"production","canonical_deployment":null}}'
       else
-        echo '{"success":true,"result":{"production_branch":"production","canonical_deployment":{"id":"previous-production-id","environment":"production","latest_stage":{"status":"success"}}}}'
+        echo '{"success":true,"result":{"deployment_configs":{"production":{"env_vars":${JSON.stringify(productionBindings)}}},"production_branch":"production","canonical_deployment":{"id":"previous-production-id","environment":"production","latest_stage":{"status":"success"}}}}'
       fi
 `);
-    const run = (extra = {}, args = []) => spawnSync('bash', ['automation/deploy_measurement_runtimes.sh', ...args], {
+    const run = (extra = {}, args = []) => spawnSync('bash', ['automation/deploy_measurement_runtimes.sh', '--only', entry.project, ...args], {
       cwd: directory, encoding: 'utf8', env: {...process.env, PATH: `${directory}/bin:${process.env.PATH}`, CLOUDFLARE_API_TOKEN: randomBytes(24).toString('hex'), ...extra},
     });
     for (const [env, message] of [[{FIX_BRANCH: 'prod/tenant'}, /requires branch main/], [{FIX_BRANCH: ''}, /requires branch main/], [{FIX_REMOTE: '2'}, /HEAD must equal origin\/main/], [{FIX_DIRTY: 'modified'}, /clean checkout/]]) {
@@ -191,12 +201,12 @@ test('deploy path binds canonical main, discovers production branches, locks, an
     const calls = await readFile(join(directory, 'calls'), 'utf8');
     assert.match(calls, /fetch/);
     assert.match(calls, /--project-name=festapp-measurement-unit-17 --branch=production --commit-hash=0000000000000000000000000000000000000001/);
-    assert.match(calls, /--project-name=festapp-measurement-unit-18 --branch=release/);
+    assert.doesNotMatch(calls, /--project-name=festapp-measurement-unit-18/);
     const fallback = run({FIX_NO_BRANCH: '1'}, ['--only', entry.project]);
     assert.equal(fallback.status, 0, fallback.stderr);
     const oauth = run({}, ['--wrangler-oauth']);
-    assert.notEqual(oauth.status, 0);
-    assert.match(oauth.stderr, /Unknown option/);
+    assert.equal(oauth.status, 0, oauth.stderr);
+    assert.doesNotMatch(oauth.stdout + oauth.stderr, /test-oauth-bearer/);
     const noToken = run({CLOUDFLARE_API_TOKEN: ''});
     assert.notEqual(noToken.status, 0);
     assert.match(noToken.stderr, /export it or use --env-file/);
@@ -261,12 +271,25 @@ test('dotenv parser rejects missing and empty values, strips comments without ex
   } finally { await rm(directory, {recursive: true, force: true}); }
 });
 
+test('OAuth parser accepts only a bounded existing OAuth credential and never logs malformed input', () => {
+  for (const value of [{}, {type:'api_token',token:'fixture'}, {type:'oauth',token:'bad\nvalue'},
+    {type:'oauth',token:'fixture-bearer'}]) {
+    const result = spawnSync(process.execPath, ['automation/lib/measurement_env.mjs','--wrangler-json'], {
+      cwd:root,encoding:'utf8',input:JSON.stringify(value),
+    });
+    const valid = value.token === 'fixture-bearer';
+    assert.equal(result.status, valid ? 0 : 1);
+    assert.equal(result.stdout, valid ? 'fixture-bearer' : '');
+    if (!valid) assert.match(result.stderr,/credential is missing or invalid/);
+  }
+});
+
 test('project metadata projection keeps only public fields and hides malformed input', () => {
   const hidden = randomBytes(24).toString('hex');
   for (const input of [JSON.stringify({success: true, result: {production_branch: 'production',
-    env_vars: {private: {value: hidden}}, canonical_deployment: {id: 'active', environment: 'production',
+    deployment_configs:{production:{env_vars:{...productionBindings,private:{value:hidden}}}}, canonical_deployment: {id: 'active', environment: 'production',
       env_vars: {private: {value: hidden}}, latest_stage: {status: 'success'}}}}), hidden]) {
-    const result = spawnSync(process.execPath, ['automation/lib/measurement_project.mjs'], {cwd: root, input, encoding: 'utf8'});
+    const result = spawnSync(process.execPath, ['automation/lib/measurement_project.mjs', '--project', entry.project], {cwd: root, input, encoding: 'utf8'});
     assert.ok(!result.stdout.includes(hidden) && !result.stderr.includes(hidden));
     if (input.startsWith('{')) {
       assert.equal(result.status, 0);
@@ -276,4 +299,99 @@ test('project metadata projection keeps only public fields and hides malformed i
       assert.match(result.stderr, /metadata unavailable/);
     }
   }
+});
+
+test('production metadata binds all public environment values before deployment', () => {
+  for (const key of ['ORGANIZATION_ID', 'UNIT_ID', 'FESTAPP_API_URL']) {
+    for (const value of ['wrong', undefined]) {
+      const env = {...productionBindings, [key]: value === undefined ? undefined : {type:'plain_text',value}};
+      const result = spawnSync(process.execPath, ['automation/lib/measurement_project.mjs', '--project', entry.project], {
+        cwd:root, encoding:'utf8', input:JSON.stringify({success:true,result:{deployment_configs:{production:{env_vars:env}}}}),
+      });
+      assert.notEqual(result.status, 0);
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, /scope\/backend does not match/);
+    }
+  }
+});
+
+test('public verification rejects wrong live scope even when bytes and build match', async () => {
+  for (const key of Object.keys(scopeHeaders)) {
+    const [result] = await verifyRuntimes([entry], {expectedSource:'receiver', expectedBuildId:'a'.repeat(64),
+      attempts:1, log() {}, fetchImpl:async () => new Response('receiver', {
+        headers:{...scopeHeaders, [key]:'wrong', 'x-festapp-runtime-build':'a'.repeat(64)},
+      })});
+    assert.equal(result.ok, false);
+    assert.equal(result.scopeOk, false);
+  }
+});
+
+test('functional probe verifies backend response, manifest, parent, CSP and exact build without executing tags', async () => {
+  const probe = {form:'public-form',parent:'https://tickets.example'};
+  const manifest = {measurement_protocol:3,organization:3,unit:17,form_link:probe.form,measurement_consent_bridge:false,
+    processing_revision:'revision',runtime_revision:1,policy_revision:1,profile:'gtm-v1',
+    required_purposes:['analytics','marketing']};
+  const base = {organization:3,unit:17,form_link:probe.form,parent_origin:probe.parent,manifest};
+  for (const scenario of ['ok','backend-down','unit','parent','manifest','csp','build','malformed','network','json']) {
+    const calls = [];
+    const [result] = await verifyRuntimes([{...entry,probe}], {expectedSource:'receiver',
+      expectedBuildId:'a'.repeat(64),attempts:1,log() {},fetchImpl:async url => {
+        calls.push(url);
+        if (url.endsWith('/runtime.js')) return new Response('receiver', {headers:{...scopeHeaders,'x-festapp-runtime-build':'a'.repeat(64)}});
+        assert.equal(new URL(url).searchParams.get('form'),probe.form);
+        assert.equal(new URL(url).searchParams.get('parent'),probe.parent);
+        if (scenario === 'network') throw Error('network unavailable');
+        if (scenario === 'backend-down') return new Response('',{status:404});
+        const boot = structuredClone(base);
+        if (scenario === 'unit') boot.unit = 18;
+        if (scenario === 'parent') boot.parent_origin = 'https://wrong.example';
+        if (scenario === 'manifest') boot.manifest.unit = 18;
+        return new Response(scenario === 'malformed' ? '<h1>fallback</h1>' :
+          `<script type="application/json" id="measurement-config">${scenario === 'json' ? '{' : JSON.stringify(boot)}</script>`,
+          {headers:{'content-type':'text/html','x-festapp-runtime-build':(scenario === 'build' ? 'b' : 'a').repeat(64),
+            'content-security-policy':`default-src 'none'; frame-ancestors ${scenario === 'csp' ? 'https://wrong.example' : probe.parent}`}});
+      }});
+    assert.equal(result.ok,scenario === 'ok',scenario);
+    assert.equal(calls.length,2);
+  }
+  const [unconfigured] = await verifyRuntimes([entry], {expectedSource:'receiver',expectedBuildId:'a'.repeat(64),
+    attempts:1,requireProbe:true,log() {},fetchImpl:async () => new Response('receiver',
+      {headers:{...scopeHeaders,'x-festapp-runtime-build':'a'.repeat(64)}})});
+  assert.equal(unconfigured.ok,false,'web release requires explicit functional probe');
+});
+
+test('web deployment verifies selected receivers before build and again before upload', async () => {
+  const directory = await mkdtemp(join(tmpdir(),'measurement-web-release-'));
+  try {
+    await mkdir(join(directory,'automation'),{recursive:true});
+    await mkdir(join(directory,'bin'));
+    await mkdir(join(directory,'build/web'),{recursive:true});
+    await copyFile(join(root,'automation/deploy_direct.sh'),join(directory,'automation/deploy_direct.sh'));
+    await writeFile(join(directory,'automation/project.conf'),
+      'CLOUDFLARE_PROJECT_NAME=test-project\nDOMAIN=tickets.example\nVERSION=1.2.3+4\nBACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=3\n');
+    await writeFile(join(directory,'build/web/_worker.js'),'worker');
+    const executable = async (name,body) => writeFile(join(directory,'bin',name),'#!/bin/bash\nset -eu\n'+body,{mode:0o755});
+    await executable('python3','echo gate >> calls\n');
+    await executable('pnpm','echo upload >> calls\n');
+    await executable('node',`if [ "$1" = automation/verify_measurement_runtimes.mjs ]; then
+      [[ "$*" = 'automation/verify_measurement_runtimes.mjs --organization 3 --require-probe' ]]
+      echo receiver >> calls
+      count=$(grep -c '^receiver$' calls)
+      [ "$count" != "\${FAIL_RECEIVER-0}" ] || exit 1
+    else echo "node $1" >> calls; fi\n`);
+    for (const failAt of ['1','2','0']) {
+      await writeFile(join(directory,'calls'),'');
+      const result = spawnSync('bash',['automation/deploy_direct.sh','--skip-build','--branch','prod/festapptickets'],{
+        cwd:directory,encoding:'utf8',env:{...process.env,PATH:`${directory}/bin:${process.env.PATH}`,
+          CLOUDFLARE_API_TOKEN:'test-only-not-a-credential',FAIL_RECEIVER:failAt},
+      });
+      const calls = (await readFile(join(directory,'calls'),'utf8')).trim().split('\n');
+      assert.equal(result.status,failAt === '0' ? 0 : 1,result.stderr);
+      assert.equal(calls.includes('upload'),failAt === '0');
+      if (failAt === '0') {
+        assert.equal(calls.filter(line => line === 'receiver').length,2);
+        assert.ok(calls.lastIndexOf('receiver') < calls.indexOf('upload'));
+      }
+    }
+  } finally { await rm(directory,{recursive:true,force:true}); }
 });

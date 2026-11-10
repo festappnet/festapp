@@ -165,8 +165,9 @@ establish the new destination semantics without losing events.
 
 Deploy receivers before the web client and embed helper, as described in the
 [form measurement contract](../../docs/integrations/form-datalayer.md). Run this
-release separately before `automation/deploy_direct.sh`. Neither script invokes
-the other. Runtime outages must never block orders or payments.
+release separately before `automation/deploy_direct.sh`. The web deploy verifies
+the selected organization's receivers before build and again before upload. A
+failed receiver blocks a new release; it does not stop the running checkout.
 
 Install the web client's dependencies with pnpm 11.24.0 using
 `pnpm --dir web_client install --frozen-lockfile`. Generate the receiver after
@@ -181,20 +182,22 @@ The Worker build checks `runtime_source.mjs` against its sources before writing
 `dist/_worker.js` and `dist/_routes.json`. A stale generated receiver fails the
 build. Artifacts are deterministic and ignored by Git; no credentials are bundled.
 
-`runtimes.json` is the public deployment registry. Each entry has exactly
-`project`, `organization` and `unit`, with positive safe integer IDs and a unique
+`runtimes.json` is the public deployment registry. Each entry has
+`project`, `organization` and `unit`, with an optional `probe: {form, parent}`
+containing an eligible public form link and approved HTTPS parent origin. No
+private form data or credentials belong here. IDs are positive safe integers with a unique
 project and Unit. The project name must be `festapp-measurement-unit-<unit>`.
 
 ```sh
-bash automation/deploy_measurement_runtimes.sh --dry-run
-bash automation/deploy_measurement_runtimes.sh --only festapp-measurement-unit-17
+bash automation/deploy_measurement_runtimes.sh --dry-run --only festapp-measurement-unit-17
+bash automation/deploy_measurement_runtimes.sh --only festapp-measurement-unit-17 --wrangler-oauth
 # Alternatively use the environment credential or a dotenv file:
-bash automation/deploy_measurement_runtimes.sh --env-file /path/to/private.env
+bash automation/deploy_measurement_runtimes.sh --only festapp-measurement-unit-17 --env-file /path/to/private.env
 node automation/verify_measurement_runtimes.mjs
 node automation/verify_measurement_runtimes.mjs --only festapp-measurement-unit-17
 ```
 
-Without `--only`, deployment targets every registered runtime. `--dry-run` only
+Deployment requires explicit `--only`; it never chooses all organizers implicitly. `--dry-run` only
 prints the plan, without credentials, builds or network requests. A real release
 requires a clean checkout on branch `main`. Tenant branches and detached HEAD are
 rejected. After `git fetch origin main`, HEAD must equal `origin/main` exactly.
@@ -214,9 +217,16 @@ or malformed values fail without printing the value.
 
 Before upload, the script discovers each project's production branch from
 `wrangler pages project list --json`. If absent, it uses the Pages project GET API
-with an environment token; without one it stops with instructions. `--branch`
+with the explicitly selected bearer credential. `--wrangler-oauth` reuses
+the existing encrypted Wrangler login; its supported `auth token --json` output
+is validated and held in process memory for Pages API requests. Stale environment
+tokens are unset first, and no new credential file or login is created.
+`--wrangler-oauth` and `--env-file` are mutually exclusive. `--branch`
 only asserts that the discovered branch matches. Each upload uses that project's
 production branch and the canonical SHA through `--commit-hash`.
+Every project API lookup validates production plain-text ORGANIZATION_ID,
+UNIT_ID and FESTAPP_API_URL against the selected registry entry and canonical
+backend before upload. Raw bindings and secrets never leave the sanitizer.
 No project variables or DNS records are changed and no projects are created.
 The project's compatibility date remains managed in Cloudflare; this script does
 not enforce equality across projects.
@@ -228,8 +238,15 @@ Verification uses public GET requests to each canonical `/runtime.js`, with a
 10 second timeout and four attempts separated by five seconds. Both response-byte
 SHA-256 and build ID must match the local sources. Worker-only source changes
 therefore cause drift too. Results print bounded hash prefixes and `OK` or `DRIFT`;
-unavailability or mismatch exits with status 1. This does not prove environment
-configuration, the `/runtime` handshake or collector delivery.
+unavailability or mismatch exits with status 1. Scope headers also prove the
+live organization, Unit and canonical backend setting. A registered probe fetches
+`/runtime` and checks its actual backend-generated manifest, scope, form, parent,
+CSP and build identity, without executing any tag or conversion. This does not
+prove collector delivery. `--require-probe` rejects incomplete onboarding entries.
+`--organization ID` selects only that tenant organization; an empty selection is
+valid. Web deployment requires this mode automatically. If a public probe form
+closes, replace it with another eligible public form through a reviewed registry
+update; do not reopen the form or change customer policy just to pass a probe.
 
 The `measurement-runtime-drift.yml` workflow runs daily at 06:17 UTC and manually.
 It installs no packages, uses no secrets and never deploys. Checkout does not
@@ -242,8 +259,8 @@ GET API. For an update, it verifies the exact active ID through the deployment
 GET API, requiring the same ID, production environment and successful latest
 stage. It does not require that ID in the first page of deployment history:
 a previous rollback may have activated a much older version. Failed lookups or
-invalid metadata stop the release before upload. An API token in the environment
-(or loaded with `--env-file`) is required; Wrangler OAuth alone is unsupported.
+invalid metadata stop the release before upload. A bearer credential is required: export an API token, use `--env-file`, or
+explicitly select the existing encrypted login with `--wrangler-oauth`.
 
 When the project has no canonical deployment, the script lists production
 history with `wrangler pages deployment list --project-name PROJECT --environment production --json`.
@@ -262,7 +279,7 @@ The command contains only a literal environment-variable reference for authentic
 This is the documented [Pages rollback API](https://developers.cloudflare.com/api/resources/pages/subresources/projects/subresources/deployments/methods/rollback/);
 there is no Pages rollback subcommand in the documented Wrangler command list.
 
-Run the printed command with an authorized environment token, or select the saved
+Run the printed command with an authorized bearer token held in the environment, or select the saved
 ID in the project's Pages dashboard. Check that the API response reports success.
 Verify the canonical runtime against the previous release's sources and build ID
 from a separate checkout using `verify_measurement_runtimes.mjs`; current main is
@@ -275,7 +292,10 @@ production branch selected, then set `ORGANIZATION_ID`, `UNIT_ID`,
 `FESTAPP_API_URL` and the secret `SUPABASE_SERVICE_ROLE_KEY` in its production
 Worker environment. Keep credentials in Cloudflare, outside this registry.
 Add the public project and scope to `runtimes.json`, review the dry run, deploy
-and verify the runtime before releasing its web client. Backend policy approval
+and verify the runtime. Initial provisioning may omit the probe, but a web release
+requires an eligible public-form probe for every registered runtime of its
+organization. Verify stored DB runtime origin and approved parent against the
+registry before enrollment; never copy a service credential into that registry. Backend policy approval
 and measurement enablement remain separate authorized operations.
 
 The release gate ignores only a check named `measurement-runtime-drift` whose
@@ -302,3 +322,11 @@ consent. Escape in Settings discards the draft. Reopened Settings always offer
 Decline; after a saved decision focus returns to the floating Consent settings
 button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
+
+## Processing revision lifecycle
+
+All consent sources share the host `bindChoice` owner. An automatic choice is
+bound to its first processing revision. After changing processing configuration,
+reload the host page to create a new frame record; another CMP accept click
+alone does not authorize the replacement revision. Unknown/mixed manifests
+remain denied. Deploy the new receiver before exposing the bridge setting.

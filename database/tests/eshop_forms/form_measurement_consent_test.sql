@@ -1,5 +1,17 @@
 -- test-setup: database/tests/helpers/form_measurement_fixture.sql
 DO $$
+DECLARE role_name text;
+BEGIN
+ PERFORM assert_true(public.form_measurement_runtime_supported_internal('gtm-v1','https://unit-17.pages.dev',ARRAY['https://tickets.example']),'supported structure');
+ PERFORM assert_false(public.form_measurement_runtime_supported_internal(NULL,NULL,NULL),'missing runtime fails closed');
+ PERFORM assert_false(public.form_measurement_runtime_supported_internal('unknown','https://unit-17.pages.dev',ARRAY['https://tickets.example']),'unsupported profile');
+ PERFORM assert_false(public.form_measurement_runtime_supported_internal('gtm-v1','https://api.festapp.net',ARRAY['https://tickets.example']),'unsupported origin');
+ PERFORM assert_false(public.form_measurement_runtime_supported_internal('gtm-v1','https://unit-17.pages.dev','{}'),'empty parent list');
+ FOREACH role_name IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP
+  PERFORM assert_false(has_function_privilege(role_name,'public.form_measurement_runtime_supported_internal(text,text,text[])','EXECUTE'),'support expression remains private');
+ END LOOP;
+END $$;
+DO $$
 DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; fid bigint:=(x->>'form')::bigint;
  org bigint:=(x->>'organization')::bigint; before_policy jsonb; after_policy jsonb; receipt jsonb; version bigint:=0;
  legacy_revision text; value jsonb; rejected boolean; origin text:='https://unit-consent-test.pages.dev';

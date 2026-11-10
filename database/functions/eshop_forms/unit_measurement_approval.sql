@@ -7,13 +7,13 @@ ALTER TABLE analytics.unit_measurement_request ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON analytics.unit_measurement_request FROM PUBLIC,anon,authenticated,service_role;
 
 -- Platform approval only: organizer switches, destinations and privacy settings
--- remain independent. Keep runtime support aligned with form_measurement_status_internal.
+-- remain independent. Structural runtime support has one shared private owner.
 CREATE OR REPLACE FUNCTION public.unit_measurement_approval_internal(p_unit bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH status AS (
   SELECT coalesce(p.enabled,false) allowed,
-   coalesce(r.runtime_profile='gtm-v1' AND r.runtime_origin ~ '^https://[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\.pages\.dev$'
-    AND cardinality(r.parent_origins)>0 AND NOT public.is_demo_unit(u.id),false) supported,q.requested_at
+   public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
+    AND NOT public.is_demo_unit(u.id) supported,q.requested_at
   FROM public.units u
   LEFT JOIN analytics.organization_policy p ON p.organization=u.organization
   LEFT JOIN analytics.unit_runtime r ON r.unit=u.id

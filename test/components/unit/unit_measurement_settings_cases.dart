@@ -75,7 +75,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(FormStrings.measurementTitle), findsOneWidget);
       expect(find.text(FormStrings.gtmContainer), findsOneWidget);
-      expect(find.byType(SwitchListTile), findsOneWidget);
+      expect(
+        find.widgetWithText(SwitchListTile, FormStrings.measurementUnitEnabled),
+        findsOneWidget,
+      );
       expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
       final gtmField = find.byWidgetPredicate(
         (widget) => widget is TextFormField && widget.controller == gtm,

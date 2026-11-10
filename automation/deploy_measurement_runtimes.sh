@@ -6,6 +6,7 @@ BRANCH=""
 readonly WRANGLER_VERSION="4.159.0"
 ONLY=""
 DRY_RUN=0
+USE_WRANGLER_OAUTH=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --env-file|--branch|--only)
@@ -17,10 +18,13 @@ while [ $# -gt 0 ]; do
       esac
       shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
+    --wrangler-oauth) USE_WRANGLER_OAUTH=1; shift ;;
     *) echo "Unknown option" >&2; exit 2 ;;
   esac
 done
 [[ -z "$BRANCH" || "$BRANCH" =~ ^[a-zA-Z0-9][a-zA-Z0-9/_.-]*$ ]] || { echo "Invalid branch" >&2; exit 2; }
+[ -n "$ONLY" ] || { echo "Select one runtime explicitly with --only PROJECT" >&2; exit 2; }
+[ "$USE_WRANGLER_OAUTH" -eq 0 ] || [ -z "$ENV_FILE" ] || { echo "Choose --wrangler-oauth or --env-file" >&2; exit 2; }
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 PROJECTS="$(node --input-type=module - "$ONLY" <<'NODE'
@@ -57,7 +61,14 @@ release_gate() {
   python3 automation/ci/release_gate.py --source-sha "$SOURCE_SHA"
 }
 release_gate
-if [ -n "$ENV_FILE" ]; then
+wrangler() { pnpm dlx "wrangler@$WRANGLER_VERSION" "$@" </dev/null; }
+if [ "$USE_WRANGLER_OAUTH" -eq 1 ]; then
+  # Reuse the existing encrypted login. Hold its bearer token only in process
+  # memory for the reviewed Pages API calls; never persist or print it.
+  unset CLOUDFLARE_API_TOKEN CF_API_TOKEN
+  CLOUDFLARE_API_TOKEN="$(wrangler auth token --json | node automation/lib/measurement_env.mjs --wrangler-json)"
+  export CLOUDFLARE_API_TOKEN
+elif [ -n "$ENV_FILE" ]; then
   # Parse only the named credential; never execute an env file or print its contents.
   CLOUDFLARE_API_TOKEN="$(node automation/lib/measurement_env.mjs "$ENV_FILE")"
   export CLOUDFLARE_API_TOKEN
@@ -66,7 +77,6 @@ if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
   echo "CLOUDFLARE_API_TOKEN required (export it or use --env-file)" >&2; exit 1
 fi
 export CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-84b32318ac235bf6738bdf1c8caa0795}"
-wrangler() { pnpm dlx "wrangler@$WRANGLER_VERSION" "$@" </dev/null; }
 # Discover every target before uploading any artifact.
 PROJECTS_JSON="$(wrangler pages project list --json)"
 PRODUCTION_BRANCHES=()
@@ -77,12 +87,13 @@ if (!entry) { console.error('Pages project missing; provision it manually'); pro
 process.stdout.write(entry.production_branch ?? entry['Production Branch'] ?? '');
 NODE
 )"
-  if [ -z "$production_branch" ]; then
-    [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || { echo "Production branch unavailable; export CLOUDFLARE_API_TOKEN for Pages project API lookup" >&2; exit 1; }
-    project_json="$(curl --silent --show-error --fail --config - "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$project" <<EOF_AUTH | node automation/lib/measurement_project.mjs
+  # Always bind public production environment to the selected registry scope,
+  # even when Wrangler already returned a production branch. Never echo bindings.
+  project_json="$(curl --silent --show-error --fail --config - "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$project" <<EOF_AUTH | node automation/lib/measurement_project.mjs --project "$project"
 header = "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
 EOF_AUTH
 )"
+  if [ -z "$production_branch" ]; then
     production_branch="$(node --input-type=module - "$project_json" <<'NODE'
 const data=JSON.parse(process.argv[2]);
 if (!data.success || !data.result?.production_branch) { console.error('Project API did not supply production branch'); process.exit(1); }
@@ -100,7 +111,7 @@ for index in "${!PROJECT_ARRAY[@]}"; do
   release_gate
   # The active deployment can be older than the first page of history.
   # Resolve its ID from project metadata and verify that deployment directly.
-  project_json="$(curl --silent --show-error --fail --config - "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$project" <<EOF_AUTH | node automation/lib/measurement_project.mjs
+  project_json="$(curl --silent --show-error --fail --config - "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$project" <<EOF_AUTH | node automation/lib/measurement_project.mjs --project "$project"
 header = "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
 EOF_AUTH
 )"

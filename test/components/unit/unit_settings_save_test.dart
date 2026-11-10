@@ -202,7 +202,8 @@ void main() {
             'reply_to': replyTo,
             'timezone': 'Europe/Prague',
             'measurement_enabled': false,
-            if (name == 'disable consent bridge') 'measurement_consent_bridge': true,
+            if (name == 'disable consent bridge')
+              'measurement_consent_bridge': true,
             'measurement_privacy_url': 'https://organizer.example/privacy',
             'measurement_scripts':
                 '<script>window.savedMeasurement = 1;</script>',
@@ -246,10 +247,12 @@ void main() {
           find.byType(UnitMeasurementSettings),
         );
         if (name == 'restore default') {
-          final restore = find.widgetWithText(
-            TextButton,
-            FormStrings.measurementConsentRestoreDefault,
-          ).first;
+          final restore = find
+              .widgetWithText(
+                TextButton,
+                FormStrings.measurementConsentRestoreDefault,
+              )
+              .first;
           await tester.ensureVisible(restore);
           await tester.tap(restore);
           await tester.pumpAndSettle();
@@ -277,7 +280,8 @@ void main() {
         );
         expect(saves.single['p_expected_version'], 4);
         expect(
-          ((saves.single['p_unit_data'] as Map)['settings'] as Map)['measurement_consent_bridge'],
+          ((saves.single['p_unit_data'] as Map)['settings']
+              as Map)['measurement_consent_bridge'],
           name == 'enable consent bridge',
         );
         expect(
@@ -367,7 +371,10 @@ void main() {
         if (rejectApprovalRead) {
           expect(button, findsNothing);
           expect(toasts, isNotEmpty);
-          final retry = find.widgetWithText(OutlinedButton, CommonStrings.retry);
+          final retry = find.widgetWithText(
+            OutlinedButton,
+            CommonStrings.retry,
+          );
           await tester.ensureVisible(retry);
           // A repeated failure must leave another attempt available.
           await tester.tap(retry);

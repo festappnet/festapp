@@ -50,8 +50,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
     AND (u.data->>'measurement_privacy_url') ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_privacy_url,pattern}'),false) privacy_policy_valid,
    coalesce(p.enabled,false) allowed,coalesce(p.revision,0) revision,
    coalesce(nullif(btrim(u.data->>'measurement_gtm_container'),''),nullif(u.data->>'measurement_scripts','')) IS NOT NULL destination,
-   coalesce(r.runtime_profile='gtm-v1' AND r.runtime_origin ~ '^https://[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\.pages\.dev$'
-    AND cardinality(r.parent_origins)>0 AND NOT public.is_demo_occasion(f.occasion),false) supported
+   public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
+    AND NOT public.is_demo_occasion(f.occasion) supported
   FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
   JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
   JOIN public.organizations org ON org.id=o.organization

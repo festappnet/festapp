@@ -1,7 +1,7 @@
 # Unified measurement configuration and release
 
 Date: 2026-11-10
-Status: Ready for execution
+Status: Implementation complete; validation and release in progress
 Verification: standard; canonical release gates remain mandatory
 
 ## Outcome and scope
@@ -26,6 +26,12 @@ consents and credential rotation are outside scope.
 | Consent sources already share `bindChoice` | `host_measurement.js` | Retain that owner and the Google adapter. Document processing-revision reload behavior; do not add another consent framework. |
 | Backend identity and one active Unit were confirmed read-only | protected SSH, current_database, organization 3, runtime Unit 17 | Runtime registry probe is public form hwnsne2t and approved parent https://kurin.skauting.cz; recheck eligibility at release. |
 | Main requires one PR approval | GitHub main protection | Use an existing contributor PR as the aggregate candidate and retain all three PR heads as ancestors. Review final candidate before merging; never bypass branch protection. |
+
+Read-only preflight additionally confirmed that pinned Wrangler 4.159.0
+`auth token --json` can reuse its existing encrypted OAuth login for the Pages
+project API. Runtime deploy therefore gains the same explicit `--wrangler-oauth`
+choice as web deploy; bearer extraction stays in memory and a safe parser.
+No credential is created, rotated or copied to a file.
 
 ## Invariants and ownership
 
@@ -76,7 +82,8 @@ headers on `/runtime.js`; verifier checks scope, build ID and exact bytes.
 Support an optional registry `probe: {form,parent}` with strict validation;
 verify returned bootstrap manifest, scope, form, parent, CSP and build against
 the actual `/runtime` HTTP response. Unit 17 receives its verified public probe.
-Require explicit `--only` for runtime deployment to prevent an accidental bulk
+Retain the existing API-token input and add explicit encrypted Wrangler OAuth
+reuse, with safe parsing and no automatic login. Require explicit `--only` for runtime deployment to prevent an accidental bulk
 release. Daily read-only monitoring may still inspect the registry.
 Exit: wrong environment, wrong scope, missing backend and malformed/ineligible
 runtime response are failures; secrets never appear in diagnostics.

@@ -1,3 +1,4 @@
 [
-  {"project": "festapp-measurement-unit-17", "organization": 3, "unit": 17}
+  {"project": "festapp-measurement-unit-17", "organization": 3, "unit": 17,
+    "probe": {"form": "hwnsne2t", "parent": "https://kurin.skauting.cz"}}
 ]

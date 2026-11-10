@@ -20,7 +20,11 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
     const local=env.LOCAL_TEST === true && ['localhost','127.0.0.1'].includes(url.hostname);
     const fail=()=>new Response('Measurement unavailable',{status:404,headers});
     if (request.method!=='GET' || !measurementOrigin(url.origin,local)) return fail();
-    if (url.pathname==='/runtime.js' && !url.search) return new Response(runtimeSource,{headers:{...headers,'content-type':'application/javascript; charset=utf-8'}});
+    if (url.pathname==='/runtime.js' && !url.search) return new Response(runtimeSource,{headers:{...headers,
+        'x-festapp-runtime-organization':/^[1-9]\d*$/.test(String(env.ORGANIZATION_ID))?String(env.ORGANIZATION_ID):'unavailable',
+        'x-festapp-runtime-unit':/^[1-9]\d*$/.test(String(env.UNIT_ID))?String(env.UNIT_ID):'unavailable',
+        'x-festapp-runtime-backend':env.FESTAPP_API_URL==='https://api.festapp.net'?env.FESTAPP_API_URL:'unavailable',
+        'content-type':'application/javascript; charset=utf-8'}});
     if (url.pathname!=='/runtime' || [...url.searchParams.keys()].some(k=>!['form','parent'].includes(k))) return fail();
     const form=url.searchParams.get('form'),parent=origin(url.searchParams.get('parent'));
     if (!/^[a-zA-Z0-9_-]{1,80}$/.test(form||'') || !parent || parent===url.origin ||
