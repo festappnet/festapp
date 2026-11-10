@@ -105,51 +105,53 @@ void main() {
     );
   }
 
-  testWidgets(
-    'new scout table follows a drag across the dance floor without rollback',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1440, 1000));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final c = VenueLayoutController(
-        VenueLayoutTemplates.create('scout-ball-182'),
-      );
-      addTearDown(c.dispose);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: VenueLayoutEditor(controller: c, showGallery: false),
+  for (final kind in ['Table', 'Round table']) {
+    testWidgets(
+      'new scout $kind follows a drag across the dance floor without rollback',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1440, 1000));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final c = VenueLayoutController(
+          VenueLayoutTemplates.create('scout-ball-182'),
+        );
+        addTearDown(c.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: VenueLayoutEditor(controller: c, showGallery: false),
+            ),
           ),
-        ),
-      );
-      LayoutSceneSurface surface() => tester.widget<LayoutSceneSurface>(
-        find.byWidgetPredicate(
-          (w) => w is LayoutSceneSurface && w.onDrop != null,
-        ),
-      );
-      surface().onDrop!('Table', const Offset(1600, 1600));
-      await tester.pump();
-      final table = c.document.nodes.singleWhere(
-        (n) => c.selection.contains(n.id),
-      );
-      final inserted = c.document;
-      surface().onDragStart!(Offset(table.x, table.y));
-      for (var i = 1; i <= 12; i++) {
-        surface().onDragUpdate!(Offset(table.x + i * 12, table.y + i * 10));
-        expect(c.error, isNull, reason: 'drag frame $i');
+        );
+        LayoutSceneSurface surface() => tester.widget<LayoutSceneSurface>(
+          find.byWidgetPredicate(
+            (w) => w is LayoutSceneSurface && w.onDrop != null,
+          ),
+        );
+        surface().onDrop!(kind, const Offset(1600, 1600));
         await tester.pump();
-      }
-      final preview = c.document.nodes.singleWhere((n) => n.id == table.id);
-      surface().onDragEnd!();
-      await tester.pump();
-      final moved = c.document.nodes.singleWhere((n) => n.id == table.id);
-      expect(moved.x, preview.x);
-      expect(moved.y, preview.y);
-      expect(moved.x, greaterThan(table.x + 100));
-      expect(moved.y, greaterThan(table.y + 80));
-      c.undo();
-      expect(c.document.toJson(), inserted.toJson());
-    },
-  );
+        final table = c.document.nodes.singleWhere(
+          (n) => c.selection.contains(n.id),
+        );
+        final inserted = c.document;
+        surface().onDragStart!(Offset(table.x, table.y));
+        for (var i = 1; i <= 12; i++) {
+          surface().onDragUpdate!(Offset(table.x + i * 12, table.y + i * 10));
+          expect(c.error, isNull, reason: 'drag frame $i');
+          await tester.pump();
+        }
+        final preview = c.document.nodes.singleWhere((n) => n.id == table.id);
+        surface().onDragEnd!();
+        await tester.pump();
+        final moved = c.document.nodes.singleWhere((n) => n.id == table.id);
+        expect(moved.x, preview.x);
+        expect(moved.y, preview.y);
+        expect(moved.x, greaterThan(table.x + 100));
+        expect(moved.y, greaterThan(table.y + 80));
+        c.undo();
+        expect(c.document.toJson(), inserted.toJson());
+      },
+    );
+  }
 
   testWidgets(
     'blocked table drag retains its last valid preview rather than jumping to its origin',
