@@ -50,6 +50,7 @@ foreach ($products as [$element, $namespace, $origin]) {
     check((string)$xml->config->fields->fieldset[1]->field[0]['default'] === '0', 'Module cache disabled');
     $form = new Form($element);
     $form->load('<form>' . $xml->config->fields->asXML() . '</form>');
+    check(!str_contains($helper::render(['url'=>$url]), 'data-festapp-datalayer'), 'Saved module without measurement remains Unit');
     $accepted = $form->validate(new Registry(['params'=>['url'=>$url, 'mode'=>'auto','height'=>800]]));
     if (!$accepted) { foreach ($form->getErrors() as $error) { fwrite(STDERR, (string)$error . PHP_EOL); } }
     check($accepted, 'Actual Joomla form accepts saved URL');

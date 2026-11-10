@@ -374,3 +374,21 @@ consent. Escape in Settings discards the draft. Reopened Settings always offer
 Decline; after a saved decision focus returns to the floating Consent settings
 button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
+
+## First-party attribution and CMS defaults
+
+For website attribution, select website dataLayer mode and configure the host
+GTM container. Host tags use the website's own native identity and CMP. Festapp
+does not read, copy or extend GA/GCL/Meta cookies or set a global client_id.
+The independent Unit runtime remains available with its existing isolation; it
+does not guarantee continuity with the website's visitor/session attribution.
+
+New WordPress inserter blocks explicitly serialize `measurement: host`, new
+Joomla modules without a bound setting preselect host, and fresh Wix widgets
+without an existing form URL select host. Existing blocks, legacy shortcodes,
+modules and widgets retain their saved destination or the unit fallback. Native
+website tags and consent must be configured before enabling host measurement.
+
+A paused, importable website GTM preset and setup instructions are available in
+[`integrations/measurement`](../../integrations/measurement/README.md). Configure
+and preview merchant destinations before publishing.

@@ -135,7 +135,7 @@ msgstr ""
 msgid "The form is not configured. Enter a saved public https://tickets.festapp.net/form/ URL without extra parameters."
 msgstr ""
 
-msgid "The published form connects to Festapp Tickets and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. Website measurement is optional and shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
+msgid "The published form connects to Festapp Tickets and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
 msgstr ""
 
 msgid "Ticket sales - Festapp Tickets"
@@ -156,7 +156,7 @@ msgstr ""
 msgid "Website dataLayer"
 msgstr ""
 
-msgid "Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp."
+msgid "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
 msgstr ""
 
 msgctxt "block title"

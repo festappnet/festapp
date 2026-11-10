@@ -200,3 +200,5 @@ or qualify commercial submission.
 Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávněný editor ho nastaví ve Vzhledu formuláře a formulář uloží. Všechna vložení použijí tuto volbu při příštím načtení bez výměny HTML. Nativní doplněk ukládá odkaz a své nastavení výšky či názvu, nikoli vlastní volbu vzhledu. Staré uložené atributy jsou neúčinné a nové verze je negenerují. Helper zůstává v obou režimech výšky; plánek sálu se nepřebarvuje.
 
 Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.
+
+New widget settings select Website measurement, recommended for websites with their own GTM and consent banner. Existing widgets with a saved form URL and no measurement property retain Unit mode. The persisted `measurement` property accepts `host` or `unit`; missing and invalid values render Unit mode. Website mode exposes approved conversion contacts and transaction identifiers to page scripts and still requires an approved website origin in Festapp.

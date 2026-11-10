@@ -21,14 +21,14 @@
   </languages>
 @@UPDATE_SERVERS@@  <config>
     <fields name="params">
-      <fieldset name="basic" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule">
+      <fieldset name="basic" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule" addfieldprefix="Festapp\Module\@@NAMESPACE@@\Site\Field">
         <field name="onboarding" type="note" label="@@KEY@@_START" description="@@KEY@@_ONBOARDING" />
         <field name="url" type="text" required="true" filter="raw" validate="publicform" label="@@KEY@@_URL" description="@@KEY@@_URL_HELP" message="@@KEY@@_INVALID_URL" />
         <field name="iframe_title" type="text" filter="string" label="@@KEY@@_TITLE" description="@@KEY@@_TITLE_HELP" />
         <field name="mode" type="list" default="auto" validate="options" label="@@KEY@@_MODE">
           <option value="auto">@@KEY@@_AUTO</option><option value="fixed">@@KEY@@_FIXED</option>
         </field>
-        <field name="measurement" type="list" default="unit" validate="options" label="@@KEY@@_MEASUREMENT" description="@@KEY@@_MEASUREMENT_HELP">
+        <field name="measurement" type="measurement" default="unit" validate="options" label="@@KEY@@_MEASUREMENT" description="@@KEY@@_MEASUREMENT_HELP">
           <option value="unit">@@KEY@@_MEASUREMENT_UNIT</option><option value="host">@@KEY@@_MEASUREMENT_HOST</option>
         </field>
         <field name="height" type="number" default="800" min="240" max="4000" filter="integer" validate="number" label="@@KEY@@_HEIGHT" />
