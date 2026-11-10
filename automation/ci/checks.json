@@ -1763,6 +1763,7 @@
     "test/components/bank_accounts/order_bank_sync_warning_test.dart",
     "test/components/bank_accounts/unit_bank_accounts_load_test.dart",
     "test/components/blueprint/blueprint_host_margin_pan_test.dart",
+    "test/components/blueprint/blueprint_template_groups_test.dart",
     "test/components/blueprint/blueprint_toolbar_test.dart",
     "test/components/eshop/additional_payment_test.dart",
     "test/components/eshop/empty_orders_test.dart",
