@@ -27,7 +27,7 @@ BEGIN
     WHERE m.occasion=p_occasion AND (m.message_kind='sign_in' OR (m.message_kind='custom' AND m.code='TEAM_ACCESS_NOTICE'))
       AND m.recipient_user IS NOT NULL AND m.accepted_at IS NOT NULL
     UNION ALL
-    SELECT i.accepted_by,m.accepted_at FROM public.occasion_team_invitations i
+    SELECT i.accepted_by,m.accepted_at FROM public.access_invitations i
     JOIN public.email_messages m ON m.message_id=i.message_id
     WHERE i.occasion=p_occasion AND i.accepted_by IS NOT NULL AND m.accepted_at IS NOT NULL
   ), accepted AS (

@@ -1,4 +1,5 @@
 import {escape,publicUrl} from './html.mjs';
+import {renderPressPage} from './press.mjs';
 import {renderTopicPage} from './topic_pages.mjs';
 import {renderTopicLinks} from './site_shell.mjs';
 export function renderLandingContent(content, manifest, page = {id: "home"}, pages = []) {
@@ -40,7 +41,7 @@ export function renderLandingContent(content, manifest, page = {id: "home"}, pag
   const related = `<nav class="wrap topic-links" aria-label="${escape(ui.related)}">${pages.filter(other=>other.id !== page.id).map(other=>`<a href="${publicUrl(other.path)}">${escape(other.linkLabel ?? other.heading ?? ui.home)}</a>`).join('')}</nav>`;
   const footer = `<nav aria-label="${escape(ui.legalNav)}">${(projection.footerLinks ?? []).map(link=>`<a href="${publicUrl(link.href)}">${escape(link.label)}</a>`).join('')}</nav>`;
   const referencesSection = references.length ? `<section id="reference" class="references wrap" aria-labelledby="references-title"><h2 id="references-title">${escape(projection.referencesHeading)}</h2>${referenceStrip}<div class="catalog-action"><a class="button primary" href="/events">${escape(projection.catalogLabel)}</a></div></section>` : '';
-  const topic = page.id === 'home' ? '' : renderTopicPage(page,{projection,player,related,sections});
+  const topic = page.id === 'home' ? '' : page.id === 'press' ? renderPressPage(page, projection) : renderTopicPage(page,{projection,player,related,sections});
   return { TOPIC_LINKS: renderTopicLinks(pages), REFERENCE_STRIP: referenceStrip, REFERENCES_SECTION: referencesSection,
     DEMO_SECTIONS: sections, HERO_MEDIA: '', TOPIC_CONTENT: topic, RELATED_LINKS: related,
     FOOTER_LINKS: footer, DEMO_BOOKING_HREF: publicUrl(projection.bookingUrl),

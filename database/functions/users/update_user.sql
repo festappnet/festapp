@@ -74,10 +74,18 @@ BEGIN
       RETURN jsonb_build_object('code', 400, 'message', 'Email is required to find or create a user.');
     END IF;
 
-    -- Check if user exists
-    SELECT id INTO existing_user_id
-    FROM auth.users
-    WHERE email = public.format_auth_email(v_org, v_email);
+    -- Share the identity allocator lock; profile identity is authoritative.
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended('user-sign-in-email:' || v_org::text, 0));
+    IF (SELECT count(*) FROM public.user_info WHERE organization=v_org AND lower(btrim(email_readonly))=v_email)>1 THEN
+      RETURN jsonb_build_object('code',409,'message','wrong_identity'); END IF;
+    SELECT id INTO existing_user_id FROM public.user_info
+    WHERE organization = v_org AND lower(btrim(email_readonly)) = v_email;
+    IF existing_user_id IS NULL THEN
+      -- A pre-profile auth account is resolved through the same canonical format.
+      SELECT id INTO existing_user_id FROM auth.users
+      WHERE email = public.format_auth_email(v_org, v_email);
+    END IF;
 
     IF existing_user_id IS NOT NULL THEN
       IF EXISTS(SELECT 1 FROM public.user_info WHERE id=existing_user_id AND organization IS DISTINCT FROM v_org) THEN

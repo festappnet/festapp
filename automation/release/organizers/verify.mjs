@@ -1,3 +1,4 @@
+import {pressAssetBase, pressLogos, logoFilename} from './press.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -20,6 +21,9 @@ export async function verifyMarketingBundle(buildDir, configPath) {
   assert.deepEqual(manifest, publicManifest(context), 'marketing registry differs from configuration');
   for (const media of marketingMedia(context)) await fs.access(path.join(buildDir,new URL(media,context.origin).pathname));
   for (const page of context.pages) verifyMarketingHtml(await fs.readFile(path.join(buildDir,page.asset),'utf8'),page,context);
+  if (context.pages.some(page=>page.id==='press')) {
+    for (const name of [...pressLogos.flatMap(logo=>[false,true].flatMap(dark=>['svg',...(logo.png?['png']:[])].map(format=>logoFilename(logo,dark,format)))),'vstupenky-online-loga.zip','pouziti-loga.txt','o-projektu.txt']) await fs.access(path.join(buildDir,pressAssetBase,name));
+  }
   if (context.updates) assert.deepEqual(JSON.parse(await fs.readFile(path.join(buildDir,'platform-updates.json'),'utf8')),context.updates.feed,'updates feed');
   return context;
 }

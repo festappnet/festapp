@@ -116,7 +116,7 @@ void main() {
     late Map<String, dynamic> parameters;
     final commands = SupabaseUnitCommands.withTransport(
       ClientCommandTransport((name, params) async {
-        expect(name, 'save_unit_user_client_sync_v1');
+        expect(name, 'manage_member_access');
         parameters = params;
         return commandResponseFixture(
           params['p_command_id'] as String,
@@ -134,9 +134,10 @@ void main() {
       isManager: false,
     );
     await commands.saveUser(user);
-    expect(parameters['p_expected_version'], 3);
-    expect((parameters['p_changes'] as Map)['kind'], 'editor');
-    expect((parameters['p_changes'] as Map).containsKey('unit'), isFalse);
+    final request = parameters['p_request'] as Map;
+    expect(request['expectedVersion'], 3);
+    expect((request['changes'] as Map)['kind'], 'editor');
+    expect((request['changes'] as Map).containsKey('unit'), isFalse);
     expect(user.aggregateVersion, 4);
     expect(user.user, '00000000-0000-0000-0000-000000000002');
   });

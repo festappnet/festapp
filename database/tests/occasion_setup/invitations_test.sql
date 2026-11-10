@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/access_invitation_fixture.sql
 DO $$
 DECLARE manager uuid; member uuid; account_user uuid; outsider uuid; new_user uuid;
  org bigint; unit_id bigint; event_id bigint; draft_id uuid:=gen_random_uuid(); response jsonb;
@@ -30,25 +31,25 @@ BEGIN
  PERFORM assert_eq(response#>>'{recipients,2,role}','read_only','Preview uses selected per-recipient permission');
  PERFORM assert_true(response#>'{event,id}'='null'::jsonb,'Preview works before finalization');
  PERFORM assert_false(response->'organizationData' ? 'secret','Preview returns safe organization fields');
- BEGIN PERFORM public.enqueue_occasion_setup_invitation(draft_id,'team_member@test.local',hash1,sealed,repeat('a',64),'editor'); RAISE EXCEPTION 'Unfinalized accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM pg_temp.enqueue_setup_access(draft_id,'team_member@test.local',hash1,sealed,repeat('a',64),'editor'); RAISE EXCEPTION 'Unfinalized accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.preview_occasion_setup_invitations(draft_id,ARRAY['invalid']); RAISE EXCEPTION 'Invalid email accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.preview_occasion_setup_invitations(draft_id,array_fill('x@test.local'::text,ARRAY[21])); RAISE EXCEPTION 'Too many emails accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  EXECUTE 'RESET ROLE';
  UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('finalizedOccasion',event_id) WHERE id=draft_id;
  SELECT encrypted_password INTO password_before FROM auth.users WHERE id=member;
  EXECUTE 'SET LOCAL ROLE authenticated';
- response:=public.enqueue_occasion_setup_invitation(draft_id,' TEAM_MEMBER@test.local ',hash1,sealed,repeat('a',64),'editor');
+ response:=pg_temp.enqueue_setup_access(draft_id,' TEAM_MEMBER@test.local ',hash1,sealed,repeat('a',64),'editor');
  message:=(response->>'message_id')::uuid;
  PERFORM assert_eq(response->>'status','queued','Invitation queued');
- response:=public.enqueue_occasion_setup_invitation(draft_id,'team_member@test.local',hash3,sealed,repeat('b',64),'editor');
+ response:=pg_temp.enqueue_setup_access(draft_id,'team_member@test.local',hash3,sealed,repeat('b',64),'editor');
  PERFORM assert_eq((response->>'message_id')::uuid,message,'Retry keeps original message and token');
  PERFORM assert_true((response->>'replayed')::boolean,'Retry marked replayed');
- BEGIN PERFORM public.enqueue_occasion_setup_invitation(draft_id,'not-selected@test.local',hash3,sealed,repeat('a',64),'editor'); RAISE EXCEPTION 'Unselected email accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- BEGIN PERFORM public.enqueue_occasion_setup_invitation(draft_id,'team_new@test.local',hash2,sealed,repeat('a',64),'editor'); RAISE EXCEPTION 'Stale prepared role accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
- PERFORM public.enqueue_occasion_setup_invitation(draft_id,'team_new@test.local',hash2,sealed,repeat('a',64),'read_only');
- PERFORM public.enqueue_occasion_setup_invitation(draft_id,'team_account@test.local',hash3,sealed,repeat('a',64),'editor');
+ BEGIN PERFORM pg_temp.enqueue_setup_access(draft_id,'not-selected@test.local',hash3,sealed,repeat('a',64),'editor'); RAISE EXCEPTION 'Unselected email accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM pg_temp.enqueue_setup_access(draft_id,'team_new@test.local',hash2,sealed,repeat('a',64),'editor'); RAISE EXCEPTION 'Stale prepared role accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+ PERFORM pg_temp.enqueue_setup_access(draft_id,'team_new@test.local',hash2,sealed,repeat('a',64),'read_only');
+ PERFORM pg_temp.enqueue_setup_access(draft_id,'team_account@test.local',hash3,sealed,repeat('a',64),'editor');
  EXECUTE 'RESET ROLE';
- PERFORM assert_eq((SELECT token_hash FROM public.occasion_team_invitations WHERE draft=draft_id AND email='team_member@test.local'),hash1,'Only token hash is stored');
+ PERFORM assert_eq((SELECT token_hash FROM public.access_invitations WHERE draft=draft_id AND email='team_member@test.local'),hash1,'Only token hash is stored');
  PERFORM assert_eq((SELECT tracking_policy FROM public.email_messages WHERE message_id=message),'disabled','Proof email tracking disabled');
  PERFORM assert_eq((SELECT encrypted_password FROM auth.users WHERE id=member),password_before,'Sending invitation never changes password');
  UPDATE public.unit_users SET is_editor=true WHERE unit=unit_id AND "user"=member;
@@ -104,27 +105,27 @@ BEGIN
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_occasion_sign_in_email_statuses(event_id)) item
   WHERE item->>'user'=member::text AND (item->>'send_count')::int=1),'Accepted team access notice appears in invitation status');
- UPDATE public.occasion_team_invitations SET expires_at=now()-interval '1 second' WHERE draft=draft_id AND email='team_account@test.local';
+ UPDATE public.access_invitations SET expires_at=now()-interval '1 second' WHERE draft=draft_id AND email='team_account@test.local';
  PERFORM set_config('request.jwt.claim.sub',account_user::text,true);
  EXECUTE 'SET LOCAL ROLE authenticated';
  PERFORM assert_true(public.get_occasion_team_invitation(token3) IS NULL,'Expired invitation hidden');
  BEGIN PERFORM public.accept_occasion_team_invitation(token3); RAISE EXCEPTION 'Expired token accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  EXECUTE 'RESET ROLE';
- UPDATE public.occasion_team_invitations SET expires_at=now()+interval '1 day' WHERE draft=draft_id AND email='team_account@test.local';
+ UPDATE public.access_invitations SET expires_at=now()+interval '1 day' WHERE draft=draft_id AND email='team_account@test.local';
  PERFORM set_config('request.jwt.claim.role','service_role',true);
- PERFORM assert_true(public.email_intent_valid((SELECT m FROM public.email_messages m JOIN public.occasion_team_invitations i
+ PERFORM assert_true(public.email_intent_valid((SELECT m FROM public.email_messages m JOIN public.access_invitations i
   ON i.message_id=m.message_id WHERE i.draft=draft_id AND i.email='team_account@test.local')),'Pending invitation remains deliverable');
  UPDATE public.unit_users SET is_manager=false WHERE unit=unit_id AND "user"=manager;
- PERFORM assert_false(public.email_intent_valid((SELECT m FROM public.email_messages m JOIN public.occasion_team_invitations i
+ PERFORM assert_false(public.email_intent_valid((SELECT m FROM public.email_messages m JOIN public.access_invitations i
   ON i.message_id=m.message_id WHERE i.draft=draft_id AND i.email='team_account@test.local')),'Revoked manager invitation cannot deliver');
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  EXECUTE 'SET LOCAL ROLE authenticated';
  PERFORM assert_true(public.get_occasion_team_invitation(token3) IS NULL,'Invitation revoked when inviting manager loses permission');
- BEGIN PERFORM public.accept_occasion_team_invitation(token3); RAISE EXCEPTION 'Revoked manager token accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM public.accept_occasion_team_invitation(token3); RAISE EXCEPTION 'Revoked manager token accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  EXECUTE 'RESET ROLE';
  PERFORM assert_true((SELECT count(*)=2 FROM pg_constraint c
-  WHERE c.conrelid='public.occasion_team_invitations'::regclass AND c.confrelid='auth.users'::regclass
+  WHERE c.conrelid='public.access_invitations'::regclass AND c.confrelid='auth.users'::regclass
    AND c.contype='f' AND c.confdeltype='c'),'Invitation references never prevent canonical account deletion');
- PERFORM assert_false(has_table_privilege('anon','public.occasion_team_invitations','SELECT'),'Anonymous has no invitation table access');
- PERFORM assert_false(has_table_privilege('authenticated','public.occasion_team_invitations','SELECT'),'Authenticated has no invitation table access');
+ PERFORM assert_false(has_table_privilege('anon','public.access_invitations','SELECT'),'Anonymous has no invitation table access');
+ PERFORM assert_false(has_table_privilege('authenticated','public.access_invitations','SELECT'),'Authenticated has no invitation table access');
 END $$;

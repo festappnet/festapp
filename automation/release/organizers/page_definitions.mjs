@@ -1,6 +1,7 @@
 // Stable identities and internal assets. Public paths and copy belong to profiles.
 export const pageDefinitions = Object.freeze({
   home: { asset: '/organizers-page' },
+  press: { asset: '/organizers/press' },
   'seating-reservations': { asset: '/organizers/seating-reservations' },
 });
 const reserved = /^\/(?:napoveda|bank-accounts|events|login|login-qr|admin|transfer|unit|signup|settings|install|map-editor|reset-password|forgot-password|google-auth|app|auth_bridge|form|stripe|scan|check|web-assets|organizers-media|assets|canvaskit|privacy|terms|support|delete-account|flutter|webclient|organizers|organizers-page|pro-poradatele|sitemap\.xml|robots\.txt)(?:\/|$)/;
@@ -15,7 +16,9 @@ export function resolvePages(pages, origin) {
     for (const key of ['title','description']) if (!page[key]?.trim()) throw new Error(`Page requires ${key}`);
     if (page.id !== 'home') {
       for (const key of ['heading','intro']) if (!page[key]?.trim()) throw new Error(`Page requires ${key}`);
-      if (page.feature) {
+      if (page.id === 'press') {
+        if (!page.press?.summary || !page.press.features?.length || !page.press.usage?.length) throw new Error('Press page requires project copy and logo guidance');
+      } else if (page.feature) {
         if (!page.feature.layouts?.length || !page.feature.editor || !page.feature.buyer) throw new Error('Feature requires examples and demonstrations');
       } else if (!page.stepsHeading || !page.steps?.length || !page.faq?.length || !page.faqHeading) throw new Error('Topic requires steps and questions');
     }

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.create_occasion_user_client_sync_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb)
+CREATE OR REPLACE FUNCTION public.create_occasion_member_internal_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -55,7 +55,13 @@ BEGIN
       'profile',v_entity));
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.create_occasion_user_client_sync_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.create_occasion_user_client_sync_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_occasion_member_internal_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb) FROM PUBLIC,anon;
+
+REVOKE ALL ON FUNCTION public.create_occasion_member_internal_v1(bigint,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+
+REVOKE ALL ON FUNCTION public.create_occasion_member_internal_v1(bigint,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.create_occasion_user_client_sync_v1(p_occasion bigint,p_command_id uuid,p_profile jsonb) RETURNS jsonb
+LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$ SELECT public.create_occasion_member_internal_v1(p_occasion,p_command_id,p_profile); $$;
 REVOKE ALL ON FUNCTION public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb) TO authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb) TO authenticated;

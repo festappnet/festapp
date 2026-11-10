@@ -195,8 +195,8 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
-        "supabase/functions/send-sign-in-code/teamAccessNotice_test.ts",
-        "supabase/functions/_shared/invitationDelivery_test.ts"
+        "supabase/functions/_shared/invitationDelivery_test.ts",
+        "supabase/functions/manage-member-access/handler_test.ts"
       ],
       "abusePolicy": [
         "email.auth"
@@ -633,6 +633,18 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/ticketWallet_test.ts"
+      ]
+    },
+    "manage-member-access": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/manage-member-access/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "email.auth",
+        "email.ordinary"
       ]
     }
   },

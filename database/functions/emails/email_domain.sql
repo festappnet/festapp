@@ -158,6 +158,7 @@ DECLARE v_answer jsonb; v_context jsonb; v_email text; v_result jsonb; v_existin
 BEGIN
  -- Reuse the existing hierarchical permission check, including elevated-account protections.
  IF auth.uid() IS NULL OR NOT coalesce(public.get_can_reset_user_password(p_user),false) THEN RAISE EXCEPTION 'password_reset_denied'; END IF;
+ PERFORM public.lock_member_access_internal_v1((SELECT unit FROM public.occasions WHERE id=p_occasion));
  PERFORM pg_advisory_xact_lock(hashtextextended('sign-in:'||p_user::text||':'||p_occasion::text,0));
  -- Team invitations never own a password transition, including older clients.
  PERFORM 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user FOR SHARE;

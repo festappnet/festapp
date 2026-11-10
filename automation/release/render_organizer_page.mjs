@@ -1,3 +1,5 @@
+import {execFileSync} from 'node:child_process';
+import {pressAssetBase, pressLogos, logoFilename} from './organizers/press.mjs';
 import {publicRuntime} from './organizers/public_runtime.mjs';
 import { expandSiteShell, publicThemeHead, publicThemeBody } from './organizers/site_shell.mjs';
 import { renderUpdate } from './platform_updates/render.mjs';
@@ -43,6 +45,7 @@ const html = fs.readFileSync(index, 'utf8')
 }
 const manifestPath = path.join(path.dirname(target), 'organizer-pages.json');
 const cleanOutputs = () => {
+  fs.rmSync(path.join(path.dirname(target),pressAssetBase.slice(1)),{recursive:true,force:true});
   fs.rmSync(path.join(path.dirname(target),'organizers/updates'),{recursive:true,force:true});
   fs.rmSync(path.join(path.dirname(target),'platform-updates.json'),{force:true});
   fs.rmSync(path.join(path.dirname(target),'co-je-nove/_assets'),{recursive:true,force:true});
@@ -69,6 +72,7 @@ const tokens = {
 };
 const template = expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8'));
 const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.css'), 'utf8');
+const pressCss = fs.readFileSync(path.join(root, 'automation/release/organizers/press.css'), 'utf8');
 const primary = /^#[0-9a-f]{6}$/i.test(value('THEME_SEED_3')) ? value('THEME_SEED_3') : '#4465a6';
 const socialImage = new URL(seo.image, context.origin).href;
 const outputs = [];
@@ -143,7 +147,7 @@ const html = `<!doctype html><html lang="${escape(context.locale)}"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}">${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}${page.id === 'press' ? pressCss : ''}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}">${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
 
 outputs.push({asset:page.asset, html});
 }
@@ -151,6 +155,12 @@ outputs.push({asset:page.asset, html});
 fs.mkdirSync(path.dirname(target), {recursive:true});
 const staging = fs.mkdtempSync(path.join(path.dirname(target), '.organizers-stage-'));
 try {
+  const press = context.pages.find(page=>page.id==='press');
+  if (press) execFileSync('python3',[path.join(root,'automation/release/organizers/build_press_kit.py'),path.join(root,'assets/brand/vstupenky-online'),path.join(staging,pressAssetBase.slice(1))],{input:JSON.stringify({
+    files:pressLogos.flatMap(logo=>[false,true].flatMap(dark=>['svg',...(logo.png?['png']:[])].map(format=>logoFilename(logo,dark,format)))),
+    texts:{'o-projektu.txt':press.press.summary+'\n\n'+press.press.features.map(item=>item.title+'\n'+item.text).join('\n\n')+'\n\nKontakt: '+projection.provider.name+' | '+projection.contact+'\n',
+      'pouziti-loga.txt':'vstupenky.online - oficiální loga\n\n'+press.press.usage.join('\n\n')+'\n\nSoubory s příponou -dark jsou určeny na tmavé pozadí.\nBarvy: námořnická #19243b, modrá #80bdf2.\nKontakt: '+projection.contact+'\n'}
+  })});
   for (const output of outputs) {
     const file = path.join(staging, output.asset.slice(1));
     fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, output.html);
@@ -159,6 +169,7 @@ try {
   for(const [name,bytes]of Object.entries(marketingRuntime.assets)){const file=path.join(staging,marketingRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,updatesRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   cleanOutputs();
+  if (press) {const destination=path.join(path.dirname(target),pressAssetBase.slice(1));fs.mkdirSync(path.dirname(destination),{recursive:true});fs.renameSync(path.join(staging,pressAssetBase.slice(1)),destination);}
   if (context.updates) fs.renameSync(path.join(staging,'platform-updates.json'),path.join(path.dirname(target),'platform-updates.json'));
   if (process.argv.includes('--built-index')) for (const {asset,bytes} of updateAssets) {const file=path.join(path.dirname(target),asset);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
   const runtimeOutput=path.join(path.dirname(target),'co-je-nove/_assets');

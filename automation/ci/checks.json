@@ -442,7 +442,7 @@
       }
     },
     "ticket-edge": {
-      "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-sign-in-code/teamAccessNotice_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/googleWallet_test.ts supabase/functions/_shared/ticketWallet_test.ts supabase/functions/_shared/ticketWalletEmail_test.ts\n",
+      "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/googleWallet_test.ts supabase/functions/_shared/ticketWallet_test.ts supabase/functions/_shared/ticketWalletEmail_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/manage-member-access/handler_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts supabase/functions/exchange-sign-in-code/exchange_test.ts\n",
       "after": [],
       "resources": {
         "ramMiB": 1100
@@ -488,7 +488,7 @@
       }
     },
     "seat-measurement": {
-      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\n",
+      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -619,6 +619,12 @@
     "seat-authorization-1": {
       "filters": [
         "database/tests/users/occasion_user_creation_authorization_test.sql"
+      ]
+    },
+    "seat-measurement-access": {
+      "filters": [
+        "database/tests/people/",
+        "database/tests/users/invitation_delivery_status_test.sql"
       ]
     }
   },
@@ -1011,6 +1017,10 @@
       "database/tests/payment_providers/projections_configuration_test.sql",
       "database/tests/payment_providers/refund_provider_dispatch_test.sql",
       "database/tests/payment_providers/setup_and_revision_test.sql",
+      "database/tests/people/access_atomicity_test.sql",
+      "database/tests/people/access_invitations_test.sql",
+      "database/tests/people/access_management_test.sql",
+      "database/tests/people/unit_membership_test.sql",
       "database/tests/performance/get_occasions_payload_size_test.sql",
       "database/tests/performance/unit_dashboard_test.sql",
       "database/tests/places/save_place_location_test.sql",
@@ -1535,6 +1545,14 @@
     "database/tests/payment_providers/projections_configuration_test.sql",
     "database/tests/payment_providers/refund_provider_dispatch_test.sql",
     "database/tests/payment_providers/setup_and_revision_test.sql",
+    "database/tests/people/access_atomicity_test.sql",
+    "database/tests/people/access_invitations_test.sql",
+    "database/tests/people/access_lifecycle_concurrency.test.mjs",
+    "database/tests/people/access_management_test.sql",
+    "database/tests/people/access_migration.test.mjs",
+    "database/tests/people/participant_credentials.integration.test.mjs",
+    "database/tests/people/unit_membership_concurrency.test.mjs",
+    "database/tests/people/unit_membership_test.sql",
     "database/tests/performance/get_occasions_payload_size_test.sql",
     "database/tests/performance/unit_dashboard_test.sql",
     "database/tests/places/save_place_location_test.sql",
@@ -1711,6 +1729,7 @@
     "supabase/functions/fetch-http-data/safeFetch_test.ts",
     "supabase/functions/fetch-transactions/handler_test.ts",
     "supabase/functions/generate-order-agreement/agreementConfig_test.ts",
+    "supabase/functions/manage-member-access/handler_test.ts",
     "supabase/functions/mcp-session-exchange/config_test.ts",
     "supabase/functions/mcp-session-exchange/handler_test.ts",
     "supabase/functions/mcp-session-exchange/management_test.ts",
@@ -1734,7 +1753,6 @@
     "supabase/functions/send-email/cancellation_handler_test.ts",
     "supabase/functions/send-email/deposit_templates_test.ts",
     "supabase/functions/send-occasion-team-invitations/handler_test.ts",
-    "supabase/functions/send-sign-in-code/teamAccessNotice_test.ts",
     "supabase/functions/send-ticket-order/commandIdentity_test.ts",
     "supabase/functions/send-ticket-order/fakturoid_test.ts",
     "supabase/functions/stripe-connect-callback/handler_test.ts",

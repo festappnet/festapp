@@ -1,26 +1,53 @@
+import 'package:fstapp/components/users/access_invitation_destination.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 
 void main() {
-  test('Stripe login continuation permits only its sanitized internal callback',
-      () {
-    expect(
+  test(
+    'invitation login continuation retains only its internal capability',
+    () {
+      final token = List.filled(64, 'a').join();
+      final target = AccessInvitationDestination.location(token);
+      expect(AccessInvitationDestination.token(target), token);
+      expect(GoogleAuthService.safeReturnPath(target), target);
+      for (final invalid in [
+        'https://other.invalid$target',
+        '/$target',
+        '$target&secret=x',
+        '$target&token=$token',
+        '$target#fragment',
+        '/other?token=$token',
+        '/team-invitation?token=short',
+        '/team-invitation?access_token=$token',
+      ]) {
+        expect(AccessInvitationDestination.token(invalid), isNull);
+        expect(GoogleAuthService.safeReturnPath(invalid), '/');
+      }
+    },
+  );
+
+  test(
+    'Stripe login continuation permits only its sanitized internal callback',
+    () {
+      expect(
         RouterService.isStripeConnectionReturnPath('/stripe/connect/callback'),
-        isTrue);
-    for (final path in [
-      null,
-      '/',
-      '/unit/1/edit',
-      '//other.test/stripe/connect/callback',
-      'https://other.test/stripe/connect/callback',
-      '/stripe/connect/callback?code=private',
-      '/stripe/connect/callback#state=private'
-    ]) {
-      expect(RouterService.isStripeConnectionReturnPath(path), isFalse);
-    }
-  });
+        isTrue,
+      );
+      for (final path in [
+        null,
+        '/',
+        '/unit/1/edit',
+        '//other.test/stripe/connect/callback',
+        'https://other.test/stripe/connect/callback',
+        '/stripe/connect/callback?code=private',
+        '/stripe/connect/callback#state=private',
+      ]) {
+        expect(RouterService.isStripeConnectionReturnPath(path), isFalse);
+      }
+    },
+  );
   test('Google continuation retains internal tab and calendar query only', () {
     const target =
         '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10&filter=latest';
@@ -32,7 +59,7 @@ void main() {
       '/%2f%2fexternal',
       '/a?secret=x',
       '/a?access_token=x',
-      '/a#login'
+      '/a#login',
     ]) {
       expect(GoogleAuthService.safeReturnPath(path), '/');
     }

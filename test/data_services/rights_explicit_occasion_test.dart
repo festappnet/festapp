@@ -107,14 +107,18 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
-      if (request.url.path == '/rest/v1/rpc/save_unit_user_client_sync_v1') {
+      if (request.url.path == '/rest/v1/rpc/manage_member_access') {
         unitUserUpdates++;
         final input = jsonDecode(request.body) as Map;
+        final intent = input['p_request'] as Map;
+        expect(intent['scope'], {'type': 'unit', 'id': 12});
+        expect(intent['operation'], 'save_member');
+        expect(intent['communication'], 'none');
         return http.Response(
           jsonEncode(
             commandResponseFixture(
               input['p_command_id'],
-              data: {'userId': input['p_user'], 'version': 1},
+              data: {'userId': intent['userId'], 'version': 1},
             ),
           ),
           200,

@@ -120,3 +120,37 @@ after failure starts a new request; SQL joins unresolved messages before creatin
 a replacement for a terminal failure.
 The batch dialog retains separate sent, queued and failed outcomes and excludes
 confirmed recipients from retries. Queued is never shown as completed delivery.
+
+## Member access and invitations
+
+`database/functions/people/` owns manual unit/occasion access orchestration.
+`manage-member-access` prepares an email through the existing template resolver,
+queue admission and encrypted snapshot owner; a service-only deposit binds it to
+actor, command, normalized intent and server preview. `manage_member_access`
+consumes that deposit in the authenticated domain transaction. This preserves
+`auth.uid()` across the existing specialized profile, role, password and receipt
+owners. Deposits are private, short-lived, and not a second email queue; staged
+credentials are encrypted and consumed after commit.
+
+Plain saves do not send email. A requested save-and-invite commits membership,
+roles, queue intent and receipt together, or rolls back together. Participant
+password invitations still use `SIGN_IN_CODE` and the existing hierarchical
+reset owner. They set real reusable passwords; email expiry is not password
+expiry. Team notices/offers never reset an existing account's password. Unit
+scope cannot request participant credentials. Applications, order confirmations
+and payments keep their existing transaction and recovery boundaries.
+
+`access_invitations` stores scoped role offers separately from memberships and
+`email_messages` delivery facts. Acceptance only adds offered permissions;
+revocation/downgrade serializes with acceptance and invalidates pending grants.
+Resending an unresolved provider dispatch is rejected. A terminal resend creates
+one new offer and supersedes the previous token; immutable receipts keep their
+original references while status reads report current delivery independently.
+
+`/team-invitation?token=...` and its old lookup/accept RPCs remain link adapters.
+Installed Client Sync save/create RPCs are authenticated adapters over the same
+specialized internal writers used by the new command. `send-sign-in-code` remains
+a supported participant producer with the old HTTP sent/202 acceptance contract;
+its domain path is shared. Setup only supplies the stored confirmed recipient
+selection. Historical setup retry resolves its original invitation/message and
+does not send again. No general workflow framework or second profile is involved.

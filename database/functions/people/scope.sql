@@ -17,6 +17,7 @@ BEGIN
  END IF;
  IF organizer.id IS NULL OR (p_organization IS NOT NULL AND organizer.organization IS DISTINCT FROM p_organization) THEN
   RAISE insufficient_privilege USING MESSAGE='organizer scope changed'; END IF;
+ PERFORM public.lock_member_access_internal_v1(organizer.id);
  PERFORM 1 FROM public.organization_users WHERE organization=organizer.organization AND "user"=auth.uid() FOR SHARE;
  PERFORM 1 FROM public.unit_users WHERE unit=organizer.id AND "user"=auth.uid() FOR SHARE;
  IF p_occasion IS NOT NULL THEN

@@ -1,3 +1,5 @@
+import 'package:fstapp/components/users/views/member_access_dialog.dart';
+import 'package:fstapp/components/users/member_access_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
@@ -55,6 +57,9 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
       ),
       getNewObject: () => UnitUserModel.newRow(widget.unit.id!),
       headerChildren: [
+        if (RightsService.canUpdateUnitUsers())
+          DataGridAction(name: MemberAccessStrings.text('title'),
+            action: (SingleDataGridController p0, [_]) => MemberAccessDialog.show(context, 'unit', widget.unit.id!)),
         if (RightsService.hasCapability(
           AuthorizationCapabilities.unitUsersWrite,
         ))

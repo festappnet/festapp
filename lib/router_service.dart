@@ -1,3 +1,4 @@
+import 'package:fstapp/components/users/access_invitation_destination.dart';
 import 'package:fstapp/services/help_destination.dart';
 import 'package:fstapp/services/organizer_destination.dart';
 import 'package:fstapp/components/navigation/help_destination_picker.dart';
@@ -474,6 +475,14 @@ class RouterService {
 
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    final invitationToken = AccessInvitationDestination.token(fallbackPath);
+    if (invitationToken != null) {
+      // An explicit invitation wins over the remembered workspace. No token
+      // enters generic occasion resolution, route logs or the workspace cache.
+      await context.router.root.replace(
+          OccasionTeamInvitationRoute(token: invitationToken));
+      return;
+    }
     if (OrganizerDestination.isCreate(fallbackPath)) {
       await RightsService.updateAppData(force: true, refreshOffline: false);
       if (!context.mounted) return;

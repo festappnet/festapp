@@ -1,8 +1,8 @@
 -- Receipt boundary around the existing organizer-user persistence owner.
-CREATE OR REPLACE FUNCTION public.save_unit_user_client_sync_v1(p_unit bigint,p_user uuid,p_command_id uuid,p_expected_version bigint,p_changes jsonb)
+CREATE OR REPLACE FUNCTION public.save_unit_member_internal_v1(p_unit bigint,p_user uuid,p_command_id uuid,p_expected_version bigint,p_changes jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE initial jsonb; current_user_row jsonb; after_row jsonb; result jsonb; usr uuid:=p_user; ver bigint;
- c public.client_commits%ROWTYPE; intent jsonb; mode text;
+ c public.client_commits%ROWTYPE; intent jsonb; mode text; existing_member uuid;
 BEGIN
  PERFORM public.lock_people_scope_internal_v1(NULL,NULL,p_unit);
  IF NOT public.can_manage_unit_users(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
@@ -16,6 +16,8 @@ BEGIN
   PERFORM public.prepare_profile_change_internal_v1('{}',jsonb_build_object('profileChange',p_changes-'kind'));
  ELSIF mode IS DISTINCT FROM 'editor' THEN RAISE invalid_parameter_value USING MESSAGE='unknown organizer user intent';
  END IF;
+ -- Use the same scope -> unit -> receipt order as membership add/delete.
+ PERFORM pg_catalog.pg_advisory_xact_lock(-p_unit);
  initial:=public.begin_unit_client_mutation_v1(p_command_id,'profile.unit_user.save',p_unit,auth.uid(),
   encode(extensions.digest(convert_to(jsonb_build_object('unit',p_unit,'user',p_user,'version',p_expected_version,'changes',p_changes)::text,'UTF8'),'sha256'),'hex'));
  IF initial->>'disposition'='replay' THEN RETURN initial->'response'; END IF;
@@ -30,10 +32,15 @@ BEGIN
   INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
    VALUES('unit_user','unit',p_unit,usr::text,0) ON CONFLICT DO NOTHING;
   SELECT version INTO ver FROM public.client_aggregate_versions WHERE aggregate_type='unit_user' AND scope_type='unit' AND scope_id=p_unit AND aggregate_id=usr::text FOR UPDATE;
-  IF p_expected_version IS DISTINCT FROM ver THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,jsonb_build_object('version',ver)); END IF;
+  IF p_expected_version IS DISTINCT FROM ver THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,jsonb_build_object('version',ver,'reasonCode','version_conflict')); END IF;
  ELSE
-  IF EXISTS(SELECT 1 FROM public.unit_users uu JOIN public.user_info ui ON ui.id=uu."user" WHERE uu.unit=p_unit AND lower(btrim(ui.email_readonly))=lower(btrim(p_changes#>>'{data,email}'))) THEN
-   RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,'{}'); END IF;
+  SELECT ui.id INTO existing_member FROM public.unit_users uu JOIN public.user_info ui ON ui.id=uu."user"
+   WHERE uu.unit=p_unit AND lower(btrim(ui.email_readonly))=lower(btrim(coalesce(p_changes#>>'{data,email}',p_changes->>'email')));
+  IF existing_member IS NOT NULL THEN
+   SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
+    ON v.aggregate_type='unit_user' AND v.scope_type='unit' AND v.scope_id=p_unit AND v.aggregate_id=existing_member::text;
+   RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,
+    jsonb_build_object('userId',existing_member,'version',ver,'reasonCode','already_member')); END IF;
   IF mode<>'editor' THEN RAISE invalid_parameter_value USING MESSAGE='creation uses organizer editor'; END IF;
  END IF;
  IF mode='editor' THEN
@@ -69,8 +76,8 @@ BEGIN
   'mutation',jsonb_build_object('commandId',p_command_id,'receiptId',p_command_id,'commitId',c.commit_id,'replayed',false,'occurredAt',c.occurred_at),
   'sync',jsonb_build_object('replacements','[]'::jsonb)),c.commit_id);
 END $$;
-REVOKE ALL ON FUNCTION public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) TO authenticated,service_role;
+REVOKE ALL ON FUNCTION public.save_unit_member_internal_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Released clients use the same owner; only they may obtain an implicit baseline.
 CREATE OR REPLACE FUNCTION public.update_unit_user(input_data jsonb)
@@ -87,3 +94,9 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.update_unit_user(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.update_unit_user(jsonb) TO authenticated,service_role;
+
+REVOKE ALL ON FUNCTION public.save_unit_member_internal_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.save_unit_user_client_sync_v1(p_unit bigint,p_user uuid,p_command_id uuid,p_expected_version bigint,p_changes jsonb) RETURNS jsonb
+LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$ SELECT public.save_unit_member_internal_v1(p_unit,p_user,p_command_id,p_expected_version,p_changes); $$;
+REVOKE ALL ON FUNCTION public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) TO authenticated,service_role;
