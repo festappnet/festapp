@@ -439,6 +439,7 @@
     "ticket_wallet/projection.sql",
     "ticket_wallet/capabilities.sql",
     "ticket_wallet/sync.sql",
-    "ticket_wallet/worker.sql"
+    "ticket_wallet/worker.sql",
+    "public_links/reserved_paths.sql"
   ]
 }
