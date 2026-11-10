@@ -14,7 +14,7 @@ broken CMP reports denied state. Absent/old embed helper or an unapproved host l
 measurement off while checkout/layout continue. No same-origin script fallback.
 
 The isolated `gtm-v1` frame sets Google's `cookie_flags` to
-`SameSite=None;Secure` before loading the container so Google collection works in
+`SameSite=None;Secure;Partitioned` before loading the container so Google collection works in
 this cross-site context. Consent Mode still determines whether storage is granted;
 the cookie setting does not grant either purpose.
 
@@ -330,3 +330,55 @@ bound to its first processing revision. After changing processing configuration,
 reload the host page to create a new frame record; another CMP accept click
 alone does not authorize the replacement revision. Unknown/mixed manifests
 remain denied. Deploy the new receiver before exposing the bridge setting.
+
+## Host identity and direct linker signals
+
+Unit mode embeds can receive optional, purpose scoped raw host cookies: `_ga`
+and `_ga_<ID>` with analytics, and `_gcl_aw`, `_gcl_gb`, `_gcl_au`, `_fbp`, `_fbc`
+with marketing. Missing choice transfers nothing. The shared validator limits
+names, characters, values to 512 characters and snapshots to ten cookies.
+Before each copy bootstrap deletes all host-only/domain and partitioned/ordinary
+variants at Path=/, then writes with `Domain=location.hostname; Path=/;
+SameSite=None; Secure; Partitioned`. Readback requires a single matching value;
+ambiguous or blocked GA storage uses a GA1 client ID fallback. A host `_ga`
+snapshot with analytics consent removes frame `_ga_<ID>` cookies absent
+from the snapshot only when the existing `_ga` identifies a different client.
+An unchanged client preserves sessions for other measurement IDs. Revocation deletes all four variants, including tag cookies.
+Identity refresh alone copies cookies silently without emitting a consent update.
+A loaded tag may retain its client ID in memory; no undocumented gtag reset is used.
+
+GA copies use two years. Timestamped `GCL.<seconds>` and `_fbc`
+`fb.1.<milliseconds>` copies use the remaining part of 90 days from their timestamp,
+capped at 90 days; expired values are deleted. Other advertising cookies use 90
+days because `document.cookie` exposes no original expiry. An unknown shorter
+host expiry cannot be preserved. `_gcl_aw` never populates URL gclid. On marketing
+revocation bootstrap removes all campaign click IDs from the frame URL and
+`_gcl_*` localStorage entries, including `_gcl_ls`. Click IDs are restored from
+the validated context only after marketing is granted again.
+GA continuity requires the same G- measurement ID on website and organizer tags;
+browser storage policy and partitioning support can prevent continuity.
+
+Direct visits pass validated `_gl` (up to 2048 characters) only with both
+analytics and marketing consent because it can carry advertising identity; revocation removes
+it from the frame URL. `gtm_debug` remains available independently of consent.
+Both signals stay outside dataLayer and page_location; embeds exclude both.
+GTM Preview in a cross-site frame does not connect reliably and is not supported.
+Protocol 3 remains unchanged; the manifest includes `measurement_consent_bridge`.
+Deploy the Unit Worker/runtime before the helper and client: a new client with
+an old Worker and the bridge enabled rejects its manifest and stops measurement.
+Older receivers ignore optional hostIdentity. See the [Attribution contract](../../docs/integrations/form-datalayer.md#attribution-and-gtm-profile).
+
+Known limitation: cookies copied at Path=/ can accompany requests for `/runtime`
+and `/runtime.js` in the Cookie header before bootstrap can delete them after
+revocation. This is the same transport limitation as ordinary GA cookies on a
+website. The Worker neither reads nor logs cookies and does not forward incoming
+request headers to the configuration RPC. Deletion cannot recall requests or data
+already sent, nor clear identifiers held in a loaded third-party tag's memory.
+
+After direct runtime initialization the form removes `_gl` from its address with
+`history.replaceState`, retaining it in memory for a later consent decision.
+An embed adopting website identity omits the website referrer from event context.
+Configure both the website and checkout domains in GA4 cross-domain settings;
+review unwanted referrals as well. Set `cookie_flags` in the Google tag settings
+too and verify actual tag behavior in browsers. Third-party advertising cookies
+and identifiers held in a loaded tag cannot be removed by this runtime.

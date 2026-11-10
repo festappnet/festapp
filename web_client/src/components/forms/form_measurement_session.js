@@ -1,4 +1,4 @@
-import {measurementConsent, measurementManifest, sameMeasurementManifest, analyticsPayload} from './form_measurement_contract.js';
+import {measurementHostIdentity, measurementConsent, measurementManifest, sameMeasurementManifest, analyticsPayload} from './form_measurement_contract.js';
 import {publicFormLocation, documentEntryAllowed} from '../../utils/public_form_location.js';
 import {AppConfig} from '../../app_config.js';
 import {browserStorage} from '../../services/browser_storage.js';
@@ -79,10 +79,13 @@ export class FormMeasurementSession {
                 if(this.disposed || this.consentBinding!==binding || manifest!==this.manifest) return;
                 if(value==null)this.consentConnected=false;
                 const next=measurementConsent(value);
-                const changed=next.analytics!==this.consent.analytics || next.marketing!==this.consent.marketing;
                 if(value?.leaseId!==this.consent.leaseId) this.invalidate();
-                this.consent={...next,leaseId:value?.leaseId,expiresAt:value?.expiresAt};
-                if(changed)this.transport.updateConsent?.(next);
+                const hostIdentity=measurementHostIdentity(value?.hostIdentity,next);
+                const changed=next.analytics!==this.consent.analytics || next.marketing!==this.consent.marketing;
+                const identityChanged=JSON.stringify(hostIdentity)!==JSON.stringify(this.consent.hostIdentity||{});
+                this.consent={...next,hostIdentity,leaseId:value?.leaseId,expiresAt:value?.expiresAt};
+                if(changed)this.transport.updateConsent?.(next,hostIdentity);
+                else if(identityChanged)this.transport.updateIdentity?.(hostIdentity);
                 this.reconcile();
             });
         } catch {this.consentConnected=false;this.consent=measurementConsent(false);this.transport.updateConsent?.(this.consent);}
@@ -108,7 +111,7 @@ export class FormMeasurementSession {
         if(this.grant) return;
         const host=this.transport.hostContext?.() || null;
         const grant=this.grant={host:host?Object.freeze({...host}):null,runtimeOrigin:this.policy.runtime_origin,manifest:this.manifest,generation:this.generation,identity:this.identity(),selection,
-            consent:measurementConsent(this.consent),leaseId:this.consent.leaseId};
+            consent:measurementConsent(this.consent),hostIdentity:measurementHostIdentity(this.consent.hostIdentity,this.consent),leaseId:this.consent.leaseId};
         this.state='starting';
         try {this.transport.activate({...grant,expiresAt:Math.min(this.until,this.consent.expiresAt||Infinity),
             onReady:()=>{if(this.grant===grant && this.permitted() && this.state==='starting'){this.state='active';this.onActive();}},

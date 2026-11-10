@@ -1,8 +1,20 @@
-import {measurementProtocol, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol, measurementHostIdentity, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
 // Presence is the long-lived public opt-in; absent preserves existing embeds.
 export const usesHostDataLayer = frame => frame.hasAttribute('data-festapp-datalayer');
+
+export function readHostMeasurementIdentity(doc, consent) {
+    if (!consent?.analytics && !consent?.marketing && consent !== true) return {};
+    try {
+        const pairs = doc.cookie.split(';').map(part => {
+            const index = part.indexOf('=');
+            return index < 0 ? ['', ''] : [part.slice(0, index).trim(), part.slice(index + 1)];
+        });
+        const cookies = Object.fromEntries(pairs.filter(([name]) => pairs.filter(([key]) => key === name).length === 1));
+        return measurementHostIdentity(cookies, consent);
+    } catch { return {}; }
+}
 
 export function createHostMeasurement({frames, currentRecord, disposeRecord, scan}) {
     let suspended = false;
@@ -15,8 +27,12 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         try { return measurementConsent(record.choice?.read(record.manifest)); }
         catch { return measurementConsent(false); }
     };
-    const sendConsent = (frame, record) => record.channel.send('measurement-consent', {measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
-            ttl:record.lease ? 60000 : 0, consent:readChoice(record)}});
+    const sendConsent = (frame, record) => {
+        const consent = record.lease ? readChoice(record) : measurementConsent(false);
+        record.channel.send('measurement-consent', {measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
+            ttl:record.lease ? 60000 : 0, consent,
+            ...(!usesHostDataLayer(frame) ? {hostIdentity:readHostMeasurementIdentity(document, consent)} : {})}});
+    };
     const revoke = (frame, record) => {
         record.lease = null;
         record.pageContext = null;

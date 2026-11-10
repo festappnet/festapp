@@ -21,7 +21,7 @@
     "MEASUREMENT": "Measurement destination",
     "MEASUREMENT_UNIT": "Festapp Unit runtime (existing behavior)",
     "MEASUREMENT_HOST": "Website dataLayer",
-    "MEASUREMENT_HELP": "Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp."
+    "MEASUREMENT_HELP": "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
   },
   "cs-CZ": {
     "XML_DESCRIPTION": "Zveřejněte prodej vstupenek přes uložený veřejný formulář @@NAME@@. Vyžaduje samostatný účet pořadatele.",
@@ -45,6 +45,6 @@
     "MEASUREMENT": "Cíl měření",
     "MEASUREMENT_UNIT": "Runtime jednotky Festapp (dosavadní chování)",
     "MEASUREMENT_HOST": "dataLayer webu",
-    "MEASUREMENT_HELP": "Režim webu předává skriptům stránky měřicí události včetně e-mailu, telefonu a identifikátorů transakcí při konverzi. Nastavte značky a správce souhlasů webu. Režim jednotky vyžaduje napojení souhlasů. Doména webu musí být schválena ve Festappu."
+    "MEASUREMENT_HELP": "Nové moduly používají režim webu, doporučený pro weby s vlastním GTM a souhlasovou lištou. Existující moduly bez nastavení zůstávají v režimu jednotky. Režim jednotky čte Consent Mode webu pouze po zapnutí volby „Přebírat souhlas z lišty mého webu“ ve Festappu a potvrzení, že lišta pokrývá vložený formulář. Režim webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky. Doména webu musí být schválena ve Festappu."
   }
 }

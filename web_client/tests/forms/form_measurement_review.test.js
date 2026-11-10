@@ -65,5 +65,5 @@ test('ad and linker parameters keep measurement on while capability parameters s
         assert.equal(publicFormLocation(at(search)),true,search);
     for(const search of ['?token=x','?gclid=x&access_token=y','?order=1'])
         assert.equal(publicFormLocation(at(search)),false,search);
-    assert.equal(publicFormAttributionSearch(at('?gad_source=1&_gl=1*a&gtm_debug=1')),'?gad_source=1');
+    assert.equal(publicFormAttributionSearch(at('?gad_source=1&_gl=1*a&gtm_debug=1')),'?gad_source=1&_gl=1*a&gtm_debug=1');
 });

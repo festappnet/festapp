@@ -176,3 +176,5 @@ page scripts. It does not install tags, grant consent or enable measurement.
 Both modes require enabled Festapp measurement and an approved website origin.
 Unit mode requires a consent adapter. See the canonical
 [measurement contract](../../docs/integrations/form-datalayer.md).
+
+New modules select Website mode, recommended for websites with their own GTM and consent banner. Saved modules without a measurement parameter keep Unit mode, including when reopened in the editor. Unit mode reads the website Consent Mode unless an explicit adapter is connected.

@@ -20,7 +20,7 @@ export async function initSettings(document, api) {
   const submit = document.querySelector('button[type="submit"]');
   document.getElementById('help').href = HELP_URL;
   let ready = false;
-  const controls = [...form.querySelectorAll('input, button')];
+  const controls = [...form.querySelectorAll('input, select, button')];
   const setBusy = busy => {
     form.setAttribute('aria-busy', String(busy));
     for (const control of controls) control.disabled = busy;
@@ -30,7 +30,7 @@ export async function initSettings(document, api) {
     for (const name of PROPERTIES) {
       const value = await api.getProp(name);
       const input = form.elements.namedItem(name);
-      input.value = value || (name === 'form-title' ? DEFAULT_TITLE : '');
+      input.value = value || (name === 'measurement' ? (await api.getProp('form-url') ? 'unit' : 'host') : name === 'form-title' ? DEFAULT_TITLE : '');
     }
     ready = true;
     status.textContent = '';
@@ -50,6 +50,7 @@ export async function initSettings(document, api) {
       await saveSettings(api, {
         'form-url': form.elements.namedItem('form-url').value,
         'form-title': form.elements.namedItem('form-title').value,
+        measurement: form.elements.namedItem('measurement').value,
       });
       status.textContent = 'Uloženo. Formulář ověřte na zveřejněném webu.';
     } catch (error) { status.textContent = error.message || 'Nastavení nelze uložit. Zkuste to znovu.'; }

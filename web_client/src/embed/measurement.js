@@ -1,5 +1,5 @@
 import {validId} from './protocol.js';
-import {measurementProtocol, analyticsPayload, campaignContext, measurementConsent, measurementManifest, sameMeasurementManifest} from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol, measurementHostIdentity, analyticsPayload, campaignContext, measurementConsent, measurementManifest, sameMeasurementManifest} from '../components/forms/form_measurement_contract.js';
 
 export class EmbedMeasurement {
     constructor(win, channel) { Object.assign(this, {win, channel}); }
@@ -25,7 +25,7 @@ export class EmbedMeasurement {
                 this.leaseUntil=granted?Date.now()+Math.min(60000,Math.max(0,Number(value.ttl)||0)):0;
                 this.win.clearTimeout(this.leaseTimer);
                 this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
-                this.consentNotify?.(granted?{...measurementConsent(value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
+                this.consentNotify?.(granted?{...measurementConsent(value.consent),hostIdentity:this.dataLayer?{}:measurementHostIdentity(value.hostIdentity,value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
             } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===measurementProtocol &&
                 data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
                 sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {
@@ -58,7 +58,8 @@ export class EmbedMeasurement {
         else this.send('measurement-activate',{measurement:{protocol:measurementProtocol,manifest:grant.manifest,generation:grant.generation,leaseId:grant.leaseId}});
     }
     renew(until) {this.measurementRuntime?.renew(Math.min(until,this.leaseUntil||0));}
-    updateConsent(consent) {this.measurementRuntime?.updateConsent(consent);}
+    updateIdentity(hostIdentity) {if(!this.dataLayer)this.measurementRuntime?.updateIdentity(hostIdentity);}
+    updateConsent(consent,hostIdentity) {if(!this.dataLayer)this.measurementRuntime?.updateConsent(consent,measurementHostIdentity(hostIdentity,consent));}
     stop() {this.grant=null;this.hostActive=false;this.measurementRuntime?.stop();}
     track(input) {
         if(!this.grant || Date.now()>=this.leaseUntil)return false;

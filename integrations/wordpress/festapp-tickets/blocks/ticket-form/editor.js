@@ -26,7 +26,7 @@
                 el(components.SelectControl, {label: __('Measurement destination', 'festapp-tickets'), value: a.measurement,
                     options: [{label: __('Festapp Unit runtime (existing behavior)', 'festapp-tickets'), value: 'unit'}, {label: __('Website dataLayer', 'festapp-tickets'), value: 'host'}],
                     onChange: (measurement) => props.setAttributes({measurement}),
-                    help: __('Website mode shares measurement events, including conversion email, phone and transaction identifiers, with page scripts. Configure your website tags and consent manager. Unit mode requires a consent adapter. The website domain must be approved in Festapp.', 'festapp-tickets')}),
+                    help: __('Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp.', 'festapp-tickets')}),
                 el('p', null, __('Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes.', 'festapp-tickets'), ' ', el('a', {href:'https://tickets.festapp.net/events?help=forms',target:'_blank',rel:'noopener noreferrer'}, __('Open forms', 'festapp-tickets'))),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', 'festapp-tickets') : __('Fallback height without the helper (px)', 'festapp-tickets'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to Festapp Tickets and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor.', 'festapp-tickets')),
@@ -34,5 +34,11 @@
             );
         },
         save: function () { return null; }
+    });
+    // Inserter defaults are explicit serialized attributes. Old blocks still
+    // resolve the block.json default (unit), including when edited and saved.
+    blocks.registerBlockVariation('festapp-tickets/ticket-form', {
+        name: 'website', title: 'Festapp Tickets', isDefault: true,
+        attributes: {measurement: 'host'}, scope: ['inserter'],
     });
 })(window.wp.blocks, window.wp.element, window.wp.blockEditor, window.wp.components, window.wp.i18n);

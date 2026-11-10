@@ -99,7 +99,7 @@ test('bootstrap rejects mismatched snapshot before code and establishes Consent 
 test('isolated Google tags receive cross-site cookie flags before loading without changing consent',t=>{
  const f=bootstrap(t,false);f.send('init');const entries=[...f.win.dataLayer];
  assert.ok(entries.some(p=>p[0]==='set' && p[1]==='ads_data_redaction' && p[2]===true));
- const cookieSettings=entries.findIndex(p=>p[0]==='set' && p[1]?.cookie_flags==='SameSite=None;Secure');
+ const cookieSettings=entries.findIndex(p=>p[0]==='set' && p[1]?.cookie_flags==='SameSite=None;Secure;Partitioned');
  assert(cookieSettings>=0,'framed Google tags require explicit cross-site cookie flags');
  assert(cookieSettings<entries.findIndex(p=>p.event==='gtm.js'));
  assert.equal(entries[0][2].analytics_storage,'denied');assert.equal(entries[1][2].analytics_storage,'denied');
@@ -119,7 +119,7 @@ test('attribution retains allowed campaign/click IDs and drops credentials and p
   assert.equal(campaignContext({[key]:'click'})[key],'click');assert.ok(measurementPageLocation({page_location:parent+'/form/summer',[key]:'click'}).includes(key+'=click'));
   assert.equal(publicFormLocation(new URL(parent+'/form/summer?'+key+'=click')),true);
  }
- assert.equal(publicFormAttributionSearch(new URL(parent+'/form/summer?_gl=x&gtm_debug=1&utm_id=2')),'?utm_id=2');
+ assert.equal(publicFormAttributionSearch(new URL(parent+'/form/summer?_gl=x&gtm_debug=1&utm_id=2')),'?utm_id=2&_gl=x&gtm_debug=1');
 });
 
 test('a broken CMP unsubscribe still revokes its saved grant synchronously',()=>{
@@ -180,4 +180,240 @@ test('isolated runtime attaches its validated page context to each event',t=>{
  f.send('event',{payload:{page_type:'checkout'}});
  f.send('event',{payload:{event:'form_submit_error'}});
  assert.equal(f.win.dataLayer.find(p=>p.event==='form_submit_error').language,null);
+});
+
+test('host identity is bounded, purpose filtered and read raw without decoding', async () => {
+ const {measurementHostIdentity,measurementSignals}=await import('../../src/components/forms/form_measurement_contract.js');
+ const {readHostMeasurementIdentity}=await import('../../src/embed/host_measurement.js');
+ const cookies={_ga:'GA1.1.123.456',_ga_AB12:'GS2.1.s123$o1',_ga_bad:'bad',_gcl_aw:'GCL.123.click',_fbp:'fb.1.123.456',secret:'private',_fbc:'bad%20value',_gcl_au:'a'.repeat(513)};
+ assert.deepEqual(measurementHostIdentity(cookies,false),{});
+ assert.deepEqual(measurementHostIdentity(cookies,true),{_ga:cookies._ga,_ga_AB12:cookies._ga_AB12});
+ assert.deepEqual(measurementHostIdentity(cookies,{marketing:true}),{_gcl_aw:cookies._gcl_aw,_fbp:cookies._fbp});
+ assert.equal(Object.keys(measurementHostIdentity(Object.fromEntries(Array.from({length:20},(_,i)=>['_ga_A'+i,'x'])),true)).length,10);
+ assert.deepEqual(readHostMeasurementIdentity({cookie:'_ga=GA1.1.123.456; _fbp=fb.1.123.456; _fbc=bad%20value'},true),{_ga:cookies._ga});
+ assert.deepEqual(readHostMeasurementIdentity({get cookie(){throw Error('blocked');}},true),{});
+ assert.deepEqual(measurementSignals({_gl:'1*abc._-1',gtm_debug:'x',gclid:'click'}),{_gl:'1*abc._-1',gtm_debug:'x'});
+ for(const value of ['', 'a'.repeat(2049),'a@b','a\nb','a%20','a$b'])assert.equal(measurementSignals({_gl:value})._gl,undefined);
+});
+test('runtime init and updates retain identity only for embedded granted purposes',t=>{
+ const f=fixture(t,true),sent=[];f.transport.activate({...f.grant,hostIdentity:{_ga:'GA1.1.123.456',_fbp:'fb.1.123.456',secret:'bad'}});
+ f.transport.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');
+ assert.deepEqual(sent[0].hostIdentity,{_ga:'GA1.1.123.456',_fbp:'fb.1.123.456'});
+ f.transport.updateConsent({marketing:true},{_ga:'GA1.1.123.456',_fbp:'fb.1.123.456'});
+ assert.deepEqual(sent.at(-1).hostIdentity,{_fbp:'fb.1.123.456'});
+ f.transport.updateConsent(false,{_ga:'GA1.1.123.456'});assert.deepEqual(sent.at(-1).hostIdentity,{});
+});
+// Model host-only/domain and partitioned/unpartitioned as distinct cookie slots.
+function cookieJar(win) {
+ const jar=new Map(),writes=[];
+ const key=(name,domain,partition)=>JSON.stringify([name,domain,partition]);
+ const seed=(name,value,domain=false,partition=false)=>jar.set(key(name,domain,partition),{name,value});
+ Object.defineProperty(win.document,'cookie',{get:()=>[...jar.values()].map(x=>x.name+'='+x.value).join('; '),set:value=>{
+  writes.push(value);const [pair]=value.split(';'),i=pair.indexOf('=');
+  const slot=key(pair.slice(0,i),value.includes('; Domain='+win.location.hostname),value.includes('; Partitioned'));
+  if(/; Max-Age=0(?:;|$)/.test(value))jar.delete(slot);else jar.set(slot,{name:pair.slice(0,i),value:pair.slice(i+1)});
+ }});
+ return {jar,writes,seed,values:name=>[...jar.values()].filter(x=>x.name===name).map(x=>x.value)};
+}
+test('bootstrap replaces all old cookie variants and removes foreign GA sessions and revoked tag cookies',t=>{
+ const f=bootstrap(t),j=cookieJar(f.win),now=Math.floor(Date.now()/1000);
+ for(const domain of [true,false])for(const partition of [true,false]) {
+  j.seed('_ga','GA1.1.999.999',domain,partition);j.seed('_ga_OTHER','GS2.1.s999',domain,partition);
+ }
+ j.seed('unrelated','keep');
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_ga:'GA1.1.123.456',_ga_AB:'GS2.1.s123$o1',_gcl_aw:`GCL.${now}.click-id`,_fbp:'fb.1.123.456'}});
+ assert.deepEqual(j.values('_ga'),['GA1.1.123.456']);assert.deepEqual(j.values('_ga_OTHER'),[]);
+ assert(j.writes.some(x=>x.includes('Max-Age=63072000; Domain='+f.win.location.hostname+'; Path=/; SameSite=None; Secure; Partitioned')));
+ assert.equal(new URL(f.win.location.href).searchParams.has('gclid'),false);
+ // A tag can write more domain cookies after the initial copy.
+ for(const domain of [true,false])for(const partition of [true,false])j.seed('_gcl_au','1.2.3',domain,partition);
+ f.send('consent',{consent:false});
+ assert.deepEqual([...j.jar.values()],[{name:'unrelated',value:'keep'}]);
+});
+test('without a host _ga snapshot existing GA sessions remain intact while analytics is granted',t=>{
+ const f=bootstrap(t),j=cookieJar(f.win);j.seed('_ga_OTHER','GS2.1.s999',true,false);
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_fbp:'fb.1.123.456'}});
+ assert.deepEqual(j.values('_ga_OTHER'),['GS2.1.s999']);
+});
+test('ambiguous readback triggers fallback even when one duplicate matches the copy',t=>{
+ const f=bootstrap(t);
+ Object.defineProperty(f.win.document,'cookie',{get:()=> '_ga=GA1.1.999.999; _ga=GA1.1.123.456',set:()=>{}});
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_ga:'GA1.1.123.456'}});
+ assert(f.win.dataLayer.some(x=>x[0]==='set'&&x[1]?.client_id==='123.456'));
+});
+test('advertising copies retain only the remaining timestamp lifetime',t=>{
+ const f=bootstrap(t),j=cookieJar(f.win),now=Math.floor(Date.now()/1000),day=86400;
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_gcl_aw:`GCL.${now-89*day}.click`,_fbc:`fb.1.${(now-91*day)*1000}.IwZX_aem-long`,_gcl_gb:'unknown',_gcl_au:`GCL.${now+day}.future`}});
+ const age=name=>Number(/Max-Age=(\d+)/.exec(j.writes.filter(x=>x.startsWith(name+'=')).at(-1))[1]);
+ assert(age('_gcl_aw')<=day && age('_gcl_aw')>=day-2);assert.equal(age('_fbc'),0);
+ assert.equal(age('_gcl_gb'),7776000);assert.equal(age('_gcl_au'),7776000);
+});
+test('realistic long Meta and Ads values survive validation with safe delimiters only',async()=>{
+ const {measurementHostIdentity}=await import('../../src/components/forms/form_measurement_contract.js');
+ const {readHostMeasurementIdentity}=await import('../../src/embed/host_measurement.js');
+ const click='IwZXh0bgNhZW0'+ 'Ab9-_'.repeat(55)+'_aem_X-y';
+ const values={_fbc:'fb.1.1794300000000.'+click,_fbp:'fb.1.1794300000000.1234567890',_gcl_aw:'GCL.1794300000.'+click};
+ assert.deepEqual(measurementHostIdentity(values,{marketing:true}),values);
+ assert.equal(measurementHostIdentity({_fbc:'a'.repeat(512)},{marketing:true})._fbc.length,512);
+ for(const value of ['a'.repeat(513),'x; secret=y','x%20','x=y','x\ny'])assert.deepEqual(measurementHostIdentity({_fbc:value},{marketing:true}),{});
+ assert.deepEqual(readHostMeasurementIdentity({cookie:'_ga=GA1.1.123.456; _ga=GA1.1.789.012'},true),{});
+});
+test('identity-only refresh and unchanged choices are silent in the frame',t=>{
+ const f=bootstrap(t),j=cookieJar(f.win);f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true}});
+ const count=f.win.dataLayer.length;
+ f.send('identity',{hostIdentity:{_ga:'GA1.1.123.456'}});
+ f.send('consent',{hostIdentity:{_ga:'GA1.1.123.789'}});
+ assert.equal(f.win.dataLayer.length,count);assert.deepEqual(j.values('_ga'),['GA1.1.123.789']);
+ f.send('consent',{consent:false});assert.equal(f.win.dataLayer.filter(x=>x.event==='festapp_consent_update').length,1);
+});
+test('blocked cookie writes use GA client ID fallback without an undocumented reset on revocation',t=>{
+ const f=bootstrap(t);Object.defineProperty(f.win.document,'cookie',{get:()=>'',set:()=>{}});
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_ga:'GA1.2.123.456'}});
+ const entries=f.win.dataLayer,index=entries.findIndex(x=>x[0]==='set'&&x[1]?.client_id==='123.456');
+ assert.ok(index>=0 && index<entries.findIndex(x=>x.event==='gtm.js'));
+ f.send('consent',{consent:false});assert.equal(entries.filter(x=>x[0]==='set'&&Object.hasOwn(x[1],'client_id')).length,1);
+});
+for(const embedded of [true,false])test('linker signals reach only direct runtime URLs, never event context; embedded='+embedded,t=>{
+ const f=bootstrap(t);f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:embedded,_gl:'1*abc._-1',gtm_debug:'x',gclid:'click'}});
+ const url=new URL(f.win.location.href);assert.equal(url.searchParams.get('_gl'),embedded?null:'1*abc._-1');assert.equal(url.searchParams.get('gtm_debug'),embedded?null:'x');
+ assert.equal(url.searchParams.get('gclid'),'click');assert.doesNotMatch(JSON.stringify(f.win.dataLayer),/_gl|gtm_debug/);
+});
+for(const embedded of [true,false])test('router and runtime preserve direct-only linker signals; embedded='+embedded,t=>{
+ const f=fixture(t,embedded),sent=[];const url=new URL(parent+'/form/summer?_gl=1*safe&gtm_debug=x&gclid=click'+(embedded?'&embed=1':''));
+ const normalized=publicFormAttributionSearch(url);
+ assert.equal(normalized.includes('_gl'),!embedded);
+ assert.equal(publicFormAttributionSearch(new URL(parent+'/form/summer?_gl=bad%24&gtm_debug=%00')),'');
+ f.dom.window.history.replaceState(null,'',url.pathname+normalized);f.transport.activate(f.grant);
+ f.transport.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');
+ assert.equal(sent[0].context._gl,embedded?undefined:'1*safe');
+ assert.equal(sent[0].context.gtm_debug,embedded?undefined:'x');
+ assert.doesNotMatch(sent[0].context.page_location,/_gl|gtm_debug/);
+});
+
+for(const analytics of [true,false])for(const marketing of [true,false])test('direct linker requires both purposes at both boundaries: '+analytics+','+marketing,t=>{
+ const f=bootstrap(t,{analytics,marketing});f.send('init',{context:{page_location:parent+'/form/summer',_gl:'1*abc',gtm_debug:'x'}});
+ assert.equal(new URL(f.win.location.href).searchParams.has('_gl'),analytics && marketing);
+ f.send('consent',{consent:false});assert.equal(new URL(f.win.location.href).searchParams.has('_gl'),false);
+ assert.equal(new URL(f.win.location.href).searchParams.get('gtm_debug'),'x');
+ const r=fixture(t,false),sent=[];
+ r.dom.window.history.replaceState(null,'','/form/summer?_gl=1*abc&gtm_debug=x');
+ r.transport.activate({...r.grant,consent:{analytics,marketing}});r.transport.frame.contentWindow.postMessage=data=>sent.push(data);r.message('ready');
+ assert.equal(sent[0].context._gl,analytics && marketing?'1*abc':undefined);
+ r.transport.updateConsent(false);assert.equal(sent.at(-1).signals._gl,undefined);
+});
+test('revocation cleans legacy URL click and linker identifiers',t=>{
+ const f=bootstrap(t);f.send('init',{context:{page_location:parent+'/form/summer',gclid:'legacy',_gl:'1*abc',gtm_debug:'x'}});
+ f.send('consent',{consent:false});const url=new URL(f.win.location.href);
+ assert.equal(url.searchParams.has('gclid'),false);assert.equal(url.searchParams.has('_gl'),false);
+});
+
+test('a choice made before ready filters linker from the eventual init message',t=>{
+ const f=fixture(t,false),sent=[];f.dom.window.history.replaceState(null,'','/form/summer?_gl=1*abc&gtm_debug=x');
+ f.transport.activate({...f.grant,consent:{analytics:true}});f.transport.updateConsent(false);
+ f.transport.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');
+ assert.equal(sent[0].context._gl,undefined);assert.equal(sent[0].context.gtm_debug,'x');
+});
+test('later grant of both purposes can forward direct linker and revocation removes it',t=>{
+ const f=bootstrap(t,false);f.send('init',{context:{page_location:parent+'/form/summer'}});
+ f.send('consent',{consent:{analytics:true,marketing:true},signals:{_gl:'1*abc',gtm_debug:'x'}});
+ assert.equal(new URL(f.win.location.href).searchParams.get('_gl'),'1*abc');
+ f.send('consent',{consent:false,signals:{_gl:'1*abc'}});
+ assert.equal(new URL(f.win.location.href).searchParams.has('_gl'),false);
+});
+
+test('a different GA cookie prefix for the same client keeps the frame session',t=>{
+ const f=bootstrap(t),j=cookieJar(f.win);
+ j.seed('_ga','GA1.1.123.456');j.seed('_ga_UNIT','GS2.1.s777$o1');
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_ga:'GA1.2.123.456'}});
+ assert.deepEqual(j.values('_ga_UNIT'),['GS2.1.s777$o1'],'GA1.2 and GA1.1 with the same client ID are one visitor');
+});
+test('same website client preserves extra GA sessions across refresh and a new frame',t=>{
+ for(const existing of [false,true]) {
+  const f=bootstrap(t),j=cookieJar(f.win);
+  if(existing)j.seed('_ga','GA1.1.123.456');
+  j.seed('_ga_UNIT','GS2.1.s777$o1');
+  f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true},hostIdentity:{_ga:'GA1.1.123.456'}});
+  f.send('identity',{hostIdentity:{_ga:'GA1.1.123.456'}});
+  assert.deepEqual(j.values('_ga_UNIT'),['GS2.1.s777$o1']);
+  f.send('identity',{hostIdentity:{_ga:'GA1.1.999.888'}});
+  assert.deepEqual(j.values('_ga_UNIT'),[]);
+ }
+});
+
+test('withdrawal clears advertising storage and every click ID; granting restores URL values',t=>{
+ const f=bootstrap(t,false),j=cookieJar(f.win);
+ const clicks={gclid:'google',gbraid:'app',wbraid:'web',fbclid:'meta',msclkid:'bing',sznclid:'seznam',ttclid:'tiktok'};
+ f.win.localStorage.setItem('_gcl_ls','join-id');f.win.localStorage.setItem('other','keep');
+ j.seed('_gcl_dc','id');j.seed('_gcl_gs','id');
+ f.send('init',{context:{page_location:parent+'/form/summer',utm_source:'search',...clicks}});
+ assert.equal(f.win.localStorage.getItem('_gcl_ls'),null);assert.equal(f.win.localStorage.getItem('other'),'keep');
+ assert.deepEqual(j.values('_gcl_dc'),[]);assert.deepEqual(j.values('_gcl_gs'),[]);
+ for(const key of Object.keys(clicks))assert.equal(new URL(f.win.location.href).searchParams.has(key),false);
+ f.send('consent',{consent:{marketing:true}});
+ for(const [key,value] of Object.entries(clicks))assert.equal(new URL(f.win.location.href).searchParams.get(key),value);
+ f.win.localStorage.setItem('_gcl_ls','join-id');f.send('consent',{consent:false});
+ assert.equal(f.win.localStorage.getItem('_gcl_ls'),null);
+ for(const key of Object.keys(clicks))assert.equal(new URL(f.win.location.href).searchParams.has(key),false);
+ assert.equal(new URL(f.win.location.href).searchParams.get('utm_source'),'search');
+});
+
+test('website identity removes embedded self-referral from event context and frame URL',t=>{
+ const f=bootstrap(t);
+ f.send('init',{context:{page_location:parent+'/form/summer',form_embedded:true,page_referrer:'https://organizer.example/'},hostIdentity:{_ga:'GA1.1.123.456'}});
+ f.send('event',{payload:{event:'page_view'}});
+ assert.doesNotMatch(JSON.stringify(f.win.dataLayer),/organizer.example/);
+ assert.doesNotMatch(f.win.location.href,/organizer.example/);
+});
+
+test('realistic multi-property linker survives routing and init, then leaves the form address',async t=>{
+ const {measurementSignals}=await import('../../src/components/forms/form_measurement_contract.js');
+ const gl='1*abc123*_ga*MTIzNDU2Nzg5MC4xNzMxMjM0NTY3*_ga_HOSTAAA1*czE3MzEyMzQ1NjckbzEkZzEkdDE3MzEyMzQ2MDckajYwJGwwJGgw*_ga_UNITBBB2*czE3MzEyMzQ1NjckbzIkZzEkdDE3MzEyMzQ2MDckajYwJGwwJGgw*_gcl_aw*'+('R0NMLjE3MzEyMzQ1Njcu'+ 'Q2xpY2tJRA'.repeat(20));
+ assert(gl.length>350 && gl.length<500);
+ assert.equal(measurementSignals({_gl:gl})._gl,gl);
+ assert.equal(measurementSignals({_gl:'x'.repeat(2048)})._gl.length,2048);
+ for(const bad of ['x'.repeat(2049),'bad%20value','bad/value','bad$value'])assert.equal(measurementSignals({_gl:bad})._gl,undefined);
+ const f=fixture(t),sent=[];
+ const url=new URL(parent+'/form/summer?_gl='+gl+'&gtm_debug=x#order-preview');
+ f.dom.window.history.replaceState({keep:true},'',url.pathname+publicFormAttributionSearch(url)+url.hash);
+ f.transport.activate(f.grant);f.transport.frame.contentWindow.postMessage=data=>sent.push(data);f.message('ready');
+ assert.equal(sent[0].context._gl,gl);assert.equal(new URL(f.dom.window.location.href).searchParams.has('_gl'),false);
+ assert.equal(f.dom.window.history.state.keep,true);assert.equal(f.dom.window.location.hash,'#order-preview');
+ f.transport.updateConsent(false);f.transport.updateConsent({analytics:true,marketing:true});assert.equal(sent.at(-1).signals._gl,gl);
+ const b=bootstrap(t);b.send('init',{context:{page_location:parent+'/form/summer',_gl:gl}});
+ assert.equal(new URL(b.win.location.href).searchParams.get('_gl'),gl);
+});
+
+test('late website cookie travels through session, bridge, embed measurement and isolated bootstrap silently',async t=>{
+ const {FormMeasurementSession}=await import('../../src/components/forms/form_measurement_session.js');
+ const {EmbedBridge}=await import('../../src/services/embed_bridge.js');
+ const f=fixture(t,true),bridge=new EmbedBridge(f.dom.window),b=bootstrap(t),j=cookieJar(b.win);
+ bridge.origin='https://organizer.example';bridge.instance='host-instance';
+ Object.defineProperty(f.dom.window.document,'referrer',{value:bridge.origin+'/checkout'});
+ bridge.measurement.measurementProtocol=measurementProtocol;bridge.setMeasurementRuntime(f.transport);
+ const session=new FormMeasurementSession({win:f.dom.window,model:{link:'summer',data:{}},transport:bridge,consentSource:{connect:(...args)=>bridge.connectConsent(...args)},policySource:async()=>({...policy,approved_hosts:[bridge.origin]}),identitySource:{read:()=> 'anonymous'}});
+ t.after(()=>{session.dispose();bridge.measurement.destroy();});
+ session.start();await session.refresh();
+ const heartbeat=(hostIdentity,consent={analytics:true})=>bridge.measurement.receive({type:'measurement-consent',measurement:{protocol:measurementProtocol,manifest,leaseId:'lease',ttl:60000,consent,hostIdentity}});
+ heartbeat({});
+ const frame=f.transport.frame;assert(frame);
+ frame.contentWindow.postMessage=data=>b.win.dispatchEvent(new b.win.MessageEvent('message',{source:b.win.parent,origin:parent,data}));
+ f.message('ready');f.message('ack');
+ assert.equal(f.transport.context.page_referrer,undefined);
+ assert.doesNotMatch(JSON.stringify(b.win.dataLayer),/organizer.example/);
+ assert.doesNotMatch(f.transport.frame.src,/organizer.example/);
+ const before=b.win.dataLayer.length;
+ heartbeat({_ga:'GA1.1.123.456'});
+ assert.deepEqual(j.values('_ga'),['GA1.1.123.456']);assert.equal(f.transport.frame,frame);assert.equal(b.win.dataLayer.length,before);
+ heartbeat({},false);heartbeat({_ga:'GA1.1.999.888'},false);assert.deepEqual(j.values('_ga'),[]);
+ bridge.measurement.dataLayer=true;bridge.updateIdentity({_ga:'GA1.1.777.888'});assert(!j.values('_ga').includes('GA1.1.777.888'));
+});
+
+
+test('withdrawal deletes tag cookies on the runtime path as well as the root',t=>{
+ const f=bootstrap(t);
+ for(const name of ['_ga','_ga_UNIT','_gcl_dc','_gcl_gs','_fbp','_fbc'])
+  for(const path of ['/','/runtime'])f.win.document.cookie=name+'=value; Path='+path+'; Secure';
+ f.win.document.cookie='unrelated=keep; Path=/runtime; Secure';
+ f.send('init',{consent:false});
+ assert.equal(f.win.document.cookie,'unrelated=keep');
 });

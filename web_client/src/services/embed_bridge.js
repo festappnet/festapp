@@ -108,6 +108,7 @@ export class EmbedBridge {
     hostContext(...args) { return this.measurement.hostContext(...args); }
     activate(...args) { return this.measurement.activate(...args); }
     renew(...args) { return this.measurement.renew(...args); }
+    updateIdentity(...args) { return this.measurement.updateIdentity(...args); }
     updateConsent(...args) { return this.measurement.updateConsent(...args); }
     stop(...args) { return this.measurement.stop(...args); }
     track(...args) { return this.measurement.track(...args); }
