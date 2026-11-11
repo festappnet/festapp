@@ -17,3 +17,41 @@ test('continuous scanner accepts further tickets without pausing and suppresses 
     assert.deepEqual(codes,['A','B']);assert.equal(input.paused,false);
     input.pause({keepStream:true});input.accept('C');assert.deepEqual(codes,['A','B']);
 });
+
+test('camera worker keeps decoding off the UI thread, bounds its queue and fences stopped results',async t=>{
+ const previous={navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),document:globalThis.document,Worker:globalThis.Worker};
+ const workers=[],messages=[],codes=[];let trackStops=0;
+ const stream={getTracks:()=>[{stop(){trackStops++;}}]};
+ const context={drawImage(){},getImageData(){return {data:new Uint8ClampedArray(16*16*4)};}};
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async()=>stream}}});
+ globalThis.document={createElement:()=>({getContext:()=>context})};
+ globalThis.Worker=class {
+  constructor(url,options){assert.match(url.pathname,/scanner_decoder_worker\.js$/);assert.equal(options.type,'module');workers.push(this);}
+  postMessage(message,transfers){messages.push(message);assert.equal(transfers[0],message.pixels.buffer);}
+  terminate(){this.terminated=true;}
+ };
+ const input=new ScannerInput(code=>codes.push(code),{continuous:true});
+ t.after(()=>{input.dispose();Object.defineProperty(globalThis,'navigator',previous.navigator);globalThis.document=previous.document;if(previous.Worker===undefined)delete globalThis.Worker;else globalThis.Worker=previous.Worker;});
+ await input.start({videoWidth:16,videoHeight:16,async play(){}});
+ const worker=workers[0];assert.ok(worker);
+ input.decode=()=>assert.fail('worker-enabled camera must not run jsQR on the UI thread');
+ input.frame();input.frame();assert.equal(messages.length,1,'busy worker must not accumulate camera frames');
+ worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME']);
+ input.frame();worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME']);
+ input.allowSame();input.frame();worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME','SAME']);
+ input.pause({keepStream:true});worker.onmessage({data:{codes:[{value:'PAUSED'}]}});assert.deepEqual(codes,['SAME','SAME']);
+ input.stop();assert.equal(worker.terminated,true);assert.equal(trackStops,1);
+ worker.onmessage({data:{codes:[{value:'STALE'}]}});assert.deepEqual(codes,['SAME','SAME']);
+});
+
+test('worker startup failure retains the local offline decoder',async t=>{
+ const previous={navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),document:globalThis.document,Worker:globalThis.Worker};
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async()=>({getTracks:()=>[]})}}});
+ globalThis.document={createElement:()=>({getContext:()=>({})})};
+ const workers=[];globalThis.Worker=class {constructor(){workers.push(this);}terminate(){this.terminated=true;}};
+ const input=new ScannerInput(()=>{});
+ t.after(()=>{input.dispose();Object.defineProperty(globalThis,'navigator',previous.navigator);globalThis.document=previous.document;if(previous.Worker===undefined)delete globalThis.Worker;else globalThis.Worker=previous.Worker;});
+ await input.start({async play(){}});assert.equal(typeof input.decode,'function');
+ workers[0].onerror({preventDefault(){}});
+ assert.equal(input.decoderWorker,null);assert.equal(workers[0].terminated,true);assert.equal(typeof input.decode,'function');assert.ok(input.stream);
+});

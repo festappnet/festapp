@@ -8,6 +8,12 @@ export class ScannerController {
         if (this.state !== 'ready') return;
         if (!symbol || symbol.length > 200 || /^(festapp-login:|https?:)/i.test(symbol)) { this.state='error';this.error = 'wrong_mode'; this.emit(); return; }
         const serial = ++this.serial; this.state = 'looking_up'; this.error = null; this.emit();
+        // Durable pending admissions must be known before confirmation is shown.
+        // Read them alongside the network request rather than after its response.
+        const outbox = (async () => {
+            try { return this.store ? await this.store.list('outbox', this.row.partition) : null; }
+            catch { return null; }
+        })();
         try {
             let ticket;
             if (this.online()) {
@@ -21,11 +27,12 @@ export class ScannerController {
                 if (!offlineGrantValid(this.row, Date.now(), performance.now() - this.started)) throw new Error('offline_grant_expired');
                 ticket = { ...await this.store.lookup(this.row.partition, symbol.trim()), source: 'offline' };
             }
+            const operations = await outbox;
             if (serial !== this.serial) return;
             this.ticket = ticket;
             this.offlineReady = ticket.source==='offline' && offlineGrantValid(this.row);
-            let pending = null;
-            if (this.store) { try { pending = (await this.store.list('outbox', this.row.partition)).find(r => r.payload.ticket_id === ticket.ticket_id && !isTerminal(r.state)); } catch { this.store = null; } }
+            if (operations === null) this.store = null;
+            const pending = operations?.find(r => r.payload.ticket_id === ticket.ticket_id && !isTerminal(r.state));
             this.operation = pending || null; this.state = pending ? pending.state : 'result';
         } catch (e) { if (serial !== this.serial) return; this.error = e.message; this.state = 'error'; }
         this.emit();

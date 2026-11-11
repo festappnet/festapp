@@ -206,3 +206,53 @@ test('automatic offline preparation uses complete snapshot size, includes 1000, 
   }
  }finally{if(previous)Object.defineProperty(globalThis,'navigator',previous);else delete globalThis.navigator;}
 });
+
+
+test('passive recovery retains the review DOM, scroll, disclosures and pinned actions',async()=>{
+ const dom=new JSDOM('<div id="scanner"></div>',{url:'https://vstupenky.online/scan'});
+ const previous={document:globalThis.document,navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator')};
+ globalThis.document=dom.window.document;Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
+ try {
+  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
+  page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+  page.row={session:{title:'Ples',capabilities:{},settings:{fields:[]}}};
+  page.input={stop(){}};
+  page.api={summary:async()=>({used_current:2,eligible_total:40})};
+  page.controller={state:'result',ticket:{symbol:'TEST',state:'sent',source:'online',admission_allowed:true,products:[],fields:Array.from({length:8},(_,i)=>({key:`field-${i}`,label:`Field ${i}`,value:'Value',default_visible:true}))}};
+  page.render();
+  const detail=page.host.querySelector('.scan-detail'),disclosure=detail.querySelector('details'),confirm=page.host.querySelector('[data-confirm]');
+  detail.scrollTop=180;disclosure.open=true;confirm.focus();
+  assert.equal(confirm.closest('.scan-detail'),null,'admission controls are outside scrolling content');
+  assert.ok(confirm.closest('.scan-review-footer'));
+  assert.equal(page.host.querySelectorAll('[data-mode=camera]').length,0,'review has only one explicit return action');
+  await page.recover();
+  assert.equal(page.host.querySelector('.scan-detail'),detail);
+  assert.equal(detail.scrollTop,180);assert.equal(disclosure.open,true);
+  assert.equal(page.host.querySelector('[data-confirm]'),confirm);assert.equal(document.activeElement,confirm);
+  page.storageAvailable=false;page.render();
+  assert.equal(page.host.querySelector('[data-confirm]'),null,'storage loss invalidates preserved admission controls');
+  assert.equal(page.host.querySelector('.scan-detail').scrollTop,180);
+  assert.equal(page.host.querySelector('.scan-detail details').open,true);
+ }finally{dom.window.close();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);}
+});
+
+test('explicit return admits the same code to a new review; automatic return retains duplicate suppression',async()=>{
+ const dom=new JSDOM('<div id="scanner"></div>',{url:'https://vstupenky.online/scan'});
+ const previous={document:globalThis.document,navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator')};
+ globalThis.document=dom.window.document;Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
+ try {
+  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:{list:async()=>[]}});
+  page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+  page.row={partition:'fixture',session:{title:'Ples',capabilities:{},settings:{fields:[]}}};
+  let resets=0,lookups=0;
+  page.input={stop(){},allowSame(){resets++;}};
+  page.api={lookup:async symbol=>{lookups++;return {symbol,ticket_id:1,state:'sent',source:'online',admission_allowed:true,products:[],fields:[]};}};
+  page.controller=page.createController();
+  await page.loadCodes(['SAME']);
+  page.host.querySelector('[data-next]').click();
+  assert.equal(resets,1);assert.equal(page.controller.state,'ready');
+  await page.loadCodes(['SAME']);assert.equal(lookups,2);assert.equal(page.batch,null);
+  page.nextScan('manual',{auto:true});assert.equal(resets,1);
+  page.disposeControllers();clearTimeout(page.advanceTimer);
+ }finally{dom.window.close();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);}
+});

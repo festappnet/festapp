@@ -191,7 +191,7 @@ body.dark-mode .scan-shell .scan-primary:hover:not(:disabled) {background:#a0cdf
 @media(max-width:899px){.scan-layout.has-result:not(.camera-mode) .scan-input{display:none}}
 
 @media(max-width:899px) {
-    .scan-layout.camera-mode.has-result {height:calc(100dvh - 130px - var(--scan-bottom-reserve,0px));min-height:320px;grid-template-rows:auto minmax(0,1fr);gap:12px}
+    .scan-layout.camera-mode.has-result {height:calc(100dvh - 130px - var(--scan-bottom-reserve,0px));min-height:0;grid-template-rows:auto minmax(0,1fr);gap:12px}
     .scan-layout.camera-mode.has-result .scan-input {position:static;padding:0;border:0;background:transparent}
     .scan-layout.camera-mode.has-result .scan-camera {height:min(20dvh,160px);max-height:none}
     .scan-layout.camera-mode.has-result .scan-detail {min-height:0;overflow:auto;overscroll-behavior:contain;scroll-padding-block:16px}
@@ -346,4 +346,23 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
     .scan-entry .scan-entry-intro {margin-bottom:24px}
     .scan-entry [data-open] {gap:20px}
     .scan-saved {padding:0 4px}
+}
+
+/* Review controls belong to the viewport, outside the ticket's scrolling content. */
+.scan-shell.has-review-footer {padding-bottom:calc(var(--scan-bottom-reserve,140px) + 24px)}
+.scan-review-footer {position:fixed;inset-inline:0;bottom:0;z-index:20;background:var(--surface-color);border-top:1px solid var(--scan-line);padding:12px max(24px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+.scan-review-actions {max-width:1184px;margin:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:12px}
+.scan-review-footer .scan-actions,.scan-review-footer .scan-group-actions {display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px;margin:0;padding:0;border:0}
+.scan-review-footer button {min-height:52px}
+.scan-review-footer [data-next],.scan-review-footer [data-group-next] {border-color:transparent;color:var(--primary-color)}
+.scan-review-footer .scan-primary[data-next] {color:var(--white)}
+.scan-review-footer .scan-unpaid {flex-basis:100%;margin:0;color:var(--text-color)}
+.scan-lookup {display:flex;align-items:center;justify-content:center;gap:16px;min-height:120px;padding:24px 0;color:var(--scan-muted)}
+.scan-lookup h2 {margin:0;font-size:1.1rem;font-weight:500}
+.scan-lookup .scan-spinner {width:24px;height:24px;margin:0;flex-shrink:0}
+@media(max-width:599px){
+    .scan-review-footer {padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right))}
+    .scan-review-actions,.scan-review-footer .scan-actions,.scan-review-footer .scan-group-actions {width:100%;gap:8px}
+    .scan-review-footer button {flex:1;min-width:0;padding-inline:12px}
+    .scan-review-footer [data-next],.scan-review-footer [data-group-next] {font-size:.95rem}
 }

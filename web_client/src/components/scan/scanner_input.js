@@ -11,17 +11,41 @@ export class ScannerInput {
             this.stream=stream;
             video.srcObject = this.stream; video.muted = true; video.playsInline = true; await video.play();
             const { default: jsQR } = await import('jsqr');
-            if (!this.stream) return;
-            this.decode = jsQR; this.canvas = document.createElement('canvas'); this.context = this.canvas.getContext('2d', { willReadFrequently: true });
+            if (generation!==this.generation || !this.stream) return;
+            this.decode=jsQR;
+            this.canvas = document.createElement('canvas'); this.context = this.canvas.getContext('2d', { willReadFrequently: true });
+            if (typeof Worker === 'function') {
+                try {
+                    const worker = new Worker(new URL('./scanner_decoder_worker.js', import.meta.url), { type: 'module' });
+                    this.decoderWorker = worker;
+                    worker.onmessage = ({ data }) => {
+                        if (generation!==this.generation || this.decoderWorker!==worker) return;
+                        this.decodingFrame = false;
+                        if (!this.paused) this.dispatchCodes(data.codes);
+                    };
+                    worker.onerror = event => {
+                        event.preventDefault?.();
+                        if (generation!==this.generation || this.decoderWorker!==worker) return;
+                        worker.terminate();this.decoderWorker=null;this.decodingFrame=false;
+                    };
+                } catch { /* The already-loaded local decoder remains available. */ }
+            }
+            if (generation!==this.generation || !this.stream) return;
             this.timer = setInterval(() => this.frame(), 180);
         } catch (e) { this.stop(); throw new Error(e.name === 'NotAllowedError' ? 'camera_denied' : 'camera_unavailable'); }
     }
     frame() {
-        if (this.paused || !this.video?.videoWidth) return;
+        if (this.paused || this.decodingFrame || !this.video?.videoWidth || (!this.decoderWorker && !this.decode)) return;
         const w = Math.min(960, this.video.videoWidth), h = Math.round(this.video.videoHeight * w / this.video.videoWidth);
         this.canvas.width = w; this.canvas.height = h; this.context.drawImage(this.video, 0, 0, w, h);
         const pixels = this.context.getImageData(0, 0, w, h);
-        const codes=decodeQRCodes(pixels.data,w,h,this.decode);
+        if (this.decoderWorker) {
+            this.decodingFrame=true;
+            this.decoderWorker.postMessage({pixels:pixels.data,width:w,height:h},[pixels.data.buffer]);
+        } else this.dispatchCodes(decodeQRCodes(pixels.data,w,h,this.decode));
+    }
+    dispatchCodes(codes) {
+        if (this.paused) return;
         const visible=new Set(codes.map(c=>c.value));
         for(const value of this.suppressedCodes)if(!visible.has(value))this.suppressedCodes.delete(value);
         const fresh=codes.filter(c=>!this.suppressedCodes.has(c.value)).map(c=>c.value);
@@ -38,6 +62,6 @@ export class ScannerInput {
         const track = this.stream?.getVideoTracks()[0];
         if (track?.getCapabilities?.().torch) { this.torchOn = !this.torchOn; await track.applyConstraints({ advanced: [{ torch: this.torchOn }] }); }
     }
-    stop() { this.generation++; clearInterval(this.timer); this.stream?.getTracks().forEach(t => t.stop()); this.stream = null; }
+    stop() { this.generation++; clearInterval(this.timer); this.decoderWorker?.terminate();this.decoderWorker=null;this.decodingFrame=false;this.decode=null; this.stream?.getTracks().forEach(t => t.stop()); this.stream = null; }
     dispose() { this.stop(); this.onCode = () => {}; }
 }

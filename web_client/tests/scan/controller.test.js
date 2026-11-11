@@ -8,3 +8,24 @@ test('stale lookup cannot overwrite a newer UI generation',async()=>{let resolve
 test('C17 reception payload and arbitrary URLs are never ticket inputs',async()=>{let called=false;const c=await setup({lookup:async()=>{called=true;}});await c.loadCode('festapp-login:v1:1:SECRET');await c.loadCode('https://external.invalid/');assert.equal(called,false);assert.equal(c.error,'wrong_mode');c.store.close();});
 test('runtime quota failure never produces local pending success',async()=>{const c=await setup();c.online=()=>true;await c.loadCode('A');c.store.enqueue=async()=>{throw new Error('QuotaExceededError');};await c.confirm();assert.equal(c.state,'error');assert.equal(c.operation,null);c.store.close();});
 test('network hint can be wrong: failed lookup reads a prepared snapshot',async()=>{const c=await setup({lookup:async()=>{throw Object.assign(new Error('network_error'),{code:0});}});c.online=()=>true;c.store.lookup=async()=>({ticket_id:9,symbol:'A',admission_allowed:true});await c.loadCode('A');assert.equal(c.ticket.source,'offline');assert.equal(c.state,'result');c.store.close();});
+
+test('lookup reads durable pending operations while the network is in flight',async()=>{
+ let resolveLookup,resolveOutbox,outboxStarted=false;
+ const c=await setup({lookup:()=>new Promise(resolve=>{resolveLookup=resolve;})});c.online=()=>true;
+ c.store.list=()=>{outboxStarted=true;return new Promise(resolve=>{resolveOutbox=resolve;});};
+ const loading=c.loadCode('CODE');
+ assert.equal(outboxStarted,true,'local pending checks must overlap network latency');
+ const pending={key:'pending',state:'pending',payload:{ticket_id:1}};
+ resolveOutbox([pending]);resolveLookup({ticket_id:1,symbol:'CODE',source:'online',admission_allowed:true});
+ await loading;
+ assert.equal(c.state,'pending');assert.equal(c.operation,pending,'pending admission cannot become confirmable again');c.store.close();
+});
+
+test('disposed lookup cannot publish a result after a slow outbox read',async()=>{
+ let resolveOutbox,readingOutbox;
+ const started=new Promise(resolve=>{readingOutbox=resolve;});
+ const c=await setup();c.online=()=>true;
+ c.store.list=()=>{readingOutbox();return new Promise(resolve=>{resolveOutbox=resolve;});};
+ const loading=c.loadCode('CODE');await started;c.dispose();resolveOutbox([]);await loading;
+ assert.notEqual(c.state,'result');assert.equal(c.ticket,undefined);c.store.close();
+});
