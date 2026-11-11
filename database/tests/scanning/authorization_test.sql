@@ -38,6 +38,9 @@ BEGIN
  UPDATE public.scanner_settings SET config=jsonb_set(config,'{manual_search,tickets}','true') WHERE occasion_id=(b->>'occasion')::bigint;
  response:=public.search_scanner_tickets((sb#>>'{data,session_id}')::uuid,sb#>>'{data,token}',(SELECT ticket_symbol FROM eshop.tickets WHERE id=foreign_ticket));
  PERFORM assert_eq(jsonb_array_length(response->'data'),0,'foreign ticket absent from manual search');
+ UPDATE eshop.orders SET data=jsonb_set(data,'{email}','"foreign-customer@example.test"') WHERE occasion=(a->>'occasion')::bigint;
+ response:=public.search_scanner_tickets((sb#>>'{data,session_id}')::uuid,sb#>>'{data,token}','foreign-customer@example.test');
+ PERFORM assert_eq(jsonb_array_length(response->'data'),0,'foreign event email is absent from search');
  -- Search rows are references, not proof of admission or event membership.
  response:=public.lookup_scanner_ticket_by_id((sb#>>'{data,session_id}')::uuid,sb#>>'{data,token}',foreign_ticket);
  PERFORM assert_eq((response->>'code')::int,404,'foreign ID lookup denied');

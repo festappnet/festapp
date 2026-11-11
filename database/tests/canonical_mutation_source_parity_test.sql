@@ -2018,16 +2018,16 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_lookup_ticket_internal(uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e1e24b26663c6e6853ffe0be43fffd3f'),'current SQL source parity: public.scanner_lookup_ticket_internal(uuid,text,text,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_settings_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='2b1717b65933cede78c39b44f5d6230d'),'current SQL source parity: public.scanner_settings_rule(boolean,boolean,boolean)');
--- supabase/migrations/20261111170000_scanner_search_previews.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_ticket_projection_internal(bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ebe3e41140a8d104dc81a56812d06f44'),'current SQL source parity: public.scanner_ticket_projection_internal(bigint,jsonb,bigint)');
+-- supabase/migrations/20261111180000_scanner_unified_search.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_ticket_projection_internal(bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='578946e101f0606a5eb418b136a9f30b'),'current SQL source parity: public.scanner_ticket_projection_internal(bigint,jsonb,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_entry_navigation_rule(boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f0258b7a3cc8e3a024dee1a96d34d407'),'current SQL source parity: public.schedule_entry_navigation_rule(boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_feedback_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='a546bbfc24dce06e231e832a11ddb4b4'),'current SQL source parity: public.schedule_feedback_read_rule(boolean,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_participants_read_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7f6977ddb21f0e2044e154b4428275d1'),'current SQL source parity: public.schedule_participants_read_rule(boolean,boolean,boolean)');
--- supabase/migrations/20261111140000_scanner_search_and_bank_movements.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.search_scanner_tickets(uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ecf18baa1e0b6014d730826ea3e67980'),'current SQL source parity: public.search_scanner_tickets(uuid,text,text,bigint)');
+-- supabase/migrations/20261111180000_scanner_unified_search.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.search_scanner_tickets(uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9f423b755d88155f43af2484e69554aa'),'current SQL source parity: public.search_scanner_tickets(uuid,text,text,bigint)');
 -- supabase/migrations/20261110220000_automatic_form_blueprints.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.seating_admissions_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='94ec9720b675040f9de8c9c00d14a513'),'current SQL source parity: public.seating_admissions_internal(bigint)');
 -- supabase/migrations/20261110220000_automatic_form_blueprints.sql

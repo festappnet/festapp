@@ -23,6 +23,7 @@ export class ScanPage extends Component {
         this.sound=new ScannerFeedback();this.feedbackStates=new WeakMap();
         this.mode = 'camera'; this.rows = []; this.history = []; this.summaryAt = 0; this.online = navigator.onLine; this.disposed = false;
     }
+    get canSearchTickets() { return Boolean(this.row?.session.capabilities.search_tickets); }
     get canSearchUsers() { return AppConfig.isAppSupported && Boolean(this.row?.session.capabilities.search_users); }
     async init(route) {
         this.onGesture=event=>{if(event.target.closest?.('[data-sound]'))return;this.sound.unlock().then(()=>this.updateSoundControl());};
@@ -137,7 +138,7 @@ export class ScanPage extends Component {
         else {this.controller.scanSymbol=null;this.controller.unpaidConfirmed=false;this.controller.next();}
         if(!auto)this.input.allowSame?.();
         this.input.paused=false;this.render();
-        if(this.mode==='camera'){if(this.input.stream)this.updateCameraState();else if(!auto||this.cameraWasStarted)this.startCamera();}else this.host.querySelector('[name=symbol]')?.focus();
+        if(this.mode==='camera'){if(this.input.stream)this.updateCameraState();else if(!auto||this.cameraWasStarted)this.startCamera();}else this.host.querySelector('[name=query]')?.focus();
     }
     resultHtml(c,inGroup=false) {
         return scanResult({...c,inGroup},this.storageAvailable && !this.authBlocked && !this.row.locked && !this.batchConfirming);
@@ -221,7 +222,8 @@ export class ScanPage extends Component {
         const reviewing=Boolean(this.batch || c && c.state!=='ready');
         const navigationBusy=Boolean(this.batchConfirming)||this.controllers().some(controller=>['persisting','looking_up','awaiting_server'].includes(controller.state));
         if (!this.canSearchUsers && this.searchScope==='users') { this.searchScope='tickets';this.searchResults=[]; }
-        const drafts = !this.row || this.renderedSession===this.row.session && this.mode==='manual' ? [...this.host.querySelectorAll('[data-open] input,[data-code] input:not(:disabled),[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
+        if(!this.canSearchTickets && this.canSearchUsers)this.searchScope='users';
+        const drafts = !this.row || this.renderedSession===this.row.session && this.mode==='manual' ? [...this.host.querySelectorAll('[data-open] input,[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
         if (!this.row && drafts.length) this.entryDraft = Object.fromEntries(drafts.map(({name,value})=>[name,value]));
         const liveVideo = this.mode==='camera' && this.route.page==='scan' && this.input?.stream ? this.input.video : null;
         if (!liveVideo) this.input?.stop();
@@ -233,8 +235,7 @@ export class ScanPage extends Component {
         <button data-prepare ${this.preparing || !this.store || !navigator.onLine ? 'disabled' : ''}>${tr('prepare')}</button><button data-retry>${tr('retry')}</button><p>${tr('logout_note')}</p><button data-lock>${tr('logout')}</button>
         <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && c?.state==='ready'?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.batch?'is-group':''} ${this.mode==='camera' && !this.batch && c?.state==='ready'?'camera-ready':''} ${this.batch || c && c.state !== 'ready' ? 'has-result' : ''}"><section class="scan-input">
-        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video>${reviewing?`<button class="scan-camera-expand" data-camera-expand aria-label="${tr('camera_expand')}" title="${tr('camera_expand')}" ${navigationBusy?'disabled':''}>${icon('expand')}</button>`:''}<div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-code><label>${tr('symbol')}<input name="symbol" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" ${c?.state!=='ready' ? 'disabled' : ''}></label><button ${c?.state!=='ready' ? 'disabled' : ''}>${icon('scan')}${tr('lookup')}</button></form>${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}${!this.cameraUnavailable?`<p class="scan-manual-note">${tr('manual_once')}</p>`:''}`}
-        ${this.mode==='manual' && (this.row.session.capabilities.search_tickets || this.canSearchUsers) ? `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.row.session.capabilities.search_tickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr('search')}<input name="query" type="search" autocomplete="off" enterkeyhint="search" minlength="2" maxlength="100" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}` : ''}</section>
+        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video>${reviewing?`<button class="scan-camera-expand" data-camera-expand aria-label="${tr('camera_expand')}" title="${tr('camera_expand')}" ${navigationBusy?'disabled':''}>${icon('expand')}</button>`:''}<div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}${!this.cameraUnavailable?`<p class="scan-manual-note">${tr('manual_once')}</p>`:''}`}</section>
         ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('expand')}${tr('camera_expand')}</button><button data-mode="manual">${icon('manual')}${tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${this.batchHtml()}${c && !this.batch ? this.resultHtml(c) : ''}</section></div>`;
         // Recovery updates the shell counters without recreating the review surface.
         // Keep native disclosure state, focused controls and the actual scrolling node.
@@ -319,7 +320,6 @@ export class ScanPage extends Component {
         const open=this.host.querySelector('[data-open]'); if(open) open.onsubmit=ev=>{ev.preventDefault();this.open({p_scan_code:open.elements.code.value,p_device_name:open.elements.device.value});};
         this.host.querySelectorAll('[data-session]').forEach(b=>b.onclick=()=>{const row=this.rows[Number(b.dataset.session)]; this.authBlocked=Boolean(row.locked);this.select(row);});
         this.host.querySelectorAll('[data-mode]').forEach(b=>{b.disabled=Boolean(this.batchConfirming)||this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state));b.onclick=()=>this.nextScan(b.dataset.mode);});
-        const code=this.host.querySelector('[data-code]'); if(code) code.onsubmit=ev=>{ev.preventDefault();this.controller.loadCode(code.elements.symbol.value);};
         const search=this.host.querySelector('[data-search]');
         if(search){
             search.setAttribute('aria-busy',String(Boolean(this.searchPending)));
@@ -404,7 +404,12 @@ export class ScanPage extends Component {
         if(query.length<2 && !immediate){
             this.searchPending=false;this.searchResults=[];this.render();return;
         }
-        if(immediate)return this.search(0);
+        if(!this.canSearchTickets && !this.canSearchUsers){
+            this.searchPending=false;this.searchResults=[];
+            if(immediate)return this.controller.loadTicket({symbol:query});
+            return;
+        }
+        if(immediate)return this.search(0,{openExact:true});
         this.searchPending=true;
         const form=this.host.querySelector('[data-search]');
         form?.setAttribute('aria-busy','true');
@@ -413,7 +418,7 @@ export class ScanPage extends Component {
         const error=this.host.querySelector('#scan-search-error');if(error)error.hidden=true;
         this.searchTimer=setTimeout(()=>{this.searchTimer=null;this.search(0);},350);
     }
-    async search(after) {
+    async search(after,{openExact=false}={}) {
         clearTimeout(this.searchTimer);this.searchTimer=null;
 
         if(this.disposed)return;
@@ -428,12 +433,15 @@ export class ScanPage extends Component {
             if (!navigator.onLine) {
                 if (scope==='users' || !offlineGrantValid(row)) throw new Error('offline_grant_expired');
                 const normalized=query.toLocaleLowerCase();
-                results=(await this.store.list('tickets',row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name || ''} ${t.purchaser_name || ''} ${t.batch_title || ''} ${t.symbol || ''}`.toLocaleLowerCase().includes(normalized)).slice(0,30);
+                results=(await this.store.list('tickets',row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name || ''} ${t.purchaser_name || ''} ${t.purchaser_email || ''} ${t.batch_title || ''} ${t.symbol || ''}`.toLocaleLowerCase().includes(normalized)).slice(0,30);
             } else if (scope==='users') {
                 results=(await this.api.call('search_scanner_users',{p_query:query,...(after?{p_after:after}:{})})).data;
             } else results=await this.api.search(query,after);
             if(!current())return;
             this.searchPending=false;this.searchResults=results;this.render();
+            const exact=openExact && results.find(t=>t.symbol?.toLocaleLowerCase()===query.toLocaleLowerCase());
+            if(exact)await this.controller.loadTicket(exact);
+            else if(openExact && scope==='users' && !results.length)await this.controller.loadTicket({symbol:query});
         } catch(err) {
             if(!current())return;
             this.searchPending=false;this.searchError=err.message;this.searchResults=[];this.render();this.host.querySelector('[data-search] [name=query]')?.focus({preventScroll:true});

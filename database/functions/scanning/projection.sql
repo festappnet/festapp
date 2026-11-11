@@ -9,7 +9,7 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  WHERE z.ticket=t.id AND (oz.occasion IS DISTINCT FROM t.occasion OR oz.state IN ('stock','storno','waitlisted','preparing_payment'))) bad_order
  FROM eshop.tickets t
  JOIN LATERAL (SELECT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=t.id ORDER BY x."order" LIMIT 1) x ON true
- JOIN eshop.orders o ON o.id=x."order"
+ JOIN eshop.orders o ON o.id=x."order" AND o.occasion=p_occasion
  LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info
  LEFT JOIN LATERAL (SELECT value FROM jsonb_array_elements(coalesce(o.data->'tickets','[]'::jsonb)) WHERE value->>'id'=t.id::text LIMIT 1) td ON true
  WHERE t.occasion=p_occasion AND (p_ticket IS NULL OR t.id=p_ticket)
@@ -18,6 +18,9 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  (SELECT string_agg(nullif(trim(a.value#>>'{}'),''),' ' ORDER BY CASE ff.type WHEN 'name' THEN 0 ELSE 1 END)
  FROM jsonb_array_elements(coalesce(b.order_data->'fields','[]'::jsonb)) e CROSS JOIN LATERAL jsonb_each(e) a
  JOIN public.form_fields ff ON ff.id::text=a.key AND ff.form=b.form AND NOT ff.is_ticket_field WHERE ff.type IN ('name','surname'))) purchaser_name,
+ coalesce(nullif(trim(b.order_data->>'email'),''),
+ (SELECT nullif(trim(a.value#>>'{}'),'') FROM jsonb_array_elements(coalesce(b.order_data->'fields','[]'::jsonb)) e CROSS JOIN LATERAL jsonb_each(e) a
+ JOIN public.form_fields ff ON ff.id::text=a.key AND ff.form=b.form AND NOT ff.is_ticket_field WHERE ff.type='email' LIMIT 1)) purchaser_email,
  coalesce((SELECT string_agg(a.value#>>'{}',' ' ORDER BY CASE ff.type WHEN 'name' THEN 0 ELSE 1 END)
  FROM jsonb_array_elements(coalesce(b.data->'fields','[]'::jsonb)) e CROSS JOIN LATERAL jsonb_each(e) a
  JOIN public.form_fields ff ON ff.id::text=a.key AND ff.form=b.form AND ff.is_ticket_field WHERE ff.type IN ('name','surname')),
@@ -27,7 +30,7 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  FROM base b)
  SELECT b.id,jsonb_strip_nulls(jsonb_build_object('ticket_id',b.id,'symbol',b.ticket_symbol,'state',b.state,'updated_at',b.updated_at,
  'batch_title',(SELECT tb.title FROM eshop.ticket_batch_items bi JOIN eshop.ticket_batches tb ON tb.id=bi.batch_id WHERE bi.ticket_id=b.id AND tb.occasion=p_occasion),
- 'order_id',b.oid,'order_state',b.order_state,'purchaser_name',b.purchaser_name,'holder_name',b.holder_name,'admission_allowed',coalesce(b.eligible AND (b.state<>'ordered' OR (p_config#>>'{admission,allow_unpaid_online}')::boolean),false),
+ 'order_id',b.oid,'order_state',b.order_state,'purchaser_name',b.purchaser_name,'purchaser_email',CASE WHEN (p_config#>>'{manual_search,tickets}')::boolean THEN b.purchaser_email END,'holder_name',b.holder_name,'admission_allowed',coalesce(b.eligible AND (b.state<>'ordered' OR (p_config#>>'{admission,allow_unpaid_online}')::boolean),false),
  'requires_unpaid_confirmation',b.state='ordered' AND NOT b.bad_order AND b.order_state<>'stock','unavailable_reason',CASE WHEN b.order_state='stock' THEN 'not_sold' END,'online_required',b.online_required,
  'eligibility_fingerprint',encode(digest(jsonb_build_object('v',1,'id',b.id,'symbol',b.ticket_symbol,'state',b.state,'updated',b.updated_at,
  'parents',(SELECT jsonb_agg(CASE WHEN pi.payment_method<>'bank' THEN jsonb_build_array(o.id,o.state,o.updated_at,pi.amount,pi.paid,pi.returned,pi.payment_method,o.email_payment_version) ELSE jsonb_build_array(o.id,o.state,o.updated_at,pi.amount,pi.paid) END ORDER BY o.id) FROM eshop.order_product_ticket z JOIN eshop.orders o ON o.id=z."order" LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE z.ticket=b.id))::text,'sha256'),'hex'),

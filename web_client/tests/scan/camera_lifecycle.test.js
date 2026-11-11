@@ -70,13 +70,13 @@ test('manual entry from a single result or group starts a focused, usable next-t
         page.controller=page.createController();
         await page.controller.loadCode('PREVIOUS');
         page.host.querySelector('[data-mode=manual]').click();
-        const input=page.host.querySelector('[name=symbol]');
+        const input=page.host.querySelector('[name=query]');
         assert.equal(input.disabled,false);assert.equal(input.value,'');
         assert.equal(document.activeElement,input);assert.equal(page.controller.state,'ready');
         input.value='NEXT-TICKET';page.render();
-        assert.equal(page.host.querySelector('[name=symbol]').value,'NEXT-TICKET','summary rendering preserves the typed draft');
-        assert.equal(document.activeElement,page.host.querySelector('[name=symbol]'),'summary rendering preserves keyboard focus');
-        page.host.querySelector('[data-code] button').click();
+        assert.equal(page.host.querySelector('[name=query]').value,'NEXT-TICKET','summary rendering preserves the typed draft');
+        assert.equal(document.activeElement,page.host.querySelector('[name=query]'),'summary rendering preserves keyboard focus');
+        page.host.querySelector('[data-search]').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
         await new Promise(resolve=>setImmediate(resolve));
         assert.equal(page.controller.ticket.symbol,'NEXT-TICKET');
         assert.deepEqual(lookups,['PREVIOUS','NEXT-TICKET']);
@@ -85,8 +85,8 @@ test('manual entry from a single result or group starts a focused, usable next-t
         page.batch[1].controller.state='error';page.batch[1].controller.error='not_found';
         page.render();page.host.querySelector('[data-mode=manual]').click();
         assert.equal(page.batch,null);assert.equal(page.controller.state,'ready');
-        assert.equal(page.host.querySelector('[name=symbol]').disabled,false);
-        assert.equal(document.activeElement,page.host.querySelector('[name=symbol]'));
+        assert.equal(page.host.querySelector('[name=query]').disabled,false);
+        assert.equal(document.activeElement,page.host.querySelector('[name=query]'));
         page.row.session.capabilities.search_tickets=true;page.render();
         const search=page.host.querySelector('[data-search]');
         search.elements.query.value='a';search.dispatchEvent(new dom.window.Event('submit',{cancelable:true}));

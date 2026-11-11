@@ -18,13 +18,15 @@ for (const supported of [false,true]) for (const tickets of [false,true]) for (c
             const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
             page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
             page.row={session:{title:'Ples',capabilities:{search_tickets:tickets,search_users:users},settings:{fields:[]}}};
-            page.controller={state:'ready'};
+            page.controller={state:'ready',loadTicket:row=>calls.push(['code',row.symbol])};
             page.searchScope='users';page.searchResults=[{symbol:'old-user',holder_name:'Old user'}];
             const calls=[];
             page.api={async search(query){calls.push(['tickets',query]);return [];},async call(name,params){calls.push([name,params.p_query]);return {data:[]};}};
             page.render();
             const form=page.host.querySelector('[data-search]');
-            assert.equal(Boolean(form),tickets || supported && users);
+            assert.ok(form);
+            assert.equal(page.host.querySelectorAll('.scan-input input').length,1,'code, name and email share one field');
+            assert.equal(page.host.querySelector('[data-code]'),null);
             assert.equal(Boolean(page.host.querySelector('[data-search-scope]')),tickets && supported && users);
             if (!supported || !users) {
                 assert.equal(page.searchScope,'tickets');
@@ -34,7 +36,7 @@ for (const supported of [false,true]) for (const tickets of [false,true]) for (c
                 form.elements.query.value='Novák';
                 form.dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
                 await new Promise(resolve=>setImmediate(resolve));
-                assert.deepEqual(calls,[[supported && users?'search_scanner_users':'tickets','Novák']]);
+                assert.deepEqual(calls,supported && users?[["search_scanner_users",'Novák'],['code','Novák']]:[[tickets?'tickets':'code','Novák']]);
             }
             if(!supported && tickets){
                 page.searchScope='users';page.searchQuery='Novák';
@@ -188,4 +190,29 @@ test('selecting another event cancels the pending typed search',async t=>{
  type('Novák');t.mock.timers.tick(200);
  await page.select({session:{title:'Jiný ples',capabilities:{search_tickets:true},settings:{fields:[]}}});
  t.mock.timers.tick(1000);assert.equal(calls,0);assert.equal(input().value,'');assert.deepEqual(page.searchResults,[]);
+});
+
+
+test('one field searches names, email and code; Enter opens only an exact ticket code',async t=>{
+ const {page,input,type,dom}=liveSearchPage(t),calls=[],selected=[];
+ const ticket={ticket_id:2,symbol:'CODE123',purchaser_name:'Jana Nováková',purchaser_email:'jana@example.test',state:'sent'};
+ page.api.search=async query=>{calls.push(query);return [ticket];};
+ page.controller.loadTicket=async row=>selected.push(row);
+ for(const query of ['Jana','jana@example.test','CODE']){type(query);t.mock.timers.tick(350);await Promise.resolve();assert.equal(selected.length,0);}
+ assert.deepEqual(calls,['Jana','jana@example.test','CODE']);
+ assert.match(page.host.querySelector('[data-search-ticket]').textContent,/jana@example.test/);
+ type('code123');input().dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Enter',cancelable:true}));await Promise.resolve();
+ assert.deepEqual(selected,[ticket]);t.mock.timers.tick(1000);assert.equal(calls.length,4);
+});
+
+
+test('unified email search uses only the active offline snapshot',async t=>{
+ const {page}=liveSearchPage(t),now=Date.now();
+ Object.assign(page.row,{partition:'current-event',serverAt:now,wallAt:now});
+ page.row.session.offline_until=new Date(now+3600000).toISOString();
+ navigator.onLine=false;
+ page.store={list:async(kind,partition)=>{assert.equal(kind,'tickets');assert.equal(partition,'current-event');return [{ticket:{ticket_id:2,symbol:'CODE',purchaser_email:'jana@example.test'}}];}};
+ page.api.search=()=>assert.fail('offline search must not request the network');
+ page.searchQuery='JANA@EXAMPLE.TEST';await page.search(0);
+ assert.deepEqual(page.searchResults.map(t=>t.ticket_id),[2]);
 });
