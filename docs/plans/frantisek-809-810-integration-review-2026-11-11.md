@@ -162,7 +162,7 @@ needed to establish the defects. No redesign is proposed.
 2. Require all eight canonical GitHub checks on the resulting exact main SHA.
 3. Prepare only the selected festapptickets tenant overlay with main-owned drift
    policy and a new version; preserve current production ancestry.
-4. Apply the canonical forward migration 20261111140000_measurement_websites.sql
+4. Apply the canonical forward migration 20261111150000_measurement_websites.sql
    through the protected backend workflow. Deploy the changed approval email
    renderer with its Functions owner, preserving pause/drain/restart/probe
    requirements. A frontend-only release would leave this workflow incomplete.

@@ -105,3 +105,13 @@ No source publication, production migration, Functions reload or deployment was
 performed. Full source CI and release gates remain required for publication and
 the separately authorized selected-tenant release. No live browser E2E claim is
 made for the widget captures.
+
+## Authorized integration and release
+
+The user's subsequent instruction explicitly authorizes publication to main and
+deployment to prod/festapptickets only. Preserve the canonical local/GitHub CI
+and protected backend/Functions release gates. Main advanced to b6c46e476 with
+scanner/bank fixes and migration version 20261111140000. To avoid a ledger version
+collision, the unpublished website migration was renamed to 20261111150000 with
+its bytes unchanged; the lifecycle forward remains 20261111160000. Regenerate
+source parity and validate the reconciled tree before publication.
