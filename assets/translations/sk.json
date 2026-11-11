@@ -3149,6 +3149,16 @@
         "bankManualPrepared": "Údaje k prevodu sú pripravené. QR pre túto menu nie je dostupný. Banka prevod zatiaľ nepotvrdila."
     },
     "MemberAccess": {
+    "selectedRecipients": "Vybraní príjemcovia",
+    "currentPermissions": "Súčasné oprávnenia",
+    "noPermissions": "Bez ďalších oprávnení",
+    "preservePermissions": "Existujúce oprávnenia zostanú zachované. Zoznam zobrazuje uložené členstvo.",
+    "additionalPermissions": "Vyberte ďalšie oprávnenia, ktoré ponúknete všetkým vybraným osobám. Existujúce oprávnenia zostanú zachované.",
+    "sendSelected": "Odoslať vybraným používateľom",
+    "retryFailed": "Opakovať nepotvrdené požiadavky",
+    "batchPartial": "Niektoré požiadavky sa nepodarilo potvrdiť. Skontrolujte príjemcov a opakujte iba nepotvrdené požiadavky.",
+    "selectionUnavailable": "Niektoré vybrané riadky nie sú uložené alebo už neexistujú. Zatvorte dialóg, uložte alebo znova načítajte tabuľku a vyberte používateľov znova.",
+    "is_cleaning_blocked": "Blokovanie upratovania",
         "title": "Prístup a pozvánky",
         "email": "Prihlasovací e-mail",
         "intent": "Akcia",

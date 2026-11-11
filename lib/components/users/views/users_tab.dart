@@ -116,8 +116,16 @@ class _UsersTabState extends State<UsersTab> {
 
   SingleDataGridController<OccasionUserModel> _createController() {
     final headerActions = [
-      if (RightsService.canUpdateUsers()) DataGridAction(name: MemberAccessStrings.text('title'),
-        action: (SingleDataGridController p0, [_]) => MemberAccessDialog.show(context, 'occasion', RightsService.currentOccasionId()!)),
+      if (RightsService.canUpdateUsers())
+        DataGridAction(
+          name: MemberAccessStrings.text('title'),
+          action: (SingleDataGridController p0, [_]) => MemberAccessDialog.show(
+            context,
+            'occasion',
+            RightsService.currentOccasionId()!,
+            grid: p0,
+          ),
+        ),
       if (RightsService.hasCapability(
         AuthorizationCapabilities.participantsWrite,
       ))

@@ -1,5 +1,10 @@
 import 'dart:async';
 
+import 'package:fstapp/services/exception_handler.dart';
+
+import '../member_access_batch.dart';
+import '../../single_data_grid/single_data_grid_controller.dart';
+
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,15 +18,52 @@ class MemberAccessDialog extends StatefulWidget {
     super.key,
     required this.scope,
     required this.scopeId,
+    this.recipients = const [],
+    this.selectionUnavailable = false,
   });
+  final List<MemberAccessRecipient> recipients;
+  final bool selectionUnavailable;
   final String scope;
   final int scopeId;
-  static Future<void> show(BuildContext context, String scope, int id) =>
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => MemberAccessDialog(scope: scope, scopeId: id),
-      );
+  static Future<void> show(
+    BuildContext context,
+    String scope,
+    int id, {
+    SingleDataGridController? grid,
+  }) async {
+    final openingContext = ClientSyncRuntime.mutationContextToken;
+    final openingActor = Supabase.instance.client.auth.currentUser?.id;
+    final selected =
+        grid?.visibleCheckedRows
+            .map((row) => grid.fromPlutoJson(row.toJson()).id)
+            .toSet() ??
+        {};
+    // Reload saved values: grid cells may contain uncommitted role edits.
+    final selection = await ExceptionHandler.guard(
+      context,
+      defaultErrorMessage: MemberAccessStrings.text('loadFailed'),
+      futureFunction: () async => MemberAccessSelection(
+        selected.cast<Object?>(),
+        selected.isEmpty ? [] : (await grid!.loadData()).cast<Object>(),
+      ),
+    );
+    if (selection == null) return;
+    if (!context.mounted ||
+        !ClientSyncRuntime.isCurrentMutationContext(openingContext) ||
+        openingActor != Supabase.instance.client.auth.currentUser?.id)
+      return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => MemberAccessDialog(
+        scope: scope,
+        scopeId: id,
+        recipients: selection.recipients,
+        selectionUnavailable: selection.unavailable,
+      ),
+    );
+  }
+
   @override
   State<MemberAccessDialog> createState() => _MemberAccessDialogState();
 }
@@ -35,6 +77,9 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
     'is_editor_view': true,
     'is_manager': false,
   };
+  MemberAccessBatch? batch;
+  bool get selected => widget.recipients.isNotEmpty;
+  bool get intentLocked => batch != null;
   Map<String, dynamic>? status;
   bool busy = false;
   bool invalidated = false;
@@ -46,6 +91,10 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
   @override
   void initState() {
     super.initState();
+    if (selected) {
+      mode = 'notify_existing_access';
+      roles.updateAll((_, value) => false);
+    }
     actor = Supabase.instance.client.auth.currentUser?.id;
     authChanges = Supabase.instance.client.auth.onAuthStateChange.listen(
       (_) => contextChanged(),
@@ -112,30 +161,15 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
       await action();
       if (mounted)
         setState(() {
-          outcome = success ?? t('queued');
+          outcome =
+              success ??
+              t(batch != null && !batch!.complete ? 'batchPartial' : 'queued');
         });
       await load();
     } on MemberAccessFailure catch (error) {
-      const reasons = {
-        'invalid_email',
-        'scope_denied',
-        'credential_operation_denied',
-        'version_conflict',
-        'command_payload_conflict',
-        'preparation_deferred',
-        'invitation_expired',
-        'invitation_revoked',
-        'wrong_identity',
-        'upgrade_required',
-        'dispatch_unresolved',
-        'invitation_pending',
-        'membership_required',
-      };
       if (mounted)
         setState(() {
-          outcome = t(
-            reasons.contains(error.reasonCode) ? error.reasonCode : 'failed',
-          );
+          outcome = failureText(error.reasonCode);
         });
     } catch (_) {
       if (mounted)
@@ -151,6 +185,28 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
   }
 
   Future<void> send() => run(() async {
+    if (widget.selectionUnavailable) return;
+    if (selected) {
+      batch ??= MemberAccessBatch(
+        scope: widget.scope,
+        scopeId: widget.scopeId,
+        recipients: widget.recipients,
+        communication: mode,
+        offeredRoles: roles,
+      );
+      await batch!.send(
+        commands.send,
+        isCurrent: () =>
+            mounted &&
+            !invalidated &&
+            actor == Supabase.instance.client.auth.currentUser?.id &&
+            ClientSyncRuntime.isCurrentMutationContext(contextToken),
+        onProgress: () {
+          if (mounted) setState(() {});
+        },
+      );
+      return;
+    }
     final address = email.text.trim().toLowerCase();
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(address))
       throw const MemberAccessFailure('invalid_email');
@@ -169,6 +225,54 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
         },
     });
   });
+  String failureText(String reason) {
+    const reasons = {
+      'invalid_email',
+      'scope_denied',
+      'credential_operation_denied',
+      'version_conflict',
+      'command_payload_conflict',
+      'preparation_deferred',
+      'invitation_expired',
+      'invitation_revoked',
+      'wrong_identity',
+      'upgrade_required',
+      'dispatch_unresolved',
+      'invitation_pending',
+      'membership_required',
+    };
+    return t(reasons.contains(reason) ? reason : 'failed');
+  }
+
+  String recipientDescription(MemberAccessRecipient recipient) {
+    final granted = recipient.roles.entries
+        .where((entry) => entry.value)
+        .map((entry) => t(entry.key))
+        .join(', ');
+    final lines = [
+      '${t('currentPermissions')}: ${granted.isEmpty ? t('noPermissions') : granted}',
+    ];
+    final receipt = batch?.confirmed[recipient.userId];
+    if (receipt != null) {
+      final communication = receipt['communication'] as Map?;
+      final messageId = communication?['messageId'];
+      final messages = status?['messages'] as List? ?? [];
+      final matching = messages.where(
+        (message) => message['messageId'] == messageId,
+      );
+      lines.add(
+        t(
+          matching.isEmpty
+              ? (communication?['state'] as String? ?? 'queued')
+              : matching.first['state'] as String,
+        ),
+      );
+    } else if (batch?.failures[recipient.userId] != null) {
+      lines.add(failureText(batch!.failures[recipient.userId]!));
+    }
+    return lines.join('\n');
+  }
+
   @override
   Widget build(BuildContext context) {
     if (invalidated) return const SizedBox.shrink();
@@ -193,12 +297,31 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
               children: [
                 Text(t('explanation')),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: email,
-                  enabled: !busy,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(labelText: t('email')),
-                ),
+                if (widget.selectionUnavailable)
+                  Text(t('selectionUnavailable')),
+                if (selected) ...[
+                  Text(
+                    '${t('selectedRecipients')} (${widget.recipients.length})',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(t('preservePermissions')),
+                  for (final recipient in widget.recipients)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        recipient.name.isEmpty
+                            ? recipient.email
+                            : '${recipient.name}\n${recipient.email}',
+                      ),
+                      subtitle: Text(recipientDescription(recipient)),
+                    ),
+                ] else
+                  TextField(
+                    controller: email,
+                    enabled: !busy,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(labelText: t('email')),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: mode,
@@ -208,24 +331,26 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
                     for (final value in [
                       'invite_to_accept',
                       'notify_existing_access',
-                      'save_and_notify',
+                      if (!selected) 'save_and_notify',
                       if (widget.scope == 'occasion') 'participant_credentials',
                     ])
                       DropdownMenuItem(value: value, child: Text(t(value))),
                   ],
-                  onChanged: busy
+                  onChanged: busy || intentLocked
                       ? null
                       : (value) => setState(() {
                           mode = value!;
                         }),
                 ),
+                if (selected && mode == 'invite_to_accept')
+                  Text(t('additionalPermissions')),
                 if (mode == 'invite_to_accept' || mode == 'save_and_notify')
                   for (final entry in roles.entries.toList())
                     CheckboxListTile(
                       title: Text(t(entry.key)),
                       value: entry.value,
                       contentPadding: EdgeInsets.zero,
-                      onChanged: busy
+                      onChanged: busy || intentLocked
                           ? null
                           : (value) => setState(() {
                               roles[entry.key] = value!;
@@ -322,8 +447,23 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
         actions: [
           TextButton(onPressed: busy ? null : close, child: Text(t('close'))),
           FilledButton(
-            onPressed: busy ? null : send,
-            child: Text(busy ? t('working') : t('send')),
+            onPressed:
+                busy ||
+                    widget.selectionUnavailable ||
+                    batch?.complete == true ||
+                    (mode == 'invite_to_accept' &&
+                        !roles.values.any((value) => value))
+                ? null
+                : send,
+            child: Text(
+              busy
+                  ? t('working')
+                  : batch != null && !batch!.complete
+                  ? t('retryFailed')
+                  : selected
+                  ? t('sendSelected')
+                  : t('send'),
+            ),
           ),
         ],
       ),

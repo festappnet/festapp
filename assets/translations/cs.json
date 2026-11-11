@@ -5305,6 +5305,16 @@
         "bankManualPrepared": "Údaje k převodu jsou připravené. QR pro tuto měnu není dostupný. Převod zatím nebyl potvrzen bankou."
     },
     "MemberAccess": {
+    "selectedRecipients": "Vybraní příjemci",
+    "currentPermissions": "Současná oprávnění",
+    "noPermissions": "Bez dalších oprávnění",
+    "preservePermissions": "Stávající oprávnění zůstanou zachována. Seznam zobrazuje uložené členství.",
+    "additionalPermissions": "Vyberte další oprávnění, která nabídnete všem vybraným osobám. Stávající oprávnění zůstanou zachována.",
+    "sendSelected": "Odeslat vybraným uživatelům",
+    "retryFailed": "Opakovat nepotvrzené požadavky",
+    "batchPartial": "Některé požadavky se nepodařilo potvrdit. Zkontrolujte jednotlivé příjemce a opakujte pouze nepotvrzené požadavky.",
+    "selectionUnavailable": "Některé vybrané řádky nejsou uložené nebo již neexistují. Zavřete dialog, uložte nebo znovu načtěte tabulku a vyberte uživatele znovu.",
+    "is_cleaning_blocked": "Blokování úklidu",
         "title": "Přístup a pozvánky",
         "email": "Přihlašovací e-mail",
         "intent": "Akce",

@@ -58,8 +58,16 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
       getNewObject: () => UnitUserModel.newRow(widget.unit.id!),
       headerChildren: [
         if (RightsService.canUpdateUnitUsers())
-          DataGridAction(name: MemberAccessStrings.text('title'),
-            action: (SingleDataGridController p0, [_]) => MemberAccessDialog.show(context, 'unit', widget.unit.id!)),
+          DataGridAction(
+            name: MemberAccessStrings.text('title'),
+            action: (SingleDataGridController p0, [_]) =>
+                MemberAccessDialog.show(
+                  context,
+                  'unit',
+                  widget.unit.id!,
+                  grid: p0,
+                ),
+          ),
         if (RightsService.hasCapability(
           AuthorizationCapabilities.unitUsersWrite,
         ))
