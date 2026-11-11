@@ -66,8 +66,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   EmailAuthoringContext? _authoringContext;
   late final Future<void> _initialAuthoringContext;
   bool _authoringContextLoading = false;
-  bool _contextUnavailable = false;
-  bool _usesOccasionProducts = false;
   Timer? _suggestTimer;
   bool _dismissSuggestions = false;
   ({
@@ -133,8 +131,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         _examples = examples;
         _refreshScenarios();
         _previewError = false;
-        _contextUnavailable = examples.contextUnavailable;
-        _usesOccasionProducts = examples.usesOccasionProducts;
       });
       _subjectEditor.refreshAuthoringPresentation();
       _bodyDraft?.refreshAuthoringPresentation();
@@ -289,93 +285,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       ),
     );
   }
-
-  String get _sampleOrigin => _usesOccasionProducts
-      ? EmailTemplatesStrings.occasionSample
-      : EmailTemplatesStrings.modelSample;
-
-  Widget _sampleControls({VoidCallback? onChanged}) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      if (_scenario != null)
-        Text(_sampleOrigin, style: Theme.of(context).textTheme.bodySmall),
-      if (_contextUnavailable || _previewError)
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-              _previewError
-                  ? EmailTemplatesStrings.previewUnavailable
-                  : EmailTemplatesStrings.contextUnavailable,
-            ),
-            IconButton(
-              tooltip: MaterialLocalizations.of(context)
-                  .refreshIndicatorSemanticLabel,
-              onPressed: () async {
-                await _loadExamples();
-                onChanged?.call();
-              },
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
-        ),
-      if (_scenarios.length > 1) const SizedBox(height: 8),
-      if (_scenarios.length > 1)
-        DropdownButtonFormField<EmailPreviewScenario>(
-          value: _scenario,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: EmailTemplatesStrings.scenario,
-            isDense: true,
-            border: const OutlineInputBorder(),
-          ),
-          items: _scenarios
-              .map(
-                (s) => DropdownMenuItem(
-                  value: s,
-                  child: Text(
-                    _scenarioLabel(s),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value == null) return;
-            setState(() {
-              _scenario = value;
-              _subjectProvider.scenario = value;
-              _bodyProvider.scenario = value;
-            });
-            _subjectEditor.refreshAuthoringPresentation();
-            _bodyDraft?.refreshAuthoringPresentation();
-            onChanged?.call();
-          },
-        ),
-    ],
-  );
-
-  String _scenarioLabel(EmailPreviewScenario scenario) =>
-      '${EmailTemplatesStrings.scenarioName(scenario.scenario)} · ${scenario.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(scenario.tone)}';
-
-  Future<void> _showSampleSettings() => showDialog<void>(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, update) => AppAlertDialog(
-        title: Text(EmailTemplatesStrings.scenario),
-        onClose: () => Navigator.pop(context),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
-        content: SizedBox(
-          width: 440,
-          child: _sampleControls(
-            onChanged: () {
-              if (context.mounted) update(() {});
-            },
-          ),
-        ),
-      ),
-    ),
-  );
 
   Future<void> _showVariableHelp() => showDialog<void>(
     context: context,
@@ -841,41 +750,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                   ),
-                  Flexible(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          onPressed: _showVariableHelp,
-                          tooltip: EmailTemplatesStrings.variableGuide,
-                          icon: const Icon(Icons.info_outline, size: 20),
-                        ),
-                        Flexible(
-                          child: Tooltip(
-                            message:
-                                '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
-                            child: TextButton.icon(
-                              onPressed: _showSampleSettings,
-                              icon: Icon(
-                                _contextUnavailable || _previewError
-                                    ? Icons.warning_amber_outlined
-                                    : Icons.tune,
-                                size: 20,
-                              ),
-                              label: Text(
-                                _scenario == null
-                                    ? EmailTemplatesStrings.scenario
-                                    : EmailTemplatesStrings.toneName(
-                                        _scenario!.tone,
-                                      ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  IconButton(
+                    onPressed: _showVariableHelp,
+                    tooltip: EmailTemplatesStrings.variableGuide,
+                    icon: const Icon(Icons.info_outline, size: 20),
                   ),
                 ],
               ),

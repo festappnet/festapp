@@ -106,73 +106,117 @@ Future<void> openTemplate(
 }
 
 void main() {
-  testWidgets('waitlist offer dialog renders inherited wording as atomic blocks',
-      (tester) async {
-    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
-    addTearDown(logs.dispose);
-    tester.view.physicalSize = const Size(1400, 1100);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final examples = EmailPreviewExamples.fromJson(jsonDecode(
-        File('assets/email_templates/preview_examples.json').readAsStringSync()));
-    final pendingExamples = Completer<EmailPreviewExamples>();
-    const html = '<h2>{{waitlist_offer_heading}}</h2>'
-        '<p>Pro přihlášku <strong>{{orderSymbol}}</strong> na '
-        '{{occasionTitle}} nabízíme {{offered_places}}. Nabídka platí do '
-        '{{offer_expires_at}}.</p><p>{{waitlist_offer_instructions}}</p>'
-        '<p>{{offer_button}}</p>';
-    await openTemplate(tester,
+  testWidgets(
+    'waitlist offer dialog renders inherited wording as atomic blocks',
+    (tester) async {
+      final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+      addTearDown(logs.dispose);
+      tester.view.physicalSize = const Size(1400, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final examples = EmailPreviewExamples.fromJson(
+        jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync(),
+        ),
+      );
+      final pendingExamples = Completer<EmailPreviewExamples>();
+      const html =
+          '<h2>{{waitlist_offer_heading}}</h2>'
+          '<p>Pro přihlášku <strong>{{orderSymbol}}</strong> na '
+          '{{occasionTitle}} nabízíme {{offered_places}}. Nabídka platí do '
+          '{{offer_expires_at}}.</p><p>{{waitlist_offer_instructions}}</p>'
+          '<p>{{offer_button}}</p>';
+      await openTemplate(
+        tester,
         code: 'waitlist_offer',
         occasionTitle: 'Adventní duchovní obnova',
         html: html,
         previewExamplesLoader: () => pendingExamples.future,
         authoringContextLoader: () async =>
-            const EmailAuthoringContext(senderAddress: 'info@example.invalid'));
-    final body = tester
-        .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
-        .last.controller;
-    expect(body.editor.document.whereType<TemplateTokenBlock>(), hasLength(3));
-    pendingExamples.complete(examples);
-    await tester.pumpAndSettle();
-    final scenario = examples.scenariosFor('waitlist_offer').first;
-    for (final code in ['waitlist_offer_heading', 'waitlist_offer_instructions']) {
-      expect(find.text(scenario.values[code]!, findRichText: true), findsOneWidget);
-      expect(find.text('{{$code}}', findRichText: true), findsNothing);
-    }
-    expect(body.hasUnsupportedTokens, isFalse);
-    expect(body.hasUserChanges, isFalse);
-    expect(body.html, html);
-    await tester.pumpWidget(const SizedBox());
-  });
+            const EmailAuthoringContext(senderAddress: 'info@example.invalid'),
+      );
+      final body = tester
+          .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+          .last
+          .controller;
+      expect(
+        body.editor.document.whereType<TemplateTokenBlock>(),
+        hasLength(3),
+      );
+      pendingExamples.complete(examples);
+      await tester.pumpAndSettle();
+      final scenario = examples.scenariosFor('waitlist_offer').first;
+      for (final code in [
+        'waitlist_offer_heading',
+        'waitlist_offer_instructions',
+      ]) {
+        expect(
+          find.text(scenario.values[code]!, findRichText: true),
+          findsOneWidget,
+        );
+        expect(find.text('{{$code}}', findRichText: true), findsNothing);
+      }
+      expect(body.hasUnsupportedTokens, isFalse);
+      expect(body.hasUserChanges, isFalse);
+      expect(body.html, html);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
-  testWidgets('default waitlist preview follows the informal single application context', (tester) async {
-    tester.view.physicalSize = const Size(1200, 1100);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final examples = EmailPreviewExamples.fromJson(
-      jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()),
-      context: const EmailPreviewContext(
-        occasionTitle: 'Duchovní obnova', communicationTone: 'informal',
-        ticketsEnabled: false, blueprintEnabled: false),
-    );
-    await openTemplate(tester, code: 'waitlist_offer', occasionTitle: 'Duchovní obnova',
-      html: '<h2>{{waitlist_offer_heading}}</h2><p>{{offered_places}}</p><p>{{waitlist_offer_instructions}}</p>{{offer_button}}',
-      previewExamplesLoader: () async => examples,
-      authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'poradatel@example.invalid'),
-    );
-    expect(find.text(EmailTemplatesStrings.toneName('informal')), findsOneWidget);
-    await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
-    await tester.tap(find.byIcon(Icons.preview_outlined).first);
-    await tester.pumpAndSettle();
-    final received = examples.scenariosFor('waitlist_offer').firstWhere((s) => s.tone == 'informal');
-    expect(find.byWidgetPredicate((w) => w is EmailPreviewHtml &&
-      w.html.contains(received.values['waitlist_offer_heading']!) &&
-      w.html.contains(received.values['offered_places']!) &&
-      w.html.contains(received.values['waitlist_offer_instructions']!)), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-  });
+  testWidgets(
+    'default waitlist preview follows the informal single application context',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final examples = EmailPreviewExamples.fromJson(
+        jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync(),
+        ),
+        context: const EmailPreviewContext(
+          occasionTitle: 'Duchovní obnova',
+          communicationTone: 'informal',
+          ticketsEnabled: false,
+          blueprintEnabled: false,
+        ),
+      );
+      await openTemplate(
+        tester,
+        code: 'waitlist_offer',
+        occasionTitle: 'Duchovní obnova',
+        html: '<h2>{{waitlist_offer_heading}}</h2><p>{{offered_places}}</p><p>{{waitlist_offer_instructions}}</p>{{offer_button}}',
+        previewExamplesLoader: () async => examples,
+        authoringContextLoader: () async => const EmailAuthoringContext(
+          senderAddress: 'poradatel@example.invalid',
+        ),
+      );
+      expect(
+        find.text(EmailTemplatesStrings.toneName('informal')),
+        findsNothing,
+      );
+      await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
+      await tester.tap(find.byIcon(Icons.preview_outlined).first);
+      await tester.pumpAndSettle();
+      final received = examples
+          .scenariosFor('waitlist_offer')
+          .firstWhere((s) => s.tone == 'informal');
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is EmailPreviewHtml &&
+              w.html.contains(received.values['waitlist_offer_heading']!) &&
+              w.html.contains(received.values['offered_places']!) &&
+              w.html.contains(received.values['waitlist_offer_instructions']!),
+        ),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   for (final code in [
     'waitlist_confirmation',
@@ -183,9 +227,7 @@ void main() {
     'TICKET_ORDER_REMINDER',
     'TICKET_ORDER_STORNO',
   ]) {
-    testWidgets('$code switches tone in the received preview and editor', (
-      tester,
-    ) async {
+    testWidgets('$code inherits tone without preview settings', (tester) async {
       tester.view.physicalSize = const Size(1200, 1100);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -225,7 +267,6 @@ void main() {
           : '${code}_heading';
       final scenarios = examples.scenariosFor(code);
       final formal = scenarios.firstWhere((s) => s.tone == 'formal');
-      final informal = scenarios.firstWhere((s) => s.tone == 'informal');
       expect(
         find.byWidgetPredicate(
           (w) =>
@@ -233,36 +274,17 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text(EmailTemplatesStrings.toneName('formal')), findsNothing);
       expect(
-        find.text(EmailTemplatesStrings.toneName('formal')),
-        findsOneWidget,
+        find.text(EmailTemplatesStrings.toneName('informal')),
+        findsNothing,
       );
-      expect(find.text('{{$heading}}', findRichText: true), findsNothing);
-      final header = find.ancestor(
-        of: find.text(EmailTemplatesStrings.emailTemplateContent),
-        matching: find.byType(Row),
-      ).first;
-      final settings = find.widgetWithIcon(TextButton, Icons.tune);
-      expect(tester.getRect(settings).right,
-          closeTo(tester.getRect(header).right, 1));
-      await tester.ensureVisible(settings);
-      await tester.tap(settings);
-      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.tune), findsNothing);
       final selector = find.byWidgetPredicate(
         (w) => w is DropdownButtonFormField<EmailPreviewScenario>,
       );
-      await tester.tap(selector);
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find
-            .text(
-              '${EmailTemplatesStrings.scenarioName(informal.scenario)} · ${informal.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(informal.tone)}',
-            )
-            .last,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(CommonStrings.close).last);
-      await tester.pumpAndSettle();
+      expect(selector, findsNothing);
+      expect(find.text('{{$heading}}', findRichText: true), findsNothing);
       await tester.scrollUntilVisible(
         find.byIcon(Icons.preview_outlined),
         -200,
@@ -275,30 +297,18 @@ void main() {
       final received = tester.widget<EmailReceivedMessage>(
         find.byType(EmailReceivedMessage),
       );
-      expect(received.html, contains(informal.values[heading]));
-      expect(received.html, isNot(contains(formal.values[heading])));
+      expect(received.html, contains(formal.values[heading]));
       expect(received.html, isNot(contains('{{')));
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(
         find.byWidgetPredicate(
           (w) =>
-              w is EmailPreviewHtml &&
-              w.html.contains(informal.values[heading]!),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.byWidgetPredicate(
-          (w) =>
               w is EmailPreviewHtml && w.html.contains(formal.values[heading]!),
         ),
-        findsNothing,
-      );
-      expect(
-        find.text(EmailTemplatesStrings.toneName('informal')),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.tune), findsNothing);
       expect(editor.html, original);
       expect(editor.hasUserChanges, isFalse);
     });
@@ -640,19 +650,38 @@ void main() {
       },
     );
   }
-  testWidgets('body toolbar chooser is usable in a long template dialog', (tester) async {
+  testWidgets('body toolbar chooser is usable in a long template dialog', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    await openTemplate(tester, occasionTitle: 'Ples',
-        html: '<p>{{orderCommunication}}</p><p>{{balanceReasoning}}</p>'
-            '<p>{{fullOrder}}</p><p>Signature</p>');
-    final bodyController = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+    await openTemplate(
+      tester,
+      occasionTitle: 'Ples',
+      html:
+          '<p>{{orderCommunication}}</p><p>{{balanceReasoning}}</p>'
+          '<p>{{fullOrder}}</p><p>Signature</p>',
+    );
+    final bodyController = tester
+        .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .last
+        .controller;
     final textNode = bodyController.editor.document.whereType<TextNode>().last;
     bodyController.editor.execute([
-      ChangeSelectionRequest(DocumentSelection(
-          base: DocumentPosition(nodeId: textNode.id, nodePosition: const TextNodePosition(offset: 0)),
-          extent: DocumentPosition(nodeId: textNode.id, nodePosition: const TextNodePosition(offset: 5))),
-          SelectionChangeType.expandSelection, SelectionReason.userInteraction),
+      ChangeSelectionRequest(
+        DocumentSelection(
+          base: DocumentPosition(
+            nodeId: textNode.id,
+            nodePosition: const TextNodePosition(offset: 0),
+          ),
+          extent: DocumentPosition(
+            nodeId: textNode.id,
+            nodePosition: const TextNodePosition(offset: 5),
+          ),
+        ),
+        SelectionChangeType.expandSelection,
+        SelectionReason.userInteraction,
+      ),
     ]);
     final button = find.byIcon(Icons.alternate_email).last;
     await tester.ensureVisible(button);
@@ -663,7 +692,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
-    final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+    final body = tester
+        .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
+        .last
+        .controller;
     expect(body.html, contains('{{amount}}'));
     await tester.pumpWidget(const SizedBox());
     debugDefaultTargetPlatformOverride = null;
