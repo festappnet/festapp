@@ -8,8 +8,11 @@ and PR [#810](https://github.com/festappnet/festapp/pull/810), head
 `2e19d58d682a94dabe433ec1ca75f56e2c4c5283`, against canonical main
 `5a01046df343d003eec4f3caf8f44f5011267c4c`.
 
-No blocking correctness issue was found in the reviewed changes. Both PRs
-had eight successful required GitHub checks at those individual heads.
+The deeper review supersedes the initial no-blocker assessment: #809 has a
+confirmed request lifecycle defect and two UX issues described below. Hold its
+merge until these are fixed. No blocking defect was found in #810 within the
+reviewed scope. Both PRs had eight successful required GitHub checks at their
+individual heads; those passing checks did not cover the newly identified cases.
 The combined local integration preserves both implementations and resolves
 the changelog conflict. Its Czech and English recommendation now lists both
 Complianz and CookieConsent v3, removing the stale Complianz-only statement
@@ -47,6 +50,103 @@ The first Flutter selection used a literal name expression and collected no
 cases; the corrected regular-expression selection executed all 25 cases above.
 No browser visual verification was performed. No production changes were made
 for this follow-up review; the currently deployed release remains 0.20.568+1079.
+
+## Deeper review: findings
+
+### Standards and code correctness
+
+**P2 - A withdrawn website request can become permanently unrequestable.**
+`database/functions/eshop_forms/unit_measurement_approval.sql:57-60` treats
+historical requested_origins as an active request even when there are no
+remaining deliverable notifications. On an already approved Unit, request B,
+remove B before delivery, let delivery cancel the invalid request, then re-add B.
+The request RPC returns its old revision and emits no new email. UI newSites
+also compares against that historical snapshot and hides/disables the retry.
+The ordinary idempotency rule therefore incorrectly spans a withdrawal.
+
+The hardened disposable PostgreSQL reproduction used real request/status/intent
+functions and actual public.claim_email() twice, each returning {"skipped":true},
+followed by the real request RPC again after re-adding B. Result: revision 1,
+two cancelled notifications, zero deliverable notifications. No direct workflow
+state assignment was used for these messages. Other disposable fixture messages
+were deferred and capacity configured only within the rolled-back transaction.
+This is not a production test or an assertion that an email was actually delivered.
+The worker cancellation branch is email_queue.sql:213-215. Durable script/log:
+/Users/miakh/Library/Caches/festapp-reviews/809-810/request-lifecycle-repro.cjs
+and request-lifecycle-repro.log. All reproduction writes were rolled back.
+
+Fix direction: give the current request an explicit actionable lifecycle bound
+to the saved proposal, distinguish it from historical requests, and allow a new
+generation after withdrawal/cancellation while retaining idempotency for repeated
+unchanged active requests. Keep request lifecycle in the canonical SQL command
+boundary and expose its derived status to UI/MCP. Do not add a persistent trigger
+or let the Flutter screen become a second authority for request eligibility.
+Add regression coverage for remove/cancel/re-add and repeated active retries.
+
+No hard documented architectural or authorization violation was found in the
+Unit aggregate, platform-only approval boundary, SQL predicates, private table
+ACLs, forward migration or CookieConsent adapter seam. Duplicating the origin
+regex between Flutter and the shared contract is a maintenance concern rather
+than a demonstrated standards violation; derive/reuse validation when revising
+the field so changes cannot drift independently.
+
+### Spec
+
+The request lifecycle defect violates #809's promise that a newly added,
+unapproved website can create another request. #807's two-state approved/pending
+wording is insufficient for a multi-step save/request workflow: implementing it
+literally produces the UX ambiguity below. #810 matches its stated opt-in,
+revision, expiry, service-category, TCF and invalid-source behavior. No unrelated
+scope expansion was identified.
+
+### UX: adaptive Flutter surface
+
+**P2 - The status UI conflates draft, unrequested, unknown and pending.**
+`unit_measurement_settings.dart:148-150` calls every origin not present in
+approvedOrigins “Čeká na potvrzení platformou”, even before Save or Request and
+when loading approval failed. Moreover, lines 165-173 show “Měření zatím není
+platformou povoleno” on an already approved Unit with a new website and no past
+request. This incorrectly implies previously working measurement is disabled.
+Separate Unit measurement approval from each website's draft, saved/unrequested,
+requested, approved and unavailable states. Derive persisted request eligibility
+from backend state; keep unsaved draft state local. Make the next action explicit.
+
+**P2 - Invalid website input silently disables the request.**
+`unit_measurement_settings.dart:146,179-184` disables Request for an invalid
+origin but shows no field error while editing. Pasting the common full URL
+https://poradatel.cz/vstupenky leaves a disabled button and a misleading pending
+label. The six-state Flutter reproduction asserts the button is disabled while
+the validation message is absent. Show validation after interaction and use the
+same validator at submission; explain why the action is unavailable.
+
+Visual verification used the actual Flutter component and ThemeConfig, Czech
+catalog and Futura font assets at desktop width 1000 and mobile width 390,
+including text scale 2. Six rendered states passed without layout exceptions:
+desktop/mobile draft, invalid input, requested, approval-load failure and large
+text. Captures are in
+/Users/miakh/Library/Caches/festapp-reviews/809-810/.
+This is a native/adaptive widget render review, not browser E2E; no live server,
+browser overlay, markup detector or production operation was used. The harness
+exercises the real component with controlled callbacks/statuses, not a live
+request. Icon font rendering in the test engine is not production visual evidence.
+The temporary rendering harness was removed after capture.
+
+Native UX heuristic assessment (0 poor, 4 strong): status visibility 1; match to
+user mental model 2; user control/recovery 1; consistency 3; error prevention 2;
+recognition over recall 2; efficiency 3; visual restraint 3; error explanation 1;
+help/documentation 3. Strengths: established field/button components, explicit
+platform-only approval and bounded input. The main cognitive burden is separating
+saving, requesting and actual approval when the screen presents them as one state.
+Questions skipped: this is the requested bounded review, with no product decision
+needed to establish the defects. No redesign is proposed.
+
+### Recommended order
+
+1. Correct #809's request lifecycle in SQL and expose authoritative request state.
+2. Use that state for truthful origin labels and separate Unit approval messaging.
+3. Make input validation visible and exercise retries, save failure and invalid data.
+4. Retain #810's adapter boundary; no rewrite is justified by this review.
+5. Rerun affected checks on corrected inputs before source publication and release.
 
 ## Integration and release sequence
 
