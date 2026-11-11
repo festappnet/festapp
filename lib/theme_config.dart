@@ -9,10 +9,10 @@ class ThemeConfig {
   static const bool isDarkModeEnabled = true;
   static const AdaptiveThemeMode defaultThemeMode = AdaptiveThemeMode.light;
 
-  static final fontFamily = "Futura";
+  static final fontFamily = "Cerebri-Sans";
   // Generated from the configured bold face's OpenType cap-height metric.
   // ignore: unnecessary_nullable_for_final_variable_declarations
-  static const double? boldCapHeightRatio = 0.682;
+  static const double? boldCapHeightRatio = 0.70556640625;
 
   /// The single shared Material 3 factory for application and local themes.
   static ThemeData theme({Brightness brightness = Brightness.light}) {
@@ -147,10 +147,10 @@ class ThemeConfig {
   static Color logoBackgroundColor(BuildContext context) =>
       backgroundColor(context);
 
-  static Color seed1 = const Color(0xFF253759);
-  static Color seed2 = const Color(0xFF80BDF2);
-  static Color seed3 = const Color(0xFF4465A6);
-  static Color seed4 = const Color(0xFF0D0D0D);
+  static Color seed1 = const Color(0xFFD0B26C);
+  static Color seed2 = const Color(0xFF9687CA);
+  static Color seed3 = const Color(0xFF290694);
+  static Color seed4 = const Color(0xFFAF83B6);
 
   static Color attentionColor(BuildContext context) => const Color(0xFF8B0000);
 
