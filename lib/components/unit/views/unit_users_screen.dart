@@ -85,7 +85,10 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
         ),
       ],
       columnHelp: UserColumns.columnHelp,
-      columns: UserColumns.generateColumns(columnIdentifiers),
+      columns: UserColumns.generateColumns(
+        columnIdentifiers,
+        canEditProfile: RightsService.canUpdateUnitUsers,
+      ),
     );
 
     return SingleTableDataGrid<UnitUserModel>(controller!);

@@ -73,7 +73,7 @@ class UserColumns {
         INVITED: UserStrings.invitedHelp,
       };
 
-  static Map<String, dynamic> get columnBuilders => {
+  static Map<String, dynamic> _columnBuilders(bool canEditProfile) => {
         EMAIL_HISTORY: [
           TrinaColumn(
               title: EmailDeliveryStrings.title,
@@ -123,7 +123,7 @@ class UserColumns {
         NAME: [
           TrinaColumn(
             title: UserStrings.name,
-            enableEditingMode: RightsService.canUpdateUsers(),
+            enableEditingMode: canEditProfile,
             field: NAME,
             type: TrinaColumnType.text(),
             width: 120,
@@ -165,7 +165,7 @@ class UserColumns {
         SURNAME: [
           TrinaColumn(
             title: UserStrings.surname,
-            enableEditingMode: RightsService.canUpdateUsers(),
+            enableEditingMode: canEditProfile,
             field: SURNAME,
             type: TrinaColumnType.text(),
             width: 120,
@@ -192,7 +192,7 @@ class UserColumns {
         SEX: [
           TrinaColumn(
             title: UserStrings.sex,
-            enableEditingMode: RightsService.canUpdateUsers(),
+            enableEditingMode: canEditProfile,
             field: SEX,
             type: TrinaColumnType.select(
               UserInfoModel.sexes,
@@ -418,7 +418,10 @@ class UserColumns {
       };
 
   static List<TrinaColumn> generateColumns(List<String> identifiers,
-      {Map<String, dynamic>? data}) {
+      {Map<String, dynamic>? data, bool Function()? canEditProfile}) {
+    final columnBuilders = _columnBuilders(
+      (canEditProfile ?? RightsService.canUpdateUsers)(),
+    );
     return identifiers
         .where((id) => columnBuilders.containsKey(id))
         .expand((id) {
