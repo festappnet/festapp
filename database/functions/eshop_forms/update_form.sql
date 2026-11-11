@@ -131,6 +131,7 @@ BEGIN
         analytics_write_requested:=CASE WHEN input_data ? 'settings' THEN
           coalesce((input_data->'settings') ? 'analytics',false) ELSE
           public.normalize_form_metadata_internal(input_data->'data') ? 'analytics' END;
+        PERFORM public.guard_form_payment_write_internal(form_metadata,form_metadata,input_data);
         input_data:=public.guard_form_presale_write_internal(form_metadata,input_data);
         IF input_data ? 'settings' THEN
           form_metadata:=public.apply_form_settings_internal(form_metadata,input_data->'settings');
@@ -163,6 +164,13 @@ BEGIN
             previous_form_metadata->'payments',public.normalize_form_metadata_internal(input_data->'data')->'payments'));
           form_metadata:=public.apply_form_settings_internal(form_metadata,
             public.form_settings_from_metadata_internal(form_metadata));
+        END IF;
+
+        form_metadata:=public.guard_form_payment_write_internal(previous_form_metadata,form_metadata,input_data);
+        IF form_metadata#>>'{payment_deadline,mode}' IN ('inherit','none') AND
+          (coalesce(input_data->'settings',input_data->'data','{}'::jsonb) ? 'payment_deadline'
+            OR form_metadata#>'{payments,cashEnabled}'='true'::jsonb) THEN
+          input_data:=input_data||'{"deadline_duration_seconds":null}'::jsonb;
         END IF;
 
         -- Form writers can change only the boolean intent, never Unit destination code.
@@ -686,6 +694,7 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Prepare a success response
         ----------------------------------------------------------------------------
+        PERFORM public.sync_form_blueprint_internal(form_id);
         PERFORM public.assert_form_seating_source_internal(form_id);
         result := JSONB_BUILD_OBJECT(
             'code', 200,

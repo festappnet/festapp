@@ -3,10 +3,11 @@ import '../../payments.dart';
 /// Server availability is independent from the saved form configuration.
 /// An explicit empty list never falls back to bank payment.
 class FormPaymentOptions {
-  FormPaymentOptions._(this.available, this.providers, this.reservationSeconds);
+  FormPaymentOptions._(this.available, this.providers, this.reservationSeconds, [this.cashInstructions = '']);
   final List<String> available;
   final Map<String, ProviderPaymentOptions> providers;
   final int reservationSeconds;
+  final String cashInstructions;
   bool get cardConfigured => providers.values.any((p) => p.configured);
   // Released Stripe-only accessors are an explicit compatibility adapter.
   String? get connectionId => providers['stripe']?.connectionId;
@@ -21,7 +22,7 @@ class FormPaymentOptions {
     if (value == null)
       return FormPaymentOptions._(const ['bank'], const {}, 1860);
     final providers = <String, ProviderPaymentOptions>{};
-    for (final connector in registry.values) {
+    for (final connector in registry.hosted) {
       final all = value['providers'];
       final raw = all is Map && all[connector.id] is Map
           ? all[connector.id] as Map
@@ -63,21 +64,28 @@ class FormPaymentOptions {
         value['available'] is List
             ? (value['available'] as List)
                   .whereType<String>()
-                  .where((id) => id == 'bank'
-                      ? (value['bank'] is! Map || value['bank']['available'] == true)
-                      : registry!.contains(id) && (value['providers'] is! Map ||
-                          (value['providers'][id] is Map && value['providers'][id]['available'] == true)))
+                  .where((id) {
+                    final connector = registry!.get(id);
+                    if (connector == null) return false;
+                    if (connector.hostedCheckout == null) {
+                      final projected = value[id];
+                      return projected is Map ? projected['available'] == true : id == 'bank';
+                    }
+                    return value['providers'] is! Map ||
+                        (value['providers'][id] is Map && value['providers'][id]['available'] == true);
+                  })
                   .toSet()
             : const <String>[],
       ),
       Map.unmodifiable(providers),
       seconds is int && seconds > 0 && seconds <= 86400 ? seconds : 1860,
+      value['cash'] is Map ? value['cash']['instructions'] as String? ?? '' : '',
     );
   }
   List<String> availableFor(String surface) => List.unmodifiable(
     available.where(
       (method) =>
-          method == 'bank' ||
+          !providers.containsKey(method) ||
           (providers[method]?.connectionId != null &&
               providers[method]!.supportedSurfaces.contains(surface)),
     ),

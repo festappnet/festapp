@@ -2,9 +2,38 @@
 
 ## Unreleased
 
+- Measurement website requests can be retried after cancelled or undelivered notifications; organizer settings distinguish drafts, unsent requests and platform approval, and show website validation while editing.
+
+- Organizer measurement settings now collect proposed websites, show platform approval for each origin and include new websites in repeat approval requests.
+
+- Organizer measurement help recommends embedding the form in website mode for the most accurate measurement and explains that consent takeover on standalone links depends on supported website banners.
+- Standalone consent links support configured CookieConsent v3 (orestbida) opt-in records, mapped category names and matching saved/current policy revisions, with expiry and other-tab checks.
+
+- Rebuild the paused website GTM preset with per-event GA4 tags, native conversion contact mapping, separate Ads free-registration conversion and the gallery-linked Meta Pixel template. Keep Google built-in consent checks and explicit Meta consent/CAPI settings.
+
+- Standalone consent links support configured Complianz opt-in records with semantic notice scope; Google Consent Mode alone never supplies imported consent.
+
+- Organizer help now explains website and Unit measurement, saved consent sources, GTM setup and troubleshooting in Czech and English source, with a download of the paused canonical host preset. English publication keeps its existing preview gate.
+
+- New WordPress, Joomla and Wix embeds select website measurement; saved content retains its existing destination.
+
+- Embedded forms in Unit runtime mode can take over the website's Consent Mode choice when the organizer enables it and confirms that the banner of its approved websites covers the form; existing settings stay off. Marketing requires all three ad consents and stays denied with TCF. Revocation is read from Google's tag state every 250 ms or from dataLayer every second; website mode detaches the bridge.
+
+- Standalone form links can use a live, revision-aware saved website CMP record when the organizer enables the bridge. Withdrawal and disconnection revoke the visit-only import; renewable source leases also bound runtime lifetime. Explicit local saves take precedence.
+
+- Public web/forms install only their web offline shell. Flutter executables are prepared atomically on actual app entry, preserving public form recovery without a Flutter download.
+
+- Embedded forms inherit the host page's light/dark appearance, show only a compact monochrome symbol on a transparent startup surface, hide the SEO fallback and update prompts, and keep automatic height with a script-free fallback. Untouched public forms update automatically; editing protects the draft from reloads. Startup self-repair and corrupt-runtime recovery remain active.
+
+- Form measurement passes `gbraid`, `wbraid`, `sznclid`, `ttclid` and `msclkid` next to UTM, `gclid` and `fbclid`, and adds optional `item_category` (product type) and `item_brand` (occasion) to items in browser events and the server `purchase`. Value calculation and recorded conversion facts are unchanged.
+- Form measurement no longer waits for visitor consent: on eligible forms the frame loads GTM and organizer scripts at once, including embedded forms without a host CMP, and the notice only passes the choice to Google Consent Mode. `purchase` and `generate_lead` carry the buyer's e-mail and phone in `user_data`, and enhanced conversions are available again. Hiding the tab no longer restarts the container.
+- The consent notice follows the form design and has two layouts, a bottom bar (default) or a centered window, and an optional custom plain-text title and text on the Unit.
+
+- Measurement requires an organizer HTTPS privacy policy URL. Without it, tags, conversion recording/export and the consent notice remain disabled; partial configuration can still be saved outside the unit settings screen, which requires the URL and warns measurement managers while it is missing.
+
 - Fix form measurement consent, lifecycle view deduplication, delayed embed consent and GA4 campaign attribution. Add the `form_start` event.
 
-- Form measurement defaults off and separates saved UI/MCP configuration from platform permission and visitor consent. Same-origin scripts and contact export are removed. Authorized command retries retain stable conversion facts, including waitlist acceptance. Isolated GTM and a concrete consent adapter remain unverified and inactive.
+- Form measurement defaults off and separates saved UI/MCP configuration from platform permission and visitor consent. Same-origin scripts and contact export are removed. Authorized command retries retain stable conversion facts, including waitlist acceptance. Local deterministic tags verify runtime/consent boundaries; production activation and live Ads attribution remain separate unperformed operations.
 
 ## 2026_02 (0.19.24–0.19.29)
 

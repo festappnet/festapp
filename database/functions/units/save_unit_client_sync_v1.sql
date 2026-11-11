@@ -43,6 +43,14 @@ BEGIN
       ELSE COALESCE(p_unit_data->'data',v_before->'data','{}'::jsonb) END);
   PERFORM public.merge_configuration_settings_internal_v1('{}',
     (SELECT COALESCE(jsonb_object_agg(key,value),'{}') FROM jsonb_each(v_after->'data') WHERE public.configuration_settings_contract_internal_v1()->'unit' ? key),'unit');
+  -- Omission preserves the current version, including legacy whole-data saves.
+  IF NOT (v_after->'data' ? 'measurement_consent_version') THEN
+    v_after:=jsonb_set(v_after,'{data,measurement_consent_version}',coalesce(v_before#>'{data,measurement_consent_version}','1'::jsonb));
+  END IF;
+  IF v_after#>'{data,measurement_consent_version}'='null'::jsonb OR
+    (v_after#>>'{data,measurement_consent_version}')::numeric < coalesce((v_before#>>'{data,measurement_consent_version}')::numeric,1) THEN
+    RAISE invalid_parameter_value USING MESSAGE='measurement consent version cannot decrease or be null';
+  END IF;
   IF v_before=v_after THEN RETURN public.complete_client_mutation_outcome_v1(
     p_command_id,'unchanged',200,jsonb_build_object('version',v_version,
       'unit',v_before||jsonb_build_object('aggregate_version',v_version))); END IF;

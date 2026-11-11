@@ -1,3 +1,5 @@
+import { clientPolicy } from './client-policy.mjs';
+import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
 import { join } from 'node:path';
 import { SessionOwner } from '../auth/session.mjs';
@@ -22,7 +24,7 @@ export class DelegatedOwner {
         this.config = config;
         this.storage = storage;
         this.token = token;
-        this.orderSummaryOnly = config.clients.find(client => client.id === token.clientId)?.dataProfile === 'order-summary';
+        this.orderSummaryOnly = clientPolicy(config, token.clientId)?.dataProfile === 'order-summary';
         const grant = this.current();
         this.session = boundOwner(config, storage, grant.binding, options);
         this.profile = this.session.profile;
@@ -51,10 +53,10 @@ export class DelegatedOwner {
     current() {
         const t = this.token;
         const grant = this.storage.get('Delegation', t.grantId);
-        check(grant && !grant.revoked && grant.userId === t.accountId &&
-            this.config.clients.some(c => c.id === grant.clientId) &&
+        check(connectionActive(grant) && grant.userId === t.accountId &&
+            clientPolicy(this.config, grant.clientId) &&
             grant.clientId === t.clientId && grant.profileBinding === this.config.profile.binding &&
-            grant.expiresAt > Date.now() && t.exp * 1000 > Date.now() &&
+            t.exp * 1000 > Date.now() &&
             t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
             clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');
         return grant;
@@ -68,7 +70,7 @@ export class DelegatedOwner {
         if (['occasions.create','occasions.copy','occasions.setup.finalize'].includes(id)) {
             check(access.units.some(u => u.unitId === (id==='occasions.copy'?args.targetUnitId:args.unitId) && u.canCreateOccasions), 'FORBIDDEN');
         } else if (id.startsWith('units.settings.')) {
-            check(access.units.some(u => u.unitId === args.unitId), 'FORBIDDEN');
+            check(access.units.some(u => u.unitId === args.unitId), 'ORGANIZER_CONSENT_REQUIRED');
         } else if (id.startsWith('email_templates.') && args.entityType === 'unit') {
             check(access.units.some(u => u.unitId === args.entityId), 'FORBIDDEN');
         } else if (!access.units.length) {
@@ -93,7 +95,7 @@ export class DelegatedOwner {
     }
     async delegatedUnitContext(client, unitId) {
         const selection = accessSelection(this.current().access);
-        check(selection.units.some(u => u.unitId === unitId), 'FORBIDDEN');
+        check(selection.units.some(u => u.unitId === unitId), 'ORGANIZER_CONSENT_REQUIRED');
         return { organizationId: this.config.profile.organizationId, unitId };
     }
     async listAccess(client) {
@@ -116,7 +118,7 @@ export class DelegatedOwner {
             return result;
         }); } catch (error) {
             const current = this.storage.get('Delegation', this.token.grantId);
-            if (!current || current.revoked || current.expiresAt <= Date.now() || this.token.exp * 1000 <= Date.now())
+            if (!connectionActive(current) || this.token.exp * 1000 <= Date.now())
                 error = new OperationError('AUTHENTICATION_REQUIRED');
             if (error.code === 'AUTHENTICATION_REQUIRED' || error.code === 'MFA_REQUIRED')
                 this.storage.revoke(this.token.grantId);

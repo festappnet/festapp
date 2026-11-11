@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "flutterOnly": [
+    "lib/",
+    "assets/",
+    "web/",
+    "fonts/",
+    "pubspec.yaml",
+    "pubspec.lock",
+    ".fvmrc",
+    ".fvm/fvm_config.json"
+  ],
+  "viteOnly": [
+    "web_client/"
+  ],
+  "packagingOnly": [
+    "docs/plans/",
+    "automation/release/help/",
+    "automation/release/organizers/",
+    "automation/release/platform_updates/",
+    "automation/release/render_help_pages.mjs",
+    "automation/release/render_organizer_page.mjs",
+    "content/platform-updates/",
+    "web_client/public/sitemap.xml",
+    "automation/tenant-overlay.json",
+    "web/napoveda/",
+    "web_client/public/napoveda/",
+    "web/organizers-page",
+    "web/organizer-pages.json",
+    "web/organizers/",
+    "web/organizers-media/press-kit/",
+    "web/organizers-assets/",
+    "web/platform-updates.json",
+    "web/co-je-nove/",
+    "web/platform-updates-media/"
+  ],
+  "generatedRoots": [
+    "lib",
+    "packages",
+    "assets",
+    "web",
+    "fonts",
+    "web_client/src",
+    "web_client/public"
+  ],
+  "environmentRoots": [
+    ".",
+    "web_client"
+  ],
+  "excludedDirectories": [
+    ".git",
+    "node_modules",
+    ".dart_tool",
+    ".private",
+    ".artifacts",
+    ".codex-artifacts",
+    ".fvm",
+    ".venv",
+    "__pycache__"
+  ],
+  "excludedPrefixes": [
+    "build/",
+    "web_client/dist/"
+  ],
+  "flutterCommand": [
+    "build",
+    "web",
+    "--release",
+    "--base-href",
+    "/",
+    "--no-web-resources-cdn",
+    "--no-wasm-dry-run"
+  ],
+  "viteCommand": [
+    "pnpm",
+    "run",
+    "build"
+  ],
+  "flutterVersionPackaging": {
+    "sdkRevision": "abaf9c523780a608bd46686fd5e53740a07077f8",
+    "compiler": [
+      [
+        "bin/cache/flutter_tools.snapshot",
+        "b3595944a8e0c4e6a0c4613f21416918300208431b147d814b42810c96f81551"
+      ],
+      [
+        "bin/cache/dart-sdk/version",
+        "e72b03ed5b70312f2782f2b05055c55b24670e126d50e24c4f2c559bf288f810"
+      ],
+      [
+        "bin/cache/dart-sdk/bin/snapshots/dart2js_aot.dart.snapshot",
+        "59eb9b7829a060dac02218e92c915bb63a2d4db825ed3d08232faa6386e37eb0"
+      ]
+    ]
+  }
+}

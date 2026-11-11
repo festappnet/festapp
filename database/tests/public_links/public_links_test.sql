@@ -12,14 +12,14 @@ BEGIN
  INSERT INTO public.organizations(title) VALUES('Public links test') RETURNING id INTO org;
  UPDATE public.user_info SET organization=org WHERE id=actor;
  INSERT INTO public.units(title,organization) VALUES('Links',org) RETURNING id INTO unit_id;
- INSERT INTO public.unit_users(unit,"user",is_manager,is_editor) VALUES(unit_id,actor,true,true);
+ INSERT INTO public.unit_users(unit,"user",is_manager,is_editor,is_editor_view) VALUES(unit_id,actor,true,true,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  response:=public.create_occasion_client_sync_v1(command,jsonb_build_object('unit',unit_id,'organization',org,'title','Ples','link','',
    'start_time',now(),'end_time',now()+interval '1 day'));
  a:=(response#>>'{data,occasionId}')::bigint;
  first_link:=response#>>'{data,occasion,link}';
- INSERT INTO public.occasion_users(occasion,"user",is_manager,is_editor,is_editor_view,is_editor_order,is_editor_order_view) VALUES(a,actor,true,true,true,true,true);
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=a AND "user"=actor AND is_manager AND is_editor AND is_editor_view AND is_editor_order AND is_editor_order_view),'canonical creation grants the creator the existing occasion roles');
  PERFORM assert_true(first_link ~ '^[23456789abcdefghjkmnpqrstuvwxyz]{8}$','short occasion code');
  PERFORM assert_eq(public.create_occasion_client_sync_v1(command,jsonb_build_object('unit',unit_id,'organization',org,'title','Ples','link','',
    'start_time',now(),'end_time',now()+interval '1 day'))#>>'{data,occasion,link}',first_link,'create replay keeps code');
@@ -42,6 +42,9 @@ BEGIN
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN
   PERFORM public.reserve_public_link_internal('occasion',a,'admin'); RAISE EXCEPTION 'Reserved path allowed';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN
+  PERFORM public.reserve_public_link_internal('occasion',a,'wallet'); RAISE EXCEPTION 'Wallet path allowed as an occasion slug';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  response:=public.create_form_client_sync_v1(first_link,'','Registration',gen_random_uuid());
  f:=(response#>>'{data,form,id}')::bigint;

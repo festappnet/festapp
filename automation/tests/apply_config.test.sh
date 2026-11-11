@@ -63,6 +63,8 @@ mkdir -p "$TMP_ROOT/automation/fonts"
 touch "$TMP_ROOT/automation/fonts/Futura-Regular.ttf"
 cp "$PROJECT_ROOT/automation/hetzner-supabase/merge/source-registry.json" \
    "$TMP_ROOT/automation/hetzner-supabase/merge/source-registry.json"
+cp "$PROJECT_ROOT/automation/lib/write_if_changed.cjs" "$TMP_ROOT/automation/lib/write_if_changed.cjs"
+cp "$PROJECT_ROOT/automation/lib/write_if_changed.py" "$TMP_ROOT/automation/lib/write_if_changed.py"
 cp "$PROJECT_ROOT/automation/lib/font_cap_height.cjs" "$TMP_ROOT/automation/lib/font_cap_height.cjs"
 cp "$PROJECT_ROOT/automation/lib/csp_policy.mjs" "$TMP_ROOT/automation/lib/csp_policy.mjs"
 cp "$PROJECT_ROOT/automation/lib/web_headers.template" "$TMP_ROOT/automation/lib/web_headers.template"
@@ -130,6 +132,36 @@ chmod +x automation/apply_config.sh
     cat apply_config.log
     exit 1
 }
+
+# Identical generation preserves both bytes and mtime of compiler inputs.
+python3 - "$TMP_ROOT" > "$TMP_ROOT/generated-before.json" <<'PY_MTIME'
+import json, pathlib, sys
+root=pathlib.Path(sys.argv[1])
+files=['.fvmrc','.fvm/fvm_config.json','lib/app_config.dart','lib/theme_config.dart','web/index.html','web_client/index.html','web_client/src/app_config.js','web_client/src/theme_config.css','web_client/public/robots.txt','web_client/public/sitemap.xml','web/_headers','web_client/public/_headers']
+print(json.dumps({name:[(root/name).read_bytes().hex(),(root/name).stat().st_mtime_ns] for name in files if (root/name).exists()}))
+PY_MTIME
+./automation/apply_config.sh > repeat-config.log 2>&1 || { cat repeat-config.log; exit 1; }
+python3 - "$TMP_ROOT" <<'PY_MTIME'
+import json, pathlib, sys
+root=pathlib.Path(sys.argv[1]);before=json.loads((root/'generated-before.json').read_text())
+changed=[name for name,(data,mtime) in before.items() if (root/name).read_bytes().hex()!=data or (root/name).stat().st_mtime_ns!=mtime]
+assert not changed, 'Identical generation rewrote inputs: '+', '.join(changed)
+PY_MTIME
+
+# Build preparation preserves the complete generated source tree required by
+# the clean-checkout upload gate, including sitemap/help and organizer pages.
+python3 - "$TMP_ROOT" > "$TMP_ROOT/build-prep-before.json" <<'PY_BUILD_PREP'
+import hashlib,json,pathlib,sys
+root=pathlib.Path(sys.argv[1])
+print(json.dumps({str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for d in ('web','web_client/public') for p in (root/d).rglob('*') if p.is_file()},sort_keys=True))
+PY_BUILD_PREP
+./automation/apply_config.sh automation/project.conf --build > build-prep.log 2>&1 || { cat build-prep.log; exit 1; }
+python3 - "$TMP_ROOT" <<'PY_BUILD_PREP'
+import hashlib,json,pathlib,sys
+root=pathlib.Path(sys.argv[1]);before=json.loads((root/'build-prep-before.json').read_text())
+after={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for d in ('web','web_client/public') for p in (root/d).rglob('*') if p.is_file()}
+assert before==after, 'Build preparation changed generated source leaves: '+str([p for p in before.keys()|after.keys() if before.get(p)!=after.get(p)])
+PY_BUILD_PREP
 
 # 3. Assertions.
 fail=0

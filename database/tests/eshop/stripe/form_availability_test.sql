@@ -1,5 +1,5 @@
 DO $$
-DECLARE org bigint; u bigint; occ bigint; f bigint; pt bigint; p bigint; conn uuid; available jsonb;
+DECLARE org bigint; u bigint; occ bigint; f bigint; pt bigint; p bigint; conn uuid; available jsonb; bank bigint;
 BEGIN
  INSERT INTO public.organizations(title,data) VALUES('Card form tenant','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Card form organizer',org) RETURNING id INTO u;
@@ -10,6 +10,8 @@ BEGIN
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Card tickets','spot') RETURNING id INTO pt;
  INSERT INTO eshop.products(product_type,occasion,title,price,currency_code) VALUES(pt,occ,'Ticket',123.45,'CZK') RETURNING id INTO p;
  INSERT INTO public.form_fields(form,product_type,type) VALUES(f,pt,'product_type');
+ INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Bank receiver','FIO',ARRAY['CZK']) RETURNING id INTO bank;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(u,bank,0);
  available:=public.form_payment_availability_internal(f);
  PERFORM assert_eq(available->'available','["bank"]'::jsonb,'old forms retain bank, card defaults off');
  BEGIN

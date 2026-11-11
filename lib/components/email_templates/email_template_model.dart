@@ -1,4 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
+
 import '../forms/sale_opening_strings.dart';
+import '../forms/waitlist_strings.dart';
 import '../ticket_layout/ticket_delivery_strings.dart';
 
 import 'package:festapp_core/email_templates.dart';
@@ -187,6 +190,12 @@ class EmailTemplateModel {
     defaultValue: '',
   );
 
+  static EmailTemplateSub get orderCommunicationSub => EmailTemplateSub(
+    code: 'orderCommunication',
+    description: EmailTemplatesStrings.orderCommunication,
+    defaultValue: '',
+  );
+
   static EmailTemplateSub get paymentDetailsSub => EmailTemplateSub(
     code: 'paymentDetails',
     description: EmailTemplatesStrings.subPaymentDetails,
@@ -211,80 +220,122 @@ class EmailTemplateModel {
     defaultValue: '31. 12. 2026 23:59',
   );
 
-  /// Mapping of template codes to their available substitutions.
-  static List<EmailTemplateSub> get orderOverviewSubs => [
-    EmailTemplateSub(
-      code: 'order_overview_url',
-      description: EmailTemplatesStrings.subOrderOverviewUrlDescription,
-      defaultValue: 'https://example.invalid/order?order_id=1&token=preview',
-    ),
-    EmailTemplateSub(
-      code: 'order_overview_button',
-      description: EmailTemplatesStrings.subOrderOverviewButtonDescription,
-      defaultValue: '',
-    ),
-  ];
-
-  static List<EmailTemplateSub> get waitlistSubs => [
-    ...orderOverviewSubs,
-    EmailTemplateSub(
-      code: 'order_symbol',
-      description: OrdersStrings.gridOrderSymbol,
-      defaultValue: '7G4K9M2R6A',
-    ),
-    EmailTemplateSub(
-      code: 'occasion_title',
-      description: EmailTemplatesStrings.subOccasionTitle,
-      defaultValue: 'Festival',
-    ),
-    EmailTemplateSub(
-      code: 'participant_count',
-      description: EmailTemplatesStrings.subParticipantCount,
-      defaultValue: '1',
-    ),
-    EmailTemplateSub(
-      code: 'participant_phrase',
-      description: EmailTemplatesStrings.subParticipantCount,
-      defaultValue: '1 osobu',
-    ),
-    EmailTemplateSub(
-      code: 'manage_waitlist_url',
-      description: EmailTemplatesStrings.subManageWaitlistUrl,
-      defaultValue:
-          'https://example.invalid/order?waitlist=1&order_id=1&token=preview',
-    ),
-    EmailTemplateSub(
-      code: 'manage_waitlist_button',
-      description: EmailTemplatesStrings.subManageWaitlistButton,
-      defaultValue: '',
-    ),
-  ];
-
-  static List<EmailTemplateSub> get saleOpeningSubs => [
-    EmailTemplateSub(
-      code: 'occasion_title',
-      description: EmailTemplatesStrings.subOccasionTitle,
-      defaultValue: 'Festival',
-    ),
-    for (final entry in [
-      ('sale_opening_subject', SaleOpeningStrings.title),
-      ('sale_opening_heading', SaleOpeningStrings.title),
-      ('sale_opening_disclaimer', SaleOpeningStrings.disclaimer),
-      ('sale_opening_action', SaleOpeningStrings.notifyShort),
-      ('sale_opening_unsubscribe', SaleOpeningStrings.unsubscribe),
-    ])
+  /// Localized descriptions adapt the shared variable contract to the UI.
+  static Map<String, EmailTemplateSub> get _variableDefinitions => {
+    for (final sub in [
+      appPlatformLinksSub,
+      appLinksSub,
+      appNameSub,
+      for (final entry in const {
+        'invitationUrl':
+            'https://example.invalid/team-invitation?token=preview',
+        'occasionAdminUrl': 'https://example.invalid/slavnost/admin',
+        'roleLabel': 'Editor',
+      }.entries)
+        EmailTemplateSub(
+          code: entry.key,
+          description: 'EmailTemplates.subs.${entry.key}'.tr(),
+          defaultValue: entry.value,
+        ),
+      emailSub,
+      nameSub,
+      surnameSub,
+      resetLinkSub,
+      signInCodeSub,
+      occasionTitleSub,
+      amountSub,
+      accountNumberSub,
+      ibanSub,
+      orderSymbolSub,
+      variableSymbolSub,
+      deadlineSub,
+      fullOrderSub,
+      changeOverviewSub,
+      balanceReasoningSub,
+      orderCommunicationSub,
+      paymentDetailsSub,
+      remainingTimeSub,
+      confirmationUrlSub,
+      expiresAtSub,
       EmailTemplateSub(
-        code: entry.$1,
-        description: entry.$2,
-        defaultValue: entry.$2,
+        code: 'order_overview_url',
+        description: EmailTemplatesStrings.subOrderOverviewUrlDescription,
+        defaultValue: 'https://example.invalid/order?order_id=1&token=preview',
       ),
-  ];
-
-  static Map<String, List<EmailTemplateSub>> get substitutionDefinitions => {
-    'sale_opening_opened': saleOpeningSubs,
-    'waitlist_confirmation': waitlistSubs,
-    'waitlist_offer': [
-      ...waitlistSubs,
+      EmailTemplateSub(
+        code: 'order_overview_button',
+        description: EmailTemplatesStrings.subOrderOverviewButtonDescription,
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'participant_count',
+        description: EmailTemplatesStrings.subParticipantCount,
+        defaultValue: '1',
+      ),
+      EmailTemplateSub(
+        code: 'participant_phrase',
+        description: EmailTemplatesStrings.subParticipantCount,
+        defaultValue: '1 osobu',
+      ),
+      EmailTemplateSub(
+        code: 'manage_waitlist_url',
+        description: EmailTemplatesStrings.subManageWaitlistUrl,
+        defaultValue:
+            'https://example.invalid/order?waitlist=1&order_id=1&token=preview',
+      ),
+      EmailTemplateSub(
+        code: 'manage_waitlist_button',
+        description: EmailTemplatesStrings.subManageWaitlistButton,
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_confirmation_heading',
+        description: WaitlistStrings.title,
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_confirmation_explanation',
+        description: WaitlistStrings.explanation,
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_offer_heading',
+        description: WaitlistStrings.offers,
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_offer_instructions',
+        description: WaitlistStrings.productAvailability,
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_offer_button_single',
+        description: EmailTemplatesStrings.waitlistToneLabel(
+          'waitlist_offer_button_single',
+        ),
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_offer_button_multiple',
+        description: EmailTemplatesStrings.waitlistToneLabel(
+          'waitlist_offer_button_multiple',
+        ),
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_manage_button_label',
+        description: EmailTemplatesStrings.waitlistToneLabel(
+          'waitlist_manage_button_label',
+        ),
+        defaultValue: '',
+      ),
+      EmailTemplateSub(
+        code: 'waitlist_offer_instructions_single',
+        description: EmailTemplatesStrings.waitlistToneLabel(
+          'waitlist_offer_instructions_single',
+        ),
+        defaultValue: '',
+      ),
       EmailTemplateSub(
         code: 'offered_count',
         description: EmailTemplatesStrings.subOfferedCount,
@@ -310,70 +361,42 @@ class EmailTemplateModel {
         description: EmailTemplatesStrings.subOfferButton,
         defaultValue: '',
       ),
-    ],
-    'RESET_PASSWORD': [appNameSub, appPlatformLinksSub, emailSub, resetLinkSub],
-    'SIGN_IN_CODE': [
-      appNameSub,
-      appPlatformLinksSub,
-      emailSub,
-      nameSub,
-      surnameSub,
-      signInCodeSub,
-    ],
-    'APP_LINKS': [appLinksSub],
-    'ACCOUNT_DELETION_CONFIRM': [appNameSub, confirmationUrlSub, expiresAtSub],
-    'ACCOUNT_DELETION_COMPLETE': [appNameSub],
-    'TICKET_ORDER_CONFIRMATION': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      amountSub,
-      accountNumberSub,
-      ibanSub,
-      variableSymbolSub,
-      deadlineSub,
-      balanceReasoningSub,
-      fullOrderSub,
-    ],
-    'TICKET_ORDER_UPDATE': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      fullOrderSub,
-      changeOverviewSub,
-      balanceReasoningSub,
-    ],
-    'TICKET_ORDER_PAYMENT_DONE': [
       EmailTemplateSub(
         code: 'tickets',
         description: TicketDeliveryStrings.text('blockDescription'),
         defaultValue: '',
       ),
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      fullOrderSub,
-      balanceReasoningSub,
-      amountSub,
-    ],
-    'TICKET_ORDER_REMINDER': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      balanceReasoningSub,
-      fullOrderSub,
-      amountSub,
-      deadlineSub,
-      paymentDetailsSub,
-      remainingTimeSub,
-    ],
-    'TICKET_ORDER_STORNO': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      amountSub,
-    ],
+      for (final entry in [
+        ('sale_opening_subject', SaleOpeningStrings.title),
+        ('sale_opening_heading', SaleOpeningStrings.title),
+        ('sale_opening_disclaimer', SaleOpeningStrings.disclaimer),
+        ('sale_opening_action', SaleOpeningStrings.notifyShort),
+        ('sale_opening_unsubscribe', SaleOpeningStrings.unsubscribe),
+      ])
+        EmailTemplateSub(
+          code: entry.$1,
+          description: entry.$2,
+          defaultValue: entry.$2,
+        ),
+    ])
+      sub.code: sub,
   };
+
+  static Map<String, List<EmailTemplateSub>> get substitutionDefinitions {
+    final definitions = _variableDefinitions;
+    EmailTemplateSub definition(String code) {
+      final sub = definitions[code];
+      if (sub == null) {
+        throw StateError('Missing email variable description: $code');
+      }
+      return sub;
+    }
+
+    return {
+      for (final template in emailTemplateVariables.entries)
+        template.key: template.value.map(definition).toList(growable: false),
+    };
+  }
 
   /// Returns usage details based on the template code.
   /// The returned map includes:
@@ -390,6 +413,18 @@ class EmailTemplateModel {
 
   Map<String, dynamic> _usageDescription() {
     switch (code) {
+      case 'TEAM_INVITATION':
+      case 'TEAM_ACCESS_NOTICE':
+        final key = const {
+          'TEAM_INVITATION': 'teamInvitation',
+          'TEAM_ACCESS_NOTICE': 'teamAccessNotice',
+        }[code]!;
+        return {
+          'title': title?.trim().isNotEmpty == true
+              ? title!.trim()
+              : 'EmailTemplates.usage.${key}_title'.tr(),
+          'description': 'EmailTemplates.usage.${key}_description'.tr(),
+        };
       case 'sale_opening_opened':
         return {
           'title': SaleOpeningStrings.title,

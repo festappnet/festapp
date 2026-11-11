@@ -2,7 +2,6 @@ import 'package:fstapp/services/locale_date_time.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.dart';
 import '../navigation/root_route_navigation.dart';
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'ticket_batch_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import '../forms/waitlist_commands.dart';
@@ -36,10 +35,8 @@ import 'package:fstapp/components/eshop/views/transactions_dialog.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
-import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/data_services/rights_service.dart';
 import 'package:trina_grid/trina_grid.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -51,8 +48,8 @@ import 'views/order_history_dialog.dart';
 import 'views/order_state_display.dart';
 import 'views/order_state_cell.dart';
 import 'package:fstapp/components/features/features_strings.dart';
-import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
-import 'views/add_cash_payment_dialog.dart';
+import 'views/payment_operation_flow.dart';
+import 'payment_operation_strings.dart';
 
 bool canToggleTicketUsage(String? formattedState) => ![
       OrderModel.stornoState,
@@ -1072,193 +1069,75 @@ class EshopColumns {
             width: 50,
           ),
         ],
-        EshopColumnIds.PAYMENT_INFO_PAID: (Map<String, dynamic> data) => [
-              TrinaColumn(
-                readOnly: true,
-                enableEditingMode: true,
-                title: OrdersStrings.gridPaid,
-                field: EshopColumnIds.PAYMENT_INFO_PAID,
-                type: TrinaColumnType.text(),
-                textAlign: TrinaColumnTextAlign.end,
-                width: 150,
-                renderer: (ctx) {
-                  final val = ctx.cell.value?.toString() ?? "";
-                  final canUpdate = RightsService.canUpdateOrders() &&
-                      OrderGridFilters.orderCanReceivePayment(ctx.row);
-                  return Row(
-                    children: [
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: !canUpdate
-                            ? null
-                            : () async {
-                                int? unitId = data["unitId"] as int?;
-                                if (unitId == null) {
-                                  ToastHelper.Show(
-                                      context, "Unit ID not found.",
-                                      severity: ToastSeverity.NotOk);
-                                  return;
-                                }
-
-                                String currency = "CZK";
-                                String? priceString = ctx.row
-                                    .cells[EshopColumnIds.ORDER_PRICE]?.value
-                                    ?.toString();
-                                if (priceString != null &&
-                                    priceString.isNotEmpty) {
-                                  var parts = priceString.trim().split(" ");
-                                  if (parts.length > 1) {
-                                    currency = parts.last;
-                                  }
-                                }
-
-                                String variableSymbol = ctx
-                                        .row
-                                        .cells[EshopColumnIds
-                                            .PAYMENT_INFO_VARIABLE_SYMBOL]
-                                        ?.value
-                                        ?.toString() ??
-                                    "";
-
-                                int? orderId = ctx
-                                    .row
-                                    .cells[EshopColumnIds.ORDER_ID]
-                                    ?.value as int?;
-                                bool canManageBankTransactions = false;
-
-                                if (orderId != null) {
-                                  var transactionObject =
-                                      await DbEshop.getTransactionsForOrder(
-                                          orderId);
-                                  if (transactionObject != null &&
-                                      transactionObject.paymentInfo != null) {
-                                    var paymentInfo =
-                                        transactionObject.paymentInfo!;
-                                    canManageBankTransactions =
-                                        RightsService.hasBankCapability(
-                                      paymentInfo.bankAccount,
-                                      AuthorizationCapabilities
-                                          .bankTransactionsManage,
-                                    );
-                                  }
-                                }
-
-                                if (!context.mounted) return;
-
-                                final result = await showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    int? paymentInfoId = ctx
-                                        .row
-                                        .cells[EshopColumnIds.PAYMENT_INFO_ID]
-                                        ?.value as int?;
-                                    if (paymentInfoId == null ||
-                                        paymentInfoId == 0) return Container();
-
-                                    return AddCashPaymentDialog(
-                                      unitId: unitId,
-                                      currency: currency,
-                                      variableSymbol: variableSymbol,
-                                      paymentInfoId: paymentInfoId,
-                                      canManageBankTransactions:
-                                          canManageBankTransactions,
-                                    );
-                                  },
-                                );
-
-                                if (result == true) {
-                                  var refresh =
-                                      data[EshopColumnIds.PAYMENT_INFO_PAID];
-                                  if (refresh is Future<void> Function()?) {
-                                    refresh?.call();
-                                  }
-                                } else if (result == 'SWITCH_TO_CASHLESS') {
-                                  int? paymentInfoId = ctx
-                                      .row
-                                      .cells[EshopColumnIds.PAYMENT_INFO_ID]
-                                      ?.value as int?;
-                                  if (paymentInfoId != null) {
-                                    int? orderId = ctx
-                                        .row
-                                        .cells[EshopColumnIds.ORDER_ID]
-                                        ?.value as int?;
-
-                                    if (orderId != null) {
-                                      var transactionObject =
-                                          await DbEshop.getTransactionsForOrder(
-                                              orderId);
-                                      if (transactionObject != null &&
-                                          transactionObject.paymentInfo !=
-                                              null) {
-                                        var paymentInfo =
-                                            transactionObject.paymentInfo!;
-
-                                        if (paymentInfo.bankAccount != null) {
-                                          final searchResult = await showDialog(
-                                            context: context,
-                                            builder: (context) =>
-                                                SearchTransactionsDialog(
-                                              paymentInfoId: paymentInfo.id!,
-                                              bankAccount:
-                                                  paymentInfo.bankAccount!,
-                                            ),
-                                          );
-
-                                          if (searchResult == true) {
-                                            var refresh = data[EshopColumnIds
-                                                .PAYMENT_INFO_PAID];
-                                            if (refresh is Future<void>
-                                                Function()?) {
-                                              refresh?.call();
-                                            }
-                                          }
-                                        } else {
-                                          ToastHelper.Show(context,
-                                              "No bank account linked to this order.",
-                                              severity: ToastSeverity.NotOk);
-                                        }
-                                      } else {
-                                        ToastHelper.Show(context,
-                                            "Could not fetch payment info.",
-                                            severity: ToastSeverity.NotOk);
-                                      }
-                                    } else {
-                                      // Fallback: if EshopColumnIds.HISTORY_ID is missing, try to find "id" or "orderId" if available in cells
-                                      ToastHelper.Show(context,
-                                          "Order ID not found in grid row.",
-                                          severity: ToastSeverity.NotOk);
-                                    }
-                                  }
-                                }
-                              },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: Icon(Icons.add_circle_outline,
-                              size: 18,
-                              color: canUpdate
-                                  ? Colors.grey
-                                  : Colors.grey.withOpacity(0.3)),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(val, textAlign: TextAlign.end),
-                      ),
-                    ],
+        for (final paymentField in [
+          EshopColumnIds.PAYMENT_INFO_PAID,
+          EshopColumnIds.PAYMENT_INFO_RETURNED,
+        ])
+          paymentField: (Map<String, dynamic> data) => [
+            TrinaColumn(
+              readOnly: true,
+              enableEditingMode: true,
+              title: paymentField == EshopColumnIds.PAYMENT_INFO_PAID
+                  ? OrdersStrings.gridPaid
+                  : OrdersStrings.gridReturned,
+              field: paymentField,
+              type: TrinaColumnType.text(),
+              textAlign: TrinaColumnTextAlign.end,
+              width: 140,
+              renderer: (ctx) {
+                final val = ctx.cell.value?.toString() ?? "";
+                final model = OrderGridFilters.order(ctx.row);
+                final operations =
+                    model?.paymentInfoModel?.paymentOperations ??
+                    model?.paymentOperations;
+                Future<void> open(bool refund) async {
+                  final unitId = data['unitId'] as int?;
+                  final orderId =
+                      ctx.row.cells[EshopColumnIds.ORDER_ID]?.value as int?;
+                  if (unitId == null || orderId == null || !context.mounted) return;
+                  final changed = await showOrderPaymentOperationDialog(
+                    context,
+                    orderId: orderId,
+                    unitId: unitId,
+                    refund: refund,
                   );
-                },
-              ),
-            ],
-        EshopColumnIds.PAYMENT_INFO_RETURNED: [
-          TrinaColumn(
-            readOnly: true,
-            enableEditingMode: true,
-            title: OrdersStrings.gridReturned,
-            field: EshopColumnIds.PAYMENT_INFO_RETURNED,
-            type: TrinaColumnType.text(),
-            textAlign: TrinaColumnTextAlign.end,
-            width: 80,
-          ),
-        ],
+                  if (changed == true) {
+                    final refresh = data[EshopColumnIds.PAYMENT_INFO_PAID];
+                    if (refresh is Future<void> Function()) await refresh();
+                  }
+                }
+
+                Widget action(bool refund) {
+                  final enabled =
+                      (refund ? operations?.canRefund : operations?.canRecord) ==
+                      true;
+                  return SizedBox(
+                    width: 32,
+                    child: IconButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      tooltip: refund
+                          ? PaymentOperationStrings.text('refund')
+                          : OrdersStrings.addPayment,
+                      onPressed: enabled ? () => open(refund) : null,
+                      icon: Icon(
+                        refund
+                            ? Icons.remove_circle_outline
+                            : Icons.add_circle_outline,
+                        size: 18,
+                      ),
+                    ),
+                  );
+                }
+
+                return Row(
+                  children: [
+                    action(paymentField == EshopColumnIds.PAYMENT_INFO_RETURNED),
+                    Expanded(child: Text(val, textAlign: TextAlign.end)),
+                  ],
+                );
+              },
+            ),
+          ],
         EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL: [
           TrinaColumn(
             readOnly: true,

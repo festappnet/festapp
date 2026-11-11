@@ -38,8 +38,12 @@ done
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# One persistent timeline for this release attempt, outside the clean checkout.
+FESTAPP_TIMINGS="$(python3 -c 'import sys;from pathlib import Path;sys.path.insert(0,"automation/ci");from telemetry import run_directory;print(run_directory(Path.home()/".cache/festapp-ci")/"timings.jsonl")')"
+export FESTAPP_TIMINGS
+
 # Required even for prebuilt uploads; failed or missing source CI blocks release.
-python3 automation/ci/release_gate.py
+python3 automation/ci/telemetry.py release.source-gate python3 automation/ci/release_gate.py
 
 # Load the CF token from a dotenv file if requested.
 if [ -n "$ENV_FILE" ]; then
@@ -99,6 +103,13 @@ set +a
 export CF_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
 export CF_PROJECT="$PROJECT_NAME"
 export BRANCH
+# Only the selected tenant's registered receivers are release prerequisites.
+# This probes public HTTP responses without executing tags or creating events.
+verify_measurement_receivers() {
+  node automation/verify_measurement_runtimes.mjs \
+    --organization "${BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID:-}" --require-probe
+}
+verify_measurement_receivers
 if [ "$USE_WRANGLER_OAUTH" -eq 1 ]; then
   # OAuth is deliberately a routine-deploy path only. It may update an already
   # bound Pages project, but it must not silently create projects or DNS.
@@ -122,9 +133,9 @@ fi
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
   echo "Building (automation/cloudflare_build.sh)..."
-  bash automation/cloudflare_build.sh
+  python3 automation/ci/telemetry.py release.build bash automation/cloudflare_build.sh
 else
-  echo "Skipping build (--skip-build); using existing build/web."
+  echo "Reusing the verified build/web artifact (--skip-build)."
 fi
 
 if [ ! -f build/web/_worker.js ]; then
@@ -132,14 +143,26 @@ if [ ! -f build/web/_worker.js ]; then
   exit 1
 fi
 
+if [ "${FESTAPP_CANONICAL_CUTOVER_RELEASE:-0}" = 1 ]; then
+  node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
+else
+  node automation/release/client_cutover_preflight.mjs
+fi
+
+python3 automation/ci/telemetry.py release.receipt-check python3 automation/release/build_receipt.py verify cloudflare
+if [ "$SKIP_BUILD" -eq 1 ]; then
+  python3 automation/ci/telemetry.py release.artifact-checks node automation/verify_web_build.mjs build/web "$VERSION" automation/project.conf cloudflare
+fi
+
 # Recheck immediately before the irreversible upload (a rerun may have failed).
-python3 automation/ci/release_gate.py
+python3 automation/ci/telemetry.py release.upload-gate python3 automation/ci/release_gate.py
+verify_measurement_receivers
 
 echo "Deploying build/web to Cloudflare Pages project '${PROJECT_NAME}'..."
-pnpm dlx wrangler@latest pages deploy build/web \
+python3 automation/ci/telemetry.py release.upload pnpm dlx wrangler@latest pages deploy build/web \
   --project-name "${PROJECT_NAME}" \
   --branch "${BRANCH}" \
   --commit-dirty=true
 
 echo "Verifying coherent production release at https://${DOMAIN}..."
-node automation/verify_web_deployment.mjs "https://${DOMAIN}" "${VERSION}"
+python3 automation/ci/telemetry.py release.live-probe node automation/verify_web_deployment.mjs "https://${DOMAIN}" "${VERSION}"

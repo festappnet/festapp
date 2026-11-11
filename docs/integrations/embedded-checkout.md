@@ -5,6 +5,22 @@ Zkopírujte kód do HTML bloku svého CMS. Při neuložené změně adresy se po
 poslední uložený odkaz. Nový formulář je nutné nejdříve uložit.
 
 Automatická výška používá iframe a externí `/embed.js` ze stejného tenantu.
+Helper ihned nastaví startovní výšku 120 px a poté ji přizpůsobuje obsahu,
+bez animace (také při reduced motion). Atribut `height="800"` zůstává jako
+fallback bez JavaScriptu, včetně stávajících WordPress pluginů. Pevné výšky
+se helper nedotýká. Nový helper posílá volitelné `minHeight: 120`; child bez
+něj zachová minimum 240 px pro kompatibilitu se staršími helpery protokolu 1.
+Rozsah `viewportHeight` se nemění. Na webclientových cestách `/form/:slug` a `/order` s přesným `?embed=1` je startovní plocha
+průhledná s černobílým symbolem bez názvu webu v boxu 48 × 48 px. Startovní výška
+120 px ponechává okolo symbolu prostor; veřejný SEO souhrn je skrytý,
+aby neprosvítal při načítání. Při převzetí vzhledu se světlý/tmavý režim řídí
+hostitelskou stránkou, včetně jejího přepnutí, nikoliv osobním nastavením aplikace
+nebo režimem prohlížeče. Helper sjednotí barevné schéma iframe i jeho obsahu,
+aby Chrome nevykreslil neprůhledný canvas. Aktualizační banner se nezobrazuje.
+Nedotčený veřejný formulář se aktualizuje automaticky; po začátku vyplňování
+aktualizace počká na příští otevření a rozpracované údaje neruší.
+Samooprava startu včetně deep refresh,
+přepnutí verze před připravením aplikace a obnova rozbitého runtime zůstávají aktivní.
 Pevná výška ponechá iframe na 800 px s vlastním posouváním. Převzetí vzhledu
 funguje v obou režimech výšky, pokud CMS povoluje externí skript. Pokud jej
 zakazuje, zůstane pevná výška a vlastní vzhled formuláře. Výšku můžete v HTML upravit. Obě varianty obsahují odkaz pro otevření
@@ -56,11 +72,11 @@ Povolené typy a hodnoty:
 | Typ | Směr | Data |
 | --- | --- | --- |
 | ready | child -> parent | Žádná osobní ani obchodní data |
-| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné dataLayer: true a dataLayerUserData: true |
+| init | parent -> child | instance, viewportHeight 240-4000 CSS px, autoHeight (false pro pevnou výšku), volitelné minHeight: 120, volitelné dataLayer: true a dataLayerUserData: true |
 | viewport | parent -> child | Stejné ID a výška 240-4000 CSS px |
 | theme | parent -> child | Stejné ID a volitelná prezentace theme |
 | analytics | child -> parent | Whitelistovaný objekt payload, viz Datová vrstva hostitele |
-| resize | child -> parent | Konečná výška 240-20000 CSS px |
+| resize | child -> parent | Konečná výška 240-20000 CSS px; s init.minHeight = 120 již od 120 px |
 | scroll-request | child -> parent | Konečné y 0-20000, volitelné block start/end/nearest a height 0-20000; host cíl omezuje na iframe |
 | scroll-save/scroll-restore/scroll-discard | child -> parent | Neosobní ID snapshotu vázané na konkrétní iframe; discard jej zruší bez posunu |
 
@@ -102,6 +118,35 @@ ani stav platby. Parent nemůže vybrat produkt/sedadlo, předvyplnit nebo odesl
 formulář. Handshake není autentizací organizátora a nechrání před samotným
 škodlivým hostitelským webem. Budoucí změny veřejného assetu musí zachovat
 protocol 1 nebo výslovně řešit migraci kontraktu.
+
+## Vlastníci implementace
+
+`web_client/src/runtime/page_context.js` klasifikuje podporované veřejné cesty;
+`runtime_state.js` drží startup stav a jediný navigační zámek. Inline bootstrap
+obou HTML shellů generuje `automation/lib/startup_theme.cjs`. Pouze webclientový
+shell má embed prezentaci a kompaktní lokalizovanou chybu s retry. Ready marker,
+událost `festapp-app-ready` a existující recovery globály zůstávají kompatibilní.
+
+`update_policy.js` rozhoduje o důvodu obnovy, `update_controller.js` provádí
+worker handshake a efekty a `update_banner.js` vykresluje běžnou aktualizaci.
+`web/festapp_update_prompt.js` je standalone generovaný výstup. Před každým
+navigačním efektem po čekání se znovu kontroluje aktuální ready stav. Výjimkami
+z odložení aktualizace jsou jednorázová obnova prokázaného poškození runtime
+a omezená migrace skutečně starých Flutter cache. Ruční retry při chybě
+startu opraví cache vstupního modulu a nepřenačte již připravenou stránku.
+
+`embed/protocol.js` vlastní základní wire kontrakt, `channel.js` připíná peer,
+origin a instanci. `EmbedBridge` skládá child layout, measurement a stávající
+`EmbedTheme`; formulář, validátor, přehled ceny a plánek používají jeho zachované
+rozhraní. Na hostiteli oddělují `host_layout`, `host_presentation`, `host_price`
+a `host_measurement` geometrii, vzhled, projekci ceny a scoped consent.
+Measurement pravidla dál patří `form_measurement_contract` a
+`FormMeasurementSession`. Staré disposery nesmějí zasáhnout novou vazbu.
+
+`host.js` se přes esbuild sestaví do jediného `/embed.js`; CMS nepotřebuje žádné
+runtime importy. `build_embed.mjs --check` a `build_runtime.mjs --check` odmítají
+generační drift. Externí protokol 1, `FestappEmbed`, atributy a HTML markup
+zůstávají podporované, včetně helperu s minimem 240 px a fallbacku 800 px.
 
 ## Lokální ověření
 
@@ -214,55 +259,159 @@ pluginu. Již otevřený formulář se během vyplňování násilně neobnovuje
 Změny WordPress nastavení, editoru nebo PHP vyžadují vydání pluginu.
 Protokol 1 musí zachovat kompatibilitu se staršími instalacemi.
 
-## Datová vrstva hostitele
+## Měření a datová vrstva hostitele
 
-Měření je ve výchozím stavu vypnuté. `data-festapp-datalayer` je pouze souhlas
-hostitele s integrací, nikoli souhlas návštěvníka. Předání událostí vyžaduje
-uložené `analytics.enabled=true`, povolení organizace, podporované prostředí,
-bezpečný veřejný kontext a aktuální souhlas pro daný účel.
+Měření je ve výchozím stavu vypnuté. Vyžaduje všechna uložená povolení, platné
+zásady, aktuální policy a schválený hostitelský origin. Na souhlas nečeká: skripty se
+načtou hned a volba návštěvníka jde do Consent Mode, který vyhodnocuje kontejner
+pořadatele. Události `purchase` a `generate_lead` nesou `user_data` s e-mailem a
+telefonem. Za nastavení tagů a použití údajů odpovídá pořadatel. Porucha CMP ani
+starší helper nebrání nákupu ani layoutu.
 
-Společný whitelist se do `public/embed.js` generuje příkazem
-`pnpm --dir web_client exec node scripts/build_embed.mjs`. Hostitel i iframe
-payload nezávisle validují. Parametry zprávy se vážou na origin, okno, instanci a
-aktuální souhlasovou lease. Před souhlasem se události neukládají do fronty.
-Odvolání souhlasu a vypršení lease zastaví další předávání; staré zprávy nelze
-znovu odeslat po novém udělení souhlasu.
-
-`window.FestappEmbed.setMeasurementConsent(frame, granted, ttlSeconds)` je pouze
-rozhraní pro budoucí konkrétní souhlasový adaptér. Žádný CMP adaptér zde není
-ověřený ani automaticky nainstalovaný. Lease platí nejvýše 60 sekund. Samotné HTML
-atributy měření nespustí. Kontakty jsou vždy blokované, včetně starého atributu
-`data-festapp-datalayer-user-data`.
-
-Izolované GTM zatím není ověřené a runtime vrací `runtime_supported=false`.
-Skripty pořadatele se do hlavní aplikace nevkládají. Konfiguraci lze uložit při
-vypnutém měření a vypnutí ji zachová. Úplný aktuální kontrakt, význam konverzí,
-MCP příklady a zbývající podmínky aktivace popisuje
-[Form measurement contract](form-datalayer.md).
-## Měření a souhlas
-
-Výchozí vložený formulář používá konfiguraci měření své jednotky v odděleném
-runtime. Hostitel předává potvrzený souhlas přes ověřený iframe kanál. Samotné
-vložení iframe nebo vyplnění GTM ID měření nezapíná.
-
-Po načtení helperu a připravení skutečného Klaro manageru připojte uloženou volbu:
+Nově generovaný kód předvolí `window.dataLayer` hostitele a výslovně přidá
+`data-festapp-datalayer`. Tagy a souhlasy pak řídí GTM a CMP webu. Bez atributu
+zůstává oddělený runtime jednotky, takže starší vložení po aktualizaci helperu
+nezmění příjemce údajů. Generátory při volbě jednotky atribut vynechají, což funguje
+i se staršími helpery. Změna atributu za běhu transport znovu inicializuje.
+WordPress a Joomla nabízejí volbu `measurement="host"` nebo `"unit"`; chybějící
+či neplatná volba zachová jednotku. Hostitelský režim zpřístupňuje skriptům stránky
+kontakty při konverzi a identifikátory transakcí. Volba transportu sama neuděluje
+souhlas ani nezapíná měření.
+Obě cesty vyžadují schválený origin a nezobrazují vlastní lištu souhlasu. Přímé
+návštěvy dál používají runtime a Klaro. Hostitelský kontext i každá událost nesou
+`form_embedded: true`; místo `page_view` se v obou transportech posílá
+`form_page_view` se stejnou deduplikací podle `page_type`. Přímé návštěvy zachovávají
+`page_view`. Na komunikačním kanálu zůstává vždy `page_view`; společný kontrakt
+přejmenovává událost až při zápisu do cílového dataLayer. Starší příjemci tak
+událost nezahodí a do své aktualizace zachovají dosavadní výstup.
+Napojení hostitelské lišty na runtime je volitelné a předává jen stav souhlasu:
 
 ```js
 const formular = document.querySelector('iframe[data-festapp-embed]');
-const odpojit = FestappEmbed.connectKlaro(formular, klaro.getManager(klaroConfig));
+FestappEmbed.setMeasurementConsent(formular, {analytics: true, marketing: false});
 ```
 
-Klaro konfigurace hostitele musí obsahovat službu `analytics`. Adaptér vyžaduje
-potvrzenou uloženou volbu, obnovuje krátkou platnost souhlasu a při odvolání
-zničí vnořený runtime. Funkce `odpojit()` odstraní vazbu a souhlas odvolá.
-Povolené hostitelské originy musí být součástí schváleného seznamu předků runtime;
-neznámý host měření nespustí, formulář tím není zablokovaný.
+Pro průběžné čtení uložené volby slouží `connectKlaro(formular, manager)` nebo
+`connectMeasurementConsent(formular, zdroj)`. Explicitní adaptér má vždy přednost
+před automatickým mostem a jeho odpojení automatický zdroj neobnoví.
+Automatický most vyžaduje zapnutí „Převzít souhlas z lišty schválených webů“ v nastavení
+měření pořadatele (`measurement_consent_bridge`). Výchozí stav je vypnuto i pro
+existující pořadatele. Zapnutím pořadatel potvrzuje, že web a formulář provozuje
+jako stejný správce a lišta výslovně pokrývá formulář na vstupenky.online, účely,
+služby GTM pořadatele, runtime `*.pages.dev` a Festapp jako zpracovatele. Musí
+vysvětlovat odvolání; důkaz souhlasu uchovává pořadatel v CMP webu. Cizí partnerský
+web tuto podmínku automaticky nesplňuje. Přepínač je součástí manifestu a revize
+zpracování. Explicitní adaptéry fungují nezávisle na přepínači.
 
-Atribut `data-festapp-datalayer` výslovně volí měření v hostitelském dokumentu:
-události pak dostává pouze jeho dataLayer a GTM, nikoli současně kontejner
-jednotky. Bez tohoto atributu je cílem runtime jednotky. Kontakty se nepředávají
-v žádné variantě, ani přes starý atribut `data-festapp-datalayer-user-data`.
+Most čte ICS každých 250 ms, jinak pouze nové příkazy Arguments v dataLayer každou
+sekundu; pole ignoruje. Při zkrácení či výměně dataLayer začne znovu. Analytika
+vyžaduje `analytics_storage`, marketing explicitní udělení všech tří typů
+`ad_storage`, `ad_user_data` a `ad_personalization`. Chybějící stav znamená denied.
+Regionální default bez aktualizace znamená denied. Přítomnost `__tcfapi` vždy
+zamítne marketing; TCF most nečte, analytiku určuje Consent Mode.
+Odvolání těsně před nákupem může dorazit až za 250 ms nebo 1 s; uspání prohlížeče
+může okno prodloužit. Již předaná data nelze odvolat. Režim web zdroj odpojí,
+návrat do režimu jednotky jej znovu připojí. Změna jednotky či revize zůstane denied
+do nového navázání zdroje, například načtením nového vložení. Měření běží i při denied.
 
-Předávají se pouze povolené hodnoty kampaně, nikdy celá URL hostitele. Důvěra
-je svázaná se zdrojovým oknem, originem, instancí a platností souhlasu. Podrobný
-kontrakt a podporovanou matici popisuje [měření formulářů](form-datalayer.md).
+Layout/scroll/theme zůstávají na protokolu 1. Měření používá protokol 2 a staré
+měřicí zprávy odmítá. Události se nefrontují. Již přijatá data nelze odvolat. Povolené kampaně se filtrují,
+celá URL hostitele ani soukromé odpovědi se nepředávají. Podrobný kontrakt,
+SQL fakta a provozní meze popisuje [měření formulářů](form-datalayer.md).
+
+Měřicí komunikace používá protocol 3, nezávisle na layout protocol 1. Starý helper
+nebo runtime s novým klientem měření neaktivuje; samotný checkout funguje dál.
+Setter, Klaro a revision-aware source nahrazují jednu účinnou volbu. Odpojení
+zdroje neobnoví starší souhlas a nový scope vyžaduje novou nebo znovu ověřenou
+volbu. Změna iframe originu uklidí původní subscription i heartbeat.
+
+Veřejný web instaluje pouze webovou část offline shellu. Flutter HTML, loader,
+hlavní JS a všechny jeho deferred části se připraví atomicky až při skutečném
+vstupu do Flutter aplikace. Veřejný formulář ani jeho update/recovery požadavek
+je nestahují. Worker a per-version cache zůstávají společné; handshake nese
+`runtime: web | flutter`. Běžná Flutter aplikace je dostupná offline po svém
+online otevření, veřejný formulář má nezávislou webovou offline obnovu.
+
+## Převzetí živé volby cookies
+
+Web s `embed.js` může předat uloženou volbu svého CMP do samostatného formuláře:
+
+```html
+<script defer src="https://vstupenky.online/embed.js"></script>
+<a data-festapp-consent-link target="_blank"
+   href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
+```
+
+Pořadatel zapne `measurement_consent_bridge` a platforma schválí origin webu.
+Samotný atribut odkazu ani stav Google Consent Mode nestačí. Správce webu jednou
+nastaví standardní adaptér Complianzu na skriptu `embed.js`:
+
+```html
+<script defer src="https://vstupenky.online/embed.js"
+  data-festapp-consent='{"provider":"complianz","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","policyId":"42"}'></script>
+```
+
+Ukázkové hodnoty nahraďte skutečnými ID organizace a jednotky, hodnotou
+`analytics.consent_revision` z metadat formuláře a ID přijatých zásad Complianzu.
+Archivované znění těchto zásad musí pokrývat nákup ve formuláři, jeho účely,
+příjemce a oddělenou doménu měření. Konfiguraci neodvozujte z příchozí žádosti.
+Jeden skript obsluhuje jednu organizaci a jednotku; cizí rozsah odmítne.
+
+Adaptér ověří režim opt-in, uložené kategorie, stav lišty a shodu nastavené,
+uložené a aktuální verze zásad CMP. Uložené přijetí, částečná volba i odmítnutí
+se přenesou bez dalšího dotazu. Neznámý či zastaralý stav, chybějící API,
+vynucené statistiky nebo souhlas po jednotlivých službách ponechá místní lištu.
+Při TCF se automaticky neudělí marketing. Pouhé zavření lišty bez uložené volby
+nic nepovolí. Přímé čtení pevných názvů cookies se nepoužívá; prefix řeší CMP.
+
+Podporované standardní lišty jsou Complianz a CookieConsent v3 od orestbida.
+Pro CookieConsent v3 zpřístupněte veřejné API i při bundlování přes npm:
+
+```js
+import * as CookieConsent from 'vanilla-cookieconsent';
+window.CookieConsent = CookieConsent;
+```
+
+```html
+<script defer src="https://vstupenky.online/embed.js"
+  data-festapp-consent='{"provider":"cookieconsent","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","revision":42,"categories":{"analytics":"analytics","marketing":"marketing"}}'></script>
+```
+
+Hodnota `revision` musí být kladné celé číslo shodné s nastavením CookieConsent
+i uloženou volbou. Archivujte odpovídající zásady a mapování na revizi Festappu.
+Použijte režim `opt-in`; nula, opt-out, předvolené nebo povinné mapované kategorie
+a volby po službách vracejí neznámý stav a ponechají místní lištu. Volitelné
+`categories` určuje oba různé názvy kategorií webu; výchozí jsou `analytics` a
+`marketing`. Při TCF marketing zůstává odmítnutý. Kontroluje se i expirace a změna
+úložiště v jiné kartě; při neshodě se stavem instance je potřeba web znovu načíst.
+Podporována jsou cookies i `useLocalStorage`. Neplatná konfigurace nepřejde na GCM.
+Podrobnosti a zdroje jsou v [rešerši adaptéru](../plans/consent-link-cmp-adapters-2026-11-11.md).
+
+Technická změna runtime ukončí starou vazbu, ale nemění verzi podmínek souhlasu.
+Při změně účelů, příjemců nebo vzdáleného obsahu GTM/zásad zvyšte
+`measurement_consent_version`, zajistěte nové rozhodnutí v CMP a aktualizujte
+společné mapování jeho zásad a revize Festappu. Starý souhlas se nesmí označit
+novou revizí. Pro jiné CMP zůstává `FestappEmbed.connectMeasurementSource`;
+přesný kontrakt je v dokumentaci měření. Bez adaptéru se odkaz řídí místní lištou.
+Dosavadní GCM cesta vložených formulářů bez napojeného zdroje se nemění.
+
+Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
+karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,
+referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Bez
+referreru, propojení oken nebo při omezení COOP se zobrazí běžná místní lišta.
+Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
+
+Převzetí čeká nejvýše 1500 ms. Pak platí pouze pro aktuální návštěvu, nejvýše
+24 hodin, a průběžně se obnovuje krátkou vazbou na živý zdroj. Odvolání na webu
+se přenese; zánik záznamu, odpojení zdroje, opuštění webu nebo vypršení vazby
+ukončí převzetí a obnoví místní lištu. Žádné převzaté souhlasy se nezapisují do
+cookies. Obnovená nebo další karta vyžaduje nové předání. Vlastní volba uložená
+ve formuláři má přednost a zůstává v cookie na 180 dní.
+
+Po převzetí je dostupné plovoucí tlačítko nastavení. Uložení odpojí vzdálený zdroj;
+Escape zavře neuložené nastavení. Obnovení vazby nepřepíše rozpracovanou volbu.
+Klaro místní volby mezi již otevřenými kartami nepřenáší průběžně. Kliknutí helperu
+může potlačit GTM Just Links trigger s validací; nákup měřte událostmi formuláře.
+
+Přesný kontrakt zdroje a protokolu je v
+[dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).

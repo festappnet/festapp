@@ -66,13 +66,24 @@ def cases(paths, moves):
 
 
 def main():
-    mode, location = sys.argv[1:]
+    mode, location = sys.argv[1:3]
     if mode == "baseline":
         inventory = cases([Path(location)], {})
         MANIFEST.write_text(json.dumps({"moves": {}, "cases": [list(key) + [count] for key, count in sorted(inventory.items())]}, ensure_ascii=False, separators=(',', ':')) + "\n")
         print(f"Baseline: {sum(inventory.values())} semantic cases")
         return 0
     manifest = json.loads(MANIFEST.read_text())
+    if mode == 'check-ci':
+        lane = sys.argv[3] if len(sys.argv)>3 else 'ticket-client'
+        expected = Counter({tuple(row[:3]):row[3] for row in manifest['ci_cases'][lane]})
+        actual = cases(sorted(Path(location).glob('*.jsonl')),manifest['ci_moves'][lane])
+        if actual != expected:
+            print(f'CI inventory FAILED: {len(expected-actual)} missing, {len(actual-expected)} added',file=sys.stderr)
+            for row in list(expected-actual)[:10]: print('Missing:',row,file=sys.stderr)
+            for row in list(actual-expected)[:10]: print('Added:',row,file=sys.stderr)
+            return 1
+        print(f'CI inventory: {sum(expected.values())} identical semantic cases, including skip states')
+        return 0
     expected = Counter({tuple(row[:3]): row[3] for row in manifest["cases"]})
     actual = cases(sorted(Path(location).glob("*.jsonl")), manifest["moves"])
     # Optional fixture cases may gain coverage when their environment is present.

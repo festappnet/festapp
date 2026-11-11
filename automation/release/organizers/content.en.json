@@ -103,11 +103,11 @@
       "PAGE_SUPPORT": "Support"
     },
     "seo": {
-      "title": "Festapp Tickets - ticket sales and event registration",
-      "description": "Create your event, design tickets and seating plans, accept card payments with Stripe and check guests in.",
+      "title": "Festapp Tickets - Bring your night to life",
+      "description": "Ticketing for concerts, balls and theatre. Create your event, arrange seats and welcome guests with phone check-in.",
       "catalogTitle": "Events and tickets | Festapp Tickets",
       "catalogDescription": "Browse events published on Festapp Tickets.",
-      "image": "/android-chrome-512x512.png",
+      "image": "/organizers-media/global/festapp-tickets-social.png",
       "imageAlt": "Festapp Tickets"
     },
     "cta": {
@@ -143,6 +143,10 @@
       {
         "href": "/support/",
         "label": "Support"
+      },
+      {
+        "href": "https://vstupenky.online/",
+        "label": "Czech version"
       }
     ],
     "pages": [
@@ -172,7 +176,22 @@
       "legalNav": "Legal and support links",
       "closing": "Prepare your next event.",
       "priceNote": "Contact us to discuss service pricing.",
-      "pending": "English recording pending."
-    }
+      "pending": "Preview unavailable."
+    },
+    "homeStyle": "illustrated",
+    "homeMedia": [
+      "/organizers-media/global/body-bold.ttf",
+      "/organizers-media/global/body.ttf",
+      "/organizers-media/global/classic-ball-en.png",
+      "/organizers-media/global/display.otf",
+      "/organizers-media/global/festapp-tickets-header-dark.svg",
+      "/organizers-media/global/festapp-tickets-header.svg",
+      "/organizers-media/global/festapp-tickets-social.png",
+      "/organizers-media/global/hamlet-ticket-en.png",
+      "/organizers-media/global/original-native-e.png",
+      "/organizers-media/global/revised-door.png",
+      "/organizers-media/global/revised-qr.svg",
+      "/organizers-media/global/sample-ticket.html"
+    ]
   }
 }

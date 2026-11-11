@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Run reviewed SQL through the Cloudflare Access protected Studio API."""
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import migration_inputs
 import argparse
 import hashlib
 import json
@@ -65,7 +69,7 @@ def main() -> int:
     file = args.migration_file or args.sql_file
     if not args.sha256 or not re.fullmatch(r"[0-9a-fA-F]{64}", args.sha256):
         parser.error("--sha256 is required for SQL execution")
-    body = file.read_bytes()
+    body = migration_inputs.read_bytes(file)
     digest = hashlib.sha256(body).hexdigest()
     if digest != args.sha256.lower():
         raise RuntimeError("SQL file SHA-256 mismatch; no SQL was executed")

@@ -3,6 +3,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get formPreview => 'FormEditorLayout.formPreview'.tr();
+  static String get publicPage => 'FormEditorLayout.publicPage'.tr();
+  static String get formIntroduction => 'FormEditorLayout.formIntroduction'.tr();
+  static String get formOutline => 'FormEditorLayout.formOutline'.tr();
+
   static String get measurementFormUnitBlocked =>
       'FeatureFormSettings.measurementFormUnitBlocked'.tr();
   static String get measurementOpenUnitSettings =>
@@ -14,6 +19,14 @@ class FormStrings {
       'FeatureFormSettings.measurementUnitDisabled'.tr();
   static String get measurementActivationHelp =>
       'FeatureFormSettings.measurementActivationHelp'.tr();
+  static String get measurementApprovalRequired =>
+      'FeatureFormSettings.measurementApprovalRequired'.tr();
+  static String get measurementApprovalRequest =>
+      'FeatureFormSettings.measurementApprovalRequest'.tr();
+  static String measurementApprovalRequested(String date) =>
+      'FeatureFormSettings.measurementApprovalRequested'.tr(
+        namedArgs: {'date': date},
+      );
   static String get gtmContainer => 'FeatureFormSettings.gtmContainer'.tr();
   static String get gtmHelp => 'FeatureFormSettings.gtmHelp'.tr();
   static String get measurementOrganizationEnabled =>
@@ -22,6 +35,32 @@ class FormStrings {
       'FeatureFormSettings.measurementOrganizationHelp'.tr();
   static String get measurementUnitEnabled =>
       'FeatureFormSettings.measurementUnitEnabled'.tr();
+  static String get measurementWebsites =>
+      'FeatureFormSettings.measurementWebsites'.tr();
+  static String get measurementWebsitesHelp =>
+      'FeatureFormSettings.measurementWebsitesHelp'.tr();
+  static String get measurementWebsitesInvalid =>
+      'FeatureFormSettings.measurementWebsitesInvalid'.tr();
+  static String get measurementWebsiteApproved =>
+      'FeatureFormSettings.measurementWebsiteApproved'.tr();
+  static String get measurementWebsitePending =>
+      'FeatureFormSettings.measurementWebsitePending'.tr();
+  static String get measurementWebsiteDraft =>
+      'FeatureFormSettings.measurementWebsiteDraft'.tr();
+  static String get measurementWebsiteUnrequested =>
+      'FeatureFormSettings.measurementWebsiteUnrequested'.tr();
+  static String get measurementWebsiteUnknown =>
+      'FeatureFormSettings.measurementWebsiteUnknown'.tr();
+  static String get measurementWebsitesSaveFirst =>
+      'FeatureFormSettings.measurementWebsitesSaveFirst'.tr();
+  static String get measurementWebsitesReady =>
+      'FeatureFormSettings.measurementWebsitesReady'.tr();
+  static String get measurementApprovalRetry =>
+      'FeatureFormSettings.measurementApprovalRetry'.tr();
+  static String get measurementConsentBridge =>
+      'FeatureFormSettings.measurementConsentBridge'.tr();
+  static String get measurementConsentBridgeConfirmation =>
+      'FeatureFormSettings.measurementConsentBridgeConfirmation'.tr();
   static String get measurementUnitHelp =>
       'FeatureFormSettings.measurementUnitHelp'.tr();
   static String get measurementFormHelp =>
@@ -34,12 +73,51 @@ class FormStrings {
       'FeatureFormSettings.measurementOrganizationBlocked'.tr();
   static String get measurementRuntimeBlocked =>
       'FeatureFormSettings.measurementRuntimeBlocked'.tr();
+  static String get measurementPlatformBlocked =>
+      'FeatureFormSettings.measurementPlatformBlocked'.tr();
   static String get measurementAdvanced =>
       'FeatureFormSettings.measurementAdvanced'.tr();
   static String get measurementNoDestination =>
       'FeatureFormSettings.measurementNoDestination'.tr();
+  static String get measurementRequestNoRecipient =>
+      'FeatureFormSettings.measurementRequestNoRecipient'.tr();
+  static String get measurementNotificationOriginMissing =>
+      'FeatureFormSettings.measurementNotificationOriginMissing'.tr();
   static String get measurementReady =>
       'FeatureFormSettings.measurementReady'.tr();
+  static String get measurementConsentLayout =>
+      'FeatureFormSettings.measurementConsentLayout'.tr();
+  static String get measurementConsentLayoutBar =>
+      'FeatureFormSettings.measurementConsentLayoutBar'.tr();
+  static String get measurementConsentLayoutModal =>
+      'FeatureFormSettings.measurementConsentLayoutModal'.tr();
+  static String get measurementConsentCustomTitle =>
+      'FeatureFormSettings.measurementConsentCustomTitle'.tr();
+  static String get measurementConsentCustomTitleHelp =>
+      'FeatureFormSettings.measurementConsentCustomTitleHelp'.tr();
+  static String get measurementConsentCustomText =>
+      'FeatureFormSettings.measurementConsentCustomText'.tr();
+  static String get measurementConsentCustomTextHelp =>
+      'FeatureFormSettings.measurementConsentCustomTextHelp'.tr();
+  static String get measurementConsentRestoreDefault =>
+      'FeatureFormSettings.measurementConsentRestoreDefault'.tr();
+
+  /// Defaults shown prefilled in the Unit editor; saving them unchanged stores
+  /// null so visitors keep the default in their own language.
+  static String get measurementConsentDefaultTitle =>
+      'FeatureFormSettings.measurementConsentTitle'.tr();
+  static String get measurementConsentDefaultText =>
+      'FeatureFormSettings.measurementConsentDescription'.tr();
+  static String get measurementPrivacyUrlRequired =>
+      'FeatureFormSettings.measurementPrivacyUrlRequired'.tr();
+  static String get measurementNoPrivacyPolicy =>
+      'FeatureFormSettings.measurementNoPrivacyPolicy'.tr();
+  static String get measurementPrivacyUrl =>
+      'FeatureFormSettings.measurementPrivacyUrl'.tr();
+  static String get measurementPrivacyUrlHelp =>
+      'FeatureFormSettings.measurementPrivacyUrlHelp'.tr();
+  static String get measurementPrivacyUrlInvalid =>
+      'FeatureFormSettings.measurementPrivacyUrlInvalid'.tr();
   static String get measurementTitle =>
       'FeatureFormSettings.measurementTitle'.tr();
   static String get measurementScripts =>
@@ -54,8 +132,9 @@ class FormStrings {
   static String appearanceLabel(String key) => 'OccasionSetup.ui.$key'.tr();
 
   static String emailSuffixWarning(String suffix, {bool informal = false}) =>
-      'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'
-          .tr(namedArgs: {'suffix': suffix});
+      'EmailDomainSuffix.${informal ? 'warningInformal' : 'warning'}'.tr(
+        namedArgs: {'suffix': suffix},
+      );
   static String get emailSuffixConfirm => 'EmailDomainSuffix.confirm'.tr();
 
   static String get productsAndPrices =>
@@ -67,6 +146,8 @@ class FormStrings {
   static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
+  static String get embedHostDataLayer =>
+      'FeatureFormSettings.embedHostDataLayer'.tr();
   static String get embedOpenAppearance =>
       'FeatureFormSettings.embedOpenAppearance'.tr();
 
@@ -95,10 +176,12 @@ class FormStrings {
   static String get nonNegativeDays =>
       'FeatureFormSettings.nonNegativeDays'.tr();
   static String inheritReminder(bool enabled) =>
-      'FeatureFormSettings.inheritReminder'
-          .tr(args: [enabled ? remindersOn : remindersOff]);
-  static String inheritDays(num days) => 'FeatureFormSettings.inheritDays'
-      .tr(args: [days % 1 == 0 ? days.toInt().toString() : days.toString()]);
+      'FeatureFormSettings.inheritReminder'.tr(
+        args: [enabled ? remindersOn : remindersOff],
+      );
+  static String inheritDays(num days) => 'FeatureFormSettings.inheritDays'.tr(
+    args: [days % 1 == 0 ? days.toInt().toString() : days.toString()],
+  );
 
   static String deletionReason(String? reason) =>
       'FormsFeature.deleteBlocked.${reason ?? 'unknown'}'.tr();
@@ -121,11 +204,12 @@ class FormStrings {
       'inventory',
       'shared',
       'primary_product',
-      'changed'
+      'changed',
     ]) {
       if (message.contains('FORM_DELETE_$reason')) {
-        return 'FormsFeature.deleteSaveFailed'
-            .tr(args: [deletionReason(reason)]);
+        return 'FormsFeature.deleteSaveFailed'.tr(
+          args: [deletionReason(reason)],
+        );
       }
     }
     return message.replaceFirst('Exception: ', '');
@@ -133,7 +217,7 @@ class FormStrings {
 
   static String get moreFonts => 'FeatureFormSettings.moreFonts'.tr();
   static String get fontSearchHint => 'FeatureFormSettings.fontSearchHint'.tr();
-// Form Settings Feature
+  // Form Settings Feature
   static String get formSettingsTitle => 'FeatureFormSettings.title'.tr();
   static String get formNotFound => 'FeatureFormSettings.formNotFound'.tr();
   static String get labelFormTitle => 'FeatureFormSettings.labelFormTitle'.tr();
@@ -221,8 +305,7 @@ class FormStrings {
   static String get communicationToneTitle =>
       'FeatureFormSettings.communicationToneTitle'.tr(); // "Communication Tone"
   static String get helperCommunicationTone =>
-      'FeatureFormSettings.helperCommunicationTone'
-          .tr(); // "Select the tone for automated communications, like payment confirmation emails or reminders. This will affect the wording in the email templates."
+      'FeatureFormSettings.helperCommunicationTone'.tr(); // "Select the tone for automated communications, like payment confirmation emails or reminders. This will affect the wording in the email templates."
   static String get labelCommunicationTone =>
       'FeatureFormSettings.labelCommunicationTone'.tr(); // "Tone"
   static String get toneFormal =>
@@ -263,10 +346,9 @@ class FormStrings {
   static String get customFontNameLabel =>
       'FeatureFormSettings.customFontNameLabel'
           .tr(); // "Custom Google Font Name"
-  static String get customFontHelper => 'FeatureFormSettings.customFontHelper'
-      .tr(); // "Paste the exact font title from Google Fonts (e.g. 'Roboto Condensed')."
-  static String get fontNotFound => 'FeatureFormSettings.fontNotFound'
-      .tr(); // "Font not found. Please paste the exact name from fonts.google.com"
+  static String get customFontHelper =>
+      'FeatureFormSettings.customFontHelper'.tr(); // "Paste the exact font title from Google Fonts (e.g. 'Roboto Condensed')."
+  static String get fontNotFound => 'FeatureFormSettings.fontNotFound'.tr(); // "Font not found. Please paste the exact name from fonts.google.com"
   static String get hexCodeLabel =>
       'FeatureFormSettings.hexCodeLabel'.tr(); // "Hex Code"
   static String get days => 'FeatureFormSettings.days'.tr(); // "Days"
@@ -281,18 +363,19 @@ class FormStrings {
       'FeatureFormSettings.reservationUnavailable'
           .tr(); // "Reservation Unavailable"
   static String get reservationUnavailableMessage =>
-      'FeatureFormSettings.reservationUnavailableMessage'
-          .tr(); // "Reservation for the selected event is currently unavailable."
+      'FeatureFormSettings.reservationUnavailableMessage'.tr(); // "Reservation for the selected event is currently unavailable."
   static String get availability =>
       'FeatureFormSettings.availability'.tr(); // "Availability"
   static String get formClosedMessage =>
       'FeatureFormSettings.formClosedMessage'.tr(); // "Form is CLOSED."
   static String scheduledWithTime(String time) =>
-      'FeatureFormSettings.scheduledWithTime'
-          .tr(namedArgs: {'time': time}); // "Scheduled (Starts: {time})"
+      'FeatureFormSettings.scheduledWithTime'.tr(
+        namedArgs: {'time': time},
+      ); // "Scheduled (Starts: {time})"
   static String endedWithTime(String time) =>
-      'FeatureFormSettings.endedWithTime'
-          .tr(namedArgs: {'time': time}); // "Ended (Closed: {time})"
+      'FeatureFormSettings.endedWithTime'.tr(
+        namedArgs: {'time': time},
+      ); // "Ended (Closed: {time})"
   static String get formOpenMessage => 'FeatureFormSettings.formOpenMessage'
       .tr(); // "Form is OPEN & accepting responses."
   static String get scheduleAndLimits =>
@@ -345,14 +428,15 @@ class FormStrings {
   static String get depositOnSite => 'OrderGridColumns.depositOnSite'.tr();
   static String get depositInfo => 'OrderGridColumns.depositInfo'.tr();
 
-// --- FormsTab (Main Grid View) ---
+  // --- FormsTab (Main Grid View) ---
   static String get formsTitle => 'FormsFeature.formsTitle'.tr(); // "Forms"
   static String get createNewForm =>
       'FormsFeature.createNewForm'.tr(); // "Create/Copy Form"
   // --- There are no forms for this event. Click '{createNew}' to add one.
   static String noFormsForEventPrompt(String createNew) =>
-      'FormsFeature.noFormsForEventPrompt'
-          .tr(namedArgs: {'createNew': createNew});
+      'FormsFeature.noFormsForEventPrompt'.tr(
+        namedArgs: {'createNew': createNew},
+      );
   static String get createCopy =>
       'FormsFeature.createCopy'.tr(); // "Create Copy"
   static String get statusOpen =>
@@ -367,12 +451,12 @@ class FormStrings {
   static String get cannotDeleteFormWithResponses =>
       'FormsFeature.cannotDeleteFormWithResponses'.tr();
 
-// --- FormTab (The TabBar holder) ---
+  // --- FormTab (The TabBar holder) ---
   static String get tabForm => 'FormsFeature.tabForm'.tr(); // "Form"
   static String get tabResponses =>
       'FormsFeature.tabResponses'.tr(); // "Responses" (can be reused)
 
-// --- FormCreationHelper (Creation Dialog) ---
+  // --- FormCreationHelper (Creation Dialog) ---
   static String get defaultFormTitle =>
       'FormsFeature.defaultFormTitle'.tr(); // "new-form"
   static String get formAvailableAt =>
@@ -380,7 +464,7 @@ class FormStrings {
   static String get formCreatedSuccess =>
       'FormsFeature.formCreatedSuccess'.tr(); // "Form created successfully!"
 
-// --- FormEditorContent (Form Editor Tab) ---
+  // --- FormEditorContent (Form Editor Tab) ---
   static String get formTurnedOff =>
       'FormsFeature.formTurnedOff'.tr(); // "This form is currently turned off"
   static String get editOffText =>
@@ -396,7 +480,7 @@ class FormStrings {
   static String get noFieldsAvailable =>
       'FormsFeature.noFieldsAvailable'.tr(); // "No fields available to add."
 
-// --- Form Editor (Ticket Editor) ---
+  // --- Form Editor (Ticket Editor) ---
   static String get addProductTypeTitle =>
       'FormsFeature.addProductTypeTitle'.tr();
   static String get createNewProductTypeOption =>
@@ -429,8 +513,7 @@ class FormStrings {
   static String get labelMaxTicketsPerOrder =>
       'FormsFeature.labelMaxTicketsPerOrder'.tr(); // "Max tickets per order:"
   static String get helperMaxTicketsPerOrder =>
-      'FormsFeature.helperMaxTicketsPerOrder'
-          .tr(); // "How many tickets a user can buy in a single order (default: 1)."
+      'FormsFeature.helperMaxTicketsPerOrder'.tr(); // "How many tickets a user can buy in a single order (default: 1)."
   static String get validationMaxTicketsInvalid =>
       'FormsFeature.validationMaxTicketsInvalid'
           .tr(); // "Please enter a valid number (1 or more)."
@@ -446,7 +529,7 @@ class FormStrings {
   static String get clearDefaultSelection =>
       'FormsFeature.clearDefaultSelection'.tr();
 
-// --- Create/Copy Dialog (_CreateOrCopyFormDialog) ---
+  // --- Create/Copy Dialog (_CreateOrCopyFormDialog) ---
   static String get createFormTitle =>
       'FormsFeature.createFormTitle'.tr(); // "Create a Form"
   static String get createNewBlankForm =>
@@ -461,11 +544,11 @@ class FormStrings {
       'FormsFeature.groupUpcoming'.tr(); // "Upcoming"
   static String get groupOther => 'FormsFeature.groupOther'.tr(); // "Other"
   static String numberOfResponsesTooltip(int count) =>
-      'FormsFeature.numberOfResponsesTooltip'.tr(namedArgs: {
-        'count': count.toString()
-      }); // "Number of responses: {count}"
+      'FormsFeature.numberOfResponsesTooltip'.tr(
+        namedArgs: {'count': count.toString()},
+      ); // "Number of responses: {count}"
 
-// --- Field & Product Editors (widgets_editor) ---
+  // --- Field & Product Editors (widgets_editor) ---
   static String get addProduct =>
       'FormsFeature.addProduct'.tr(); // "Add Product"
   static String get addDescription =>

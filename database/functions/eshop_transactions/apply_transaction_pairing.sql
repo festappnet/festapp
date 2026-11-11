@@ -52,6 +52,25 @@ BEGIN
   PERFORM 1 FROM eshop.payment_info WHERE id IN (v_old_payment_info_id,p_payment_info_id)
   ORDER BY id FOR UPDATE;
 
+  -- A settled movement is immutable through the generic attach/unlink API.
+  -- Cash voids and evidenced bank reclassification have their explicit owner.
+  IF EXISTS(SELECT 1 FROM eshop.refund_settlements WHERE transaction_id=p_transaction_id)
+     AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id THEN
+    RAISE EXCEPTION 'REFUND_SETTLEMENT_REQUIRES_EXPLICIT_CORRECTION';
+  END IF;
+  IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0
+     AND NOT EXISTS(SELECT 1 FROM eshop.bank_accounts b WHERE b.id=v_transaction.bank_account_id
+       AND upper(b.type)='CASH' AND v_transaction.transaction_type='manual'
+       AND v_transaction.ingest_source='manual') THEN
+    RAISE EXCEPTION 'OUTGOING_REQUIRES_REFUND_CLASSIFICATION';
+  END IF;
+  IF v_old_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id THEN
+    PERFORM public.assert_payment_refund_reservations_internal(v_old_payment_info_id,greatest(v_transaction.amount,0));
+  END IF;
+  IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0 THEN
+    PERFORM public.assert_payment_refund_reservations_internal(p_payment_info_id,-v_transaction.amount);
+  END IF;
+
   IF p_actor_kind='user' THEN
     FOR v_order_id IN SELECT id FROM eshop.orders
       WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id) ORDER BY id LOOP
@@ -67,7 +86,16 @@ BEGIN
   IF p_payment_info_id IS NOT NULL THEN
     SELECT * INTO v_target FROM eshop.payment_info WHERE id = p_payment_info_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_PAYMENT_INFO_NOT_FOUND'; END IF;
-    IF v_target.payment_method<>'bank' THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF public.payment_method_is_online_internal(v_target.payment_method) THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF v_target.payment_method='cash' AND NOT EXISTS(SELECT 1 FROM eshop.bank_accounts b
+      WHERE b.id=v_transaction.bank_account_id AND b.type='CASH' AND v_transaction.transaction_type='manual') THEN
+      RAISE EXCEPTION 'CASH_BANK_PAIRING_UNSUPPORTED'; END IF;
+    IF v_transaction.transaction_type='manual' THEN
+      IF NOT EXISTS(SELECT 1 FROM eshop.unit_bank_accounts link JOIN public.occasions oc ON oc.unit=link.unit
+        JOIN eshop.orders o ON o.occasion=oc.id JOIN eshop.bank_accounts b ON b.id=link.bank_account
+        WHERE o.payment_info=v_target.id AND b.id=v_transaction.bank_account_id ) THEN
+        RAISE EXCEPTION 'CASH_ORDER_SCOPE_MISMATCH'; END IF;
+    END IF;
     IF upper(trim(v_transaction.currency::text)) <> upper(trim(v_target.currency_code::text)) THEN
       RAISE EXCEPTION 'PAIRING_CURRENCY_MISMATCH';
     END IF;

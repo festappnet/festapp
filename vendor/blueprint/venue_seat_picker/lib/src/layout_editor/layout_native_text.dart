@@ -23,7 +23,12 @@ class LayoutNativeTextCache {
     final items = <Map<String, dynamic>>[
       for (final raw in scene['items'] as List)
         if (!(raw['kind'] == 'glyphs' && '${raw['id']}'.endsWith(':text')))
-          Map<String, dynamic>.from(raw as Map),
+          // The painter caches parsed paths by item identity. Native text only
+          // replaces labels; retaining the compiler's other items keeps those
+          // path caches alive while unrelated geometry moves.
+          raw is Map<String, dynamic>
+              ? raw
+              : Map<String, dynamic>.from(raw as Map),
     ];
     final active = <String>{};
     final nativeIds = <String>{};

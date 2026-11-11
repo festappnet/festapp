@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { checkoutPayment, recoverPaymentClaim } from "./checkout.ts";
 import {
   type CheckoutSnapshot,
-  type PaymentDependencies,
+  type HostedPaymentDependencies,
   PaymentError,
   type PaymentObservation,
   type PaymentClaim,
@@ -44,7 +44,7 @@ function fixture(id = "different_gateway") {
     url: "https://pay.example/checkout/42",
     expiresAt: snapshot.expiresAt,
   };
-  const deps: PaymentDependencies = {
+  const deps: HostedPaymentDependencies = {
     livemode: false,
     allowedOrigins: ["https://tickets.example"],
     routes: { payPath: "/payments/pay", returnPath: "/payments/return" },

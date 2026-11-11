@@ -43,6 +43,11 @@ abstract final class AuthorizationCapabilities {
   static const speakersWrite = 'speakers.write';
   static const speakersEditorRead = 'speakers.editor.read';
   static const servicesWrite = 'services.write';
+  static const accessMembersWrite = 'access.members.write';
+  static const accessInvitationsOffer = 'access.invitations.offer';
+  static const accessInvitationsRead = 'access.invitations.read';
+  static const accessInvitationsRevoke = 'access.invitations.revoke';
+  static const accessCredentialsSend = 'access.credentials.send';
   static const participantsWrite = 'participants.write';
   static const participantsContactsRead = 'participants.contacts.read';
   static const formsSaleOpeningSubscribersRead = 'forms.sale_opening_subscribers.read';

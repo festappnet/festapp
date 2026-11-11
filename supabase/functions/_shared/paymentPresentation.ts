@@ -1,3 +1,12 @@
+// Released historical payment rows can omit the method. Only that bounded
+// shape retains bank presentation; explicit cash/provider identities never do.
+export function isBankPaymentInfo(payment: any): boolean {
+  return payment != null && (payment.payment_method == null || payment.payment_method === "bank");
+}
+export function hasNoPaymentDeadline(payment: any): boolean {
+  return payment?.data?.payment_policy?.mode === "none";
+}
+
 export type PaymentQrFormat = "SPD" | "EPC_SCT";
 
 export interface PaymentPresentation {

@@ -2,153 +2,127 @@ name: Seat checkout regressions
 on:
   push:
     branches: [main]
-    paths:
-      - 'database/functions/eshop/**'
-      - 'database/functions/eshop_barion/**'
-      - 'database/functions/eshop_stripe/**'
-      - 'database/functions/payment_providers/**'
-      - 'database/functions/abuse/policy.sql'
-      - 'supabase/functions/_shared/barion/**'
-      - 'supabase/functions/_shared/payments/**'
-      - 'supabase/functions/_shared/stripe/**'
-      - 'web_client/tests/database/barion*'
-      - 'automation/payments/**'
-      - 'automation/*barion*'
-      - 'database/functions/blueprint/**'
-      - 'database/tests/blueprint/legacy_ticket_offer_test.sql'
-      - 'database/functions/eshop_orders/**'
-      - 'database/functions/eshop_waitlist/**'
-      - 'database/functions/eshop_forms/**'
-      - 'database/functions/notification_center/**'
-      - 'database/functions/occasion_setup/**'
-      - 'database/tests/occasion_setup/**'
-      - 'supabase/functions/occasion-setup-email-preview/**'
-      - 'lib/components/occasion/setup/**'
-      - 'lib/components/fonts/**'
-      - 'lib/components/forms/**'
-      - 'test/components/forms/form_appearance_theme_test.dart'
-      - 'test/components/occasion/occasion_setup*'
-      - 'automation/generate_setup_appearance_fonts.mjs'
-      - 'automation/tickets/setup-appearance-fonts.json'
-      - 'database/tests/notification_center/**'
-      - 'lib/components/notification_center/**'
-      - 'test/components/notification_center/**'
-      - 'automation/notification-center-feed-manifest.json'
-      - 'automation/assemble-notification-center-migration.py'
-      - 'database/tests/eshop_orders/required*test.sql'
-      - 'database/tests/eshop_orders/manual_paid_state_only_test.sql'
-      - 'database/functions/emails/**'
-      - 'database/tests/emails/**'
-      - 'database/tests/eshop/reminders/**'
-      - 'database/tests/eshop/deposit/**'
-      - 'automation/email-delivery/**'
-      - 'supabase/functions/send-tickets/**'
-      - 'supabase/functions/preview-ticket-layout/**'
-      - 'supabase/functions/_shared/**'
-      - 'lib/components/eshop/db_tickets.dart'
-      - 'lib/components/eshop/views/orders_content.dart'
-      - 'test/components/eshop/ticket_delivery_request_test.dart'
-      - 'workers/image-worker/**'
-      - 'database/functions/others/**'
-      - 'database/functions/authoring/lifecycle.sql'
-      - 'database/tests/occasion_copy_lifecycle_test.sql'
-      - 'supabase/migrations/**'
-      - 'supabase/baseline/**'
-      - 'database/tests/canonical_mutation_source_parity_test.sql'
-      - 'automation/generate_canonical_source_contract.py'
-      - 'automation/canonical-source-contract.json'
-      - 'automation/baseline.py'
-      - 'automation/historical-sql-manifest.json'
-      - 'automation/bootstrap_local_db.sh'
-      - 'automation/local_db/**'
-      - 'web_client/package.json'
-      - 'web_client/pnpm-lock.yaml'
-      - 'web_client/pnpm-workspace.yaml'
-      - 'web_client/src/**'
-      - 'web_client/scripts/test_seat_checkout_browser.mjs'
-      - 'web_client/scripts/test_form_access_browser.mjs'
-      - 'web_client/tests/fixtures/form_access/**'
-      - 'web_client/tests/fixtures/seat_checkout/**'
-      - 'automation/ci/**'
-      - '.github/workflows/seat-checkout-regressions.yml'
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  merge_group:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
+  actions: read
+  checks: read
 jobs:
   seat-checkout:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
-      SEAT_CHECKOUT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Select verified CI inputs
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/selection.py seat-checkout
       - uses: pnpm/action-setup@v6
+        if: steps.selection.outputs.run == 'true'
         with:
           version: 11.24.0
       - uses: actions/setup-node@v7
+        if: steps.selection.outputs.run == 'true'
         with:
-          node-version: '22.23.3'
+          node-version: '22.23.4'
           cache: pnpm
           cache-dependency-path: web_client/pnpm-lock.yaml
       - uses: supabase/setup-cli@v3
+        if: steps.selection.outputs.run == 'true'
         with:
           version: 2.111.0
       - run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
-      - run: python3 automation/ci/run.py step seat-install
-      - name: Install isolated Chromium test runner
-        run: bash automation/ci/browser.sh
-      - run: python3 automation/ci/run.py step seat-database
-      - name: Copy event media in workerd and delete its inventory through real SQL
-        run: python3 automation/ci/run.py step occasion-lifecycle
-      - name: Authorization read-phase upgrade contracts
+        if: steps.selection.outputs.run == 'true'
+      - name: Prepare isolated browser and database image
+        if: steps.selection.outputs.run == 'true'
+        run: bash automation/ci/prepare-seat.sh
+      - name: Install pinned Deno
+        if: steps.selection.outputs.run == 'true'
+        run: bash automation/ci/deno.sh
+      - name: Run canonical regression DAG
         env:
-          FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL: ${{ env.DATABASE_URL }}
-        run: python3 automation/ci/run.py step seat-authorization
-      - uses: denoland/setup-deno@v2
+          GH_TOKEN: ${{ github.token }}
+        if: steps.selection.outputs.run == 'true'
+        run: python3 automation/ci/run.py lane seat-checkout
+      - name: All lane tests executed
+        if: steps.selection.outputs.run == 'true'
+        run: echo 'All lane tests executed'
+      - name: Preserve canonical CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          deno-version: '2.9.0'
-      - name: Google broker admission against real SQL
-        env:
-          GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
-        run: python3 automation/ci/run.py step seat-google-auth
-      - name: Database contract and anonymous checkout
-        run: python3 automation/ci/run.py step seat-contract
-      - name: Notification feed and history authorization contracts
-        run: python3 automation/ci/run.py step seat-notifications
-      - name: Reserve a seat, lose connectivity and recover checkout in a real browser
-        run: python3 automation/ci/run.py step seat-browser
+          name: ci-${{ github.job }}-${{ github.run_attempt }}
+          path: ~/.cache/festapp-ci/runs
+          retention-days: 7
+          if-no-files-found: ignore
 
   ticket-preview-and-delivery:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
+      - uses: actions/checkout@v7
         with:
-          deno-version: '2.9.0'
-      - name: Ticket preview colors and first-delivery intent
-        run: python3 automation/ci/run.py step ticket-edge
+          fetch-depth: 0
+      - name: Select verified CI inputs
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/selection.py ticket-preview-and-delivery
+      - name: Install pinned Deno
+        if: steps.selection.outputs.run == 'true'
+        run: bash automation/ci/deno.sh
       - id: sdk
+        if: steps.selection.outputs.run == 'true'
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
+        if: steps.selection.outputs.run == 'true'
         with:
           flutter-version: ${{ steps.sdk.outputs.version }}
           cache: true
       - name: Use the installed SDK through FVM
+        if: steps.selection.outputs.run == 'true'
         run: |
           dart pub global activate fvm 4.1.2
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
-      - run: python3 automation/ci/run.py step ticket-install
-      - name: Shared customer display labels
-        run: python3 automation/ci/run.py step ticket-core
-      - name: First delivery, notification feed and resend client requests
-        run: python3 automation/ci/run.py step ticket-client
+      - uses: pnpm/action-setup@v6
+        if: steps.selection.outputs.run == 'true'
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v7
+        if: steps.selection.outputs.run == 'true'
+        with:
+          node-version: '22.23.4'
+      - name: Run canonical regression DAG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        if: steps.selection.outputs.run == 'true'
+        run: python3 automation/ci/run.py lane ticket-preview-and-delivery
+      - name: All lane tests executed
+        if: steps.selection.outputs.run == 'true'
+        run: echo 'All lane tests executed'
+      - name: Preserve canonical CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-${{ github.job }}-${{ github.run_attempt }}
+          path: ~/.cache/festapp-ci/runs
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs';
+import fs from './lib/migration_inputs.mjs';
 import { readHistoricalSql } from './lib/historical_sql.mjs';
 import path from 'node:path';
 import process from 'node:process';

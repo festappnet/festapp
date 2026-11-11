@@ -20,6 +20,14 @@ must still be selected; neither an empty selection nor an optional add-on can
 replace the required fee. Enabled or missing ticket containers retain the
 admission-product requirement.
 
+## Saved seat selection
+
+Seat selection uses the form's saved `blueprint` association immediately after
+ordinary plan/form Save, including preview. It has no independent publication
+step; the form's existing availability settings control sales. See the
+[plan association owner](../blueprint/README.md#saved-form-plans-and-existing-admissions).
+Missing associations never render as a free-text seat field.
+
 ## Gotchas
 
 - **Never hardcode field IDs**. Find fields by `type` or `data` attributes -- IDs are generated.
@@ -413,3 +421,28 @@ aggregate deletion cascades their removal and makes old intents invalid.
 The additive migration installs the new cron inactive. Production activation,
 provider credentials and release are separate operations. See the
 [local execution evidence](../../../docs/plans/sale-opening-notifications-RESULT-2026-11-04.md).
+
+## Cash reservations and deadline policy
+
+The existing per-form payment picker stores one canonical `data.payments` choice.
+Cash-only means `cashEnabled=true`, `bankEnabled=false`, no provider bindings;
+`cashInstructions` is plain text (up to 1000 characters). SQL rejects mixed cash
+methods and mandatory Fakturoid invoicing. A missing account never selects cash.
+`payment_deadline.mode` is `inherit`, `custom` or `none`; only
+`deadline_duration_seconds` stores a custom duration, including zero.
+
+The versioned form command owns normalization and `payment_selection_intent:
+'replace'`. Modern editors declare explicit selection changes; omitted fields
+are retained and conflicting older full saves fail with
+`PAYMENT_CLIENT_UPDATE_REQUIRED`. Public form/order reads and checkout declare
+`cash_reservations` and `no_payment_deadline` in `client_capabilities`. Released
+RPC signatures delegate to those readers with no capabilities and refuse new
+unsupported instructions. Setup, MCP, duplication and waitlist conversion use
+the same settings/finalization owners. See the [payment contract](../eshop/README.md#cash-payments-and-payment-deadlines).
+
+The web embed uses the shared page context and update policy in
+`web_client/src/runtime/`. `EmbedBridge` composes the validated channel, layout,
+measurement transport and `EmbedTheme`; the public step, price and scroll
+helpers retain their existing callers. `FormMeasurementSession` remains the
+measurement policy owner. The host projects the existing price widget and
+never computes an order total. Flutter has no embed presentation variant.

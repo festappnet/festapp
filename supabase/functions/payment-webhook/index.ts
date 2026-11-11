@@ -10,8 +10,8 @@ Deno.serve(async (request) => {
     const binding = paymentRegistry.resolve(
       new URL(request.url).searchParams.get("provider"),
     );
-    if (!binding.webhook) throw new Error("payment_webhook_unavailable");
-    return await binding.webhook.handle(request);
+    if (!binding.hostedCheckout?.webhook) throw new Error("payment_webhook_unavailable");
+    return await binding.hostedCheckout.webhook.handle(request);
   } catch {
     return Response.json({ error: "payment_webhook_unavailable" }, {
       status: 503,

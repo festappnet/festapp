@@ -1,3 +1,80 @@
+CREATE OR REPLACE FUNCTION public.order_email_current_issues_bulk(p_orders bigint[])
+RETURNS TABLE(order_id bigint,issues jsonb)
+LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN QUERY
+
+ WITH RECURSIVE selected_orders AS MATERIALIZED (
+  SELECT o.* FROM eshop.orders o WHERE o.id=ANY(p_orders) AND o.state<>'storno'
+ ), scoped_messages AS MATERIALIZED (
+  SELECT m.* FROM public.email_messages m JOIN selected_orders o ON o.id=m.order_id AND o.occasion=m.occasion
+  JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=m.organization
+ ), event_times AS MATERIALIZED (
+  SELECT e.message_id,max(e.provider_time) FILTER(WHERE e.event_type='bounce') bounce,
+   max(e.provider_time) FILTER(WHERE e.event_type='delivery') delivery,
+   max(e.provider_time) FILTER(WHERE e.event_type IN ('bounce','complaint','reject','rendering_failure')) failure
+  FROM public.email_delivery_events e JOIN scoped_messages m ON m.message_id=e.message_id GROUP BY e.message_id
+ ), messages AS MATERIALIZED (
+  SELECT m.*,CASE WHEN m.complained_at IS NULL AND m.last_error IS DISTINCT FROM 'post_action_failed'
+   AND coalesce(m.provider_failure,'') NOT IN ('reject','rendering_failure')
+   AND greatest(m.bounced_at,events.bounce) IS NOT NULL
+   AND greatest(m.delivered_at,events.delivery)>greatest(m.bounced_at,events.bounce)
+   THEN 'delivery' ELSE public.email_reporting_state(m::public.email_messages) END rs,events.failure FROM scoped_messages m
+  LEFT JOIN event_times events ON events.message_id=m.message_id),
+ problem_orders AS MATERIALIZED (
+  SELECT DISTINCT m.order_id FROM messages m
+  WHERE m.rs IN ('bounce','complaint','reject','rendering_failure','dead','suppressed','unknown','retry_wait','delay','blocked','sending','post_action_failed')
+   OR (m.message_kind IN ('order_confirmation','order_tickets') AND m.workflow_state IN ('pending','preparing') AND m.target_time<=now())
+ ), chain AS (
+  SELECT m.order_id,m.message_id root,m.message_id leaf,ARRAY[m.message_id] path FROM messages m JOIN problem_orders problem ON problem.order_id=m.order_id
+  WHERE NOT EXISTS(SELECT 1 FROM messages parent WHERE parent.message_id::text=m.data->>'repair_source_message_id' AND parent.message_kind=m.message_kind AND parent.order_id=m.order_id)
+  UNION ALL
+  SELECT c.order_id,c.root,m.message_id,c.path||m.message_id FROM chain c JOIN messages parent ON parent.message_id=c.leaf
+  JOIN messages m ON m.data->>'repair_source_message_id'=c.leaf::text AND m.message_kind=parent.message_kind AND m.order_id=c.order_id
+  WHERE NOT m.message_id=ANY(c.path)),
+ leaves AS (SELECT DISTINCT ON (c.order_id,c.root) * FROM chain c ORDER BY c.order_id,c.root,cardinality(c.path) DESC,c.leaf),
+ issues AS (
+  SELECT c.order_id,root.message_id source_message_id,leaf.message_id,root.message_kind kind,root.recipient original_recipient,
+   leaf.recipient,leaf.rs state,
+   coalesce(leaf.last_error,CASE WHEN leaf.workflow_state IN ('pending','preparing','blocked') THEN
+    (SELECT CASE WHEN paused THEN 'queue_paused' WHEN daily_quota<=provider_sent_24h THEN 'queue_limit' END FROM public.email_capacity) END) reason,
+   (SELECT reason FROM public.email_suppressions WHERE recipient=lower(leaf.recipient)) suppression_reason,
+   CASE WHEN o.state='storno' THEN 'cancelled'
+    WHEN leaf.rs IN ('delivery','open','click') AND leaf.delivered_at IS NOT NULL
+     AND (leaf.recipient IS DISTINCT FROM o.data->>'email' OR leaf.source_version IS DISTINCT FROM o.email_payment_version
+      OR (leaf.data->>'repair_payment_fingerprint' IS NOT NULL AND leaf.data->>'repair_payment_fingerprint' IS DISTINCT FROM public.order_email_payment_fingerprint(o.id))) THEN 'stale_delivery'
+    WHEN leaf.message_id<>root.message_id AND leaf.rs IN ('pending','preparing','accepted','open','click','sending','blocked') THEN 'waiting_repair'
+    ELSE leaf.rs END resolution,
+   (root.message_kind<>public.order_checkout_email_kind_internal(o.id)) obsolete
+  FROM leaves c JOIN messages root ON root.message_id=c.root JOIN messages leaf ON leaf.message_id=c.leaf
+  JOIN selected_orders o ON o.id=c.order_id
+  WHERE (EXISTS(SELECT 1 FROM messages m WHERE m.message_id=ANY(c.path)
+    AND (m.rs IN ('bounce','complaint','reject','rendering_failure','dead','suppressed','unknown','retry_wait','delay','blocked','sending','post_action_failed')
+     OR (m.message_kind IN ('order_confirmation','order_tickets') AND m.workflow_state IN ('pending','preparing') AND m.target_time<=now()))))
+   -- Delivered current tickets supersede the obsolete checkout confirmation,
+   -- even though confirmation and ticket repairs intentionally have separate chains.
+   -- Acceptance/open tracking alone, stale snapshots and unrelated message kinds
+   -- must never clear an actionable delivery failure.
+   AND NOT (root.message_kind='order_confirmation' AND o.state IN ('paid','sent')
+    AND EXISTS(SELECT 1 FROM messages tickets WHERE tickets.order_id=c.order_id AND tickets.message_kind='order_tickets'
+     AND tickets.rs IN ('delivery','open','click') AND tickets.delivered_at IS NOT NULL
+     AND tickets.recipient=o.data->>'email' AND tickets.source_version=o.email_payment_version
+     AND (tickets.data->>'repair_payment_fingerprint' IS NULL
+      OR tickets.data->>'repair_payment_fingerprint'=public.order_email_payment_fingerprint(o.id))
+     AND tickets.delivered_at>greatest(leaf.created_at,leaf.bounced_at,leaf.complained_at,
+      leaf.failure)))
+   AND NOT (leaf.delivered_at IS NOT NULL AND leaf.rs IN ('delivery','open','click')
+    AND leaf.recipient=o.data->>'email' AND leaf.source_version=o.email_payment_version
+    AND (leaf.data->>'repair_payment_fingerprint' IS NULL OR leaf.data->>'repair_payment_fingerprint'=public.order_email_payment_fingerprint(o.id))))
+ SELECT o.id::bigint,coalesce(jsonb_agg(to_jsonb(i)-'order_id' ORDER BY i.source_message_id)
+  FILTER(WHERE i.source_message_id IS NOT NULL),'[]'::jsonb)
+ FROM eshop.orders o LEFT JOIN issues i ON i.order_id=o.id WHERE o.id=ANY(p_orders) GROUP BY o.id;
+
+END;
+$$;
+REVOKE ALL ON FUNCTION public.order_email_current_issues_bulk(bigint[]) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_email_current_issues_bulk(bigint[]) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.get_email_occasion_context(p_occasion bigint) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
@@ -19,62 +96,10 @@ GRANT EXECUTE ON FUNCTION public.email_reporting_state(public.email_messages) TO
 -- Current issues are explicit provenance chains, independent of historical counts.
 -- This invoker helper is only reachable through authorized reporting functions.
 CREATE OR REPLACE FUNCTION public.order_email_current_issues(p_order bigint) RETURNS jsonb
-LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH RECURSIVE messages AS (
-  SELECT m.*,CASE WHEN m.complained_at IS NULL AND m.last_error IS DISTINCT FROM 'post_action_failed'
-   AND coalesce(m.provider_failure,'') NOT IN ('reject','rendering_failure')
-   AND greatest(m.bounced_at,events.bounce) IS NOT NULL
-   AND greatest(m.delivered_at,events.delivery)>greatest(m.bounced_at,events.bounce)
-   THEN 'delivery' ELSE public.email_reporting_state(m) END rs FROM public.email_messages m
-  LEFT JOIN LATERAL (SELECT max(provider_time) FILTER(WHERE event_type='bounce') bounce,
-   max(provider_time) FILTER(WHERE event_type='delivery') delivery
-   FROM public.email_delivery_events e WHERE e.message_id=m.message_id) events ON true
-  JOIN eshop.orders o ON o.id=m.order_id AND o.occasion=m.occasion
-  JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=m.organization
-  WHERE m.order_id=p_order AND o.state<>'storno'),
- chain AS (
-  SELECT m.message_id root,m.message_id leaf,ARRAY[m.message_id] path FROM messages m
-  WHERE NOT EXISTS(SELECT 1 FROM messages parent WHERE parent.message_id::text=m.data->>'repair_source_message_id' AND parent.message_kind=m.message_kind)
-  UNION ALL
-  SELECT c.root,m.message_id,c.path||m.message_id FROM chain c JOIN messages parent ON parent.message_id=c.leaf
-  JOIN messages m ON m.data->>'repair_source_message_id'=c.leaf::text AND m.message_kind=parent.message_kind
-  WHERE NOT m.message_id=ANY(c.path)),
- leaves AS (SELECT DISTINCT ON (root) * FROM chain ORDER BY root,cardinality(path) DESC,leaf),
- issues AS (
-  SELECT root.message_id source_message_id,leaf.message_id,root.message_kind kind,root.recipient original_recipient,
-   leaf.recipient,leaf.rs state,
-   coalesce(leaf.last_error,CASE WHEN leaf.workflow_state IN ('pending','preparing','blocked') THEN
-    (SELECT CASE WHEN paused THEN 'queue_paused' WHEN daily_quota<=provider_sent_24h THEN 'queue_limit' END FROM public.email_capacity) END) reason,
-   (SELECT reason FROM public.email_suppressions WHERE recipient=lower(leaf.recipient)) suppression_reason,
-   CASE WHEN o.state='storno' THEN 'cancelled'
-    WHEN leaf.rs IN ('delivery','open','click') AND leaf.delivered_at IS NOT NULL
-     AND (leaf.recipient IS DISTINCT FROM o.data->>'email' OR leaf.source_version IS DISTINCT FROM o.email_payment_version
-      OR (leaf.data->>'repair_payment_fingerprint' IS NOT NULL AND leaf.data->>'repair_payment_fingerprint' IS DISTINCT FROM public.order_email_payment_fingerprint(o.id))) THEN 'stale_delivery'
-    WHEN leaf.message_id<>root.message_id AND leaf.rs IN ('pending','preparing','accepted','open','click','sending','blocked') THEN 'waiting_repair'
-    ELSE leaf.rs END resolution,
-   (root.message_kind<>public.order_checkout_email_kind_internal(o.id)) obsolete
-  FROM leaves c JOIN messages root ON root.message_id=c.root JOIN messages leaf ON leaf.message_id=c.leaf
-  JOIN eshop.orders o ON o.id=p_order
-  WHERE (EXISTS(SELECT 1 FROM messages m WHERE m.message_id=ANY(c.path)
-    AND (m.rs IN ('bounce','complaint','reject','rendering_failure','dead','suppressed','unknown','retry_wait','delay','blocked','sending','post_action_failed')
-     OR (m.message_kind IN ('order_confirmation','order_tickets') AND m.workflow_state IN ('pending','preparing') AND m.target_time<=now()))))
-   -- Delivered current tickets supersede the obsolete checkout confirmation,
-   -- even though confirmation and ticket repairs intentionally have separate chains.
-   -- Acceptance/open tracking alone, stale snapshots and unrelated message kinds
-   -- must never clear an actionable delivery failure.
-   AND NOT (root.message_kind='order_confirmation' AND o.state IN ('paid','sent')
-    AND EXISTS(SELECT 1 FROM messages tickets WHERE tickets.message_kind='order_tickets'
-     AND tickets.rs IN ('delivery','open','click') AND tickets.delivered_at IS NOT NULL
-     AND tickets.recipient=o.data->>'email' AND tickets.source_version=o.email_payment_version
-     AND (tickets.data->>'repair_payment_fingerprint' IS NULL
-      OR tickets.data->>'repair_payment_fingerprint'=public.order_email_payment_fingerprint(o.id))
-     AND tickets.delivered_at>greatest(leaf.created_at,leaf.bounced_at,leaf.complained_at,
-      (SELECT max(provider_time) FROM public.email_delivery_events
-       WHERE message_id=leaf.message_id AND event_type IN ('bounce','complaint','reject','rendering_failure')))))
-   AND NOT (leaf.delivered_at IS NOT NULL AND leaf.rs IN ('delivery','open','click')
-    AND leaf.recipient=o.data->>'email' AND leaf.source_version=o.email_payment_version
-    AND (leaf.data->>'repair_payment_fingerprint' IS NULL OR leaf.data->>'repair_payment_fingerprint'=public.order_email_payment_fingerprint(o.id))))
- SELECT coalesce(jsonb_agg(to_jsonb(issues) ORDER BY source_message_id),'[]'::jsonb) FROM issues;
+LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN coalesce((SELECT b.issues FROM public.order_email_current_issues_bulk(ARRAY[p_order]) b),'[]'::jsonb);
+END;
 $$;
 REVOKE ALL ON FUNCTION public.order_email_current_issues(bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.order_email_current_issues(bigint) TO service_role;
@@ -84,20 +109,33 @@ DECLARE v_summary jsonb;
 BEGIN
  IF NOT coalesce(public.can_read_orders(p_occasion),false) THEN RAISE EXCEPTION 'email_read_denied'; END IF;
  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=ANY(p_orders) AND occasion<>p_occasion) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
- WITH messages AS (
- SELECT m.*,public.email_reporting_state(m) reporting_state FROM public.email_messages m WHERE m.order_id=ANY(p_orders) AND m.occasion=p_occasion
-  AND workflow_state NOT IN ('cancelled','expired')),
- ranked AS (
- SELECT *,CASE WHEN reporting_state IN ('complaint','bounce','reject','rendering_failure','unknown','dead','suppressed','retry_wait','post_action_failed') THEN 0
- WHEN workflow_state IN ('pending','preparing','sending','blocked') AND target_time<=now() THEN 1
- WHEN workflow_state='accepted' THEN 2 ELSE 3 END rank FROM messages)
- SELECT coalesce(jsonb_object_agg(r.order_id,jsonb_build_object('state',r.reporting_state,'kind',r.message_kind,'recipient',r.recipient,'message_id',r.message_id,'at',coalesce(r.clicked_at,r.opened_at,r.delivered_at,r.accepted_at,r.created_at),
- 'current_issues',public.order_email_current_issues(r.order_id),'scheduled_at',r.target_time,'attention_count',(SELECT count(*) FROM ranked n WHERE n.order_id=r.order_id AND rank=0),'loaded_at',now(),
- 'messages',(SELECT coalesce(jsonb_agg(jsonb_build_object('kind',message_kind,'state',reporting_state,'at',coalesce(delivered_at,accepted_at,created_at)) ORDER BY created_at DESC),'[]') FROM ranked n WHERE n.order_id=r.order_id))
-),'{}'::jsonb) INTO v_summary FROM (SELECT DISTINCT ON (order_id) * FROM ranked ORDER BY order_id,rank,created_at DESC,id DESC) r;
- SELECT v_summary||coalesce(jsonb_object_agg(o.id,jsonb_build_object('state','unavailable','messages','[]'::jsonb,
-  'current_issues',public.order_email_current_issues(o.id),'loaded_at',now())),'{}') INTO v_summary
- FROM eshop.orders o WHERE o.id=ANY(p_orders) AND o.occasion=p_occasion AND NOT v_summary ? o.id::text;
+ WITH selected_orders AS MATERIALIZED (
+  SELECT o.id FROM eshop.orders o WHERE o.id=ANY(p_orders) AND o.occasion=p_occasion
+ ), messages AS MATERIALIZED (
+  SELECT m.*,public.email_reporting_state(m) reporting_state FROM public.email_messages m
+  WHERE m.order_id=ANY(p_orders) AND m.occasion=p_occasion AND m.workflow_state NOT IN ('cancelled','expired')
+ ), current_issues AS MATERIALIZED (
+  SELECT b.order_id,b.issues FROM public.order_email_current_issues_bulk(p_orders) b
+ ), ranked AS MATERIALIZED (
+  SELECT m.*,i.issues,CASE WHEN m.reporting_state IN ('complaint','bounce','reject','rendering_failure','unknown','dead','suppressed','retry_wait','post_action_failed')
+   AND EXISTS(SELECT 1 FROM jsonb_array_elements(i.issues) issue WHERE issue->>'message_id'=m.message_id::text) THEN 0
+   WHEN m.workflow_state IN ('pending','preparing','sending','blocked') AND m.target_time<=now() THEN 1
+   WHEN m.workflow_state='accepted' AND m.reporting_state NOT IN ('complaint','bounce','reject','rendering_failure') THEN 2 ELSE 3 END rank
+  FROM messages m JOIN current_issues i USING(order_id)
+ ), histories AS MATERIALIZED (
+  SELECT n.order_id,count(*) FILTER(WHERE n.rank=0) attention_count,
+   jsonb_agg(jsonb_build_object('kind',n.message_kind,'state',n.reporting_state,'at',coalesce(n.delivered_at,n.accepted_at,n.created_at)) ORDER BY n.created_at DESC) messages
+  FROM ranked n GROUP BY n.order_id
+ ), latest AS (
+  SELECT DISTINCT ON (r.order_id) * FROM ranked r ORDER BY r.order_id,r.rank,r.created_at DESC,r.id DESC
+ )
+ SELECT coalesce(jsonb_object_agg(o.id,CASE WHEN r.order_id IS NULL
+  THEN jsonb_build_object('state','unavailable','messages','[]'::jsonb,'current_issues',i.issues,'loaded_at',now())
+  ELSE jsonb_build_object('state',r.reporting_state,'kind',r.message_kind,'recipient',r.recipient,'message_id',r.message_id,
+   'at',coalesce(r.clicked_at,r.opened_at,r.delivered_at,r.accepted_at,r.created_at),'current_issues',i.issues,
+   'scheduled_at',r.target_time,'attention_count',h.attention_count,'loaded_at',now(),'messages',h.messages) END),'{}')
+ INTO v_summary FROM selected_orders o JOIN current_issues i ON i.order_id=o.id
+ LEFT JOIN latest r ON r.order_id=o.id LEFT JOIN histories h ON h.order_id=o.id;
  RETURN v_summary;
 END $$;
 REVOKE ALL ON FUNCTION public.get_order_email_summaries(bigint,bigint[]) FROM PUBLIC,anon;

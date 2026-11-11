@@ -151,6 +151,108 @@
   <!-- Match browser chrome to the loading surface before Flutter starts. -->
   <meta name="theme-color" content="#242424">
   <meta name="color-scheme" content="dark">
+<script id="festapp-runtime-startup">
+// Generated from web_client/src/runtime.
+(function() {
+// Presentation only. This classification never grants identity or permissions.
+function pageContext(location) {
+    return location && (/^\/order$/.test(location.pathname) || /^\/form\/[^/]+\/?$/.test(location.pathname)) &&
+        new URLSearchParams(location.search).get('embed') === '1' ? 'public-embed' : 'full-page';
+}
+// Every asynchronous executor re-evaluates this immediately before its effect.
+function allowUpdate(reason, {context, phase, publicWeb, draftProtected}) {
+    if (publicWeb && draftProtected && reason !== 'corrupt-runtime') return false;
+    switch (reason) {
+        case 'automatic-update': return publicWeb === true && !draftProtected;
+        case 'legacy-migration':
+        case 'corrupt-runtime': return true;
+        case 'startup':
+        case 'manual-startup': return phase !== 'ready';
+        case 'background':
+        case 'explicit-update': return context !== 'public-embed' || phase !== 'ready';
+        default: return false;
+    }
+}
+// Readiness belongs to a runtime shell, not merely to an installed worker.
+function queryWorkerBuildVersion(worker, runtime, win = window, timeoutMs = runtime === 'flutter' ? 120000 : 3000) {
+    const Channel = win.MessageChannel ?? globalThis.MessageChannel;
+    if (!worker || !Channel) return Promise.resolve(null);
+    return new Promise(resolve => {
+        const channel = new Channel();
+        let finished = false;
+        const timeout = win.setTimeout(() => finish(null), timeoutMs);
+        function finish(version) {
+            if (finished) return;
+            finished = true; win.clearTimeout(timeout); channel.port1.close?.(); resolve(version);
+        }
+        channel.port1.onmessage = event => finish(event.data?.version || null);
+        try { worker.postMessage({type:'FESTAPP_QUERY_BUILD_VERSION', runtime}, [channel.port2]); }
+        catch { finish(null); }
+    });
+}
+// Installed before paint and reused by the standalone recovery controller.
+function installRuntimeState(win) {
+    if (win.FestappRuntime) return win.FestappRuntime;
+    let phase = win.__FESTAPP_APP_READY__ === true ? 'ready' : 'starting';
+    let retrying = false;
+    let navigating = false;
+    let draftProtected = false;
+    const runtime = {
+        async prepareFlutterOffline(registration) {
+            for (const worker of [...new Set([registration.waiting, registration.installing, registration.active])]) {
+                if (worker && await queryWorkerBuildVersion(worker, 'flutter', win) === win.__FESTAPP_BUILD_VERSION__) return true;
+            }
+            throw new Error('Flutter offline shell is not ready for this build');
+        },
+        get retrying() { return retrying; },
+        protectDraft() { draftProtected = true; },
+        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase,
+            publicWeb:win.__FESTAPP_CLIENT_RUNTIME__ === 'web', draftProtected}); },
+        navigate(reason, effect) {
+            if (!runtime.allowed(reason)) return false;
+            navigating = true;
+            effect();
+            return true;
+        },
+        get phase() { return win.__FESTAPP_APP_READY__ === true ? 'ready' : phase; },
+        markReady() {
+            if (runtime.phase === 'ready') return false;
+            phase = 'ready';
+            win.__FESTAPP_APP_READY__ = true;
+            delete win.__FESTAPP_WEB_STARTUP_FAILURE__;
+            win.dispatchEvent(new win.Event('festapp-app-ready'));
+            return true;
+        },
+        fail(reason) {
+            if (runtime.phase === 'ready') return false;
+            phase = 'failed';
+            win.__FESTAPP_WEB_STARTUP_FAILURE__ = reason;
+            return true;
+        },
+        async retry(prepare, navigate) {
+            if (retrying || !runtime.allowed('manual-startup')) return false;
+            retrying = true;
+            try {
+                await prepare();
+                return runtime.navigate('manual-startup', navigate);
+            } finally { retrying = false; }
+        }
+    };
+    win.FestappRuntime = runtime;
+    // Native forms include the sale-opening email field. Synthetic initialization
+    // does not protect an untouched page; custom form fields use protectDraft().
+    for (const type of ['beforeinput', 'input', 'change', 'submit']) {
+        win.addEventListener(type, event => {
+            if (event.isTrusted) runtime.protectDraft();
+        }, true);
+    }
+    return runtime;
+}
+window.__FESTAPP_CLIENT_RUNTIME__ = 'flutter';
+installRuntimeState(window);
+
+})();
+</script>
 <script id="festapp-startup-theme">
 // This classic-script-compatible policy is embedded in both startup shells and
 // imported by ThemeService. Startup never waits for another network request.
@@ -179,28 +281,41 @@
         const document = global.document;
         if (!document) return;
         const root = document.documentElement;
+        const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && root.hasAttribute('data-embed-startup');
+        const startupScheme = embedded && !global.__FESTAPP_APP_READY__ ? global.__FESTAPP_EMBED_STARTUP_SCHEME__ : null;
+        const hostScheme = startupScheme || (root.dataset.embedTheme === 'host' ? root.dataset.embedColorScheme : null);
+        if (['light', 'dark'].includes(hostScheme)) dark = hostScheme === 'dark';
         const mode = dark ? 'dark' : 'light';
+        // A scheme mismatch makes browsers replace an iframe's transparent
+        // canvas with opaque black/white. The embedded media preference comes
+        // from its host; a saved standalone app preference must not override it.
+        const canvasScheme = embedded ? 'light dark' : mode;
         const color = document.querySelector('meta[name="theme-color"]');
         if (color) color.dataset.darkColor ||= color.content;
         const background = dark ? color?.dataset.darkColor || '#232529' : color?.dataset.lightColor || '#ffffff';
         root.dataset.startupTheme = mode;
-        root.style.colorScheme = mode;
-        root.style.backgroundColor = background;
+        root.style.colorScheme = canvasScheme;
+        root.style.backgroundColor = embedded && !global.__FESTAPP_APP_READY__ ? 'transparent' : background;
         root.style.setProperty('--festapp-startup-background', background);
         root.style.setProperty('--festapp-startup-foreground', dark ? '#bdbdbd' : '#000000');
         if (color) color.content = background;
         const scheme = document.querySelector('meta[name="color-scheme"]');
-        if (scheme) scheme.content = mode;
+        if (scheme) scheme.content = canvasScheme;
         if (document.body) {
             document.body.style.colorScheme = mode;
             document.body.classList.toggle('dark-mode', dark);
         }
         for (const logo of document.querySelectorAll('.initial-logo, .startup-brand')) {
             logo.dataset.darkSrc ||= logo.getAttribute('src').replace(/-light\.svg$/, '.svg');
-            const source = logo.dataset.darkSrc;
+            const source = embedded && logo.classList.contains('startup-brand')
+                ? '/brand-symbol.svg' : logo.dataset.darkSrc;
             logo.setAttribute('src', !dark && /(?:loading-animation|loading-logo)\.svg$/.test(source)
                 ? source.replace(/\.svg$/, '-light.svg') : source);
-            logo.dataset.startupLogoReady = '';
+            if (embedded && !global.__FESTAPP_APP_READY__ && logo.classList.contains('startup-brand') && !['light', 'dark'].includes(startupScheme)) {
+                delete logo.dataset.startupLogoReady;
+            } else {
+                logo.dataset.startupLogoReady = '';
+            }
         }
     }
     global.FestappThemePreference = Object.freeze({readMode, isDark, paintTheme});
@@ -210,7 +325,8 @@
         if (global.__FESTAPP_APP_READY__) return;
         let storage;
         try { storage = global.localStorage; } catch { /* optional API */ }
-        paintTheme(isDark(readMode(storage), system?.matches));
+        const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && global.document.documentElement.hasAttribute('data-embed-startup');
+        paintTheme(embedded ? !!system?.matches : isDark(readMode(storage), system?.matches));
     }
     global.applyFestappStartupTheme = applyStartup;
     applyStartup();
@@ -219,6 +335,7 @@
         if (event.key === 'theme' || event.key === null) applyStartup();
     });
     global.addEventListener('pageshow', applyStartup);
+    global.addEventListener('festapp-embed-theme-changed', applyStartup);
 })(globalThis);
 </script>
   <style>
@@ -425,7 +542,7 @@
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.524+1033";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.580+1095";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -558,7 +675,11 @@
     window.festappOfflineReady = navigator.serviceWorker.register('/festapp_service_worker.js', {
       scope: '/',
       updateViaCache: 'none'
-    }).then(persistUsedFontResources).catch(function(error) {
+    }).then(async function(registration) {
+      await navigator.serviceWorker.ready;
+      await window.FestappRuntime.prepareFlutterOffline(registration);
+      return persistUsedFontResources();
+    }).catch(function(error) {
       console.warn('Festapp offline service worker registration failed:', error);
     });
   }
@@ -569,8 +690,7 @@
   // Dart can still be restoring the offline context or loading the occasion.
   // FestappBootstrap calls this only after the first usable app frame.
   window.markFestappAppReady = function() {
-    if (window.__FESTAPP_APP_READY__ === true) return;
-    window.__FESTAPP_APP_READY__ = true;
+    if (!window.FestappRuntime.markReady()) return;
     document.getElementById('public-seo-summary')?.remove();
     const loader = document.getElementById('loader-content');
     if (loader) {
@@ -578,13 +698,15 @@
       loader.style.pointerEvents = 'none';
       setTimeout(function() { loader.remove(); }, 400);
     }
-    window.dispatchEvent(new Event('festapp-app-ready'));
   };
 
   window.addEventListener('load', async function(ev) {
       try {
         if (window.festappLocalDevelopmentReady) {
           await window.festappLocalDevelopmentReady;
+        }
+        if (!window.__FESTAPP_LOCAL_DEVELOPMENT__ && window.festappOfflineReady) {
+          await window.festappOfflineReady;
         }
         window.prepareFestappFlutterBootstrap();
         {{flutter_js}}

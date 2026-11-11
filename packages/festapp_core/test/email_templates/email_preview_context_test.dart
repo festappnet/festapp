@@ -17,6 +17,32 @@ void main() {
             EmailPreviewScenario.fromJson(Map<String, dynamic>.from(v as Map)),
       )
       .toList();
+  test('single application waitlist examples offer exactly one place', () {
+    for (final record in records.where(
+      (r) => r.templateCode.startsWith('waitlist'),
+    )) {
+      final single = record.withContext(
+        const EmailPreviewContext(
+          ticketsEnabled: false,
+          blueprintEnabled: false,
+        ),
+      );
+      expect(single.values['participant_count'], '1');
+      expect(single.values['participant_phrase'], '1 osobu');
+      expect(single.values['offered_count'], '1');
+      expect(single.values['offered_places'], '1 místo');
+      if (record.templateCode == 'waitlist_offer') {
+        expect(
+          single.values['offer_button'],
+          isNot(record.values['offer_button']),
+        );
+        expect(
+          single.values['waitlist_offer_instructions'],
+          isNot(record.values['waitlist_offer_instructions']),
+        );
+      }
+    }
+  });
   const context = EmailPreviewContext(
     occasionTitle: 'Ples ve Lhotě',
     deadline: '10. 11. 2026',
@@ -33,14 +59,42 @@ void main() {
       ),
     ],
   );
+  test(
+    'order introductions keep tone while binding the current event title',
+    () {
+      for (final record in records.where(
+        (r) => r.values.containsKey('orderCommunication'),
+      )) {
+        final value = record
+            .withContext(
+              const EmailPreviewContext(occasionTitle: '<Ples & hosté>'),
+            )
+            .values['orderCommunication']!;
+        if (record.templateCode != 'TICKET_ORDER_REMINDER') {
+          expect(value, contains('&lt;Ples &amp; hosté&gt;'));
+        }
+        expect(value, isNot(contains('{{preview_')));
+        if (record.locale == 'cs') {
+          expect(
+            value,
+            contains(record.tone == 'informal' ? 'Ahoj' : 'Dobrý den'),
+          );
+        }
+      }
+    },
+  );
   test('configured account replaces fixture digits in every payment block', () {
     const account = EmailPreviewPaymentAccount(
       accountNumber: '2102808173/2010',
       iban: 'CZ87 2010 0000 0021 0280 8173',
       currencies: ['CZK'],
     );
-    for (final original in records.where((r) => r.values.containsKey('paymentDetails'))) {
-      final adjusted = original.withContext(context.withPaymentAccount(account));
+    for (final original in records.where(
+      (r) => r.values.containsKey('paymentDetails'),
+    )) {
+      final adjusted = original.withContext(
+        context.withPaymentAccount(account),
+      );
       final html = adjusted.values['paymentDetails']!;
       final text = html.replaceAll(RegExp(r'<[^>]*>'), '');
       expect(text, contains(account.accountNumber));
@@ -76,22 +130,45 @@ void main() {
       );
     },
   );
-  test('occasion ticket mode selects canonical application or ticket markup', () {
-    for (final original in records.where((s) => s.values.containsKey('fullOrder'))) {
-      final application = original.withContext(const EmailPreviewContext(ticketsEnabled: false));
-      final ticket = original.withContext(const EmailPreviewContext(ticketsEnabled: true));
-      final label = original.locale == 'cs' ? 'Přihláška X3425W8H2U' : 'Application X3425W8H2U';
-      final ticketLabel = original.locale == 'cs' ? 'Vstupenka X3425W8H2U' : 'Ticket X3425W8H2U';
-      expect(application.values['fullOrder'], contains(label));
-      expect(application.values['fullOrder'], isNot(contains(ticketLabel)));
-      expect(ticket.values['fullOrder'], contains(ticketLabel));
-      expect(application.composeHtml('{{fullOrder}}'), contains(label));
-      expect(application.authoringCompletion('{{fullOrder}}').forToken('fullOrder', 0), contains(label));
-      final restricted = original.restrictTo({'fullOrder'}).withContext(const EmailPreviewContext(ticketsEnabled: false));
-      expect(restricted.values['fullOrder'], contains(label));
-      expect(application.restrictTo({'amount'}).applicationContextTemplates, isEmpty);
-    }
-  });
+  test(
+    'occasion ticket mode selects canonical application or ticket markup',
+    () {
+      for (final original in records.where(
+        (s) => s.values.containsKey('fullOrder'),
+      )) {
+        final application = original.withContext(
+          const EmailPreviewContext(ticketsEnabled: false),
+        );
+        final ticket = original.withContext(
+          const EmailPreviewContext(ticketsEnabled: true),
+        );
+        final label = original.locale == 'cs'
+            ? 'Přihláška X3425W8H2U'
+            : 'Application X3425W8H2U';
+        final ticketLabel = original.locale == 'cs'
+            ? 'Vstupenka X3425W8H2U'
+            : 'Ticket X3425W8H2U';
+        expect(application.values['fullOrder'], contains(label));
+        expect(application.values['fullOrder'], isNot(contains(ticketLabel)));
+        expect(ticket.values['fullOrder'], contains(ticketLabel));
+        expect(application.composeHtml('{{fullOrder}}'), contains(label));
+        expect(
+          application
+              .authoringCompletion('{{fullOrder}}')
+              .forToken('fullOrder', 0),
+          contains(label),
+        );
+        final restricted = original
+            .restrictTo({'fullOrder'})
+            .withContext(const EmailPreviewContext(ticketsEnabled: false));
+        expect(restricted.values['fullOrder'], contains(label));
+        expect(
+          application.restrictTo({'amount'}).applicationContextTemplates,
+          isEmpty,
+        );
+      }
+    },
+  );
   test(
     'every generated contextual block resolves once with coherent totals',
     () {
@@ -111,7 +188,7 @@ void main() {
             scenario.scenario == 'zero'
                 ? '0'
                 : scenario.templateCode == 'TICKET_ORDER_PAYMENT_DONE' &&
-                    scenario.scenario == 'deposit'
+                      scenario.scenario == 'deposit'
                 ? '300'
                 : '800',
           ),

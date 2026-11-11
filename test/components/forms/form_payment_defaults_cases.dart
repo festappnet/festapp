@@ -1,3 +1,5 @@
+import 'package:fstapp/components/payments/payment_method_cards.dart';
+import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -118,10 +120,8 @@ void main() {
             SwitchListTile,
             FormStrings.measurementEnabled,
           );
-          expect(toggle, findsNothing);
-          final measurementSection = find.text(FormStrings.measurementTitle);
-          await tester.ensureVisible(measurementSection);
-          await tester.tap(measurementSection);
+          // A regular section like the others: no expansion step.
+          await tester.ensureVisible(find.text(FormStrings.measurementTitle));
           await tester.pumpAndSettle();
           expect(tester.widget<SwitchListTile>(toggle).value, false);
           expect(
@@ -159,8 +159,9 @@ void main() {
             await tester.ensureVisible(toggle);
             await tester.tap(toggle);
             await tester.pumpAndSettle();
+            // Platform policy and runtime gates show as one plain reason.
             expect(
-              find.text(FormStrings.measurementRuntimeBlocked),
+              find.text(FormStrings.measurementPlatformBlocked),
               findsOneWidget,
             );
             await save();
@@ -265,6 +266,103 @@ void main() {
             .onSave();
         await tester.pumpAndSettle();
         expect(saved?['analytics'], {'enabled': true});
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final (name, manager, formOn, unitOn, reasons, warned) in [
+    ('missing link', true, true, true, ['no_privacy_policy'], true),
+    ('form editor only', false, true, true, ['no_privacy_policy'], true),
+    ('form off', true, false, true, ['disabled', 'no_privacy_policy'], false),
+    ('unit off', true, true, false, ['unit_disabled', 'no_privacy_policy'], true),
+    ('no destination', true, true, true, ['no_destination', 'no_privacy_policy'], true),
+    ('platform block editor', false, true, true, ['platform_block'], false),
+    ('unsaved enable', true, false, true, <String>[], false),
+    ('unknown block', true, true, true, ['future_block'], false),
+    ('link present', true, true, true, <String>[], false),
+  ]) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'collapsed measurement privacy warning: $name',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 4000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          capabilities: {
+            AuthorizationCapabilities.formsWrite: true,
+            AuthorizationCapabilities.unitSettingsWrite: manager,
+            AuthorizationCapabilities.formsMeasurementWrite: manager,
+          },
+          occasionUser: OccasionUserModel(isEditor: true),
+          occasion: OccasionModel(
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+            features: [FormFeature(code: 'form')],
+          ),
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final changes = ValueNotifier((accountId: 0, revision: 0));
+        addTearDown(changes.dispose);
+        final form = FormEditorDraft(
+          link: 'test',
+          title: 'Letní koncert',
+          data: {
+            'analytics': {'enabled': formOn},
+          },
+        );
+        form.definition = form.definition.copyWith(
+          measurementStatus: {
+            'organization_enabled': true,
+            'unit_enabled': unitOn,
+            'blocked_reasons': reasons,
+            'eligible': reasons.isEmpty,
+            'organization_allowed': name != 'platform block editor',
+            'runtime_supported': name != 'platform block editor',
+          },
+        );
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: FormSettingsContent(
+              bankConnectionChanges: changes,
+              formLink: 'test',
+              loadBundle: (_) async => FormEditBundle(
+                form: form,
+                productTypes: [],
+                products: [],
+                availableBankAccounts: [],
+              ),
+              saveForm: (_) async {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text(FormStrings.measurementNoPrivacyPolicy),
+          warned ? findsOneWidget : findsNothing,
+        );
+        await tester.ensureVisible(find.text(FormStrings.measurementTitle));
+        expect(find.text(FormStrings.measurementReady),
+            reasons.isEmpty && formOn ? findsOneWidget : findsNothing);
+        if (name == 'platform block editor') {
+          expect(find.text(FormStrings.measurementPlatformBlocked), findsNothing);
+          expect(find.text(FormStrings.measurementAskUnitManager), findsWidgets);
+        }
+        if (name == 'unsaved enable') {
+          final toggle = find.widgetWithText(SwitchListTile, FormStrings.measurementEnabled);
+          await tester.ensureVisible(toggle);
+          await tester.tap(toggle);
+          await tester.pumpAndSettle();
+          expect(find.text(FormStrings.measurementReady), findsNothing);
+        }
+        if (formOn && reasons.contains('no_privacy_policy')) {
+          expect(find.text(FormStrings.measurementNoPrivacyPolicy), findsWidgets);
+        }
         expect(tester.takeException(), isNull);
       },
     );
@@ -388,10 +486,10 @@ void main() {
           TextFormField,
           FormStrings.labelReminderInterval,
         );
-        final deadline = find.widgetWithText(
-          TextFormField,
-          FormStrings.labelDeadlineDays,
-        );
+        final deadlineMode = find.byKey(const ValueKey('form-payment-deadline-mode'));
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('custom');
+        await tester.pumpAndSettle();
+        final deadline = find.widgetWithText(TextFormField, FormStrings.labelDeadlineDays);
         await tester.enterText(interval, '2');
         await tester.enterText(deadline, '4');
         await tester
@@ -410,7 +508,14 @@ void main() {
         await tester.pumpAndSettle();
         expect(form.definition.deadlineDurationSeconds, 0);
         await tester.enterText(interval, '');
-        await tester.enterText(deadline, '');
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('none');
+        await tester.pumpAndSettle();
+        await tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+        await tester.pumpAndSettle();
+        expect(form.definition.deadlineDurationSeconds, isNull);
+        expect(form.definition.data?['payment_deadline'], {'mode':'none'});
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('inherit');
+        await tester.pumpAndSettle();
         await tester
             .widget<EditorActionBar>(find.byType(EditorActionBar))
             .onSave();
@@ -422,6 +527,18 @@ void main() {
           isFalse,
         );
         expect(form.definition.deadlineDurationSeconds, isNull);
+        if (override == null) {
+          tester.widget<PaymentMethodCards>(find.byType(PaymentMethodCards)).onChanged(FormPaymentMethod.cash);
+          await tester.pumpAndSettle();
+          await tester.enterText(find.widgetWithText(TextFormField, PaymentMethodStrings.text('cashInstructions')), 'Uhraďte u vstupu.');
+          await tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+          await tester.pumpAndSettle();
+          final settings = form.toEditedJson()['settings'] as Map;
+          expect(settings['payments'], {'bankEnabled':false,'cashEnabled':true,'cashInstructions':'Uhraďte u vstupu.','providerConnections':<String,String>{}});
+          expect(settings['payment_deadline'], {'mode':'none'});
+          expect(form.definition.deadlineDurationSeconds, isNull);
+          expect(find.text(PaymentMethodStrings.reason('not_configured')), findsNothing);
+        }
         await _environment.pumpWidget(tester, const SizedBox.shrink());
         await tester.pump(const Duration(seconds: 4));
       },

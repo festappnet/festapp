@@ -21,7 +21,7 @@ BEGIN
    RAISE EXCEPTION 'STRIPE_BANK_INSTRUCTIONS_FORBIDDEN'; END IF;
  -- Stripe creates references/attempts through its provider lifecycle. Bank
  -- instructions must never be fabricated for a card payment or a free order.
- IF pi.amount>0 AND pi.amount>coalesce(pi.paid,0) AND pi.payment_method='bank' THEN
+ IF pi.amount>0 AND pi.amount>coalesce(pi.paid,0)-coalesce(pi.returned,0) AND pi.payment_method='bank' THEN
    SELECT * INTO STRICT f FROM public.forms WHERE id=o.form;
    SELECT unit,organization INTO unit_id,org_id FROM public.occasions WHERE id=o.occasion;
    IF pi.bank_account IS NULL THEN

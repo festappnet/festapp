@@ -30,7 +30,7 @@ def stop_group(process):
     process.wait()
 
 
-def main():
+def _main():
     allowed = ('web', 'db', 'flutter', 'integration', 'automation')
     selected = set(sys.argv[1:] or allowed)
     if selected - set(allowed):
@@ -103,12 +103,6 @@ def main():
         return argv, cwd, timeout
 
     database = os.environ.get('DATABASE_URL')
-    if not database and selected & {'db', 'integration'} and shutil.which('pg_isready'):
-        probe = subprocess.run(['pg_isready', '-h', '127.0.0.1', '-p', '55432', '-d', 'postgres'],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if probe.returncode == 0:
-            os.environ['DATABASE_URL'] = 'postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable'
-            database = True
     if 'web' in selected:
         lane('web', [command(['pnpm', 'test'], ROOT/'web_client', 60)])
     if 'db' in selected:
@@ -141,6 +135,20 @@ def main():
     summary = save()
     print(f'Summary: {output / "summary.json"}', flush=True)
     return 0 if summary['success'] else 1
+
+
+def main():
+    selected=set(sys.argv[1:] or ('web','db','flutter','integration','automation'))
+    if not os.environ.get('DATABASE_URL') and selected & {'web','db','integration'}:
+        from local_db.runtime import Runtime,workspace_env
+        previous=os.environ.copy()
+        try:
+            with Runtime().workspace() as lease:
+                os.environ.update(workspace_env(lease))
+                return _main()
+        finally:
+            os.environ.clear();os.environ.update(previous)
+    return _main()
 
 
 if __name__ == '__main__':

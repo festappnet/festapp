@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {options,setup,executor,create,formPatch,save,denied} from './form-fixtures.mjs';
-const defaultPayments={bankEnabled:true,providerConnections:{}};
+const defaultPayments={bankEnabled:true,cashEnabled:false,cashInstructions:'',providerConnections:{}};
 const stored=async(db,id)=>(await db.query('select data from forms where id=$1',[id])).rows[0].data;
 
 test('settings executor preserves unrelated metadata and shares UI snapshots, original versions and frozen retries',options,async t=>{
@@ -75,16 +75,16 @@ test('existing Stripe selection validates actual recipient scope and compatibili
 
 test('payment null resets share the canonical merge owner and the real MCP save contract',options,async t=>{
  const{db,f}=await setup(t);const connections={stripe:randomUUID(),barion:randomUUID()};
- const payments={bankEnabled:false,providerConnections:connections};
+ const payments={bankEnabled:false,cashEnabled:false,cashInstructions:'',providerConnections:connections};
  const merge=async input=>(await db.query('select merge_form_payments_internal($1,$2) value',[payments,input])).rows[0].value;
  assert.deepEqual(await merge(null),payments,'SQL NULL is an internal preservation request');
  const patch=async value=>(await db.query('select apply_form_settings_internal($1,$2) value',[{payments,private_owner:7},{payments:value}])).rows[0].value;
  assert.deepEqual(await patch(null),{payments:defaultPayments,private_owner:7});
- assert.deepEqual(await patch({bankEnabled:null,providerConnections:connections}),{payments:{bankEnabled:true,providerConnections:connections},private_owner:7});
- assert.deepEqual(await patch({providerConnections:null}),{payments:{bankEnabled:false,providerConnections:{}},private_owner:7});
- assert.deepEqual(await merge({bankEnabled:true}),{bankEnabled:true,providerConnections:{barion:connections.barion}},'released Stripe-only omission preserves other providers');
+ assert.deepEqual(await patch({bankEnabled:null,providerConnections:connections}),{payments:{bankEnabled:true,cashEnabled:false,cashInstructions:'',providerConnections:connections},private_owner:7});
+ assert.deepEqual(await patch({providerConnections:null}),{payments:{bankEnabled:false,cashEnabled:false,cashInstructions:'',providerConnections:{}},private_owner:7});
+ assert.deepEqual(await merge({bankEnabled:true}),{bankEnabled:true,cashEnabled:false,cashInstructions:'',providerConnections:{barion:connections.barion}},'released Stripe-only omission preserves other providers');
  const made=await create(db,f);await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);
- let result=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(made.authoring,{settings:{payments:{bankEnabled:false,providerConnections:{}}}})});
+ let result=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(made.authoring,{settings:{payments:{bankEnabled:false,cashEnabled:false,cashInstructions:'',providerConnections:{}}}})});
  assert.equal(result.ok,true,JSON.stringify(result));
  for(const value of [{bankEnabled:null,providerConnections:{}},null,{providerConnections:null}]){
   result=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(result.data.authoring,{settings:{payments:value}})});

@@ -151,7 +151,7 @@ void main() {
                                   loadProposal: proposal,
                                   loadPreview: (_) async => {
                                         'template': {
-                                          'subject': 'Offer {{order_symbol}}',
+                                          'subject': 'Offer {{orderSymbol}}',
                                           'html': '<p>{{offered_count}}</p>'
                                         },
                                         'wrapper': {'html': '{{content}}'},

@@ -3,14 +3,26 @@
 # Uses mocked backend data only; never creates production orders.
 set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+node "$PROJECT_ROOT/web_client/scripts/build_runtime.mjs" --check
 node "$PROJECT_ROOT/automation/generate_email_tlds.mjs" --check
 cd "$PROJECT_ROOT/web_client"
 node --test \
+  ../automation/tests/pwa_runtime_shells.test.mjs \
+  ../automation/tests/pwa_manifest.test.mjs \
+  ../automation/tests/pwa_offline.test.mjs \
+  tests/core/embed_runtime.test.js \
+  tests/core/embed_analytics.test.js \
+  tests/core/festapp_update_prompt.test.js \
+  tests/core/startup_theme_consistency.test.js \
   ../automation/tests/web_profile_contract.test.mjs \
-  tests/core/isolated_browser_startup.test.js \
+  tests/core/native_browser.test.js \
   tests/core/browser_storage.test.js \
   tests/core/backend_activation_service.test.js \
   tests/core/supabase_client_config.test.js \
+  tests/core/early_form_load.test.js \
+  tests/core/initialize_core_services.test.js \
+  tests/core/home_startup.test.js \
+  tests/core/public_catalogue_recovery.test.js \
   tests/core/web_client_bootstrap.test.js \
   tests/core/pwa_client_adapter.test.js \
   tests/core/flutter_runtime_handoff.test.js \

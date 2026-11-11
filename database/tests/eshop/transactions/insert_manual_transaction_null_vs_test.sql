@@ -8,6 +8,7 @@ DECLARE
     v_user_id uuid := gen_random_uuid();
     v_bank_id bigint;
     v_pi_id bigint;
+    v_occasion_id bigint;
     v_paid_amount numeric;
     v_trans_record eshop.transactions%ROWTYPE;
 BEGIN
@@ -28,6 +29,13 @@ BEGIN
     INSERT INTO eshop.payment_info (variable_symbol, amount, currency_code, bank_account, paid)
     VALUES (floor(random()*1000000000)::bigint, 200.0, 'CZK', v_bank_id, 0)
     RETURNING id INTO v_pi_id;
+
+    -- Explicit linkage must have a stored in-unit order, just like real callers.
+    INSERT INTO public.occasions(unit,organization,title,link,start_time,end_time)
+    VALUES(v_unit_id,v_org_id,'Explicit cash payment','cash-null-vs-'||v_user_id,now(),now()+interval '1 day')
+    RETURNING id INTO v_occasion_id;
+    INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,payment_info,state,price,currency_code)
+    VALUES(public.next_order_sequence(v_occasion_id),public.generate_order_symbol(),v_occasion_id,v_pi_id,'created',200,'CZK');
 
     -- 3. Call RPC: NULL VS, explicit payment_info_id link
     PERFORM public.insert_manual_transaction(

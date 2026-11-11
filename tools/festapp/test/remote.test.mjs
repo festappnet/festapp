@@ -1,7 +1,11 @@
+import { activeConnections, verifyConnectionChoice } from '../src/remote/connection-choice.mjs';
+import { connectionActive, connectionDeadline } from '../../../packages/festapp_contracts/mcp-connection.mjs';
+import { DatabaseSync } from 'node:sqlite';
+import { digest } from '../src/context/profile.mjs';
 import { createRateLimiter } from '../src/remote/rate-limit.mjs';
 import {canonicalPreview} from './render-fixture.mjs';
 import {receipt as layoutReceipt} from './layout-fixture.mjs';
-import {MCP_PERMISSIONS} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
+import {DOMAIN_SCOPES,MCP_PERMISSIONS} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { PROTOCOL_VERSION_META_KEY, CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY } from '@modelcontextprotocol/server';
 import {invokeFormOperation} from '../src/operations/forms.mjs';
 import test from 'node:test';
@@ -10,7 +14,7 @@ import { createServer as httpServer } from 'node:http';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomBytes, createHash, generateKeyPairSync } from 'node:crypto';
+import { randomBytes, randomUUID, createHash, generateKeyPairSync } from 'node:crypto';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Client as LegacyClient } from 'mcp-sdk-legacy/client/index.js';
 import { StreamableHTTPClientTransport as LegacyHTTPClientTransport } from 'mcp-sdk-legacy/client/streamableHttp.js';
@@ -32,7 +36,7 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false } = {}) {
+async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
     const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -40,6 +44,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     const storage = await openRemoteStorage(root, key);
     const server = httpServer();
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    t.after(async () => { await new Promise(resolve => server.close(resolve)); await storage.close(); await rm(root, { recursive: true, force: true }); });
     const issuer = `http://127.0.0.1:${server.address().port}`;
     const raw = configuration(issuer);
     if (webCallback) raw.clients[0].redirectUris = [webCallback];
@@ -47,17 +52,18 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     if (pilot) raw.clients = [raw.clients[0], { id: 'portable-fixture', name: 'Portable fixture', redirectUris: [issuer + '/callback/portable'], allowedScopes: [READ_SCOPE] }].map((c, i) => i ? c : { ...c, allowedScopes: [READ_SCOPE, 'festapp:orders:read'] });
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
     if (publicClient) { raw.clients[0].id = 'arbitrary-summary-client'; raw.clients[0].dataProfile = 'order-summary'; }
+    if (genericClients) raw.clients = raw.clients.map((c, i) => ({ ...c, id: i ? 'browser-fixture' : 'desktop-fixture', name: i ? 'Browser application' : 'Desktop application' }));
+    if (clientMetadataDocuments) raw.clientMetadataDocuments = clientMetadataDocuments;
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
     const parsedConfig = parseRemoteConfig(raw);
     const config = canonical ? { ...parsedConfig, profile: { ...parsedConfig.profile, kind: 'canonical' } } : parsedConfig;
     const audit = [];
-    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r), rateLimiter });
+    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r), rateLimiter, metadataFetch });
     server.on('request', service.app);
-    t.after(async () => { await new Promise(resolve => server.close(resolve)); await storage.close(); await rm(root, { recursive: true, force: true }); });
     const jar = new Map();
     const browser = async (path, body, extra = {}) => {
         const r = await fetch(new URL(path, issuer), { redirect: 'manual',
-            method: body ? 'POST' : 'GET', body: body && new URLSearchParams(body),
+            method: body ? 'POST' : 'GET', body: body && new URLSearchParams(Object.entries(body).flatMap(([key,value]) => [value].flat().map(v => [key,String(v)]))),
             headers: { cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; '),
                 ...(body ? { origin: issuer } : {}), ...extra } });
         for (const c of r.headers.getSetCookie()) {
@@ -68,7 +74,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false, handleFormPost, resources = [f.config.resource] } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
@@ -87,10 +93,13 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     r = await f.browser(r.headers.get('location'));
     const consent = await r.text();
     assert.match(consent, /Povolit přístup/);
+    assert.match(consent, /name="consentVersion" value="3"/);
+    assert.doesNotMatch(consent, /type="checkbox" name="(?:permission|create)"/);
     assert.match(consent, /value="7"/);
     assert.doesNotMatch(consent, /value="8"/);
-    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: '7' }) });
-    assert.equal(r.status, 303);
+    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), consentVersion: '3', ...consentFields, ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: occasionIds ?? '7' }) });
+    assert.equal(r.status, consentStatus);
+    if (consentStatus !== 303) return;
     let redirect = r.headers.get('location');
     const callbackTarget = new URL(callbackUri);
     const isCallback = value => { const u = new URL(value, f.issuer); return u.origin === callbackTarget.origin && u.pathname === callbackTarget.pathname; };
@@ -209,13 +218,16 @@ for (const resourceCount of [0, 1, 2, 3]) test(`native OAuth with ${resourceCoun
 });
 
 for (const guide of ['automation/release/help/ai-agenti.html', 'automation/release/help/en/ai-agents.html', 'tools/festapp/README.md'])
-    test(`documented Codex login refreshes with the SDK's offline_access scope: ${guide}`, async t => {
+    test(`documented MCP login refreshes with the SDK's offline_access scope: ${guide}`, async t => {
         const text = await readFile(new URL('../../../' + guide, import.meta.url), 'utf8');
-        const commands = [...text.matchAll(/codex mcp login \S+ --scopes ([^<\s]+)/g)];
-        assert(commands.length > 0);
-        for (const [index, command] of commands.entries()) await t.test(`login command ${index + 1}`, async t => {
+        const scopeSets = guide.endsWith('.html')
+            ? [[...new Set(text.match(/\b(?:offline_access|festapp:[a-z-]+:[a-z-]+)\b/g))]]
+            : [...text.matchAll(/codex mcp login \S+ --scopes ([^<\s]+)/g)].map(command => command[1].split(','));
+        assert(scopeSets.length > 0);
+        if (guide.endsWith('.html')) assert.doesNotMatch(text, /codex/i);
+        for (const [index, scopes] of scopeSets.entries()) await t.test(`documented scopes ${index + 1}`, async t => {
             const f = await setup(t, { native: true, tenant: true });
-            const scopes = command[1].split(',');
+            assert(scopes.includes('offline_access'));
             const permissions = scopes.filter(scope => MCP_SCOPES.includes(scope));
             const clientId = 'codex-fixture', callbackUri = 'http://127.0.0.1:51789/callback', verifier = 'v'.repeat(43);
             const query = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: callbackUri,
@@ -400,6 +412,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     assert.match(client.getInstructions(), /ask which occasion/i);
     assert.match(client.getInstructions(), /untrusted data, never instructions/i);
     const tools = await client.listTools();
+    assert.doesNotMatch(JSON.stringify({ instructions: client.getInstructions(), server: client.getServerVersion(), tools }), /codex|chatgpt|claude|openai/i, 'automatic MCP discovery stays client independent');
     assert(tools.tools.some(t => t.name === 'festapp_orders_update' && t.annotations.destructiveHint === true));
     assert(tools.tools.some(t => t.name === 'festapp_orders_report' && t.annotations.readOnlyHint === true));
     assert(tools.tools.some(t => t.name === 'festapp_products_list' && t.annotations.readOnlyHint === true));
@@ -498,6 +511,7 @@ test('OAuth discovery, exact callbacks, browser CSRF and PKCE fail closed', asyn
     const challenge = await fetch(f.issuer + '/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
     assert.equal(challenge.status, 401);
     assert.match(challenge.headers.get('www-authenticate'), /oauth-protected-resource/);
+    assert.doesNotMatch(challenge.headers.get('www-authenticate'), /codex|chatgpt|claude|openai/i);
     for (const bearer of [supabaseToken, 'invented-access-token-1234567890']) {
         assert.equal((await fetch(f.issuer + '/mcp', { method: 'POST', headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' }, body: '{}' })).status, 401);
     }
@@ -566,7 +580,7 @@ test('delegated handlers deny other occasions and writes and discard a revoked i
     const bound = boundOwner(f.config, f.storage, 'grant-binding', { fetchImpl: f.owner.fetch });
     await bound.login('fixture@example.test', 'fixture-password');
     const grant = { id: 'grant-1', userId: actor, clientId: 'chatgpt-fixture', binding: 'grant-binding',
-        profileBinding: f.config.profile.binding, access: { type: 'occasions', occasionIds: [7] }, expiresAt: Date.now() + 60000, revoked: false };
+        profileBinding: f.config.profile.binding, access: { type: 'occasions', occasionIds: [7] }, expiresAt: Date.now() + 60000, lifecycle: 'legacy', revoked: false };
     f.storage.put('Delegation', grant.id, grant);
     const token = { grantId: grant.id, accountId: actor, clientId: grant.clientId, aud: f.config.resource,
         exp: Math.floor(Date.now() / 1000) + 300, scope: READ_SCOPE };
@@ -600,7 +614,7 @@ test('two delegated actors on one process keep their refresh sessions and identi
         await boundOwner(config, f.storage, binding, { fetchImpl: upstream }).login('fixture@example.test', 'fixture-password');
         const id = `grant-${userId}`;
         f.storage.put('Delegation', id, { id, userId, clientId: 'chatgpt-fixture', binding,
-            profileBinding: config.profile.binding, access: { type: 'occasions', occasionIds: [7] }, expiresAt: Date.now() + 60000, revoked: false });
+            profileBinding: config.profile.binding, access: { type: 'occasions', occasionIds: [7] }, expiresAt: Date.now() + 60000, lifecycle: 'legacy', revoked: false });
         owners.push(new DelegatedOwner(config, f.storage, { grantId: id, accountId: userId,
             clientId: 'chatgpt-fixture', aud: config.resource, scope: READ_SCOPE, exp: Date.now() / 1000 + 300 }, { fetchImpl: upstream }));
     }
@@ -612,7 +626,8 @@ test('two delegated actors on one process keep their refresh sessions and identi
 
 test('organizer consent needs requested create scope; read consent never exposes creation', async t => {
     const denied = await setup(t);
-    await assert.rejects(connect(denied, { unitId: 3, create: true }), /403/);
+    const attempted = await connect(denied, { unitId: 3, create: true });
+    assert(!attempted.tokens.scope.split(' ').includes(CREATE_SCOPE));
     const f = await setup(t);
     const { tokens } = await connect(f, { unitId: 3 });
     const token = await f.provider.AccessToken.find(tokens.access_token);
@@ -657,7 +672,7 @@ test('tree grant includes future occasions only in selected organizers and keeps
     await boundOwner(f.config,f.storage,binding,{fetchImpl:f.owner.fetch}).login('fixture@example.test','fixture-password');
     const id='tree-grant';
     f.storage.put('Delegation',id,{id,userId:actor,clientId:'chatgpt-fixture',binding,
-        profileBinding:f.config.profile.binding,access:{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:false}],occasionIds:[8]},expiresAt:Date.now()+60000,revoked:false});
+        profileBinding:f.config.profile.binding,access:{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:false}],occasionIds:[8]},expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false});
     const owner=new DelegatedOwner(f.config,f.storage,{grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:READ_SCOPE+' '+CREATE_SCOPE,exp:Date.now()/1000+300},{fetchImpl:f.owner.fetch});
     let occasions=[{id:7,title:'Current',unitId:3},{id:8,title:'Selected separately',unitId:5},{id:9,title:'Other organizer',unitId:5},{id:10,title:'Second organizer',unitId:4}];
     const client={rpc:async()=>({data:{units:[{id:3,title:'First',canCreateOccasions:true},{id:4,title:'Second',canCreateOccasions:true},{id:5,title:'Excluded',canCreateOccasions:true}],occasions:occasions.map(o=>({...o,capabilities:{'ticket_layouts.read':true}}))},error:null})};
@@ -693,7 +708,7 @@ test('order permissions require explicit requested consent and both persisted gr
     assert.deepEqual(verifyPermissions(['festapp:products:read'],MCP_SCOPES),['festapp:products:read']);
     const f=await setup(t);
     const id='order-permissions';const binding='order-permissions-session';
-    const grant={id,binding,userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},expiresAt:Date.now()+60000,revoked:false};
+    const grant={id,binding,userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
     const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
     const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
     f.storage.put('Delegation',id,grant);
@@ -710,7 +725,7 @@ test('order permissions require explicit requested consent and both persisted gr
 test('product schedule tools require new explicit consent; old product grants stay unchanged',async t=>{
  const f=await setup(t);const id='schedule-permissions';
  const permissions=['festapp:products:read','festapp:products:write'];
- const grant={id,binding:'schedule-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions,expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'schedule-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions,expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -738,7 +753,7 @@ test('product schedule tools require new explicit consent; old product grants st
 
 test('inventory summaries require inventory consent in both grant and token',async t=>{
  const f=await setup(t),id='inventory-read-permissions';
- const grant={id,binding:'inventory-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:inventory:read'],expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'inventory-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:inventory:read'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:READ_SCOPE+' festapp:inventory:read',exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -752,7 +767,7 @@ test('inventory summaries require inventory consent in both grant and token',asy
 
 test('inventory writes require new consent and token scope, separate from standing and inventory reads',async t=>{
  const f=await setup(t),id='inventory-write-permissions';
- const grant={id,binding:'inventory-write-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:inventory:read'],expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'inventory-write-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:inventory:read'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
  assert(!owner().allowedOperations.includes('inventory.change'));assert.throws(()=>verifyPermissions(['festapp:inventory:write'],MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:inventory:read','festapp:inventory:write']});assert(owner().allowedOperations.includes('inventory.change'));
@@ -762,7 +777,7 @@ test('inventory writes require new consent and token scope, separate from standi
 
 test('unused product choices require explicit consent beyond previously issued product grants',async t=>{
  const f=await setup(t),id='product-options-permissions';const permissions=['festapp:products:read','festapp:products:write'];
- const grant={id,binding:'product-options-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions,expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);
+ const grant={id,binding:'product-options-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions,expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
  assert(!owner().allowedOperations.includes('products.options'));assert.throws(()=>verifyPermissions(['festapp:product-options:read'],MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read','festapp:product-options:read']});assert(owner().allowedOperations.includes('products.options'));
@@ -770,26 +785,26 @@ test('unused product choices require explicit consent beyond previously issued p
 });
 
 test('seat lifecycle reads and blocking require separate explicit grants and token scopes',async t=>{
- const f=await setup(t),id='seat-permissions';const grant={id,binding:'seat-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write','festapp:inventory:read','festapp:inventory:write'],expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);
+ const f=await setup(t),id='seat-permissions';const grant={id,binding:'seat-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write','festapp:inventory:read','festapp:inventory:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('seats.list'));assert(!owner().allowedOperations.includes('seats.block'));assert.throws(()=>verifyPermissions(['festapp:seats:block'],MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read']});assert(owner().allowedOperations.includes('seats.list'));assert(!owner().allowedOperations.includes('seats.preview_block'));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read','festapp:seats:block']});assert(owner().allowedOperations.includes('seats.block'));token.scope=READ_SCOPE+' festapp:seats:read';assert(!owner().allowedOperations.includes('seats.block'));
 });
 
 test('hold release needs explicit permission independently of seat blocking or order grants',async t=>{
- const f=await setup(t),id='hold-release-permissions';const grant={id,binding:'hold-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:seats:block','festapp:orders:read','festapp:orders:write'],expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('seats.release_holds'));assert.throws(()=>verifyPermissions(['festapp:seats:release-holds'],MCP_SCOPES));
+ const f=await setup(t),id='hold-release-permissions';const grant={id,binding:'hold-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:seats:block','festapp:orders:read','festapp:orders:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('seats.release_holds'));assert.throws(()=>verifyPermissions(['festapp:seats:release-holds'],MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read','festapp:seats:release-holds']});assert(owner().allowedOperations.includes('seats.preview_release'));assert(owner().allowedOperations.includes('seats.release_holds'));assert(!owner().allowedOperations.includes('seats.block'));token.scope=READ_SCOPE+' festapp:seats:read';assert(!owner().allowedOperations.includes('seats.release_holds'));
 });
 
 test('seat swaps require their own financial-effect consent and both seat/order reads',async t=>{
- const f=await setup(t),id='seat-swap-permissions';const grant={id,binding:'swap-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:seats:block','festapp:seats:release-holds','festapp:orders:read','festapp:orders:write','festapp:payments:write'],expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('seats.swap'));
+ const f=await setup(t),id='seat-swap-permissions';const grant={id,binding:'swap-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:seats:block','festapp:seats:release-holds','festapp:orders:read','festapp:orders:write','festapp:payments:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('seats.swap'));
  for(const missing of ['festapp:seats:read','festapp:orders:read'])assert.throws(()=>verifyPermissions(['festapp:seats:read','festapp:orders:read','festapp:seats:swap'].filter(p=>p!==missing),MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read','festapp:orders:read','festapp:seats:swap']});assert(owner().allowedOperations.includes('seats.preview_swap'));assert(owner().allowedOperations.includes('seats.swap'));assert(!owner().allowedOperations.includes('seats.release_holds'));token.scope=READ_SCOPE+' festapp:seats:read festapp:orders:read';assert(!owner().allowedOperations.includes('seats.swap'));
 });
 
 test('seat order creation requires explicit consent and both semantic preview reads',async t=>{
  const f=await setup(t),id='seat-order-permissions';
- const grant={id,binding:'seat-order-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:orders:read','festapp:orders:write','festapp:seats:swap'],expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'seat-order-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:orders:read','festapp:orders:write','festapp:seats:swap'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -804,7 +819,7 @@ test('seat order creation requires explicit consent and both semantic preview re
 
 test('seat cancellation requires fresh explicit consent and both semantic reads',async t=>{
  const f=await setup(t),id='seat-cancellation-permissions';
- const grant={id,binding:'seat-cancellation-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:orders:read','festapp:orders:write','festapp:seats:swap'],expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'seat-cancellation-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:orders:read','festapp:orders:write','festapp:seats:swap'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -820,7 +835,7 @@ test('seat cancellation requires fresh explicit consent and both semantic reads'
 test('email template consent never expands old grants or promotes occasion access into organizer access',async t=>{
  const f=await setup(t),id='email-template-permissions';
  const grant={id,binding:'email-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,
-  access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write'],expiresAt:Date.now()+60000,revoked:false};
+  access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -843,7 +858,7 @@ test('email template consent never expands old grants or promotes occasion acces
 test('form scopes do not widen older grants and copy must consent both source and target',async t=>{
  const f=await setup(t),id='form-authoring-permissions';
  const grant={id,binding:'form-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,
-  access:{type:'occasions',occasionIds:[7]},permissions:['festapp:products:read','festapp:products:write'],expiresAt:Date.now()+60000,revoked:false};
+  access:{type:'occasions',occasionIds:[7]},permissions:['festapp:products:read','festapp:products:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
  assert(!owner().allowedOperations.includes('forms.save'));assert.throws(()=>verifyPermissions(['festapp:forms:write'],MCP_SCOPES));
@@ -855,7 +870,7 @@ test('form scopes do not widen older grants and copy must consent both source an
    return{error:null,data:{occasionId:7,authoring:{form:{id:88,measurement_status:{
     requested_enabled:false,organization_allowed:false,organization_enabled:false,unit_enabled:false,
     runtime_supported:true,eligible:false,blocked_reasons:['disabled'],policy_revision:0,
-    consent_required:true,enhanced_conversions_unavailable:true,
+    consent_required:true,enhanced_conversions_unavailable:false,
    }}}}};
   }
   assert.equal(name,'manage_form');assert.equal(p.p_payload.source_occasion_id,9);assert.equal(p.p_payload.source_unit_id,null);
@@ -867,7 +882,7 @@ test('form scopes do not widen older grants and copy must consent both source an
 });
 
 test('completed form sales require explicit new order and waitlist consent with dependency and occasion boundaries',async t=>{
- const f=await setup(t),id='complete-form-consent',grant={id,binding:'stage4-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write','festapp:forms:read','festapp:forms:write'],expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);
+ const f=await setup(t),id='complete-form-consent',grant={id,binding:'stage4-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write','festapp:forms:read','festapp:forms:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300},owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('forms.createOrder'));assert(!owner().allowedOperations.includes('waitlist.send'));assert(owner().allowedOperations.includes('forms.publicLink'));
  const permissions=[...grant.permissions,'festapp:orders:create','festapp:waitlist:read','festapp:waitlist:write','festapp:waitlist:accept'];verifyPermissions(permissions,MCP_SCOPES);f.storage.put('Delegation',id,{...grant,permissions});assert(owner().allowedOperations.includes('forms.createOrder'));assert(owner().allowedOperations.includes('waitlist.accept'));assert.throws(()=>owner().authorizeOperation('waitlist.accept',{occasionId:8,formId:42}));
  token.scope=READ_SCOPE+' festapp:forms:read festapp:orders:read';assert(!owner().allowedOperations.includes('forms.publicLink'));assert(!owner().allowedOperations.includes('forms.createOrder'));assert(!owner().allowedOperations.includes('waitlist.accept'));
@@ -876,7 +891,7 @@ test('completed form sales require explicit new order and waitlist consent with 
 
 test('configuration scopes and whole-unit selection stay separate from occasion-only grants',async t=>{
  const f=await setup(t),id='configuration-permissions';
- const grant={id,binding:'settings-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:forms:read','festapp:forms:write'],expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'settings-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:forms:read','festapp:forms:write'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -892,7 +907,7 @@ test('configuration scopes and whole-unit selection stay separate from occasion-
  token.scope=READ_SCOPE+' festapp:unit-settings:read';assert(!owner().allowedOperations.includes('units.settings.save'));
 });
 
-async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'] } = {}) {
+async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200 } = {}) {
     const callbackUri = f.config.clients.find(c => c.id === clientId).redirectUris[0];
     const verifier = randomBytes(32).toString('base64url');
     let r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code',
@@ -906,9 +921,10 @@ async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_S
         headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) },
         body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
             organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }) });
-    r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2,
-        selection: { type: 'occasions', occasionIds: [7] }, permissions: scopes.filter(s => MCP_SCOPES.includes(s)) } });
-    assert.equal(r.status, 200);
+    r = await broker('prepare', { accessToken: supabaseToken, access: legacy ? { type: 'occasions', occasionIds: [7] } : { consentVersion: 2,
+        selection, permissions: scopes.filter(s => MCP_SCOPES.includes(s)), ...(connection ? { connection } : {}) } });
+    assert.equal(r.status, prepareStatus);
+    if (prepareStatus !== 200) return;
     const { lease } = await r.json();
     r = await broker('complete', { lease, session: { access_token: supabaseToken, refresh_token: 'independent-fixture-refresh' } });
     assert.equal(r.status, 200);
@@ -919,12 +935,91 @@ async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_S
     }
     const callback = new URL(target, f.issuer);
     assert.equal(callback.searchParams.get('iss'), f.issuer);
-    r = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+    const exchange = () => fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
         grant_type: 'authorization_code', code: callback.searchParams.get('code'), client_id: clientId,
         redirect_uri: callbackUri, code_verifier: verifier, resource: f.config.resource }) });
+    if (pending) return { exchange, code: callback.searchParams.get('code') };
+    r = await exchange();
     assert.equal(r.status, 200);
     return r.json();
 }
+
+for (const modern of [true, false]) test(`form save denial explains account rights over ${modern ? 'modern' : 'legacy'} MCP`, async t => {
+    let saves = 0;
+    const f = await setup(t, { tenant: true, fetchImpl: (url) => {
+        if (url.pathname !== '/rest/v1/rpc/manage_form') return undefined;
+        saves++;
+        return reply({ code: '42501', message: 'private database denial', details: 'private-role-detail' }, 403);
+    } });
+    const tokens = await connectTenant(f, { scopes: [READ_SCOPE, 'festapp:forms:read', 'festapp:forms:write'] });
+    const client = new (modern ? Client : LegacyClient)({ name: 'generic-form-editor', version: '1' });
+    await client.connect(new (modern ? StreamableHTTPClientTransport : LegacyHTTPClientTransport)(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
+    }));
+    t.after(() => client.close());
+    const result = await client.callTool({ name: 'festapp_forms_save', arguments: {
+        occasionId: 7, commandId: randomUUID(), form: { id: 42, expected_aggregate_version: 0,
+            expected_product_versions: {}, expected_product_type_versions: {}, title: 'Approved change' },
+    } });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.error.code, 'FORBIDDEN');
+    assert.equal(result.structuredContent.error.retryable, false);
+    assert.match(result.structuredContent.error.message, /account.*form editor/i);
+    assert.match(result.content[0].text, /OAuth consent does not grant account permissions/);
+    assert(!JSON.stringify(result).includes('private-role-detail'));
+    assert.equal(saves, 1, 'a permission denial must not retry the mutation');
+});
+
+for (const modern of [true, false]) test(`organizer analytics distinguishes consent, manager rights and enabled measurement over ${modern ? 'modern' : 'legacy'} MCP`, async t => {
+    let saves = 0, manager = false;
+    const measurementSettings = { measurement_enabled: true, measurement_gtm_container: 'GTM-AB12',
+        measurement_scripts: '<script>window.syntheticMeasurement = true;</script>' };
+    const f = await setup(t, { tenant: true, fetchImpl: (url, init) => {
+        if (url.pathname !== '/rest/v1/rpc/save_configuration_settings') return undefined;
+        saves++;
+        if (!manager) return reply({ code: '42501', message: 'private organizer denial' }, 403);
+        const p = JSON.parse(init.body);
+        assert.equal(p.p_entity_type, 'unit');assert.equal(p.p_entity_id, 3);
+        assert.deepEqual(p.p_settings.settings, measurementSettings);
+        return reply({ code: 200, status: 'applied', mutation: { commandId: p.p_command_id, receiptId: p.p_command_id },
+            data: { configuration: { entityType: 'unit', entityId: 3, aggregateVersion: 1,
+                title: 'Organizer', settings: measurementSettings } } });
+    } });
+    const scopes = [READ_SCOPE, 'festapp:unit-settings:read', 'festapp:unit-settings:write'];
+    const connectClient = async (selection, requestedScopes = scopes) => {
+        const tokens = await connectTenant(f, { scopes: requestedScopes, ...(selection ? { selection } : {}) });
+        const c = new (modern ? Client : LegacyClient)({ name: 'generic-analytics-editor', version: '1' });
+        await c.connect(new (modern ? StreamableHTTPClientTransport : LegacyHTTPClientTransport)(new URL(f.config.resource), {
+            requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
+        }));t.after(() => c.close());return c;
+    };
+    const call = c => c.callTool({ name: 'festapp_units_settings_save', arguments: { unitId: 3,
+        expectedVersion: 0, commandId: randomUUID(), changes: { settings: measurementSettings } } });
+    const readOnly = await connectClient(undefined, [READ_SCOPE]);
+    assert(!(await readOnly.listTools()).tools.some(t => t.name === 'festapp_units_settings_save'));
+    const discovery = await readOnly.callTool({ name: 'festapp_context_inspect', arguments: { query: 'tracking code' } });
+    assert.equal(discovery.structuredContent.ok, true, JSON.stringify(discovery));
+    const support = discovery.structuredContent.data.capabilitySearch.matches.find(m => m.operation === 'units.settings.save');
+    assert(support, 'read-only clients can discover implemented analytics without gaining its tool');
+    assert.equal(support.serverSupported, true);assert.equal(support.toolEnabled, false);
+    assert(support.requiredScopes.includes('festapp:unit-settings:write'));
+    assert.match(support.description, /manager authorization/i);
+    assert.equal(discovery.structuredContent.data.capabilitySearch.authorization, 'checked_when_action_runs');
+    assert.equal(saves, 0);
+    const occasionOnly = await connectClient();
+    const consentDenied = await call(occasionOnly);
+    assert.equal(consentDenied.structuredContent.error.code, 'ORGANIZER_CONSENT_REQUIRED');
+    assert.match(consentDenied.structuredContent.error.message, /whole organizer/i);
+    assert.equal(consentDenied.structuredContent.error.retryable, false);assert.equal(saves, 0);
+    const organizer = await connectClient({ type: 'selection', occasionIds: [], units: [{ unitId: 3, canCreateOccasions: false }] });
+    const roleDenied = await call(organizer);
+    assert.equal(roleDenied.structuredContent.error.code, 'FORBIDDEN');
+    assert.match(roleDenied.structuredContent.error.message, /manager role/i);
+    assert.equal(roleDenied.structuredContent.error.retryable, false);assert.equal(saves, 1);
+    manager = true;
+    const saved = await call(organizer);assert.equal(saved.structuredContent.ok, true, JSON.stringify(saved));
+    assert.deepEqual(saved.structuredContent.data.settings, measurementSettings);assert.equal(saves, 2);
+});
 
 const orderRow = id => ({ id, occasionId: 7, symbol: 'FIXTURE-' + id, state: id % 2 ? 'ordered' : 'paid',
     createdAt: null, updatedAt: null, revision: 'a'.repeat(64), customer: { name: null, surname: null, email: null },
@@ -1195,7 +1290,7 @@ test('refresh replay revokes its connection, expired grants fail refresh, and en
 
 test('remaining domain scopes require fresh grant AND token consent; copy/finalize also require explicit target creation',async t=>{
  const f=await setup(t),id='final-domain-permissions';
- const grant={id,binding:'final-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:forms:read'],expiresAt:Date.now()+60000,revoked:false};
+ const grant={id,binding:'final-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:forms:read'],expiresAt:Date.now()+60000,lifecycle:'legacy',revoked:false};
  f.storage.put('Delegation',id,grant);
  const token={grantId:id,accountId:actor,clientId:grant.clientId,aud:f.config.resource,scope:[READ_SCOPE,CREATE_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
  const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
@@ -1273,4 +1368,532 @@ test('canonical HTTP rejects missing/multiple client IP and isolates normalized 
     assert.equal((await get({ 'x-festapp-client-ip': '192.0.2.2', 'x-forwarded-for': '192.0.2.1' })).status, 200);
     assert.equal((await fetch(f.issuer + '/healthz', { headers: { 'x-forwarded-proto': 'https' } })).status, 200);
     assert.equal((await fetch(f.issuer + '/healthz')).status, 400);
+});
+
+for (const clientId of ['desktop-fixture', 'browser-fixture']) test(`connection replacement lifecycle for registered client ${clientId}`, async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const options = { clientId, scopes: [READ_SCOPE] };
+    const first = await connectTenant(f, { ...options, scopes: clientId === 'desktop-fixture' ? [READ_SCOPE, 'festapp:orders:read'] : [READ_SCOPE] }); // Legacy request without a choice.
+    const old = f.storage.values('Delegation').find(g => g.clientId === clientId);
+    await connectTenant(f, options); // Existing connections do not change legacy no-choice requests.
+    assert.equal(f.storage.values('Delegation').filter(g => g.clientId === clientId && !g.revoked).length, 2);
+    const anotherClient = clientId === 'browser-fixture' ? 'desktop-fixture' : 'browser-fixture';
+    await connectTenant(f, { clientId: anotherClient, scopes: [READ_SCOPE] });
+    const other = f.storage.values('Delegation').find(g => g.clientId === anotherClient);
+    await connectTenant(f, { ...options, connection: { mode: 'replace', connectionId: other.id }, prepareStatus: 403 });
+    const foreign = { ...old, id: 'foreign-connection', userId: 'another-user' };
+    f.storage.put('Delegation', foreign.id, foreign, 600);
+    await connectTenant(f, { ...options, connection: { mode: 'replace', connectionId: foreign.id }, prepareStatus: 403 });
+    const wrongProfile = { ...old, id: 'foreign-profile', profileBinding: 'different-profile' };
+    f.storage.put('Delegation', wrongProfile.id, wrongProfile, 600);
+    await connectTenant(f, { ...options, connection: { mode: 'replace', connectionId: wrongProfile.id }, prepareStatus: 403 });
+    await connectTenant(f, { ...options, connection: { mode: 'replace', connectionId: 'missing' }, prepareStatus: 403 });
+    const expired = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    f.storage.remove('AuthorizationCode', expired.code); // Model the provider removing an expired code.
+    assert.equal((await expired.exchange()).status, 400);
+    assert.equal(f.storage.get('Delegation', old.id).revoked, false);
+    const abandoned = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    assert.equal(f.storage.get('Delegation', old.id).revoked, false, 'consent/callback alone never revoke');
+    assert(await f.provider.AccessToken.find(first.access_token));
+    const refresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', refresh_token: first.refresh_token, client_id: clientId, resource: f.config.resource }) });
+    assert.equal(refresh.status, 200);
+    assert.equal(f.storage.get('Delegation', old.id).revoked, false, 'refresh must not trigger replacement');
+    await connectTenant(f, { ...options, connection: { mode: 'new', name: 'Office laptop' } });
+    assert.equal(f.storage.get('Delegation', old.id).revoked, false, 'new device keeps both');
+    const listed = await fetch(f.issuer + '/tenant-connections', { method: 'POST', headers: {
+        'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) }, body: JSON.stringify({
+        operation: 'list', accessToken: supabaseToken, tenantId: f.config.profile.tenantId,
+        organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin }) });
+    assert.equal(listed.status, 200);
+    const connections = (await listed.json()).connections;
+    assert(connections.some(c => c.name === 'Office laptop' && c.client === f.config.clients.find(c => c.id === clientId).name));
+
+    for (const g of f.storage.values('Delegation').filter(g => g.replaces === old.id)) assert.deepEqual(g.permissions, [], 'replacement never inherits wider permissions');
+    const r = await abandoned.exchange(); assert.equal(r.status, 200);
+    assert.equal(f.storage.get('Delegation', old.id).revoked, true);
+    assert.equal(await f.storage.backendStore.read(old.binding), null);
+    assert.equal(await f.provider.AccessToken.find(first.access_token), undefined);
+    assert.equal(f.storage.get('Delegation', other.id).revoked, false);
+    assert.equal(f.storage.values('Delegation').find(g => g.name === 'Office laptop').revoked, false);
+    assert(f.audit.some(e => e.event === 'issued' && e.replaced));
+});
+
+for (const guide of ['automation/release/help/ai-agenti.html', 'automation/release/help/en/ai-agents.html'])
+    test(`generic guide requests registered-client OAuth scopes: ${guide}`, async () => {
+        const text = await readFile(new URL('../../../' + guide, import.meta.url), 'utf8');
+        assert.match(text, /offline_access/);
+        assert.match(text, /festapp:ticket-layouts:read/);
+        assert.match(text, /festapp:forms:read/);
+        assert.doesNotMatch(text, /codex mcp login|chatgpt/i);
+    });
+
+test('replacement commit failure returns OAuth error without tokens', async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const options = { clientId: 'desktop-fixture', scopes: [READ_SCOPE] };
+    await connectTenant(f, options);
+    const old = f.storage.values('Delegation')[0];
+    const pending = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    const activate = f.storage.activateConnection;
+    f.storage.activateConnection = () => { throw Error('fixture storage failure'); };
+    try {
+        const response = await pending.exchange(); assert.equal(response.status, 500);
+        const body = await response.json(); assert.equal(body.error, 'server_error'); assert.equal(body.access_token, undefined);
+        assert.equal(f.storage.get('Delegation', old.id).revoked, false);
+        assert(f.storage.values('Delegation').some(g => g.replaces === old.id && g.lifecycle === 'pending'));
+    } finally { f.storage.activateConnection = activate; }
+});
+
+for (const millisecond of [0, 999]) for (const clientId of ['desktop-fixture', 'browser-fixture']) test(`consent duration and fixed token deadlines for ${clientId} at ${millisecond}ms`, async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    // Provider timestamps use whole seconds while delegation deadlines use
+    // milliseconds. Exercise both ends of a second without scheduler jitter
+    // moving token issuance across that boundary. Keep the expiry assertions.
+    t.mock.timers.enable({ apis: ['Date'], now: Math.floor(Date.now() / 1000) * 1000 + millisecond });
+    const db = new DatabaseSync(join(f.root, 'remote.sqlite'), { readOnly: true });
+    t.after(() => db.close());
+    const deadline = (model, id) => db.prepare('SELECT expires FROM records WHERE model=? AND id=?').get(model, digest(id))?.expires;
+    const refresh = token => fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: clientId, grant_type: 'refresh_token', refresh_token: token, resource: f.config.resource }) });
+    for (const durationDays of [7, 30, 90, 365]) {
+        const tokens = await connectTenant(f, { clientId, scopes: [READ_SCOPE], connection: { mode: 'new', name: `Device ${durationDays}`, durationDays } });
+        const access = await f.provider.AccessToken.find(tokens.access_token);
+        const grant = f.storage.get('Delegation', access.grantId);
+        assert.equal(grant.expiresAt - grant.createdAt, durationDays * 86400000);
+        assert(Math.abs(deadline('Delegation', grant.id) - grant.expiresAt) < 1000);
+        assert(Math.abs(deadline('Binding', grant.binding) - grant.expiresAt) < 1000);
+        assert(Math.abs(deadline('Backend', grant.binding) - grant.expiresAt) < 1000);
+        const providerGrant = await f.provider.Grant.find(grant.id);
+        assert(Math.abs(providerGrant.exp * 1000 - grant.expiresAt) < 1000);
+        const providerRefresh = await f.provider.RefreshToken.find(tokens.refresh_token);
+        assert(Math.abs(providerRefresh.exp * 1000 - Math.min(grant.expiresAt, grant.issuedAt + 30 * 86400000)) < 1000);
+        const r = await refresh(tokens.refresh_token); assert.equal(r.status, 200);
+        const rotated = await r.json();
+        assert.equal(f.storage.get('Delegation', grant.id).expiresAt, grant.expiresAt);
+        assert.equal(f.storage.get('Delegation', grant.id).createdAt, grant.createdAt);
+        const next = await f.provider.RefreshToken.find(rotated.refresh_token);
+        assert(next.exp * 1000 <= grant.expiresAt + 1000, 'rotation never adds another consent duration');
+        // Simulate a provider retaining a refresh credential beyond consent expiry.
+        const payload = f.storage.get('RefreshToken', rotated.refresh_token);
+        f.storage.put('RefreshToken', rotated.refresh_token, { ...payload, exp: Math.floor(Date.now() / 1000) + 365 * 86400 }, 365 * 86400);
+        f.storage.put('Delegation', grant.id, { ...grant, expiresAt: Date.now() - 1 }, 365 * 86400);
+        assert.equal((await refresh(rotated.refresh_token)).status, 400, 'Delegation deadline wins even with longer provider TTL');
+        assert.throws(() => new DelegatedOwner(f.config, f.storage, access, { fetchImpl: f.owner.fetch }), /AUTHENTICATION_REQUIRED/);
+    }
+    for (const legacy of [false, true]) {
+        const tokens = await connectTenant(f, { clientId, scopes: [READ_SCOPE], legacy });
+        const access = await f.provider.AccessToken.find(tokens.access_token);
+        const grant = f.storage.get('Delegation', access.grantId);
+        assert.equal(grant.expiresAt - grant.createdAt, 7 * 86400000, 'missing duration and old consent both default to seven days');
+    }
+    // Revoked annual grants remain tombstoned to their original deadline.
+    const tokens = await connectTenant(f, { clientId, scopes: [READ_SCOPE], connection: { mode: 'new', name: 'Annual device', durationDays: 365 } });
+    const grant = f.storage.get('Delegation', (await f.provider.AccessToken.find(tokens.access_token)).grantId);
+    f.storage.revoke(grant.id);
+    assert.equal(f.storage.get('Delegation', grant.id).revoked, true);
+    assert(Math.abs(deadline('Delegation', grant.id) - grant.expiresAt) < 1000);
+    assert.equal(await f.storage.backendStore.read(grant.binding), null);
+});
+
+test('standalone form accepts only exact duration strings and defaults to seven days', async t => {
+    const f = await setup(t, { pilot: true, genericClients: true });
+    for (const durationDays of ['7', '30', '90', '365']) {
+        const result = await connect(f, { clientId: 'desktop-fixture', consentFields: { mode: 'new', name: 'Device', durationDays } });
+        const access = await f.provider.AccessToken.find(result.tokens.access_token);
+        const grant = f.storage.get('Delegation', access.grantId);
+        assert.equal(grant.expiresAt - grant.createdAt, Number(durationDays) * 86400000);
+    }
+    for (const durationDays of ['0', '366', '7.0', '07', '7 ', 'Infinity', ''])
+        await connect(f, { clientId: 'desktop-fixture', consentStatus: 403, consentFields: { mode: 'new', name: 'Device', durationDays } });
+    const result = await connect(f, { clientId: 'desktop-fixture' });
+    const grant = f.storage.get('Delegation', (await f.provider.AccessToken.find(result.tokens.access_token)).grantId);
+    assert.equal(grant.durationDays, 7);
+});
+
+test('annual session survives local inactivity past seven days, rotates downstream credentials without extending consent', async t => {
+    let rejectBackend = false;
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true, fetchImpl: url => {
+        if (rejectBackend && url.pathname === '/auth/v1/token') return reply({ code: 'refresh_token_not_found' }, 400);
+    } });
+    const clientId = 'desktop-fixture';
+    const tokens = await connectTenant(f, { clientId, scopes: [READ_SCOPE], connection: { mode: 'new', name: 'Annual', durationDays: 365 } });
+    const access = await f.provider.AccessToken.find(tokens.access_token);
+    const grant = f.storage.get('Delegation', access.grantId);
+    const saved = await f.storage.backendStore.read(grant.binding);
+    const originalNow = Date.now;
+    const later = originalNow() + 8 * 86400000;
+    t.mock.method(Date, 'now', () => later);
+    try {
+        assert(f.storage.get('Delegation', grant.id));
+        assert(f.storage.get('Binding', grant.binding));
+        assert(await f.storage.backendStore.read(grant.binding));
+        const r = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+            client_id: clientId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+        assert.equal(r.status, 200); const next = await r.json();
+        assert.deepEqual(await f.storage.backendStore.read(grant.binding), saved, 'OAuth refresh never refreshes the downstream session');
+        const nextAccess = await f.provider.AccessToken.find(next.access_token);
+        const owner = new DelegatedOwner(f.config, f.storage, nextAccess, { fetchImpl: f.owner.fetch });
+        await owner.authorized(async () => 'allowed');
+        assert.notEqual((await f.storage.backendStore.read(grant.binding)).refreshToken, saved.refreshToken);
+        assert.equal(f.storage.get('Delegation', grant.id).expiresAt, grant.expiresAt);
+        // Provider-side expiry/invalidity is independent of annual local consent.
+        rejectBackend = true;
+        await assert.rejects(owner.authorized(async () => 'denied'), { code: 'AUTHENTICATION_REQUIRED' });
+        assert.equal(f.storage.get('Delegation', grant.id).revoked, true);
+        assert.equal(await f.storage.backendStore.read(grant.binding), null);
+        assert.match(owner.challengeFor('AUTHENTICATION_REQUIRED'), /invalid_token/);
+    } finally { t.mock.restoreAll(); }
+});
+
+for (const reverse of [false, true]) test(`only first HTTP replacement commits (reverse=${reverse}) and restart retains one successor`, async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const options = { clientId: 'desktop-fixture', scopes: [READ_SCOPE] };
+    const tokens = await connectTenant(f, options);
+    const old = f.storage.get('Delegation', (await f.provider.AccessToken.find(tokens.access_token)).grantId);
+    const b = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    assert.deepEqual(activeConnections(f.storage, old.userId, old.clientId, old.profileBinding).map(g => g.id), [old.id]);
+    const c = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    const results = await Promise.all((reverse ? [c, b] : [b, c]).map(flow => flow.exchange()));
+    assert.deepEqual(results.map(r => r.status).sort(), [200, 400]);
+    const rejected = await results.find(r => r.status === 400).json();
+    assert.equal(rejected.error, 'invalid_grant'); assert.equal(rejected.access_token, undefined);
+    const winner = await f.provider.AccessToken.find((await results.find(r => r.status === 200).json()).access_token);
+    await f.storage.close();
+    const reopened = await openRemoteStorage(f.root, f.key);
+    try {
+        assert.deepEqual(activeConnections(reopened, old.userId, old.clientId, old.profileBinding).map(g => g.id), [winner.grantId]);
+        assert.equal(reopened.get('Delegation', old.id).revoked, true);
+    } finally { await reopened.close(); }
+});
+
+for (const stage of ['backend', 'tombstone', 'activation']) test(`real SQLite fault at ${stage} rolls back replacement and survives restart`, async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const options = { clientId: 'desktop-fixture', scopes: [READ_SCOPE] };
+    const tokens = await connectTenant(f, options);
+    const old = f.storage.get('Delegation', (await f.provider.AccessToken.find(tokens.access_token)).grantId);
+    const pending = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    const next = f.storage.values('Delegation').find(g => g.replaces === old.id);
+    const db = new DatabaseSync(join(f.root, 'remote.sqlite'));
+    const condition = stage === 'backend' ? `OLD.model='Backend' AND OLD.id='${digest(old.binding)}'`
+        : `NEW.model='Delegation' AND NEW.id='${digest(stage === 'tombstone' ? old.id : next.id)}'`;
+    db.exec(`CREATE TRIGGER fail_commit AFTER ${stage === 'backend' ? 'DELETE' : 'INSERT'} ON records WHEN ${condition} BEGIN SELECT RAISE(ABORT, 'injected_sqlite_fault'); END`);
+    db.close();
+    if (stage === 'activation') f.storage.discardUnissuedTokens = () => { throw Error('cleanup unavailable'); };
+    const response = await pending.exchange(); assert.equal(response.status, 500);
+    const body = await response.json(); assert.equal(body.error, 'server_error');
+    for (const field of ['access_token', 'refresh_token', 'id_token']) assert.equal(body[field], undefined);
+    assert.equal(f.storage.get('Delegation', old.id).revoked, false);
+    assert.equal(f.storage.get('Delegation', next.id).lifecycle, 'pending');
+    assert(await f.provider.AccessToken.find(tokens.access_token));
+    new DelegatedOwner(f.config, f.storage, await f.provider.AccessToken.find(tokens.access_token), { fetchImpl: f.owner.fetch });
+    const leakedRows = f.storage.values('AccessToken').filter(token => token.grantId === next.id);
+    assert.equal(leakedRows.length, stage === 'activation' ? 1 : 0);
+    for (const token of leakedRows) assert.throws(() => new DelegatedOwner(f.config, f.storage, token), /AUTHENTICATION_REQUIRED/);
+    await f.storage.close();
+    const reopened = await openRemoteStorage(f.root, f.key);
+    try {
+        assert.equal(reopened.get('Delegation', old.id).revoked, false);
+        assert(await reopened.backendStore.read(old.binding));
+        assert.equal(reopened.get('Binding', next.binding).id, next.id);
+        assert.equal(reopened.get('Delegation', next.id).lifecycle, 'pending');
+        assert.equal(connectionActive(reopened.get('Delegation', next.id)), false);
+        for (const token of reopened.values('AccessToken').filter(token => token.grantId === next.id))
+            assert.throws(() => new DelegatedOwner(f.config, reopened, token), /AUTHENTICATION_REQUIRED/);
+    } finally { await reopened.close(); }
+});
+
+for (const state of ['revoked', 'expired']) test(`target ${state} after consent cannot be replaced`, async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const options = { clientId: 'desktop-fixture', scopes: [READ_SCOPE] };
+    await connectTenant(f, options);
+    const old = f.storage.values('Delegation')[0];
+    const flow = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    if (state === 'revoked') f.storage.revoke(old.id);
+    else f.storage.put('Delegation', old.id, { ...old, expiresAt: Date.now() - 1 }, 600);
+    const r = await flow.exchange(); assert.equal(r.status, 400);
+    assert.equal((await r.json()).error, 'invalid_grant');
+    assert.equal(f.storage.values('Delegation').filter(g => connectionActive(g)).length, 0);
+});
+
+test('pending expires at original interaction deadline, including backend writes and restart', async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    // Exercise clock movement between the caller's TTL calculation and SQLite's write.
+    let now = Date.now();
+    t.mock.method(Date, 'now', () => now++);
+    await connectTenant(f, { clientId: 'desktop-fixture', scopes: [READ_SCOPE], pending: true,
+        connection: { mode: 'new', durationDays: 365 } });
+    const grant = f.storage.values('Delegation')[0];
+    assert.equal(grant.lifecycle, 'pending');
+    assert(grant.pendingExpiresAt <= grant.createdAt + 600000);
+    assert(grant.pendingExpiresAt > Date.now());
+    await f.storage.backendStore.write(grant.binding, await f.storage.backendStore.read(grant.binding));
+    await f.storage.close();
+    const clock = Date.now; Date.now = () => grant.pendingExpiresAt;
+    let reopened;
+    try {
+        reopened = await openRemoteStorage(f.root, f.key);
+        assert.equal(reopened.get('Delegation', grant.id), undefined);
+        assert.equal(await reopened.backendStore.read(grant.binding), null);
+        assert.equal(reopened.get('Binding', grant.binding), undefined);
+    } finally { Date.now = clock; await reopened?.close(); }
+});
+
+for (const durationDays of [7, 30, 90, 365]) test(`native refresh rotation obeys absolute/idle boundary for ${durationDays} days`, async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const clientId = 'desktop-fixture';
+    const tokens = await connectTenant(f, { clientId, scopes: [READ_SCOPE], connection: { mode: 'new', durationDays } });
+    const access = await f.provider.AccessToken.find(tokens.access_token);
+    const grant = f.storage.get('Delegation', access.grantId);
+    const refresh = token => fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: clientId, grant_type: 'refresh_token', refresh_token: token, resource: f.config.resource }) });
+    const original = Date.now; let now = grant.issuedAt + 86400000;
+    Date.now = () => now;
+    try {
+        assert.equal((await refresh('invalid-token')).status, 400);
+        assert.equal(f.storage.get('Delegation', grant.id).lastTokenExchangeAt, grant.lastTokenExchangeAt);
+        const r = await refresh(tokens.refresh_token); assert.equal(r.status, 200);
+        const rotated = await r.json();
+        const updated = f.storage.get('Delegation', grant.id);
+        assert.equal(updated.lastTokenExchangeAt, now);
+        assert.equal(updated.expiresAt, grant.expiresAt);
+        const native = await f.provider.RefreshToken.find(rotated.refresh_token);
+        const end = connectionDeadline(updated);
+        assert(Math.abs(native.exp * 1000 - end) < 1000);
+        now = end - 1; assert(connectionActive(updated));
+        now = end; assert(!connectionActive(updated));
+        assert.equal((await refresh(rotated.refresh_token)).status, 400);
+        now = end + 1; assert(!connectionActive(updated));
+    } finally { Date.now = original; }
+});
+
+test('legacy upgrade preserves scopes, unused access and deadline, is idempotent, and has no implicit default', async t => {
+    const root = await mkdtemp(join(tmpdir(), 'festapp-upgrade-'));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    const key = randomBytes(32);
+    let storage = await openRemoteStorage(root, key);
+    const old = { id: 'old', userId: actor, clientId: 'client', profileBinding: 'profile',
+        access: { type: 'occasions', occasionIds: [7] }, permissions: ['festapp:orders:read'], expiresAt: Date.now() + 86400000 };
+    storage.put('Delegation', old.id, old, 86400);
+    storage.remove('Metadata', 'connection-lifecycle');
+    await storage.close();
+    for (let restart = 0; restart < 2; restart++) {
+        storage = await openRemoteStorage(root, key);
+        try {
+            const upgraded = storage.get('Delegation', old.id);
+            assert.deepEqual(upgraded, { ...old, lifecycle: 'legacy' });
+            assert(connectionActive(upgraded));
+            const candidates = activeConnections(storage, actor, 'client', 'profile');
+            assert.equal(candidates.length, 1); assert.equal(candidates[0].defaultEligible, false);
+            assert.equal(verifyConnectionChoice({ mode: 'replace', connectionId: 'old' }, storage, actor, 'client', 'profile').replaces, 'old');
+        } finally { await storage.close(); }
+    }
+});
+
+test('commit survives lost HTTP response and failed audit without activating two connections', async t => {
+    const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    const options = { clientId: 'desktop-fixture', scopes: [READ_SCOPE] };
+    await connectTenant(f, options);
+    const old = f.storage.values('Delegation')[0];
+    const pending = await connectTenant(f, { ...options, pending: true, connection: { mode: 'replace', connectionId: old.id } });
+    f.audit.push = event => {
+        if (event.event === 'issued') { f.server.closeAllConnections(); throw Error('audit sink unavailable'); }
+    };
+    await assert.rejects(pending.exchange(), /fetch failed/);
+    const successor = f.storage.values('Delegation').find(g => g.replaces === old.id);
+    assert.equal(successor.lifecycle, 'issued'); assert(successor.issuedAt);
+    await f.storage.close();
+    const reopened = await openRemoteStorage(f.root, f.key);
+    try {
+        assert.equal(reopened.get('Delegation', old.id).revoked, true);
+        assert.deepEqual(activeConnections(reopened, old.userId, old.clientId, old.profileBinding).map(g => g.id), [successor.id]);
+    } finally { await reopened.close(); }
+});
+
+test('manual revocation uses the same atomic rollback primitive', async t => {
+    const f = await setup(t);
+    const { tokens } = await connect(f);
+    const token = await f.provider.AccessToken.find(tokens.access_token);
+    const grant = f.storage.get('Delegation', token.grantId);
+    const db = new DatabaseSync(join(f.root, 'remote.sqlite'));
+    db.exec(`CREATE TRIGGER fail_revoke AFTER INSERT ON records WHEN NEW.model='Delegation' AND NEW.id='${digest(grant.id)}' BEGIN SELECT RAISE(ABORT, 'revoke_fault'); END`);
+    db.close();
+    assert.throws(() => f.storage.revoke(grant.id), /revoke_fault/);
+    assert.equal(f.storage.get('Delegation', grant.id).revoked, false);
+    assert(await f.storage.backendStore.read(grant.binding));
+    assert(await f.provider.AccessToken.find(tokens.access_token));
+});
+
+test('markerless existing encrypted OAuth session upgrades and refreshes through the native provider', async t => {
+    const f = await setup(t);
+    const { tokens } = await connect(f);
+    const native = await f.provider.AccessToken.find(tokens.access_token);
+    const current = f.storage.get('Delegation', native.grantId);
+    const { lifecycle, issuedAt, lastTokenExchangeAt, pendingExpiresAt, ...historical } = current;
+    f.storage.put('Delegation', current.id, historical, (current.expiresAt - Date.now()) / 1000);
+    f.storage.remove('Metadata', 'connection-lifecycle');
+    await f.storage.close();
+    const recovered = await openRemoteStorage(f.root, f.key);
+    f.storage.close = () => recovered.close();
+    f.server.removeListener('request', f.app);
+    f.server.on('request', createRemoteApp(f.config, recovered, { ...secrets, fetchImpl: f.owner.fetch }).app);
+    const upgraded = recovered.get('Delegation', current.id);
+    assert.deepEqual(upgraded, { ...historical, lifecycle: 'legacy' });
+    assert.equal(activeConnections(recovered, current.userId, current.clientId, current.profileBinding)[0].defaultEligible, false);
+    const response = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: current.clientId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(response.status, 200);
+    const next = await response.json();
+    assert.equal((await jsonRpc(f, next.access_token, 'tools/list')).status, 200);
+    assert.equal(recovered.get('Delegation', current.id).expiresAt, historical.expiresAt);
+});
+
+
+const nativeMetadataId = 'https://desktop.fixture.test/client.json';
+const nativeMetadataPolicy = () => ({ allowedOrigins: ['https://desktop.fixture.test'],
+    dataProfile: 'operator', allowedScopes: [READ_SCOPE, 'festapp:forms:read'] });
+const nativeMetadata = () => ({ client_id: nativeMetadataId, client_name: 'Desktop fixture',
+    application_type: 'native', redirect_uris: ['http://127.0.0.1/oauth/callback'],
+    token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'] });
+
+test('trusted native client metadata uses normal PKCE, consent, MCP and refresh', async t => {
+    const requests = [];
+    const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async (url, options) => {
+        requests.push({ url, options });
+        return reply(nativeMetadata());
+    } });
+    const discovery = await (await fetch(f.issuer + '/.well-known/oauth-authorization-server')).json();
+    assert.equal(discovery.client_id_metadata_document_supported, true);
+    assert.equal(discovery.registration_endpoint, undefined);
+    const { tokens } = await connect(f, { clientId: nativeMetadataId,
+        callbackUri: 'http://127.0.0.1:51789/oauth/callback', scope: READ_SCOPE + ' festapp:forms:read' });
+    assert(requests.length > 0);
+    assert(requests.every(r => r.url === nativeMetadataId && r.options.redirect === 'manual'));
+    assert(requests.every(r => !r.options.headers.has('authorization')), 'Metadata fetch must never inherit a Supabase bearer');
+    const refresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: nativeMetadataId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource,
+    }) });
+    assert.equal(refresh.status, 200, await refresh.clone().text());
+    const next = await refresh.json();
+    const client = new Client({ name: 'metadata-client-regression', version: '1' });
+    t.after(() => client.close());
+    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: 'Bearer ' + next.access_token } },
+    }));
+    const tools = (await client.listTools()).tools;
+    assert(tools.some(t => t.name === 'festapp_forms_inspect'));
+    assert(!tools.some(t => t.name === 'festapp_forms_save'));
+    assert.equal((await client.callTool({ name: 'festapp_context_inspect', arguments: {} })).structuredContent.ok, true);
+    f.config.clientMetadataDocuments.allowedOrigins.length = 0;
+    const denied = await fetch(f.config.resource, { method: 'POST', headers: {
+        authorization: 'Bearer ' + next.access_token, 'content-type': 'application/json', accept: 'application/json, text/event-stream',
+    }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) });
+    assert.equal(denied.status, 401);
+});
+
+
+test('an in-flight older consent still honors explicit declined scopes without a loop', async t => {
+    const f = await setup(t, { native: true });
+    const { tokens } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback',
+        scope: READ_SCOPE + ' ' + CREATE_SCOPE + ' festapp:forms:read festapp:forms:write',
+        consentFields: { consentVersion: '2', permission: ['festapp:forms:read'] } });
+    assert(tokens.access_token);
+    assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
+    assert(!tokens.scope.split(' ').includes('festapp:forms:write'));
+    assert(tokens.scope.split(' ').includes('festapp:forms:read'));
+    const grant = f.storage.values('Delegation')[0];
+    assert.deepEqual(grant.permissions, ['festapp:forms:read']);
+    assert.deepEqual(grant.access, { type: 'occasions', occasionIds: [7] });
+    const rejected = await f.provider.Grant.find(grant.id);
+    assert(rejected.getRejectedResourceScope(f.config.resource).split(' ').includes(CREATE_SCOPE));
+    assert(rejected.getRejectedResourceScope(f.config.resource).split(' ').includes('festapp:forms:write'));
+});
+
+
+function metadataAuthorization(f, clientId = nativeMetadataId, callback = 'http://127.0.0.1:51789/oauth/callback') {
+    return '/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: callback,
+        scope: READ_SCOPE, resource: f.config.resource, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43), state: 'fixture-state' });
+}
+
+test('metadata trust is checked before fetch and static discovery does not advertise CIMD', async t => {
+    let calls = 0;
+    const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async () => { calls++; return reply(nativeMetadata()); } });
+    for (const id of ['https://untrusted.fixture.test/client.json', 'https://desktop.fixture.test/']) {
+        const r = await f.browser(metadataAuthorization(f, id));
+        assert.equal(r.status, 400);
+        assert.match(await r.text(), /invalid_client/);
+    }
+    assert.equal(calls, 0);
+    const disabled = await setup(t);
+    assert.equal((await (await fetch(disabled.issuer + '/.well-known/oauth-authorization-server')).json()).client_id_metadata_document_supported, undefined);
+});
+
+test('provider rejects forged metadata identities, web callbacks, secrets and forbidden capabilities', async t => {
+    const variants = [
+        { client_id: 'https://desktop.fixture.test/other.json' },
+        { application_type: 'web', redirect_uris: ['https://desktop.fixture.test/callback'] },
+        { redirect_uris: ['http://evil.fixture.test/oauth/callback'] },
+        { redirect_uris: ['http://localhost/oauth/callback'] },
+        { token_endpoint_auth_method: 'client_secret_post', client_secret: 'never-render-this' },
+        { response_types: ['token'] },
+        { scope: READ_SCOPE + ' festapp:forms:write' },
+    ];
+    for (const change of variants) await t.test(JSON.stringify(Object.keys(change)), async t => {
+        const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async () => reply({ ...nativeMetadata(), ...change }) });
+        const r = await f.browser(metadataAuthorization(f), undefined, { accept: 'text/html' });
+        if (r.status === 303) {
+            const rejected = new URL(r.headers.get('location'));
+            assert.equal(rejected.pathname, '/oauth/callback');
+            assert(rejected.searchParams.get('error'));
+            assert(!rejected.searchParams.has('code'));
+        } else {
+            assert.equal(r.status, 400);
+            assert.doesNotMatch(await r.text(), /never-render-this/);
+        }
+        assert.equal(f.storage.values('Delegation').length, 0);
+    });
+});
+
+test('OAuth callback errors expose only safe classified guidance', async t => {
+    const f = await setup(t, { native: true });
+    const path = metadataAuthorization(f, 'codex-fixture', 'http://127.0.0.1:51789/wrong?private=never-render-this');
+    const r = await f.browser(path, undefined, { accept: 'text/html' });
+    assert.equal(r.status, 400);
+    const html = await r.text();
+    assert.match(html, /invalid_redirect_uri/);
+    assert.doesNotMatch(html, /never-render-this|code_challenge|fixture-state/);
+});
+
+
+test('general metadata clients can consent to the complete operation catalog', async t => {
+    const f = await setup(t, { clientMetadataDocuments: { allowedOrigins: ['https://desktop.fixture.test'], dataProfile: 'operator' },
+        metadataFetch: async () => reply(nativeMetadata()) });
+    const { tokens } = await connect(f, { clientId: nativeMetadataId,
+        callbackUri: 'http://127.0.0.1:51789/oauth/callback', scope: DOMAIN_SCOPES.join(' '), unitId: 3 });
+    const grant = f.storage.values('Delegation')[0];
+    assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
+    assert.equal(grant.access.canCreateOccasions, true);
+    const client = new Client({ name: 'complete-general-client', version: '1' });
+    t.after(() => client.close());
+    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: 'Bearer ' + tokens.access_token } },
+    }));
+    const tools = (await client.listTools()).tools;
+    for (const name of ['festapp_occasions_create', 'festapp_forms_save', 'festapp_inventory_assignments_save',
+        'festapp_products_save', 'festapp_profiles_save', 'festapp_orders_cancel'])
+        assert(tools.some(t => t.name === name), 'General client operation missing: ' + name);
+});
+
+
+test('standalone full-function consent accepts all 100 supported occasion selections', async t => {
+    const occasionIds = [7, ...Array.from({ length: 99 }, (_, i) => Number.MAX_SAFE_INTEGER - i)];
+    const f = await setup(t, { native: true, fetchImpl: url => url.pathname === '/rest/v1/rpc/get_operator_access_v1'
+        ? reply({ units: [{ id: 3, title: 'Testovací pořadatel', canCreateOccasions: true }],
+            occasions: occasionIds.map((id, i) => ({ id, title: 'Testovací akce ' + i, unitId: 3, capabilities: { 'ticket_layouts.read': true } })) }) : undefined });
+    const { tokens } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback',
+        scope: DOMAIN_SCOPES.join(' '), occasionIds });
+    assert(tokens.access_token);
+    const grant = f.storage.values('Delegation')[0];
+    assert.deepEqual(grant.access.occasionIds, occasionIds);
+    assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
+    assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
 });

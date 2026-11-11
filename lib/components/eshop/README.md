@@ -40,6 +40,33 @@ Manual mark-paid does not enqueue delivery. See the
 [payment lifecycle plan](../../../docs/plans/payment-lifecycle-unification-plan-2026-10-29.md)
 for the transition, history and concurrency contracts.
 
+## Unified payment operations
+
+The plus and minus actions use `payment-operation`, which authenticates the user
+and delegates to `command_payment_operation`. SQL resolves the installed connector
+and its capabilities for the stored order/account/currency. Context and previews
+are server-owned. The dialog retains its original command and draft across an
+uncertain result; closing a prepared bank instruction does not cancel it.
+
+Cash confirmation creates an audited negative CASH movement. Bank preparation
+creates an immutable recipient instruction and reservation, using the original
+VS or stored EUR RF; only BankSync confirms the actual debit. External dispatch
+uses the original connector payment and its existing verified ledger. UI states
+must distinguish prepared, pending and confirmed. Barion refund writes remain
+unavailable; unsupported currencies/codecs never get a fake QR.
+
+The grid shows net confirmed payment. Detail/report/public order projections
+separate received, refunded, net and pending; pending reserves availability
+without reducing confirmed money. `payment_financial_totals_internal` and the
+shared transaction movement classifier own the calculation. Historical negative
+manual corrections retain their meaning. Cash refund corrections are explicit
+and audited; generic transaction deletion cannot remove refund history.
+
+Refund reservations/history protect order deletion and source unlinking. Cancelled
+or expired orders update finance without reviving tickets or payment reminders.
+See [payment connector ownership](../../../docs/architecture/payment-providers.md)
+and [local execution evidence](../../../docs/plans/cash-refunds-RESULT-2026-11-10.md).
+
 ## Gotchas
 
 - **Stringly Typed**: `OrderModel` fields mapped from `Tb` class strings. Renames break silently.
@@ -184,3 +211,30 @@ A confirmed command remains confirmed if cache activation or readback fails.
 
 Local review setup and actual evidence are recorded in
 [`order-detail-local-review.md`](../../../docs/plans/evidence/order-detail-local-review.md).
+
+## Cash payments and payment deadlines
+
+`payment_providers/registry.sql` classifies builtin bank/cash and installed
+online connectors. `payment_policy.sql` resolves a policy once during checkout;
+`payment_info.data.payment_policy` stores its metadata and cash instructions.
+Existing method/amount/deadline/bank columns remain authoritative. New timed
+orders preserve their absolute deadline on repricing. `none` clears ordinary
+and deposit deadlines and fences both queued and dispatched reminders. Only
+historical rows without a snapshot retain the old repricing deadline behavior.
+
+Cash checkout reserves capacity as an unpaid order and creates no bank reference
+or online attempt. Confirmation never records money. Actual cash uses the
+existing exact numeric ledger and the receipted `insert_manual_transaction`
+command; unit/currency, lifecycle locks, pairing and paid transitions stay with
+their existing SQL owners. The order operator command can update
+`paymentDeadline` to an ISO instant or null, retaining its revision/receipt and
+history. Cash cannot acquire a deadline.
+
+`get_transactions_for_order` reads attached movements by order access and
+projects allowed cash, bank setup, pairing and personal-history actions. Wider
+statements require the existing account-admin read right through
+`get_bank_transaction_history`; disconnection preserves membership/history but
+removes bank write rights. CASH movements remain correctable by the actual
+unit manager. The shared cash dialog keeps its draft during nested setup and
+history navigation. The transaction foreign key restricts account deletion
+instead of cascading away financial facts.

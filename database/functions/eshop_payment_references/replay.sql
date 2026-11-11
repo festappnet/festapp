@@ -11,12 +11,13 @@ BEGIN
   payload:=jsonb_set(payload,'{order,payment_info}','null')||jsonb_build_object('code',409,'errorCode','ORDER_NOT_PAYABLE');
  ELSE
   SELECT * INTO payment FROM eshop.payment_info WHERE id=target.payment_info;
+  IF payment.payment_method='cash' THEN RETURN p_response; END IF;
   IF payment.id IS NOT NULL THEN
    details:=coalesce(payload#>'{order,payment_info}','{}')||jsonb_build_object('id',payment.id,'variable_symbol',payment.variable_symbol,
     'creditor_reference',payment.creditor_reference,'amount',payment.amount,'deposit_amount',payment.deposit_amount,
     'deadline',payment.deadline,'deposit_deadline',payment.deposit_deadline,'currency_code',payment.currency_code);
    payload:=jsonb_set(payload,'{order,payment_info}',details);
-   IF payment.payment_method<>'bank' THEN
+   IF public.payment_method_is_online_internal(payment.payment_method) THEN
     payload:=payload||jsonb_build_object('payment',public.provider_order_payment_projection_internal(target.id));
    END IF;
   END IF;

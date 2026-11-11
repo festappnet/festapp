@@ -1,6 +1,6 @@
 DO $$
 DECLARE org bigint;un bigint;oc bigint;f bigint;foreign_f bigint;name_id bigint;surname_id bigint;hidden_id bigint;foreign_id bigint;
- actor uuid:=gen_random_uuid();oid bigint;tid bigint;second_ticket bigint;empty_ticket bigint;w uuid;reply jsonb;token text:=repeat('c',64);offer_token text:=repeat('d',64);
+ actor uuid:=gen_random_uuid();oid bigint;tid bigint;second_ticket bigint;empty_ticket bigint;w uuid;reply jsonb;token text:=encode(extensions.gen_random_bytes(32),'hex');offer_token text:=encode(extensions.gen_random_bytes(32),'hex');
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Waitlist context labels') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Labels',org) RETURNING id INTO un;

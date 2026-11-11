@@ -4,7 +4,7 @@ Tags: tickets, events, registration, embed, forms
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.5
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,10 +17,14 @@ This is a frontend integration with the Czech vstupenky.online service. You need
 Create and save a form in vstupenky.online. Copy its public URL, then insert the vstupenky.online block and paste the URL. Publish the page. Use only https://vstupenky.online/form/saved-slug, without query parameters or fragments. The editor shows local controls, never a remote administration screen.
 
 Shortcode:
-[vstupenky_online url="https://vstupenky.online/form/saved-slug" title="Tickets for our event"]
+[vstupenky_online url="https://vstupenky.online/form/saved-slug" title="Tickets for our event" measurement="host"]
 
 Fixed height:
-[vstupenky_online url="https://vstupenky.online/form/saved-slug" mode="fixed" height="800"]
+[vstupenky_online url="https://vstupenky.online/form/saved-slug" mode="fixed" height="800" measurement="host"]
+
+New blocks and the shortcode examples use Website dataLayer, recommended for websites with their own GTM and consent banner. Existing blocks and shortcodes without a measurement setting retain the Festapp Unit runtime:
+[vstupenky_online url="https://vstupenky.online/form/saved-slug" measurement="host"]
+Use measurement="unit" to retain the Unit runtime. Missing or invalid values retain Unit mode. This setting selects a destination; it does not enable measurement or grant consent.
 
 Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance.
 
@@ -28,9 +32,9 @@ Fixed and fallback height is limited to 240-4000 pixels. Automatic height follow
 
 = External service and privacy =
 
-On a published page with a configured form, the visitor's browser connects to https://vstupenky.online to load /form/saved-slug?embed=1. Both height modes also load https://vstupenky.online/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. Customer contact details, order identifiers, payment instructions, authentication secrets and order submissions are not passed to WordPress.
+On a published page with a configured form, the visitor's browser connects to https://vstupenky.online to load /form/saved-slug?embed=1. Both height modes also load https://vstupenky.online/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded.
 
-The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The WordPress plugin does not add analytics or tracking pixels. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
+The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and reads the website Consent Mode unless an explicit consent adapter is connected. Both modes require an approved website origin and enabled measurement in Festapp. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
 
 Service: https://vstupenky.online/
 Terms: https://vstupenky.online/terms/
@@ -45,7 +49,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.5.zip and activate it.
+1. In Plugins > Add New > Upload Plugin, upload vstupenky-online-1.0.7.zip and activate it.
 2. Click Get started in the plugin list, or open Settings > vstupenky.online, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
@@ -77,6 +81,12 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
+= 1.0.7 =
+* Add an explicit measurement destination with conversion-sharing disclosure; retain Unit mode for existing embeds.
+
+= 1.0.6 =
+* Prevent a dark iframe canvas before the shared helper loads.
+
 = 1.0.5 =
 * Control embedded appearance only through the saved form setting; remove local overrides.
 
@@ -94,5 +104,5 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Upgrade Notice ==
 
-= 1.0.5 =
-No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.
+= 1.0.7 =
+Existing blocks and shortcodes retain Unit measurement. Website dataLayer sharing requires an explicit choice. No database migration.

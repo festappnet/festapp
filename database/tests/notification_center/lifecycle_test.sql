@@ -3,7 +3,7 @@
 -- test-setup: database/functions/notification_center/order_selection.sql
 BEGIN;
 DO $$
-DECLARE org bigint; oc bigint; extra_oc bigint; viewer uuid:=gen_random_uuid(); anchor timestamptz:=clock_timestamp();
+DECLARE runtime_started timestamptz:=clock_timestamp(); org bigint; oc bigint; extra_oc bigint; viewer uuid:=gen_random_uuid(); anchor timestamptz:=clock_timestamp();
  old_order bigint; border_order bigint; fresh_order bigint; snap bigint; old_snap bigint; result jsonb; page jsonb;
  selected jsonb; cursor jsonb; n int:=0; rounds int:=0; ids text[]:='{}'; scope jsonb;
 BEGIN
@@ -25,6 +25,7 @@ BEGIN
   jsonb_build_object('orderId',border_order,'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,anchor-interval '29 days');
  PERFORM public.project_notification_center(500);
  SELECT last_delivery_sequence INTO old_snap FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer;
+ RAISE NOTICE 'TEST_TIMING %',jsonb_build_object('phase','fixture-and-publication','serverSeconds',extract(epoch FROM clock_timestamp()-runtime_started));
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  -- The 30-day cutoff is evaluated at capture; prepared_retention covers pinned expiry.
  PERFORM public.notification_center_publish_internal(org,oc,'order_created','life:fresh',

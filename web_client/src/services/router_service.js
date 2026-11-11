@@ -59,8 +59,10 @@ export class RouterService {
         await RouterService.mountForm(cleanLink);
     }
 
+    static preloadForm() { return import('../components/forms/form_page.js'); }
+
     static async mountForm(link) {
-        const { FormPage } = await import('../components/forms/form_page.js');
+        const { FormPage } = await RouterService.preloadForm();
         RouterService._formPage?.clear();
         RouterService._formPage = new FormPage('form-page-container');
         await RouterService._formPage.init(link, { onBack: RouterService.goBackProgrammatically });
@@ -150,6 +152,25 @@ export class RouterService {
     // Initial Load Check
     static async handleInitialLoad() {
         RouterService.disposeMcpPage();
+        if (window.location.pathname === '/wallet') {
+            const {TicketWalletPage} = await import('../components/ticket_wallet_page.js');
+            const {SupabaseService} = await import('./supabase_service.js');
+            await SupabaseService.initialize();
+            document.getElementById('app')?.style.setProperty('display','none');
+            RouterService._walletPage?.clear();
+            RouterService._walletPage = new TicketWalletPage(document.getElementById('form-page-container'), {
+                locale: document.documentElement.lang,
+                invoke: async body => {
+                    const {data,error} = await SupabaseService.getClient().functions.invoke('ticket-wallet',{body});
+                    if(error) {
+                        try {return await error.context.json();} catch {throw new Error('wallet_retry');}
+                    }
+                    return data;
+                },
+            });
+            await RouterService._walletPage.init();
+            return true;
+        }
         const mcpGeneration = RouterService._mcpGeneration;
         // The callback owns its continuation dialog until the user finishes or
         // cancels. App-supported tenants must not hand it off to Flutter.
@@ -435,6 +456,7 @@ export class RouterService {
             ? new ScannerDomainPage(host, { client })
             : new ScanPage(host, { client });
         await this._scannerPage.init(route);
+        this._lastPath = window.location.pathname;
     }
 
     static normalizeUrl(url) {
@@ -508,6 +530,13 @@ export class RouterService {
     static initPopStateListener() {
         window.addEventListener('popstate', async (event) => {
             const path = window.location.pathname;
+
+            // Scanner input modes own their same-document history, before route
+            // comparisons: secret-link entry may have canonicalized its URL.
+            if (RouterService._scannerPage?.handleInputHistory?.(event)) {
+                RouterService._lastPath = path;
+                return;
+            }
 
             // Ignore hash changes (SPA overlays)
             if (path === RouterService._lastPath) {

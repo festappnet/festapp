@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/drain_prepared_notifications.sql
 BEGIN;
 DO $$
 DECLARE org bigint;oc bigint;viewer uuid:=gen_random_uuid();colleague uuid:=gen_random_uuid();hidden uuid:=gen_random_uuid();
@@ -19,7 +20,7 @@ BEGIN
  v:=public.get_notification_center_view(org,oc);
  PERFORM assert_eq(v->>'state','preparing','initial open never aggregates canonical history');
  PERFORM assert_eq((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer),0::bigint,'initial preparing cannot acknowledge');
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100); END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org,false);
  first_view:=public.get_notification_center_view(org,oc,p_mode=>'preview');
  PERFORM assert_eq(first_view->>'state','ready','prepared preview is ready');
  PERFORM assert_eq((SELECT seen_through_sequence FROM public.notification_center_user_state WHERE organization=org AND recipient=viewer),0::bigint,'preview never acknowledges');
@@ -41,7 +42,7 @@ BEGIN
  scope:=jsonb_build_object('viewToken',whole_view->>'viewToken','id',whole_view#>>'{items,0,id}','organization',org);
  PERFORM assert_true(public.mark_notification_center_view_item_read(org,scope),'original tab seals the captured suffix');
  PERFORM assert_true(public.mark_notification_center_view_item_read(org,scope),'reverse retry does not require stale read metadata repair');
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100); END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org,true,(whole_view->>'viewToken')::uuid);
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq(v->>'state','ready','read repair restores existing slots');
  PERFORM assert_eq(v#>>'{items,0,isRead}','true','captured range is now read');
@@ -49,19 +50,19 @@ BEGIN
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq(v->>'state','preparing','privacy is checked live in one response snapshot');
  PERFORM assert_true(v#>'{items,0,data}' IS NULL,'dirty view exposes no private counters or contacts');
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100); END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org,true,(whole_view->>'viewToken')::uuid);
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq(v->>'state','ready','privacy repair makes the same token usable');
  PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,3,'hidden membership does not retract order totals');
  PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),3,'order selection is independent of hidden membership');
  UPDATE public.organization_users SET is_hidden=false WHERE organization=org AND "user"=hidden;
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100); END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org,true,(whole_view->>'viewToken')::uuid);
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,3,'unhide restores captured contribution');
  UPDATE eshop.orders SET state='storno' WHERE id=ids[1];PERFORM public.notification_center_order_state_internal(ids[1]);
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq(v->>'state','preparing','storno invalidates in its source transaction');
- FOR i IN 1..20 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100); END LOOP;
+ PERFORM pg_temp.drain_prepared_notifications(org,true,(whole_view->>'viewToken')::uuid);
  v:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>(whole_view->>'viewToken')::uuid);
  PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,2,'storno repairs exact frozen count');
  PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),2,'storno repairs selected orders');

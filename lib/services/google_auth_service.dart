@@ -1,3 +1,5 @@
+import 'package:fstapp/components/users/access_invitation_destination.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -296,6 +298,10 @@ class GoogleAuthService {
   }
 
   static String safeReturnPath(String value) {
+    final invitationToken = AccessInvitationDestination.token(value);
+    if (invitationToken != null) {
+      return AccessInvitationDestination.location(invitationToken);
+    }
     final uri = Uri.tryParse(value);
     if (uri == null ||
         uri.hasScheme ||

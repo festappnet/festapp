@@ -1,0 +1,35 @@
+{
+  "public_url": "https://extensions.joomla.org/extension/vstupenky-online/",
+  "receipt_url": "https://extensions.joomla.org/listing-updated/?extension_id=17931&core_title=vstupenky.online",
+  "verified_at_utc": "2026-11-10T23:29:59.536185+00:00",
+  "version_before": "1.0.4",
+  "logo": {
+    "previous_id": "6adf259f5d7ec",
+    "new_id": "6af3a835c457b",
+    "url": "https://extensions.joomla.org/cache/fab_image/6af3a835c457b_resizeDown1200px525px16.png",
+    "width": 1200,
+    "height": 525,
+    "visually_verified": true
+  },
+  "gallery_and_descriptions": {
+    "urls": [
+      "https://extensions.joomla.org/cache/fab_image/6aee12005058c_resizeDown1200px525px16.png",
+      "https://extensions.joomla.org/cache/fab_image/6aee1200a9e16_resizeDown1200px525px16.png",
+      "https://extensions.joomla.org/cache/fab_image/6aee12010dcb2_resizeDown1200px525px16.png"
+    ],
+    "dimensions": "1200x525",
+    "gallery_loaded": 3,
+    "english_inline_loaded": 3,
+    "czech_inline_loaded": 3,
+    "replaced_inline_ids": [
+      "6ae35fc44d684",
+      "6ae35fc527e19",
+      "6ae35fc608029"
+    ]
+  },
+  "description_sources": [
+    "integrations/joomla/submission/description.en.txt",
+    "integrations/joomla/submission/description.cs.txt"
+  ],
+  "pricing_unchanged": true
+}

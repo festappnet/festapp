@@ -116,11 +116,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     setState(() => _isLoading = false);
     _loadingController.stop();
     _mainController.forward();
-    if (_isSuccess && !paymentConnectors.contains(_orderData?['payment']?['method'])) {
+    if (_isSuccess && !paymentConnectors.containsHosted(_orderData?['payment']?['method'])) {
       _observeDelivery();
     }
     if (_isSuccess &&
-        paymentConnectors.contains(_orderData?['payment']?['method']) &&
+        paymentConnectors.containsHosted(_orderData?['payment']?['method']) &&
         _payToken != null &&
         _orderData?['checkout_url'] is String) {
       try {
@@ -311,7 +311,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
         ? paymentHandoffUri(_orderData?['payment_access']?['url'],
             _orderData?['payment_access']?['token'], connector: paymentConnectors.get(payment is Map ? payment['method'] : null))
         : null;
-    if (_isSuccess && payment is Map && paymentConnectors.contains(payment['method'])) {
+    if (_isSuccess && payment is Map && paymentConnectors.containsHosted(payment['method'])) {
       return SingleChildScrollView(
           child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -351,10 +351,10 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     }
     String title, subtitle;
     if (_isSuccess) {
-      title = PublicOrderStrings.successTitle(
-        widget.tone,
-        hasTickets: widget.hasTickets,
-      );
+      final cashInfo = _orderData?['ticketOrder']?['order']?['payment_info'];
+      title = cashInfo is Map && cashInfo['payment_method'] == 'cash' && (cashInfo['amount'] as num? ?? 0) > 0
+          ? PaymentMethodStrings.text('reservationConfirmed')
+          : PublicOrderStrings.successTitle(widget.tone, hasTickets: widget.hasTickets);
       final email = ((_orderData?['ticketOrder'] as Map?)?['order']
           as Map?)?['data']?['email'];
       final formData = (((_orderData?['form'] ??
@@ -470,6 +470,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
   Widget _buildPaymentQr() {
     final data = _orderData;
     if (data == null) return const SizedBox.shrink();
+    final cash = data['ticketOrder']?['order']?['payment_info'];
+    if (cash is Map && cash['payment_method'] == 'cash' && (cash['amount'] as num? ?? 0)>0) {
+      final instructions = cash['data']?['payment_policy']?['cashInstructions'] as String? ?? '';
+      return Column(children: [Text(PaymentMethodStrings.text('reservationConfirmed')), Text('${PaymentMethodStrings.text('payOnSite')}: ${cash['amount']} ${cash['currency_code']}'), Text(instructions.isEmpty ? PaymentMethodStrings.text('cashInstructionsDefault') : instructions)]);
+    }
     final pq = (data['payment_qr'] as Map?)?.cast<String, dynamic>();
     if (pq == null) return const SizedBox.shrink();
     final formData =

@@ -1,3 +1,19 @@
+## 0.2.7
+
+## 0.2.8
+
+- Reuse stationary physical collision hulls during rigid table translations while checking moving assemblies at their current positions.
+
+- Add `LayoutCollisionIndex`, `collisionIndexFor` and `isLayoutObstacle` as the shared geometry owner for physical placement and collision reporting across all obstacle kinds.
+- Reuse spatial bucket machinery with rendered hit testing while avoiding rendered outline tessellation during table/bar movement, chair reflow and seat fitting.
+- Preserve physical collision checks, spatial bucketing and immutable-document cache invalidation.
+
+## 0.2.6
+
+- Derive seat state marker bounds from the rendered chair cushion, excluding backrests and armrests.
+- Align scene state markers with those bounds and cover supported chair styles with regression tests.
+- Retain the supported Dart floor and dependency ranges.
+
 ## 0.2.5
 
 - Derive open-path hit segments from rendered arrowheads, including their configured length and separate subpaths.

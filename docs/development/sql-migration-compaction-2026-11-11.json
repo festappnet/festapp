@@ -1,0 +1,145 @@
+{
+  "sourceCommit": "742d614b722bbe619b3a095f66605bd4bb536006",
+  "coveredThrough": "20261107170000",
+  "coveredForwardMigrationsRemoved": 370,
+  "coveredLedgerVersions": 481,
+  "activeForwardMigrations": 23,
+  "sqlLinesBefore": 308445,
+  "sqlLinesAfter": 99692,
+  "sqlLinesRemoved": 208753,
+  "schemaSha256": "0fa58dbb836cc31394371c5796aa1938afa2531d52ec3705fae2a2c02dc7d9b9",
+  "referenceSeedSha256": "272b46818dcc397bcf0ad1c2c702a8caf012f2d4f76ee49088193f4855646e79",
+  "historicalRecoveryCompressedBytes": 3773898,
+  "parity": {
+    "15": {
+      "roles_equal": true,
+      "role_memberships_equal": true,
+      "cron_disabled_both": true,
+      "ledger_equal": true,
+      "extensions_equal": true,
+      "postgres_versions": [
+        "150008",
+        "150008"
+      ],
+      "schema_equal": true,
+      "schema_sha256": [
+        "75bdf9294efa611fcbe13c583750bd1f2cba4264aed58ed06606d41afb5ff6ba",
+        "75bdf9294efa611fcbe13c583750bd1f2cba4264aed58ed06606d41afb5ff6ba"
+      ],
+      "reference_rows_equal": {
+        "eshop.payment_providers": true,
+        "public.abuse_policy_revision": true,
+        "public.abuse_policy_rules": true,
+        "public.canonical_asset_cutover": true,
+        "public.client_sync_component_sources": true,
+        "public.email_capacity": true,
+        "public.email_templates": true,
+        "public.notification_runtime": true,
+        "public.wix_billing_activation": true,
+        "public.ticket_font_assets": true,
+        "public.ticket_font_families": true
+      },
+      "unresolved_reference_counts": {
+        "public.client_sync_component_sources.source_relation": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      "sequence_values_equal": true,
+      "ignored_catalog_schema": "supabase_migrations (ledger verified separately)",
+      "ignored_reference_columns": {
+        "public.email_capacity": [
+          "next_send_at"
+        ]
+      },
+      "ignored_provider_tables": []
+    },
+    "17": {
+      "roles_equal": true,
+      "role_memberships_equal": true,
+      "cron_disabled_both": true,
+      "ledger_equal": true,
+      "extensions_equal": true,
+      "postgres_versions": [
+        "170006",
+        "170006"
+      ],
+      "schema_equal": true,
+      "schema_sha256": [
+        "59957b90d6e503c4cbac9a1181eac745ed9c593edbe8fd5af6b2a8030b42908f",
+        "59957b90d6e503c4cbac9a1181eac745ed9c593edbe8fd5af6b2a8030b42908f"
+      ],
+      "reference_rows_equal": {
+        "eshop.payment_providers": true,
+        "public.abuse_policy_revision": true,
+        "public.abuse_policy_rules": true,
+        "public.canonical_asset_cutover": true,
+        "public.client_sync_component_sources": true,
+        "public.email_capacity": true,
+        "public.email_templates": true,
+        "public.notification_runtime": true,
+        "public.wix_billing_activation": true,
+        "public.ticket_font_assets": true,
+        "public.ticket_font_families": true
+      },
+      "unresolved_reference_counts": {
+        "public.client_sync_component_sources.source_relation": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      "sequence_values_equal": true,
+      "ignored_catalog_schema": "supabase_migrations (ledger verified separately)",
+      "ignored_reference_columns": {
+        "public.email_capacity": [
+          "next_send_at"
+        ]
+      },
+      "ignored_provider_tables": []
+    }
+  },
+  "populatedUpgrade": {
+    "passed": true,
+    "ledgerVersions": 489,
+    "preserved": [
+      "order state",
+      "price",
+      "JSON marker"
+    ],
+    "backfilled": [
+      "order symbol before NOT NULL contract"
+    ]
+  },
+  "canonicalBootstrapPG15": true,
+  "targetedSqlTests": {
+    "PG15": {
+      "passed": 5,
+      "failed": 0
+    },
+    "PG17": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "integrationBaseMainSha": "fbcdc070e375373ebfb2cbf27a14187a64f82de3",
+  "canonicalRuntimeReplay": {
+    "PG15": true,
+    "PG17": true,
+    "originalMigrations": 393,
+    "compactedForwards": 23,
+    "ledgerVersions": 504,
+    "forwardMigrationRole": "supabase_admin"
+  },
+  "publicationBaseMainSha": "7c0636be7acc52564276861ac7fcdae51076efe9",
+  "rebasedForwardMigrations": 24,
+  "rebaseValidation": {
+    "canonicalSourceContract": true,
+    "paymentOperationsAssembler": true,
+    "sqlContractsPassed": 2,
+    "sqlContractsFailed": 0
+  },
+  "fullLocalMirror": {
+    "state": "incomplete",
+    "reason": "Another session held the global CI mirror lock; publication review exception explicitly accepted by the owner."
+  }
+}

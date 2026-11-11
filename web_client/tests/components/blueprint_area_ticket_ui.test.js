@@ -11,7 +11,7 @@ const {TicketFieldBuilder} = await import('../../src/components/forms/fields/tic
 const {FormValidator} = await import('../../src/components/forms/form_validator.js');
 
 test('standing ticket shows its admission product without a required addressed seat', () => {
-    const model = new FormModel({key:'k',secret:'s',fields:[
+    const model = new FormModel({key:'k',secret:'s',blueprint:10,fields:[
         {id:99,type:'ticket',data:{max_tickets:5}},
         {id:17,type:'spot',is_ticket_field:true,is_required:true,title:'Seat'},
         {id:23,type:'product_type',is_ticket_field:true,product_type_data:{id:3,type:'spot',products:[{id:9,title:'Standing admission',price:80,currency_code:'CZK'}]}},
@@ -32,9 +32,10 @@ test('standing ticket shows its admission product without a required addressed s
 });
 
 test('standing summary and payload work without a duplicate admission product field', () => {
-    const model = new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket'},{id:17,type:'spot',is_ticket_field:true,is_required:true}]});
+    const model = new FormModel({key:'k',secret:'s',blueprint:10,fields:[{id:99,type:'ticket'},{id:17,type:'spot',is_ticket_field:true,is_required:true}]});
     const session = new FormSession(model);
-    session.setAreaQuantity({nodeId:'standing',productId:9},1,3,{id:9,title:'Bound standing',price:80,currency_code:'CZK'});
+    session.setAreaQuantity({nodeId:'standing',productId:9},1,3,{id:9,title:'Bound standing',type_title:'Standing',price:80,currency_code:'CZK'});
+    assert.equal(session.state.tickets[0]._blueprintProduct.type_title,'Standing');
     const view=TicketFieldBuilder.create(model.visibleFields.find(f=>f.type==='ticket'),model,session);
     assert.match(view.textContent,/Bound standing/);
     assert.equal(session.state.totalPrice,80);
@@ -45,7 +46,7 @@ test('standing summary and payload work without a duplicate admission product fi
 });
 
 test('tickets without additional fields show their product without a placeholder', () => {
-    const model = new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket',data:{max_tickets:5}}]});
+    const model = new FormModel({key:'k',secret:'s',blueprint:10,fields:[{id:99,type:'ticket',data:{max_tickets:5}}]});
     const session = new FormSession(model);
     session.setAreaQuantity({nodeId:'standing',productId:9},2,3,{id:9,title:'Standing admission',price:80,currency_code:'CZK'});
     const view = TicketFieldBuilder.create(model.visibleFields[0],model,session);
@@ -57,7 +58,7 @@ test('ticket remove button has a localized tooltip and accessible name', async (
     const { readFileSync } = await import('node:fs');
     const { LocalizationService } = await import('../../src/services/localization_service.js');
     LocalizationService.translations = JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json', import.meta.url)));
-    const model = new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket',data:{max_tickets:5}}]});
+    const model = new FormModel({key:'k',secret:'s',blueprint:10,fields:[{id:99,type:'ticket',data:{max_tickets:5}}]});
     const session = new FormSession(model);
     session.setAreaQuantity({nodeId:'standing',productId:9},2,3,{id:9,title:'Admission',price:450,currency_code:'CZK'});
     const view = TicketFieldBuilder.create(model.visibleFields[0],model,session);
@@ -67,4 +68,31 @@ test('ticket remove button has a localized tooltip and accessible name', async (
         assert.equal(button.title, 'Odebrat');
         assert.equal(button.getAttribute('aria-label'), 'Odebrat');
     }
+});
+
+
+test('saved plan renders the seat picker before any admission has been assigned', () => {
+    const model = new FormModel({blueprint:10,fields:[
+        {id:99,type:'ticket',data:{max_tickets:20}},
+        {id:17,type:'spot',is_ticket_field:true,is_required:true,is_hidden:false},
+    ]});
+    const session = new FormSession(model);
+    const view = TicketFieldBuilder.create(model.visibleFields[0],model,session);
+    assert.ok(view.querySelector('.btn-blueprint-select'));
+    assert.equal(view.querySelector('.btn-add-ticket'),null);
+    assert.equal(view.querySelector('input[type="text"]'),null);
+    view.destroy?.();
+});
+
+test('missing plan never substitutes a free-text seat or manual ticket flow', () => {
+    const model = new FormModel({fields:[
+        {id:99,type:'ticket',data:{max_tickets:20}},
+        {id:17,type:'spot',is_ticket_field:true,is_required:true,is_hidden:false},
+    ]});
+    const session = new FormSession(model);
+    const view = TicketFieldBuilder.create(model.visibleFields[0],model,session);
+    assert.ok(view.querySelector('[role="alert"]'));
+    assert.equal(view.querySelector('input'),null);
+    assert.equal(view.querySelector('.btn-add-ticket'),null);
+    view.destroy?.();
 });

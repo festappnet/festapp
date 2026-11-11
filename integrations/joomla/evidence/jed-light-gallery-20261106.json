@@ -1,0 +1,15 @@
+{
+  "url": "https://extensions.joomla.org/extension/vstupenky-online/",
+  "version": "1.0.4",
+  "ids": [
+    "6aee12005058c.png",
+    "6aee1200a9e16.png",
+    "6aee12010dcb2.png"
+  ],
+  "source_screenshots_commit": "5cb6b01b77a555e105e7805aab29e3f991005da0",
+  "light_visually_verified": true,
+  "pricing_unchanged": true,
+  "verified_at_utc": "2026-11-06T17:48:47.060971+00:00",
+  "screenshot_evidence": "catalog-screenshots-20261106.json",
+  "previous_release_evidence": "jed-listing-update-20261106.json"
+}

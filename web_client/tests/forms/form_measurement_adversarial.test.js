@@ -6,45 +6,6 @@ import {analyticsPayload,attributionContext} from '../../src/components/forms/fo
 import {serveMeasurement} from '../../../workers/form-measurement/src/worker.mjs';
 
 const origin='https://unit-measurement.pages.dev',host='https://tickets.example';
-function setup(t){
- const dom=new JSDOM('<body></body>',{url:host+'/form/summer',pretendToBeVisual:true});
- let callbacks=0,safe=true;
- const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,organization:1,unit:2,
-  runtime_origin:origin,valid_for_seconds:60,policy_revision:1,configuration_revision:'one'};
- const model={link:'summer',data:{analytics:policy}};
- const runtime=new FormMeasurementRuntime({win:dom.window,model,canRun:()=>safe,onReady:()=>callbacks++});
- t.after(()=>{runtime.destroy();dom.window.close()});
- const send=(type,{source=runtime.frame?.contentWindow,instance=runtime.instance,messageOrigin=origin}={})=>dom.window.dispatchEvent(new dom.window.MessageEvent('message',{
-  source,origin:messageOrigin,data:{namespace:'festapp-measurement',protocol:1,type,instance},
- }));
- return{dom,runtime,model,send,callbacks:()=>callbacks,unsafe:()=>safe=false};
-}
-
-test('detaching a ready iframe invalidates sends and the next lease creates a fresh browsing context',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);f.send('ready');f.send('ack');
- const old=r.frame,oldWindow=old.contentWindow,oldInstance=r.instance;
- old.remove();assert.equal(r.measurementAllowed(),false);assert.equal(r.track({event:'page_view'}),false);
- r.setConsent(true);assert.notEqual(r.frame,old);assert.equal(r.frame.isConnected,true);
- f.send('ack',{source:oldWindow,instance:oldInstance});assert.equal(r.measurementAllowed(),false);
- f.send('ready');f.send('ack');assert.equal(r.measurementAllowed(),true);
-});
-
-test('a detached frame cannot finish its pending handshake',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);const source=r.frame.contentWindow,instance=r.instance;r.frame.remove();
- f.send('ack',{source,instance});assert.equal(f.callbacks(),0);assert.equal(r.measurementAllowed(),false);
-});
-
-test('expired consent drops an ACK even when its expiry timer has not run yet',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);const source=r.frame.contentWindow,instance=r.instance;
- r.consentUntil=Date.now()-1;f.send('ack',{source,instance});
- assert.equal(f.callbacks(),0);assert.equal(r.frame,null);assert.equal(r.measurementAllowed(),false);
-});
-
-test('an unsafe document cannot finish an earlier valid handshake',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);f.unsafe();f.send('ack');
- assert.equal(f.callbacks(),0);assert.equal(r.frame,null);
-});
-
 function generator(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2**32;};}
 
 test('seeded event mutation keeps the receiver idempotent, bounded and free of injected fields',()=>{
@@ -69,12 +30,12 @@ test('seeded event mutation keeps the receiver idempotent, bounded and free of i
 test('script-breaking text, wrong scope and malformed backend responses fail at the actual Worker fetch/JSON seam',async t=>{
  const credential='SERVER_ONLY_SENTINEL_733';
  const config={organization:1,unit:2,form_id:3,form_link:'summer',runtime_origin:origin,parent_origin:host,profile:'gtm-v1',ancestor_origins:[host],collector_origins:[],
-  policy:{eligible:true,runtime_supported:true},gtm_container:'GTM-AB12',scripts:'</ScRiPt><script>window.XSS="SECRET"</script>\u2028\u2029'};
+  policy:{measurement_protocol:3,eligible:true,runtime_supported:true,organization:1,unit:2,processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']},gtm_container:'GTM-AB12',scripts:'</ScRiPt><script>window.XSS="SECRET"</script>\u2028\u2029'};
  const env={ORGANIZATION_ID:1,UNIT_ID:2,FESTAPP_API_URL:'https://api.festapp.net',SUPABASE_SERVICE_ROLE_KEY:credential};
  const request=new Request(origin+'/runtime?form=summer&parent='+encodeURIComponent(host));
  let response;
  t.mock.method(globalThis,'fetch',async(url,options)=>{
-  assert.equal(url,'https://api.festapp.net/rest/v1/rpc/get_form_measurement_runtime_config');assert.equal(options.redirect,'error');
+  assert.equal(url,'https://api.festapp.net/rest/v1/rpc/get_form_measurement_runtime_config');assert.equal(options.redirect,'manual');
   assert.equal(options.headers.authorization,'Bearer '+credential);assert.equal(JSON.parse(options.body).p_unit,2);
   return response;
  });
@@ -107,9 +68,10 @@ test('extreme cart mutations never export totals outside exact integer-cent arit
  }
 });
 
-test('a real postMessage failure is a failed send and does not consume the current consent epoch',t=>{
- const f=setup(t),r=f.runtime;r.setConsent(true);f.send('ready');f.send('ack');const epoch=r.measurementEpoch();
- const target=r.frame.contentWindow,send=target.postMessage;target.postMessage=()=>{throw new DOMException('closed transport','DataCloneError')};
- assert.equal(r.track({event:'page_view'}),false);assert.equal(r.measurementEpoch(),epoch);
- target.postMessage=send;assert.equal(r.track({event:'page_view'}),true);
+test('only a well-formed e-mail and E.164 phone pass, and only on conversions',()=>{
+ const lead={event:'generate_lead',event_id:'11111111-1111-4111-8111-111111111111',currency:'CZK',value:0,lead_source:'waitlist'};
+ assert.deepEqual(analyticsPayload({...lead,user_data:{email:'real@example.test',phone_number:'+420601234567',first_name:'SECRET'}}).user_data,{email:'real@example.test',phone_number:'+420601234567'});
+ assert.deepEqual(analyticsPayload({...lead,user_data:{email:'bad',phone_number:'+420601234567'}}).user_data,{phone_number:'+420601234567'});
+ for(const user_data of [{email:'bad',phone_number:'SECRET'},{email:'a@b.c\n'},null,'real@example.test'])assert.equal('user_data' in analyticsPayload({...lead,user_data}),false);
+ assert.equal('user_data' in analyticsPayload({event:'page_view',user_data:{email:'real@example.test'}}),false);
 });

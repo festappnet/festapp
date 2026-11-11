@@ -1,3 +1,28 @@
+## 0.4.8
+
+## 0.4.10
+
+- Keep incremental scene geometry while native draft labels await canonical text preparation, fixing slow dragging of newly numbered tables.
+- Preserve unchanged scene-item identity through native text rendering so painted paths remain cached.
+
+## 0.4.9
+
+- Keep numeric sliders live inside cached inspector panels and coalesce pointer samples per frame.
+- Preserve release/cancel/undo semantics and hide floating-point display noise.
+- Avoid repeated overflow work for unchanged objects during geometry previews.
+
+- Reduce table and bar drag-preview cost by using a physical placement index, also shared by chair reflow and automatic seat fitting.
+- Require core 0.2.7; preserve collision rejection and gesture undo.
+
+- Correct the central-stage arena template so all 96 chairs face the stage.
+
+## 0.4.7
+
+- Publish the editor and viewer corrections made after the 0.4.6 registry release: persistent palette filtering, construction appearance controls, readable-seat focus and overview highlighting.
+- Preserve independent text resources for edited and saved layouts, including save, export and customer previews.
+- Improve mobile insertion and verify the complete organizer demo journey.
+- Require core 0.2.6 for cushion-aligned seat state markers; retain the supported SDK floors and compatible dependency ranges.
+
 ## 0.4.6
 
 - Prepare edited and saved text resources independently so labels can be resized or restyled without losing save/export support.

@@ -1,13 +1,23 @@
+import { escapeEmailHtml } from "./emailActionLink.ts";
+import type { Tone } from "./communicationTone.ts";
 import { formatCurrency, formatDatetime, formatIBAN } from "./utilities.ts";
-import { paymentReferenceValue } from "./paymentPresentation.ts";
-import { type Tone, translations } from "./translations/translations.ts";
+import { hasNoPaymentDeadline, paymentReferenceValue } from "./paymentPresentation.ts";
+import { translations } from "./translations/translations.ts";
 
 // Pure email presentation over committed payment facts. Producers own access,
 // eligibility, attachments and sending; preview fixtures use these same branches.
 type Fields = Record<string, any>;
+export function confirmedNetPayment(payment: Fields | null | undefined, fallback = 0): number {
+  return Number(payment?.paid ?? fallback) - Number(payment?.returned ?? 0);
+}
+
 const translation = (lang: string) =>
   translations[lang as keyof typeof translations] || translations.cs;
 
+function cashBalance(payment: Fields, amount: number, lang: string, tone: Tone) {
+  const instructions = payment.data?.payment_policy?.cashInstructions || (lang === 'cs' ? (tone === 'informal' ? 'Zaplať prosím v hotovosti na místě.' : 'Zaplaťte prosím v hotovosti na místě.') : 'Please pay in cash at the venue.');
+  return `<p>${lang === 'cs' ? 'Rezervace potvrzena. K úhradě na místě' : 'Reservation confirmed. Pay at the venue'}: ${escapeEmailHtml(formatCurrency(amount, payment.currency_code))}</p><p>${escapeEmailHtml(instructions)}</p>`;
+}
 export function confirmationPaymentSubstitutions(
   paymentInfo: Fields,
   features: Fields[],
@@ -18,6 +28,8 @@ export function confirmationPaymentSubstitutions(
   let balanceReasoning: string;
   if (paymentInfo.amount <= 0) {
     balanceReasoning = tr.zeroOrder(paymentInfo.currency_code, tone);
+  } else if (paymentInfo.payment_method === 'cash') {
+    balanceReasoning = cashBalance(paymentInfo, Number(paymentInfo.amount), lang, tone);
   } else if (
     paymentInfo.deposit_amount &&
     paymentInfo.deposit_amount < paymentInfo.amount
@@ -25,7 +37,7 @@ export function confirmationPaymentSubstitutions(
     const deposit = Number(paymentInfo.deposit_amount);
     const remaining = paymentInfo.amount - deposit;
     const feature = features.find((item: any) => item.code === "deposit");
-    const deadline = feature?.deposit_deadline === "on_site"
+    const deadline = hasNoPaymentDeadline(paymentInfo) ? null : feature?.deposit_deadline === "on_site"
       ? (lang === "cs" ? "na místě" : "on site")
       : feature?.deposit_deadline_days
       ? `${feature.deposit_deadline_days} ${
@@ -47,7 +59,7 @@ export function confirmationPaymentSubstitutions(
       paymentInfo.account_number_human_readable,
       formatIBAN(paymentInfo.account_number),
       paymentReferenceValue(paymentInfo),
-      formatDatetime(paymentInfo.deadline, lang) ?? "",
+      hasNoPaymentDeadline(paymentInfo) ? null : formatDatetime(paymentInfo.deadline, lang),
       tone,
     );
   }
@@ -77,6 +89,8 @@ export function updateBalanceReasoning(
       formatCurrency(Math.abs(balance), currency),
       tone,
     );
+  } else if (balance > 0 && payment_info.payment_method === 'cash') {
+    balanceReasoning = cashBalance(payment_info, balance, lang, tone);
   } else if (balance > 0) {
     const iban = formatIBAN(bank_account.account_number);
     if (amountPaid === 0) {
@@ -85,7 +99,7 @@ export function updateBalanceReasoning(
         bank_account.account_number_human_readable,
         iban,
         paymentReferenceValue(payment_info),
-        formatDatetime(payment_info.deadline, lang),
+        hasNoPaymentDeadline(payment_info) ? null : formatDatetime(payment_info.deadline, lang),
         tone,
       );
     } else {
@@ -95,7 +109,7 @@ export function updateBalanceReasoning(
         bank_account.account_number_human_readable,
         iban,
         paymentReferenceValue(payment_info),
-        formatDatetime(payment_info.deadline, lang),
+        hasNoPaymentDeadline(payment_info) ? null : formatDatetime(payment_info.deadline, lang),
         tone,
       );
     }
@@ -112,6 +126,7 @@ export function paidPaymentSubstitutions(
   features: Fields[],
   lang: string,
   tone: Tone,
+  paymentInfo?: Fields,
 ) {
   const tr = translation(lang);
   let balanceReasoning = "";
@@ -123,6 +138,11 @@ export function paidPaymentSubstitutions(
       formatCurrency(totalAmount, currency),
       tone,
     );
+  } else if (paymentInfo?.payment_method === 'cash') {
+    balanceReasoning = cashBalance(paymentInfo, totalAmount - amountPaid, lang, tone);
+  } else if (hasNoPaymentDeadline(paymentInfo)) {
+    balanceReasoning = `<p>${lang === 'cs' ? 'Přijato' : 'Received'}: ${escapeEmailHtml(formatCurrency(amountPaid, currency))}</p>` +
+      `<p>${lang === 'cs' ? 'Zbývá k úhradě' : 'Remaining to pay'}: ${escapeEmailHtml(formatCurrency(totalAmount - amountPaid, currency))}</p>`;
   } else {
     const remainingAmount = totalAmount - amountPaid;
 

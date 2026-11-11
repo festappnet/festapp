@@ -1,0 +1,419 @@
+{
+  "tokenPattern": "\\{\\{([A-Za-z_][A-Za-z_0-9]*)\\}\\}",
+  "variables": {
+    "accountNumber": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "amount": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "appLinks": {
+      "kind": "richInline",
+      "repeatable": true,
+      "html": true
+    },
+    "appName": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "balanceReasoning": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "changeOverview": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "code": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "confirmationUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "deadline": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "email": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "expiresAt": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "fullOrder": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "iban": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "manage_waitlist_button": {
+      "kind": "richBlock",
+      "repeatable": true,
+      "html": true
+    },
+    "manage_waitlist_url": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "name": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "occasionTitle": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "offer_button": {
+      "kind": "richBlock",
+      "repeatable": true,
+      "html": true
+    },
+    "offer_expires_at": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "offer_url": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "offered_count": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "offered_places": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "orderCommunication": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "orderSymbol": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "order_overview_button": {
+      "kind": "richBlock",
+      "repeatable": true,
+      "html": true
+    },
+    "order_overview_url": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "participant_count": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "participant_phrase": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "paymentDetails": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "platformLinks": {
+      "kind": "richInline",
+      "repeatable": true,
+      "html": true
+    },
+    "remainingTime": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "resetLink": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "sale_opening_action": {
+      "kind": "richBlock",
+      "repeatable": true,
+      "html": true
+    },
+    "sale_opening_disclaimer": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "sale_opening_heading": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "sale_opening_subject": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "sale_opening_unsubscribe": {
+      "kind": "richBlock",
+      "repeatable": true,
+      "html": true
+    },
+    "surname": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "tickets": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "variableSymbol": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "waitlist_confirmation_explanation": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false,
+      "bodyBlock": true
+    },
+    "waitlist_confirmation_heading": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false,
+      "bodyBlock": true
+    },
+    "waitlist_offer_heading": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false,
+      "bodyBlock": true
+    },
+    "waitlist_offer_instructions": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false,
+      "bodyBlock": true
+    },
+    "phone": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "note": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "waitlist_offer_button_single": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "waitlist_offer_button_multiple": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "waitlist_manage_button_label": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
+    "waitlist_offer_instructions_single": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false,
+      "bodyBlock": true
+    },
+    "invitationUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "occasionAdminUrl": {
+      "kind": "url",
+      "repeatable": true,
+      "html": false
+    },
+    "roleLabel": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    }
+  },
+  "templates": {
+    "sale_opening_opened": [
+      "occasionTitle",
+      "sale_opening_subject",
+      "sale_opening_heading",
+      "sale_opening_disclaimer",
+      "sale_opening_action",
+      "sale_opening_unsubscribe"
+    ],
+    "waitlist_confirmation": [
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "participant_count",
+      "participant_phrase",
+      "manage_waitlist_url",
+      "manage_waitlist_button",
+      "waitlist_confirmation_heading",
+      "waitlist_confirmation_explanation",
+      "waitlist_offer_button_single",
+      "waitlist_offer_button_multiple",
+      "waitlist_manage_button_label",
+      "waitlist_offer_heading",
+      "waitlist_offer_instructions_single",
+      "waitlist_offer_instructions"
+    ],
+    "waitlist_offer": [
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "participant_count",
+      "participant_phrase",
+      "manage_waitlist_url",
+      "manage_waitlist_button",
+      "waitlist_offer_heading",
+      "waitlist_offer_instructions",
+      "offered_count",
+      "offered_places",
+      "offer_expires_at",
+      "offer_url",
+      "offer_button",
+      "waitlist_offer_button_single",
+      "waitlist_offer_button_multiple",
+      "waitlist_manage_button_label",
+      "waitlist_confirmation_heading",
+      "waitlist_confirmation_explanation",
+      "waitlist_offer_instructions_single"
+    ],
+    "RESET_PASSWORD": [
+      "appName",
+      "platformLinks",
+      "email",
+      "resetLink"
+    ],
+    "SIGN_IN_CODE": [
+      "appName",
+      "platformLinks",
+      "email",
+      "name",
+      "surname",
+      "code"
+    ],
+    "APP_LINKS": [
+      "appLinks"
+    ],
+    "ACCOUNT_DELETION_CONFIRM": [
+      "appName",
+      "confirmationUrl",
+      "expiresAt"
+    ],
+    "ACCOUNT_DELETION_COMPLETE": [
+      "appName"
+    ],
+    "TICKET_ORDER_CONFIRMATION": [
+      "orderCommunication",
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "amount",
+      "accountNumber",
+      "iban",
+      "variableSymbol",
+      "deadline",
+      "balanceReasoning",
+      "fullOrder"
+    ],
+    "TICKET_ORDER_UPDATE": [
+      "orderCommunication",
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "fullOrder",
+      "changeOverview",
+      "balanceReasoning"
+    ],
+    "TICKET_ORDER_PAYMENT_DONE": [
+      "orderCommunication",
+      "tickets",
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "fullOrder",
+      "balanceReasoning",
+      "amount"
+    ],
+    "TICKET_ORDER_REMINDER": [
+      "orderCommunication",
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "balanceReasoning",
+      "fullOrder",
+      "amount",
+      "deadline",
+      "paymentDetails",
+      "remainingTime"
+    ],
+    "TICKET_ORDER_STORNO": [
+      "orderCommunication",
+      "order_overview_url",
+      "order_overview_button",
+      "orderSymbol",
+      "occasionTitle",
+      "amount"
+    ],
+    "TEAM_INVITATION": [
+      "appName",
+      "occasionTitle",
+      "roleLabel",
+      "invitationUrl"
+    ],
+    "TEAM_ACCESS_NOTICE": [
+      "appName",
+      "occasionTitle",
+      "roleLabel",
+      "occasionAdminUrl"
+    ]
+  }
+}

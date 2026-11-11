@@ -24,7 +24,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  SELECT jsonb_build_object('id',o.id,'occasionId',o.occasion,'symbol',o.order_symbol,'state',o.state,
    'ticketCount',(SELECT count(DISTINCT i.ticket) FROM eshop.order_product_ticket i JOIN eshop.tickets t ON t.id=i.ticket WHERE i."order"=o.id AND o.state IS DISTINCT FROM 'storno' AND o.state IS DISTINCT FROM 'waitlisted' AND t.state IS DISTINCT FROM 'storno' AND t.state IS DISTINCT FROM 'waitlisted'),
    'price',o.price::text,'currency',o.currency_code,'allowedActions',public.get_order_allowed_actions_internal_v1(o.id),
-   'payment',CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object('amount',p.amount::text,'paid',p.paid::text,'returned',p.returned::text) END)
+   'payment',CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object('amount',p.amount::text,'paid',p.paid::text,'returned',p.returned::text,'net',(coalesce(p.paid,0)-coalesce(p.returned,0))::text,'pending',(SELECT coalesce(sum(r.amount),0)::text FROM eshop.refund_requests r WHERE r.payment_info=p.id AND r.status IN ('pending','processing','unknown'))) END)
  FROM eshop.orders o LEFT JOIN eshop.payment_info p ON p.id=o.payment_info WHERE o.id=p_order;
 $$;
 
@@ -33,7 +33,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  SELECT public.operator_order_facts_internal_v1(o.id) || jsonb_build_object(
    'createdAt',o.created_at,'updatedAt',o.updated_at,'revision',public.operator_order_revision_internal_v1(o.id),
    'customer',jsonb_build_object('name',o.data->>'name','surname',o.data->>'surname','email',o.data->>'email'),
-   'payment',CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object('method',p.payment_method,'amount',p.amount::text,'paid',p.paid::text,'returned',p.returned::text,'variableSymbol',p.variable_symbol::text,'deadline',p.deadline) END)
+   'payment',CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object('method',p.payment_method,'amount',p.amount::text,'paid',p.paid::text,'returned',p.returned::text,'net',(coalesce(p.paid,0)-coalesce(p.returned,0))::text,'pending',(SELECT coalesce(sum(r.amount),0)::text FROM eshop.refund_requests r WHERE r.payment_info=p.id AND r.status IN ('pending','processing','unknown')),'policy',p.data->'payment_policy','variableSymbol',p.variable_symbol::text,'deadline',p.deadline) END)
    || CASE WHEN p_detail THEN jsonb_build_object('note',o.note_hidden,'responses',coalesce(o.data->'fields','[]'),
      'formFields',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'type',f.type) ORDER BY f.id),'[]') FROM public.form_fields f WHERE f.form=o.form),
      'tickets',public.order_tickets_with_seating_internal(o.id,(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'state',t.state,
@@ -137,7 +137,16 @@ BEGIN
  IF p_action='cancel' THEN
    v_result:=public.storno_order_client_sync_v1(p_order,v_child);
  ELSIF p_action='update' THEN
-   IF p_changes - ARRAY['responses','note','tickets']::text[]<>'{}'::jsonb OR p_changes='{}' THEN RAISE invalid_parameter_value USING MESSAGE='invalid order changes'; END IF;
+   IF p_changes - ARRAY['responses','note','tickets','paymentDeadline']::text[]<>'{}'::jsonb OR p_changes='{}' THEN RAISE invalid_parameter_value USING MESSAGE='invalid order changes'; END IF;
+   IF p_changes ? 'paymentDeadline' THEN
+     IF v_pi.id IS NULL OR public.payment_method_is_online_internal(v_pi.payment_method)
+       OR jsonb_typeof(p_changes->'paymentDeadline') NOT IN ('null','string') THEN
+       RAISE invalid_parameter_value USING MESSAGE='payment deadline unavailable'; END IF;
+     PERFORM public.check_order_is_mutable(p_order);
+     PERFORM public.set_payment_deadline(v_pi.id,(p_changes->>'paymentDeadline')::timestamptz);
+     INSERT INTO eshop.orders_history("order",data,state,price,currency_code)
+     VALUES(p_order,v_order.data||jsonb_build_object('payment',public.customer_order_payment_internal(p_order)),v_order.state,v_order.price,v_order.currency_code);
+   END IF;
    IF p_changes ? 'responses' THEN PERFORM public.update_order_responses(p_order,p_changes->'responses'); END IF;
    IF p_changes ? 'note' THEN
      v_result:=public.update_order_note_hidden(p_order,p_changes->>'note');
@@ -156,11 +165,11 @@ BEGIN
  ELSIF p_action='record_payment' THEN
    IF NOT (p_changes ?& ARRAY['amount','currency','receivedAt']) OR p_changes - ARRAY['amount','currency','receivedAt','note']::text[]<>'{}'::jsonb
      OR jsonb_typeof(p_changes->'amount') IS DISTINCT FROM 'string' OR jsonb_typeof(p_changes->'currency') IS DISTINCT FROM 'string' OR jsonb_typeof(p_changes->'receivedAt') IS DISTINCT FROM 'string'
-     OR v_pi.id IS NULL OR v_pi.payment_method<>'bank' OR (p_changes->>'currency') IS DISTINCT FROM trim(v_order.currency_code)
+     OR v_pi.id IS NULL OR public.payment_method_is_online_internal(v_pi.payment_method) OR (p_changes->>'currency') IS DISTINCT FROM trim(v_order.currency_code)
      OR (p_changes->>'amount') !~ '^[0-9]{1,8}(\.[0-9]{1,2})?$' OR (p_changes->>'amount')::numeric<=0 THEN
      RAISE invalid_parameter_value USING MESSAGE='manual payment unavailable'; END IF;
-   PERFORM public.insert_manual_transaction((p_changes->>'amount')::double precision,p_changes->>'currency',v_unit::int,v_pi.variable_symbol::text,
-     p_changes->>'receivedAt',p_changes->>'note',v_pi.id::int);
+   PERFORM public.command_payment_operation(p_changes||jsonb_build_object('operation','record_payment',
+     'orderId',p_order,'method','cash'),md5(p_command_id::text||':payment')::uuid);
  ELSIF p_action='send_tickets' THEN
    v_message:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',p_order,'requested_by',auth.uid()),p_organization,p_occasion,v_unit,now(),'operator:'||p_command_id);
  END IF;

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Disposable SQL timings, not browser click-to-content or production capacity.
 import {randomUUID} from 'node:crypto';
-import {writeFileSync,readFileSync} from 'node:fs';
+import {writeFileSync,readFileSync} from '../lib/migration_inputs.mjs';
 import {createHash} from 'node:crypto';
 import {cpus,platform,arch} from 'node:os';
 import {drain} from './drain.mjs';

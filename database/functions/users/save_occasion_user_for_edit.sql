@@ -9,7 +9,7 @@ DECLARE
     v_user uuid := (input_data->>'user')::uuid;
     v_unit bigint;
     v_data jsonb := CASE WHEN jsonb_typeof(input_data->'data') = 'object'
-                         THEN input_data->'data' ELSE '{}'::jsonb END;
+                         THEN (input_data->'data')-'is_invited' ELSE '{}'::jsonb END;
     v_services jsonb := CASE WHEN jsonb_typeof(input_data->'services') = 'object'
                              THEN input_data->'services' ELSE '{}'::jsonb END;
     v_catalog jsonb;
@@ -91,6 +91,10 @@ BEGIN
 
     PERFORM public.publish_user_profile_change_internal_v1(v_user,v_occasion,v_global_before);
 
+    IF EXISTS(SELECT 1 FROM public.occasion_users m WHERE m.occasion=v_occasion AND m."user"=v_user
+     AND EXISTS(SELECT 1 FROM jsonb_each(to_jsonb(m)) r WHERE r.key IN ('is_manager','is_editor','is_editor_view','is_editor_order','is_editor_order_view','is_receptionist','is_approver','is_cleaning_crew') AND r.value='true' AND input_data->r.key='false')) THEN
+      PERFORM public.invalidate_member_access_invitations_internal_v1(v_unit,v_occasion,v_user);
+    END IF;
     UPDATE public.occasion_users
        SET data = v_data,
            -- A grid may edit only one service family. Merge top-level service
@@ -122,6 +126,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE oc bigint:=(input_data->>'occasion')::bigint; usr uuid:=(input_data->>'user')::uuid; ver bigint; r jsonb;
 BEGIN
  IF auth.uid() IS NULL OR NOT(public.can_manage_occasion_participants(oc)) THEN RETURN jsonb_build_object('code',403); END IF;
+ PERFORM public.lock_people_scope_internal_v1(oc);
  PERFORM 1 FROM public.user_info WHERE id=usr FOR UPDATE;
  PERFORM 1 FROM public.occasion_users WHERE occasion=oc AND "user"=usr FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('code',404); END IF;

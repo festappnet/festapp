@@ -1,9 +1,10 @@
 -- Draft-scoped read projection. No caller-provided hierarchy or template ID is accepted.
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_email_preview(
- p_id uuid,p_expected_revision bigint,p_message_type text,p_occasion bigint,p_delivery_mode text)
+ p_id uuid,p_expected_revision bigint,p_message_type text,p_occasion bigint,p_delivery_mode text,p_wallet_enabled boolean)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE d public.occasion_setup_drafts; unit_data jsonb; resolved jsonb; copied jsonb;
  email_banner text; inherited_banner text; source_id bigint; tone text; reply_to text;
+ payment_metadata jsonb; payment_policy jsonb; payment_method text; payment_info jsonb; payment_duration bigint;
  o public.occasions; selected_code text; feature jsonb; ticket_catalog jsonb; template_code text; templates jsonb:='[]'; overrides jsonb; effective jsonb;
 BEGIN
  IF p_message_type IS NULL OR p_message_type NOT IN ('order_confirmation','order_tickets') THEN
@@ -34,8 +35,10 @@ BEGIN
  IF nullif(email_banner,'') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=email_banner AND unit=d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft email banner access denied'; END IF;
  SELECT coalesce(unit_data->>'email_banner',data->>'email_banner') INTO inherited_banner FROM public.organizations WHERE id=d.organization;
- tone:=coalesce(nullif(nullif(d.data->>'communicationTone',''),'inherit'),CASE WHEN unit_data->>'communication_tone'='informal' THEN 'informal' ELSE 'formal' END);
- IF tone NOT IN ('formal','informal') THEN RAISE invalid_parameter_value USING MESSAGE='Invalid tone'; END IF;
+ IF nullif(nullif(d.data->>'communicationTone',''),'inherit') IS NOT NULL
+  AND public.parse_communication_tone(d.data->>'communicationTone') IS NULL THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid tone'; END IF;
+ tone:=public.resolve_communication_tone(d.data->>'communicationTone',unit_data->>'communication_tone');
  IF coalesce(d.data->>'replyToMode','inherit') NOT IN ('inherit','custom') THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid reply mode'; END IF;
  reply_to:=CASE WHEN d.data->>'replyToMode'='custom' THEN btrim(d.data->>'replyToEmail') ELSE unit_data->>'reply_to' END;
@@ -80,6 +83,21 @@ BEGIN
        CROSS JOIN LATERAL jsonb_array_elements(coalesce(pt->'products','[]')) p),'[]'::jsonb)) INTO ticket_catalog
   FROM (SELECT fld->'product_type_data' t FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) fld WHERE jsonb_typeof(fld->'product_type_data')='object') x;
  END IF;
+ -- Preview facts use the same SQL policy owner as real checkout. No draft
+ -- preview creates an order, reference or payment attempt.
+ payment_metadata:=public.normalize_form_metadata_internal(d.data#>'{formDraft,data}');
+ payment_metadata:=payment_metadata||jsonb_build_object('payments',public.normalize_setup_payments_internal(d.data)->'payments');
+ payment_method:=CASE WHEN payment_metadata#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END;
+ payment_duration:=coalesce(nullif(d.data#>>'{formDraft,deadline_duration_seconds}','')::numeric,
+   nullif(d.data->>'deadline','')::numeric*86400)::bigint;
+ payment_policy:=public.resolve_payment_policy_internal(payment_metadata,payment_duration,
+   (SELECT elem FROM jsonb_array_elements(coalesce(o.features,'[]')) elem WHERE elem->>'code'='form'),payment_method);
+ SELECT jsonb_build_object('account_number',b.account_number,'account_number_human_readable',coalesce(nullif(b.account_number_human_readable,''),b.account_number))
+ INTO payment_info FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
+ WHERE u.unit=d.unit AND b.id::text=d.data->>'bankAccountId' AND b.type<>'CASH' AND payment_method='bank';
+ payment_info:=coalesce(payment_info,'{}')||jsonb_build_object('payment_method',payment_method,
+   'data',jsonb_build_object('payment_policy',payment_policy-'durationSeconds'),
+   'deadline',CASE WHEN payment_policy->>'mode'='custom' THEN statement_timestamp()+make_interval(secs=>(payment_policy->>'durationSeconds')::bigint) END);
  RETURN jsonb_build_object('messageType',p_message_type,'deliveryMode',coalesce(p_delivery_mode,public.ticket_delivery_mode(feature)),
   'ticketFeature',feature,'ticketCatalog',ticket_catalog,'occasion',CASE WHEN p_occasion IS NOT NULL THEN to_jsonb(o) ELSE jsonb_build_object('id',0,'title',d.data->>'title','start_time',d.data->>'start','end_time',d.data->>'end','data',jsonb_build_object('place_name',d.data->>'placeName')) END,
   'revision' ,d.revision,'title',coalesce(nullif(d.data->>'title',''),'Ukázková událost'),
@@ -88,16 +106,22 @@ BEGIN
   'emailTemplates',templates,'emailScope',jsonb_build_object(
    'unit',jsonb_build_object('id',d.unit,'title',(SELECT title FROM public.units WHERE id=d.unit)),
    'organization',jsonb_build_object('id',d.organization,'title',(SELECT title FROM public.organizations WHERE id=d.organization))),
-  'deadlineDurationSeconds',coalesce(nullif(d.data#>>'{formDraft,deadline_duration_seconds}','')::numeric,nullif(d.data->>'deadline','')::numeric*86400),
-  'paymentInfo',(SELECT jsonb_build_object('account_number',b.account_number,
-    'account_number_human_readable',coalesce(nullif(b.account_number_human_readable,''),b.account_number))
-    FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
-    WHERE u.unit=d.unit AND b.id::text=d.data->>'bankAccountId' AND b.type<>'CASH'),
+  'deadlineDurationSeconds',payment_policy->'durationSeconds',
+  'paymentInfo',payment_info,
   'ticketsEnabled',coalesce((feature->>'is_enabled')::boolean,p_occasion IS NULL) AND (p_occasion IS NOT NULL OR coalesce((d.data->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false))),
+  'walletEnabled',coalesce(p_wallet_enabled,public.ticket_wallet_enabled(feature)),
+  'walletReady',public.ticket_wallet_ready(d.organization),
   'sampleProducts',coalesce((SELECT jsonb_agg(p) FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f CROSS JOIN LATERAL (SELECT p FROM jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p WHERE NOT coalesce((p->>'is_hidden')::boolean,false) LIMIT 1) products(p) WHERE NOT coalesce((f->>'is_hidden')::boolean,false)),'[]'::jsonb),
   'has_custom_template',coalesce((overrides ? selected_code) OR (resolved->'template'->>'occasion') IS NOT NULL
     OR (resolved->'template'->>'unit') IS NOT NULL OR (resolved->'template'->>'organization') IS NOT NULL,false));
 END $$;
+REVOKE ALL ON FUNCTION public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_occasion_setup_email_preview(p_id uuid,p_expected_revision bigint,p_message_type text,p_occasion bigint,p_delivery_mode text)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT public.get_occasion_setup_email_preview(p_id,p_expected_revision,p_message_type,p_occasion,p_delivery_mode,NULL);
+$$;
 REVOKE ALL ON FUNCTION public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text) TO authenticated;
 

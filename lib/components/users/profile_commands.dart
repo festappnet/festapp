@@ -1,3 +1,6 @@
+import 'package:festapp_core/forms.dart' show EmailAddress;
+import 'package:fstapp/components/_shared/person_fields_strings.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:festapp_core/sync.dart';
@@ -97,6 +100,9 @@ class SupabaseProfileCommands implements ProfileCommands {
     if (occasion == null || profile.user != null) {
       throw ArgumentError('Creating a profile requires only an occasion ID');
     }
+    if (!EmailAddress.isValid(profile.data?['email']?.toString().trim())) {
+      throw _invalidEmail();
+    }
     return _invoke('create_occasion_user_client_sync_v1', {
       'p_occasion': occasion,
       'p_profile': profile.toUpdateJson(),
@@ -122,12 +128,24 @@ class SupabaseProfileCommands implements ProfileCommands {
       String name, Map<String, dynamic> parameters) async {
     final actor = _actorId();
     final token = ClientSyncRuntime.mutationContextToken;
+    if (name == 'create_occasion_user_client_sync_v1' || name == 'save_profile_client_sync_v1') {
+      parameters = {'p_request': {
+        'scope': {'type': 'occasion', 'id': parameters['p_occasion']},
+        'operation': 'save_member', 'communication': 'none',
+        'userId': parameters['p_user'], 'expectedVersion': parameters['p_expected_version'],
+        'changes': parameters['p_profile'],
+      }};
+      name = 'manage_member_access';
+    }
     final scoped = name == 'import_profiles_client_sync_v1' ||
-        name == 'delete_occasion_user_client_sync_v1';
+        name == 'delete_occasion_user_client_sync_v1' || name == 'manage_member_access';
     final response = ClientCommandResponse.from(await (scoped
         ? _transport.invokeIntent(
             '$actor:${parameters['p_occasion']}:$name', name, parameters)
         : _transport.invoke(name, parameters)));
+    if (response.status == 'rejected' && response.data['message'] == 'INVALID_USER_EMAIL') {
+      throw _invalidEmail();
+    }
     if (actor == _actorId()) {
       await response.applyConfirmedReplacements(expectedContextToken: token);
     }
@@ -138,3 +156,7 @@ class SupabaseProfileCommands implements ProfileCommands {
     );
   }
 }
+
+AppError _invalidEmail() => AppError(
+    code: 400, message: PersonFieldsStrings.emailInvalid,
+    rawJson: '{"code":400,"reason":"INVALID_USER_EMAIL"}');

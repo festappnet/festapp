@@ -1,0 +1,2372 @@
+﻿﻿___TERMS_OF_SERVICE___
+
+By creating or modifying this file you agree to Google Tag Manager's Community
+Template Gallery Developer Terms of Service available at
+https://developers.google.com/tag-manager/gallery-tos (or such other URL as
+Google may provide), as modified from time to time.
+
+
+___INFO___
+
+{
+  "displayName": "Meta Pixel",
+  "__wm": "VGVtcGxhdGUtQXV0aG9yX0ZhY2Vib29rLVNpbW8tQWhhdmE\u003d",
+  "description": "Integrate your GTM with Meta Pixel for a streamlined way to connect your data to Meta and help maximize your advertising and measurement by understanding the actions people take on your website.",
+  "categories": [
+    "ADVERTISING",
+    "ANALYTICS"
+  ],
+  "id": "cvt_5RM3Q",
+  "type": "TAG",
+  "version": 1,
+  "brand": {
+    "displayName": "facebook",
+    "id": "github.com_facebook",
+    "thumbnail": "data:image/png;base64,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\u003d\u003d"
+  },
+  "containerContexts": [
+    "WEB"
+  ],
+  "securityGroups": []
+}
+
+
+___TEMPLATE_PARAMETERS___
+
+[
+  {
+    "alwaysInSummary": true,
+    "valueValidators": [
+      {
+        "errorMessage": "You must provide a Pixel ID",
+        "type": "NON_EMPTY"
+      },
+      {
+        "args": [
+          "^[0-9,]+$"
+        ],
+        "errorMessage": "Invalid Pixel ID format",
+        "type": "REGEX"
+      }
+    ],
+    "displayName": "Facebook Pixel ID(s)",
+    "simpleValueType": true,
+    "name": "pixelId",
+    "type": "TEXT",
+    "valueHint": "e.g. 12345678910"
+  },
+  {
+    "type": "CHECKBOX",
+    "name": "enhancedEcommerce",
+    "checkboxText": "Enhanced Ecommerce dataLayer Integration",
+    "simpleValueType": true,
+    "help": "If you check this, then the Facebook pixel will populate \u003cstrong\u003eEvent Name\u003c/strong\u003e and \u003cstrong\u003eObject Properties\u003c/strong\u003e automatically from the last \u003ca href\u003d\"https://developers.google.com/tag-manager/enhanced-ecommerce\"\u003eecommerce\u003c/a\u003e object pushed into the dataLayer array."
+  },
+  {
+    "type": "CHECKBOX",
+    "name": "useGA4Ecommerce",
+    "checkboxText": "Use GA4 dataLayer Integration",
+    "simpleValueType": true,
+    "help": "**Use GA4 Ecommerce:**\u003cbr/\u003e\n\u003cbr/\u003e\nIf this feature is enabled, please push an **eventModel** object containing the required parameters into the dataLayer.\u003cbr/\u003e\n\u003cbr/\u003e\nExample:\u003cbr/\u003e\n\u003cbr/\u003e\nwindow.dataLayer \u003d window.dataLayer || [];\u003cbr/\u003e\n\u003cbr/\u003e\nwindow.dataLayer.push({\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\"event\": \"add_to_cart\",\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\"eventModel\": {\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\"currency\": \"USD\",\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\"value\": 30,\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\"items\": [\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;{\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\"item_id\": \"item_id\",\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\"item_name\": \"item_name\",\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\"price\": 30\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;}\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;\u0026nbsp;\u0026nbsp;]\u003cbr/\u003e\n\u0026nbsp;\u0026nbsp;}\u003cbr/\u003e\n});"
+  },
+  {
+    "type": "RADIO",
+    "name": "eventName",
+    "displayName": "Event Name",
+    "radioItems": [
+      {
+        "value": "standard",
+        "displayValue": "Standard",
+        "subParams": [
+          {
+            "type": "SELECT",
+            "name": "standardEventName",
+            "macrosInSelect": false,
+            "selectItems": [
+              {
+                "displayValue": "PageView",
+                "value": "PageView"
+              },
+              {
+                "displayValue": "AddPaymentInfo",
+                "value": "AddPaymentInfo"
+              },
+              {
+                "displayValue": "AddToCart",
+                "value": "AddToCart"
+              },
+              {
+                "displayValue": "AddToWishlist",
+                "value": "AddToWishlist"
+              },
+              {
+                "displayValue": "CompleteRegistration",
+                "value": "CompleteRegistration"
+              },
+              {
+                "displayValue": "Contact",
+                "value": "Contact"
+              },
+              {
+                "displayValue": "CustomizeProduct",
+                "value": "CustomizeProduct"
+              },
+              {
+                "displayValue": "Donate",
+                "value": "Donate"
+              },
+              {
+                "displayValue": "FindLocation",
+                "value": "FindLocation"
+              },
+              {
+                "displayValue": "InitiateCheckout",
+                "value": "InitiateCheckout"
+              },
+              {
+                "displayValue": "Lead",
+                "value": "Lead"
+              },
+              {
+                "displayValue": "Purchase",
+                "value": "Purchase"
+              },
+              {
+                "displayValue": "Schedule",
+                "value": "Schedule"
+              },
+              {
+                "displayValue": "Search",
+                "value": "Search"
+              },
+              {
+                "displayValue": "StartTrial",
+                "value": "StartTrial"
+              },
+              {
+                "displayValue": "SubmitApplication",
+                "value": "SubmitApplication"
+              },
+              {
+                "displayValue": "Subscribe",
+                "value": "Subscribe"
+              },
+              {
+                "displayValue": "ViewContent",
+                "value": "ViewContent"
+              }
+            ],
+            "simpleValueType": true,
+            "defaultValue": "PageView"
+          }
+        ]
+      },
+      {
+        "value": "custom",
+        "displayValue": "Custom",
+        "subParams": [
+          {
+            "type": "TEXT",
+            "name": "customEventName",
+            "displayName": "",
+            "simpleValueType": true
+          }
+        ]
+      },
+      {
+        "value": "variable",
+        "displayValue": "Variable",
+        "subParams": [
+          {
+            "type": "SELECT",
+            "name": "variableEventName",
+            "macrosInSelect": true,
+            "selectItems": [],
+            "simpleValueType": true
+          }
+        ]
+      }
+    ],
+    "simpleValueType": true,
+    "enablingConditions": [
+      {
+        "paramName": "enhancedEcommerce",
+        "paramValue": true,
+        "type": "NOT_EQUALS"
+      }
+    ]
+  },
+  {
+    "type": "RADIO",
+    "name": "eecEventName",
+    "displayName": "Event Name",
+    "radioItems": [
+      {
+        "value": "eec",
+        "displayValue": "Set automatically from dataLayer"
+      }
+    ],
+    "simpleValueType": true,
+    "help": "The Enhanced Ecommerce integration populates the Event Name automatically depending on what type of \u003cstrong\u003eecommerce\u003c/strong\u003e object was last pushed into dataLayer (\"detail\" -\u003e \"ViewContent\", \"add\" -\u003e \"AddToCart\", \"checkout\" -\u003e \"InitiateCheckout\", \"purchase\" -\u003e \"Purchase\").",
+    "enablingConditions": [
+      {
+        "paramName": "enhancedEcommerce",
+        "paramValue": true,
+        "type": "EQUALS"
+      }
+    ]
+  },
+  {
+    "type": "SELECT",
+    "name": "consent",
+    "displayName": "Consent Granted (GDPR)",
+    "macrosInSelect": true,
+    "selectItems": [
+      {
+        "value": true,
+        "displayValue": "True"
+      },
+      {
+        "value": false,
+        "displayValue": "False"
+      }
+    ],
+    "simpleValueType": true,
+    "help": "If you set Consent Granted to \u003cstrong\u003efalse\u003c/strong\u003e, the pixel will not send any hits until a tag is fired where Consent Granted is set to \u003cstrong\u003etrue\u003c/strong\u003e. See \u003ca href\u003d\"https://developers.facebook.com/docs/facebook-pixel/implementation/gdpr/\"\u003ethis article\u003c/a\u003e for more information."
+  },
+  {
+    "simpleValueType": true,
+    "name": "advancedMatching",
+    "checkboxText": "Enable Advanced Matching",
+    "type": "CHECKBOX"
+  },
+  {
+    "type": "GROUP",
+    "name": "metaCAPIOptInGroup",
+    "displayName": "Meta-enabled Conversions API integration",
+    "groupStyle": "ZIPPY_OPEN",
+    "subParams": [
+      {
+        "type": "LABEL",
+        "name": "optInMetaCAPIConsent",
+        "displayName": "You hereby authorize and instruct Meta to set up a Meta-enabled Conversions API integration on your behalf, and you agree that your use of the integration will be subject to Meta\u2019s \u003ca href\u003d\"https://www.facebook.com/legal/terms\"\u003ePlatform Terms\u003c/a\u003e and \u003ca href\u003d\"https://www.facebook.com/legal/technology_terms\"\u003eBusiness Tools Terms\u003c/a\u003e."
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "optInMetaCAPI",
+        "checkboxText": "Opt in to a Meta-enabled Conversions API integration",
+        "simpleValueType": true,
+        "defaultValue": true,
+        "alwaysInSummary": true
+      }
+    ]
+  },
+  {
+    "type": "GROUP",
+    "name": "dataProcessingOptionsGroup",
+    "displayName": "Data Processing Options",
+    "groupStyle": "ZIPPY_CLOSED",
+    "subParams": [
+      {
+        "type": "LABEL",
+        "name": "dpoInfo",
+        "displayName": "Data Processing Options force this Facebook event to comply to regional regulations with regard to the processing and selling of user data. Read \u003ca href\u003d\"https://developers.facebook.com/docs/marketing-apis/data-processing-options\"\u003ethis\u003c/a\u003e for more information about how to configure this section."
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "dpoLDU",
+        "checkboxText": "Limited Data Use (LDU)",
+        "simpleValueType": true
+      },
+      {
+        "type": "TEXT",
+        "name": "dpoCountry",
+        "displayName": "Country",
+        "simpleValueType": true,
+        "defaultValue": 0,
+        "enablingConditions": [
+          {
+            "paramName": "dpoLDU",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ],
+        "valueValidators": [
+          {
+            "type": "NUMBER"
+          }
+        ]
+      },
+      {
+        "type": "TEXT",
+        "name": "dpoState",
+        "displayName": "State",
+        "simpleValueType": true,
+        "defaultValue": 0,
+        "enablingConditions": [
+          {
+            "paramName": "dpoLDU",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ],
+        "valueValidators": [
+          {
+            "type": "NUMBER"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "enablingConditions": [
+      {
+        "paramName": "advancedMatching",
+        "type": "EQUALS",
+        "paramValue": true
+      }
+    ],
+    "displayName": "Customer Information Data Parameters",
+    "name": "advancedMatchingGroup",
+    "groupStyle": "ZIPPY_CLOSED",
+    "type": "GROUP",
+    "subParams": [
+      {
+        "displayName": "",
+        "name": "advancedMatchingList",
+        "simpleTableColumns": [
+          {
+            "selectItems": [
+              {
+                "displayValue": "City",
+                "value": "ct"
+              },
+              {
+                "displayValue": "Country",
+                "value": "cn"
+              },
+              {
+                "displayValue": "Date of Birth",
+                "value": "db"
+              },
+              {
+                "displayValue": "Email",
+                "value": "em"
+              },
+              {
+                "displayValue": "External ID",
+                "value": "external_id"
+              },
+              {
+                "displayValue": "First Name",
+                "value": "fn"
+              },
+              {
+                "displayValue": "Gender",
+                "value": "ge"
+              },
+              {
+                "displayValue": "Last Name",
+                "value": "ln"
+              },
+              {
+                "displayValue": "Phone",
+                "value": "ph"
+              },
+              {
+                "displayValue": "State",
+                "value": "st"
+              },
+              {
+                "displayValue": "Zip Code",
+                "value": "zp"
+              }
+            ],
+            "defaultValue": "",
+            "displayName": "Parameter name",
+            "name": "name",
+            "isUnique": true,
+            "type": "SELECT"
+          },
+          {
+            "defaultValue": "",
+            "displayName": "Parameter value",
+            "name": "value",
+            "type": "TEXT"
+          }
+        ],
+        "type": "SIMPLE_TABLE",
+        "newRowButtonText": "Add parameter",
+        "valueValidators": [
+          {
+            "type": "NON_EMPTY"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "displayName": "Object Properties",
+    "name": "objectPropertiesGroup",
+    "groupStyle": "ZIPPY_CLOSED",
+    "type": "GROUP",
+    "subParams": [
+      {
+        "type": "LABEL",
+        "name": "enhancedEcommerceObject",
+        "displayName": "\u003cstrong\u003eWarning!\u003c/strong\u003e Object properties are populated automatically based on the most recent \u003cstrong\u003eecommerce\u003c/strong\u003e object pushed into dataLayer. If you add properties here that are already set by the integration (content_type, contents, num_items, value, currency), then the properties you add here will override those set automatically by the integration!",
+        "enablingConditions": [
+          {
+            "paramName": "enhancedEcommerce",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ]
+      },
+      {
+        "type": "SELECT",
+        "name": "objectPropertiesFromVariable",
+        "displayName": "Load Properties From Variable",
+        "macrosInSelect": true,
+        "selectItems": [
+          {
+            "value": false,
+            "displayValue": "False"
+          }
+        ],
+        "simpleValueType": true,
+        "help": "You can use a variable that returns a JavaScript object with the properties you want to use. This object will be merged with any additional properties you add via the table below. Any conflicts will be resolved in favor of the properties you add to the table."
+      },
+      {
+        "name": "objectPropertyList",
+        "simpleTableColumns": [
+          {
+            "valueValidators": [],
+            "defaultValue": "",
+            "displayName": "Property Name",
+            "name": "name",
+            "isUnique": true,
+            "type": "TEXT"
+          },
+          {
+            "defaultValue": "",
+            "displayName": "Property Value",
+            "name": "value",
+            "type": "TEXT"
+          }
+        ],
+        "type": "SIMPLE_TABLE",
+        "newRowButtonText": "Add property"
+      }
+    ]
+  },
+  {
+    "displayName": "More Settings",
+    "name": "moreSettingsGroup",
+    "groupStyle": "ZIPPY_CLOSED",
+    "type": "GROUP",
+    "subParams": [
+      {
+        "help": "Facebook collects some metadata (e.g. structured data) and user interactions (e.g. clicks) automatically. Check this box to disable this automatic configuration of the pixel.",
+        "simpleValueType": true,
+        "name": "disableAutoConfig",
+        "checkboxText": "Disable Automatic Configuration",
+        "type": "CHECKBOX"
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "disablePushState",
+        "checkboxText": "Disable History Event Tracking",
+        "simpleValueType": true,
+        "help": "The Facebook Pixel tracks history events (pushState and replaceState) automatically as PageViews. Check this box to prevent the pixel from tracking such events automatically."
+      },
+      {
+        "type": "TEXT",
+        "name": "eventId",
+        "displayName": "Event ID",
+        "simpleValueType": true,
+        "help": "Set the Event ID parameter in case you are tracking the same event server-side as well. The Event ID can be used to deduplicate the same event if sent from multiple sources. See more \u003ca href\u003d\"https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events/\"\u003ehere\u003c/a\u003e."
+      }
+    ]
+  }
+]
+
+
+___SANDBOXED_JS_FOR_WEB_TEMPLATE___
+
+const createQueue = require('createQueue');
+const callInWindow = require('callInWindow');
+const aliasInWindow = require('aliasInWindow');
+const copyFromWindow = require('copyFromWindow');
+const setInWindow = require('setInWindow');
+const injectScript = require('injectScript');
+const makeTableMap = require('makeTableMap');
+const makeNumber = require('makeNumber');
+const getType = require('getType');
+const copyFromDataLayer = require('copyFromDataLayer');
+const math = require('Math');
+const log = require('logToConsole');
+const getUrl = require('getUrl');
+
+const PARAM_BUILDER_PRIMARY_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js';
+const PARAM_BUILDER_FALLBACK_SCRIPT_URL = 'https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js';
+
+const initIds = copyFromWindow('_fbq_gtm_ids') || [];
+const pixelIds = data.pixelId;
+const standardEventNames = ['AddPaymentInfo', 'AddToCart', 'AddToWishlist', 'CompleteRegistration', 'Contact', 'CustomizeProduct', 'Donate', 'FindLocation', 'InitiateCheckout', 'Lead', 'PageView', 'Purchase', 'Schedule', 'Search', 'StartTrial', 'SubmitApplication', 'Subscribe', 'ViewContent'];
+const ecommerce = copyFromDataLayer('ecommerce', 1);
+const eventModel = copyFromDataLayer('eventModel', 1);
+
+// Helper methods
+const fail = msg => {
+  log(msg);
+  data.gtmOnFailure();
+};
+
+const mergeObj = (obj, obj2) => {
+  for (let key in obj2) {
+    if (obj2.hasOwnProperty(key)) {
+      obj[key] = obj2[key];
+    }
+  }
+  return obj;
+};
+
+const parseEecObj = prod => {
+  return {
+    id: prod.id,
+    quantity: prod.quantity
+  };
+};
+
+// Initialize EEC integration
+let eventName, action, eecObjectProps;
+if (data.enhancedEcommerce) {
+  if (!ecommerce) return fail('Facebook Pixel: No valid "ecommerce" object found in dataLayer');
+  if (ecommerce.detail) { eventName = 'ViewContent'; action = 'detail'; }
+  else if (ecommerce.add) { eventName = 'AddToCart'; action = 'add'; }
+  else if (ecommerce.checkout) { eventName = 'InitiateCheckout'; action = 'checkout'; }
+  else if (ecommerce.purchase) { eventName = 'Purchase'; action = 'purchase'; }
+  else return fail('Facebook Pixel: Most recently pushed "ecommerce" object must be one of types "detail", "add", "checkout" or "purchase".');
+
+  if (!ecommerce[action].products || getType(ecommerce[action].products) !== 'array') return fail('Facebook pixel: Most recently pushed "ecommerce" object did not have a valid "products" array.');
+  eecObjectProps = {
+    content_type: 'product',
+    contents: ecommerce[action].products.map(parseEecObj),
+    value: ecommerce[action].products.reduce((acc, cur) => {
+      const curVal = math.round(makeNumber(cur.price || 0) * (cur.quantity || 1) * 100) / 100;
+      return acc + curVal;
+    }, 0.0),
+    currency: ecommerce.currencyCode || 'USD'
+  };
+  if (['InitiateCheckout', 'Purchase'].indexOf(eventName) > -1) eecObjectProps.num_items = ecommerce[action].products.reduce((acc,cur) => {
+    return acc + makeNumber(cur.quantity || 1);
+  }, 0);
+}
+
+// Prepare event variables
+const cidParams = data.advancedMatchingList && data.advancedMatchingList.length ? makeTableMap(data.advancedMatchingList, 'name', 'value') : {};
+const objectProps = data.objectPropertyList && data.objectPropertyList.length ? makeTableMap(data.objectPropertyList, 'name', 'value') : {};
+const objectPropsFromVar = getType(data.objectPropertiesFromVariable) === 'object' ? data.objectPropertiesFromVariable : {};
+let customData = {};
+
+eventName = eventName || (data.eventName === 'custom' ? data.customEventName : (data.eventName === 'variable' ? data.variableEventName : data.standardEventName));
+
+const command = standardEventNames.indexOf(eventName) === -1 ? 'trackSingleCustom' : 'trackSingle';
+const consent = data.consent === false ? 'revoke' : 'grant';
+
+// Utility function to use either fbq.queue[]
+// (if the FB SDK hasn't loaded yet), or fbq.callMethod()
+// if the SDK has loaded.
+const getFbq = () => {
+  // Return the existing 'fbq' global method if available
+  let fbq = copyFromWindow('fbq');
+  if (fbq) {
+    return fbq;
+  }
+
+  // Initialize the 'fbq' global method to either use
+  // fbq.callMethod or fbq.queue)
+  setInWindow('fbq', function() {
+    const callMethod = copyFromWindow('fbq.callMethod.apply');
+    if (callMethod) {
+      callInWindow('fbq.callMethod.apply', null, arguments);
+    } else {
+      callInWindow('fbq.queue.push', arguments);
+    }
+  });
+  aliasInWindow('_fbq', 'fbq');
+
+  // Create the fbq.queue
+  createQueue('fbq.queue');
+
+  // Return the global 'fbq' method, created above
+  return copyFromWindow('fbq');
+};
+
+// Get reference to the global method
+const fbq = getFbq();
+
+fbq('consent', consent);
+
+ // Set Data Processing Options
+if (data.dpoLDU) {
+  fbq('dataProcessingOptions', ['LDU'], makeNumber(data.dpoCountry), makeNumber(data.dpoState));
+}
+
+// Monitoring agent string for Tag Setup
+const agentName = 'tmSimo-GTM-WebTemplate';
+const version = '2.0.9';
+const agentSuffix = (data.enhancedEcommerce ? '-EEC' : '') + (data.useGA4Ecommerce ? '-GA4' : '') + (data.optInMetaCAPI !== false ? '-fcg' : '');
+
+// Handle multiple, comma-separated pixel IDs,
+// and initialize each ID if not done already.
+pixelIds.split(',').forEach(pixelId => {
+  if (initIds.indexOf(pixelId) === -1) {
+
+    // If the user has chosen to disable automatic configuration
+    if (data.disableAutoConfig) {
+      fbq('set', 'autoConfig', false, pixelId);
+    }
+
+    // If the user has chosen to disable pushState and replaceState tracking
+    if (data.disablePushState) {
+      setInWindow('fbq.disablePushState', true);
+    }
+
+    // Signal opt-in to Meta-enabled CAPI integration before init. Treat
+    // undefined as opted-in so tags created before this field existed
+    // continue to opt in without requiring the advertiser to re-save the tag.
+    if (data.optInMetaCAPI !== false) {
+      fbq('optinMetaEnabledCapi', pixelId);
+    }
+
+    // Initialize pixel and store in global array
+    fbq('init', pixelId, cidParams);
+
+    // Monitoring agent string for Tag Setup
+    const agentString = agentName + '-' + version + agentSuffix;
+    fbq('set','agent', agentString, pixelId);
+
+    initIds.push(pixelId);
+    setInWindow('_fbq_gtm_ids', initIds, true);
+
+    // If this first-time init included cidParams, mark the page as
+    // already-initialized-with-cidParams so we never re-init for it.
+    if (data.advancedMatchingList && data.advancedMatchingList.length) {
+      setInWindow('_fbq_gtm_cidparams_initialized', true, true);
+    }
+  }
+});
+
+// Re-init pixels with cidParams when:
+//   - this tag fire actually has Advanced Matching data, AND
+//   - we have NOT yet initialized any pixel with cidParams on this page.
+if (data.advancedMatchingList && data.advancedMatchingList.length) {
+  pixelIds.split(',').forEach(pixelId => {
+    if (initIds.indexOf(pixelId) !== -1) {
+      fbq('init', pixelId, cidParams);
+      const reinitAgentString = agentName + '-' + version + agentSuffix + '-REINIT';
+      fbq('set', 'agent', reinitAgentString, pixelId);
+    }
+  });
+}
+
+const fireEvent = (resolvedCustomData) => {
+  const mergedCustom = mergeObj(resolvedCustomData, eecObjectProps || {});
+  const mergedObjectProps = mergeObj(objectPropsFromVar, objectProps);
+  const finalObjectProps = mergeObj(mergedCustom, mergedObjectProps);
+
+  pixelIds.split(',').forEach(pixelId => {
+    if (data.eventId) {
+      fbq(command, pixelId, eventName, finalObjectProps, {eventID: data.eventId});
+    } else {
+      fbq(command, pixelId, eventName, finalObjectProps);
+    }
+  });
+};
+
+if (data.useGA4Ecommerce) {
+  const firstPixelId = pixelIds.split(',')[0];
+  callInWindow(
+    'fbq',
+    'gateCheck',
+    'enable_gtm_ga4_structure',
+    function(gateName, pixelID) {
+      // Set user_data from eventModel into cidParams
+      if (eventModel && eventModel.user_data) {
+        var ud = eventModel.user_data;
+        if (ud.email_address && !cidParams.em) cidParams.em = ud.email_address;
+        if (ud.phone_number && !cidParams.ph) cidParams.ph = ud.phone_number;
+        if (ud.address) {
+          if (ud.address.first_name && !cidParams.fn) cidParams.fn = ud.address.first_name;
+          if (ud.address.last_name && !cidParams.ln) cidParams.ln = ud.address.last_name;
+          if (ud.address.city && !cidParams.ct) cidParams.ct = ud.address.city;
+          if (ud.address.region && !cidParams.st) cidParams.st = ud.address.region;
+          if (ud.address.postal_code && !cidParams.zp) cidParams.zp = ud.address.postal_code;
+          if (ud.address.country && !cidParams.country) cidParams.country = ud.address.country;
+        }
+        if (ud.fb_login_id && !cidParams.fb_login_id) cidParams.fb_login_id = ud.fb_login_id;
+
+        pixelIds.split(',').forEach(function(pixelId) {
+          fbq('init', pixelId, cidParams);
+        });
+      }
+
+      // Set custom_data from eventModel
+      if (eventModel) {
+        if (eventModel.currency) customData.currency = eventModel.currency;
+        if (eventModel.value) customData.value = eventModel.value;
+        if (eventModel.search_term) customData.search_string = eventModel.search_term;
+        if (eventModel.transaction_id) customData.order_id = eventModel.transaction_id;
+        if (eventModel.items && getType(eventModel.items) === 'array') {
+          customData.contents = eventModel.items.map(function(item) {
+            return {
+              id: (item.item_id || item.item_name) || undefined,
+              item_price: item.price || undefined,
+              quantity: item.quantity || undefined
+            };
+          });
+        }
+      }
+
+      fireEvent(customData);
+    },
+    function(gateName, pixelID) {
+      fireEvent(customData);
+    },
+    firstPixelId
+  );
+} else {
+  fireEvent(customData);
+}
+
+// Inject Param Builder script if enabled
+const onParamBuilderFailure = () => {
+  log('Facebook Pixel: Failed to load clientParamBuilder script');
+  setInWindow('_fbq_param_builder_status', 'complete', true);
+  data.gtmOnSuccess();
+};
+
+// Param Builder callback - called after script loads
+const processAndCollectAllParams = () => {
+  log("ParamBuilder script loaded successfully, processing and collecting all params...");
+  const clientParamBuilder = copyFromWindow('clientParamBuilder');
+  if (!clientParamBuilder) {
+    log("ERROR: clientParamBuilder wasn't loaded correctly.");
+    setInWindow('_fbq_param_builder_status', 'complete', true);
+    data.gtmOnSuccess();
+    return;
+  }
+
+  const currentPageUrl = getUrl();
+
+  // Check which method exists and call it via callInWindow
+  const hasProcessAndCollectAllParams = copyFromWindow('clientParamBuilder.processAndCollectAllParams');
+  const hasProcessAndCollectParams = copyFromWindow('clientParamBuilder.processAndCollectParams');
+
+  if (hasProcessAndCollectAllParams) {
+    callInWindow('clientParamBuilder.processAndCollectAllParams', currentPageUrl);
+    log("processAndCollectAllParams completed successfully.");
+    setInWindow('_fbq_param_builder_status', 'complete', true);
+    data.gtmOnSuccess();
+  } else if (hasProcessAndCollectParams) {
+    callInWindow('clientParamBuilder.processAndCollectParams', currentPageUrl);
+    log("processAndCollectParams completed successfully.");
+    setInWindow('_fbq_param_builder_status', 'complete', true);
+    data.gtmOnSuccess();
+  } else {
+    log("ERROR: Neither processAndCollectAllParams nor processAndCollectParams methods found.");
+    data.gtmOnFailure();
+  }
+};
+
+const loadParamBuilderFallback = () => {
+  injectScript(PARAM_BUILDER_FALLBACK_SCRIPT_URL, processAndCollectAllParams, onParamBuilderFailure, PARAM_BUILDER_FALLBACK_SCRIPT_URL);
+};
+
+
+function gtmSuccess() {
+  const status = copyFromWindow('_fbq_param_builder_status');
+
+  // If it's done OR currently downloading, skip injecting it again!
+  if (status === 'complete' || status === 'loading') {
+    return data.gtmOnSuccess();
+  }
+
+  // Immediately lock the state synchronously so Tag 2 doesn't enter this block
+  setInWindow('_fbq_param_builder_status', 'loading', true);
+
+  var firstPixelId = pixelIds.split(',')[0];
+
+  callInWindow(
+    'fbq',
+    'gateCheck',
+    'enable_gtm_parambuilder',
+    function(gateName, pixelID) {
+      injectScript(PARAM_BUILDER_PRIMARY_SCRIPT_URL, processAndCollectAllParams, loadParamBuilderFallback, PARAM_BUILDER_PRIMARY_SCRIPT_URL);
+    },
+    function(gateName, pixelID) {
+      data.gtmOnSuccess();
+    },
+    firstPixelId
+  );
+}
+
+// Use the URL as the cache token (matches original paramBuilder template)
+
+injectScript('https://connect.facebook.net/en_US/fbevents.js', gtmSuccess, data.gtmOnFailure, 'fbPixel');
+
+
+___WEB_PERMISSIONS___
+
+[
+  {
+    "instance": {
+      "key": {
+        "publicId": "access_globals",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "keys",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "fbq"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_fbq_gtm"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_fbq"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_fbq_gtm_ids"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_fbq_gtm_cidparams_initialized"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "fbq.callMethod.apply"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "fbq.queue.push"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "fbq.queue"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "fbq.disablePushState"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_fbq_param_builder_status"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "clientParamBuilder"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "clientParamBuilder.processAndCollectAllParams"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "clientParamBuilder.processAndCollectParams"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "inject_script",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "urls",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 1,
+                "string": "https://connect.facebook.net/en_US/fbevents.js"
+              },
+              {
+                "type": 1,
+                "string": "https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js"
+              },
+              {
+                "type": 1,
+                "string": "https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "logging",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "environments",
+          "value": {
+            "type": 1,
+            "string": "debug"
+          }
+        }
+      ]
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "read_data_layer",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "allowedKeys",
+          "value": {
+            "type": 1,
+            "string": "specific"
+          }
+        },
+        {
+          "key": "keyPatterns",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 1,
+                "string": "ecommerce"
+              },
+              {
+                "type": 1,
+                "string": "eventModel"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "get_url",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "urlParts",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        },
+        {
+          "key": "queriesAllowed",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        }
+      ]
+    },
+    "isRequired": true
+  }
+]
+
+
+___TESTS___
+
+scenarios:
+- name: Library is injected
+  code: |+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // 1. Verify the Facebook Pixel URL was requested
+    assertThat(injectedUrls).contains('https://connect.facebook.net/en_US/fbevents.js');
+
+    // 2. Verify the Param Builder URL was requested
+    assertThat(injectedUrls).contains('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');
+
+    // 3. Verify the template finished successfully
+    assertApi('gtmOnSuccess').wasCalled();
+
+- name: fbq does not exist - method created
+  code: |-
+    let fbq;
+
+    mock('copyFromWindow', key => {
+      // 1. The specific logic for this test (mocking fbq absence)
+      if (key === 'fbq') return fbq;
+
+      // 2. The required logic for the template to finish (ParamBuilder mocks)
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    mock('createQueue', key => {});
+
+    mock('setInWindow', (key, val) => {
+      if (key === 'fbq') fbq = val;
+    });
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('aliasInWindow').wasCalledWith('_fbq', 'fbq');
+    assertApi('setInWindow').wasCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: fbq exists - method copied
+  code: |-
+    mock('setInWindow', key => {
+      if (key === 'fbq') fail('setInWindow called with fbq even though variable exists');
+    });
+
+    mock('createQueue', key => {});
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+- name: makeTableMap called
+  code: |-
+    mockData.advancedMatching = true;
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('makeTableMap').wasCalledWith(mockData.advancedMatchingList, 'name', 'value');
+    assertApi('makeTableMap').wasCalledWith(mockData.objectPropertyList, 'name', 'value');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Consent set
+  code: |-
+    mock('copyFromWindow', key => {
+      // 1. The specific logic for this test (checking fbq consent)
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'consent') {
+          assertThat(arguments[1], 'Consent set incorrectly').isEqualTo('grant');
+        }
+      };
+
+      // 2. The required logic for the template to finish (ParamBuilder mocks)
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+- name: DPO LDU set
+  code: |-
+    mockData.dpoLDU = true;
+    mockData.dpoCountry = '0';
+    mockData.dpoState = '0';
+
+    mock('copyFromWindow', key => {
+      // 1. The specific logic for this test (checking fbq DPO options)
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'consent') {
+          assertThat(arguments[1], 'Consent set incorrectly').isEqualTo('grant');
+        }
+        if (arguments[0] === 'dataProcessingOptions') {
+          assertThat(arguments[1], 'LDU array value not set').isEqualTo(['LDU']);
+          assertThat(arguments[2], 'LDU country not set').isEqualTo(0);
+          assertThat(arguments[3], 'LDU state not set').isEqualTo(0);
+        }
+      };
+
+      // 2. The required logic for the template to finish (ParamBuilder mocks)
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+- name: DPO LDU not set
+  code: |-
+    mock('copyFromWindow', key => {
+      // 1. The specific logic for this test (checking fbq consent and ensuring DPO is NOT called)
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'consent') {
+          assertThat(arguments[1], 'Consent set incorrectly').isEqualTo('grant');
+        }
+        if (arguments[0] === 'dataProcessingOptions') {
+          fail('dataProcessingOptions called even though DPO was not set');
+        }
+      };
+
+      // 2. The required logic for the template to finish (ParamBuilder mocks)
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Pixel IDs set - do not initialize
+  code: |-
+    // Clear advancedMatchingList so the cidParams update block is skipped,
+    // isolating the init guard behavior.
+    mockData.advancedMatchingList = [];
+
+    mock('copyFromWindow', key => {
+      // 1. The specific logic for this test (checking initialized IDs and preventing re-init)
+      if (key === '_fbq_gtm_ids') return ['12345', '23456'];
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'init') fail('init called even though pixel IDs already initialized');
+      };
+
+      // 2. The required logic for the template to finish (ParamBuilder mocks)
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Pixel IDs not set - run init process
+  code: "mockData.enhancedEcommerce = true;\n\nmockData.objectPropertyList = {};\n\
+    \n\n\nmock('copyFromDataLayer', key => {\n\n  if (key === 'ecommerce') return\
+    \ {\n\n    currencyCode: 'EUR',\n\n    detail: {\n\n      products: mockEec.gtm.products\n\
+    \n    }\n\n  };\n\n});\n\n\n\nlet index = 0;\n\nmock('copyFromWindow', key =>\
+    \ {\n\n  // 1. The specific logic for this test (checking fbq trackSingle calls)\n\
+    \n  if (key === 'fbq') return function() {\n\n    if (arguments[0] === 'trackSingle')\
+    \ {\n\n      assertThat(arguments[1], 'trackSingle called with incorrect pixel\
+    \ ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\n      assertThat(arguments[2],\
+    \ 'trackSingle called with incorrect event name').isEqualTo('ViewContent');\n\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockEec.fb);\n\
+    \n      index += 1;\n\n    }\n\n  };\n\n\n\n  // 2. The required logic for the\
+    \ template to finish (ParamBuilder mocks)\n\n  if (key === 'clientParamBuilder')\
+    \ return {};\n\n  if (key === 'clientParamBuilder.processAndCollectAllParams')\
+    \ return () => {};\n\n});\n\n      \n\n// Call runCode to run the template's code.\n\
+    \nrunCode(mockData);\n\n\n\n// Verify that the tag finished successfully.\n\n\
+    assertThat(index, 'trackSingle called incorrect number of times').isEqualTo(2);\n\
+    \nassertApi('gtmOnSuccess').wasCalled();"
+- name: cidParams updated on subsequent fire when pixel already initialized
+  code: |-
+    mockData.advancedMatchingList = [
+      {name: 'em', value: 'user@example.com'}
+    ];
+
+    let initCalls = [];
+    mock('copyFromWindow', key => {
+      // Pixels already initialized
+      if (key === '_fbq_gtm_ids') return ['12345', '23456'];
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'init') {
+          initCalls.push({pixelId: arguments[1], cidParams: arguments[2]});
+        }
+      };
+
+      // Required ParamBuilder mocks
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    runCode(mockData);
+
+    // Init guard skipped (pixels already initialized).
+    // Re-init block fires init for each already-initialized pixel with cidParams.
+    assertThat(initCalls.length).isEqualTo(2);
+    assertThat(initCalls[0].pixelId).isEqualTo('12345');
+    assertThat(initCalls[0].cidParams.em).isEqualTo('user@example.com');
+    assertThat(initCalls[1].pixelId).isEqualTo('23456');
+    assertThat(initCalls[1].cidParams.em).isEqualTo('user@example.com');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: cidParams not updated on subsequent fire when advancedMatchingList is empty
+  code: |-
+    mockData.advancedMatchingList = [];
+
+    mock('copyFromWindow', key => {
+      // Simulate pixel already initialized
+      if (key === '_fbq_gtm_ids') return ['12345', '23456'];
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'init') {
+          fail('init called even though advancedMatchingList is empty and pixels are already initialized');
+        }
+      };
+
+      // Required ParamBuilder mocks
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    runCode(mockData);
+
+    assertApi('gtmOnSuccess').wasCalled();
+- name: cidParams re-init runs on every fire with advancedMatchingList
+  code: |-
+    mockData.advancedMatchingList = [
+      {name: 'em', value: 'newuser@example.com'}
+    ];
+
+    let initCalls = [];
+    mock('copyFromWindow', key => {
+      // Pixels already initialized on a prior fire
+      if (key === '_fbq_gtm_ids') return ['12345', '23456'];
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'init') {
+          initCalls.push({pixelId: arguments[1], cidParams: arguments[2]});
+        }
+      };
+
+      // Required ParamBuilder mocks
+      if (key === 'clientParamBuilder') return {};
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+    });
+
+    runCode(mockData);
+
+    // Re-init block fires init for each already-initialized pixel with the
+    // latest cidParams, regardless of any prior fire.
+    assertThat(initCalls.length).isEqualTo(2);
+    assertThat(initCalls[0].pixelId).isEqualTo('12345');
+    assertThat(initCalls[0].cidParams.em).isEqualTo('newuser@example.com');
+    assertThat(initCalls[1].pixelId).isEqualTo('23456');
+    assertThat(initCalls[1].cidParams.em).isEqualTo('newuser@example.com');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Send standard event
+  code: "const eventParams = {\n  prop1: 'val1',\n  prop2: 'val2'\n};\n\nlet index\
+    \ = 0;\nmock('copyFromWindow', key => {\n  // 1. The specific logic for this test\
+    \ (checking fbq trackSingle calls)\n  if (key === 'fbq') return function() {\n\
+    \    if (arguments[0] === 'trackSingle') {\n      assertThat(arguments[1], 'trackSingle\
+    \ called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo(mockData.standardEventName);\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(eventParams);\n\
+    \      index += 1;\n    }\n  };\n\n  // 2. The required logic for the template\
+    \ to finish (ParamBuilder mocks)\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n      \n// Call runCode to run the template's code.\nrunCode(mockData);\n\
+    \n// Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Send custom event
+  code: "mockData.eventName = 'custom';\n\nconst eventParams = {\n  prop1: 'val1',\n\
+    \  prop2: 'val2'\n};\n\nlet index = 0;\nmock('copyFromWindow', key => {\n  //\
+    \ 1. The specific logic for this test (checking fbq trackSingleCustom calls)\n\
+    \  if (key === 'fbq') return function() {\n    if (arguments[0] === 'trackSingleCustom')\
+    \ {\n      assertThat(arguments[1], 'trackSingleCustom called with incorrect pixel\
+    \ ID').isEqualTo(mockData.pixelId.split(',')[index]);\n      assertThat(arguments[2],\
+    \ 'trackSingleCustom called with incorrect event name').isEqualTo(mockData.customEventName);\n\
+    \      assertThat(arguments[3], 'trackSingleCustom called with incorrect event\
+    \ parameters').isEqualTo(eventParams);\n      index += 1;\n    }\n  };\n\n  //\
+    \ 2. The required logic for the template to finish (ParamBuilder mocks)\n  if\
+    \ (key === 'clientParamBuilder') return {};\n  if (key === 'clientParamBuilder.processAndCollectAllParams')\
+    \ return () => {};\n});\n      \n// Call runCode to run the template's code.\n\
+    runCode(mockData);\n\n// Verify that the tag finished successfully.\nassertThat(index,\
+    \ 'trackSingleCustom called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Send variable event with standard name
+  code: "mockData.eventName = 'variable';\nmockData.variableEventName = 'PageView';\n\
+    \nconst eventParams = {\n  prop1: 'val1',\n  prop2: 'val2'\n};\n\nlet index =\
+    \ 0;\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return function()\
+    \ {\n    if (arguments[0] === 'trackSingle') {\n      assertThat(arguments[1],\
+    \ 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo(mockData.variableEventName);\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(eventParams);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Send variable event with custom name
+  code: "mockData.eventName = 'variable';\nmockData.variableEventName = 'custom';\n\
+    \nconst eventParams = {\n  prop1: 'val1',\n  prop2: 'val2'\n};\n\nlet index =\
+    \ 0;\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return function()\
+    \ {\n    if (arguments[0] === 'trackSingleCustom') {\n      assertThat(arguments[1],\
+    \ 'trackSingleCustom called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingleCustom called with incorrect event\
+    \ name').isEqualTo(mockData.variableEventName);\n      assertThat(arguments[3],\
+    \ 'trackSingleCustom called with incorrect event parameters').isEqualTo(eventParams);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingleCustom\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Send event parameters from a variable
+  code: "mockData.objectPropertiesFromVariable = {\n  prop1: 'val1',\n  prop2: 'val2'\n\
+    };\n\nlet index = 0;\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return\
+    \ function() {\n    if (arguments[0] === 'trackSingle') {\n      assertThat(arguments[1],\
+    \ 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo(mockData.standardEventName);\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockData.objectPropertiesFromVariable);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Enhanced Ecommerce integration fails with invalid object
+  code: "mockData.enhancedEcommerce = true;\n\n// Override the global setup for this\
+    \ specific test so it returns undefined\nmock('copyFromDataLayer', (key) => {\n\
+    \  return undefined; \n});\n\n// Call runCode to run the template's code.\nrunCode(mockData);\n\
+    \n// Verify that the tag finished successfully.\nassertApi('logToConsole').wasCalledWith('Facebook\
+    \ Pixel: No valid \"ecommerce\" object found in dataLayer');\nassertApi('gtmOnFailure').wasCalled();\n\
+    assertApi('gtmOnSuccess').wasNotCalled();"
+- name: Enhanced Ecommerce integration fails with invalid action
+  code: |-
+    mockData.enhancedEcommerce = true;
+
+    mock('copyFromDataLayer', key => {
+      if (key === 'ecommerce') return {
+        invalid: true
+      };
+    });
+
+    // Call runCode to run the template's code.
+    runCode(mockData);
+
+    // Verify that the tag finished successfully.
+    assertApi('logToConsole').wasCalledWith('Facebook Pixel: Most recently pushed "ecommerce" object must be one of types "detail", "add", "checkout" or "purchase".');
+    assertApi('gtmOnFailure').wasCalled();
+    assertApi('gtmOnSuccess').wasNotCalled();
+- name: Enhanced Ecommerce ViewContent works
+  code: "mockData.enhancedEcommerce = true;\nmockData.objectPropertyList = {};\n\n\
+    mock('copyFromDataLayer', key => {\n  if (key === 'ecommerce') return {\n    currencyCode:\
+    \ 'EUR',\n    detail: {\n      products: mockEec.gtm.products\n    }\n  };\n});\n\
+    \nlet index = 0;\nmock('copyFromWindow', key => {\n  // 1. The specific logic\
+    \ for this test (checking fbq trackSingle calls)\n  if (key === 'fbq') return\
+    \ function() {\n    if (arguments[0] === 'trackSingle') {\n      assertThat(arguments[1],\
+    \ 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo('ViewContent');\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockEec.fb);\n\
+    \      index += 1;\n    }\n  };\n\n  // 2. The required logic for the template\
+    \ to finish (ParamBuilder mocks)\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n      \n// Call runCode to run the template's code.\nrunCode(mockData);\n\
+    \n// Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Enhanced Ecommerce AddToCart works
+  code: "mockData.enhancedEcommerce = true;\nmockData.objectPropertyList = {};\n\n\
+    mock('copyFromDataLayer', key => {\n  if (key === 'ecommerce') return {\n    currencyCode:\
+    \ 'EUR',\n    add: {\n      products: mockEec.gtm.products\n    }\n  };\n});\n\
+    \nlet index = 0;\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return\
+    \ function() {\n    if (arguments[0] === 'trackSingle') {\n      assertThat(arguments[1],\
+    \ 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo('AddToCart');\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockEec.fb);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Enhanced Ecommerce InitiateCheckout works
+  code: "mockData.enhancedEcommerce = true;\nmockEec.fb.num_items = 3;\nmockData.objectPropertyList\
+    \ = {};\n\nmock('copyFromDataLayer', key => {\n  if (key === 'ecommerce') return\
+    \ {\n    currencyCode: 'EUR',\n    checkout: {\n      products: mockEec.gtm.products\n\
+    \    }\n  };\n});\n\nlet index = 0;\nmock('copyFromWindow', key => {\n  if (key\
+    \ === 'fbq') return function() {\n    if (arguments[0] === 'trackSingle') {\n\
+    \      assertThat(arguments[1], 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo('InitiateCheckout');\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockEec.fb);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Enhanced Ecommerce Purchase works
+  code: "mockData.enhancedEcommerce = true;\nmockEec.fb.num_items = 3;\nmockData.objectPropertyList\
+    \ = {};\n\nmock('copyFromDataLayer', key => {\n  if (key === 'ecommerce') return\
+    \ {\n    currencyCode: 'EUR',\n    purchase: {\n      products: mockEec.gtm.products\n\
+    \    }\n  };\n});\n\nlet index = 0;\nmock('copyFromWindow', key => {\n  if (key\
+    \ === 'fbq') return function() {\n    if (arguments[0] === 'trackSingle') {\n\
+    \      assertThat(arguments[1], 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo('Purchase');\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockEec.fb);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Object merge with variable and list works
+  code: "mockData.objectPropertiesFromVariable = {\n  prop1: 'var1',\n  prop2: 'var2',\n\
+    \  prop3: 'var3'\n};\n\nconst expected = {\n  prop1: 'val1',\n  prop2: 'val2',\n\
+    \  prop3: 'var3'\n};\n\nlet index = 0;\nmock('copyFromWindow', key => {\n  if\
+    \ (key === 'fbq') return function() {\n    if (arguments[0] === 'trackSingle')\
+    \ {\n      assertThat(arguments[1], 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo('PageView');\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(expected);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Object merge with variable, list and eec works
+  code: "mockData.enhancedEcommerce = true;\nmockData.objectPropertiesFromVariable\
+    \ = {\n  content_type: 'product_group'\n};\nmockData.objectPropertyList = [{\n\
+    \  name: 'currency',\n  value: 'USD'\n}];\nmockEec.fb.num_items = 3;\nmockEec.fb.content_type\
+    \ = 'product_group';\nmockEec.fb.currency = 'USD';\n\nmock('copyFromDataLayer',\
+    \ key => {\n  if (key === 'ecommerce') return {\n    currencyCode: 'EUR',\n  \
+    \  purchase: {\n      products: mockEec.gtm.products\n    }\n  };\n});\n\nlet\
+    \ index = 0;\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return function()\
+    \ {\n    if (arguments[0] === 'trackSingle') {\n      assertThat(arguments[1],\
+    \ 'trackSingle called with incorrect pixel ID').isEqualTo(mockData.pixelId.split(',')[index]);\n\
+    \      assertThat(arguments[2], 'trackSingle called with incorrect event name').isEqualTo('Purchase');\n\
+    \      assertThat(arguments[3], 'trackSingle called with incorrect event parameters').isEqualTo(mockEec.fb);\n\
+    \      index += 1;\n    }\n  };\n  if (key === 'clientParamBuilder') return {};\n\
+    \  if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};\n\
+    });\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\n\
+    // Verify that the tag finished successfully.\nassertThat(index, 'trackSingle\
+    \ called incorrect number of times').isEqualTo(2);\nassertApi('gtmOnSuccess').wasCalled();"
+- name: Send event ID
+  code: "mockData.eventId = 'eventId';\n\nmock('copyFromWindow', key => {\n  if (key\
+    \ === 'fbq') return function() {\n    if (arguments[0] === 'trackSingle') {\n\
+    \      assertThat(arguments[4], 'eventID not included in hit').isEqualTo({eventID:\
+    \ mockData.eventId});\n    }\n  };\n  if (key === 'clientParamBuilder') return\
+    \ {};\n  if (key === 'clientParamBuilder.processAndCollectAllParams') return ()\
+    \ => {};\n});\n     \n// Call runCode to run the template's code.\nrunCode(mockData);\n\
+    \n// Verify that the tag finished successfully.\nassertApi('gtmOnSuccess').wasCalled();"
+- name: ParamBuilder processAndCollectAllParams success
+  code: "mock('injectScript', (url, onsuccess, onfailure, token) => {\n  onsuccess();\n\
+    });\n\n// Replaced the basic mock with the callback-triggering mock\nmock('callInWindow',\
+    \ (propName, arg1, arg2, arg3) => {\n  if (propName === 'fbq' && arg1 === 'gateCheck')\
+    \ {\n    if (typeof arg3 === 'function') {\n      arg3(true);\n    }\n  }\n  return\
+    \ true; \n});\n\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return\
+    \ () => {};\n  if (key === 'clientParamBuilder') return {};\n  if (key === 'clientParamBuilder.processAndCollectAllParams')\
+    \ return () => {};\n  if (key === 'clientParamBuilder.processAndCollectParams')\
+    \ return undefined;\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
+    assertApi('gtmOnFailure').wasNotCalled();"
+- name: ParamBuilder processAndCollectParams success
+  code: "mock('injectScript', (url, onsuccess, onfailure, token) => {\n  onsuccess();\n\
+    });\n\n// Use the upgraded mock that triggers the callback\nmock('callInWindow',\
+    \ (propName, arg1, arg2, arg3) => {\n  if (propName === 'fbq' && arg1 === 'gateCheck')\
+    \ {\n    if (typeof arg3 === 'function') {\n      arg3(true);\n    }\n  }\n  return\
+    \ true; \n});\n\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return\
+    \ () => {};\n  if (key === 'clientParamBuilder') return {};\n  if (key === 'clientParamBuilder.processAndCollectAllParams')\
+    \ return undefined;\n  if (key === 'clientParamBuilder.processAndCollectParams')\
+    \ return () => {};\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasCalled();\n\
+    assertApi('gtmOnFailure').wasNotCalled();"
+- name: ParamBuilder loaded failed
+  code: "mock('injectScript', (url, onsuccess, onfailure, token) => {\n  onsuccess();\n\
+    });\n\n// Use the upgraded mock that triggers the callback\nmock('callInWindow',\
+    \ (propName, arg1, arg2, arg3) => {\n  if (propName === 'fbq' && arg1 === 'gateCheck')\
+    \ {\n    if (typeof arg3 === 'function') {\n      arg3(true);\n    }\n  }\n  return\
+    \ true; \n});\n\nmock('copyFromWindow', key => {\n  if (key === 'fbq') return\
+    \ () => {};\n  if (key === 'clientParamBuilder') return {};\n  // Both methods\
+    \ return undefined to trigger the failure block\n  if (key === 'clientParamBuilder.processAndCollectAllParams')\
+    \ return undefined;\n  if (key === 'clientParamBuilder.processAndCollectParams')\
+    \ return undefined;\n});\n\nrunCode(mockData);\n\nassertApi('gtmOnSuccess').wasNotCalled();\n\
+    assertApi('gtmOnFailure').wasCalled();"
+- name: optInMetaCAPI true - fbq optin signal fires before init
+  code: |-
+    mockData.optInMetaCAPI = true;
+    let calls = [];
+    mock('callInWindow', (propName, arg1, arg2, arg3) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (typeof arg3 === 'function') arg3(true);
+      }
+      return true;
+    });
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        calls.push(arguments[0]);
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    const optinIdx = calls.indexOf('optinMetaEnabledCapi');
+    const initIdx = calls.indexOf('init');
+    assertThat(optinIdx).isGreaterThan(-1);
+    assertThat(initIdx).isGreaterThan(-1);
+    assertThat(optinIdx).isLessThan(initIdx);
+    assertApi('gtmOnSuccess').wasCalled();
+- name: optInMetaCAPI undefined - legacy tag still opts in
+  code: |-
+    // Old tags created before optInMetaCAPI existed have data.optInMetaCAPI === undefined.
+    // The runtime must treat undefined as opted-in (no re-save required after upgrade).
+    mockData.optInMetaCAPI = undefined;
+    let calls = [];
+    mock('callInWindow', (propName, arg1, arg2, arg3) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (typeof arg3 === 'function') arg3(true);
+      }
+      return true;
+    });
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        calls.push(arguments[0]);
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    assertThat(calls).contains('optinMetaEnabledCapi');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: optInMetaCAPI false - fbq optin signal suppressed
+  code: |-
+    mockData.optInMetaCAPI = false;
+    let calls = [];
+    mock('callInWindow', (propName, arg1, arg2, arg3) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (typeof arg3 === 'function') arg3(true);
+      }
+      return true;
+    });
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        calls.push(arguments[0]);
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    assertThat(calls).doesNotContain('optinMetaEnabledCapi');
+    assertThat(calls).contains('init');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: GK off pixel load successfully
+  code: "// Reset the array instead of re-declaring it\ninjectedUrls = [];\n\nmock('injectScript',\
+    \ (url, onsuccess, onfailure, token) => {\n  injectedUrls.push(url);\n  if (onsuccess)\
+    \ {\n    onsuccess();\n  }\n});\n\n// Correctly target arg4 (onDisabled) to simulate\
+    \ the gateCheck failing\nmock('callInWindow', (propName, arg1, arg2, arg3, arg4,\
+    \ arg5) => {\n  if (propName === 'fbq' && arg1 === 'gateCheck') {\n    const onDisabled\
+    \ = arg4; // arg4 is the onDisabled callback\n    if (typeof onDisabled === 'function')\
+    \ {\n      onDisabled(arg2, arg5); // Pass gateName and pixelID back to the callback\n\
+    \    }\n  }\n  return true; \n});\n\n// Run the template\nrunCode(mockData);\n\
+    \n// 1. Verify the template finished successfully\nassertApi('gtmOnSuccess').wasCalled();\n\
+    assertApi('gtmOnFailure').wasNotCalled();\n\n// 2. Verify the Param Builder script\
+    \ was skipped\nassertThat(injectedUrls).doesNotContain('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');"
+- name: GA4 gate enabled - eventModel merged into tracking
+  code: |-
+    mockData.useGA4Ecommerce = true;
+    mockData.objectPropertyList = {};
+
+    var mockEventModel = {
+      currency: 'USD',
+      value: '99.99',
+      search_term: 'shoes',
+      transaction_id: 'order_abc',
+      items: [
+        { item_id: 'SKU1', price: 49.99, quantity: 2 },
+        { item_id: 'SKU2', item_name: 'Hat', price: 10.00, quantity: 1 }
+      ]
+    };
+
+    mock('copyFromDataLayer', key => {
+      if (key === 'eventModel') return mockEventModel;
+      return undefined;
+    });
+
+    var trackedProps = null;
+    let index = 0;
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'trackSingle') {
+          trackedProps = arguments[3];
+          index += 1;
+        }
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    assertThat(index).isGreaterThan(0);
+    assertThat(trackedProps.currency).isEqualTo('USD');
+    assertThat(trackedProps.value).isEqualTo('99.99');
+    assertThat(trackedProps.search_string).isEqualTo('shoes');
+    assertThat(trackedProps.order_id).isEqualTo('order_abc');
+    assertThat(trackedProps.contents.length).isEqualTo(2);
+    assertThat(trackedProps.contents[0].id).isEqualTo('SKU1');
+    assertThat(trackedProps.contents[1].id).isEqualTo('SKU2');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: GA4 gate disabled - standard props used
+  code: |-
+    mockData.useGA4Ecommerce = true;
+    mockData.objectPropertyList = {};
+
+    mock('copyFromDataLayer', key => {
+      if (key === 'eventModel') return { currency: 'EUR', value: '50.00' };
+      return undefined;
+    });
+
+    // Mock gateCheck to call onDisabled for enable_gtm_ga4_structure
+    mock('callInWindow', (propName, arg1, arg2, arg3, arg4, arg5) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (arg2 === 'enable_gtm_ga4_structure') {
+          if (typeof arg4 === 'function') arg4(arg2, arg5);
+        } else {
+          if (typeof arg3 === 'function') arg3(arg2, arg5);
+        }
+      }
+      return true;
+    });
+
+    var trackedProps = null;
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'trackSingle') {
+          trackedProps = arguments[3];
+        }
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    // Should NOT have GA4 fields since gate was disabled
+    assertThat(trackedProps.currency).isUndefined();
+    assertThat(trackedProps.search_string).isUndefined();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: GA4 not enabled - unchanged behavior
+  code: |-
+    mockData.useGA4Ecommerce = false;
+
+    var trackCount = 0;
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'trackSingle') trackCount += 1;
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    assertThat(trackCount).isEqualTo(2);
+    assertApi('gtmOnSuccess').wasCalled();
+- name: GA4 user_data merged into cidParams
+  code: |-
+    mockData.useGA4Ecommerce = true;
+    mockData.advancedMatchingList = [
+      {name: 'em', value: 'override@test.com'}
+    ];
+
+    var mockEventModel = {
+      user_data: {
+        email_address: 'ga4@test.com',
+        phone_number: '5551234567',
+        address: {
+          first_name: 'John',
+          last_name: 'Doe',
+          city: 'Menlo Park',
+          region: 'CA',
+          postal_code: '94025',
+          country: 'US'
+        }
+      }
+    };
+
+    mock('copyFromDataLayer', key => {
+      if (key === 'eventModel') return mockEventModel;
+      return undefined;
+    });
+
+    var initCidParams = null;
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return function() {
+        if (arguments[0] === 'init') initCidParams = arguments[2];
+      };
+      if (key === 'fbq.callMethod.apply') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return { processAndCollectAllParams: () => {} };
+      if (key === 'clientParamBuilder.processAndCollectAllParams') return () => {};
+      if (key === 'clientParamBuilder.processAndCollectParams') return () => {};
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    // advancedMatchingList 'em' should override ga4 user_data email_address
+    assertThat(initCidParams.em).isEqualTo('override@test.com');
+    // GA4 user_data fields should be present
+    assertThat(initCidParams.ph).isEqualTo('5551234567');
+    assertThat(initCidParams.fn).isEqualTo('John');
+    assertThat(initCidParams.ln).isEqualTo('Doe');
+    assertThat(initCidParams.ct).isEqualTo('Menlo Park');
+    assertThat(initCidParams.st).isEqualTo('CA');
+    assertThat(initCidParams.zp).isEqualTo('94025');
+    assertThat(initCidParams.country).isEqualTo('US');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: GK off pixel load failed
+  code: "// Reset the array\ninjectedUrls = [];\n\n// Mock injectScript to simulate\
+    \ a network error / loading failure\nmock('injectScript', (url, onsuccess, onfailure,\
+    \ token) => {\n  injectedUrls.push(url);\n  \n  // Notice we are calling onfailure()\
+    \ this time instead of onsuccess()\n  if (onfailure) {\n    onfailure(); \n  }\n\
+    });\n\n// Run the template\nrunCode(mockData);\n\n// 1. Verify failure was called\
+    \ and success was not\nassertApi('gtmOnFailure').wasCalled();\nassertApi('gtmOnSuccess').wasNotCalled();\n\
+    \n// 2. Verify only the first script was attempted\nassertThat(injectedUrls).contains('https://connect.facebook.net/en_US/fbevents.js');\n\
+    assertThat(injectedUrls).doesNotContain('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');"
+- name: ParamBuilder already called in proc - loading state
+  code: "// Simulate that the flag is already set from a previous event\nmock('copyFromWindow',\
+    \ key => {\n  if (key === '_fbq_param_builder_status') return 'loading'; \n  if\
+    \ (key === 'fbq') return () => {};\n  if (key === '_fbq_gtm_ids') return [];\n\
+    \  return undefined;\n});\n\ninjectedUrls = [];\nlet processCalled = false;\n\n\
+    // Monitor callInWindow to see if the param builder is executed\nmock('callInWindow',\
+    \ (propName) => {\n   if (propName === 'clientParamBuilder.processAndCollectAllParams'\
+    \ || \n       propName === 'clientParamBuilder.processAndCollectParams') {\n \
+    \    processCalled = true;\n   }\n   return true;\n});\n\n// Run the template\n\
+    runCode(mockData);\n\n// 1. Verify it did NOT attempt to inject the script\nassertThat(injectedUrls).doesNotContain('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');\n\
+    \n// 2. Verify it did NOT call the function (saving the cookie write)\nassertThat(processCalled).isFalse();\n\
+    \n// 3. Verify the tag still finished successfully\nassertApi('gtmOnSuccess').wasCalled();"
+- name: ParamBuilder clientParamBuilder global undefined - graceful skip (not stuck
+    running)
+  code: |-
+    // Regression: Magento 2 checkout (Hyva/Luma) scenario where bundle loads but
+    // clientParamBuilder never attaches to window. Tag must not hang "Still running".
+    mock('injectScript', (url, onsuccess, onfailure, token) => {
+      if (onsuccess) onsuccess();
+    });
+
+    mock('callInWindow', (propName, arg1, arg2, arg3) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (typeof arg3 === 'function') arg3(true);
+      }
+      return true;
+    });
+
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return undefined;
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    assertApi('logToConsole').wasCalledWith("ERROR: clientParamBuilder wasn't loaded correctly.");
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('gtmOnFailure').wasNotCalled();
+- name: ParamBuilder script load fails - graceful skip (not stuck running)
+  code: |-
+    // Regression: Network error / CSP block on the ParamBuilder bundle URL must
+    // not leave the tag hanging or fail the whole pixel event.
+    injectedUrls = [];
+    mock('injectScript', (url, onsuccess, onfailure, token) => {
+      injectedUrls.push(url);
+      if (url === 'https://connect.facebook.net/en_US/fbevents.js') {
+        if (onsuccess) onsuccess();
+      } else {
+        if (onfailure) onfailure();
+      }
+    });
+
+    mock('callInWindow', (propName, arg1, arg2, arg3) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (typeof arg3 === 'function') arg3(true);
+      }
+      return true;
+    });
+
+    runCode(mockData);
+
+    assertThat(injectedUrls).contains('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');
+    assertThat(injectedUrls).contains('https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');
+    assertApi('logToConsole').wasCalledWith('Facebook Pixel: Failed to load clientParamBuilder script');
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('gtmOnFailure').wasNotCalled();
+- name: ParamBuilder failure clears loading status so subsequent tags can proceed
+  code: |-
+    // Regression: If we leave _fbq_param_builder_status === 'loading' forever,
+    // every subsequent tag fire on the page skips injection AND skips gtmOnSuccess
+    // path through gtmSuccess; more importantly, it masks the failure for observability.
+    let statusWrites = [];
+    mock('setInWindow', (key, val) => {
+      if (key === '_fbq_param_builder_status') statusWrites.push(val);
+    });
+
+    mock('injectScript', (url, onsuccess, onfailure, token) => {
+      if (onsuccess) onsuccess();
+    });
+
+    mock('callInWindow', (propName, arg1, arg2, arg3) => {
+      if (propName === 'fbq' && arg1 === 'gateCheck') {
+        if (typeof arg3 === 'function') arg3(true);
+      }
+      return true;
+    });
+
+    mock('copyFromWindow', key => {
+      if (key === 'fbq') return () => {};
+      if (key === '_fbq_gtm_ids') return [];
+      if (key === 'clientParamBuilder') return undefined;
+      return undefined;
+    });
+
+    runCode(mockData);
+
+    assertThat(statusWrites).contains('loading');
+    assertThat(statusWrites).contains('complete');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: ParamBuilder already called in proc - complete state
+  code: "// Simulate that the flag is already set from a previous event\nmock('copyFromWindow',\
+    \ key => {\n  if (key === '_fbq_param_builder_status') return 'complete'; \n \
+    \ if (key === 'fbq') return () => {};\n  if (key === '_fbq_gtm_ids') return [];\n\
+    \  return undefined;\n});\n\ninjectedUrls = [];\nlet processCalled = false;\n\n\
+    // Monitor callInWindow to see if the param builder is executed\nmock('callInWindow',\
+    \ (propName) => {\n   if (propName === 'clientParamBuilder.processAndCollectAllParams'\
+    \ || \n       propName === 'clientParamBuilder.processAndCollectParams') {\n \
+    \    processCalled = true;\n   }\n   return true;\n});\n\n// Run the template\n\
+    runCode(mockData);\n\n// 1. Verify it did NOT attempt to inject the script\nassertThat(injectedUrls).doesNotContain('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');\n\
+    \n// 2. Verify it did NOT call the function (saving the cookie write)\nassertThat(processCalled).isFalse();\n\
+    \n// 3. Verify the tag still finished successfully\nassertApi('gtmOnSuccess').wasCalled();"
+setup: "const mockData = {\n  pixelId: '12345,23456',\n  eventName: 'standard',\n\
+  \  standardEventName: 'PageView',\n  customEventName: 'custom',\n  variableEventName:\
+  \ 'standard',\n  consent: true,\n  advancedMatching: false,\n  advancedMatchingList:\
+  \ [\n    {name: 'ct', value: 'Helsinki'},\n    {name: 'cn', value: 'Finland'}\n\
+  \  ],\n  objectPropertiesFromVariable: false,\n  objectPropertyList: [\n    {name:\
+  \ 'prop1', value: 'val1'},\n    {name: 'prop2', value: 'val2'}\n  ],\n  disableAutoConfig:\
+  \ false,\n  disablePushState: false,\n  enhancedEcommerce: false,\n  eventId: '',\n\
+  \  gtmOnSuccess: () => {},\n  gtmOnFailure: () => {}\n};\n\n// Restored to YOUR\
+  \ original structure!\nconst mockEec = {\n  gtm: {  \n    products: [{\n      id:\
+  \ 'i1',\n      name: 'n1',\n      category: 'c1',\n      price: '1.00',\n      quantity:\
+  \ 1\n    },{\n      id: 'i2',\n      name: 'n2',\n      category: 'c2',\n      price:\
+  \ '2.00',\n      quantity: 2\n    }]\n  },\n  fb: {\n    content_type: 'product',\n\
+  \    contents: [{\n      id: 'i1',\n      quantity: 1\n    },{\n      id: 'i2',\n\
+  \      quantity: 2\n    }],\n    currency: 'EUR',\n    value: 5.00\n  }\n};\n\n\
+  let injectedUrls = [];\n\nmock('injectScript', (url, onsuccess, onfailure, token)\
+  \ => {\n  injectedUrls.push(url);\n  if (onsuccess) {\n    onsuccess();\n  }\n});\n\
+  \nmock('callInWindow', (propName, arg1, arg2, arg3, arg4, arg5) => {\n  if (propName\
+  \ === 'fbq' && arg1 === 'gateCheck') {\n    const gateName = arg2;\n    const onEnabled\
+  \ = arg3;\n    const onDisabled = arg4;\n    const pixelID = arg5;\n    \n    if\
+  \ (typeof onEnabled === 'function') {\n      onEnabled(gateName, pixelID); \n  \
+  \  }\n  }\n  return true; \n});\n\nmock('copyFromWindow', key => {\n  if (key ===\
+  \ 'fbq') return () => {};\n  if (key === 'fbq.callMethod.apply') return () => {};\n\
+  \  if (key === '_fbq_gtm_ids') return [];\n  \n  if (key === 'clientParamBuilder')\
+  \ {\n    return {\n      processAndCollectAllParams: () => {},\n      processAndCollectParams:\
+  \ () => {}\n    };\n  }\n  if (key === 'clientParamBuilder.processAndCollectAllParams')\
+  \ return () => {};\n  if (key === 'clientParamBuilder.processAndCollectParams')\
+  \ return () => {};\n  \n  return undefined;\n});\n\n// We return a dummy object\
+  \ here, but your tests will override it to use mockEec.gtm\nmock('copyFromDataLayer',\
+  \ (key) => { \n  return undefined;\n});\n\nmock('getUrl', () => 'https://example.com');\n\
+  mock('logToConsole', () => {});\nmock('createQueue', () => {});\nmock('setInWindow',\
+  \ () => {});\nmock('aliasInWindow', () => {});"
+
+
+___NOTES___
+
+Created on 18/05/2019, 21:57:16

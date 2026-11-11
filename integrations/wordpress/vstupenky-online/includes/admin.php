@@ -64,13 +64,13 @@ function admin_page() {
 		<details>
 		<summary><?php esc_html_e( 'Shortcode, display options and service information', 'vstupenky-online' ); ?></summary>
 		<h2><?php esc_html_e( 'Shortcode and height', 'vstupenky-online' ); ?></h2>
-		<p><code>[vstupenky_online url="https://vstupenky.online/form/saved-slug" title="Tickets for our event"]</code></p>
-		<p><code>[vstupenky_online url="https://vstupenky.online/form/saved-slug" mode="fixed" height="800"]</code></p>
+		<p><code>[vstupenky_online url="https://vstupenky.online/form/saved-slug" title="Tickets for our event" measurement="host"]</code></p>
+		<p><code>[vstupenky_online url="https://vstupenky.online/form/saved-slug" mode="fixed" height="800" measurement="host"]</code></p>
 		<p><?php esc_html_e( 'Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab.', 'vstupenky-online' ); ?></p>
 		<p><a href="https://vstupenky.online/events?help=forms" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open forms', 'vstupenky-online' ); ?></a></p>
 		<p><?php esc_html_e( 'Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance.', 'vstupenky-online' ); ?></p>
 		<h2><?php esc_html_e( 'External service and privacy', 'vstupenky-online' ); ?></h2>
-		<p><?php esc_html_e( 'The published form connects to vstupenky.online. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form.', 'vstupenky-online' ); ?></p>
+		<p><?php esc_html_e( 'The published form connects to vstupenky.online and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form.', 'vstupenky-online' ); ?></p>
 		<p>
 			<a href="https://vstupenky.online/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open vstupenky.online', 'vstupenky-online' ); ?></a> |
 			<a href="https://vstupenky.online/privacy/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Privacy policy', 'vstupenky-online' ); ?></a> |

@@ -1,17 +1,17 @@
 import {
   type PaymentClaim,
   type DispatchClaim,
-  type PaymentDependencies,
+  type HostedPaymentDependencies,
   PaymentError,
   type ProviderEvent,
   record,
 } from "./contracts.ts";
 
-function fail(deps: PaymentDependencies, suffix: string): never {
+function fail(deps: HostedPaymentDependencies, suffix: string): never {
   throw new PaymentError(`${deps.connector.id}_${suffix}`, true);
 }
 
-async function preparedClaim(claim: PaymentClaim, deps: PaymentDependencies, creation = false) {
+async function preparedClaim(claim: PaymentClaim, deps: HostedPaymentDependencies, creation = false) {
   await deps.verifyPlatform();
   if (claim.providerId !== deps.connector.id || claim.disposition !== "dispatch" || claim.snapshot.livemode !== deps.livemode)
     fail(deps, "dispatch_invalid");
@@ -29,7 +29,7 @@ async function preparedClaim(claim: PaymentClaim, deps: PaymentDependencies, cre
 export async function synchronizePaymentClaim(
   value: PaymentClaim,
   event: ProviderEvent | null,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
   checkoutId?: string,
 ) {
   const { claim, snapshot, lease } = await preparedClaim(value, deps);
@@ -53,7 +53,7 @@ export async function synchronizePaymentClaim(
 
 export async function checkoutPayment(
   token: string,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
 ): Promise<{ payment: Record<string, unknown>; checkoutUrl?: string }> {
   const claim = await deps.store.claimCheckout(token);
   if (claim.providerId !== deps.connector.id) fail(deps, "dispatch_invalid");
@@ -100,7 +100,7 @@ export async function checkoutPayment(
 /** Retry never chooses a new attempt, expiry, recipient or idempotency key. */
 export async function recoverPaymentClaim(
   value: PaymentClaim,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
 ) {
   const { claim, snapshot, lease } = await preparedClaim(value, deps,
     deps.connector.recoveryRequiresSource !== false && value.disposition === "dispatch" && !value.checkoutId && Math.floor(Date.now()/1000) < value.snapshot.expiresAt);
@@ -119,7 +119,7 @@ export async function recoverPaymentClaim(
 
 export async function checkoutHandoff(
   token: string,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
   consume = true,
 ) {
   const result = record(await deps.store.readHandoff(token, consume));

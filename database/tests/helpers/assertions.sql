@@ -96,6 +96,7 @@ $$ LANGUAGE plpgsql;
 
 -- Adopt direct-insert legacy fixtures explicitly before exercising real readers.
 -- Temporary and invoker-only: this helper cannot bypass application write guards.
+-- session-setup-start
 CREATE OR REPLACE FUNCTION pg_temp.adopt_public_link_fixtures()
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
@@ -114,8 +115,9 @@ BEGIN
   SELECT f.link,f.id FROM public.forms f WHERE coalesce(f.link,'')<>''
    AND NOT EXISTS(SELECT 1 FROM public.form_link_reservations r WHERE r.slug=f.link);
 END $$;
+-- session-setup-end
 
--- These helpers are injected and rolled back by the SQL runner. New function
+-- Public helpers are installed once in the disposable group workspace. New function
 -- defaults intentionally grant no client execution; role-switching assertions
 -- need their own explicit test-only grants.
 GRANT EXECUTE ON FUNCTION public.assert_true(boolean,text),

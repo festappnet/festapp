@@ -19,17 +19,21 @@ class ReportTimelineSeries {
 
 // Plot coordinates may be approximate; all displayed values use integer cents.
 BigInt reportMinorUnits(String amount) {
-  final parts = amount.split('.');
-  if (parts.length > 2 || (parts.length == 2 && parts[1].length > 2)) {
+  if (!RegExp(r'^-?[0-9]+(\.[0-9]{1,2})?$').hasMatch(amount)) {
     throw const FormatException('Expected a two-decimal payment');
   }
-  return BigInt.parse(parts[0]) * BigInt.from(100) +
-      BigInt.parse(parts.length == 1 ? '0' : parts[1].padRight(2, '0'));
+  final negative = amount.startsWith('-');
+  final parts = (negative ? amount.substring(1) : amount).split('.');
+  final cents = BigInt.parse(parts[0]) * BigInt.from(100) +
+    BigInt.parse(parts.length == 1 ? '0' : parts[1].padRight(2, '0'));
+  return negative ? -cents : cents;
 }
 
-String reportChartAmount(BigInt amount, String? currency) => currency == null
-    ? amount.toString()
-    : '${amount ~/ BigInt.from(100)},${(amount % BigInt.from(100)).toString().padLeft(2, '0')} $currency';
+String reportChartAmount(BigInt amount, String? currency) {
+  if (currency == null) return amount.toString();
+  final absolute = amount.abs();
+  return '${amount.isNegative ? '-' : ''}${absolute ~/ BigInt.from(100)},${(absolute % BigInt.from(100)).toString().padLeft(2, '0')} $currency';
+}
 
 List<DateTime> reportChartDays(DateTime start, DateTime end) => [
       for (var day = start;
@@ -159,7 +163,9 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
         : ((padded > minimum ? padded : minimum) + BigInt.one) ~/
             BigInt.two *
             BigInt.two;
-    if (peak == BigInt.zero) {
+    final trough = amounts.expand((x) => x).fold(BigInt.zero, (a, b) => a < b ? a : b);
+    final lowerBound = trough + trough ~/ BigInt.from(5);
+    if (peak == BigInt.zero && trough == BigInt.zero) {
       final colors = Theme.of(context).colorScheme;
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         SizedBox(
@@ -194,7 +200,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
     }
     final lastActivity = days.lastIndexWhere(
       (day) => widget.series.any(
-        (s) => (s.amounts[day] ?? BigInt.zero) > BigInt.zero,
+        (s) => (s.amounts[day] ?? BigInt.zero) != BigInt.zero,
       ),
     );
     final selected = math.min(
@@ -205,6 +211,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
         widget.currency == null && !widget.series.any((s) => s.currency != null)
             ? maximum.toDouble()
             : maximum.toDouble() / 100;
+    final lowerAxis = money ? lowerBound.toDouble() / 100 : lowerBound.toDouble();
     final colors = Theme.of(context).colorScheme;
     void select(double x, double width) {
       final index = (x / width * math.max(1, days.length - 1)).round().clamp(
@@ -282,10 +289,10 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                     Text(
-                      NumberFormat.compact().format(axis / 2),
+                      NumberFormat.compact().format((axis + lowerAxis) / 2),
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
-                    Text('0', style: Theme.of(context).textTheme.labelSmall),
+                    Text(NumberFormat.compact().format(lowerAxis), style: Theme.of(context).textTheme.labelSmall),
                   ],
                 ),
               ),
@@ -309,6 +316,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
                                   ticks.map((tick) => tick.fraction).toList(),
                               amounts: amounts,
                               maximum: maximum,
+                            minimum: lowerBound,
                               colors:
                                   widget.series.map((s) => s.color).toList(),
                               grid:
@@ -380,7 +388,7 @@ class _ReportTimelineChartState extends State<ReportTimelineChart> {
 class _TimelinePainter extends CustomPainter {
   final List<double> ticks;
   final List<List<BigInt>> amounts;
-  final BigInt maximum;
+  final BigInt maximum, minimum;
   final List<Color> colors;
   final Color grid;
   final int? selected;
@@ -389,6 +397,7 @@ class _TimelinePainter extends CustomPainter {
     required this.ticks,
     required this.amounts,
     required this.maximum,
+    required this.minimum,
     required this.colors,
     required this.grid,
     required this.selected,
@@ -396,6 +405,9 @@ class _TimelinePainter extends CustomPainter {
   });
   @override
   void paint(Canvas canvas, Size size) {
+    double yFor(BigInt value) => size.height *
+      (1 - (value - minimum).toDouble() / (maximum - minimum).toDouble());
+    final baseline = yFor(BigInt.zero);
     final gridPaint = Paint()
       ..color = grid
       ..strokeWidth = 1;
@@ -417,16 +429,16 @@ class _TimelinePainter extends CustomPainter {
         final x = values.length == 1
             ? size.width / 2
             : i * size.width / (values.length - 1);
-        final y = size.height * (1 - values[i].toDouble() / maximum.toDouble());
+        final y = yFor(values[i]);
         if (bars) {
           final width = math.min(22.0, size.width / values.length * 0.7);
           canvas.drawRRect(
             RRect.fromRectAndRadius(
               Rect.fromLTRB(
                 math.max(0, x - width / 2),
-                y,
+                math.min(y, baseline),
                 math.min(size.width, x + width / 2),
-                size.height,
+                math.max(y, baseline),
               ),
               const Radius.circular(3),
             ),
@@ -446,8 +458,8 @@ class _TimelinePainter extends CustomPainter {
       if (!bars) {
         if (amounts.length == 1 && values.length > 1) {
           final area = Path.from(path)
-            ..lineTo(size.width, size.height)
-            ..lineTo(0, size.height)
+            ..lineTo(size.width, baseline)
+            ..lineTo(0, baseline)
             ..close();
           canvas.drawPath(
               area,
@@ -470,8 +482,7 @@ class _TimelinePainter extends CustomPainter {
           count == 1 ? size.width / 2 : selected! * size.width / (count - 1);
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
       for (var s = 0; s < amounts.length; s++) {
-        final y = size.height *
-            (1 - amounts[s][selected!].toDouble() / maximum.toDouble());
+        final y = yFor(amounts[s][selected!]);
         canvas.drawCircle(Offset(x, y), 4, Paint()..color = colors[s]);
       }
     }

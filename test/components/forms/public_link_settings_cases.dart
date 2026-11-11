@@ -61,10 +61,12 @@ void main() {
         expect(code, contains('Order &quot;tickets&quot;'));
         expect(code, contains('Open &lt;order&gt;'));
         expect(code.contains('data-festapp-embed'), isTrue);
+        expect(code, contains('data-festapp-datalayer'));
         expect(code.contains('<script'), isTrue);
         expect(code.contains('data-festapp-style="inherit"'), false);
         expect(code, contains('allow="clipboard-write"'));
         expect(code, contains('height="800"'));
+        expect(code, contains('color-scheme:light dark'));
         expect(code, isNot(contains('sandbox')));
         expect(code.contains('data-festapp-height="fixed"'), !automatic);
       }
@@ -80,9 +82,32 @@ void main() {
     },
   );
 
+  test(
+    'embed measurement option explicitly opts into the website dataLayer',
+    () {
+      for (final automatic in [true, false]) {
+        String code({bool hostDataLayer = true}) => formEmbedCode(
+          tenantUrl: 'https://tenant.example',
+          savedLink: 'saved',
+          title: 'Form',
+          fallbackLabel: 'Open',
+          automatic: automatic,
+          hostDataLayer: hostDataLayer,
+        );
+        final host = code();
+        expect(code(hostDataLayer: true), host);
+        expect(host, contains('data-festapp-datalayer'));
+        expect(
+          code(hostDataLayer: false),
+          host.replaceFirst(' data-festapp-datalayer', ''),
+        );
+      }
+    },
+  );
+
   testWidgetsWithEnvironment(
     () => _environment,
-    'embed dialog uses saved form appearance and exposes sizing only',
+    'embed dialog preserves appearance and independently controls sizing and measurement',
     (tester) async {
       await _environment.pumpWidget(
         tester,
@@ -99,24 +124,45 @@ void main() {
           .widgetList<CopyButton>(find.byType(CopyButton))
           .singleWhere((button) => button.value.contains('<iframe'))
           .value;
-      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(find.byType(CheckboxListTile), findsOneWidget);
       expect(find.text(FormStrings.embedInheritStyle), findsNothing);
       expect(copiedCode(), isNot(contains('data-festapp-style')));
       expect(copiedCode(), contains('/embed.js'));
+      final measurement = find.byKey(const ValueKey('embed-host-datalayer'));
+      expect(find.text(FormStrings.embedHostDataLayer), findsOneWidget);
+      expect(tester.widget<CheckboxListTile>(measurement).value, isTrue);
+      final hostCode = copiedCode();
+      await tester.ensureVisible(measurement);
+      await tester.tap(measurement);
+      await tester.pumpAndSettle();
+      expect(tester.widget<CheckboxListTile>(measurement).value, isFalse);
+      expect(
+        copiedCode(),
+        hostCode.replaceFirst(' data-festapp-datalayer', ''),
+      );
+      await tester.ensureVisible(find.byType(DropdownButton<bool>));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedFixed).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(find.byType(CheckboxListTile), findsOneWidget);
       expect(copiedCode(), isNot(contains('data-festapp-style')));
       expect(copiedCode(), contains('/embed.js'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
       expect(copiedCode(), contains('allow="clipboard-write"'));
+      expect(copiedCode(), isNot(contains('data-festapp-datalayer')));
+      await tester.ensureVisible(measurement);
+      await tester.tap(measurement);
+      await tester.pumpAndSettle();
+      expect(tester.widget<CheckboxListTile>(measurement).value, isTrue);
+      expect(copiedCode(), contains('data-festapp-datalayer'));
+      expect(copiedCode(), contains('data-festapp-height="fixed"'));
+      await tester.ensureVisible(find.byType(DropdownButton<bool>));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedAutomatic).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(find.byType(CheckboxListTile), findsOneWidget);
       expect(copiedCode(), isNot(contains('data-festapp-style')));
       expect(copiedCode(), isNot(contains('data-festapp-height="fixed"')));
     },
@@ -142,7 +188,10 @@ void main() {
       );
       await tester.tap(find.text(FormStrings.embedAction));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('embed-open-appearance')));
+      final openAppearance = find.byKey(const ValueKey('embed-open-appearance'));
+      await tester.ensureVisible(openAppearance);
+      await tester.pumpAndSettle();
+      await tester.tap(openAppearance);
       await tester.pumpAndSettle();
       expect(opened, 1);
       expect(find.byKey(const ValueKey('embed-open-appearance')), findsNothing);

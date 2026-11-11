@@ -106,3 +106,12 @@ test('canonical route stays in web client on app tenants and disposes with navig
     RouterService.pushState('/'); assert(page.generation > before); assert.equal(RouterService._accountConnectionsPage, null);
     window.history.replaceState({}, '', '/settings/connections');
 });
+
+test('device names render as text next to the registered application name', async () => {
+    const named = { ...connection, client: 'Registered application', name: '<img src=x onerror=alert(1)>' };
+    const f = fixture({ invoke: async () => ({ data: { connections: [named] } }) });
+    await f.page.init();
+    assert.equal(f.container.querySelector('.account-connection h3').textContent, 'Registered application · <img src=x onerror=alert(1)>');
+    assert.equal(f.container.querySelector('img'), null);
+    f.page.dispose();
+});

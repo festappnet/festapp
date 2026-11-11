@@ -49,7 +49,7 @@ BEGIN
   v_claim:=public.claim_email();
   PERFORM assert_eq((v_claim->>'order_id')::bigint,v_order,'ticket preparation uses canonical queue');
   PERFORM public.prepare_email((v_claim->>'message_id')::uuid,(v_claim->>'lease_token')::uuid,
-    '{"sealed":"synthetic-ticket-snapshot"}',jsonb_build_object('ticket_ids',jsonb_build_array(v_ticket)));
+    '{"sealed":"synthetic-ticket-snapshot"}',jsonb_build_object('ticket_ids',jsonb_build_array(v_ticket),'wallet_fingerprint',public.ticket_wallet_fingerprint(v_occ)));
   v_start:=public.begin_email_send((v_claim->>'attempt_id')::uuid,(v_claim->>'lease_token')::uuid);
   PERFORM assert_eq(v_start->>'disposition','deferred','global daily quota still gates tickets');
   PERFORM assert_eq((SELECT attempt_count FROM public.email_messages WHERE order_id=v_order AND message_kind='order_tickets'),0,'capacity wait does not consume a send attempt');

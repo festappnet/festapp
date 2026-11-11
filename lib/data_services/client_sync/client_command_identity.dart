@@ -36,10 +36,7 @@ class ClientCommandIdentity {
     String? principalBinding,
     String scopeBinding,
   ) =>
-      'client_command_active:$namespace:${fingerprint([
-            principalBinding,
-            scopeBinding
-          ])}';
+      'client_command_active:$namespace:${fingerprint([principalBinding, scopeBinding])}';
 
   static String newCommandId() => const Uuid().v4();
 
@@ -59,8 +56,9 @@ class ClientCommandIdentity {
       final store = StoreRef.main();
       var commandId = await store.record(key).get(transaction) as String?;
       if (principalBinding != null) {
-        final previousBinding =
-            await store.record('$key:principal').get(transaction);
+        final previousBinding = await store
+            .record('$key:principal')
+            .get(transaction);
         if (commandId != null && previousBinding != principalBinding) {
           throw StateError('PAYMENT_RECOVERY_PRINCIPAL_CHANGED');
         }
@@ -88,7 +86,9 @@ class ClientCommandIdentity {
         await store.record('$key:scope').put(transaction, activeKey);
       }
       if (requestJson != null) {
-        await store.record('$key:request').put(
+        await store
+            .record('$key:request')
+            .put(
               transaction,
               jsonEncode(_canonicalize(jsonDecode(requestJson))),
             );
@@ -97,9 +97,9 @@ class ClientCommandIdentity {
     });
   }
 
-  /// A terminal response may clear only the intent that produced it.
-  /// The transaction prevents an old response from deleting a later claim.
-  static Future<bool> completeIntent(
+  /// Fence actual dispatches through the same persisted identity owner. A late
+  /// caller cannot dispatch a command whose proven rejection removed its claim.
+  static Future<int> registerDispatch(
     String namespace,
     Object? payload, {
     required String commandId,
@@ -112,6 +112,38 @@ class ClientCommandIdentity {
       if (await store.record(key).get(transaction) != commandId ||
           await store.record('$key:principal').get(transaction) !=
               principalBinding) {
+        throw StateError('CLIENT_COMMAND_DISPATCH_IDENTITY_CHANGED');
+      }
+      final count =
+          ((await store.record('$key:dispatches').get(transaction)) as int? ??
+              0) +
+          1;
+      await store.record('$key:dispatches').put(transaction, count);
+      return count;
+    });
+  }
+
+  /// A terminal response may clear only the intent that produced it.
+  /// The transaction prevents an old response from deleting a later claim.
+  static Future<bool> completeIntent(
+    String namespace,
+    Object? payload, {
+    required String commandId,
+    required String principalBinding,
+    bool onlyIfSingleDispatch = false,
+    bool retainIdentity = false,
+  }) async {
+    final key = _pendingKey(namespace, payload);
+    final db = await StorageHelper.openDatabase();
+    return db.transaction((transaction) async {
+      final store = StoreRef.main();
+      if (await store.record(key).get(transaction) != commandId ||
+          await store.record('$key:principal').get(transaction) !=
+              principalBinding) {
+        return false;
+      }
+      if (onlyIfSingleDispatch &&
+          await store.record('$key:dispatches').get(transaction) != 1) {
         return false;
       }
       final activeKey = await store.record('$key:scope').get(transaction);
@@ -125,8 +157,11 @@ class ClientCommandIdentity {
       }
       await store.record('$key:scope').delete(transaction);
       await store.record('$key:request').delete(transaction);
-      await store.record(key).delete(transaction);
-      await store.record('$key:principal').delete(transaction);
+      if (!retainIdentity) {
+        await store.record(key).delete(transaction);
+        await store.record('$key:principal').delete(transaction);
+        await store.record('$key:dispatches').delete(transaction);
+      }
       await store.record('$key:preconditions').delete(transaction);
       return true;
     });
@@ -180,8 +215,10 @@ class ClientCommandIdentity {
   /// Released order replacements stored only a payload digest, not its bytes.
   /// They can be resumed only when the original form values are supplied again.
   /// Never let a new replacement silently bypass an uncertain legacy intent.
-  static Future<String?> pendingLegacyOrderReplacement(Object payload,
-      {required String principalBinding}) async {
+  static Future<String?> pendingLegacyOrderReplacement(
+    Object payload, {
+    required String principalBinding,
+  }) async {
     const namespace = 'ticket_order_replace';
     final exactKey = _pendingKey(namespace, payload);
     final db = await StorageHelper.openDatabase();
@@ -190,13 +227,16 @@ class ClientCommandIdentity {
       final keys = await store.findKeys(transaction);
       String? exact;
       var hasPending = false;
-      for (final key in keys.whereType<String>().where((key) =>
-          key.startsWith('client_command_pending:$namespace:') &&
-          !key
-              .substring('client_command_pending:$namespace:'.length)
-              .contains(':'))) {
+      for (final key in keys.whereType<String>().where(
+        (key) =>
+            key.startsWith('client_command_pending:$namespace:') &&
+            !key
+                .substring('client_command_pending:$namespace:'.length)
+                .contains(':'),
+      )) {
         if (await store.record('$key:principal').get(transaction) !=
-            principalBinding) continue;
+            principalBinding)
+          continue;
         final id = await store.record(key).get(transaction);
         if (id is! String || id.isEmpty) continue;
         hasPending = true;
@@ -243,13 +283,14 @@ class ClientCommandIdentity {
 
   static Object? _canonicalize(Object? value) {
     if (value is Map) {
-      final entries = value.entries
-          .map(
-            (entry) =>
-                MapEntry(entry.key.toString(), _canonicalize(entry.value)),
-          )
-          .toList()
-        ..sort((left, right) => left.key.compareTo(right.key));
+      final entries =
+          value.entries
+              .map(
+                (entry) =>
+                    MapEntry(entry.key.toString(), _canonicalize(entry.value)),
+              )
+              .toList()
+            ..sort((left, right) => left.key.compareTo(right.key));
       return {for (final entry in entries) entry.key: entry.value};
     }
     if (value is Iterable) return value.map(_canonicalize).toList();

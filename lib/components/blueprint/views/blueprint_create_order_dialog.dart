@@ -116,6 +116,7 @@ class _BlueprintCreateOrderDialogState
     }
     if (!valid) return null;
     return {
+      'client_capabilities': ['cash_reservations','no_payment_deadline'],
       'email': _email.text.trim(),
       'form_key': _requirements!.formKey,
       if (_customerFields != null)

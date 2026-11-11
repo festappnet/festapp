@@ -1,14 +1,21 @@
+import 'package:festapp_core/communication_tone.dart';
+
 import 'unit_measurement_settings.dart';
+import '../unit_measurement_approval.dart';
+
+import 'package:fstapp/services/exception_handler.dart';
+
 import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
+
 import '../verification/verification_strings.dart';
+
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -56,6 +63,21 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   String? _selectedTimezone;
   String _communicationTone = 'formal';
   bool _measurementEnabled = false;
+  UnitMeasurementApproval? _measurementApproval;
+  bool _isLoadingMeasurementApproval = false;
+  bool _measurementApprovalLoadFailed = false;
+  bool _isRequestingMeasurement = false;
+  bool _measurementConsentBridge = false;
+  String _measurementConsentLayout = 'bar';
+  final _measurementConsentTitleController = TextEditingController();
+  final _measurementConsentTextController = TextEditingController();
+  final _restoredConsent = <TextEditingController>{};
+  String? _storedConsentTitle;
+  String? _storedConsentText;
+  String _initialConsentTitle = '';
+  String _initialConsentText = '';
+  final _measurementPrivacyUrlController = TextEditingController();
+  final _measurementWebsitesController = TextEditingController();
   final _measurementGtmController = TextEditingController();
   final _measurementScriptsController = TextEditingController();
   bool get _organizationMeasurementEnabled =>
@@ -85,7 +107,11 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
     _replyToEmailController.dispose();
+    _measurementWebsitesController.dispose();
     _measurementGtmController.dispose();
+    _measurementPrivacyUrlController.dispose();
+    _measurementConsentTitleController.dispose();
+    _measurementConsentTextController.dispose();
     _measurementScriptsController.dispose();
     super.dispose();
   }
@@ -133,17 +159,23 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     final unitId = _unit.id;
     if (unitId == null ||
         !StripeFeature.canActivate ||
-        RightsService.currentUnit()?.id != unitId) return;
+        RightsService.currentUnit()?.id != unitId)
+      return;
     setState(() => _isUpdatingStripeFeature = true);
     try {
-      await Supabase.instance.client.rpc('set_stripe_unit_feature',
-          params: {'p_unit': unitId, 'p_enabled': enabled});
+      await Supabase.instance.client.rpc(
+        'set_stripe_unit_feature',
+        params: {'p_unit': unitId, 'p_enabled': enabled},
+      );
       await RightsService.refreshAfterAuthorizationChange();
       if (mounted) widget.onUnitUpdated();
     } catch (_) {
       if (mounted)
-        ToastHelper.Show(context, 'Nastavení Stripe se nepodařilo uložit.',
-            severity: ToastSeverity.NotOk);
+        ToastHelper.Show(
+          context,
+          'Nastavení Stripe se nepodařilo uložit.',
+          severity: ToastSeverity.NotOk,
+        );
     } finally {
       if (mounted) setState(() => _isUpdatingStripeFeature = false);
     }
@@ -179,22 +211,115 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         });
       }
     }
+    if (mounted && _organizationMeasurementEnabled) {
+      await _loadMeasurementApproval();
+    }
   }
-// ... (existing code omitted) ...
+
+  Future<void> _loadMeasurementApproval() async {
+    if (_isLoadingMeasurementApproval || _unit.id == null) return;
+    setState(() {
+      _isLoadingMeasurementApproval = true;
+      _measurementApprovalLoadFailed = false;
+    });
+    try {
+      final approval = await ExceptionHandler.guard(
+        context,
+        futureFunction: () => DbUnits.getMeasurementApproval(_unit.id!),
+      );
+      if (mounted) {
+        setState(() {
+          _measurementApproval = approval;
+          _measurementApprovalLoadFailed = approval == null;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingMeasurementApproval = false);
+    }
+  }
+
+  Future<void> _requestMeasurementApproval() async {
+    if (!_canEdit ||
+        _isSaving ||
+        _isRequestingMeasurement ||
+        _isLoadingMeasurementApproval ||
+        _unit.id == null) {
+      return;
+    }
+    if (_measurementApproval?.canRequest != true ||
+        !(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    final sites = UnitMeasurementSettings.parseWebsites(
+      _measurementWebsitesController.text,
+    );
+    final saved = _measurementApproval!.savedOrigins;
+    if (sites.length != saved.length || !sites.every(saved.contains)) return;
+    setState(() => _isRequestingMeasurement = true);
+    try {
+      final approval = await ExceptionHandler.guard(
+        context,
+        futureFunction: () async {
+          try {
+            return await DbUnits.requestMeasurementApproval(_unit.id!);
+          } catch (error) {
+            final detail = error.toString();
+            final message = detail.contains('measurement_request_no_recipient')
+                ? FormStrings.measurementRequestNoRecipient
+                : detail.contains('measurement_notification_origin_missing')
+                ? FormStrings.measurementNotificationOriginMissing
+                : null;
+            if (message != null) {
+              throw AppError(
+                code: 'measurement_request',
+                message: message,
+                rawJson: '{}',
+              );
+            }
+            rethrow;
+          }
+        },
+      );
+      if (mounted && approval != null) {
+        setState(() => _measurementApproval = approval);
+      }
+    } finally {
+      if (mounted) setState(() => _isRequestingMeasurement = false);
+    }
+  }
+  // ... (existing code omitted) ...
 
   void _initializeFormState() {
     _title = _unit.title;
     _canEdit = RightsService.hasCapability(
-        AuthorizationCapabilities.unitSettingsWrite);
+      AuthorizationCapabilities.unitSettingsWrite,
+    );
     _replyToEmailController = TextEditingController(
       text: _unit.data?[Tb.units.data_reply_to] as String? ?? '',
     );
-    _communicationTone =
-        _unit.data?[Tb.units.data_communication_tone] == 'informal'
-            ? 'informal'
-            : 'formal';
+    _communicationTone = CommunicationTone.resolve(
+      _unit.data?[Tb.units.data_communication_tone],
+    );
 
     _measurementEnabled = _unit.data?['measurement_enabled'] == true;
+    _measurementConsentBridge =
+        _unit.data?['measurement_consent_bridge'] == true;
+    _measurementConsentLayout =
+        _unit.data?['measurement_consent_layout'] == 'modal' ? 'modal' : 'bar';
+    // Unset title/text show the default prefilled; see _consentOverride.
+    _storedConsentTitle = _unit.data?['measurement_consent_title'] as String?;
+    _storedConsentText = _unit.data?['measurement_consent_text'] as String?;
+    _measurementConsentTitleController.text =
+        _storedConsentTitle ?? FormStrings.measurementConsentDefaultTitle;
+    _measurementConsentTextController.text =
+        _storedConsentText ?? FormStrings.measurementConsentDefaultText;
+    _initialConsentTitle = _measurementConsentTitleController.text;
+    _initialConsentText = _measurementConsentTextController.text;
+    _measurementPrivacyUrlController.text =
+        _unit.data?['measurement_privacy_url'] as String? ?? '';
+    _measurementWebsitesController.text = List<String>.from(
+      _unit.data?['measurement_websites'] ?? const [],
+    ).join('\n');
     _measurementGtmController.text =
         _unit.data?['measurement_gtm_container'] as String? ?? '';
     _measurementScriptsController.text =
@@ -210,10 +335,29 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
   }
 
+  /// Untouched fields keep what was stored (null stays null, so visitors keep
+  /// the default in their own language, independent of the editor's locale).
+  /// An edit back to the default text, e.g. "Obnovit výchozí", stores null.
+  String _consentOverride(
+    TextEditingController controller,
+    String? stored,
+    String initial,
+    String fallback,
+  ) {
+    final value = controller.text.trim();
+    if (_restoredConsent.contains(controller) && value == fallback.trim()) {
+      return '';
+    }
+    if (value == initial.trim()) return stored?.trim() ?? '';
+    return value == fallback.trim() ? '' : value;
+  }
+
   Future<void> _saveSettings() async {
-    if (!RightsService.hasCapability(
-      AuthorizationCapabilities.unitSettingsWrite,
-    )) {
+    if (_isSaving ||
+        _isRequestingMeasurement ||
+        !RightsService.hasCapability(
+          AuthorizationCapabilities.unitSettingsWrite,
+        )) {
       return;
     }
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -224,44 +368,101 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
     _formKey.currentState!.save();
 
-    _unit.title = _title;
-    _unit.data ??= {};
+    final pendingUnit = UnitModel(
+      id: _unit.id,
+      title: _title,
+      data: Map<String, dynamic>.from(_unit.data ?? {}),
+      aggregateVersion: _unit.aggregateVersion,
+    );
 
     final trimmedEmail = _replyToEmailController.text.trim();
     if (trimmedEmail.isEmpty) {
-      _unit.data!.remove(Tb.units.data_reply_to);
+      pendingUnit.data![Tb.units.data_reply_to] = null;
     } else {
-      _unit.data![Tb.units.data_reply_to] = trimmedEmail;
+      pendingUnit.data![Tb.units.data_reply_to] = trimmedEmail;
     }
 
-    _unit.data![dataTimezone] = _selectedTimezone;
-    _unit.data![Tb.units.data_communication_tone] = _communicationTone;
+    pendingUnit.data![dataTimezone] = _selectedTimezone;
+    pendingUnit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
-      _unit.data!['measurement_enabled'] = _measurementEnabled;
-      final gtm = _measurementGtmController.text.trim();
-      final scripts = _measurementScriptsController.text;
-      if (gtm.isEmpty) {
-        _unit.data!.remove('measurement_gtm_container');
-      } else {
-        _unit.data!['measurement_gtm_container'] = gtm;
-      }
-      if (scripts.isEmpty) {
-        _unit.data!.remove('measurement_scripts');
-      } else {
-        _unit.data!['measurement_scripts'] = scripts;
+      pendingUnit.data!['measurement_websites'] =
+          UnitMeasurementSettings.parseWebsites(
+            _measurementWebsitesController.text,
+          );
+      pendingUnit.data!['measurement_enabled'] = _measurementEnabled;
+      pendingUnit.data!['measurement_consent_bridge'] =
+          _measurementConsentBridge;
+      pendingUnit.data!['measurement_consent_layout'] =
+          _measurementConsentLayout;
+      // Omission preserves unloaded metadata; explicit null clears an edited field.
+      for (final (key, value) in [
+        (
+          'measurement_consent_title',
+          _consentOverride(
+            _measurementConsentTitleController,
+            _storedConsentTitle,
+            _initialConsentTitle,
+            FormStrings.measurementConsentDefaultTitle,
+          ),
+        ),
+        (
+          'measurement_consent_text',
+          _consentOverride(
+            _measurementConsentTextController,
+            _storedConsentText,
+            _initialConsentText,
+            FormStrings.measurementConsentDefaultText,
+          ),
+        ),
+        (
+          'measurement_privacy_url',
+          _measurementPrivacyUrlController.text.trim(),
+        ),
+        ('measurement_gtm_container', _measurementGtmController.text.trim()),
+        ('measurement_scripts', _measurementScriptsController.text),
+      ]) {
+        pendingUnit.data![key] = value.isEmpty ? null : value;
       }
     }
 
     try {
-      await DbUnits.updateUnit(_unit);
-      widget.unit.data = _unit.data;
-      if (RightsService.currentUnit()?.id == _unit.id) {
-        RightsService.currentUnit()?.data = _unit.data;
+      await DbUnits.updateUnit(pendingUnit);
+      _storedConsentTitle =
+          pendingUnit.data!['measurement_consent_title'] as String?;
+      _storedConsentText =
+          pendingUnit.data!['measurement_consent_text'] as String?;
+      _measurementConsentTitleController.text =
+          _storedConsentTitle ?? FormStrings.measurementConsentDefaultTitle;
+      _measurementConsentTextController.text =
+          _storedConsentText ?? FormStrings.measurementConsentDefaultText;
+      _restoredConsent.clear();
+      _initialConsentTitle = _measurementConsentTitleController.text;
+      _initialConsentText = _measurementConsentTextController.text;
+      _unit
+        ..title = pendingUnit.title
+        ..data = pendingUnit.data
+        ..aggregateVersion = pendingUnit.aggregateVersion;
+      widget.unit
+        ..title = _unit.title
+        ..data = _unit.data
+        ..aggregateVersion = _unit.aggregateVersion;
+      final currentUnit = RightsService.currentUnit();
+      if (currentUnit?.id == _unit.id) {
+        currentUnit!
+          ..title = _unit.title
+          ..data = _unit.data
+          ..aggregateVersion = _unit.aggregateVersion;
       }
+      if (!mounted) return;
       ToastHelper.Show(context, "${CommonStrings.saved}: ${_unit.title!}");
       widget.onUnitUpdated();
+      if (mounted && _organizationMeasurementEnabled) {
+        await _loadMeasurementApproval();
+      }
     } catch (e) {
-      ToastHelper.Show(context, e.toString(), severity: ToastSeverity.NotOk);
+      if (mounted) {
+        ToastHelper.Show(context, e.toString(), severity: ToastSeverity.NotOk);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -304,7 +505,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         if (remainingUnits.isNotEmpty) {
           // Switch to the first available unit
           await RouterService.navigateToUnitAdmin(
-              context, remainingUnits.first);
+            context,
+            remainingUnits.first,
+          );
         } else {
           // No units left, go home
           await RouterService.navigateHome(context);
@@ -328,327 +531,397 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
+          constraints: const BoxConstraints(
+            maxWidth: StylesConfig.formMaxWidth,
+          ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
-              child: Column(children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator())
-                    else ...[
-                      TextFormField(
-                        initialValue: _title,
-                        enabled: _canEdit,
-                        maxLength: maxTitleLength,
-                        buildCounter: (context,
-                            {required currentLength,
-                            required isFocused,
-                            required maxLength}) {
-                          return isFocused
-                              ? Text(
-                                  '$currentLength/$maxLength',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                )
-                              : null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: UnitSettingsStrings.labelOrganizationName,
-                        ),
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) {
-                            return OccasionSettingsStrings.titleIsRequired;
-                          }
-                          return null;
-                        },
-                        onSaved: (val) {
-                          _title = val;
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _replyToEmailController,
-                        enabled: _canEdit,
-                        decoration: InputDecoration(
-                          labelText: UnitSettingsStrings.labelReplyToEmail,
-                          border: const OutlineInputBorder(),
-                          helperText:
-                              OccasionSettingsStrings.helperReplyToEmail,
-                          helperMaxLines: 3,
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: FormBuilderValidators.compose([
-                          FormBuilderValidators.required(
-                              errorText: CommonStrings.fieldCannotBeEmpty),
-                          EmailValidation.validator(
-                              errorText: OccasionSettingsStrings
-                                  .validationEmailInvalid),
-                        ]),
-                      ),
-                      const SizedBox(height: 24),
-                      DropdownButtonFormField<String>(
-                        initialValue: _communicationTone,
-                        decoration: InputDecoration(
-                          labelText:
-                              UnitSettingsStrings.labelDefaultCommunicationTone,
-                          border: const OutlineInputBorder(),
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: 'formal',
-                            child: Text(FormStrings.toneFormal),
-                          ),
-                          DropdownMenuItem(
-                            value: 'informal',
-                            child: Text(FormStrings.toneInformal),
-                          ),
-                        ],
-                        onChanged: _canEdit
-                            ? (value) {
-                                if (value != null) {
-                                  setState(() => _communicationTone = value);
-                                }
-                              }
-                            : null,
-                      ),
-                      const SizedBox(height: 24),
-                      if (_allTimezones.isNotEmpty)
-                        Autocomplete<String>(
-                          initialValue: _selectedTimezone != null &&
-                                  _allTimezones.contains(_selectedTimezone)
-                              ? TextEditingValue(text: _selectedTimezone!)
-                              : null,
-                          optionsBuilder: (TextEditingValue textEditingValue) {
-                            if (textEditingValue.text.isEmpty) {
-                              return _allTimezones.take(50);
-                            }
-                            return _allTimezones.where((String option) {
-                              return option.toLowerCase().contains(
-                                  textEditingValue.text.toLowerCase());
-                            });
-                          },
-                          onSelected: (String selection) {
-                            setState(() {
-                              _selectedTimezone = selection;
-                            });
-                          },
-                          fieldViewBuilder: (BuildContext context,
-                              TextEditingController fieldTextEditingController,
-                              FocusNode fieldFocusNode,
-                              VoidCallback onFieldSubmitted) {
-                            return TextFormField(
-                              controller: fieldTextEditingController,
-                              focusNode: fieldFocusNode,
-                              enabled: _canEdit,
-                              decoration: InputDecoration(
-                                labelText:
-                                    UnitSettingsStrings.labelDefaultTimezone,
-                                border: const OutlineInputBorder(),
-                                suffixIcon: fieldTextEditingController
-                                            .text.isNotEmpty &&
-                                        _canEdit
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        onPressed: () {
-                                          fieldTextEditingController.clear();
-                                          setState(() {
-                                            _selectedTimezone = null;
-                                          });
-                                        },
+              child: Column(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_isLoading)
+                        const Center(child: CircularProgressIndicator())
+                      else ...[
+                        TextFormField(
+                          initialValue: _title,
+                          enabled: _canEdit,
+                          maxLength: maxTitleLength,
+                          buildCounter:
+                              (
+                                context, {
+                                required currentLength,
+                                required isFocused,
+                                required maxLength,
+                              }) {
+                                return isFocused
+                                    ? Text(
+                                        '$currentLength/$maxLength',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
                                       )
-                                    : null,
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return OccasionSettingsStrings
-                                      .timezoneIsRequired;
-                                }
-                                if (!_allTimezones.contains(value)) {
-                                  if (_selectedTimezone != value) {
-                                    return OccasionSettingsStrings
-                                        .invalidTimezone;
-                                  }
-                                }
-                                if (_allTimezones.contains(value) &&
-                                    _selectedTimezone != value) {
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    if (mounted) {
-                                      setState(() {
-                                        _selectedTimezone = value;
-                                      });
-                                    }
-                                  });
-                                }
-                                return null;
+                                    : null;
                               },
-                              onFieldSubmitted: (_) => onFieldSubmitted(),
-                            );
+                          decoration: InputDecoration(
+                            labelText:
+                                UnitSettingsStrings.labelOrganizationName,
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return OccasionSettingsStrings.titleIsRequired;
+                            }
+                            return null;
                           },
-                          optionsViewBuilder: (BuildContext context,
-                              AutocompleteOnSelected<String> onSelected,
-                              Iterable<String> options) {
-                            return Align(
-                              alignment: Alignment.topLeft,
-                              child: Material(
-                                elevation: 4.0,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                      maxHeight: 300,
-                                      maxWidth: MediaQuery.of(context)
-                                                      .size
-                                                      .width -
-                                                  40 >
-                                              0
-                                          ? MediaQuery.of(context).size.width -
-                                              40
-                                          : 300),
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.zero,
-                                    itemCount: options.length,
-                                    shrinkWrap: true,
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      final String option =
-                                          options.elementAt(index);
-                                      return InkWell(
-                                        onTap: () {
-                                          onSelected(option);
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Text(option),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            );
+                          onSaved: (val) {
+                            _title = val;
                           },
-                        )
-                      else
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0),
-                          child: Text(OccasionSettingsStrings.timezonesLoading),
                         ),
-                      const SizedBox(height: 24),
-                      if (_canEdit)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton.icon(
-                              icon: _isSaving
-                                  ? const SizedBox.shrink()
-                                  : const Icon(Icons.save, size: 18),
-                              label: _isSaving
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2))
-                                  : Text(CommonStrings.save),
-                              onPressed: _isSaving ? null : _saveSettings,
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          controller: _replyToEmailController,
+                          enabled: _canEdit,
+                          decoration: InputDecoration(
+                            labelText: UnitSettingsStrings.labelReplyToEmail,
+                            border: const OutlineInputBorder(),
+                            helperText:
+                                OccasionSettingsStrings.helperReplyToEmail,
+                            helperMaxLines: 3,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) => EmailValidation.validator(
+                            checkNullOrEmpty: false,
+                            errorText:
+                                OccasionSettingsStrings.validationEmailInvalid,
+                          )(value?.trim()),
+                        ),
+                        const SizedBox(height: 24),
+                        DropdownButtonFormField<String>(
+                          initialValue: _communicationTone,
+                          decoration: InputDecoration(
+                            labelText: UnitSettingsStrings
+                                .labelDefaultCommunicationTone,
+                            border: const OutlineInputBorder(),
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'formal',
+                              child: Text(FormStrings.toneFormal),
+                            ),
+                            DropdownMenuItem(
+                              value: 'informal',
+                              child: Text(FormStrings.toneInformal),
                             ),
                           ],
+                          onChanged: _canEdit
+                              ? (value) {
+                                  if (value != null) {
+                                    setState(() => _communicationTone = value);
+                                  }
+                                }
+                              : null,
                         ),
+                        const SizedBox(height: 24),
+                        if (_allTimezones.isNotEmpty)
+                          Autocomplete<String>(
+                            initialValue:
+                                _selectedTimezone != null &&
+                                    _allTimezones.contains(_selectedTimezone)
+                                ? TextEditingValue(text: _selectedTimezone!)
+                                : null,
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text.isEmpty) {
+                                    return _allTimezones.take(50);
+                                  }
+                                  return _allTimezones.where((String option) {
+                                    return option.toLowerCase().contains(
+                                      textEditingValue.text.toLowerCase(),
+                                    );
+                                  });
+                                },
+                            onSelected: (String selection) {
+                              setState(() {
+                                _selectedTimezone = selection;
+                              });
+                            },
+                            fieldViewBuilder:
+                                (
+                                  BuildContext context,
+                                  TextEditingController
+                                  fieldTextEditingController,
+                                  FocusNode fieldFocusNode,
+                                  VoidCallback onFieldSubmitted,
+                                ) {
+                                  return TextFormField(
+                                    controller: fieldTextEditingController,
+                                    focusNode: fieldFocusNode,
+                                    enabled: _canEdit,
+                                    decoration: InputDecoration(
+                                      labelText: UnitSettingsStrings
+                                          .labelDefaultTimezone,
+                                      border: const OutlineInputBorder(),
+                                      suffixIcon:
+                                          fieldTextEditingController
+                                                  .text
+                                                  .isNotEmpty &&
+                                              _canEdit
+                                          ? IconButton(
+                                              icon: const Icon(Icons.clear),
+                                              onPressed: () {
+                                                fieldTextEditingController
+                                                    .clear();
+                                                setState(() {
+                                                  _selectedTimezone = null;
+                                                });
+                                              },
+                                            )
+                                          : null,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return OccasionSettingsStrings
+                                            .timezoneIsRequired;
+                                      }
+                                      if (!_allTimezones.contains(value)) {
+                                        if (_selectedTimezone != value) {
+                                          return OccasionSettingsStrings
+                                              .invalidTimezone;
+                                        }
+                                      }
+                                      if (_allTimezones.contains(value) &&
+                                          _selectedTimezone != value) {
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) {
+                                              if (mounted) {
+                                                setState(() {
+                                                  _selectedTimezone = value;
+                                                });
+                                              }
+                                            });
+                                      }
+                                      return null;
+                                    },
+                                    onFieldSubmitted: (_) => onFieldSubmitted(),
+                                  );
+                                },
+                            optionsViewBuilder:
+                                (
+                                  BuildContext context,
+                                  AutocompleteOnSelected<String> onSelected,
+                                  Iterable<String> options,
+                                ) {
+                                  return Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Material(
+                                      elevation: 4.0,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxHeight: 300,
+                                          maxWidth:
+                                              MediaQuery.of(context)
+                                                          .size
+                                                          .width -
+                                                      40 >
+                                                  0
+                                              ? MediaQuery.of(context)
+                                                        .size
+                                                        .width -
+                                                    40
+                                              : 300,
+                                        ),
+                                        child: ListView.builder(
+                                          padding: EdgeInsets.zero,
+                                          itemCount: options.length,
+                                          shrinkWrap: true,
+                                          itemBuilder:
+                                              (
+                                                BuildContext context,
+                                                int index,
+                                              ) {
+                                                final String option = options
+                                                    .elementAt(index);
+                                                return InkWell(
+                                                  onTap: () {
+                                                    onSelected(option);
+                                                  },
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          16.0,
+                                                        ),
+                                                    child: Text(option),
+                                                  ),
+                                                );
+                                              },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12.0),
+                            child: Text(
+                              OccasionSettingsStrings.timezonesLoading,
+                            ),
+                          ),
+                        if (_organizationMeasurementEnabled) ...[
+                          const SizedBox(height: 32),
+                          UnitMeasurementSettings(
+                            consentBridge: _measurementConsentBridge,
+                            onConsentBridgeChanged: (value) => setState(
+                              () => _measurementConsentBridge = value,
+                            ),
+                            websitesController: _measurementWebsitesController,
+                            approval: _measurementApproval,
+                            loadingApproval: _isLoadingMeasurementApproval,
+                            approvalLoadFailed: _measurementApprovalLoadFailed,
+                            onRetryApproval: _loadMeasurementApproval,
+                            requestingApproval: _isRequestingMeasurement,
+                            onRequestApproval: _requestMeasurementApproval,
+                            enabled: _measurementEnabled,
+                            consentLayout: _measurementConsentLayout,
+                            hasStoredTitle: _storedConsentTitle != null,
+                            hasStoredText: _storedConsentText != null,
+                            onRestore: (controller) =>
+                                _restoredConsent.add(controller),
+                            consentTitleController:
+                                _measurementConsentTitleController,
+                            consentTextController:
+                                _measurementConsentTextController,
+                            onConsentLayoutChanged: (value) => setState(
+                              () => _measurementConsentLayout = value,
+                            ),
+                            canEdit:
+                                _canEdit &&
+                                !_isSaving &&
+                                !_isRequestingMeasurement,
+                            privacyUrlController:
+                                _measurementPrivacyUrlController,
+                            gtmController: _measurementGtmController,
+                            scriptsController: _measurementScriptsController,
+                            onEnabledChanged: (value) =>
+                                setState(() => _measurementEnabled = value),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        if (_canEdit)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              ElevatedButton.icon(
+                                icon: _isSaving
+                                    ? const SizedBox.shrink()
+                                    : const Icon(Icons.save, size: 18),
+                                label: _isSaving
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(CommonStrings.save),
+                                onPressed: _isSaving || _isRequestingMeasurement
+                                    ? null
+                                    : _saveSettings,
+                              ),
+                            ],
+                          ),
+                      ],
                     ],
-                  ],
-                ),
-              if (!_isLoading && _unit.id != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 24),
-                  child: ListTile(
-                    leading: const Icon(Icons.verified_outlined),
-                    title: Text(VerificationStrings.text('title')),
-                    subtitle:
-                        Text(VerificationStrings.text('settingsDescription')),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () =>
-                        context.router.push(const UnitLegalProfileRoute()),
                   ),
-                ),
-              if (!_isLoading) ...[
-                const SizedBox(height: 24),
-                const SizedBox(height: 24),
-                if (_canEdit)
-                  ListTile(
-                    leading: const Icon(Icons.account_balance),
-                    title: Text(BankAccountStrings.bankAccountsTitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      context.tabsRouter
-                          .navigate(const UnitBankAccountsNavigationRoute());
-                    },
-                  ),
-                const SizedBox(height: 48),
-                if (_organizationMeasurementEnabled) ...[
-                  UnitMeasurementSettings(
-                    enabled: _measurementEnabled,
-                    canEdit: _canEdit && !_isSaving,
-                    gtmController: _measurementGtmController,
-                    scriptsController: _measurementScriptsController,
-                    onEnabledChanged: (value) =>
-                        setState(() => _measurementEnabled = value),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                if (StripeFeature.canActivate &&
-                    RightsService.currentUnit()?.id == _unit.id)
-                  ExpansionTile(
-                    title: const Text('Skryté funkce'),
-                    children: [
-                      SwitchListTile(
-                        title: const Text('Platby kartou přes Stripe'),
-                        subtitle: const Text(
-                            'Zpřístupní nastavení pouze této organizaci. Ostré platby se tím nezapnou.'),
-                        value: StripeFeature.visible,
-                        onChanged:
-                            _isUpdatingStripeFeature ? null : _setStripeFeature,
-                      )
-                    ],
-                  ),
-                if (StripeFeature.visible && StripeFeature.canManage)
-                  ListTile(
-                      leading: const Icon(Icons.credit_card),
-                      title: Text(StripeConnectionStrings.title),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.tabsRouter
-                          .navigate(const UnitCardPaymentsRoute())),
-                if (_canEdit)
-                  Center(
-                    child: Tooltip(
-                      message: _deleteDisabledMessage ?? "",
-                      child: TextButton(
-                        onPressed: _canDeleteUnit ? _deleteUnit : null,
-                        child: Text(
-                          UnitSettingsStrings.deleteUnit,
-                          style: TextStyle(
-                            color: _canDeleteUnit
-                                ? ThemeConfig.redColor(context)
-                                : Colors.grey,
+                  if (!_isLoading && _unit.id != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 24),
+                      child: ListTile(
+                        leading: const Icon(Icons.verified_outlined),
+                        title: Text(VerificationStrings.text('title')),
+                        subtitle: Text(
+                          VerificationStrings.text('settingsDescription'),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () =>
+                            context.router.push(const UnitLegalProfileRoute()),
+                      ),
+                    ),
+                  if (!_isLoading) ...[
+                    const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                    if (_canEdit)
+                      ListTile(
+                        leading: const Icon(Icons.account_balance),
+                        title: Text(BankAccountStrings.bankAccountsTitle),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          context.tabsRouter.navigate(
+                            const UnitBankAccountsNavigationRoute(),
+                          );
+                        },
+                      ),
+                    const SizedBox(height: 48),
+                    if (StripeFeature.canActivate &&
+                        RightsService.currentUnit()?.id == _unit.id)
+                      ExpansionTile(
+                        title: const Text('Skryté funkce'),
+                        children: [
+                          SwitchListTile(
+                            title: const Text('Platby kartou přes Stripe'),
+                            subtitle: const Text(
+                              'Zpřístupní nastavení pouze této organizaci. Ostré platby se tím nezapnou.',
+                            ),
+                            value: StripeFeature.visible,
+                            onChanged: _isUpdatingStripeFeature
+                                ? null
+                                : _setStripeFeature,
+                          ),
+                        ],
+                      ),
+                    if (StripeFeature.visible && StripeFeature.canManage)
+                      ListTile(
+                        leading: const Icon(Icons.credit_card),
+                        title: Text(StripeConnectionStrings.title),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.tabsRouter.navigate(
+                          const UnitCardPaymentsRoute(),
+                        ),
+                      ),
+                    if (_canEdit)
+                      Center(
+                        child: Tooltip(
+                          message: _deleteDisabledMessage ?? "",
+                          child: TextButton(
+                            onPressed: _canDeleteUnit ? _deleteUnit : null,
+                            child: Text(
+                              UnitSettingsStrings.deleteUnit,
+                              style: TextStyle(
+                                color: _canDeleteUnit
+                                    ? ThemeConfig.redColor(context)
+                                    : Colors.grey,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                const SizedBox(height: 24),
-                if (_versionInfo.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
-                    child: Center(
-                      child: Text(
-                        "Version: $_versionInfo",
-                        style: Theme.of(context).textTheme.bodySmall,
+                    const SizedBox(height: 24),
+                    if (_versionInfo.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0),
+                        child: Center(
+                          child: Text(
+                            "Version: $_versionInfo",
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
-              ]),
+                  ],
+                ],
+              ),
             ),
           ),
         ),

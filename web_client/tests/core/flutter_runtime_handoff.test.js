@@ -95,7 +95,7 @@ test('activates the exact waiting generation before navigation', async () => {
     });
     assert.equal(result.strategy, 'activated');
     assert.deepEqual(f.waiting.messages, [
-        { type: 'FESTAPP_QUERY_BUILD_VERSION' },
+        { type: 'FESTAPP_QUERY_BUILD_VERSION', runtime:'flutter' },
         'SKIP_WAITING',
     ]);
     assert.equal(f.registration.unregistered, 0);

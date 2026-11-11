@@ -84,13 +84,15 @@ try {
     'backend activation must not be part of the app-shell precache');
   assert.ok(!precacheUrls.includes('/client-sync-config.json'),
     'client sync runtime config must not be part of the app-shell precache');
-  assert.ok(coreUrls.includes('/main.dart.js'));
-  assert.ok(coreUrls.includes('/flutter?pwa-cache=1'));
+  const flutterCoreUrls = JSON.parse(worker.match(/const FLUTTER_CORE_URLS = (\[[\s\S]*?\]);/)[1]);
+  assert.ok(!coreUrls.includes('/main.dart.js'));
+  assert.ok(flutterCoreUrls.includes('/main.dart.js'));
+  assert.ok(flutterCoreUrls.includes('/flutter?pwa-cache=1'));
   assert.ok(!coreUrls.includes('/pro-poradatele'));
   assert.match(worker,/const ORGANIZER_HOMEPAGE = true;/);
   assert.ok(coreUrls.includes('/privacy/'),
     'standalone documents must be available before their first navigation');
-  assert.ok(coreUrls.includes('/main.dart.js_7.part.js'),
+  assert.ok(flutterCoreUrls.includes('/main.dart.js_7.part.js'),
     'every deferred executable must be installed for offline cold-start routes');
 
   const genericRoot = await mkdtemp(path.join(tmpdir(), 'festapp-pwa-generic-'));
@@ -524,11 +526,13 @@ try {
   const resumedId = 'resumed-web-page';
   const resumedClient = { id: resumedId, url: 'https://app.test/events', postMessage() {} };
   clientsById.set(resumedId, resumedClient);
+  const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
+    .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
+  // Read the cached document before starting the fixture's short handshake
+  // deadline; cold disk I/O is not part of the client-version protocol.
   const pendingWebModule = dispatchFetch(
     new Request('https://app.test/web-assets/index.js'), resumedId,
   );
-  const bootstrapHtml = (await readFile(path.join(projectRoot, 'web_client/index.html'), 'utf8'))
-    .replace(/(window\.__FESTAPP_BUILD_VERSION__\s*=\s*)"[^"]*"/, '$1"1.2.3+4"');
   const resumedPage = new JSDOM(bootstrapHtml, {
     url: 'https://app.test/events',
     runScripts: 'dangerously',
@@ -661,11 +665,17 @@ try {
     'activation responses must carry the public CORS contract',
   );
   assert.match(sharedBuild, /cd web_client && pnpm install --frozen-lockfile/);
-  assert.match(sharedBuild, /bash automation\/test_web_startup\.sh/);
+  assert.match(sharedBuild, /python3 automation\/ci\/release_gate\.py/);
+  assert.doesNotMatch(sharedBuild, /bash automation\/test_web_startup\.sh/);
+  const ciContract = JSON.parse(await readFile(path.join(projectRoot, 'automation/ci/checks.json'), 'utf8'));
+  assert.ok(ciContract.jobs['web-startup'].steps.includes('web-startup'));
+  assert.match(ciContract.steps['web-startup'].script, /bash automation\/test_web_startup\.sh/);
+  assert.match(sharedBuild, /release\.web-client-build node automation\/lib\/web_build_cache\.mjs component vite/);
   assert.match(sharedBuild, /cd web_client && pnpm run build/);
-  assert.ok(sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
-    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && pnpm run build'),
-    'install dependencies, verify startup, then build the public client');
+  assert.ok(sharedBuild.indexOf('python3 automation/ci/release_gate.py') < sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile')
+    && sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check')
+    && sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check') < sharedBuild.indexOf('release.web-client-build node automation/lib/web_build_cache.mjs component vite'),
+    'verify canonical source CI, install dependencies, check tenant runtime, then build the public client');
   assert.match(sharedBuild, /apply_config\.sh/);
   assert.match(sharedBuild, /emit_version_manifest\.sh/);
   assert.match(sharedBuild, /verify_web_build\.mjs/);
@@ -695,11 +705,19 @@ try {
   assert.doesNotMatch(installHandler, /preventDefault\(/,
     'native installation must remain available alongside the custom prompt');
   assert.match(flutterIndex, /function promptInstall\(\)/);
-  assert.doesNotMatch(
-    flutterIndex,
-    /promptInstall\(\)[\s\S]*?await window\.festappOfflineReady/,
-    'the browser install prompt must run synchronously while user activation is valid',
-  );
+  const promptPage = new JSDOM(flutterIndex, {url:'https://app.test/',runScripts:'outside-only'});
+  try {
+    const promptWindow = promptPage.window;
+    promptWindow.festappOfflineReady = new Promise(() => {});
+    const script = [...promptWindow.document.scripts].find(node => node.textContent.includes('function promptInstall'));
+    promptWindow.eval(script.textContent);
+    let prompted = false;
+    const event = new promptWindow.Event('beforeinstallprompt');
+    event.prompt = () => { prompted = true; };
+    promptWindow.dispatchEvent(event);
+    promptWindow.promptInstall();
+    assert.equal(prompted,true,'install prompt must execute synchronously before user activation expires');
+  } finally { promptPage.window.close(); }
   assert.match(flutterIndex, /performance\.getEntriesByType\('resource'\)/);
   assert.match(flutterIndex, /window\.recoverFestappStartup\('bootstrap-error'\)/);
   assert.match(flutterIndex, /festapp-app-ready/);
@@ -728,23 +746,8 @@ try {
     path.join(projectRoot, 'web/festapp_update_prompt.js'),
     'utf8',
   );
-  assert.match(updatePrompt, /function recoverStalledStartup\(reason\)/);
-  assert.match(updatePrompt, /scheduleStartupRecovery\(\)/);
-  assert.match(updatePrompt, /startupRecoveryStorageKey/);
-  assert.match(updatePrompt, /navigator\.onLine === false/);
-  assert.match(updatePrompt, /FESTAPP_CLIENT_VERSION/);
-  assert.match(updatePrompt, /serviceWorker\.ready\.then\(reportClientVersion\)/);
-  assert.match(
-    updatePrompt,
-    /if \(window\.__FESTAPP_LOCAL_DEVELOPMENT__\) return;/,
-  );
-  const networkReload = updatePrompt.match(
-    /async function prepareNetworkReload\(\) \{[\s\S]*?\n  \}/,
-  )?.[0];
-  assert.ok(networkReload);
-  assert.match(networkReload, /registration\.update\(\)/);
-  assert.doesNotMatch(networkReload, /unregister\(\)/);
-  assert.doesNotMatch(networkReload, /caches\.delete|festapp-app-shell-/);
+  assert.match(updatePrompt, /Generated by web_client\/scripts\/build_runtime.mjs/);
+  // Recovery behavior is exercised through the public API by update_prompt_behavior.
   const consent = new Request('https://app.test/settings/mcp-connect?request=' + 'R'.repeat(43));
   Object.defineProperty(consent, 'mode', { value: 'navigate' });
   networkAvailable = false;

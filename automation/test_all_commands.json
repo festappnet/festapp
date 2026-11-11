@@ -27,6 +27,41 @@
     "automation/tests/migration_layout.test.sh"
   ],
   [
+    "node",
+    "--test",
+    "automation/tests/migration_compaction.test.mjs"
+  ],
+  [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "automation/tests",
+    "-p",
+    "test_migration_compaction.py"
+  ],
+  [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "automation/tests",
+    "-p",
+    "test_baseline_contract.py"
+  ],
+  [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "automation/tests",
+    "-p",
+    "test_historical_inputs.py"
+  ],
+  [
     "bash",
     "automation/tests/hetzner_supabase_runtime_recovery.test.sh"
   ],

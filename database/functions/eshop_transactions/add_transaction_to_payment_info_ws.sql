@@ -15,7 +15,11 @@ BEGIN
     WHERE pi.id = p_payment_info_id
     LIMIT 1;
 
-    PERFORM public.check_is_admin_for_bank_account(bank_acc);
+    IF NOT public.can_manage_bank_account(bank_acc) THEN
+    RAISE insufficient_privilege USING MESSAGE='Bank transaction write access denied'; END IF;
+
+    IF NOT public.can_manage_bank_account((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id)) THEN
+      RAISE insufficient_privilege USING MESSAGE='Source bank transaction write access denied'; END IF;
 
     SELECT o.occasion
     INTO occasion_id

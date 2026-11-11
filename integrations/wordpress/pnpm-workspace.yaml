@@ -8,3 +8,9 @@ minimumReleaseAge: 0
 overrides:
   "rimraf@5.0.10>glob": "^14.0.3"
   "express@4.22.2>qs": "^6.16.1"
+
+  # GHSA-9qw7-j9xw-fv9c and GHSA-cw2g-2vwq-88w6: prevent checkout escapes.
+  "@wp-playground/storage@3.1.60>isomorphic-git": "1.38.6"
+
+  # GHSA-474x-hrwr-fgx4: bound CPU use on malformed XML stop-node tags.
+  "@php-wasm/cli-util@3.1.60>fast-xml-parser": "^5.12.0"

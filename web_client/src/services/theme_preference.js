@@ -25,28 +25,41 @@
         const document = global.document;
         if (!document) return;
         const root = document.documentElement;
+        const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && root.hasAttribute('data-embed-startup');
+        const startupScheme = embedded && !global.__FESTAPP_APP_READY__ ? global.__FESTAPP_EMBED_STARTUP_SCHEME__ : null;
+        const hostScheme = startupScheme || (root.dataset.embedTheme === 'host' ? root.dataset.embedColorScheme : null);
+        if (['light', 'dark'].includes(hostScheme)) dark = hostScheme === 'dark';
         const mode = dark ? 'dark' : 'light';
+        // A scheme mismatch makes browsers replace an iframe's transparent
+        // canvas with opaque black/white. The embedded media preference comes
+        // from its host; a saved standalone app preference must not override it.
+        const canvasScheme = embedded ? 'light dark' : mode;
         const color = document.querySelector('meta[name="theme-color"]');
         if (color) color.dataset.darkColor ||= color.content;
         const background = dark ? color?.dataset.darkColor || '#232529' : color?.dataset.lightColor || '#ffffff';
         root.dataset.startupTheme = mode;
-        root.style.colorScheme = mode;
-        root.style.backgroundColor = background;
+        root.style.colorScheme = canvasScheme;
+        root.style.backgroundColor = embedded && !global.__FESTAPP_APP_READY__ ? 'transparent' : background;
         root.style.setProperty('--festapp-startup-background', background);
         root.style.setProperty('--festapp-startup-foreground', dark ? '#bdbdbd' : '#000000');
         if (color) color.content = background;
         const scheme = document.querySelector('meta[name="color-scheme"]');
-        if (scheme) scheme.content = mode;
+        if (scheme) scheme.content = canvasScheme;
         if (document.body) {
             document.body.style.colorScheme = mode;
             document.body.classList.toggle('dark-mode', dark);
         }
         for (const logo of document.querySelectorAll('.initial-logo, .startup-brand')) {
             logo.dataset.darkSrc ||= logo.getAttribute('src').replace(/-light\.svg$/, '.svg');
-            const source = logo.dataset.darkSrc;
+            const source = embedded && logo.classList.contains('startup-brand')
+                ? '/brand-symbol.svg' : logo.dataset.darkSrc;
             logo.setAttribute('src', !dark && /(?:loading-animation|loading-logo)\.svg$/.test(source)
                 ? source.replace(/\.svg$/, '-light.svg') : source);
-            logo.dataset.startupLogoReady = '';
+            if (embedded && !global.__FESTAPP_APP_READY__ && logo.classList.contains('startup-brand') && !['light', 'dark'].includes(startupScheme)) {
+                delete logo.dataset.startupLogoReady;
+            } else {
+                logo.dataset.startupLogoReady = '';
+            }
         }
     }
     global.FestappThemePreference = Object.freeze({readMode, isDark, paintTheme});
@@ -56,7 +69,8 @@
         if (global.__FESTAPP_APP_READY__) return;
         let storage;
         try { storage = global.localStorage; } catch { /* optional API */ }
-        paintTheme(isDark(readMode(storage), system?.matches));
+        const embedded = global.__FESTAPP_CLIENT_RUNTIME__ === 'web' && global.document.documentElement.hasAttribute('data-embed-startup');
+        paintTheme(embedded ? !!system?.matches : isDark(readMode(storage), system?.matches));
     }
     global.applyFestappStartupTheme = applyStartup;
     applyStartup();
@@ -65,4 +79,5 @@
         if (event.key === 'theme' || event.key === null) applyStartup();
     });
     global.addEventListener('pageshow', applyStartup);
+    global.addEventListener('festapp-embed-theme-changed', applyStartup);
 })(globalThis);

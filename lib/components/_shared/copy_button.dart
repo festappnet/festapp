@@ -115,7 +115,9 @@ class _CopyButtonState extends State<CopyButton> {
               height: 30,
               child: IconButton(
                 onPressed: widget.value.isEmpty ? null : _copy,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                padding: EdgeInsets.zero,
+                alignment: Alignment.center,
+                constraints: const BoxConstraints.tightFor(width: 24, height: 30),
                 iconSize: 16,
                 style: IconButton.styleFrom(
                   foregroundColor: _copied

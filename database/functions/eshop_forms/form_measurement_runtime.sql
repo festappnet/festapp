@@ -5,7 +5,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,ex
 DECLARE fid bigint:=public.resolve_form_link_internal(p_form_link);
 BEGIN
  IF NOT public.can_read_public_form_measurement(fid) THEN RETURN NULL; END IF;
- RETURN public.form_measurement_runtime_internal(fid);
+ RETURN public.form_measurement_runtime_internal(fid)||jsonb_build_object('visitor_role',public.form_measurement_visitor_role_internal(fid));
 END $$;
 REVOKE ALL ON FUNCTION public.get_form_measurement_policy(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_form_measurement_policy(text) TO anon,authenticated,service_role;
@@ -22,7 +22,7 @@ BEGIN
  END IF;
  SELECT jsonb_build_object('organization',o.organization,'unit',u.id,'form_id',f.id,'form_link',f.link,
   'runtime_origin',r.runtime_origin,'parent_origin',p_parent_origin,'profile',r.runtime_profile,
-  'ancestor_origins',r.parent_origins,'collector_origins',r.collector_origins,'policy',public.form_measurement_runtime_internal(f.id),
+  'ancestor_origins',r.parent_origins,'collector_origins',r.collector_origins,'policy',public.form_measurement_runtime_internal(f.id)-ARRAY['privacy_url','consent_notice','approved_hosts'],
   'gtm_container',u.data->>'measurement_gtm_container','scripts',u.data->>'measurement_scripts') INTO result
  FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
  JOIN public.units u ON u.id=o.unit AND u.organization=o.organization

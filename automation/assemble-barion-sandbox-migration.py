@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Assemble the additive sandbox connector; never rewrite shared history."""
+"""Verify installed sandbox history and its effective forward-owned definitions."""
+import migration_inputs
 from pathlib import Path
-import argparse,json
-root=Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');args=p.parse_args()
-m=json.loads((root/'automation/barion-sandbox-migration.json').read_text())
-parts=['-- Additive Barion sandbox connector. No credentials, sales activation or jobs.','SET LOCAL ROLE postgres;']
-for source in m['sources']: parts.append('-- SOURCE: '+source+'\n'+(root/'database/functions'/source).read_text().rstrip())
-parts.append('RESET ROLE;');content='\n\n'.join(parts)+'\n';dest=root/'supabase/migrations'/m['migration']
-if args.check:
- if not dest.exists() or dest.read_text()!=content: raise SystemExit('Barion sandbox migration is stale')
- print('Barion sandbox sources match')
-else: dest.write_text(content);print('Assembled Barion sandbox migration')
+import argparse, hashlib, json
+from generate_canonical_source_contract import render as source_contract
+ROOT=Path(__file__).resolve().parents[1]
+def main():
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--check',action='store_true')
+ if not parser.parse_args().check: raise SystemExit('Installed Barion migration is immutable; author a new forward migration')
+ manifest=json.loads(migration_inputs.read_text(ROOT/'automation/barion-sandbox-migration.json'))
+ target=ROOT/'supabase/migrations'/manifest['migration']
+ if target.is_symlink() or hashlib.sha256(migration_inputs.read_bytes(target)).hexdigest()!='9c5dbacf7997544ac5224391c02053d5b861fdec65278d77a76fa24d2187cb9e':
+  raise SystemExit('Installed Barion migration bytes changed')
+ source_contract(ROOT,additional_sources=manifest['sources'])
+ print('Immutable Barion history and effective forward owners match')
+if __name__=='__main__':main()

@@ -33,8 +33,8 @@ BEGIN
       result:=result||'Externí částka bez doloženého přiřazení: '||(item->>'external_unattributed')||E'\n';
     END IF;
     IF (item->>'has_deposits')::boolean THEN
-      result := result || 'Přijaté zálohy (hrubé): ' || (item->>'deposit_received_gross') || E'\n'
-        || 'Přijato nad zálohu (hrubé): ' || (item->>'beyond_deposit_received_gross') || E'\n';
+      result := result || 'Přijaté zálohy (čisté): ' || coalesce(item->>'deposit_received_net',item->>'deposit_received_gross') || E'\n'
+        || 'Přijato nad zálohu (čisté): ' || coalesce(item->>'beyond_deposit_received_net',item->>'beyond_deposit_received_gross') || E'\n';
     END IF;
   END LOOP;
   IF report ? 'timeline' THEN
@@ -51,7 +51,7 @@ BEGIN
   FOR item IN SELECT value FROM jsonb_array_elements(report->'products') LOOP
     result := result || coalesce(item->>'type_title','Bez typu') || ' / ' || (item->>'product_title') || ': ' || (item->>'confirmed_count') || E'\n';
   END LOOP;
-  result := result || E'\nSouhrn stavů odpovídá aktuálnímu stavu, nikoli historickým přechodům. Denní platby obsahují pouze zaevidované transakce. Stav paid může znamenat jen uhrazenou zálohu.\nMísta nezahrnují dočasné blokace. Ruční příjmy nejsou nutně hotovost; ostatní nejsou nutně banka.\nZálohy jsou hrubé platby před vratkami, pouze u plateb se zálohou.\n';
+  result := result || E'\nSouhrn stavů odpovídá aktuálnímu stavu, nikoli historickým přechodům. Denní platby obsahují pouze zaevidované transakce. Stav paid může znamenat jen uhrazenou zálohu.\nMísta nezahrnují dočasné blokace. Ruční příjmy nejsou nutně hotovost; ostatní nejsou nutně banka.\nZálohy jsou čisté potvrzené platby po vratkách, pouze u plateb se zálohou.\n';
   FOR item IN SELECT value FROM jsonb_array_elements(report->'warnings') LOOP
     result := result || 'Upozornění: ' || (item->>'code') || ' (' || (item->>'count') || E')\n';
   END LOOP;

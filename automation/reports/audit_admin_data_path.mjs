@@ -1,7 +1,7 @@
 // Local-only baseline: canonical SQL -> actual MCP executor -> serialized DTO.
 // Fixture changes, including DDL, are always rolled back. No HTTP/provider calls.
 import assert from 'node:assert/strict';
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, stat } from '../lib/migration_inputs_async.mjs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';

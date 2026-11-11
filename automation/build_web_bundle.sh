@@ -13,11 +13,16 @@ BUILD_WEB_DIR="$PROJECT_ROOT/build/web"
 WEB_CLIENT_DIST_DIR="$PROJECT_ROOT/web_client/dist"
 cd "$PROJECT_ROOT"
 
+# Every hosting adapter must prove the exact canonical release source.
+python3 automation/ci/release_gate.py
+
 deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check
 
 # Every production build must reach the image service using this tenant's
 # actual domain and project, before compiling another unusable application.
 node automation/verify_image_service.mjs
+
+python3 automation/release/build_receipt.py preserve "$TARGET"
 
 # Generated output must never retain content-hashed files from another tenant.
 rm -rf -- "$BUILD_WEB_DIR" "$WEB_CLIENT_DIST_DIR"
@@ -26,7 +31,7 @@ FLUTTER_VERSION="$(node automation/flutter_version.mjs)"
 FLUTTER_CMD=()
 
 if command -v flutter >/dev/null 2>&1; then
-    AVAILABLE_FLUTTER_VERSION="$(flutter --version --machine 2>/dev/null | node -e 'let input="";process.stdin.on("data",c=>input+=c);process.stdin.on("end",()=>{try{process.stdout.write(JSON.parse(input).frameworkVersion||"")}catch{}});')"
+    AVAILABLE_FLUTTER_VERSION="$(python3 automation/ci/resources.py flutter --version --machine 2>/dev/null | node -e 'let input="";process.stdin.on("data",c=>input+=c);process.stdin.on("end",()=>{try{process.stdout.write(JSON.parse(input).frameworkVersion||"")}catch{}});')"
     if [ "$AVAILABLE_FLUTTER_VERSION" = "$FLUTTER_VERSION" ]; then
         FLUTTER_CMD=(flutter)
     fi
@@ -50,7 +55,7 @@ fi
 
 # FVM 4 prefixes spawned command output with a human-readable status line.
 # Parse from the JSON object so direct Flutter and FVM output share one path.
-ACTUAL_FLUTTER_VERSION="$("${FLUTTER_CMD[@]}" --version --machine | node -e 'let input="";process.stdin.on("data",c=>input+=c);process.stdin.on("end",()=>{const start=input.indexOf("{");process.stdout.write(JSON.parse(input.slice(start)).frameworkVersion);});')"
+ACTUAL_FLUTTER_VERSION="$(python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" --version --machine | node -e 'let input="";process.stdin.on("data",c=>input+=c);process.stdin.on("end",()=>{const start=input.indexOf("{");process.stdout.write(JSON.parse(input.slice(start)).frameworkVersion);});')"
 if [ "$ACTUAL_FLUTTER_VERSION" != "$FLUTTER_VERSION" ]; then
     echo "Flutter ${FLUTTER_VERSION} required by automation/project.conf, found ${ACTUAL_FLUTTER_VERSION}." >&2
     exit 1
@@ -60,14 +65,15 @@ fi
 
 # project.conf is the sole tenant-identity owner. Apply it immediately before
 # compilation so stale generated files can never leak between production apps.
-bash automation/apply_config.sh
+bash automation/apply_config.sh "$PROJECT_ROOT/automation/project.conf" --build
 if [ "${FESTAPP_CANONICAL_CUTOVER_RELEASE:-0}" = 1 ]; then
     node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
 else
     node automation/release/client_cutover_preflight.mjs
 fi
 
-"${FLUTTER_CMD[@]}" precache --web
+python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" precache --web
+python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" pub get --enforce-lockfile
 FESTAPP_SETUP_BUILD_ARGS=()
 FESTAPP_SETUP_ENABLED="$(sed -n 's/^OCCASION_SETUP_ENABLED=//p' automation/project.conf)"
 case "$FESTAPP_SETUP_ENABLED" in
@@ -77,7 +83,13 @@ case "$FESTAPP_SETUP_ENABLED" in
 esac
 # Pinned esbuild is also used for lexical compaction before immutable stamping.
 (cd web_client && pnpm install --frozen-lockfile)
-"${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
+node web_client/scripts/build_runtime.mjs --check
+node web_client/scripts/build_embed.mjs
+node web_client/scripts/build_measurement_runtime.mjs
+node automation/configure_fonts.js . --assets-only
+python3 automation/release/build_receipt.py capture "$TARGET"
+python3 automation/ci/telemetry.py release.flutter-build node automation/lib/web_build_cache.mjs component flutter "$TARGET" python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
+node automation/lib/web_build_cache.mjs stamp-flutter
 node automation/optimize_web_fonts.mjs build/web automation/project.conf
 node automation/compact_flutter_javascript.mjs build/web
 bash automation/emit_version_manifest.sh build/web
@@ -88,11 +100,11 @@ else
     mv build/web/index.html build/web/flutter.html
 fi
 
-# Both direct deployment and GitHub Deploy use this shared build path.
-# Fail before publishing if restricted WebViews or built module identity regress.
-bash automation/test_web_startup.sh
-(cd web_client && pnpm run build)
+# CI owns the full source startup suite. The source gate above and completed
+# tenant bundle verification below cover the two distinct release boundaries.
+python3 automation/ci/telemetry.py release.web-client-build node automation/lib/web_build_cache.mjs component vite "$TARGET" bash -c 'cd web_client && pnpm run build'
 cp -R web_client/dist/. build/web/
+cp web_client/public/sitemap.xml build/web/sitemap.xml
 node automation/minify_web_translations.mjs build/web
 # The standalone organizer document shares the compiled tenant theme and fonts.
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
@@ -113,7 +125,7 @@ if [ "$TARGET" = cloudflare ]; then
     fi
 fi
 
-rm -f build/web/flutter_service_worker.js
+rm -f build/web/flutter_service_worker.js build/web/.last_build_id
 VERSION="$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')"
 FORCED_OCCASION="$(grep -m1 '^FORCE_OCCASION_LINK=' automation/project.conf | cut -d= -f2- | tr -d '\"' | tr -d "'" | tr -d '[:space:]')"
 APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' automation/project.conf | tr -d '[:space:]')"
@@ -125,5 +137,6 @@ node automation/generate_csp_policy.mjs build/web "$TARGET"
 # Cloudflare adds its edge router before running the same verifier. Static
 # hosts have no generated edge worker, so their completed bundle is verified here.
 if [ "$TARGET" = static ]; then
-    node automation/verify_web_build.mjs build/web "$VERSION" automation/project.conf static
+    python3 automation/ci/telemetry.py release.artifact-checks node automation/verify_web_build.mjs build/web "$VERSION" automation/project.conf static
+    python3 automation/release/build_receipt.py seal static
 fi

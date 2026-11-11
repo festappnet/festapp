@@ -1,4 +1,4 @@
-import { type PaymentDependencies, PaymentError, record } from "./contracts.ts";
+import { type HostedPaymentDependencies, PaymentError, record } from "./contracts.ts";
 import { checkoutPayment } from "./checkout.ts";
 
 async function hash(value: string) {
@@ -16,7 +16,7 @@ export async function prepareOrderDelivery(
   commandId: string,
   surface: unknown,
   fallbackPayment: unknown,
-  deps: PaymentDependencies,
+  deps: HostedPaymentDependencies,
 ): Promise<Record<string, unknown>> {
   const source = record(sourceValue);
   if (!source.sealed) return { payment: source.payment ?? fallbackPayment };

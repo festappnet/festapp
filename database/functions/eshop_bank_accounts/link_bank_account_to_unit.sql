@@ -27,6 +27,18 @@ BEGIN
     END IF;
 
     IF p_priority IS NULL THEN
+        -- Issued instructions outlive a dialog and may still arrive as debits.
+        -- Account links needed by an open refund cannot be forcibly removed.
+        PERFORM public.lock_order_capacity_scope_internal(ARRAY(
+          SELECT o.id FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion
+          JOIN eshop.payment_info pi ON pi.id=o.payment_info
+          WHERE oc.unit=p_unit_id AND pi.bank_account=p_bank_account_id ORDER BY o.id));
+        IF EXISTS(SELECT 1 FROM eshop.refund_requests r JOIN eshop.orders o ON o.id=r.order_id
+          JOIN public.occasions oc ON oc.id=o.occasion JOIN eshop.payment_info pi ON pi.id=r.payment_info
+          WHERE oc.unit=p_unit_id AND pi.bank_account=p_bank_account_id
+            AND r.status IN ('pending','processing','unknown')) THEN
+          RAISE EXCEPTION 'BANK_ACCOUNT_HAS_PENDING_REFUND';
+        END IF;
         -- Unlink Logic
 
         -- Dependency Check (unless hard)
@@ -38,7 +50,7 @@ BEGIN
                 SELECT unnest(ba.supported_currencies) as curr
                 FROM eshop.unit_bank_accounts uba
                 JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
-                WHERE uba.unit = p_unit_id AND uba.bank_account != p_bank_account_id
+                WHERE uba.unit = p_unit_id AND uba.bank_account != p_bank_account_id AND ba.type IS DISTINCT FROM 'CASH'
             ),
             LostCurrencies AS (
                 SELECT curr FROM TargetAcc
@@ -55,6 +67,7 @@ BEGIN
                 JOIN eshop.products p2 ON ff.product_type = p2.product_type
                 WHERE o.unit = p_unit_id
                   AND f.is_open = true
+                  AND coalesce(f.data#>'{payments,bankEnabled}','true'::jsonb)='true'::jsonb
                   -- AND p.is_hidden = false -- Removed is_hidden check? Original SQL had it. Let's keep it tight.
                   AND p.currency_code IN (SELECT curr FROM LostCurrencies)
             )

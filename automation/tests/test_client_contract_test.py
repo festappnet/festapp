@@ -21,6 +21,10 @@ class ClientRunnerContract(unittest.TestCase):
         automation.mkdir()
         for name in ("test_client.sh", "test_client.py", "client_test_inventory.py"):
             shutil.copy(REPO / "automation" / name, automation)
+        # These contract fixtures never launch a Flutter engine; the real
+        # workstation slot is tested independently from fake runner outcomes.
+        (automation / "ci").mkdir()
+        (automation / "ci/resources.py").write_text("from contextlib import nullcontext\nflutter_slot = nullcontext\n")
         (automation / "client_test_inventory.json").write_text('{"moves":{},"cases":[]}')
         for directory in (self.root, self.root / "packages/festapp_core"):
             (directory / ".dart_tool").mkdir(parents=True)

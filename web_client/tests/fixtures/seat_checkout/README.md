@@ -14,8 +14,8 @@ SEAT_CHECKOUT_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postg
   pnpm --dir web_client run test:seat-checkout-browser --offline-recovery
 ```
 
-The browser test requires locally installed `agent-browser` 0.33.1 and Chrome
-(`agent-browser install`). CI runs both checks in `seat-checkout-regressions.yml`.
+The browser test requires the pinned Playwright dependency and its Chromium build
+(`pnpm --dir web_client exec playwright install chromium`). CI runs both checks in `seat-checkout-regressions.yml`.
 
 The browser physically clicks a rendered seat, closes the map, opens the order
 preview and confirms the order. It asserts SQL reservation and the persisted

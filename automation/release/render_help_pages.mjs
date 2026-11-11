@@ -1,7 +1,9 @@
+import writeIfChanged from '../lib/write_if_changed.cjs';
 import {publicRuntime} from './organizers/public_runtime.mjs';
 import { helpActionWebPath } from '../../web_client/src/services/help_action_routes.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {articleSections} from './help/search_index.mjs';
@@ -18,10 +20,13 @@ if (!['cs', 'en'].includes(locale)) throw new Error('Unknown help locale');
 if (locale !== 'cs' && (!preview || !arg('--output'))) throw new Error('English help is preview-only until localized screenshot capture is complete');
 const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && new URL(value('WEB_LINK')).hostname === 'vstupenky.online';
 // Authored help is versioned; the single local output is disposable build input.
-const target = path.resolve(arg('--output') || path.join(root, 'web_client/public/napoveda'));
+const destination = path.resolve(arg('--output') || path.join(root, 'web_client/public/napoveda'));
+let target = destination;
 if (path.basename(target) !== 'napoveda') throw new Error('Help output must be a napoveda directory');
-fs.rmSync(target, {recursive:true, force:true});
+if (!enabled) fs.rmSync(target, {recursive:true, force:true});
 if (!enabled) {console.log('Public help disabled for this tenant.'); process.exit(0);}
+target = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-help-'));
+process.on('exit', () => fs.rmSync(target,{recursive:true,force:true}));
 const directory = path.join(root, 'automation/release/help');
 const source = locale === 'cs' ? directory : path.join(directory, 'en');
 const pages = JSON.parse(fs.readFileSync(path.join(directory, locale === 'cs' ? 'pages.json' : 'pages.en.json'), 'utf8'));
@@ -35,6 +40,10 @@ const digest = data => createHash('sha256').update(data).digest('hex').slice(0,1
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const runtime=publicRuntime(root,{builtIndex:arg('--built-index'),entry:'src/marketing/help.js',assetRoot:helpRoot+'assets/'});
 const assets = {...runtime.assets};
+const measurementPreset = fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json'));
+const measurementPresetName = `festapp-host-gtm.${digest(measurementPreset)}.json`;
+assets[measurementPresetName] = measurementPreset;
+const measurementPresetUrl = helpRoot+'assets/'+measurementPresetName;
 const mcpReference = readMcpReference(root);
 const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
 assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
@@ -101,7 +110,7 @@ const videoLink = id => {
 const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
-    .replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
+    .replaceAll('{{MEASUREMENT_PRESET}}',measurementPresetUrl).replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
     .replace('{{MCP_REFERENCE}}', () => renderMcpReference(mcpReference,locale))
     .replace('{{MCP_PROMPTS}}', () => renderMcpPrompts(mcpReference,mcpPrompts,locale))
     .replace(/\{\{PREVIEW:([a-z0-9/-]+)\}\}/g, (_,id) => previewImage(id))
@@ -145,16 +154,17 @@ for (const page of allPages) {
   const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">${publicThemeHead}<meta name="referrer" content="no-referrer"><title>${escape(page.seoTitle)} | ${escape(brand)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${preview ? 'noindex,nofollow' : 'index,follow'}">${preview ? '' : `<link rel="canonical" href="${canonical}">`}<meta property="og:type" content="${collection ? 'website' : 'article'}"><meta property="og:title" content="${escape(page.seoTitle)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${canonical}"><meta property="og:site_name" content="${escape(brand)}"><link rel="icon" href="/favicon.ico">${themeLinks}<link rel="stylesheet" href="${helpRoot}assets/${cssName}"><script type="application/ld+json">${json}</script><script src="${helpRoot}assets/${searchName}" defer></script><script src="${helpRoot}assets/${jsName}" defer></script><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="help">${publicThemeBody}<a class="skip-link" href="#main">${escape(ui.skip)}</a>${shell.header}${searchChrome}
 <div class="help-layout"><aside class="help-sidebar"><p>${escape(ui.categoryNav)}</p><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></aside><details class="help-mobile-menu"><summary>${escape(ui.mobileGuides)}</summary><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></details>
 <main id="main" class="help-main"><nav class="breadcrumb" aria-label="${escape(ui.breadcrumb)}">${breadcrumb}</nav><h1>${escape(page.title)}</h1><div data-help-browse>${page.slug && toc ? `<details class="guide-toc"><summary>${escape(ui.onThisPage)}</summary><ul>${toc}</ul></details>` : ''}${body}<div class="guide-related"><p>${escape(ui.related)}</p>${category && !page.collection ? `<a href="${href(category)}">${escape(category.label)}</a>` : ''}<a href="${helpRoot}">${escape(ui.allGuides)}</a><a href="/support/">${escape(ui.support)}</a></div></div></main></div>${shell.footer}${accountScript}</body></html>\n`;
-  const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); fs.writeFileSync(path.join(folder,'index.html'),html);
+  const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); writeIfChanged.writeFileSync(path.join(folder,'index.html'),html);
 }
 fs.mkdirSync(path.join(target,'assets'),{recursive:true});
-for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data);}
+for (const [name,data] of Object.entries(assets)) {const file=path.join(target,'assets',name);fs.mkdirSync(path.dirname(file),{recursive:true});writeIfChanged.writeFileSync(file,data);}
+writeIfChanged.syncTree(target,destination);
 console.log(`Rendered ${allPages.length} ${locale} help pages.`);
-if (!arg('--output')) {
-  const sitemap = path.join(root,'web_client/public/sitemap.xml');
+if (!arg('--output') || arg('--built-index')) {
+  const sitemap = arg('--built-index') ? path.join(path.dirname(destination),'sitemap.xml') : path.join(root,'web_client/public/sitemap.xml');
   if (fs.existsSync(sitemap)) {
     const original = fs.readFileSync(sitemap,'utf8').replace(/\s*<url><loc>https:\/\/[^<]+\/napoveda\/[^<]*<\/loc><\/url>/g,'');
     const entries = allPages.map(page => `  <url><loc>${origin}${href(page)}</loc></url>`).join('\n');
-    fs.writeFileSync(sitemap,original.replace('</urlset>',entries+'\n</urlset>'));
+    writeIfChanged.writeFileSync(sitemap,original.replace('</urlset>',entries+'\n</urlset>'));
   }
 }

@@ -1,3 +1,5 @@
+-- test-setup: database/functions/scanning/projection.sql
+-- test-setup: database/functions/scanning/admission.sql
 -- One transaction retains the injected scanner fixture across every DO block.
 BEGIN;
 DO $$
@@ -36,6 +38,24 @@ BEGIN
  UPDATE public.scanner_settings SET config=jsonb_set(config,'{manual_search,tickets}','true') WHERE occasion_id=(b->>'occasion')::bigint;
  response:=public.search_scanner_tickets((sb#>>'{data,session_id}')::uuid,sb#>>'{data,token}',(SELECT ticket_symbol FROM eshop.tickets WHERE id=foreign_ticket));
  PERFORM assert_eq(jsonb_array_length(response->'data'),0,'foreign ticket absent from manual search');
+ UPDATE eshop.orders SET data=jsonb_set(data,'{email}','"foreign-customer@example.test"') WHERE occasion=(a->>'occasion')::bigint;
+ response:=public.search_scanner_tickets((sb#>>'{data,session_id}')::uuid,sb#>>'{data,token}','foreign-customer@example.test');
+ PERFORM assert_eq(jsonb_array_length(response->'data'),0,'foreign event email is absent from search');
+ -- Search rows are references, not proof of admission or event membership.
+ response:=public.lookup_scanner_ticket_by_id((sb#>>'{data,session_id}')::uuid,sb#>>'{data,token}',foreign_ticket);
+ PERFORM assert_eq((response->>'code')::int,404,'foreign ID lookup denied');
+ PERFORM assert_true(response->'data'='null'::jsonb,'foreign ID exposes no ticket preview');
+ BEGIN
+  PERFORM public.lookup_scanner_ticket_by_id((sa#>>'{data,session_id}')::uuid,sa#>>'{data,token}',foreign_ticket);
+  PERFORM assert_fail('disabled manual search cannot enumerate ticket IDs');
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ UPDATE public.scanner_settings SET config=jsonb_set(config,'{manual_search,tickets}','true') WHERE occasion_id=(a->>'occasion')::bigint;
+ UPDATE eshop.tickets SET state='storno',ticket_symbol=NULL WHERE id=foreign_ticket;
+ response:=public.lookup_scanner_ticket_by_id((sa#>>'{data,session_id}')::uuid,sa#>>'{data,token}',foreign_ticket);
+ PERFORM assert_eq((response->>'code')::int,200,'cancelled symbol-less row opens by scoped ID');
+ PERFORM assert_eq(response#>>'{data,state}','storno','cancelled status survives without products or symbol');
+ PERFORM assert_false((response#>>'{data,admission_allowed}')::boolean,'cancelled row never permits admission');
+ PERFORM assert_false(has_function_privilege('anon','public.scanner_lookup_ticket_internal(uuid,text,text,bigint)','EXECUTE'),'lookup implementation remains private');
  BEGIN PERFORM public.get_scanner_summary((sa#>>'{data,session_id}')::uuid,sb#>>'{data,token}');PERFORM assert_fail('foreign bearer denied');EXCEPTION WHEN SQLSTATE 'PT401' THEN NULL;END;
 END $$;
 ROLLBACK;

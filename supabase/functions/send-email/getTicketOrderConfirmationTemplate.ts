@@ -1,10 +1,12 @@
+import { requireHostedPayment } from "../_shared/payments/contracts.ts";
+import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { formatCurrency, formatDatetime } from "../_shared/utilities.ts";
-import { translations } from "../_shared/translations/translations.ts";
 import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
 import { paymentRegistry } from "../_shared/payments/runtime.ts";
 import { paymentConfirmationBalance } from "../_shared/payments/email.ts";
@@ -60,9 +62,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     throw new Error("Queued ticket order payload is missing");
   }
   const requestedLanguage = String(task.data.lang ?? "cs");
-  const lang = requestedLanguage in translations
-    ? requestedLanguage as keyof typeof translations
-    : "cs";
+  const lang = resolveEmailLanguage(requestedLanguage);
   const order = await withOrderIdentity(ticketOrder.order, async (params) => {
     const { data, error } = await supabaseAdmin.rpc(
       "read_order_identity",
@@ -74,8 +74,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
   const attachments: Attachment[] = [];
-  if (paymentRegistry.has(paymentInfo.payment_method)) {
-    const binding=paymentRegistry.resolve(paymentInfo.payment_method);
+  if (paymentRegistry.hasHosted(paymentInfo.payment_method)) {
+    const binding=requireHostedPayment(paymentRegistry.resolve(paymentInfo.payment_method));
     if (!binding.order) throw new Error("payment_email_not_configured");
     const source=await binding.order.readSource(order.id,task.data.command_id);
     const sourcePayment=(source as {payment?:{status?:string}})?.payment;
@@ -146,7 +146,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       commandId: String(task.data.command_id),
     });
     if (invoice.attachment) attachments.push(invoice.attachment);
-  } else if (paymentInfo.amount > 0) {
+  } else if (isBankPaymentInfo(paymentInfo) && paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }

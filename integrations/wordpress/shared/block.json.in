@@ -28,6 +28,14 @@
     "height": {
       "type": "number",
       "default": 800
+    },
+    "measurement": {
+      "type": "string",
+      "enum": [
+        "unit",
+        "host"
+      ],
+      "default": "unit"
     }
   },
   "supports": {

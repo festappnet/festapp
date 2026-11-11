@@ -11,6 +11,7 @@ const testEnvironment = {
   FESTAPP_MCP_TENANTS_JSON: JSON.stringify([{ tenantId: "fixture", tenantOrigin: "https://tenant.invalid",
     issuer: "https://mcp.invalid", organizationId: 3, brokerSecret: "s".repeat(43) }]),
   FESTAPP_ALLOWED_WEB_ORIGINS: "https://app.example.invalid",
+  GOOGLE_WALLET_ALLOWED_ORIGINS: "https://app.example.invalid",
   NOTIFY_WEBHOOK_TOKEN: "edge-test-webhook-token",
 };
 
@@ -75,6 +76,7 @@ const optionEntrypoints = [
   "send-email",
   "send-reset-password-link",
   "send-sign-in-code",
+  "manage-member-access",
   "send-ticket-order",
   "wix-checkout-context",
   "waitlist-commands",
@@ -194,7 +196,7 @@ Deno.test("send-sign-in-code rejects invalid identities before changing a passwo
       body: "{}",
     }),
   );
-  assertEquals(response.status, 400);
+  assertEquals(response.status, 401);
 });
 
 Deno.test("send-tickets rejects invalid input before privileged reads", async () => {
@@ -518,3 +520,31 @@ Deno.test('payment-webhook rejects unsafe methods and uninstalled providers with
   assertEquals((await handler(new Request('https://edge-test.invalid/payment-webhook',{method:'GET'}))).status,405);
   assertEquals((await handler(new Request('https://edge-test.invalid/payment-webhook?provider=uninstalled',{method:'POST',body:'{}'}))).status,503);
 });
+
+for (const [name, method, expectedStatus] of [
+  ["payment-operation", "POST", 401],
+  ["ticket-wallet", "GET", 405],
+  ["sync-ticket-wallet", "POST", 401],
+] as const) {
+  Deno.test(`${name} registers a guarded handler before privileged I/O`, async () => {
+    const originalFetch = globalThis.fetch;
+    let externalCalls = 0;
+    globalThis.fetch = (() => {
+      externalCalls++;
+      throw new Error("Rejected requests must not reach privileged services");
+    }) as typeof fetch;
+    try {
+      const handler = await loadHandler(name);
+      const response = await handler(new Request("https://edge-test.invalid", {
+        method,
+        headers: {origin: "https://app.example.invalid"},
+        ...(method === "POST" ? {body: "{}"} : {}),
+      }));
+      assertEquals(response.status, expectedStatus);
+      assertEquals(response.headers.get("Cache-Control"), "no-store");
+      assertEquals(externalCalls, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+}

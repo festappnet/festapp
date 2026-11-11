@@ -15,7 +15,7 @@ DECLARE
     v_final_version bigint;
     v_promote boolean;
 BEGIN
-    IF p_reason IS NULL OR p_reason NOT IN ('payment_fact','product_edit') THEN
+    IF p_reason IS NULL OR p_reason NOT IN ('payment_fact','product_edit','refund_fact') THEN
         RAISE EXCEPTION 'INVALID_PAYMENT_RECONCILIATION_REASON';
     END IF;
     PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order_id]);
@@ -23,8 +23,13 @@ BEGIN
     SELECT * INTO v_payment FROM eshop.payment_info WHERE id=v_order.payment_info FOR UPDATE;
     v_was_eligible := coalesce(v_order.state IN ('paid','sent'),false);
     -- Provider facts and non-admission shells retain their existing owners.
-    IF v_payment.id IS NULL OR v_payment.payment_method<>'bank'
+    IF v_payment.id IS NULL OR public.payment_method_is_online_internal(v_payment.payment_method)
        OR v_order.state NOT IN ('created','ordered','expired','paid','sent') THEN
+        RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_order.state,
+            'eligibility_changed',false,'email_payment_version',v_order.email_payment_version);
+    END IF;
+
+    IF p_reason='refund_fact' AND v_order.state IN ('storno','expired') THEN
         RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_order.state,
             'eligibility_changed',false,'email_payment_version',v_order.email_payment_version);
     END IF;
@@ -35,7 +40,7 @@ BEGIN
     END IF;
 
     -- The saved deposit is a commercial snapshot, capped by the current price.
-    v_eligible := coalesce(v_order.price,0)<=0 OR coalesce(v_payment.paid,0)>=
+    v_eligible := coalesce(v_order.price,0)<=0 OR (coalesce(v_payment.paid,0)-coalesce(v_payment.returned,0))>=
         least(coalesce(v_payment.deposit_amount,v_order.price),v_order.price);
     v_promote := v_eligible AND NOT v_was_eligible;
 

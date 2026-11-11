@@ -1,11 +1,12 @@
-import { updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
+import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
+import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
+import { confirmedNetPayment, updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
-import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { getBaseOrderData } from "./shared.ts";
-import { translations } from "../_shared/translations/translations.ts";
 import { generateChangeOverview } from "../_shared/changeOverview.ts";
-import type { Tone } from "../_shared/translations/translations.ts"; // Import the Tone type
+
 
 /**
  * Prepares the data required for the TICKET_ORDER_UPDATE email template.
@@ -16,9 +17,7 @@ export async function getTicketOrderUpdateTemplate(
 ) {
   const { orderId, requestSecret, lang: requestedLanguage = "cs" } =
     reqData.data;
-  const lang = requestedLanguage in translations
-    ? requestedLanguage as keyof typeof translations
-    : "cs";
+  const lang = resolveEmailLanguage(requestedLanguage);
 
   const attachments: any[] = [];
 
@@ -35,20 +34,18 @@ export async function getTicketOrderUpdateTemplate(
   } = await getBaseOrderData(orderId, requestSecret, authorizationHeader);
 
   // 2. Get the communication tone
-  const tone: Tone = (form_data?.communication_tone === "informal")
-    ? "informal"
-    : "formal";
+  const tone = resolveCommunicationTone(form_data?.communication_tone);
 
   // 3. Calculate balance and generate a single, consolidated reasoning string
   const orderPrice = Number(order.price) || 0;
-  const amountPaid = Number(payment_info?.paid) || 0;
+  const amountPaid = confirmedNetPayment(payment_info);
   const balance = orderPrice - amountPaid;
   const currency = order.currency_code || "CZK";
   const balanceReasoning = updateBalanceReasoning(
     orderPrice, amountPaid, currency, bank_account, payment_info, lang, tone,
   );
 
-  if (orderPrice !== 0 && balance > 0) {
+  if (isBankPaymentInfo(payment_info) && orderPrice !== 0 && balance > 0) {
     // 4. Generate Payment QR Code if there is a balance
     try {
       const qrPaymentData = {
@@ -88,8 +85,7 @@ export async function getTicketOrderUpdateTemplate(
 
   // 6. Prepare final data for the email client
   const subs = {
-    occasionTitle: occasion.title,
-      orderSymbol: order.order_symbol,
+    ...orderTemplateValues("TICKET_ORDER_UPDATE", occasion.title, order.order_symbol, tone, lang),
     changeOverview: changeOverviewHtml,
     fullOrder: generateFullOrder(
       order.data,

@@ -1,3 +1,5 @@
+import { connectionActive, connectionIssuable } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
+import { errors } from 'oidc-provider';
 import { acquireProcessLock, rejectLegacyLock, createSessionQueue } from '../auth/process-lock.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
@@ -40,6 +42,20 @@ export async function openRemoteStorage(root, key) {
             decipher.setAuthTag(bytes.subarray(12, 28));
             return JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]));
         };
+        const transaction = action => {
+            db.exec('BEGIN IMMEDIATE');
+            try { const result = action(); db.exec('COMMIT'); return result; }
+            catch (error) { db.exec('ROLLBACK'); throw error; }
+        };
+        // Called only inside the transaction owned by activation or revocation.
+        const revokeRecords = grantId => {
+            const grant = store.get('Delegation', grantId);
+            if (grant) {
+                store.remove('Backend', grant.binding);
+                store.putUntil('Delegation', grantId, { ...grant, revoked: true }, grant.expiresAt);
+            }
+            db.prepare('DELETE FROM records WHERE grant_id=?').run(digest(grantId));
+        };
         const store = {
             root,
             runSessionExclusive,
@@ -48,12 +64,16 @@ export async function openRemoteStorage(root, key) {
                 return row ? unseal(model, digest(id), row.value) : undefined;
             },
             put(model, id, value, seconds = 3600) {
+                return this.putUntil(model, id, value, Date.now() + seconds * 1000);
+            },
+            // Absolute consent deadlines must survive clock movement during writes.
+            putUntil(model, id, value, expiresAt) {
                 db.prepare('DELETE FROM records WHERE expires<=?').run(Date.now());
                 if (db.prepare('SELECT COUNT(*) AS n FROM records').get().n >= 20000 && !this.get(model, id))
                     throw new Error('REMOTE_STORAGE_FULL');
                 const hashed = digest(id);
                 db.prepare('INSERT OR REPLACE INTO records VALUES (?,?,?,?,?,?,?)').run(
-                    model, hashed, seal(model, hashed, value), Date.now() + seconds * 1000,
+                    model, hashed, seal(model, hashed, value), expiresAt,
                     value.grantId ? digest(value.grantId) : null,
                     value.uid ? digest(value.uid) : null,
                     value.userCode ? digest(value.userCode) : null,
@@ -64,14 +84,37 @@ export async function openRemoteStorage(root, key) {
                 return db.prepare('SELECT id,value FROM records WHERE model=? AND expires>?').all(model, Date.now())
                     .map(r => unseal(model, r.id, r.value));
             },
-            revoke(grantId) {
-                const grant = this.get('Delegation', grantId);
-                if (grant) {
-                    this.remove('Backend', grant.binding);
-                    grant.revoked = true;
-                    this.put('Delegation', grantId, grant, 86400 * 7);
-                }
-                db.prepare('DELETE FROM records WHERE grant_id=?').run(digest(grantId));
+            revoke(grantId) { return transaction(() => revokeRecords(grantId)); },
+            discardUnissuedTokens(grantId) {
+                db.prepare("DELETE FROM records WHERE grant_id=? AND model IN ('AccessToken','RefreshToken')").run(digest(grantId));
+            },
+            activateConnection(grantId) {
+                return transaction(() => {
+                    const grant = this.get('Delegation', grantId);
+                    if (!connectionIssuable(grant)) throw new errors.InvalidGrant('consent expired');
+                    if (grant.replaces) {
+                        const old = this.get('Delegation', grant.replaces);
+                        if (!connectionActive(old) || ['userId', 'clientId', 'profileBinding'].some(k => old[k] !== grant[k]))
+                            throw new errors.InvalidGrant('replacement target inactive');
+                        revokeRecords(old.id);
+                    }
+                    const backend = this.get('Backend', grant.binding);
+                    if (!backend) throw new errors.InvalidGrant('backend session expired');
+                    const issued = { ...grant, lifecycle: 'issued', issuedAt: Date.now(), lastTokenExchangeAt: Date.now() };
+                    this.putUntil('Delegation', grantId, issued, grant.expiresAt);
+                    this.putUntil('Binding', grant.binding, { id: grantId }, grant.expiresAt);
+                    this.putUntil('Backend', grant.binding, backend, grant.expiresAt);
+                    return issued;
+                });
+            },
+            refreshConnection(grantId) {
+                return transaction(() => {
+                    const grant = this.get('Delegation', grantId);
+                    if (!connectionActive(grant)) throw new errors.InvalidGrant('connection inactive');
+                    const updated = { ...grant, lastTokenExchangeAt: Date.now() };
+                    this.putUntil('Delegation', grantId, updated, grant.expiresAt);
+                    return updated;
+                });
             },
             adapter(model) {
                 return {
@@ -85,7 +128,7 @@ export async function openRemoteStorage(root, key) {
                         if (!value || value.consumed) throw new Error('OAUTH_SOURCE_ALREADY_CONSUMED');
                         if (value) {
                             const row = db.prepare('SELECT expires FROM records WHERE model=? AND id=?').get(model, digest(id));
-                            store.put(model, id, { ...value, consumed: Math.floor(Date.now() / 1000) }, Math.max(0, (row.expires - Date.now()) / 1000));
+                            store.putUntil(model, id, { ...value, consumed: Math.floor(Date.now() / 1000) }, row.expires);
                         }
                     },
                     revokeByGrantId: async id => store.revoke(id),
@@ -101,11 +144,12 @@ export async function openRemoteStorage(root, key) {
                 write: async (binding, value) => {
                     const link = store.get('Binding', binding);
                     const grant = link && store.get('Delegation', link.id);
-                    if (link && (!grant || grant.revoked || grant.expiresAt <= Date.now()))
+                    if (link && !connectionActive(grant) && !connectionIssuable(grant))
                         throw new Error('CONNECTION_REVOKED');
                     // Abandoned login flows expire in ten minutes. Only an
-                    // explicit consent promotes a session to the grant lifetime.
-                    store.put('Backend', binding, value, grant ? (grant.expiresAt - Date.now()) / 1000 : 600);
+                    // successful code exchange promotes a session to the grant lifetime.
+                    if (grant) store.putUntil('Backend', binding, value, grant.lifecycle === 'pending' ? grant.pendingExpiresAt : grant.expiresAt);
+                    else store.put('Backend', binding, value, 600);
                 },
                 remove: async binding => store.remove('Backend', binding),
             },
@@ -114,6 +158,12 @@ export async function openRemoteStorage(root, key) {
         // Detect a wrong/missing key before accepting traffic, even after restart.
         const sentinel = store.get('Metadata', 'encryption');
         if (!sentinel) store.put('Metadata', 'encryption', { version: 1 }, 86400 * 3650);
+        if (!store.get('Metadata', 'connection-lifecycle')) transaction(() => {
+            for (const grant of store.values('Delegation')) {
+                if (!grant.lifecycle) store.putUntil('Delegation', grant.id, { ...grant, lifecycle: 'legacy' }, grant.expiresAt);
+            }
+            store.put('Metadata', 'connection-lifecycle', { version: 1 }, 86400 * 3650);
+        });
         return store;
     } catch (e) { try { db?.close(); } finally { release(); } throw e; }
 }

@@ -78,6 +78,13 @@ BEGIN
       RETURN jsonb_build_object('code', 500, 'message', 'Failed to retrieve user UUID after profile update.', 'lol', (v_update_user_result));
     END IF;
 
+    PERFORM public.ensure_unit_membership_internal_v1(v_unit,v_final_user_uuid);
+
+    IF EXISTS(SELECT 1 FROM public.unit_users m WHERE m.unit=v_unit AND m."user"=v_final_user_uuid
+      AND (m.is_manager AND NOT coalesce(v_is_manager,false) OR m.is_editor AND NOT coalesce(v_is_editor,false)
+       OR m.is_editor_view AND NOT coalesce(v_is_editor_view,false))) THEN
+      PERFORM public.invalidate_member_access_invitations_internal_v1(v_unit,NULL,v_final_user_uuid);
+    END IF;
     -- 6. Insert or Update the user's roles in the unit (UPSERT)
     INSERT INTO public.unit_users("user", unit, is_manager, is_editor, is_editor_view, data)
     VALUES (v_final_user_uuid, v_unit, v_is_manager, v_is_editor, v_is_editor_view, v_data)

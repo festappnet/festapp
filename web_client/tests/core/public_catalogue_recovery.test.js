@@ -1,3 +1,4 @@
+import {publicFormLocation} from '../../src/utils/public_form_location.js';
 import { register } from 'node:module';
 register('../css_loader.mjs', import.meta.url);
 import test from 'node:test';
@@ -40,7 +41,7 @@ test('unknown public paths render the catalogue without reloading', async t => {
         window.failFestappWebClientStartup = assert.fail;
         await runInNewContext(source, {
             window, document, console, UnitPage, RouterService, AppConfig,
-            isEmbed: () => false, applyEmbedContext() {}, resolveScannerRoute: () => null,
+            publicFormLocation, isEmbed: () => false, applyEmbedContext() {}, resolveScannerRoute: () => null,
             GoogleAuthService: { takeCallback: () => null },
             initializeCoreServices: async () => {}, handleHelpAction: async () => false, handleOrganizerIntent: async () => null,
             LocalizationService: {}, SupabaseService: {}, RightsService: {},

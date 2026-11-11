@@ -96,8 +96,46 @@ slots and links remain part of the chosen wrapper design.
 
 ## Authoring and generated examples
 
+Communication tone is defined by `packages/festapp_contracts/communication-tone.json`.
+`automation/generate_communication_tone.py` produces the SQL, Dart and TypeScript
+adapters; web uses the same TypeScript module as Edge Functions. They resolve an
+explicit form/draft setting, then the organizer setting, then the platform default.
+Persisted form metadata and setup previews use the generated SQL resolver. Shared
+contract cases verify the same behavior in all runtimes, including invalid values.
+
+`_shared/emailCommunication.ts` owns introductions for all five global order
+templates. Delivery and generated previews insert the same `orderCommunication`
+HTML block. Payment presentation consumes the same resolved tone. Waitlist wording is generated from `packages/festapp_contracts/waitlist-email-copy.json`
+for SQL delivery/offer previews and TypeScript offline examples; the preview generator
+does not parse SQL source. Neutral messages need no artificial formal/informal wording branch.
+Scoped custom prose, formatting and custom payment instructions are preserved;
+only inserted dynamic blocks adapt to tone. The editor's scenario selector affects
+preview state, while form/organizer settings control actual delivery.
+
+`packages/festapp_contracts/email-variables.json` owns every supported template's
+canonical variables, value kinds, HTML/scalar distinction and repeatability.
+`automation/generate_email_variables.py` generates the TypeScript and Dart catalogs.
+The Flutter adapter supplies localized descriptions. Order identity is assembled
+by `orderIdentityValues` using only `orderSymbol` and `occasionTitle`.
+The forward data migration converts existing scoped/global templates, wrappers
+and draft overrides; storage constraints and the delivery guard reject retired
+placeholders. There is no runtime alias conversion. See the
+[cutover procedure](../../../docs/operations/email-template-variable-cutover.md).
+Delivery and preview substitute once, so a token-looking event title
+cannot trigger another substitution. The existing shared money/date formatters,
+order overview, payment presentation and capability-link owners remain the source
+for their respective values; the catalog does not recalculate business facts.
+Producers pass raw scalar values; the shared delivery renderer escapes catalogued
+text/URLs for HTML while leaving subjects plain and generated HTML blocks intact.
+Order overview rendering escapes its raw customer/product fields itself. Preview
+adapters must not pre-escape those same fields or maintain a second substitution loop.
+
 Email authoring uses native Super Editor action-tag composition and atomic
-placeholder objects. The editor serializes them only as existing `{{code}}`
+placeholder objects. The explicit variable chooser follows its toolbar button,
+so an expanded or offscreen document selection cannot hide it; typed `@` queries
+still follow the caret. Every variable exposes an information action, including
+empty block previews. Inline actions use the editor's native tap delegate because
+inline widget gestures do not receive document taps. The editor serializes them only as existing `{{code}}`
 substitutions. Preview data and editor metadata never enter the saved HTML.
 The portable rules and preview composer live in `festapp_core/email_templates.dart`;
 localized authoring labels remain in the Flutter adapter. Required overview actions
@@ -253,3 +291,31 @@ and the editor's selection/move/delete/history operations. Stored email blocks
 remain `{{code}}`, inline variables remain inline, and safe unknown HTML remains
 preserved content rather than a functional component. Generated preview scenarios
 cover the opening message in every supported language.
+
+The shared variable catalog covers all 15 registered system template kinds,
+including team invitation/access messages. Team producers
+supply raw canonical values; the common composer owns escaping for both
+preview and delivery. The forward system-variable migration preserves the
+installed earlier migration and converts existing sources at every scope.
+
+The retired `ORDER_OVERVIEW` type remains data-only for historical identity
+retention; it has no first-party sender or registered editor preview. Password reset
+uses `resetLink` everywhere; forward17 also converts `resetPasswordLink`.
+
+## Member access messages
+
+Manual unit/occasion access uses `manage-member-access` and the SQL owner in
+`database/functions/people/`. `TEAM_INVITATION` offers scoped permissions;
+`TEAM_ACCESS_NOTICE` reports existing access; `SIGN_IN_CODE` remains the supported
+participant password message. Team messages never reset an existing password.
+Unit scope cannot request participant credentials. A plain profile save sends
+nothing. Setup forwards only its explicitly confirmed recipient selection.
+
+The existing resolver, inherited wrapper, renderer, recipient admission,
+encrypted snapshot and queue own delivery. Common role/title/link substitutions
+retain `occasionTitle`, `roleLabel`, `invitationUrl` and `occasionAdminUrl` for existing
+custom templates, including unit messages. The forward migration only adjusts
+byte-identical system defaults; customized global/tenant/unit/occasion content
+is preserved. Queue/provider/delivery facts and invitation acceptance are
+separate projections; neither membership nor provider acceptance proves inbox
+reading. Historical participant sending evidence remains valid.

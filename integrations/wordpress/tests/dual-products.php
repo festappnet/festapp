@@ -31,6 +31,13 @@ foreach ( $products as $i => $p ) {
  $plain_block = render_block( array( 'blockName' => $slug . '/ticket-form', 'attrs' => $plain, 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
  $plain_short = do_shortcode( '[' . $shortcode . ' url="' . $a['url'] . '" mode="fixed" height="240" inherit_style="false"]' );
  dual_assert( $plain_block === $plain_short && false === strpos( $plain_short, 'data-festapp-style' ) && false !== strpos( $plain_short, 'data-festapp-height="fixed"' ), 'legacy opt-out cannot override the saved form and preserves fixed height' );
+ foreach ( array( 'unit', 'host', 'invalid' ) as $measurement ) {
+  $attrs = $a; $attrs['measurement'] = $measurement;
+  $measured_block = render_block( array( 'blockName' => $slug . '/ticket-form', 'attrs' => $attrs, 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
+  $measured_short = do_shortcode( '[' . $shortcode . ' url="' . $a['url'] . '" mode="fixed" height="240" measurement="' . $measurement . '"]' );
+  dual_assert( $measured_block === $measured_short, 'Block and shortcode share measurement normalization' );
+  dual_assert( ( false !== strpos( $measured_short, 'data-festapp-datalayer' ) ) === ( 'host' === $measurement ), 'Only explicit host selection enables website dataLayer' );
+ }
  $render( array( 'url' => $origin . '/form/test' ) ); $render( array( 'url' => $origin . '/form/test' ) );
  $helpers = array_filter( wp_scripts()->queue, function( $h ) use ( $slug ) { return 0 === strpos( $h, $slug . '-helper-' ); } );
  dual_assert( 1 === count( $helpers ), 'one helper per product origin' );

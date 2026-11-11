@@ -1,4 +1,4 @@
-import {readdir} from 'node:fs/promises';
+import {readdir} from '../../../automation/lib/migration_inputs_async.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const {Client}=createRequire(new URL('../../../web_client/package.json',import.meta.url))('pg');

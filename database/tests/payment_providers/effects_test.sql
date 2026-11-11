@@ -23,7 +23,7 @@ BEGIN
  END IF;
  RAISE EXCEPTION 'unsupported test operation';
 END $$;
-INSERT INTO eshop.payment_providers(provider_key,handler,source_field) VALUES('different_gateway','public.test_alternate_effects(text,jsonb)'::regprocedure,'differentSource');
+INSERT INTO eshop.payment_providers(provider_key,handler,source_field,hosted_checkout) VALUES('different_gateway','public.test_alternate_effects(text,jsonb)'::regprocedure,'differentSource',true);
 DO $$
 DECLARE fx jsonb:=public.scanner_test_fixture(1); oc bigint:=(fx->>'occasion')::bigint; oid bigint; pi bigint; org bigint; u bigint;
  a uuid:=extensions.gen_random_uuid(); c jsonb; result jsonb; t bigint:=(fx#>>'{tickets,0}')::bigint; used bigint; emails bigint;

@@ -1349,17 +1349,16 @@
       "signature": "public.preview_occasion_setup_invitations(uuid,text[])",
       "source": "database/functions/occasion_setup/invitations.sql"
     },
-    "4083ceaf0c296f6c2e5778c15690eb7c49dfc14d8f7ab996aa8e12149eb6bdb4": {
-      "signature": "public.enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text)",
-      "source": "database/functions/occasion_setup/invitations.sql"
-    },
     "99dd9c61f4d8f5b25228b5d16ec521244706805bb1b93ff95eb03602957a9de0": {
       "signature": "public.get_occasion_team_invitation(text)",
       "source": "database/functions/occasion_setup/invitations.sql"
     },
     "94fb0381b6367b17d80a0417bee35d8dbd6f452069b0e0340f54609f01f0d1c7": {
       "signature": "public.accept_occasion_team_invitation(text,text)",
-      "source": "database/functions/occasion_setup/invitations.sql"
+      "source": "database/functions/occasion_setup/invitations.sql",
+      "additionalSources": [
+        "database/functions/people/access_invitations.sql"
+      ]
     },
     "9a6a1ce294fca16614387cd3003840cf6484818c6cfa78f1ee74ec03d523c1c4": {
       "signature": "public.materialize_occasion_setup_program_internal(jsonb,bigint,bigint)",
@@ -2858,11 +2857,11 @@
     },
     "f7edaa05d427681fe0904cb4cb2fb400ffd944c2fb2962cedbd452492b085262": {
       "signature": "public.can_read_seating_status(bigint)",
-      "source": "database/functions/user_permissions/seating_transition_operations.sql"
+      "source": "database/functions/user_permissions/seating_operations.sql"
     },
     "49f28786f42a1fcfd28bfca12fbf150aa3440c844fd4fb115d878f956f536ef1": {
       "signature": "public.can_assign_existing_admissions(bigint)",
-      "source": "database/functions/user_permissions/seating_transition_operations.sql"
+      "source": "database/functions/user_permissions/seating_operations.sql"
     },
     "8b1f0f3cb68a99f5d53090335dfff18c0a60a2f15093edb1eb0996d73920f8fd": {
       "signature": "public.get_blueprint_for_edit(text,bigint)",
@@ -2871,38 +2870,6 @@
     "6507df59b6d4f9af16c327682229cd2841d034c40883882bff9d3bc5aa80ea57": {
       "signature": "public.get_blueprint_for_edit(text)",
       "source": "database/functions/eshop/get_blueprint_for_edit.sql"
-    },
-    "0e876954292b464268f1331328feb4c465cb305e289bff2b826f3b85df8be9d2": {
-      "signature": "public.get_seating_workspace(bigint,bigint)",
-      "source": "database/functions/blueprint/seating_transition_context.sql"
-    },
-    "33601e971ea5cc22e7100fc88138165646206c1c1ef01f69b75daa9e1341c402": {
-      "signature": "public.get_seating_transition_context(uuid,text,text,bigint,integer)",
-      "source": "database/functions/blueprint/seating_transition_context.sql"
-    },
-    "3a77bad29feb7b1cdaaa8cdf78f346bbb2d5689ba4738f6118644d0b3dd621a4": {
-      "signature": "public.preview_ticket_seat_assignment(uuid,jsonb)",
-      "source": "database/functions/blueprint/seating_assignment.sql"
-    },
-    "b4698e7462c785731bcfe86d0d70c35f0f9dbad84a78d90a61d0c5c8dd7ad18d": {
-      "signature": "public.set_ticket_seat_assignments(uuid,jsonb,text,uuid)",
-      "source": "database/functions/blueprint/seating_assignment.sql"
-    },
-    "e60795f95bdff40113ceed5d2a962fa090f9c457e0409cf2661c5d5971ee4bbc": {
-      "signature": "public.start_seating_configuration(bigint,bigint,uuid)",
-      "source": "database/functions/blueprint/seating_transition_lifecycle.sql"
-    },
-    "1ad321accc1f9dcc851d1af973a68b2b4bef762d48a85b16552285c4acd4ca37": {
-      "signature": "public.cancel_seating_configuration(uuid,bigint,uuid)",
-      "source": "database/functions/blueprint/seating_transition_lifecycle.sql"
-    },
-    "40ae0959cdaeca3f52b366307a28de3603d32a2037687bbd33b1346ad3324c02": {
-      "signature": "public.preview_seating_publication(uuid)",
-      "source": "database/functions/blueprint/seating_publication.sql"
-    },
-    "bfc4c403a2f77689ec489cec73d8583836c1ce5f85ff6efe3e316e192b5ae1e4": {
-      "signature": "public.publish_seating_transitions(uuid,uuid[],text,uuid)",
-      "source": "database/functions/blueprint/seating_publication.sql"
     },
     "e6e5f0eb2f101a172107a8d2967f6963fb34ad93eacfd60a7342ed0bb759c3d2": {
       "signature": "public.effective_form_metadata_internal(jsonb,jsonb)",
@@ -2927,6 +2894,290 @@
     "d7d22018d14a84f1ac181cd5559caba4e852080c9bfd53cb0b6bcf7ba18fcc7e": {
       "signature": "public.get_setup_payment_options(uuid)",
       "source": "database/functions/payment_providers/configuration.sql"
+    },
+    "0bb3bc664e6e44bc09c8bb061e163106c56ed6995bed640f87ecdd78c94cc21f": {
+      "signature": "public.get_customer_order_overview_internal(text,bigint)",
+      "source": "database/functions/eshop_waitlist/order_overview.sql"
+    },
+    "6be5947f84e4f8fe93ada5fec86235d13f2d2c32d9d011bb4eebdc9c8bc70d3b": {
+      "signature": "public.get_customer_order_overview(jsonb)",
+      "source": "database/functions/eshop_waitlist/order_overview.sql"
+    },
+    "b94c52953a6ce1ca6536bff1ec98381e3a4fb4226117a1b8346e50eab98738e2": {
+      "signature": "public.get_customer_order_overview(text,bigint)",
+      "source": "database/functions/eshop_waitlist/order_overview.sql"
+    },
+    "b28ad3612d8f920edca59546f27849b4bf84a6f17110d03b0315e925711a6a2f": {
+      "signature": "public.insert_manual_transaction(jsonb,uuid)",
+      "source": "database/functions/eshop_transactions/insert_manual_transaction.sql"
+    },
+    "7a22bfb468ab07f801369c0617d2c22bea287254538b0fd3051d0a6787bdcc53": {
+      "signature": "public.get_bank_transaction_history(bigint)",
+      "source": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql"
+    },
+    "3fb1ec78c0ba9b718da226ecd973c5e9f773e00bb512a1c0a564d5f17d58cb2a": {
+      "signature": "public.get_form_by_link(jsonb)",
+      "source": "database/functions/eshop_forms/get_form_by_link.sql"
+    },
+    "5b6f18b4adc054bbf86d2fdd3e0a38233e08658e9a5b6a56424b20c0246fa89d": {
+      "signature": "public.get_form_by_link(text)",
+      "source": "database/functions/eshop_forms/get_form_by_link.sql"
+    },
+    "b42ac5feef6032bf833d3b8b824dc5d9a6a5d07f0b6279e2a795a03f744b85f6": {
+      "signature": "public.can_read_bank_transactions(bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "699fc9768136420542913d895f5f23ab31785c6d586538334b62bf55a36507f6": {
+      "signature": "public.get_inventory_spot_page(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/inventory/delegated_assignments.sql"
+    },
+    "679919fc615dc318f4755acba3b6a26c87b929f7d2f2f387867eebd762cf0dd0": {
+      "signature": "public.get_inventory_resource_slot_page(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/inventory/delegated_assignments.sql"
+    },
+    "92d1f5fd9cbb80433c4efb11f9b7eb6dfabbd267c838b601b2a20d922dedcef2": {
+      "signature": "public.manage_inventory_assignments(bigint,bigint,bigint,jsonb,uuid)",
+      "source": "database/functions/inventory/delegated_assignments.sql"
+    },
+    "8226b0aa154572ba43194c8f8c24c7c36f72b319bada8ffe3e3211fea2ae2c49": {
+      "signature": "public.get_unit_measurement_approval(bigint)",
+      "source": "database/functions/eshop_forms/unit_measurement_approval.sql"
+    },
+    "1ff3e54956d018f8f4620fea3fee13e0e419fb64dcec7a62d0ab4386f92911a2": {
+      "signature": "public.request_unit_measurement_approval(bigint)",
+      "source": "database/functions/eshop_forms/unit_measurement_approval.sql"
+    },
+    "0e876954292b464268f1331328feb4c465cb305e289bff2b826f3b85df8be9d2": {
+      "signature": "public.get_seating_workspace(bigint,bigint)",
+      "source": "database/functions/blueprint/seating_context.sql"
+    },
+    "47d5d7fc95a01b4a90d86aa8080bfa90f65da29cf00fe4bdeee2cdefba6f94d5": {
+      "signature": "public.get_blueprint_seating_context(bigint,text,text,bigint,integer)",
+      "source": "database/functions/blueprint/seating_context.sql"
+    },
+    "3e1d7e89a43b8e7a836b70f98ebb5adc9cc3434a58a89c9ef72a6b5cfeccb30d": {
+      "signature": "public.preview_ticket_seat_assignment(bigint,jsonb)",
+      "source": "database/functions/blueprint/seating_assignment.sql"
+    },
+    "ad9f8122d47b53fc2ea12b373683abd2bc2e85066d22a4c30a8e901adc29a149": {
+      "signature": "public.set_ticket_seat_assignments(bigint,jsonb,text,uuid)",
+      "source": "database/functions/blueprint/seating_assignment.sql"
+    },
+    "bfb95083354c936e2701b80bb233ed32556a792691d96db090c027be35d7361a": {
+      "signature": "public.ticket_wallet_projection_internal(bigint)",
+      "source": "database/functions/ticket_wallet/projection.sql"
+    },
+    "051ac097c3b8db3946989f7999b7efcae5f136974a624b750d37d74409bf986c": {
+      "signature": "public.refresh_ticket_wallet_term_internal(bigint)",
+      "source": "database/functions/ticket_wallet/projection.sql"
+    },
+    "80643701de7e90f73573510aab3f6699360fe96e313da86f8945ccec874ba2c7": {
+      "signature": "public.wake_ticket_wallet_worker()",
+      "source": "database/functions/ticket_wallet/worker.sql"
+    },
+    "44eb709ad380657accdc70874bf44e51802e7ef54895e838e929be87e1db0ad0": {
+      "signature": "public.claim_ticket_wallet(bigint,text,text)",
+      "source": "database/functions/ticket_wallet/sync.sql"
+    },
+    "c8ffd48667ea8d30f6ae755fe07454f77f868a3267d791452d1ff56483744b4b": {
+      "signature": "public.reserve_ticket_wallet_request(bigint,uuid)",
+      "source": "database/functions/ticket_wallet/sync.sql"
+    },
+    "581477ce2f228f92927871204139584767881a80960b4eac3f78707f3fb87827": {
+      "signature": "public.finish_ticket_wallet(bigint,uuid,boolean)",
+      "source": "database/functions/ticket_wallet/sync.sql"
+    },
+    "cab1209f7c8fc0214ef60157bb73396ed12811c142b2a49dfd4c70d32bb26137": {
+      "signature": "public.ticket_wallet_health()",
+      "source": "database/functions/ticket_wallet/sync.sql"
+    },
+    "b029d3381031bd4cc824ea49cacf25e38f0d39e24f744e511611045e612d8f7c": {
+      "signature": "public.ticket_wallet_ready(bigint)",
+      "source": "database/functions/ticket_wallet/settings.sql"
+    },
+    "a9976ba3a4ffbd5b8f3c3ac488571cf5e923668fc359df587e6ad189d81e33b1": {
+      "signature": "public.ticket_wallet_fingerprint(bigint)",
+      "source": "database/functions/ticket_wallet/settings.sql"
+    },
+    "3e85241a8de1e64332db7bfb736a3f1742f8e4cd673e85ae109a62575c833b3d": {
+      "signature": "public.prepare_ticket_wallet(uuid,bigint,text,jsonb)",
+      "source": "database/functions/ticket_wallet/capabilities.sql"
+    },
+    "ac97e35722ca6f3aa1a5cf81f3a774b3adc2cf529e4f7e727a76dfbd46935d09": {
+      "signature": "public.resolve_ticket_wallet(text,text)",
+      "source": "database/functions/ticket_wallet/capabilities.sql"
+    },
+    "71d7d168299440263fa8da9b7a4dd4a552c2036c36e4ce342903b399eb259092": {
+      "signature": "public.manage_ticket_wallet(bigint,text)",
+      "source": "database/functions/ticket_wallet/capabilities.sql"
+    },
+    "1a8a84d43e3f2ac722ac54faf17d585b355afe832448af4cf30969b9fb9d639f": {
+      "signature": "public.claim_payment_refund(uuid)",
+      "source": "database/functions/payment_providers/refund_dispatch.sql"
+    },
+    "ee5b80efb333313b42e26b6de18d75ba1beadfbadafaa5193e8d86363773b8f4": {
+      "signature": "public.complete_payment_refund(uuid,uuid,jsonb)",
+      "source": "database/functions/payment_providers/refund_dispatch.sql"
+    },
+    "420ce456a09c63c2ce057a083c0a2eef6c21b05cfead476ef2abb607de3705a9": {
+      "signature": "public.get_recoverable_payment_refunds()",
+      "source": "database/functions/payment_providers/refund_dispatch.sql"
+    },
+    "23d3963526334ef319346e15c8379d71612773623aa29d584f7be5a814322179": {
+      "signature": "public.get_payment_operation_context(bigint)",
+      "source": "database/functions/payment_providers/operations.sql"
+    },
+    "43969339c372cdf64170bf20f3a732671f7524f349ad6861fea889bf6a089bf4": {
+      "signature": "public.command_payment_operation(jsonb,uuid)",
+      "source": "database/functions/payment_providers/operations.sql"
+    },
+    "e9a34e6e0f6b86fc2d5c1d72398b1659172b1833ab1d6e62bb14714d15eaa645": {
+      "signature": "public.preview_payment_operation(jsonb)",
+      "source": "database/functions/payment_providers/operations.sql"
+    },
+    "4b3da1ff5d08adad61318f74d79061ca554c2087254a6b4881053af72817129e": {
+      "signature": "public.can_record_order_cash(bigint)",
+      "source": "database/functions/user_permissions/payment_operations.sql"
+    },
+    "9ddaa24c7a8265b01d640355f05afb81d90240127936668d3ffadd0bc2e695aa": {
+      "signature": "public.can_prepare_order_bank_refund(bigint)",
+      "source": "database/functions/user_permissions/payment_operations.sql"
+    },
+    "67d05308316fccbe68aae2d16933e9fb697d1fe52d91c8c4f333f54556228ffd": {
+      "signature": "public.can_prepare_order_provider_refund(bigint)",
+      "source": "database/functions/user_permissions/payment_operations.sql"
+    },
+    "4ac14bae865d6d0462c9a3099456e28c716c50d23e55353114e50ec3b3148614": {
+      "signature": "public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)",
+      "source": "database/functions/occasion_setup/email_preview.sql"
+    },
+    "79f13f3089112fa220d62dc94da3f9b6e54065639716afb21167c83256248171": {
+      "signature": "public.member_access_preview_internal_v1(jsonb)",
+      "source": "database/functions/people/access_management.sql"
+    },
+    "889384045875a8dfb698e026b73303fe21a6b2dd88aa128c12c9af9f8c07ac2e": {
+      "signature": "public.preview_member_access(uuid,jsonb)",
+      "source": "database/functions/people/access_management.sql"
+    },
+    "08791cf0e01055c03415e2530923262defd9a83e11a682c5f6311127b91377ef": {
+      "signature": "public.invalidate_member_access_invitations_internal_v1(bigint,bigint,uuid)",
+      "source": "database/functions/people/access_management.sql"
+    },
+    "9ce1dc4bd94e218dba0e771ea0785db86d91348bffe2d4155ac0c45d9c08b9ea": {
+      "signature": "public.manage_member_access(uuid,jsonb,uuid)",
+      "source": "database/functions/people/access_management.sql"
+    },
+    "f6c96e6c4c7bce0376537e2e99ac020c526950f885b58452292c0e280c15fa5b": {
+      "signature": "public.access_invitation_valid_internal_v1(public.access_invitations)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "645fc917cd504340cfe6076e09eda8b6235f56ae8296a074cb8c2af173469d3e": {
+      "signature": "public.get_access_invitation(text)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "03f3d75ad8f2f44c57e9de37174af733bfc32616e206f185853913747d786e00": {
+      "signature": "public.accept_access_invitation(text,text)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "5329bfca878500af9d4719aaad244a66990a4077407213cdb95bc60e3ba6adbf": {
+      "signature": "public.revoke_access_invitation(uuid)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "f1498fbd01f513e6b9ded2bd09d9fa50610438a60413f01c4527ce527f227f14": {
+      "signature": "public.get_member_access_status(text,bigint,uuid)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "c09fce8619adb3446e9ae4d183e7b04d8961ddcb395fa1f155afef539ce52e2e": {
+      "signature": "public.get_occasion_team_invitation(text)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "e80424ea6fe3586fcdaea49d77e77ca756c184eb50e2a26bc40a59d589ccc829": {
+      "signature": "public.accept_occasion_team_invitation(text,text)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "9613b382541cf66693eaa2f2376849bf981f5cf3a82a10477988f85f6938e396": {
+      "signature": "public.resend_access_invitation(uuid)",
+      "source": "database/functions/people/access_invitations.sql"
+    },
+    "f93e51d0f62e5bc484bb3fa6e3762bb5cd802c73e8f184d5960a85fe72835943": {
+      "signature": "public.can_manage_member_access_as_actor_internal_v1(uuid,text,bigint)",
+      "source": "database/functions/people/access_policy.sql"
+    },
+    "e0e0f064043e8fca80df7d521d9efe518461110eabaf59e5be473253eebaec26": {
+      "signature": "public.can_manage_member_access(text,bigint)",
+      "source": "database/functions/people/access_policy.sql"
+    },
+    "a4b621d1fb71263fb0d02c7d082bfe1545a556cac8bfcd500cbb843262cc1aaf": {
+      "signature": "public.lock_member_access_internal_v1(bigint)",
+      "source": "database/functions/people/access_policy.sql"
+    },
+    "ac769ea45da05b73d9c4b76db47fe2ad0b6259a4f08e68d3a388eb9aaad987f0": {
+      "signature": "public.stage_member_access_email(uuid,uuid,text,text,jsonb,text,text)",
+      "source": "database/functions/people/access_policy.sql"
+    },
+    "22cb31f16d4fe9faca272e8a0c1c7484fcc09b0e2d82505a831018f9410ce780": {
+      "signature": "public.can_offer_member_access_as_actor_internal_v1(uuid,text,bigint,jsonb)",
+      "source": "database/functions/people/access_policy.sql"
+    },
+    "709ff5ff798e8b0344637317fe22109f283ff5643a396c4d9ea0f3b60ade6c76": {
+      "signature": "public.ensure_unit_membership_internal_v1(bigint,uuid)",
+      "source": "database/functions/people/unit_membership.sql"
+    },
+    "65d5630eac13995b3844ca34692aa57b863e4498d2ddc0a0d444b8598a8477e3": {
+      "signature": "public.add_user_to_unit_client_sync_v1(bigint,uuid,uuid)",
+      "source": "database/functions/people/unit_membership.sql"
+    },
+    "933d6bb1e203bedeebf8bf1d90e01aaf1a449a992185e2c5658cb9257e4faf8f": {
+      "signature": "public.save_unit_member_internal_v1(bigint,uuid,uuid,bigint,jsonb)",
+      "source": "database/functions/people/unit_user_command.sql"
+    },
+    "3b56dc25639044c23df6b12bb3e7a5a3b452507640c620ddaf06365927eb8475": {
+      "signature": "public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)",
+      "source": "database/functions/people/unit_user_command.sql"
+    },
+    "3e4d277e66bf9dff149eaeec4ba2a61ebb587ce5fa356e3851aed4906c1dd643": {
+      "signature": "public.save_profile_internal_v1(bigint,uuid,uuid,bigint,jsonb)",
+      "source": "database/functions/users/save_profile_client_sync_v1.sql"
+    },
+    "70a02847e084ade7f8658841b5eee7eb20dcd92a484fc4ef64e7edb3d44ad2f4": {
+      "signature": "public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)",
+      "source": "database/functions/users/save_profile_client_sync_v1.sql"
+    },
+    "efaae565bc1a59a82af21a526a9feac23b49a484a0ecd24672ce20151b3afa44": {
+      "signature": "public.create_occasion_member_internal_v1(bigint,uuid,jsonb)",
+      "source": "database/functions/users/create_occasion_user_client_sync_v1.sql"
+    },
+    "efbc810f25041aadec1f0f1af4fda7be35989d69d6776a0b38202754788f646e": {
+      "signature": "public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb)",
+      "source": "database/functions/users/create_occasion_user_client_sync_v1.sql"
+    },
+    "e53c6d33fb1782b7edeb35c3851523d0cdb98add443db976b1c066936aa8dacf": {
+      "signature": "public.add_user_to_unit(bigint,uuid)",
+      "source": "database/functions/users/add_user_to_unit.sql"
+    },
+    "c096226dcd214bc902e90792c16de6e967ad839c954f764d20efd0ea7f7590f5": {
+      "signature": "public.get_bank_refund_instructions(jsonb)",
+      "source": "database/functions/payment_providers/operations.sql"
+    },
+    "aed0e31d0beb994c19321f9ea04f93f8e3cde08e805aa0020f75357944461282": {
+      "signature": "public.can_manage_bank_account(bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "fcb0ba1834ac6129fe2f21f242dec48d54d25dd93fbfbfebd27cf3b161b19ca4": {
+      "signature": "public.can_read_orders(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "b0db3614e773eaa330bdddfbea20f6e03bb457ce9540d8fa4d2fbaa9e83f6071": {
+      "signature": "public.get_is_manager_on_unit(bigint)",
+      "source": "database/functions/user_permissions/get_is_manager_on_unit.sql"
+    },
+    "1e0d6deef8e56a5e732226429c0b3c563bd5d74ef4398715302de81ecd2c6939": {
+      "signature": "public.scanner_lookup_ticket_internal(uuid,text,text,bigint)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "fb692f78f66a8f85296d9f0b8385d8af6905dd54d03c352ec6812681a010a83c": {
+      "signature": "public.lookup_scanner_ticket_by_id(uuid,text,bigint)",
+      "source": "database/functions/scanning/admission.sql"
     }
   }
 }

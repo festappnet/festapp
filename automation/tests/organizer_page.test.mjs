@@ -13,9 +13,15 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'automation/release'), { recursive: true });
   mkdirSync(join(root, 'web_client'), { recursive: true });
+  cpSync(new URL('../../web_client/public', import.meta.url), join(root, 'web_client/public'), {recursive:true});
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
+  mkdirSync(join(root,'web_client/public'),{recursive:true});
+  for (const name of ['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg']) cpSync(new URL('../../web_client/public/'+name,import.meta.url),join(root,'web_client/public',name));
+  cpSync(new URL('../../assets/brand/vstupenky-online',import.meta.url),join(root,'assets/brand/vstupenky-online'),{recursive:true,filter:source=>!['concepts','source','tools'].includes(source.split('/').pop())});
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web/organizers-media',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
@@ -76,16 +82,29 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!html.includes('{{'));
   assert.ok(!html.includes('fonts.googleapis.com'));
   render(); assert.equal(readFileSync(output, 'utf8'), html);
+  mkdirSync(join(root, 'web_client/web-assets'), {recursive:true});
+  mkdirSync(join(root, 'web_client/assets/translations'), {recursive:true});
+  writeFileSync(join(root, 'web_client/web-assets/landing-test.js'), 'import "./account_header-cached.js";');
+  writeFileSync(join(root, 'web_client/web-assets/account_header-cached.js'), 'export const ready = true;');
+  writeFileSync(join(root, 'web_client/web-assets/index-fixture.css'), 'body{}');
+  writeFileSync(join(root, 'web_client/assets/translations/cs.json'), '{}');
   const builtIndex = join(root, 'web_client/built.html');
   writeFileSync(builtIndex, '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"><link rel="stylesheet" href="/web-assets/index-fixture.css">');
   mkdirSync(join(root, 'web_client/.vite'), { recursive: true });
   writeFileSync(join(root, 'web_client/.vite/manifest.json'), JSON.stringify({'src/marketing/landing.js': {file: 'web-assets/landing-test.js'}}));
+  mkdirSync(join(root,'web_client/web-assets'),{recursive:true});
+  mkdirSync(join(root,'web_client/assets/translations'),{recursive:true});
   const bundleOutput = join(root, 'bundle/organizers-page');
   cpSync(join(root,'web/organizers-media'),join(root,'bundle/organizers-media'),{recursive:true});
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr);
   const bundled = readFileSync(bundleOutput, 'utf8');
-  assert.ok(bundled.includes('href="/web-assets/index-fixture.css"'));
+  const runtimeRoot = bundled.match(/src="(\/organizers-assets\/[a-f0-9]+\/)runtime\/landing-test.js"/)?.[1];
+  assert.ok(runtimeRoot, 'homepage uses the canonical versioned public runtime, avoiding cached app-chunk failures');
+  assert.ok(bundled.includes(`href="${runtimeRoot}runtime/index-fixture.css"`));
+  assert.equal(readFileSync(join(root, 'bundle', runtimeRoot, 'runtime/account_header-cached.js'), 'utf8'), 'export const ready = true;');
+  assert.ok(!bundled.includes('src="/web-assets/'));
+
   assert.ok(bundled.includes('https://fonts.googleapis.com/icon?family=Material+Icons'));
   assert.ok(!bundled.includes('css2?family=Roboto'));
   assert.equal(readFileSync(output, 'utf8'), html, 'compiled theme must not alter the deterministic source leaf');
@@ -104,6 +123,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
 
   writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=false\nDOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
   render(); assert.equal(existsSync(output), false);
+  assert.equal(existsSync(join(root,'web/organizers/press')),false);
+  assert.equal(existsSync(join(root,'web/organizers-media/press-kit')),false);
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('cloudflareinsights.com'));
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('href="/pro-poradatele"'));
 });
@@ -116,7 +137,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
   writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
   writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
   writeFileSync(config, readFileSync(new URL('../project.conf',import.meta.url),'utf8'));
-  for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
+  for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations','organizers/press']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
   for (const asset of ['organizers/updates/cs/index','organizers/updates/en/index']) {mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture');}
   writeFileSync(join(root,'organizer-pages.json'),JSON.stringify(publicManifest(resolveContext(readConfig(config)))));
   writeFileSync(join(root,'platform-updates.json'),JSON.stringify({schemaVersion:1,items:[]}));
@@ -148,7 +169,7 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   for (const domain of ['vstupenky.online','other.invalid']) {
     const config=join(root,'project.conf');
     writeFileSync(config,readFileSync(new URL('../project.conf',import.meta.url),'utf8').replace(/^DOMAIN=.*$/m,`DOMAIN=${domain}`).replace(/^WEB_LINK=.*$/m,`WEB_LINK=https://${domain}`).replace(/^WEB_ORGANIZER_LANDING_ENABLED=.*$/m,`WEB_ORGANIZER_LANDING_ENABLED=${domain==='vstupenky.online'}`));
-    const run = spawnSync('python3', ['-',output,config,process.cwd()], {input:python,encoding:'utf8'});
+    const run = spawnSync('python3', ['-',output,config,process.cwd()], {input:python,encoding:'utf8',env:{...process.env,PYTHONPATH:join(process.cwd(),'automation/lib')}});
     assert.equal(run.status, 0, run.stderr);
     const xml = readFileSync(output, 'utf8');
     assert.ok(xml.includes(`https://${domain}/`));
@@ -161,34 +182,39 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   assert.equal(png.readUInt32BE(20), 630);
 });
 
-test('English uses the same template, no Czech references, and requires real English recordings', t => {
+test('English illustrated home ships English examples, one regional link and fails atomically on missing artwork', t => {
   const root = mkdtempSync(join(tmpdir(), 'festapp-en-marketing-'));
+  cpSync(new URL('../../web_client/public', import.meta.url), join(root, 'web_client/public'), {recursive:true});
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'automation/release'), { recursive: true });
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
-  const mediaPath = join(root, 'automation/release/organizers/clips.en.json');
-  const mediaFixture = JSON.parse(readFileSync(mediaPath, 'utf8'));
-  for (const clip of mediaFixture.clips) clip.captureStatus = 'pending';
-  writeFileSync(mediaPath, JSON.stringify(mediaFixture));
+  cpSync(new URL('../../web/organizers-media/global',import.meta.url),join(root,'web/organizers-media/global'),{recursive:true});
   const config = join(root, 'project.conf');
   writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=true\nWEB_SUPPORTED_LANGUAGES=en\nWEB_LINK=https://tickets.example.invalid\nDOMAIN=tickets.example.invalid\nAPP_NAME=Festapp Tickets\nWEB_ORGANIZER_CONTENT_PROFILE=festapp-en\nPRIVACY_URL=https://tickets.example.invalid/privacy/\nTERMS_URL=https://tickets.example.invalid/terms/\nSUPPORT_URL=https://tickets.example.invalid/support/\n');
   const run = (...args) => spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, ...args], { encoding: 'utf8' });
-  const gated = run();
-  assert.notEqual(gated.status, 0);
-  assert.match(gated.stderr, /English product recordings are incomplete/);
-  assert.equal(existsSync(join(root, 'web/organizers-page')), false);
-  const preview = run('--preview');
-  assert.equal(preview.status, 0, preview.stderr);
-  const html = readFileSync(join(root, 'web/organizers-page'), 'utf8');
+  const rendered = run();
+  assert.equal(rendered.status, 0, rendered.stderr);
+  const output=join(root,'web/organizers-page');
+  const html = readFileSync(output, 'utf8');
   assert.match(html, /<html lang="en">/);
-  assert.equal((html.match(/class="feature reveal"/g) || []).length, 6);
-  assert.ok(!html.includes('id="reference"'));
-  assert.ok(!html.includes('vstupenky.online'));
+  assert.equal((html.match(/vstupenky\.online/g) || []).length, 1);
+  assert.match(html,/href="https:\/\/vstupenky\.online\/"[^>]*>Czech version/);
+  assert.match(html,/classic-ball-en\.png/);
+  assert.match(html,/hamlet-ticket-en\.png/);
+  assert.match(html,/info@festapp\.net/);
+  assert.match(html,/href="\/events\?create=1"/);
+  assert.ok(!html.includes('tickets.fesup.net'));
   assert.ok(!html.includes('{{'));
-  assert.ok(html.includes('Stripe Checkout'));
-  assert.ok(html.includes('English recording pending.'));
+  assert.ok(!html.includes('English recording pending.'));
   assert.ok(!html.includes('cloudflareinsights.com'));
+  rmSync(join(root,'web/organizers-media/global/classic-ball-en.png'));
+  const failed=run();
+  assert.notEqual(failed.status,0);
+  assert.match(failed.stderr,/Missing\/foreign marketing media/);
+  assert.equal(readFileSync(output,'utf8'),html,'invalid media cannot overwrite a previously rendered page');
 });

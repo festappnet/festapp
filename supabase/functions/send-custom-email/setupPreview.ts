@@ -1,10 +1,12 @@
+import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
+import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
+import { isBankPaymentInfo, paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import {
   confirmationPaymentSubstitutions,
   paidPaymentSubstitutions,
 } from "../_shared/orderEmailPresentation.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
-import { escapeEmailHtml } from "../_shared/emailActionLink.ts";
 
 /** Read-only production rendering. Intentionally no queue, checkout, invoice,
  * payment-reference allocation, attachment generation or customer lookup. */
@@ -12,11 +14,7 @@ export interface SetupPreviewDependencies {
   draft(authorization: string, id: string, bytes: number): Promise<any | null>;
   catalog(authorization: string, unit: number): Promise<any | null>;
   sourceTemplates(authorization: string, occasion: number): Promise<any | null>;
-  bank(
-    authorization: string,
-    draftId: string,
-    accountId: number,
-  ): Promise<string | null>;
+  paymentInfo(authorization: string, draftId: string, revision: number): Promise<any | null>;
   resolve: (code: string, context: any) => Promise<any>;
   senderAddress: string;
 }
@@ -91,24 +89,20 @@ export async function setupPreviewResponse(
       total += p.price;
       items.push({
         ...p,
-        title: escapeEmailHtml(p.title ?? ""),
-        type_title: escapeEmailHtml(p.type_title ?? ""),
+        title: p.title ?? "",
+        type_title: p.type_title ?? "",
         ...(selected.seat
           ? {
-            spot_group_title: escapeEmailHtml(selected.seat.group),
-            spot_title: escapeEmailHtml(selected.seat.title),
+            spot_group_title: selected.seat.group,
+            spot_title: selected.seat.title,
           }
           : {}),
       });
     }
     tickets.push({ ticket_symbol: `PREVIEW-${index + 1}`, products: items });
   }
-  const lang = input.locale === "en" ? "en" : "cs"; // same fallback as production emails
-  const tone = ["formal", "informal"].includes(d.communicationTone)
-    ? d.communicationTone
-    : (scope.unit.data?.communication_tone === "informal"
-      ? "informal"
-      : "formal");
+  const lang = resolveEmailLanguage(input.locale);
+  const tone = resolveCommunicationTone(d.communicationTone, scope.unit.data?.communication_tone);
   const features = [{
     code: "ticket",
     is_enabled: (d.formDraft?.fields ?? []).some((f: any) =>
@@ -121,23 +115,16 @@ export async function setupPreviewResponse(
       input.fields?.[key] !== undefined &&
       (typeof input.fields[key] !== "string" || input.fields[key].length > 500)
     ) return reply({ error: "Invalid customer field" }, 400);
-    fields[key] = escapeEmailHtml(input.fields?.[key] ?? "");
+    fields[key] = input.fields?.[key] ?? "";
   }
-  const bank = d.bankAccountId
-    ? await deps.bank(authorization, input.draftId, d.bankAccountId)
-    : null;
-  const deadline = new Date(
-    Date.now() + Math.max(0, Number(d.deadline) || 0) * 86400000,
-  ).toISOString();
+  const paymentInfo = await deps.paymentInfo(authorization, input.draftId, row.revision);
+  if (!paymentInfo) return reply({ error: "Payment preview unavailable" }, 503);
+  const previewPaymentInfo = {...paymentInfo, amount:total,currency_code:currency??'CZK',
+    account_number:paymentInfo.account_number??'',account_number_human_readable:paymentInfo.account_number_human_readable??'',
+    variable_symbol:isBankPaymentInfo(paymentInfo)?'PREVIEW':null,
+    creditor_reference:isBankPaymentInfo(paymentInfo)?'RF18539007547034':null};
   const confirmation = confirmationPaymentSubstitutions(
-    {
-      amount: total,
-      currency_code: currency ?? "CZK",
-      account_number: "",
-      account_number_human_readable: bank ?? "",
-      deadline,
-      variable_symbol: "PREVIEW",
-    },
+    previewPaymentInfo,
     features,
     lang,
     tone,
@@ -162,13 +149,11 @@ export async function setupPreviewResponse(
   ) {
     const substitutions = {
       ...fields,
-      occasionTitle: escapeEmailHtml(d.title ?? ""),
-      occasion_title: escapeEmailHtml(d.title ?? ""),
-      orderSymbol: "PREVIEW",
-      variableSymbol: "PREVIEW",
-      accountNumber: bank ?? "",
+      ...orderTemplateValues(code, d.title ?? "", "PREVIEW", tone, lang),
+      variableSymbol: paymentReferenceValue(previewPaymentInfo,{required:total>0&&isBankPaymentInfo(paymentInfo)}),
+      accountNumber: paymentInfo.account_number_human_readable ?? paymentInfo.account_number ?? "",
       iban: "",
-      deadline,
+      deadline: paymentInfo.deadline ?? null,
       fullOrder: generateFullOrder(fields, tickets, features, lang, "PREVIEW"),
       ...(code === "TICKET_ORDER_CONFIRMATION"
         ? confirmation
@@ -179,6 +164,7 @@ export async function setupPreviewResponse(
           features,
           lang,
           tone,
+          paymentInfo,
         )),
     };
     const prepared = await renderEmail({

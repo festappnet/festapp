@@ -19,7 +19,11 @@ function fixture(t) {
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
   cpSync(source,join(root,'automation/release/organizers'),{recursive:true});
+  cpSync(new URL('../../web_client/public',import.meta.url),join(root,'web_client/public'),{recursive:true});
+  cpSync(new URL('../../assets/brand/vstupenky-online',import.meta.url),join(root,'assets/brand/vstupenky-online'),{recursive:true,filter:source=>!['concepts','source','tools'].includes(source.split('/').pop())});
   cpSync(new URL('../release/render_organizer_page.mjs',import.meta.url),join(root,'automation/release/render_organizer_page.mjs'));
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../../web/organizers-media/',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
   const configPath = join(root,'project.conf');
   const setConfig = config => writeFileSync(configPath,Object.entries(config).map(([k,v])=>`${k}=${v}`).join('\n')+'\n');
@@ -32,12 +36,34 @@ test('one registry drives CS HTML, offline topics, sitemap and deterministic gen
   writeFileSync(join(f.root,'web/organizers/ball-ticket-sales'),'retired article');
   const result=f.render(); assert.equal(result.status,0,result.stderr);
   const context=await verifyMarketingBundle(join(f.root,'web'),f.configPath);
-  assert.equal(context.pages.length,4);
-  const headerOf=html=>html.match(/<header[\s\S]*?<\/header>/)[0].replace(' auth-pending','');
+  assert.equal(context.pages.length,5);
+  const pressHtml=readFileSync(join(f.root,'web/organizers/press'),'utf8');
+  assert.match(pressHtml,/href="\/organizers-media\/press-kit\/vstupenky-online-loga.zip" download/);
+  assert.match(pressHtml,/info@vstupenky.online/);
+  assert.match(pressHtml,/Co vstupenky.online umí/);
+  const kit=join(f.root,'web/organizers-media/press-kit');
+  const archive=readFileSync(join(kit,'vstupenky-online-loga.zip'));
+  const inspect=spawnSync('python3',['-c',`from zipfile import ZipFile
+from pathlib import Path
+import sys
+kit=Path(sys.argv[1])
+with ZipFile(kit/'vstupenky-online-loga.zip') as z:
+ assert z.testzip() is None
+ assert len(z.namelist()) == 22
+ for name in z.namelist():
+  assert '/' not in name and 'concept' not in name and 'loading' not in name
+  assert z.read(name) == (kit/name).read_bytes()
+` ,kit],{encoding:'utf8'});
+  assert.equal(inspect.status,0,inspect.stderr);
+  const headerOf=html=>{
+    const header=html.match(/<header[\s\S]*?<\/header>/)[0].replace(' auth-pending','');
+    const assetBase=header.match(/ data-brand-asset-base="([^"]+)"/)?.[1];
+    return assetBase ? header.replace(/ data-brand-asset-base="[^"]+"/,'').replaceAll(assetBase,'/') : header;
+  };
   const homeHtml=readFileSync(join(f.root,'web/organizers-page'),'utf8'),header=headerOf(homeHtml);
   assert.ok(!header.includes('/co-je-nove'));
   assert.match(homeHtml.match(/<footer[\s\S]*?<\/footer>/)[0],/href="\/co-je-nove"/);
-  for (const page of context.pages) assert.equal(headerOf(readFileSync(join(f.root,'web',page.asset),'utf8')),header,'all public pages use the upstream shared header');
+  for (const page of context.pages.filter(page=>(page.locale ?? context.locale)===context.locale)) assert.equal(headerOf(readFileSync(join(f.root,'web',page.asset),'utf8')),header,'public pages in the same locale use the upstream shared header');
   assert.equal(existsSync(join(f.root,'web/organizers/ball-ticket-sales')),false);
   assert.deepEqual(context.redirects,[{from:'/prodej-vstupenek-na-ples',to:'/'}]);
   const manifest=JSON.parse(readFileSync(join(f.root,'web/organizer-pages.json')));
@@ -51,6 +77,7 @@ test('one registry drives CS HTML, offline topics, sitemap and deterministic gen
   assert.ok(!pwa.knownResources.some(url=>/\.(mp4|webm)$/.test(url)));
   const before=context.pages.map(page=>readFileSync(join(f.root,'web',page.asset),'utf8'));
   assert.equal(f.render().status,0);
+  assert.deepEqual(readFileSync(join(kit,'vstupenky-online-loga.zip')),archive,'identical inputs produce identical ZIP');
   assert.deepEqual(context.pages.map(page=>readFileSync(join(f.root,'web',page.asset),'utf8')),before);
 });
 test('synthetic EN uses same renderer, empty references, own media and optional topic without CS fallback',async t=>{

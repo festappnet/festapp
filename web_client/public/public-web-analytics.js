@@ -8,7 +8,7 @@
         /^\/unit\/[1-9]\d*\/?$/.test(path) || /^\/form\/[^/]+\/?$/.test(path);
     // Capability fragments, previews, auth and embedded checkout are deliberately
     // excluded, including legacy hash routes that the server cannot inspect.
-    const publicQuery = key => /^(utm_(source|medium|campaign|term|content)|gclid|fbclid|q|lang)$/.test(key);
+    const publicQuery = key => /^(utm_(source|medium|campaign|term|content|id)|gclid|gbraid|wbraid|gad_source|gad_campaignid|srsltid|fbclid|sznclid|ttclid|msclkid|q|lang)$/.test(key);
     if (!/^[a-f0-9]{32}$/.test(token || '') || current.hostname !== host ||
         current.protocol !== 'https:' || window.self !== window.top || window.__festappSaleOpeningLink ||
         !publicPath(current.pathname) || current.hash ||

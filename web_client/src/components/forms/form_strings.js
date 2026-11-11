@@ -14,12 +14,23 @@ export class FormStrings {
     // Form Settings Feature
     static get measurementConsentTitle() { return LocalizationService.tr('FeatureFormSettings.measurementConsentTitle'); }
     static get measurementConsentAccept() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAccept'); }
+    static get measurementConsentAcceptAll() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAcceptAll'); }
     static get measurementConsentSave() { return LocalizationService.tr('FeatureFormSettings.measurementConsentSave'); }
     static get measurementConsentClose() { return LocalizationService.tr('FeatureFormSettings.measurementConsentClose'); }
     static get measurementConsentPrivacy() { return LocalizationService.tr('FeatureFormSettings.measurementConsentPrivacy'); }
     static get measurementConsentDecline() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDecline'); }
     static get measurementConsentService() { return LocalizationService.tr('FeatureFormSettings.measurementConsentService'); }
+    static get measurementConsentAnalyticsDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAnalyticsDescription'); }
+    static get measurementConsentMarketing() { return LocalizationService.tr('FeatureFormSettings.measurementConsentMarketing'); }
+    static get measurementConsentMarketingDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentMarketingDescription'); }
     static get measurementConsentDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentDescription'); }
+    static get measurementConsentSettings() { return LocalizationService.tr('FeatureFormSettings.measurementConsentSettings'); }
+    static get measurementConsentNecessary() { return LocalizationService.tr('FeatureFormSettings.measurementConsentNecessary'); }
+    static get measurementConsentNecessaryDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentNecessaryDescription'); }
+    static get measurementConsentAlwaysActive() { return LocalizationService.tr('FeatureFormSettings.measurementConsentAlwaysActive'); }
+    static get measurementConsentModalTitle() { return LocalizationService.tr('FeatureFormSettings.measurementConsentModalTitle'); }
+    static get measurementConsentModalDescription() { return LocalizationService.tr('FeatureFormSettings.measurementConsentModalDescription'); }
+    static get measurementConsentChangeChoice() { return LocalizationService.tr('FeatureFormSettings.measurementConsentChangeChoice'); }
     static get measurementConsentChoices() { return LocalizationService.tr('FeatureFormSettings.measurementConsentChoices'); }
     static get formSettingsTitle() { return LocalizationService.tr('FeatureFormSettings.title'); }
     static get formNotFound() { return LocalizationService.tr('FeatureFormSettings.formNotFound'); }

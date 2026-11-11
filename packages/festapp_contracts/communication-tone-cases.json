@@ -1,0 +1,13 @@
+[
+  {"value":"formal","inherited":"informal","expected":"formal"},
+  {"value":"informal","inherited":"formal","expected":"informal"},
+  {"value":"inherit","inherited":"informal","expected":"informal"},
+  {"value":null,"inherited":"informal","expected":"informal"},
+  {"value":"","inherited":"informal","expected":"informal"},
+  {"value":"bad","inherited":"informal","expected":"informal"},
+  {"value":"INFORMAL","inherited":"informal","expected":"informal"},
+  {"value":" formal ","inherited":"informal","expected":"informal"},
+  {"value":null,"inherited":null,"expected":"formal"},
+  {"value":"inherit","inherited":"invalid","expected":"formal"},
+  {"value":"bad","inherited":"formal","expected":"formal"}
+]

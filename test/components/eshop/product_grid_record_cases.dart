@@ -79,6 +79,8 @@ void main() {
       var persisted = ProductModel(
         id: 7,
         title: 'Lunch',
+        productTypeId: 12,
+        occasion: 34,
         price: 120,
         currencyCode: 'CZK',
         data: {
@@ -175,6 +177,8 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(commands.saved.single['id'], 7);
+        expect(commands.saved.single['product_type'], 12);
+        expect(commands.saved.single['occasion'], 34);
         expect(commands.saved.single['currency_code'], 'CZK');
         expect(commands.saved.single['data'], {
           'unknown': {'retained': false},

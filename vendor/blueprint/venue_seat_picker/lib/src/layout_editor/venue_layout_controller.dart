@@ -435,8 +435,22 @@ class VenueLayoutController extends ChangeNotifier {
     final priorById = {for (final n in _document.nodes) n.id: n};
     final priorWorld = worldMatrices(_document),
         nextWorld = worldMatrices(next);
+    final sameGeometryContext =
+        sameLayoutValue(next.canvas, _document.canvas) &&
+        sameLayoutValue(next.styles, _document.styles) &&
+        sameLayoutValue(next.textPolicy, _document.textPolicy) &&
+        sameLayoutValue(next.seatingDefaults, _document.seatingDefaults);
     for (final node in next.nodes) {
       if (node.kind == 'group') continue;
+      final prior = priorById[node.id];
+      // Unchanged objects (including text outlines) cannot gain overflow on
+      // an unchanged canvas. Descendants of a moved parent still get checked.
+      if (sameGeometryContext &&
+          prior != null &&
+          sameLayoutNode(node, prior) &&
+          listEquals(nextWorld[node.id], priorWorld[node.id])) {
+        continue;
+      }
       final overflow = _canvasOverflow(
         next,
         node,
@@ -444,7 +458,6 @@ class VenueLayoutController extends ChangeNotifier {
         _resources,
       );
       if (overflow <= _canvasEdgeTolerance) continue;
-      final prior = priorById[node.id];
       // Old drafts can be repaired progressively, but no new or worsened
       // placement may leave the canvas, including rotation/resize/insert.
       if (prior == null ||
@@ -1115,7 +1128,8 @@ class VenueLayoutController extends ChangeNotifier {
 
   void _clipboardError() {
     if (_disposed) return;
-    error = 'Clipboard does not contain a valid layout selection, or access was denied.';
+    error =
+        'Clipboard does not contain a valid layout selection, or access was denied.';
     notifyListeners();
   }
 

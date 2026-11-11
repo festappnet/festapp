@@ -3,6 +3,52 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 void main() {
+  test('arena rendered chair backs point away from the central stage', () {
+    final document = VenueLayoutTemplates.create('studio-arena');
+    final stage = document.nodes.singleWhere(
+      (node) => node.kind == 'text' && node.label == 'Stage',
+    );
+    final stageCenter = transformPoint(worldMatrix(document, stage), 0, 0);
+    final items = compileScene(document)['items'] as List;
+    final decorations = {
+      for (final item in items)
+        if ((item['id'] as String).endsWith(':seat-style'))
+          item['nodeId'] as String: item as Map,
+    };
+    final seats = document.nodes.where((node) => node.kind == 'seat');
+    expect(seats, hasLength(96));
+    for (final seat in seats) {
+      final backrest = decorations[seat.id]!;
+      final matrix = List<double>.from(backrest['matrix'] as List);
+      final path = backrest['path'] as List;
+      var left = double.infinity, top = double.infinity;
+      var right = double.negativeInfinity, bottom = double.negativeInfinity;
+      for (final command in path) {
+        for (var i = 1; i + 1 < command.length; i += 2) {
+          final x = (command[i] as num).toDouble();
+          final y = (command[i + 1] as num).toDouble();
+          if (x < left) left = x;
+          if (x > right) right = x;
+          if (y < top) top = y;
+          if (y > bottom) bottom = y;
+        }
+      }
+      final center = transformPoint(matrix, 0, 0);
+      final back = transformPoint(
+        matrix,
+        (left + right) / 2,
+        (top + bottom) / 2,
+      );
+      final dot =
+          (back[0] - center[0]) * (stageCenter[0] - center[0]) +
+          (back[1] - center[1]) * (stageCenter[1] - center[1]);
+      expect(
+        dot,
+        lessThan(0),
+        reason: 'Chair ${seat.label}: backrest must face away from stage',
+      );
+    }
+  });
   test('recommended picker contains only approved plans plus blank', () {
     expect(VenueLayoutTemplates.recommended.map((t) => t.id), [
       'blank',

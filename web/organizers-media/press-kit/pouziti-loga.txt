@@ -1,0 +1,7 @@
+vstupenky.online - oficiální loga
+
+Vyberte logo podle pozadí a zachovejte jeho barvy i poměr stran.
+
+Soubory s příponou -dark jsou určeny na tmavé pozadí.
+Barvy: námořnická #19243b, modrá #80bdf2.
+Kontakt: info@vstupenky.online

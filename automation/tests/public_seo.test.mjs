@@ -486,3 +486,26 @@ test('nested published details serve their own localized HTML and enter the same
  const xml=await(await detailWorker.fetch(request('/sitemap.xml'),assets)).text();
  for(const page of context.updates.pages) assert.ok(xml.includes(page.canonical));
 });
+
+// A transient missing module must not poison the browser cache across deployments.
+test('missing scripts and failed asset responses are never cached', async () => {
+  for (const status of [404, 503]) {
+    const response = await worker.fetch(request('/web-assets/account_header-missing.js'), {
+      ASSETS: {fetch: async () => new Response('missing', {status,
+        headers: {'cache-control': 'max-age=14400', 'content-type': 'text/html'}})},
+    });
+    assert.equal(response.status, status);
+    assert.match(response.headers.get('cache-control'), /no-store/);
+  }
+});
+
+test('marketing runtime serves independent script assets only for enabled tenants', async () => {
+  const script = '/organizers-assets/release/runtime/account_header.js';
+  const fixture = {ASSETS: {fetch: async () => new Response('export {};', {
+    headers: {'content-type': 'application/javascript', 'cache-control': 'max-age=14400'},
+  })}};
+  const response = await productionWorker.fetch(new Request('https://vstupenky.online' + script), fixture);
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), 'export {};');
+  assert.equal((await worker.fetch(request(script), fixture)).status, 404);
+});

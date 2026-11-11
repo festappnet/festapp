@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Hosted Ubuntu already includes Chrome and its system libraries.
+# Hosted Ubuntu images already provide Chrome and its system libraries.
+# Keep Playwright's pinned headless shell without reinstalling OS packages.
+# Repeating apt here adds an unrelated DNS/mirror dependency to every browser lane.
 set -euo pipefail
-export PATH="${PNPM_HOME:?}/bin:$PATH"
-printf '%s\n' "$PNPM_HOME/bin" >> "${GITHUB_PATH:?}"
-pnpm add --global --allow-build=agent-browser agent-browser@0.39.4
+pnpm --package=playwright@1.65.0 dlx playwright install --only-shell chromium
 browser_path="$(command -v google-chrome)"
-printf 'AGENT_BROWSER_EXECUTABLE_PATH=%s\n' "$browser_path" >> "${GITHUB_ENV:?}"
+printf 'CHROME_EXECUTABLE=%s\n' "$browser_path" >> "${GITHUB_ENV:?}"

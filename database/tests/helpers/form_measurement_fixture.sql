@@ -7,7 +7,7 @@ BEGIN
  INSERT INTO organizations(title) VALUES('Waitlist regression '||suffix) RETURNING id INTO org;
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  UPDATE organizations SET data=coalesce(data,'{}')||'{"FORM_MEASUREMENT_ENABLED":true}'::jsonb WHERE id=org;
- UPDATE units SET data=coalesce(data,'{}')||'{"measurement_enabled":true,"measurement_gtm_container":"GTM-AB12"}'::jsonb WHERE id=un;
+ UPDATE units SET data=coalesce(data,'{}')||'{"measurement_privacy_url":"https://organizer.example/privacy","measurement_enabled":true,"measurement_gtm_container":"GTM-AB12"}'::jsonb WHERE id=un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
  INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;

@@ -1,13 +1,14 @@
 -- Validate one final typed quote before retaining any confirmed write effects.
 CREATE OR REPLACE FUNCTION public.blueprint_seat_order_quote_internal(p_effect jsonb)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE quote jsonb:=p_effect->'quote';money jsonb;products jsonb;
 BEGIN
  IF coalesce(quote#>>'{newOrder,amount}','')!~'^-?[0-9]+(\.[0-9]+)?$'
   OR length(quote#>>'{newOrder,amount}')>40
   OR coalesce(btrim(quote#>>'{newOrder,currencyCode}'),'')!~'^[A-Za-z]{3}$'
   OR coalesce(length(quote#>>'{newOrder,state}'),0) NOT BETWEEN 1 AND 64
-  OR quote#>>'{newOrder,paymentMethod}' IS DISTINCT FROM 'bank'
+  OR NOT public.payment_method_registered_internal(quote#>>'{newOrder,paymentMethod}')
+  OR public.payment_method_is_online_internal(quote#>>'{newOrder,paymentMethod}')
   OR (quote#>>'{newOrder,ticketCount}')::int IS DISTINCT FROM jsonb_array_length(quote->'spotIds')
   OR EXISTS(SELECT 1 FROM jsonb_array_elements(quote#>'{newOrder,products}') p
     WHERE coalesce(p->>'amount','')!~'^-?[0-9]+(\.[0-9]+)?$' OR length(p->>'amount')>40

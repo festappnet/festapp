@@ -3,3 +3,11 @@ vstupenky.online is a Czech ticketing service for balls, concerts and other even
 The Joomla module places the ticket order form directly on your website. Visitors choose their tickets and place an order on your event page. They receive tickets by email, while you manage sales in vstupenky.online.
 
 The module is available in Czech and English and is free to download under GPLv2 or later. An organizer account is required; the external service has its own commercial terms and pricing agreed separately.
+
+### Screenshots
+
+![Ticket order form](https://extensions.joomla.org/cache/fab_image/6aee12005058c_resizeDown1200px525px16.png)
+
+![Seated ticket order form](https://extensions.joomla.org/cache/fab_image/6aee1200a9e16_resizeDown1200px525px16.png)
+
+![Seat selection](https://extensions.joomla.org/cache/fab_image/6aee12010dcb2_resizeDown1200px525px16.png)

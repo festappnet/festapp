@@ -30,3 +30,17 @@ for (const locale of ['cs', 'en']) {
         }
     });
 }
+
+test('cash confirmation shows saved reservation instructions without bank payment QR',()=>{
+ const dom=new JSDOM('<div id="host"></div>',{url:'http://localhost/'});globalThis.document=dom.window.document;
+ const previous=LocalizationService.translations;
+ try {
+  const catalog=JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json',import.meta.url)));
+  LocalizationService.translations=catalog;
+  const host=document.querySelector('#host');
+  OrderResult.render(host,true,{ticketOrder:{order:{id:4,order_symbol:'CASH',data:{email:'test@example.invalid'},payment_info:{payment_method:'cash',amount:250.50,currency_code:'CZK',data:{payment_policy:{mode:'none',cashInstructions:'Zaplaťte u vstupu <img src=x>'}}}}},payment_qr:null},{visibleFields:[]},()=>{});
+  assert.match(host.textContent,/Rezervace potvrzena/);assert.match(host.textContent,/Zaplaťte u vstupu <img src=x>/);
+  assert.equal(host.querySelector('.result-payment-qr'),null);assert.equal(host.querySelector('img[src=x]'),null);
+  assert.doesNotMatch(host.textContent,/IBAN|Zaplaťte do/);
+ } finally {LocalizationService.translations=previous;dom.window.close();}
+});

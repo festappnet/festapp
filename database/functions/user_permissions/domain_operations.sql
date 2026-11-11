@@ -1,10 +1,14 @@
 -- Operation policies. Membership helpers are live facts, not cached decisions.
 CREATE OR REPLACE FUNCTION public.can_read_orders(p_occasion bigint)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
+BEGIN
+ RETURN (
  SELECT public.order_read_rule(
    (SELECT ou.is_editor_order_view FROM public.occasion_users ou WHERE ou.occasion=p_occasion AND ou."user"=auth.uid()),
-   public.is_demo_occasion(p_occasion),public.can_read_demo_occasion(p_occasion));
+   public.is_demo_occasion(p_occasion),public.can_read_demo_occasion(p_occasion))
+ );
+END;
 $$;
 REVOKE ALL ON FUNCTION public.can_read_orders(bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.can_read_orders(bigint) TO anon, authenticated, service_role;

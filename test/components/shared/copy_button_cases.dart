@@ -84,6 +84,10 @@ void main() {
           home: const Scaffold(
               body: Center(child: CopyButton(value: 'ABC123')))));
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final button = tester.getRect(find.byType(IconButton));
+      final icon = tester.getRect(find.byIcon(Icons.copy));
+      expect(icon.center.dx, closeTo(button.center.dx, 0.1));
+      expect(icon.center.dy, closeTo(button.center.dy, 0.1));
       await mouse.addPointer(location: Offset.zero);
       await mouse.moveTo(tester.getCenter(find.byType(IconButton)));
       await tester.pumpAndSettle();

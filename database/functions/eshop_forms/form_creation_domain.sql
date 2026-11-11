@@ -15,7 +15,9 @@ BEGIN
     SELECT org.data->>'DEFAULT_FORM_PAYMENT_METHOD' INTO payment_default
     FROM public.occasions o JOIN public.organizations org ON org.id=o.organization
     WHERE o.id=p_occasion_id;
-    IF payment_default<>'bank' AND public.payment_method_registered_internal(payment_default) THEN
+    IF payment_default='cash' THEN
+      initial_data := initial_data || '{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}'::jsonb;
+    ELSIF public.payment_method_is_online_internal(payment_default) THEN
       -- A closed draft can await Connect without inventing a recipient or bank.
       initial_data := initial_data || '{"payments":{"bankEnabled":false}}'::jsonb;
     END IF;
@@ -38,7 +40,7 @@ BEGIN
         p_occasion_id,
         now,
         now,
-        604800, -- Default to 7 days
+        NULL, -- New forms inherit the occasion policy; legacy stored durations stay custom.
         initial_data
     )
     RETURNING to_jsonb(public.forms.*) INTO new_form;
@@ -71,6 +73,14 @@ BEGIN
     -- Create the 'product_type' form field linked to 'spot'
     INSERT INTO public.form_fields(title, type, is_required, form, "order", product_type, is_ticket_field)
     VALUES ('Spot', 'product_type', false, new_form_id, 2, new_product_type_id, true);
+
+    IF EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occasion_id AND
+      jsonb_path_exists(features,'$[*] ? (@.code == "blueprint" && @.is_enabled == true)')) THEN
+      INSERT INTO public.form_fields(form,type,is_ticket_field,is_required,is_hidden,"order")
+      VALUES(new_form_id,'spot',true,true,false,-1);
+      PERFORM public.sync_form_blueprint_internal(new_form_id);
+      SELECT to_jsonb(f) INTO new_form FROM public.forms f WHERE id=new_form_id;
+    END IF;
 
     -- Return the raw data of the newly created form
     PERFORM public.notification_center_form_created_internal(new_form_id);

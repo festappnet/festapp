@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile } from '../../../automation/lib/migration_inputs_async.mjs';
 import { randomUUID } from 'node:crypto';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
 import { openDisposableDatabase, assertSchema } from './postgres.mjs';

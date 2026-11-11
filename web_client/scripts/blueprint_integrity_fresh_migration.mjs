@@ -2,7 +2,7 @@
 import pg from 'pg';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync} from '../../automation/lib/migration_inputs.mjs';
 import {resolve} from 'node:path';
 const url=new URL(process.env.BLUEPRINT_DATABASE_URL??'');
 assert.equal(url.hostname,'127.0.0.1');assert(['59822','60922'].includes(url.port));

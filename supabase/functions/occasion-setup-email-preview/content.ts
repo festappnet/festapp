@@ -1,6 +1,6 @@
+import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { ticketEmailSubstitutions } from "../_shared/ticketEmail.ts";
 import {
-  escapeTicketText,
   prepareTicketDelivery,
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
@@ -58,14 +58,14 @@ export function previewOrder(
     payment_info: {
       amount,
       currency_code: currency,
-      deadline,
-      account_number: configuration?.paymentInfo?.account_number ||
-        defaults.iban,
+      payment_method: configuration?.paymentInfo?.payment_method ?? 'bank',
+      data: configuration?.paymentInfo?.data,
+      deadline: configuration?.paymentInfo && Object.hasOwn(configuration.paymentInfo, 'deadline') ? configuration.paymentInfo.deadline : deadline,
+      account_number: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number || defaults.iban : null,
       account_number_human_readable:
-        configuration?.paymentInfo?.account_number_human_readable ||
-        configuration?.paymentInfo?.account_number || defaults.accountNumber,
-      variable_symbol: defaults.variableSymbol,
-      creditor_reference: "RF18539007547034",
+        isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number_human_readable || configuration?.paymentInfo?.account_number || defaults.accountNumber : null,
+      variable_symbol: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? defaults.variableSymbol : null,
+      creditor_reference: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? "RF18539007547034" : null,
     },
     data: {
       tickets: [{
@@ -134,6 +134,9 @@ export async function renderDraftPreview(context: any) {
         );
       };
     });
+    if (context.walletEnabled !== false && context.walletReady === true && context.ticketsEnabled === true) {
+      delivery.html += '<p>Google Wallet - ukázka nabídky u každé vstupenky (' + tickets.length + ')</p>';
+    }
     // Admission QR stays deliberately invalid; only its human-readable sample
     // code is shown. Production delivery continues to show the real symbol.
     delivery.html = delivery.html.replaceAll("festapp-preview:", "");
@@ -158,11 +161,7 @@ export async function renderDraftPreview(context: any) {
     ticketBlock: isTickets ? delivery?.html ?? "" : undefined,
     subjectSubstitutions: isTickets ? ticketSubs : undefined,
     substitutions: isTickets
-      ? {
-        ...ticketSubs,
-        occasionTitle: escapeTicketText(context.title),
-        orderSymbol: escapeTicketText(order.order_symbol),
-      }
+      ? ticketSubs
       : {
         ...defaults,
         ...confirmationSubstitutions(
@@ -190,7 +189,7 @@ export async function renderDraftPreview(context: any) {
     authoringContext: {
       senderAddress: prepared.from,
       wrapperHtml: context.resolved?.wrapper?.html,
-      paymentAccounts: context.paymentInfo
+      paymentAccounts: context.paymentInfo && isBankPaymentInfo(context.paymentInfo)
         ? [{
           accountNumber: context.paymentInfo.account_number_human_readable ||
             context.paymentInfo.account_number,

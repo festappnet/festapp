@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/payment_method_strings.dart';
 
 /// The form's saved payment policy, independent of temporary availability.
-enum FormPaymentMethod { bank, online, both }
+enum FormPaymentMethod { bank, online, both, cash }
 
 class PaymentMethodCards extends StatelessWidget {
   const PaymentMethodCards({
@@ -11,10 +11,12 @@ class PaymentMethodCards extends StatelessWidget {
     required this.canSelectOnline,
     required this.onChanged,
     this.onlineFirst = false,
+    this.showOnline = true,
     this.onlineTitle,
   });
 
   final bool onlineFirst;
+  final bool showOnline;
   final String? onlineTitle;
   final FormPaymentMethod? value;
   final bool canSelectOnline;
@@ -23,25 +25,66 @@ class PaymentMethodCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, size) {
-      // Stack early when enlarged text needs more room.
+      // Each row shares its natural height, including wrapped translations.
       final columns =
           size.maxWidth >= 600 * MediaQuery.textScalerOf(context).scale(1)
-          ? 3
+          ? 2
           : 1;
-      final width = (size.maxWidth - (columns - 1) * 12) / columns;
-      return Wrap(
-        spacing: 12,
-        runSpacing: 12,
+      final methods = [
+        for (final method
+            in (onlineFirst
+                ? const [
+                    FormPaymentMethod.online,
+                    FormPaymentMethod.bank,
+                    FormPaymentMethod.both,
+                  ]
+                : const [
+                    FormPaymentMethod.bank,
+                    FormPaymentMethod.online,
+                    FormPaymentMethod.both,
+                  ]))
+          if (showOnline || method == FormPaymentMethod.bank) method,
+      ];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final method
-              in (onlineFirst
-                  ? const [
-                      FormPaymentMethod.online,
-                      FormPaymentMethod.bank,
-                      FormPaymentMethod.both,
-                    ]
-                  : FormPaymentMethod.values))
-            SizedBox(width: width, child: _card(context, method)),
+          for (var start = 0; start < methods.length; start += columns) ...[
+            if (start > 0) const SizedBox(height: 12),
+            if (columns == 1 || start + 1 == methods.length)
+              _card(context, methods[start])
+            else
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var offset = 0; offset < columns; offset++) ...[
+                      if (offset > 0) const SizedBox(width: 12),
+                      Expanded(
+                        child: start + offset < methods.length
+                            ? _card(context, methods[start + offset])
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          RadioGroup<FormPaymentMethod>(
+            groupValue: value,
+            onChanged: (method) {
+              if (method != null) onChanged(method);
+            },
+            child: RadioListTile<FormPaymentMethod>(
+              key: const ValueKey('payment-method-cash'),
+              value: FormPaymentMethod.cash,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              title: Text(PaymentMethodStrings.text('cash')),
+              subtitle: Text(PaymentMethodStrings.text('cashDescription')),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ),
         ],
       );
     },
@@ -51,20 +94,25 @@ class PaymentMethodCards extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final selected = value == method;
-    final enabled = method == FormPaymentMethod.bank || canSelectOnline;
+    final enabled =
+        method == FormPaymentMethod.cash ||
+        method == FormPaymentMethod.bank ||
+        canSelectOnline;
     final title = method == FormPaymentMethod.online && onlineTitle != null
         ? onlineTitle!
         : PaymentMethodStrings.text(switch (method) {
+            FormPaymentMethod.cash => 'cash',
             FormPaymentMethod.bank => 'onlyBank',
             FormPaymentMethod.online => 'onlyStripe',
             FormPaymentMethod.both => 'bothMethods',
           });
     final description = PaymentMethodStrings.text(switch (method) {
+      FormPaymentMethod.cash => 'cashDescription',
       FormPaymentMethod.bank => 'bankDescription',
       FormPaymentMethod.online => 'stripeDescription',
       FormPaymentMethod.both => 'bothDescription',
     });
-    final radius = BorderRadius.circular(8);
+    final radius = BorderRadius.circular(12);
     return Semantics(
       container: true,
       checked: selected,
@@ -90,12 +138,14 @@ class PaymentMethodCards extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Icon(
                         switch (method) {
+                          FormPaymentMethod.cash => Icons.payments_outlined,
                           FormPaymentMethod.bank =>
                             Icons.account_balance_outlined,
                           FormPaymentMethod.online =>
@@ -132,7 +182,7 @@ class PaymentMethodCards extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: selected
                           ? colors.onPrimaryContainer
                           : colors.onSurfaceVariant,

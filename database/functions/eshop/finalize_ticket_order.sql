@@ -4,6 +4,7 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path = public, extensions
 AS $$
+<<checkout>>
 DECLARE
     result JSONB;
     order_id BIGINT;
@@ -62,6 +63,7 @@ DECLARE
     v_payment_method text;
     v_payment_instructions jsonb;
     v_provider_payment jsonb;
+    v_payment_policy jsonb;
 BEGIN
     PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid)]);
     PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid));
@@ -107,10 +109,6 @@ BEGIN
         INTO organization_id, unit_id, occasion_title, occasion_features
         FROM public.occasions
         WHERE id = occasion_id;
-
-        form_deadline_duration := COALESCE(form_deadline_duration,
-            (SELECT (elem->>'deadline_duration_seconds')::bigint
-             FROM jsonb_array_elements(occasion_features) elem WHERE elem->>'code'='form'),604800);
 
         IF organization_id IS NULL THEN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1005, 'message', 'No organization found for the occasion')::TEXT;
@@ -228,13 +226,27 @@ BEGIN
 
         order_data := public.strip_payment_sources_internal(input_data) - 'ticket' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
 
-        v_payment_method:=coalesce(input_data->>'payment_method','bank');
+        -- Revalidate current configuration under the form lock, including invoice
+        -- services added after the form was saved. Never bypass mandatory invoicing.
+        PERFORM public.validate_form_payment_configuration_internal(form_id);
+        v_payment_method:=coalesce(input_data->>'payment_method',CASE WHEN form_data#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END);
         IF NOT public.payment_method_registered_internal(v_payment_method) THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
-        IF calculated_price=0 THEN v_payment_method:='bank'; END IF;
+        -- Selection exclusivity applies to free orders too; repricing must retain
+        -- a method that the form actually offered. Online readiness and recipient
+        -- changes remain owned by the provider's locked initialization below.
+        IF coalesce(form_data#>'{payments,cashEnabled}'='true'::jsonb,false)
+             IS DISTINCT FROM (v_payment_method='cash') THEN
+          RAISE EXCEPTION 'PAYMENT_METHOD_UNAVAILABLE'; END IF;
+        v_payment_policy:=public.resolve_form_payment_policy_internal(form_id,v_payment_method);
+        PERFORM public.check_payment_client_capabilities_internal(v_payment_policy,v_payment_method,input_data->'client_capabilities');
+        IF calculated_price>0 AND NOT public.payment_method_is_online_internal(v_payment_method)
+          AND NOT (public.form_payment_availability_internal(form_id)->'available' ? v_payment_method) THEN
+          RAISE EXCEPTION 'PAYMENT_METHOD_UNAVAILABLE'; END IF;
+        IF v_payment_method='cash' THEN v_total_deposit:=0; END IF;
         IF calculated_price=0 THEN
           bank_account_id:=NULL;
-          INSERT INTO eshop.payment_info(amount,currency_code,created_at) VALUES(0,first_currency_code,now) RETURNING id INTO payment_info_id;
-        ELSIF v_payment_method<>'bank' THEN
+          INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method) VALUES(0,first_currency_code,now,v_payment_method) RETURNING id INTO payment_info_id;
+        ELSE
           v_provider_payment:=public.payment_provider_call_internal(v_payment_method,'initialize_payment',jsonb_build_object(
             'formId',form_id,'input',input_data,'amount',calculated_price,'currency',first_currency_code,'deposit',v_total_deposit,'createdAt',now));
           payment_info_id:=(v_provider_payment->>'paymentInfoId')::bigint;
@@ -243,15 +255,9 @@ BEGIN
               AND provider_payment.amount=calculated_price AND provider_payment.currency_code=first_currency_code) THEN
             RAISE EXCEPTION 'PAYMENT_PROVIDER_PREPARATION_INVALID'; END IF;
           bank_account_id:=NULL;
-        ELSE
-          IF input_data->>'payment_type' = 'full' THEN v_total_deposit:=0; END IF;
-          INSERT INTO eshop.payment_info(amount,deposit_amount,currency_code,created_at)
-          VALUES(calculated_price,NULLIF(v_total_deposit,0),first_currency_code,now)
-          RETURNING id INTO payment_info_id;
-
-
         END IF;
 
+        UPDATE eshop.payment_info SET data=coalesce(data,'{}')||jsonb_build_object('payment_policy',v_payment_policy-'durationSeconds') WHERE id=payment_info_id;
         PERFORM public.notification_center_prepared_invalidate_order(order_id);
         -- persist all of the non‐state fields
         UPDATE eshop.orders
@@ -282,20 +288,14 @@ BEGIN
           SET state      = 'ordered'
           WHERE id = order_id;
 
-          -- NULL inherits the occasion default; zero is an explicit immediate deadline.
-          form_deadline_duration := coalesce(form_deadline_duration,
-            (SELECT (feature->>'deadline_duration_seconds')::bigint
-             FROM jsonb_array_elements(occasion_features) feature WHERE feature->>'code'='form'),604800);
-          -- Calculate deadline if deadline duration is provided
-          IF v_payment_method<>'bank' THEN
+          IF public.payment_method_is_online_internal(v_payment_method) THEN
               v_provider_payment:=public.payment_provider_call_internal(v_payment_method,'create_attempt',jsonb_build_object('orderId',order_id));
               deadline:=(v_provider_payment->>'expiresAt')::timestamptz;
               IF deadline IS NULL THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_DEADLINE_INVALID'; END IF;
-          ELSIF form_deadline_duration IS NOT NULL THEN
-              deadline := now + make_interval(secs => form_deadline_duration);
-              PERFORM public.set_payment_deadline(payment_info_id, deadline);
-          ELSE
-              deadline := NULL;
+          ELSIF v_payment_policy->>'mode'='custom' THEN
+              deadline:=now+make_interval(secs=>(v_payment_policy->>'durationSeconds')::bigint);
+              UPDATE eshop.payment_info SET deadline=checkout.deadline WHERE id=payment_info_id;
+              PERFORM public.queue_payment_reminders_internal(occasion_id,payment_info_id);
           END IF;
         END IF;
 
@@ -303,7 +303,7 @@ BEGIN
         PERFORM public.recalculate_order_payment_status(order_id);
 
         -- Queue deposit reminder if deposit exists and deadline is days-based (not "on site")
-        IF v_total_deposit > 0 THEN
+        IF v_total_deposit > 0 AND v_payment_policy->>'mode'<>'none' THEN
             DECLARE
                 v_occ_start_time TIMESTAMPTZ;
                 v_deposit_deadline_days INT;
@@ -343,7 +343,7 @@ BEGIN
         INSERT INTO eshop.orders_history (created_at, data, "order", state, price, currency_code)
         VALUES (
             now,
-            JSONB_BUILD_OBJECT('input_data', input_data, 'tickets', ticket_details),
+            JSONB_BUILD_OBJECT('input_data', input_data, 'tickets', ticket_details,'payment_policy',v_payment_policy-'durationSeconds'),
             order_id,
             'ordered',
             calculated_price,
@@ -360,7 +360,7 @@ BEGIN
         -- Prepare the success response JSON
         result := JSONB_BUILD_OBJECT(
             'code', 200,
-            'payment',public.provider_order_payment_projection_internal(order_id),
+            'payment',public.customer_order_payment_internal(order_id),
             'order', JSONB_BUILD_OBJECT(
                 'id', order_id,
                 'order_symbol', assigned_order_symbol,
@@ -372,6 +372,7 @@ BEGIN
                 'payment_info', JSONB_BUILD_OBJECT(
                     'id', payment_info_id,
                     'payment_method',v_payment_method,
+                    'data',jsonb_build_object('payment_policy',v_payment_policy-'durationSeconds'),
                     'variable_symbol', generated_variable_symbol,
                     'creditor_reference', generated_creditor_reference,
                     'creditor_name', creditor_name,

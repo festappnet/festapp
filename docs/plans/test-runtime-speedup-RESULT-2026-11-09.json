@@ -1,0 +1,1907 @@
+{
+  "status": "implemented-verified-deployed-with-documented-target-deficits",
+  "baseMainSha": "81e00bfdf8905b0144c5eb6caf58d25239a154b5",
+  "worktree": "/private/tmp/festapp-test-runtime-20261109",
+  "branch": "perf/test-runtime-20261109",
+  "implementedWaves": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "published": true,
+  "productionMutated": true,
+  "providerParity": {
+    "roles_equal": true,
+    "role_memberships_equal": true,
+    "cron_disabled_both": true,
+    "ledger_equal": true,
+    "extensions_equal": true,
+    "postgres_versions": [
+      "150008",
+      "150008"
+    ],
+    "schema_equal": true,
+    "schema_sha256": [
+      "8701b7e0e425afae2b63beab77bc6c99de378ffb960ef67ad544a475a4959947",
+      "8701b7e0e425afae2b63beab77bc6c99de378ffb960ef67ad544a475a4959947"
+    ],
+    "reference_rows_equal": {
+      "public.client_sync_component_sources": true
+    },
+    "unresolved_reference_counts": {
+      "public.client_sync_component_sources.source_relation": {
+        "left": 0,
+        "right": 0
+      }
+    },
+    "sequence_values_equal": true,
+    "ignored_catalog_schema": "supabase_migrations (ledger verified separately)"
+  },
+  "inventory": {
+    "sqlExecutions": 110,
+    "sqlUniqueIds": 109,
+    "flutterSemanticCases": 295,
+    "startupBrowserReports": 31,
+    "formAccessReports": 30,
+    "measurementScenarios": 205,
+    "startupNodeTests": 291,
+    "startupOriginalNodeTests": 306,
+    "startupAddedNodeTests": 10,
+    "startupRetiredCliImplementationTests": 26,
+    "startupOriginalNodeTestsScope": "previous CLI harness; all non-CLI application subtest names and multiplicities retained",
+    "startupUpstreamAddedNodeTests": 1,
+    "measurementNodeTests": 193,
+    "scope": "Current Node/browser inventory after main #774; historical matched Flutter and SQL counts retain their documented benchmark scope."
+  },
+  "sqlDefaultConcurrency": 2,
+  "hostedExactShaGate": {
+    "status": "PASS",
+    "sourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "requiredJobsPassed": 8,
+    "attestationScope": "immutable deployed application source; subsequent result/plan updates are documentation only"
+  },
+  "evidenceDirectory": "/private/tmp/festapp-runtime-evidence-20261109",
+  "sqlDefaultRationale": "Lower memory when independent units overlap; final2/4/5 wall15.72/14.14/13.75s and PG container347.0/375.8/432.9MiB; prior matrix19.08/19.45/28.84s demonstrates host variability.",
+  "serviceProofs": {
+    "pg17Security": "pg17-security-final-v6.log:11+1Node,28scanAttendance,6SQL PASS",
+    "email": "email-runtime-v2.log PASS",
+    "nativeAuth": "native-auth-final-v2.log PASS",
+    "abuse": "abuse-runtime-passed.log:43SQL+3Node+realnativeAuth PASS"
+  },
+  "historicalBeforeMainIntegration": {
+    "baseMainSha": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+    "sqlConcurrencyMatrix": [
+      {
+        "concurrency": 2,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 19.083290499984287,
+        "peakSummedRssBytes": 89833472,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            4.71484375,
+            5.09326171875,
+            6.06201171875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14415.12M  free = 944.88M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            5.91650390625,
+            5.3447265625,
+            6.12939453125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14543.88M  free = 816.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 4,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 19.454257624980528,
+        "peakSummedRssBytes": 180436992,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            5.6826171875,
+            5.3056640625,
+            6.11083984375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14545.62M  free = 814.38M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            6.408203125,
+            5.50830078125,
+            6.16455078125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15082.06M  free = 1301.94M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 5,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 28.841258999949787,
+        "peakSummedRssBytes": 83509248,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            6.408203125,
+            5.50830078125,
+            6.16455078125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15034.06M  free = 1349.94M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            8.7373046875,
+            6.197265625,
+            6.39306640625
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 14759.31M  free = 1624.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "33d93e51ca1998926b2b91945bb823d4be872fa31210a95d0fa814993198596f",
+        "coveredInputsUnchanged": true
+      }
+    ],
+    "sqlContainerSamplesFirstMatrix": "unavailable: Docker ANSI controls; corrected sampler regression passed; final matrix has27-31 valid samples",
+    "flutterControl": [
+      {
+        "run": "cold",
+        "seconds": 110.77156841603573,
+        "peakSummedRssBytes": 2506489856,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      },
+      {
+        "run": "warm-1",
+        "seconds": 80.41113370802486,
+        "peakSummedRssBytes": 2151989248,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      },
+      {
+        "run": "warm-2",
+        "seconds": 79.87895841698628,
+        "peakSummedRssBytes": 1950400512,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      },
+      {
+        "run": "warm-3",
+        "seconds": 109.18961449997732,
+        "peakSummedRssBytes": 1470087168,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "571d34d851b4121db6e1ffee74811fdd07633b7fee66c28ca86b055c99442144",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        }
+      }
+    ],
+    "sqlFinalMemoryMatrix": [
+      {
+        "concurrency": 2,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 15.717003750032745,
+        "peakSummedRssBytes": 99876864,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            4.16552734375,
+            5.92236328125,
+            6.244140625
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 14769.88M  free = 1614.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            3.9248046875,
+            5.779296875,
+            6.18701171875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13964.31M  free = 1395.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 4,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 14.144293082994409,
+        "peakSummedRssBytes": 109068288,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            3.9248046875,
+            5.779296875,
+            6.18701171875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13964.31M  free = 1395.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            4.02734375,
+            5.70849609375,
+            6.15380859375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13932.31M  free = 1427.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+        "coveredInputsUnchanged": true
+      },
+      {
+        "concurrency": 5,
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "automation/local_db/runtime.py",
+          "exec",
+          "--",
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1"
+        ],
+        "code": 0,
+        "seconds": 13.749731041956693,
+        "peakSummedRssBytes": 109723648,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            4.02734375,
+            5.70849609375,
+            6.15380859375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13924.31M  free = 1435.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            3.6455078125,
+            5.5419921875,
+            6.08642578125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 13924.31M  free = 1435.69M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": true,
+        "coveredInputsBefore": "2f3a70f98de5a808b47d22a1b51ad4ec2b79c0571ad79c37d34078ef20f1bd93",
+        "coveredInputsUnchanged": true
+      }
+    ],
+    "flutterCandidate": [
+      {
+        "run": "cold",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/cold/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/cold/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 72.0506929999683,
+        "peakSummedRssBytes": 2676621312,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "970eee244ffbc46e2469d220d58a36c911f07543b2d6a4ed32dfce73731bb622",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            6.95849609375,
+            6.1181640625,
+            6.34912109375
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 15360.00M  used = 14149.19M  free = 1210.81M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            5.73388671875,
+            5.9716796875,
+            6.27685546875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15799.50M  free = 584.50M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.04130866698687896
+      },
+      {
+        "run": "warm-1",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-1/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-1/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 63.88402158301324,
+        "peakSummedRssBytes": 1774206976,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "bf420c544895770bdf15a251562f7274062665d81bcd99ef3c0486e6666fc38a",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            5.73388671875,
+            5.9716796875,
+            6.27685546875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15791.50M  free = 592.50M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            7.2177734375,
+            6.28271484375,
+            6.36376953125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15985.94M  free = 398.06M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.02779295900836587
+      },
+      {
+        "run": "warm-2",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-2/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-2/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 56.1227184170275,
+        "peakSummedRssBytes": 1701429248,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "e2ee4f01f3644d016f5b302f55b8c907f1782099279acbe39990dd530f3d2d3b",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            7.3603515625,
+            6.32763671875,
+            6.37890625
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15969.94M  free = 414.06M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            8.140625,
+            6.6669921875,
+            6.4970703125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15721.88M  free = 662.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.039915083965752274
+      },
+      {
+        "run": "warm-3",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-3/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/warm-3/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 48.13200558297103,
+        "peakSummedRssBytes": 1695744000,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "6791e30f917a92875ed4c4479c7f35e337e0380025264b37f6d3a5cd21b571ba",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            8.140625,
+            6.6669921875,
+            6.4970703125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15713.88M  free = 670.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            7.732421875,
+            6.78955078125,
+            6.5517578125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15353.88M  free = 1030.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.06450437498278916
+      },
+      {
+        "run": "reverse",
+        "command": [
+          "bash",
+          "-euo",
+          "pipefail",
+          "-c",
+          "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart --reporter=json > /private/tmp/festapp-runtime-evidence-20261109/flutter-final/reverse/0.jsonl 2> /private/tmp/festapp-runtime-evidence-20261109/flutter-final/reverse/0.stderr"
+        ],
+        "code": 0,
+        "seconds": 44.41573270899244,
+        "peakSummedRssBytes": 1686781952,
+        "identity": {
+          "head": "570aa2a29c081393720b98cbc2c79355e6818fd0",
+          "dirty": true,
+          "inputSha256": "718c169139aca7aa53230c2ee54394a0bc4463cf0001cbe62eca3e5d92386168",
+          "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "machine": "arm64"
+        },
+        "hostBefore": {
+          "loadAverage": [
+            7.732421875,
+            6.78955078125,
+            6.5517578125
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 15353.88M  free = 1030.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "hostAfter": {
+          "loadAverage": [
+            6.26025390625,
+            6.52392578125,
+            6.46435546875
+          ],
+          "cpuCount": 10,
+          "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+          "swap": "total = 16384.00M  used = 14961.88M  free = 1422.12M  (encrypted)",
+          "physicalMemoryBytes": 17179869184
+        },
+        "inputsUnchanged": false,
+        "coveredInputsBefore": "1f2dfdf27facae70bc28230d7059f8ee9ec455d441ba122a3a461bc16e64c70a",
+        "coveredInputsUnchanged": true,
+        "slotWaitSeconds": 0.028907750034704804
+      }
+    ],
+    "finalChecks": null
+  },
+  "flutterMatchedCurrentMain": [
+    {
+      "side": "control",
+      "run": "cold",
+      "code": 0,
+      "seconds": 118.047560875013,
+      "peakSummedRssBytes": 2570305536,
+      "slotWaitSeconds": 0.03129541699308902,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          6.1787109375,
+          7.28955078125,
+          6.9169921875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 17408.00M  used = 16577.25M  free = 830.75M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          7.013671875,
+          7.11328125,
+          6.88330078125
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 17431.12M  free = 1000.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "cold",
+      "code": 0,
+      "seconds": 89.60409083397826,
+      "peakSummedRssBytes": 2323677184,
+      "slotWaitSeconds": 0.03214866702910513,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          7.013671875,
+          7.11328125,
+          6.88330078125
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 17431.12M  free = 1000.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          8.767578125,
+          7.4560546875,
+          7.02197265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 16941.38M  free = 1490.62M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "control",
+      "run": "warm1",
+      "code": 0,
+      "seconds": 93.05567512498237,
+      "peakSummedRssBytes": 1856552960,
+      "slotWaitSeconds": 0.031165916996542364,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          8.767578125,
+          7.4560546875,
+          7.02197265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 18432.00M  used = 16941.38M  free = 1490.62M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          8.8212890625,
+          8.15283203125,
+          7.36572265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 17408.00M  used = 15366.25M  free = 2041.75M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "warm1",
+      "code": 0,
+      "seconds": 52.6893790839822,
+      "peakSummedRssBytes": 1972273152,
+      "slotWaitSeconds": 0.02929858397692442,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          8.8212890625,
+          8.15283203125,
+          7.36572265625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 15358.06M  free = 1025.94M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.98193359375,
+          7.48046875,
+          7.1630859375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 15230.06M  free = 1153.94M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "control",
+      "run": "warm2",
+      "code": 0,
+      "seconds": 90.76950979197863,
+      "peakSummedRssBytes": 1663139840,
+      "slotWaitSeconds": 0.027031125035136938,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          5.98193359375,
+          7.48046875,
+          7.1630859375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 15222.06M  free = 1161.94M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.75048828125,
+          6.99072265625,
+          7.00341796875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14941.94M  free = 1442.06M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "warm2",
+      "code": 0,
+      "seconds": 60.874180916987825,
+      "peakSummedRssBytes": 1708179456,
+      "slotWaitSeconds": 0.029287416953593493,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          5.60986328125,
+          6.94091796875,
+          6.9853515625
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14941.94M  free = 1442.06M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.1083984375,
+          6.60498046875,
+          6.857421875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14953.12M  free = 1430.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "control",
+      "run": "warm3",
+      "code": 0,
+      "seconds": 86.72616945800837,
+      "peakSummedRssBytes": 1889615872,
+      "slotWaitSeconds": 0.027531208004802465,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "87b22ab6a25f3c0ed7fe78abb8654eb382a2a8ed428e078800f5fe122c817d77",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          5.1083984375,
+          6.60498046875,
+          6.857421875
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14937.12M  free = 1446.88M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          4.2939453125,
+          6.0078125,
+          6.60302734375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14915.75M  free = 1468.25M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    },
+    {
+      "side": "candidate",
+      "run": "warm3",
+      "code": 0,
+      "seconds": 58.074119541968685,
+      "peakSummedRssBytes": 1804419072,
+      "slotWaitSeconds": 0.029872958024498075,
+      "identity": {
+        "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "dirty": true,
+        "inputSha256": "29861c5868f856bbab031db4fcc26114c2310433d455fd8f33a51b21529c1f09",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "inputsUnchanged": true,
+      "semanticCases": 295,
+      "inventoryEqual": true,
+      "hostBefore": {
+        "loadAverage": [
+          4.2939453125,
+          6.0078125,
+          6.60302734375
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14915.75M  free = 1468.25M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      },
+      "hostAfter": {
+        "loadAverage": [
+          5.560546875,
+          6.0654296875,
+          6.58203125
+        ],
+        "cpuCount": 10,
+        "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "swap": "total = 16384.00M  used = 14934.94M  free = 1449.06M  (encrypted)",
+        "physicalMemoryBytes": 17179869184
+      }
+    }
+  ],
+  "currentMainChecks": {
+    "providerParity": "PASS",
+    "runtimeIntegration": {
+      "tests": 9,
+      "seconds": 12.904,
+      "result": "PASS"
+    },
+    "browserCorrectness": {
+      "nodeTests": 306,
+      "reports": 31,
+      "result": "PASS"
+    },
+    "mirror": {
+      "result": "PASS",
+      "jobs": 8,
+      "units": 36,
+      "complete": true,
+      "inputsUnchanged": true,
+      "perFileChangedInputs": 0,
+      "testedInputSha256": "c0ff5e89e75f2243b283bbb327614fd48fefe6ef7dbd13a850d7167c06053a94",
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T193539-edc7a4a13f01/receipt.json",
+      "archivedReceipt": "final-ci-receipt/receipt.json",
+      "outer": {
+        "exitCode": 0,
+        "seconds": 340.1222222080105,
+        "peakSummedRssBytes": 2705080320,
+        "headBefore": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "headAfter": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+        "filesChanged": []
+      },
+      "receiptSeconds": 338.92056958394824,
+      "preparationSeconds": 5.18080008396646,
+      "executionSeconds": 333.5651527500013,
+      "cleanupSeconds": 0.17461216601077467,
+      "canonicalSeatSpanWithinSharedRunSeconds": 187.02,
+      "canonicalSeatSpanScope": "eleven step events including real upgrade/runtime gates and shared-run scheduling waits; not comparable to isolated nine-unit benchmark",
+      "imageLifecycleOwnedLeaseVerified": false
+    }
+  },
+  "browserToolchain": {
+    "agentBrowser": "0.41.2",
+    "browserSelection": "native discovery; no forced executable path",
+    "removed": "0.39-specific iframe geometry helper"
+  },
+  "seatMatchedCurrentMain": {
+    "scope": "same nine behavior units;110 SQL executions109unique; separate additive safety/upgrade/runtime gates excluded",
+    "runs": {
+      "control": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 116.02545883395942,
+          "peakSummedRssBytes": 1991639040,
+          "containerPeakSampledBytes": 267386880,
+          "containerSamples": 54,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-cold-receipt.json"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 108.06943845801288,
+          "peakSummedRssBytes": 1812152320,
+          "containerPeakSampledBytes": 213490073,
+          "containerSamples": 51,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-warm1-receipt.json"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 108.08807066699956,
+          "peakSummedRssBytes": 1772290048,
+          "containerPeakSampledBytes": 248197939,
+          "containerSamples": 51,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-warm2-receipt.json"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 105.52408045798074,
+          "peakSummedRssBytes": 1929609216,
+          "containerPeakSampledBytes": 213280358,
+          "containerSamples": 50,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-control-warm3-receipt.json"
+        }
+      ],
+      "dag": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 73.93366625002818,
+          "peakSummedRssBytes": 1836482560,
+          "containerPeakSampledBytes": 328728576,
+          "containerSamples": 36,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-cold-receipt.json"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 52.1214603339904,
+          "peakSummedRssBytes": 1791000576,
+          "containerPeakSampledBytes": 308910489,
+          "containerSamples": 27,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-warm1-receipt.json"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 51.08769629098242,
+          "peakSummedRssBytes": 1745829888,
+          "containerPeakSampledBytes": 295279001,
+          "containerSamples": 26,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-warm2-receipt.json"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 52.802160207997076,
+          "peakSummedRssBytes": 1808056320,
+          "containerPeakSampledBytes": 317928243,
+          "containerSamples": 28,
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/main-seat-dag-warm3-receipt.json"
+        }
+      ]
+    },
+    "controlWarmMedianSeconds": 108.06943845801288,
+    "candidateWarmMedianSeconds": 52.1214603339904,
+    "speedup": 2.073415398676707,
+    "targetSeconds": 40,
+    "targetDeficitSeconds": 12.121460333990399,
+    "fallbackAtLeast2xMet": true,
+    "coldDefinition": "fresh owned project/template; image, pnpm and OS caches retained; all clone/start/stop and Node resolution included",
+    "validForSpeedupClaim": false,
+    "supersededReason": "Historical image lifecycle transport used a legacy port fallback; both sides must be remeasured with each owned DB context. SQL110/109 and Flutter evidence unaffected."
+  },
+  "browserMatchedCurrentMain": {
+    "runs": {
+      "web-startup": {
+        "control": [
+          {
+            "run": "cold",
+            "exitCode": 1,
+            "seconds": 60.16789079201408,
+            "peakSummedRssBytes": 1619361792
+          }
+        ],
+        "candidate": [
+          {
+            "run": "cold",
+            "exitCode": 0,
+            "seconds": 113.4701766250073,
+            "peakSummedRssBytes": 1808809984
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 103.32724974997109,
+            "peakSummedRssBytes": 2192097280
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 107.14619708398823,
+            "peakSummedRssBytes": 1824456704
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 108.23258066701237,
+            "peakSummedRssBytes": 1820262400
+          }
+        ]
+      },
+      "web-measurement": {
+        "control": [
+          {
+            "run": "cold",
+            "exitCode": 0,
+            "seconds": 33.8012371250079,
+            "peakSummedRssBytes": 1600684032
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 32.498314291005954,
+            "peakSummedRssBytes": 1632026624
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 33.17894504102878,
+            "peakSummedRssBytes": 1644609536
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 34.73637462500483,
+            "peakSummedRssBytes": 1654800384
+          }
+        ],
+        "candidate": [
+          {
+            "run": "cold",
+            "exitCode": 0,
+            "seconds": 31.971686040982604,
+            "peakSummedRssBytes": 1554006016
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 31.649791667005047,
+            "peakSummedRssBytes": 1469874176
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 32.80172741599381,
+            "peakSummedRssBytes": 1459912704
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 29.691666208032984,
+            "peakSummedRssBytes": 1584578560
+          }
+        ]
+      }
+    },
+    "originalNodeTests": 304,
+    "additiveNodeTests": 2,
+    "browserReports": 31,
+    "measurementScenarios": 194,
+    "startupControlVerdict": "FAIL first attempt iframe validation timeout; no matched startup speedup claim",
+    "candidateStartupWarmMedianSeconds": 107.15,
+    "controlMeasurementWarmMedianSeconds": 33.18,
+    "candidateMeasurementWarmMedianSeconds": 31.65,
+    "candidateCombinedMedianSeconds": 138.8,
+    "targetSeconds": 75,
+    "targetDeficitSeconds": 63.8,
+    "coldDefinition": "first sampled invocation: fresh owned browsers/servers and fixture build; dependency/browser/Vite/OS caches retained; not a cold-cache measurement"
+  },
+  "warmTargetedCurrentMain": {
+    "identity": {
+      "head": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+      "dirty": true,
+      "inputSha256": "c0ff5e89e75f2243b283bbb327614fd48fefe6ef7dbd13a850d7167c06053a94",
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "machine": "arm64"
+    },
+    "inputsUnchanged": true,
+    "clusterStartAndPrepare": {
+      "seconds": 1.1219805829459801,
+      "mode": "behavior-template"
+    },
+    "acquisitions": [
+      {
+        "run": 1,
+        "acquireCloneSeconds": 1.054680917004589,
+        "mode": "behavior-template",
+        "fingerprint": "ae7092d564affa72ca71d2e65a0d54754d8e729954722330c3466c49a0309fa4",
+        "acquireReleaseSeconds": 1.1995413330150768
+      },
+      {
+        "run": 2,
+        "acquireCloneSeconds": 0.6941614999668673,
+        "mode": "behavior-template",
+        "fingerprint": "ae7092d564affa72ca71d2e65a0d54754d8e729954722330c3466c49a0309fa4",
+        "acquireReleaseSeconds": 0.8209982499829493
+      },
+      {
+        "run": 3,
+        "acquireCloneSeconds": 0.6541336659574881,
+        "mode": "behavior-template",
+        "fingerprint": "ae7092d564affa72ca71d2e65a0d54754d8e729954722330c3466c49a0309fa4",
+        "acquireReleaseSeconds": 0.7711339579545893
+      }
+    ],
+    "scope": [
+      "database/tests/notification_center/prepared_orders_test.sql",
+      "database/tests/notification_center/prepared_lifecycle_test.sql",
+      "database/tests/notification_center/contract_test.sql"
+    ],
+    "targeted": [
+      {
+        "run": 1,
+        "seconds": 2.1785946669988334,
+        "peakSummedRssBytes": 136871936,
+        "code": 0
+      },
+      {
+        "run": 2,
+        "seconds": 2.6678390839952044,
+        "peakSummedRssBytes": 141623296,
+        "code": 0
+      },
+      {
+        "run": 3,
+        "seconds": 2.226301999995485,
+        "peakSummedRssBytes": 154337280,
+        "code": 0
+      }
+    ],
+    "finalClusterStopSeconds": 0.14824608399067074,
+    "scopeLabel": "three targeted SQL files; separate from whole-suite performance"
+  },
+  "flutterEventProfile": "main-flutter/event-profile.json",
+  "postGateDocumentation": {
+    "onlyAllowedPaths": [
+      "docs/plans/test-runtime-speedup-RESULT-2026-11-09.md",
+      "docs/plans/test-runtime-speedup-RESULT-2026-11-09.json",
+      "docs/plans/test-runtime-speedup-plan-2026-11-09.md"
+    ],
+    "note": "Final numerical documentation is written after the exact-source mirror; separate manifest comparison proves no functional inputs changed."
+  },
+  "remainingTargets": [
+    "Corrected owned seat median45.72s exceeds40s by5.72s; >=2x fallback met.",
+    "Browser combined medians138.80s exceed75s by63.80s; startup control failed, so startup speedup unproven.",
+    "Corrected hosted8 exact-SHA checks passed; no controlled hosted performance comparison.",
+    "No controlled before/after full-eight-job total."
+  ],
+  "releaseCorrection": {
+    "workerDatabaseContract": "common DATABASE_URL only; active lease project/database verified",
+    "legacyImageUrlFallbackRemoved": true,
+    "correctedLocalReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T202631-6e72098f93dd/receipt.json",
+    "obsoleteAliasDeliberatelyInvalid": true,
+    "correctedLocalUnitsPassed": 15,
+    "hostedEvidence": "All eight hosted lanes now archive run receipts, logs and timings even after failure.",
+    "hostedSourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "hostedJobsPassed": 8,
+    "comparisonCorrected": true
+  },
+  "correctedMatchedSeatRelease1053": {
+    "sourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "controlMainSha": "81e00bfdf8905b0144c5eb6caf58d25239a154b5",
+    "validForSpeedupClaim": true,
+    "scope": "same nine behavior units;110SQL executions109unique;both real image lifecycle cases on each respective owned DB;separate upgrade/additive gates excluded",
+    "controlBinding": "Historical documented IMAGE_LIFECYCLE_DATABASE_URL explicitly points to the control-owned DATABASE_URL; no assertions or behavior altered",
+    "candidateBinding": "Common DATABASE_URL with live project/database lease assertions; obsolete alias deliberately invalid55999",
+    "allFirstAttemptsPassed": true,
+    "inputsUnchanged": true,
+    "runs": {
+      "control": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 106.58573841594625,
+          "peakSummedRssBytes": 1810284544,
+          "containerPeakSampledBytes": 246100787,
+          "containerSamples": 50,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-cold-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 103.77752016601153,
+          "peakSummedRssBytes": 1805647872,
+          "containerPeakSampledBytes": 269274316,
+          "containerSamples": 48,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-warm1-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 101.94922008301364,
+          "peakSummedRssBytes": 1798897664,
+          "containerPeakSampledBytes": 214853222,
+          "containerSamples": 47,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-warm2-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 102.50763483298942,
+          "peakSummedRssBytes": 1812234240,
+          "containerPeakSampledBytes": 245366784,
+          "containerSamples": 48,
+          "container": "supabase_db_festapp-release1053-control",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-control-warm3-receipt.json",
+          "inputSha256": "1114885065a5c5678427ad8df41822ba9bbab628b26cf942d9075701580649b0"
+        }
+      ],
+      "dag": [
+        {
+          "run": "cold",
+          "exitCode": 0,
+          "seconds": 67.42785808298504,
+          "peakSummedRssBytes": 1860665344,
+          "containerPeakSampledBytes": 321703116,
+          "containerSamples": 33,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-cold-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        },
+        {
+          "run": "warm1",
+          "exitCode": 0,
+          "seconds": 45.715067374985665,
+          "peakSummedRssBytes": 1840136192,
+          "containerPeakSampledBytes": 337851187,
+          "containerSamples": 24,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-warm1-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        },
+        {
+          "run": "warm2",
+          "exitCode": 0,
+          "seconds": 44.898031375021674,
+          "peakSummedRssBytes": 1812627456,
+          "containerPeakSampledBytes": 299578163,
+          "containerSamples": 24,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-warm2-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        },
+        {
+          "run": "warm3",
+          "exitCode": 0,
+          "seconds": 46.95263337501092,
+          "peakSummedRssBytes": 1829683200,
+          "containerPeakSampledBytes": 342884352,
+          "containerSamples": 25,
+          "container": "supabase_db_festapp-release1053-candidate",
+          "receipt": "/private/tmp/festapp-runtime-evidence-20261109/browser-final/release1053-seat-dag-warm3-receipt.json",
+          "inputSha256": "f34f720638d68e75fe4aaea45faeffcb0cedc9cdc6b23cf8fd66c86765c8477f"
+        }
+      ]
+    },
+    "controlWarmMedianSeconds": 102.50763483298942,
+    "candidateWarmMedianSeconds": 45.715067374985665,
+    "speedup": 2.242316170993537,
+    "targetSeconds": 40,
+    "targetDeficitSeconds": 5.715067374985665,
+    "fallbackAtLeast2xMet": true,
+    "coldDefinition": "fresh owned project/template;image,pnpm and OS caches retained;Node,start,clone,release and clusterstop included"
+  },
+  "originalMeasurementBaseMainSha": "e3de2261a0717893b41b8cbfc955f9b47ed46da4",
+  "release1053": {
+    "sourceMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+    "tenantSha": "9fac6c3e90c9ee99f2a84bd4a4ba9f3f505b54f8",
+    "tenantId": "festapptickets",
+    "version": "0.20.542+1053",
+    "liveUrl": "https://vstupenky.online",
+    "deploymentUrl": "https://2d738a83.vstupenkyonline.pages.dev",
+    "hostedRequiredChecksPassed": 8,
+    "buildStartupNodeCases": 306,
+    "buildStartupBrowserReports": 31,
+    "buildVerified": true,
+    "coherentLiveConsecutiveProbesPassed": 3,
+    "migration1800Present": true,
+    "migration1900Preserved": true,
+    "retiredRegistrySelectorCount": 0,
+    "deploymentMethod": "single local build followed by automation/deploy_direct.sh --skip-build --wrangler-oauth --branch prod/festapptickets",
+    "receipt": "/Users/miakh/Library/Caches/festapp-test-runtime-20261109/release-1053/deployment-receipt.json",
+    "postReleaseNumericalDocsOnly": true,
+    "postReleaseDocumentationPublished": true
+  },
+  "publishedMainSha": "0da72ea9f799e1762533c16afd1c7d541f7b368b",
+  "documentationPublication": {
+    "scope": "three result/plan files only; no runtime/workflow/tenant changes",
+    "deployedApplicationSourceUnchanged": true,
+    "newDeploymentRequired": false
+  },
+  "furtherCanonicalSeatOptimization": {
+    "baselineMainSha": "463abf71a3747467eb6ee40e27c3c8bff3c34942",
+    "scope": "full canonical seat-checkout lane, all eleven units including real upgrade/runtime and additive safety tests",
+    "allFirstAttemptsPassed": true,
+    "allInputsUnchangedDuringSamples": true,
+    "sqlExecutions": 110,
+    "sqlUniqueFiles": 109,
+    "lifecycleCasesPerRun": 2,
+    "controlWarmMedianSeconds": 79.40389233297901,
+    "candidateWarmMedianSeconds": 70.98373158299364,
+    "savedSeconds": 8.42016074998537,
+    "reductionPercent": 10.60421662287732,
+    "rawSamples": {
+      "seat-checkout": {
+        "control": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 78.55439583299449,
+            "peakSummedRssBytes": 2013331456,
+            "containerPeakSampledBytes": 364065587,
+            "containerSamples": 32,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214214-a5714d6848f4/receipt.json"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 74.9851176670054,
+            "peakSummedRssBytes": 1887010816,
+            "containerPeakSampledBytes": 315097088,
+            "containerSamples": 28,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214443-c1a46c36505c/receipt.json"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 79.40389233297901,
+            "peakSummedRssBytes": 1828323328,
+            "containerPeakSampledBytes": 324219699,
+            "containerSamples": 31,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214712-03c521f0fe3f/receipt.json"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 79.94690158299636,
+            "peakSummedRssBytes": 1934327808,
+            "containerPeakSampledBytes": 362387865,
+            "containerSamples": 31,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214949-2619dfd60a89/receipt.json"
+          }
+        ],
+        "candidate": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 66.98305312497541,
+            "peakSummedRssBytes": 2152939520,
+            "containerPeakSampledBytes": 313419366,
+            "containerSamples": 27,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214334-1923b53a4228/receipt.json"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 70.98373158299364,
+            "peakSummedRssBytes": 2028699648,
+            "containerPeakSampledBytes": 310168780,
+            "containerSamples": 27,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214559-2cf897efec4c/receipt.json"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 74.44391129200812,
+            "peakSummedRssBytes": 2000666624,
+            "containerPeakSampledBytes": 346554368,
+            "containerSamples": 29,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T214833-b284e7309d1a/receipt.json"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 70.82792174996575,
+            "peakSummedRssBytes": 1986887680,
+            "containerPeakSampledBytes": 304716185,
+            "containerSamples": 27,
+            "inputsUnchanged": true,
+            "scope": "full canonical seat lane",
+            "firstRunDefinition": "fresh project and template; image/pnpm/OS caches retained",
+            "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T215110-c9b776db2b45/receipt.json"
+          }
+        ]
+      },
+      "web-startup": {
+        "control": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 89.70097924995935,
+            "peakSummedRssBytes": 2005532672,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 86.0091222919873,
+            "peakSummedRssBytes": 2121515008,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 86.29454724997049,
+            "peakSummedRssBytes": 2187378688,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 96.52626395801781,
+            "peakSummedRssBytes": 2162556928,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          }
+        ],
+        "candidate": [
+          {
+            "run": "first",
+            "exitCode": 0,
+            "seconds": 84.94323291699402,
+            "peakSummedRssBytes": 2178646016,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm1",
+            "exitCode": 0,
+            "seconds": 86.53149020898854,
+            "peakSummedRssBytes": 2082717696,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm2",
+            "exitCode": 0,
+            "seconds": 97.66046087502036,
+            "peakSummedRssBytes": 2154594304,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          },
+          {
+            "run": "warm3",
+            "exitCode": 0,
+            "seconds": 85.68193075002637,
+            "peakSummedRssBytes": 2112864256,
+            "containerPeakSampledBytes": null,
+            "containerSamples": 0,
+            "inputsUnchanged": true,
+            "scope": "canonical startup step",
+            "firstRunDefinition": "fresh browser sessions and per-run fixture build; dependencies/browser/OS caches retained"
+          }
+        ]
+      }
+    },
+    "browserExperiment": {
+      "retained": false,
+      "controlWarmMedianSeconds": 86.29454724997049,
+      "candidateWarmMedianSeconds": 86.53149020898854,
+      "cliInvocationsControl": 431,
+      "cliInvocationsCandidate": 386,
+      "reason": "No measured elapsed-time gain; restored browser script exactly to baseline after all measurements."
+    },
+    "retainedFunctionalPaths": [
+      "automation/ci/checks.json",
+      "automation/ci/test_scheduler.py"
+    ],
+    "restoredFileNotExecutedBySeatLane": "web_client/scripts/test_form_access_browser.mjs",
+    "memory": {
+      "hostPeakControlMiB": [
+        1744,
+        1920
+      ],
+      "hostPeakCandidateMiB": [
+        1895,
+        2053
+      ],
+      "postgresPeakControlMiB": [
+        300,
+        347
+      ],
+      "postgresPeakCandidateMiB": [
+        291,
+        330
+      ],
+      "containerSamplesPerRun": [
+        27,
+        32
+      ]
+    },
+    "localValidation": {
+      "seatAndWebReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T212615-0b1a8e3027ac/receipt.json",
+      "imageReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T212933-8b24be83b9e8/receipt.json",
+      "ciFrameworkCases": 25,
+      "startupNodeCases": 306,
+      "startupBrowserReports": 31,
+      "measurementNodeCases": 182,
+      "measurementBrowserReports": 12
+    },
+    "productionUnchanged": {
+      "version": "0.20.542+1053",
+      "tenantSha": "9fac6c3e90c9ee99f2a84bd4a4ba9f3f505b54f8"
+    },
+    "evidenceDirectory": "/private/tmp/festapp-further-evidence"
+  },
+  "nativeBrowserCutover": {
+    "status": "implemented-benchmarked-locally-verified-awaiting-review",
+    "baseMainSha": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+    "branch": "perf/test-runtime-native-browser-20261109",
+    "merged": false,
+    "productionChanged": false,
+    "driver": {
+      "baseline": "agent-browser 0.41.2 / Chrome 151.0.7922.47",
+      "candidate": "Playwright 1.65.0 / managed Chromium 158.0.8127.18 revision 1254"
+    },
+    "benchmark": {
+      "units": {
+        "web-startup": {
+          "baseline": {
+            "firstSeconds": 125.53751337499125,
+            "warmSeconds": [
+              89.87884495902108,
+              87.52602516597835,
+              97.5466917080339
+            ],
+            "warmMedianSeconds": 89.87884495902108,
+            "reportCount": 31,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": false,
+              "inputSha256": "f9317130aafa5b02a010cab92db4a8e84c497194a870cc36cf54e28bb8e45f18",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              2127511552,
+              2296758272,
+              2225963008,
+              2182725632
+            ]
+          },
+          "candidate": {
+            "firstSeconds": 29.340706125018187,
+            "warmSeconds": [
+              23.63435174996266,
+              19.520797500037588,
+              19.21607937500812
+            ],
+            "warmMedianSeconds": 19.520797500037588,
+            "reportCount": 31,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": true,
+              "inputSha256": "3531fec36f4159e464ae45a1c7a6417debc6179edd190126d52f2118220c1446",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              1473888256,
+              1866629120,
+              1649360896,
+              1628585984
+            ]
+          },
+          "warmReductionPercent": 78.28098757951574
+        },
+        "web-measurement": {
+          "baseline": {
+            "firstSeconds": 37.6370377499843,
+            "warmSeconds": [
+              29.038887915958185,
+              31.67947566701332,
+              29.950831833004486
+            ],
+            "warmMedianSeconds": 29.950831833004486,
+            "reportCount": 12,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": false,
+              "inputSha256": "f9317130aafa5b02a010cab92db4a8e84c497194a870cc36cf54e28bb8e45f18",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              1706803200,
+              1679081472,
+              1769209856,
+              1746157568
+            ]
+          },
+          "candidate": {
+            "firstSeconds": 19.10031800001161,
+            "warmSeconds": [
+              19.357172666990664,
+              18.357141249987762,
+              17.765232917037793
+            ],
+            "warmMedianSeconds": 18.357141249987762,
+            "reportCount": 12,
+            "inputsUnchanged": true,
+            "source": {
+              "head": "bae4f2e29bef4e79e6031c997bf2814d7024ca1c",
+              "dirty": true,
+              "inputSha256": "3531fec36f4159e464ae45a1c7a6417debc6179edd190126d52f2118220c1446",
+              "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+              "machine": "arm64"
+            },
+            "peakTreeRSSBytes": [
+              1520893952,
+              1395851264,
+              1337884672,
+              1729806336
+            ]
+          },
+          "warmReductionPercent": 38.70907708894079
+        }
+      },
+      "attempts": 16,
+      "allFirstAttemptsPassed": true,
+      "cachePolicy": "Dependency, browser and OS caches retained; first samples are not cold-cache samples. Includes pinned Node resolution and canonical step preparation/body/cleanup. Different browser engines are an intentional toolchain change; environment-specific comparison.",
+      "scope": "Two canonical steps measured separately; sum of their medians is not a measured whole-lane or all-eight-jobs elapsed time.",
+      "candidateAfterMeasurement": "Consumer cleanup hardened afterward; no scenarios/assertions/waits changed. Final functional validation covers that source.",
+      "evidenceDirectory": "/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/benchmark"
+    },
+    "localValidation": {
+      "seatAndStartupReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T231404-1bdb48235585/receipt.json",
+      "complete": true,
+      "inputsUnchanged": true,
+      "finalAllEight": {
+        "complete": true,
+        "inputsUnchanged": true,
+        "jobs": 8,
+        "seconds": 196.85638562496752,
+        "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T233734-f586dc66a7c1/receipt.json"
+      },
+      "ciFrameworkCases": 27,
+      "preMainAllEight": {
+        "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T233021-1ed1cdced017/receipt.json",
+        "durableCopy": "/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/final-all-eight-receipt.json",
+        "complete": true,
+        "inputsUnchanged": true,
+        "jobs": 8,
+        "seconds": 195.11858745798236,
+        "scope": "Final runtime source; afterward only WordPress workflow trigger filter and result documentation changed. Targeted canonical image/compatibility validation covers that metadata follow-up."
+      }
+    },
+    "security": {
+      "alerts": [
+        305,
+        307
+      ],
+      "advisories": [
+        "GHSA-9qw7-j9xw-fv9c",
+        "GHSA-cw2g-2vwq-88w6"
+      ],
+      "previousVersion": "1.37.6",
+      "patchedVersion": "1.38.6",
+      "scope": "@wp-playground/storage@3.1.60>isomorphic-git",
+      "oldVersionRegressions": "both fail",
+      "patchedDependencyCases": 5,
+      "patchedCasesPassed": true,
+      "githubAlertClosure": "awaits default-branch merge and rescan",
+      "wordpressOnlyPushTrigger": true
+    },
+    "discardedReplayExperiment": {
+      "syncCommitOnSeconds": 20.789060707960743,
+      "syncCommitOffSeconds": 20.825176333019044,
+      "scope": "One full-history pair including explicit durability fence; parity retained; no useful speedup observed. No reduced durability settings adopted."
+    },
+    "publicationBaseMainSha": "6c41c82b3c4c8785148f9c09e0af2cfb8fb43040",
+    "mainIntegration": {
+      "commit": "6c41c82b3c4c8785148f9c09e0af2cfb8fb43040",
+      "pullRequest": 774,
+      "changes": "Updated embed measurement contract and CMS adapters retained. Two driver conflicts resolved with native waitForFunction and upstream form_page_view assertions.",
+      "benchmarkScope": "The controlled matrix predates this upstream feature; retained as an explicit bae4f2e29 comparison. New upstream assertions are additional final validation, not omitted to preserve old counts.",
+      "validation": {
+        "complete": true,
+        "inputsUnchanged": true,
+        "jobs": 8,
+        "seconds": 196.85638562496752,
+        "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261109T233734-f586dc66a7c1/receipt.json"
+      }
+    },
+    "currentMainInventory": {
+      "startupNodeCases": 291,
+      "startupBrowserReports": 31,
+      "measurementNodeCases": 193,
+      "measurementBrowserReports": 12,
+      "measurementScenarios": 205,
+      "ciFrameworkCases": 27
+    },
+    "productionObservation": {
+      "version": "0.20.542+1053",
+      "coherentSamples": 3,
+      "canonicalVerifierPassed": true,
+      "receipt": "/Users/miakh/Library/Caches/festapp-test-runtime-native-20261109/live-version-observation.json"
+    }
+  }
+}

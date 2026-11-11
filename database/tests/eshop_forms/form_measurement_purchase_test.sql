@@ -13,7 +13,7 @@ BEGIN
  INSERT INTO public.organizations(title,data) VALUES('Stripe create tenant','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Card receiver',org) RETURNING id INTO u;
  UPDATE public.organizations SET data=data||'{"FORM_MEASUREMENT_ENABLED":true}'::jsonb WHERE id=org;
- UPDATE public.units SET data=coalesce(data,'{}')||'{"measurement_enabled":true}'::jsonb WHERE id=u;
+ UPDATE public.units SET data=coalesce(data,'{}')||'{"measurement_privacy_url":"https://organizer.example/privacy","measurement_enabled":true}'::jsonb WHERE id=u;
  INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Card order',org,u,'stripe-create-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
@@ -35,7 +35,7 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','confirmed requested order receives immutable analytics facts');
  PERFORM assert_true(result#>>'{data,analytics,ecommerce,transaction_id}'<>result#>>'{data,order,order_symbol}','analytics identity is not an order capability');
  PERFORM assert_eq(result#>>'{data,analytics,ecommerce,payment_type}','card','analytics describes payment method, not paid state');
- PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1)),'analytics exposes the public offer name and final buyer price');
+ PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1,'item_category','Card tickets','item_brand','Card order')),'analytics exposes the public offer name and final buyer price');
  PERFORM assert_eq(result#>>'{data,analytics,ecommerce,value}','123.45','analytics value is the final charged line total');
  PERFORM assert_true(NOT (result#>'{data,analytics,ecommerce}') ? 'tax','VAT is not invented without a backend breakdown');
  oid:=(result#>>'{data,order,id}')::bigint;
@@ -63,10 +63,26 @@ BEGIN
  UPDATE eshop.orders SET price=123.45 WHERE id=oid;
  UPDATE eshop.products SET price=999 WHERE id=p;
  PERFORM assert_eq(public.form_conversion_datalayer_internal(oid,'purchase'),result#>'{data,analytics}','later catalog prices do not rewrite conversion facts');
+ UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=u;
+ PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'missing privacy URL blocks historical conversion export');
+ DELETE FROM analytics.conversion_facts WHERE "order"=oid;
+ PERFORM public.record_form_conversion_internal(oid);
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid),'missing privacy URL prevents conversion recording');
+ UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/privacy"}' WHERE id=u;
+ PERFORM public.record_form_conversion_internal(oid);
+ PERFORM assert_true(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid),'valid URL permits conversion recording again');
  UPDATE analytics.organization_policy SET enabled=false,revision=2 WHERE organization=org;
  PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'live policy revocation blocks replay projection');
  UPDATE analytics.organization_policy SET enabled=true,revision=3 WHERE organization=org;
  UPDATE eshop.products SET price=123.45 WHERE id=p;
  PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_checkout_attempts WHERE order_id=oid),1::bigint,'replay cannot create another attempt');
+
+ UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=u;
+ payload:=jsonb_set(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(encode(extensions.digest(extensions.gen_random_uuid()::text,'sha256'),'hex'))),
+  '{stripePaymentSource,returnHash}',to_jsonb(encode(extensions.digest(extensions.gen_random_uuid()::text,'sha256'),'hex')));
+ result:=public.create_ticket_order_client_sync_v1(payload,extensions.gen_random_uuid(),extensions.gen_random_uuid());
+ PERFORM assert_eq(result#>>'{data,code}','200','missing privacy URL never blocks checkout');
+ PERFORM assert_true(result#>'{data,analytics}' IS NULL OR result#>'{data,analytics}'='null'::jsonb,'checkout without URL exports no conversion');
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=(result#>>'{data,order,id}')::bigint),'checkout without URL records no conversion');
 
 END $$;

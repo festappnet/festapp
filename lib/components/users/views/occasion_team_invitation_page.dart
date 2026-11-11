@@ -1,9 +1,11 @@
+import 'package:fstapp/app_router.gr.dart';
+import 'package:fstapp/components/users/access_invitation_destination.dart';
+import 'package:fstapp/components/users/member_access_strings.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
-import 'package:fstapp/components/users/views/login_page.dart';
 import 'package:fstapp/components/users/widgets/profile_legal_link.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/router_service.dart';
@@ -21,7 +23,7 @@ typedef OccasionTeamInvitationAcceptor = Future<Map<String, dynamic>> Function(
 /// explicit action; existing accounts authenticate through the normal login.
 @RoutePage()
 class OccasionTeamInvitationPage extends StatefulWidget {
-  static const ROUTE = 'team-invitation';
+  static const ROUTE = AccessInvitationDestination.route;
   const OccasionTeamInvitationPage({
     super.key,
     @QueryParam('token') this.token,
@@ -78,11 +80,11 @@ class _OccasionTeamInvitationPageState
       return;
     }
     try {
-      final result = await (widget.loader?.call(token) ??
-          Supabase.instance.client.rpc(
-            'get_occasion_team_invitation',
-            params: {'p_token': token},
-          ).then((value) => Map<String, dynamic>.from(value as Map)));
+      final result =
+          await (widget.loader?.call(token) ??
+              Supabase.instance.client
+                  .rpc('get_access_invitation', params: {'p_token': token})
+                  .then((value) => Map<String, dynamic>.from(value as Map)));
       if (!mounted) return;
       if (result['organization'] != AppConfig.organization ||
           result['email'] is! String ||
@@ -116,10 +118,12 @@ class _OccasionTeamInvitationPageState
       final password = registering ? _password.text : null;
       final result =
           await (widget.acceptor?.call(widget.token!, password: password) ??
-              Supabase.instance.client.rpc(
-                'accept_occasion_team_invitation',
-                params: {'p_token': widget.token!, 'p_password': password},
-              ).then((value) => Map<String, dynamic>.from(value as Map)));
+              Supabase.instance.client
+                  .rpc(
+                    'accept_access_invitation',
+                    params: {'p_token': widget.token!, 'p_password': password},
+                  )
+                  .then((value) => Map<String, dynamic>.from(value as Map)));
       if (!mounted) return;
       if (result['accepted'] != true) throw StateError('Not accepted');
       _password.clear();
@@ -149,22 +153,18 @@ class _OccasionTeamInvitationPageState
   }
 
   String get _eventPath =>
-      '/${Uri.encodeComponent(_invitation!['link'] as String)}/${AdminPage.ROUTE}';
+      _invitation!['scope'] is Map &&
+          (_invitation!['scope'] as Map)['type'] == 'unit'
+      ? '/unit/${int.parse(_invitation!['link'] as String)}/edit'
+      : '/${Uri.encodeComponent(_invitation!['link'] as String)}/${AdminPage.ROUTE}';
 
   void _login({bool accepted = false}) {
     final redirect = accepted
         ? _eventPath
-        : Uri(
-            path: '/${OccasionTeamInvitationPage.ROUTE}',
-            queryParameters: {'token': widget.token!},
-          ).toString();
-    RouterService.navigate(
-      context,
-      Uri(
-        path: '/${LoginPage.ROUTE}',
-        queryParameters: {'redirect': redirect},
-      ).toString(),
-    );
+        : AccessInvitationDestination.location(widget.token!);
+    // Preserve the nested capability query as typed arguments rather than
+    // round-tripping it through a string route reconstruction.
+    context.router.root.push(LoginRoute(redirect: redirect));
   }
 
   @override
@@ -234,8 +234,9 @@ class _OccasionTeamInvitationPageState
                         Text(text('accessDescription')),
                         const SizedBox(height: 12),
                         Text(
-                            "${text('roleLabel')}: ${text(invitation['role'] == 'read_only' ? 'roleReadOnly' : 'roleEditor')}",
-                            style: Theme.of(context).textTheme.titleMedium),
+                          "${text('roleLabel')}: ${invitation['roles'] is Map ? (invitation['roles'] as Map).entries.where((e) => e.value == true).map((e) => MemberAccessStrings.text(e.key as String)).join(', ') : text(invitation['role'] == 'read_only' ? 'roleReadOnly' : 'roleEditor')}",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 16),
                         SelectableText(
                           invitation['email'] as String,
@@ -279,8 +280,8 @@ class _OccasionTeamInvitationPageState
                                     ),
                                     validator: (value) =>
                                         (value?.length ?? 0) < 8
-                                            ? text('passwordShort')
-                                            : null,
+                                        ? text('passwordShort')
+                                        : null,
                                   ),
                                   const SizedBox(height: 16),
                                   TextFormField(
@@ -297,8 +298,8 @@ class _OccasionTeamInvitationPageState
                                     ),
                                     validator: (value) =>
                                         value != _password.text
-                                            ? text('passwordMismatch')
-                                            : null,
+                                        ? text('passwordMismatch')
+                                        : null,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(text('registrationNotice')),
@@ -314,8 +315,8 @@ class _OccasionTeamInvitationPageState
                                 _busy
                                     ? 'working'
                                     : registering
-                                        ? 'createAndAccept'
-                                        : 'accept',
+                                    ? 'createAndAccept'
+                                    : 'accept',
                               ),
                             ),
                           ),

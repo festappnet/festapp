@@ -1,7 +1,12 @@
+/// Builtin method identities shared by all Dart adapters. SQL owns availability.
+bool isBuiltinPaymentMethod(String? method) => method == 'bank' || method == 'cash';
+
 /// Canonical saved payment choice. Legacy Stripe aliases are decoded here only.
 class FormPaymentConfiguration {
-  const FormPaymentConfiguration({this.bankEnabled = true, this.connections = const {}});
+  const FormPaymentConfiguration({this.bankEnabled = true, this.cashEnabled = false, this.cashInstructions = '', this.connections = const {}});
   final bool bankEnabled;
+  final bool cashEnabled;
+  final String cashInstructions;
   final Map<String, String> connections;
   factory FormPaymentConfiguration.fromJson(Map? value) {
     final raw = value?['providerConnections'];
@@ -18,9 +23,9 @@ class FormPaymentConfiguration {
       }
       connections['stripe'] = legacy;
     }
-    return FormPaymentConfiguration(bankEnabled: value?['bankEnabled'] != false, connections: Map.unmodifiable(connections));
+    return FormPaymentConfiguration(bankEnabled: value?['bankEnabled'] != false, cashEnabled: value?['cashEnabled'] == true, cashInstructions: value?['cashInstructions'] as String? ?? '', connections: Map.unmodifiable(connections));
   }
-  Map<String, dynamic> toJson() => {'bankEnabled': bankEnabled, 'providerConnections': Map<String, String>.from(connections)};
+  Map<String, dynamic> toJson() => {'bankEnabled': bankEnabled, 'cashEnabled': cashEnabled, 'cashInstructions': cashInstructions, 'providerConnections': Map<String, String>.from(connections)};
   static void normalizeDraft(Map<String, dynamic> data) {
     final form = data['formDraft'];
     final meta = form is Map ? form['data'] : null;
@@ -35,6 +40,6 @@ class FormPaymentConfiguration {
       connections = legacy == 'both' ? connections : {if (connections[legacy] != null) legacy: connections[legacy]!};
       if (connections.isEmpty) data['paymentRepairRequired'] = true;
     }
-    data['payments'] = FormPaymentConfiguration(bankEnabled: bank, connections: connections).toJson();
+    data['payments'] = FormPaymentConfiguration(bankEnabled: bank, cashEnabled: config.cashEnabled, cashInstructions: config.cashInstructions, connections: connections).toJson();
   }
 }

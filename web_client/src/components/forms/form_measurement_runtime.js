@@ -1,109 +1,57 @@
-import {analyticsPayload, attributionContext, measurementId, measurementNamespace, measurementOrigin} from './form_measurement_contract.js';
+import {measurementProtocol} from './form_measurement_contract.js';
+import {analyticsPayload, attributionContext, measurementId, measurementNamespace, measurementOrigin, sameMeasurementManifest} from './form_measurement_contract.js';
 
-// Implements the same small transport seam as EmbedBridge. No funnel, queue,
-// configuration scripts or privileged backend client lives in this document.
+// Mechanical isolated transport. Only the session supplies a grant.
 export class FormMeasurementRuntime {
-    constructor({win = window, model, onReady = () => {}, canRun = () => true, campaign = () => ({}), local = false}) {
-        this.win = win; this.model = model; this.onReady = onReady; this.local = local;
-        this.canRun = canRun;
-        this.campaign = campaign;
-        this.scope = JSON.stringify([model.data?.analytics?.organization,model.data?.analytics?.unit]);
-        this.policyUntil = Date.now() + Math.min(60, Math.max(0, Number(model.data?.analytics?.valid_for_seconds) || 0)) * 1000;
-        this.onMessage = event => {
-            if (!this.frame || event.source !== this.frame.contentWindow || event.origin !== this.origin ||
-                event.data?.namespace !== measurementNamespace || event.data.protocol !== 1) return;
-            if (!this.hasLiveFrame()) { this.revokeMeasurement(); return; }
-            if (event.data.type === 'ready' && !this.ready) {
-                this.send('init', {context: this.context});
-            } else if (event.data.type === 'ack' && event.data.instance === this.instance && !this.ready) {
-                this.win.clearTimeout(this.handshake);
-                this.ready = true;
-                this.onReady();
+    constructor({win=window, model, campaign=()=>({}), embedded=false, local=false}) {
+        Object.assign(this,{win,model,campaign,embedded,local});
+        this.onMessage=event=>{
+            const data=event.data, grant=this.grant;
+            if(!grant || !this.live() || event.source!==this.frame?.contentWindow || event.origin!==this.origin ||
+                data?.namespace!==measurementNamespace || data.protocol!==measurementProtocol) return;
+            if(!sameMeasurementManifest(data.manifest,grant.manifest)) {const mismatch=grant.onMismatch;this.stop();mismatch();return;}
+            if(data.type==='ready' && !this.ready) {this.initialized=this.send('init',{context:this.context,consent:this.consent});}
+            else if(data.type==='ack' && data.instance===this.instance && data.generation===grant.generation && !this.ready) {
+                this.win.clearTimeout(this.handshake);this.ready=true;grant.onReady();
             }
         };
-        win.addEventListener('message', this.onMessage);
-        this.onContext = () => { if (!this.safeContext()) this.revokeMeasurement(); };
-        for (const event of ['hashchange','popstate','storage']) win.addEventListener(event,this.onContext);
+        win.addEventListener('message',this.onMessage);
     }
-    safeContext() { try { return this.canRun() === true; } catch { return false; } }
-    setConsent(granted, expiresAt = Date.now() + 60000) {
-        if (this.frame && Date.now() >= this.consentUntil) this.revokeMeasurement();
-        this.consentUntil = granted === true && Number.isFinite(expiresAt) ? Math.min(expiresAt,Date.now()+60000) : 0;
-        if (granted !== true) this.revokeMeasurement();
-        else this.updatePolicy();
+    activate(grant) {
+        this.stop();
+        if(this.disposed || !grant)return;
+        const origin=measurementOrigin(grant.runtimeOrigin,this.local);
+        if(!origin || origin===this.win.location.origin)return;
+        const input={...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign(),
+            form_embedded:this.embedded, page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};
+        this.context=attributionContext(input);if(!this.context)return;
+        this.grant=grant;this.consent=grant.consent;this.origin=origin;this.instance=this.win.crypto.randomUUID();this.until=grant.expiresAt;
+        const frame=this.frame=this.win.document.createElement('iframe');
+        frame.hidden=true;frame.title='Measurement';frame.referrerPolicy='no-referrer';
+        frame.setAttribute('sandbox','allow-scripts allow-same-origin');
+        const url=new URL('/runtime',origin);url.searchParams.set('form',grant.manifest.form_link);url.searchParams.set('parent',this.win.location.origin);
+        frame.src=url.href;this.win.document.body.append(frame);
+        this.handshake=this.win.setTimeout(()=>{const mismatch=this.grant?.onMismatch;this.stop();mismatch?.();},8000);
+        this.renew(this.until);
     }
-    updatePolicy(expiresAt) {
-        if (Number.isFinite(expiresAt)) this.policyUntil = expiresAt;
-        const policy = this.model.data?.analytics;
-        // A saved choice belongs to one organizer. A scope move requires a new
-        // page/CMP binding, rather than recycling the previous Unit's consent.
-        if (JSON.stringify([policy?.organization,policy?.unit]) !== this.scope) { this.destroy(); return; }
-        if (this.frame && !this.frame.isConnected) this.revokeMeasurement();
-        const origin = measurementOrigin(policy?.runtime_origin, this.local);
-        const key = JSON.stringify([origin, policy?.organization, policy?.configuration_revision, policy?.policy_revision, policy?.runtime_revision]);
-        if (this.frame && this.key !== key) this.revokeMeasurement();
-        if (!origin || origin === this.win.location.origin || policy?.eligible !== true ||
-            Date.now() >= Math.min(this.consentUntil || 0, this.policyUntil) || this.win.document.hidden || this.disposed || !this.safeContext()) {
-            this.revokeMeasurement(); return;
-        }
-        if (this.frame) { this.armExpiry(); return; }
-        const input = {...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign()};
-        input.page_location = new URL('/form/' + this.model.link,this.win.location.origin).href;
-        input.page_referrer = this.win.document.referrer;
-        this.context = attributionContext(input);
-        if (!this.context) return;
-        this.origin = origin; this.key = key; this.ready = false;
-        this.instance = this.win.crypto.randomUUID();
-        const frame = this.frame = this.win.document.createElement('iframe');
-        frame.hidden = true;
-        frame.title = 'Measurement';
-        frame.referrerPolicy = 'no-referrer';
-        frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-        const url = new URL('/runtime', origin);
-        url.searchParams.set('form', this.model.link);
-        url.searchParams.set('parent', this.win.location.origin);
-        frame.src = url.href;
-        this.win.document.body.append(frame);
-        this.handshake = this.win.setTimeout(() => { if (!this.ready) this.revokeMeasurement(); },8000);
-        // The parent owns expiry; tenant code cannot keep its frame alive.
-        this.armExpiry();
+    renew(until) {
+        if(!this.grant)return;
+        if(!this.frame?.isConnected){const mismatch=this.grant.onMismatch;this.stop();mismatch();return;}
+        this.until=until;this.win.clearTimeout(this.expiry);
+        this.expiry=this.win.setTimeout(()=>this.stop(),Math.max(0,until-Date.now()));
     }
-    armExpiry() {
-        this.win.clearTimeout(this.expiry);
-        this.expiry = this.win.setTimeout(() => this.revokeMeasurement(),Math.max(0,Math.min(this.consentUntil,this.policyUntil)-Date.now()));
+    // A later choice reaches tags as Consent Mode state. It never stops the frame.
+    updateConsent(consent) {this.consent=consent;if(this.initialized)this.send('consent',{consent});}
+    live() {return !!this.grant && !this.disposed && this.frame?.isConnected===true && Date.now()<this.until;}
+    send(type,extra={}) {
+        if(!this.live())return false;
+        this.frame.contentWindow?.postMessage({namespace:measurementNamespace,protocol:measurementProtocol,type,instance:this.instance,
+            generation:this.grant.generation,manifest:this.grant.manifest,...extra},this.origin);return true;
     }
-    send(type, extra) {
-        if (!this.hasLiveFrame()) return false;
-        try {
-            const target = this.frame.contentWindow;
-            if (!target) return false;
-            target.postMessage({namespace: measurementNamespace, protocol: 1,
-                instance: this.instance, type, ...extra}, this.origin);
-            return true;
-        } catch { return false; }
+    track(input) {const payload=analyticsPayload(input);return this.ready===true && measurementId(this.instance) && !!payload && this.send('event',{payload});}
+    stop() {
+        this.ready=false;this.initialized=false;this.grant=null;this.win.clearTimeout(this.expiry);this.win.clearTimeout(this.handshake);
+        this.frame?.remove();this.frame=null;this.instance=null;
     }
-    measurementEpoch() { return this.measurementAllowed() ? this.instance : null; }
-    hasLiveFrame() {
-        return !this.disposed && this.frame?.isConnected === true && Date.now() < Math.min(this.consentUntil, this.policyUntil) && !this.win.document.hidden && this.safeContext();
-    }
-    measurementAllowed() {
-        return this.ready === true && this.hasLiveFrame();
-    }
-    track(input) {
-        if (!this.measurementAllowed()) return false;
-        const payload = analyticsPayload(input);
-        if (!payload || !measurementId(this.instance)) return false;
-        return this.send('event', {payload});
-    }
-    revokeMeasurement() {
-        this.ready = false;
-        this.win.clearTimeout(this.expiry);
-        this.win.clearTimeout(this.handshake);
-        this.frame?.remove(); this.frame = null; this.instance = null;
-    }
-    destroy() {
-        this.disposed = true; this.consentUntil = 0; this.revokeMeasurement();
-        this.win.removeEventListener('message', this.onMessage);
-        for (const event of ['hashchange','popstate','storage']) this.win.removeEventListener(event,this.onContext);
-    }
+    destroy() {this.stop();this.disposed=true;this.win.removeEventListener('message',this.onMessage);}
 }

@@ -1,0 +1,14 @@
+{
+  "url": "https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online",
+  "native_version": "2.2",
+  "cdn_ids": [
+    "397be0_fbaf8e15084342fb9182742ac992937a~mv2.png",
+    "397be0_94100d0e7ba146c3bb104b391c079098~mv2.png"
+  ],
+  "source_screenshots_commit": "5cb6b01b77a555e105e7805aab29e3f991005da0",
+  "light_visually_verified": true,
+  "pricing_unchanged": true,
+  "verified_at_utc": "2026-11-06T17:48:47.060971+00:00",
+  "screenshot_evidence": "catalog-screenshots-20261106.json",
+  "previous_release_evidence": "market-listing-update-20261106.json"
+}

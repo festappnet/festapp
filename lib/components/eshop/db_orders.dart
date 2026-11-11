@@ -28,6 +28,20 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// The server proved the command transaction did not apply. Safe to edit a draft.
+class PaymentOperationRejected implements Exception {
+  const PaymentOperationRejected(this.code);
+  final String code;
+  @override
+  String toString() => code;
+}
+
+/// A stable server reason for a failed read-only instruction request.
+class PaymentInstructionsException implements Exception {
+  const PaymentInstructionsException(this.code);
+  final String code;
+}
+
 class ReservationsBundle {
   final List<OrderModel> orders;
   final List<FormBundle> forms;
@@ -549,28 +563,142 @@ class DbOrders {
     }
   }
 
-  static Future<void> insertManualTransaction({
-    required double amount,
-    required String currency,
-    required int unitId,
-    required String? variableSymbol,
-    required DateTime date,
-    String? note,
-    int? paymentInfoId,
-  }) async {
-    final params = {
-      'p_amount': amount,
-      'p_currency': currency,
-      'p_unit_id': unitId,
-      'p_variable_symbol': variableSymbol,
-      'p_date': date.toIso8601String(),
-      'p_note': note,
-      'p_payment_info_id': paymentInfoId,
-    };
+  static Future<Map<String, dynamic>> getPaymentOperationContext(
+    int orderId,
+  ) async {
+    final response = await _supabase.functions.invoke(
+      'payment-operation',
+      body: {
+        'input_data': {'operation': 'read', 'orderId': orderId},
+      },
+    );
+    final result = Map<String, dynamic>.from(response.data as Map);
+    if (result['code'] != 200) throw StateError('PAYMENT_CONTEXT_UNAVAILABLE');
+    return Map<String, dynamic>.from(
+      (result['context'] ?? result['paymentOperations'] ?? result) as Map,
+    );
+  }
 
+  static Future<Map<String, dynamic>> previewPaymentOperation(
+    Map<String, dynamic> input,
+  ) async {
+    final response = await _supabase.functions.invoke(
+      'payment-operation',
+      body: {
+        'input_data': {...input, 'operation': 'preview'},
+      },
+    );
+    final result = Map<String, dynamic>.from(response.data as Map);
+    if (result['code'] != 200 || result['preview'] is! Map) {
+      throw StateError('PAYMENT_PREVIEW_UNAVAILABLE');
+    }
+    return Map<String, dynamic>.from(result['preview']);
+  }
+
+  static Future<Map<String, dynamic>> bankRefundInstructions(
+    Map<String, dynamic> input,
+  ) async {
     try {
-      await _supabase.rpc('insert_manual_transaction', params: params);
-    } catch (e) {
+      final response = await _supabase.functions.invoke(
+        'payment-operation',
+        body: {'input_data': {...input, 'operation': 'bank_instructions'}},
+      );
+      final data = response.data;
+      if (data is! Map || data['code'] != 200 || data['instructions'] is! Map) {
+        throw PaymentInstructionsException(
+          data is Map && data['error'] is String
+              ? data['error'] as String
+              : 'payment_operation_unavailable',
+        );
+      }
+      return Map<String, dynamic>.from(data['instructions'] as Map);
+    } on FunctionException catch (error) {
+      final details = error.details;
+      throw PaymentInstructionsException(
+        details is Map && details['error'] is String
+            ? details['error'] as String
+            : 'payment_operation_unavailable',
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>?> pendingPaymentOperation(
+    int orderId,
+  ) async {
+    final intent = await ClientCommandIdentity.pendingIntent(
+      'orders.payment.operation',
+      principalBinding: _supabase.auth.currentUser?.id ?? 'anonymous',
+      scopeBinding: 'order:$orderId',
+    );
+    if (intent == null) return null;
+    final payload = Map<String, dynamic>.from(
+      jsonDecode(intent.requestJson) as Map,
+    );
+    if (payload['orderId'] != orderId) {
+      throw StateError('PAYMENT_RECOVERY_SCOPE_MISMATCH');
+    }
+    return payload;
+  }
+
+  /// One receipted ingress for incoming and outgoing operator money operations.
+  static Future<Map<String, dynamic>> commandPaymentOperation(
+    Map<String, dynamic> payload,
+  ) async {
+    final principal = _supabase.auth.currentUser?.id ?? 'anonymous';
+    final orderId = payload['orderId'];
+    if (orderId is! int || orderId <= 0) {
+      throw StateError('PAYMENT_ORDER_INVALID');
+    }
+    final recovering = await pendingPaymentOperation(orderId) != null;
+    final commandId = await ClientCommandIdentity.claimIntent(
+      'orders.payment.operation',
+      payload,
+      principalBinding: principal,
+      scopeBinding: 'order:$orderId',
+      requestJson: jsonEncode(payload),
+    );
+    await ClientCommandIdentity.registerDispatch(
+      'orders.payment.operation',
+      payload,
+      commandId: commandId,
+      principalBinding: principal,
+    );
+    try {
+      final response = await _supabase.functions.invoke(
+        'payment-operation',
+        body: {'input_data': payload, 'p_command_id': commandId},
+      );
+      final result = Map<String, dynamic>.from(response.data as Map);
+      if (result['code'] != 200) {
+        throw StateError('PAYMENT_OPERATION_RECEIPT_INVALID');
+      }
+      await ClientCommandIdentity.completeIntent(
+        'orders.payment.operation',
+        payload,
+        commandId: commandId,
+        principalBinding: principal,
+        retainIdentity: true,
+      );
+      return result;
+    } on FunctionException catch (error) {
+      final details = error.details;
+      // A failed replay may precede receipt lookup. It cannot prove that an
+      // earlier uncertain dispatch did not commit. Preserve recovery fencing.
+      if (!recovering &&
+          details is Map &&
+          details['mutationNotApplied'] == true) {
+        final released = await ClientCommandIdentity.completeIntent(
+          'orders.payment.operation',
+          payload,
+          commandId: commandId,
+          principalBinding: principal,
+          onlyIfSingleDispatch: true,
+        );
+        if (!released) rethrow;
+        throw PaymentOperationRejected(
+          details['error']?.toString() ?? 'PAYMENT_OPERATION_REJECTED',
+        );
+      }
       rethrow;
     }
   }

@@ -1,4 +1,5 @@
-enum EmailValueKind { text, url, richInline, richBlock }
+import 'email_variables.dart';
+export 'email_variables.dart' show EmailValueKind;
 
 enum EmailTargetField { subject, body }
 
@@ -17,6 +18,12 @@ class EmailVariableDefinition {
       field == EmailTargetField.body ||
       kind == EmailValueKind.text ||
       kind == EmailValueKind.url;
+
+  /// Plain dynamic paragraphs retain scalar substitution/subject semantics,
+  /// while the body editor presents their delivered copy as atomic sections.
+  bool get bodyBlock =>
+      kind == EmailValueKind.richBlock ||
+      bodyBlockEmailVariables.contains(code);
 }
 
 class EmailTitleMatch {
@@ -27,52 +34,17 @@ class EmailTitleMatch {
 
 /// Pure authoring rules. Persisted substitutions remain {{code}}.
 abstract final class EmailTemplateRules {
-  static final tokenPattern = RegExp(r'\{\{([A-Za-z_][A-Za-z_0-9]*)\}\}');
-  static EmailValueKind kindFor(String code) {
-    if (const {
-      'tickets',
-      'fullOrder',
-      'paymentDetails',
-      'balanceReasoning',
-      'changeOverview',
-      'order_overview_button',
-      'manage_waitlist_button',
-      'sale_opening_action',
-      'sale_opening_unsubscribe',
-      'offer_button',
-    }.contains(code))
-      return EmailValueKind.richBlock;
-    if (const {'platformLinks', 'appLinks'}.contains(code)) {
-      return EmailValueKind.richInline;
-    }
-    if (const {
-      'resetLink',
-      'confirmationUrl',
-      'order_overview_url',
-      'manage_waitlist_url',
-      'offer_url',
-    }.contains(code))
-      return EmailValueKind.url;
-    return EmailValueKind.text;
-  }
+  static final tokenPattern = RegExp(emailVariablePattern);
+  static EmailValueKind kindFor(String code) =>
+      emailVariableKinds[code] ?? EmailValueKind.text;
 
-  static EmailVariableDefinition definition(String code, {int order = 0}) {
-    final kind = kindFor(code);
-    return EmailVariableDefinition(
-      code: code,
-      kind: kind,
-      order: order,
-      // Whole content sections appear once. Links/buttons and inline content
-      // may deliberately appear in several places, regardless of their kind.
-      repeatable: !const {
-        'tickets',
-        'fullOrder',
-        'paymentDetails',
-        'balanceReasoning',
-        'changeOverview',
-      }.contains(code),
-    );
-  }
+  static EmailVariableDefinition definition(String code, {int order = 0}) =>
+      EmailVariableDefinition(
+        code: code,
+        kind: kindFor(code),
+        order: order,
+        repeatable: !nonRepeatableEmailVariables.contains(code),
+      );
 
   static bool canTrigger(
     String text,

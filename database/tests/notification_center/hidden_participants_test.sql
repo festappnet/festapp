@@ -6,7 +6,7 @@ DO $$
 DECLARE org bigint; oc bigint; viewer uuid:=gen_random_uuid(); member uuid:=gen_random_uuid();
  hidden_member uuid:=gen_random_uuid(); result jsonb; legacy public.notification_center_events; snapshot bigint; anchor timestamptz;
 BEGIN
- INSERT INTO public.organizations(title) VALUES('Hidden notification participants') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Hidden notification participants','{"IS_APP_SUPPORTED":true}') RETURNING id INTO org;
  INSERT INTO auth.users(id) VALUES(viewer),(member),(hidden_member);
  INSERT INTO public.user_info(id,organization,name) VALUES(viewer,org,'Editor'),(member,org,'Visible participant'),(hidden_member,org,'Hidden admin');
  INSERT INTO public.organization_users(organization,"user",is_hidden,is_admin) VALUES(org,hidden_member,true,true);

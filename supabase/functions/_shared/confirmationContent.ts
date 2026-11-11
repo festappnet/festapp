@@ -1,22 +1,19 @@
+import { orderTemplateValues, resolveEmailLanguage } from "./emailCommunication.ts";
+import { resolveCommunicationTone } from "./communicationTone.ts";
 // Pure confirmation content. Producers own identity, attachments and delivery.
 import { confirmationPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import { generateFullOrder } from "./orderOverview.ts";
-import { paymentReferenceValue } from "./paymentPresentation.ts";
+import { isBankPaymentInfo, hasNoPaymentDeadline, paymentReferenceValue } from "./paymentPresentation.ts";
 import { formatDatetime, formatIBAN } from "./utilities.ts";
-import { type Tone, translations } from "./translations/translations.ts";
 
 export function confirmationSubstitutions(
   order: any,
   requestedLanguage = "cs",
 ) {
-  const lang = requestedLanguage in translations
-    ? requestedLanguage as keyof typeof translations
-    : "cs";
+  const lang = resolveEmailLanguage(requestedLanguage);
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
-  const tone: Tone = order.form?.data?.communication_tone === "informal"
-    ? "informal"
-    : "formal";
+  const tone = resolveCommunicationTone(order.form?.data?.communication_tone);
   const paymentPresentation = confirmationPaymentSubstitutions(
     paymentInfo,
     occasion.features ?? [],
@@ -24,8 +21,7 @@ export function confirmationSubstitutions(
     tone,
   );
   return {
-    occasionTitle: occasion.title,
-    orderSymbol: order.order_symbol,
+    ...orderTemplateValues("TICKET_ORDER_CONFIRMATION", occasion.title, order.order_symbol, tone, lang),
     balanceReasoning: paymentPresentation.balanceReasoning,
     price: paymentInfo.amount,
     currencyCode: paymentInfo.currency_code,
@@ -34,9 +30,9 @@ export function confirmationSubstitutions(
     iban: formatIBAN(paymentInfo.account_number),
     // Free registrations have no payment reference; preserve one if already set.
     variableSymbol: paymentReferenceValue(paymentInfo, {
-      required: Number(paymentInfo.amount) > 0,
+      required: Number(paymentInfo.amount) > 0 && isBankPaymentInfo(paymentInfo),
     }),
-    deadline: formatDatetime(paymentInfo.deadline, lang),
+    deadline: hasNoPaymentDeadline(paymentInfo) ? null : formatDatetime(paymentInfo.deadline, lang),
     fullOrder: generateFullOrder(
       order.data,
       order.data.tickets,

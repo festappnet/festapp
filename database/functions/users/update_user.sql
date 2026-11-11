@@ -57,37 +57,35 @@ BEGIN
 
   -- Authorization check
   IF v_occasion IS NOT NULL THEN
-    IF NOT EXISTS (
-     SELECT 1 FROM public.occasion_users
-     WHERE "user" = auth.uid()
-      AND occasion = v_occasion
-      AND is_manager = true
-    ) THEN
-     RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: Caller is not a manager for this occasion');
+    IF NOT public.can_manage_occasion_participants(v_occasion) THEN
+     RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: Cannot manage participants for this occasion');
     END IF;
   ELSE
-    IF NOT EXISTS (
-        SELECT 1 FROM public.unit_users
-        WHERE "user" = auth.uid()
-        AND unit = v_unit
-        AND is_manager = true
-    ) THEN
+    IF NOT public.can_manage_unit_users(v_unit) THEN
         RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: Caller is not a manager for this unit');
     END IF;
   END IF;
 
   -- Logic for finding or creating user
   IF v_user IS NULL THEN
-    v_email := input_data->'data'->>'email';
+    v_email := lower(btrim(input_data->'data'->>'email'));
 
     IF v_email IS NULL OR v_email = '' THEN
       RETURN jsonb_build_object('code', 400, 'message', 'Email is required to find or create a user.');
     END IF;
 
-    -- Check if user exists
-    SELECT id INTO existing_user_id
-    FROM auth.users
-    WHERE email = v_org::text || '+' || v_email;
+    -- Share the identity allocator lock; profile identity is authoritative.
+    PERFORM pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended('user-sign-in-email:' || v_org::text, 0));
+    IF (SELECT count(*) FROM public.user_info WHERE organization=v_org AND lower(btrim(email_readonly))=v_email)>1 THEN
+      RETURN jsonb_build_object('code',409,'message','wrong_identity'); END IF;
+    SELECT id INTO existing_user_id FROM public.user_info
+    WHERE organization = v_org AND lower(btrim(email_readonly)) = v_email;
+    IF existing_user_id IS NULL THEN
+      -- A pre-profile auth account is resolved through the same canonical format.
+      SELECT id INTO existing_user_id FROM auth.users
+      WHERE email = public.format_auth_email(v_org, v_email);
+    END IF;
 
     IF existing_user_id IS NOT NULL THEN
       IF EXISTS(SELECT 1 FROM public.user_info WHERE id=existing_user_id AND organization IS DISTINCT FROM v_org) THEN
@@ -166,6 +164,9 @@ BEGIN
   );
 
 EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM = 'INVALID_USER_EMAIL' THEN
+    RETURN jsonb_build_object('code', 400, 'message', SQLERRM);
+  END IF;
   RETURN jsonb_build_object('code', 500, 'message', SQLERRM);
 END;
 $$ LANGUAGE plpgsql;

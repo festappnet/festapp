@@ -1,7 +1,7 @@
 -- test-setup: database/tests/helpers/prepared_notification_view.sql
 BEGIN;
 DO $$
-DECLARE org bigint; foreign_org bigint; un bigint; oc bigint; actor uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); badge jsonb;
+DECLARE runtime_started timestamptz:=clock_timestamp(); org bigint; foreign_org bigint; un bigint; oc bigint; actor uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); badge jsonb;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Automatic notification availability') RETURNING id INTO org;
  INSERT INTO public.organizations(title) VALUES('Foreign notification scope') RETURNING id INTO foreign_org;
@@ -38,6 +38,7 @@ BEGIN
  PERFORM assert_eq(pg_temp.prepared_notification_badge(org)->>'state','denied','anonymous account accepted');
  PERFORM assert_false(has_function_privilege('authenticated','public.initialize_notification_center_internal(bigint,text)','execute'),'client cannot initialize sources');
  PERFORM assert_false(has_function_privilege('anon','public.initialize_notification_center_internal(bigint,text)','execute'),'anonymous cannot initialize sources');
+ RAISE NOTICE 'TEST_TIMING %',jsonb_build_object('phase','scenario','serverSeconds',extract(epoch FROM clock_timestamp()-runtime_started));
 END $$;
 DO $$DECLARE created bigint; BEGIN
  PERFORM set_config('request.jwt.claim.role','service_role',true);

@@ -15,6 +15,13 @@ const data = () => ({layout:{nodes:[{id:'a',kind:'seat'},{id:'b',kind:'seat'}],s
     spots:[{id:11,state:'available',customer:{email:'private'}},{id:12,state:'available'}]});
 const session = () => new FormSession({key:'form',secret:'initial',visibleFields:[],relatedFields:[{type:'ticket',data:{max_tickets:5}}]});
 
+test('seat models keep the public product type label for measurement', () => {
+    const fixture=data();fixture.products[0].type_title='Seating';
+    const adapter=new BlueprintLayoutAdapter(fixture,{session:session()});
+    assert.equal(adapter.models.get('a').productModel.type_title,'Seating');
+    assert.equal(JSON.stringify(adapter.models.get('a')).includes('private'),false);
+});
+
 test('unit selection creates both normal tickets with one hold command and latest secret', async t => {
     const calls=[];
     t.mock.method(DbForms,'selectSpot',async (...args)=>{calls.push(args); return {code:200,spotIds:[11,12],secret:'returned',expiresAt:'2026-10-19T18:00:00Z'};});

@@ -69,7 +69,7 @@ if (input.action === "prepare") {
   console.log(
     JSON.stringify({
       snapshot,
-      postAction: { ticket_ids: delivery.tickets.map((t) => t.id) },
+      postAction: { wallet_fingerprint: input.details.data.wallet.fingerprint, ticket_ids: delivery.tickets.map((t) => t.id) },
     }),
   );
 } else if (input.action === "send") {

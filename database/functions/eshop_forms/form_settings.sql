@@ -4,7 +4,8 @@ CREATE OR REPLACE FUNCTION public.form_settings_keys_internal()
 RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
- "payments":["bankEnabled","stripeConnectionId","providerConnections"],
+ "payments":["bankEnabled","stripeConnectionId","providerConnections","cashEnabled","cashInstructions"],
+ "payment_deadline":["mode"],
  "analytics":["enabled"],
  "design":["embed_inherit_style","is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
  "sale_opening_notifications":["enabled","collection_paused"],
@@ -116,7 +117,7 @@ BEGIN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
    ELSIF path='payments.providerConnections' THEN
     IF jsonb_typeof(v)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid provider connections'; END IF;
-    IF EXISTS(SELECT 1 FROM jsonb_each(v) x WHERE jsonb_typeof(x.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=x.key AND handler IS NOT NULL)) THEN
+    IF EXISTS(SELECT 1 FROM jsonb_each(v) x WHERE jsonb_typeof(x.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=x.key AND hosted_checkout)) THEN
      RAISE invalid_parameter_value USING MESSAGE='unknown payment provider'; END IF;
     PERFORM (x.value#>>'{}')::uuid FROM jsonb_each(v) x;
    ELSIF path='variable_symbol.starting_number' THEN
@@ -126,6 +127,8 @@ BEGIN
     IF jsonb_typeof(v)<>'string' THEN RAISE invalid_parameter_value USING MESSAGE='invalid string setting: '||path; END IF;
     IF length(v#>>'{}')>(CASE WHEN path IN ('schedule.countdown_title') THEN 65536 ELSE 128 END) THEN
      RAISE invalid_parameter_value USING MESSAGE='form setting too long: '||path; END IF;
+    IF path='payment_deadline.mode' AND v NOT IN ('"inherit"'::jsonb,'"custom"'::jsonb,'"none"'::jsonb) THEN
+     RAISE invalid_parameter_value USING MESSAGE='invalid payment deadline mode'; END IF;
     IF path='variable_symbol.type'  AND v NOT IN ('"random"'::jsonb,'"sequence"'::jsonb) OR
        path='payment_message.type' AND v NOT IN ('"name_surname"'::jsonb,'"none"'::jsonb,'"occasion_title"'::jsonb) THEN
      RAISE invalid_parameter_value USING MESSAGE='invalid setting mode: '||path; END IF;

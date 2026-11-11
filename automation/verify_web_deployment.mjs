@@ -62,12 +62,31 @@ async function fetchFresh(pathname) {
 const marketing = resolveContext(readConfig(configPath));
 async function verifyOnce() {
   const updateAssets = new Set();
+  const marketingAssets = new Set();
   for (const page of marketing.pages) {
     const response = await fetchFresh(page.path);
     assert.equal(response.status,200,`marketing ${page.path}`);
     const html = await response.text();
     verifyMarketingHtml(html,page,marketing);
     for (const match of html.matchAll(/(?:src|href)="(\/co-je-nove\/_assets\/[^"?#]+)"/g)) updateAssets.add(match[1]);
+    if (!page.type) {
+      for (const match of html.matchAll(/(?:src|href)="(\/organizers-assets\/[^"?#]+)"/g)) marketingAssets.add(match[1]);
+    }
+  }
+
+  if (marketing.enabled) {
+    for (const extension of ['svg', 'js', 'css']) {
+      assert.ok([...marketingAssets].some(asset => asset.endsWith('.' + extension)), `marketing ${extension} assets missing from published HTML`);
+    }
+    await Promise.all([...marketingAssets].map(async asset => {
+      const response = await fetchFresh(asset);
+      assert.equal(response.status, 200, `marketing asset ${asset}`);
+      assert.ok(!(response.headers.get('content-type') || '').startsWith('text/html'), `marketing asset ${asset} returned HTML`);
+      await response.arrayBuffer();
+    }));
+    const missingModule = await fetchFresh('/organizers-assets/missing-runtime-probe.js');
+    assert.equal(missingModule.status, 404);
+    assert.match(missingModule.headers.get('cache-control') || '', /no-store/);
   }
 
   if (marketing.updates) {

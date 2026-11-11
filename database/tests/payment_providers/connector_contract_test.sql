@@ -25,8 +25,8 @@ BEGIN
  RAISE EXCEPTION 'unknown test provider operation';
 END $$;
 REVOKE ALL ON FUNCTION public.test_other_payment_provider(text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
-INSERT INTO eshop.payment_providers(provider_key,handler,source_field)
- VALUES('other_gateway','public.test_other_payment_provider(text,jsonb)'::regprocedure,'otherPaymentSource');
+INSERT INTO eshop.payment_providers(provider_key,handler,source_field,hosted_checkout)
+ VALUES('other_gateway','public.test_other_payment_provider(text,jsonb)'::regprocedure,'otherPaymentSource',true);
 DO $$
 DECLARE org bigint; u bigint; occ bigint; f bigint; pt bigint; product bigint; result jsonb; repeated jsonb; payload jsonb;
  ord bigint; pi bigint; totals record; command uuid:=extensions.gen_random_uuid();client uuid:=extensions.gen_random_uuid();

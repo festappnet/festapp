@@ -1,3 +1,4 @@
+import {bankPaymentConnector} from '../../src/components/forms/connectors/builtin.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PaymentConnectorRegistry} from '../../src/components/forms/payment_connector_registry.js';
@@ -21,8 +22,16 @@ test('unknown providers cannot create a payment owner and duplicate registration
     assert.equal(CardPaymentController.fromResult({payment:{...payment,method:'unknown'},payment_access:{token,url:`https://tickets.example${connector.payPath}#pay=${token}`}},{registry}),null);
 });
 test('availability uses each connector recipient and never invents an available method',()=>{
-    const registry=new PaymentConnectorRegistry([connector]);
+    const registry=new PaymentConnectorRegistry([bankPaymentConnector,connector]);
     const result=formPaymentOptions({available:['bank','another_gateway','uninstalled'],providers:{another_gateway:{configured:true,available:true,recipient:{connectionId:'merchant-42'}}}},'web',registry);
     assert.deepEqual(result.available,['bank','another_gateway']);assert.equal(result.providers.another_gateway.recipient.connectionId,'merchant-42');
     assert.deepEqual(formPaymentOptions({available:[],providers:{another_gateway:{configured:true,available:true}}},'web',registry).available,[]);
+});
+
+test('builtin identity shares registration without exposing checkout or inventing capabilities',()=>{
+    const registry=new PaymentConnectorRegistry([bankPaymentConnector]);
+    assert.equal(registry.get('bank').hostedCheckout,null);
+    assert.equal(registry.get('bank').confirmation,'bank_event');
+    assert.deepEqual(formPaymentOptions({available:['bank'],bank:{available:false}},'web',registry).available,[]);
+    assert.deepEqual(formPaymentOptions({available:['bank']},'web',new PaymentConnectorRegistry([])).available,[]);
 });

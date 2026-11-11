@@ -27,6 +27,11 @@ BEGIN
   -- Match the email worker's outer send fence before form/order locks.
   PERFORM 1 FROM public.email_capacity FOR UPDATE;
   PERFORM 1 FROM public.forms WHERE id=(SELECT form FROM eshop.orders WHERE id=p_order) FOR UPDATE;
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
+  IF EXISTS(SELECT 1 FROM eshop.order_deletion_fences WHERE order_id=p_order
+    AND (command_id IS DISTINCT FROM p_command_id OR created_by IS DISTINCT FROM v_actor)) THEN
+    RAISE EXCEPTION 'ORDER_DELETION_IN_PROGRESS';
+  END IF;
   SELECT COALESCE(array_agg(DISTINCT ou."user"),'{}'::uuid[]) INTO v_removed_users
   FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
     ON ou.ticket=opt.ticket AND ou.occasion=v_occasion

@@ -40,10 +40,8 @@ class RightsAdministrationAccess implements AdministrationAccess {
       await pending;
       if (loadedLink == link) return canAccess(reservations: reservations);
     }
-    if (loadedLink == link && canAccess(reservations: reservations))
-      return true;
-    // A denied/failed refresh leaves this link selected with invalidated
-    // capabilities. Retry must ask SQL again, rather than cache that denial.
+    // A completed context is a snapshot, including when access was allowed.
+    // Re-entry must observe role promotions and revocations from another session.
     await RightsService.updateAppData(
       link: link,
       force: loadedLink == link,

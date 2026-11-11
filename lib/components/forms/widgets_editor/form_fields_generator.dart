@@ -14,6 +14,8 @@ import 'package:fstapp/components/html/html_view.dart';
 import '../models/form_field_draft.dart';
 import '../widgets_view/form_helper.dart';
 import 'birth_date_editor.dart';
+import 'form_fields_navigation_controller.dart';
+import 'form_editor_scroll.dart';
 import 'description_with_edit.dart';
 import 'sex_editor.dart';
 import 'ticket_editor_widgets.dart';
@@ -32,12 +34,16 @@ class FormFieldsGenerator extends StatefulWidget {
   final VoidCallback? onChanged;
   final bool editingEnabled;
   final bool expandProducts;
+  final FormFieldsNavigationController? navigationController;
+  final ScrollController? revealScrollController;
   const FormFieldsGenerator({
     super.key,
     required this.bundle,
     this.onChanged,
     this.editingEnabled = true,
     this.expandProducts = false,
+    this.navigationController,
+    this.revealScrollController,
   });
 
   @override
@@ -45,38 +51,126 @@ class FormFieldsGenerator extends StatefulWidget {
 }
 
 class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
-  int? selectedIndex;
+  Object? _selectedIdentity;
+  final Map<Object, GlobalKey> _anchors = {};
+  bool _publicationPending = false;
+  Object _identity(FormFieldDraft field) => field.definition.id ?? field;
+  List<FormFieldDraft> get _topLevelFields => widget.bundle.form.relatedFields
+      .where((field) => field.definition.isTicketField != true)
+      .toList();
+
+  void _publishNavigation() {
+    final fields = _topLevelFields;
+    final identities = fields.map(_identity).toSet();
+    _anchors.removeWhere((identity, _) => !identities.contains(identity));
+    if (!identities.contains(_selectedIdentity)) _selectedIdentity = null;
+    widget.navigationController?.publish(this, [
+      for (final field in fields)
+        FormFieldNavigationItem(
+          field: field,
+          identity: _identity(field),
+          title: field.definition.title?.trim().isNotEmpty == true
+              ? field.definition.title!
+              : FormHelper.fieldTypeToLocale(field.definition.type ?? ''),
+        ),
+    ], _selectedIdentity);
+  }
+
+  void _schedulePublication() {
+    if (_publicationPending) return;
+    _publicationPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _publicationPending = false;
+      if (mounted) _publishNavigation();
+    });
+  }
+
+  void _attachNavigation() {
+    widget.navigationController?.attach(
+      this,
+      reveal: _revealField,
+      clearSelection: () {
+        setState(() => _selectedIdentity = null);
+        _publishNavigation();
+      },
+    );
+    _schedulePublication();
+  }
+
+  void _revealField(FormFieldDraft field) {
+    final bundle = widget.bundle;
+    if (!_topLevelFields.contains(field)) return;
+    final identity = _identity(field);
+    setState(() => _selectedIdentity = identity);
+    _publishNavigation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !identical(bundle, widget.bundle) ||
+          !_topLevelFields.contains(field))
+        return;
+      final target = _anchors[identity]?.currentContext;
+      if (target != null) {
+        revealFormEditorTarget(
+          target,
+          controller: widget.revealScrollController,
+          alignment: 0.1,
+        );
+      }
+    });
+  }
+
   void _refresh(VoidCallback change) {
     setState(change);
+    _publishNavigation();
     widget.onChanged?.call();
   }
 
   @override
   void initState() {
     super.initState();
-    // Use the form from the bundle
-    final topLevelFields = widget.bundle.form.relatedFields
-        .where((f) => f.definition.isTicketField != true)
-        .toList();
-    if (topLevelFields.isNotEmpty) {
-      selectedIndex = 0;
+    if (_topLevelFields.isNotEmpty) {
+      _selectedIdentity = _identity(_topLevelFields.first);
     }
+    _attachNavigation();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return _buildFieldsList();
+  void didUpdateWidget(covariant FormFieldsGenerator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.bundle, widget.bundle)) {
+      _anchors.clear();
+      _selectedIdentity = null;
+    }
+    if (oldWidget.navigationController != widget.navigationController) {
+      oldWidget.navigationController?.detach(this);
+      _attachNavigation();
+    }
+    _schedulePublication();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _schedulePublication();
+  }
+
+  @override
+  void dispose() {
+    widget.navigationController?.detach(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _buildFieldsList();
 
   Widget _buildFieldsList() {
     // Use the form from the bundle
-    final topLevelFields = widget.bundle.form.relatedFields
-        .where((f) => f.definition.isTicketField != true)
-        .toList();
+    final topLevelFields = _topLevelFields;
 
     return ReorderableListView.builder(
       shrinkWrap: true,
       primary: false,
+      physics: const NeverScrollableScrollPhysics(),
       buildDefaultDragHandles: false,
       itemCount: topLevelFields.length,
       itemBuilder: (context, index) {
@@ -103,14 +197,6 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             form.relatedFields[i].definition = form.relatedFields[i].definition
                 .copyWith(order: i);
           }
-
-          if (selectedIndex == oldIndex) {
-            selectedIndex = newIndex;
-          } else if (selectedIndex != null &&
-              selectedIndex! >= newIndex &&
-              selectedIndex! < oldIndex) {
-            selectedIndex = selectedIndex! + 1;
-          }
         });
       },
     );
@@ -126,7 +212,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         field.definition.type == FormMetadata.fieldTypeTicket ||
         field.definition.type == FormMetadata.fieldTypeProductType;
     final isSelected =
-        selectedIndex == index || widget.expandProducts && isProduct;
+        _selectedIdentity == _identity(field) ||
+        widget.expandProducts && isProduct;
     // The ticket flag also disables ticket issuance for application-only forms.
     // Its container and product choices remain active in that mode.
     final effectiveOpacity =
@@ -142,11 +229,13 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
       onTap: () {
         if (!isSelected) {
           setState(() {
-            selectedIndex = index;
+            _selectedIdentity = _identity(field);
           });
+          _publishNavigation();
         }
       },
       child: Opacity(
+        key: _anchors.putIfAbsent(_identity(field), () => GlobalKey()),
         opacity: effectiveOpacity,
         child: Card(
           elevation: isSelected ? 4 : 2,
@@ -276,7 +365,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
       _refresh(() {
         displayList.remove(field);
         form.removeField(field);
-        if (selectedIndex == index) selectedIndex = null;
+        if (_selectedIdentity == _identity(field)) _selectedIdentity = null;
       });
     }
 
@@ -324,6 +413,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             initialValue: field.definition.title,
             onChanged: (value) {
               field.definition = field.definition.copyWith(title: value);
+              _publishNavigation();
               widget.onChanged?.call();
             },
           ),

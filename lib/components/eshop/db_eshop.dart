@@ -1,3 +1,6 @@
+import 'models/payment_operation_context.dart';
+import 'models/order_payment_actions.dart';
+
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/eshop.dart';
@@ -44,16 +47,14 @@ class DbEshop {
   }
 
   static Future<FunctionResponse> sendTicketOrderUpdateEmail(
-      int orderId) async {
+    int orderId,
+  ) async {
     final body = {
       "code": "TICKET_ORDER_UPDATE",
       "data": {"orderId": orderId},
     };
 
-    final response = await _supabase.functions.invoke(
-      "send-email",
-      body: body,
-    );
+    final response = await _supabase.functions.invoke("send-email", body: body);
 
     return response;
   }
@@ -64,14 +65,17 @@ class DbEshop {
   }
 
   static Future<OccasionReport> getReportForOccasion(String link) async {
-    final response =
-        await _supabase.rpc('get_report_ws', params: {'occasion_link': link});
+    final response = await _supabase.rpc(
+      'get_report_ws',
+      params: {'occasion_link': link},
+    );
     return OccasionReport.fromResponse(response);
   }
 
   /// Retrieves all transactions associated with a specific order ID.
   static Future<GetTransactionsForOrderResponse?> getTransactionsForOrder(
-      int orderId) async {
+    int orderId,
+  ) async {
     final response = await _supabase.rpc(
       'get_transactions_for_order',
       params: {'order_id': orderId},
@@ -87,15 +91,22 @@ class DbEshop {
   /// Retrieves all transactions that have the same bank account as the order's payment_info
   /// and have a NULL payment_info field.
   static Future<List<TransactionModel>?> getTransactionsForOrderAllAvailable(
-      int paymentInfoId) async {
+    int? paymentInfoId, {
+    int? historyAccountId,
+  }) async {
     final response = await _supabase.rpc(
-      'get_transactions_for_order_all_available',
-      params: {'payment_info_id': paymentInfoId},
+      historyAccountId == null
+          ? 'get_transactions_for_order_all_available'
+          : 'get_bank_transaction_history',
+      params: historyAccountId == null
+          ? {'payment_info_id': paymentInfoId}
+          : {'p_bank_account_id': historyAccountId},
     );
 
     if (response != null) {
       return List<TransactionModel>.from(
-          response.map((x) => TransactionModel.fromJson(x)));
+        response.map((x) => TransactionModel.fromJson(x)),
+      );
     }
 
     return null;
@@ -103,7 +114,10 @@ class DbEshop {
 
   /// Adds a transaction to payment_info with security checks using RPC.
   static Future<void> addTransactionToPaymentInfoWithSecurity(
-      BuildContext context, int transactionId, int paymentInfoId) async {
+    BuildContext context,
+    int transactionId,
+    int paymentInfoId,
+  ) async {
     try {
       await _supabase.rpc(
         'add_transaction_to_payment_info_ws',
@@ -120,7 +134,10 @@ class DbEshop {
 
   /// Removes a transaction from payment_info with security checks using RPC.
   static Future<void> removeTransactionFromPaymentInfoWithSecurity(
-      BuildContext context, int transactionId, int paymentInfoId) async {
+    BuildContext context,
+    int transactionId,
+    int paymentInfoId,
+  ) async {
     try {
       await _supabase.rpc(
         'remove_transaction_from_payment_info_ws',
@@ -137,7 +154,10 @@ class DbEshop {
 
   /// Deletes a manual transaction completely from the database using RPC.
   static Future<void> deleteManualTransactionWithSecurity(
-      BuildContext context, int transactionId, int paymentInfoId) async {
+    BuildContext context,
+    int transactionId,
+    int paymentInfoId,
+  ) async {
     try {
       await _supabase.rpc(
         'delete_manual_transaction_ws',
@@ -153,9 +173,12 @@ class DbEshop {
   }
 
   static Future<List<ProductModel>?> getProductsForTicketAllAvailable(
-      int ticketId) async {
-    final result = await _supabase.rpc('get_products_for_ticket_all_available',
-        params: {'ticket_id': ticketId});
+    int ticketId,
+  ) async {
+    final result = await _supabase.rpc(
+      'get_products_for_ticket_all_available',
+      params: {'ticket_id': ticketId},
+    );
     if (result != null && result['code'] == 200) {
       return (result['data'] as List)
           .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
@@ -166,8 +189,10 @@ class DbEshop {
   }
 
   static Future<TicketDetailsBundle?> getProductsForTicket(int ticketId) async {
-    final response = await _supabase
-        .rpc('get_products_for_ticket', params: {'ticket_id': ticketId});
+    final response = await _supabase.rpc(
+      'get_products_for_ticket',
+      params: {'ticket_id': ticketId},
+    );
 
     if (response != null && response['code'] == 200) {
       final data = response['data'];
@@ -177,9 +202,12 @@ class DbEshop {
   }
 
   static Future<dynamic> updateProductsForOrder(
-      int ticketId, List<ProductModel> products) {
-    final productsJson =
-        products.map((p) => {'id': p.id, 'price': p.price}).toList();
+    int ticketId,
+    List<ProductModel> products,
+  ) {
+    final productsJson = products
+        .map((p) => {'id': p.id, 'price': p.price})
+        .toList();
 
     if (ClientSyncRuntime.isV1Selected) {
       return commands.updateTicketProducts(ticketId, productsJson);
@@ -188,15 +216,13 @@ class DbEshop {
     // Directly return the Future. The calling code will handle success or exceptions.
     return _supabase.rpc(
       'update_ticket_products_wsv2',
-      params: {
-        'p_ticket_id': ticketId,
-        'p_products': productsJson,
-      },
+      params: {'p_ticket_id': ticketId, 'p_products': productsJson},
     );
   }
 
   static Future<ProductsEditBundle> getProductsAndTypesForOccasion(
-      String occasionLink) async {
+    String occasionLink,
+  ) async {
     final catalogResponse = await _supabase.rpc(
       'get_product_catalog',
       params: {
@@ -222,14 +248,15 @@ class DbEshop {
     final productContextLinks = (response['product_inventory_contexts'] as List)
         .map((pc) => ProductInventoryContextModel.fromJson(pc))
         .toList();
-    final forms =
-        (response['forms'] as List).map((f) => FormBundle.fromJson(f)).toList();
+    final forms = (response['forms'] as List)
+        .map((f) => FormBundle.fromJson(f))
+        .toList();
 
     // Create lookup maps for efficient joins
     final poolsMap = {for (var p in pools) p.id: p};
     final contextsMap = {for (var c in contexts) c.id: c};
     final formsMap = {
-      for (var form in forms) form.definition.id: form.definition.toString()
+      for (var form in forms) form.definition.id: form.definition.toString(),
     };
 
     // Join inventory pools to inventory contexts
@@ -238,8 +265,10 @@ class DbEshop {
     }
 
     // Group inventory links by product ID
-    final productLinksMap =
-        groupBy(productContextLinks, (link) => link.productId);
+    final productLinksMap = groupBy(
+      productContextLinks,
+      (link) => link.productId,
+    );
 
     final serverTime = DateTime.parse(response['server_time']).toUtc();
     final clockOffset = serverTime.difference(DateTime.now().toUtc());
@@ -277,47 +306,73 @@ class DbEshop {
   }
 
   static Future<ProductPriceWave> createProductPriceWave(
-      String link, DateTime time) async {
+    String link,
+    DateTime time,
+  ) async {
     _checkScheduleLink(link);
     return scheduleCommands.ensureWave(time);
   }
 
   static Future<void> saveNewProductWaveTarget(
-      String occasionLink,
-      ProductPriceWave wave,
-      int productId,
-      double? price,
-      bool? hidden,
-      int? priceRevision,
-      int? visibilityRevision) async {
+    String occasionLink,
+    ProductPriceWave wave,
+    int productId,
+    double? price,
+    bool? hidden,
+    int? priceRevision,
+    int? visibilityRevision,
+  ) async {
     _checkScheduleLink(occasionLink);
     await scheduleCommands.saveTarget(
-        wave, productId, price, hidden, priceRevision, visibilityRevision);
+      wave,
+      productId,
+      price,
+      hidden,
+      priceRevision,
+      visibilityRevision,
+    );
   }
 
   static Future<void> saveProductWaveTarget(
-          ProductPriceWave wave,
-          int productId,
-          double? price,
-          bool? hidden,
-          int? priceRevision,
-          int? visibilityRevision) =>
-      scheduleCommands.saveTarget(
-          wave, productId, price, hidden, priceRevision, visibilityRevision);
+    ProductPriceWave wave,
+    int productId,
+    double? price,
+    bool? hidden,
+    int? priceRevision,
+    int? visibilityRevision,
+  ) => scheduleCommands.saveTarget(
+    wave,
+    productId,
+    price,
+    hidden,
+    priceRevision,
+    visibilityRevision,
+  );
 
   static Future<void> moveProductPriceWave(
-          ProductPriceWave wave, DateTime time) =>
-      scheduleCommands.moveWave(wave, time);
+    ProductPriceWave wave,
+    DateTime time,
+  ) => scheduleCommands.moveWave(wave, time);
   static Future<void> cancelProductPriceWave(ProductPriceWave wave) =>
       scheduleCommands.cancelWave(wave);
   static Future<void> saveProductPriceChange(
-          int productId, double price, DateTime time,
-          {int? changeId, int? revision}) =>
-      scheduleCommands.savePriceChange(productId, price, time,
-          changeId: changeId, revision: revision);
+    int productId,
+    double price,
+    DateTime time, {
+    int? changeId,
+    int? revision,
+  }) => scheduleCommands.savePriceChange(
+    productId,
+    price,
+    time,
+    changeId: changeId,
+    revision: revision,
+  );
   static Future<void> cancelProductPriceChange(
-          int productId, int changeId, int revision) =>
-      scheduleCommands.cancelPriceChange(productId, changeId, revision);
+    int productId,
+    int changeId,
+    int revision,
+  ) => scheduleCommands.cancelPriceChange(productId, changeId, revision);
 
   static Future<ProductModel> saveProductBasics(ProductModel product) async {
     final saved = await commands.saveProduct({
@@ -333,12 +388,15 @@ class DbEshop {
         'expected_aggregate_version': product.aggregateVersion,
     });
     return product.copyWith(
-        id: saved.id, aggregateVersion: saved.aggregateVersion);
+      id: saved.id,
+      aggregateVersion: saved.aggregateVersion,
+    );
   }
 
   /// Fetches all resources associated with a specific inventory pool ID.
   static Future<List<ResourceModel>> getResourcesForInventoryPool(
-      int inventoryPoolId) async {
+    int inventoryPoolId,
+  ) async {
     try {
       final response = await _supabase.rpc(
         'get_resources_for_inventory_pool_v1',
@@ -367,9 +425,13 @@ class GetTransactionsForOrderResponse {
   final String? orderState;
   final PaymentInfoModel? paymentInfo;
   final List<TransactionModel> transactions;
+  final OrderPaymentActions actions;
+  final PaymentOperationContext paymentOperations;
 
   GetTransactionsForOrderResponse({
     this.orderState,
+    this.actions = const OrderPaymentActions(),
+    this.paymentOperations = const PaymentOperationContext(),
     required this.paymentInfo,
     required this.transactions,
   });
@@ -378,7 +440,8 @@ class GetTransactionsForOrderResponse {
     // Parse users
     final users = json['users'] != null
         ? List<UserInfoModel>.from(
-            (json['users'] as List).map((x) => UserInfoModel.fromJson(x)))
+            (json['users'] as List).map((x) => UserInfoModel.fromJson(x)),
+          )
         : <UserInfoModel>[];
 
     // Create user map
@@ -386,7 +449,8 @@ class GetTransactionsForOrderResponse {
 
     final transactions = json['transactions'] != null
         ? List<TransactionModel>.from(
-            json['transactions'].map((x) => TransactionModel.fromJson(x)))
+            json['transactions'].map((x) => TransactionModel.fromJson(x)),
+          )
         : <TransactionModel>[];
 
     // Link users
@@ -396,6 +460,12 @@ class GetTransactionsForOrderResponse {
 
     return GetTransactionsForOrderResponse(
       orderState: json['order_state'] as String?,
+      paymentOperations: PaymentOperationContext.fromJson(
+        json['paymentOperations'] as Map? ?? const {},
+      ),
+      actions: OrderPaymentActions.fromJson(
+        json['actions'] as Map? ?? const {},
+      ),
       paymentInfo: json['payment_info'] != null
           ? PaymentInfoModel.fromJson(json['payment_info'])
           : null,
@@ -408,10 +478,7 @@ class OrderHistoryInfo {
   final DateTime? latestSentAt;
   final bool isNewerVersionAvailable;
 
-  OrderHistoryInfo({
-    this.latestSentAt,
-    required this.isNewerVersionAvailable,
-  });
+  OrderHistoryInfo({this.latestSentAt, required this.isNewerVersionAvailable});
 
   factory OrderHistoryInfo.fromJson(Map<String, dynamic> json) {
     return OrderHistoryInfo(
@@ -443,7 +510,8 @@ class TicketDetailsBundle {
   factory TicketDetailsBundle.fromJson(Map<String, dynamic> json) {
     var bundle = TicketDetailsBundle(
       changes: OrderChangeSummary.fromJson(
-          Map<String, dynamic>.from(json['order_changes'])),
+        Map<String, dynamic>.from(json['order_changes']),
+      ),
       ticket: TicketModel.fromJson(json['ticket']),
       order: OrderModel.fromJson(json['order']),
       paymentInfo: json['payment_info'] != null

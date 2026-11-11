@@ -1,9 +1,13 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import migration_inputs
 from pathlib import Path
 import os
 os.chdir(Path(__file__).resolve().parents[2])
 files=['emails/email_schema.sql','users/get_can_reset_user_password.sql','users/reset_user_password.sql','emails/email_domain.sql','emails/email_queue.sql','emails/email_reporting.sql','emails/email_health.sql','users/get_occasion_users_for_edit.sql','emails/queue_payment_reminders.sql','emails/set_payment_deadline.sql','emails/fakturoid_email_gate.sql','eshop/create_ticket_order.sql','eshop_orders/update_order_and_tickets_to_paid.sql','eshop_orders/recalculate_order_payment_status.sql','eshop_orders/update_order_and_tickets_to_storno.sql','eshop_orders/update_ticket_products_ws.sql','eshop_orders/get_orders_tab_data.sql','others/delete_occasion.sql','others/update_occasion.sql','seed/crons.sql']
 s='-- Canonical email cutover. Maintenance and reviewed function bundle required. Starts paused.\nBEGIN;\n'
-for name in files:s+='\n-- Source: database/functions/'+name+'\n'+(Path('database/functions')/name).read_text()+'\n'
+for name in files:s+='\n-- Source: database/functions/'+name+'\n'+migration_inputs.read_text(Path('database/functions')/name)+'\n'
 s+='''
 -- Remove obsolete RPCs and duplicate legacy reminder producers discovered in the baseline.
 DROP FUNCTION IF EXISTS public.claim_due_queue_emails_v1(integer);
@@ -48,4 +52,4 @@ END $$;
 NOTIFY pgrst,'reload schema';
 COMMIT;
 '''
-Path('supabase/migrations/20261003200000_canonical_email_delivery.sql').write_text(s)
+migration_inputs.write_text(Path('supabase/migrations/20261003200000_canonical_email_delivery.sql'), s)

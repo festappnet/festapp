@@ -17,8 +17,8 @@ BEGIN
       WHERE o.occasion IS DISTINCT FROM (SELECT id FROM scope)
          OR o.currency_code IS DISTINCT FROM p.currency_code) AS value
   ), transactions_scope AS MATERIALIZED (
-    SELECT t.* FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info
-    WHERE t.currency=p.currency_code
+    SELECT t.* FROM payments p CROSS JOIN LATERAL public.payment_transaction_movements_internal(p.id) t
+    WHERE t.currency=p.currency_code AND NOT t.voided
   ), stripe_movements AS MATERIALIZED (
     SELECT m.*,p.id AS payment_info_id FROM payments p
     CROSS JOIN LATERAL public.provider_payment_movements_internal(p.id) m WHERE m.currency=p.currency_code::text
@@ -33,9 +33,9 @@ BEGIN
     FROM orders_scope GROUP BY 1,2
   ), payment_days AS (
     SELECT day,currency,sum(received)::text AS received,sum(returned)::text AS returned FROM (
-     SELECT date::date AS day,currency::text AS currency,
-      coalesce(sum(amount) FILTER (WHERE amount>0),0) AS received,
-      coalesce(-sum(amount) FILTER (WHERE amount<0),0) AS returned
+     SELECT occurred_at::date AS day,currency::text AS currency,
+      coalesce(sum(amount) FILTER (WHERE NOT is_refund),0) AS received,
+      coalesce(-sum(amount) FILTER (WHERE is_refund),0) AS returned
       FROM transactions_scope GROUP BY 1,2
      UNION ALL
      SELECT (occurred_at AT TIME ZONE 'Europe/Prague')::date,currency,
@@ -43,19 +43,23 @@ BEGIN
       (coalesce(sum(amount_minor) FILTER(WHERE kind='refund'),0)/100)::numeric(30,2) FROM stripe_movements GROUP BY 1,2
     ) facts GROUP BY day,currency
   ), manual AS (
-    SELECT t.payment_info, sum(t.amount) FILTER (WHERE t.transaction_type = 'manual' AND t.amount > 0) AS received
-    FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info GROUP BY t.payment_info
+    SELECT t.payment_info, sum(t.amount) FILTER (WHERE t.transaction_type = 'manual') AS received
+    FROM eshop.transactions t JOIN payments p ON p.id=t.payment_info
+    JOIN LATERAL public.payment_transaction_movements_internal(p.id) m ON m.transaction_id=t.id
+    WHERE NOT m.voided AND NOT m.is_refund GROUP BY t.payment_info
   ), order_money AS (
     SELECT currency_code AS currency, sum(coalesce(price,0)) AS value
     FROM orders_scope GROUP BY currency_code
   ), payment_money AS (
-    SELECT p.currency_code AS currency, sum(coalesce(p.paid,0)) AS received,
-      sum(coalesce(p.returned,0)) AS returned, sum(coalesce(m.received,0)) AS manual,
+    SELECT p.currency_code AS currency, sum(coalesce(ft.gross_received,0)) AS received,
+      sum(coalesce(ft.refunded,0)) AS returned, sum(coalesce(m.received,0)) AS manual,
       sum(coalesce(sm.received,0)) AS stripe_received,sum(coalesce(sm.returned,0)) AS stripe_refunded,
       sum(coalesce(ft.disputed,0)) AS disputed,sum(coalesce(p.paid_externally,0)) AS external_unattributed,
       bool_or(p.deposit_amount IS NOT NULL) AS deposits,
-      sum(CASE WHEN p.deposit_amount IS NOT NULL THEN least(coalesce(p.paid,0),p.deposit_amount) ELSE 0 END) AS deposit,
-      sum(CASE WHEN p.deposit_amount IS NOT NULL THEN greatest(coalesce(p.paid,0)-p.deposit_amount,0) ELSE 0 END) AS beyond
+      sum(CASE WHEN p.deposit_amount IS NOT NULL THEN least(coalesce(ft.gross_received,0),p.deposit_amount) ELSE 0 END) AS deposit,
+      sum(CASE WHEN p.deposit_amount IS NOT NULL THEN greatest(coalesce(ft.gross_received,0)-p.deposit_amount,0) ELSE 0 END) AS beyond,
+      sum(CASE WHEN p.deposit_amount IS NOT NULL THEN least(coalesce(ft.net_received,0),p.deposit_amount) ELSE 0 END) AS deposit_net,
+      sum(CASE WHEN p.deposit_amount IS NOT NULL THEN greatest(coalesce(ft.net_received,0)-p.deposit_amount,0) ELSE 0 END) AS beyond_net
     FROM payments p LEFT JOIN manual m ON m.payment_info=p.id LEFT JOIN stripe_money sm ON sm.payment_info_id=p.id
      LEFT JOIN financial_totals ft ON ft.id=p.id GROUP BY p.currency_code
   ), money AS (
@@ -64,7 +68,8 @@ BEGIN
       coalesce(p.manual,0) AS manual, coalesce(p.deposits,false) AS deposits,
       coalesce(p.stripe_received,0) AS stripe_received,coalesce(p.stripe_refunded,0) AS stripe_refunded,
       coalesce(p.disputed,0) AS disputed,coalesce(p.external_unattributed,0) AS external_unattributed,
-      coalesce(p.deposit,0) AS deposit, coalesce(p.beyond,0) AS beyond
+      coalesce(p.deposit,0) AS deposit, coalesce(p.beyond,0) AS beyond,
+      coalesce(p.deposit_net,0) AS deposit_net,coalesce(p.beyond_net,0) AS beyond_net
     FROM order_money o FULL JOIN payment_money p USING(currency)
   ), ticket_scope AS (
     SELECT t.* FROM eshop.tickets t JOIN scope s ON s.id=t.occasion
@@ -135,7 +140,8 @@ BEGIN
     'money_by_currency',coalesce((SELECT jsonb_agg(jsonb_build_object(
       'currency',currency,'current_order_value',value::text,'received',received::text,'returned',returned::text,
       'net_received',(received-returned)::text,'manual_received',manual::text,'other_received',(received-manual)::text,
-      'has_deposits',deposits,'deposit_received_gross',deposit::text,'beyond_deposit_received_gross',beyond::text
+      'has_deposits',deposits,'deposit_received_gross',deposit::text,'beyond_deposit_received_gross',beyond::text,
+      'deposit_received_net',deposit_net::text,'beyond_deposit_received_net',beyond_net::text
     ) || CASE WHEN stripe_received>0 OR stripe_refunded>0 OR disputed>0 THEN jsonb_build_object(
       'stripe_received',stripe_received::numeric(30,2)::text,'stripe_refunded',stripe_refunded::numeric(30,2)::text,'disputed',disputed::numeric(30,2)::text,
       'available_after_disputes',greatest(received-returned-disputed,0)::numeric(30,2)::text) ELSE '{}'::jsonb END

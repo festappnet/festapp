@@ -8,9 +8,10 @@
     "dev_constant": "VSTUPENKY_ONLINE_DEV_ORIGIN",
     "origin": "https://vstupenky.online",
     "login_url": "https://vstupenky.online/login",
-    "version": "1.0.5",
+    "version": "1.0.7",
     "market": "Czech",
-    "changelog": "= 1.0.5 =\n* Control embedded appearance only through the saved form setting; remove local overrides.\n\n= 1.0.4 =\n* Configure appearance per block or shortcode through the shared embed contract.\n\n= 1.0.3 =\n* Declare the minimum supported WordPress major release consistently.\n\n= 1.0.2 =\n* Link the service offer directly to the canonical homepage.\n\n= 1.0.1 =\n* Clearly identify the WordPress appearance option as a local override of the app appearance."
+    "upgrade_notice": "Existing blocks and shortcodes retain Unit measurement. Website dataLayer sharing requires an explicit choice. No database migration.",
+    "changelog": "= 1.0.7 =\n* Add an explicit measurement destination with conversion-sharing disclosure; retain Unit mode for existing embeds.\n\n= 1.0.6 =\n* Prevent a dark iframe canvas before the shared helper loads.\n\n= 1.0.5 =\n* Control embedded appearance only through the saved form setting; remove local overrides.\n\n= 1.0.4 =\n* Configure appearance per block or shortcode through the shared embed contract.\n\n= 1.0.3 =\n* Declare the minimum supported WordPress major release consistently.\n\n= 1.0.2 =\n* Link the service offer directly to the canonical homepage.\n\n= 1.0.1 =\n* Clearly identify the WordPress appearance option as a local override of the app appearance."
   },
   {
     "slug": "festapp-tickets",
@@ -21,8 +22,9 @@
     "dev_constant": "FESTAPP_TICKETS_DEV_ORIGIN",
     "origin": "https://tickets.festapp.net",
     "login_url": "https://tickets.festapp.net/login",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "market": "international",
-    "changelog": "= 1.0.1 =\n* Control embedded appearance only through the saved form setting; remove local overrides."
+    "changelog": "= 1.0.2 =\n* Add an explicit measurement destination with conversion-sharing disclosure; retain Unit mode for existing embeds.\n\n= 1.0.1 =\n* Control embedded appearance only through the saved form setting; remove local overrides.",
+    "upgrade_notice": "Existing blocks and shortcodes retain Unit measurement. Website dataLayer sharing requires an explicit choice. No database migration."
   }
 ]

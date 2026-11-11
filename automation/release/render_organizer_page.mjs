@@ -1,3 +1,6 @@
+import writeIfChanged from '../lib/write_if_changed.cjs';
+import {execFileSync} from 'node:child_process';
+import {pressAssetBase, pressLogos, logoFilename} from './organizers/press.mjs';
 import {publicRuntime} from './organizers/public_runtime.mjs';
 import { expandSiteShell, publicThemeHead, publicThemeBody } from './organizers/site_shell.mjs';
 import { renderUpdate } from './platform_updates/render.mjs';
@@ -43,17 +46,25 @@ const html = fs.readFileSync(index, 'utf8')
 }
 const manifestPath = path.join(path.dirname(target), 'organizer-pages.json');
 const cleanOutputs = () => {
+  fs.rmSync(path.join(path.dirname(target),pressAssetBase.slice(1)),{recursive:true,force:true});
   fs.rmSync(path.join(path.dirname(target),'organizers/updates'),{recursive:true,force:true});
   fs.rmSync(path.join(path.dirname(target),'platform-updates.json'),{force:true});
   fs.rmSync(path.join(path.dirname(target),'co-je-nove/_assets'),{recursive:true,force:true});
+  fs.rmSync(path.join(path.dirname(target),'organizers-assets'),{recursive:true,force:true});
   if (process.argv.includes('--built-index')) fs.rmSync(path.join(path.dirname(target),'platform-updates-media'),{recursive:true,force:true});
   for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
 };
+if (process.argv.includes('--catalog-only')) {
+  // Preserve overlay-owned generated leaves; source must remain clean for upload.
+  if(catalogOutput)writeIfChanged.writeFileSync(index,catalogOutput);
+  console.log('Prepared catalogue; public documents are assembled after compilation.');
+  process.exit(0);
+}
 if (!enabled) {
   cleanOutputs();
   fs.mkdirSync(path.dirname(target), {recursive:true});
-  fs.writeFileSync(manifestPath, JSON.stringify(publicManifest(context)) + '\n');
-  if (catalogOutput) fs.writeFileSync(index, catalogOutput);
+  writeIfChanged.writeFileSync(manifestPath, JSON.stringify(publicManifest(context)) + '\n');
+  if (catalogOutput) writeIfChanged.writeFileSync(index, catalogOutput);
   console.log('Organizer pages disabled for this tenant.');
   process.exit(0);
 }
@@ -68,6 +79,7 @@ const tokens = {
 };
 const template = expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8'));
 const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.css'), 'utf8');
+const pressCss = fs.readFileSync(path.join(root, 'automation/release/organizers/press.css'), 'utf8');
 const primary = /^#[0-9a-f]{6}$/i.test(value('THEME_SEED_3')) ? value('THEME_SEED_3') : '#4465a6';
 const socialImage = new URL(seo.image, context.origin).href;
 const outputs = [];
@@ -79,19 +91,19 @@ for (const media of process.argv.includes("--preview") ? [] : mediaPaths) {
   if (url.origin !== context.origin || !url.pathname.startsWith('/') || url.pathname.includes('..') || !fs.existsSync(path.join(process.argv.includes('--built-index') ? path.dirname(target) : path.join(root,'web'), url.pathname))) throw new Error(`Missing/foreign marketing media: ${media}`);
 }
 const builtIndexArg = process.argv.indexOf('--built-index');
-let themeLinks = '';
-let entryScript = '';
-if (builtIndexArg >= 0) {
-  const manifestPath = path.join(path.dirname(path.resolve(process.argv[builtIndexArg + 1])), '.vite/manifest.json');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  const entry = manifest['src/marketing/landing.js'];
-  if (!entry?.file) throw new Error('Built organizer page needs the Vite landing entry');
-  entryScript = `<script type="module" src="/${escape(entry.file)}"></script>`;
-  const builtIndex = fs.readFileSync(path.resolve(process.argv[builtIndexArg + 1]), 'utf8');
-  themeLinks = (builtIndex.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || [])
-    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag) || tag.includes("https://fonts.googleapis.com/icon?family=Material+Icons")).join('');
-  if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
-}
+// The homepage and its account header share the same public runtime owner as
+// help/update pages. A fresh deployment namespace also bypasses cached 404s
+// for unchanged shared chunk names from an earlier partial load.
+const marketingRuntime = builtIndexArg < 0
+  ? {assets: {}, assetRoot: '/', entryUrl: null, themeLinks: ''}
+  : publicRuntime(root, {
+  builtIndex: path.resolve(process.argv[builtIndexArg + 1]),
+  entry: 'src/marketing/landing.js', assetRoot: '/organizers-assets/', versioned: true,
+});
+const {themeLinks} = marketingRuntime;
+if (builtIndexArg >= 0 && !themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
+const entryScript = marketingRuntime.entryUrl
+  ? `<script type="module" src="${marketingRuntime.entryUrl}"></script>` : '';
 const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexArg<0?null:path.resolve(process.argv[builtIndexArg+1]),entry:'src/marketing/landing.js',assetRoot:'/co-je-nove/_assets/',versioned:true}):null;
 if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['media/'+asset.slice('/platform-updates-media/'.length)]=bytes;
   for (const page of context.pages) {
@@ -107,7 +119,9 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
       return tokens[nested];
     }));
   });
-  let body = template;
+  const illustrated = page.id === 'home' && projection.homeStyle === 'illustrated';
+  let body = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8') : template;
+  const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
   if (projection.locale === 'cs') {
     body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
     const reference=body.match(/<section id="reference"[\s\S]*?<\/section>/)?.[0] ?? '';
@@ -118,7 +132,12 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
 
   if (!projection.references?.length) body = body.replace(/<section id="reference"[\s\S]*?<\/section>/, "");
   if (page.id !== 'home') body = body.replace(/<main id="main">[\s\S]*?<\/main>/, '<main id="main">{{TOPIC_CONTENT}}</main>');
-  const content = substitute(body);
+  const content = substitute(body)
+    .replace('<header class="site-header auth-pending"', marketingRuntime.entryUrl
+      ? `<header class="site-header auth-pending" data-brand-asset-base="${escape(marketingRuntime.assetRoot)}"`
+      : '<header class="site-header auth-pending"')
+    .replace(/src="\/(brand-logo(?:-light)?\.svg)"/g,
+      (_, name) => `src="${escape(marketingRuntime.assetRoot + name)}"`);
   const canonical = page.canonical, title = page.title, description = page.description;
   const home = context.origin + '/';
   const structured = {'@context':'https://schema.org', '@graph':[
@@ -137,7 +156,7 @@ const html = `<!doctype html><html lang="${escape(context.locale)}"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}">${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${illustrated ? '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.json">' : ''}${themeLinks}<style>:root{--primary-color:${primary}}${pageCss}${page.id === 'press' ? pressCss : ''}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}"${illustrated ? ' data-drawing="original" data-story="revised-english" data-cinematic="true"' : ''}>${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
 
 outputs.push({asset:page.asset, html});
 }
@@ -145,24 +164,50 @@ outputs.push({asset:page.asset, html});
 fs.mkdirSync(path.dirname(target), {recursive:true});
 const staging = fs.mkdtempSync(path.join(path.dirname(target), '.organizers-stage-'));
 try {
+  const press = context.pages.find(page=>page.id==='press');
+  if (press) execFileSync('python3',[path.join(root,'automation/release/organizers/build_press_kit.py'),path.join(root,'assets/brand/vstupenky-online'),path.join(staging,pressAssetBase.slice(1))],{input:JSON.stringify({
+    files:pressLogos.flatMap(logo=>[false,true].flatMap(dark=>['svg',...(logo.png?['png']:[])].map(format=>logoFilename(logo,dark,format)))),
+    texts:{'o-projektu.txt':press.press.summary+'\n\n'+press.press.features.map(item=>item.title+'\n'+item.text).join('\n\n')+'\n\nKontakt: '+projection.provider.name+' | '+projection.contact+'\n',
+      'pouziti-loga.txt':'vstupenky.online - oficiální loga\n\n'+press.press.usage.join('\n\n')+'\n\nSoubory s příponou -dark jsou určeny na tmavé pozadí.\nBarvy: námořnická #19243b, modrá #80bdf2.\nKontakt: '+projection.contact+'\n'}
+  })});
   for (const output of outputs) {
     const file = path.join(staging, output.asset.slice(1));
-    fs.mkdirSync(path.dirname(file), {recursive:true}); fs.writeFileSync(file, output.html);
+    fs.mkdirSync(path.dirname(file), {recursive:true}); writeIfChanged.writeFileSync(file, output.html);
   }
-  if (context.updates) fs.writeFileSync(path.join(staging,'platform-updates.json'),JSON.stringify(context.updates.feed)+'\n');
-  if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,updatesRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
-  cleanOutputs();
-  if (context.updates) fs.renameSync(path.join(staging,'platform-updates.json'),path.join(path.dirname(target),'platform-updates.json'));
-  if (process.argv.includes('--built-index')) for (const {asset,bytes} of updateAssets) {const file=path.join(path.dirname(target),asset);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
+  if (context.updates) writeIfChanged.writeFileSync(path.join(staging,'platform-updates.json'),JSON.stringify(context.updates.feed)+'\n');
+  for(const [name,bytes]of Object.entries(marketingRuntime.assets)){const file=path.join(staging,marketingRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});writeIfChanged.writeFileSync(file,bytes);}
+  if(updatesRuntime)for(const [name,bytes]of Object.entries(updatesRuntime.assets)){const file=path.join(staging,updatesRuntime.assetRoot.slice(1),name);fs.mkdirSync(path.dirname(file),{recursive:true});writeIfChanged.writeFileSync(file,bytes);}
+  // Remove only retired outputs. Preserve unchanged generated bytes and mtimes.
+  const active = new Set(outputs.map(output=>output.asset));
+  for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) {
+    if (!active.has(asset)) fs.rmSync(path.join(path.dirname(target),asset.slice(1)),{recursive:true,force:true});
+  }
+  fs.rmSync(path.join(path.dirname(target),'organizers/updates'),{recursive:true,force:true});
+  const pressDestination=path.join(path.dirname(target),pressAssetBase.slice(1));
+  if (press) writeIfChanged.syncTree(path.join(staging,pressAssetBase.slice(1)),pressDestination);
+  else fs.rmSync(pressDestination,{recursive:true,force:true});
+  const feed=path.join(path.dirname(target),'platform-updates.json');
+  if (context.updates) writeIfChanged.copyFileSync(path.join(staging,'platform-updates.json'),feed);
+  else fs.rmSync(feed,{force:true});
+  if (process.argv.includes('--built-index')) {
+    const mediaRoot=path.join(path.dirname(target),'platform-updates-media');
+    const stagedMedia=path.join(staging,'platform-updates-media');
+    fs.mkdirSync(stagedMedia,{recursive:true});
+    for (const {asset,bytes} of updateAssets) {const file=path.join(staging,asset);fs.mkdirSync(path.dirname(file),{recursive:true});writeIfChanged.writeFileSync(file,bytes);}
+    writeIfChanged.syncTree(stagedMedia,mediaRoot);
+  }
   const runtimeOutput=path.join(path.dirname(target),'co-je-nove/_assets');
-  fs.rmSync(runtimeOutput,{recursive:true,force:true});
-  if(updatesRuntime)fs.cpSync(path.join(staging,'co-je-nove/_assets'),runtimeOutput,{recursive:true});
+  if(updatesRuntime)writeIfChanged.syncTree(path.join(staging,'co-je-nove/_assets'),runtimeOutput);
+  else fs.rmSync(runtimeOutput,{recursive:true,force:true});
+  const marketingOutput=path.join(path.dirname(target),'organizers-assets');
+  if(marketingRuntime.entryUrl)writeIfChanged.syncTree(path.join(staging,'organizers-assets'),marketingOutput);
+  else fs.rmSync(marketingOutput,{recursive:true,force:true});
   for (const {asset} of outputs) {
     const destination = asset === '/organizers-page' ? target : path.join(path.dirname(target), asset.slice(1));
     fs.mkdirSync(path.dirname(destination), {recursive:true});
-    fs.renameSync(path.join(staging,asset.slice(1)), destination);
+    writeIfChanged.copyFileSync(path.join(staging,asset.slice(1)),destination);
   }
-  fs.writeFileSync(manifestPath, JSON.stringify(publicManifest(context)) + '\n');
-  if (catalogOutput) fs.writeFileSync(index, catalogOutput);
+  writeIfChanged.writeFileSync(manifestPath, JSON.stringify(publicManifest(context)) + '\n');
+  if (catalogOutput) writeIfChanged.writeFileSync(index, catalogOutput);
 } finally { fs.rmSync(staging, {recursive:true,force:true}); }
 console.log(`Rendered ${outputs.length} organizer pages (${context.locale}).`);

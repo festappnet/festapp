@@ -13,6 +13,7 @@ import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/template_authoring.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:super_editor/super_editor.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 
@@ -21,6 +22,196 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('waitlist tone variables are recognized and previewed without changing stored HTML', (tester) async {
+    final examples = EmailPreviewExamples.fromJson(
+      jsonDecode(
+        File('assets/email_templates/preview_examples.json').readAsStringSync(),
+      ),
+    );
+    for (final code in ['waitlist_confirmation', 'waitlist_offer']) {
+      for (final scenario in examples.scenariosFor(code)) {
+        final tokens = code == 'waitlist_offer'
+            ? ['waitlist_offer_heading', 'waitlist_offer_instructions']
+            : [
+                'waitlist_confirmation_heading',
+                'waitlist_confirmation_explanation',
+              ];
+        final html = '<h3 style="text-align:center">{{${tokens.first}}}</h3>'
+            '<p>{{${tokens.last}}}</p>';
+        final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: code),
+          field: EmailTargetField.body,
+          scenario: scenario,
+        );
+        final controller = RichHtmlEditorController(
+          initialHtml: html,
+          owner: const HtmlMediaOwner.none(),
+          authoring: provider,
+        );
+        try {
+          await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+              home: Scaffold(body: RichHtmlEditor(controller: controller))));
+          await tester.pump();
+          expect(
+            controller.hasUnsupportedTokens,
+            isFalse,
+            reason: '$code/${scenario.tone}',
+          );
+          for (final token in tokens) {
+            expect(provider.entry(token)?.block, isTrue, reason: token);
+            final subjectEntry = EmailAuthoringProvider(
+              EmailTemplateModel(code: code),
+              field: EmailTargetField.subject,
+              scenario: scenario,
+            ).entry(token)!;
+            expect(subjectEntry.block, isFalse);
+            expect(subjectEntry.rich, isFalse);
+            expect(EmailTemplateRules.definition(token).supports(EmailTargetField.subject),
+                isTrue);
+            expect(find.text(scenario.values[token]!, findRichText: true),
+                findsOneWidget, reason: '$code/${scenario.tone}/$token');
+            expect(scenario.values[token], isNotEmpty, reason: token);
+            expect(scenario.composeHtml(html), isNot(contains('{{$token}}')));
+            expect(find.text('{{$token}}', findRichText: true), findsNothing);
+          }
+          expect(find.text(provider.unsupportedLabel), findsNothing);
+          final headingPreview = tester
+              .widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml))
+              .firstWhere((widget) => widget.html.contains(scenario.values[tokens.first]!));
+          expect(headingPreview.html,
+              '<h3 style="text-align:center">${scenario.values[tokens.first]}</h3>');
+          expect(
+            controller.html,
+            html,
+            reason: 'editor labels must not replace the saved substitutions',
+          );
+          controller.reset('<p>{{custom_not_supported}}</p>');
+          await tester.pump();
+          expect(
+            controller.hasUnsupportedTokens,
+            isTrue,
+            reason: 'genuinely unknown data must remain preserved',
+          );
+          expect(find.text(provider.unsupportedLabel), findsOneWidget);
+        } finally {
+          await tester.pumpWidget(const SizedBox());
+          controller.dispose();
+        }
+      }
+    }
+  });
+
+  for (final code in EmailTemplateModel.substitutionDefinitions.keys) {
+    for (final field in EmailTargetField.values) {
+      testWidgets(
+        '$code $field toolbar chooser stays visible with offscreen caret',
+        (tester) async {
+          final provider = EmailAuthoringProvider(
+            EmailTemplateModel(code: code),
+            field: field,
+          );
+          final source = field == EmailTargetField.subject
+              ? '<p>${'Long subject ' * 100}</p>'
+              : '${'<p>Long email paragraph</p>' * 40}<p>End</p>';
+          final controller = RichHtmlEditorController(
+            initialHtml: source,
+            owner: const HtmlMediaOwner.none(),
+            authoring: provider,
+          );
+          await tester.pumpWidget(
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  child: RichHtmlEditor(controller: controller),
+                ),
+              ),
+            ),
+          );
+          await tester.tap(find.byIcon(Icons.alternate_email));
+          await tester.pumpAndSettle();
+          expect(controller.hasUserChanges, isFalse);
+          expect(find.byType(TextField).hitTestable(), findsOneWidget);
+          final entries = provider.search('', const {});
+          if (entries.isEmpty) {
+            expect(find.text(provider.emptyLabel), findsOneWidget);
+            await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+            await tester.pumpAndSettle();
+            await tester.pumpWidget(const SizedBox());
+            controller.dispose();
+            return;
+          }
+          final entry = entries.firstWhere((e) => !e.block);
+          await tester.enterText(find.byType(TextField), entry.code);
+          await tester.pumpAndSettle();
+          await tester.testTextInput.receiveAction(TextInputAction.done);
+          await tester.pumpAndSettle();
+          expect(controller.html, contains('{{${entry.code}}}'));
+          expect(find.byType(TextField), findsNothing);
+          await tester.pumpWidget(const SizedBox());
+          controller.dispose();
+        },
+      );
+    }
+  }
+  testWidgets('inline variable info responds to actual editor taps', (
+    tester,
+  ) async {
+    final provider = EmailAuthoringProvider(
+      EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
+      field: EmailTargetField.body,
+    );
+    final controller = RichHtmlEditorController(
+      initialHtml: '<p>Hello {{occasionTitle}}</p>',
+      owner: const HtmlMediaOwner.none(),
+      authoring: provider,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: RichHtmlEditor(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.info_outline));
+    await tester.pumpAndSettle();
+    expect((tester.widget<AppAlertDialog>(find.byType(AppAlertDialog)).content as Text).data,
+        provider.entry('occasionTitle')!.description);
+    expect(controller.hasUserChanges, isFalse);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+  final checkedVariables = <String>{};
+  final infoExamples = EmailPreviewExamples.fromJson(jsonDecode(
+      File('assets/email_templates/preview_examples.json').readAsStringSync()));
+  for (final template in EmailTemplateModel.substitutionDefinitions.entries) {
+    for (final sub in template.value) {
+      if (!checkedVariables.add(sub.code)) continue;
+      for (final inline in [false, true]) {
+        testWidgets('${sub.code} info works in ${inline ? 'inline' : 'standalone'} content', (tester) async {
+          final provider = EmailAuthoringProvider(EmailTemplateModel(code: template.key),
+              field: EmailTargetField.body, scenario: infoExamples.scenariosFor(template.key).first)
+            ..inlineTicketsEnabled = true;
+          final controller = RichHtmlEditorController(
+              initialHtml: inline ? '<p>Before {{${sub.code}}} after</p>' : '<p>{{${sub.code}}}</p>',
+              owner: const HtmlMediaOwner.none(), authoring: provider);
+          await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
+              home: Scaffold(body: SingleChildScrollView(child: RichHtmlEditor(controller: controller)))));
+          await tester.pumpAndSettle();
+          expect(find.byIcon(Icons.info_outline), findsOneWidget);
+          await tester.tapAt(tester.getCenter(find.byIcon(Icons.info_outline)));
+          await tester.pumpAndSettle();
+          expect(find.byType(AppAlertDialog), findsOneWidget);
+          expect((tester.widget<AppAlertDialog>(find.byType(AppAlertDialog)).content as Text).data,
+              provider.entry(sub.code)!.description);
+          expect(controller.hasUserChanges, isFalse);
+          await tester.pumpWidget(const SizedBox());
+          controller.dispose();
+        }, variant: TargetPlatformVariant({TargetPlatform.android, TargetPlatform.macOS}));
+      }
+    }
+  }
   testWidgets('ticket variable example shows the delivered QR structure',
       (tester) async {
     final provider = EmailAuthoringProvider(
@@ -37,6 +228,51 @@ void main() {
         find.text('Kód vstupenky: festapp-preview:INVALID-1'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  for (final templateCode in ['waitlist_confirmation', 'waitlist_offer']) {
+    testWidgets('$templateCode renders dynamic wording as preview blocks',
+        (tester) async {
+      final examples = EmailPreviewExamples.fromJson(jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync()));
+      final scenario = examples.scenariosFor(templateCode).first;
+      final heading = '${templateCode}_heading';
+      final instructions = templateCode == 'waitlist_offer'
+          ? 'waitlist_offer_instructions'
+          : 'waitlist_confirmation_explanation';
+      final html = '<h3 style="text-align:center">{{$heading}}</h3>'
+          '<p>{{$instructions}}</p>';
+      final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: templateCode),
+          field: EmailTargetField.body,
+          scenario: scenario);
+      final controller = RichHtmlEditorController(
+          initialHtml: html,
+          owner: const HtmlMediaOwner.none(),
+          authoring: provider);
+      await tester.pumpWidget(MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(body: RichHtmlEditor(controller: controller))));
+      await tester.pumpAndSettle();
+      for (final code in [heading, instructions]) {
+        expect(provider.entry(code)?.block, isTrue);
+        expect(scenario.values[code], isNotEmpty);
+        expect(find.text(scenario.values[code]!, findRichText: true),
+            findsOneWidget);
+        expect(find.text('{{$code}}', findRichText: true), findsNothing);
+      }
+      expect(controller.editor.document.whereType<TemplateTokenBlock>(),
+          hasLength(2));
+      final renderedHeading = tester
+          .widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml))
+          .firstWhere((widget) => widget.html.contains(scenario.values[heading]!));
+      expect(renderedHeading.html,
+          '<h3 style="text-align:center">${scenario.values[heading]}</h3>');
+      expect(controller.html, html);
+      expect(controller.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
   test('QR ticket variable stays hidden without enabled inline delivery', () {
     final provider = EmailAuthoringProvider(
         EmailTemplateModel(code: 'TICKET_ORDER_PAYMENT_DONE'),

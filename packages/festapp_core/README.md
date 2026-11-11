@@ -32,3 +32,15 @@ fvm dart test
 and Flutter roots. Its architecture guard parses import/export/part/conditional
 closures, production dependency graphs, module direction, test registration and
 classification, registration-time effects and private SDK fixture imports. Direct `fvm flutter test` alone does not run this package.
+
+### Payment selection and reservation presentation
+
+`FormPaymentConfiguration` round-trips the canonical bank/cash/provider choice;
+`FormPaymentOptions` consumes SQL availability and cash instructions. Builtin
+method identities are shared in the payments module. Core does not infer a
+method from missing bank data or compute deadline policy. Order payment
+projections retain the server's method, financial facts, effective policy and
+instructions; cash has no payment QR, while bank `none` keeps its bank QR.
+The SQL and compatible reader/write contracts are documented in
+[Forms](../../lib/components/forms/README.md#cash-reservations-and-deadline-policy)
+and [Eshop](../../lib/components/eshop/README.md#cash-payments-and-payment-deadlines).

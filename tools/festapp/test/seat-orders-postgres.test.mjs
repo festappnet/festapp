@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
+import {readFile} from '../../../automation/lib/migration_inputs_async.mjs';
 import {setup,paidAtomicSwap,executor} from './seat-fixtures.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
@@ -18,6 +18,33 @@ async function state(s){await s.db.query('RESET ROLE');const r=(await s.db.query
  'spots',(select coalesce(jsonb_agg(to_jsonb(s) order by id),'[]') from eshop.spots s where occasion=$1),
  'history',(select coalesce(jsonb_agg(to_jsonb(h) order by id),'[]') from eshop.orders_history h where "order" in(select id from eshop.orders where occasion=$1)),
  'email',(select coalesce(jsonb_agg(to_jsonb(e) order by id),'[]') from email_messages e where occasion=$1)) v`,[s.f.occasion])).rows[0].v;await s.db.query('SET LOCAL ROLE authenticated');return r;}
+
+test('plan editor creates an order with a closed public form without opening public sales',options,async t=>{
+ const s=await setup(t);await bank(s);
+ await s.db.query('RESET ROLE');
+ await s.db.query('update forms set is_open=false where id=$1',[s.fx.form]);
+ await s.db.query('SET LOCAL ROLE authenticated');
+ const ids=[s.bindings[0].spotId],input={email:'closed-form-editor@example.invalid',form_key:s.fx.formKey};
+ const requirements=await preview(s,ids);
+ assert.equal(requirements.formKey,s.fx.formKey,'closed form remains available to the order editor');
+ const p=await preview(s,ids,input),done=await apply(s,p,input,randomUUID(),true);
+ assert.equal(done.status,'applied',JSON.stringify(done));
+ const after=await state(s);
+ assert.equal(after.orders.length,1);assert.equal(after.tickets.length,2);
+ await s.db.query('RESET ROLE');
+ assert.equal((await s.db.query('select is_open from forms where id=$1',[s.fx.form])).rows[0].is_open,false);
+ await s.db.query("select set_config('request.jwt.claim.sub','',true),set_config('request.jwt.claim.role','anon',true)");
+ const publicOrder=(await s.db.query('select create_ticket_order_internal_v1($1) v',[
+   {form:s.fx.formKey,email:'closed-form-public@example.invalid',ticket:[{spot:s.bindings[2].spotId,fields:[]}]}])).rows[0].v;
+ assert.equal(publicOrder.code,1021,'public checkout still rejects a closed form');
+ const reader=randomUUID();
+ await s.db.query('insert into auth.users(id) values($1)',[reader]);
+ await s.db.query('insert into user_info(id,organization) values($1,$2)',[reader,s.f.org]);
+ await s.db.query('insert into occasion_users(occasion,"user",is_editor_order_view) values($1,$2,true)',[s.f.occasion,reader]);
+ await s.db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[reader]);
+ assert.equal((await s.db.query('select analyze_new_order_spots($1) v',[requirements.spotIds])).rows[0].v.order_form,null,
+   'read-only order access does not grant the closed-form override');
+});
 
 test('a changed actor cannot claim the approved seat-order UUID; the original actor can still execute it',options,async t=>{
  const s=await setup(t);await bank(s);
@@ -247,4 +274,18 @@ test('current printed-batch guards reject approved replacement and swap atomical
  await assert.rejects(s.db.query('select swap_spot_tickets_client_sync_v1($1,$2,$3)',[s.first,s.second,randomUUID()]),error=>error.code==='55000');
  await s.db.query('ROLLBACK TO SAVEPOINT legacy_swap_printed');await s.db.query('RELEASE SAVEPOINT legacy_swap_printed');
  assert.deepEqual(await state(s),before,'neither new nor released paths may alter printed ticket allocations, money, history or notices');
+});
+
+test('cash seat replacement preserves the shared quote, snapshot and atomic receipt',options,async t=>{
+ const s=await paidAtomicSwap(t);await s.db.query('RESET ROLE');
+ await s.db.query(`update forms set bank_account=null,data='{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}' where key=$1`,[s.fx.formKey]);
+ await s.db.query('SET LOCAL ROLE authenticated');
+ const input={email:'cash-seat@example.invalid',form_key:s.fx.formKey,client_capabilities:['cash_reservations','no_payment_deadline']};
+ const p=await preview(s,[s.first],input);assert.equal(p.code,200,JSON.stringify(p));
+ assert.equal(p.quote.newOrder.paymentMethod,'cash');assert.equal(p.quote.newOrder.paymentPolicy.mode,'none');
+ const command=randomUUID(),done=await apply(s,p,input,command,true);assert.equal(done.status,'applied',JSON.stringify(done));
+ const replay=await apply(s,p,input,command,true);assert.equal(replay.data.order.id,done.data.order.id);
+ await s.db.query('RESET ROLE');
+ const payment=(await s.db.query('select p.* from eshop.orders o join eshop.payment_info p on p.id=o.payment_info where o.id=$1',[done.data.order.id])).rows[0];
+ assert.equal(payment.payment_method,'cash');assert.equal(payment.bank_account,null);assert.equal(payment.deadline,null);
 });

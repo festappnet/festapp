@@ -120,11 +120,11 @@ BEGIN
 
     -- Recalculate order state
     SELECT CASE
-        WHEN COALESCE(pi.paid, 0) >= new_order_price AND new_order_price > 0 THEN 'paid'
+        WHEN COALESCE(pi.paid, 0)-COALESCE(pi.returned,0) >= new_order_price AND new_order_price > 0 THEN 'paid'
         WHEN new_order_price <= 0 THEN 'paid'
         ELSE 'ordered'
     END INTO new_state
-    FROM (SELECT COALESCE((SELECT paid FROM eshop.payment_info WHERE id=ord.payment_info),0) AS paid) pi;
+    FROM eshop.payment_info pi WHERE pi.id=ord.payment_info;
 
     -- 6. Build the new order_ids.data JSON
     new_data := jsonb_set(
@@ -154,7 +154,7 @@ BEGIN
 
     -- Update payment info
     IF price_delta <> 0 THEN
-        IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=ord.payment_info AND payment_method<>'bank') THEN
+        IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=ord.payment_info AND public.payment_method_is_online_internal(payment_method)) THEN
             RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
         UPDATE eshop.payment_info SET amount = amount + price_delta WHERE id = ord.payment_info;
     END IF;

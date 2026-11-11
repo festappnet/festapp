@@ -22,7 +22,7 @@ export function shouldPrecache(relativePath) {
   // Keep it available online without spending users' offline cache budget.
   if (relativePath === 'assets/packages/venue_seat_picker/assets/layout_fonts/fixtures.json') return false;
   // Marketing demonstrations are streamed, not part of the offline app.
-  if (relativePath.startsWith('napoveda/') || relativePath.startsWith('co-je-nove/_assets/')) return false;
+  if (relativePath.startsWith('organizers-assets/') || relativePath.startsWith('napoveda/') || relativePath.startsWith('co-je-nove/_assets/')) return false;
   if (relativePath.startsWith('organizers/') || relativePath.startsWith('organizers-media/') || /^web-assets\/landing-[^/]+\.js$/.test(relativePath)) return false;
   const name = path.posix.basename(relativePath);
   if (excludedNames.has(name)) return false;
@@ -154,13 +154,20 @@ export async function collectPwaShellManifest(buildDir) {
     url === flutterEntry || url === webClientEntry ||
     // Every lazy web module belongs to the same immutable build. Open forms
     // must still open their seat selector after a newer deployment replaces assets.
-    (url.startsWith('/web-assets/') && /\.(?:js|css)$/.test(url)) ||
+    (url.startsWith('/web-assets/') && /\.(?:js|css|wasm)$/.test(url)) ||
     url.startsWith('/assets/translations/') ||
     standaloneDocumentSet.has(url) ||
     url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||
     /^\/festapp_(?:update_prompt|flutter_bootstrap_guard|pwa_bridge)\.[0-9][0-9A-Za-z.+-]*\.js$/.test(url) ||
     /^\/main\.dart\.(?:[0-9][0-9A-Za-z.+-]*\.)?js_\d+\.part\.js$/.test(url.split('?')[0])));
+  const flutterCoreResources = coreResources.filter(url =>
+    url === flutterEntry || url === flutterMain ||
+    url === '/flutter.js' || url === '/flutter_bootstrap.js' ||
+    /^\/main\.dart\.(?:[0-9][0-9A-Za-z.+-]*\.)?js_\d+\.part\.js$/.test(url.split('?')[0]) ||
+    /^\/festapp_flutter_bootstrap_guard(?:\.[0-9][0-9A-Za-z.+-]*)?\.js$/.test(url));
+  const flutterCoreSet = new Set(flutterCoreResources);
+  const webCoreResources = coreResources.filter(url => !flutterCoreSet.has(url));
   const total = (resources) => resources.reduce(
     (sum, url) => sum + (byUrl.get(url)?.bytes ?? 0), 0);
 
@@ -174,6 +181,10 @@ export async function collectPwaShellManifest(buildDir) {
     webClientEntry,
     standaloneDocuments,
     coreResources,
+    webCoreResources,
+    flutterCoreResources,
+    webCoreBytes: total(webCoreResources),
+    flutterCoreBytes: total(flutterCoreResources),
     knownResources,
     coreBytes: total(coreResources),
     knownBytes: total(knownResources),

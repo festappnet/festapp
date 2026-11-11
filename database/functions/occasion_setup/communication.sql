@@ -12,8 +12,8 @@ BEGIN
  manager:=public.get_is_manager_on_unit(d.unit);
  RETURN jsonb_build_object('canManage',manager,
   'firstEvent',NOT EXISTS(SELECT 1 FROM public.occasions WHERE unit=d.unit),
-  'defaults',jsonb_build_object('replyTo',nullif(btrim(u.data->>'reply_to'),''),
-    'tone',CASE WHEN u.data->>'communication_tone'='informal' THEN 'informal' ELSE 'formal' END,
+  'defaults',jsonb_build_object('walletReady',public.ticket_wallet_ready(u.organization),'replyTo',nullif(btrim(u.data->>'reply_to'),''),
+    'tone',public.resolve_communication_tone(u.data->>'communication_tone'),
     'remindersEnabled',coalesce((u.data->>'is_reminder_enabled')::boolean,true),
     'leadSeconds',coalesce((u.data->>'reminder_interval_seconds')::bigint,86400)),
   'unit',CASE WHEN manager THEN jsonb_build_object('id',u.id,'title',u.title,'data',u.data,'aggregate_version',coalesce(version,0)) ELSE NULL END);

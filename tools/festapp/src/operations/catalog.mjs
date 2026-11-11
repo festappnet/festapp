@@ -1,3 +1,4 @@
+import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeInventoryAssignmentOperation } from './inventory-assignments.mjs';
 import {lifecycleDescriptors,lifecycleDataSchemas,invokeLifecycleOperation} from './lifecycle.mjs';
 import {agendaDescriptors,agendaDataSchemas,invokeAgendaOperation} from './agenda.mjs';
 import {financeDescriptors,financeDataSchemas,invokeFinanceOperation} from './finance.mjs';
@@ -27,6 +28,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { digest } from '../context/profile.mjs';
 import { check, safeError, upstream } from '../errors.mjs';
+import { scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { rasterizePdf, PreviewArtifacts } from './preview.mjs';
 import {
     layoutSaveInput,
@@ -75,6 +77,7 @@ const dataSchemas = {
     ...seatOrderDataSchemas,
     ...seatCancellationDataSchemas,
     ...inventoryAuthoringDataSchemas,
+    ...inventoryAssignmentDataSchemas,
     'occasions.create': occasionCreateResult,
     'access.inspect': accessProjection,
     'context.inspect': z.strictObject({
@@ -82,6 +85,19 @@ const dataSchemas = {
         backend: z.url(),
         enabledOperations: z.array(z.string()),
         writesEnabled: z.boolean(),
+        capabilitySearch: z.strictObject({
+            query: z.string(),
+            authorization: z.literal('checked_when_action_runs'),
+            hasMore: z.boolean(),
+            matches: z.array(z.strictObject({
+                operation: z.string(),
+                tool: z.string(),
+                description: z.string(),
+                serverSupported: z.literal(true),
+                toolEnabled: z.boolean(),
+                requiredScopes: z.array(z.string()),
+            })).max(10),
+        }).optional(),
     }),
     'ticket_layouts.inspect': projection.extend({
         presets: z.record(z.string(), z.unknown()),
@@ -144,7 +160,7 @@ const resultSchema = (id, schema = dataSchemas[id]) =>
             .optional(),
         meta: metaSchema,
     });
-const delegatedDescriptors = [...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
+const delegatedDescriptors = [...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
 const descriptors = [
     ...delegatedDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
@@ -155,8 +171,11 @@ const descriptors = [
         id: 'context.inspect', title: 'Inspect connection capabilities',
         name: 'festapp_context_inspect',
         description:
-            'Inspect the pinned tenant and authenticated ordinary-user identity. No domain changes.',
-        input: z.strictObject({}),
+            'Inspect the pinned tenant and enabled operations. Optionally search implemented server actions using English feature words, an operation ID or tool name. Search includes tools not enabled for this connection and returns their required scopes and existing descriptions. toolEnabled means the tool is exposed, not that the account is authorized for a particular resource; current account rights and consent are checked when the action runs. No domain changes.',
+        input: z.strictObject({
+            query: z.string().trim().min(1).max(160).optional(),
+            limit: z.number().int().min(1).max(10).default(5),
+        }),
         domainReadOnly: true,
     },
     {
@@ -239,7 +258,7 @@ export class Operations {
                         input: descriptor.id === 'orders.list' ? descriptor.input.extend({ search: publicOrderSearch.optional() }) : descriptor.input,
                         output: resultSchema(descriptor.id, publicOrderPage) };
                 if (this.owner.orderSummaryOnly && descriptor.id === 'context.inspect')
-                    return { ...descriptor, description: 'Inspect tenant and read-only capabilities. Does not return the connected user identifier.',
+                    return { ...descriptor, description: descriptor.description + ' Does not return the connected user identifier.',
                         output: resultSchema(descriptor.id, dataSchemas[descriptor.id].omit({ userId: true })) };
                 return { ...descriptor, output: resultSchema(descriptor.id) };
             });
@@ -331,13 +350,29 @@ export class Operations {
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
                 let data;
-                if (id === 'context.inspect')
+                if (id === 'context.inspect') {
                     data = {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
                         writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || delegatedDescriptors.some(d => d.id === id && !d.domainReadOnly)) === true,
                     };
+                    if (args.query) {
+                        const terms = args.query.toLowerCase().split(/\s+/u);
+                        const matches = descriptors.filter(d => scopesForOperation(d.id) && terms.every(term =>
+                            `${d.id} ${d.name} ${d.description}`.toLowerCase().includes(term)));
+                        const enabled = new Map(this.catalog.map(d => [d.id, d]));
+                        data.capabilitySearch = {
+                            query: args.query, authorization: 'checked_when_action_runs',
+                            hasMore: matches.length > args.limit,
+                            matches: matches.slice(0, args.limit).map(d => ({
+                                operation: d.id, tool: d.name, description: enabled.get(d.id)?.description ?? d.description,
+                                serverSupported: true, toolEnabled: enabled.has(d.id),
+                                requiredScopes: scopesForOperation(d.id),
+                            })),
+                        };
+                    }
+                }
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
                 else if (lifecycleDataSchemas[id]) data = await invokeLifecycleOperation(this.owner, client, id, args);
                 else if (agendaDataSchemas[id]) data = await invokeAgendaOperation(this.owner, client, id, args);
@@ -356,6 +391,7 @@ export class Operations {
                 else if (seatSwapDataSchemas[id]) data = await invokeSeatSwapOperation(this.owner, client, id, args);
                 else if (seatHoldDataSchemas[id]) data = await invokeSeatHoldOperation(this.owner, client, id, args);
                 else if (seatDataSchemas[id]) data = await invokeSeatOperation(this.owner, client, id, args);
+                else if (inventoryAssignmentDataSchemas[id]) data = await invokeInventoryAssignmentOperation(this.owner, client, id, args);
                 else if (inventoryAuthoringDataSchemas[id]) data = await invokeInventoryAuthoringOperation(this.owner, client, id, args);
                 else if (inventoryDataSchemas[id]) data = await invokeInventoryOperation(this.owner, client, id, args);
                 else if (productScheduleDataSchemas[id]) data = await invokeProductScheduleOperation(this.owner, client, id, args);
@@ -502,7 +538,7 @@ export class Operations {
                 return { ok: true, operation: id, data, meta };
             });
         } catch (error) {
-            return { ok: false, operation: id, error: safeError(error), meta };
+            return { ok: false, operation: id, error: safeError(error, { operation: id }), meta };
         }
     }
     async readArtifact(uri) {

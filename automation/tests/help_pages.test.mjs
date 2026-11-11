@@ -6,6 +6,23 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'../..');
+test('compiled help owns fresh bundle sitemap and synchronizes unchanged documents',t=>{
+ const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-built-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
+ const put=(file,content)=>{const target=path.join(temporary,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,content);};
+ put('project.conf','WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\n');
+ put('dist/index.html','<html><head><title>Compiled public client</title></head></html>');
+ put('dist/.vite/manifest.json',JSON.stringify({'src/marketing/help.js':{file:'web-assets/help.js'}}));
+ put('dist/web-assets/help.js','/* compiled helper */');put('dist/assets/translations/cs.json','{}');
+ put('bundle/sitemap.xml','<urlset><url><loc>https://vstupenky.online/events</loc></url></urlset>');
+ const render=()=>spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',path.join(temporary,'project.conf'),'--built-index',path.join(temporary,'dist/index.html'),'--output',path.join(temporary,'bundle/napoveda')],{encoding:'utf8'});
+ const first=render();assert.equal(first.status,0,first.stderr);
+ assert.match(fs.readFileSync(path.join(temporary,'bundle/sitemap.xml'),'utf8'),/https:\/\/vstupenky\.online\/napoveda\/zaciname\//);
+ const index=path.join(temporary,'bundle/napoveda/index.html'),mtime=fs.statSync(index).mtimeMs;
+ put('bundle/napoveda/stale.html','retired guide');const repeat=render();assert.equal(repeat.status,0,repeat.stderr);
+ assert.equal(fs.statSync(index).mtimeMs,mtime);assert.equal(fs.existsSync(path.join(temporary,'bundle/napoveda/stale.html')),false);
+ const sitemap=fs.readFileSync(path.join(temporary,'bundle/sitemap.xml'),'utf8');
+ assert.equal(sitemap.split('https://vstupenky.online/napoveda/zaciname/').length-1,1,'one canonical sitemap entry');
+});
 test('public guides render crawlable linked documents, code generator without unpublished plugin downloads',t=>{
  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
  const target=path.join(temporary,'napoveda');const config=path.join(temporary,'project.conf');
@@ -83,6 +100,12 @@ test('public guides render crawlable linked documents, code generator without un
  assert.equal(fs.readdirSync(path.join(target,'assets')).some(name=>name.endsWith('.zip')),false,'plugin ZIP payloads stay out of help; link to the public directory');
  const joomla=fs.readFileSync(path.join(target,'joomla/index.html'),'utf8');assert.match(joomla,/Přístupný název iframe/);assert.match(joomla,/Uložený veřejný odkaz na formulář/);
  const wix=fs.readFileSync(path.join(target,'wix/index.html'),'utf8');assert.match(wix,/Add to Site/);assert.match(wix,/Přístupný název formuláře/);
+ const measurement=fs.readFileSync(path.join(target,'mereni-formularu/index.html'),'utf8');
+ const presetName=measurement.match(/href="\/napoveda\/assets\/(festapp-host-gtm\.[a-f0-9]+\.json)" download/)[1];
+ const presetBytes=fs.readFileSync(path.join(target,'assets',presetName));
+ assert.deepEqual(presetBytes,fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json')),'public download is the validated canonical preset');
+ assert.ok(JSON.parse(presetBytes).containerVersion.tag.every(tag=>tag.paused),'customer imports start paused');
+ assert.ok(embed.includes('/napoveda/mereni-formularu/'),'embed generator guide leads to measurement setup');
  const before=fs.readFileSync(path.join(target,'index.html'));run=render();assert.equal(run.status,0,run.stderr);assert.deepEqual(fs.readFileSync(path.join(target,'index.html')),before);
  const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
  assert.equal(english.status,0,english.stderr);
@@ -101,6 +124,8 @@ test('public guides render crawlable linked documents, code generator without un
    const local=match[1].slice('/napoveda/'.length);assert.ok(fs.existsSync(local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local)),match[1]);
   }
  }
+ const enMeasurement=fs.readFileSync(path.join(target,'form-measurement/index.html'),'utf8');
+ assert.ok(enMeasurement.includes(presetName),'both languages download one canonical preset');
  const refused=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en'],{encoding:'utf8'});
  assert.notEqual(refused.status,0,'English publication requires completed localized evidence');
  assert.ok(fs.existsSync(path.join(target,'index.html')),'invalid invocation does not delete the preview');

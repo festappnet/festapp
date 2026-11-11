@@ -28,6 +28,7 @@ const BANNER_ID = 'festapp-update-banner';
  * run mid-test — we drive checkVersion explicitly via the 'focus' listener.
  */
 function boot({
+    url = 'https://csmostrava.festapp.net/',
     buildVersion = '1.0.0+1',
     locale,
     latestVersion,
@@ -37,6 +38,7 @@ function boot({
     activeWorkerWithoutUpdate = false,
     activeWorkerVersion,
     appReady = false,
+    clientRuntime,
     cutoverVersion,
 } = {}) {
     const navigationErrors = [];
@@ -48,12 +50,13 @@ function boot({
         }
     });
     const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>', {
-        url: 'https://csmostrava.festapp.net/',
+        url,
         runScripts: 'dangerously',
         virtualConsole,
         beforeParse(window) {
             window.__FESTAPP_BUILD_VERSION__ = buildVersion;
             window.__FESTAPP_APP_READY__ = appReady;
+            window.__FESTAPP_CLIENT_RUNTIME__ = clientRuntime;
             if (locale) window.localStorage.setItem('flutter.Locale', JSON.stringify(locale));
             if (cutoverVersion) {
                 window.sessionStorage.setItem('festappCutoverVersion', cutoverVersion);
@@ -69,8 +72,12 @@ function boot({
             };
 
             // Deterministic timers: record calls, never auto-run.
-            window.setTimeout = () => 0;
-            window.setInterval = () => 0;
+            window.__timeouts = [];
+            window.__intervals = [];
+            window.setTimeout = (listener, delay) => {
+                window.__timeouts.push({listener, delay}); return 0;
+            };
+            window.setInterval = listener => { window.__intervals.push(listener); return 0; };
 
             window.__fetchCalls = [];
             window.fetch = async (url) => {
@@ -427,4 +434,112 @@ describe('festapp_update_prompt.js', () => {
         const { window } = boot();
         assert.strictEqual(typeof window.clearLegacyFlutterCaches, 'function');
     });
+});
+
+
+for (const path of ['/form/a', '/form/a?embed=1', '/']) {
+    test(`pristine public web automatically activates a coherent new build without a banner: ${path}`, async t => {
+        const dom = boot({url:`https://csmostrava.festapp.net${path}`, appReady:true,
+            clientRuntime:'web', latestVersion:'2.0.0+2', waitingWorker:true});
+        t.after(() => dom.window.close());
+        dom.window.dispatchEvent(new dom.window.Event(path === '/' ? 'festapp-update-available' : 'focus'));
+        await flush();
+        assert.deepEqual([...dom.window.__skipWaitingMessages], ['SKIP_WAITING']);
+        assert.equal(dom.window.__navigationErrors.length, 1);
+        assert.equal(banner(dom.window), null);
+    });
+}
+
+test('public web draft is left alone when a new version exists', async t => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1', appReady:true,
+        clientRuntime:'web', latestVersion:'2.0.0+2', waitingWorker:true});
+    t.after(() => dom.window.close());
+    dom.window.FestappRuntime.protectDraft();
+    dom.window.dispatchEvent(new dom.window.Event('focus'));
+    await flush();
+    assert.equal(dom.window.__navigationErrors.length, 0);
+    assert.deepEqual([...dom.window.__skipWaitingMessages], []);
+    assert.equal(banner(dom.window), null);
+});
+
+test('typing during worker preparation cancels automatic activation and reload', async t => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a', appReady:true,
+        clientRuntime:'web', latestVersion:'2.0.0+2', waitingWorker:true});
+    t.after(() => dom.window.close());
+    let finish, started;
+    const preparing = new Promise(resolve => { started = resolve; });
+    dom.window.__registration.update = () => { started(); return new Promise(resolve => { finish = resolve; }); };
+    dom.window.dispatchEvent(new dom.window.Event('focus'));
+    await flush();
+    assert.equal(typeof finish, 'function', 'pristine web must prepare the new worker automatically');
+    await preparing;
+    dom.window.FestappRuntime.protectDraft();
+    finish(); await flush();
+    assert.deepEqual([...dom.window.__skipWaitingMessages], []);
+    assert.equal(dom.window.__navigationErrors.length, 0);
+    assert.equal(banner(dom.window), null);
+});
+
+test('ready embed preserves recovery exports but ignores all background update triggers', async () => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1', appReady:true,
+        latestVersion:'2.0.0+2', waitingWorker:true, cutoverVersion:'2.0.0+2'});
+    const win = dom.window;
+    for (const name of ['recoverFestappStartup', 'prepareFestappNetworkReload', 'deepRefreshIfStale',
+        'cutOverToVersion', 'recoverFailedFestappCutover', 'clearLegacyFlutterCaches']) {
+        assert.equal(typeof win[name], 'function', name);
+    }
+    for (const name of ['load', 'focus', 'festapp-app-ready']) win.dispatchEvent(new win.Event(name));
+    win.dispatchEvent(new win.CustomEvent('festapp-update-available', {detail:{version:'2.0.0+2'}}));
+    win.document.dispatchEvent(new win.Event('visibilitychange'));
+    await flush();
+    for (const timer of win.__timeouts.filter(timer => timer.delay === 3000)) timer.listener();
+    for (const listener of win.__intervals) listener();
+    await flush();
+    assert.equal(banner(win), null);
+    assert.deepEqual(win.__fetchCalls, []);
+    assert.deepEqual(win.__skipWaitingMessages, []);
+    assert.equal(win.__navigationErrors.length, 0);
+    assert.equal(win.__festappUnregisterCalls, 0);
+    assert.deepEqual(win.__deletedCaches, []);
+    dom.window.close();
+});
+
+test('embed before ready still cuts over to a waiting build without a banner', async () => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1',
+        latestVersion:'2.0.0+2', waitingWorker:true});
+    const win = dom.window;
+    win.dispatchEvent(new win.Event('focus'));
+    await flush();
+    assert.deepEqual([...win.__skipWaitingMessages], ['SKIP_WAITING']);
+    assert.equal(win.sessionStorage.getItem('festappCutoverVersion'), '2.0.0+2');
+    assert.equal(win.__navigationErrors.length, 1);
+    assert.equal(banner(win), null);
+    dom.window.close();
+});
+
+test('embed never shows a banner, including before ready when cutover is unavailable', async () => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1', latestVersion:'2.0.0+2'});
+    const win = dom.window;
+    win.dispatchEvent(new win.Event('focus'));
+    win.dispatchEvent(new win.CustomEvent('festapp-update-available', {detail:{version:'2.0.0+2'}}));
+    await flush();
+    assert.ok(win.__fetchCalls.length > 0);
+    assert.equal(banner(win), null);
+    dom.window.close();
+});
+
+test('embed that becomes ready during a version fetch ignores the late result', async () => {
+    const dom = boot({url:'https://csmostrava.festapp.net/form/a?embed=1',
+        latestVersion:'2.0.0+2', waitingWorker:true, cutoverVersion:'2.0.0+2'});
+    const win = dom.window;
+    let respond;
+    win.fetch = () => new Promise(resolve => { respond = resolve; });
+    win.dispatchEvent(new win.Event('focus'));
+    win.__FESTAPP_APP_READY__ = true;
+    respond({ok:true, json:async () => ({version:'2.0.0+2'})});
+    await flush();
+    assert.equal(win.__navigationErrors.length, 0);
+    assert.deepEqual(win.__skipWaitingMessages, []);
+    assert.equal(banner(win), null);
+    dom.window.close();
 });

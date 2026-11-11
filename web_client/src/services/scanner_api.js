@@ -17,6 +17,7 @@ export class ScannerApi {
     }
     async open(params) { const r = await this.call('open_scanner_session', params, false); this.session = { ...r.data, server_time: r.server_time }; return this.session; }
     async lookup(symbol) { const r = await this.call('lookup_scanner_ticket', { p_symbol: symbol }); return { ...r.data, settings_revision: r.settings_revision, source: 'online' }; }
+    async lookupTicket(ticketId) { const r = await this.call('lookup_scanner_ticket_by_id', { p_ticket: ticketId }); return { ...r.data, settings_revision: r.settings_revision, source: 'online' }; }
     async search(query, after = 0) { return (await this.call('search_scanner_tickets', { p_query: query, p_after: after })).data; }
     async receipts(ids) { return (await this.call('get_scanner_receipts', { p_operation_ids: ids })).data; }
     async sync(operations) { return (await this.call('sync_scanner_operations', { p_operations: operations })).data; }

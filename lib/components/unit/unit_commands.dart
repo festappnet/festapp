@@ -1,6 +1,7 @@
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/users/unit_user_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/unit_settings_fields.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -9,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract interface class UnitCommands {
   Future<UnitModel> save(UnitModel unit);
   Future<void> saveUser(UnitUserModel user);
+  Future<void> ensureMembership(int unitId, String userId);
   Future<void> deleteUserAccess(int unitId, String userId);
 }
 
@@ -21,6 +23,29 @@ class SupabaseUnitCommands implements UnitCommands {
   final ClientCommandTransport _transport;
 
   @override
+  Future<void> ensureMembership(int unitId, String userId) async {
+    final actor = RightsService.currentUser()?.id;
+    final token = ClientSyncRuntime.mutationContextToken;
+    final response = ClientCommandResponse.from(
+      await _transport.invokeIntent(
+        '$actor:$unitId:unit-membership:$userId',
+        'add_user_to_unit_client_sync_v1',
+        {'p_unit': unitId, 'p_user': userId},
+      ),
+    );
+    if (response.code != 200) {
+      if (response.code == 403) {
+        await RightsService.refreshAfterAuthorizationDenial();
+      }
+      throw StateError('Organizer membership was rejected');
+    }
+    if (actor != RightsService.currentUser()?.id ||
+        !ClientSyncRuntime.isCurrentMutationContext(token)) {
+      throw StateError('Reload organizer members after context change');
+    }
+  }
+
+  @override
   Future<void> saveUser(UnitUserModel user) async {
     final context = RightsService.currentUser()?.id;
     final contextToken = ClientSyncRuntime.mutationContextToken;
@@ -30,12 +55,14 @@ class SupabaseUnitCommands implements UnitCommands {
     final response = ClientCommandResponse.from(
       await _transport.invokeIntent(
         '$context:${user.unit}:unit-user:${user.user}',
-        'save_unit_user_client_sync_v1',
+        'manage_member_access',
         {
-          'p_unit': user.unit,
-          'p_user': user.user,
-          'p_expected_version': user.aggregateVersion,
-          'p_changes': {...changes, 'kind': 'editor'},
+          'p_request': {
+            'scope': {'type': 'unit', 'id': user.unit},
+            'operation': 'save_member', 'communication': 'none',
+            'userId': user.user, 'expectedVersion': user.aggregateVersion,
+            'changes': {...changes, 'kind': 'editor'},
+          },
         },
       ),
     );
@@ -87,8 +114,8 @@ class SupabaseUnitCommands implements UnitCommands {
           'id': id,
           'title': unit.title,
           'settings': {
-            for (final key in ['reply_to', 'communication_tone', 'timezone'])
-              key: unit.data?[key],
+            for (final key in unitSettingsKeys)
+              if (unit.data?.containsKey(key) ?? false) key: unit.data![key],
           },
         },
       }),

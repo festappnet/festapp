@@ -62,7 +62,7 @@ BEGIN
   RAISE check_violation USING MESSAGE='replacement order rejected',DETAIL=created::text; END IF;
  PERFORM public.enqueue_ticket_order_confirmation_v1(p_command,occ,created,coalesce(p_input->>'lang',prepared#>>'{orderDetails,lang}'));
  SELECT * INTO new_order FROM eshop.orders WHERE id=(created#>>'{order,id}')::bigint;
- IF created#>>'{order,payment_info,payment_method}'<>'bank' THEN
+ IF public.payment_method_is_online_internal(created#>>'{order,payment_info,payment_method}') THEN
   RAISE check_violation USING MESSAGE='STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',id,'beforeAmount',(before_orders->id::text->>'amount')::numeric,
   'afterAmount',price,'delta',price-(before_orders->id::text->>'amount')::numeric,'currencyCode',currency_code,
@@ -84,6 +84,7 @@ BEGIN
   'releasedSpotIds',ARRAY(SELECT id FROM unnest(affected) id WHERE NOT id=ANY(ids)),
   'seats',seats,'blueprints',revision,'formKey',details->'form','orders',effects,
   'newOrder',jsonb_build_object('amount',new_order.price::text,'currencyCode',new_order.currency_code,
+   'paymentPolicy',created#>'{order,payment_info,data,payment_policy}',
    'state',new_order.state,'paymentMethod',created#>'{order,payment_info,payment_method}',
    'ticketCount',(SELECT count(DISTINCT ticket) FROM eshop.order_product_ticket WHERE "order"=new_order.id),
    'products',new_products));

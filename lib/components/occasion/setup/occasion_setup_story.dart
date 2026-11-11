@@ -95,8 +95,8 @@ class OccasionSetupStory {
   static bool paymentSetupReady(Map<String, dynamic> data) {
     final config = FormPaymentConfiguration.fromJson(data['payments'] as Map?);
     return data['paymentRepairRequired'] != true &&
-        config.connections.keys.every(paymentConnectors.contains) &&
-        (config.bankEnabled ? paymentAccountReady(data) : config.connections.isNotEmpty);
+        config.connections.keys.every(paymentConnectors.containsHosted) &&
+        (config.cashEnabled || (config.bankEnabled ? paymentAccountReady(data) : config.connections.isNotEmpty));
   }
 
   static bool paymentAccountReady(Map<String, dynamic> data) =>

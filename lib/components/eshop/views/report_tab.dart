@@ -258,7 +258,7 @@ class _ReportTabState extends State<ReportTab> {
       ...report.ticketDays.where((d) => d.count > 0).map((d) => d.day),
       ...report.paymentDays
           .where((d) =>
-              reportMinorUnits(d.received) > BigInt.zero ||
+              reportMinorUnits(d.received) != BigInt.zero ||
               reportMinorUnits(d.returned) > BigInt.zero)
           .map((d) => d.day),
     ]..sort();

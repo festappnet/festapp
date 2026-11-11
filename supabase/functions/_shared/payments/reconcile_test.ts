@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import type { DispatchClaim, PaymentDependencies } from "./contracts.ts";
+import type { DispatchClaim, HostedPaymentDependencies } from "./contracts.ts";
 import { reconcilePayments } from "./reconcile.ts";
 
 function fixture() {
@@ -25,7 +25,7 @@ function fixture() {
       idempotencyKey: "immutable-command-42",
     },
   };
-  const deps: PaymentDependencies = {
+  const deps: HostedPaymentDependencies = {
     livemode: false,
     allowedOrigins: ["https://tickets.example"],
     routes: { payPath: "/payments/pay", returnPath: "/payments/return" },

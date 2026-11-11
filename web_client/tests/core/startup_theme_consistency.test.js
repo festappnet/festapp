@@ -47,11 +47,40 @@ for (const shell of ['web', 'web_client']) {
     }
 }
 
+test('embed canvas follows the host scheme before body/styles regardless of saved app theme', async t => {
+    const html = await readFile(new URL('../../../web_client/index.html', import.meta.url), 'utf8');
+    assert.ok(html.indexOf('id="festapp-runtime-startup"') < html.indexOf('id="festapp-startup-theme"'),
+        'classify the embed before painting the startup theme');
+    for (const hostDark of [false, true]) {
+        const dom = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#232529" data-light-color="#ebf1f6"><meta name="color-scheme" content="light dark"></head></html>',
+            {url:'https://tickets.invalid/form/a?embed=1', runScripts:'outside-only'});
+        t.after(() => dom.window.close());
+        const win = dom.window;
+        win.localStorage.setItem('theme', hostDark ? 'light' : 'dark');
+        win.matchMedia = () => ({matches:hostDark, addEventListener(){}});
+        for (const id of ['festapp-runtime-startup', 'festapp-startup-theme']) {
+            const match = html.match(new RegExp(`<script id="${id}">([\\s\\S]*?)<\\/script>`));
+            win.eval(match[1]);
+        }
+        assert.equal(win.document.documentElement.style.colorScheme, 'light dark');
+        assert.equal(win.document.documentElement.style.backgroundColor, 'transparent');
+        win.__FESTAPP_APP_READY__ = true;
+        win.document.documentElement.dataset.embedTheme = 'host';
+        win.document.documentElement.dataset.embedColorScheme = hostDark ? 'dark' : 'light';
+        win.FestappThemePreference.paintTheme(!hostDark);
+        assert.equal(win.document.body.classList.contains('dark-mode'), hostDark, 'host mode wins over the saved application mode');
+        assert.equal(win.document.documentElement.style.colorScheme, 'light dark',
+            'transparent host-themed content must not regain an opaque browser canvas');
+    }
+});
+
 // Configuration embeds exactly one copy before first-paint metadata consumers.
 test('startup policy generation is deterministic and idempotent for both shells', async t => {
     const root = await mkdtemp(join(tmpdir(), 'festapp-startup-policy-'));
     t.after(() => rm(root, {recursive:true, force:true}));
     await mkdir(join(root, 'web_client/src/services'), {recursive:true});
+    await mkdir(join(root, 'web_client/src/runtime'), {recursive:true});
+    for (const name of ['page_context.js','update_policy.js','worker_shell.js','runtime_state.js']) await writeFile(join(root, 'web_client/src/runtime', name), await readFile(new URL(`../../src/runtime/${name}`, import.meta.url)));
     await mkdir(join(root, 'web'), {recursive:true});
     await writeFile(join(root, 'web_client/src/services/theme_preference.js'), source);
     for (const shell of ['web', 'web_client']) {
@@ -66,4 +95,77 @@ test('startup policy generation is deterministic and idempotent for both shells'
         assert.equal(html.split('id="festapp-startup-theme"').length,2);
         assert.ok(html.indexOf('name="color-scheme"')<html.indexOf('id="festapp-startup-theme"'));
     }
+});
+
+
+for (const shell of ['web', 'web_client']) {
+    test(`${shell} startup keeps compact branding for explicit embed=1`, async () => {
+        const html = await readFile(new URL(`../../../${shell}/index.html`, import.meta.url), 'utf8');
+        for (const query of ['?embed=1', '?embed=true', '']) {
+            const dom = new JSDOM(html, {url:`https://tickets.invalid/form/a${query}`, runScripts:'outside-only'});
+            const {window} = dom;
+            window.matchMedia = () => ({matches:false, addEventListener(){}});
+            window.eval(window.document.getElementById('festapp-runtime-startup').textContent);
+            window.eval(window.document.getElementById('festapp-startup-theme').textContent);
+            window.applyFestappStartupTheme();
+            const embedded = shell === 'web_client' && query === '?embed=1';
+            assert.equal(window.document.documentElement.hasAttribute('data-embed-startup'), embedded);
+            const brand = window.document.querySelector(shell === 'web' ? '.initial-logo' : '.startup-spinner');
+            assert.notEqual(window.getComputedStyle(brand).display, 'none');
+            if (embedded) {
+                assert.equal(window.getComputedStyle(brand).width, '48px');
+                assert.equal(window.getComputedStyle(brand).maxHeight, '48px');
+                const symbol = brand.querySelector('.startup-brand');
+                assert.equal(symbol.getAttribute('src'), '/brand-symbol.svg');
+                assert.equal(window.getComputedStyle(symbol).filter, 'brightness(0)');
+                const loader = shell === 'web' ? 'loader-content' : 'web-client-startup';
+                const rule = [...window.document.styleSheets].flatMap(sheet => [...sheet.cssRules])
+                    .find(rule => rule.selectorText?.endsWith(`html[data-embed-startup] #${loader}`));
+                assert.equal(rule.style.getPropertyValue('background'), 'transparent');
+                assert.equal(rule.style.getPropertyPriority('background'), 'important');
+            }
+            window.close();
+        }
+    });
+}
+
+
+for (const shell of ['web', 'web_client']) {
+    test(`${shell} hides the server-injected SEO summary only in explicit embed context`, async t => {
+        const html = await readFile(new URL(`../../../${shell}/index.html`, import.meta.url), 'utf8');
+        for (const query of ['?embed=1', '?embed=true', '']) {
+            const dom = new JSDOM(html, {url:`https://tickets.invalid/form/a${query}`, runScripts:'outside-only'});
+            t.after(() => dom.window.close());
+            const {window} = dom;
+            // Production HTML receives this public fallback before the app starts.
+            window.document.body.insertAdjacentHTML('afterbegin',
+                '<section id="public-seo-summary"><h1>KUŘÍN 2027 – Přihláška</h1><p>Letní tábor</p><p>3.–17. července 2027</p></section>');
+            window.eval(window.document.getElementById('festapp-runtime-startup').textContent);
+            const summary = window.document.getElementById('public-seo-summary');
+            assert.equal(window.getComputedStyle(summary).display === 'none', shell === 'web_client' && query === '?embed=1');
+            assert.equal(summary.querySelector('h1').textContent, 'KUŘÍN 2027 – Přihláška');
+        }
+    });
+}
+
+test('validated host appearance reveals the embedded startup symbol without enabling form inheritance', async t => {
+    const {EmbedTheme} = await import('../../src/services/embed_theme.js');
+    const dom = new JSDOM('<!doctype html><html data-embed-startup><head><meta name="theme-color" content="#232529" data-light-color="#fff"><meta name="color-scheme" content="light dark"></head><body><img class="startup-brand" src="/loading-animation.svg"></body></html>',
+        {url:'https://tickets.invalid/form/a?embed=1', runScripts:'outside-only'});
+    t.after(() => dom.window.close());
+    const win=dom.window;
+    win.__FESTAPP_CLIENT_RUNTIME__='web';
+    win.matchMedia=()=>({matches:true,addEventListener(){}});
+    win.CSS={supports:()=>true};
+    win.eval(source);
+    const logo=win.document.querySelector('.startup-brand');
+    assert.equal(logo.hasAttribute('data-startup-logo-ready'),false);
+    const theme=new EmbedTheme(win);
+    theme.apply({fontFamily:'sans-serif',text:'#111',background:'#fff',primary:'#000',buttonText:'#fff',colorScheme:'light'});
+    assert.equal(logo.hasAttribute('data-startup-logo-ready'),true);
+    assert.equal(win.document.body.classList.contains('dark-mode'),false);
+    assert.equal(win.document.documentElement.dataset.startupTheme,'light');
+    assert.equal(win.document.documentElement.dataset.embedTheme,undefined);
+    assert.equal(theme.enabled,false);
+    assert.equal(win.document.documentElement.style.backgroundColor,'transparent');
 });

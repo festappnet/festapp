@@ -1,17 +1,11 @@
 import {EmbedBridge} from '../../../src/services/embed_bridge.js';
 import {FormDataLayer} from '../../../src/components/forms/form_datalayer.js';
+import {FormMeasurementSession} from '../../../src/components/forms/form_measurement_session.js';
 import {FormMeasurementRuntime} from '../../../src/components/forms/form_measurement_runtime.js';
-const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,valid_for_seconds:60,organization:1,unit:2,runtime_origin:window.fixtureRuntime};
+const policy={enabled:true,organization_allowed:true,runtime_supported:true,eligible:true,visitor_role:'visitor',privacy_url:'https://organizer.example/privacy',valid_for_seconds:60,organization:1,unit:2,form_link:'test',processing_revision:'rev-a',measurement_protocol:3,runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],runtime_origin:window.fixtureRuntime,approved_hosts:[window.fixtureHost]};
 const model={link:'test',data:{analytics:policy},visibleFields:[]};
-const bridge=new EmbedBridge(); bridge.start();
-const runtime=new FormMeasurementRuntime({model,local:true,campaign:()=>bridge.measurementCampaign || {}}); bridge.setMeasurementRuntime(runtime);
-const layer=new FormDataLayer({model,bridge,entryAllowed:true,session:()=>false});
-window.addEventListener('message',e=>{
- if(e.origin===window.fixtureRuntime && e.source===runtime.frame?.contentWindow && e.data?.nestedReceipt) parent.postMessage(e.data,window.fixtureHost);
- if(e.source!==parent || e.origin!==window.fixtureHost || !e.data?.testCall)return;
- const {id,action}=e.data; let result;
- if(action==='state') result={allowed:bridge.measurementAllowed(),ready:runtime.ready===true,hasFrame:!!runtime.frame,consentUntil:bridge.consentUntil};
- if(action==='view') result=layer.view();
- parent.postMessage({testReply:true,id,result},window.fixtureHost);
-});
+const bridge=new EmbedBridge();bridge.start();
+const runtime=new FormMeasurementRuntime({model,embedded:true,local:true,campaign:()=>bridge.measurementCampaign||{}});bridge.setMeasurementRuntime(runtime);
+let layer;const measurement=new FormMeasurementSession({model,policySource:async()=>policy,consentSource:{connect:(p,n)=>bridge.connectConsent(p,n)},identitySource:{read:()=> 'anonymous',subscribe:()=>()=>{}},transport:bridge,onActive:()=>layer.activate({payload:{}})});layer=new FormDataLayer({model,sink:measurement});measurement.start();
+window.addEventListener('message',e=>{if(e.origin===window.fixtureRuntime && e.source===runtime.frame?.contentWindow && e.data?.nestedReceipt)parent.postMessage(e.data,window.fixtureHost);if(e.source!==parent || e.origin!==window.fixtureHost || !e.data?.testCall)return;const {id,action}=e.data;let result;if(action==='state')result={state:measurement.state,bridgeOrigin:bridge.origin,protocol:bridge.measurementProtocol,manifest:bridge.measurementManifest,ready:runtime.ready===true,hasFrame:!!runtime.frame,instance:runtime.instance,consent:measurement.consent,generation:measurement.generation};if(action==='view')result=layer.view();if(action==='oldCapture')window.oldSend=measurement.capture();if(action==='sendOld')result=window.oldSend?.({event:'form_start'});if(action==='pagehide')window.dispatchEvent(new PageTransitionEvent('pagehide'));if(action==='pageshow')window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));parent.postMessage({testReply:true,id,result},window.fixtureHost)});
 parent.postMessage({testReady:true},window.fixtureHost);

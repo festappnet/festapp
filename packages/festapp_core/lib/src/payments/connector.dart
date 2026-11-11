@@ -2,9 +2,9 @@
 class PaymentConnector {
   const PaymentConnector({
     required this.id,
-    required this.payPath,
-    required this.returnPath,
-    required this.checkoutHost,
+    String? payPath,
+    String? returnPath,
+    String? checkoutHost,
     this.orderConnectionField = 'payment_connection_id',
     this.unavailableReasonField = 'unavailableReason',
     this.legacyAvailability = false,
@@ -15,8 +15,18 @@ class PaymentConnector {
     this.authorizationHost,
     this.authorizationPath,
     this.callbackEndpoint,
-  });
-  final String id, payPath, returnPath, checkoutHost;
+    this.confirmation = PaymentConfirmation.verifiedProviderObservation,
+    this.currencies = const ['CZK', 'EUR', 'PLN', 'USD', 'GBP'],
+  }) : _payPath = payPath, _returnPath = returnPath, _checkoutHost = checkoutHost;
+  final String id;
+  final String? _payPath, _returnPath, _checkoutHost;
+  final PaymentConfirmation confirmation;
+  final List<String> currencies;
+  HostedCheckoutCapability? get hostedCheckout => _payPath == null || _returnPath == null || _checkoutHost == null
+      ? null : HostedCheckoutCapability(_payPath, _returnPath, _checkoutHost);
+  String get payPath => hostedCheckout?.payPath ?? (throw StateError('payment_hosted_checkout_unavailable'));
+  String get returnPath => hostedCheckout?.returnPath ?? (throw StateError('payment_hosted_checkout_unavailable'));
+  String get checkoutHost => hostedCheckout?.checkoutHost ?? (throw StateError('payment_hosted_checkout_unavailable'));
   final String orderConnectionField, unavailableReasonField, labelKey, hintKey;
   final bool legacyAvailability;
   final String? checkoutPath, checkoutGuidParameter;
@@ -35,6 +45,7 @@ class PaymentConnector {
   }
 
   Uri checkoutUri(String value) {
+    if (hostedCheckout == null) throw StateError('payment_hosted_checkout_unavailable');
     final uri = Uri.parse(value);
     if (uri.scheme != 'https' ||
         uri.host != checkoutHost ||
@@ -55,4 +66,11 @@ class PaymentConnector {
     }
     return uri;
   }
+}
+
+/// The server still authorizes every capability per order/account/currency.
+enum PaymentConfirmation { localCommit, bankEvent, verifiedProviderObservation }
+class HostedCheckoutCapability {
+  const HostedCheckoutCapability(this.payPath, this.returnPath, this.checkoutHost);
+  final String payPath, returnPath, checkoutHost;
 }

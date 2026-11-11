@@ -26,8 +26,6 @@ DECLARE
   v_reconciliation   jsonb;
   v_occasion_features jsonb;
   v_form_settings     jsonb;
-  v_deadline_duration_seconds bigint;
-  v_new_deadline      timestamptz;
   v_current_products_for_compare jsonb;
 BEGIN
   PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=p_ticket_id));
@@ -50,7 +48,7 @@ BEGIN
 
   PERFORM public.check_ticket_is_mutable(p_ticket_id);
   PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[p_ticket_id]);
-  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND payment_method<>'bank') THEN
+  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND public.payment_method_is_online_internal(payment_method)) THEN
     RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
 
   /* Check for negative prices in the input */
@@ -195,23 +193,7 @@ BEGIN
   v_reconciliation := public.reconcile_order_payment_internal_v1(v_order_id,'product_edit');
   SELECT price INTO v_price FROM eshop.orders WHERE id=v_order_id;
 
-  IF v_price > 0 THEN
-    -- If there's a balance due, set/update the payment deadline.
-    SELECT elem INTO v_form_settings
-    FROM jsonb_array_elements(v_occasion_features) AS elem
-    WHERE elem->>'code' = 'form';
-
-    v_deadline_duration_seconds := COALESCE(
-        (v_form_settings->>'deadline_duration_seconds')::bigint,
-        604800 -- Default to 7 days (604800 seconds) if not specified
-    );
-
-    v_new_deadline := now() + make_interval(secs => v_deadline_duration_seconds);
-    PERFORM public.set_payment_deadline(v_payment_info_id, v_new_deadline);
-  ELSE
-    -- If the order is free or paid off, clear the payment deadline.
-    PERFORM public.set_payment_deadline(v_payment_info_id, NULL);
-  END IF;
+  PERFORM public.refresh_order_payment_deadline_internal(v_order_id);
 
   PERFORM public.apply_allocations(v_order_id);
 

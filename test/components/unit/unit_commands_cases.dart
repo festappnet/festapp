@@ -10,6 +10,19 @@ import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
+  test('existing unit member joins through the retry-safe command', () async {
+    final commands = SupabaseUnitCommands.withTransport(
+      ClientCommandTransport((name, params) async {
+        expect(name, 'add_user_to_unit_client_sync_v1');
+        expect(params['p_unit'], 4);
+        expect(params['p_user'], '00000000-0000-0000-0000-000000000002');
+        expect(params['p_command_id'], isNotEmpty);
+        return commandResponseFixture(params['p_command_id'] as String);
+      }, maxAttempts: 1),
+    );
+    await commands.ensureMembership(4, '00000000-0000-0000-0000-000000000002');
+  });
+
   test('unit save carries the unit-scoped aggregate version', () async {
     late String functionName;
     late Map<String, dynamic> parameters;
@@ -47,18 +60,63 @@ void main() {
     expect(saved.aggregateVersion, 3);
     final payload = parameters['p_unit_data'] as Map;
     expect(payload.containsKey('data'), isFalse);
-    expect(payload['settings'], {
-      'reply_to': 'reply@example.invalid',
-      'communication_tone': null,
-      'timezone': null,
-    });
+    expect(payload['settings'], {'reply_to': 'reply@example.invalid'});
   });
+
+  test(
+    'unit save sends organizer measurement settings that are present',
+    () async {
+      late Map<String, dynamic> parameters;
+      final commands = SupabaseUnitCommands.withTransport(
+        ClientCommandTransport((name, params) async {
+          parameters = params;
+          return commandResponseFixture(
+            params['p_command_id'] as String,
+            data: {
+              'version': 3,
+              'unit': {
+                'id': 4,
+                'title': 'Unit',
+                'data': <String, dynamic>{},
+                'aggregate_version': 3,
+              },
+            },
+          );
+        }, maxAttempts: 1),
+      );
+
+      await commands.save(
+        UnitModel(
+          id: 4,
+          title: 'Unit',
+          data: {
+            'measurement_enabled': true,
+            'measurement_gtm_container': 'GTM-ABCD1234',
+            'measurement_privacy_url': 'https://example.invalid/privacy',
+            'measurement_consent_title': null,
+          },
+          aggregateVersion: 2,
+        ),
+      );
+
+      final settings = (parameters['p_unit_data'] as Map)['settings'] as Map;
+      expect(settings['measurement_enabled'], isTrue);
+      expect(settings['measurement_gtm_container'], 'GTM-ABCD1234');
+      expect(
+        settings['measurement_privacy_url'],
+        'https://example.invalid/privacy',
+      );
+      expect(settings.containsKey('measurement_consent_title'), isTrue);
+      expect(settings['measurement_consent_title'], isNull);
+      expect(settings.containsKey('measurement_scripts'), isFalse);
+    },
+  );
 
   test('unit user grid save carries original version and accepts confirmed identity', () async {
     late Map<String, dynamic> parameters;
     final commands = SupabaseUnitCommands.withTransport(
       ClientCommandTransport((name, params) async {
-        expect(name, 'save_unit_user_client_sync_v1');
+        expect(name, 'manage_member_access');
         parameters = params;
         return commandResponseFixture(
           params['p_command_id'] as String,
@@ -76,9 +134,10 @@ void main() {
       isManager: false,
     );
     await commands.saveUser(user);
-    expect(parameters['p_expected_version'], 3);
-    expect((parameters['p_changes'] as Map)['kind'], 'editor');
-    expect((parameters['p_changes'] as Map).containsKey('unit'), isFalse);
+    final request = parameters['p_request'] as Map;
+    expect(request['expectedVersion'], 3);
+    expect((request['changes'] as Map)['kind'], 'editor');
+    expect((request['changes'] as Map).containsKey('unit'), isFalse);
     expect(user.aggregateVersion, 4);
     expect(user.user, '00000000-0000-0000-0000-000000000002');
   });

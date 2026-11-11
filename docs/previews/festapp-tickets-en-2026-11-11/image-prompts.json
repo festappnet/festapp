@@ -1,0 +1,12 @@
+[
+  {
+    "target": "classic-ball-en.png",
+    "source": "crowd-medium.png",
+    "prompt": "Edit this illustration for an English ticketing website. Preserve the exact blue and near-black rough ink / linocut illustration language, broad composition and aspect ratio. Keep a formally dressed man left and woman right seen over their shoulders holding and pointing to a paper seating plan in the foreground. Replace the modest Czech community hall in the background with a classic elegant European ballroom: high ceilings, graceful chandeliers, restrained historic architectural moldings, round banquet tables with white cloths around a central dance floor, guests in tuxedos and flowing evening gowns waltzing, small orchestra in the distance. Lively but tasteful, welcoming rather than palatial excess. Make the foreground plan match the ballroom: 12 clearly numbered round tables, chairs, central dance floor, stage at the top. All lettering ENGLISH only: STAGE and DANCE FLOOR, table numbers 1-12. No other text. Keep the tactile coarse blue print, expressive confident ink strokes and dark navy edges, not photorealistic."
+  },
+  {
+    "target": "hamlet-ticket-en.png",
+    "source": "revised-ticket.png",
+    "prompt": "Edit only the printed guest and seating text of this blue ink Hamlet ticket illustration to English. Replace Jana Nováková with Emma Wilson. Replace Řada 4 · sedadlo 12 with Row 4 · Seat 12. Preserve HAMLET and William Shakespeare, all artwork, hands, two fanned paper tickets, blue and near-black coarse print texture, proportions, composition, perforation, QR and identifier K7M9R2VX6P. English text only. Do not add anything else."
+  }
+]

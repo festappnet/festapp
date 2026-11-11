@@ -42,8 +42,7 @@ class WaitlistCommands {
   Future<CustomerOrderOverview> overview(CustomerOrderScope scope) async =>
       CustomerOrderOverview(Map<String, dynamic>.from(
           await client.rpc('get_customer_order_overview', params: {
-        'p_token': scope.token,
-        'p_order_id': scope.orderId,
+        'input_data': {'token': scope.token, 'order_id': scope.orderId, 'client_capabilities': ['cash_reservations', 'no_payment_deadline']},
       })));
 
   Future<String> adminOverviewUrl(int orderId) async {

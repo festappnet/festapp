@@ -1,3 +1,4 @@
+import './startup/consent_link_prepare.js';
 import { isEmbed, applyEmbedContext } from './services/embed_context.js';
 import './embed.css';
 import { handleHelpAction } from './startup/help_action.js';
@@ -19,11 +20,23 @@ import { FeedbackFab } from './components/feedback/feedback_fab.js';
 import { ImageLoader } from './utils/image_loader.js';
 import { initializeCoreServices } from './startup/initialize_core_services.js';
 import { resolveScannerRoute } from './services/scanner_routes.js';
+import { publicFormLocation } from './utils/public_form_location.js';
+import { earlyFormLoad } from './startup/early_form_load.js';
+import { DbForms } from './components/forms/db_forms.js';
 
 class Main {
     static async init() {
         try {
             ThemeService.init();
+            // Vite also preloads the chunk's CSS. Failure leaves routing's normal retry.
+            if (/^\/form\/[^/]+\/?$/.test(window.location.pathname)) RouterService.preloadForm().catch(() => {});
+            if (window.location.pathname === '/wallet') {
+                await LocalizationService.init();
+                await RouterService.handleInitialLoad();
+                RouterService.initPopStateListener();
+                window.markFestappAppReady?.();
+                return;
+            }
             // A prepared scanner must mount its local shell before optional
             // account refresh or rights startup can require network access.
             const scannerRoute = resolveScannerRoute(RouterService.normalizeUrl(window.location.href));
@@ -42,7 +55,9 @@ class Main {
                 rightsService: RightsService,
                 // Content pages need account context without a later router fetch.
                 isAppSupported: AppConfig.isAppSupported && document.body.dataset.page !== 'organizers',
-                publicEmbed: isEmbed(),
+                // FormPage owns its scoped rights; public forms do not need catalogue context.
+                deferAppContext: isEmbed() || publicFormLocation(window.location, {entry: true}),
+                onBackendReady: () => earlyFormLoad.start({win: window, service: SupabaseService, load: link => DbForms.getFormByLink(link)}),
             });
             ImageLoader.init(); // Initialize Image Loader
 

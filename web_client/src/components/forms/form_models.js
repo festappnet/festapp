@@ -1,3 +1,4 @@
+import { resolveCommunicationTone } from '../../../../supabase/functions/_shared/communicationTone.ts';
 import { parseOrganizationIdentity } from './organization_identity.js';
 
 export class FormStatsModel {
@@ -133,6 +134,7 @@ export class FormModel {
         this.key = data.key;
         this.occasionTitle = data.occasion?.title || null;
         this.occasionId = data.occasion; // Occasion ID might come as integer or object depending on query
+        this.occasionTitle = data.occasion?.title;
         this.blueprint = data.blueprint;
         this.type = data.type;
         this.bankAccountId = data.bank_account;
@@ -289,7 +291,7 @@ export class FormModel {
     }
     
     get communicationTone() {
-        return this.data[FormModel.metaCommunicationTone];
+        return resolveCommunicationTone(this.data[FormModel.metaCommunicationTone]);
     }
 
     _parseColor(value) {

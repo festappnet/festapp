@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the forward admin deletion/context correction; leave published history intact."""
+import migration_inputs
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = [
@@ -11,6 +12,6 @@ SOURCES = [
 TARGET = ROOT / 'supabase/migrations/20261014000000_waitlist_admin_delete.sql'
 content = '-- Scoped admin deletion of waiting orders and safe active waitlist labels.\n'
 for source in SOURCES:
-    content += '\n-- Source: ' + source + '\n' + (ROOT / source).read_text() + '\n'
-TARGET.write_text(content.rstrip() + '\n')
+    content += '\n-- Source: ' + source + '\n' + migration_inputs.read_text(ROOT / source) + '\n'
+migration_inputs.write_text(TARGET, content.rstrip() + '\n')
 print('Waitlist admin-delete forward migration assembled')

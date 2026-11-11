@@ -1,3 +1,4 @@
+import {measurementProtocol} from '../../src/components/forms/form_measurement_contract.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -24,6 +25,28 @@ function host(nativePrice = false, configure = () => {}) {
 test('explicit form URL context only', () => {
     for (const [url, expected] of [['https://t.invalid/form/a?embed=1&preview=true', true], ['https://t.invalid/form/a?embed=true', false], ['https://t.invalid/admin?embed=1', false], ['https://t.invalid/form/?embed=1', false]]) assert.equal(isEmbed(new URL(url)), expected);
 });
+test('parent matches the default iframe canvas to the host before starting the child handshake', t => {
+    const {dom,frames,sent}=host();
+    t.after(()=>dom.window.close());
+    for(const [index,frame] of frames.entries()) {
+        assert.equal(frame.style.colorScheme,'light');
+        assert.equal(sent[index][0][0].theme.colorScheme,'light');
+        assert.equal(sent[index][0][0].type,'init');
+    }
+});
+test('parent exports an explicitly declared host scheme', t => {
+    const {dom,frames}=host(false,win=>{
+        const frames=win.document.querySelectorAll('iframe');
+        for (const [index,frame] of [...frames].entries()) {
+            const wrapper=win.document.createElement('section');
+            wrapper.style.colorScheme=index===0?'light':'dark';
+            frame.replaceWith(wrapper); wrapper.append(frame);
+        }
+    });
+    t.after(()=>dom.window.close());
+    assert.equal(frames[0].style.colorScheme,'light');
+    assert.equal(frames[1].style.colorScheme,'dark');
+});
 test('parent isolates two instances, rejects invalid source/origin/payload, and is idempotent', () => {
     const { dom, frames: [a,b], sent, message } = host();
     const id = sent[0][0][0].instance;
@@ -34,9 +57,9 @@ test('parent isolates two instances, rejects invalid source/origin/payload, and 
     message(a, 'https://tickets.invalid', envelope('resize', id, {height: 400}), b.contentWindow);
     message(a, 'https://tickets.invalid', {...envelope('resize', id, {height: 400}), protocol: 2});
     message(a, 'https://tickets.invalid', envelope('resize', 'other', {height: 400}));
-    assert.equal(a.style.height, '');
+    assert.equal(a.style.height, '120px');
     message(a, 'https://tickets.invalid', envelope('resize', id, {height: 1240}));
-    assert.equal(a.style.height, '1240px'); assert.equal(b.style.height, '');
+    assert.equal(a.style.height, '1240px'); assert.equal(b.style.height, '120px');
     dom.window.eval(hostScript);
     const before = sent[0].length;
     message(a, 'https://tickets.invalid', envelope('ready'));
@@ -160,7 +183,7 @@ test('host supplies appearance and explicit mode independently of fixed height',
     assert.equal(theme.buttonText, 'rgb(250, 249, 245)');
     assert.ok(sent[1][0][0].theme);
     message(frame, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height:1500}));
-    assert.equal(frame.style.height, '');
+    assert.equal(frame.style.height, '120px');
     frame.dataset.festappStyle = 'default';
     message(frame, 'https://tickets.invalid', envelope('ready'));
     assert.equal(Object.hasOwn(sent[0].at(-1)[0], 'inheritStyle'), false);
@@ -170,7 +193,7 @@ test('host supplies appearance and explicit mode independently of fixed height',
     assert.equal(sent[0].at(-1)[0].styleMode,undefined);
     assert.equal(sent[0].findLast(([data])=>data.theme)?.[0].theme.fontFamily, theme.fontFamily);
     assert.ok(sent[1].at(-1)[0].theme);
-    assert.equal(other.style.height, '');
+    assert.equal(other.style.height, '120px');
     dom.window.close();
 });
 
@@ -463,38 +486,78 @@ test('new child uses one native reveal with a legacy host for end and nearest al
     }
 });
 
-test('host consent is bound to origin, source, instance and lease; revocation fences delayed events', () => {
- const {dom,frames:[a,b],sent,message}=host();
- const instance=sent[0][0][0].instance;
- a.setAttribute('data-festapp-datalayer','');
- const payload={event:'page_view',user_data:{email:'private'},token:'private'};
- const emit=(extra={},origin='https://tickets.invalid',source=a.contentWindow)=>message(a,origin,envelope('analytics',instance,{payload,...extra}),source);
- emit();assert.equal(dom.window.dataLayer,undefined);
- dom.window.FestappEmbed.setMeasurementConsent(a,true);
- const consentId=sent[0].at(-1)[0].consentId;
- emit({consentId,instance:'wrong'});emit({consentId,protocol:2});emit({consentId},'https://evil.invalid');emit({consentId},'https://tickets.invalid',b.contentWindow);emit({consentId:'old'});
- assert.equal(dom.window.dataLayer,undefined);
- emit({consentId});assert.deepEqual(JSON.parse(JSON.stringify(dom.window.dataLayer)),[{event:'page_view'}]);
- dom.window.FestappEmbed.setMeasurementConsent(a,false);emit({consentId});assert.equal(dom.window.dataLayer.length,1);
- dom.window.FestappEmbed.setMeasurementConsent(a,true,0);emit({consentId:sent[0].at(-1)[0].consentId});assert.equal(dom.window.dataLayer.length,1);
- dom.window.FestappEmbed.setMeasurementConsent(a,true);const next=sent[0].at(-1)[0].consentId;emit({consentId});assert.equal(dom.window.dataLayer.length,1);
- emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);a.removeAttribute('data-festapp-datalayer');emit({consentId:next});assert.equal(dom.window.dataLayer.length,2);
- dom.window.close();
+const measurement={measurement_protocol:measurementProtocol,organization:1,unit:2,form_link:'summer',processing_revision:'a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing']};
+const plain=value=>JSON.parse(JSON.stringify(value));
+function measurementHost() {
+ const f=host(),{dom,frames:[frame],sent,message}=f;
+ Object.defineProperty(dom.window.document,'hidden',{value:false,configurable:true});
+ frame.setAttribute('data-festapp-datalayer','');const instance=sent[0][0][0].instance;
+ const send=(type,values={},origin='https://tickets.invalid',source=frame.contentWindow)=>message(frame,origin,envelope(type,instance,values),source);
+ send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:measurement}});
+ return {...f,frame,instance,send,last:()=>sent[0].at(-1)[0]};
+}
+test('a helper alone measures: lease without a CMP, setters and Klaro only pass the choice on',()=>{
+ const f=measurementHost();const {dom,frame,send,last}=f;let watcher;
+ const leaseId=last().measurement.leaseId;assert.ok(leaseId,'no CMP is needed for a lease');
+ assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});
+ send('analytics',{payload:{event:'page_view'}});assert.equal(dom.window.dataLayer,undefined,'protocol 1 event stays rejected');
+ dom.window.FestappEmbed.setMeasurementConsent(frame,{analytics:true,marketing:true});
+ assert.deepEqual(plain(last().measurement.consent),{analytics:true,marketing:true});assert.equal(last().measurement.leaseId,leaseId);
+ dom.window.FestappEmbed.setMeasurementConsent(frame,false);
+ assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});assert.equal(last().measurement.leaseId,leaseId,'refusal keeps measuring');
+ const manager={confirmed:true,savedConsents:{analytics:true,marketing:true},getConsent:()=>true,watch:w=>watcher=w,unwatch(){}};
+ const stop=dom.window.FestappEmbed.connectKlaro(frame,manager);watcher.update();
+ assert.deepEqual(plain(last().measurement.consent),{analytics:true,marketing:true});stop();dom.window.close();
+});
+test('lease binds instance and generation; a revoked choice does not stop host events',()=>{
+ const f=measurementHost(),{dom,frame,send,last}=f;let choice={processingRevision:'a',analytics:true,marketing:true},notify;
+ const source={read:context=>{assert.equal(context.processingRevision,'a');return choice;},subscribe:fn=>{notify=fn;return ()=>{};}};
+ const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,source);const leaseId=last().measurement.leaseId;assert.ok(leaseId);
+ const measurementEnvelope=()=>({protocol:measurementProtocol,manifest:measurement,generation:7,leaseId});
+ const emit=(m=measurementEnvelope(),origin,source)=>send('analytics',{measurement:m,payload:{event:'page_view'}},origin,source);
+ emit();assert.equal(dom.window.dataLayer,undefined,'activate handshake required');
+ send('measurement-activate',{measurement:measurementEnvelope()});emit();assert.equal(dom.window.dataLayer.filter(p=>p.event).length,1);
+ emit({...measurementEnvelope(),generation:6});emit({...measurementEnvelope(),leaseId:'stale'});emit(measurementEnvelope(),'https://evil.invalid');emit(measurementEnvelope(),undefined,{});
+ assert.equal(dom.window.dataLayer.filter(p=>p.event).length,1);
+ choice=null;notify();assert.equal(last().measurement.leaseId,leaseId);assert.deepEqual(plain(last().measurement.consent),{analytics:false,marketing:false});
+ emit();assert.equal(dom.window.dataLayer.filter(p=>p.event).length,2,'consent state never gates the event');
+ choice={...choice,processingRevision:'b'};
+ disconnect();emit();assert.equal(dom.window.dataLayer.filter(p=>p.event).length,3);dom.window.close();
+});
+test('unreadable, partial or stale-revision source keeps the lease and reports the real choice',()=>{
+ for(const [choice,consent] of [[null,{analytics:false,marketing:false}],[{processingRevision:'a',analytics:true},{analytics:true,marketing:false}],[{processingRevision:'b',analytics:true,marketing:true},{analytics:false,marketing:false}]]){
+  const f=measurementHost();const disconnect=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>choice,subscribe:()=>()=>{}});
+  assert.ok(f.last().measurement.leaseId);assert.deepEqual(plain(f.last().measurement.consent),consent);disconnect();f.dom.window.close();
+ }
+});
+test('host dataLayer receives the contact only on conversions and clears it afterwards',()=>{
+ const f=measurementHost();
+ const m={protocol:measurementProtocol,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};f.send('measurement-activate',{measurement:m});
+ f.send('analytics',{measurement:m,payload:{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist',user_data:{email:'buyer@example.test',phone_number:'+420601234567',first_name:'PRIVATE'}}});
+ f.send('analytics',{measurement:m,payload:{event:'page_view',user_data:{email:'buyer2@example.test'}}});
+ const layer=f.dom.window.dataLayer;
+ assert.deepEqual(plain(layer.find(p=>p.event==='generate_lead').user_data),{email:'buyer@example.test',phone_number:'+420601234567'});
+ assert.equal(layer.find(p=>p.event==='form_page_view').user_data,undefined);
+ assert.deepEqual(plain(layer[layer.findIndex(p=>p.event==='generate_lead')+1]),{user_data:null,form_embedded:false});assert.doesNotMatch(JSON.stringify(layer),/PRIVATE|buyer2/);f.dom.window.close();
 });
 
-test('child discards pre-consent payloads, checks pinned messages and strips contacts after consent',()=>{
+function child(){
  const dom=new JSDOM('<body></body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
  const win=dom.window;globalThis.document=win.document;globalThis.window=win;
- const sent=[];const parent={postMessage:(...args)=>sent.push(args)};
+ const sent=[],calls=[];const parent={postMessage:(...args)=>sent.push(args)};
  Object.defineProperty(win,'parent',{value:parent});win.ResizeObserver=class{observe(){}disconnect(){}};
- const bridge=new EmbedBridge(win);bridge.start();bridge.track({event:'page_view'});
- const init=(data={},source=parent,origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope('init','one',{viewportHeight:600,dataLayer:true,...data})}));
- init();bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,0);
- init({consentId:'lease',consentUntil:Date.now()+60000});bridge.track({event:'page_view',user_data:{email:'private'}});
- assert.deepEqual(sent.filter(([d])=>d.type==='analytics').map(([d])=>d.payload),[{event:'page_view'}]);
- init({consentId:'fake',consentUntil:Date.now()+60000},{},'https://evil.invalid');assert.equal(bridge.consentId,'lease');
- init({consentId:null});bridge.track({event:'page_view'});assert.equal(sent.filter(([d])=>d.type==='analytics').length,1);
- bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;
+ const bridge=new EmbedBridge(win);bridge.start();
+ const runtime={setConsent:value=>calls.push(value),start:()=>calls.push('start'),stop:()=>calls.push('stop'),revokeMeasurement(){},measurementAllowed:()=>false,track:()=>false};
+ bridge.setMeasurementRuntime(runtime);
+ const init=(data={},source=parent,origin='https://host.invalid')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:envelope('init','one',{viewportHeight:600,...data})}));
+ return{dom,win,sent,calls,bridge,init,done(){bridge.destroy();dom.window.close();delete globalThis.window;delete globalThis.document;}};
+}
+
+test('layout handshake, legacy consent and absent helper never start Unit code',async()=>{
+ const f=child();f.init({consent:{analytics:true,marketing:true}});assert.equal(f.calls.includes('start'),false);assert.equal(f.bridge.selection(),null);
+ f.init({measurementProtocol,dataLayer:true});assert.equal(f.bridge.selection(),'host');assert.equal(f.bridge.track({event:'page_view'}),false);
+ f.done();
+ const absent=child();assert.equal(absent.bridge.selection(),null);assert.equal(absent.calls.includes('start'),false);absent.done();
 });
 
 test('host refreshes changed appearance while scroll messages omit presentation', async () => {
@@ -684,4 +747,283 @@ test('saved form preference overrides hostile legacy markup in either loading or
             assert.equal(root.dataset.embedTheme,!formEnabled?'host':undefined,'later form load applies its saved choice');
         } finally { bridge.destroy();win.close();Object.assign(globalThis,previous); }
     }
+});
+
+test('heartbeat keeps the lease and rereads the source; hiding the page changes nothing',()=>{
+ let heartbeat;const f=host(false,win=>{Object.defineProperty(win.document,'hidden',{value:true,configurable:true});win.setInterval=callback=>{heartbeat=callback;return 1;};win.clearInterval=()=>{};});
+ const {dom,frames:[frame],sent,message}=f;const instance=sent[0][0][0].instance;
+ const context=manifest=>message(frame,'https://tickets.invalid',envelope('measurement-context',instance,{measurement:{protocol:measurementProtocol,manifest}}),frame.contentWindow);
+ context(measurement);let choice={processingRevision:'a',analytics:true,marketing:true},reads=0;
+ const disconnect=dom.window.FestappEmbed.connectMeasurementConsent(frame,{read:()=>{reads++;return choice;},subscribe:()=>()=>{}});
+ const lease=sent[0].at(-1)[0].measurement.leaseId;assert.ok(lease,'a hidden page still measures');
+ const before=reads;heartbeat();assert.ok(reads>before);assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);
+ dom.window.document.dispatchEvent(new dom.window.Event('visibilitychange'));assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);
+ const layout=reads;dom.window.dispatchEvent(new dom.window.Event('scroll'));assert.equal(reads,layout,'layout does not read the choice');
+ choice=null;heartbeat();assert.equal(sent[0].at(-1)[0].measurement.leaseId,lease);assert.deepEqual(plain(sent[0].at(-1)[0].measurement.consent),{analytics:false,marketing:false});
+ context({...measurement,processing_revision:'b'});assert.notEqual(sent[0].at(-1)[0].measurement.leaseId,lease,'a new revision gets a new lease');
+ disconnect();const disconnectedReads=reads;heartbeat();assert.equal(reads,disconnectedReads,'disconnected source is never reread');dom.window.close();
+});
+
+const deniedChoice={analytics:false,marketing:false};
+test('cutover: replacing or losing a choice source never reveals an older grant',()=>{
+ const f=measurementHost();try{
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,{analytics:true,marketing:true});
+  const stop=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'a',...deniedChoice}),subscribe:()=>()=>{}});
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+  const lease=f.last().measurement.leaseId;stop();stop();
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);assert.equal(f.last().measurement.leaseId,lease);
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,true);
+  f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>true,subscribe(){throw Error('unavailable');}});
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+ }finally{f.dom.window.close();}
+});
+test('cutover: legacy choice is scoped and an old disposer cannot clear its replacement',()=>{
+ const f=measurementHost();try{
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,{analytics:true,marketing:true});
+  f.send('measurement-context',{measurement:{protocol:measurementProtocol,manifest:{...measurement,processing_revision:'b'}}});
+  assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+  let staleNotify;
+  const old=f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'b',...deniedChoice}),subscribe:fn=>{staleNotify=fn;return()=>{};}});
+  f.dom.window.FestappEmbed.connectMeasurementConsent(f.frame,{read:()=>({processingRevision:'b',analytics:true,marketing:false}),subscribe:()=>()=>{}});
+  old();staleNotify();
+  assert.deepEqual(plain(f.last().measurement.consent),{analytics:true,marketing:false});
+ }finally{f.dom.window.close();}
+});
+test('cutover: record owns Klaro subscription and ignores retired watcher updates',async()=>{
+ const f=measurementHost();let watcher,unwatched=0;try{
+  const manager={confirmed:true,savedConsents:{analytics:true,marketing:true},getConsent:()=>true,watch:w=>{watcher=w;},unwatch(){unwatched++;}};
+  const stop=f.dom.window.FestappEmbed.connectKlaro(f.frame,manager);
+  f.dom.window.FestappEmbed.setMeasurementConsent(f.frame,false);
+  assert.equal(unwatched,1);watcher.update();assert.deepEqual(plain(f.last().measurement.consent),deniedChoice);
+  stop();assert.equal(unwatched,1);
+ }finally{f.dom.window.close();}
+});
+test('cutover: retired record heartbeat is removed on origin replacement and pagehide',async()=>{
+ const timers=new Map(),polls=new Map();let n=0;
+ const f=host(false,win=>{win.setInterval=(fn,delay)=>{(delay===1000?polls:timers).set(++n,fn);return n;};win.clearInterval=id=>{timers.delete(id);polls.delete(id);};});
+ const frame=f.frames[0],instance=f.sent[0][0][0].instance;
+ const context=(id=instance,origin='https://tickets.invalid')=>f.message(frame,origin,envelope('measurement-context',id,{measurement:{protocol:measurementProtocol,manifest:measurement}}));
+ try{
+  context();assert.equal(timers.size,1);const retired=[...timers.values()][0];
+  frame.src='https://new.invalid/form/b?embed=1';await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(timers.size,0);const before=f.sent[0].length;retired();assert.equal(f.sent[0].length,before);
+  frame.contentWindow.postMessage=(...args)=>f.sent[0].push(args);
+  f.message(frame,'https://new.invalid',envelope('ready'));
+  const next=f.sent[0].at(-1)[0].instance;context(next,'https://new.invalid');assert.equal(timers.size,1);
+  f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pagehide',{persisted:true}));assert.equal(timers.size,0);
+  f.dom.window.dispatchEvent(new f.dom.window.PageTransitionEvent('pageshow',{persisted:true}));assert.equal(timers.size,1);
+  frame.remove();await new Promise(resolve=>setImmediate(resolve));assert.equal(timers.size,0);
+  assert.equal(polls.size,0,'consent polling stops with the last embed');
+ }finally{f.dom.window.close();}
+});
+
+test('cutover: pre-context setter binds once and two frames keep independent scopes',()=>{
+ const f=host();const [a,b]=f.frames;try{
+  f.dom.window.FestappEmbed.setMeasurementConsent(a,true);
+  f.dom.window.FestappEmbed.setMeasurementConsent(b,{analytics:true,marketing:true});
+  const context=(frame,index,manifest)=>f.message(frame,new URL(frame.src).origin,envelope('measurement-context',f.sent[index][0][0].instance,{measurement:{protocol:measurementProtocol,manifest}}));
+  context(a,0,measurement);context(b,1,{...measurement,organization:2,unit:3});
+  assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.consent),{analytics:true,marketing:false});
+  assert.deepEqual(plain(f.sent[1].at(-1)[0].measurement.consent),{analytics:true,marketing:true});
+  context(a,0,{...measurement,unit:4});assert.deepEqual(plain(f.sent[0].at(-1)[0].measurement.consent),deniedChoice);
+  assert.deepEqual(plain(f.sent[1].at(-1)[0].measurement.consent),{analytics:true,marketing:true});
+ }finally{f.dom.window.close();}
+});
+
+test('cutover: bridge publishes the complete canonical manifest to the real helper',()=>{
+ const f=child();try{
+  f.bridge.connectConsent(measurement,()=>{});
+  f.init({measurementProtocol,dataLayer:true});
+  const context=f.sent.find(([message])=>message.type==='measurement-context')[0].measurement;
+  assert.equal(context.protocol,measurementProtocol);assert.deepEqual(context.manifest,{...measurement,measurement_consent_bridge:false});
+ }finally{f.done();}
+});
+
+
+test('automatic height starts compactly, preserves no-script fallback and accepts short forms', () => {
+    const { dom, frames: [auto, fixed], sent, message } = host(false, win => {
+        win.document.querySelectorAll('iframe')[1].dataset.festappHeight = 'fixed';
+    });
+    assert.equal(auto.getAttribute('height'), '800');
+    assert.equal(auto.style.height, '120px');
+    assert.equal(fixed.getAttribute('height'), '800');
+    assert.equal(fixed.style.height, '');
+    assert.equal(sent[0][0][0].minHeight, 120);
+    for (const height of [119, -1, NaN, 20001]) {
+        message(auto, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height}));
+        assert.equal(auto.style.height, '120px');
+    }
+    for (const height of [170, 240, 1200]) {
+        message(auto, 'https://tickets.invalid', envelope('resize', sent[0][0][0].instance, {height}));
+        assert.equal(auto.style.height, `${height}px`);
+        message(fixed, 'https://other.invalid', envelope('resize', sent[1][0][0].instance, {height}));
+        assert.equal(fixed.style.height, '');
+    }
+    dom.window.close();
+});
+
+test('short child forms negotiate a lower minimum only with a capable protocol-1 host', () => {
+    const dom = new JSDOM('<body>Checkout</body>', {url:'https://tickets.invalid/form/a?embed=1', pretendToBeVisual:true});
+    const win = dom.window;
+    globalThis.document = win.document; globalThis.window = win;
+    const sent = [], parent = {postMessage: data => sent.push(data)};
+    Object.defineProperty(win, 'parent', {value:parent});
+    win.ResizeObserver = class { observe() {} disconnect() {} };
+    win.requestAnimationFrame = () => 1;
+    win.cancelAnimationFrame = () => {};
+    win.document.body.getBoundingClientRect = () => ({height:170});
+    const bridge = new EmbedBridge(win); bridge.start();
+    for (const [minHeight, expected] of [[undefined,240], [120,170], [0,240], [119,240]]) {
+        win.dispatchEvent(new win.MessageEvent('message', {source:parent,origin:'https://host.invalid',
+            data:envelope('init','one',{viewportHeight:600,minHeight})}));
+        bridge.publishHeight();
+        assert.equal(sent.filter(data => data.type === 'resize').at(-1).height, expected);
+    }
+    bridge.destroy(); dom.window.close();
+    delete globalThis.window; delete globalThis.document;
+});
+
+test('repeated start and destroyed child cannot send or revive observers', async () => {
+    const dom = new JSDOM('<body>Form</body>', {url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+    const win=dom.window, sent=[];
+    let observed=0;
+    Object.defineProperty(win,'parent',{value:{postMessage:(...args)=>sent.push(args)}});
+    win.ResizeObserver=class {observe(){observed++;} disconnect(){}};
+    const bridge=new EmbedBridge(win);
+    bridge.start(); bridge.start();
+    assert.equal(observed,1);
+    bridge.destroy();
+    const count=sent.length;
+    win.dispatchEvent(new win.MessageEvent('message',{source:win.parent,origin:'https://host.invalid',
+        data:envelope('init','new',{viewportHeight:600})}));
+    win.dispatchEvent(new win.Event('pageshow')); bridge.start(); bridge.measure();
+    await new Promise(resolve=>win.setTimeout(resolve,220));
+    assert.equal(sent.length,count); assert.equal(observed,1);
+    win.close();
+});
+
+test('retired consent disposer cannot stop the current binding, page lifecycle renews its lease', () => {
+    const f=child();
+    try {
+        f.init({measurementProtocol,dataLayer:true});
+        const notify=()=>{};
+        const dispose=f.bridge.connectConsent(measurement,notify);
+        f.bridge.connectConsent(measurement,notify);
+        dispose();
+        const before=f.sent.length;
+        f.win.dispatchEvent(new f.win.Event('pagehide'));
+        f.win.dispatchEvent(new f.win.Event('pageshow'));
+        assert.ok(f.sent.length>before);
+        assert.equal(f.sent.at(-1)[0].type,'measurement-context');
+    } finally { f.done(); }
+});
+
+test('a replacement bridge owns the window and a retired destroy cannot clear its theme', () => {
+    const dom=new JSDOM('<body>Form</body>',{url:'https://tickets.invalid/form/a?embed=1',pretendToBeVisual:true});
+    const win=dom.window; win.ResizeObserver=class {observe(){} disconnect(){}};
+    Object.defineProperty(win,'parent',{value:{postMessage(){}}});
+    const old=new EmbedBridge(win), current=new EmbedBridge(win);
+    old.start(); current.start();
+    win.document.documentElement.dataset.embedTheme='host';
+    old.destroy(); old.setInheritStyle(false); old.receiveTheme(null);
+    assert.equal(win.document.documentElement.dataset.embedTheme,'host');
+    assert.equal(old.selection(),null);
+    current.destroy(); win.close();
+});
+
+
+test('host transport requires an explicit opt-in and live changes preserve the boundary',async t=>{
+ const {dom,frames:[frame],sent}=host();t.after(()=>dom.window.close());
+ assert.equal(sent[0][0][0].dataLayer,false);
+ for(const [value,enabled] of [['false',true],['',true],['true',true],['FALSE',true],['other',true],['false',true],[null,false]]) {
+  const before=sent[0].filter(([m])=>m.type==='init').length;
+  if(value===null)frame.removeAttribute('data-festapp-datalayer');else frame.setAttribute('data-festapp-datalayer',value);
+  await new Promise(resolve=>setImmediate(resolve));
+  const inits=sent[0].filter(([m])=>m.type==='init');
+  assert.ok(inits.length>before);assert.equal(inits.at(-1)[0].dataLayer,enabled);
+ }
+});
+test('host context and every event carry strict form_embedded with no host URL data',()=>{
+ const f=measurementHost();
+ const m={protocol:measurementProtocol,manifest:measurement,generation:1,leaseId:f.last().measurement.leaseId};
+ f.send('measurement-activate',{measurement:m});
+ const ecommerce={currency:'CZK',items:[{item_id:'product_11',item_name:'Koncert',price:100,quantity:1}]};
+ const payloads=[{page_type:'sale_opening',user_type:'b2c',language:'cs'},
+  ...['page_view','form_start','form_submit_error'].map(event=>({event})),
+  {event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist'},
+  ...['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','purchase'].map(event=>({event,ecommerce:{...ecommerce,payment_type:'bank_transfer',transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44'}}))];
+ for(const payload of payloads)f.send('analytics',{measurement:m,payload:{...payload,form_embedded:false,page_location:'https://host.invalid/private',page_referrer:'https://private.invalid'}});
+ const pushes=plain(f.dom.window.dataLayer),events=pushes.filter(p=>p.event||p.page_type);
+ assert.equal(events.length,payloads.length);
+ assert.equal(events.some(p=>p.event==='page_view'),false);assert.equal(events.filter(p=>p.event==='form_page_view').length,1);
+ assert.deepEqual(events[0],{page_type:'sale_opening',user_type:'b2c',language:'cs',form_embedded:true});
+ for(const payload of events){assert.equal(payload.form_embedded,true);assert.equal(payload.page_location,undefined);assert.equal(payload.page_referrer,undefined);}
+ for(const payload of pushes.filter(p=>!p.event&&!p.page_type&&'form_embedded' in p))assert.equal(payload.form_embedded,false,'host marker is scoped to one measurement push');
+ f.frame.removeAttribute('data-festapp-datalayer');
+ f.send('analytics',{measurement:m,payload:{event:'page_view'}});assert.equal(f.dom.window.dataLayer.length,pushes.length,'opt-out never writes host events');
+ f.dom.window.close();
+});
+
+// Model the documented retained dataLayer state at each event, not just the
+// standalone push objects. GTM processes these messages in FIFO order.
+function retainedMeasurementHost(t) {
+ const f=host(),state={},events=[];
+ t.after(()=>f.dom.window.close());
+ const layer=f.dom.window.dataLayer=[];
+ layer.push=(...values)=>{
+  for(const value of values){Object.assign(state,value);if(value.event)events.push(plain(state));}
+  return Array.prototype.push.apply(layer,values);
+ };
+ const activate=(index,generation=1,manifest={...measurement,form_link:index===0?'a':'b'})=>{
+  const frame=f.frames[index],instance=f.sent[index][0][0].instance;
+  frame.setAttribute('data-festapp-datalayer','');
+  const send=(type,values)=>f.message(frame,new URL(frame.src).origin,envelope(type,instance,values));
+  send('measurement-context',{measurement:{protocol:measurementProtocol,manifest}});
+  const leaseId=f.sent[index].findLast(([m])=>m.type==='measurement-consent')[0].measurement.leaseId;
+  const grant={protocol:measurementProtocol,manifest,generation,leaseId};
+  send('measurement-activate',{measurement:grant});
+  return {send,grant,emit:payload=>send('analytics',{measurement:grant,payload})};
+ };
+ return {...f,layer,state,events,activate};
+}
+
+test('embedded marker does not leak into later native website events',t=>{
+ const f=retainedMeasurementHost(t),a=f.activate(0);
+ a.emit({page_type:'product',language:'cs'});
+ f.layer.push({event:'website_after_context'});
+ a.emit({event:'page_view'});
+ f.layer.push({event:'page_view'});
+ a.emit({event:'form_start'});
+ f.layer.push({event:'website_after_interaction'});
+ assert.deepEqual(f.events.map(({event,form_embedded})=>[event,form_embedded]),[
+  ['website_after_context',false],['form_page_view',true],['page_view',false],
+  ['form_start',true],['website_after_interaction',false]
+ ]);
+});
+
+test('interleaved embeds retain their own page context and clear it across grants',t=>{
+ const f=retainedMeasurementHost(t),a=f.activate(0),b=f.activate(1);
+ a.emit({page_type:'product',language:'cs'});
+ b.emit({page_type:'sale_opening',language:'en'});
+ a.emit({event:'page_view'});
+ b.emit({event:'form_start'});
+ a.emit({event:'form_start',page_type:'sale_opening',language:'de'});
+ assert.deepEqual(f.events.map(({event,page_type,language})=>[event,page_type,language]),[
+  ['form_page_view','product','cs'],['form_start','sale_opening','en'],['form_start','product','cs']
+ ]);
+ const next=f.activate(0,2);
+ a.emit({page_type:'confirmation',language:'de'}); // Retired generation cannot replace context.
+ next.emit({event:'form_start'});
+ assert.equal(f.events.at(-1).page_type,null);
+ assert.equal(f.events.at(-1).language,null);
+ next.emit({page_type:'checkout'});
+ b.emit({page_type:'sale_opening',language:'en'});
+ next.send('measurement-activate',{measurement:next.grant}); // Duplicate ACK preserves current context.
+ next.emit({event:'form_start'});
+ assert.equal(f.events.at(-1).page_type,'checkout');
+ assert.equal(f.events.at(-1).language,null,'missing language never borrows the other frame language');
+ const changed=f.activate(0,3,{...measurement,form_link:'a',processing_revision:'new-scope'});
+ changed.emit({event:'page_view'});
+ assert.equal(f.events.at(-1).page_type,null,'a new scope never reuses the prior page context');
+ assert.equal(f.events.at(-1).language,null);
 });

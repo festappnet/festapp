@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1";
 import { PageSizes, PDFDict, PDFDocument, PDFName, rgb } from "npm:pdf-lib";
-import { unzipSync } from "npm:fflate@0.8.2";
+import { unzipSync } from "npm:fflate@0.8.3";
 import { batchSheetLayout, exportTicketBatch } from "./ticketBatchExports.ts";
 import { digest } from "./ticketFonts.ts";
 

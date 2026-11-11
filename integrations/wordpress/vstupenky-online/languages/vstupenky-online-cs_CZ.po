@@ -1,5 +1,5 @@
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.5\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.7\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr "1. Připravte formulář"
@@ -55,6 +55,9 @@ msgstr "Připojení služby a soukromí"
 msgid "Fallback height without the helper (px)"
 msgstr "Výchozí výška bez skriptu (px)"
 
+msgid "Festapp Unit runtime (existing behavior)"
+msgstr "Runtime jednotky Festapp (dosavadní chování)"
+
 msgid "Fixed"
 msgstr "Pevná"
 
@@ -75,6 +78,9 @@ msgstr "Výška (px)"
 
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr "Při nejistém výsledku nákupu ověřte objednávku s pořadatelem před novým nákupem. Platby a dostupnost sedadel řídí služba. Deaktivace ani odinstalace pluginu nemaže objednávky ve službě; shortcode pak může být na stránce viditelný jako text."
+
+msgid "Measurement destination"
+msgstr "Cíl měření"
 
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr "Otevřete novou nebo existující stránku ve WordPressu. Přes tlačítko + vyhledejte blok vstupenky.online a vložte do něj veřejný odkaz formuláře."
@@ -124,8 +130,8 @@ msgstr "V editoru uvidíte nastavení bloku. Stránku uložte a otevřete její 
 msgid "The form is not configured. Enter a saved public https://vstupenky.online/form/ URL without extra parameters."
 msgstr "Formulář není nastaven. Vložte veřejný uložený odkaz https://vstupenky.online/form/… bez dalších parametrů."
 
-msgid "The published form connects to vstupenky.online. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form."
-msgstr "Zveřejněný formulář se připojuje k vstupenky.online. Služba obdrží IP adresu a údaje prohlížeče; údaje nákupu zadává návštěvník přímo službě. Oba režimy výšky načítají také /embed.js. Plugin nekopíruje objednávky ani přístupy do WordPressu a nepřidává analytiku. Úložiště, cookies a případné souhlasy posuďte podle služby a svého webu. Samotná aktivace, tento návod ani editor vzdálený formulář nenačítají."
+msgid "The published form connects to vstupenky.online and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
+msgstr "Zveřejněný formulář se připojuje k vstupenky.online a načítá /embed.js. Pro existující bloky a shortcode zůstává výchozí měření v jednotce. Nové bloky a příklady shortcode používají měření webu, doporučené pro weby s vlastním GTM a souhlasovou lištou. Měření webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky přes dataLayer. Před zapnutím nastavte značky webu, správce souhlasů a informace o soukromí. Plugin neukládá do WordPressu objednávky kupujících ani přístupy ke službě. Aktivace, tento návod ani editor vzdálený formulář nenačítají."
 
 msgid "Ticket sales - vstupenky.online"
 msgstr "Prodej vstupenek - vstupenky.online"
@@ -141,6 +147,12 @@ msgstr "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Ob
 
 msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
 msgstr "Vzhled všech vložení řídí pouze uložené nastavení formuláře ve službě. Otevřete Vzhled formuláře, nastavte Přizpůsobit vzhled webu a formulář uložte. Změna se projeví při příštím načtení bez výměny kódu. WordPress ji nemůže přepsat. Plánek sálu si ponechá vlastní vzhled."
+
+msgid "Website dataLayer"
+msgstr "dataLayer webu"
+
+msgid "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
+msgstr "Režim webu je doporučen pro weby s vlastním GTM a souhlasovou lištou. Nová vložení používají režim webu. Existující obsah bez nastavení zůstává v režimu jednotky. Režim jednotky čte Consent Mode webu pouze po zapnutí volby „Přebírat souhlas z lišty mého webu“ ve Festappu a potvrzení, že lišta pokrývá vložený formulář. Režim webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky. Doména webu musí být schválena ve Festappu."
 
 msgid "vstupenky.online"
 msgstr "vstupenky.online"

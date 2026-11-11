@@ -48,8 +48,12 @@ export async function startLocalUploadRuntime(databaseUrl: string, supabaseUrl: 
       }
       if (target.origin !== 'https://api.festapp.net') throw new Error(`Unexpected image integration egress: ${target.origin}`);
       const local = new URL(target.pathname + target.search, supabaseUrl);
+      // Node fetch serializes a new body across the workerd boundary. Let it
+      // compute Content-Length instead of forwarding the transport header.
+      const headers = new Headers(request.headers);
+      headers.delete('content-length');
       return globalThis.fetch(local, {
-        method:request.method, headers:request.headers,
+        method:request.method, headers:Object.fromEntries(headers),
         body:['GET','HEAD'].includes(request.method) ? undefined : await request.arrayBuffer(),
         redirect:'manual',
       });

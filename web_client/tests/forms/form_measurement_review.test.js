@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {analyticsPayload} from '../../src/components/forms/form_measurement_contract.js';
-import {publicFormAttributionSearch} from '../../src/utils/public_form_location.js';
+import {publicFormAttributionSearch,publicFormLocation} from '../../src/utils/public_form_location.js';
 import {CardPaymentController} from '../../src/components/forms/card_payment_controller.js';
 import {AppConfig} from '../../src/app_config.js';
 const item={item_id:'product_7',item_name:'Letní koncert',price:123.45,quantity:2};
@@ -31,7 +31,7 @@ test('Stripe departure retains payment history, navigates only once, and Back re
 });
 
 test('attribution survives form startup and other parameters are removed before mount',async t=>{
-    const page=dom('https://tickets.test/form/summer?utm_source=search&utm_campaign=summer&gclid=click&lang=cs&token=private#pay=private');
+    const page=dom('https://tickets.test/form/summer?utm_source=search&utm_campaign=summer&gclid=click&gbraid=app&sznclid=sklik&lang=cs&token=private#pay=private');
     const previous={window:globalThis.window,document:globalThis.document};Object.assign(globalThis,{window:page.window,document:page.window.document});
     const {RouterService}=await import('../../src/services/router_service.js');
     const oldSupported=AppConfig.isAppSupported;AppConfig.isAppSupported=false;
@@ -39,7 +39,7 @@ test('attribution survives form startup and other parameters are removed before 
         let observed;
         t.mock.method(RouterService,'mountForm',async()=>{observed=page.window.location.href;});
         await RouterService.handleInitialLoad();
-        assert.equal(observed,'https://tickets.test/form/summer?utm_source=search&utm_campaign=summer&gclid=click&lang=cs');
+        assert.equal(observed,'https://tickets.test/form/summer?utm_source=search&utm_campaign=summer&gclid=click&gbraid=app&sznclid=sklik&lang=cs');
         assert.equal(publicFormAttributionSearch(new URL('https://tickets.test/events?utm_source=search')),'');
         assert.equal(page.window.location.hash,'');
     }finally{AppConfig.isAppSupported=oldSupported;Object.assign(globalThis,previous);page.window.close();}
@@ -54,7 +54,16 @@ test('all approved ecommerce events carry the final price, offer name and recomp
 });
 
 
-test('measurement owner has no script insertion, history interception, Auth subscription or contact export',()=>{
+test('measurement owner has no script insertion, history interception or Auth subscription',()=>{
  const source=readFileSync(new URL('../../src/components/forms/form_datalayer.js',import.meta.url),'utf8');
- for(const retired of ['loadFormIntegrations','installFormIntegrationGuard','integrationDocuments','navigateWithFormReturnContext',"createElement('script')",'onAuthStateChange','history.replaceState','user_data']) assert(!source.includes(retired),retired);
+ for(const retired of ['loadFormIntegrations','installFormIntegrationGuard','integrationDocuments','navigateWithFormReturnContext',"createElement('script')",'onAuthStateChange','history.replaceState']) assert(!source.includes(retired),retired);
+});
+
+test('ad and linker parameters keep measurement on while capability parameters stay blocked',()=>{
+    const at=search=>({pathname:'/form/summer',search,hash:''});
+    for(const search of ['?gclid=x&gad_source=1&gad_campaignid=2','?utm_id=1','?srsltid=x','?_gl=1*a','?gtm_debug=1'])
+        assert.equal(publicFormLocation(at(search)),true,search);
+    for(const search of ['?token=x','?gclid=x&access_token=y','?order=1'])
+        assert.equal(publicFormLocation(at(search)),false,search);
+    assert.equal(publicFormAttributionSearch(at('?gad_source=1&_gl=1*a&gtm_debug=1')),'?gad_source=1');
 });

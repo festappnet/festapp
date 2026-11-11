@@ -114,7 +114,11 @@ class TicketEmailPreview extends StatelessWidget {
         ticketsEnabled: true,
       ),
     );
-    final body = ticketBody('${template['html'] ?? ''}', mode);
+    final body =
+        ticketBody('${template['html'] ?? ''}', mode) +
+        (context['walletEnabled'] != false && context['walletReady'] == true
+            ? '<p>${TicketDeliveryStrings.text('walletPreview')} ($count)</p>'
+            : '');
     final wrapper = (resolved['wrapper'] as Map?)?['html'] as String?;
     return {
       'subject': scenario.composeSubject('${template['subject'] ?? ''}'),

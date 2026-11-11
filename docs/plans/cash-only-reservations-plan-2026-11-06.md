@@ -1,8 +1,16 @@
 # Rezervace s platbou pouze hotově a bez termínu úhrady
 
 Datum: 2026-11-06  
-Stav: Zkontrolováno proti pracovnímu stromu a nezávisle Astra Medium 2026-11-06; nálezy zapracovány, nikoli runtime ověření  
+Stav: Implementováno a lokálně ověřeno 2026-11-06; produkční aktivace neprovedena
 Ověření při implementaci: standard (platební kontrakty, oprávnění a migrace)
+
+## Průběžný stav implementace
+
+- Lokální implementace dokončena: per-form cash-only, pokyny, skutečné none, kompatibilní čtení/zápis, ledger, historie, setup/MCP a oba klienti. Žádný další implementační krok není otevřený.
+- Výchozí `main` byl `d47667c9fa879a6c4efc1044e838b16e17ee2245`; souběžná nesouvisející práce posunula HEAD během implementace. Cizí změny byly zachovány; tato relace neprováděla commit, push, produkční migraci ani nasazení.
+- Fakturoid vyžaduje bankovní referenci: cash se odmítá při konfiguraci i opětovné validaci ve finalizeru, takže ani dodatečně zapojená povinná fakturace není tiše přeskočena.
+- Kontroly a scoped caller důkazy jsou zaznamenané v závěrečném oddílu. Browser prošel na finálních SQL zdrojích; všechna jeho prostředí a přístupové údaje byly odstraněny.
+- Limit ověření: skutečné odesílání e-mailů bylo vypnuté. Pro zákaznický přehled vydal testovací token skutečný lokální SQL issuer; vystavení odkazu e-mailovým tokem a doručení nebylo součástí browser důkazu. Renderery, skutečné náhledy a send fence mají cílené testy.
 
 ## Výsledek a rozsah
 
@@ -517,8 +525,8 @@ Minimální akceptační matice:
 | E-mail potvrzení, změna a doplatek | U cash žádná povinná bankovní reference; u none žádný obnovený termín. |
 
 Plán byl prověřen čtením uvedených SQL/Edge/Dart vlastníků a porovnáním
-jejich podmínek. Aplikace ani migrace zatím nebyly implementovány nebo spuštěny;
-tato matice je závazný důkaz pro implementaci, nikoli seznam již prošlých testů.
+jejich podmínek. Původní matice určovala požadované důkazy. Výsledky dokončené lokální implementace
+a skutečně spuštěné kontroly jsou níže; produkční použití z ní nevyplývá.
 
 Nasazení je samostatná autorizovaná operace. Pořadí: kompatibilní schema a SQL,
 Edge/prezentace, oba klienti, teprve potom zpřístupnění nové volby ve vybraném
@@ -543,3 +551,53 @@ omezit nové vytváření a opravit dopředně, data a úhrady zachovat.
   Banka s termínem, banka bez termínu, bezplatná objednávka i online provider
   musí projít cílenými regresními kontrolami. Produkční nasazení se vykazuje
   odděleně, nikoli jako provedené automaticky s dokončením vývoje.
+
+## Dokončení a ověření 2026-11-06
+
+### Vlastníci a odstraněné cesty
+
+- `payment_providers/registry.sql` vlastní klasifikaci bank/cash/online. `payment_policy.sql::resolve_payment_policy_internal` je společný resolver; `resolve_form_payment_policy_internal` pouze načte uložený formulář a feature. Stejný resolver používá autorizovaný SQL kontext náhledu draftu. Žádná klientská implementace dědění termínu nepřibyla.
+- `finalize_ticket_order_internal_v1` volá resolver, capability guard, validaci konfigurace a vrací `customer_order_payment_internal`. `update_ticket_products_ws` volá jen `refresh_order_payment_deadline_internal`. Původní paralelní výpočty termínu byly odstraněné; jediný výslovný legacy výklad zůstává v policy owneru pro objednávku bez snapshotu. Původní absolutní deadline nových objednávek se při editaci nepřepočítává.
+- `get_form_by_link(jsonb)` a `get_customer_order_overview(jsonb)` hlídají deklarované schopnosti; vydané signatury delegují bez nich. Form command hash obsahuje `payment_selection_intent`; starý konfliktní full save vrací bezpečnou obálku s `PAYMENT_CLIENT_UPDATE_REQUIRED`. Core authoring allowlist zachovává cash i `payment_deadline.mode`.
+- `get_transactions_for_order` promítá autorizované akce a připojené pohyby. Osobní historie používá `can_read_bank_transactions` a `get_bank_transaction_history`, nikoli právo číst objednávku. Bankovní write guard se přepočítá i po odpojení. Odstraněn účet ID 0, původní boolean dialogu i duplicitní gridová navigace; grid/detail používají `showOrderCashPaymentDialog` a uchovávají draft během nastavení a historie. FK účtu je RESTRICT, bez kaskádového mazání ledgeru.
+- Edge bankovní QR a reference jsou omezené bankovní metodou. Cash/none prezentace, potvrzení, doplatek a oba skutečné setup náhledy používají společné renderery. Náhledy čtou projektovanou SQL politiku a neobnovují ukázkový bankovní termín. Flutter/JS vykreslují pokyny jako text. Aktualizovány existující Forms/Eshop/Core README a generovaná MCP reference.
+
+Scoped kontrola callerů byla provedena nad `finalize_ticket_order.sql`, `update_ticket_products_ws.sql`, `get_form_by_link.sql`, `order_overview.sql` a `admin_form_orders.sql`. Zbývající `method <> bank` větve jsou výhradně bankovní ochrana instrukcí a fence bankovních upomínek, nikoli dispatch každé nebankovní metody do provideru. V platebních writerech už není druhý týdenní fallback.
+
+### Skutečně provedené kontroly
+
+| Oblast | Výsledek |
+|---|---|
+| Disposable SQL matice `run_db_tests.js` | 16/16 finálních kontraktů; samostatně následně 1/1 cash setup + kopie + anonymní checkout. Cash, bank/none se zálohou, custom/inherit/zero, repricing, legacy snapshot, replay, storno, odpojená historie, oprávnění, Fakturoid, skutečné preview a send fence. |
+| Dodatečné finanční guardy a dostupnost | `cash_command_guards_test.sql` + `cash_policy_regression_test.sql` 2/2. Neplatná přesnost/NaN/nula/numeric JSON, cizí jednotka/měna/objednávka, odmítnutí starého checkoutu a podvržené banky, přesná záporná oprava, zachování used vstupenky a replay po odebrání práv. NULL i nepodporovaná měna banky neposkytují převod. Nové kontrakty jsou součástí kanonických CI kroků `seat-contract`, `ticket-edge`, `ticket-core` a `ticket-client`; generovaná kanonická SQL parita byla aktualizována. |
+| Finální veřejný přehled `customer_order_overview_test.sql` | 1/1 nad disposable DB: obě vydané RPC signatury, skutečná role anon, starý klient odmítne cash i bank/none, schopný klient je načte; přímý interní bypass není povolen. Zachované původní kontroly scope, revokace, expirace a stabilních e-mailových zdrojů. |
+| Souběh `payment_product_transition_concurrency.test.mjs` | 9/9: zámky bankovních změn/repricing, storno, opožděný e-mail, přesun mezi scope, dvě cash rezervace o poslední místo a zamítnutí přesunu hotovosti do cizí jednotky. |
+| MCP `forms`, `forms-settings-postgres`, `forms-completion-postgres`, `seat-orders-postgres`, `orders-postgres` | 52/52, bez skipů, nad skutečnou disposable DB. Včetně cash administrativní objednávky a cash náhrady sedadel. |
+| Edge platební/objednávkové helpery | 39/39; potvrzení CZK/EUR bez reference, pokyny a escaping, none se zálohou, identita commandu a invoice guardy. |
+| Edge skutečné náhledy a deposit prezentace | 38/38. `deno check` prošel pro send-custom-email a všechny tři dotčené order e-mailové šablony. |
+| JS veřejné formuláře a přehled | 51 cílených testů, po opravě očekávaného capability transportu všechny prošly; dotčený přehled samostatně 32/32. Cash výběr/potvrzení/přehled, bankovní QR/reference a okamžité vykreslení. |
+| Core + Flutter | Core 17/17; Flutter výběry 14 + 27 + 8 testů prošly. Skutečný formulářový editor zachová cash/none v odesílaném Core snapshotu; dialog přijme desetinnou částku a uchová částku, datum i poznámku po návratu z nastavení. Flutter běžel vždy jediný, s `--concurrency=1`. |
+| Statické kontrakty | Cílený Dart analyzátor bez chyb a varování (ponechané informační stylové diagnostiky), `docs:check`, `git diff --check` a parita cash migrace prošly. Manifest obsahuje všechny změněné SQL funkční ownery; změna schema registru a FK je v hlavičce dopředné migrace. |
+| Browser s reálným lokálním Auth/REST/Edge | Cash objednávka 154: 150 CZK, ordered, žádná banka/reference/QR/deadline; skutečný autorizovaný příjem 50 CZK a obnovený přehled se zůstatkem 100 CZK/historií. Bank objednávka 155: 150 CZK, skutečný QR/účet/reference, žádný termín ani zálohový termín. Izolovaná muted Terra session; všechny její služby uklizené. |
+
+Dodatečný cílený důkaz zákaznického přehledu: `DATABASE_URL=<disposable-local-db> node web_client/scripts/run_db_tests.js database/tests/eshop_orders/customer_order_overview_test.sql`, výsledek 1 passed / 0 failed. Po této kontrole se měnil pouze tento záznam výsledku; implementační zdroje a digest migrace zůstaly stejné.
+
+Přesné příkazy, digest a omezení browser důkazu: [uložený receipt](../development/cash-reservations-browser-2026-11-06.json). Browser průchod ověřil migraci s SHA256 `27db5afcc72af8c5db222ba5d3980e46f0467c121c93970876ade07d26e9557a`. Následný regresní důkaz odhalil nabídku banky při NULL podporovaných měnách; owner dostupnosti nyní považuje NULL za prázdnou množinu. Aktuální sestavená migrace `20261106220000_cash_reservations.sql` má SHA256 `faca691eb97680b060d4bedda89fedb7d3c2ba5ab4b29212fd4871d9f14791f0`. Je připravená, nikoli aplikovaná do produkce. Testovací databáze dostaly finální kanonické ownery; finální již jednou instalovaná migrační hlavička se na nich nespouštěla znovu jako celek.
+
+Opravy testovacích vstupů zachovaly finanční a autorizační assertions: explicitní cash úhrada má skutečnou objednávku; dostupnost banky má skutečně nakonfigurovaný účet; pozitivní přesun ručního pohybu používá dvě objednávky ve stejné jednotce/organizaci a samostatný negativní případ prokazuje zákaz cizí jednotky. Worker send fence se ověřuje jeho skutečnou service rolí nad reálně zařazenou upomínkou, bez odeslání. Žádný z požadovaných výsledků nebyl dosažen skipem či oslabením ochrany.
+
+Produkční SQL, skutečné platby, externí odesílání, commit, push ani nasazení tato implementační relace neprováděla. Případná produkční aktivace nadále vyžaduje samostatné vydání a jeho platné repository gates.
+
+### Následné sjednocení a autorizované vydání
+
+Uživatel následně výslovně rozšířil rozsah o publikaci main, nasazení a sjednocení worktrees. Vybraný produkční tenant je `prod/festapptickets` / vstupenky.online; jiné tenantové větve se nevydávají. Původní výše uvedené výsledky zůstávají lokálními důkazy, nikoli potvrzením nasazení.
+
+- 24 vedlejších worktrees bylo porovnáno s main a odstraněno po ověřené externí archivaci lokálních souborů a binárních diffů. Všechny HEADy mají zachované refs pod `refs/archive/worktree-unification-20261106/`; původní větve se nemažou. Archiv: `/Users/miakh/source/festapp-worktree-archives/2026-11-06`. Starší sdílené kandidáty již main obsahuje ve výsledné nebo následně opravené podobě; tenantové overlaye se nepřenášejí do sdíleného zdroje.
+- Úplný klientský běh ověřil Core a adaptéry, Flutter odhalil zastaralé očekávání skrytého celého výběru a současně chybějící online feature guard. Editor nyní vždy nabízí bank/cash, online volby i načítání příjemce respektují původní viditelnost. Uložený binding se pouhým otevřením nemění. Cílených 15 editorových testů prošlo; nový kontrakt je součástí kanonického CI.
+- Před publikací zbývají povinné CI mirror lanes; před produkčními kroky všechny GitHub joby na přesném publikovaném main SHA, následně overlay/drift/build a oddělené SQL/Edge/MCP kroky. Stav nasazení se vykáže podle skutečných receipts.
+
+Další předpublikační důkazy: úplná klientská sada s obrácenou registrací prošla (Core 267, adaptéry 95, Flutter 2457, inventář 1219 původních + 1600 přidaných případů), 168,40 s. Zůstal jeden Flutter worker; původní cíl 100 s není dosažen. Webová nedatabázová sada prošla 1005 testů; dvě následná DB selhání vyřešil správný explicitní testovací container a úplná rekonstrukce zmrazených connector funkcí. Všechny tři upgrade/Stripe concurrency testy pak prošly, včetně původních finančních a autorizačních assertions.
+
+Souběh Stripe navíc odhalil předčasnou obecnou kontrolu dostupnosti překrývající stabilní `STRIPE_RECIPIENT_CHANGED`. Online dostupnost opět hlídá existující zamčený provider owner; sdílený finalizer hlídá builtin dostupnost a cash exclusivitu také při nulové ceně. Dodatečný SQL guard zakazuje podvrženou bank/online metodu na bezplatném cash formuláři i cash na bankovním formuláři. Draft test nyní ověřuje uložené NULL dědění a stejné efektivní týdenní výchozí pravidlo. Tyto dva SQL testy prošly 2/2. Upgrade a Stripe concurrency důkazy jsou doplněné do sdíleného kanonického CI kroku, nevynechané.
+
+Kanonická bezpečnostní kontrola následně doplnila osm deklarací nových/přepracovaných definer signatur s přesnými role ACL. Obě vydané veřejné reader signatury mají explicitní granty místo zděděného PUBLIC; interní přehled není přístupný API rolím. Statických bezpečnostních kontrol prošlo 8/8, skutečný SQL ACL a zákaznický přehled 2/2. Test kontroluje všech 24 kombinací role/signatura a absenci PUBLIC EXECUTE.

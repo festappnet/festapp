@@ -1,4 +1,5 @@
-import 'package:uuid/uuid.dart';
+import 'package:fstapp/components/users/member_access_commands.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/services/batch_progress_dialog.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
@@ -180,25 +181,24 @@ class UsersTabHelper {
     if (!confirm) return;
 
     if (!context.mounted) return;
+    final commands = MemberAccessCommands(Supabase.instance.client);
     final tasks = users.map((user) {
       // Transport retries and queued checks share an intent. A terminal failure
       // permits a new attempt; SQL still joins any unresolved queued message.
-      var requestId = const Uuid().v4();
       return BatchTask(
         label: user.toBasicString(),
         run: () async {
           for (var attempt = 0; attempt < retryLimit; attempt++) {
             try {
-              final status = await AuthService.sendSignInCode(
-                user,
-                requestId: requestId,
-              );
-              return status == InvitationDeliveryStatus.sent
-                  ? BatchTaskOutcome.completed
-                  : BatchTaskOutcome.deferred;
+              await commands.send({
+                'scope': {'type': 'occasion', 'id': user.occasion},
+                'operation': 'send_invitation', 'userId': user.user,
+                'communication': user.isManager == true || user.isEditor == true || user.isEditorView == true
+                    ? 'notify_existing_access' : 'participant_credentials',
+              });
+              return BatchTaskOutcome.deferred;
             } catch (_) {
               if (attempt + 1 >= retryLimit) {
-                requestId = const Uuid().v4();
                 rethrow;
               }
               await Future<void>.delayed(const Duration(milliseconds: 500));

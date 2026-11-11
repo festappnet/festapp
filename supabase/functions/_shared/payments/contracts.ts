@@ -114,7 +114,7 @@ export function decodeCommitReceipt(value: unknown, providerId: string): CommitR
 }
 export type ProviderEvent = Record<string, unknown>;
 
-export interface PaymentConnector {
+export interface HostedCheckoutConnector extends PaymentConnector {
   readonly id: string;
   readonly displayName: string;
   /** False for protocols whose recovery is read-only and never needs bearer secrets. */
@@ -165,11 +165,11 @@ export interface PaymentStore {
   failSync(attemptId: string, lease: string): Promise<void>;
 }
 
-export type PaymentDependencies = Readonly<{
+export type HostedPaymentDependencies = Readonly<{
   livemode: boolean;
   allowedOrigins: readonly string[];
   routes: Readonly<{ payPath: string; returnPath: string }>;
-  connector: PaymentConnector;
+  connector: HostedCheckoutConnector;
   store: PaymentStore;
   maintenance?: Readonly<{
     recoverableConnections(): Promise<readonly RecoveryConnection[]>;
@@ -185,3 +185,60 @@ export type PaymentDependencies = Readonly<{
   connection?: Readonly<{ handle(request: Request): Promise<Response> }>;
   webhook?: Readonly<{ handle(request: Request): Promise<Response> }>;
 }>;
+
+/** Shared identity. Hosted checkout is one optional capability, never a
+ * requirement for ledger-backed methods. SQL remains installation authority. */
+export interface PaymentConnector {
+  readonly id: string;
+  readonly displayName: string;
+}
+export type PaymentConfirmation = "local_commit" | "bank_event" | "verified_provider_observation";
+export type PaymentOperationResult = Readonly<{
+  kind: "recorded" | "show_bank_instructions" | "processing" | "unavailable";
+  reason?: string;
+  data?: Record<string, unknown>;
+}>;
+export type RefundSnapshot = Readonly<{
+  requestId: string;
+  attemptId: string;
+  providerId: string;
+  accountId: string;
+  livemode: boolean;
+  paymentId: string;
+  amountMinor: number;
+  currency: string;
+  createdAt: number;
+  idempotencyKey: string;
+}>;
+export type RefundObservation = Readonly<{
+  status: "pending" | "action_required" | "succeeded" | "failed" | "cancelled" | "unknown";
+  refundId?: string;
+  amountMinor?: number;
+  currency?: string;
+  dispatchUncertain: boolean;
+  connectorState?: ConnectorState;
+}>;
+export interface RefundCapability {
+  readonly confirmation: PaymentConfirmation;
+  readonly currencies: readonly string[];
+  requestRefund(snapshot: RefundSnapshot): Promise<RefundObservation>;
+  /** Recovery is read-only; absence in a list never authorizes another write. */
+  recoverRefund(snapshot: RefundSnapshot, state: ConnectorState): Promise<RefundObservation>;
+}
+export type PaymentMethodBinding = Readonly<{
+  connector: PaymentConnector;
+  hostedCheckout?: HostedPaymentDependencies;
+  refund?: RefundCapability;
+  operation?: Readonly<{
+    confirmation: PaymentConfirmation;
+    execute(input: Record<string, unknown>, commandId: string, authorization: string): Promise<PaymentOperationResult>;
+  }>;
+}>;
+export function hostedPaymentBinding(deps: HostedPaymentDependencies, refund?: RefundCapability): PaymentMethodBinding {
+  return {connector: deps.connector, hostedCheckout: deps, ...(refund ? {refund} : {})};
+}
+export function requireHostedPayment(binding: PaymentMethodBinding): HostedPaymentDependencies {
+  if (!binding.hostedCheckout || binding.hostedCheckout.connector.id !== binding.connector.id)
+    throw new PaymentError("payment_hosted_checkout_unavailable");
+  return binding.hostedCheckout;
+}

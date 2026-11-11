@@ -26,7 +26,7 @@ BEGIN
  payload := public.normalize_occasion_setup_appearance_internal(d.data);
  payload:=public.normalize_setup_payments_internal(payload);
  IF payload->'paymentRepairRequired'='true'::jsonb THEN RAISE invalid_parameter_value USING MESSAGE='Payment recipient requires explicit repair'; END IF;
- payment_method:=CASE WHEN payload#>'{payments,bankEnabled}'='false'::jsonb THEN 'online' ELSE 'bank' END;
+ payment_method:=CASE WHEN payload#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' WHEN payload#>'{payments,bankEnabled}'='false'::jsonb THEN 'online' ELSE 'bank' END;
  blueprint_mode:=CASE payload->>'blueprintMode'
   WHEN 'Bez plánku' THEN 'none' WHEN 'Nový' THEN 'new' WHEN 'Převzít' THEN 'copy'
   ELSE payload->>'blueprintMode' END;
@@ -222,6 +222,7 @@ BEGIN
    form_meta:=public.strip_form_payment_connections_internal(form_meta);
   END IF;
   form_meta:=jsonb_set(form_meta,'{payments}',payload->'payments');
+  IF payment_method='cash' THEN form_meta:=form_meta||'{"payment_deadline":{"mode":"none"}}'::jsonb; END IF;
   form_data:=jsonb_set(form_data,'{data}',form_meta);
   SELECT id INTO form_id FROM public.forms WHERE occasion=new_id ORDER BY id LIMIT 1;
   IF form_id IS NULL THEN
@@ -277,7 +278,7 @@ BEGIN
   -- baseline is zero; the setup revision/command still owns materialization.
   result := public.update_form_internal_v1((form_data-'id'-'fields'-'blueprint'-'bank_account') || jsonb_build_object(
    'expected_aggregate_version',0,'id',form_id,'occasion',new_id,'link',coalesce(form_link,(SELECT link FROM public.forms WHERE id=form_id)),
-   'is_open',sale_mode<>'preparation','bank_account',selected_bank,'form_fields',fields));
+   'payment_selection_intent','replace','is_open',sale_mode<>'preparation','bank_account',selected_bank,'form_fields',fields));
   IF result->>'code'<>'200' THEN RAISE EXCEPTION '%',result; END IF;
   IF jsonb_array_length(old_types)>0 THEN
    FOR idx IN 0..jsonb_array_length(old_types)-1 LOOP

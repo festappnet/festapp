@@ -1,76 +1,114 @@
 name: Image upload regressions
 on:
-  workflow_dispatch:
-  pull_request:
-    paths:
-      - 'workers/image-worker/**'
-      - 'lib/components/images/**'
-      - 'lib/components/html/**'
-      - 'lib/components/ticket_layout/**'
-      - 'lib/components/blueprint/**'
-      - 'lib/components/occasion_settings/**'
-      - 'lib/components/schedule/**'
-      - 'lib/components/speakers/**'
-      - 'lib/components/email_templates/**'
-      - 'test/components/images/**'
-      - 'test/components/html/**'
-      - 'test/components/ticket_layout/**'
-      - 'automation/ci/**'
-      - '.github/workflows/image-upload-regressions.yml'
   push:
     branches: [main]
-    paths:
-      - 'workers/image-worker/**'
-      - 'lib/components/images/**'
-      - 'lib/components/html/**'
-      - 'lib/components/ticket_layout/**'
-      - 'lib/components/blueprint/**'
-      - 'lib/components/occasion_settings/**'
-      - 'lib/components/schedule/**'
-      - 'lib/components/speakers/**'
-      - 'lib/components/email_templates/**'
-      - 'test/components/images/**'
-      - 'test/components/html/**'
-      - 'test/components/ticket_layout/**'
-      - 'automation/ci/**'
-      - '.github/workflows/image-upload-regressions.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
+  actions: read
+  checks: read
 jobs:
   server-policy:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select verified CI inputs
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/selection.py server-policy
       - uses: pnpm/action-setup@v6
+        if: steps.selection.outputs.run == 'true'
         with:
           version: 11.24.0
       - uses: actions/setup-node@v7
+        if: steps.selection.outputs.run == 'true'
         with:
-          node-version: '22.23.3'
+          node-version: '22.23.4'
           cache: pnpm
           cache-dependency-path: workers/image-worker/pnpm-lock.yaml
-      - run: python3 automation/ci/run.py step image-server-install
-      - run: python3 automation/ci/run.py step image-server-policy
+      - name: Install pinned Deno
+        if: steps.selection.outputs.run == 'true'
+        run: bash automation/ci/deno.sh
+      - name: Run canonical regression DAG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        if: steps.selection.outputs.run == 'true'
+        run: python3 automation/ci/run.py lane server-policy
+      - name: All lane tests executed
+        if: steps.selection.outputs.run == 'true'
+        run: echo 'All lane tests executed'
+      - name: Preserve canonical CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-${{ github.job }}-${{ github.run_attempt }}
+          path: ~/.cache/festapp-ci/runs
+          retention-days: 7
+          if-no-files-found: ignore
 
   client-contract:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select verified CI inputs
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 automation/ci/selection.py client-contract
       - id: sdk
+        if: steps.selection.outputs.run == 'true'
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
+        if: steps.selection.outputs.run == 'true'
         with:
           flutter-version: ${{ steps.sdk.outputs.version }}
           cache: true
       - name: Use the installed SDK through FVM
+        if: steps.selection.outputs.run == 'true'
         run: |
           dart pub global activate fvm 4.1.2
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
-      - run: python3 automation/ci/run.py step image-client-install
-      - run: python3 automation/ci/run.py step image-client-adapter
-      - run: python3 automation/ci/run.py step image-client-widgets
-      - run: python3 automation/ci/run.py step image-client-browser
+      - uses: pnpm/action-setup@v6
+        if: steps.selection.outputs.run == 'true'
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v7
+        if: steps.selection.outputs.run == 'true'
+        with:
+          node-version: '22.23.4'
+      - name: Run canonical regression DAG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        if: steps.selection.outputs.run == 'true'
+        run: python3 automation/ci/run.py lane client-contract
+      - name: All lane tests executed
+        if: steps.selection.outputs.run == 'true'
+        run: echo 'All lane tests executed'
+      - name: Preserve canonical CI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-${{ github.job }}-${{ github.run_attempt }}
+          path: ~/.cache/festapp-ci/runs
+          retention-days: 7
+          if-no-files-found: ignore

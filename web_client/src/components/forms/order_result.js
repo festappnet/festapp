@@ -208,6 +208,13 @@ export class OrderResult {
 
         const paymentQr = success && !isWaitlist ? resultData?.payment_qr : null;
         const paymentHost = container.querySelector('.result-payment-details');
+        const cashInfo = resultData?.ticketOrder?.order?.payment_info;
+        if (success && cashInfo?.payment_method === 'cash' && Number(cashInfo.amount)>0) {
+            container.querySelector('.result-title').textContent = paymentMethodText('reservationConfirmed');
+            const label=document.createElement('p');label.textContent=paymentMethodText('payOnSite')+': '+cashInfo.amount+' '+cashInfo.currency_code;
+            const instructions=document.createElement('p');instructions.textContent=cashInfo.data?.payment_policy?.cashInstructions || paymentMethodText('cashInstructionsDefault');
+            paymentHost?.append(label,instructions);
+        }
         if (paymentHost && paymentQr) {
             renderPaymentDetails(paymentHost, paymentQr, { occasionTitle: formModel.occasionId?.title || formModel.title, orderSymbol });
         }

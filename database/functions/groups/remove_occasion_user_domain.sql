@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.remove_occasion_user_domain_internal_v1(p_occa
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE groups bigint[]; impacts jsonb;
 BEGIN
+ PERFORM public.invalidate_member_access_invitations_internal_v1((SELECT unit FROM public.occasions WHERE id=p_occasion),p_occasion,p_user);
  PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
  SELECT COALESCE(array_agg(DISTINCT g.id),'{}') INTO groups FROM public.user_group_info g LEFT JOIN public.user_groups ug ON g.id=ug."group" WHERE g.occasion=p_occasion AND (ug."user"=p_user OR g.leader=p_user);
  impacts:=public.group_profile_impacts_internal_v1(p_occasion,ARRAY(SELECT "user" FROM public.user_groups WHERE "group"=ANY(groups))||ARRAY[p_user]);

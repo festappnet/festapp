@@ -66,8 +66,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   EmailAuthoringContext? _authoringContext;
   late final Future<void> _initialAuthoringContext;
   bool _authoringContextLoading = false;
-  bool _contextUnavailable = false;
-  bool _usesOccasionProducts = false;
   Timer? _suggestTimer;
   bool _dismissSuggestions = false;
   ({
@@ -123,14 +121,16 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           await (widget.previewExamplesLoader?.call() ??
               EmailPreviewExamples.loadForOccasion(
                 widget.emailTemplatesResponse.occasion,
+                inheritedTone: widget
+                    .emailTemplatesResponse
+                    .unit
+                    .data?['communication_tone'],
               ));
       if (!mounted) return;
       setState(() {
         _examples = examples;
         _refreshScenarios();
         _previewError = false;
-        _contextUnavailable = examples.contextUnavailable;
-        _usesOccasionProducts = examples.usesOccasionProducts;
       });
       _subjectEditor.refreshAuthoringPresentation();
       _bodyDraft?.refreshAuthoringPresentation();
@@ -156,6 +156,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   s.tone == previous?.tone,
             )
             .firstOrNull ??
+        _scenarios
+            .where((s) => s.tone == examples.context?.communicationTone)
+            .firstOrNull ??
         _scenarios.firstOrNull;
     _bodyProvider.inlineTicketsEnabled =
         _ticketMode != null && _ticketMode != TicketDeliveryMode.pdfAttachment;
@@ -175,7 +178,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     final title = widget.emailTemplatesResponse.occasion?.title;
     final code = widget.template.substitutions
         .map((s) => s.code)
-        .where((code) => code == 'occasionTitle' || code == 'occasion_title')
+        .where((code) => code == 'occasionTitle')
         .firstOrNull;
     if (title == null || code == null) return;
     _suggestTimer = Timer(const Duration(milliseconds: 600), () {
@@ -283,93 +286,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     );
   }
 
-  String get _sampleOrigin => _usesOccasionProducts
-      ? EmailTemplatesStrings.occasionSample
-      : EmailTemplatesStrings.modelSample;
-
-  Widget _sampleControls({VoidCallback? onChanged}) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      if (_scenario != null)
-        Text(_sampleOrigin, style: Theme.of(context).textTheme.bodySmall),
-      if (_contextUnavailable || _previewError)
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(
-              _previewError
-                  ? EmailTemplatesStrings.previewUnavailable
-                  : EmailTemplatesStrings.contextUnavailable,
-            ),
-            IconButton(
-              tooltip: MaterialLocalizations.of(context)
-                  .refreshIndicatorSemanticLabel,
-              onPressed: () async {
-                await _loadExamples();
-                onChanged?.call();
-              },
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
-        ),
-      if (_scenarios.length > 1) const SizedBox(height: 8),
-      if (_scenarios.length > 1)
-        DropdownButtonFormField<EmailPreviewScenario>(
-          value: _scenario,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: EmailTemplatesStrings.scenario,
-            isDense: true,
-            border: const OutlineInputBorder(),
-          ),
-          items: _scenarios
-              .map(
-                (s) => DropdownMenuItem(
-                  value: s,
-                  child: Text(
-                    '${EmailTemplatesStrings.scenarioName(s.scenario)} · ${s.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(s.tone)}',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value == null) return;
-            setState(() {
-              _scenario = value;
-              _subjectProvider.scenario = value;
-              _bodyProvider.scenario = value;
-            });
-            _subjectEditor.refreshAuthoringPresentation();
-            _bodyDraft?.refreshAuthoringPresentation();
-            onChanged?.call();
-          },
-        ),
-    ],
-  );
-
-  String _scenarioLabel(EmailPreviewScenario scenario) =>
-      '${EmailTemplatesStrings.scenarioName(scenario.scenario)} · ${scenario.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(scenario.tone)}';
-
-  Future<void> _showSampleSettings() => showDialog<void>(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, update) => AppAlertDialog(
-        title: Text(EmailTemplatesStrings.scenario),
-        onClose: () => Navigator.pop(context),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
-        content: SizedBox(
-          width: 440,
-          child: _sampleControls(
-            onChanged: () {
-              if (context.mounted) update(() {});
-            },
-          ),
-        ),
-      ),
-    ),
-  );
-
   Future<void> _showVariableHelp() => showDialog<void>(
     context: context,
     builder: (context) => AppAlertDialog(
@@ -440,9 +356,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_authoringContext != null)
-                    Text(EmailTemplatesStrings.previewScope)
-                  else ...[
+                  if (_authoringContext == null) ...[
                     Text(EmailTemplatesStrings.authoringContextUnavailable),
                     if (_authoringContextLoading)
                       const LinearProgressIndicator()
@@ -458,8 +372,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                         },
                       ),
                   ],
-                  _sampleControls(onChanged: () => update(() {})),
-                  const SizedBox(height: 16),
+                  if (_authoringContext == null) const SizedBox(height: 16),
                   if (_authoringContext != null)
                     if (widget.template.code == 'TICKET_ORDER_PAYMENT_DONE')
                       TicketEmailPreview(
@@ -842,17 +755,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                     tooltip: EmailTemplatesStrings.variableGuide,
                     icon: const Icon(Icons.info_outline, size: 20),
                   ),
-                  IconButton(
-                    onPressed: _showSampleSettings,
-                    tooltip:
-                        '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
-                    icon: Icon(
-                      _contextUnavailable || _previewError
-                          ? Icons.warning_amber_outlined
-                          : Icons.tune,
-                      size: 20,
-                    ),
-                  ),
                 ],
               ),
               if (_duplicateTicketsBlock) ...[
@@ -940,7 +842,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             occasionId:
                                 widget.emailTemplatesResponse.occasion?.id,
                             unitId: widget.emailTemplatesResponse.unit.id!,
-                            organizationId: widget.emailTemplatesResponse.organization.id!,
+                            organizationId:
+                                widget.emailTemplatesResponse.organization.id!,
                             expectedRevision: widget.template.revision!,
                             code: widget.template.code!,
                           ));

@@ -1,3 +1,4 @@
+import 'package:festapp_core/payments.dart';
 import 'dart:convert';
 import 'package:fstapp/components/eshop/order_amount_change.dart';
 
@@ -185,7 +186,7 @@ class BlueprintSeatOrderPreview {
         products.map((row) => _id(row['spotId'])).toSet().length !=
             spots.length ||
         quote['formKey'] != requirements.formKey ||
-        next['paymentMethod'] != 'bank')
+        !isBuiltinPaymentMethod(next['paymentMethod'] as String?))
       throw const FormatException('Incomplete seat order confirmation');
     for (final row in seats) {
       for (final key in ['stateBefore', 'stateAfter'])

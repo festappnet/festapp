@@ -18,7 +18,7 @@ DECLARE
     unit_is_editor        BOOLEAN := false;
     unit_is_editor_view   BOOLEAN := false;
 
-    is_privileged         BOOLEAN := false;
+    may_enrol             BOOLEAN := false;
 BEGIN
     -- 1. Retrieve the organization, the unit, and the open status of the occasion.
     SELECT organization, unit, is_open
@@ -54,14 +54,14 @@ BEGIN
     unit_is_editor      := COALESCE(unit_is_editor, false);
     unit_is_editor_view := COALESCE(unit_is_editor_view, false);
 
-    -- 5. Define is_privileged.
-    --    User is privileged if they have specific unit roles OR are an admin on the occasion.
-    is_privileged := public.closed_occasion_enrolment_rule(unit_is_manager,unit_is_editor,unit_is_editor_view,
-                     public.get_is_admin_on_occasion(oc));
+    -- 5. One admission rule, shared by creation, existing-account enrolment,
+    -- imports and the other scoped callers. Target roles remain target facts.
+    may_enrol := public.closed_occasion_enrolment_rule(
+        unit_is_manager,unit_is_editor,unit_is_editor_view,
+        public.can_manage_occasion_participants(oc));
 
-    -- 6. Permission Check: Closed Occasions.
-    --    If the occasion is not open, only privileged users can be added/modified.
-    IF NOT occasion_open AND NOT is_privileged THEN
+    -- 6. Closure restricts public enrolment, not authorized management.
+    IF NOT occasion_open AND NOT may_enrol THEN
         RETURN jsonb_build_object('code', 403);
     END IF;
 

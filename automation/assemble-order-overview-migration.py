@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Forward-only overview assembly, independent of the published capacity migration."""
+import migration_inputs
 from pathlib import Path
 import argparse
 root = Path(__file__).resolve().parents[1]
@@ -7,11 +8,11 @@ sources = ['database/functions/eshop_waitlist/order_overview_email.sql',
            'database/functions/others/get_all_email_templates.sql']
 content = '-- Stable overview link in existing order emails; retire standalone delivery.\n'
 for source in sources:
-    content += '\n-- Source: ' + source + '\n' + (root / source).read_text() + '\n'
+    content += '\n-- Source: ' + source + '\n' + migration_inputs.read_text(root / source) + '\n'
 # Only the affected send-time predicate belongs to this migration, not other
 # independently evolving queue functions.
 queue_source = 'database/functions/emails/email_queue.sql'
-queue = (root / queue_source).read_text()
+queue = migration_inputs.read_text(root / queue_source)
 start = queue.index('CREATE OR REPLACE FUNCTION public.email_intent_valid(')
 end = queue.index('END $$;', start) + len('END $$;')
 content += '\n-- Source: ' + queue_source + ' (email_intent_valid only)\n' + queue[start:end] + '\n'
@@ -21,9 +22,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
 if args.check:
-    if not target.exists() or target.read_text() != content:
+    if not migration_inputs.exists(target) or migration_inputs.read_text(target) != content:
         raise SystemExit('Overview migration differs from canonical sources')
     print('Overview migration matches canonical sources')
 else:
-    target.write_text(content)
+    migration_inputs.write_text(target, content)
     print('Overview migration assembled')

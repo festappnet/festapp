@@ -52,7 +52,7 @@ export class AccountConnectionsPage {
             const data = await this.call('connections.list');
             if (generation !== this.generation) return;
             if (!Array.isArray(data.connections) || data.connections.some(c =>
-                typeof c.id !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(c.id) || typeof c.client !== 'string' ||
+                typeof c.id !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(c.id) || typeof c.client !== 'string' || (c.name != null && (typeof c.name !== 'string' || c.name.length > 80)) ||
                 !Number.isFinite(Date.parse(c.expiresAt)) || !Array.isArray(c.access?.units) || !Array.isArray(c.access?.occasionIds) ||
                 c.access.units.some(u => !u || !Number.isSafeInteger(u.unitId) || u.unitId <= 0 || typeof u.canCreateOccasions !== 'boolean') ||
                 c.access.occasionIds.some(id => !Number.isSafeInteger(id) || id <= 0) ||
@@ -137,7 +137,7 @@ export class AccountConnectionsPage {
             } else if (!this.connections.length) add('p', this.text('empty'), apps);
             else for (const c of this.connections) {
                 const item = add('article', '', apps); item.className = 'account-connection';
-                add('h3', c.client, item);
+                add('h3', c.name ? `${c.client} · ${c.name}` : c.client, item);
                 add('p', this.text('active'), item).className = 'connection-status';
                 if (!c.access.units.some(u => u.canCreateOccasions) && c.permissions.every(p => p.endsWith(':read')))
                     add('p', this.text('readOnly'), item).className = 'connection-status';
@@ -150,7 +150,7 @@ export class AccountConnectionsPage {
                     for (const p of c.permissions) add('li', LocalizationService.tr(`McpConnection.${MCP_PERMISSIONS[p].label}`), permissions);
                 }
                 if (this.pendingRevoke === c.id) {
-                    add('p', this.text('revokeConfirm', { client: c.client }), item);
+                    add('p', this.text('revokeConfirm', { client: c.name ? `${c.client} · ${c.name}` : c.client }), item);
                     const confirm = button(this.text('revoke'), () => this.revoke(c.id), item, this.revoking); confirm.dataset.confirmRevoke = '';
                     button(this.text('cancel'), () => { this.pendingRevoke = null; this.render(); this.container.querySelector(`[data-revoke="${c.id}"]`)?.focus(); }, item, this.revoking);
                 } else {

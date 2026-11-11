@@ -24,6 +24,7 @@ export class SupabaseService {
     }
 
     static get endpoint() { return SupabaseService._backend?.supabaseUrl ?? null; }
+    static get isCanonicalBackend() { return SupabaseService._backend?.isCanonical === true; }
 
     // A prepared scanner can open its local shell without waiting for an Auth
     // refresh. Online RPCs still pass through initialize() before use.
@@ -53,6 +54,13 @@ export class SupabaseService {
             );
         }
         return SupabaseService._client;
+    }
+
+    // Bind the anonymous check to the exact client that owns the request.
+    static async isAnonymousClient(client) {
+        if (this.getClient() !== client) return false;
+        const {data, error} = await client.auth.getSession();
+        return !error && data?.session === null && this.getClient() === client;
     }
 
     /// Refresh an existing browser session exactly when the configured backend

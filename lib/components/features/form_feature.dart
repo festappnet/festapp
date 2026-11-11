@@ -15,6 +15,7 @@ class FormFeature extends Feature {
   bool? reminderIsEnabled;
   int? reminderIntervalSeconds;
   int? deadlineDurationSeconds;
+  String? paymentDeadlineMode;
 
   FormFeature({
     required super.code,
@@ -27,6 +28,7 @@ class FormFeature extends Feature {
     this.reserveButtonTitle,
     this.reminderIsEnabled,
     this.deadlineDurationSeconds,
+    this.paymentDeadlineMode,
     this.reminderIntervalSeconds,
   }) : super(
           // Pass the processed value to the super constructor.
@@ -42,6 +44,7 @@ class FormFeature extends Feature {
     // This factory is now simpler. It just passes the JSON value
     // to the main constructor, which will handle the logic.
     return FormFeature(
+      paymentDeadlineMode: (json['payment_deadline'] as Map?)?['mode'] as String?,
       code: json[FeatureConstants.metaCode],
       isEnabled:
           json[FeatureConstants.metaIsEnabled], // Let the constructor handle it
@@ -79,6 +82,9 @@ class FormFeature extends Feature {
       data[FeatureConstants.reminderIntervalSeconds] = reminderIntervalSeconds!;
     if (deadlineDurationSeconds != null)
       data[FeatureConstants.deadlineDurationSeconds] = deadlineDurationSeconds!;
+    if (paymentDeadlineMode != null) {
+      data['payment_deadline'] = {'mode': paymentDeadlineMode!};
+    }
     return data;
   }
 }

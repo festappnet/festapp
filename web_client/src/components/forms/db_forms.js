@@ -17,7 +17,7 @@ export class DbForms {
         let result;
         try {
             result = await Promise.race([
-                client.rpc('get_form_by_link', { form_link: link }).abortSignal(controller.signal),
+                client.rpc('get_form_by_link', { input_data: {form_link: link, client_capabilities:['cash_reservations','no_payment_deadline']} }).abortSignal(controller.signal),
                 new Promise((_, reject) => {
                     timeout = setTimeout(() => {
                         reject(new Error('Form loading timed out'));

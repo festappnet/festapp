@@ -1,5 +1,11 @@
-import test from 'node:test';import assert from 'node:assert/strict';import QRCode from 'qrcode';import jsQR from 'jsqr';import { ScannerInput } from '../../src/components/scan/scanner_input.js';
-test('C01 local decoder reads QR pixels without BarcodeDetector or a CDN',()=>{const text='SCANNER-OFFLINE-LOCAL',qr=QRCode.create(text),scale=4,margin=4,width=(qr.modules.size+2*margin)*scale,pixels=new Uint8ClampedArray(width*width*4).fill(255);for(let y=0;y<qr.modules.size;y++)for(let x=0;x<qr.modules.size;x++)if(qr.modules.get(y,x))for(let dy=0;dy<scale;dy++)for(let dx=0;dx<scale;dx++){const i=(((y+margin)*scale+dy)*width+(x+margin)*scale+dx)*4;pixels[i]=pixels[i+1]=pixels[i+2]=0;}assert.equal(jsQR(pixels,width,width).data,text);});
+import test from 'node:test';import assert from 'node:assert/strict';
+import {qrFrame} from './decoder_fixture.js';
+import {decodeQRCodes,qrDecoderAsset} from '../../src/components/scan/scanner_codes.js';
+import { ScannerInput } from '../../src/components/scan/scanner_input.js';
+test('C01 reader uses its pinned local WASM asset without a CDN',async()=>{
+ const image=qrFrame();assert.match(qrDecoderAsset,/^\/web-assets\/zxing-reader-[a-f0-9]{16}\.wasm$/);
+ assert.equal((await decodeQRCodes(image.data,image.width,image.height))[0].value,image.text);
+});
 test('C02 repeated detections pause input until deliberate next; dispose stops tracks',()=>{const codes=[];const input=new ScannerInput(code=>codes.push(code));input.accept('A');input.accept('A');input.accept('B');assert.deepEqual(codes,['A']);let stopped=false;input.stream={getTracks:()=>[{stop:()=>{stopped=true;}}]};input.dispose();assert.equal(stopped,true);assert.equal(input.stream,null);});
 
 test('review pauses decoding while keeping the live stream; default pause still releases it',()=>{
@@ -16,4 +22,70 @@ test('continuous scanner accepts further tickets without pausing and suppresses 
     input.accept('A');input.accept('A');input.accept('B');
     assert.deepEqual(codes,['A','B']);assert.equal(input.paused,false);
     input.pause({keepStream:true});input.accept('C');assert.deepEqual(codes,['A','B']);
+});
+
+test('camera worker keeps decoding off the UI thread, bounds its queue and fences stopped results',async t=>{
+ const previous={navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),document:globalThis.document,Worker:globalThis.Worker};
+ const workers=[],messages=[],codes=[];let trackStops=0,focus;
+ const track={stop(){trackStops++;},getCapabilities:()=>({focusMode:['continuous']}),async applyConstraints(value){focus=value;}};
+ const stream={getTracks:()=>[track],getVideoTracks:()=>[track]};
+ const context={drawImage(){},getImageData(x,y,w,h){return {data:new Uint8ClampedArray(w*h*4)};}};
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async constraints=>{assert.equal(constraints.video.width.ideal,1920);assert.equal(constraints.video.height.ideal,1080);assert.equal(constraints.audio,false);return stream;}}}});
+ globalThis.document={createElement:()=>({getContext:()=>context})};
+ globalThis.Worker=class {
+  constructor(url,options){assert.match(url.pathname,/scanner_decoder_worker\.js$/);assert.equal(options.type,'module');workers.push(this);}
+  postMessage(message,transfers){messages.push(message);assert.equal(transfers[0],message.pixels.buffer);}
+  terminate(){this.terminated=true;}
+ };
+ const input=new ScannerInput(code=>codes.push(code),{continuous:true});
+ t.after(()=>{input.dispose();Object.defineProperty(globalThis,'navigator',previous.navigator);globalThis.document=previous.document;if(previous.Worker===undefined)delete globalThis.Worker;else globalThis.Worker=previous.Worker;});
+ await input.start({videoWidth:1920,videoHeight:1080,async play(){}});
+ assert.deepEqual(focus,{advanced:[{focusMode:'continuous'}]});
+ const worker=workers[0];assert.ok(worker);
+ input.decode=()=>assert.fail('worker-enabled camera must not decode QR on the UI thread');
+ input.frame();input.frame();assert.equal(messages.length,1,'busy worker must not accumulate camera frames');
+ assert.equal(messages[0].width,1920,'small QR modules must retain HD camera detail');assert.equal(messages[0].height,1080);
+ worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME']);
+ input.frame();worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME']);
+ input.allowSame();input.frame();worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME','SAME']);
+ input.pause({keepStream:true});worker.onmessage({data:{codes:[{value:'PAUSED'}]}});assert.deepEqual(codes,['SAME','SAME']);
+ input.stop();assert.equal(worker.terminated,true);assert.equal(trackStops,1);
+ worker.onmessage({data:{codes:[{value:'STALE'}]}});assert.deepEqual(codes,['SAME','SAME']);
+});
+
+test('worker startup failure retains the local offline decoder',async t=>{
+ const previous={navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),document:globalThis.document,Worker:globalThis.Worker};
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async()=>({getTracks:()=>[]})}}});
+ globalThis.document={createElement:()=>({getContext:()=>({})})};
+ const workers=[];globalThis.Worker=class {constructor(){workers.push(this);}terminate(){this.terminated=true;}};
+ const input=new ScannerInput(()=>{});
+ t.after(()=>{input.dispose();Object.defineProperty(globalThis,'navigator',previous.navigator);globalThis.document=previous.document;if(previous.Worker===undefined)delete globalThis.Worker;else globalThis.Worker=previous.Worker;});
+ await input.start({async play(){}});assert.equal(typeof input.decode,'function');
+ workers[0].onerror({preventDefault(){}});
+ assert.equal(input.decoderWorker,null);assert.equal(workers[0].terminated,true);assert.equal(typeof input.decode,'function');assert.ok(input.stream);
+});
+
+
+test('manual selection suppresses its QR too; noise does not hide a valid neighbouring ticket',()=>{
+ const codes=[],input=new ScannerInput(value=>codes.push(value),{accepts:value=>!value.startsWith('https:')});
+ input.suppress('MANUAL');input.paused=false;
+ input.dispatchCodes([{value:'https://noise.invalid'},{value:'MANUAL'},{value:'NEXT'}]);
+ assert.deepEqual(codes,['NEXT']);assert.equal(input.paused,true);
+ assert.equal(input.suppressedCodes.has('https://noise.invalid'),false);
+});
+
+
+test('a stopped camera playback rejection cannot stop a newer camera start',async t=>{
+ const previous={navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),document:globalThis.document};
+ let stops=0,rejectPlay;
+ const stream=()=>({getTracks:()=>[{stop(){stops++;}}],getVideoTracks:()=>[]});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async()=>stream()}}});
+ globalThis.document={createElement:()=>({getContext:()=>({})})};
+ const input=new ScannerInput(()=>{});
+ t.after(()=>{input.dispose();Object.defineProperty(globalThis,'navigator',previous.navigator);globalThis.document=previous.document;});
+ const first=input.start({play:()=>new Promise((resolve,reject)=>{rejectPlay=reject;})});
+ await new Promise(resolve=>setImmediate(resolve));
+ input.stop();await input.start({async play(){}});const current=input.stream;
+ rejectPlay(Object.assign(new Error('old video detached'),{name:'AbortError'}));await first;
+ assert.equal(input.stream,current,'stale failure must not revoke the replacement stream');assert.equal(stops,1);
 });

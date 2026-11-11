@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync} from '../lib/migration_inputs.mjs';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 const historical='supabase/migrations/20261024020000_pregenerated_ticket_batches.sql';

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build a new, dormant Festapp-owned reference migration from canonical SQL."""
+import migration_inputs
 import argparse
 from pathlib import Path
 root = Path(__file__).resolve().parents[1]
@@ -20,7 +21,7 @@ files = [
 ]
 text = '-- Festapp-owned payment references; activation is a separate scoped operation.\n'
 for name in files:
-    text += '\n-- Source: database/functions/' + name + '\n' + (root / 'database/functions' / name).read_text() + '\n'
+    text += '\n-- Source: database/functions/' + name + '\n' + migration_inputs.read_text(root / 'database/functions' / name) + '\n'
 text += '''
 -- Direct payment writes cannot publish an unreserved symbol. Domain RPC owners
 -- keep their internal access. Legacy helper exports are not a second API.
@@ -36,17 +37,17 @@ END $$;
 '''
 output = Path(args.output)
 if args.check:
-    if not output.exists() or output.read_text() != text:
+    if not migration_inputs.exists(output) or migration_inputs.read_text(output) != text:
         raise SystemExit('Payment-reference migration differs from canonical sources')
 else:
-    if output.exists():
+    if migration_inputs.exists(output):
         raise SystemExit('Refusing to overwrite an existing migration')
-    output.write_text(text)
+    migration_inputs.write_text(output, text)
     tables = root / 'database/tables/tables.sql'
-    contents = tables.read_text()
+    contents = migration_inputs.read_text(tables)
     start = '\n-- Festapp-owned payment-reference registry.\n'
     end = '-- End Festapp-owned payment-reference registry.\n'
-    block = start + (root / 'database/functions/eshop_payment_references/schema.sql').read_text() + end
+    block = start + migration_inputs.read_text(root / 'database/functions/eshop_payment_references/schema.sql') + end
     if start in contents:
         head, tail = contents.split(start, 1)
         if end not in tail:
@@ -54,4 +55,4 @@ else:
         contents = head + block + tail.split(end, 1)[1]
     else:
         contents += block
-    tables.write_text(contents)
+    migration_inputs.write_text(tables, contents)

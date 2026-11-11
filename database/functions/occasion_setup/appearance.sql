@@ -4,6 +4,8 @@ RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
 DECLARE payload jsonb:=p_data-'eventKind'-'eventKindNeedsConfirmation'; appearance jsonb; shared_font text; has_tickets boolean;
 BEGIN
  has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false));
+ PERFORM public.validate_ticket_wallet_appearance(payload->'ticketDraft');
+ PERFORM public.ticket_wallet_enabled(payload->'ticketDraft');
  PERFORM public.ticket_delivery_mode(payload->'ticketDraft');
  appearance:=payload->'appearance';
  IF appearance IS NOT NULL THEN

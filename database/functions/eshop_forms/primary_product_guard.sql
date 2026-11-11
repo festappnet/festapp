@@ -24,7 +24,8 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions
 BEGIN
  IF EXISTS(SELECT 1 FROM unnest(p_preserve) required(id) WHERE NOT EXISTS(
    SELECT 1 FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
-   WHERE ff.form=p_form AND pt.id=required.id AND pt.type='spot' AND ff.type='product_type' AND NOT ff.is_hidden))
+   -- Both ordinary offers and seated forms can own the primary catalog.
+   WHERE ff.form=p_form AND pt.id=required.id AND pt.type='spot' AND ff.type IN ('product_type','ticket') AND NOT ff.is_hidden))
  OR EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
    WHERE ff.form=p_form AND pt.type='spot' AND (ff.is_hidden OR NOT EXISTS(
      SELECT 1 FROM eshop.products p WHERE p.product_type=pt.id AND NOT p.is_hidden)))

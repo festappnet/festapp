@@ -1,0 +1,15 @@
+{
+  "head": "f23ed15bcb20726f423998a88fcff355c9c07681",
+  "dirty": true,
+  "platform": "darwin",
+  "jobs": [
+    {
+      "name": "server-policy",
+      "seconds": 8.43,
+      "exitCode": 0,
+      "log": "/Users/miakh/Library/Caches/festapp-ci/server-policy.log"
+    }
+  ],
+  "complete": true,
+  "seconds": 8.43
+}

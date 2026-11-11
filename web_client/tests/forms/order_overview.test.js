@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { LocalizationService } from '../../src/services/localization_service.js';
 import { loadOrderOverview, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
@@ -44,7 +45,7 @@ test('view transport calls only read RPC; resolver remains a separate POST', asy
     const calls = [];
     const client = { rpc: async (name, params) => { calls.push({ name, params }); return { data: fixture() }; } };
     const commands = new WaitlistCommands(client); await commands.overview({ token: 'view', orderId: 1 });
-    assert.equal(calls[0].name, 'get_customer_order_overview'); assert.deepEqual(calls[0].params, { p_token: 'view', p_order_id: 1 });
+    assert.equal(calls[0].name, 'get_customer_order_overview'); assert.deepEqual(calls[0].params, { input_data: {token:'view', order_id:1, client_capabilities:['cash_reservations','no_payment_deadline']} });
     assert.equal(commands.pending.size, 0);
 });
 
@@ -343,4 +344,52 @@ test('standing tickets display the saved area name beside the unchanged product 
     assert.equal(seating.querySelector('vip'),null);
     assert.match(host.textContent,/Místo/);
     assert.match(host.textContent,/500,00/);
+});
+
+test('cash overview preserves remaining balance and instructions with no bank or deadline facts',t=>{
+ const host=setup(t),data=fixture();
+ data.orders[0].payment={method:'cash',status:'partially_paid',received:250.50,totalOutstanding:749.50,dueNow:749.50,returned:0,overpaid:0,instructionsAvailable:true,dueAt:null,instructions:{cashInstructions:'U vstupu <script>unsafe</script>'}};
+ renderOrderOverview(host,data);
+ assert.match(host.textContent,/U vstupu <script>/);assert.match(host.textContent,/749,50/);
+ assert.equal(host.querySelector('script'),null);assert.equal(host.querySelector('.overview-state-deadline'),null);
+ assert.equal(host.querySelector('.result-payment-qr'),null);assert.doesNotMatch(host.textContent,/123\/0100|VS:|IBAN/);
+});
+
+for (const locale of ['cs', 'sk', 'de', 'uk', 'en', 'pl']) {
+    test(`overview uses effective tone in waiting, offers and refresh errors: ${locale}`, async t => {
+        const host = setup(t);
+        const original = LocalizationService.translations;
+        LocalizationService.translations = JSON.parse(readFileSync(new URL(`../../../assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+        t.after(() => { LocalizationService.translations = original; });
+        const strings = LocalizationService.translations.OrderOverview;
+        for (const tone of ['formal', 'informal', undefined, 'invalid']) {
+            const data = fixture();
+            data.root.communicationTone = tone;
+            data.orders = []; data.offers = [];
+            const suffix = tone === 'informal' ? '_informal' : '';
+            renderOrderOverview(host, data);
+            assert.ok(host.querySelector('.overview-status').textContent.includes(strings[`not_required_yet${suffix}`]));
+            assert.ok(host.querySelector('.overview-status').textContent.includes(strings[`waitingExplanation${suffix}`]));
+            assert.ok(host.querySelector('.overview-history-card').textContent.includes(strings[`waitingExplanation${suffix}`]));
+            data.offers = [{ pendingPlaces: 1 }];
+            renderOrderOverview(host, data);
+            assert.ok(host.textContent.includes(strings[`offerReady${suffix}`]));
+            assert.ok(host.textContent.includes(strings[`offerEmail${suffix}`]));
+            await loadOrderOverview(host, { overview: async () => { throw new Error('offline'); } }, {}, null, false, true);
+            assert.equal(host.querySelector('[role=alert]').textContent, strings[`failed${suffix}`]);
+        }
+    });
+}
+
+test('pending refund remains separate from confirmed received and net facts', t => {
+    const host = setup(t), data = fixture();
+    Object.assign(data.orders[0].payment, {received:1000,returned:0,net:1000,pending:300,totalOutstanding:0,dueNow:0,instructionsAvailable:false});
+    renderOrderOverview(host,data);
+    const amounts = host.querySelector('.overview-amounts');
+    assert.ok(amounts);
+    assert.match(amounts.textContent,/net/);
+    assert.match(amounts.textContent,/pendingRefund/);
+    assert.match(amounts.textContent,/300,00/);
+    assert.equal(host.querySelector('.overview-refunded'),null);
+    assert.equal(host.querySelectorAll('button').length,0);
 });

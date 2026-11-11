@@ -35,6 +35,25 @@ class CheckPolicyTest(unittest.TestCase):
     def test_unlisted_failed_check_also_blocks(self):
         self.assertTrue(gate.problems([check('a'), check('new-job', 'failure')], ['a'], SHA))
 
+    def test_failed_runtime_drift_monitor_does_not_block_its_repair(self):
+        drift = check('measurement-runtime-drift', 'failure')
+        self.assertTrue(gate.problems([check('a'), drift], ['a'], SHA))
+        drift['_workflow_path'] = '.github/workflows/other.yml'
+        self.assertTrue(gate.problems([check('a'), drift], ['a'], SHA))
+        drift['_workflow_path'] = '.github/workflows/measurement-runtime-drift.yml'
+        self.assertEqual(gate.problems([check('a'), drift], ['a'], SHA), [])
+        self.assertTrue(gate.problems([check('a'), drift], ['a', 'measurement-runtime-drift'], SHA))
+
+    def test_workflow_identity_comes_from_matching_suite(self):
+        drift = check('measurement-runtime-drift', 'failure')
+        drift['check_suite'] = {'id': 42}
+        for path, expected in [('.github/workflows/other.yml', True),
+                               ('.github/workflows/measurement-runtime-drift.yml', False)]:
+            with patch.object(gate.subprocess, 'check_output', return_value=json.dumps({
+                    'workflow_runs': [{'check_suite_id': 42, 'path': path}]})):
+                gate.identify_informational_workflows([drift], 'fixture/repo')
+            self.assertEqual(bool(gate.problems([drift], [], SHA)), expected)
+
     def test_other_app_cannot_supply_missing_github_job(self):
         fake = check('a')
         fake['app'] = {'slug': 'unrelated'}
@@ -46,7 +65,8 @@ class ReleaseCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'automation/ci').mkdir(parents=True)
-            for name in ['automation/ci/release_gate.py', 'automation/deploy_direct.sh']:
+            for name in [*gate.CANONICAL_RELEASE_FILES, 'automation/deploy_direct.sh']:
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
                 (root / name).write_bytes((gate.ROOT / name).read_bytes())
             (root / 'automation/ci/checks.json').write_text(json.dumps({'jobs': {'seat-checkout': {}}}))
             def git(*args):
@@ -54,7 +74,7 @@ class ReleaseCliTest(unittest.TestCase):
             git('init', '-q')
             git('config', 'user.email', 'test@example.invalid')
             git('config', 'user.name', 'Release fixture')
-            (root / '.gitignore').write_text('/bin/\n/checks.json\n/upload-must-not-run\n')
+            (root / '.gitignore').write_text('/bin/\n/checks.json\n/upload-must-not-run\n__pycache__/\n')
             git('add', '.')
             git('commit', '-qm', 'canonical source')
             sha = git('rev-parse', 'HEAD')

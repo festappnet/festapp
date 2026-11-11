@@ -1,3 +1,4 @@
+import writeIfChanged from '../lib/write_if_changed.cjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -141,7 +142,7 @@ for (const page of pages) {
     }
   } else {
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, rendered);
+    writeIfChanged.writeFileSync(target, rendered);
   }
 }
 

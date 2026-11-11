@@ -23,6 +23,10 @@
                 el(components.SelectControl, {label: __('Form height', 'vstupenky-online'), value: a.mode,
                     options: [{label: __('Automatic', 'vstupenky-online'), value: 'auto'}, {label: __('Fixed', 'vstupenky-online'), value: 'fixed'}], onChange: (mode) => props.setAttributes({mode})}),
 
+                el(components.SelectControl, {label: __('Measurement destination', 'vstupenky-online'), value: a.measurement,
+                    options: [{label: __('Festapp Unit runtime (existing behavior)', 'vstupenky-online'), value: 'unit'}, {label: __('Website dataLayer', 'vstupenky-online'), value: 'host'}],
+                    onChange: (measurement) => props.setAttributes({measurement}),
+                    help: __('Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp.', 'vstupenky-online')}),
                 el('p', null, __('Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes.', 'vstupenky-online'), ' ', el('a', {href:'https://vstupenky.online/events?help=forms',target:'_blank',rel:'noopener noreferrer'}, __('Open forms', 'vstupenky-online'))),
                 el(components.RangeControl, {label: a.mode === 'fixed' ? __('Height (px)', 'vstupenky-online') : __('Fallback height without the helper (px)', 'vstupenky-online'), value: a.height, min: 240, max: 4000, step: 10, onChange: (height) => props.setAttributes({height})}),
                 el('p', null, __('After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor.', 'vstupenky-online')),
@@ -30,5 +34,11 @@
             );
         },
         save: function () { return null; }
+    });
+    // Inserter defaults are explicit serialized attributes. Old blocks still
+    // resolve the block.json default (unit), including when edited and saved.
+    blocks.registerBlockVariation('vstupenky-online/ticket-form', {
+        name: 'website', title: 'vstupenky.online', isDefault: true,
+        attributes: {measurement: 'host'}, scope: ['inserter'],
     });
 })(window.wp.blocks, window.wp.element, window.wp.blockEditor, window.wp.components, window.wp.i18n);

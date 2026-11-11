@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "profiles": [
+    "reference",
+    "demo"
+  ],
+  "settings": {
+    "cron.launch_active_jobs": "off",
+    "shared_preload_libraries": "pg_stat_statements,pgaudit,plpgsql,plpgsql_check,pg_cron,pg_net,pgsodium,timescaledb,auto_explain,pg_tle,plan_filter,supabase_vault",
+    "pg_net.database_name": "festapp_network_sink"
+  },
+  "platforms": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
+  "providers": {
+    "15": {
+      "image": "public.ecr.aws/supabase/postgres:15.8.1.085@sha256:af083ef64d0408c8f098ee6f5c364a59b26f36fbc0f3a334a62c5c1d57362e9b",
+      "providerManifest": "automation/local_db/provider/manifest.json"
+    },
+    "17": {
+      "image": "public.ecr.aws/supabase/postgres:17.6.1.156@sha256:ca7871b587ca2c401ac0f325df6249c9aa0d25647ded34631158efc51176767f",
+      "providerManifest": "automation/local_db/provider/pg17/manifest.json",
+      "settings": {
+        "shared_preload_libraries": "pg_stat_statements,pgaudit,plpgsql,plpgsql_check,pg_cron,pg_net,pgsodium,auto_explain,pg_tle,plan_filter,supabase_vault"
+      }
+    }
+  }
+}

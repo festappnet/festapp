@@ -49,6 +49,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
       widget.fullscreen && MediaQuery.sizeOf(context).width >= 600;
   double _documentWidth = 600;
   final _selectionLinks = SelectionLayerLinks();
+  final _chooserLink = LeaderLink();
   final _mentionOverlay = OverlayPortalController();
   bool _explicitChooser = false;
   bool _consumeEscapeUp = false;
@@ -155,7 +156,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         left: 0,
         top: 0,
         child: Follower.withOffset(
-            link: _selectionLinks.caretLink,
+            // Explicit insertion also works with an expanded or offscreen selection.
+            link: _explicitChooser ? _chooserLink : _selectionLinks.caretLink,
             leaderAnchor: Alignment.bottomLeft,
             followerAnchor: Alignment.topLeft,
             offset: const Offset(0, 8),
@@ -795,10 +797,10 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                             : Axis.horizontal,
                                         children: [
                                           if (controller.authoring != null)
-                                            IconButton(
+                                            Leader(link: _chooserLink, child: IconButton(
                                                 tooltip: controller.authoring!.insertLabel,
                                                 onPressed: _openMentions,
-                                                icon: const Icon(Icons.alternate_email)),
+                                                icon: const Icon(Icons.alternate_email))),
                                           _tool(
                                               Icons.format_bold,
                                               HtmlStrings.bold,
@@ -999,7 +1001,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               ],
                                               contentTapDelegateFactories: [
                                                 if (controller.authoring != null)
-                                                  (_) => _TemplateInlineTapDelegate(controller),
+                                                  (_) => _TemplateInlineTapDelegate(controller, context),
                                                 superEditorLaunchLinkTapHandlerFactory,
                                               ],
                                               autofocus: widget.fullscreen,
@@ -1090,6 +1092,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                                 style: style.copyWith(color: colors.primary, fontWeight: FontWeight.normal)),
                                                                             const SizedBox(width: 4),
                                                                             Flexible(child: Text(sample, softWrap: true, textScaler: TextScaler.noScaling, style: style.copyWith(color: colors.onSurface))),
+                                                                            const SizedBox(width: 4),
+                                                                            const Icon(Icons.info_outline, size: 14),
                                                                           ]))));
                                                         }
                                                       ],
@@ -1196,13 +1200,13 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         constraints: const BoxConstraints(minHeight: 48),
         child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Expanded(child: document),
-        IconButton(
+        Leader(link: _chooserLink, child: IconButton(
             tooltip: controller.authoring!.insertLabel,
             onPressed: _openMentions,
             style: IconButton.styleFrom(
                 minimumSize: const Size(48, 48),
                 foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant),
-            icon: const Icon(Icons.alternate_email, size: 20)),
+            icon: const Icon(Icons.alternate_email, size: 20))),
       ]));
     }
     return widget.fullscreen ? Expanded(child: document) : document;
@@ -1342,14 +1346,17 @@ class _AtomicBlockBuilder implements ComponentBuilder {
         onMoveUp: controller.canMoveBlock(node.id, -1) ? () => controller.moveBlock(node.id, -1) : null,
         onMoveDown: controller.canMoveBlock(node.id, 1) ? () => controller.moveBlock(node.id, 1) : null,
         child: embedded?.builder(buildContext) ?? controller.authoring!.preview(buildContext,
-          (node as TemplateTokenBlock).code, occurrence: () => _templateOccurrence(controller, node.code, node)) ?? Text(controller.authoring!.sampleLabel))));
+          (node as TemplateTokenBlock).code,
+          occurrence: () => _templateOccurrence(controller, node.code, node),
+          wrapHtml: (html) => controller.wrapTokenPreview(node.id, html)) ?? Text(controller.authoring!.sampleLabel))));
   }
 }
 
 /// Text components ignore child gestures; use the editor's native tap boundary.
 class _TemplateInlineTapDelegate extends ContentTapDelegate {
-  _TemplateInlineTapDelegate(this.controller);
+  _TemplateInlineTapDelegate(this.controller, this.context);
   final RichHtmlEditorController controller;
+  final BuildContext context;
   @override
   TapHandlingInstruction onTap(DocumentTapDetails details) {
     final position = details.documentLayout.getDocumentPositionAtOffset(details.layoutOffset);
@@ -1357,11 +1364,23 @@ class _TemplateInlineTapDelegate extends ContentTapDelegate {
     if (node is! TextNode) return TapHandlingInstruction.continueHandling;
     for (final entry in node.text.placeholders.entries) {
       final token = entry.value;
-      if (token is! TemplateTokenPlaceholder || controller.authoring?.entry(token.code)?.rich != true) continue;
+      if (token is! TemplateTokenPlaceholder) continue;
+      final tokenEntry = controller.authoring?.entry(token.code);
       final base = DocumentPosition(nodeId: node.id, nodePosition: TextNodePosition(offset: entry.key));
       final extent = DocumentPosition(nodeId: node.id, nodePosition: TextNodePosition(offset: entry.key + 1));
       final bounds = details.documentLayout.getRectForSelection(base, extent);
       if (bounds?.contains(details.layoutOffset) != true) continue;
+      // Inline child gestures belong to Super Editor's native tap boundary.
+      final rich = tokenEntry?.rich == true && !controller.authoring!.singleLine;
+      final infoWidth = rich ? 48.0 : 18.0;
+      final infoBounds = Rect.fromLTWH(bounds!.right - infoWidth, bounds.top, infoWidth, rich ? 48 : bounds.height);
+      if (infoBounds.contains(details.layoutOffset)) {
+        showHtmlAtomicBlockInfo(context,
+            label: tokenEntry?.label ?? token.code,
+            description: tokenEntry?.description ?? '');
+        return TapHandlingInstruction.halt;
+      }
+      if (!rich) return TapHandlingInstruction.continueHandling;
       controller.focusNode.requestFocus();
       controller.editor.execute([
         ChangeSelectionRequest(DocumentSelection(base: base, extent: extent),

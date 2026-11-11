@@ -15,13 +15,11 @@ rules are tracked in `AGENTS.md`, `CLAUDE.md`, and
 
 Selects the repository's Web Client, SQL, client, Deno, image integration and
 explicit automation lanes. Install their dependencies and choose a disposable
-local database before running it. The wrapper loads `.env.local`; an existing
-`DATABASE_URL` there takes precedence over automatic local-DB detection unless
-you supply an explicit shell override.
+local database before running it. Without an explicit disposable `DATABASE_URL`, the wrapper acquires an owned
+workspace. It never guesses an existing localhost database.
 
 ```bash
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  ./automation/test_all.sh
+./automation/test_all.sh
 ```
 
 The GitHub web regression jobs have a native local mirror:
@@ -32,32 +30,87 @@ The GitHub web regression jobs have a native local mirror:
 python3 automation/ci/run.py list          # Available job names
 ```
 
-GitHub and the mirror read the same ordered commands from
-`automation/ci/checks.json`; change that contract instead of copying test lists.
-The mirror runs sequentially, pins Node per job through pnpm, uses frozen JS
-lockfiles, and waits for an existing workstation Flutter task. Install pnpm
-11.24.0, FVM with the project SDK, Deno 2.9.0, Supabase CLI 2.111.0,
-Docker, psql, Chrome and agent-browser 0.39.4 first. PyYAML 6.0.3 is installed
-in an isolated cached Python environment. No production environment file is loaded.
+GitHub and the mirror consume the same unit DAG from
+`automation/ci/checks.json`. Units declare dependencies, source inputs, test
+groups and resource claims. The local scheduler bounds RAM, browser work,
+cluster mutation and the single workstation Flutter slot. Required units with a
+failed dependency are `INCOMPLETE`, never successful skips. All eight public job
+names and exact-SHA release gates remain mandatory.
 
-The SQL lane rebuilds its own `festapp-ci-mirror` project on loopback port 55442
-(shadow 55440), reuses Docker's downloaded image layers, and stops that project
-on exit. It does not reuse migrated database contents. Concurrent mirrors are
-blocked across worktrees. Keep these ports free. Logs and a source/platform/timing
-receipt are under `~/Library/Caches/festapp-ci` on macOS or
-`~/.cache/festapp-ci` on Linux. A dirty receipt describes a development run,
-not a release attestation. The native mirror does not reproduce Ubuntu itself;
-required GitHub checks and existing release/live-version gates still apply.
-Android publishing and production deployment are separate authorized operations.
+Install pnpm 11.24.0, FVM/project SDK, Deno 2.9.0, Supabase CLI 2.111.0, Docker,
+psql and Chrome/Chromium for Flutter. After the frozen web-client install, run
+`pnpm --dir web_client exec playwright install --only-shell chromium` to provision the managed
+browser pinned by the declared Playwright dependency. Hosted lanes install its
+system dependencies through `automation/ci/browser.sh`, downloading only the
+headless shell used by the native suites. Seat CI overlaps this provisioning
+with pulling the digest-pinned database image through
+`automation/ci/prepare-seat.sh`; both must succeed before the lane runs.
+Ticket Edge checks run alongside client preparation; all units remain required.
+The mirror pins Node per job and shares a frozen package install only within the same run when Node,
+manifests, lockfiles and the installed-module manifest match. Different Node
+versions cannot concurrently rewrite shared dependencies. It never copies
+`node_modules` between worktrees. Flutter's separate Chrome runner receives
+`CHROME_EXECUTABLE`. PyYAML 6.0.3 is installed in an isolated cached Python
+environment.
+
+The PostgreSQL-only runtime is owned by `automation/local_db/runtime.py` and
+`test-base.json`. It uses a pinned Supabase image digest and verified provider
+SQL/roles, including actual Auth/Storage helpers and ACLs. No application or
+production environment is loaded. Cron execution is disabled; pg_net workers
+process a separate empty sink database, never test queues. Default ownership is
+`festapp-sql-runtime` on **127.0.0.1:55542**; use
+`FESTAPP_LOCAL_DB_PROJECT_ID`/`FESTAPP_LOCAL_DB_PORT` for another task-owned cluster.
+Existing unowned containers or non-loopback mappings are rejected.
+
+Behavior units receive unique lease-owned databases from immutable fenced
+bases. Fingerprints include image/platform/toolchain, provider content, verified
+baseline inputs, complete migration content/order, backfills, seed/owner tools
+and canonical SQL. Literal nested seed includes, generator configuration and
+validation-policy inputs are included transitively. Same-name rewrites invalidate
+both bases and cached prefixes.
+Append-only migrations can clone a verified prefix and execute the real tail;
+full seat CI separately performs the real cold history replay and populated
+upgrade proofs. Snapshot reuse never substitutes for the upgrade gate.
+
+Logs, immutable `runs/<id>/receipt.json` and structured `timings.jsonl` live under
+`~/Library/Caches/festapp-ci` (macOS) or `~/.cache/festapp-ci` (Linux).
+`latest.json` is a path pointer. Receipts record selected units, source content,
+actual tool versions, host load/swap, outcomes, host process-tree sampled RSS and
+cleanup-inclusive elapsed time. Container memory samples are reported separately.
+Set `FESTAPP_TIMINGS` for standalone profiling; traces omit query bodies, command
+arguments and error contents. Node monotonic origins are per process: durations
+are comparable, unrelated `monotonicStart` values are not.
+
+`python3 automation/ci/run.py affected <paths...>` reports explicit affected job
+recommendations. Unknown paths/tests request the full set; new test files must
+have explicit inventory ownership. Executed release lanes always run every required unit; input reuse is admitted as described below.
+No source publication or production deployment is implied by these local tools.
+A dirty receipt is development evidence, not a release attestation. Measurements,
+limits and the retirement ledger are recorded in
+[`test-runtime-speedup-RESULT-2026-11-09.md`](docs/plans/test-runtime-speedup-RESULT-2026-11-09.md).
 
 ### Required web release CI gate
 
-Before publishing shared changes, run the affected lanes from
-`automation/test_ci.sh`, not a substitute list of hand-picked tests. Before a
+Before publishing shared changes, run targeted local tests of the affected
+behavior. GitHub performs authoritative complete lane verification; a duplicate
+full local mirror is not required. `automation/test_ci.sh` remains an explicit
+full mirror for diagnosis, offline work and requested full verification. Before a
 web release, all eight jobs in `automation/ci/checks.json` must finish successfully
-in GitHub on the exact canonical `baseMainSha`. A failed baseline is still a
-blocked release; document and fix it before continuing. A successful build,
-local test receipt, another SHA, or a previous run does not replace this gate.
+in GitHub on the exact canonical `baseMainSha`. Each job either executes its
+complete lane or verifies identical inputs against actually executed, successful
+main or internal-PR CI execution artifacts no older than seven days. Reused
+evidence is recorded in the job summary;
+it cannot refresh its own age. Missing evidence or an uncertain impact runs tests.
+A failed baseline is still a blocked release. A build or local receipt does not
+replace this gate. See [CI input reuse](docs/architecture/ci_input_reuse.md).
+
+Draft pull requests do not start these expensive regression jobs. Switching to
+Ready for review runs every lane. Subsequent ready-PR updates and main pushes
+reuse only directly executed, artifact-verified identical inputs from main
+or internal PRs; changed or unknown inputs run their lanes. Manual workflow
+dispatch, reruns and merge-queue checks always run full lanes.
+New PR updates cancel superseded runs of that PR, without cancelling main runs.
+The local mirror still executes explicitly selected lanes without GitHub reuse.
 
 After publishing main, inspect it before creating/pushing a tenant overlay:
 
@@ -81,10 +134,16 @@ must pass; any additional failed GitHub Actions check also blocks release.
 
 
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
-and every web release build. Install its pinned runner with
-`pnpm add --global --allow-build=agent-browser agent-browser@0.39.4`.
-Use installed Chrome through `AGENT_BROWSER_EXECUTABLE_PATH` (or run
-`agent-browser install` when no system browser is available).
+and every web release build. Install the frozen web-client dependencies and
+provision the browser with `pnpm --dir web_client exec playwright install chromium`.
+The declared Playwright SDK owns one headless, muted browser per suite and a fresh
+nonpersistent context per scenario. All fixture traffic, including service
+workers and WebSockets, passes through an owned proxy limited to registered
+loopback origins. The explicit measurement `--live-gtm` diagnostic additionally
+permits its exact approved Google Tag Manager origin; ordinary CI remains local.
+Theme fixtures set the main page preference through the public CDP session API,
+preserving cross-origin iframe media behavior. Interactive agent-browser use is
+separate from the deterministic test and release contract.
 `pnpm --dir web_client run test:form-access-browser` exercises the real HTML,
 Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin
@@ -107,6 +166,11 @@ skips inside individual tests retain their own test-runner semantics.
 A JSON summary is written under `FESTAPP_ALL_RESULTS` (a fresh temporary directory
 by default). The web lane retains its 60-second timeout and executes `pnpm test`;
 timeout and interruption terminate the owned process group, including descendants.
+The web runner discovers all `tests/**/*.test.js` files recursively. Independent
+web files run in four isolated Node processes; `tests/database/` runs afterward
+with one process to preserve shared disposable-database fixture ordering. Both
+batches run even when the first fails, and either failure makes the command
+nonzero. Generated embed, measurement and email-TLD checks still run first.
 Use pnpm 11.24.0 for JavaScript packages; install with
 `pnpm install --frozen-lockfile` in the package directory.
 
@@ -119,31 +183,52 @@ command list; it does not discover every test in that directory.
 Use when modifying SQL functions or migrations.
 
 ```bash
-# Rebuild the isolated local DB from the schema baseline (destructive only to
-# the dedicated festapp-db-tests-pg15 Docker volume).
-./automation/bootstrap_local_db.sh
-
-# Run all DB tests
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  node web_client/scripts/run_db_tests.js
-
-# Run specific test file
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  node web_client/scripts/run_db_tests.js database/tests/path/to/test.sql
+./automation/bootstrap_local_db.sh             # Prepare/reuse a verified clean base
+./automation/bootstrap_local_db.sh --upgrade   # Real full supported-history replay
+node web_client/scripts/run_db_tests.js        # Acquire clone, run full SQL inventory, release
+node web_client/scripts/run_db_tests.js database/tests/path/to/test.sql
+node web_client/scripts/run_db_tests.js --group seat-contract-1 --list
+python3 automation/local_db/runtime.py exec -- node --test web_client/tests/database/retired_waitlist_registry.test.js
+./automation/bootstrap_local_db.sh --status
+./automation/bootstrap_local_db.sh --prune
+./automation/bootstrap_local_db.sh --stop
 ```
 
-**Key concept:** Tests run in a transaction and auto-rollback. Any data inserted
-during a test is undone automatically. The SQL runner exits nonzero when files
-still fail after its sequential retry; it also exits zero when the filter selects
-no files. Check the selected count and summary as well as the exit status. This
-is separate from the broad wrapper's warning-only web/integration lanes.
+The public SQL CLI and broad wrapper acquire from the same owner when no
+explicit disposable `DATABASE_URL` is supplied. They do not guess a running
+localhost port or load production defaults. Explicit marked local fixtures remain
+supported for deliberate upgrade/transport work. Pools close before lease
+release; active connections, bad markers or live leases block cleanup/stop.
+Pruning checks persisted run/database ownership, PID start identity and age; it
+never drops a database merely because its name has a matching prefix.
 
-The payment-reference concurrency/restore test uses a separate disposable
-PostgreSQL template via `PAYMENT_REFERENCE_DATABASE_URL`. The template must
-contain the current schema and bootstrap disposable marker, use a dedicated
-`festapp_*_template` database name, and have no active clients while it is cloned.
-Its local admin connection must be able to fence fixture extension workers. It is separate
-from `DATABASE_URL`, so concurrent web tests cannot block its database copy.
+SQL groups install public assertion/scanner helpers once in the disposable
+workspace and use a bounded work-conserving pool, one sequence-maintenance
+barrier per group, and session cleanup after every file (rollback, role reset, temporary
+objects/GUC/advisory-lock discard). Notification fixtures retain their real
+projector lock and are explicitly serial within a workspace. Actual multi-client
+concurrency scenarios remain real. First-attempt failure always fails the gate;
+`--diagnostic-retry` records additional outcomes without turning a failure green.
+Unknown filters and empty selections fail. `FESTAPP_SQL_CONCURRENCY` supports
+bounded experiments; default 2 limits pressure when several isolated units run
+together. In the pre-main-integration 108-execution matrix, 2/4/5 workers took 15.72/14.14/13.75 s
+and used 347.0/375.8/432.9 MiB sampled PostgreSQL container memory. An earlier
+matched matrix took 19.08/19.45/28.84 s; higher concurrency was less predictable.
+Declared resources serialize shared fixture mutations; rollback fixtures that
+truncate shared tables run exclusively within their workspace.
+
+Provider artifacts are generated only from a fresh isolated CLI provider:
+`python3 automation/local_db/provider/generate.py --output /absolute/new/path`.
+Review schema/ACL/role parity and digests before replacing versioned artifacts.
+Normal SQL runs pull only the pinned PostgreSQL image; artifact regeneration is
+an explicit authoring operation and may pull the CLI's provider prerequisites.
+No live PGDATA is restored across hosts or architectures; hosted runners build
+from the verified initialization artifact and actual migration engine.
+
+The separate payment-reference transport gate retains its explicit
+`PAYMENT_REFERENCE_DATABASE_URL` contract. Canonical seat upgrade, Stripe and
+seating fixtures use runtime-owned clones while still reconstructing and
+executing their actual populated predecessors and forward migrations.
 
 ### C. Client tests
 
@@ -174,6 +259,8 @@ is accepted; other positive values are rejected under the workstation policy.
 Run only one Flutter task across the workstation at a time.
 Small compatible suites share an engine through `registerClientSuites`; verify
 both normal and `FESTAPP_FIXTURE_ORDER=reverse` group orders when changing them.
+For the measured local performance changes and remaining limits, see
+[`docs/development/local-test-performance-2026-11-06.md`](docs/development/local-test-performance-2026-11-06.md).
 
 Small suites in the same feature share a `<feature>_unit_test.dart` or
 `<feature>_widget_test.dart` entrypoint to avoid starting a Flutter engine for
@@ -467,3 +554,96 @@ Before submitting code for review, verify:
 - [ ] Auth check via `authorizeRequest()` for sensitive operations
 - [ ] Error responses include proper HTTP status codes
 - [ ] Shared code imported from `_shared/` (no duplication)
+
+Hosted canonical lanes archive their immutable run receipts, timings and unit logs
+for seven days, including failed runs. The artifact is named by job and attempt;
+local receipts keep the same structure under the documented CI cache.
+
+
+### Flutter CI session ownership
+
+`client-contract` owns both Flutter Chrome contract files in one invocation:
+`test/browser/browser_preference_store_test.dart` and
+`test/components/html/html_image_preview_cases.dart`. `navigation-interactions`
+retains its VM and unsupported-application variant; its compatible default
+suites register through `automation/testing/navigation_default.dart` and the
+existing scoped `registerClientSuites` helper. Root backend/service environments
+and different locale/compile/browser environments keep their original boundaries.
+The CI subset entrypoint lives outside default test discovery; full-client
+registrations remain authoritative for their existing roots.
+
+The existing `automation/client_test_inventory.json` records original semantic
+cases and skip states for ticket, navigation and Flutter browser units. Both
+local mirrors and hosted lanes enforce those inventories. Keep the eight public
+release jobs; moving a case between owners must move its workflow source filters
+and inventory coverage too. Use `FESTAPP_FIXTURE_ORDER=reverse` to verify the
+scoped navigation registrations in reverse order.
+
+The large preview JPEG is immutable test data generated by
+`fvm dart run automation/testing/generate_preview_image_fixture.dart`.
+Its generated Dart representation works in both VM and browser without adding
+production assets. Use the generator's `--check` mode when maintaining the fixture.
+Every browser run asserts its original byte length and SHA-256 without repeating
+JPEG encoding. The browser still decodes the same 3000x2000 JPEG
+and verifies the 1200x800 preview and unchanged source bytes.
+
+### Local web build cache and prebuilt uploads
+
+`automation/build_web_bundle.sh <cloudflare|static>` remains the only compiler
+orchestrator. Hosting adapters finish and verify their bundle before sealing
+`festapp-version.json.buildReceipt` with its full inventory in
+`build/web-build-receipt.json`. Flutter and Vite cache their raw output separately
+under `${XDG_CACHE_HOME:-$HOME/.cache}/festapp/web-build/`. Restored files are
+copied before font/JS processing, version stamping, content rendering and PWA/CSP
+generation. Preflights and final verification still run on hits. The exact-source CI gate
+owns the startup suite, preserving main's removal of duplicate release tests.
+
+`automation/web_build_inputs.json` declares conservative input ownership. Unknown
+tracked or untracked files affect both compilers. Ignored generated assets and
+Vite `.env*` files are included explicitly. Resolved dependencies, actual SDK and
+compiler bytes, tool versions, file paths/modes, tenant, build policy and relevant
+environment are fingerprinted by `automation/lib/web_build_cache.mjs`; source SHA
+and mtime are insufficient. Receipts contain hashes, never environment values or
+the private backend release manifest. Flutter version-only reuse is enabled only
+for the SDK revision and compiler bytes proved in `flutterVersionPackaging`.
+Other SDKs conservatively include version until equivalent evidence is added.
+Vite's `APP_VERSION` remains a compilation input. Restored Flutter metadata,
+HTML, bootstrap, main/deferred filenames and PWA state receive the current
+release identity during assembly. Native PackageInfo is unchanged.
+
+Build preparation uses `apply_config.sh <config> --build` to configure the
+catalogue without rendering disposable public documents. Help/organizer pages
+are rendered once against the completed Vite runtime. Their content can change
+without either compiler; SEO changes that modify the Vite HTML still invalidate
+Vite. A separate complete bundle fingerprint protects packaging-only changes
+when validating an upload retry.
+
+Installed dependency hashing preserves actual bytes, modes and alias targets.
+Only pnpm's administrative `prunedAt` and `lastValidatedTimestamp` are normalized;
+changing installed code, settings or dependency bindings invalidates the key.
+The final hosted bundle excludes Flutter's incremental `.last_build_id` scratch
+file; its original raw identity remains in component provenance.
+
+The log distinguishes hits and misses (`inputs-or-first-build`, `invalid-entry`,
+`disabled`). An invalid or incomplete cache entry rebuilds. To diagnose a cache
+problem, run the same adapter with `FESTAPP_WEB_BUILD_CACHE=off`; this disables
+reuse without weakening checks. Per-key locks and the shared Flutter compile
+lock serialize writers. Interrupted owners with no live compiler can be
+recovered; inspect owner metadata before manually removing an incomplete lock.
+Sealing retains up to 12 recent unlocked entries per component, with a 30-day
+maximum age. Cache cleanup never traverses other worktrees.
+
+`automation/deploy_direct.sh --skip-build` validates the receipt and exact file
+inventory, including unexpected additions, current source inputs, packaging
+revision, tenant, hosting target and version before uploading. Reuse the original
+verified `build/web` for an upload retry. On mismatch rebuild through the normal
+adapter; do not edit or bypass the receipt. Exact-source CI admission and image
+and backend preflights remain mandatory.
+
+Build/deploy logs emit `timing phase=... seconds=... status=...` and total time,
+including failed attempts. Measure cold (`FESTAPP_WEB_BUILD_CACHE=off`) and warm
+builds on the same disposable tenant checkout, sequentially, three times per
+main scenario. Include startup tests in total time and report median/range.
+Local measurement never calls the deploy script. Commands, raw-output version
+proof, artifact parity and measured results are recorded in
+`docs/plans/build-speed-RESULT-2026-11-11.md`.

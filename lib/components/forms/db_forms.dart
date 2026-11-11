@@ -231,8 +231,8 @@ class DbForms {
     );
   }
 
-  static Future<FormEditorDraft> updateForm(FormEditorDraft form) async {
-    final response = await _commands.save(form.toEditedJson());
+  static Future<FormEditorDraft> updateForm(FormEditorDraft form, {bool paymentSelectionChanged = false}) async {
+    final response = await _commands.save({...form.toEditedJson(), if (paymentSelectionChanged) 'payment_selection_intent': 'replace'});
     final saved = FormEditBundle.fromSave(form, response).form;
     // Receipt metadata is historical. Refresh only the read-only live policy,
     // with current reader authorization, without changing acknowledged versions.
@@ -253,7 +253,7 @@ class DbForms {
   static Future<FormBundle?> getFormFromLink(String link) async {
     final response = await _supabase.rpc(
       'get_form_by_link',
-      params: {'form_link': link},
+      params: {'input_data': {'form_link': link, 'client_capabilities': ['cash_reservations', 'no_payment_deadline']}},
     );
 
     if (response["code"] == 200 || response["code"] == 400) {

@@ -9,7 +9,6 @@ BEGIN
   IF jsonb_typeof(facts->k) IS DISTINCT FROM 'number' OR (facts->>k)::numeric<0
    OR (facts->>k)::numeric*100<>trunc((facts->>k)::numeric*100) THEN RAISE EXCEPTION 'PAYMENT_FINANCIAL_FACTS_INVALID'; END IF;
  END LOOP;
- IF (facts->>'returned')::numeric>(facts->>'received')::numeric THEN RAISE EXCEPTION 'PAYMENT_FINANCIAL_FACTS_INVALID'; END IF;
  RETURN facts;
 END $$;
 REVOKE ALL ON FUNCTION public.provider_financial_totals_internal(text,bigint) FROM PUBLIC,anon,authenticated,service_role;

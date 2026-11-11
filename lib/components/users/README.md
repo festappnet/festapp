@@ -1,5 +1,18 @@
 # Users Component
 
+## Participant enrolment ownership
+
+`add_user_to_occasion_internal_v1` owns membership admission and target role
+projection for account creation, existing-account enrolment, imports and other
+scoped commands. Its callers authorize their operation before entering this
+private owner. `closed_occasion_enrolment_rule` receives the target's existing
+unit membership facts and the actor's canonical
+`can_manage_occasion_participants` decision. Closed registration still permits
+an authorized manager to add ordinary participants. It does not grant those
+participants unit membership or copy the manager's roles. Public self-enrolment
+continues to respect closure. New and existing accounts follow the same rule;
+replay rechecks the caller's current permission.
+
 ## Reception ownership
 
 Reception is a default-disabled per-occasion feature. Its role lives only in
@@ -51,10 +64,10 @@ map projection used for the signed-in user's profile.
 
 - `get_users_from_occasion_with_orders` -- full user-ticket-order-form graph as dictionary maps
 - `get_occasion_users_for_edit` -- occasion users with forms for admin editing
-- `create_user_in_organization_with_data_ws` -- creates user account with initial data
-- `add_user_to_occasion` -- adds existing user to an occasion
+- `create_occasion_user_client_sync_v1` -- resolves or creates an account and saves its occasion profile atomically
+- `add_user_to_occasion_client_sync_v1` -- adds an existing account through the same private enrolment owner
 - `import_users_from_tickets_ws` -- bulk-creates users from ticket data
-- `update_user` -- updates user profile for an occasion
+- `save_profile_client_sync_v1` -- updates the occasion profile through the scoped command
 
 ## Users Editor Performance
 
@@ -107,3 +120,57 @@ after failure starts a new request; SQL joins unresolved messages before creatin
 a replacement for a terminal failure.
 The batch dialog retains separate sent, queued and failed outcomes and excludes
 confirmed recipients from retries. Queued is never shown as completed delivery.
+
+## Member access and invitations
+
+`database/functions/people/` owns manual unit/occasion access orchestration.
+`manage-member-access` prepares an email through the existing template resolver,
+queue admission and encrypted snapshot owner; a service-only deposit binds it to
+actor, command, normalized intent and server preview. `manage_member_access`
+consumes that deposit in the authenticated domain transaction. This preserves
+`auth.uid()` across the existing specialized profile, role, password and receipt
+owners. Deposits are private, short-lived, and not a second email queue; staged
+credentials are encrypted and consumed after commit.
+
+Plain saves do not send email. A requested save-and-invite commits membership,
+roles, queue intent and receipt together, or rolls back together. Participant
+password invitations still use `SIGN_IN_CODE` and the existing hierarchical
+reset owner. They set real reusable passwords; email expiry is not password
+expiry. Team notices/offers never reset an existing account's password. Unit
+scope cannot request participant credentials. Applications, order confirmations
+and payments keep their existing transaction and recovery boundaries.
+
+`access_invitations` stores scoped role offers separately from memberships and
+`email_messages` delivery facts. Acceptance only adds offered permissions;
+revocation/downgrade serializes with acceptance and invalidates pending grants.
+Resending an unresolved provider dispatch is rejected. A terminal resend creates
+one new offer and supersedes the previous token; immutable receipts keep their
+original references while status reads report current delivery independently.
+
+`/team-invitation?token=...` and its old lookup/accept RPCs remain link adapters.
+Installed Client Sync save/create RPCs are authenticated adapters over the same
+specialized internal writers used by the new command. `send-sign-in-code` remains
+a supported participant producer with the old HTTP sent/202 acceptance contract;
+its domain path is shared. Setup only supplies the stored confirmed recipient
+selection. Historical setup retry resolves its original invitation/message and
+does not send again. No general workflow framework or second profile is involved.
+
+The manual access dialog snapshots visible checked identities and reloads their
+saved membership records before opening. Unsaved or removed selected rows block
+sending until the table is saved/reloaded. Current per-person grants are shown
+separately from additive permission offers. Selected members default to an access
+notice bound to `userId`; this sends no role/profile changes. A batch freezes each
+recipient's intent after its first attempt and retries only unconfirmed requests
+through the same command adapter. Queue admission remains distinct from delivery;
+refresh resolves the message receipt against the canonical status projection.
+
+`MemberAccessDelivery` observes canonical message IDs from command receipts and
+pending messages for selected members. Manual send and explicit resend retain
+those receipts too. The summary, recipient rows and history use the same status
+response; provider acceptance is not delivery. Polls only read status, with a
+2/5/10-second backoff and a two-minute observation window. Slow reads stop showing
+loading after 15 seconds without launching an overlapping request. Closing or
+changing identity/context cancels observation and discards stale responses; it
+never cancels the server's email queue. After the observation window, manual
+refresh starts another bounded window. An unresolved HTTP read instead offers
+close/reopen recovery until the original request returns.

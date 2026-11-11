@@ -1,26 +1,91 @@
 # Festapp
 
-Festapp is an event platform for festivals, conferences and community events.
-Organizers manage registration, tickets, payments and staffing; attendees use
-schedules, maps, news and their personal program on Android, iOS and the web.
+Festapp is an event platform for festivals, conferences and community
+events. Attendees browse programs, explore venue maps and save their personal
+schedule on iOS, Android and the web. Organizers manage registration, tickets,
+reserved seating, payments and admission.
 
-It also powers [vstupenky.online](https://vstupenky.online), the ticketing and
-registration service. Try the event app at [live.festapp.net](https://live.festapp.net)
-or visit [festapp.net](https://festapp.net).
+The same platform powers branded festival apps such as **Festival Slunovrat**,
+the international **Festapp Tickets** service and the Czech **vstupenky.online**
+portal.
 
-![Festapp app screens](repo-data/festapp-showcase.png?raw=true)
+[Festapp](https://festapp.net/) ·
+[Festapp Tickets](https://tickets.festapp.net/) ·
+[vstupenky.online](https://vstupenky.online/) ·
+[Developer setup](docs/setup/howto.md) ·
+[Contributing](CONTRIBUTING.md)
 
-## What it does
+## One platform, connected products
 
-- Event schedules, workshops, maps, news, songbooks and group games
-- Registration forms, seat selection, ticket PDFs and QR scanning
-- Order administration, bank payment matching and email communication
-- Volunteer shifts, participant groups, accommodation and reception
-- Tenant branding and feature settings for each occasion
+![Festapp powers international and Czech ticketing services, and branded event apps such as Festival Slunovrat](docs/images/readme/festapp-platform.svg)
 
-Previously synchronized data can be read offline. Authentication, payments and
-server-confirmed writes need a connection; native offline maps require a prepared
-map bundle. See [features and screenshots](docs/overview/features.md) for more.
+Each organization configures its branding and features on the shared platform.
+
+## Ticketing for organizers
+
+- **Ticket sales and registration.** Build public forms with ticket types,
+  prices, capacity limits and attendee questions; share a link or embed a form
+  on your website.
+- **Reserved seating.** Design your venue layout and let buyers select seats
+  when purchasing tickets.
+- **Orders and payments.** Manage orders, track payments and match bank transfers.
+  Online payment options depend on the event's configured provider.
+- **Tickets and admission.** Customize PDF tickets, deliver them by email and
+  verify QR codes with the browser scanner.
+- **Event operations.** Coordinate volunteers, participant groups,
+  accommodation and reception, with event-specific branding and permissions.
+
+### Design your venue
+
+![Lucerna seating plan with ground-floor seating, boxes and two balconies](docs/images/readme/tickets-seating-desktop.png)
+
+Create venue plans with tables, seating sections and balconies. Buyers choose
+their seats directly from your plan, as shown here in Lucerna's Grand Hall.
+
+### Design your tickets
+
+![Festapp ticket designer with a branded ticket and QR code](docs/images/readme/tickets-designer-desktop.png)
+
+Create tickets with your own artwork, event details and seat information.
+Each ticket includes a QR code for admission checks.
+
+### Orders and payments
+
+![Order administration with payment states in Festapp Tickets](docs/images/readme/tickets-admin-desktop.png)
+
+Track orders and payments from the event administration.
+
+Website plugins and connectors live in the
+[integration directory](integrations/README.md), together with their setup
+instructions and publication status.
+
+## The event app
+
+Attendees can browse schedules and venue maps, read news, sign up for workshops
+and save a personal program on Android, iOS and the web. Each event can include
+information pages, songbooks and group games.
+
+### Slunovrat 2026: the summer festival
+
+For the summer Slunovrat festival in Opava (June 18-21, 2026), visitors can follow
+the program, find venues on the map and explore artist profiles.
+
+<table>
+  <tr>
+    <th align="center">Festival program</th>
+    <th align="center">Venue map</th>
+    <th align="center">Artist details</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-program.png" width="220" alt="Slunovrat summer festival program" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-map.png" width="220" alt="Slunovrat festival venue map of Opava" /></td>
+    <td align="center"><img src="docs/images/readme/slunovrat-ios-detail.png" width="220" alt="Slunovrat artist profile for Vypsaná fiXa" /></td>
+  </tr>
+</table>
+
+Previously downloaded event information remains available offline. Sign-in and
+ticket purchases need an internet connection. Events can also include offline
+venue maps. See the [feature reference](docs/overview/features.md) for more.
 
 ## Start here
 
@@ -70,7 +135,7 @@ For details, use the [documentation map](docs/README.md),
 
 ## Local development
 
-Install Git, Node.js/npm and FVM. Use the Flutter version specified by
+Install Git, Node.js, pnpm 11.24.0 and FVM. Use the Flutter version specified by
 `FLUTTER_VERSION` in `automation/project.conf`. From the repository root:
 
 ```bash
@@ -101,7 +166,3 @@ Festapp began with volunteers building an app for
 [Absolventský Velehrad](https://absolventskyvelehrad.cz) in 2023.
 [CHANGELOG.md](CHANGELOG.md) records development history. Updates are also
 shared in the [Czech WhatsApp channel](https://whatsapp.com/channel/0029Vb64lj91CYoUWARKf80R).
-
-## JavaScript dependencies
-
-Use pnpm 11.24.0, matching the Mendelio workspace. Run `pnpm install --frozen-lockfile` in the directory containing the relevant `package.json`, then `pnpm run <script>`. Each package keeps its own `pnpm-lock.yaml`; pnpm shares package content through the user store across repositories and worktrees. Keep the local virtual store enabled for compatibility with direct Node scripts and container builds. Do not use npm installs or commit npm lockfiles. Approved native build scripts are declared in each `pnpm-workspace.yaml`.

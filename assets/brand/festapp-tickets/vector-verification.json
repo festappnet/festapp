@@ -1,0 +1,129 @@
+{
+  "reference": "../vstupenky-online/vstupenky-online-symbol.svg",
+  "reference_sha256": "bded2e5e33651235e13f55d8751c0ce1c7048a1d7d8d5cf6232175614df21759",
+  "uploaded_source_sha256": "ba7f1fc334bc92d2f41fca027cb78c2fb08afd4740676a41ad87923c7f98e517",
+  "canonical_font": "../vstupenky-online/source/Roboto-Bold.ttf",
+  "canonical_font_sha256": "a059c7343a09d6144d964625cb5d7cd9a0692772f981920c253941600447cb8d",
+  "uploaded_glyph_comparisons": [
+    {
+      "character": "F",
+      "difference_area_font_units_squared": 11716.0,
+      "reference_area": 763728.0,
+      "exact_match": false
+    },
+    {
+      "character": "e",
+      "difference_area_font_units_squared": 14840.627464,
+      "reference_area": 733717.25,
+      "exact_match": false
+    },
+    {
+      "character": "s",
+      "difference_area_font_units_squared": 11804.40712,
+      "reference_area": 619843.833333,
+      "exact_match": false
+    },
+    {
+      "character": "t",
+      "difference_area_font_units_squared": 7964.778332,
+      "reference_area": 552663.458333,
+      "exact_match": false
+    },
+    {
+      "character": "a",
+      "difference_area_font_units_squared": 10768.676273,
+      "reference_area": 728382.125,
+      "exact_match": false
+    },
+    {
+      "character": "p",
+      "difference_area_font_units_squared": 9844.667997,
+      "reference_area": 942451.958333,
+      "exact_match": false
+    },
+    {
+      "character": "p",
+      "difference_area_font_units_squared": 9844.667997,
+      "reference_area": 942451.958333,
+      "exact_match": false
+    },
+    {
+      "character": "T",
+      "difference_area_font_units_squared": 9006.0,
+      "reference_area": 714524.0,
+      "exact_match": false
+    },
+    {
+      "character": "i",
+      "difference_area_font_units_squared": 3458.894607,
+      "reference_area": 388276.5,
+      "exact_match": false
+    },
+    {
+      "character": "c",
+      "difference_area_font_units_squared": 10336.770343,
+      "reference_area": 576985.125,
+      "exact_match": false
+    },
+    {
+      "character": "k",
+      "difference_area_font_units_squared": 3453.429108,
+      "reference_area": 860002.5,
+      "exact_match": false
+    },
+    {
+      "character": "e",
+      "difference_area_font_units_squared": 14840.627464,
+      "reference_area": 733717.25,
+      "exact_match": false
+    },
+    {
+      "character": "t",
+      "difference_area_font_units_squared": 7964.778332,
+      "reference_area": 552663.458333,
+      "exact_match": false
+    },
+    {
+      "character": "s",
+      "difference_area_font_units_squared": 11804.40712,
+      "reference_area": 619843.833333,
+      "exact_match": false
+    }
+  ],
+  "uploaded_symbol_bounds": [
+    190,
+    117,
+    684,
+    361
+  ],
+  "canonical_envelope_bounds": [
+    196.0,
+    254.0,
+    828.0,
+    563.0
+  ],
+  "uploaded_notch_half_width": 48,
+  "canonical_notch_half_width": 60,
+  "uploaded_left_corner_extent": 47,
+  "uploaded_right_corner_extent": 49,
+  "canonical_corner_extent": 54,
+  "normalization": "Canonical regional outer envelope; preserve and map uploaded stepped interior edges to envelope bounds; regenerate complete word contours from the canonical Roboto Bold font.",
+  "outer_edge_bands": [
+    [
+      0,
+      307
+    ],
+    [
+      717,
+      1024
+    ]
+  ],
+  "outer_edge_xor_area": 0.0,
+  "outside_envelope_area": 0.0,
+  "lettering_tracking_em": -0.035,
+  "lettering_paths_per_row": 1,
+  "glyph_overlap_boundaries_removed": true,
+  "embedded_raster_images": 0,
+  "live_text_elements": 0,
+  "status": "canonical global source assets; production deployment not performed"
+}

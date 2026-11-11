@@ -1,16 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readFile,writeFile,mkdtemp,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
+import {readFile} from '../../../automation/lib/migration_inputs_async.mjs';
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {createTestWorkspace} from '../../../web_client/tests/database/runtime_workspace.js';
 import {assertLocalDatabaseUrl,assertDisposableDatabase} from '../../../web_client/tests/database/disposable_database.js';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');
 const url=process.env.DATABASE_URL;
 assertLocalDatabaseUrl(url);
-const cloneName=`festapp_seating_race_${randomUUID().replaceAll('-','')}`;
 async function connect(connectionString){const c=new Client({connectionString});await c.connect();return c;}
 async function identity(c,actor){await c.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.role','authenticated',false)",[actor]);}
 async function blocked(admin,pid){for(let n=0;n<150;n++){const r=await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid=$1',[pid]);if(r.rows[0]?.wait_event_type==='Lock')return;await new Promise(r=>setTimeout(r,20));}throw Error('second connection never reached lock wait');}
@@ -19,107 +18,15 @@ const rpc=async(c,sql,args=[])=>(await row(c,sql,args)).result;
 
 test('seating public commands: actual two-connection serial outcomes and permission revocation',{timeout:60000},async t=>{
  const admin=await connect(url);await assertDisposableDatabase(admin);
- const cloneUrl=new URL(url);cloneUrl.pathname=`/${cloneName}`;
+ const workspace=await createTestWorkspace();const cloneUrl=new URL(workspace.databaseUrl);const restoreUrl=new URL(cloneUrl);restoreUrl.username='supabase_admin';
  let db,left,right;
- const kit=await mkdtemp(`${tmpdir()}/festapp-seating-race-`);
  try{
-  // Clone checked dependencies, never reset the shared database or bootstrap a server.
-  execFileSync('pg_dump',[url,'--no-owner','--exclude-schema=cron','--file',`${kit}/snapshot.sql`],{stdio:'pipe'});
-  await writeFile(`${kit}/snapshot.sql`,(await readFile(`${kit}/snapshot.sql`,'utf8')).replace(/^SET transaction_timeout = 0;$/m,'').replace(/^CREATE EXTENSION IF NOT EXISTS pg_cron\b[^;]*;$/gm,'').replace(/^COMMENT ON EXTENSION pg_cron\b[^;]*;$/gm,'').replace(/^(?:REVOKE|GRANT).*ON FUNCTION graphql_public\.graphql\(.*$/gm,'').replace(/^(?:ALTER DEFAULT PRIVILEGES|REVOKE|GRANT).*\bcron\b.*$/gm,''));
-  await admin.query(`CREATE DATABASE ${cloneName} TEMPLATE template0`);
-  const restoreUrl=new URL(cloneUrl);restoreUrl.username='supabase_admin';
-  execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-f',`${kit}/snapshot.sql`],{stdio:'pipe'});
-  execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q','-c',`GRANT USAGE ON SCHEMA analytics TO postgres; GRANT ALL ON ALL TABLES IN SCHEMA public,eshop,analytics TO postgres; GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop,analytics TO postgres; DO $fix$ DECLARE r record; BEGIN FOR r IN SELECT p.oid::regprocedure f FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind IN ('f','w') AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass AND d.objid=p.oid AND d.deptype='e') LOOP EXECUTE format('ALTER FUNCTION %s OWNER TO postgres',r.f); END LOOP; END $fix$;`],{stdio:'pipe'});
   [db,left,right]=await Promise.all([connect(cloneUrl.href),connect(cloneUrl.href),connect(cloneUrl.href)]);
   for(const source of ['database/tests/helpers/assertions.sql','database/tests/blueprint/fixtures.sql','database/tests/blueprint/seating_fixture.sql'])await db.query(await readFile(new URL(`../../../${source}`,import.meta.url),'utf8'));
   await right.query('SET ROLE authenticated');
-  await t.test('clean predecessor upgrade and final canonical source parity',async()=>{
-   const program=`import runpy,sys,subprocess
-from pathlib import Path
-sys.path.insert(0,'automation')
-from generate_canonical_source_contract import definitions, statements
-from historical_inputs import read_source, source_paths
-assembly=runpy.run_path('automation/assemble-seating-transition-migration.py')
-sources=assembly['SOURCES']
-predecessor=assembly['PREDECESSOR']
-commands=['BEGIN; SET LOCAL ROLE postgres;']
-old_sources=[]
-affected=set()
-for source in sources:
- current=dict(definitions(Path('database/functions',source).read_text()))
- affected.update(current)
- path='database/functions/'+source
- old=read_source(predecessor,path).decode() if path in source_paths(predecessor) else None
- previous=dict(definitions(old)) if old is not None else {}
- for signature,body in current.items():
-  if body is not None and signature not in previous:commands.append('DROP FUNCTION IF EXISTS '+signature+' CASCADE;')
- if old is not None:old_sources.append(old)
-commands.append('DROP TABLE public.form_seating_transitions CASCADE;')
-# The clone contains unrelated retained old fixtures. This upgrade proof uses
-# an empty layout store; production data conversion has its own guarded proof.
-commands.append('TRUNCATE eshop.blueprints CASCADE;')
-commands.append('RESET ROLE; ALTER TABLE eshop.blueprints OWNER TO postgres; SET LOCAL ROLE postgres;')
-commands.append('ALTER TABLE eshop.blueprints DROP CONSTRAINT IF EXISTS blueprints_canonical_layout_check, DROP CONSTRAINT IF EXISTS blueprints_retired_geometry_empty_check;')
-commands+=old_sources
-commands.append(Path('supabase/migrations/20261031223000_blueprint_feature_independent_capacity.sql').read_text())
-commands.append(Path('supabase/migrations/20261101120000_blueprint_existing_admission_seating.sql').read_text())
-commands.append(Path('supabase/migrations/20261101121500_occasion_copy_deletion.sql').read_text())
-commands.append(Path('supabase/migrations/20261101160000_blueprint_canonical_storage_cutover.sql').read_text())
-commands.append(Path('supabase/migrations/20261101173000_seating_compatibility_admissions.sql').read_text())
-# This fixture downgrades selected functions inside a current-head clone.
-# Restore only their final definitions, never whole later schema/data migrations.
-# Preserve the clone's exact canonical ACLs, including absent PUBLIC/API grants.
-# Include every function touched by the predecessor replay, not only source-list owners.
-for sql in commands[1:]:affected.update(signature for signature,body in definitions(sql))
-quoted=','.join("to_regprocedure('"+signature.replace("'","''")+"')" for signature in sorted(affected))
-commands.insert(1,"CREATE TEMP TABLE seating_canonical_acl ON COMMIT DROP AS SELECT p.oid::regprocedure::text signature, coalesce(p.proacl,acldefault('f',p.proowner)) acl FROM pg_proc p WHERE p.oid=ANY(ARRAY["+quoted+"]);" )
-final_owners={}
-for migration in sorted(Path('supabase/migrations').glob('*.sql')):
- if migration.name[:14] > '20261101173000':
-  for index,statement in enumerate(statements(migration.read_text())):
-   for signature,body in definitions(statement):
-    if signature not in affected:continue
-    if isinstance(body,tuple):raise ValueError('Explicit rename handling required: '+signature)
-    sql=statement if body is not None else 'DROP FUNCTION IF EXISTS '+signature+';'
-    final_owners[signature]=(migration.name,index,sql)
-commands.append('SET LOCAL ROLE postgres;')
-commands.extend(value[2] for value in sorted(final_owners.values()))
-commands.append("""DO $acl$
-DECLARE saved record; permission record; target regprocedure; recipient text;
-BEGIN
- FOR saved IN SELECT * FROM seating_canonical_acl LOOP
-  target:=to_regprocedure(saved.signature);
-  IF target IS NULL THEN RAISE EXCEPTION 'Canonical function missing: %',saved.signature; END IF;
-  FOR permission IN SELECT a.* FROM pg_proc p,
-   LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=target LOOP
-   recipient:=CASE WHEN permission.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(permission.grantee)) END;
-   EXECUTE format('REVOKE ALL ON FUNCTION %s FROM %s',target,recipient);
-  END LOOP;
-  FOR permission IN SELECT * FROM aclexplode(saved.acl) LOOP
-   recipient:=CASE WHEN permission.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(permission.grantee)) END;
-   EXECUTE format('GRANT %s ON FUNCTION %s TO %s%s',permission.privilege_type,target,recipient,
-    CASE WHEN permission.is_grantable THEN ' WITH GRANT OPTION' ELSE '' END);
-  END LOOP;
-  IF EXISTS(
-   (SELECT grantor,grantee,privilege_type,is_grantable FROM aclexplode(saved.acl)
-    EXCEPT SELECT a.* FROM pg_proc p,LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=target)
-   UNION ALL
-   (SELECT a.* FROM pg_proc p,LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE p.oid=target
-    EXCEPT SELECT grantor,grantee,privilege_type,is_grantable FROM aclexplode(saved.acl))) THEN
-   RAISE EXCEPTION 'Canonical ACL changed: %',saved.signature;
-  END IF;
- END LOOP;
-END $acl$;""")
-commands.append("RESET ROLE; DELETE FROM supabase_migrations.schema_migrations WHERE version='20261101120000'; INSERT INTO supabase_migrations.schema_migrations(version,name) VALUES('20261101120000','blueprint_existing_admission_seating'); COMMIT;")
-print(chr(10).join(commands))`;
-   const upgrade=execFileSync('python3',['-c',program],{cwd:new URL('../../../',import.meta.url),encoding:'utf8',maxBuffer:16*1024*1024});
-   try { execFileSync('psql',[restoreUrl.href,'-v','ON_ERROR_STOP=1','-q'],{input:upgrade,stdio:['pipe','pipe','pipe']}); }
-   catch(error) { throw new Error(error.stderr?.toString() || error.message); }
-   await db.query(await readFile(new URL('../canonical_mutation_source_parity_test.sql',import.meta.url),'utf8'));
-  });
   const fixture=async(n=2,w=0)=>rpc(db,'SELECT public.seating_test_fixture_internal($1,$2) result',[n,w]);
-  const prepare=async(c,f,m)=>rpc(c,'SELECT public.preview_ticket_seat_assignment($1,$2::jsonb) result',[f.transition,JSON.stringify(m)]).then(r=>r.data);
-  const assign=async(c,f,m,p)=>rpc(c,'SELECT public.set_ticket_seat_assignments($1,$2::jsonb,$3,$4) result',[f.transition,JSON.stringify(m),p.fingerprint,randomUUID()]);
+  const prepare=async(c,f,m)=>rpc(c,'SELECT public.preview_ticket_seat_assignment($1,$2::jsonb) result',[f.blueprint,JSON.stringify(m)]).then(r=>r.data);
+  const assign=async(c,f,m,p)=>rpc(c,'SELECT public.set_ticket_seat_assignments($1,$2::jsonb,$3,$4) result',[f.blueprint,JSON.stringify(m),p.fingerprint,randomUUID()]);
   const waitRight=async()=>blocked(db,right.processID);
   t.afterEach(async()=>{await left.query('ROLLBACK');await right.query('ROLLBACK');});
   await t.test('two organizers target one seat; exactly one placement',async()=>{
@@ -156,75 +63,53 @@ print(chr(10).join(commands))`;
    await left.query('SELECT public.scanner_admit_ticket_internal($1)',[f.mappings[0].ticketId]);await left.query('COMMIT');
    const r=await competing;assert.equal(r.status,'conflict');assert.equal(r.data.reason,'USED_TICKET_PROTECTED');
   });
-  await t.test('publication first; stale visible-product checkout rejected by actual materializer',async()=>{
-   const f=await fixture(0);await Promise.all([identity(left,f.actor),identity(right,f.actor)]);
-   const p=(await rpc(left,'SELECT public.preview_seating_publication($1) result',[f.transition])).data;
-   await left.query('BEGIN');await left.query('SELECT public.lock_blueprint_scope_internal(ARRAY[$1::bigint])',[f.occasion]);
-   const checkout={form:f.formKey,email:'seating@example.invalid',ticket:[{fields:[{product_type:f.product}]}]};
-   const competing=rpc(right,'SELECT public.create_ticket_order_client_sync_v1($1::jsonb,$2,$3) result',[JSON.stringify(checkout),randomUUID(),randomUUID()]);await waitRight();
-   const published=await rpc(left,'SELECT public.publish_seating_transitions($1,$2::uuid[],$3,$4) result',[f.transition,p.transitionIds,p.fingerprint,randomUUID()]);
-   assert.equal(published.status,'applied');await left.query('COMMIT');
-   const rejected=await competing;assert.notEqual(rejected.status,'applied');
-   assert.equal((await row(db,"SELECT count(*)::int n FROM eshop.orders WHERE occasion=$1 AND state NOT IN ('storno','waitlisted','stock')",[f.occasion])).n,0);
-  });
-
-  await t.test('layout save first; waiting publication must review new saved revision',async()=>{
-   const f=await fixture(0);await Promise.all([identity(left,f.actor),identity(right,f.actor)]);
-   const p=(await rpc(right,'SELECT public.preview_seating_publication($1) result',[f.transition])).data;
+  await t.test('layout save invalidates a waiting assignment preview',async()=>{
+   const f=await fixture(1);await Promise.all([identity(left,f.actor),identity(right,f.actor)]);
+   const p=await prepare(right,f,f.mappings);
    const b=(await row(db,'SELECT to_jsonb(b) b FROM eshop.blueprints b WHERE id=$1',[f.blueprint])).b;
    await left.query('BEGIN');await left.query('SELECT public.lock_blueprint_scope_internal(ARRAY[$1::bigint])',[f.occasion]);
-   const competing=rpc(right,'SELECT public.publish_seating_transitions($1,$2::uuid[],$3,$4) result',[f.transition,p.transitionIds,p.fingerprint,randomUUID()]);await waitRight();
+   const competing=assign(right,f,f.mappings,p);await waitRight();
    const payload={id:b.id,occasion:b.occasion,organization:b.organization,title:'Revised saved plan',expected_layout_revision:b.layout_revision,layout:b.layout,textResourceIds:[],seatChanges:[],groupProductChanges:[],areaBindingChanges:[]};
    const saved=await rpc(left,'SELECT public.update_blueprint_client_sync_v1($1::jsonb,$2) result',[JSON.stringify(payload),randomUUID()]);
    assert.equal(saved.status,'applied',JSON.stringify(saved));await left.query('COMMIT');
    assert.equal((await competing).status,'conflict');
   });
-  await t.test('provider completion first; publication rechecks paid facts and keeps exact placement',async()=>{
-   const f=await fixture(1);await Promise.all([identity(left,f.actor),identity(right,f.actor)]);
-   await assign(left,f,f.mappings,await prepare(left,f,f.mappings));
-   const parent=await row(db,'SELECT o.id,o.organization,o.unit FROM public.occasions o WHERE id=$1',[f.occasion]);
-   const order=(await row(db,'SELECT "order" id FROM eshop.order_product_ticket WHERE id=$1',[f.mappings[0].admissionItemId])).id;
-   const account='acct_'+randomUUID().replaceAll('-','');
-   const connection=(await row(db,"INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,paused) VALUES($1,$2,$3,false,'connected',false) RETURNING id",[parent.organization,parent.unit,account])).id;
-   const payment=(await row(db,"INSERT INTO eshop.payment_info(amount,paid,currency_code,payment_method,stripe_connection_id) VALUES(42,0,'CZK','stripe',$1) RETURNING id",[connection])).id;
-   await db.query('UPDATE eshop.orders SET payment_info=$1 WHERE id=$2',[payment,order]);
-   const lease=randomUUID();
-   const attempt=(await row(db,"INSERT INTO eshop.stripe_checkout_attempts(order_id,payment_info_id,organization_id,unit_id,connection_id,livemode,amount_minor,currency,order_revision,idempotency_key,reservation_expires_at,state,lease_token,lease_expires_at) VALUES($1,$2,$3,$4,$5,false,4200,'CZK',1,$6,clock_timestamp()+interval '1 hour','open',$7,clock_timestamp()+interval '5 minutes') RETURNING id",[order,payment,parent.organization,parent.unit,connection,'seating:'+randomUUID(),lease])).id;
-   const p=(await rpc(right,'SELECT public.preview_seating_publication($1) result',[f.transition])).data;
-   await left.query('BEGIN');await left.query('SELECT public.lock_order_capacity_scope_internal(ARRAY[$1::bigint])',[order]);
-   const competing=rpc(right,'SELECT public.publish_seating_transitions($1,$2::uuid[],$3,$4) result',[f.transition,p.transitionIds,p.fingerprint,randomUUID()]);await waitRight();
-   await left.query("SELECT set_config('request.jwt.claim.role','service_role',true)");
-   await left.query("SELECT set_config('request.jwt.claim.sub','',true)");
-   const now=Math.floor(Date.now()/1000),intent='pi_'+randomUUID().replaceAll('-','');
-   const event={id:'evt_'+randomUUID().replaceAll('-',''),bodyHash:'f'.repeat(64),accountId:account,livemode:false,type:'checkout.session.completed',created:now};
-   const facts={observedAt:new Date().toISOString(),sessionId:'cs_'+randomUUID().replaceAll('-',''),paymentIntentId:intent,sessionStatus:'complete',movements:[{kind:'payment',providerId:intent,amountMinor:4200,currency:'CZK',occurredAt:now}],disputes:[]};
-   const paid=await rpc(left,'SELECT public.ingest_stripe_payment_internal($1,$2,$3::jsonb,$4::jsonb) result',[attempt,lease,JSON.stringify(event),JSON.stringify(facts)]);
-   assert.equal(paid.status,'applied',JSON.stringify(paid));await left.query('COMMIT');
-   assert.equal((await competing).status,'conflict');
-   assert.equal((await row(db,'SELECT order_product_ticket FROM eshop.spots WHERE id=$1',[f.mappings[0].targetSpotId])).order_product_ticket,String(f.mappings[0].admissionItemId));
-  });
-  await t.test('offer acceptance first; stable accepted ticket enters worklist before publication',async()=>{
-   const f=await fixture(0,2);await Promise.all([identity(left,f.actor),identity(right,f.actor)]);
-   await db.query('UPDATE eshop.products SET price=0 WHERE id=$1',[f.product]);
-   const person=await row(db,'SELECT t.id,x."order" FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id JOIN eshop.orders o ON o.id=x."order" WHERE o.occasion=$1',[f.occasion]);
-   await db.query('UPDATE eshop.order_product_ticket SET \"order\"=$1 WHERE \"order\" IN(SELECT id FROM eshop.orders WHERE occasion=$2)',[person.order,f.occasion]);
-   await db.query("UPDATE eshop.orders SET data=jsonb_set(data,'{tickets}',(SELECT jsonb_agg(tj) FROM eshop.orders sibling CROSS JOIN LATERAL jsonb_array_elements(sibling.data->'tickets') tj WHERE sibling.occasion=$2)) WHERE id=$1",[person.order,f.occasion]);
-   const offer=(await row(db,"INSERT INTO eshop.waitlist_offers(order_id,form_id,created_by,expires_at,revision) VALUES($1,$2,$3,clock_timestamp()+interval '1 hour',0) RETURNING id",[person.order,f.form,f.actor])).id;
-   await db.query('INSERT INTO eshop.waitlist_offer_slots(offer_id,ticket_id,form_id) VALUES($1,$2,$3)',[offer,person.id,f.form]);
-   const p=(await rpc(right,'SELECT public.preview_seating_publication($1) result',[f.transition])).data;
-   await left.query('BEGIN');await left.query('SELECT public.lock_blueprint_scope_internal(ARRAY[$1::bigint])',[f.occasion]);
-   const competing=rpc(right,'SELECT public.publish_seating_transitions($1,$2::uuid[],$3,$4) result',[f.transition,p.transitionIds,p.fingerprint,randomUUID()]);await waitRight();
-   await left.query("SELECT set_config('request.jwt.claim.role','service_role',true)");
-   const payload={offerId:offer,ticketIds:[person.id],orderDetails:{form:f.formKey,email:'seating@example.invalid',ticket:[{ticketId:person.id,fields:[{product_type:f.product}]}]}};
-   const accepted=await rpc(left,"SELECT public.execute_waitlist_command_client_sync_v1('accept',$1::jsonb,$2,$3,$4) result",[JSON.stringify(payload),randomUUID(),randomUUID(),f.actor]);
-   assert.equal(accepted.status,'applied',JSON.stringify(accepted));await left.query('COMMIT');
-   assert.equal((await competing).status,'conflict');
-   const context=(await rpc(right,'SELECT public.get_seating_transition_context($1) result',[f.transition])).data;
-   assert.equal(context.counts.unassigned,1);assert.equal(context.counts.waiting,1);assert.ok(context.items.some(i=>i.ticketId===Number(person.id)&&i.category==='unassigned'));
-   const ownership=await row(db,'SELECT \"order\" FROM eshop.order_product_ticket WHERE ticket=$1',[person.id]);assert.notEqual(ownership.order,person.order,'partial acceptance split retains current ticket identity');
+  await t.test('forward cutover connects an existing configuration without changing orders or seats',async()=>{
+   const f=await fixture(1);await identity(right,f.actor);
+   const generic=await fixture(2,1);
+   const p=await prepare(right,f,f.mappings);assert.equal((await assign(right,f,f.mappings,p)).status,'applied');
+   const old=await readFile(new URL('../../../supabase/migrations/20261101120000_blueprint_existing_admission_seating.sql',import.meta.url),'utf8');
+   const start=old.indexOf('-- Source: database/functions/blueprint/seating_transition_schema.sql');
+   const end=old.indexOf('-- Source:',start+10);
+   assert.ok(start>=0 && end>start);
+   await db.query('BEGIN');
+   try {
+    await db.query(old.slice(start,end));
+    await db.query('INSERT INTO public.form_seating_transitions(occasion,form,blueprint,started_by) VALUES($1,$2,$3,$4)',[f.occasion,f.form,f.blueprint,f.actor]);
+    await db.query("INSERT INTO public.client_sync_component_sources(registry_version,component,source_relation,scope_resolver,tracked_columns,canonical_writers,legacy_writers,disposition,test_factory,cutover_ready) VALUES(1,'private_inventory','public.form_seating_transitions'::regclass,'form_seating_transitions.occasion',ARRAY['form'],ARRAY['set_ticket_seat_assignments'],ARRAY[]::text[],'migrate','fixture',true)");
+    await db.query("INSERT INTO public.form_fields(form,type,is_ticket_field,is_hidden) VALUES($1,'spot',true,false)",[f.form]);
+    await db.query('UPDATE public.forms SET blueprint=NULL,is_open=false WHERE id=$1',[f.form]);
+    await db.query('INSERT INTO public.form_seating_transitions(occasion,form,blueprint,started_by) VALUES($1,$2,$3,$4)',[generic.occasion,generic.form,generic.blueprint,generic.actor]);
+    await db.query('UPDATE public.forms SET blueprint=NULL,participant_capacity=10,waitlist_enabled=true,waitlist_offer_duration_seconds=3600 WHERE id=$1',[generic.form]);
+    const genericBefore=await row(db,'SELECT to_jsonb(f) value FROM public.forms f WHERE id=$1',[generic.form]);
+    const before=await row(db,"SELECT (SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM eshop.orders o WHERE occasion=$1) orders,(SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM eshop.spots s WHERE occasion=$1) spots",[f.occasion]);
+    await db.query(await readFile(new URL('../../../supabase/migrations/20261110220000_automatic_form_blueprints.sql',import.meta.url),'utf8'));
+    const after=await row(db,"SELECT (SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM eshop.orders o WHERE occasion=$1) orders,(SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM eshop.spots s WHERE occasion=$1) spots",[f.occasion]);
+    assert.deepEqual(after,before);
+    assert.deepEqual(await row(db,'SELECT to_jsonb(f) value FROM public.forms f WHERE id=$1',[generic.form]),genericBefore);
+    await identity(db,generic.actor);
+    const genericContext=(await rpc(db,'SELECT public.get_blueprint_seating_context($1) result',[generic.blueprint])).data;
+    assert.equal(genericContext.counts.unassigned,2);
+    assert.equal(genericContext.counts.waiting,1);
+    assert.equal((await row(db,'SELECT blueprint,is_open FROM public.forms WHERE id=$1',[f.form])).blueprint,String(f.blueprint));
+    assert.equal((await row(db,'SELECT is_open FROM public.forms WHERE id=$1',[f.form])).is_open,false);
+    assert.equal((await row(db,"SELECT to_regclass('public.form_seating_transitions') retired")).retired,null);
+    assert.equal((await row(db,'SELECT count(*)::int n FROM public.client_sync_component_sources t WHERE NOT EXISTS(SELECT FROM pg_class c WHERE c.oid=t.source_relation)')).n,0);
+    await db.query('COMMIT');
+   } catch(error) {await db.query('ROLLBACK');throw error;}
   });
  }finally{
   await Promise.allSettled([left,right,db].filter(Boolean).map(async c=>{await c.query('ROLLBACK');await c.end();}));
-  await admin.query(`DROP DATABASE IF EXISTS ${cloneName} WITH (FORCE)`);await admin.end();await rm(kit,{recursive:true,force:true});
+  await admin.end();await workspace.release();
  }
 });

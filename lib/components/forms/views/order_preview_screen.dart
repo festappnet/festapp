@@ -206,7 +206,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                                         widget.totalPrice <= 0
                                             ? PaymentMethodStrings.text(
                                                 'finishFree')
-                                            : paymentConnectors.contains(_paymentMethod)
+                                            : paymentConnectors.containsHosted(_paymentMethod)
                                                 ? PaymentMethodStrings.text(
                                                     'orderAndPay')
                                                 : PublicOrderStrings

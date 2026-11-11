@@ -216,6 +216,10 @@ test('moving pairing locks stored old/new form scopes in order before either pay
   // Create the receiving form first: sorted acquisition must lock it before
   // waiting on the later, original form, independently of movement direction.
   const target=await fixture(setup),source=await fixture(setup),command=randomUUID();
+  // Manual receipts can move only inside their actual unit. Keep the two form
+  // scopes distinct while using a valid same-unit movement; cross-unit refusal
+  // has its own regression below, without changing either receiving account.
+  await setup.query('update occasions set (unit,organization)=(select unit,organization from occasions where id=$1) where id=$2',[source.occasion,target.occasion]);
   assert.ok(BigInt(target.form)<BigInt(source.form));
   assert.notEqual(source.payment,target.payment);
   const tid=await transaction(setup,source,1000);
@@ -256,4 +260,43 @@ test('moving pairing locks stored old/new form scopes in order before either pay
   assert.deepEqual(await evidence(setup,source),sourceFinal);
   assert.deepEqual(await evidence(setup,target),targetFinal);
  }finally{await close(bank,editor,setup);}
+});
+
+test('two cash checkouts serialize the final available place without bank or provider attempts',async()=>{
+ const setup=await connect(),first=await connect(),second=await connect();
+ try {
+  const x=await fixture(setup);
+  await setup.query(`update forms set participant_capacity=2,bank_account=null,
+    data='{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}' where id=$1`,[x.form]);
+  const key=(await setup.query('select key from forms where id=$1',[x.form])).rows[0].key;
+  const payload={form:key,email:'cash-capacity@example.invalid',payment_method:'cash',
+    client_capabilities:['cash_reservations','no_payment_deadline'],ticket:[{fields:[{product_type:x.product}]}]};
+  await begin(first,x,'anon');await begin(second,x,'anon');
+  for(const c of [first,second])await c.query("select set_config('request.jwt.claim.sub','',true);set local role anon");
+  const a=(await first.query('select create_ticket_order_client_sync_v1($1,$2,$3) value',[payload,randomUUID(),randomUUID()])).rows[0].value;
+  assert.equal(a.status,'applied',JSON.stringify(a));assert.equal(a.data.order.payment_info.payment_method,'cash');
+  const firstPid=await pid(first),secondPid=await pid(second);
+  const waiting=pending(second.query('select create_ticket_order_client_sync_v1($1,$2,$3) value',[payload,randomUUID(),randomUUID()]));
+  await blocked(setup,secondPid,firstPid);await first.query('commit');
+  const b=(await result(waiting)).rows[0].value;assert.equal(b.status,'rejected',JSON.stringify(b));await second.query('commit');
+  const facts=(await setup.query(`select count(*)::int total,count(*) filter(where state='ordered')::int reservations
+    from eshop.orders where form=$1`,[x.form])).rows[0];
+  assert.equal(facts.total,2,'one existing order plus exactly one final-place reservation');assert.equal(facts.reservations,2);
+  const payment=(await setup.query('select * from eshop.payment_info where id=$1',[a.data.order.payment_info.id])).rows[0];
+  assert.equal(payment.bank_account,null);assert.equal(payment.deadline,null);assert.equal(payment.variable_symbol,null);
+ } finally {await close(setup,first,second);}
+});
+
+
+test('cash movement cannot cross stored order units even through private system pairing',async()=>{
+ const c=await connect();
+ try {
+  const source=await fixture(c),target=await fixture(c),tid=await transaction(c,source,250.50);
+  await begin(c,source);await pair(c,tid,source.payment);await c.query('commit');
+  await begin(c,source);await assert.rejects(pair(c,tid,target.payment),e=>e.code==='P0001'&&e.message==='CASH_ORDER_SCOPE_MISMATCH');await c.query('rollback');
+  const binding=(await c.query('select payment_info from eshop.transactions where id=$1',[tid])).rows[0].payment_info;
+  assert.equal(String(binding),String(source.payment));
+  const paid=(await c.query('select paid from eshop.payment_info where id=$1',[target.payment])).rows[0].paid;
+  assert.equal(Number(paid??0),0);
+ } finally {await close(c);}
 });

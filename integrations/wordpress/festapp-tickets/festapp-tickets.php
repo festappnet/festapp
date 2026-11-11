@@ -3,7 +3,7 @@
  * Plugin Name: Festapp Tickets
  * Plugin URI: https://tickets.festapp.net/
  * Description: Embed a saved Festapp Tickets ticket form with a block or shortcode.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.6
  * Requires PHP: 7.4.33
  * Author: Festapp
@@ -27,10 +27,10 @@ require_once __DIR__ . '/includes/admin.php';
 /** Register the block and shortcode backed by one renderer. */
 function register() {
 	load_plugin_textdomain( 'festapp-tickets', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-	wp_register_script( 'festapp-tickets-editor', plugins_url( 'blocks/ticket-form/editor.js', __FILE__ ), array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n' ), '1.0.1', true );
+	wp_register_script( 'festapp-tickets-editor', plugins_url( 'blocks/ticket-form/editor.js', __FILE__ ), array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n' ), '1.0.2', true );
 	wp_localize_script( 'festapp-tickets-editor', 'festappTicketsEditor', array( 'origins' => allowed_origins() ) );
 	wp_set_script_translations( 'festapp-tickets-editor', 'festapp-tickets', __DIR__ . '/languages' );
-	wp_register_style( 'festapp-tickets', plugins_url( 'blocks/ticket-form/style.css', __FILE__ ), array(), '1.0.1' );
+	wp_register_style( 'festapp-tickets', plugins_url( 'blocks/ticket-form/style.css', __FILE__ ), array(), '1.0.2' );
 	register_block_type( __DIR__ . '/blocks/ticket-form', array( 'render_callback' => __NAMESPACE__ . '\render' ) );
 	add_shortcode( 'festapp_tickets', __NAMESPACE__ . '\shortcode' );
 }

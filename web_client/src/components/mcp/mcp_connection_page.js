@@ -1,3 +1,4 @@
+import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, CONNECTION_IDLE_SECONDS, DAY_SECONDS, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { MCP_PERMISSIONS, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { ACCOUNT_CONNECTIONS_PATH } from '../users/account_connections_links.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -42,7 +43,6 @@ export class McpConnectionPage {
         this.request = new URL(browser.location.href).searchParams.get('request');
         this.selected = new Set();
         this.selectedUnits = new Map();
-        this.selectedPermissions = new Set();
         this.expandedUnits = new Map();
         this.generation = 0;
         this.busy = false;
@@ -53,7 +53,7 @@ export class McpConnectionPage {
 
     async call(operation) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.selectedPermissions.size ? { consentVersion: 2, selection: this.access, permissions: [...this.selectedPermissions] } : this.access } : {}) },
+            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: this.details?.requestedPermissions ?? [], ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -66,9 +66,12 @@ export class McpConnectionPage {
     }
 
     get canApprove() {
+        if (this.connection && (!['new', 'replace'].includes(this.connection.mode) || !CONNECTION_DURATION_DAYS.includes(this.connection.durationDays) || this.connection.name.length > 80 || /[\u0000-\u001f\u007f]/u.test(this.connection.name) ||
+            (this.connection.mode === 'replace' && !this.connection.connectionId) ||
+            (this.connection.mode === 'new' && this.details.connections?.length && !this.connection.name.trim()))) return false;
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
         const units = this.details?.units || [];
-        if ([...this.selectedPermissions].some(p => !this.details?.requestedPermissions?.includes(p))) return false;
+        if (!validPermissions(this.details?.requestedPermissions ?? [])) return false;
         return this.selected.size + this.selectedUnits.size > 0 && this.selected.size <= 100 && this.selectedUnits.size <= 100 &&
             [...this.selected].every(id => ids.has(id)) && [...this.selectedUnits].every(([id, create]) =>
                 units.some(u => u.id === id && (!create || (this.details.canRequestCreate && u.canCreateOccasions))));
@@ -96,6 +99,8 @@ export class McpConnectionPage {
                 const details = await this.call('details');
                 if (generation !== this.generation) return;
                 this.details = details;
+                const latest = details.connections?.find(c => c.defaultEligible !== false);
+                this.connection = details.connections ? { mode: latest ? 'replace' : (details.connections.length ? '' : 'new'), ...(latest ? { connectionId: latest.id } : {}), name: latest?.name || '', durationDays: DEFAULT_CONNECTION_DURATION_DAYS } : undefined;
                 if (!Array.isArray(this.details.occasions) || this.details.occasions.some(o => !Number.isSafeInteger(o.id))) {
                     throw new Error('Invalid occasions');
                 }
@@ -112,9 +117,8 @@ export class McpConnectionPage {
                 const permissions = this.details.requestedPermissions ?? [];
                 if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p))) throw new Error('Invalid permissions');
                 if (!validPermissions(permissions)) throw new Error('Invalid permissions');
-                // The displayed capability summary and single approval cover exactly
-                // these requested scopes. Existing issued grants are never changed.
-                this.selectedPermissions = new Set(permissions);
+                // OAuth scopes remain an internal client contract. One approval
+                // delegates the requested functions; live SQL still owns user rights.
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
@@ -198,12 +202,77 @@ export class McpConnectionPage {
         }
         add('h1', this.text(this.state === 'connected' ? 'connected' : 'heading'));
         if (this.state === 'consent') {
-            add('h2', this.text('client'));
+            add('h2', this.details.client);
             if (this.details.regionalPortal) {
                 const { name: portal, platform } = this.details.regionalPortal;
                 add('p', this.text('regionalPlatform', { portal, platform }));
             }
             add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
+            if (this.connection) {
+                const choices = this.details.connections;
+                const durationLabel = add('label', this.text('durationLabel'));
+                const duration = add('select', '', durationLabel); duration.name = 'durationDays'; duration.disabled = this.busy;
+                for (const days of CONNECTION_DURATION_DAYS) {
+                    const option = add('option', this.text(`duration${days}`), duration); option.value = String(days);
+                    option.selected = this.connection.durationDays === days;
+                }
+                duration.addEventListener('change', () => {
+                    this.connection.durationDays = Number(duration.value); this.render();
+                    this.container.querySelector('[name="durationDays"]')?.focus();
+                });
+                add('p', this.text('consentDeadline', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(consentDeadline(this.connection.durationDays))) }));
+                add('p', this.text('idleDurationHint', { days: CONNECTION_IDLE_SECONDS / DAY_SECONDS }));
+                if (this.connection.durationDays === 365) add('p', this.text('longDurationHint')).dataset.longDurationHint = '';
+
+                const section = add('fieldset', ''); section.disabled = this.busy;
+                add('legend', this.text('connectionChoice'), section);
+                if (choices.length) {
+                    for (const mode of ['replace', 'new']) {
+                        const label = add('label', '', section);
+                        const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'connection-mode';
+                        radio.value = mode; radio.checked = this.connection.mode === mode;
+                        radio.addEventListener('change', () => {
+                            const target = choices.find(c => c.defaultEligible !== false);
+                            this.connection = { mode, durationDays: this.connection.durationDays, name: mode === 'replace' ? target?.name || '' : '',
+                                ...(mode === 'replace' && target ? { connectionId: target.id } : {}) }; this.render();
+                        });
+                        label.appendChild(radio); add('span', this.text(mode === 'replace' ? 'replaceConnection' : 'newDevice'), label);
+                    }
+                    if (this.connection.mode === 'replace') {
+                        const label = add('label', this.text('replaceTarget'), section);
+                        const select = add('select', '', label); select.name = 'connectionId';
+                        if (!this.connection.connectionId) {
+                            const placeholder = add('option', this.text('replaceTarget'), select); placeholder.value = '';
+                        }
+                        for (const [index, c] of choices.entries()) {
+                            const date = new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(c.expiresAt));
+                            const option = add('option', `${index + 1}. ${c.name || this.details.client} · ${date}`, select); option.value = c.id;
+                            option.selected = c.id === this.connection.connectionId;
+                        }
+                        select.addEventListener('change', () => {
+                            this.connection.connectionId = select.value;
+                            this.connection.name = choices.find(c => c.id === select.value)?.name || ''; this.render();
+                        });
+                        // Show every target's scope before approval, using text nodes only.
+                        for (const [index, c] of choices.entries()) {
+                            const item = add('article', '', section);
+                            add('h3', `${index + 1}. ${c.name || this.details.client}`, item);
+                            add('p', this.text('connectionExpiry', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(c.expiresAt)) }), item);
+                            for (const u of c.access.units) add('p', this.text(u.canCreateOccasions ? 'connectionOrganizerCreate' : 'connectionOrganizer', { id: u.unitId }), item);
+                            for (const id of c.access.occasionIds) add('p', this.text('connectionOccasion', { id }), item);
+                            add('p', this.text('sameRights'), item);
+                        }
+                        add('p', this.text('replaceHint'), section);
+                    }
+                }
+                const label = add('label', this.text(this.connection.mode === 'new' && choices.length ? 'deviceNameRequired' : 'deviceName'), section);
+                const name = add('input', '', label); name.type = 'text'; name.maxLength = 80; name.value = this.connection.name;
+                name.dataset.connectionName = ''; name.required = this.connection.mode === 'new' && choices.length > 0;
+                name.addEventListener('input', () => {
+                    this.connection.name = name.value;
+                    const approve = root.querySelector('button[data-primary]'); if (approve) approve.disabled = this.busy || !this.canApprove;
+                });
+            }
             add('p', this.text('chooseScope'));
             const fieldset = add('fieldset', '');
             fieldset.disabled = this.busy;
@@ -303,12 +372,6 @@ export class McpConnectionPage {
             summary.className = 'mcp-access-summary';
             add('h2', this.text('accessSummary'), summary);
             add('p', this.text('sameRights'), summary);
-            const capabilities = add('ul', '', summary);
-            add('li', this.text('baseAccess'), capabilities);
-            for (const scope of this.selectedPermissions) add('li', this.text(MCP_PERMISSIONS[scope].label), capabilities);
-            if ([...this.selectedPermissions].some(scope => scope !== 'festapp:orders:read')) {
-                add('p', this.text('sensitiveActionsHint'), summary);
-            }
             const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
             selectionSummary.className = 'mcp-selection-summary';
             add('p', this.text('duration', { appName: AppConfig.appName }));
@@ -358,7 +421,8 @@ export class McpConnectionPage {
 .mcp-connection fieldset{border:0;padding:0;margin:28px 0}
 .mcp-connection legend{font-weight:600;margin-bottom:16px}
 .mcp-connection label{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 0;cursor:pointer}
-.mcp-connection input{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#243858)}
+.mcp-connection input:not([type=text]){width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#243858)}
+.mcp-connection input[type=text]{width:100%;padding:10px;font:inherit;box-sizing:border-box}
 .mcp-connection a{display:block;margin-top:20px}
 `;
         this.container.replaceChildren(style, root);

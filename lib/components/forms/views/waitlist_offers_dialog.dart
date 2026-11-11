@@ -1,3 +1,5 @@
+import 'package:festapp_core/communication_tone.dart';
+import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'dart:convert';
@@ -211,16 +213,6 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     final participantCount =
         order?.waitlistSummary?.counts.values.fold<int>(0, (a, b) => a + b) ??
         count;
-    final participantWord = participantCount == 1
-        ? 'osobu'
-        : participantCount >= 2 && participantCount <= 4
-        ? 'osoby'
-        : 'osob';
-    final placeWord = count == 1
-        ? 'místo'
-        : count >= 2 && count <= 4
-        ? 'místa'
-        : 'míst';
     final expiry = _expiresAt == null
         ? ''
         : DateFormat.yMd()
@@ -230,8 +222,8 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
     final toneSubstitutions = _preview?['toneSubstitutions'];
     String previewLabel(String key, String fallback) =>
         toneSubstitutions is Map && toneSubstitutions[key] is String
-        ? escape(toneSubstitutions[key] as String)
-        : escape(fallback);
+        ? toneSubstitutions[key] as String
+        : fallback;
     final vars = <String, String>{
       for (final key in const [
         'waitlist_confirmation_heading',
@@ -239,7 +231,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
         'waitlist_offer_heading',
       ])
         if (toneSubstitutions is Map && toneSubstitutions[key] is String)
-          key: escape(toneSubstitutions[key] as String),
+          key: toneSubstitutions[key] as String,
       'waitlist_offer_instructions': previewLabel(
         participantCount == 1 &&
                 count == 1 &&
@@ -250,35 +242,39 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
             : 'waitlist_offer_instructions',
         '',
       ),
-      'order_symbol': escape(order?.orderSymbol ?? '$orderId'),
-      'occasion_title': escape(_preview?['occasionTitle']?.toString() ?? ''),
+      'orderSymbol': order?.orderSymbol ?? '',
+      'occasionTitle': _preview?['occasionTitle']?.toString() ?? '',
       'participant_count': '$participantCount',
-      'participant_phrase': '$participantCount $participantWord',
+      'participant_phrase': waitlistCountPhrase(participantCount, 'person'),
       'offered_count': '$count',
-      'offered_places': '$count $placeWord',
-      'offer_expires_at': escape(expiry),
+      'offered_places': waitlistCountPhrase(count, 'place'),
+      'offer_expires_at': expiry,
       'offer_url': '#',
       'manage_waitlist_url': '#',
       'offer_button':
-          '<a href="#">${previewLabel(count == 1 ? 'waitlist_offer_button_single' : 'waitlist_offer_button_multiple', WaitlistStrings.accept)}</a>',
+          '<a href="#">${escape(previewLabel(count == 1 ? 'waitlist_offer_button_single' : 'waitlist_offer_button_multiple', WaitlistStrings.accept))}</a>',
       'manage_waitlist_button':
-          '<a href="#">${previewLabel('waitlist_manage_button_label', WaitlistStrings.withdraw)}</a>',
+          '<a href="#">${escape(previewLabel('waitlist_manage_button_label', WaitlistStrings.withdraw))}</a>',
     };
-    String expand(String html) => html.replaceAllMapped(
-      RegExp(r'\{\{\s*(\w+)\s*\}\}'),
-      (m) => vars[m[1]] ?? m[0]!,
+    final scenario = EmailPreviewScenario(
+      templateCode: 'waitlist_offer',
+      scenario: 'standard',
+      locale: 'cs',
+      tone: CommunicationTone.resolve(_preview?['communicationTone']),
+      values: vars,
+      richCodes: htmlEmailVariables.intersection(vars.keys.toSet()),
+      requiredLinks: const [],
     );
-    final body = expand(
+    final body = scenario.composeHtml(
       _preview?['instructionsTemplateHtml']?.toString() ??
           _preview?['template']?['html']?.toString() ??
           '',
+      wrapperHtml: _preview?['wrapper']?['html']?.toString(),
     );
-    final wrapper = _preview?['wrapper']?['html']?.toString();
-    final wrapped = wrapper == null
-        ? body
-        : expand(wrapper.replaceAll('{{content}}', body));
-    final subject = expand(_preview?['template']?['subject']?.toString() ?? '');
-    return '<h3>$subject</h3>$wrapped';
+    final subject = scenario.composeSubject(
+      _preview?['template']?['subject']?.toString() ?? '',
+    );
+    return '<h3>${escape(subject)}</h3>$body';
   }
 
   Widget _recipient(int id, FormCapacityModel capacity) {

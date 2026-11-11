@@ -424,6 +424,37 @@
         "barion-sandbox-api"
       ],
       "mutates_authority": true
+    },
+    "payment-operation": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
+    },
+    "ticket-wallet": {
+      "trigger": "capability-http",
+      "effects": [
+        "database-rpc",
+        "google-wallet-api"
+      ],
+      "mutates_authority": true
+    },
+    "sync-ticket-wallet": {
+      "trigger": "machine-http",
+      "effects": [
+        "database-rpc",
+        "google-wallet-api"
+      ],
+      "mutates_authority": true
+    },
+    "manage-member-access": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "email-queue"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -513,7 +544,10 @@
       "payment-checkout": "explicit-installed-connector-scoped-expiring-capability-leased-immutable-attempt-no-default-provider",
       "payment-return": "explicit-installed-connector-read-only-return-capability",
       "payment-webhook": "explicit-installed-connector-raw-body-stripe-signature-or-durable-barion-hint-then-account-bound-authenticated-state",
-      "payment-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery"
+      "payment-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery",
+      "payment-operation": "live-user-jwt-stored-order-scope-typed-operation-policy-exact-receipt-no-client-provider-secrets",
+      "ticket-wallet": "explicit-post-256bit-ticket-capability-current-admission-fixed-origin-no-store-fenced-provider-identity",
+      "sync-ticket-wallet": "private-machine-proof-fenced-bounded-current-ticket-state-reconciliation"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

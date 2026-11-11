@@ -1,6 +1,6 @@
 // Canonical RPCs, real parallel pg clients; only an explicitly disposable loopback DB.
 import pg from 'pg';
-import fs from 'node:fs';
+import fs from '../../automation/lib/migration_inputs.mjs';
 import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 const url = process.env.DATABASE_URL;

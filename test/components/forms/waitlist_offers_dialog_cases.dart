@@ -123,11 +123,11 @@ void main() {
                               : 'Objednávku pak potvrdíte.',
                         },
                         'instructionsTemplateHtml':
-                            '<h2>{{waitlist_offer_heading}}</h2><p>{{waitlist_offer_instructions}}</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasion_title}}</p>{{offer_button}}',
+                            '<h2>{{waitlist_offer_heading}}</h2><p>{{waitlist_offer_instructions}}</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasionTitle}}</p>{{offer_button}}',
                         'template': {
                           'subject': 'Nabídka pro {{offered_places}}',
                           'html':
-                              '<h2>{{waitlist_offer_heading}}</h2><p>Legacy expanded multi-person instructions.</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasion_title}}</p>{{offer_button}}',
+                              '<h2>{{waitlist_offer_heading}}</h2><p>Legacy expanded multi-person instructions.</p><p>{{participant_phrase}} | {{participant_count}} | {{offered_count}} | <span style="white-space:nowrap">{{offer_expires_at}}</span></p><p>{{occasionTitle}}</p>{{offer_button}}',
                         },
                         'wrapper': {'html': '<main>{{content}}</main>'},
                       },

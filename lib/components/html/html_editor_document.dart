@@ -156,6 +156,15 @@ class HtmlEditorDocument {
   late final List<String> _initialOrder;
   final _envelopes = <String, _Envelope>{};
 
+  /// Preview scalar content inside its authored HTML element, without changing
+  /// the document or introducing a second definition of the element's style.
+  String wrapTokenPreview(String nodeId, String html) {
+    final wrapper = _envelopes[nodeId]?.wrapper?.clone(false);
+    if (wrapper == null) return html;
+    wrapper.nodes.addAll(parser.parseFragment(html).nodes.toList());
+    return wrapper.outerHtml;
+  }
+
   void adoptFragment(HtmlEditorDocument fragment) {
     _envelopes.addAll(fragment._envelopes);
     _baseline.addAll(fragment._baseline);

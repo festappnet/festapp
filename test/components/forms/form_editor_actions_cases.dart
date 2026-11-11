@@ -1,3 +1,12 @@
+import 'package:fstapp/components/forms/form_strings.dart';
+import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
+import 'package:fstapp/components/html/editable_html_field.dart';
+import 'package:fstapp/components/html/rich_html_editor.dart';
+import 'package:fstapp/components/forms/sale_opening_strings.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:super_editor/super_editor.dart';
+import 'package:fstapp/components/forms/widgets_editor/product_type_editor.dart';
+import 'package:fstapp/components/forms/widgets_editor/ticket_product_editor_row.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -50,6 +59,339 @@ void main() {
       ) as Map<String, dynamic>,
     );
   });
+  for (final entry in ['top', 'bottom', 'prototype', 'embedded']) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'adding a field selects its editor immediately via $entry',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          capabilities: {AuthorizationCapabilities.formsWrite: true},
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final original = FormFieldDraft(
+          id: 1, type: 'text', title: 'Původní otázka',
+        );
+        final bundle = FormEditBundle(
+          form: FormEditorDraft(link: 'ples', occasionId: 1, data: {},
+              relatedFields: [original]),
+          productTypes: [], products: [], availableBankAccounts: [],
+        );
+        final prototype = entry == 'prototype' || entry == 'embedded';
+        final editor = prototype
+            ? FormEditorContent.prototype(bundle: bundle,
+                embedded: entry == 'embedded', onPrototypeSave: (_) {})
+            : FormEditorContent(formLink: 'ples', loadBundle: (_) async => bundle);
+        await _environment.pumpWidget(tester, MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: entry == 'embedded'
+              ? Scaffold(body: SingleChildScrollView(child: editor))
+              : editor,
+        ));
+        await tester.pumpAndSettle();
+        final add = entry == 'embedded'
+            ? find.widgetWithText(FilledButton, FormStrings.addFieldTitle)
+            : find.byKey(ValueKey(entry == 'bottom'
+                ? 'add-form-field-bottom' : 'add-form-field-top'));
+        await tester.ensureVisible(add);
+        await tester.tap(add);
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ListTile, FormStrings.textFieldType));
+        await tester.pumpAndSettle();
+        final generator = tester.widget<FormFieldsGenerator>(
+            find.byType(FormFieldsGenerator));
+        final added = generator.bundle.form.relatedFields.last;
+        final navigation = generator.navigationController!;
+        expect(added, isNot(same(original)));
+        expect(added.definition.id, isNull);
+        expect(navigation.fields.last.field, same(added));
+        expect(navigation.selectedIdentity, navigation.fields.last.identity);
+        expect(find.widgetWithText(TextFormField, 'Původní otázka'), findsNothing);
+        final title = find.descendant(
+          of: find.byType(FormFieldsGenerator),
+          matching: find.byWidgetPredicate((widget) =>
+              widget is TextFormField && (widget.initialValue?.isEmpty ?? true)),
+        );
+        expect(title, findsOneWidget);
+        await tester.enterText(title, 'Nová otázka');
+        await tester.pumpAndSettle();
+        expect(added.definition.title, 'Nová otázka');
+        expect(original.definition.title, 'Původní otázka');
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'outline scrolls vertically without animating ancestor tab pages',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final pages = PageController(initialPage: 1);
+      addTearDown(pages.dispose);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.formsWrite: true},
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      await _environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: PageView(
+          controller: pages,
+          children: [
+            const SizedBox(),
+            FormEditorContent(
+              formLink: 'ples',
+              loadBundle: (_) async => FormEditBundle(
+                form: FormEditorDraft(
+                  link: 'ples', occasionId: 1, isOpen: true, data: {},
+                  header: '<p>Vítejte na plese</p>',
+                  relatedFields: [for (var i = 1; i <= 8; i++)
+                    FormFieldDraft(id: i, type: 'text', title: 'Otázka $i')],
+                ),
+                productTypes: [], products: [], availableBankAccounts: [],
+              ),
+            ),
+            const SizedBox(),
+          ],
+        ),
+      ));
+      await tester.pumpAndSettle();
+      final horizontalOffset = pages.position.pixels;
+      final outline = find.byKey(const ValueKey('form-editor-outline'));
+      final vertical = tester.widget<SingleChildScrollView>(find.ancestor(
+        of: find.byType(FormFieldsGenerator),
+        matching: find.byType(SingleChildScrollView),
+      ).first).controller!;
+      final save = find.descendant(of: find.byType(EditorActionBar),
+        matching: find.widgetWithText(FilledButton, CommonStrings.save));
+      Future<void> navigate(String label) async {
+        await tester.tap(find.descendant(of: outline, matching: find.text(label)));
+        // A settled-only assertion misses a horizontal animation that snaps back.
+        for (var frame = 0; frame < 8; frame++) {
+          await tester.pump(const Duration(milliseconds: 40));
+          expect(pages.position.pixels, closeTo(horizontalOffset, 0.01));
+        }
+        expect(tester.widget<FilledButton>(save).onPressed, isNull);
+      }
+      await navigate('Otázka 4');
+      final fieldOffset = vertical.offset;
+      expect(fieldOffset, greaterThan(0));
+      expect(tester.widget<TextFormField>(find.widgetWithText(
+        TextFormField, 'Otázka 4')).initialValue, 'Otázka 4');
+      await navigate(FormStrings.formIntroduction);
+      expect(vertical.offset, lessThan(fieldOffset));
+      await navigate(FormStrings.availability);
+      expect(vertical.offset, lessThanOrEqualTo(12));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'layout C preserves active HTML and field drafts across widths and guards both previews',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.formsWrite: true},
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final field = FormFieldDraft(id: 4, type: 'text', title: 'Poznámka');
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormEditorContent(
+            formLink: 'ples',
+            loadBundle: (_) async => FormEditBundle(form: FormEditorDraft(
+              link: 'ples',
+              occasionId: 1,
+              header: '<p>Vítejte na plese</p>',
+              relatedFields: [field],
+              data: {},
+            ), productTypes: [], products: [], availableBankAccounts: []),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final outline = find.byKey(const ValueKey('form-editor-outline'));
+      final header = find.byKey(const ValueKey('form-header'));
+      final generatorState = tester.state(find.byType(FormFieldsGenerator));
+      final headerState = tester.state(header);
+      final save = find.descendant(
+        of: find.byType(EditorActionBar),
+        matching: find.widgetWithText(FilledButton, CommonStrings.save),
+      );
+      expect(outline, findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text(FormStrings.formOpenMessage)).dy,
+        lessThan(tester.getTopLeft(header).dy),
+      );
+      expect(
+        tester.getTopLeft(header).dy,
+        lessThan(tester.getTopLeft(find.byType(FormFieldsGenerator)).dy),
+      );
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(tester.widget<FilledButton>(save).onPressed, isNull);
+      final outlineField = find.descendant(
+        of: outline,
+        matching: find.text('Poznámka'),
+      );
+      await tester.tap(outlineField);
+      await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(save).onPressed, isNull);
+      final title = find.widgetWithText(TextFormField, 'Poznámka');
+      await tester.ensureVisible(title);
+      await tester.enterText(title, 'Doprovod');
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: outline, matching: find.text('Doprovod')),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(header);
+      await tester.tap(
+        find.descendant(of: header, matching: find.byIcon(Icons.edit)),
+      );
+      await tester.pumpAndSettle();
+      final rich = find.descendant(
+        of: header,
+        matching: find.byType(RichHtmlEditor),
+      );
+      final controller = tester.widget<RichHtmlEditor>(rich).controller;
+      final node = controller.editor.document.first as TextNode;
+      controller.editor.execute([
+        InsertTextRequest(
+          documentPosition: DocumentPosition(
+            nodeId: node.id,
+            nodePosition: TextNodePosition(offset: node.text.length),
+          ),
+          textToInsert: ' - těšíme se na Vás',
+          attributions: {},
+        ),
+      ]);
+      await tester.pumpAndSettle();
+      final draftHtml = controller.html;
+      for (final width in [390.0, 1099.0, 1600.0]) {
+        tester.view.physicalSize = Size(width, 1800);
+        await tester.pumpAndSettle();
+        expect(outline, width < 1100 ? findsNothing : findsOneWidget);
+        expect(tester.state(header), same(headerState));
+        expect(
+          tester.state(find.byType(FormFieldsGenerator)),
+          same(generatorState),
+        );
+        expect(
+          tester.widget<RichHtmlEditor>(rich).controller,
+          same(controller),
+        );
+        expect(controller.html, draftHtml);
+        expect(field.definition.title, 'Doprovod');
+        expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
+        expect(tester.takeException(), isNull);
+      }
+      for (final label in [FormStrings.formPreview, FormStrings.publicPage]) {
+        final action = find.text(label);
+        await tester.ensureVisible(action);
+        await tester.tap(action);
+        await tester.pumpAndSettle();
+        expect(
+          find.text(SaleOpeningStrings.text('unsavedChanges')),
+          findsOneWidget,
+        );
+        await tester.tap(find.text(CommonStrings.keepEditing));
+        await tester.pumpAndSettle();
+        expect(controller.html, draftHtml);
+      }
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      tester.view.physicalSize = const Size(1100, 1800);
+      await tester.pumpAndSettle();
+      expect(outline, findsNothing);
+      expect(controller.html, draftHtml);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  for (final mode in ['read-only', 'prototype', 'embedded']) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'layout C retains the $mode shell and permissions',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 1800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = null;
+        final bundle = FormEditBundle(form: FormEditorDraft(
+          link: 'ples',
+          occasionId: 1,
+          relatedFields: [
+            FormFieldDraft(id: 4, type: 'text', title: 'Poznámka'),
+          ],
+          data: {},
+        ), productTypes: [], products: [], availableBankAccounts: []);
+        await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: mode == 'read-only'
+                ? FormEditorContent(
+                    formLink: 'ples',
+                    loadBundle: (_) async => bundle,
+                  )
+                : Scaffold(
+                    body: SingleChildScrollView(
+                      child: SizedBox(
+                        height: 1500,
+                        child: FormEditorContent.prototype(
+                          bundle: bundle,
+                          embedded: mode == 'embedded',
+                          onPrototypeSave: (_) {},
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(FormFieldsGenerator), findsOneWidget);
+        expect(find.byType(FloatingActionButton), findsNothing);
+        if (mode == 'read-only') {
+          expect(
+            tester
+                .widget<EditableHtmlField>(
+                  find.byKey(const ValueKey('form-header')),
+                )
+                .enabled,
+            isFalse,
+          );
+          expect(
+            tester
+                .widget<FormFieldsGenerator>(find.byType(FormFieldsGenerator))
+                .editingEnabled,
+            isFalse,
+          );
+        } else {
+          expect(find.text(FormStrings.formPreview), findsNothing);
+          expect(find.text(FormStrings.publicPage), findsNothing);
+          expect(find.byType(EditorActionBar), findsNothing);
+          if (mode == 'embedded') {
+            expect(
+              find.byKey(const ValueKey('form-editor-outline')),
+              findsNothing,
+            );
+            expect(find.byType(BottomAppBar), findsNothing);
+          }
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgetsWithEnvironment(
     () => _environment,
     'responses read each source once and refresh once on tab return',
@@ -283,6 +625,134 @@ void main() {
   }
   testWidgetsWithEnvironment(
     () => _environment,
+    'product group edits update the actual Save button and revert cleanly',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.formsWrite: true},
+        occasionUser: OccasionUserModel(isEditorOrder: true),
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final product = ProductModel(
+        id: 10,
+        title: 'Bez odvozu',
+        price: 0,
+        currencyCode: 'CZK',
+        isHidden: false,
+      );
+      final group = ProductTypeModel(
+        id: 3,
+        title: 'Odvoz',
+        products: [product],
+      );
+      final field = FormFieldDraft(
+        id: 5,
+        title: 'Odvoz',
+        type: 'product_type',
+        productType: group,
+        isTicketField: true,
+        isRequired: false,
+        isHidden: false,
+        data: {},
+      );
+      final form = FormEditorDraft(
+        occasionId: 1,
+        link: 'test',
+        relatedFields: [
+          FormFieldDraft(id: 4, type: 'ticket', data: {'max_tickets': 1}),
+          field,
+        ],
+      );
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormEditorContent(
+            formLink: 'test',
+            loadBundle: (_) async => FormEditBundle(
+              form: form,
+              productTypes: [group],
+              products: [product],
+              availableBankAccounts: [],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final save = find.widgetWithText(FilledButton, 'Common.save'.tr());
+      void expectSave(bool enabled) => expect(
+        tester.widget<FilledButton>(save).onPressed,
+        enabled ? isNotNull : isNull,
+      );
+      Future<void> editAndRestore(
+        Finder input,
+        String changed,
+        String original,
+      ) async {
+        await tester.ensureVisible(input);
+        await tester.enterText(input, changed);
+        await tester.pumpAndSettle();
+        expectSave(true);
+        await tester.enterText(input, original);
+        await tester.pumpAndSettle();
+        expectSave(false);
+      }
+
+      expectSave(false);
+      final row = find.byType(TicketProductEditorRow);
+      Finder productInput(String label) => find.descendant(
+        of: row,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField && widget.decoration?.labelText == label,
+        ),
+      );
+      await editAndRestore(productInput('Název'), 'Žimrovice', 'Bez odvozu');
+      await editAndRestore(productInput('Cena'), '150', '0');
+      await editAndRestore(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.labelText == FormStrings.productTypeTitle,
+        ),
+        'Doprava domů',
+        'Odvoz',
+      );
+      final groupEditor = find.byType(ProductTypeEditor);
+      final toggles = find.descendant(
+        of: groupEditor,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Switch || widget is Checkbox,
+        ),
+      );
+      for (var i = 0; i < toggles.evaluate().length; i++) {
+        await tester.ensureVisible(toggles.at(i));
+        await tester.tap(toggles.at(i));
+        await tester.pumpAndSettle();
+        expectSave(true);
+        await tester.tap(toggles.at(i));
+        await tester.pumpAndSettle();
+        expectSave(false);
+      }
+      final defaultChoice = find.descendant(
+        of: groupEditor,
+        matching: find.byType(Radio<String>),
+      );
+      await tester.ensureVisible(defaultChoice);
+      await tester.tap(defaultChoice);
+      await tester.pumpAndSettle();
+      expectSave(true);
+      await tester.tap(defaultChoice);
+      await tester.pumpAndSettle();
+      expectSave(false);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => _environment,
     'failed loading leaves the spinner and retry recovers',
     (tester) async {
       var calls = 0;
@@ -456,7 +926,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       for (var i = 0; i < 2; i++) {
-        await tester.tap(find.byKey(const ValueKey('form-embed-inherit-style')));
+        await tester.tap(
+          find.byKey(const ValueKey('form-embed-inherit-style')),
+        );
         await tester.pumpAndSettle();
         final save = find.widgetWithText(FilledButton, 'Common.save'.tr());
         await tester.tap(save);

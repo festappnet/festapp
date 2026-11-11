@@ -8,7 +8,7 @@ baseline.
 
 The installation contract is `supabase/baseline/manifest.json`. It pins the
 schema, provider bootstrap, non-tenant reference seed, covered migration ledger
-and immutable historical Git inputs by checksum. The baseline contains no
+and immutable historical recovery inputs by checksum. The baseline contains no
 production rows or secrets.
 
 ## First-time setup and reset
@@ -22,38 +22,30 @@ production rows or secrets.
    ./automation/bootstrap_local_db.sh
    ```
 
-The command deletes and recreates only the Docker volume belonging to
-`festapp-db-tests-pg15`, starts PostgreSQL 15 on port `55432`, restores
-the manifest-owned baseline through `20260906140000`, records its 111 covered
-migration versions, applies newer forward migrations, and runs
-`supabase/seed.sql`.
+The command prepares or reuses a content-verified immutable PostgreSQL 15 base,
+then ordinary test commands acquire their own clean clone. The canonical owner is
+`automation/local_db/runtime.py`; it never reads `.env.local` or guesses another
+session's database. Default dedicated cluster: `festapp-sql-runtime`, loopback
+port 55542. The baseline/ledger and full supported history remain authoritative.
+Use `--upgrade` for an actual cold full replay, `--status` for leases/cache state,
+`--prune` for owned abandoned runs, and `--stop` to stop only an unleased runtime.
 
-Database URL:
-
-```text
-postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
-```
-
-Stop and remove the isolated database with:
-
-```bash
-./automation/bootstrap_local_db.sh --stop
-```
+The baseline covers SQL through `20261107170000` and records 481 covered
+versions before applying the remaining active forwards.
 
 ## Running tests
 
 ```bash
-# Override any DATABASE_URL supplied by .env.local.
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  ./automation/test_all.sh db
-
-# Run one SQL contract directly.
-DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  node web_client/scripts/run_db_tests.js database/tests/companion_contract_test.sql
-
-# Complete client suite (core + native Dart adapters + Flutter), no database.
+./automation/test_all.sh db
+node web_client/scripts/run_db_tests.js database/tests/companion_contract_test.sql
+python3 automation/local_db/runtime.py exec -- node --test web_client/tests/database/retired_waitlist_registry.test.js
 ./automation/test_client.sh
 ```
+
+No fixed behavior database URL is required: the wrappers acquire a unique
+workspace and close their pools before deleting it. An explicit marked local
+fixture remains supported for integration or supported-upgrade work. Empty SQL
+filters fail; diagnostic retries never erase the first-attempt verdict.
 
 First resolve root dependencies with `fvm flutter pub get`, then run
 `fvm dart pub get` inside `packages/festapp_core`. For a partial run use
@@ -65,8 +57,7 @@ never production.
 
 The complete image Worker integration suite also needs local GoTrue and
 PostgREST connected to that same marked disposable database. Supply its
-`SUPABASE_URL`, `SUPABASE_ANON_KEY` and `DATABASE_URL`, and set
-`IMAGE_LIFECYCLE_DATABASE_URL` to the same database before running
+`SUPABASE_URL`, `SUPABASE_ANON_KEY` and `DATABASE_URL` before running
 `pnpm --dir workers/image-worker run test:integration`. Missing or remote
 fixtures fail instead of silently skipping. The suite runs the actual Worker
 in workerd with local R2, native Images processing and a real rate limiter.
@@ -81,7 +72,7 @@ SQL connections to prove the transaction races.
 
 - Active migrations use one unique `YYYYMMDDHHMMSS_name.sql` filename in
   `supabase/migrations/`.
-- Covered historical SQL is recovered from checksum-pinned Git objects rather
+- Covered historical SQL is recovered from checksum-pinned fixture objects rather
   than kept in the active migration directory. Its versions remain in the ledger.
 - The bootstrap uses `automation/baseline.py upgrade-local` to materialize a
   complete temporary migration history for Supabase CLI and apply active forwards.
@@ -109,19 +100,28 @@ corresponding contract migration, then applies the remaining forwards. It refuse
 older or missing original-baseline ledgers. Use the extension-owning local role
 `supabase_admin` where required by the provider image.
 
-Historical recovery needs the full Git objects pinned in
-`automation/historical-sql-manifest.json`; use a full clone or fetch the recorded
-commits in a shallow checkout. Recovery validates all checksums before writing,
-refuses conflicting files, and never substitutes current source definitions.
-`automation/email-delivery/rehearse-local.sh` uses this kit for its legacy upgrade.
+Historical recovery uses `automation/historical-sql-manifest.json` and the
+checksum-addressed objects under `automation/historical-inputs/objects/`.
+Objects may contain exact raw bytes or their gzip representation. Recovery
+requires no Git history or network, validates every decompressed checksum,
+refuses conflicting output files, and never substitutes current definitions.
+`--email` selects the separate frozen email predecessor rather than later
+versions of migrations with the same names.
+
+Tooling and predecessor tests read covered migration inputs through
+`automation/migration_inputs.py` or `automation/lib/migration_inputs.mjs`.
+Installers enumerate the physical active directory only. Covered SQL cannot be
+regenerated by the shared writer. Current changes always use a new forward.
+See the [November compaction evidence](../development/sql-migration-compaction-2026-11-11.md).
 
 ## Production safety
 
-`bootstrap_local_db.sh` defaults to `127.0.0.1:55432` and its dedicated local
-Supabase project ID. Isolated checks may select a separate project, workdir and
-port with `FESTAPP_LOCAL_DB_PROJECT_ID`, `FESTAPP_LOCAL_DB_WORKDIR` and
-`FESTAPP_LOCAL_DB_PORT`. Scheduled cron execution is disabled before SQL restore. It does not read `DATABASE_URL`, link a remote project, or
-run `db push`. Testing against production is not part of the supported workflow.
+`bootstrap_local_db.sh` delegates to the owned runtime on 127.0.0.1:55542.
+Choose another owned project/port with `FESTAPP_LOCAL_DB_PROJECT_ID` and
+`FESTAPP_LOCAL_DB_PORT`. Cron execution is disabled and pg_net's worker uses an
+empty sink database. Unowned containers, non-loopback port mappings, mismatched
+markers and live leases prevent reuse or shutdown. No command links a remote
+project or runs `db push`; production is outside this workflow.
 
 ## Generated app fonts
 

@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "image": "public.ecr.aws/supabase/postgres:17.6.1.156",
+  "supabaseCli": "2.111.0",
+  "sourcePlatform": "linux/arm64",
+  "provenance": "Fresh CLI provider only; no app schema/environment/data. Exact provider extension-member wrapper and password-free role definitions. PG17 standalone GraphQL placeholder is already dumped; no extension membership reconstruction.",
+  "files": {
+    "provider.sql": "07e6380d4e1f01c6ef3bcca733e76ebcfc24331868695fd475cc1364016c18a4",
+    "roles.sql": "2d87bf005c1ab4301757898cfffe38b1f9c8ec78eed4bac9bcc4e7e3b7d1d605"
+  },
+  "schema": "provider.sql"
+}

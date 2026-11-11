@@ -23,7 +23,7 @@ BEGIN
  allowed:=CASE p_action
   WHEN 'public_link' THEN ARRAY['id','expected_aggregate_version','link']
   WHEN 'create' THEN ARRAY['title']
-  WHEN 'save' THEN ARRAY['id','expected_aggregate_version','expected_product_versions','expected_product_type_versions',
+  WHEN 'save' THEN ARRAY['payment_selection_intent','id','expected_aggregate_version','expected_product_versions','expected_product_type_versions',
    'title','header','header_off','is_open','blueprint','bank_account','deadline_duration_seconds',
    'participant_capacity','waitlist_enabled','show_remaining_capacity','waitlist_offer_duration_seconds',
    'form_fields','deleted_field_ids','deleted_product_ids','settings']

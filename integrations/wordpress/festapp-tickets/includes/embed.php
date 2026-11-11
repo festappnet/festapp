@@ -71,10 +71,11 @@ function shortcode( $attributes ) {
 	return render(
 		shortcode_atts(
 			array(
-				'url'    => '',
-				'title'  => '',
-				'mode'   => 'auto',
-				'height' => 800,
+				'url'         => '',
+				'title'       => '',
+				'mode'        => 'auto',
+				'height'      => 800,
+				'measurement' => 'unit',
 			),
 			$attributes,
 			'festapp_tickets'
@@ -116,8 +117,9 @@ function render( $attributes ) {
 	);
 	// phpcs:enable WordPress.WP.EnqueuedResourceParameters.MissingVersion
 	return sprintf(
-		'<div class="festapp-tickets" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
-		' data-festapp-embed' . ( ! $auto ? ' data-festapp-height="fixed"' : '' ),
+		'<div class="festapp-tickets" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0;color-scheme:light dark" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
+		' data-festapp-embed' . ( ! $auto ? ' data-festapp-height="fixed"' : '' )
+			. ( isset( $attributes['measurement'] ) && 'host' === $attributes['measurement'] ? ' data-festapp-datalayer' : '' ),
 		esc_url( $valid['url'] . '?embed=1' ),
 		esc_attr( $title ),
 		$height,

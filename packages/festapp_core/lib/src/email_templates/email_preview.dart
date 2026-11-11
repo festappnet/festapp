@@ -1,4 +1,5 @@
 import 'email_template_rules.dart';
+import 'email_variables.dart';
 import 'email_preview_context.dart';
 
 class EmailRequiredLink {
@@ -16,7 +17,8 @@ String escapeEmailHtml(String value) => value
     .replaceAll('&', '&amp;')
     .replaceAll('"', '&quot;')
     .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
+    .replaceAll('>', '&gt;')
+    .replaceAll("'", '&#39;');
 
 /// Mirrors the production pure finalizer; shared fixtures assert parity.
 String completeEmailContent(
@@ -209,10 +211,11 @@ class EmailPreviewScenario {
       ...context.bindings(zero: scenario == 'zero'),
     };
     final result = Map<String, String>.from(values);
-    for (final code in ['occasionTitle', 'occasion_title']) {
-      if (result.containsKey(code) && context.occasionTitle?.isNotEmpty == true)
-        result[code] = context.occasionTitle!;
+    if (result.containsKey('occasionTitle') &&
+        context.occasionTitle?.isNotEmpty == true) {
+      result['occasionTitle'] = context.occasionTitle!;
     }
+
     if (context.paymentAccount != null) {
       if (result.containsKey('accountNumber'))
         result['accountNumber'] = context.paymentAccount!.accountNumber;
@@ -271,10 +274,13 @@ class EmailPreviewScenario {
     );
   }
 
-  String composeSubject(String subject) => subject.replaceAllMapped(
-    EmailTemplateRules.tokenPattern,
-    (m) => richCodes.contains(m[1]) ? m[0]! : values[m[1]] ?? m[0]!,
-  );
+  String composeSubject(String subject) {
+    assertCanonicalEmailTemplate(subject);
+    return subject.replaceAllMapped(
+      EmailTemplateRules.tokenPattern,
+      (m) => richCodes.contains(m[1]) ? m[0]! : values[m[1]] ?? m[0]!,
+    );
+  }
 
   /// One scan over authored HTML. Substituted fragments are never reprocessed.
   /// Rich content is admitted only in text context, never HTML attributes.
@@ -295,6 +301,8 @@ class EmailPreviewScenario {
     String? wrapperHtml,
     _AuthoringCompletionCapture? capture,
   }) {
+    assertCanonicalEmailTemplate(html);
+    assertCanonicalEmailTemplate(wrapperHtml);
     final out = StringBuffer();
     var offset = 0;
     var inTag = false;
@@ -344,13 +352,7 @@ class EmailPreviewScenario {
               );
             }
             final escaped = escapeEmailHtml(value);
-            out.write(
-              richCodes.contains(code)
-                  ? value
-                  : quote == "'"
-                  ? escaped.replaceAll("'", '&#39;')
-                  : escaped,
-            );
+            out.write(richCodes.contains(code) ? value : escaped);
           } else {
             out.write(match[0]);
           }

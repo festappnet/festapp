@@ -22,6 +22,20 @@ class WrapperContract(unittest.TestCase):
             (self.root/name).mkdir()
         for name in ('test_all.sh', 'test_all.py', 'test_all_commands.json'):
             shutil.copy(REPO/'automation'/name, self.root/'automation'/name)
+        # Model only the workspace acquisition boundary. Lifecycle/SQL identity
+        # is covered by the real runtime integration suite, not these fake CLIs.
+        (self.root/'automation/local_db').mkdir()
+        (self.root/'automation/local_db/runtime.py').write_text(
+            "from contextlib import contextmanager\n"
+            "from pathlib import Path\n"
+            "class Runtime:\n"
+            " @contextmanager\n"
+            " def workspace(self):\n"
+            "  path=Path(__file__).parents[2]/'runtime-scope'\n"
+            "  path.write_text('acquired')\n"
+            "  try: yield {'databaseUrl':'postgresql://fixture@127.0.0.1:1/test'}\n"
+            "  finally: path.write_text('released')\n"
+            "def workspace_env(lease): return {'DATABASE_URL':lease['databaseUrl']}\n")
         (self.root/'automation/test_client.sh').write_text('test "$PWD" = "$EXPECTED_ROOT" || exit 29\necho client >> "$CALLS"\nexit "${CLIENT_CODE:-0}"\n')
         self.env = {**os.environ, 'PATH': str(self.root/'bin')+os.pathsep+os.environ['PATH'],
                     'DATABASE_URL': '', 'SUPABASE_URL': '', 'CALLS': str(self.root/'calls'),
@@ -68,6 +82,12 @@ class WrapperContract(unittest.TestCase):
             ['bash', 'missing.sh'], ['bash', str(good)]]))
         self.assertEqual(self.run_wrapper('automation').returncode, 1)
         self.assertEqual((self.root/'calls').read_text().strip(), 'required')
+
+    def test_missing_url_acquires_and_releases_the_canonical_workspace(self):
+        self.env.pop('DATABASE_URL',None)
+        result=self.run_wrapper('web')
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual((self.root/'runtime-scope').read_text(),'released')
 
     def test_output_and_summary_do_not_log_database_credentials(self):
         self.env['DATABASE_URL'] = 'postgresql://user:secret-sentinel@localhost/test'

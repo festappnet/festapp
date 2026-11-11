@@ -174,6 +174,14 @@ test(`offline handoff uses the selected main and recovery scripts (immutable she
     let installation;
     handlers.install({ waitUntil: (promise) => { installation = promise; } });
     await installation;
+    assert.ok(!entries.has('/main.dart.1.0.0-1.js'), 'public install must omit Flutter');
+    context.fetch = async () => Response.json({version:'1.0.0+1',main:'main.dart.1.0.0-1.js'});
+    let preparation, prepared;
+    handlers.message({data:{type:'FESTAPP_QUERY_BUILD_VERSION',runtime:'flutter'}, source:{id:'mobile',url:'https://app.test/login'},
+      ports:[{postMessage:value=>prepared=value}],waitUntil:value=>preparation=value});
+    await preparation;
+    assert.equal(prepared.ready,true);
+    context.fetch = async () => {throw new Error('offline mobile handoff');};
     function fetchThroughWorker(request) {
       let response;
       handlers.fetch({ request, clientId: 'mobile', resultingClientId: 'mobile',
@@ -237,12 +245,14 @@ test('lazy web modules and their styles install with the shell before a deployme
   await mkdir(path.join(dir,'assets','translations'),{recursive:true});
   await writeFile(path.join(dir,'web-assets','blueprint-hash1234.js'),'export {};');
   await writeFile(path.join(dir,'web-assets','blueprint-hash1234.css'),'body {}');
+  await writeFile(path.join(dir,'web-assets','zxing-reader-test.wasm'),new Uint8Array([0,97,115,109]));
   await writeFile(path.join(dir,'assets','translations','cs.json'),'{}');
   await writeFile(path.join(dir,'flutter'),'flutter');
   await writeFile(path.join(dir,'webclient'),'webclient');
   const manifest=await collectPwaShellManifest(dir);
   assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.js'));
   assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.css'));
+  assert.ok(manifest.coreResources.includes('/web-assets/zxing-reader-test.wasm'),'offline scanner requires its local decoder binary');
   assert.ok(manifest.coreResources.includes('/assets/translations/cs.json'));
  } finally {await rm(dir,{recursive:true,force:true});}
 });
@@ -251,10 +261,10 @@ test('lazy web modules and their styles install with the shell before a deployme
 test('marketing streams stay online and do not consume the application offline budget', async t => {
  const dir=await mkdtemp(path.join(tmpdir(),'festapp-marketing-cache-'));
  t.after(()=>rm(dir,{recursive:true,force:true}));
- await mkdir(path.join(dir,'organizers-media'),{recursive:true});await mkdir(path.join(dir,'web-assets'),{recursive:true});
+ await mkdir(path.join(dir,'organizers-media'),{recursive:true});await mkdir(path.join(dir,'web-assets'),{recursive:true});await mkdir(path.join(dir,'organizers-assets','version','runtime'),{recursive:true});
  for(const file of ['flutter','webclient','main.dart.js']) await writeFile(path.join(dir,file),'app');
  await writeFile(path.join(dir,'organizer-pages.json'),JSON.stringify({enabled:true,pages:[{id:'home',path:'/',asset:'/organizers-page'}]}));
- for(const file of ['organizers-page','organizers-media/demo.mp4','organizers-media/poster.jpg','web-assets/landing-proof.js']) await writeFile(path.join(dir,file),'marketing');
+ for(const file of ['organizers-page','organizers-media/demo.mp4','organizers-media/poster.jpg','web-assets/landing-proof.js','organizers-assets/version/runtime/account_header.js']) await writeFile(path.join(dir,file),'marketing');
  const manifest=await collectPwaShellManifest(dir);
  assert.equal(manifest.organizerHomepage,true);
  assert.deepEqual(manifest.knownResources,['/flutter?pwa-cache=1','/main.dart.js','/webclient?pwa-cache=1']);

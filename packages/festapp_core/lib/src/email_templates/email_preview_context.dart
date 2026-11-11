@@ -24,7 +24,7 @@ class EmailPreviewPaymentAccount {
 }
 
 class EmailPreviewContext {
-  final String? occasionTitle, deadline;
+  final String? occasionTitle, deadline, communicationTone;
   final EmailPreviewPaymentAccount? paymentAccount;
   final bool? ticketsEnabled;
   final bool? blueprintEnabled;
@@ -33,6 +33,7 @@ class EmailPreviewContext {
   final List<EmailPreviewProduct> products;
   const EmailPreviewContext({
     this.occasionTitle,
+    this.communicationTone,
     this.deadline,
     this.ticketsEnabled,
     this.blueprintEnabled,
@@ -43,6 +44,7 @@ class EmailPreviewContext {
   EmailPreviewContext withPaymentAccount(EmailPreviewPaymentAccount? account) =>
       EmailPreviewContext(
         occasionTitle: occasionTitle,
+        communicationTone: communicationTone,
         deadline: deadline,
         ticketsEnabled: ticketsEnabled,
         blueprintEnabled: blueprintEnabled,

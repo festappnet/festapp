@@ -13,6 +13,7 @@ class LayoutSceneCache {
     VenueLayoutDocument document, {
     Map<String, dynamic> resources = const {},
     Map<String, dynamic> presentation = const {},
+    bool nativeTextPreview = false,
   }) {
     if (identical(_document, document) &&
         identical(_resources, resources) &&
@@ -20,6 +21,13 @@ class LayoutSceneCache {
       return _scene!;
     }
     final previous = _document;
+    // Draft labels are painted with loaded native fonts until explicit Save
+    // prepares their canonical text. Missing vectors do not invalidate cached
+    // geometry. Other issues still use the complete compiler and validation.
+    bool blockingIssue(dynamic issue) =>
+        !nativeTextPreview ||
+        issue['reason'] != 'text_layout_unavailable' ||
+        issue['nodeId'] is! String;
     final documentChanged = !identical(previous, document);
     final canvasChanged =
         previous != null && !sameLayoutValue(previous.canvas, document.canvas);
@@ -28,7 +36,7 @@ class LayoutSceneCache {
         : _nodes;
     var full =
         previous == null ||
-        (_scene?['issues'] as List? ?? const []).isNotEmpty ||
+        (_scene?['issues'] as List? ?? const []).any(blockingIssue) ||
         !identical(_resources, resources) ||
         (documentChanged &&
             (previous.schemaVersion != document.schemaVersion ||
@@ -148,7 +156,7 @@ class LayoutSceneCache {
         ],
       };
     }
-    if (!full && (_scene!['issues'] as List).isNotEmpty) {
+    if (!full && (_scene!['issues'] as List).any(blockingIssue)) {
       _scene = compileScene(
         document,
         resources: resources,

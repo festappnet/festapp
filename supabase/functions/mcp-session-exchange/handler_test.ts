@@ -75,6 +75,13 @@ Deno.test("versioned consent reaches the issuer unchanged without adding exchang
   assertEquals((await f.request()).status, 200);
 });
 
+Deno.test("connection choice and device name cross the opaque consent envelope unchanged", async () => {
+  for (const connection of [{ mode: "replace", connectionId: "owned-connection", name: "Office", durationDays: 365 }, { mode: "new", name: "Laptop", durationDays: 30 }]) {
+    const f = fixture({ access: { consentVersion: 2, selection: { type: "occasions", occasionIds: [7] }, permissions: [], connection } });
+    assertEquals((await f.request()).status, 200);
+  }
+});
+
 Deno.test("broker 429 preserves Retry-After without replay or extra session minting", async () => {
   for (const operation of ["details", "status", "prepare", "complete"]) {
     const f = fixture({ limited: operation });

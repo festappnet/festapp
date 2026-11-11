@@ -2,6 +2,7 @@ import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 import 'unit_occasion_dashboard.dart';
+import 'unit_measurement_approval.dart';
 
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_commands.dart';
@@ -9,6 +10,28 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 class DbUnits {
+  static Future<UnitMeasurementApproval> getMeasurementApproval(
+    int unitId,
+  ) async => UnitMeasurementApproval.fromJson(
+    Map<String, dynamic>.from(
+      await _supabase.rpc(
+        'get_unit_measurement_approval',
+        params: {'p_unit': unitId},
+      ),
+    ),
+  );
+
+  static Future<UnitMeasurementApproval> requestMeasurementApproval(
+    int unitId,
+  ) async => UnitMeasurementApproval.fromJson(
+    Map<String, dynamic>.from(
+      await _supabase.rpc(
+        'request_unit_measurement_approval',
+        params: {'p_unit': unitId},
+      ),
+    ),
+  );
+
   static Future<UnitOccasionDashboard> getOccasionDashboard(
     int unitId, {
     SupabaseClient? client,

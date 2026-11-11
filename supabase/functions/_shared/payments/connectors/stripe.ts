@@ -6,8 +6,8 @@ import type {
   RecoveryAttempt,
   RecoveryConnection,
   CheckoutSnapshot,
-  PaymentConnector,
-  PaymentDependencies,
+  HostedCheckoutConnector,
+  HostedPaymentDependencies,
   PaymentObservation,
   PaymentStore,
 } from "../contracts.ts";
@@ -37,7 +37,7 @@ export type StripePaymentsDependencies = {
     | "refunds"
     | "disputes"
     | "account"
-  >;
+  > & Partial<Pick<StripeProvider, "requestRefund" | "recoverRefund">>;
   rpc(name: string, args: Record<string, unknown>): Promise<unknown>;
   openSource?: typeof openStripePaySource;
 };
@@ -68,7 +68,7 @@ function checkout(value: Record<string, unknown>): Checkout {
 }
 
 /** All Stripe SDK shapes and financial verification live in this connector. */
-export class StripePaymentConnector implements PaymentConnector {
+export class StripePaymentConnector implements HostedCheckoutConnector {
   readonly id = "stripe";
   readonly displayName = "Stripe";
   constructor(
@@ -254,7 +254,7 @@ export function stripePaymentStore(
 
 export function stripePaymentAdapter(
   deps: StripePaymentsDependencies,
-): PaymentDependencies {
+): HostedPaymentDependencies {
   return {
     livemode: deps.livemode,
     allowedOrigins: deps.allowedOrigins,

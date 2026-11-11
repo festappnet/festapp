@@ -1,3 +1,5 @@
+import 'package:festapp_core/communication_tone.dart';
+
 import 'occasion_setup_review_row.dart';
 
 import 'package:fstapp/components/forms/email_validation.dart';
@@ -7,6 +9,7 @@ import 'dart:convert';
 import '../../email_templates/email_preview_examples.dart';
 import '../../features/ticket_feature.dart';
 import '../../ticket_layout/views/ticket_delivery_selector.dart';
+import '../../ticket_layout/views/ticket_wallet_selector.dart';
 import '../../ticket_layout/views/ticket_delivery_preview.dart';
 
 import 'dart:async';
@@ -36,9 +39,8 @@ void initializeCommunicationDraft(
       : (data['formDraft'] as Map?)?['data'] as Map? ?? {};
   final values = <String, dynamic>{
     'communicationTone':
-        ['formal', 'informal'].contains(form['communication_tone'])
-        ? form['communication_tone']
-        : 'inherit',
+        CommunicationTone.parse(form['communication_tone']) ??
+        CommunicationTone.inherit,
     'replyToMode': 'inherit',
     'replyToEmail': '',
     'remindersMode': form['is_reminder_enabled'] is bool
@@ -82,8 +84,7 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
   final form = data['formDraft'];
   if (form is! Map) return;
   final meta = Map<String, dynamic>.from(form['data'] as Map? ?? {});
-  if (data['communicationTone'] == 'formal' ||
-      data['communicationTone'] == 'informal') {
+  if (CommunicationTone.parse(data['communicationTone']) != null) {
     meta['communication_tone'] = data['communicationTone'];
   } else {
     meta.remove('communication_tone');
@@ -333,6 +334,20 @@ class _OccasionSetupCommunicationState
                 },
               }),
             ),
+            TicketWalletSelector(
+              value:
+                  (widget.data['ticketDraft'] as Map?)?['wallet_enabled'] !=
+                  false,
+              enabled:
+                  (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false,
+              ready: defaults['walletReady'] == true,
+              onChanged: (value) => widget.onChanged({
+                'ticketDraft': {
+                  ...?widget.data['ticketDraft'] as Map?,
+                  'wallet_enabled': value,
+                },
+              }),
+            ),
             if (widget.loadPreview != null &&
                 (widget.data['ticketDraft'] as Map?)?['is_enabled'] !=
                     false) ...[
@@ -341,6 +356,8 @@ class _OccasionSetupCommunicationState
                 examples: widget.previewExamples,
                 revision: jsonEncode({
                   'draftId': widget.draftId,
+                  'ticketDraft': widget.data['ticketDraft'],
+                  'walletReady': defaults['walletReady'],
                   'sourceId': widget.data['sourceId'],
                   'copyEmails': widget.data['copyEmails'],
                   'emailBanner': widget.data['emailBanner'],

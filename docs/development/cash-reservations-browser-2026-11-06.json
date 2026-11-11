@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-06",
+  "backend": "disposable festapp-cash-browser-e2e-20261106, API 127.0.0.1:61621, DB 127.0.0.1:61622; stopped",
+  "source": {
+    "manifest": "automation/cash-reservations-migration.json",
+    "manifest_sha256_observed_after_test": "ddeb741279e0c6535ecd1364783850561e8e3a29382555544474d3f2727a86a4",
+    "migration": "supabase/migrations/20261106220000_cash_reservations.sql",
+    "migration_sha256_verified_before_application": "27db5afcc72af8c5db222ba5d3980e46f0467c121c93970876ade07d26e9557a",
+    "application": "Fresh supported bootstrap initially applied prior cash migration; final canonical manifest sources then applied in order via psql -v ON_ERROR_STOP=1. Existing cash migration header and FK already in place; final assembled migration file verified by SHA256 but not rerun as a whole. Final Edge sources copied to disposable runtime."
+  },
+  "cash": {
+    "order_id": 154,
+    "fixture": "cash-e2e-cash-20261106-final3",
+    "checkout": "real public form, seat A1, 150 CZK; real send-ticket-order Edge and SQL",
+    "confirmation": "Reservation confirmed; cash instructions present; no payment QR or payment date",
+    "database": "ordered, method cash, amount 150.00, deadline NULL, bank_account NULL",
+    "recording": "local Auth password grant, then authenticated POST /rest/v1/rpc/insert_manual_transaction with amount 50.00 CZK and a unique command id",
+    "readback": "payment paid 50.00, remaining 100.00, dueAt NULL, qrPayment NULL; reloaded customer overview shows recorded 50.00, outstanding 100.00 and cash payment history"
+  },
+  "bank_none": {
+    "order_id": 155,
+    "fixture": "cash-e2e-bank-20261106-final3",
+    "checkout": "real public form and Edge; 150 CZK",
+    "confirmation": "bank account and variable symbol displayed with payment QR; no due-date text",
+    "database": "ordered, method bank, amount 150.00, deadline NULL, deposit_deadline NULL, payment_policy.mode none"
+  },
+  "limitation": "No external email or provider delivery occurred; order-view capability was issued via local public.issue_order_overview_internal with a disposable fixture token, so actual email link issuance/delivery was not tested.",
+  "artifacts": {
+    "fixture": "/Users/miakh/cash-browser-e2e-20261106/fixture-final.sql",
+    "sql_application_log": "/Users/miakh/cash-browser-e2e-20261106/apply-final.log",
+    "edge_log": "/Users/miakh/cash-browser-e2e-20261106/edge-final.log",
+    "vite_log": "/Users/miakh/cash-browser-e2e-20261106/vite-final.log"
+  },
+  "cleanup": "Owned browser, Vite, Edge and Supabase stack stopped; disposable credentials removed; shared database and unrelated services untouched."
+}

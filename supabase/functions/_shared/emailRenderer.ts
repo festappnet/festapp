@@ -1,6 +1,7 @@
 import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
+import { measurementApprovalEmail } from "./measurementApprovalEmail.ts";
 import {
   orderEmailOverviewUrl,
   overviewEmailSubstitutions,
@@ -8,7 +9,8 @@ import {
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
-import { escapeTicketText, prepareTicketDelivery } from "./ticketDelivery.ts";
+import { prepareWalletEmail } from "./ticketWalletEmail.ts";
+import { prepareTicketDelivery } from "./ticketDelivery.ts";
 import { ticketEmailSubstitutions } from "./ticketEmail.ts";
 import { getTicketOrderConfirmationTemplate } from "../send-email/getTicketOrderConfirmationTemplate.ts";
 import { getTicketOrderReminderTemplate } from "../send-email/getTicketOrderReminderTemplate.ts";
@@ -71,6 +73,16 @@ export async function renderQueuedEmail(
       postAction: { tracking_policy: "disabled" },
     };
   }
+  if (row.message_kind === "custom" && row.code === "MEASUREMENT_APPROVAL_REQUEST") {
+    return {
+      prepared: measurementApprovalEmail(
+        row.recipient,
+        row.data,
+        Deno.env.get("DEFAULT_EMAIL") ?? "",
+      ),
+      postAction: { tracking_policy: "disabled" },
+    };
+  }
   if (row.message_kind === "order_tickets") {
     const result = await emailRpc("get_order_details_for_email", {
       p_order_id: row.order_id,
@@ -86,6 +98,15 @@ export async function renderQueuedEmail(
         return await prepareTicketRenderer(...args);
       },
     );
+    // Read before optional preparation; begin_email_send fences any later preference change.
+    const walletSettings = result.data.wallet;
+    const walletFingerprint = walletSettings.fingerprint;
+    let walletHtml = '';
+    try {
+      walletHtml = await prepareWalletEmail(row, delivery.tickets, walletSettings.feature, emailRpc);
+    } catch {
+      console.warn('ticket_wallet_email_unavailable');
+    }
     const lang = row.data?.lang ?? "cs";
     const payment = ticketEmailSubstitutions(result.data, lang);
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
@@ -99,23 +120,18 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        subjectSubstitutions: {
-          ...payment,
-          ...overviewEmailSubstitutions(overviewUrl, lang),
-        },
         substitutions: {
           ...payment,
-          occasionTitle: escapeTicketText(occasion.title),
-          orderSymbol: escapeTicketText(order.order_symbol),
           ...overviewEmailSubstitutions(overviewUrl, lang),
         },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
         attachments: delivery.attachments,
-        ticketBlock: delivery.html,
+        ticketBlock: delivery.html + walletHtml,
       }),
       postAction: {
-        ...(overviewUrl ? { tracking_policy: "disabled" } : {}),
+        ...((overviewUrl || walletHtml) ? { tracking_policy: "disabled" } : {}),
+        wallet_fingerprint: walletFingerprint,
         ticket_ids: delivery.tickets.map((t: any) => t.id),
       },
     };

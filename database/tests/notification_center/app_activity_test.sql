@@ -24,7 +24,7 @@ DO $$
 DECLARE org bigint; oc bigint; editor uuid:=gen_random_uuid(); orders_only uuid:=gen_random_uuid(); member uuid:=gen_random_uuid();
  outsider uuid:=gen_random_uuid(); tenant_admin uuid:=gen_random_uuid(); ev bigint; response jsonb; notification uuid; snapshot bigint; n integer; usr uuid;
 BEGIN
- INSERT INTO public.organizations(title) VALUES('App administration notifications') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('App administration notifications','{"IS_APP_SUPPORTED":true}') RETURNING id INTO org;
  INSERT INTO public.occasions(organization,title,link,is_open,is_hidden,features,start_time,end_time)
  VALUES(org,'Public festival',gen_random_uuid()::text,true,false,'[{"code":"schedule","is_enabled":true}]',now(),now()+interval '2 days') RETURNING id INTO oc;
  INSERT INTO auth.users(id) VALUES(editor),(orders_only),(member),(outsider),(tenant_admin);

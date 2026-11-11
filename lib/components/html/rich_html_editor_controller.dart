@@ -83,6 +83,8 @@ class RichHtmlEditorController extends ChangeNotifier {
       ? _codec.encode()
       : applyHtmlContentProfile(_codec.encode(), profile);
   bool get hasUserChanges => !_codec.isUnchanged;
+  String wrapTokenPreview(String nodeId, String html) =>
+      _codec.wrapTokenPreview(nodeId, html);
   bool get isDirty => !_codec.isUnchanged || _baselineHtml != originalHtml;
   bool get isEmpty => editor.document.every(
       (node) => node is TextNode && node.text.toPlainText().trim().isEmpty);

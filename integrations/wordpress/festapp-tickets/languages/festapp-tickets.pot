@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: Festapp Tickets 1.0.1\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: festapp-tickets\n"
+msgstr "Project-Id-Version: Festapp Tickets 1.0.2\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: festapp-tickets\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -60,6 +60,9 @@ msgstr ""
 msgid "Festapp Tickets"
 msgstr ""
 
+msgid "Festapp Unit runtime (existing behavior)"
+msgstr ""
+
 msgid "Fixed"
 msgstr ""
 
@@ -79,6 +82,9 @@ msgid "Height (px)"
 msgstr ""
 
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
+msgstr ""
+
+msgid "Measurement destination"
 msgstr ""
 
 msgid "Open Festapp Tickets"
@@ -129,7 +135,7 @@ msgstr ""
 msgid "The form is not configured. Enter a saved public https://tickets.festapp.net/form/ URL without extra parameters."
 msgstr ""
 
-msgid "The published form connects to Festapp Tickets. The service receives the IP address and browser information; visitors enter purchase data directly into the service. Both height modes also load /embed.js. The plugin does not copy orders or credentials into WordPress and adds no analytics. Review storage, cookies and consent requirements for the service and your website. Activation, this help page and the editor do not load the remote form."
+msgid "The published form connects to Festapp Tickets and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
 msgstr ""
 
 msgid "Ticket sales - Festapp Tickets"
@@ -145,6 +151,12 @@ msgid "Visitors buy tickets on your published page. Manage orders, payments and 
 msgstr ""
 
 msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
+msgstr ""
+
+msgid "Website dataLayer"
+msgstr ""
+
+msgid "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
 msgstr ""
 
 msgctxt "block title"

@@ -1,8 +1,8 @@
 import {FORM_MEASUREMENT_SCRIPT_LIMIT} from '../../../web_client/src/components/forms/form_measurement_limits.js';
 import {runtimeSource} from './runtime_source.mjs';
-import {measurementOrigin} from '../../../web_client/src/components/forms/form_measurement_contract.js';
+import {measurementOrigin, measurementManifest} from '../../../web_client/src/components/forms/form_measurement_contract.js';
 
-const headers = {'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
+const headers = {'x-festapp-runtime-build': typeof BUILD_ID === 'undefined' ? 'unbuilt' : BUILD_ID,'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
     'permissions-policy':'camera=(), microphone=(), geolocation=(), payment=()', 'cross-origin-opener-policy':'same-origin'};
 const json = value => JSON.stringify(value).replace(/</g,'\\u003c').replace(/[\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16));
 const origin = value => {
@@ -12,7 +12,7 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
     if (env.FESTAPP_API_URL !== 'https://api.festapp.net' || !env.SUPABASE_SERVICE_ROLE_KEY) throw Error('backend unavailable');
     const response = await fetch(env.FESTAPP_API_URL+'/rest/v1/rpc/get_form_measurement_runtime_config',{
         method:'POST',headers:{'content-type':'application/json',apikey:env.SUPABASE_SERVICE_ROLE_KEY,
-            authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY},body:JSON.stringify(args),signal:AbortSignal.timeout(8000),redirect:'error'});
+            authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY},body:JSON.stringify(args),signal:AbortSignal.timeout(8000),redirect:'manual'});
     if (!response.ok) throw Error('configuration unavailable');
     return response.json();
 }) {
@@ -20,7 +20,11 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
     const local=env.LOCAL_TEST === true && ['localhost','127.0.0.1'].includes(url.hostname);
     const fail=()=>new Response('Measurement unavailable',{status:404,headers});
     if (request.method!=='GET' || !measurementOrigin(url.origin,local)) return fail();
-    if (url.pathname==='/runtime.js' && !url.search) return new Response(runtimeSource,{headers:{...headers,'content-type':'application/javascript; charset=utf-8'}});
+    if (url.pathname==='/runtime.js' && !url.search) return new Response(runtimeSource,{headers:{...headers,
+        'x-festapp-runtime-organization':/^[1-9]\d*$/.test(String(env.ORGANIZATION_ID))?String(env.ORGANIZATION_ID):'unavailable',
+        'x-festapp-runtime-unit':/^[1-9]\d*$/.test(String(env.UNIT_ID))?String(env.UNIT_ID):'unavailable',
+        'x-festapp-runtime-backend':env.FESTAPP_API_URL==='https://api.festapp.net'?env.FESTAPP_API_URL:'unavailable',
+        'content-type':'application/javascript; charset=utf-8'}});
     if (url.pathname!=='/runtime' || [...url.searchParams.keys()].some(k=>!['form','parent'].includes(k))) return fail();
     const form=url.searchParams.get('form'),parent=origin(url.searchParams.get('parent'));
     if (!/^[a-zA-Z0-9_-]{1,80}$/.test(form||'') || !parent || parent===url.origin ||
@@ -43,7 +47,9 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
         const sources=['https://www.googletagmanager.com',...collectors].join(' ');
         const csp=`default-src 'none'; script-src 'self' 'unsafe-inline' ${sources}; script-src-attr 'none'; connect-src ${sources}; img-src ${sources}; style-src 'none'; frame-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors ${ancestors.join(' ')}`;
         // Explicit fields only: never serialize the service credential or env.
-        const boot={organization:config.organization,form_id:config.form_id,form_link:form,parent_origin:parent,
+        const manifest=measurementManifest(config.policy,form);
+        if(!manifest || manifest.organization!==config.organization || manifest.unit!==config.unit)return fail();
+        const boot={manifest,organization:config.organization,unit:config.unit,form_id:config.form_id,form_link:form,parent_origin:parent,
             gtm_container:config.gtm_container||null,scripts:config.scripts||null};
         const html=`<!doctype html><meta charset="utf-8"><title>Festapp measurement</title><script type="application/json" id="measurement-config">${json(boot)}</script><script src="/runtime.js"></script>`;
         return new Response(html,{headers:{...headers,'content-type':'text/html; charset=utf-8','content-security-policy':csp}});

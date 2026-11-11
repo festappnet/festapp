@@ -157,7 +157,7 @@ def command_transaction_owners(selected):
     return owners
 
 
-def render(root=ROOT):
+def render(root=ROOT, additional_sources=()):
     config = json.loads((root / 'automation/canonical-source-contract.json').read_text())
     manifest = json.loads((root / config['operationsManifest']).read_text())
     selected, effective = {}, {}
@@ -166,6 +166,12 @@ def render(root=ROOT):
             if body is not None:
                 selected[signature] = body
     command_transaction_owners(selected)
+    # Additional domains request final-body parity only. Receipt ownership
+    # remains scoped to the canonical operation manifest above.
+    for source in additional_sources:
+        for signature, body in definitions((root / 'database/functions' / source).read_text()):
+            if body is not None:
+                selected[signature] = body
     baseline = json.loads((root / config['baselineManifest']).read_text())
     inputs = [root / baseline['schema']['path']]
     inputs += sorted(x for x in (root / 'supabase/migrations').glob('*.sql') if x.name[:14] > baseline['coveredThrough'])

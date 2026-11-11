@@ -67,17 +67,33 @@ BEGIN
    WHERE ou.occasion=p_message.occasion AND ou."user"=p_message.recipient_user AND (ou.is_editor OR ou.is_editor_view OR ou.is_manager)) THEN
   RETURN false; END IF;
  IF p_message.message_kind='custom' AND p_message.code='TEAM_INVITATION' THEN
-  RETURN EXISTS(SELECT 1 FROM public.occasion_team_invitations i
-   JOIN public.occasions o ON o.id=i.occasion AND o.unit=i.unit AND o.organization=i.organization
-   JOIN public.unit_users uu ON uu.unit=i.unit AND uu."user"=i.created_by AND uu.is_manager
-   WHERE i.message_id=p_message.message_id AND i.accepted_at IS NULL AND i.expires_at>now()
-    AND i.email=p_message.recipient AND i.occasion=p_message.occasion AND i.organization=p_message.organization);
+  RETURN EXISTS(SELECT 1 FROM public.access_invitations i WHERE i.message_id=p_message.message_id
+   AND i.accepted_at IS NULL AND public.access_invitation_valid_internal_v1(i)
+   AND i.email=p_message.recipient AND i.occasion IS NOT DISTINCT FROM p_message.occasion AND i.unit=p_message.unit AND i.organization=p_message.organization);
+ END IF;
+ IF p_message.message_kind='custom' AND p_message.code='TEAM_ACCESS_NOTICE' THEN
+  RETURN public.can_manage_member_access_as_actor_internal_v1(p_message.producer_actor,
+   CASE WHEN p_message.occasion IS NULL THEN 'unit' ELSE 'occasion' END,coalesce(p_message.occasion,p_message.unit))
+   AND public.get_user_delivery_email(p_message.recipient_user)=p_message.recipient
+   AND CASE WHEN p_message.occasion IS NULL THEN EXISTS(SELECT 1 FROM public.unit_users WHERE unit=p_message.unit AND "user"=p_message.recipient_user)
+    ELSE EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_message.occasion AND "user"=p_message.recipient_user) END;
  END IF;
  IF p_message.message_kind='custom' AND p_message.code='UNIT_VERIFICATION_REQUEST' THEN
   RETURN EXISTS(SELECT 1 FROM public.unit_legal_profiles p JOIN public.units u ON u.id=p.unit_id
    JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
    WHERE p.unit_id=p_message.unit AND u.organization=p_message.organization AND p.status='pending'
     AND p.revision=p_message.source_version
+    AND public.get_user_delivery_email(ou."user")=p_message.recipient);
+ END IF;
+ IF p_message.message_kind='custom' AND p_message.code='MEASUREMENT_APPROVAL_REQUEST' THEN
+  RETURN EXISTS(SELECT 1 FROM analytics.unit_measurement_request q JOIN public.units u ON u.id=q.unit
+   JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
+   WHERE q.unit=p_message.unit AND u.organization=p_message.organization AND NOT public.is_demo_unit(u.id)
+    AND q.revision=coalesce((p_message.data->>'request_revision')::integer,1)
+    AND (public.unit_measurement_approval_internal(u.id)->'approved'='false'::jsonb
+     OR EXISTS(SELECT FROM jsonb_array_elements(q.requested_origins) x
+      WHERE coalesce(u.data->'measurement_websites','[]'::jsonb) @> jsonb_build_array(x.value)
+       AND NOT (public.unit_measurement_approval_internal(u.id)->'approved_origins' @> jsonb_build_array(x.value))))
     AND public.get_user_delivery_email(ou."user")=p_message.recipient);
  END IF;
  IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN
@@ -126,7 +142,7 @@ BEGIN
  IF p_message.message_kind='order_storno' THEN RETURN true; END IF;
  IF v_order.state IN ('storno','expired','preparing_payment') THEN RETURN false; END IF;
  IF p_message.message_kind IN ('order_payment_notice','order_tickets') THEN
-  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_order.payment_info AND payment_method<>'bank')
+  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_order.payment_info AND public.payment_method_is_online_internal(payment_method))
    AND public.provider_order_payment_projection_internal(v_order.id)->>'admissionState' IS DISTINCT FROM 'valid' THEN RETURN false; END IF;
   RETURN v_order.state IN ('paid','sent') AND v_order.email_payment_version=p_message.source_version
    AND (p_message.data->>'manual'='true' OR v_order.data->>'email'=p_message.recipient);
@@ -138,7 +154,7 @@ BEGIN
  END IF;
  IF p_message.message_kind='order_reminder' THEN
   SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
-  IF v_pi.payment_method<>'bank' THEN RETURN false; END IF;
+  IF v_pi.payment_method<>'bank' OR v_pi.data#>>'{payment_policy,mode}'='none' THEN RETURN false; END IF;
   SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
   SELECT * INTO v_form FROM public.forms WHERE id=v_order.form;
   SELECT x INTO v_feature FROM jsonb_array_elements(v_occ.features) x WHERE x->>'code'='form';
@@ -147,7 +163,7 @@ BEGIN
    OR coalesce((v_feature->>'is_enabled')::boolean,false)=false
    OR coalesce((v_form.data->>'is_reminder_enabled')::boolean,(v_feature->>'reminder_is_enabled')::boolean,true)=false THEN RETURN false; END IF;
   IF (p_message.data->>'is_deposit_reminder')::boolean IS TRUE THEN
-   RETURN v_order.state IN ('paid','sent') AND v_pi.deposit_amount IS NOT NULL AND v_pi.paid<v_pi.amount
+   RETURN v_order.state IN ('paid','sent') AND v_pi.deposit_amount IS NOT NULL AND coalesce(v_pi.paid,0)-coalesce(v_pi.returned,0)<v_pi.amount
     AND (v_deposit->>'is_enabled')::boolean IS TRUE AND v_deposit->>'deposit_deadline' IS DISTINCT FROM 'on_site';
   END IF;
   RETURN v_order.state='ordered' AND v_pi.deadline IS NOT NULL AND coalesce((v_pi.data->>'current_version_reminded')::boolean,false)=false;
@@ -268,6 +284,14 @@ BEGIN
    last_error='offer_snapshot_changed' WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now(),
    error_code='offer_snapshot_changed' WHERE attempt_id=p_attempt;
+  RETURN jsonb_build_object('disposition','deferred');
+ END IF;
+ -- Only unstarted provider attempts can discard a stale Wallet snapshot.
+ IF v_row.message_kind='order_tickets' AND v_row.post_action->>'wallet_fingerprint'
+  IS DISTINCT FROM public.ticket_wallet_fingerprint(v_row.occasion) THEN
+  UPDATE public.email_messages SET workflow_state='pending',target_time=now(),prepared=NULL,prepared_hash=NULL,prepared_at=NULL,
+   post_action=post_action-'wallet_fingerprint',lease_token=NULL,lease_until=NULL,last_error='wallet_snapshot_changed' WHERE id=v_row.id;
+  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='wallet_snapshot_changed' WHERE attempt_id=p_attempt;
   RETURN jsonb_build_object('disposition','deferred');
  END IF;
  v_rate:=CASE WHEN v_cap.shared_account THEN least(v_cap.max_rate*0.8,v_cap.allocated_rate) ELSE v_cap.max_rate*0.8 END*v_cap.rate_factor;

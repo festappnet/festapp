@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {setup as formSetup,options,denied} from './form-fixtures.mjs';
-import {configurationDescriptors,invokeConfigurationOperation} from '../src/operations/configuration.mjs';
+import {configurationDescriptors,configurationDataSchemas,invokeConfigurationOperation} from '../src/operations/configuration.mjs';
 import {MCP_PERMISSIONS,scopesForOperation} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 const setup = formSetup;
 async function read(db,f,kind='occasion'){return(await db.query('select get_configuration_settings($1,$2,$3,$4) value',[kind,kind==='unit'?f.unit:f.occasion,f.org,f.unit])).rows[0].value;}
@@ -146,4 +146,41 @@ test('Unit manager owns the shared measurement destination and disabling preserv
  assert.equal(off.data.configuration.settings.measurement_enabled,false);
  await db.query('update unit_users set is_manager=false where unit=$1 and "user"=$2',[f.unit,f.actor]);
  await denied(db,'select save_configuration_settings($1,$2,$3,$4,$5,$6,$7)',['unit',f.unit,f.org,f.unit,2,randomUUID(),{settings:{measurement_gtm_container:'GTM-CD34'}}]);
+});
+
+test('Unit privacy URL input and inspect share the nullable bounded HTTPS contract',()=>{
+ const schema=configurationDescriptors.find(d=>d.id==='units.settings.save').input;
+ const inspect=configurationDataSchemas['units.settings.inspect'].parse({entityType:'unit',entityId:1,aggregateVersion:0,title:'Organizer',settings:{measurement_privacy_url:'https://organizer.example/privacy'}});
+ assert.equal(inspect.settings.measurement_privacy_url,'https://organizer.example/privacy');
+ const parse=value=>schema.safeParse({unitId:1,commandId:randomUUID(),expectedVersion:0,changes:{settings:value}}).success;
+ for(const value of [{},{measurement_privacy_url:''},{measurement_privacy_url:null},{measurement_privacy_url:'https://organizer.example/privacy'}]) assert.equal(parse(value),true);
+ for(const value of ['javascript:alert(1)','data:text/plain,x','http://example.com','/privacy','https://user:pass@example.com','https://@example.com','https://example.com:99999','https://example.com/'+'x'.repeat(2048)]) assert.equal(parse({measurement_privacy_url:value}),false,value.slice(0,60));
+});
+test('Unit privacy URL round trip preserves omission and clears null',options,async t=>{
+ const {db,f}=await setup(t);
+ await db.query("update units set data=data-'measurement_privacy_url' where id=$1",[f.unit]);
+ const saved=await save(db,f,{settings:{measurement_privacy_url:'https://organizer.example/privacy'}},0,randomUUID(),'unit');
+ assert.equal(saved.data.configuration.settings.measurement_privacy_url,'https://organizer.example/privacy');
+ const edit=(await db.query('select get_unit_for_edit($1) value',[f.unit])).rows[0].value;
+ assert.equal(edit.data.data.measurement_privacy_url,'https://organizer.example/privacy');
+ const kept=await save(db,f,{settings:{measurement_enabled:false}},1,randomUUID(),'unit');
+ assert.equal(kept.data.configuration.settings.measurement_privacy_url,'https://organizer.example/privacy');
+ const current=await read(db,f,'unit');
+ assert.equal(current.settings.measurement_privacy_url,'https://organizer.example/privacy');
+ const cleared=await save(db,f,{settings:{measurement_privacy_url:null}},current.aggregateVersion,randomUUID(),'unit');
+ assert.equal(cleared.data.configuration.settings.measurement_privacy_url,undefined);
+});
+
+test('Unit consent notice settings share the bounded contract',()=>{
+ const schema=configurationDescriptors.find(d=>d.id==='units.settings.save').input;
+ const parse=settings=>schema.safeParse({unitId:1,commandId:randomUUID(),expectedVersion:0,changes:{settings}}).success;
+ for(const value of [{measurement_consent_layout:'bar'},{measurement_consent_layout:'modal'},{measurement_consent_layout:null},{measurement_consent_title:'x'.repeat(80)},{measurement_consent_title:null},{measurement_consent_text:'x'.repeat(500)},{measurement_consent_text:null}]) assert.equal(parse(value),true,JSON.stringify(value));
+ for(const value of [{measurement_consent_layout:'popup'},{measurement_consent_title:'x'.repeat(81)},{measurement_consent_text:'x'.repeat(501)},{measurement_consent_color:'#000'},{measurement_enhanced_conversions:true}]) assert.equal(parse(value),false,JSON.stringify(value).slice(0,60));
+});
+
+test('MCP consent version contract is positive, bounded and never nullable',()=>{
+ const schema=configurationDescriptors.find(d=>d.id==='units.settings.save').input;
+ const parse=value=>schema.safeParse({unitId:1,commandId:randomUUID(),expectedVersion:0,changes:{settings:{measurement_consent_version:value}}}).success;
+ for(const value of [1,2,2147483647])assert.equal(parse(value),true);
+ for(const value of [null,0,-1,1.5,'2',2147483648])assert.equal(parse(value),false);
 });

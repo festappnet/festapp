@@ -5,6 +5,7 @@ New source changes belong in forward migrations. The former domain-only parity
 artifact is superseded by generate_canonical_source_contract.py, which now
 includes all of this migration's canonical sources and effective later owners.
 """
+import migration_inputs
 import argparse
 import hashlib
 from pathlib import Path
@@ -17,10 +18,10 @@ parser.add_argument('--check',action='store_true')
 args=parser.parse_args()
 if not args.check:
     raise SystemExit('Applied migration is immutable; author a new forward migration. Current parity: automation/generate_canonical_source_contract.py')
-if hashlib.sha256(TARGET.read_bytes()).hexdigest()!=FROZEN_SHA256:
+if hashlib.sha256(migration_inputs.read_bytes(TARGET)).hexdigest()!=FROZEN_SHA256:
     raise SystemExit('Immutable Blueprint migration changed')
-if hashlib.sha256((ROOT/'supabase/migrations/20261021020000_blueprint_release_integration.sql').read_bytes()).hexdigest()!='98da54019793ebe446323b69d2a273544c788c4cff0753a9a82f8225b6348918':
+if hashlib.sha256(migration_inputs.read_bytes(ROOT/'supabase/migrations/20261021020000_blueprint_release_integration.sql')).hexdigest()!='98da54019793ebe446323b69d2a273544c788c4cff0753a9a82f8225b6348918':
     raise SystemExit('Immutable Blueprint release integration migration changed')
-if PARITY_TARGET.read_text()!=render():
+if migration_inputs.read_text(PARITY_TARGET)!=render():
     raise SystemExit('Current canonical SQL source parity is stale')
 print('Immutable Blueprint migration and current canonical parity verified')

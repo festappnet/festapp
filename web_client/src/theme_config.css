@@ -202,3 +202,13 @@ img.smooth-load {
 img.smooth-load.loaded {
     opacity: 1;
 }
+
+.wallet-page { max-width: 440px; margin: 48px auto; padding: 24px; }
+.wallet-page h1 { margin-bottom: 16px; }
+.wallet-page p { line-height: 1.6; margin-bottom: 24px; }
+.wallet-page button { min-height: 48px; padding: 12px 20px; }
+
+.wallet-save { background: transparent; border: 0; cursor: pointer; }
+.wallet-save img { height: 48px; width: auto; max-width: 100%; margin: 8px; }
+.wallet-save span { display: block; }
+.wallet-save:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

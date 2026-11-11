@@ -348,7 +348,7 @@
       "sources": [
         "lib/components/inventory/db_spots.dart"
       ],
-      "mcp": [],
+      "mcp": ["inventory.spots.list", "inventory.slots.list", "inventory.assignments.save"],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",

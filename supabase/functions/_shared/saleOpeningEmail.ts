@@ -4,7 +4,7 @@ import { emailRpc } from './emailQueueClient.ts';
 import { type DeliverEmailInput, renderEmail, type PreparedEmail } from './emailDelivery.ts';
 import { emailPayloadHash } from './emailPayload.ts';
 
-type Context = {organization: number; occasion: number; unit: number; recipient: string; occasionTitle: string; formLink: string; webLink: string; lang: string; hasTickets?: boolean; tone?: string; replyTo?: string; capabilities: Record<string,{hash: string; envelope: Record<string,string>}>};
+type Context = {organization: number; occasion: number; unit: number; recipient: string; occasionTitle: string; formLink: string; webLink: string; lang: string; hasTickets?: boolean; replyTo?: string; capabilities: Record<string,{hash: string; envelope: Record<string,string>}>};
 type Row = {message_id: string; message_kind: string; recipient: string; organization: number; occasion: number; unit: number};
 export async function renderSaleOpeningEmail(row: Row, dependencies: {
  context?: (id: string) => Promise<Context>;
@@ -24,7 +24,6 @@ export async function renderSaleOpeningEmail(row: Row, dependencies: {
  const action = saleOpeningUrl(context.webLink, context.formLink);
  return {prepared: await (dependencies.render ?? renderEmail)({to: row.recipient, templateCode: row.message_kind,
  context: {organization: row.organization, occasion: row.occasion, unit: row.unit}, replyTo: context.replyTo,
- subjectSubstitutions: {...saleOpeningSubstitutions(context.lang, context.occasionTitle, action, unsubscribe, {hasTickets: context.hasTickets, tone: context.tone}), occasion_title: context.occasionTitle},
- substitutions: saleOpeningSubstitutions(context.lang, context.occasionTitle, action, unsubscribe, {hasTickets: context.hasTickets, tone: context.tone})}),
+ substitutions: saleOpeningSubstitutions(context.lang, context.occasionTitle, action, unsubscribe, {hasTickets: context.hasTickets})}),
  postAction: {tracking_policy: 'disabled'}};
 }

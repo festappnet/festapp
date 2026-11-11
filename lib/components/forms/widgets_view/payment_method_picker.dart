@@ -37,14 +37,15 @@ class PaymentMethodPicker extends StatelessWidget {
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(PaymentMethodStrings.text(paymentConnectors.get(methods.single)?.labelKey ?? methods.single))),
-      if (paymentConnectors.contains(selected)) ...[
+      if (selected == 'cash') Text(options.cashInstructions.isEmpty ? PaymentMethodStrings.text('cashInstructionsDefault') : options.cashInstructions),
+      if (paymentConnectors.containsHosted(selected)) ...[
         if (options.providers[selected]?.recipientName?.isNotEmpty == true)
           Text(PaymentMethodStrings.recipient(options.providers[selected]!.recipientName!)),
         Text(PaymentMethodStrings.text('fullAmount')),
         Text(PaymentMethodStrings.reservation(options.reservationSeconds)),
         Text(PaymentMethodStrings.text(paymentConnectors.get(selected)!.hintKey)),
       ],
-      if (options.cardConfigured && !methods.any(paymentConnectors.contains))
+      if (options.cardConfigured && !methods.any(paymentConnectors.containsHosted))
         Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(

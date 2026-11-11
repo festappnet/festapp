@@ -1,15 +1,15 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.524",
+  "version": "0.20.580",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
-    "dev": "node ../automation/configure_fonts.js .. --assets-only && vite",
-    "build": "node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
+    "dev": "node scripts/build_scanner_decoder.mjs && node ../automation/configure_fonts.js .. --assets-only && vite",
+    "build": "node scripts/build_scanner_decoder.mjs && node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
-    "test": "node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node --test --test-concurrency=1 tests/**/*.test.js",
+    "test": "node scripts/build_scanner_decoder.mjs --check && node scripts/build_runtime.mjs --check && node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node scripts/run_tests.mjs",
     "test:measurement-browser": "node scripts/test_form_measurement_browser.mjs",
     "test:form-interaction-browser": "node scripts/test_form_interaction_browser.mjs",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
@@ -21,24 +21,26 @@
     "test:measurement-adversarial-browser": "node scripts/test_form_measurement_runtime_adversarial.mjs"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.10-f58aef881e07.tgz",
-    "@supabase/supabase-js": "^2.118.0",
+    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.13-39a53b150114.tgz",
+    "@supabase/supabase-js": "^2.119.0",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",
     "dotenv": "^18.0.9",
     "flatpickr": "^4.6.13",
     "glob": "^14.0.2",
-    "jsqr": "^1.4.0",
+    "klaro": "0.7.21",
     "node-localstorage": "^3.0.5",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
-    "klaro": "0.7.21"
+    "zxing-wasm": "3.1.6"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
-    "fake-indexeddb": "^6.2.6",
+    "fake-indexeddb": "^6.2.7",
     "jsdom": "^30.1.3",
-    "parse5": "^8.0.1",
+    "parse5": "^8.1.0",
+    "playwright": "1.65.0",
+    "vanilla-cookieconsent": "3.3.0",
     "vite": "^8.3.5"
   },
   "packageManager": "pnpm@11.24.0",

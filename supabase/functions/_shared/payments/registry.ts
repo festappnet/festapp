@@ -1,14 +1,14 @@
-import { type PaymentDependencies, PaymentError } from "./contracts.ts";
+import { type HostedPaymentDependencies, type PaymentMethodBinding, hostedPaymentBinding, requireHostedPayment, PaymentError } from "./contracts.ts";
 import { paymentHandler, paymentHeaders, readPaymentBytes } from "./http.ts";
 
 /** An explicit allowlist, never a module path or environment name from a client.
  * No default provider: unknown or mismatched bindings fail closed.
  */
 export class PaymentRegistry {
-  private readonly factories: Map<string, () => PaymentDependencies>;
+  private readonly factories: Map<string, () => PaymentMethodBinding | HostedPaymentDependencies>;
   private readonly sourceFields: readonly string[];
   constructor(
-    entries: readonly (readonly [string, () => PaymentDependencies, string?])[],
+    entries: readonly (readonly [string, () => PaymentMethodBinding | HostedPaymentDependencies, string?])[],
   ) {
     this.factories = new Map();
     this.sourceFields = entries.flatMap((entry) => entry[2] ? [entry[2]] : []);
@@ -22,19 +22,22 @@ export class PaymentRegistry {
   has(id: unknown): id is string {
     return typeof id === "string" && this.factories.has(id);
   }
+  hasHosted(id: unknown): boolean {
+    return this.has(id) && this.resolve(id).hostedCheckout !== undefined;
+  }
   ids(): readonly string[] {
     return [...this.factories.keys()];
   }
   stripOrderSources(order: Record<string, unknown>) {
     for (const field of this.sourceFields) delete order[field];
   }
-  resolve(id: unknown): PaymentDependencies {
+  resolve(id: unknown): PaymentMethodBinding {
     if (!this.has(id)) throw new PaymentError("payment_connector_unavailable");
     const binding = this.factories.get(id)!();
     if (binding.connector.id !== id) {
       throw new PaymentError("payment_connector_identity_mismatch");
     }
-    return binding;
+    return "store" in binding ? hostedPaymentBinding(binding) : binding;
   }
 }
 
@@ -65,9 +68,9 @@ export async function registeredPaymentHandler(
         headers: paymentHeaders,
       });
     }
-    let binding: PaymentDependencies;
+    let binding: HostedPaymentDependencies;
     try {
-      binding = registry.resolve(body.provider);
+      binding = requireHostedPayment(registry.resolve(body.provider));
     } catch (error) {
       if (!(error instanceof Error) || error.message !== `${body.provider}_not_configured`) throw error;
       return Response.json({ error: error.message }, {
@@ -87,9 +90,10 @@ export async function registeredPaymentHandler(
       );
     }
     return await paymentHandler(request, binding, action === "return");
-  } catch {
-    return Response.json({ error: "payment_temporarily_unavailable" }, {
-      status: 503,
+  } catch (error) {
+    const unavailable = error instanceof PaymentError && ["payment_hosted_checkout_unavailable", "payment_connection_unavailable"].includes(error.code);
+    return Response.json({ error: unavailable ? error.code : "payment_temporarily_unavailable" }, {
+      status: unavailable ? 400 : 503,
       headers: paymentHeaders,
     });
   }

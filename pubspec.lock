@@ -544,7 +544,7 @@ packages:
     source: hosted
     version: "5.0.1"
   fake_async:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: fake_async
       sha256: "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
@@ -2341,14 +2341,14 @@ packages:
       path: "vendor/blueprint/venue_layout_core"
       relative: true
     source: path
-    version: "0.2.5"
+    version: "0.2.8"
   venue_seat_picker:
     dependency: "direct main"
     description:
       path: "vendor/blueprint/venue_seat_picker"
       relative: true
     source: path
-    version: "0.4.6"
+    version: "0.4.10"
   video_player:
     dependency: transitive
     description:

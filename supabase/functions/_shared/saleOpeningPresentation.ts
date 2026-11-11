@@ -70,12 +70,12 @@ export function saleOpeningUrl(webLink: string, formLink: string, purpose?: stri
  if (purpose && token) url.hash = new URLSearchParams({ sale_opening: purpose, token }).toString();
  return url.href;
 }
-export function saleOpeningSubstitutions(lang: string, title: string, action: string, unsubscribe: string, options: {hasTickets?: boolean; tone?: string} = {}) {
+export function saleOpeningSubstitutions(lang: string, title: string, action: string, unsubscribe: string, options: {hasTickets?: boolean} = {}) {
  const copy = saleOpeningCopy[lang as keyof typeof saleOpeningCopy];
  if (!copy) throw new Error('sale_opening_locale_invalid');
  const registration = saleOpeningRegistrationCopy[lang as keyof typeof saleOpeningRegistrationCopy];
  const subject = options.hasTickets === false ? registration[0] : copy.subject;
- return {occasion_title: escapeEmailHtml(title),sale_opening_subject:subject,sale_opening_heading:subject,
+ return {occasionTitle: title,sale_opening_subject:subject,sale_opening_heading:subject,
   sale_opening_disclaimer:copy.disclaimer,
   sale_opening_action:waitlistActionLink(escapeEmailHtml(action),options.hasTickets === false ? registration[1] : copy.action),
   sale_opening_unsubscribe:`<a href="${escapeEmailHtml(unsubscribe)}" rel="noreferrer noopener" referrerpolicy="no-referrer">${copy.unsubscribe}</a>`};

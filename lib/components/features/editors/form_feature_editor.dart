@@ -1,3 +1,4 @@
+import '../../forms/payment_method_strings.dart';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
@@ -130,6 +131,16 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
           Column(
             children: [
               Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: DropdownButtonFormField<String>(
+                  initialValue: widget.formFeature.paymentDeadlineMode == 'none' ? 'none' : 'custom',
+                  items: [for (final mode in ['custom','none']) DropdownMenuItem(value: mode,
+                    child: Text(PaymentMethodStrings.text(mode == 'none' ? 'deadlineNone' : 'deadlineCustom')))],
+                  onChanged: (mode) => _refresh(() => widget.formFeature.paymentDeadlineMode = mode),
+                ),
+              ),
+              if (widget.formFeature.paymentDeadlineMode != 'none')
+              Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: TextFormField(
@@ -155,7 +166,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                 onChanged: (v) =>
                     _refresh(() => widget.formFeature.reminderIsEnabled = v),
               ),
-              if (widget.formFeature.reminderIsEnabled ?? true)
+              if (widget.formFeature.paymentDeadlineMode != 'none' && (widget.formFeature.reminderIsEnabled ?? true))
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 8.0),

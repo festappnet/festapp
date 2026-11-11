@@ -195,8 +195,8 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
-        "supabase/functions/send-sign-in-code/teamAccessNotice_test.ts",
-        "supabase/functions/_shared/invitationDelivery_test.ts"
+        "supabase/functions/_shared/invitationDelivery_test.ts",
+        "supabase/functions/manage-member-access/handler_test.ts"
       ],
       "abusePolicy": [
         "email.auth"
@@ -608,6 +608,44 @@
         "supabase/functions/_shared/barion/adapter_test.ts"
       ],
       "abusePolicy": []
+    },
+    "payment-operation": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/payments/operationHandler_test.ts",
+        "supabase/functions/_shared/payments/refunds_test.ts"
+      ]
+    },
+    "ticket-wallet": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/ticketWallet_test.ts",
+        "supabase/functions/_shared/googleWallet_test.ts"
+      ]
+    },
+    "sync-ticket-wallet": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/ticketWallet_test.ts"
+      ]
+    },
+    "manage-member-access": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/manage-member-access/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "email.auth",
+        "email.ordinary"
+      ]
     }
   },
   "excluded": {

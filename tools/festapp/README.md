@@ -224,7 +224,67 @@ or one whole organizer. Explicitly consented organizer grants can also create
 hidden occasions with sales closed through the canonical command. Hosted artwork
 writes, preview and issued-ticket actions remain separate waves.
 
-## Hosted OAuth pilot: connect in a browser
+## Hosted OAuth: general clients and the public ChatGPT connection
+
+General operator clients can request the complete implemented operation catalog,
+including event creation, forms, seating, products, people and settings. There
+is no default eight-permission or read-only ceiling. Actual access is the
+intersection of requested scopes, explicit consent, selected resources and the
+ordinary user's live SQL rights. Organizer-only actions still require organizer
+consent; event consent cannot grant authority over another event or organizer.
+The generated [operation reference](../../automation/release/help/mcp-reference.json)
+and its permission contract are authoritative, not a separate transport allowlist.
+The public ChatGPT client below intentionally retains its distinct restricted
+order-summary profile.
+
+### Official Inspector web UI
+
+Generate both the native issuer registration and the Inspector configuration
+from the selected, reviewed private remote configuration:
+
+```sh
+pnpm --dir tools/festapp exec node src/remote/main.mjs client inspector /absolute/private/remote-config.json --origin http://127.0.0.1:6274
+```
+
+This prints configuration only. It does not register a client, authenticate,
+change a profile or invoke any operation. Apply the returned `registration`
+through the protected configuration workflow, preserving existing clients and
+keys, validate it with `remote/main.mjs check`, then restart only the standalone
+MCP sidecar. Import the returned `inspector` configuration into Inspector.
+The registration has the operator profile and no artificial functional ceiling;
+the requested scopes follow the shared permission catalog.
+
+Start Inspector with `BROWSER=none pnpm dlx @modelcontextprotocol/inspector@2.14.0`
+and open its UI using the exact `127.0.0.1` origin. Its web callback is always
+`<origin>/oauth/callback`; the displayed redirect value is read-only. A Codex
+registration ending in `/callback` is a different client and cannot substitute
+for this registration. Do not disable callback checks, PKCE or browser protections.
+Choose only the intended test resources and functions in consent. Declining
+requested functions completes a narrower connection; it must not restart consent.
+For uncertain writes, keep the same command UUID and payload. A stale version
+requires reloading and a new decision, not blind retries.
+
+### Client ID Metadata Documents
+
+The issuer also supports opt-in trusted native CIMD through the pinned
+oidc-provider implementation. Add `clientMetadataDocuments` to the protected
+remote configuration with `allowedOrigins` (exact trusted HTTPS origins) and an
+explicit `dataProfile` (`operator` for trusted private general clients).
+Omitting `allowedScopes` permits the full implemented catalog; an explicit
+ceiling is appropriate only for a deliberately restricted integration.
+
+Only metadata from these origins is fetched. The provider validates document
+identity, caches metadata, prevents redirects and performs its SSRF checks.
+Admitted clients must be public native applications with literal-loopback HTTP
+callbacks, authorization-code/optional-refresh grants and no shared secret.
+Metadata never chooses a Festapp profile or expands rights. Removing the trusted
+origin or narrowing its scope policy is checked on existing token use too.
+CIMD is advertised only when configured. Unconfigured issuers remain static;
+open dynamic registration stays disabled. Remote web metadata clients require
+a separate callback/CSP policy and are not enabled by this native trust setting.
+See [authorization policy](../../docs/architecture/operations/remote-mcp-auth.md).
+
+### Public ChatGPT connection
 
 The live regional endpoint is `https://mcp.vstupenky.online/mcp`. The former
 `mcp.festapp.net` endpoint is retired with HTTP 410. The regional cutover and
@@ -245,6 +305,10 @@ pilot additionally needs explicit `festapp:orders:read` in the requested scopes
 and consent, giving report/list/detail readers. The configured ordinary-user
 rights, client ceiling and consent are checked again for every call. Disconnect at
 `https://mcp.vstupenky.online/connections`, independently of the Festapp application.
+
+Connection activation, replacement, expiry, refresh replay and encrypted storage
+upgrade are documented in [the authorization lifecycle](../../docs/architecture/operations/remote-mcp-auth.md#connection-lifecycle-and-recovery).
+Both consent entries use the same policy; pending approval grants no MCP access.
 
 Private setup with the provided client and both read scopes is recorded in
 [integrations/chatgpt](../../integrations/chatgpt/README.md). A bare URL/base-only

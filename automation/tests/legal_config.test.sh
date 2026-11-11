@@ -6,6 +6,8 @@ TMP_ROOT=$(mktemp -d /tmp/festapp-legal-config.XXXXXX)
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
 mkdir -p "$TMP_ROOT/automation/release/legal" "$TMP_ROOT/web"
+mkdir -p "$TMP_ROOT/automation/lib"
+cp "$PROJECT_ROOT/automation/lib/write_if_changed.cjs" "$TMP_ROOT/automation/lib/write_if_changed.cjs"
 cp "$PROJECT_ROOT/automation/release/render_legal_pages.mjs" "$TMP_ROOT/automation/release/render_legal_pages.mjs"
 cp "$PROJECT_ROOT"/automation/release/legal/*.md "$TMP_ROOT/automation/release/legal/"
 

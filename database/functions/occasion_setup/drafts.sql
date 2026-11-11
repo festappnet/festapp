@@ -170,6 +170,14 @@ BEGIN
   IF jsonb_typeof(p_data->'ticketDraft')='object' AND NOT ((p_data->'ticketDraft') ? 'delivery_mode')
     AND (d.data->'ticketDraft') ? 'delivery_mode' AND p_data->>'sourceId' IS NOT DISTINCT FROM d.data->>'sourceId' THEN
     p_data:=jsonb_set(p_data,'{ticketDraft,delivery_mode}',d.data#>'{ticketDraft,delivery_mode}'); END IF;
+  IF jsonb_typeof(p_data->'ticketDraft')='object' AND NOT ((p_data->'ticketDraft') ? 'wallet_enabled')
+    AND (d.data->'ticketDraft') ? 'wallet_enabled' AND p_data->>'sourceId' IS NOT DISTINCT FROM d.data->>'sourceId' THEN
+    p_data:=jsonb_set(p_data,'{ticketDraft,wallet_enabled}',d.data#>'{ticketDraft,wallet_enabled}'); END IF;
+  IF jsonb_typeof(p_data->'ticketDraft')='object' AND NOT ((p_data->'ticketDraft') ? 'wallet_appearance')
+    AND (d.data->'ticketDraft') ? 'wallet_appearance' AND p_data->>'sourceId' IS NOT DISTINCT FROM d.data->>'sourceId' THEN
+    p_data:=jsonb_set(p_data,'{ticketDraft,wallet_appearance}',d.data#>'{ticketDraft,wallet_appearance}'); END IF;
+  PERFORM public.validate_ticket_wallet_appearance(p_data->'ticketDraft');
+  PERFORM public.ticket_wallet_enabled(p_data->'ticketDraft');
   PERFORM public.ticket_delivery_mode(p_data->'ticketDraft');
   IF d.data ? 'copy_locale' THEN p_data := jsonb_set(p_data,'{copy_locale}',d.data->'copy_locale'); END IF;
   IF p_data ? 'copy_locale' AND p_data->>'sourceId' IS NOT NULL

@@ -400,7 +400,7 @@ create table if not exists eshop.transactions (
 
   CONSTRAINT transactions_pkey PRIMARY KEY (id),
   CONSTRAINT transactions_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.user_info (id),
-  CONSTRAINT transactions_bank_account_fkey FOREIGN KEY (bank_account_id) REFERENCES eshop.bank_accounts (id) ON DELETE CASCADE,
+  CONSTRAINT transactions_bank_account_fkey FOREIGN KEY (bank_account_id) REFERENCES eshop.bank_accounts (id) ON DELETE RESTRICT,
   CONSTRAINT transactions_payment_info_fkey FOREIGN KEY (payment_info) REFERENCES eshop.payment_info (id)
 ) TABLESPACE pg_default;
 
@@ -1799,27 +1799,6 @@ ALTER TABLE public.notification_center_maintenance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_center_bank_health ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.notification_center_maintenance,public.notification_center_bank_health FROM PUBLIC,anon,authenticated,service_role;
 -- End organization notification center private projections.
-
--- Configuration history only. Physical placement remains eshop.spots.
-CREATE TABLE IF NOT EXISTS public.form_seating_transitions (
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- occasion bigint NOT NULL REFERENCES public.occasions(id) ON DELETE RESTRICT,
- form bigint REFERENCES public.forms(id) ON DELETE SET NULL,
- blueprint bigint REFERENCES eshop.blueprints(id) ON DELETE SET NULL,
- state text NOT NULL DEFAULT 'organizer_managed' CHECK(state IN ('organizer_managed','published','cancelled')),
- revision bigint NOT NULL DEFAULT 1 CHECK(revision>0),
- started_by uuid NOT NULL, started_at timestamptz NOT NULL DEFAULT clock_timestamp(),
- finished_by uuid, finished_at timestamptz,
- CHECK(state<>'organizer_managed' OR (form IS NOT NULL AND blueprint IS NOT NULL)),
- CHECK((state='organizer_managed' AND finished_at IS NULL AND finished_by IS NULL) OR
-       (state<>'organizer_managed' AND finished_at IS NOT NULL AND finished_by IS NOT NULL))
-);
-CREATE UNIQUE INDEX IF NOT EXISTS form_seating_transitions_active_form ON public.form_seating_transitions(form) WHERE state='organizer_managed';
-CREATE INDEX IF NOT EXISTS form_seating_transitions_target ON public.form_seating_transitions(blueprint,state);
-ALTER TABLE public.form_seating_transitions ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.form_seating_transitions FROM PUBLIC,anon,authenticated,service_role;
--- The service-role email renderer reads seating through invoker SQL helpers.
-GRANT SELECT ON public.form_seating_transitions TO service_role;
 
 -- One campaign per form. Contacts are independent of orders and waiting tickets.
 CREATE TABLE IF NOT EXISTS public.sale_opening_campaigns (

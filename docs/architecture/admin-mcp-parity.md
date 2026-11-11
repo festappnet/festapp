@@ -5,6 +5,33 @@ operation predicates remain authoritative. Delegation additionally narrows
 organization, units/occasions and explicitly consented functional scopes.
 Existing issued grants are never expanded by adding tools.
 
+## Current source coverage and adapter policy (2026-11-10)
+
+The shared permission catalog currently exposes 196 implemented operations.
+General operator clients have no default functional subset; the public ChatGPT
+order-summary registration is a separate restricted integration. The canonical
+client policy, ordinary actor session, explicitly approved resource/function
+scope and SQL operation predicate all apply. See
+[client policy and future API adapters](operations/remote-mcp-auth.md#canonical-adapters-and-client-policy).
+
+The existing 109-action administration inventory now maps every occasion action
+to this catalog. The two account-only actions (connection management and Google
+login) remain ordinary account UI. This is a source coverage contract, not a
+claim that every tool has been deployed or functionally exercised in production.
+The generated reference and `client-policy.test.mjs` detect unmapped inventory
+actions and artificial general-client scope ceilings. Earlier stage tables
+below record their historical implementation/rollout sequence.
+
+The previously missing stock assignment action is covered by bounded
+`inventory.spots.list` and `inventory.slots.list`, plus
+`inventory.assignments.save`. The scoped SQL facade pins stored occasion and
+resource identities, including receipt replay, and calls
+`update_spot_assignments_client_sync_v1`, exactly as `SpotCommands` does.
+Its original old/new spot intention, locks, hold/capacity checks, all-or-nothing
+transaction and receipt stay with that existing domain owner. No new allocator,
+secondary mutation receipt or Node/Supabase business-rule copy is introduced.
+The new migration is locally tested and requires the normal production release.
+
 The proposed [order and financial core](order-commerce-core.md) includes MCP
 order/form/seat tools as mandatory callers and readers, using the same domain
 owners as administration. Its [migration plan](../plans/order-commerce-core-plan-2026-10-27.md)

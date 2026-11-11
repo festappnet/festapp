@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble only the confirmed seat-order migration from its canonical owners."""
+import migration_inputs
 from pathlib import Path
 import sys
 
@@ -31,9 +32,9 @@ TARGET = ROOT / 'supabase/migrations/20261024023000_confirmed_blueprint_seat_ord
 import hashlib
 from generate_canonical_source_contract import render, TARGET as CONTRACT
 expected = '41cbed8f437bac0826cf0b30c99f2b30ab4bd472de5247221a24dae51585f9c2'
-if hashlib.sha256(TARGET.read_bytes()).hexdigest() != expected:
+if hashlib.sha256(migration_inputs.read_bytes(TARGET)).hexdigest() != expected:
     raise SystemExit('Installed seat-order migration bytes changed')
 if '--check' not in sys.argv:
     raise SystemExit('Installed seat-order migration is immutable; author a forward migration')
-if CONTRACT.read_text() != render(ROOT):
+if migration_inputs.read_text(CONTRACT) != render(ROOT):
     raise SystemExit('Current canonical source parity is stale')

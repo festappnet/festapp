@@ -12,6 +12,7 @@ const input = {
 function fixture() {
   const calls: string[] = [];
   const row = {
+    revision: 1,
     unit: 2,
     data: {
       title: "Nová akce",
@@ -45,9 +46,9 @@ function fixture() {
       return { unit: { id: 2, data: {} }, organization: { id: 1 } };
     },
     sourceTemplates: async () => null,
-    bank: async () => {
+    paymentInfo: async () => {
       calls.push("bank");
-      return "123/0100";
+      return {payment_method:'bank', account_number:'',account_number_human_readable:'123/0100',deadline:'2030-01-01T00:00:00Z',data:{payment_policy:{mode:'custom'}}};
     },
     resolve: async (code) => {
       calls.push(code);
@@ -152,4 +153,13 @@ Deno.test("zero price preview does not invent a paid confirmation and escapes cu
   assertEquals(result.messages.length, 1);
   assertEquals(result.total, 0);
   assert(!result.messages[0].html.includes("<img src=x>"));
+});
+
+Deno.test('selected cash order preview uses server policy and shared confirmation rendering',async()=>{
+ const f=fixture();
+ f.deps.paymentInfo=async()=>({payment_method:'cash',deadline:null,data:{payment_policy:{mode:'none',cashInstructions:'Hotově u vstupu.'}}});
+ const result=await (await setupPreviewResponse(input,'Bearer user',f.deps)).json();
+ assert(result.messages[0].html.includes('Hotově u vstupu.'));
+ assert(!result.messages[0].html.includes('123/0100'));assert(!result.messages[0].html.includes('PREVIEW</span>'));
+ assert(!result.messages[0].html.includes('2030'));
 });

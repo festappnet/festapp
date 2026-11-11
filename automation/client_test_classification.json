@@ -1,40 +1,5 @@
 {
   "flutter_roots": {
-    "test/components/unit/unit_measurement_settings_test.dart": {
-      "kind": "environment",
-      "reason": "Localized organizer measurement settings exercise Flutter widget rendering, expansion, saved configuration preservation and permission-dependent editability.",
-      "sources": [
-        "test/components/unit/unit_measurement_settings_test.dart"
-      ]
-    },
-    "test/services/deferred_external_url_test.dart": {
-      "kind": "adapter",
-      "reason": "Browser URL launch orchestration reserves a tab before asynchronous access resolution and handles blocked windows and failed requests.",
-      "sources": [
-        "test/services/deferred_external_url_test.dart"
-      ]
-    },
-    "test/services/locale_date_time_test.dart": {
-      "kind": "environment",
-      "reason": "Locale mismatch regression exercises the delivery tooltip and dialog with Flutter localization delegates; shared date adapters cover all interface languages and canonical grid values.",
-      "sources": [
-        "test/services/locale_date_time_test.dart"
-      ]
-    },
-    "test/components/forms/email_domain_suffix_test.dart": {
-      "kind": "environment",
-      "reason": "Localized public email field widgets in both designs and real main/ticket FormBuilder submission gate.",
-      "sources": [
-        "test/components/forms/email_domain_suffix_test.dart"
-      ]
-    },
-    "test/components/blueprint/blueprint_mobile_pan_test.dart": {
-      "kind": "environment",
-      "reason": "Mobile reservation canvas pinch and one-finger pan through the real venue editor require Flutter gesture arbitration and rendering.",
-      "sources": [
-        "test/components/blueprint/blueprint_mobile_pan_test.dart"
-      ]
-    },
     "test/data_services/external_login_context_test.dart": {
       "kind": "environment",
       "reason": "Actual client-sync projection/runtime/private SDK adapters or root auth/rights integration; pure sync orchestration is in core.",
@@ -490,32 +455,11 @@
         "test/components/eshop/ticket_delivery_request_test.dart"
       ]
     },
-    "test/components/bank_accounts/connection_refresh_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/bank_accounts/connection_refresh_test.dart"
-      ]
-    },
-    "test/startup/public_occasion_scope_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/startup/public_occasion_scope_test.dart"
-      ]
-    },
     "test/components/eshop/empty_orders_test.dart": {
       "kind": "environment",
       "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
       "sources": [
         "test/components/eshop/empty_orders_test.dart"
-      ]
-    },
-    "test/components/unit/app_landing_card_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/unit/app_landing_card_test.dart"
       ]
     },
     "test/components/users/login_startup_session_test.dart": {
@@ -546,83 +490,6 @@
         "test/components/bank_accounts/order_bank_sync_warning_test.dart"
       ]
     },
-    "test/data_services/client_command_identity_test.dart": {
-      "kind": "environment",
-      "reason": "Platform path-provider singleton and on-disk Sembast reopen/concurrency require an isolated binding.",
-      "sources": [
-        "test/data_services/client_command_identity_test.dart"
-      ]
-    },
-    "test/components/forms/organization_identity_test.dart": {
-      "kind": "environment",
-      "reason": "Localized legal-profile and public identity widget interactions with the application dialog and isolated RPC transport.",
-      "sources": [
-        "test/components/forms/organization_identity_test.dart"
-      ]
-    },
-    "test/components/forms/verification_review_test.dart": {
-      "kind": "environment",
-      "reason": "Localized verification review dialog with real focus, scrolling and injected RPC transport; covers decision validation and retained drafts.",
-      "sources": [
-        "test/components/forms/verification_review_test.dart"
-      ]
-    },
-    "test/components/users/occasion_team_invitation_test.dart": {
-      "kind": "widget",
-      "reason": "Team invitation page interaction with injected readers and acceptance callbacks, localized labels and tenant configuration.",
-      "sources": [
-        "test/components/users/occasion_team_invitation_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_story_shell_test.dart": {
-      "kind": "widget",
-      "reason": "Responsive story shell layout, rendered navigation, semantics and screenshot fixtures require Flutter widgets.",
-      "sources": [
-        "test/components/occasion/occasion_setup_story_shell_test.dart"
-      ]
-    },
-    "test/components/mcp/mcp_connection_test.dart": {
-      "kind": "environment",
-      "reason": "MCP consent and connection UI use widget lifecycle and browser adapter fixtures.",
-      "sources": [
-        "test/components/mcp/mcp_connection_test.dart"
-      ]
-    },
-    "test/components/blueprint/blueprint_editor_feedback_test.dart": {
-      "kind": "environment",
-      "reason": "Editor feedback and public editor color transactions require rendering and modal focus.",
-      "sources": [
-        "test/components/blueprint/blueprint_editor_feedback_test.dart"
-      ]
-    },
-    "test/components/blueprint/blueprint_table_seating_test.dart": {
-      "kind": "environment",
-      "reason": "Real public layout controller preserves manual chair placement and table geometry.",
-      "sources": [
-        "test/components/blueprint/blueprint_table_seating_test.dart"
-      ]
-    },
-    "test/components/blueprint/blueprint_legend_test.dart": {
-      "kind": "environment",
-      "reason": "Legend geometry uses Flutter painting and text metrics.",
-      "sources": [
-        "test/components/blueprint/blueprint_legend_test.dart"
-      ]
-    },
-    "test/components/blueprint/blueprint_editor_file_drop_test.dart": {
-      "kind": "environment",
-      "reason": "Current public editor file-drop import lock and failed-upload draft retention require widget and platform channel fixtures.",
-      "sources": [
-        "test/components/blueprint/blueprint_editor_file_drop_test.dart"
-      ]
-    },
-    "test/components/shared/editor_file_drop_region_test.dart": {
-      "kind": "environment",
-      "reason": "Native file-drop plugin and bounded import state use Flutter widget lifecycle and platform channels.",
-      "sources": [
-        "test/components/shared/editor_file_drop_region_test.dart"
-      ]
-    },
     "test/components/organization/authorization_projection_test.dart": {
       "kind": "environment",
       "reason": "Root Supabase identity and scoped capability revocation require separate process isolation.",
@@ -637,116 +504,11 @@
         "test/components/blueprint/blueprint_toolbar_test.dart"
       ]
     },
-    "test/components/stripe_payments/unit_card_payments_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/unit_card_payments_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/stripe_connect_callback_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/stripe_connect_callback_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/payment_method_cards_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/payment_method_cards_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/form_payment_settings_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/form_payment_settings_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/payment_access_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/payment_access_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/stripe_payment_link_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/stripe_payment_link_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/hidden_feature_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/hidden_feature_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/stripe_products_dialog_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/stripe_products_dialog_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/admin_payment_precision_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/admin_payment_precision_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/payment_method_preview_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/payment_method_preview_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/card_refund_decision_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/stripe_payments/card_refund_decision_test.dart"
-      ]
-    },
     "test/components/forms/card_payment_status_test.dart": {
       "kind": "environment",
       "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
       "sources": [
         "test/components/forms/card_payment_status_test.dart"
-      ]
-    },
-    "test/components/forms/form_total_price_test.dart": {
-      "kind": "environment",
-      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
-      "sources": [
-        "test/components/forms/form_total_price_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/canonical_quote_refresh_test.dart": {
-      "kind": "environment",
-      "reason": "Canonical Blueprint model and Flutter seat adapter preserve held seat identity and current exact payment prices.",
-      "sources": [
-        "test/components/stripe_payments/canonical_quote_refresh_test.dart"
-      ]
-    },
-    "test/components/stripe_payments/stripe_feature_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises SQL-projected unit feature visibility and admin capabilities through the real rights context.",
-      "sources": [
-        "test/components/stripe_payments/stripe_feature_test.dart"
-      ]
-    },
-    "test/components/forms/form_validation_test.dart": {
-      "kind": "environment",
-      "reason": "Actual Czech form settings/editor widgets and public form holders; validates draft repair and persisted decimal duration.",
-      "sources": [
-        "test/components/forms/form_validation_test.dart"
       ]
     },
     "test/components/occasion/occasion_list_refresh_test.dart": {
@@ -763,39 +525,11 @@
         "test/components/occasion/occasion_creation_recovery_test.dart"
       ]
     },
-    "test/components/dialogs/responsive_search_empty_test.dart": {
-      "kind": "environment",
-      "reason": "Actual shared participant search dialog empty and no-match states.",
-      "sources": [
-        "test/components/dialogs/responsive_search_empty_test.dart"
-      ]
-    },
-    "test/services/batch_progress_dialog_test.dart": {
-      "kind": "environment",
-      "reason": "Actual batch progress dialog; validates truthful mixed outcomes and retry exclusions.",
-      "sources": [
-        "test/services/batch_progress_dialog_test.dart"
-      ]
-    },
     "test/components/qa/program_qa_regression_test.dart": {
       "kind": "environment",
       "reason": "Program QA regressions exercise real routed app bars, form widgets and the cached DbSpeakers root Supabase client with a Czech catalog; isolate the root client from other sessions.",
       "sources": [
         "test/components/qa/program_qa_regression_test.dart"
-      ]
-    },
-    "test/components/eshop/ticket_batch_commands_test.dart": {
-      "kind": "environment",
-      "reason": "Actual durable client command transport and Supabase exception adapter; verifies stable identity, recovery and validation before persisted intent.",
-      "sources": [
-        "test/components/eshop/ticket_batch_commands_test.dart"
-      ]
-    },
-    "test/components/eshop/ticket_batch_print_downloads_test.dart": {
-      "kind": "environment",
-      "reason": "Actual Material batch download menu in a narrow viewport; verifies compact layout and the packed A4 PDF versus individual PDF ZIP choices.",
-      "sources": [
-        "test/components/eshop/ticket_batch_print_downloads_test.dart"
       ]
     },
     "test/components/bank_accounts/unit_bank_accounts_load_test.dart": {
@@ -805,130 +539,11 @@
         "test/components/bank_accounts/unit_bank_accounts_load_test.dart"
       ]
     },
-    "test/components/eshop/order_history_seat_labels_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/eshop/order_history_seat_labels_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_appearance_panel_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/occasion_setup_appearance_panel_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_appearance_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/occasion_setup_appearance_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_email_document_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/occasion_setup_email_document_test.dart"
-      ]
-    },
     "test/components/occasion/occasion_setup_email_templates_test.dart": {
       "kind": "environment",
       "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
       "sources": [
         "test/components/occasion/occasion_setup_email_templates_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_ticket_gallery_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/occasion_setup_ticket_gallery_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_ticket_loading_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/occasion_setup_ticket_loading_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_ticket_matrix_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/occasion_setup_ticket_matrix_test.dart"
-      ]
-    },
-    "test/components/occasion/ticket_email_delivery_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/occasion/ticket_email_delivery_test.dart"
-      ]
-    },
-    "test/components/ticket_layout/ticket_text_autofit_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
-      "sources": [
-        "test/components/ticket_layout/ticket_text_autofit_test.dart"
-      ]
-    },
-    "test/components/blueprint/seat_order_commands_test.dart": {
-      "kind": "environment",
-      "reason": "Actual Supabase HTTP binding and durable Sembast journal use an isolated platform path-provider fixture; covers order retry identity and actor changes.",
-      "sources": [
-        "test/components/blueprint/seat_order_commands_test.dart"
-      ]
-    },
-    "test/components/eshop/ticket_batch_detail_header_test.dart": {
-      "kind": "environment",
-      "reason": "Localized batch header, selection actions and table space across viewport sizes and themes require Flutter layout and scoped font/catalog fixtures.",
-      "sources": [
-        "test/components/eshop/ticket_batch_detail_header_test.dart"
-      ]
-    },
-    "test/components/eshop/ticket_batch_presentation_test.dart": {
-      "kind": "environment",
-      "reason": "Pregenerated ticket feature visibility, batch creation form selection and native grid rendering require Flutter widgets and a scoped Czech catalog.",
-      "sources": [
-        "test/components/eshop/ticket_batch_presentation_test.dart"
-      ]
-    },
-    "test/components/notification_center/notification_center_time_test.dart": {
-      "kind": "widget",
-      "reason": "Verifies notification center time test through Flutter widgets and host fixtures.",
-      "sources": [
-        "test/components/notification_center/notification_center_time_test.dart"
-      ]
-    },
-    "test/components/scan/scan_ticket_identity_test.dart": {
-      "kind": "widget",
-      "reason": "Verifies scan ticket identity test through Flutter widgets and host fixtures.",
-      "sources": [
-        "test/components/scan/scan_ticket_identity_test.dart"
-      ]
-    },
-    "test/components/eshop/ticket_batch_navigation_test.dart": {
-      "kind": "widget",
-      "reason": "Verifies ticket batch navigation test through Flutter widgets and host fixtures.",
-      "sources": [
-        "test/components/eshop/ticket_batch_navigation_test.dart"
-      ]
-    },
-    "test/components/eshop/order_email_navigation_test.dart": {
-      "kind": "widget",
-      "reason": "Verifies order email navigation test through Flutter widgets and host fixtures.",
-      "sources": [
-        "test/components/eshop/order_email_navigation_test.dart"
-      ]
-    },
-    "test/components/eshop/order_email_repair_design_test.dart": {
-      "kind": "widget",
-      "reason": "Verifies order email repair design test through Flutter widgets and host fixtures.",
-      "sources": [
-        "test/components/eshop/order_email_repair_design_test.dart"
       ]
     },
     "test/components/eshop/ticket_batch_columns_test.dart": {
@@ -938,32 +553,11 @@
         "test/components/eshop/ticket_batch_columns_test.dart"
       ]
     },
-    "test/components/eshop/order_email_repair_dialog_test.dart": {
-      "kind": "widget",
-      "reason": "Verifies order email repair dialog test through Flutter widgets and host fixtures.",
-      "sources": [
-        "test/components/eshop/order_email_repair_dialog_test.dart"
-      ]
-    },
-    "test/components/blueprint/ticket_cancellation_commands_test.dart": {
-      "kind": "adapter",
-      "reason": "Verifies ticket cancellation commands test through application model and adapter contracts.",
-      "sources": [
-        "test/components/blueprint/ticket_cancellation_commands_test.dart"
-      ]
-    },
     "test/components/blueprint/blueprint_host_margin_pan_test.dart": {
       "kind": "adapter",
       "reason": "Verifies blueprint host margin pan test through application model and adapter contracts.",
       "sources": [
         "test/components/blueprint/blueprint_host_margin_pan_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_preview_performance_test.dart": {
-      "kind": "environment",
-      "reason": "Measures actual Flutter preview compilation and rebuild behavior.",
-      "sources": [
-        "test/components/occasion/occasion_setup_preview_performance_test.dart"
       ]
     },
     "test/components/occasion/occasion_setup_blueprint_open_test.dart": {
@@ -973,13 +567,6 @@
         "test/components/occasion/occasion_setup_blueprint_open_test.dart"
       ]
     },
-    "test/services/help_destination_test.dart": {
-      "kind": "environment",
-      "reason": "Exercises Flutter routing and configured help destinations.",
-      "sources": [
-        "test/services/help_destination_test.dart"
-      ]
-    },
     "test/components/navigation/help_occasion_picker_test.dart": {
       "kind": "environment",
       "reason": "Checks occasion-specific help navigation with the public widget environment.",
@@ -987,81 +574,11 @@
         "test/components/navigation/help_occasion_picker_test.dart"
       ]
     },
-    "test/components/navigation/help_organization_picker_test.dart": {
-      "kind": "environment",
-      "reason": "Checks organization help destination selection and capability-scoped context.",
-      "sources": [
-        "test/components/navigation/help_organization_picker_test.dart"
-      ]
-    },
-    "test/components/navigation/organizer_creation_entry_test.dart": {
-      "kind": "environment",
-      "reason": "Checks canonical organizer creation entry and retained route behavior.",
-      "sources": [
-        "test/components/navigation/organizer_creation_entry_test.dart"
-      ]
-    },
-    "test/services/organizer_destination_test.dart": {
-      "kind": "environment",
-      "reason": "Checks configured organizer destination routing in the Flutter environment.",
-      "sources": [
-        "test/services/organizer_destination_test.dart"
-      ]
-    },
-    "test/components/blueprint/seating_transition_test.dart": {
-      "kind": "widget",
-      "reason": "Production seating worklist, mapping review dialogs, responsive layout and draft/recovery interaction require Flutter rendering.",
-      "sources": [
-        "test/components/blueprint/seating_transition_test.dart"
-      ]
-    },
     "test/components/fonts/ticket_font_recovery_test.dart": {
       "kind": "environment",
       "reason": "Font loader retries and actual rendered blueprint draft text require Flutter font loading and widget bindings.",
       "sources": [
         "test/components/fonts/ticket_font_recovery_test.dart"
-      ]
-    },
-    "test/components/forms/appearance_color_controls_test.dart": {
-      "kind": "environment",
-      "reason": "Application appearance color controls use translated catalogs, Material widgets and widget environment fixtures.",
-      "sources": [
-        "test/components/forms/appearance_color_controls_test.dart"
-      ]
-    },
-    "test/components/forms/appearance_palettes_test.dart": {
-      "kind": "adapter",
-      "reason": "Flutter application palette definitions and setup drafts are checked against the six shipped localization catalogs.",
-      "sources": [
-        "test/components/forms/appearance_palettes_test.dart"
-      ]
-    },
-    "test/components/forms/form_creation_visibility_test.dart": {
-      "kind": "adapter",
-      "reason": "Application form creation models and feature visibility use Flutter application dependencies.",
-      "sources": [
-        "test/components/forms/form_creation_visibility_test.dart"
-      ]
-    },
-    "test/components/forms/form_design_compatibility_test.dart": {
-      "kind": "adapter",
-      "reason": "Application form design serialization retains legacy Material color settings through its Flutter model boundary.",
-      "sources": [
-        "test/components/forms/form_design_compatibility_test.dart"
-      ]
-    },
-    "test/components/forms/primary_product_guard_test.dart": {
-      "kind": "widget",
-      "reason": "Real product editor widgets must protect the primary admission field and product controls.",
-      "sources": [
-        "test/components/forms/primary_product_guard_test.dart"
-      ]
-    },
-    "test/components/navigation/reservations_capability_tabs_test.dart": {
-      "kind": "environment",
-      "reason": "Rights context fixtures exercise actual application reservation tab composition and initialized event timezone data.",
-      "sources": [
-        "test/components/navigation/reservations_capability_tabs_test.dart"
       ]
     },
     "test/components/notification_center/notification_batch_panel_test.dart": {
@@ -1078,32 +595,11 @@
         "test/components/notification_center/notification_center_bell_requests_test.dart"
       ]
     },
-    "test/components/occasion/breadcrumb_creation_choice_test.dart": {
-      "kind": "widget",
-      "reason": "Breadcrumb creation choices require actual navigation widgets, capabilities and dialog interaction.",
-      "sources": [
-        "test/components/occasion/breadcrumb_creation_choice_test.dart"
-      ]
-    },
-    "test/components/single_data_grid/data_grid_number_format_test.dart": {
-      "kind": "adapter",
-      "reason": "TrinaGrid and Flutter cell formatting adapters consume the portable number formatting policy.",
-      "sources": [
-        "test/components/single_data_grid/data_grid_number_format_test.dart"
-      ]
-    },
     "test/widgets/avatar_initial_test.dart": {
       "kind": "environment",
       "reason": "Avatar cap-height placement is verified with real font assets and dart:ui rendering.",
       "sources": [
         "test/widgets/avatar_initial_test.dart"
-      ]
-    },
-    "test/widgets/synced_adaptive_theme_test.dart": {
-      "kind": "widget",
-      "reason": "Mounted adaptive theme synchronization and system preference changes require Flutter widget lifecycle.",
-      "sources": [
-        "test/widgets/synced_adaptive_theme_test.dart"
       ]
     },
     "test/browser/browser_preference_store_test.dart": {
@@ -1120,125 +616,6 @@
         "test/components/occasion/setup_font_catalog_test.dart"
       ]
     },
-    "test/components/email_delivery/email_delivery_legend_timeline_test.dart": {
-      "kind": "environment",
-      "reason": "Localized email audit timeline and real icon tooltip rendering use Material delegates, bundled fonts and optional rendered captures.",
-      "sources": [
-        "test/components/email_delivery/email_delivery_legend_timeline_test.dart"
-      ]
-    },
-    "test/components/forms/sale_opening_notifications_test.dart": {
-      "kind": "environment",
-      "reason": "Public opt-in and editor controls exercise localized widgets, parent drafts, rights/context singletons and asynchronous subscription state.",
-      "sources": [
-        "test/components/forms/sale_opening_notifications_test.dart"
-      ]
-    },
-    "test/components/forms/presale_content_test.dart": {
-      "kind": "environment",
-      "reason": "Presale rich-editor history, embedded blocks, locale/theme inheritance and public preview mounting require the real Flutter editing and rendering environment.",
-      "sources": [
-        "test/components/forms/presale_content_test.dart"
-      ]
-    },
-    "test/components/forms/form_appearance_theme_test.dart": {
-      "kind": "widget",
-      "reason": "Theme propagation, system brightness and selected-control contrast are tested through mounted Material widgets.",
-      "sources": [
-        "test/components/forms/form_appearance_theme_test.dart"
-      ]
-    },
-    "test/components/forms/form_opening_timer_test.dart": {
-      "kind": "widget",
-      "reason": "Browser-safe long timers and cancellation use the widget tester clock to verify bounded waits and one reload at the exact target.",
-      "sources": [
-        "test/components/forms/form_opening_timer_test.dart"
-      ]
-    },
-    "test/components/notification_center/notification_center_prepared_test.dart": {
-      "kind": "adapter",
-      "reason": "The Flutter ChangeNotifier controller owns prepared RPC requests, foreground timers, retained private rows and view-lease lifetimes.",
-      "sources": [
-        "test/components/notification_center/notification_center_prepared_test.dart"
-      ]
-    },
-    "test/components/bank_accounts/bank_failure_diagnostic_test.dart": {
-      "kind": "widget",
-      "reason": "Recovery/grace diagnostics and readonly bank controls render real Material dialogs and must retain the last failure.",
-      "sources": [
-        "test/components/bank_accounts/bank_failure_diagnostic_test.dart"
-      ]
-    },
-    "test/components/navigation/ticketing_catalog_boundary_test.dart": {
-      "kind": "environment",
-      "reason": "Generated AutoRoute navigation, app configuration and catalog back-stack isolation require the mounted router and platform localization bridge.",
-      "sources": [
-        "test/components/navigation/ticketing_catalog_boundary_test.dart"
-      ]
-    },
-    "test/components/eshop/async_download_button_test.dart": {
-      "kind": "environment",
-      "reason": "Localized download buttons exercise single-flight async actions, disposal and retry through real focusable Material controls.",
-      "sources": [
-        "test/components/eshop/async_download_button_test.dart"
-      ]
-    },
-    "test/components/eshop/order_payment_summary_test.dart": {
-      "kind": "environment",
-      "reason": "Localized payment summaries render partial debt, refunds, cancelled balances and exact server deadlines under the application theme.",
-      "sources": [
-        "test/components/eshop/order_payment_summary_test.dart"
-      ]
-    },
-    "test/components/eshop/order_detail_answers_test.dart": {
-      "kind": "environment",
-      "reason": "The configured answer projection is rendered with form metadata and Flutter localization delegates.",
-      "sources": [
-        "test/components/eshop/order_detail_answers_test.dart"
-      ]
-    },
-    "test/components/eshop/order_detail_split_pane_test.dart": {
-      "kind": "environment",
-      "reason": "Responsive overlays, modal stacking, persisted divider width and retained widget state require Flutter layout and pointer dispatch.",
-      "sources": [
-        "test/components/eshop/order_detail_split_pane_test.dart"
-      ]
-    },
-    "test/components/eshop/order_detail_viewer_test.dart": {
-      "kind": "widget",
-      "reason": "Public venue viewer focus, camera limits, hit testing, wheel gestures and repaint-only emphasis require the rendering engine.",
-      "sources": [
-        "test/components/eshop/order_detail_viewer_test.dart"
-      ]
-    },
-    "test/components/eshop/order_detail_save_changes_test.dart": {
-      "kind": "adapter",
-      "reason": "Shared detail/contact ChangeNotifiers bind RightsService context, durable command recovery and ordered async draft saves.",
-      "sources": [
-        "test/components/eshop/order_detail_save_changes_test.dart"
-      ]
-    },
-    "test/components/eshop/order_detail_scroll_storage_test.dart": {
-      "kind": "environment",
-      "reason": "Retained contact expansion, scroll-storage namespaces and identity rebinding exercise real widget lifecycle and localized Material fields.",
-      "sources": [
-        "test/components/eshop/order_detail_scroll_storage_test.dart"
-      ]
-    },
-    "test/components/eshop/order_places_overview_test.dart": {
-      "kind": "environment",
-      "reason": "Localized saved-plan controls combine RightsService context, venue rendering, reduced motion and bounded camera focus.",
-      "sources": [
-        "test/components/eshop/order_places_overview_test.dart"
-      ]
-    },
-    "test/components/eshop/order_customer_payment_details_test.dart": {
-      "kind": "environment",
-      "reason": "Locale-aware selectable bank instructions, narrow wrapping, large text and copy selection require Flutter text layout and gestures.",
-      "sources": [
-        "test/components/eshop/order_customer_payment_details_test.dart"
-      ]
-    },
     "test/components/eshop/order_detail_presentation_revision_test.dart": {
       "kind": "environment",
       "reason": "The full localized order detail composes rights, drafts, responsive tabs, modal guards and payment/ticket presentation.",
@@ -1246,39 +623,256 @@
         "test/components/eshop/order_detail_presentation_revision_test.dart"
       ]
     },
-    "test/components/eshop/order_grid_activation_revision_test.dart": {
+    "test/components/eshop/eshop_unit_test.dart": {
       "kind": "environment",
-      "reason": "TrinaGrid row activation, clipboard gestures and modal-versus-cell Escape handling require the real grid and focus tree.",
+      "reason": "Compatible eshop suites share one engine with scoped setup/teardown. Keep root Supabase and font-loader suites isolated; verify normal and reverse registration order.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
       "sources": [
-        "test/components/eshop/order_grid_activation_revision_test.dart"
+        "test/components/eshop/eshop_unit_test.dart",
+        "test/components/eshop/order_blueprint_cache_cases.dart",
+        "test/components/eshop/order_detail_save_changes_cases.dart",
+        "test/components/eshop/order_email_repair_dialog_cases.dart",
+        "test/components/eshop/order_detail_scroll_storage_cases.dart",
+        "test/components/eshop/ticket_batch_commands_cases.dart"
       ]
     },
-    "test/components/eshop/order_blueprint_cache_test.dart": {
-      "kind": "adapter",
-      "reason": "Drawing-cache adapters are exercised through the Flutter detail controller, RightsService context invalidation and immutable public venue documents.",
+    "test/components/eshop/eshop_english_widget_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible eshop suites share one engine with scoped setup/teardown. Keep root Supabase and font-loader suites isolated; verify normal and reverse registration order.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "en",
+        "rootSupabase": "forbidden"
+      },
       "sources": [
-        "test/components/eshop/order_blueprint_cache_test.dart"
+        "test/components/eshop/eshop_english_widget_test.dart",
+        "test/components/eshop/async_download_button_cases.dart",
+        "test/components/eshop/order_detail_answers_cases.dart"
       ]
     },
-    "test/components/occasion/occasion_setup_feedback_test.dart": {
+    "test/components/eshop/eshop_czech_widget_test.dart": {
       "kind": "environment",
-      "reason": "Localized setup controls, collaborator commits, appearance picking and retained venue previews require Material delegates and rendering resources.",
+      "reason": "Compatible eshop suites share one engine with scoped setup/teardown. Keep root Supabase and font-loader suites isolated; verify normal and reverse registration order.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "cs",
+        "rootSupabase": "forbidden"
+      },
       "sources": [
-        "test/components/occasion/occasion_setup_feedback_test.dart"
+        "test/components/eshop/eshop_czech_widget_test.dart",
+        "test/components/eshop/order_payment_summary_cases.dart",
+        "test/components/eshop/order_history_seat_labels_cases.dart",
+        "test/components/eshop/ticket_batch_navigation_cases.dart"
       ]
     },
-    "test/components/blueprint/blueprint_focus_navigation_test.dart": {
+    "test/sessions/extended_default_test.dart": {
       "kind": "environment",
-      "reason": "Blueprint route focus is verified against the real editor camera, public document API and localized navigation fixture.",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
       "sources": [
-        "test/components/blueprint/blueprint_focus_navigation_test.dart"
+        "test/sessions/extended_default_test.dart",
+        "test/components/blueprint/blueprint_editor_feedback_cases.dart",
+        "test/components/blueprint/blueprint_table_seating_cases.dart",
+        "test/components/blueprint/seat_order_commands_cases.dart",
+        "test/components/blueprint/ticket_cancellation_commands_cases.dart",
+        "test/components/dialogs/responsive_search_empty_cases.dart",
+        "test/components/eshop/order_email_navigation_cases.dart",
+        "test/components/eshop/ticket_batch_print_downloads_cases.dart",
+        "test/components/forms/form_appearance_theme_cases.dart",
+        "test/components/forms/form_opening_timer_cases.dart",
+        "test/components/forms/form_total_price_cases.dart",
+        "test/components/forms/primary_product_guard_cases.dart",
+        "test/components/mcp/mcp_connection_cases.dart",
+        "test/components/navigation/help_organization_picker_cases.dart",
+        "test/components/navigation/organizer_creation_entry_cases.dart",
+        "test/components/navigation/reservations_capability_tabs_cases.dart",
+        "test/components/navigation/ticketing_catalog_boundary_cases.dart",
+        "test/components/notification_center/notification_center_prepared_cases.dart",
+        "test/components/occasion/occasion_setup_email_document_cases.dart",
+        "test/components/occasion/occasion_setup_ticket_loading_cases.dart",
+        "test/components/single_data_grid/data_grid_number_format_cases.dart",
+        "test/components/stripe_payments/canonical_quote_refresh_cases.dart",
+        "test/components/stripe_payments/hidden_feature_cases.dart",
+        "test/components/stripe_payments/stripe_feature_cases.dart",
+        "test/components/stripe_payments/stripe_payment_link_cases.dart",
+        "test/components/ticket_layout/ticket_text_autofit_cases.dart",
+        "test/components/unit/app_landing_card_cases.dart",
+        "test/components/users/occasion_team_invitation_cases.dart",
+        "test/data_services/client_command_identity_cases.dart",
+        "test/services/batch_progress_dialog_cases.dart",
+        "test/services/deferred_external_url_cases.dart",
+        "test/services/help_destination_cases.dart",
+        "test/services/organizer_destination_cases.dart",
+        "test/services/payment_deadline_cases.dart",
+        "test/startup/public_occasion_scope_cases.dart",
+        "test/widgets/synced_adaptive_theme_cases.dart"
       ]
     },
-    "test/services/payment_deadline_test.dart": {
+    "test/sessions/extended_english_test.dart": {
       "kind": "environment",
-      "reason": "Deadline presentation composes Flutter locale/date adapters, embedded timezone initialization and the restorable application clock with Intl relative grammar.",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "en",
+        "rootSupabase": "forbidden"
+      },
       "sources": [
-        "test/services/payment_deadline_test.dart"
+        "test/sessions/extended_english_test.dart",
+        "test/components/bank_accounts/bank_failure_diagnostic_cases.dart",
+        "test/components/bank_accounts/connection_refresh_cases.dart",
+        "test/components/blueprint/blueprint_focus_navigation_cases.dart",
+        "test/components/blueprint/seating_cases.dart",
+        "test/components/eshop/order_detail_split_pane_cases.dart",
+        "test/components/eshop/order_grid_activation_revision_cases.dart",
+        "test/components/forms/form_creation_visibility_cases.dart",
+        "test/components/forms/organization_identity_cases.dart",
+        "test/components/forms/verification_review_cases.dart"
+      ]
+    },
+    "test/sessions/extended_czech_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "cs",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_czech_test.dart",
+        "test/components/blueprint/blueprint_editor_file_drop_cases.dart",
+        "test/components/blueprint/blueprint_legend_cases.dart",
+        "test/components/blueprint/blueprint_mobile_pan_cases.dart",
+        "test/components/eshop/ticket_batch_presentation_cases.dart",
+        "test/components/forms/appearance_color_controls_cases.dart",
+        "test/components/forms/email_domain_suffix_cases.dart",
+        "test/components/forms/form_validation_cases.dart",
+        "test/components/forms/presale_content_cases.dart",
+        "test/components/forms/sale_opening_notifications_cases.dart",
+        "test/components/notification_center/notification_center_time_cases.dart",
+        "test/components/occasion/breadcrumb_creation_choice_cases.dart",
+        "test/components/scan/scan_ticket_identity_cases.dart",
+        "test/components/shared/editor_file_drop_region_cases.dart",
+        "test/components/stripe_payments/admin_payment_precision_cases.dart",
+        "test/components/stripe_payments/card_refund_decision_cases.dart",
+        "test/components/stripe_payments/form_payment_settings_cases.dart",
+        "test/components/stripe_payments/payment_access_cases.dart",
+        "test/components/stripe_payments/payment_method_cards_cases.dart",
+        "test/components/stripe_payments/payment_method_preview_cases.dart",
+        "test/components/stripe_payments/stripe_connect_callback_cases.dart",
+        "test/components/stripe_payments/stripe_products_dialog_cases.dart",
+        "test/components/stripe_payments/unit_card_payments_cases.dart",
+        "test/components/unit/unit_measurement_settings_cases.dart",
+        "test/services/locale_date_time_cases.dart"
+      ]
+    },
+    "test/sessions/extended_futura_czech_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "cs",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_futura_czech_test.dart",
+        "test/components/email_delivery/email_delivery_legend_timeline_cases.dart",
+        "test/components/eshop/order_customer_payment_details_cases.dart",
+        "test/components/eshop/order_email_repair_design_cases.dart",
+        "test/components/eshop/order_places_overview_cases.dart",
+        "test/components/eshop/ticket_batch_detail_header_cases.dart"
+      ]
+    },
+    "test/sessions/extended_futura_book_czech_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "cs",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_futura_book_czech_test.dart",
+        "test/components/occasion/occasion_setup_feedback_cases.dart",
+        "test/components/occasion/occasion_setup_preview_performance_cases.dart",
+        "test/components/occasion/ticket_email_delivery_cases.dart"
+      ]
+    },
+    "test/sessions/extended_palette_czech_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "cs",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_palette_czech_test.dart",
+        "test/components/forms/form_design_compatibility_cases.dart",
+        "test/components/occasion/occasion_setup_appearance_panel_cases.dart"
+      ]
+    },
+    "test/sessions/extended_catalog_default_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_catalog_default_test.dart",
+        "test/components/forms/appearance_palettes_cases.dart",
+        "test/components/occasion/occasion_setup_appearance_cases.dart"
+      ]
+    },
+    "test/sessions/extended_catalog_czech_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "cs",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_catalog_czech_test.dart",
+        "test/components/occasion/occasion_setup_ticket_gallery_cases.dart",
+        "test/components/occasion/occasion_setup_ticket_matrix_cases.dart"
+      ]
+    },
+    "test/sessions/extended_futura_book_default_test.dart": {
+      "kind": "environment",
+      "reason": "Compatible localized application suites share the standard engine and retain scoped lifecycle hooks. Font groups have matching installed families; root clients, failure-injected font caches and incompatible bindings remain isolated. Verify both group orders.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "default-uninitialized",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/extended_futura_book_default_test.dart",
+        "test/components/eshop/order_detail_viewer_cases.dart",
+        "test/components/occasion/occasion_setup_story_shell_cases.dart"
+      ]
+    },
+    "test/data_services/form_editor_rpc_test.dart": {
+      "kind": "environment",
+      "reason": "Actual DbForms RPC transport and root Supabase singleton integration for editor and public reader contracts.",
+      "sources": [
+        "test/data_services/form_editor_rpc_test.dart"
+      ]
+    },
+    "test/components/unit/unit_settings_save_test.dart": {
+      "kind": "environment",
+      "reason": "Actual organizer settings screen, root Supabase command transport and current rights require an isolated root client lifecycle.",
+      "sources": [
+        "test/components/unit/unit_settings_save_test.dart"
       ]
     }
   }

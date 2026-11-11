@@ -381,3 +381,12 @@ verify_jwt = false
 
 [functions.payment-reconcile]
 verify_jwt = false
+
+[functions.ticket-wallet]
+verify_jwt = false
+
+[functions.sync-ticket-wallet]
+verify_jwt = false
+
+[functions.payment-operation]
+verify_jwt = false

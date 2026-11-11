@@ -2,7 +2,7 @@ import test from 'node:test';
 import {readHistoricalSql} from '../../../automation/lib/historical_sql.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {readFileSync} from 'node:fs';
+import {readFileSync} from '../../../automation/lib/migration_inputs.mjs';
 import {readSource} from '../../../automation/lib/historical_inputs.mjs';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');
@@ -60,7 +60,7 @@ try{
  });
  await test('NULL permission result fails closed',async()=>{
   await q('SAVEPOINT null_permission');
-  await q('CREATE OR REPLACE FUNCTION public.get_is_editor_order_on_occasion(oc bigint) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$ SELECT NULL::boolean $$');
+  await q('CREATE OR REPLACE FUNCTION public.can_write_orders(p_occasion bigint) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$ SELECT NULL::boolean $$');
   await denied(()=>role('authenticated',ids.actor,()=>assign([change()])));
   await q('ROLLBACK TO SAVEPOINT null_permission');
  });
@@ -91,12 +91,18 @@ try{
   assert.equal((await one('SELECT resource FROM eshop.spots WHERE id=$1',[ids.spot[0]])).resource,null);
  });
  await test('every batch resource, spot, context and slot checked; mixed batch rolls back',async()=>{
-  for(const changes of [[change(),change(1)],[change(0,{new_spot_id:ids.spot[1]})],[change(0,{old_spot_id:ids.spot[1]})],[change(0,{inventory_context_id:ids.ctx[1]})],[change(0,{inventory_context_id:null})],[change(0,{resource_slot_id:ids.slot[1]})],[change(0,{resource_id:null})]]){
-   await denied(()=>role('authenticated',ids.actor,()=>assign(changes)));
+  // Current inventory contract uses 22023 for malformed context/slot input;
+  // authorization denial remains 42501. Null context is an optional hint.
+  for(const [changes,code] of [[[change(),change(1)],'42501'],[[change(0,{new_spot_id:ids.spot[1]})],'42501'],[[change(0,{old_spot_id:ids.spot[1]})],'42501'],[[change(0,{inventory_context_id:ids.ctx[1]})],'22023'],[[change(0,{inventory_context_id:-1})],'22023'],[[change(0,{resource_slot_id:ids.slot[1]})],'22023'],[[change(0,{resource_id:null})],'42501']]){
+   await denied(()=>role('authenticated',ids.actor,()=>assign(changes)),code);
    assert.equal((await one('SELECT count(*)::int n FROM eshop.spots WHERE id=ANY($1) AND resource IS NOT NULL',[ids.spot])).n,0);
   }
  });
  await test('authorized assignment and unassignment preserve scope',async()=>{
+  await q('SAVEPOINT optional_context');
+  await role('authenticated',ids.actor,()=>assign([change(0,{inventory_context_id:null})]));
+  assert.equal((await one('SELECT resource FROM eshop.spots WHERE id=$1',[ids.spot[0]])).resource,ids.res[0]);
+  await q('ROLLBACK TO SAVEPOINT optional_context');
   await role('authenticated',ids.actor,()=>assign([change()]));
   assert.equal((await one('SELECT resource FROM eshop.spots WHERE id=$1',[ids.spot[0]])).resource,ids.res[0]);
   await role('authenticated',ids.actor,()=>assign([change(0,{old_spot_id:ids.spot[0],new_spot_id:null})]));
@@ -104,7 +110,7 @@ try{
  });
  await test('capacity rejection rolls back preceding writes',async()=>{
   const extra=(await one('INSERT INTO eshop.spots(occasion,inventory_context) VALUES($1,$2) RETURNING id',[ids.occ[0],ids.ctx[0]])).id;
-  await denied(()=>role('authenticated',ids.actor,()=>assign([change(),change(0,{new_spot_id:extra})])),'23514');
+  await denied(()=>role('authenticated',ids.actor,()=>assign([change(),change(0,{new_spot_id:extra})])),'55000');
   assert.equal((await one('SELECT count(*)::int n FROM eshop.spots WHERE resource=$1',[ids.res[0]])).n,0);
  });
  await test('sync client CRUD denied for every table, service upserts work',async()=>{

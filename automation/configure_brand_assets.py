@@ -80,4 +80,5 @@ for name in ('favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
 for target, data in outputs.items():
     path = root / target
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
+    if not path.exists() or path.read_bytes() != data:
+        path.write_bytes(data)

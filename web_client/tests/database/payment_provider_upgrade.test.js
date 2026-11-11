@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import fs from '../../../automation/lib/migration_inputs.mjs';
 import path from 'node:path';
 import {withPaymentUpgradeFixture} from './payment_upgrade_fixture.js';
 const root=path.resolve(import.meta.dirname,'../../..');

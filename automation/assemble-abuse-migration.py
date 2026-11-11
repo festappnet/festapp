@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify immutable admission history and its canonical forward corrections."""
+import migration_inputs
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -16,13 +17,13 @@ files = ['abuse/schema.sql', 'abuse/seeds.sql', 'abuse/policy.sql', 'abuse/budge
 # The installed admission migration is immutable. Later corrections supersede
 # selected function bodies without rebuilding already applied history.
 installed = root / 'supabase/migrations/20261016100000_abuse_admission.sql'
-historical = installed.read_text()
-if hashlib.sha256(installed.read_bytes()).hexdigest() != '5ba74531a242669dd0a0b846af9648a6e63505a1b16494ec0b24b564d9a59f22':
+historical = migration_inputs.read_text(installed)
+if hashlib.sha256(migration_inputs.read_bytes(installed)).hexdigest() != '5ba74531a242669dd0a0b846af9648a6e63505a1b16494ec0b24b564d9a59f22':
     raise SystemExit('Installed abuse migration was changed')
 # Index the applied forward definitions in migration order. Verify changed
 # canonical functions against their actual forward migrations without rebuilding
 # or weakening the immutable installed migration.
-forward_sql = '\n'.join(p.read_text() for p in sorted((root / 'supabase/migrations').glob('*.sql')) if p.name > installed.name)
+forward_sql = '\n'.join(migration_inputs.read_text(p) for p in sorted(migration_inputs.migration_paths((root / 'supabase/migrations').parent.parent)) if p.name > installed.name)
 def normalized(value):
     return '\n'.join(line.rstrip() for line in value.splitlines()).strip()
 
@@ -30,7 +31,7 @@ forward_definitions = {signature: normalized(body) for signature, body in defini
 
 def canonical_source(name):
     current_name = 'abuse/image_records.sql' if name == 'abuse/storage.sql' else name
-    source = (root / 'database/functions' / current_name).read_text()
+    source = migration_inputs.read_text(root / 'database/functions' / current_name)
     marker = '-- Source: database/functions/' + name + '\n'
     original = historical.split(marker, 1)[1].split('\n-- Source:', 1)[0].split('\nUPDATE eshop.spots SET secret_expiration_time=', 1)[0].rstrip()
     if normalized(source) == normalized(original):
@@ -53,5 +54,5 @@ text = '\n'.join(line.rstrip() for line in text.splitlines()) + '\n'
 output = root / 'supabase/migrations/20261016100000_abuse_admission.sql'
 # Section-ending blank lines have varied in source files; the installed bytes
 # remain protected by the exact SHA above and function bodies are checked above.
-if [part.rstrip() for part in output.read_text().split('\n-- Source:')] != [part.rstrip() for part in text.split('\n-- Source:')]:
+if [part.rstrip() for part in migration_inputs.read_text(output).split('\n-- Source:')] != [part.rstrip() for part in text.split('\n-- Source:')]:
     raise SystemExit('Abuse source drift: add a canonical forward correction; do not rewrite installed history')

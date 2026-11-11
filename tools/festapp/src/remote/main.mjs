@@ -7,6 +7,7 @@ import { privateRoot } from '../context/profile.mjs';
 import { safeError, check } from '../errors.mjs';
 import { openRemoteStorage } from './storage.mjs';
 import { createRemoteApp } from './server.mjs';
+import { inspectorConfiguration } from './inspector.mjs';
 
 try {
     const args = process.argv.slice(2);
@@ -22,6 +23,9 @@ try {
         const f = await open(args[2], 'wx', 0o600);
         try { await f.writeFile(JSON.stringify(secrets)); await f.sync(); } finally { await f.close(); }
         process.stdout.write('{"ok":true,"secretsCreated":true}\n');
+    } else if (args[0] === 'client' && args[1] === 'inspector' && args.length === 5 && args[3] === '--origin') {
+        const config = parseRemoteConfig(JSON.parse(await readFile(args[2], 'utf8')));
+        process.stdout.write(JSON.stringify(inspectorConfiguration(config, args[4]), null, 2) + '\n');
     } else if (args[0] === 'check' && args.length === 2) {
         const c = parseRemoteConfig(JSON.parse(await readFile(args[1], 'utf8')));
         process.stdout.write(JSON.stringify({ ok: true, issuer: c.issuer, resource: c.resource,

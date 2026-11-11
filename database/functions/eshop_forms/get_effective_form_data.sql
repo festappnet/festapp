@@ -2,10 +2,8 @@
 CREATE OR REPLACE FUNCTION public.effective_form_metadata_internal(p_form_data jsonb,p_unit_data jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT (public.normalize_form_metadata_internal(p_form_data)-'analytics') || jsonb_build_object(
-  'communication_tone',CASE
-   WHEN p_form_data->>'communication_tone' IN ('formal','informal') THEN p_form_data->>'communication_tone'
-   WHEN p_unit_data->>'communication_tone' IN ('formal','informal') THEN p_unit_data->>'communication_tone'
-   ELSE 'formal' END);
+  'communication_tone',public.resolve_communication_tone(
+   p_form_data->>'communication_tone',p_unit_data->>'communication_tone'));
 $$;
 REVOKE ALL ON FUNCTION public.effective_form_metadata_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.effective_form_metadata_internal(jsonb,jsonb) TO service_role;

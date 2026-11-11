@@ -1,0 +1,66 @@
+{
+  "state": "CANDIDATE_VERIFIED_PENDING_CANONICAL_PUBLICATION",
+  "prepared_at_utc": "2026-11-09",
+  "scope": "WordPress.org vstupenky-online 1.0.6 only",
+  "source_base_sha": "f4347936d295b3c31bdc28732f3852fca392dce8",
+  "artifact": {
+    "path": "dist/vstupenky-online-1.0.6.zip",
+    "sha256": "f1460c9f64a9891203cdc695dbb1cb6aefd9031360e52ee56d09a934d07efc76",
+    "files": 12,
+    "package_inputs": "evidence/vstupenky-online-package-inputs.json",
+    "offline_stage": "dist/wordpress-org-draft",
+    "trunk_files": 12,
+    "tag_files": 12,
+    "catalog_assets": 9,
+    "previous_tag_1_0_5": "unchanged; candidate uses new tag 1.0.6"
+  },
+  "checks": {
+    "package_reproduction": "PASS; canonical selected Czech package hash matches the staged ZIP",
+    "real_wordpress_contract": [
+      {"wordpress": "7.1.3", "php": "8.5.12", "assertions": 47, "status": "PASS"},
+      {"wordpress": "6.6", "php": "7.4.33", "assertions": 47, "status": "PASS"}
+    ],
+    "iframe_color_scheme_markup": [
+      {"wordpress": "7.1.3", "php": "8.5.12", "status": "PASS"},
+      {"wordpress": "6.6", "php": "7.4.33", "status": "PASS"}
+    ],
+    "wpcs": {"version": "3.4.1", "php_files": 3, "errors": 0, "warnings": 0, "status": "PASS"},
+    "php_syntax": {"files": 3, "engines": ["PHP 8.5.12", "PHP 7.4.33"], "errors": 0, "status": "PASS"},
+    "plugin_check": {
+      "version": "2.1.0",
+      "engines": ["WordPress 7.1.3/PHP 8.5.12", "WordPress 6.6/PHP 7.4.33"],
+      "errors_per_engine": 0,
+      "warnings_per_engine": 1,
+      "known_warning": "Discouraged load_plugin_textdomain; retained for bundled translations in standalone ZIP installs",
+      "status": "PASS"
+    },
+    "wix_checkout_compatibility_mirror": {"status": "PASS", "receipt": "~/Library/Caches/festapp-ci/latest.json"}
+  },
+  "production_service": {
+    "source_sha": "f4347936d295b3c31bdc28732f3852fca392dce8",
+    "tenant_overlay_sha": "8436fff3afb447d23b8ff2cb7bc00e4cfff8443d",
+    "version": "0.20.537+1048",
+    "deployment_id_url": "https://dd961b7e.vstupenkyonline.pages.dev",
+    "coherent_live_probes": 3,
+    "exact_main_ci_jobs": 8,
+    "live_probe_output_sha256": "5af5907db534e840f5c8d527f89aa8e81e016f91807fb7b754d297247fd5310e",
+    "central_cms_bridge_asset_sha256": "2f5724174a9b2d146f69bfea8d474998beef05921080ef9facc51e7a0516d890",
+    "central_cms_bridge_included_in_deploy": true,
+    "private_deployment_receipt": {
+      "path": "/Users/miakh/source/festapp/.private/vstupenky-online-embed-release-20261109/deployment-receipt.json",
+      "sha256": "028e86637b9ab1b75511f53ba9f635a9d75408510218035525c2a99662acd176",
+      "mode": "0600"
+    },
+    "status": "LIVE; deployment receipt readback verified"
+  },
+  "remaining_external_gates": [
+    "merge the version-correction source through the required protected-branch pull request",
+    "publish the version-matched GitHub 1.0.6 ZIP",
+    "publish WordPress.org trunk and new tag 1.0.6, then verify public readbacks"
+  ],
+  "previous_wordpress_tag_1_0_5": {
+    "svn_revision": 3788326,
+    "catalog_stable_version": "1.0.5",
+    "immutable": true
+  }
+}

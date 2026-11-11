@@ -156,8 +156,23 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
 
+CREATE OR REPLACE FUNCTION public.get_form_by_link(input_data jsonb)
+RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE f bigint; policy jsonb; method text;
+BEGIN
+ f:=public.resolve_form_link_internal(input_data->>'form_link');
+ IF f IS NOT NULL THEN
+  SELECT CASE WHEN data#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END INTO method FROM public.forms WHERE id=f;
+  policy:=public.resolve_form_payment_policy_internal(f,method);
+  PERFORM public.check_payment_client_capabilities_internal(policy,method,input_data->'client_capabilities');
+ END IF;
+ RETURN public.get_form_bundle_internal(f,false);
+EXCEPTION WHEN raise_exception THEN
+ IF left(SQLERRM,1)='{' THEN RETURN SQLERRM::json; END IF; RAISE;
+END $$;
 CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
-RETURNS json LANGUAGE sql SECURITY DEFINER
-SET search_path=public,extensions AS $$
- SELECT public.get_form_bundle_internal(public.resolve_form_link_internal(form_link),false);
+RETURNS json LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.get_form_by_link(jsonb_build_object('form_link',form_link));
 $$;
+REVOKE ALL ON FUNCTION public.get_form_by_link(jsonb),public.get_form_by_link(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_form_by_link(jsonb),public.get_form_by_link(text) TO anon,authenticated,service_role;

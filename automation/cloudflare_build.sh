@@ -430,6 +430,11 @@ async function routeRequest(request, env) {
       if (!ORGANIZERS_ENABLED) return notFound();
       return Response.redirect(new URL("/" + url.search, url).href, 308);
     }
+    if (path.startsWith("/organizers-assets/")) {
+      if (!ORGANIZERS_ENABLED) return notFound();
+      const response = await serveAsset(env, request, path);
+      return response.ok ? response : notFound();
+    }
     if (ORGANIZERS_ENABLED) {
       if (["/", "/events", "/events/"].includes(path) && url.searchParams.get("create") === "1") {
         const target = new URL("/login", url); target.search = url.search;
@@ -518,12 +523,13 @@ async function routeRequest(request, env) {
 
     // OAuth handoffs and account management must reach the correct adapter and never enter HTML caches.
     const paymentPrivateRoute = /^\/(?:app\/)?(?:stripe\/(?:connect\/callback|pay|return)|payments\/[a-z][a-z0-9_-]{0,31}\/(?:pay|return))$/.test(path);
-    if (path === "/login" || path === "/login/" || paymentPrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
+    const walletPrivateRoute = path === "/wallet" || path === "/wallet/";
+    if (path === "/login" || path === "/login/" || walletPrivateRoute || paymentPrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
       const entry = paymentPrivateRoute || path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
       // The browser retains callback parameters; the static asset fetch needs none.
       const assetUrl = new URL(request.url);
       assetUrl.search = "";
-      const res = await serveAsset(env, paymentPrivateRoute ? new Request(assetUrl) : request, entry);
+      const res = await serveAsset(env, paymentPrivateRoute || walletPrivateRoute ? new Request(assetUrl) : request, entry);
       const response = htmlResponse(res.body, res.headers, 200, entry === FLUTTER_ENTRY ? "flutter" : "webclient");
       response.headers.set("cache-control", "no-store");
       response.headers.set("referrer-policy", "no-referrer");
@@ -624,6 +630,11 @@ export default {
       }
     }
     const headers = new Headers(response.headers);
+    // Transient module failures must never survive as four-hour browser-cache
+    // entries and prevent a later, complete deployment from starting.
+    if (response.status >= 400 && !/\bno-store\b/i.test(headers.get('cache-control') || '')) {
+      headers.set('cache-control', 'no-store, max-age=0');
+    }
     // Prevent a zone-wide automatic beacon from bypassing the public-only owner.
     // Cloudflare documents no-transform as suppressing automatic RUM injection.
     const isHtml = headers.get('content-type')?.includes('text/html');
@@ -746,9 +757,11 @@ if count != 1:
 pathlib.Path(worker_path).write_text(source, encoding="utf-8")
 PY
 
-node automation/verify_web_build.mjs build/web \
+python3 automation/ci/telemetry.py release.artifact-checks node automation/verify_web_build.mjs build/web \
   "$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')" \
   automation/project.conf cloudflare
+
+python3 automation/release/build_receipt.py seal cloudflare
 
 echo "Build complete. Output in build/web"
 ls -la build/web | head -25

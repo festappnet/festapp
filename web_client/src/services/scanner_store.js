@@ -167,14 +167,19 @@ export class ScannerStore {
         const pointer = await this.get('preferences', `${partition}:active-snapshot`);
         return pointer ? (await this.get('snapshots', pointer.snapshot_id))?.manifest : null;
     }
-    async lookup(partition, symbol) {
+    async lookupTicket(partition, ticketId) { return this.lookup(partition,null,ticketId); }
+    async lookup(partition, symbol, ticketId=null) {
         const snapshot = await this.snapshot(partition);
         if (!snapshot || Date.parse(snapshot.expires_at) <= this.now()) throw new Error('offline_grant_expired');
-        const digest=await this.symbolDigest(symbol);let encrypted;
-        await this.transaction(['tickets'],'readonly',stores=>{stores.tickets.index('partition_symbol').get([partition,digest]).onsuccess=event=>{encrypted=event.target.result;};});
+        let encrypted;
+        if(ticketId!==null)await this.transaction(['tickets'],'readonly',stores=>{stores.tickets.get(`${partition}:${ticketId}`).onsuccess=event=>{encrypted=event.target.result;};});
+        else {
+            const digest=await this.symbolDigest(symbol);
+            await this.transaction(['tickets'],'readonly',stores=>{stores.tickets.index('partition_symbol').get([partition,digest]).onsuccess=event=>{encrypted=event.target.result;};});
+        }
         const row=await this.openTicket(encrypted);
         if (row?.ticket?.online_required) throw new Error('online_required');
-        if (!row || row.snapshot_id!==snapshot.snapshot_id || row.ticket.symbol!==symbol) throw new Error('offline_not_found');
+        if (!row || row.snapshot_id!==snapshot.snapshot_id || (ticketId!==null?row.ticket.ticket_id!==ticketId:row.ticket.symbol!==symbol)) throw new Error('offline_not_found');
         // Only a receipt for this exact snapshot generation can provide a used
         // overlay. A newer snapshot after admin unused has a different fingerprint.
         const accepted=(await this.list('outbox',partition)).find(op=>op.payload.ticket_id===row.ticket.ticket_id
