@@ -224,6 +224,10 @@ export class ScanPage extends Component {
     }
     render() {
         if (this.disposed || this.settingsPage) return;
+        // Keep the permission request and pending video.play attached. Recovery can
+        // refresh counters while the browser is still opening the camera.
+        if(this.cameraStarting && this.mode==='camera' && this.route.page==='scan' && this.renderedSession===this.row?.session){this.updateCameraState();return;}
+        if(this.cameraStarting){this.cameraStarting=null;this.input.stop();}
         const c = this.controller;
         const reviewing=Boolean(!this.searchOpen && c && c.state!=='ready');
         const navigationBusy=this.controllers().some(controller=>['persisting','looking_up','awaiting_server'].includes(controller.state));
@@ -241,7 +245,7 @@ export class ScanPage extends Component {
         <button data-prepare ${this.preparing || !this.store || !navigator.onLine ? 'disabled' : ''}>${tr('prepare')}</button><button data-retry>${tr('retry')}</button><p>${tr('logout_note')}</p><button data-lock>${tr('logout')}</button>
         <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && !reviewing?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.mode==='camera' && c?.state==='ready'?'camera-ready':''} ${reviewing ? 'has-result' : ''}"><section class="scan-input">
-        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}`}</section>
+        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><p class="scan-camera-hint">${tr('camera_aim')}</p><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}`}</section>
         ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button><button data-next-mode="manual" ${navigationBusy?'disabled':''}>${icon('manual')}${tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${!this.searchOpen && c ? this.resultHtml(c) : ''}</section></div>`;
         // Recovery updates the shell counters without recreating the review surface.
         // Keep native disclosure state, focused controls and the actual scrolling node.
@@ -365,7 +369,7 @@ export class ScanPage extends Component {
         one('[data-next]',()=>this.nextScan());
         one('[data-next-mode]',()=>this.setInputMode('manual'));
         one('[data-camera]',()=>this.startCamera());
-        one('[data-camera-stop]',()=>{this.input.stop();this.updateCameraState();});
+        one('[data-camera-stop]',()=>{this.cameraStarting=null;this.input.stop();this.render();});
         one('[data-switch]',async()=>{try{await this.input.switchCamera();this.updateCameraState();}catch(err){this.error=err.message;this.render();}});
         one('[data-torch]',()=>this.input.torch());
         one('[data-prepare]',()=>this.prepare());one('[data-retry]',()=>this.recover());
@@ -397,17 +401,32 @@ export class ScanPage extends Component {
     }
     updateCameraState() {
         const camera=this.host.querySelector('.scan-camera');
-        if(camera){camera.dataset.active=String(Boolean(this.input.stream));camera.dataset.paused=String(Boolean(this.input.paused));const hint=camera.querySelector('.scan-camera-hint');if(hint)hint.textContent=tr(this.input.paused?'camera_review':'camera_aim');}
+        if(camera){camera.dataset.active=String(Boolean(this.input.stream));camera.dataset.paused=String(Boolean(this.input.paused));const hint=this.host.querySelector('.scan-camera-hint');if(hint)hint.textContent=tr(this.input.paused?'camera_review':'camera_aim');}
+        const start=this.host.querySelector('[data-camera]');if(start){start.disabled=Boolean(this.cameraStarting);start.setAttribute('aria-busy',String(Boolean(this.cameraStarting)));}
         const torch=this.host.querySelector('[data-torch]');
         if(torch)torch.hidden=!this.input.stream?.getVideoTracks()[0]?.getCapabilities?.().torch;
         for(const selector of ['[data-switch]','[data-camera-stop]']) {
-            const button=this.host.querySelector(selector);if(button)button.disabled=!this.input.stream;
+            const button=this.host.querySelector(selector);if(button)button.disabled=!this.input.stream || (selector==='[data-switch]' && Boolean(this.cameraStarting));
         }
     }
-    async startCamera() {
+    startCamera() {
+        if(this.cameraStarting)return this.cameraStarting.promise;
         const video=this.host.querySelector('video');if(!video)return;
-        try { this.error=null;if(!this.input.stream)await this.input.start(video);this.cameraWasStarted=Boolean(this.input.stream);this.cameraUnavailable=false;this.input.paused=this.controller?.state!=='ready';this.updateCameraState(); }
-        catch(err) { this.cameraUnavailable=true;this.error=err.message;this.sound.play('error');this.render(); }
+        const attempt={};this.cameraStarting=attempt;this.error=null;
+        attempt.promise=(async()=>{
+            try {
+                if(!this.input.stream)await this.input.start(video);
+                if(this.cameraStarting!==attempt || this.disposed)return;
+                this.cameraWasStarted=Boolean(this.input.stream);this.cameraUnavailable=false;
+                this.input.paused=this.controller?.state!=='ready';
+            } catch(err) {
+                if(this.cameraStarting!==attempt || this.disposed)return;
+                this.cameraUnavailable=true;this.error=err.message;this.sound.play('error');
+            } finally {
+                if(this.cameraStarting===attempt){this.cameraStarting=null;if(!this.disposed)this.render();}
+            }
+        })();
+        this.updateCameraState();return attempt.promise;
     }
     scheduleSearch({immediate=false}={}) {
         clearTimeout(this.searchTimer);this.searchTimer=null;

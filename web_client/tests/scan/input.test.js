@@ -73,3 +73,19 @@ test('manual selection suppresses its QR too; noise does not hide a valid neighb
  assert.deepEqual(codes,['NEXT']);assert.equal(input.paused,true);
  assert.equal(input.suppressedCodes.has('https://noise.invalid'),false);
 });
+
+
+test('a stopped camera playback rejection cannot stop a newer camera start',async t=>{
+ const previous={navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator'),document:globalThis.document};
+ let stops=0,rejectPlay;
+ const stream=()=>({getTracks:()=>[{stop(){stops++;}}],getVideoTracks:()=>[]});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices:{getUserMedia:async()=>stream()}}});
+ globalThis.document={createElement:()=>({getContext:()=>({})})};
+ const input=new ScannerInput(()=>{});
+ t.after(()=>{input.dispose();Object.defineProperty(globalThis,'navigator',previous.navigator);globalThis.document=previous.document;});
+ const first=input.start({play:()=>new Promise((resolve,reject)=>{rejectPlay=reject;})});
+ await new Promise(resolve=>setImmediate(resolve));
+ input.stop();await input.start({async play(){}});const current=input.stream;
+ rejectPlay(Object.assign(new Error('old video detached'),{name:'AbortError'}));await first;
+ assert.equal(input.stream,current,'stale failure must not revoke the replacement stream');assert.equal(stops,1);
+});

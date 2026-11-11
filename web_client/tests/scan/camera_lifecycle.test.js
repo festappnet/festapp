@@ -269,3 +269,35 @@ test('explicit next in the program scanner also re-arms the same QR',async()=>{
   assert.equal(resets,1);assert.equal(page.input.paused,false);assert.equal(page.result,undefined);
  }finally{globalThis.document=previous;dom.window.close();}
 });
+
+
+for(const stage of ['permission','playback'])test(`summary renders cannot cancel pending camera ${stage} or replace its video`,async()=>{
+    const {ScannerInput}=await import('../../src/components/scan/scanner_input.js');
+    const dom=new JSDOM('<div id="scanner"></div>',{url:'http://localhost/scan'});
+    const previous={document:globalThis.document,navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator')};
+    let grant,play,stops=0;
+    const stream={getTracks:()=>[{stop(){stops++;}}],getVideoTracks:()=>[]};
+    globalThis.document=dom.window.document;
+    Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true,mediaDevices:{getUserMedia:()=>stage==='permission'?new Promise(resolve=>{grant=resolve;}):Promise.resolve(stream)}}});
+    const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
+    page.route={page:'scan'};page.storageAvailable=true;
+    page.row={session:{title:'Ples',capabilities:{},settings:{fields:[]}}};page.controller={state:'ready'};
+    page.input=new ScannerInput(()=>{});
+    try{
+        page.render();const video=page.host.querySelector('video');
+        video.play=stage==='playback'?()=>new Promise(resolve=>{play=resolve;}):async()=>{};
+        dom.window.HTMLCanvasElement.prototype.getContext=()=>({});
+        const starting=page.startCamera();
+        assert.equal(page.startCamera(),starting,'repeated start shares the pending request');
+        assert.equal(page.host.querySelector('[data-camera]').disabled,true);
+        await new Promise(resolve=>setImmediate(resolve));
+        page.summary={used_current:1,eligible_total:5};page.render();
+        if(stage==='permission')grant(stream);else {video.play=async()=>{};play();}
+        await starting;
+        assert.equal(page.input.stream,stream,'summary refresh must not silently cancel permission/start');
+        assert.equal(page.host.querySelector('video'),video,'starting camera keeps its attached preview');
+        assert.equal(stops,0);assert.equal(page.host.querySelector('.scan-camera').dataset.active,'true');
+        assert.equal(page.host.querySelector('[data-camera]').disabled,false);
+        assert.equal(page.host.querySelector('.scan-camera-hint').previousElementSibling,page.host.querySelector('.scan-camera'),'guidance is outside the viewfinder');
+    }finally{page.input.dispose();dom.window.close();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);}
+});
