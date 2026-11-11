@@ -97,7 +97,9 @@ class MirrorContractTest(unittest.TestCase):
         version=json.loads((ROOT/'web_client/package.json').read_text())['devDependencies']['playwright']
         installer=(ROOT/'automation/ci/browser.sh').read_text()
         self.assertIn('playwright@'+version,installer)
-        self.assertIn('playwright install --with-deps --only-shell chromium',installer)
+        self.assertIn('playwright install --only-shell chromium',installer)
+        self.assertNotIn('--with-deps',installer)
+        self.assertNotIn('apt-get',installer)
         self.assertNotIn('agent-browser',installer)
 
     def test_flutter_browser_contracts_have_one_owner_and_semantic_inventory(self):
