@@ -139,3 +139,52 @@ test('late searches cannot replace a newer query or a newly selected event',asyn
   page.disposeControllers();
  }finally{globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);dom.window.close();}
 });
+
+function liveSearchPage(t) {
+ const dom=new JSDOM('<div id="scanner"></div>',{url:'http://localhost/scan'});
+ const previous={document:globalThis.document,navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator')};
+ globalThis.document=dom.window.document;Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
+ const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
+ page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+ page.row={session:{title:'Skautský ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
+ page.api={async search(){return [];}};page.controller=page.createController();
+ page.controller.state='result';page.controller.ticket={ticket_id:1,symbol:'OLD',state:'used',products:[]};
+ page.render();
+ t.mock.timers.enable({apis:['setTimeout']});
+ t.after(()=>{clearTimeout(page.searchTimer);page.disposeControllers();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);dom.window.close();});
+ const input=()=>page.host.querySelector('[name=query]');
+ const type=value=>{const field=input();field.focus();field.value=value;field.setSelectionRange(value.length,value.length);field.dispatchEvent(new dom.window.Event('input'));};
+ return {page,dom,input,type};
+}
+
+test('typing debounces the latest name, Enter searches immediately, and results preserve input focus',async t=>{
+ const {page,dom,input,type}=liveSearchPage(t),calls=[];
+ page.api.search=async query=>{calls.push(query);return query==='Jan'?[]:[{ticket_id:2,symbol:'MATCH',purchaser_name:query,state:'sent',admission_allowed:true}];};
+ type('J');t.mock.timers.tick(1000);assert.deepEqual(calls,[]);
+ type('Ja');t.mock.timers.tick(200);type('Jan');t.mock.timers.tick(349);assert.deepEqual(calls,[]);
+ t.mock.timers.tick(1);await Promise.resolve();assert.deepEqual(calls,['Jan']);
+ assert.equal(input().value,'Jan');assert.equal(document.activeElement,input());assert.equal(input().selectionStart,3);assert.equal(page.host.querySelector('[data-search]').getAttribute('aria-busy'),'false');
+ type('Jana');t.mock.timers.tick(100);
+ page.host.querySelector('[data-search]').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
+ await Promise.resolve();assert.deepEqual(calls,['Jan','Jana']);t.mock.timers.tick(1000);assert.equal(calls.length,2);
+ type('Ab');t.mock.timers.tick(100);type('');t.mock.timers.tick(1000);
+ assert.deepEqual(calls,['Jan','Jana']);assert.deepEqual(page.searchResults,[]);assert.equal(input().value,'');
+ assert.equal(page.host.querySelector('[data-search]').getAttribute('aria-busy'),'false');
+});
+
+test('new typing invalidates an older response before the next debounce fires',async t=>{
+ const {page,type,input}=liveSearchPage(t),pending=new Map();
+ page.api.search=query=>new Promise(resolve=>pending.set(query,resolve));
+ type('Alice');t.mock.timers.tick(350);
+ type('Alina');pending.get('Alice')([{ticket_id:2,symbol:'ALICE',holder_name:'Alice'}]);await Promise.resolve();
+ assert.equal(page.host.querySelectorAll('[data-search-ticket]').length,0);assert.equal(input().value,'Alina');
+ t.mock.timers.tick(350);pending.get('Alina')([{ticket_id:3,symbol:'ALINA',holder_name:'Alina'}]);await Promise.resolve();
+ assert.equal(page.searchResults[0].ticket_id,3);assert.equal(input().value,'Alina');assert.equal(document.activeElement,input());
+});
+
+test('selecting another event cancels the pending typed search',async t=>{
+ const {page,type,input}=liveSearchPage(t);let calls=0;page.api.search=async()=>{calls++;return [];};page.recover=async()=>{};
+ type('Novák');t.mock.timers.tick(200);
+ await page.select({session:{title:'Jiný ples',capabilities:{search_tickets:true},settings:{fields:[]}}});
+ t.mock.timers.tick(1000);assert.equal(calls,0);assert.equal(input().value,'');assert.deepEqual(page.searchResults,[]);
+});
