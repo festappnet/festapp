@@ -1,6 +1,4 @@
--- test-setup: database/functions/payment_providers/operations_schema.sql
--- test-setup: database/functions/eshop_transactions/payment_totals.sql
--- test-setup: database/functions/eshop/get_report_ws.sql
+-- Exercise the installed canonical migration; never run schema DDL in this parallel fixture.
 BEGIN;
 DO $$
 DECLARE u uuid; org bigint; un bigint; oc bigint; pi bigint; bank bigint; r jsonb; m jsonb; facts record;
