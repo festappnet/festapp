@@ -2081,7 +2081,6 @@
     "web_client/tests/scan/display_settings.test.js",
     "web_client/tests/scan/entry.test.js",
     "web_client/tests/scan/feedback.test.js",
-    "web_client/tests/scan/groups.test.js",
     "web_client/tests/scan/input.test.js",
     "web_client/tests/scan/multiple_codes.test.js",
     "web_client/tests/scan/navigation.test.js",

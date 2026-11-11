@@ -64,3 +64,12 @@ test('worker startup failure retains the local offline decoder',async t=>{
  workers[0].onerror({preventDefault(){}});
  assert.equal(input.decoderWorker,null);assert.equal(workers[0].terminated,true);assert.equal(typeof input.decode,'function');assert.ok(input.stream);
 });
+
+
+test('manual selection suppresses its QR too; noise does not hide a valid neighbouring ticket',()=>{
+ const codes=[],input=new ScannerInput(value=>codes.push(value),{accepts:value=>!value.startsWith('https:')});
+ input.suppress('MANUAL');input.paused=false;
+ input.dispatchCodes([{value:'https://noise.invalid'},{value:'MANUAL'},{value:'NEXT'}]);
+ assert.deepEqual(codes,['NEXT']);assert.equal(input.paused,true);
+ assert.equal(input.suppressedCodes.has('https://noise.invalid'),false);
+});

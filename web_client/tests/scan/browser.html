@@ -31,11 +31,11 @@ async function showScene(scene){
  if(busy || page.controllers().some(c=>['persisting','awaiting_server','looking_up'].includes(c.state)))return;
  busy=true;status.textContent='Připravuji…';document.querySelector('[data-repeat]').disabled=true;
  try{
-  demoOffline=false;await page.recover();await refreshScenes();page.disposeControllers();page.batch=null;page.groupDetailController=null;page.controller=page.createController();page.route={page:'scan'};page.mode='camera';page.error=null;page.transportOffline=false;page.input.pause({keepStream:true});page.render();
+  demoOffline=false;await page.recover();await refreshScenes();page.disposeControllers();page.controller=page.createController();page.route={page:'scan'};page.mode='camera';page.error=null;page.transportOffline=false;page.input.pause({keepStream:true});page.render();
   if(realData&&(scene==='real_all'||scene.startsWith('real_order_'))){const orders=realData.orders.filter(order=>scene==='real_all'||order.key===scene);await page.loadCodes(orders.flatMap(order=>order.symbols));}
   else if(['custom','ball','ball_group','empty','long','ball_order','ball_without_dinner','ball_orders'].includes(scene)){const selected=customCases?.filter(c=>scene==='ball_group'?['ball','ball_partner'].includes(c.key):scene==='ball_orders'?['ball_order','ball_without_dinner'].includes(c.key):c.key===scene);if(!selected?.length)throw Error('Vlastní demo data nejsou připravená pro tuto událost.');await page.loadCodes(selected.map(c=>c.symbol));}
   else if(scene==='camera')await page.startCamera();
-  else if(scene==='group'||scene==='group_accepted'){await page.loadCodes(scenes.unused.slice(0,3));if(scene==='group_accepted')await page.confirmBatch();}
+  else if(scene==='group'||scene==='group_accepted'){await page.loadCodes(scenes.unused.slice(0,3));if(scene==='group_accepted')await page.controller.confirm();}
   else if(scene==='mixed')await page.loadCodes([scenes.unused[0],scenes.used||'DEMO-NOT-FOUND', 'DEMO-NOT-A-TICKET']);
   else{
    await page.controller.loadCode(scenes.unused[0]);

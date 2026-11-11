@@ -157,22 +157,7 @@ body.dark-mode .scan-shell .scan-primary:hover:not(:disabled) {background:#a0cdf
 .scan-shell .scan-home {display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;border-radius:10px;color:var(--text-color)}
 .scan-home:hover {background:var(--scan-soft)}
 .scan-menu-title {font-size:.85rem;color:var(--scan-muted);margin:0 12px 8px!important}
-.scan-group {padding-bottom:0;margin-bottom:0}
-.scan-group-hint {font-size:.95rem;color:var(--scan-muted)}
-.scan-group-list {display:grid;gap:8px;margin:16px 0}
-.scan-group-list [data-group-ticket] {width:100%;justify-content:flex-start;text-align:start;gap:12px;padding:12px}
-.scan-group-list [data-group-ticket][aria-expanded=true] {border-color:var(--primary-color);background:var(--scan-soft);box-shadow:inset 3px 0 var(--primary-color)}
-.scan-group-list [data-group-ticket]>span:nth-child(2) {flex:1;min-width:0;display:grid;gap:2px}
-.scan-group-list strong {font-size:1rem;font-weight:500}
-.scan-group-list small {font-size:.85rem;color:var(--scan-muted)}
-.scan-group-list [data-group-ticket]>span:nth-child(2)>span {font-size:.85rem}
-.scan-group-list [data-group-ticket].complete>svg,.scan-group-list [data-group-ticket].allowed>svg {color:var(--scan-success)}
-.scan-group-list [data-group-ticket].pending>svg {color:var(--scan-warning)}
-.scan-group-number {width:26px;height:26px;display:grid;place-items:center;background:var(--scan-soft);border-radius:50%;font-size:.85rem;flex-shrink:0}
-.scan-group>[data-group-confirm],.scan-group>[data-group-next] {width:100%;margin-top:8px}
-.scan-group>[data-group-next] {border-color:transparent;color:var(--scan-muted)}
-@media(max-width:899px) {.scan-header {gap:6px}.scan-header h1{font-size:1rem}.scan-group {padding-bottom:0;margin-bottom:0}}
-.scan-group-list [data-group-ticket].blocked>svg {color:var(--red-color)}
+@media(max-width:899px) {.scan-header {gap:6px}.scan-header h1{font-size:1rem}}
 .scan-layout.is-group .scan-detail {width:100%;min-width:0;}
 
 /* Keep the live feed as spatial context while reviewing a single ticket or group. */
@@ -211,35 +196,18 @@ body.dark-mode .scan-shell .scan-primary:hover:not(:disabled) {background:#a0cdf
 .scan-shell .scan-manual-note {font-size:.9rem;color:var(--scan-muted);margin:0 0 16px}
 .manual-ready .scan-manual-link {margin-top:8px}
 
-.scan-group-detail:not([hidden]) {padding:16px;margin:8px 0;border-inline-start:3px solid var(--scan-line);min-width:0}
-.scan-group-detail .scan-ticket-code {overflow-wrap:anywhere}
 
- .scan-order-group {display:grid;gap:8px;min-width:0;margin:4px 0 12px}
-.scan-order-header {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:0 2px 4px}
-.scan-shell .scan-order-header h3 {font-size:1rem;font-weight:500;margin:0;overflow-wrap:anywhere;min-width:0}
-.scan-shell .scan-order-header p {font-size:.95rem;margin:0;color:var(--scan-muted)}
-.scan-group-list [data-group-ticket] {align-items:flex-start}
-.scan-group-list [data-group-ticket] .scan-group-body {display:grid;gap:4px;flex:1;min-width:0}
-.scan-group-title {display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap}
-.scan-group-list [data-group-ticket] .scan-group-seat {color:var(--text-color);font-size:.95rem}
-.scan-group-list [data-group-ticket] .scan-group-products {display:grid;gap:4px;margin:2px 0 0}
-.scan-group-products>span {color:var(--text-color);font-size:.95rem;line-height:1.45;overflow-wrap:anywhere}
 .scan-ticket-status {display:inline-flex;align-items:center;gap:5px;font-size:.9rem;font-weight:500;line-height:1.4}
 .scan-ticket-status .scan-icon {width:18px;height:18px;flex-shrink:0}
-.scan-group-list .allowed .scan-ticket-status,.scan-group-list .complete .scan-ticket-status {color:var(--scan-success)}
-.scan-group-list .blocked .scan-ticket-status {color:var(--red-color)}
-.scan-group-list .unpaid .scan-ticket-status,.scan-group-list .pending .scan-ticket-status {color:var(--scan-warning)}
-@media(max-width:599px){.scan-group-title{gap:4px}.scan-ticket-status{font-size:.85rem}}
+@media(max-width:599px){.scan-ticket-status{font-size:.85rem}}
 
 .scan-ticket-status .scan-icon {width:24px;height:24px}
 .scan-visible-note {display:block;font-size:.9rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text-color)}
 .scan-visible-note>span {font-weight:500}
-.scan-order-group>.scan-visible-note {margin-bottom:4px}
 .scan-result>.scan-visible-note {margin:8px 0}
 
 .scan-shell {--scan-used:#315aab;--scan-used-bg:#edf2fb}
 body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
-.scan-group-list .already-used .scan-ticket-status {color:var(--scan-used)}
 .scan-result.used {--scan-tone:var(--scan-used)}
 .scan-result.used .scan-result-icon {background:var(--scan-used-bg)}
 
@@ -352,7 +320,7 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-shell.has-review-footer {padding-bottom:calc(var(--scan-bottom-reserve,140px) + 24px)}
 .scan-review-footer {position:fixed;inset-inline:0;bottom:0;z-index:20;background:var(--surface-color);border-top:1px solid var(--scan-line);padding:12px max(24px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
 .scan-review-actions {max-width:1184px;margin:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:12px}
-.scan-review-footer .scan-actions,.scan-review-footer .scan-group-actions {display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px;margin:0;padding:0;border:0}
+.scan-review-footer .scan-actions {display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px;margin:0;padding:0;border:0}
 .scan-review-footer button {min-height:52px}
 .scan-review-footer [data-next],.scan-review-footer [data-group-next] {border-color:transparent;color:var(--primary-color)}
 .scan-review-footer .scan-primary[data-next] {color:var(--white)}
@@ -362,7 +330,7 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-lookup .scan-spinner {width:24px;height:24px;margin:0;flex-shrink:0}
 @media(max-width:599px){
     .scan-review-footer {padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right))}
-    .scan-review-actions,.scan-review-footer .scan-actions,.scan-review-footer .scan-group-actions {width:100%;gap:8px}
+    .scan-review-actions,.scan-review-footer .scan-actions {width:100%;gap:8px}
     .scan-review-footer button {flex:1;min-width:0;padding-inline:12px}
     .scan-review-footer [data-next],.scan-review-footer [data-group-next] {font-size:.95rem}
 }
@@ -381,9 +349,12 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-search-products {display:grid;gap:4px;font-size:.95rem}
 .scan-search-code,.scan-search-context {font-size:.85rem;color:var(--scan-muted)}
 .scan-search-code {margin-top:4px}
-.scan-shell .scan-camera-expand {position:absolute;top:8px;inset-inline-end:8px;z-index:4;background:var(--surface-color);color:var(--text-color);padding:10px;min-width:48px}
 .scan-review-navigation {display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .scan-review-navigation button {background:transparent;border-color:transparent;color:var(--primary-color)}
-.scan-review-footer .scan-actions,.scan-review-footer .scan-group-actions {width:100%}
+.scan-review-footer .scan-actions {width:100%}
 .scan-review-footer [data-confirm],.scan-review-footer [data-group-confirm] {width:100%;flex:1}
 @media(min-width:900px){.scan-layout:has(.scan-review-navigation) {grid-template-rows:max-content 1fr}.scan-review-navigation {grid-column:2;grid-row:1;align-self:start}.scan-layout:has(.scan-review-navigation)>.scan-detail {grid-column:2;align-self:start}.scan-layout:has(.scan-review-navigation)>.scan-input {grid-column:1;grid-row:1 / 3}}
+
+/* One current ticket and one full-width primary action. */
+.scan-review-footer .scan-actions {flex-direction:column;align-items:stretch}
+.scan-review-footer [data-confirm],.scan-review-footer [data-next] {width:100%;flex:none}
