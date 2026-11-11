@@ -37,7 +37,7 @@ export class ScannerInput {
             }
             if (generation!==this.generation || !this.stream) return;
             this.timer = setInterval(() => this.frame(), 100);
-        } catch (e) { this.stop(); throw new Error(e.name === 'NotAllowedError' ? 'camera_denied' : 'camera_unavailable'); }
+        } catch (e) { if(generation!==this.generation)return;this.stop(); throw new Error(e.name === 'NotAllowedError' ? 'camera_denied' : 'camera_unavailable'); }
     }
     frame() {
         if (this.paused || this.decodingFrame || !this.video?.videoWidth || (!this.decoderWorker && !this.decode)) return;
