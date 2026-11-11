@@ -23,7 +23,7 @@ BEGIN
   ('public.can_preview_ticket_readonly(bigint)','48efb47c1529b5106cbab4edf641fd0a',true,true),
   ('public.can_read_information_editor_bundle(bigint)','ba203be730cbf9acca46c0b3e63363ad',true,true),
   ('public.can_read_map_editor_bundle(bigint)','02c9fbcfcd61c8598e88407a9f3070fa',true,true),
-  ('public.can_read_orders(bigint)','6b8f1152158aa8ab01bd13cec9dbbdf3',true,true),
+  ('public.can_read_orders(bigint)','795b29c048acb37bc949683bfc586f43',true,true),
   ('public.can_read_ticket_layout(bigint)','50105a20a0ff5d89389f80e5dd9f891c',true,true),
   ('public.can_read_unit_users(bigint)','76b08038f169406ba1ba56652e44608e',true,true),
   ('public.can_write_orders(bigint)','680cbd3862cc0f6abc89d7d2497c7fb1',true,true),

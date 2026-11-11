@@ -16,8 +16,9 @@ SOURCES = {
     'eshop/order_seating.sql': ['order_spot_metadata_bulk_internal','order_spot_metadata_internal','order_tickets_with_seating_bulk_internal','order_tickets_with_seating_internal'],
     'eshop_orders/get_orders.sql': ['get_orders'],
     'emails/email_reporting.sql': ['order_email_current_issues_bulk','order_email_current_issues','get_order_email_summaries'],
+    'others/get_ticket_layout_write_contract_v1.sql': ['get_ticket_layout_write_contract_v1'],
 }
-TARGET = ROOT / 'supabase/migrations/20261111120000_order_read_performance.sql'
+TARGET = ROOT / 'supabase/migrations/20261111123041_order_read_performance.sql'
 
 
 def render():

@@ -5,7 +5,7 @@ production database measurements, before transport or rendering. Payment context
 for its 113 orders took 612 ms in a separate probe. The transaction ledger lacked
 a payment lookup index; one scoped lookup scanned 4284 unrelated rows.
 
-The prepared migration `20261111120000_order_read_performance.sql` optimizes only
+The prepared migration `20261111123041_order_read_performance.sql` optimizes only
 the shared order/ticket/history read path. Payment information, money buttons,
 delivery status, history and current/historical seating remain available.
 There is no stale-data cache, deferred payment loading or client change.

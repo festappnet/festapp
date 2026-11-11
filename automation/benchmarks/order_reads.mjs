@@ -15,7 +15,7 @@ assert.ok(databaseUrl, 'DATABASE_URL must identify a local disposable database')
 assertLocalDatabaseUrl(databaseUrl);
 const client = new Client({ connectionString: databaseUrl, statement_timeout: 30000 });
 const baselineIndex = process.argv.indexOf('--baseline-sql');
-const candidate = read('supabase/migrations/20261111120000_order_read_performance.sql');
+const candidate = read('supabase/migrations/20261111123041_order_read_performance.sql');
 const minimumSpeedup = Number(process.env.FESTAPP_ORDER_READ_MIN_SPEEDUP ?? 0);
 assert.ok(Number.isFinite(minimumSpeedup) && minimumSpeedup >= 0 && minimumSpeedup < 1);
 
