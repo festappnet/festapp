@@ -422,6 +422,47 @@ unconfigured iframe GCM fallback is unchanged; a configured Complianz source
 supplies both links and automatic Unit iframe bindings through the shared registry.
 A later explicit source replaces that source and retires its subscriptions.
 
+### Configured CookieConsent v3 source (orestbida)
+
+Supported standard sources are Complianz and CookieConsent v3. For CookieConsent,
+expose the public API on the website, including when bundling via npm:
+
+```js
+import * as CookieConsent from 'vanilla-cookieconsent';
+window.CookieConsent = CookieConsent;
+// Run the website's complete CMP configuration with mode:'opt-in', revision:42.
+```
+
+```html
+<script defer src="https://vstupenky.online/embed.js"
+  data-festapp-consent='{"provider":"cookieconsent","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","revision":42,"categories":{"analytics":"analytics","marketing":"marketing"}}'></script>
+```
+
+Use actual IDs and `analytics.consent_revision` from form metadata. `revision`
+is a positive integer matching both `CookieConsent.getConfig('revision')` and
+the saved cookie. Archive that CMP notice and its mapping to the Festapp revision;
+it must cover the form, both purposes, recipients and measurement domain. Increase
+the CMP revision and obtain a new choice when coverage changes. Zero (revision
+management disabled), opt-out and unknown/malformed configurations keep the local
+notice and never fall back to GCM. One script supports one organization/Unit.
+
+`categories` optionally maps both purposes to distinct website category names;
+omit it for defaults `analytics` / `marketing`. Both categories must exist and
+must not be enabled by default, read-only or have per-service definitions/choices.
+These unsupported cases return `null`. A valid stored acceptance, refusal or
+partial choice transfers. TCF presence (`window.__tcfapi`) denies marketing.
+
+The adapter checks `validConsent()`, fresh `getCookie()` contents including
+`expirationTime`, and `acceptedCategory()`. Events `cc:onConsent`, `cc:onChange`
+and `cc:onFirstConsent` on window coalesce in a microtask. A one-second poll
+checks expiry and other-tab changes. If storage and the instance disagree, the
+import ends; reload the website to adopt a different tab's new acceptance. Cookie
+and `useLocalStorage` storage are supported. API calls made by website code cannot
+be distinguished from a visitor's action; the organizer must use the CMP correctly.
+The underlying GCM iframe bridge and Complianz adapter are unchanged.
+
+Sources and conservative boundaries: [adapter research](../plans/consent-link-cmp-adapters-2026-11-11.md).
+
 `consent_revision` binds organization/Unit, destination code, privacy URL, notice
 text/title, consent version, runtime profile, collector origins and purposes.
 It excludes runtime build revision/origin and approved parent origins. Technical
