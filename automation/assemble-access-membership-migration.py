@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble only the canonical membership owners changed by this task."""
+import hashlib
 import migration_inputs
 from pathlib import Path
 import sys
@@ -40,9 +41,9 @@ def render():
     return text + '\nCOMMIT;\n'
 if __name__ == '__main__':
     target = ROOT / 'supabase/migrations/20261111010000_access_membership.sql'
-    expected = render()
     if '--check' in sys.argv:
-        if not migration_inputs.exists(target) or migration_inputs.read_text(target) != expected:
-            raise SystemExit('Access membership migration differs from canonical sources')
+        # Later forward migrations own changed shared sources such as email_queue.sql.
+        if not migration_inputs.exists(target) or hashlib.sha256(migration_inputs.read_bytes(target)).hexdigest() != '7fb1b6d6250be8af862fbfd2332c25a8d5218b2a9f433c993cdca1f4356131a9':
+            raise SystemExit('Installed access membership migration bytes changed')
     else:
-        migration_inputs.write_text(target, expected)
+        raise SystemExit('Installed access membership migration is immutable; author a scoped forward migration')
