@@ -5385,5 +5385,11 @@
         "is_receptionist": "Recepce",
         "is_approver": "Schvalování",
         "is_cleaning_crew": "Úklid"
-    }
+    },
+  "FormEditorLayout": {
+    "formPreview": "Náhled formuláře",
+    "publicPage": "Veřejná stránka",
+    "formIntroduction": "Úvod",
+    "formOutline": "Osnova formuláře"
+  }
 }

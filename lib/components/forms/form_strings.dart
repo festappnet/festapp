@@ -3,6 +3,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get formPreview => 'FormEditorLayout.formPreview'.tr();
+  static String get publicPage => 'FormEditorLayout.publicPage'.tr();
+  static String get formIntroduction => 'FormEditorLayout.formIntroduction'.tr();
+  static String get formOutline => 'FormEditorLayout.formOutline'.tr();
+
   static String get measurementFormUnitBlocked =>
       'FeatureFormSettings.measurementFormUnitBlocked'.tr();
   static String get measurementOpenUnitSettings =>
