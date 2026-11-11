@@ -791,13 +791,8 @@ class _FormEditorContentState extends State<FormEditorContent>
           !identical(_bundle, bundle) ||
           !bundle.form.relatedFields.contains(newField))
         return;
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
+      _selectedSection.value = null;
+      _fieldNavigation.revealField(newField);
     });
   }
 
@@ -855,6 +850,7 @@ class _FormEditorContentState extends State<FormEditorContent>
             child: FormFieldsGenerator(
               key: ObjectKey(_bundle),
               bundle: _bundle!,
+              navigationController: _fieldNavigation,
               expandProducts: true,
               editingEnabled: _canEdit,
               onChanged: _draftChanged,
