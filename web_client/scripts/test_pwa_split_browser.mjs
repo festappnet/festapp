@@ -6,6 +6,10 @@ import { createServer } from 'node:http';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { createRequire } from 'node:module';
+import { build as bundle } from 'esbuild';
+import QRCode from 'qrcode';
+import { qrDecoderAsset } from '../src/components/scan/scanner_codes.js';
 
 const execute = promisify(execFile);
 const projectRoot = path.resolve(import.meta.dirname, '../..');
@@ -46,6 +50,9 @@ export async function testPwaSplitBrowser({ owner, session, temporary }) {
         '/canvaskit/canvaskit.wasm': 'fixture-canvas-engine',
         '/assets/FontManifest.json': '[]',
     };
+    const decoder=await bundle({entryPoints:[path.join(projectRoot,'web_client/src/components/scan/scanner_decoder_worker.js')],bundle:true,format:'iife',platform:'browser',write:false,target:'es2022'});
+    files['/web-assets/scanner-reader.js']=decoder.outputFiles[0].text;
+    files[qrDecoderAsset]=await readFile(createRequire(import.meta.url).resolve('zxing-wasm/reader/zxing_reader.wasm'));
     for (const [name, content] of Object.entries(files)) await writeFile(path.join(build, name.slice(1)), content);
     await execute(process.execPath, [path.join(projectRoot, 'automation/generate_pwa_service_worker.mjs'), build, version], {cwd:projectRoot});
     const worker = await readFile(path.join(build, 'festapp_service_worker.js'));
@@ -61,7 +68,7 @@ export async function testPwaSplitBrowser({ owner, session, temporary }) {
         const content = files[name];
         if (content === undefined) { res.statusCode=404; return res.end('not found'); }
         res.setHeader('cache-control','no-store');
-        res.setHeader('content-type', name.endsWith('.html') ? 'text/html; charset=utf-8' : name.endsWith('.js') ? 'text/javascript' : 'application/octet-stream');
+        res.setHeader('content-type', name.endsWith('.html') ? 'text/html; charset=utf-8' : name.endsWith('.js') ? 'text/javascript' : name.endsWith('.wasm') ? 'application/wasm' : 'application/octet-stream');
         res.end(content);
     });
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
@@ -88,6 +95,21 @@ export async function testPwaSplitBrowser({ owner, session, temporary }) {
         await session.page.locator('input[name=jmeno]').waitFor();
         await session.page.locator('input[name=jmeno]').fill('Jana Nováková');
         assert.equal((await session.page.locator('input[name=jmeno]').inputValue()), 'Jana Nováková');
+        // A fresh worker must load its engine from the installed shell while offline.
+        assert.ok(publicCache.includes(qrDecoderAsset),'WASM reader must be part of the web shell');
+        const qr=QRCode.create('OFFLINE-SCANNER');
+        const decoded=await evalResult(`new Promise((resolve,reject)=>{
+          const worker=new Worker('/web-assets/scanner-reader.js',{type:'module'}),width=240,height=240,scale=6;
+          const pixels=new Uint8ClampedArray(width*height*4).fill(255),modules=${JSON.stringify(Array.from(qr.modules.data))},size=${qr.modules.size};
+          for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(modules[y*size+x])for(let dy=0;dy<scale;dy++)for(let dx=0;dx<scale;dx++){
+            const i=((y*scale+dy+40)*width+x*scale+dx+40)*4;pixels[i]=pixels[i+1]=pixels[i+2]=0;
+          }
+          const timer=setTimeout(()=>{worker.terminate();reject(new Error('offline reader timeout'));},10000);
+          worker.onerror=()=>{clearTimeout(timer);worker.terminate();reject(new Error('offline reader failed'));};
+          worker.onmessage=event=>{clearTimeout(timer);worker.terminate();event.data.error?reject(new Error(event.data.error)):resolve(event.data.codes.map(code=>code.value));};
+          worker.postMessage({pixels,width,height},[pixels.buffer]);
+        })`);
+        assert.deepEqual(decoded,['OFFLINE-SCANNER'],'offline must decode through a new real WASM worker');
         await session.context.setOffline(false);
         await session.page.waitForFunction('!!navigator.serviceWorker.controller && !!window.fixtureQuery');
         const webCacheBeforeFailure = await cachePaths();

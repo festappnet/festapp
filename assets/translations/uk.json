@@ -3374,5 +3374,11 @@
         "is_receptionist": "Рецепція",
         "is_approver": "Схвалення",
         "is_cleaning_crew": "Прибирання"
-    }
+    },
+  "FormEditorLayout": {
+    "formPreview": "Попередній перегляд форми",
+    "publicPage": "Публічна сторінка",
+    "formIntroduction": "Вступ",
+    "formOutline": "Структура форми"
+  }
 }

@@ -245,12 +245,14 @@ test('lazy web modules and their styles install with the shell before a deployme
   await mkdir(path.join(dir,'assets','translations'),{recursive:true});
   await writeFile(path.join(dir,'web-assets','blueprint-hash1234.js'),'export {};');
   await writeFile(path.join(dir,'web-assets','blueprint-hash1234.css'),'body {}');
+  await writeFile(path.join(dir,'web-assets','zxing-reader-test.wasm'),new Uint8Array([0,97,115,109]));
   await writeFile(path.join(dir,'assets','translations','cs.json'),'{}');
   await writeFile(path.join(dir,'flutter'),'flutter');
   await writeFile(path.join(dir,'webclient'),'webclient');
   const manifest=await collectPwaShellManifest(dir);
   assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.js'));
   assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.css'));
+  assert.ok(manifest.coreResources.includes('/web-assets/zxing-reader-test.wasm'),'offline scanner requires its local decoder binary');
   assert.ok(manifest.coreResources.includes('/assets/translations/cs.json'));
  } finally {await rm(dir,{recursive:true,force:true});}
 });

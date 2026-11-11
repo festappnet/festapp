@@ -163,9 +163,10 @@ test('typing debounces the latest name, Enter searches immediately, and results 
  type('J');t.mock.timers.tick(1000);assert.deepEqual(calls,[]);
  type('Ja');t.mock.timers.tick(200);type('Jan');t.mock.timers.tick(349);assert.deepEqual(calls,[]);
  t.mock.timers.tick(1);await Promise.resolve();assert.deepEqual(calls,['Jan']);
+ assert.equal(page.host.querySelector('[data-search] button'),null,'typing search needs no visible submit button');
  assert.equal(input().value,'Jan');assert.equal(document.activeElement,input());assert.equal(input().selectionStart,3);assert.equal(page.host.querySelector('[data-search]').getAttribute('aria-busy'),'false');
  type('Jana');t.mock.timers.tick(100);
- page.host.querySelector('[data-search]').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
+ input().dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Enter',cancelable:true}));
  await Promise.resolve();assert.deepEqual(calls,['Jan','Jana']);t.mock.timers.tick(1000);assert.equal(calls.length,2);
  type('Ab');t.mock.timers.tick(100);type('');t.mock.timers.tick(1000);
  assert.deepEqual(calls,['Jan','Jana']);assert.deepEqual(page.searchResults,[]);assert.equal(input().value,'');

@@ -3202,5 +3202,11 @@
         "is_receptionist": "Empfang",
         "is_approver": "Genehmigung",
         "is_cleaning_crew": "Reinigung"
-    }
+    },
+  "FormEditorLayout": {
+    "formPreview": "Formularvorschau",
+    "publicPage": "Öffentliche Seite",
+    "formIntroduction": "Einleitung",
+    "formOutline": "Formularübersicht"
+  }
 }

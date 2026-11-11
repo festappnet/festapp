@@ -24,10 +24,11 @@ import 'package:fstapp/styles/styles_config.dart';
 class FormDetailPage extends StatefulWidget {
   final String formLink;
   final Future<List<FormBundle>> Function(String)? loadForms;
-  const FormDetailPage(
-      {super.key,
-      @PathParam('formLink') required this.formLink,
-      this.loadForms});
+  const FormDetailPage({
+    super.key,
+    @PathParam('formLink') required this.formLink,
+    this.loadForms,
+  });
   @override
   State<FormDetailPage> createState() => _FormDetailPageState();
 }
@@ -42,8 +43,9 @@ class _FormDetailPageState extends State<FormDetailPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final link = context.routeData.inheritedPathParams
-        .getString(AppRouter.linkFormatted);
+    final link = context.routeData.inheritedPathParams.getString(
+      AppRouter.linkFormatted,
+    );
     if (_link != link) {
       _link = link;
       _load();
@@ -76,7 +78,10 @@ class _FormDetailPageState extends State<FormDetailPage> {
       if (!mounted || generation != _generation) return;
       _canonicalFormLink = canonical;
       RouterService.canonicalizePublicLink(
-          'occasion', link, RightsService.currentLink);
+        'occasion',
+        link,
+        RightsService.currentLink,
+      );
       if (canonical != widget.formLink) {
         final path = context.router.root.urlState.uri;
         final parts = path.pathSegments.toList();
@@ -88,15 +93,19 @@ class _FormDetailPageState extends State<FormDetailPage> {
           parts[index] = canonical;
           context.router.root.markUrlStateForReplace();
           await context.router.root.navigatePath(
-              path.replace(pathSegments: ['', ...parts]).toString());
+            path.replace(pathSegments: ['', ...parts]).toString(),
+          );
         }
       }
       if (!mounted || generation != _generation) return;
       setState(() {
         _forms = objects;
-        _ready = RightsService.currentLink == link &&
-            objects.any((f) =>
-                f.definition.link == (_canonicalFormLink ?? widget.formLink));
+        _ready =
+            RightsService.currentLink == link &&
+            objects.any(
+              (f) =>
+                  f.definition.link == (_canonicalFormLink ?? widget.formLink),
+            );
         _failed = !_ready;
       });
     } catch (_) {
@@ -106,13 +115,17 @@ class _FormDetailPageState extends State<FormDetailPage> {
 
   void _back() {
     RetainedDraftGuard.instance.leaveOwner(
-        context,
-        () => context.router.replaceAll([
-              PageRouteInfo(FormsListRoute.name, rawQueryParams: {
-                ...context.router.root.urlState.uri.queryParametersAll,
-                'list': 'true',
-              })
-            ]));
+      context,
+      () => context.router.replaceAll([
+        PageRouteInfo(
+          FormsListRoute.name,
+          rawQueryParams: {
+            ...context.router.root.urlState.uri.queryParametersAll,
+            'list': 'true',
+          },
+        ),
+      ]),
+    );
   }
 
   @override
@@ -120,128 +133,165 @@ class _FormDetailPageState extends State<FormDetailPage> {
     if (_failed)
       return Scaffold(
         appBar: AppBar(
-            leading: IconButton(
-                icon: const Icon(Icons.arrow_back), onPressed: _back)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _back,
+          ),
+        ),
         body: const Center(child: Text('Not found or access denied')),
       );
     if (!_ready) return const Center(child: CircularProgressIndicator());
     return FormRouteScope(
-        identity: _canonicalFormLink ?? widget.formLink,
-        onDeleted: _back,
-        onUpdated: _load,
-        child: Scaffold(
-            appBar: AppBar(
-                automaticallyImplyLeading: false,
-                centerTitle: false,
-                elevation: 0,
-                toolbarHeight: 44,
-                title: _buildBreadcrumbs(),
-                actions: [
-                  if (!RightsService.isDemoReadOnly &&
-                      RightsService.hasCapability(AuthorizationCapabilities.formsCreate))
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 6, horizontal: 4),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text(FormStrings.createNewForm),
-                          onPressed: () => RetainedDraftGuard.instance
-                              .leaveOwner(
-                                  context,
-                                  () => FormCreationHelper
-                                      .showCreateOrCopyFormDialog(context,
-                                          occasionLink: _link!,
-                                          onFormCreated: _back)),
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      StylesConfig.commonRoundness))),
-                        )),
-                  const SizedBox(width: 8),
-                ]),
-            body: AutoRouter(key: ValueKey(widget.formLink))));
+      identity: _canonicalFormLink ?? widget.formLink,
+      onDeleted: _back,
+      onUpdated: _load,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          centerTitle: false,
+          elevation: 0,
+          toolbarHeight: 44,
+          title: _buildBreadcrumbs(),
+        ),
+        body: AutoRouter(key: ValueKey(widget.formLink)),
+      ),
+    );
   }
+
+  static const _createFormAction = 'create-or-copy-form';
+  bool get _canCreateForm =>
+      !RightsService.isDemoReadOnly &&
+      RightsService.hasCapability(AuthorizationCapabilities.formsCreate);
 
   Widget _buildBreadcrumbs() {
     final color = Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-    final selected = _forms.firstWhere((form) =>
-        form.definition.link == (_canonicalFormLink ?? widget.formLink));
-    final title = Text(selected.definition.toString(),
-        style: TextStyle(
-            fontSize: 16,
-            color: color,
-            fontWeight:
-                _forms.length <= 1 ? FontWeight.bold : FontWeight.normal));
+    final selected = _forms.firstWhere(
+      (form) => form.definition.link == (_canonicalFormLink ?? widget.formLink),
+    );
+    final title = Text(
+      selected.definition.toString(),
+      style: TextStyle(
+        fontSize: 16,
+        color: color,
+        fontWeight: _forms.length <= 1 ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
     return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: BreadcrumbRow(children: [
+      scrollDirection: Axis.horizontal,
+      child: BreadcrumbRow(
+        children: [
           InkWell(
-              onTap: _back,
-              borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
+            onTap: _back,
+            borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 IgnoreBaseline(
-                    child:
-                        Icon(Icons.article_outlined, size: 20, color: color)),
+                  child: Icon(Icons.article_outlined, size: 20, color: color),
+                ),
                 const SizedBox(width: 6),
-                Text(FormStrings.formsTitle,
-                    style: TextStyle(fontSize: 16, color: color)),
-              ])),
+                Text(
+                  FormStrings.formsTitle,
+                  style: TextStyle(fontSize: 16, color: color),
+                ),
+              ],
+            ),
+          ),
           Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text('/',
-                  style:
-                      TextStyle(fontSize: 14, color: color.withOpacity(0.4)))),
-          if (_forms.length <= 1)
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              '/',
+              style: TextStyle(fontSize: 14, color: color.withOpacity(0.4)),
+            ),
+          ),
+          if (_forms.length <= 1 && !_canCreateForm)
             InkWell(
-                onTap: () =>
-                    resetNestedTabs(context.router, FormDetailRoute.name),
-                child: title)
+              onTap: () =>
+                  resetNestedTabs(context.router, FormDetailRoute.name),
+              child: title,
+            )
           else
-            PopupMenuButton<FormBundle>(
-                elevation: 0,
-                onSelected: (form) {
-                  if (form.definition.link ==
-                      (_canonicalFormLink ?? widget.formLink)) {
-                    resetNestedTabs(context.router, FormDetailRoute.name);
-                  } else {
-                    RetainedDraftGuard.instance.leaveOwner(
-                        context,
-                        () => context.router.navigate(FormDetailRoute(
-                                formLink: form.definition.link!,
-                                children: const [
-                                  FormTabsRoute(children: [FormEditorRoute()])
-                                ])));
-                  }
-                },
-                itemBuilder: (_) => _forms
-                    .map((form) => PopupMenuItem(
+            PopupMenuButton<Object>(
+              elevation: 0,
+              onSelected: (selection) {
+                if (selection == _createFormAction) {
+                  RetainedDraftGuard.instance.leaveOwner(
+                    context,
+                    () => FormCreationHelper.showCreateOrCopyFormDialog(
+                      context,
+                      occasionLink: _link!,
+                      onFormCreated: _back,
+                    ),
+                  );
+                  return;
+                }
+                final form = selection as FormBundle;
+                if (form.definition.link ==
+                    (_canonicalFormLink ?? widget.formLink)) {
+                  resetNestedTabs(context.router, FormDetailRoute.name);
+                } else {
+                  RetainedDraftGuard.instance.leaveOwner(
+                    context,
+                    () => context.router.navigate(
+                      FormDetailRoute(
+                        formLink: form.definition.link!,
+                        children: const [
+                          FormTabsRoute(children: [FormEditorRoute()]),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
+              itemBuilder: (_) => <PopupMenuEntry<Object>>[
+                ..._forms
+                    .map(
+                      (form) => PopupMenuItem<Object>(
                         value: form,
                         child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(form.definition.toString()),
-                              if (form.definition.id == selected.definition.id)
-                                Icon(Icons.check,
-                                    color:
-                                        Theme.of(context).colorScheme.primary),
-                            ])))
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(form.definition.toString()),
+                            if (form.definition.id == selected.definition.id)
+                              Icon(
+                                Icons.check,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                          ],
+                        ),
+                      ),
+                    )
                     .toList(),
-                child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      title,
-                      const SizedBox(width: 8),
-                      Transform.scale(
-                          scaleY: 0.8,
-                          child: Icon(Icons.unfold_more_rounded,
-                              size: 20, color: color.withOpacity(0.7))),
-                    ]))),
-        ]));
+                if (_canCreateForm) ...[
+                  const PopupMenuDivider(),
+                  PopupMenuItem<Object>(
+                    value: _createFormAction,
+                    child: Text(FormStrings.createNewForm),
+                  ),
+                ],
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    title,
+                    const SizedBox(width: 8),
+                    Transform.scale(
+                      scaleY: 0.8,
+                      child: Icon(
+                        Icons.unfold_more_rounded,
+                        size: 20,
+                        color: color.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

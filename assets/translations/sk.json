@@ -3229,5 +3229,11 @@
         "is_receptionist": "Recepcia",
         "is_approver": "Schvaľovanie",
         "is_cleaning_crew": "Upratovanie"
-    }
+    },
+  "FormEditorLayout": {
+    "formPreview": "Náhľad formulára",
+    "publicPage": "Verejná stránka",
+    "formIntroduction": "Úvod",
+    "formOutline": "Osnova formulára"
+  }
 }

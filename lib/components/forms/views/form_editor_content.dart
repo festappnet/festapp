@@ -1,13 +1,21 @@
+import 'form_editor_toolbar.dart';
+import 'form_editor_outline.dart';
+import '../widgets_editor/form_fields_navigation_controller.dart';
 import 'form_unavailable_content_editor.dart';
 import '../sale_opening_strings.dart';
+
 import 'package:fstapp/data_services/authorization_capabilities.dart';
+
 import '../waitlist_strings.dart';
 import 'form_capacity_settings.dart';
+
 import 'package:fstapp/components/forms/models/form_presentation.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
+
 import 'dart:async';
+
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
@@ -41,12 +49,15 @@ class FormEditorContent extends StatefulWidget {
   final ValueChanged<FormEditBundle>? onPrototypeSave;
   final ValueChanged<FormEditBundle>? onPrototypeHydrated;
   final bool embedded;
-  const FormEditorContent(
-      {super.key, required this.formLink, this.onDataUpdated, this.loadBundle})
-      : prototypeBundle = null,
-        onPrototypeSave = null,
-        onPrototypeHydrated = null,
-        embedded = false;
+  const FormEditorContent({
+    super.key,
+    required this.formLink,
+    this.onDataUpdated,
+    this.loadBundle,
+  }) : prototypeBundle = null,
+       onPrototypeSave = null,
+       onPrototypeHydrated = null,
+       embedded = false;
 
   const FormEditorContent.prototype({
     super.key,
@@ -82,26 +93,35 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   void _draftChanged({bool hydrated = false}) => scheduleMicrotask(() {
-        if (!mounted) return;
-        _draftRevision.value++;
-        if (widget.embedded && _bundle != null) {
-          (hydrated
-                  ? widget.onPrototypeHydrated ?? widget.onPrototypeSave
-                  : widget.onPrototypeSave)
-              ?.call(_bundle!);
-        }
-      });
+    if (!mounted) return;
+    _draftRevision.value++;
+    if (widget.embedded && _bundle != null) {
+      (hydrated
+              ? widget.onPrototypeHydrated ?? widget.onPrototypeSave
+              : widget.onPrototypeSave)
+          ?.call(_bundle!);
+    }
+  });
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
-      coordinator: _htmlSave, child: _buildHtmlParent(context));
+    coordinator: _htmlSave,
+    child: _buildHtmlParent(context),
+  );
 
   FormEditBundle? _bundle;
   bool _loadFailed = false;
   String? _formLink;
   final ScrollController _scrollController = ScrollController();
+  final _fieldNavigation = FormFieldsNavigationController();
+  final _selectedSection = ValueNotifier<String?>(null);
+  GlobalKey _availabilityAnchor = GlobalKey();
+  GlobalKey _introductionAnchor = GlobalKey();
+  FormEditBundle? _anchorBundle;
   bool _prototypeSaved = false;
   bool get _prototype => widget.prototypeBundle != null;
-  bool get _canEdit => _prototype || RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
+  bool get _canEdit =>
+      _prototype ||
+      RightsService.hasCapability(AuthorizationCapabilities.formsWrite);
   bool get _canSeeReservations =>
       !_prototype && RightsService.canSeeReservations();
 
@@ -117,6 +137,8 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   @override
   void dispose() {
+    _fieldNavigation.dispose();
+    _selectedSection.dispose();
     _draftRevision.dispose();
     _htmlSave.dispose();
     if (_prototype && !widget.embedded && !_prototypeSaved && _bundle != null) {
@@ -141,9 +163,10 @@ class _FormEditorContentState extends State<FormEditorContent>
     if (_formLink == null) return;
     final link = _formLink!;
     setState(() => _loadFailed = false);
-    final bundle = await ExceptionHandler.guard<FormEditBundle?>(context,
-        futureFunction: () =>
-            (widget.loadBundle ?? DbForms.getFormForEdit)(link));
+    final bundle = await ExceptionHandler.guard<FormEditBundle?>(
+      context,
+      futureFunction: () => (widget.loadBundle ?? DbForms.getFormForEdit)(link),
+    );
     if (!mounted || link != _formLink) return;
     setState(() {
       _bundle = bundle;
@@ -156,9 +179,11 @@ class _FormEditorContentState extends State<FormEditorContent>
   }
 
   Future<void> saveChanges() async {
-    await ExceptionHandler.guardVoid(context,
-        futureFunction: () =>
-            _htmlSave.save(() => _performHtmlSave(), context: context));
+    await ExceptionHandler.guardVoid(
+      context,
+      futureFunction: () =>
+          _htmlSave.save(() => _performHtmlSave(), context: context),
+    );
   }
 
   Future<void> _performHtmlSave() async {
@@ -166,24 +191,31 @@ class _FormEditorContentState extends State<FormEditorContent>
     if (_bundle == null) return;
     final form = _bundle!.form;
     if (form.relatedFields.any((field) => field.hasInvalidSelectionOptions)) {
-      ToastHelper.Show(context, FormStrings.selectionOptionsRequired,
-          severity: ToastSeverity.NotOk);
+      ToastHelper.Show(
+        context,
+        FormStrings.selectionOptionsRequired,
+        severity: ToastSeverity.NotOk,
+      );
       return;
     }
 
     if (form.definition.startTime != null && form.definition.endTime != null) {
       if (form.definition.endTime!.isBefore(form.definition.startTime!)) {
-        ToastHelper.Show(context, FormStrings.errorEndTimeBeforeStartTime,
-            severity: ToastSeverity.NotOk);
+        ToastHelper.Show(
+          context,
+          FormStrings.errorEndTimeBeforeStartTime,
+          severity: ToastSeverity.NotOk,
+        );
         return;
       }
     }
 
     form.relatedFields.sort(
-        (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0));
+      (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0),
+    );
     for (int i = 0; i < form.relatedFields.length; i++) {
-      form.relatedFields[i].definition =
-          form.relatedFields[i].definition.copyWith(order: i);
+      form.relatedFields[i].definition = form.relatedFields[i].definition
+          .copyWith(order: i);
     }
 
     for (final field in form.relatedFields) {
@@ -194,10 +226,13 @@ class _FormEditorContentState extends State<FormEditorContent>
         final products = [...field.definition.productType!.products!]
           ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
         field.definition = field.definition.copyWith(
-            productType: field.definition.productType!.copyWith(products: [
-          for (var index = 0; index < products.length; index++)
-            products[index].copyWith(order: index),
-        ]));
+          productType: field.definition.productType!.copyWith(
+            products: [
+              for (var index = 0; index < products.length; index++)
+                products[index].copyWith(order: index),
+            ],
+          ),
+        );
       }
     }
 
@@ -213,8 +248,10 @@ class _FormEditorContentState extends State<FormEditorContent>
       _htmlSave.markSaved();
       if (!mounted) return;
       ToastHelper.Show(
-          context, "${CommonStrings.saved}: ${form.definition.link}",
-          severity: ToastSeverity.Ok);
+        context,
+        "${CommonStrings.saved}: ${form.definition.link}",
+        severity: ToastSeverity.Ok,
+      );
       setState(() {
         _bundle = _bundle!.afterSave(saved);
         _snapshot.accept(saved.toEditedJson());
@@ -235,11 +272,12 @@ class _FormEditorContentState extends State<FormEditorContent>
         }
       }
       ToastHelper.Show(
-          context,
-          capacityError == null
-              ? FormStrings.saveError(e)
-              : WaitlistStrings.text(capacityError),
-          severity: ToastSeverity.NotOk);
+        context,
+        capacityError == null
+            ? FormStrings.saveError(e)
+            : WaitlistStrings.text(capacityError),
+        severity: ToastSeverity.NotOk,
+      );
     }
   }
 
@@ -732,7 +770,8 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   void _addFieldOfType(String type) {
     if (!mounted || _bundle == null) return;
-    final form = _bundle!.form;
+    final bundle = _bundle!;
+    final form = bundle.form;
     final newField = FormFieldDraft(
       type: type,
       order: form.relatedFields.length,
@@ -747,6 +786,10 @@ class _FormEditorContentState extends State<FormEditorContent>
     _draftChanged();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !identical(_bundle, bundle) ||
+          !bundle.form.relatedFields.contains(newField))
+        return;
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -757,19 +800,43 @@ class _FormEditorContentState extends State<FormEditorContent>
     });
   }
 
+  void _revealSection(String section, GlobalKey anchor) {
+    _fieldNavigation.clearSelection();
+    _selectedSection.value = section;
+    final target = anchor.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0,
+        duration: const Duration(milliseconds: 250),
+      );
+    }
+  }
+
   Widget _buildHtmlParent(BuildContext context) {
+    if (!identical(_anchorBundle, _bundle)) {
+      _anchorBundle = _bundle;
+      _availabilityAnchor = GlobalKey();
+      _introductionAnchor = GlobalKey();
+    }
     if (_bundle == null) {
       return Scaffold(
-          body: Center(
-              child: _loadFailed
-                  ? Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text(CommonStrings.unexpectedError),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                          onPressed: loadData,
-                          child: Text(CommonStrings.retry)),
-                    ])
-                  : const CircularProgressIndicator()));
+        body: Center(
+          child: _loadFailed
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(CommonStrings.unexpectedError),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: loadData,
+                      child: Text(CommonStrings.retry),
+                    ),
+                  ],
+                )
+              : const CircularProgressIndicator(),
+        ),
+      );
     }
 
     if (widget.embedded) {
@@ -777,17 +844,20 @@ class _FormEditorContentState extends State<FormEditorContent>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_canEdit)
-            Text(FormStrings.dragToReorder,
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              FormStrings.dragToReorder,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           const SizedBox(height: 16),
           Form(
             onChanged: _draftChanged,
             child: FormFieldsGenerator(
-                key: ObjectKey(_bundle),
-                bundle: _bundle!,
-                expandProducts: true,
-                editingEnabled: _canEdit,
-                onChanged: _draftChanged),
+              key: ObjectKey(_bundle),
+              bundle: _bundle!,
+              expandProducts: true,
+              editingEnabled: _canEdit,
+              onChanged: _draftChanged,
+            ),
           ),
           const SizedBox(height: 16),
           Align(
@@ -803,131 +873,199 @@ class _FormEditorContentState extends State<FormEditorContent>
     }
 
     return Scaffold(
-      floatingActionButtonAnimator: _NoScalingAnimation(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (!_prototype)
-            FloatingActionButton(
-              heroTag: "viewFormFab",
-              onPressed: () => _openPublicForm(),
-              tooltip: FormStrings.publicView,
-              child: const Icon(Icons.remove_red_eye_outlined),
-            ),
-          if (!_prototype) const SizedBox.square(dimension: 12),
-          if (!_prototype)
-            FloatingActionButton(
-              heroTag: "previewFormFab",
-              onPressed: () => _openPublicForm(preview: true),
-              tooltip: FormStrings.editorPreview,
-              child: const Icon(Icons.developer_mode),
-            ),
-          if (!_prototype) const SizedBox.square(dimension: 12),
-          if (_canEdit)
-            FloatingActionButton(
-              heroTag: "addFieldFab",
-              onPressed: _addNewField,
-              tooltip: FormStrings.addFieldTitle,
-              child: const Icon(Icons.add),
-            ),
-          const SizedBox.square(dimension: 64),
-        ],
-      ),
-      // UPDATED: Check for bundle
-      body: _bundle == null
-          ? const Center(child: CircularProgressIndicator())
-          : Align(
-              key: ObjectKey(_bundle),
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Column(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // The content remains at the same position in one tree at every width.
+          // Hiding the outline must never remount rich text or field drafts.
+          final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+          final showOutline =
+              !_prototype &&
+              constraints.maxWidth >= 1100 &&
+              constraints.maxWidth >=
+                  216 * textScale + 24 + StylesConfig.formMaxWidth + 24;
+          return Align(
+            key: ObjectKey(_bundle),
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: showOutline
+                    ? 216 + 24 + StylesConfig.formMaxWidth
+                    : StylesConfig.formMaxWidth,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!_prototype)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
+                      child: FormEditorToolbar(
+                        onPreview: () => _openPublicForm(preview: true),
+                        onPublicPage: () => _openPublicForm(),
+                      ),
+                    ),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildFormOpenToggleAndOffTextEditor(),
-                        const Divider(
-                          thickness: 1,
-                          color: Colors.grey,
+                        SizedBox(
+                          width: showOutline ? 216 : 0,
+                          child: showOutline
+                              ? AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _fieldNavigation,
+                                    _selectedSection,
+                                  ]),
+                                  builder: (context, _) => FormEditorOutline(
+                                    key: const ValueKey('form-editor-outline'),
+                                    fields: _fieldNavigation.fields,
+                                    selectedIdentity:
+                                        _fieldNavigation.selectedIdentity,
+                                    selectedSection: _selectedSection.value,
+                                    onAvailability: () => _revealSection(
+                                      'availability',
+                                      _availabilityAnchor,
+                                    ),
+                                    onIntroduction: () => _revealSection(
+                                      'introduction',
+                                      _introductionAnchor,
+                                    ),
+                                    onField: (field) {
+                                      _selectedSection.value = null;
+                                      _fieldNavigation.revealField(field);
+                                    },
+                                  ),
+                                )
+                              : null,
                         ),
-                        EditableHtmlField(
-                          key: const ValueKey('form-header'),
-                          html: _bundle!.form.definition.header,
-                          enabled: _canEdit && !_prototype,
-                          coordinator: _htmlSave,
-                          owner: HtmlMediaOwner.occasion(
-                              _bundle!.form.definition.occasionId),
-                          onChanged: (html) => setState(() => _bundle!
-                                  .form.definition =
-                              _bundle!.form.definition.copyWith(header: html)),
-                        ),
-                        const SizedBox(height: 24),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            if (_canEdit)
-                              Text(
-                                FormStrings.dragToReorder,
-                                style: Theme.of(context).textTheme.bodySmall,
+                        SizedBox(width: showOutline ? 24 : 0),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            controller: _scrollController,
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  KeyedSubtree(
+                                    key: _availabilityAnchor,
+                                    child:
+                                        _buildFormOpenToggleAndOffTextEditor(),
+                                  ),
+                                  const Divider(
+                                    thickness: 1,
+                                    color: Colors.grey,
+                                  ),
+                                  Padding(
+                                    key: _introductionAnchor,
+                                    padding: const EdgeInsets.only(
+                                      top: 16,
+                                      bottom: 8,
+                                    ),
+                                    child: Text(
+                                      FormStrings.formIntroduction,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
+                                    ),
+                                  ),
+                                  EditableHtmlField(
+                                    key: const ValueKey('form-header'),
+                                    html: _bundle!.form.definition.header,
+                                    enabled: _canEdit && !_prototype,
+                                    coordinator: _htmlSave,
+                                    owner: HtmlMediaOwner.occasion(
+                                      _bundle!.form.definition.occasionId,
+                                    ),
+                                    onChanged: (html) => setState(
+                                      () => _bundle!.form.definition = _bundle!
+                                          .form
+                                          .definition
+                                          .copyWith(header: html),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  if (_canEdit) ...[
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: TextButton.icon(
+                                        key: const ValueKey(
+                                          'add-form-field-top',
+                                        ),
+                                        onPressed: _addNewField,
+                                        icon: const Icon(Icons.add),
+                                        label: Text(FormStrings.addFieldTitle),
+                                      ),
+                                    ),
+                                    Text(
+                                      FormStrings.dragToReorder,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  Form(
+                                    onChanged: _draftChanged,
+                                    child: FormFieldsGenerator(
+                                      key: ObjectKey(_bundle),
+                                      bundle: _bundle!,
+                                      navigationController: _fieldNavigation,
+                                      editingEnabled: _canEdit,
+                                      onChanged: _draftChanged,
+                                    ),
+                                  ),
+                                  if (_canEdit)
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: TextButton.icon(
+                                        key: const ValueKey(
+                                          'add-form-field-bottom',
+                                        ),
+                                        onPressed: _addNewField,
+                                        icon: const Icon(Icons.add),
+                                        label: Text(FormStrings.addFieldTitle),
+                                      ),
+                                    ),
+                                  const SizedBox(height: 24),
+                                ],
                               ),
-                          ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        Form(
-                            onChanged: _draftChanged,
-                            child: FormFieldsGenerator(
-                                key: ObjectKey(_bundle),
-                                bundle: _bundle!,
-                                editingEnabled: _canEdit,
-                                onChanged: _draftChanged)),
-                        const SizedBox(height: 102),
                       ],
                     ),
                   ),
-                ),
+                ],
               ),
             ),
+          );
+        },
+      ),
       bottomNavigationBar: AnimatedBuilder(
         animation: Listenable.merge([_htmlSave, _draftRevision]),
         builder: (context, _) => _prototype
             ? BottomAppBar(
-                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(CommonStrings.back)),
-                FilledButton(
-                    onPressed: _hasChanges ? saveChanges : null,
-                    child: Text(CommonStrings.save))
-              ]))
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(CommonStrings.back),
+                    ),
+                    FilledButton(
+                      onPressed: _hasChanges ? saveChanges : null,
+                      child: Text(CommonStrings.save),
+                    ),
+                  ],
+                ),
+              )
             : EditorActionBar(
                 hasChanges: _hasChanges,
                 enabled: _canEdit && _bundle != null,
                 onSave: saveChanges,
-                onDiscard: cancelEdit),
+                onDiscard: cancelEdit,
+              ),
       ),
     );
-  }
-}
-
-class _NoScalingAnimation extends FloatingActionButtonAnimator {
-  @override
-  Offset getOffset(
-      {required Offset begin, required Offset end, required double progress}) {
-    return end;
-  }
-
-  @override
-  Animation<double> getRotationAnimation({required Animation<double> parent}) {
-    return Tween<double>(begin: 1.0, end: 1.0).animate(parent);
-  }
-
-  @override
-  Animation<double> getScaleAnimation({required Animation<double> parent}) {
-    return Tween<double>(begin: 1.0, end: 1.0).animate(parent);
   }
 }

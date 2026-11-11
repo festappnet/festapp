@@ -3204,5 +3204,11 @@
         "is_receptionist": "Recepcja",
         "is_approver": "Zatwierdzanie",
         "is_cleaning_crew": "Sprzątanie"
-    }
+    },
+  "FormEditorLayout": {
+    "formPreview": "Podgląd formularza",
+    "publicPage": "Strona publiczna",
+    "formIntroduction": "Wprowadzenie",
+    "formOutline": "Struktura formularza"
+  }
 }

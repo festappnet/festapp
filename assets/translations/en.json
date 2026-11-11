@@ -5383,5 +5383,11 @@
         "is_receptionist": "Reception",
         "is_approver": "Approver",
         "is_cleaning_crew": "Cleaning"
-    }
+    },
+  "FormEditorLayout": {
+    "formPreview": "Form preview",
+    "publicPage": "Public page",
+    "formIntroduction": "Introduction",
+    "formOutline": "Form outline"
+  }
 }
