@@ -22,7 +22,17 @@
     "automation/release/render_organizer_page.mjs",
     "content/platform-updates/",
     "web_client/public/sitemap.xml",
-    "automation/tenant-overlay.json"
+    "automation/tenant-overlay.json",
+    "web/napoveda/",
+    "web_client/public/napoveda/",
+    "web/organizers-page",
+    "web/organizer-pages.json",
+    "web/organizers/",
+    "web/organizers-media/press-kit/",
+    "web/organizers-assets/",
+    "web/platform-updates.json",
+    "web/co-je-nove/",
+    "web/platform-updates-media/"
   ],
   "generatedRoots": [
     "lib",

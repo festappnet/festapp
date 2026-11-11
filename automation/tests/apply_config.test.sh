@@ -148,6 +148,21 @@ changed=[name for name,(data,mtime) in before.items() if (root/name).read_bytes(
 assert not changed, 'Identical generation rewrote inputs: '+', '.join(changed)
 PY_MTIME
 
+# Build preparation preserves the complete generated source tree required by
+# the clean-checkout upload gate, including sitemap/help and organizer pages.
+python3 - "$TMP_ROOT" > "$TMP_ROOT/build-prep-before.json" <<'PY_BUILD_PREP'
+import hashlib,json,pathlib,sys
+root=pathlib.Path(sys.argv[1])
+print(json.dumps({str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for d in ('web','web_client/public') for p in (root/d).rglob('*') if p.is_file()},sort_keys=True))
+PY_BUILD_PREP
+./automation/apply_config.sh automation/project.conf --build > build-prep.log 2>&1 || { cat build-prep.log; exit 1; }
+python3 - "$TMP_ROOT" <<'PY_BUILD_PREP'
+import hashlib,json,pathlib,sys
+root=pathlib.Path(sys.argv[1]);before=json.loads((root/'build-prep-before.json').read_text())
+after={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for d in ('web','web_client/public') for p in (root/d).rglob('*') if p.is_file()}
+assert before==after, 'Build preparation changed generated source leaves: '+str([p for p in before.keys()|after.keys() if before.get(p)!=after.get(p)])
+PY_BUILD_PREP
+
 # 3. Assertions.
 fail=0
 assert_contains() {

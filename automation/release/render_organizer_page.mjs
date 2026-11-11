@@ -55,8 +55,7 @@ const cleanOutputs = () => {
   for (const asset of [...Object.values(pageDefinitions).map(page=>page.asset), ...retiredPageAssets]) fs.rmSync(path.join(path.dirname(target), asset.slice(1)), {force:true});
 };
 if (process.argv.includes('--catalog-only')) {
-  cleanOutputs();
-  fs.rmSync(manifestPath,{force:true});
+  // Preserve overlay-owned generated leaves; source must remain clean for upload.
   if(catalogOutput)writeIfChanged.writeFileSync(index,catalogOutput);
   console.log('Prepared catalogue; public documents are assembled after compilation.');
   process.exit(0);

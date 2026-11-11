@@ -377,6 +377,8 @@ fi
 # Static host fallback; the Cloudflare router supplies the live public catalog.
 if [ -d "$PROJECT_ROOT/web_client/public" ]; then
     printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" | write_stdin_if_changed "$PROJECT_ROOT/web_client/public/robots.txt"
+    # A canonical overlay already owns the complete source sitemap.
+    if [ "${2:-}" != --build ] || [ ! -f "$PROJECT_ROOT/web_client/public/sitemap.xml" ]; then
     python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$CONFIG_FILE" "$PROJECT_ROOT" <<'SITEMAP'
 from write_if_changed import write_text
 import html
@@ -391,6 +393,7 @@ write_text(pathlib.Path(path), '<?xml version="1.0" encoding="UTF-8"?>\n'
     + ''.join(f'  <url><loc>{html.escape(manifest["origin"] + route)}</loc></url>\n' for route in manifest['sitemapPaths'])
     + '</urlset>\n', encoding='utf-8')
 SITEMAP
+    fi
 fi
 
 # 2b. Update Flutter web template (web/index.html): <title> and the
@@ -984,7 +987,6 @@ node "$LEGAL_RENDERER" --config "$CONFIG_FILE"
 if [ "${2:-}" = --build ]; then
     # Build documents once, after compilation, using the final Vite runtime.
     node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE" --catalog-only
-    rm -rf -- "$PROJECT_ROOT/web_client/public/napoveda"
 else
     node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE"
     node "$PROJECT_ROOT/automation/release/render_help_pages.mjs" --config "$CONFIG_FILE"

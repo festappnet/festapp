@@ -66,6 +66,12 @@ test('frozen pnpm install timestamps do not invalidate installed dependency byte
  put('package/lib.js',{code:'changed dependency'});assert.notEqual(dependencyDigest(directory,true),before);
  const changed=dependencyDigest(directory,true);put('.modules.yaml',{prunedAt:'new',nodeLinker:'hoisted'});assert.notEqual(dependencyDigest(directory,true),changed);
 });
+test('generated public documents change packaging without invalidating compilers',t=>{
+ const f=fixture(t),key=c=>fingerprint(f.root,c,'cloudflare',f.tools).key;
+ const before={flutter:key('flutter'),vite:key('vite'),bundle:key('bundle')};
+ for(const name of ['web/organizers-page','web/organizer-pages.json','web/organizers/press','web/napoveda/index.html','web_client/public/napoveda/index.html'])f.put(name,'fresh generated document');
+ assert.equal(key('flutter'),before.flutter);assert.equal(key('vite'),before.vite);assert.notEqual(key('bundle'),before.bundle);
+});
 test('Vite temporary config directory does not change installed dependency identity',t=>{
  const f=fixture(t),directory=path.join(f.root,'node_modules');
  fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'dependency.js'),'export const value=1;');

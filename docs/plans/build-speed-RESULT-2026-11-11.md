@@ -142,3 +142,5 @@ je packaging vstup, takže samotná nová revize releasu neinvaliduje kompilaci;
 skutečnou tenantovou identitu nadále vlastní celý generovaný config.
 
 The measurement receiver generator remains unchanged from canonical main because its source bytes identify separately deployed receiver workers. Its output already stays byte-identical; changing that independent deployment identity is outside this tenant release.
+
+Upload gate vyžaduje čistý checkout i po kompilaci. Build preparation proto zachovává zdrojové generované organizer/help stránky i úplnou sitemapu; katalog pouze synchronizuje metadata. Tyto generované dokumenty patří do packaging vstupů a finální render je synchronizuje v balíčku. Regresní test porovnává celý web/public strom před a po `apply_config --build`.
