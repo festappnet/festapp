@@ -30,11 +30,11 @@ export async function withPaymentUpgradeFixture(phase,run){
    DELETE FROM public.abuse_policy_rules WHERE budget_key='barion.checkout';`);
   if(phase==='connector'){
    const sql=execFileSync('python3',['-c',`import sys
-from pathlib import Path
 sys.path.insert(0,'automation')
+from migration_inputs import read_text
 from generate_canonical_source_contract import definitions,statements
-frozen=Path('supabase/migrations/20261106120000_payment_provider_connectors.sql').read_text()
-hardening=Path('supabase/migrations/20261106160000_payment_provider_hardening.sql').read_text()
+frozen=read_text('supabase/migrations/20261106120000_payment_provider_connectors.sql')
+hardening=read_text('supabase/migrations/20261106160000_payment_provider_hardening.sql')
 previous={}
 for statement in statements(frozen):
  for signature,body in definitions(statement):
