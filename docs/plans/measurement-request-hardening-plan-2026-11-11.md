@@ -115,3 +115,11 @@ scanner/bank fixes and migration version 20261111140000. To avoid a ledger versi
 collision, the unpublished website migration was renamed to 20261111150000 with
 its bytes unchanged; the lifecycle forward remains 20261111160000. Regenerate
 source parity and validate the reconciled tree before publication.
+
+Full local CI additionally exercised large text without loaded font assets and
+exposed the consent layout dropdown's unconstrained intrinsic width. Setting
+DropdownButtonFormField.isExpanded bounds it to the available form width. The
+exact previously failing 2x-text case now passes without captures or custom fonts.
+The local parallel mirror also exposed a pre-existing test race between a
+temporary checkpoint migration and a generator read; rerun affected lanes after
+the database runtime mutation test completes, preserving passed unchanged lanes.

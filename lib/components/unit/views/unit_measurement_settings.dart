@@ -284,6 +284,7 @@ class UnitMeasurementSettings extends StatelessWidget {
         ),
         gap,
         DropdownButtonFormField<String>(
+          isExpanded: true,
           key: ValueKey(consentLayout),
           initialValue: consentLayout,
           decoration: InputDecoration(
