@@ -20,7 +20,7 @@ export function isConsentLinkOrigin(origin, local = false) {
 }
 // A linked visit owns a renewable source lease, never a persisted local choice.
 export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = () => {}, settled = () => {}}) {
-    let timer, watch, active = true, requested = false, connected = false, sequence = 0;
+    let timer, active = true, requested = false, connected = false, sequence = 0;
     let origin, peer, nonce, until, scope, visitUntil;
     const stop = () => {
         if (!active) return;
@@ -30,7 +30,6 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
         win.removeEventListener('pageshow', check);
         win.document.removeEventListener('visibilitychange', check);
         if (timer !== undefined) win.clearTimeout(timer);
-        if (watch !== undefined) win.clearInterval(watch);
         peers.delete(win);
         if (requested) {
             try { peer.postMessage({namespace, protocol:1, type:'detach', nonce}, origin); } catch { /* Closed source. */ }
@@ -44,10 +43,7 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
         try {
             if (!active) return;
             if (Date.now() >= until) { disconnect(); return; }
-            // An unloading website (reload or navigation) posts its terminal end
-            // with a different source. End only revokes, so origin, nonce, scope
-            // and sequence suffice for it; every grant needs the exact peer.
-            if ((event.source !== peer && data?.type !== 'end') || event.origin !== origin || data?.namespace !== namespace || data.protocol !== 1 ||
+            if (event.source !== peer || event.origin !== origin || data?.namespace !== namespace || data.protocol !== 1 ||
                 data.nonce !== nonce || !sameConsentScope(scope, data.scope) ||
                 !Number.isSafeInteger(data.sequence) || data.sequence <= sequence) return;
             if (hasChoice()) { stop(); return; }
@@ -55,8 +51,6 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
             if (data.type !== 'response' || typeof data.choice?.analytics !== 'boolean' || typeof data.choice?.marketing !== 'boolean' ||
                 !Number.isFinite(data.expiresAt) || data.expiresAt <= Date.now() || data.expiresAt > Date.now()+60000) return;
             sequence = data.sequence; connected = true;
-            // A closed website tab may never deliver pagehide or its end message.
-            watch ??= win.setInterval(() => { try { if (peer.closed) disconnect(); } catch { disconnect(); } }, 1000);
             until = Math.min(visitUntil, data.expiresAt);
             win.clearTimeout(timer); timer = win.setTimeout(disconnect, until-Date.now());
             peers.delete(win);

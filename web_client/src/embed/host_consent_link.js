@@ -4,12 +4,7 @@ import {consentScope, sameConsentScope} from '../components/forms/measurement_co
 export const consentLinkNamespace = 'festapp-consent-link';
 // Only explicitly opted-in, ordinary new-tab clicks retain an opener. Keeping
 // the actual WindowProxy also excludes iframe and unsolicited popup requests.
-// Without an explicit saved-record source, the website's Consent Mode is the
-// linked source, read exactly like the automatic iframe bridge under the same
-// organizer opt-in (defaults and updates, regional defaults denied, strict ads),
-// once the website has decided; denied defaults alone leave the form's notice.
-// A configured explicit source always owns the link; it never falls back.
-export function installHostConsentLink(win, productOrigin, source, consentMode = null) {
+export function installHostConsentLink(win, productOrigin, source) {
     const opened = new Map();
     const click = event => {
         try {
@@ -54,24 +49,15 @@ export function installHostConsentLink(win, productOrigin, source, consentMode =
             const session = {sequence:0, until:Date.now()+24*60*60*1000, generation:source?.generation,
                 envelope:{namespace:consentLinkNamespace, protocol:1, nonce:data.nonce, scope}};
             sessions.set(child, session);
-            const automatic = !source?.configured && !!consentMode;
-            const readChoice = () => {
-                if (source?.generation !== session.generation) return null;
-                if (!automatic) return source?.read(scope);
-                const value = consentMode.read();
-                return value && typeof value.analytics === 'boolean' && typeof value.marketing === 'boolean'
-                    ? {analytics:value.analytics, marketing:value.marketing} : null;
-            };
             const send = () => {
                 if (sessions.get(child) !== session) return;
-                const choice = readChoice();
+                const choice = source?.generation === session.generation ? source?.read(scope) : null;
                 if (child.closed || Date.now() >= session.until || !choice) { end(child); return; }
                 try { child.postMessage({...session.envelope, type:'response', sequence:++session.sequence,
                     choice, expiresAt:Math.min(session.until, Date.now()+60000)}, productOrigin); }
                 catch { end(child); }
             };
-            const stopSource = source?.subscribe(send), stopMode = automatic ? consentMode.subscribe(send) : null;
-            session.unsubscribe = () => { stopSource?.(); stopMode?.(); };
+            session.unsubscribe = source?.subscribe(send);
             session.timer = win.setInterval(send, 20000);
             send();
         } catch { /* Consent never changes navigation or checkout. */ }
