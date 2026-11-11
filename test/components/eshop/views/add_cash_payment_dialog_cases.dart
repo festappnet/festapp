@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/models/payment_refund_recipient.dart';
+import 'package:fstapp/components/eshop/models/transaction_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 
 import 'dart:async';
@@ -290,6 +292,7 @@ void main() {
   Future<void> operation(
     WidgetTester tester, {
     bool refund = false,
+    List<PaymentRefundRecipient> recipients = const [],
     String currency = 'EUR',
     PaymentOperationContext context = cashContext,
     PaymentOperationSubmit? submit,
@@ -310,6 +313,7 @@ void main() {
             currency: currency,
             context: context,
             refund: refund,
+            refundRecipients: recipients,
             onSubmit: submit,
             onBankInstructions: instructions,
             initialPendingPayload: pending,
@@ -329,6 +333,143 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  TransactionModel incoming({
+    String account = '19-2000145399/0800',
+    String currency = 'CZK',
+    String source = 'banksync_api',
+    double amount = 1000,
+    bool voided = false,
+    String name = 'Eva Nováková',
+  }) => TransactionModel(
+    counterAccount: account,
+    currency: currency,
+    ingestSource: source,
+    amount: amount,
+    voided: voided,
+    counterAccountName: name,
+  );
+
+  test('refund recipients use incoming bank facts and deduplicate IBANs', () {
+    final recipients = PaymentRefundRecipient.fromTransactions([
+      incoming(),
+      incoming(account: 'CZ6508000000192000145399'),
+      incoming(source: 'manual', account: 'DE89370400440532013000'),
+      incoming(amount: -100, account: 'DE89370400440532013000'),
+      incoming(voided: true, account: 'DE89370400440532013000'),
+      incoming(currency: 'USD', account: 'DE89370400440532013000'),
+      incoming(account: 'invalid'),
+    ], 'CZK');
+    expect(recipients, hasLength(1));
+    expect(recipients.single.iban, 'CZ6508000000192000145399');
+    expect(recipients.single.name, 'Eva Nováková');
+    expect(
+      PaymentRefundRecipient.fromTransactions([
+        incoming(account: '2000145399', name: ''),
+      ], 'CZK'),
+      isEmpty,
+    );
+  });
+
+  testWidgets(
+    'refund prefills amount and incoming recipient and tracks account edits',
+    (tester) async {
+      final recipients = PaymentRefundRecipient.fromTransactions([
+        incoming(),
+      ], 'CZK');
+      await operation(
+        tester,
+        refund: true,
+        currency: 'CZK',
+        recipients: recipients,
+        context: const PaymentOperationContext(
+          available: '750.50',
+          methods: [
+            PaymentOperationMethod(
+              id: 'bank',
+              displayName: 'Bank',
+              refund: true,
+              verification: 'bank_event',
+              instructions: true,
+            ),
+          ],
+        ),
+      );
+      final amount = find.byKey(const ValueKey('paymentAmount'));
+      final name = find.widgetWithText(
+        TextFormField,
+        PaymentOperationStrings.text('recipientName'),
+      );
+      final iban = find.widgetWithText(
+        TextFormField,
+        PaymentOperationStrings.text('recipientIban'),
+      );
+      expect(tester.widget<TextFormField>(amount).controller!.text, '750.50');
+      expect(
+        tester.widget<TextFormField>(name).controller!.text,
+        'Eva Nováková',
+      );
+      expect(
+        tester.widget<TextFormField>(iban).controller!.text,
+        recipients.single.iban,
+      );
+      expect(
+        find.text(PaymentOperationStrings.text('incomingAccountHint')),
+        findsOneWidget,
+      );
+      await tester.enterText(iban, 'DE89370400440532013000');
+      await tester.pump();
+      expect(
+        find.text(PaymentOperationStrings.text('incomingAccountHint')),
+        findsNothing,
+      );
+      expect(
+        find.text(PaymentOperationStrings.text('manualAccountHint')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'refund with multiple incoming accounts requires recipient choice',
+    (tester) async {
+      final recipients = PaymentRefundRecipient.fromTransactions([
+        incoming(),
+        incoming(account: 'DE89370400440532013000', name: 'Marta'),
+      ], 'CZK');
+      await operation(
+        tester,
+        refund: true,
+        recipients: recipients,
+        context: const PaymentOperationContext(
+          available: '1000',
+          methods: [
+            PaymentOperationMethod(
+              id: 'bank',
+              displayName: 'Bank',
+              refund: true,
+              verification: 'bank_event',
+              instructions: true,
+            ),
+          ],
+        ),
+      );
+      final iban = find.widgetWithText(
+        TextFormField,
+        PaymentOperationStrings.text('recipientIban'),
+      );
+      expect(tester.widget<TextFormField>(iban).controller!.text, isEmpty);
+      final dropdown = tester.widget<DropdownButtonFormField<String>>(
+        find.byKey(const ValueKey('refundRecipientAccount')),
+      );
+      dropdown.onChanged!('DE89370400440532013000');
+      await tester.pump();
+      expect(
+        tester.widget<TextFormField>(iban).controller!.text,
+        'DE89370400440532013000',
+      );
+    },
+  );
 
   testWidgets(
     'refund exposes bank QR before submitting and preserves cash choice',
@@ -492,7 +633,7 @@ void main() {
             .widget<TextFormField>(find.byKey(const ValueKey('paymentAmount')))
             .controller!
             .text,
-        '',
+        '1000.00',
       );
       await tester.enterText(
         find.byKey(const ValueKey('paymentAmount')),

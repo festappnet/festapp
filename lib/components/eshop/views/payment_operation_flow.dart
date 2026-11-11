@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../db_eshop.dart';
 import '../db_orders.dart';
 import '../models/payment_operation_context.dart';
+import '../models/payment_refund_recipient.dart';
 import '../models/order_payment_actions.dart';
 import '../../bank_accounts/views/unit_bank_accounts_screen.dart';
 import '../../forms/payment_method_strings.dart';
@@ -114,6 +115,10 @@ class _PaymentOperationFlowState extends State<_PaymentOperationFlow> {
     orderId: widget.orderId,
     context: _operations,
     refund: widget.refund,
+    refundRecipients: PaymentRefundRecipient.fromTransactions(
+      _data.transactions,
+      _data.paymentInfo!.currencyCode!,
+    ),
     initialPendingPayload: widget.initialPendingPayload,
     currency: _data.paymentInfo!.currencyCode!,
     bankOptions: OrderPaymentBankOptions(

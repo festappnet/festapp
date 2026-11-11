@@ -14,6 +14,7 @@ import '../../forms/payment_method_strings.dart';
 import '../../../services/utilities_all.dart';
 import '../db_orders.dart';
 import '../models/payment_operation_context.dart';
+import '../models/payment_refund_recipient.dart';
 import '../orders_strings.dart';
 import '../payment_operation_strings.dart';
 
@@ -30,6 +31,7 @@ class PaymentOperationDialog extends StatefulWidget {
     required this.currency,
     required this.context,
     this.refund = false,
+    this.refundRecipients = const [],
     this.bankOptions,
     this.onSubmit,
     this.onPreview,
@@ -40,6 +42,7 @@ class PaymentOperationDialog extends StatefulWidget {
   final String currency;
   final PaymentOperationContext context;
   final bool refund;
+  final List<PaymentRefundRecipient> refundRecipients;
   final Widget? bankOptions;
   final PaymentOperationSubmit? onSubmit, onPreview, onBankInstructions;
   final Map<String, dynamic>? initialPendingPayload;
@@ -138,6 +141,15 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
   void initState() {
     super.initState();
     _method = _methods.firstOrNull?.id;
+    if (widget.refund) {
+      if ((double.tryParse(_context.available) ?? 0) > 0) {
+        _amount.text = _context.available;
+      }
+      if (widget.refundRecipients.length == 1) {
+        _iban.text = widget.refundRecipients.single.iban;
+        _name.text = widget.refundRecipients.single.name;
+      }
+    }
     final pending = widget.initialPendingPayload;
     if (pending != null) {
       if (pending['orderId'] != widget.orderId) {
@@ -172,6 +184,11 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
           break;
         }
       }
+    }
+    if (widget.refund && pending == null && _request == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _draftChanged();
+      });
     }
   }
 
@@ -734,7 +751,40 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                         ],
                         if (_bank) ...[
                           const SizedBox(height: 12),
-                          Text(PaymentOperationStrings.text('manualRecipient')),
+                          Text(
+                            PaymentOperationStrings.text('recipientAccount'),
+                          ),
+                          if (widget.refundRecipients.length > 1)
+                            DropdownButtonFormField<String>(
+                              key: const ValueKey('refundRecipientAccount'),
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                labelText: PaymentOperationStrings.text(
+                                  'chooseIncomingAccount',
+                                ),
+                              ),
+                              items: widget.refundRecipients
+                                  .map(
+                                    (recipient) => DropdownMenuItem(
+                                      value: recipient.iban,
+                                      child: Text(
+                                        '${recipient.name} ${recipient.iban}'
+                                            .trim(),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: locked
+                                  ? null
+                                  : (iban) {
+                                      final recipient = widget.refundRecipients
+                                          .firstWhere((r) => r.iban == iban);
+                                      setState(() {
+                                        _iban.text = recipient.iban;
+                                        _name.text = recipient.name;
+                                      });
+                                    },
+                            ),
                           TextFormField(
                             controller: _name,
                             enabled: !locked,
@@ -749,11 +799,27 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                           ),
                           TextFormField(
                             controller: _iban,
+                            onChanged: (_) => setState(() {}),
                             enabled: !locked,
                             decoration: InputDecoration(
                               labelText: PaymentOperationStrings.text(
                                 'recipientIban',
                               ),
+                              helperText:
+                                  widget.refundRecipients.any(
+                                    (r) =>
+                                        r.iban ==
+                                        _iban.text
+                                            .replaceAll(RegExp(r'\s'), '')
+                                            .toUpperCase(),
+                                  )
+                                  ? PaymentOperationStrings.text(
+                                      'incomingAccountHint',
+                                    )
+                                  : PaymentOperationStrings.text(
+                                      'manualAccountHint',
+                                    ),
+                              helperMaxLines: 3,
                             ),
                             validator: (v) =>
                                 RegExp(
