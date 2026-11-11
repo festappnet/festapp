@@ -86,6 +86,12 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'consent_notice',CASE WHEN s->'eligible'='true'::jsonb THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
    'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
   'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
+  -- Stable notice/processing scope, independent of runtime deployment and approved hosts.
+  -- Changes behind an unchanged GTM ID/privacy URL require a consent-version increment.
+  'consent_revision',md5(jsonb_build_array(1,o.organization,u.id,u.data->'measurement_gtm_container',
+   u.data->'measurement_scripts',u.data->'measurement_privacy_url',u.data->'measurement_consent_title',
+   u.data->'measurement_consent_text',coalesce(u.data->'measurement_consent_version','1'::jsonb),
+   r.runtime_profile,r.collector_origins,jsonb_build_array('analytics','marketing'))::text),
   'measurement_protocol',3,'form_link',f.link,'profile',r.runtime_profile,'required_purposes',jsonb_build_array('analytics','marketing'),
   'enhanced_conversions_unavailable',false,
   -- Append the opt-in only when enabled to preserve existing saved choices.
@@ -93,7 +99,9 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    u.data->'measurement_privacy_url',coalesce(u.data->'measurement_consent_version','1'::jsonb),r.runtime_profile,r.runtime_origin,
    r.parent_origins,r.collector_origins,r.revision,s->'policy_revision',u.data->'measurement_enabled',
    org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')
-   ||CASE WHEN u.data->'measurement_consent_bridge'='true'::jsonb THEN jsonb_build_array(true) ELSE '[]'::jsonb END)::text),
+   ||CASE WHEN u.data->'measurement_consent_bridge'='true'::jsonb THEN jsonb_build_array(true) ELSE '[]'::jsonb END
+   ||CASE WHEN nullif(u.data->>'measurement_consent_title','') IS NOT NULL OR nullif(u.data->>'measurement_consent_text','') IS NOT NULL
+     THEN jsonb_build_array(u.data->'measurement_consent_title',u.data->'measurement_consent_text') ELSE '[]'::jsonb END)::text),
   'configuration_revision',md5(jsonb_build_array(u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_enabled',org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')::text),
   'runtime_revision',coalesce(r.revision,0),'policy_revision',s->'policy_revision','valid_for_seconds',60,'consent_required',true)

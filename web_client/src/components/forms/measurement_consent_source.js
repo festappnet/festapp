@@ -1,6 +1,7 @@
 import {measurementConsent} from './form_measurement_contract.js';
 // One public scope/record contract for iframe adapters and linked visits. The
-// revision must come from the saved CMP record, never from the requested scope.
+// revision belongs to the saved record or archived CMP-policy mapping, never
+// to a value copied from the requested scope.
 export function consentScope(policy) {
     const revision = policy?.processingRevision ?? policy?.processing_revision;
     const purposes = policy?.requiredPurposes ?? policy?.required_purposes;
@@ -8,14 +9,22 @@ export function consentScope(policy) {
         typeof revision !== 'string' || !revision.length || revision.length > 128 ||
         (purposes !== undefined && (!Array.isArray(purposes) || purposes.length !== 2 ||
             !purposes.includes('analytics') || !purposes.includes('marketing')))) return null;
-    return {organization:policy.organization, unit:policy.unit, processingRevision:revision, requiredPurposes:['analytics','marketing']};
+    const consentRevision = policy.consentRevision ?? policy.consent_revision;
+    if (consentRevision !== undefined && (typeof consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(consentRevision))) return null;
+    return {organization:policy.organization, unit:policy.unit, processingRevision:revision, requiredPurposes:['analytics','marketing'],
+        ...(consentRevision !== undefined ? {consentRevision} : {})};
 }
 export const sameConsentScope = (a, b) => !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
 export function readConsentSource(source, scope) {
     if (!scope) return null;
     try {
         const value = source?.read({...scope, requiredPurposes:[...scope.requiredPurposes]});
-        return value?.processingRevision === scope.processingRevision ? measurementConsent(value) : null;
+        // Semantic records bind to the archived notice; old external adapters keep
+        // their stricter processing-revision contract. Neither echoes a request.
+        const matches = value?.consentRevision !== undefined
+            ? scope.consentRevision !== undefined && value.consentRevision === scope.consentRevision
+            : value?.processingRevision === scope.processingRevision;
+        return matches ? measurementConsent(value) : null;
     } catch { return null; }
 }
 export function createConsentSourceRegistry() {

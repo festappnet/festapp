@@ -342,13 +342,35 @@ Web s `embed.js` může předat uloženou volbu svého CMP do samostatného form
    href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
 ```
 
-Samotný odkaz ani Consent Mode nestačí. Pořadatel zapne
-`measurement_consent_bridge`, schválí origin webu a napojí živý zdroj přes
-`FestappEmbed.connectMeasurementSource`. Zdroj vrací uložený záznam CMP jen pro
-odpovídající organizaci, jednotku a revizi zpracování. Revize musí být součástí
-uložené volby, nesmí se pouze převzít z příchozí žádosti. Lišta webu a archivovaná
-konfigurace CMP musí výslovně pokrývat i nákup ve formuláři se stejnými účely,
-příjemci, zásadami a možností odvolání. Technický přepínač tuto evidenci nenahrazuje.
+Pořadatel zapne `measurement_consent_bridge` a platforma schválí origin webu.
+Samotný atribut odkazu ani stav Google Consent Mode nestačí. Správce webu jednou
+nastaví standardní adaptér Complianzu na skriptu `embed.js`:
+
+```html
+<script defer src="https://vstupenky.online/embed.js"
+  data-festapp-consent='{"provider":"complianz","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","policyId":"42"}'></script>
+```
+
+Ukázkové hodnoty nahraďte skutečnými ID organizace a jednotky, hodnotou
+`analytics.consent_revision` z metadat formuláře a ID přijatých zásad Complianzu.
+Archivované znění těchto zásad musí pokrývat nákup ve formuláři, jeho účely,
+příjemce a oddělenou doménu měření. Konfiguraci neodvozujte z příchozí žádosti.
+Jeden skript obsluhuje jednu organizaci a jednotku; cizí rozsah odmítne.
+
+Adaptér ověří režim opt-in, uložené kategorie, stav lišty a shodu nastavené,
+uložené a aktuální verze zásad CMP. Uložené přijetí, částečná volba i odmítnutí
+se přenesou bez dalšího dotazu. Neznámý či zastaralý stav, chybějící API,
+vynucené statistiky nebo souhlas po jednotlivých službách ponechá místní lištu.
+Při TCF se automaticky neudělí marketing. Pouhé zavření lišty bez uložené volby
+nic nepovolí. Přímé čtení pevných názvů cookies se nepoužívá; prefix řeší CMP.
+
+Technická změna runtime ukončí starou vazbu, ale nemění verzi podmínek souhlasu.
+Při změně účelů, příjemců nebo vzdáleného obsahu GTM/zásad zvyšte
+`measurement_consent_version`, zajistěte nové rozhodnutí v CMP a aktualizujte
+společné mapování jeho zásad a revize Festappu. Starý souhlas se nesmí označit
+novou revizí. Pro jiné CMP zůstává `FestappEmbed.connectMeasurementSource`;
+přesný kontrakt je v dokumentaci měření. Bez adaptéru se odkaz řídí místní lištou.
+Dosavadní GCM cesta vložených formulářů bez napojeného zdroje se nemění.
 
 Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
 karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,

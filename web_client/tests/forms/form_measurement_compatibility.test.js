@@ -22,7 +22,7 @@ for (const [name,Client,manifestForClient,source,manifestForWorker,expectsActive
  const parent=new JSDOM('<body><form><button>Submit</button></form>',{url:parentOrigin+'/form/summer',runScripts:'outside-only'});
  const transport=new Client({win:parent.window,model:{link:'summer'}});let active=false;
  const timers=new Map();let timer=0;parent.window.setTimeout=(fn,delay)=>{timers.set(++timer,{fn,delay});return timer;};parent.window.clearTimeout=id=>timers.delete(id);
- const currentPolicy={...policy,processing_revision:'sql-protocol-3'};
+ const currentPolicy={...policy,consent_revision:'a'.repeat(32),processing_revision:'sql-protocol-3'};
  const manifest=manifestForClient(currentPolicy,'summer'),workerManifest=manifestForWorker(currentPolicy,'summer');
  transport.activate({runtimeOrigin,manifest,generation:7,consent:{analytics:true,marketing:true},expiresAt:Date.now()+60000,onReady:()=>{active=true;},onMismatch(){}});
  const worker=new JSDOM('<script type="application/json" id="measurement-config"></script>',{url:runtimeOrigin+'/runtime',runScripts:'outside-only'});

@@ -93,7 +93,9 @@
   }
   function measurementManifest(policy, formLink) {
     if (!policy || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization < 1 || policy.unit < 1 || !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 1 || !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 1 || typeof policy.processing_revision !== "string" || !policy.processing_revision || policy.processing_revision.length > 128 || policy.profile !== "gtm-v1" || !measurementId(formLink) || JSON.stringify(policy.required_purposes) !== JSON.stringify(["analytics", "marketing"])) return null;
+    if (policy.consent_revision !== void 0 && (typeof policy.consent_revision !== "string" || !/^[a-f0-9]{32}$/.test(policy.consent_revision))) return null;
     return {
+      ...policy.consent_revision !== void 0 ? { consent_revision: policy.consent_revision } : {},
       measurement_protocol: measurementProtocol,
       organization: policy.organization,
       unit: policy.unit,
@@ -106,21 +108,30 @@
       required_purposes: ["analytics", "marketing"]
     };
   }
-  var sameMeasurementManifest = (a, b) => !!a && !!b && ["measurement_protocol", "organization", "unit", "form_link", "processing_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
+  var sameMeasurementManifest = (a, b) => !!a && !!b && ["measurement_protocol", "organization", "unit", "form_link", "processing_revision", "consent_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
 
   // src/components/forms/measurement_consent_source.js
   function consentScope(policy) {
     const revision = policy?.processingRevision ?? policy?.processing_revision;
     const purposes = policy?.requiredPurposes ?? policy?.required_purposes;
     if (![policy?.organization, policy?.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof revision !== "string" || !revision.length || revision.length > 128 || purposes !== void 0 && (!Array.isArray(purposes) || purposes.length !== 2 || !purposes.includes("analytics") || !purposes.includes("marketing"))) return null;
-    return { organization: policy.organization, unit: policy.unit, processingRevision: revision, requiredPurposes: ["analytics", "marketing"] };
+    const consentRevision = policy.consentRevision ?? policy.consent_revision;
+    if (consentRevision !== void 0 && (typeof consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(consentRevision))) return null;
+    return {
+      organization: policy.organization,
+      unit: policy.unit,
+      processingRevision: revision,
+      requiredPurposes: ["analytics", "marketing"],
+      ...consentRevision !== void 0 ? { consentRevision } : {}
+    };
   }
   var sameConsentScope = (a, b) => !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
   function readConsentSource(source, scope) {
     if (!scope) return null;
     try {
       const value = source?.read({ ...scope, requiredPurposes: [...scope.requiredPurposes] });
-      return value?.processingRevision === scope.processingRevision ? measurementConsent(value) : null;
+      const matches = value?.consentRevision !== void 0 ? scope.consentRevision !== void 0 && value.consentRevision === scope.consentRevision : value?.processingRevision === scope.processingRevision;
+      return matches ? measurementConsent(value) : null;
     } catch {
       return null;
     }
@@ -295,6 +306,90 @@
       win.removeEventListener("message", receive);
       for (const record of opened.values()) win.clearTimeout(record.timer);
       opened.clear();
+    };
+  }
+
+  // src/embed/host_complianz.js
+  var events = [
+    "cmplz_status_change",
+    "cmplz_banner_status",
+    "cmplz_fire_categories",
+    "cmplz_cookie_warning_loaded",
+    "cmplz_revoke",
+    "cmplz_before_categories_consent"
+  ];
+  var disabled = (value) => value === void 0 || value === false || value === 0 || value === "0";
+  var policyId = (value) => (typeof value === "string" || Number.isSafeInteger(value)) && /^[1-9][0-9]{0,15}$/.test(String(value)) ? String(value) : null;
+  function createComplianzSource(win, input) {
+    let config;
+    try {
+      config = typeof input === "string" ? JSON.parse(input) : { ...input };
+      if (config?.provider !== "complianz" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !policyId(config.policyId)) config = null;
+      else config = Object.freeze({ ...config, policyId: policyId(config.policyId) });
+    } catch {
+      config = null;
+    }
+    const listeners = /* @__PURE__ */ new Set();
+    let timer, last, pending = false;
+    const read = (scope) => {
+      try {
+        if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
+        const cmp = win.complianz;
+        if (cmp?.consenttype !== "optin" || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) || typeof win.cmplz_get_cookie !== "function" || typeof win.cmplz_get_banner_status !== "function" || typeof win.cmplz_has_consent !== "function" || win.cmplz_get_banner_status() !== "dismissed" || policyId(cmp.current_policy_id) !== config.policyId || policyId(win.cmplz_get_cookie("policy_id")) !== config.policyId) return null;
+        const stats = win.cmplz_get_cookie("statistics"), ads = win.cmplz_get_cookie("marketing");
+        if (![stats, ads].every((value) => ["allow", "deny"].includes(value))) return null;
+        const services = win.cmplz_get_cookie("consented_services");
+        if (services && services !== "[]" && services !== "{}") return null;
+        const analytics = win.cmplz_has_consent("statistics"), marketing = win.cmplz_has_consent("marketing");
+        if (typeof analytics !== "boolean" || typeof marketing !== "boolean") return null;
+        return {
+          consentRevision: config.consentRevision,
+          analytics: stats === "allow" && analytics,
+          marketing: ads === "allow" && marketing && disabled(cmp.tcf_active) && typeof win.__tcfapi === "undefined"
+        };
+      } catch {
+        return null;
+      }
+    };
+    const tick = () => {
+      if (!listeners.size) return;
+      const next = JSON.stringify(read());
+      if (next === last) return;
+      last = next;
+      for (const listener of [...listeners]) {
+        try {
+          listener();
+        } catch {
+        }
+      }
+    };
+    const changed = () => {
+      if (pending) return;
+      pending = true;
+      win.queueMicrotask(() => {
+        pending = false;
+        tick();
+      });
+    };
+    return {
+      read,
+      subscribe(listener) {
+        listeners.add(listener);
+        if (listeners.size === 1 && config) {
+          last = JSON.stringify(read());
+          for (const event of events) win.document.addEventListener(event, changed);
+          timer = win.setInterval(tick, 1e3);
+        }
+        return () => {
+          listeners.delete(listener);
+          if (!listeners.size) {
+            win.clearInterval(timer);
+            timer = void 0;
+            last = void 0;
+            for (const event of events) win.document.removeEventListener(event, changed);
+          }
+        };
+      }
     };
   }
 
@@ -971,7 +1066,11 @@
     window.__festappEmbedV1 = true;
     const consentSource = createConsentSourceRegistry();
     try {
-      const productOrigin = new URL(document.currentScript.src, document.baseURI).origin;
+      const script = document.currentScript;
+      const productOrigin = new URL(script.src, document.baseURI).origin;
+      if (script.hasAttribute("data-festapp-consent")) {
+        consentSource.connect(createComplianzSource(window, script.getAttribute("data-festapp-consent")));
+      }
       installHostConsentLink(window, productOrigin, consentSource);
     } catch {
     }

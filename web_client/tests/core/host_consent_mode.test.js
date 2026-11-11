@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {readHostConsentMode, createHostConsentMode} from '../../src/embed/host_consent_mode.js';
 import {measurementProtocol, measurementManifest} from '../../src/components/forms/form_measurement_contract.js';
+import {complianzFixture,complianzConfig,consentRevision} from '../support/complianz_fixture.js';
 import {policy} from '../support/measurement_fixture.js';
 const denied = {analytics:false, marketing:false};
 const granted = {analytics:true, marketing:true};
@@ -78,7 +79,7 @@ test('polling notifies only on change, leaves dataLayer untouched and stops with
     assert.equal(Object.getOwnPropertyDescriptor(win,'dataLayer').writable,true);
     stopA(); assert.equal(timers.size,1); stopB(); assert.equal(timers.size,0);
 });
-function host(t, web = false) {
+function host(t, web = false, cmpConfiguration) {
     const dom = new JSDOM(`<iframe data-festapp-embed ${web ? 'data-festapp-datalayer' : ''} src="https://tickets.invalid/form/summer?embed=1"></iframe>`,
         {url:'https://host.invalid',runScripts:'outside-only',pretendToBeVisual:true});
     t.after(() => dom.window.close());
@@ -87,12 +88,19 @@ function host(t, web = false) {
     win.clearInterval = id => { if (timers[id - 1]) { timers[id - 1].active = false; timers[id - 1].callback = () => {}; } };
     const poll = () => timers.filter(timer => timer.active && [250,1000].includes(timer.delay)).forEach(timer => timer.callback());
     frame.contentWindow.postMessage = value => sent.push(value);
+    let cmp;
+    if (cmpConfiguration !== undefined) {
+        cmp = complianzFixture(win,{choice:granted});
+        const element = win.document.createElement('script'); element.src='https://tickets.invalid/embed.js';
+        element.setAttribute('data-festapp-consent', typeof cmpConfiguration === 'string' ? cmpConfiguration : JSON.stringify(cmpConfiguration));
+        Object.defineProperty(win.document,'currentScript',{value:element});
+    }
     win.eval(script);
-    const manifest = measurementManifest({...policy,measurement_consent_bridge:true},'summer');
+    const manifest = measurementManifest({...policy,...(cmpConfiguration !== undefined ? {consent_revision:consentRevision} : {}),measurement_consent_bridge:true},'summer');
     const context = (m = manifest) => win.dispatchEvent(new win.MessageEvent('message', {source:frame.contentWindow,origin:'https://tickets.invalid',
         data:{namespace:'festapp-embed',protocol:1,instance:sent[0].instance,type:'measurement-context',measurement:{protocol:measurementProtocol,manifest:m}}}));
     const choice = () => JSON.parse(JSON.stringify(sent.findLast(value => value.type === 'measurement-consent').measurement.consent));
-    return {win,frame,sent,context,choice,timers,manifest,poll};
+    return {win,frame,sent,context,choice,timers,manifest,poll,cmp};
 }
 test('runtime bridge forwards host consent changes on the next poll', t => {
     const {win,context,choice,poll} = host(t);
@@ -235,4 +243,18 @@ test('a trimmed dataLayer of unchanged length cannot hide a later revocation', (
     win.dataLayer.push(command('consent','update',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'}));
     assert.equal(win.dataLayer.length, 300);
     assert.deepEqual(source.read(), denied, 'the revocation must not stay behind the cursor');
+});
+
+test('configured Complianz source also supplies real automatic iframe bindings',async t=>{
+ const {context,choice,cmp,manifest}=host(t,false,complianzConfig);
+ context();assert.deepEqual(choice(),granted);
+ cmp.choose({analytics:true,marketing:false});await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(choice(),{analytics:true,marketing:false});
+ context({...manifest,consent_revision:'b'.repeat(32),processing_revision:'new-processing'});
+ assert.deepEqual(choice(),denied,'old configured coverage cannot supply a new form scope');
+});
+test('invalid script configuration cannot restore iframe GCM grants',t=>{
+ const {win,context,choice,poll}=host(t,false,'{');
+ win.google_tag_data={ics:{entries:{analytics_storage:{default:true},ad_storage:{default:true},ad_user_data:{default:true},ad_personalization:{default:true}}}};
+ context();poll();assert.deepEqual(choice(),denied);
 });

@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {measurementConsent, analyticsPayload, measurementDataLayerPayload} from '../../src/components/forms/form_measurement_contract.js';
+import {policy} from '../support/measurement_fixture.js';
+import {measurementManifest as frozenManifest} from '../fixtures/measurement_protocol_3/contract.mjs';
+import {measurementConsent, analyticsPayload, measurementDataLayerPayload, measurementManifest, sameMeasurementManifest} from '../../src/components/forms/form_measurement_contract.js';
 
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const read=path=>readFileSync(new URL('../../../'+path,import.meta.url),'utf8');
@@ -78,4 +80,16 @@ test('destination projection rebuilds scoped page context without trusting event
  }
  assert.deepEqual(measurementDataLayerPayload({page_type:'checkout'},{embedded:true,pageContext}),
   {page_type:'checkout',user_type:'b2c',form_embedded:true},'a new page replaces prior context completely');
+});
+
+// New scope fields fail closed with frozen peers; no version is manufactured.
+test('semantic scope survives current projection and mismatched frozen peers stay inactive',()=>{
+ const input={...policy,consent_revision:'a'.repeat(32)};
+ const current=measurementManifest(input,'summer');
+ assert.equal(current.consent_revision,input.consent_revision);
+ assert.equal(sameMeasurementManifest(current,measurementManifest(input,'summer')),true);
+ assert.equal(sameMeasurementManifest(current,frozenManifest(input,'summer')),false);
+ assert.equal(sameMeasurementManifest(current,{...current,consent_revision:'b'.repeat(32)}),false);
+ assert.equal(measurementManifest({...input,consent_revision:'bad'},'summer'),null);
+ assert.equal(measurementManifest(policy,'summer').consent_revision,undefined);
 });

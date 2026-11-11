@@ -380,17 +380,71 @@ Custom notice text always retains a fixed explanation of how to change consent.
 Explicit marked links can share a saved website CMP record with the standalone
 form. The Unit must enable `measurement_consent_bridge` and approve the exact
 host origin. The website notice and its archived CMP configuration must cover
-this Unit's form, purposes, destinations, recipients and processing revision.
+this Unit's form, purposes, destinations, recipients and applicable notice revision.
 An opt-in switch is configuration, not evidence that a visitor confirmed a notice.
-Google Consent Mode alone does not prove this record or its revision.
 
-Register a live source after `embed.js` loads with
+### Configured Complianz source
+
+Configure the standard helper once for one organization/Unit and mark links:
+
+```html
+<script defer src="https://vstupenky.online/embed.js"
+  data-festapp-consent='{"provider":"complianz","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","policyId":"42"}'></script>
+<a data-festapp-consent-link target="_blank"
+   href="https://vstupenky.online/form/your-form">Buy tickets</a>
+```
+
+These are example values. Obtain `consentRevision` from the form metadata's
+`analytics.consent_revision`; use the actual organization/Unit IDs and the
+Complianz policy ID whose archived notice covers that revision. The website owner
+must verify that statistics/marketing categories cover the form's respective
+purposes, destinations and recipients, including the isolated measurement domain.
+This static configuration is a coverage assertion, not a visitor consent record.
+Do not generate it from the incoming form request or auto-update it on a deploy.
+
+The helper uses Complianz's prefix-aware `cmplz_get_cookie`, banner/category APIs
+and consent events. Import requires opt-in mode, a dismissed banner, explicit
+stored category values and matching configured, stored and current CMP policy IDs.
+Only stored `allow` intersected with the category API can grant. Forced-statistics,
+opt-out, per-service records, missing/broken APIs or expired cookies keep the local
+notice. TCF marketing stays denied. Ordinary saved refusal transfers without
+asking again. A close-only interaction without a stored decision grants nothing.
+Sequential category writes are observed after the CMP transaction; polling also
+detects expiration and changes from another website tab.
+
+**Standalone links never infer a saved choice from GCM defaults or updates.** An
+unconfigured site keeps the form's own notice, even with `default: granted` or a
+Consent Mode update. Invalid configured sources remain denied. The existing
+unconfigured iframe GCM fallback is unchanged; a configured Complianz source
+supplies both links and automatic Unit iframe bindings through the shared registry.
+A later explicit source replaces that source and retires its subscriptions.
+
+`consent_revision` binds organization/Unit, destination code, privacy URL, notice
+text/title, consent version, runtime profile, collector origins and purposes.
+It excludes runtime build revision/origin and approved parent origins. Technical
+changes still invalidate live leases through `processing_revision`. Increase
+`measurement_consent_version` when remote GTM or privacy content changes at an
+unchanged ID/URL; the digest cannot inspect those contents. Update the CMP notice
+and require a new decision, then configure its new accepted policy ID and the new
+semantic revision together. Never map an old CMP policy to newly added purposes.
+
+Deploy the SQL projection and updated form/helper/runtime artifacts coherently.
+Mixed peers that cannot carry the semantic revision fall back to local consent;
+there is no permissive GCM fallback during rolling upgrades. Existing external
+adapters returning `processingRevision` remain supported by updated peers. New
+adapters can instead return a saved `consentRevision` matching the requested
+scope's `consentRevision`; a runtime-only deploy then does not invalidate that
+saved notice. Exact current technical scope still binds every live message.
+
+### Explicit external adapters
+
+For another CMP, register a live source after `embed.js` loads with
 `FestappEmbed.connectMeasurementSource({read(scope), subscribe(notify)})`.
 It uses the same record contract as `connectMeasurementConsent(frame, source)`.
 `scope` contains `organization`, `unit`, `processingRevision` and the two
-`requiredPurposes`. `read` must return null unless the visitor's **saved** CMP
+`requiredPurposes`, plus optional `consentRevision`. `read` must return null unless the visitor's **saved** CMP
 record covers that exact organization, Unit and revision. A valid record returns
-`{processingRevision, analytics, marketing}`. Read the revision from that saved
+`{processingRevision, analytics, marketing}` or `{consentRevision, analytics, marketing}`. Read the revision from that saved
 record; never echo the requested revision into an old decision. Subscribe must
 return a disposer and notify after updates, withdrawal and record removal.
 The source owner must also enforce the website record's own expiry in read.
@@ -410,7 +464,8 @@ const disconnect = FestappEmbed.connectMeasurementSource({
 ```
 
 `disconnect()` retires that source. Replacement, broken subscriptions and explicit
-disconnect remain denied; they never restore Google's automatic fallback. The
+disconnect remain denied; they never restore Google's automatic fallback, for
+iframes or links. Replacing the configured source ends its active linked visits. The
 global source also supplies existing automatic Unit iframe bindings; explicit
 per-frame adapters keep precedence. Existing embeds with no global source ever
 registered retain their existing automatic bridge behavior.

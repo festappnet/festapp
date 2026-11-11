@@ -1,5 +1,6 @@
 import {createConsentSourceRegistry} from '../components/forms/measurement_consent_source.js';
 import {installHostConsentLink} from './host_consent_link.js';
+import {createComplianzSource} from './host_complianz.js';
 import {EmbedChannel} from './channel.js';
 import {limits} from './protocol.js';
 import {measurementProtocol, campaignContext} from '../components/forms/form_measurement_contract.js';
@@ -13,7 +14,11 @@ if (!window.__festappEmbedV1) {
     const consentSource = createConsentSourceRegistry();
     // Capture synchronously while the classic embed script is executing.
     try {
-        const productOrigin = new URL(document.currentScript.src, document.baseURI).origin;
+        const script = document.currentScript;
+        const productOrigin = new URL(script.src, document.baseURI).origin;
+        if (script.hasAttribute('data-festapp-consent')) {
+            consentSource.connect(createComplianzSource(window, script.getAttribute('data-festapp-consent')));
+        }
         installHostConsentLink(window, productOrigin, consentSource);
     } catch { /* No trusted script origin, no consent link bridge. */ }
     const frames = new Map();

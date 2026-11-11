@@ -10,10 +10,10 @@ function childFixture(options={}) {
  const dom=new JSDOM('',{url:'https://tickets.example/form/test',referrer:options.referrer??'https://host.example/event'}),win=dom.window;
  win.name=options.legacy?'':'festapp-consent-link-00000000-0000-0000-0000-000000000000';
  const sent=[],accepted=[];let revoked=0,settled=0,saved=false;
- const peer={postMessage:data=>sent.push(data)};win.opener=peer;
+ const peer={closed:false,postMessage:data=>sent.push(data)};win.opener=peer;
  const stop=requestLinkedConsent({win,policy:options.policy??policy,hasChoice:()=>saved,accept:(...v)=>accepted.push(v),revoke:()=>revoked++,settled:()=>settled++});
  const reply=(extra={},source=peer,origin='https://host.example')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:{...sent[0],type:'response',sequence:1,expiresAt:Date.now()+60000,choice:{analytics:true,marketing:false},...extra}}));
- return {win,sent,accepted,stop,reply,save:()=>saved=true,get revoked(){return revoked},get settled(){return settled},close(){stop();win.close()}};
+ return {win,sent,accepted,stop,reply,closePeer:()=>peer.closed=true,save:()=>saved=true,get revoked(){return revoked},get settled(){return settled},close(){stop();win.close()}};
 }
 function hostFixture() {
  const dom=new JSDOM('<a data-festapp-consent-link target="_blank" href="https://tickets.example/form/test">Buy</a>',{url:'https://host.example'}),win=dom.window;
@@ -83,4 +83,27 @@ test('a delayed unused renewal retains sender expiry instead of gaining a new TT
  Date.now=()=>start+80001;f.reply({sequence:3,expiresAt:start+100000});
  assert.equal(f.revoked,1);assert.equal(f.accepted.length,2);
  }finally{Date.now=now;f.close()}
+});
+
+test('standalone GCM defaults and updates never create a saved scoped source',()=>{
+ const f=hostFixture();try {
+  f.dispose();
+  f.win.google_tag_data={ics:{entries:{analytics_storage:{default:true,update:true}}}};
+  f.win.dataLayer=[(function(){return arguments})('consent','update',{analytics_storage:'granted'})];
+  f.click();f.reply();assert.equal(f.replies.at(-1).data.type,'end');
+ }finally{f.close()}
+});
+test('a closed website tab revokes the linked visit without an end message',async()=>{
+ const f=childFixture();try{f.reply();assert.equal(f.accepted.length,1);
+ f.closePeer();await new Promise(r=>setTimeout(r,1100));assert.equal(f.revoked,1);
+ }finally{f.close()}
+});
+
+test('a terminal end from an unloading website revokes even without the peer source',()=>{
+ const f=childFixture();try{f.reply();assert.equal(f.accepted.length,1);
+ f.reply({type:'end',sequence:2,choice:undefined},null);assert.equal(f.revoked,1);
+ }finally{f.close()}
+ const g=childFixture();try{g.reply();g.reply({sequence:2,choice:{analytics:true,marketing:true}},null);assert.equal(g.accepted.length,1,'a grant still needs the exact peer');
+ g.reply({type:'end',sequence:3,nonce:'wrong'},null);assert.equal(g.revoked,0,'end still needs the nonce');
+ }finally{g.close()}
 });

@@ -66,7 +66,7 @@ BEGIN
  PERFORM assert_eq(receipt->>'status','conflict','aggregateVersion prevents lost update');
  receipt:=public.save_unit_client_sync_v1(un,gen_random_uuid(),version,jsonb_build_object('id',un,'data',(SELECT data-'measurement_consent_version' FROM public.units WHERE id=un)));
  PERFORM assert_eq((SELECT data->'measurement_consent_version' FROM public.units WHERE id=un),'2'::jsonb,'legacy whole-data omission cannot reset version');
- UPDATE public.units SET data=data||'{"measurement_consent_title":"New heading","measurement_consent_layout":"modal"}' WHERE id=un;
+ UPDATE public.units SET data=data||'{"measurement_consent_layout":"modal"}' WHERE id=un;
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid)->>'processing_revision',before_policy->>'processing_revision','cosmetic changes preserve processing revision');
  UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/new-policy"}' WHERE id=un;
  after_policy:=public.form_measurement_runtime_internal(fid);
@@ -102,4 +102,37 @@ BEGIN
   PERFORM public.save_unit_client_sync_v1(un,gen_random_uuid(),version,jsonb_build_object('id',un,'settings',jsonb_build_object('measurement_consent_version',3)));
  EXCEPTION WHEN insufficient_privilege THEN rejected:=true; END;
  PERFORM assert_true(rejected,'nonmanager cannot increase consent version');
+END $$;
+
+-- Semantic coverage survives technical deployments but never processing changes.
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; fid bigint:=(x->>'form')::bigint;
+ org bigint:=(x->>'organization')::bigint; before_policy jsonb; after_policy jsonb; previous_scope text;
+BEGIN
+ UPDATE public.forms SET is_open=true,data='{"analytics":{"enabled":true}}' WHERE id=fid;
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'fixture','scope');
+ INSERT INTO analytics.unit_runtime(unit,runtime_origin,runtime_profile,parent_origins,collector_origins,revision,operator,reason)
+ VALUES(un,'https://unit-scope.pages.dev','gtm-v1',ARRAY['https://tickets.example'],ARRAY['https://www.google-analytics.com'],1,'fixture','scope');
+ before_policy:=public.form_measurement_runtime_internal(fid);
+ PERFORM assert_true((before_policy->>'consent_revision') ~ '^[a-f0-9]{32}$','semantic revision exists');
+ UPDATE analytics.unit_runtime SET revision=revision+1,runtime_origin='https://unit-scope-new.pages.dev',
+  parent_origins=parent_origins||ARRAY['https://another.example'] WHERE unit=un;
+ after_policy:=public.form_measurement_runtime_internal(fid);
+ PERFORM assert_eq(after_policy->>'consent_revision',before_policy->>'consent_revision','runtime deploy and host additions preserve consent scope');
+ PERFORM assert_true(after_policy->>'processing_revision'<>before_policy->>'processing_revision','technical lease still invalidates');
+ UPDATE public.units SET data=data||'{"measurement_consent_text":"Updated purposes"}' WHERE id=un;
+ after_policy:=public.form_measurement_runtime_internal(fid);
+ PERFORM assert_true(after_policy->>'consent_revision'<>before_policy->>'consent_revision','notice text invalidates imported coverage');
+ PERFORM assert_true(after_policy->>'processing_revision'<>before_policy->>'processing_revision','notice text also invalidates locally saved choices');
+ previous_scope:=after_policy->>'consent_revision';
+ UPDATE public.units SET data=data||'{"measurement_consent_version":2}' WHERE id=un;
+ after_policy:=public.form_measurement_runtime_internal(fid);
+ PERFORM assert_true(after_policy->>'consent_revision'<>previous_scope,'notice version invalidates saved coverage');
+ previous_scope:=after_policy->>'consent_revision';
+ UPDATE public.units SET data=data||'{"measurement_gtm_container":"GTM-NEW123"}' WHERE id=un;
+ after_policy:=public.form_measurement_runtime_internal(fid);
+ PERFORM assert_true(after_policy->>'consent_revision'<>previous_scope,'new destination invalidates saved coverage');
+ previous_scope:=after_policy->>'consent_revision';
+ UPDATE analytics.unit_runtime SET collector_origins=collector_origins||ARRAY['https://new-recipient.example'] WHERE unit=un;
+ PERFORM assert_true(public.form_measurement_runtime_internal(fid)->>'consent_revision'<>previous_scope,'new collector invalidates saved coverage');
 END $$;

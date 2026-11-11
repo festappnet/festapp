@@ -4,6 +4,8 @@ import {consentScope, sameConsentScope} from '../components/forms/measurement_co
 export const consentLinkNamespace = 'festapp-consent-link';
 // Only explicitly opted-in, ordinary new-tab clicks retain an opener. Keeping
 // the actual WindowProxy also excludes iframe and unsolicited popup requests.
+// Standalone links require an actual scoped CMP record; GCM defaults and updates
+// alone do not establish a saved decision or its coverage.
 export function installHostConsentLink(win, productOrigin, source) {
     const opened = new Map();
     const click = event => {

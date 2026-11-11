@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Standalone consent links support configured Complianz opt-in records with semantic notice scope; Google Consent Mode alone never supplies imported consent.
+
 - Organizer help now explains website and Unit measurement, saved consent sources, GTM setup and troubleshooting in Czech and English source, with a download of the paused canonical host preset. English publication keeps its existing preview gate.
 
 - New WordPress, Joomla and Wix embeds select website measurement; saved content retains its existing destination.
