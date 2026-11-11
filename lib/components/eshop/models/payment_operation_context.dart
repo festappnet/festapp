@@ -16,7 +16,7 @@ class PaymentOperationContext {
   final List<Map<String, dynamic>> requests;
   bool get canRecord => methods.any((m) => m.record);
   bool get canRefund =>
-      methods.any((m) => m.refund || m.instructions) ||
+      methods.any((m) => m.canStartRefund) ||
       requests.any(
         (r) =>
             const {
@@ -62,6 +62,9 @@ class PaymentOperationMethod {
   final String id, displayName, verification;
   final bool refund, record, instructions;
   final String? reason;
+  // New bank actions only render instructions; legacy write capability is not a UI action.
+  bool get canStartRefund =>
+      verification == 'bank_event' ? instructions : refund;
   factory PaymentOperationMethod.fromJson(Map value) => PaymentOperationMethod(
     id: '${value['id']}',
     displayName: '${value['displayName'] ?? value['id']}',

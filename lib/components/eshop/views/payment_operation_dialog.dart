@@ -124,7 +124,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
   }
 
   List<PaymentOperationMethod> get _methods => _context.methods
-      .where((m) => widget.refund ? (m.refund || m.instructions) : m.record)
+      .where((m) => widget.refund ? m.canStartRefund : m.record)
       .toList();
   PaymentOperationMethod? get _selected {
     for (final method in _methods) {
@@ -496,10 +496,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
 
   Widget _refundMethods(bool locked) {
     final methods = _context.methods
-        .where(
-          (method) =>
-              method.refund || method.instructions || method.id == 'bank',
-        )
+        .where((method) => method.canStartRefund || method.id == 'bank')
         .toList();
     // Keep bank instructions discoverable when only cash recording is allowed.
     // Availability still comes exclusively from the server capabilities.
@@ -534,7 +531,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              enabled: !locked && (method.refund || method.instructions),
+              enabled: !locked && method.canStartRefund,
               leading: Icon(
                 method.verification == 'bank_event'
                     ? (_supportsBankQr
@@ -567,7 +564,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                     ? Icons.radio_button_checked
                     : Icons.radio_button_unchecked,
               ),
-              onTap: locked || !(method.refund || method.instructions)
+              onTap: locked || !method.canStartRefund
                   ? null
                   : () {
                       setState(() => _method = method.id);

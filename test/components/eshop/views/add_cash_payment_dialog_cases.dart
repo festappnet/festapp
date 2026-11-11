@@ -402,6 +402,30 @@ void main() {
     },
   );
 
+  testWidgets(
+    'legacy bank write capability cannot enable a new QR without its codec',
+    (tester) async {
+      const context = PaymentOperationContext(
+        currency: 'USD',
+        methods: [
+          PaymentOperationMethod(
+            id: 'bank',
+            displayName: 'Bank',
+            refund: true,
+            verification: 'bank_event',
+          ),
+        ],
+      );
+      expect(context.canRefund, isFalse);
+      await operation(tester, refund: true, currency: 'USD', context: context);
+      final bank = tester.widget<ListTile>(
+        find.byKey(const ValueKey('refundMethod_bank')),
+      );
+      expect(bank.enabled, isFalse);
+      expect(bank.onTap, isNull);
+    },
+  );
+
   testWidgets('unavailable bank QR is explained and cannot be selected', (
     tester,
   ) async {
