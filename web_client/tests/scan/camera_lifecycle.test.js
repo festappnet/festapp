@@ -58,10 +58,10 @@ test('switching input preserves review; deliberately starting another ticket foc
         await page.controller.loadCode('PREVIOUS');
         page.host.querySelector('[data-mode=manual]').click();
         assert.equal(page.controller.ticket.symbol,'PREVIOUS','switching inputs does not discard the active ticket');
-        page.host.querySelector('[data-next-mode=manual]').click();
+        assert.equal(page.host.querySelector('.scan-result'),null,'search takes over the workspace even with a ticket loaded');
         const input=page.host.querySelector('[name=query]');
         assert.equal(input.disabled,false);assert.equal(input.value,'');
-        assert.equal(document.activeElement,input);assert.equal(page.controller.state,'ready');
+        assert.equal(document.activeElement,input);assert.equal(page.controller.state,'result');
         input.value='NEXT-TICKET';page.render();
         assert.equal(page.host.querySelector('[name=query]').value,'NEXT-TICKET','summary rendering preserves the typed draft');
         assert.equal(document.activeElement,page.host.querySelector('[name=query]'),'summary rendering preserves keyboard focus');
@@ -72,8 +72,8 @@ test('switching input preserves review; deliberately starting another ticket foc
         page.startCamera=async()=>{};page.setInputMode('camera');
         assert.equal(page.controller.ticket.symbol,'NEXT-TICKET');
         page.host.querySelector('[data-mode=manual]').click();
-        page.host.querySelector('[data-next-mode=manual]').click();
-        assert.equal(page.controller.state,'ready');
+        assert.equal(page.host.querySelector('.scan-result'),null);
+        assert.equal(page.controller.ticket.symbol,'NEXT-TICKET');
         assert.equal(page.host.querySelector('[name=query]').disabled,false);
         assert.equal(document.activeElement,page.host.querySelector('[name=query]'));
         page.row.session.capabilities.search_tickets=true;page.render();
