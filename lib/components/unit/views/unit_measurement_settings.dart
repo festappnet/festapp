@@ -1,3 +1,7 @@
+import 'package:flutter/foundation.dart' show setEquals;
+
+import '../unit_settings_fields.dart';
+
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -66,7 +70,7 @@ class UnitMeasurementSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([
-      if (websitesController != null) websitesController!,
+      ?websitesController,
       gtmController,
       scriptsController,
       privacyUrlController,
@@ -76,18 +80,16 @@ class UnitMeasurementSettings extends StatelessWidget {
     builder: (context, _) => _tile(context),
   );
 
-  static List<String> parseWebsites(String text) =>
-      text.split('\n')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toSet()
-          .toList();
+  static List<String> parseWebsites(String text) => text
+      .split('\n')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toSet()
+      .toList();
 
   static String? validateWebsites(String? value) {
     final sites = parseWebsites(value ?? '');
-    final pattern = RegExp(
-      r'^https://[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$',
-    );
+    final pattern = RegExp(unitMeasurementWebsitePattern);
     return sites.length <= 10 &&
             sites.every((s) => s.length <= 2048 && pattern.hasMatch(s))
         ? null
@@ -97,10 +99,30 @@ class UnitMeasurementSettings extends StatelessWidget {
   Widget _tile(BuildContext context) {
     final theme = Theme.of(context);
     final sites = parseWebsites(websitesController?.text ?? '');
-    final newSites = sites.any(
-      (s) => !(approval?.approvedOrigins.contains(s) ?? false) &&
-          !(approval?.requestedOrigins.contains(s) ?? false),
-    );
+    final statusKnown =
+        approval != null &&
+        !loadingApproval &&
+        !approvalLoadFailed &&
+        approval!.requestState != MeasurementRequestState.unavailable;
+    final unsaved =
+        statusKnown &&
+        websitesController != null &&
+        !setEquals(sites.toSet(), approval!.savedOrigins.toSet());
+    String websiteStatus(String site) {
+      if (!statusKnown) return FormStrings.measurementWebsiteUnknown;
+      if (!approval!.savedOrigins.contains(site)) {
+        return FormStrings.measurementWebsiteDraft;
+      }
+      if (approval!.approvedOrigins.contains(site)) {
+        return FormStrings.measurementWebsiteApproved;
+      }
+      if (approval!.requestState == MeasurementRequestState.requested &&
+          approval!.requestedOrigins.contains(site)) {
+        return FormStrings.measurementWebsitePending;
+      }
+      return FormStrings.measurementWebsiteUnrequested;
+    }
+
     const gap = SizedBox(height: 24);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -140,20 +162,22 @@ class UnitMeasurementSettings extends StatelessWidget {
             decoration: InputDecoration(
               labelText: FormStrings.measurementWebsites,
               helperText: FormStrings.measurementWebsitesHelp,
-              helperMaxLines: 6,
+              helperMaxLines: 12,
+              errorMaxLines: 4,
               border: const OutlineInputBorder(),
             ),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: validateWebsites,
           ),
-          for (final site in sites)
-            Text(
-              '$site: ${approval?.approvedOrigins.contains(site) == true ? FormStrings.measurementWebsiteApproved : FormStrings.measurementWebsitePending}',
-            ),
+          for (final site in sites) Text('$site: ${websiteStatus(site)}'),
         ],
         if (enabled && loadingApproval) ...[
           const SizedBox(height: 8),
           Text(CommonStrings.loading),
-        ] else if (enabled && approvalLoadFailed) ...[
+        ] else if (enabled &&
+            (approvalLoadFailed ||
+                approval?.requestState ==
+                    MeasurementRequestState.unavailable)) ...[
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
@@ -162,30 +186,46 @@ class UnitMeasurementSettings extends StatelessWidget {
               child: Text(CommonStrings.retry),
             ),
           ),
-        ] else if (enabled && approval != null && (!approval!.approved || newSites)) ...[
+        ] else if (enabled && statusKnown) ...[
           const SizedBox(height: 8),
-          Text(
-            approval!.requestedAt == null
-                ? FormStrings.measurementApprovalRequired
-                : FormStrings.measurementApprovalRequested(
-                    DateFormat.yMd(Localizations.localeOf(context).toString())
-                        .format(approval!.requestedAt!.toLocal()),
-                  ),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton(
-              onPressed:
-                  canEdit &&
-                      !requestingApproval &&
-                      (approval!.requestedAt == null || newSites) &&
-                      validateWebsites(websitesController?.text) == null
-                  ? onRequestApproval
-                  : null,
-              child: Text(FormStrings.measurementApprovalRequest),
+          if (!approval!.approved)
+            Text(FormStrings.measurementApprovalRequired),
+          if (unsaved)
+            Text(FormStrings.measurementWebsitesSaveFirst)
+          else if (approval!.requestState ==
+                  MeasurementRequestState.retryAvailable &&
+              approval!.canRequest)
+            Text(FormStrings.measurementApprovalRetry)
+          else if (approval!.canRequest && approval!.approved)
+            Text(FormStrings.measurementWebsitesReady)
+          else if (approval!.requestState ==
+                  MeasurementRequestState.requested &&
+              approval!.requestedAt != null)
+            Text(
+              FormStrings.measurementApprovalRequested(
+                DateFormat.yMd(Localizations.localeOf(context).toString())
+                    .format(approval!.requestedAt!.toLocal()),
+              ),
             ),
-          ),
+          if (approval!.canRequest ||
+              approval!.requestState == MeasurementRequestState.requested ||
+              unsaved) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(
+                onPressed:
+                    canEdit &&
+                        !requestingApproval &&
+                        !unsaved &&
+                        approval!.canRequest &&
+                        validateWebsites(websitesController?.text) == null
+                    ? onRequestApproval
+                    : null,
+                child: Text(FormStrings.measurementApprovalRequest),
+              ),
+            ),
+          ],
         ],
         if (canEdit &&
             _privacyUrlRequired &&

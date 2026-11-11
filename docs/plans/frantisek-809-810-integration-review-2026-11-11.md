@@ -1,5 +1,12 @@
 # Review and local integration of František's measurement follow-ups
 
+## Follow-up implementation
+
+The confirmed defects below have now been corrected locally according to
+[the implementation plan](measurement-request-hardening-plan-2026-11-11.md).
+The findings remain as review evidence; production and source publication are
+still separate steps. See the plan's execution result for final checks.
+
 ## Scope and outcome
 
 Reviewed PR [#809](https://github.com/festappnet/festapp/pull/809), head

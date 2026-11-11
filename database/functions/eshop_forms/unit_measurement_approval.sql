@@ -7,22 +7,48 @@ ALTER TABLE analytics.unit_measurement_request ADD COLUMN IF NOT EXISTS requeste
 ALTER TABLE analytics.unit_measurement_request ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
 ALTER TABLE analytics.unit_measurement_request ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON analytics.unit_measurement_request FROM PUBLIC,anon,authenticated,service_role;
+-- Approval status reads only this Unit's notification generations, not the
+-- global email history. The queue remains the delivery-state authority.
+CREATE INDEX IF NOT EXISTS unit_measurement_notification_generation
+ ON public.email_messages(unit,(coalesce((data->>'request_revision')::integer,1)))
+ WHERE code='MEASUREMENT_APPROVAL_REQUEST';
 
 -- Platform approval only: organizer switches, destinations and privacy settings
 -- remain independent. Structural runtime support has one shared private owner.
 CREATE OR REPLACE FUNCTION public.unit_measurement_approval_internal(p_unit bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH status AS (
-  SELECT coalesce(p.enabled,false) allowed,
+  SELECT u.id,u.organization,coalesce(p.enabled,false) allowed,
    public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
-    AND NOT public.is_demo_unit(u.id) supported,q.requested_at,coalesce(to_jsonb(r.parent_origins),'[]'::jsonb) approved_origins,
-   coalesce(q.requested_origins,'[]'::jsonb) requested_origins
+    AND NOT public.is_demo_unit(u.id) supported,q.requested_at,
+   coalesce(to_jsonb(r.parent_origins),'[]'::jsonb) approved_origins,
+   coalesce(u.data->'measurement_websites','[]'::jsonb) saved_origins,
+   coalesce(q.requested_origins,'[]'::jsonb) requested_origins,
+   EXISTS(SELECT FROM public.email_messages m
+    JOIN public.organization_users ou ON ou.organization=u.organization
+     AND ou."user"=m.recipient_user AND ou.is_admin
+    WHERE m.unit=u.id AND m.organization=u.organization AND m.code='MEASUREMENT_APPROVAL_REQUEST'
+     AND coalesce((m.data->>'request_revision')::integer,1)=q.revision
+     AND public.get_user_delivery_email(ou."user")=m.recipient
+     -- Accepted/ambiguous sends must not be duplicated. Terminal undelivered
+     -- generations are retryable; expired queued work cannot prove activity.
+     AND (m.workflow_state IN ('accepted','sending','unknown') OR
+      (m.workflow_state IN ('pending','retry_wait','preparing','blocked') AND m.expires_at>now()))) active_request
   FROM public.units u
   LEFT JOIN analytics.organization_policy p ON p.organization=u.organization
   LEFT JOIN analytics.unit_runtime r ON r.unit=u.id
   LEFT JOIN analytics.unit_measurement_request q ON q.unit=u.id WHERE u.id=p_unit
+ ), pending AS (
+  SELECT *,coalesce((SELECT jsonb_agg(value) FROM jsonb_array_elements(saved_origins)
+   WHERE NOT (approved_origins @> jsonb_build_array(value))),'[]'::jsonb) pending_origins FROM status
  ) SELECT jsonb_build_object('approved',allowed AND supported,'organization_allowed',allowed,
-  'runtime_supported',supported,'requested_at',requested_at,'approved_origins',approved_origins,'requested_origins',requested_origins) FROM status;
+  'runtime_supported',supported,'requested_at',requested_at,'approved_origins',approved_origins,
+  'saved_origins',saved_origins,'requested_origins',requested_origins,
+  'request_state',CASE WHEN requested_at IS NULL THEN 'not_requested'
+    WHEN active_request THEN 'requested' ELSE 'retry_available' END,
+  'can_request',NOT public.is_demo_unit(id) AND
+   (NOT (allowed AND supported) OR pending_origins<>'[]'::jsonb) AND
+   (NOT active_request OR NOT (requested_origins @> pending_origins))) FROM pending;
 $$;
 REVOKE ALL ON FUNCTION public.unit_measurement_approval_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -39,7 +65,7 @@ GRANT EXECUTE ON FUNCTION public.get_unit_measurement_approval(bigint) TO authen
 
 CREATE OR REPLACE FUNCTION public.request_unit_measurement_approval(p_unit bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE u public.units; o public.organizations; a record; status jsonb; msg jsonb; origin text; sent integer:=0; websites jsonb; pending jsonb; request_revision integer;
+DECLARE u public.units; o public.organizations; a record; status jsonb; msg jsonb; origin text; sent integer:=0; websites jsonb; request_revision integer;
 BEGIN
  -- Demo configuration is read-only: an authorized administration reader may
  -- receive the no-op status, while every live request needs settings write.
@@ -52,13 +78,7 @@ BEGIN
  status:=public.unit_measurement_approval_internal(p_unit);
  websites:=coalesce(u.data->'measurement_websites','[]'::jsonb);
  PERFORM public.validate_configuration_value_internal_v1(websites,public.configuration_settings_contract_internal_v1()#>'{unit,measurement_websites}');
- SELECT coalesce(jsonb_agg(DISTINCT value ORDER BY value),'[]'::jsonb) INTO pending
- FROM jsonb_array_elements(websites) WHERE NOT (status->'approved_origins' @> jsonb_build_array(value));
- IF public.is_demo_unit(p_unit) OR
-  ((status->'approved'='true'::jsonb OR status->>'requested_at' IS NOT NULL)
-   AND NOT EXISTS(SELECT FROM jsonb_array_elements(pending) x WHERE NOT (status->'requested_origins' @> jsonb_build_array(x.value)))) THEN
-  RETURN status;
- END IF;
+ IF status->'can_request' IS DISTINCT FROM 'true'::jsonb THEN RETURN status; END IF;
  SELECT * INTO o FROM public.organizations WHERE id=u.organization;
  origin:=rtrim(o.data->>'DEFAULT_URL','/');
  IF origin IS NULL OR origin !~ '^https://[^/?#[:space:]]+$' THEN RAISE EXCEPTION 'measurement_notification_origin_missing'; END IF;

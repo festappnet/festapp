@@ -593,3 +593,19 @@ ownership and updates `analytics.organization_policy` and
 `analytics.unit_runtime` (including `parent_origins`, revision, operator and reason)
 through the existing controlled SQL release procedure. No organizer RPC writes
 these platform tables, and neither saving nor requesting approves an origin.
+
+### Website approval request lifecycle
+
+`get_unit_measurement_approval` is the authority for `saved_origins`,
+`request_state` (`not_requested`, `requested`, `retry_available`) and `can_request`.
+The requested origin snapshot and timestamp are historical metadata; they alone
+do not prove an active notification. The current revision stays active while an
+eligible administrator has queued/preparing work, an accepted delivery or an
+ambiguous sending/unknown outcome. Terminal undelivered or expired queued work
+permits an explicit retry; the Unit row lock and revision keep active retries
+idempotent. Approval of runtime origins remains a separate platform operation.
+
+Save proposed websites through the Unit aggregate first, then refresh approval
+status and request permission. Drafts must not be presented as submitted requests.
+The frontend fails closed when the new lifecycle fields are unavailable; apply
+the forward SQL migration before deploying its reader.

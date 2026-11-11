@@ -61,7 +61,11 @@ void main() {
               headers: {'content-type': 'application/json'},
             );
           }
-          body = approval;
+          body = {
+            ...approval,
+            'saved_origins':
+                (stored['data'] as Map)['measurement_websites'] ?? <String>[],
+          };
         } else if (request.url.path.endsWith(
           '/request_unit_measurement_approval',
         )) {
@@ -78,8 +82,16 @@ void main() {
               headers: {'content-type': 'application/json'},
             );
           }
-          approval = {...approval, 'requested_at': '2026-11-09T12:00:00Z',
-            'requested_origins': (stored['data'] as Map)['measurement_websites'] ?? <String>[]};
+          approval = {
+            ...approval,
+            'request_state': 'requested',
+            'can_request': false,
+            'saved_origins':
+                (stored['data'] as Map)['measurement_websites'] ?? <String>[],
+            'requested_at': '2026-11-09T12:00:00Z',
+            'requested_origins':
+                (stored['data'] as Map)['measurement_websites'] ?? <String>[],
+          };
           body = approval;
         } else if (request.url.path == '/rest/v1/occasions') {
           return http.Response(
@@ -142,6 +154,9 @@ void main() {
       approvalRequests = 0;
       approvalReads = 0;
       approval = {
+        'request_state': 'not_requested',
+        'can_request': true,
+        'saved_origins': <String>[],
         'approved': false,
         'organization_allowed': false,
         'runtime_supported': false,
@@ -390,17 +405,33 @@ void main() {
           expect(retry, findsNothing);
         }
         if (failure == 'none') {
-          final settings = tester.widget<UnitMeasurementSettings>(find.byType(UnitMeasurementSettings));
+          final settings = tester.widget<UnitMeasurementSettings>(
+            find.byType(UnitMeasurementSettings),
+          );
           settings.websitesController!.text = 'https://poradatel.example';
           await tester.pump();
+          expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+          final save = find.widgetWithText(ElevatedButton, CommonStrings.save);
+          await tester.ensureVisible(save);
+          rejectSave = true;
+          await tester.tap(save);
+          await tester.pumpAndSettle();
+          expect(approvalRequests, 0);
+          expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+          expect((stored['data'] as Map)['measurement_websites'], isNull);
+          rejectSave = false;
+          await tester.tap(save);
+          await tester.pumpAndSettle();
         }
         await tester.ensureVisible(button);
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(approvalRequests, 1);
         if (failure == 'none') {
-          expect(saves, hasLength(1));
-          expect((stored['data'] as Map)['measurement_websites'], ['https://poradatel.example']);
+          expect(saves, hasLength(2));
+          expect((stored['data'] as Map)['measurement_websites'], [
+            'https://poradatel.example',
+          ]);
         }
         expect(
           tester.widget<OutlinedButton>(button).onPressed == null,

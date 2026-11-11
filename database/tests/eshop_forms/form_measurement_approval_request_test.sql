@@ -24,7 +24,7 @@ DO $$
 DECLARE x jsonb:=pg_temp.measurement_request_fixture(); un bigint:=(x->>'unit')::bigint; org bigint:=(x->>'organization')::bigint;
  r jsonb; m public.email_messages;
 BEGIN
- PERFORM assert_eq(public.get_unit_measurement_approval(un),'{"approved":false,"organization_allowed":false,"runtime_supported":false,"requested_at":null,"approved_origins":[],"requested_origins":[]}'::jsonb,'missing policy and runtime deny approval');
+ PERFORM assert_eq(public.get_unit_measurement_approval(un),'{"approved":false,"organization_allowed":false,"runtime_supported":false,"requested_at":null,"approved_origins":[],"requested_origins":[],"saved_origins":[],"request_state":"not_requested","can_request":true}'::jsonb,'missing policy and runtime deny approval');
  r:=public.request_unit_measurement_approval(un);
  PERFORM assert_true(r->>'requested_at' IS NOT NULL,'request returns persisted date');
  PERFORM assert_eq((SELECT requested_by FROM analytics.unit_measurement_request WHERE unit=un),(x->>'manager')::uuid,'request records its actor');
@@ -178,4 +178,51 @@ BEGIN
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_false(public.email_intent_valid(m),'platform approval obsoletes request');
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
+END $$;
+
+-- A historical snapshot is not an active request after worker cancellation.
+DO $$
+DECLARE x jsonb:=pg_temp.measurement_request_fixture(); un bigint:=(x->>'unit')::bigint;
+ org bigint:=(x->>'organization')::bigint; r jsonb; state text; claimed jsonb;
+BEGIN
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES(org,true,1,'test','approval');
+ INSERT INTO analytics.unit_runtime(unit,runtime_origin,runtime_profile,parent_origins,revision,operator,reason)
+ VALUES(un,'https://lifecycle-'||un||'.pages.dev','gtm-v1',ARRAY['https://approved.example'],1,'test','approval');
+ UPDATE public.units SET data=jsonb_set(coalesce(data,'{}'),'{measurement_websites}','["https://pending.example"]') WHERE id=un;
+ r:=public.get_unit_measurement_approval(un);
+ PERFORM assert_eq(r->>'request_state','not_requested','new proposal is not requested');
+ PERFORM assert_true((r->>'can_request')::boolean,'new proposal can be requested');
+ PERFORM public.request_unit_measurement_approval(un);
+ PERFORM public.request_unit_measurement_approval(un);
+ PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),1,'active retries are idempotent');
+ UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}','[]') WHERE id=un;
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ -- Defer other transaction-local fixtures; exercise the real worker boundary.
+ UPDATE public.email_messages SET target_time='infinity' WHERE unit IS DISTINCT FROM un;
+ UPDATE public.email_capacity SET paused=false,quota_at=now(),circuit_until=NULL,max_preparing=2,worker_url=NULL;
+ FOR i IN 1..2 LOOP
+  claimed:=public.claim_email();
+  PERFORM assert_eq(claimed,'{"skipped":true}'::jsonb,'worker cancels withdrawn request');
+ END LOOP;
+ UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}','["https://pending.example"]') WHERE id=un;
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ r:=public.get_unit_measurement_approval(un);
+ PERFORM assert_eq(r->>'request_state','retry_available','cancelled generation can be retried');
+ PERFORM assert_true((r->>'can_request')::boolean,'re-added website is requestable');
+ PERFORM public.request_unit_measurement_approval(un);
+ PERFORM public.request_unit_measurement_approval(un);
+ PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),2,'retry creates exactly one new generation');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE unit=un AND workflow_state='pending'),2::bigint,'new notifications are deliverable');
+ FOREACH state IN ARRAY ARRAY['accepted','sending','unknown'] LOOP
+  UPDATE public.email_messages SET workflow_state=state WHERE unit=un AND data->>'request_revision'='2';
+  PERFORM assert_false((public.get_unit_measurement_approval(un)->>'can_request')::boolean,'accepted or ambiguous notification is not duplicated');
+ END LOOP;
+ FOREACH state IN ARRAY ARRAY['cancelled','expired','dead','suppressed'] LOOP
+  UPDATE public.email_messages SET workflow_state=state WHERE unit=un AND data->>'request_revision'='2';
+  PERFORM assert_true((public.get_unit_measurement_approval(un)->>'can_request')::boolean,'terminal undelivered notification permits explicit retry');
+ END LOOP;
+ UPDATE public.email_messages SET workflow_state='pending',expires_at=now()-interval '1 second'
+  WHERE unit=un AND data->>'request_revision'='2';
+ PERFORM assert_true((public.get_unit_measurement_approval(un)->>'can_request')::boolean,'expired queued notification permits retry');
 END $$;

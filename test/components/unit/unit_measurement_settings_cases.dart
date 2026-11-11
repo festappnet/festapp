@@ -1,3 +1,9 @@
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/theme_config.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,63 +18,107 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
   WidgetEnvironmentFixture.register();
-
-  for (final canEdit in [true, false]) {
-    testWidgets('destinations and consent bridge opt-in when off; canEdit=$canEdit', (
-      tester,
-    ) async {
+  setUpAll(() async {
+    if (Platform.environment.containsKey('MEASUREMENT_REVIEW_ARTIFACT_DIR')) {
+      final loader = FontLoader('Futura');
+      for (final font in [
+        'fonts/Futura PT Book.ttf',
+        'fonts/Futura PT Medium.ttf',
+        'fonts/Gill Sans Bold.otf',
+      ]) {
+        loader.addFont(rootBundle.load(font));
+      }
+      await loader.load();
+    }
+  });
+  for (final state in [
+    'draft',
+    'unrequested',
+    'requested',
+    'retry',
+    'unavailable',
+    'approved',
+    'invalid',
+    'removed',
+    'desktop',
+    'large text',
+  ]) {
+    testWidgets('website request lifecycle UX: $state', (tester) async {
+      tester.view.physicalSize = Size(state == 'desktop' ? 1000 : 390, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final controllers = List.generate(6, (_) => TextEditingController());
+      for (final controller in controllers) {
+        addTearDown(controller.dispose);
+      }
+      const site = 'https://poradatel.cz';
+      controllers[0].text = state == 'removed' ? '' : site;
+      final known = state != 'unavailable';
+      final saved = state == 'draft' ? <String>[] : [site];
+      final status = UnitMeasurementApproval.fromJson({
+        'approved': true,
+        'organization_allowed': true,
+        'runtime_supported': true,
+        if (known)
+          'request_state': state == 'retry'
+              ? 'retry_available'
+              : state == 'requested'
+              ? 'requested'
+              : 'not_requested',
+        'can_request': state != 'approved' && state != 'requested',
+        'saved_origins': saved,
+        'approved_origins': state == 'approved' ? [site] : <String>[],
+        'requested_origins': state == 'requested' || state == 'retry'
+            ? [site]
+            : <String>[],
+        'requested_at': state == 'requested' || state == 'retry'
+            ? '2026-11-11T10:00:00Z'
+            : null,
+      });
+      var requests = 0;
+      final boundary = GlobalKey();
       final fixture = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
         translations: jsonDecode(
           File('assets/translations/cs.json').readAsStringSync(),
         ) as Map<String, dynamic>,
       );
-      final websites = TextEditingController(text: 'https://approved.example\nhttps://pending.example');
-      addTearDown(websites.dispose);
-      final gtm = TextEditingController(text: 'GTM-ABCD');
-      final privacy = TextEditingController(
-        text: 'https://organizer.example/privacy',
-      );
-      addTearDown(privacy.dispose);
-      final scripts = TextEditingController(
-        text: '<script>/* saved */</script>',
-      );
-      addTearDown(gtm.dispose);
-      addTearDown(scripts.dispose);
-      bool enabled = false;
-      bool consentBridge = false;
-      String layout = 'bar';
-      final consentTitle = TextEditingController();
-      final consentText = TextEditingController();
-      addTearDown(consentTitle.dispose);
-      addTearDown(consentText.dispose);
       await fixture.pumpWidget(
         tester,
         MaterialApp(
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          theme: ThemeConfig.theme(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(state == 'large text' ? 2 : 1),
+            ),
+            child: child!,
+          ),
+          locale: const Locale('cs'),
           supportedLocales: const [Locale('cs')],
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: StatefulBuilder(
-                builder: (context, setState) => Form(
-                  child: UnitMeasurementSettings(
-                    websitesController: websites,
-                    approval: const UnitMeasurementApproval(approved: true, organizationAllowed: true, runtimeSupported: true, approvedOrigins: ['https://approved.example']),
-                    enabled: enabled,
-                    consentBridge: consentBridge,
-                    onConsentBridgeChanged: (value) =>
-                        setState(() => consentBridge = value),
-                    consentLayout: layout,
-                    consentTitleController: consentTitle,
-                    consentTextController: consentText,
-                    onConsentLayoutChanged: (value) =>
-                        setState(() => layout = value),
-                    canEdit: canEdit,
-                    gtmController: gtm,
-                    scriptsController: scripts,
-                    privacyUrlController: privacy,
-                    onEnabledChanged: (value) =>
-                        setState(() => enabled = value),
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: RepaintBoundary(
+            key: boundary,
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    child: UnitMeasurementSettings(
+                      websitesController: controllers[0],
+                      gtmController: controllers[1],
+                      scriptsController: controllers[2],
+                      privacyUrlController: controllers[3],
+                      consentTitleController: controllers[4],
+                      consentTextController: controllers[5],
+                      enabled: true,
+                      consentLayout: 'bar',
+                      canEdit: true,
+                      approval: status,
+                      onEnabledChanged: (_) {},
+                      onConsentLayoutChanged: (_) {},
+                      onRequestApproval: () => requests++,
+                    ),
                   ),
                 ),
               ),
@@ -77,140 +127,336 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text(FormStrings.measurementTitle), findsOneWidget);
-      expect(find.text(FormStrings.gtmContainer), findsOneWidget);
-      expect(
-        find.widgetWithText(SwitchListTile, FormStrings.measurementUnitEnabled),
-        findsOneWidget,
-      );
-      expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
-      expect(find.text('https://approved.example: ${FormStrings.measurementWebsiteApproved}'), findsOneWidget);
-      expect(find.text('https://pending.example: ${FormStrings.measurementWebsitePending}'), findsOneWidget);
-      final websitesField = tester.widget<TextFormField>(find.byWidgetPredicate((w) => w is TextFormField && w.controller == websites));
-      expect(websitesField.enabled, canEdit);
-      expect(websitesField.validator!('https://example.com\nhttps://www.example.com:443'), isNull);
-      for (final invalid in ['http://example.com', 'https://example.com/', 'https://example.com/path', 'https://example.com?x', 'https://example.com#x', 'https://user@example.com', 'https://example.com:65536', List.generate(11, (i) => 'https://site$i.example').join('\n')]) {
-        expect(websitesField.validator!(invalid), FormStrings.measurementWebsitesInvalid);
-      }
-      final gtmField = find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.controller == gtm,
-      );
-      expect(tester.widget<TextFormField>(gtmField).enabled, canEdit);
-      final privacyField = find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.controller == privacy,
-      );
-      expect(privacyField, findsOneWidget);
-      final field = tester.widget<TextFormField>(privacyField);
-      expect(field.enabled, canEdit);
-      expect(field.validator!('https://organizer.example/privacy'), isNull);
-      expect(field.validator!(''), isNull);
-      for (final invalid in [
-        'javascript:alert(1)',
-        'data:text/plain,x',
-        'http://example.com',
-        '/privacy',
-        'https://user:pass@example.com',
-        'https://@example.com',
-        'https://example.com:99999',
-        'https://example.com/${'x' * 2048}',
-      ]) {
-        expect(
-          field.validator!(invalid),
-          FormStrings.measurementPrivacyUrlInvalid,
+      if (state == 'invalid') {
+        await tester.enterText(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is TextFormField && widget.controller == controllers[0],
+          ),
+          '$site/vstupenky',
         );
-      }
-      final bridgeSwitch = find.widgetWithText(
-        SwitchListTile, FormStrings.measurementConsentBridge,
-      );
-      final bridge = tester.widget<SwitchListTile>(bridgeSwitch);
-      expect(bridge.value, isFalse);
-      expect(bridge.onChanged == null, !canEdit);
-      expect(find.text(FormStrings.measurementConsentBridgeConfirmation), findsOneWidget);
-      if (canEdit) {
-        await tester.ensureVisible(bridgeSwitch);
-        await tester.tap(bridgeSwitch);
         await tester.pumpAndSettle();
-        expect(consentBridge, isTrue);
-      }
-      final enabledSwitch = find.widgetWithText(
-        SwitchListTile,
-        FormStrings.measurementUnitEnabled,
-      );
-      expect(
-        find.text(FormStrings.measurementConsentLayoutBar),
-        findsOneWidget,
-        reason: 'bar is the default layout',
-      );
-      for (final controller in [consentTitle, consentText]) {
-        final field = find.byWidgetPredicate(
-          (widget) =>
-              widget is TextFormField && widget.controller == controller,
+        expect(
+          find.text(FormStrings.measurementWebsitesInvalid),
+          findsOneWidget,
         );
-        expect(tester.widget<TextFormField>(field).enabled, canEdit);
       }
+      final button = find.widgetWithText(
+        OutlinedButton,
+        FormStrings.measurementApprovalRequest,
+      );
+      final actionable = [
+        'unrequested',
+        'retry',
+        'desktop',
+        'large text',
+      ].contains(state);
+      if (state == 'unavailable' || state == 'approved') {
+        expect(button, findsNothing);
+      } else {
+        expect(button, findsOneWidget);
+        expect(
+          tester.widget<OutlinedButton>(button).onPressed != null,
+          actionable,
+        );
+        if (actionable) {
+          await tester.ensureVisible(button);
+          await tester.tap(button);
+          expect(requests, 1);
+        }
+      }
+      final label = switch (state) {
+        'draft' => FormStrings.measurementWebsiteDraft,
+        'unrequested' => FormStrings.measurementWebsiteUnrequested,
+        'requested' => FormStrings.measurementWebsitePending,
+        'retry' => FormStrings.measurementWebsiteUnrequested,
+        'unavailable' => FormStrings.measurementWebsiteUnknown,
+        'approved' => FormStrings.measurementWebsiteApproved,
+        _ => null,
+      };
+      if (label != null) expect(find.text('$site: $label'), findsOneWidget);
       expect(
-        find.textContaining('FeatureFormSettings.measurementConsentTitle'),
+        find.text(FormStrings.measurementApprovalRequired),
         findsNothing,
+        reason: 'Adding an origin must not revoke overall Unit approval',
       );
-      expect(
-        find.text(FormStrings.measurementConsentCustomTextHelp),
-        findsOneWidget,
-      );
-      final toggle = tester.widget<SwitchListTile>(enabledSwitch);
-      expect(toggle.onChanged == null, !canEdit);
-      if (canEdit) {
-        final dropdown = find.text(FormStrings.measurementConsentLayoutBar);
-        await tester.ensureVisible(dropdown);
-        await tester.tap(dropdown);
-        await tester.pumpAndSettle();
-        await tester.tap(
-          find.text(FormStrings.measurementConsentLayoutModal).last,
-        );
-        await tester.pumpAndSettle();
-        expect(layout, 'modal');
-        await tester.ensureVisible(enabledSwitch);
-        await tester.tap(enabledSwitch);
-        await tester.pumpAndSettle();
-        expect(enabled, isTrue);
-        final enabledPrivacyField = tester.widget<TextFormField>(privacyField);
+      if (['draft', 'removed', 'invalid'].contains(state))
         expect(
-          enabledPrivacyField.validator!(''),
-          FormStrings.measurementPrivacyUrlRequired,
+          find.text(FormStrings.measurementWebsitesSaveFirst),
+          findsOneWidget,
         );
-        expect(
-          enabledPrivacyField.validator!('https://organizer.example/privacy'),
-          isNull,
-        );
-        gtm.clear();
-        scripts.clear();
-        expect(enabledPrivacyField.validator!(''), isNull);
-        scripts.text = '<script>/* saved */</script>';
-        expect(
-          enabledPrivacyField.validator!(''),
-          FormStrings.measurementPrivacyUrlRequired,
-        );
-        gtm.text = 'GTM-ABCD';
-        await tester.tap(enabledSwitch);
-        await tester.pumpAndSettle();
-        expect(enabled, isFalse);
-        expect(
-          tester.widget<TextFormField>(privacyField).validator!(''),
-          isNull,
-        );
-        expect(gtm.text, 'GTM-ABCD');
-        expect(scripts.text, '<script>/* saved */</script>');
-      }
-      await tester.ensureVisible(find.text(FormStrings.measurementAdvanced));
-      await tester.tap(find.text(FormStrings.measurementAdvanced));
-      await tester.pumpAndSettle();
-      final scriptField = find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.controller == scripts,
-      );
-      expect(scriptField, findsOneWidget);
-      expect(tester.widget<TextFormField>(scriptField).enabled, canEdit);
       expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+      if (Platform.environment['MEASUREMENT_REVIEW_ARTIFACT_DIR']
+          case final String directory) {
+        await tester.runAsync(() async {
+          final image =
+              await (boundary.currentContext!.findRenderObject()
+                      as RenderRepaintBoundary)
+                  .toImage();
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          Directory(directory).createSync(recursive: true);
+          File('$directory/fixed-$state.png')
+              .writeAsBytesSync(bytes!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
       await tester.pumpWidget(const SizedBox.shrink());
     });
+  }
+
+  for (final canEdit in [true, false]) {
+    testWidgets(
+      'destinations and consent bridge opt-in when off; canEdit=$canEdit',
+      (tester) async {
+        final fixture = WidgetEnvironmentFixture(
+          locale: const Locale('cs'),
+          translations: jsonDecode(
+            File('assets/translations/cs.json').readAsStringSync(),
+          ) as Map<String, dynamic>,
+        );
+        final websites = TextEditingController(
+          text: 'https://approved.example\nhttps://pending.example',
+        );
+        addTearDown(websites.dispose);
+        final gtm = TextEditingController(text: 'GTM-ABCD');
+        final privacy = TextEditingController(
+          text: 'https://organizer.example/privacy',
+        );
+        addTearDown(privacy.dispose);
+        final scripts = TextEditingController(
+          text: '<script>/* saved */</script>',
+        );
+        addTearDown(gtm.dispose);
+        addTearDown(scripts.dispose);
+        bool enabled = false;
+        bool consentBridge = false;
+        String layout = 'bar';
+        final consentTitle = TextEditingController();
+        final consentText = TextEditingController();
+        addTearDown(consentTitle.dispose);
+        addTearDown(consentText.dispose);
+        await fixture.pumpWidget(
+          tester,
+          MaterialApp(
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('cs')],
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: StatefulBuilder(
+                  builder: (context, setState) => Form(
+                    child: UnitMeasurementSettings(
+                      websitesController: websites,
+                      approval: const UnitMeasurementApproval(
+                        approved: true,
+                        organizationAllowed: true,
+                        runtimeSupported: true,
+                        requestState: MeasurementRequestState.notRequested,
+                        canRequest: true,
+                        savedOrigins: [
+                          'https://approved.example',
+                          'https://pending.example',
+                        ],
+                        approvedOrigins: ['https://approved.example'],
+                      ),
+                      enabled: enabled,
+                      consentBridge: consentBridge,
+                      onConsentBridgeChanged: (value) =>
+                          setState(() => consentBridge = value),
+                      consentLayout: layout,
+                      consentTitleController: consentTitle,
+                      consentTextController: consentText,
+                      onConsentLayoutChanged: (value) =>
+                          setState(() => layout = value),
+                      canEdit: canEdit,
+                      gtmController: gtm,
+                      scriptsController: scripts,
+                      privacyUrlController: privacy,
+                      onEnabledChanged: (value) =>
+                          setState(() => enabled = value),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(FormStrings.measurementTitle), findsOneWidget);
+        expect(find.text(FormStrings.gtmContainer), findsOneWidget);
+        expect(
+          find.widgetWithText(
+            SwitchListTile,
+            FormStrings.measurementUnitEnabled,
+          ),
+          findsOneWidget,
+        );
+        expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
+        expect(
+          find.text(
+            'https://approved.example: ${FormStrings.measurementWebsiteApproved}',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            'https://pending.example: ${FormStrings.measurementWebsiteUnrequested}',
+          ),
+          findsOneWidget,
+        );
+        final websitesField = tester.widget<TextFormField>(
+          find.byWidgetPredicate(
+            (w) => w is TextFormField && w.controller == websites,
+          ),
+        );
+        expect(websitesField.enabled, canEdit);
+        expect(
+          websitesField.validator!(
+            'https://example.com\nhttps://www.example.com:443',
+          ),
+          isNull,
+        );
+        for (final invalid in [
+          'http://example.com',
+          'https://example.com/',
+          'https://example.com/path',
+          'https://example.com?x',
+          'https://example.com#x',
+          'https://user@example.com',
+          'https://example.com:65536',
+          List.generate(11, (i) => 'https://site$i.example').join('\n'),
+        ]) {
+          expect(
+            websitesField.validator!(invalid),
+            FormStrings.measurementWebsitesInvalid,
+          );
+        }
+        final gtmField = find.byWidgetPredicate(
+          (widget) => widget is TextFormField && widget.controller == gtm,
+        );
+        expect(tester.widget<TextFormField>(gtmField).enabled, canEdit);
+        final privacyField = find.byWidgetPredicate(
+          (widget) => widget is TextFormField && widget.controller == privacy,
+        );
+        expect(privacyField, findsOneWidget);
+        final field = tester.widget<TextFormField>(privacyField);
+        expect(field.enabled, canEdit);
+        expect(field.validator!('https://organizer.example/privacy'), isNull);
+        expect(field.validator!(''), isNull);
+        for (final invalid in [
+          'javascript:alert(1)',
+          'data:text/plain,x',
+          'http://example.com',
+          '/privacy',
+          'https://user:pass@example.com',
+          'https://@example.com',
+          'https://example.com:99999',
+          'https://example.com/${'x' * 2048}',
+        ]) {
+          expect(
+            field.validator!(invalid),
+            FormStrings.measurementPrivacyUrlInvalid,
+          );
+        }
+        final bridgeSwitch = find.widgetWithText(
+          SwitchListTile,
+          FormStrings.measurementConsentBridge,
+        );
+        final bridge = tester.widget<SwitchListTile>(bridgeSwitch);
+        expect(bridge.value, isFalse);
+        expect(bridge.onChanged == null, !canEdit);
+        expect(
+          find.text(FormStrings.measurementConsentBridgeConfirmation),
+          findsOneWidget,
+        );
+        if (canEdit) {
+          await tester.ensureVisible(bridgeSwitch);
+          await tester.tap(bridgeSwitch);
+          await tester.pumpAndSettle();
+          expect(consentBridge, isTrue);
+        }
+        final enabledSwitch = find.widgetWithText(
+          SwitchListTile,
+          FormStrings.measurementUnitEnabled,
+        );
+        expect(
+          find.text(FormStrings.measurementConsentLayoutBar),
+          findsOneWidget,
+          reason: 'bar is the default layout',
+        );
+        for (final controller in [consentTitle, consentText]) {
+          final field = find.byWidgetPredicate(
+            (widget) =>
+                widget is TextFormField && widget.controller == controller,
+          );
+          expect(tester.widget<TextFormField>(field).enabled, canEdit);
+        }
+        expect(
+          find.textContaining('FeatureFormSettings.measurementConsentTitle'),
+          findsNothing,
+        );
+        expect(
+          find.text(FormStrings.measurementConsentCustomTextHelp),
+          findsOneWidget,
+        );
+        final toggle = tester.widget<SwitchListTile>(enabledSwitch);
+        expect(toggle.onChanged == null, !canEdit);
+        if (canEdit) {
+          final dropdown = find.text(FormStrings.measurementConsentLayoutBar);
+          await tester.ensureVisible(dropdown);
+          await tester.tap(dropdown);
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.text(FormStrings.measurementConsentLayoutModal).last,
+          );
+          await tester.pumpAndSettle();
+          expect(layout, 'modal');
+          await tester.ensureVisible(enabledSwitch);
+          await tester.tap(enabledSwitch);
+          await tester.pumpAndSettle();
+          expect(enabled, isTrue);
+          final enabledPrivacyField = tester.widget<TextFormField>(
+            privacyField,
+          );
+          expect(
+            enabledPrivacyField.validator!(''),
+            FormStrings.measurementPrivacyUrlRequired,
+          );
+          expect(
+            enabledPrivacyField.validator!('https://organizer.example/privacy'),
+            isNull,
+          );
+          gtm.clear();
+          scripts.clear();
+          expect(enabledPrivacyField.validator!(''), isNull);
+          scripts.text = '<script>/* saved */</script>';
+          expect(
+            enabledPrivacyField.validator!(''),
+            FormStrings.measurementPrivacyUrlRequired,
+          );
+          gtm.text = 'GTM-ABCD';
+          await tester.tap(enabledSwitch);
+          await tester.pumpAndSettle();
+          expect(enabled, isFalse);
+          expect(
+            tester.widget<TextFormField>(privacyField).validator!(''),
+            isNull,
+          );
+          expect(gtm.text, 'GTM-ABCD');
+          expect(scripts.text, '<script>/* saved */</script>');
+        }
+        await tester.ensureVisible(find.text(FormStrings.measurementAdvanced));
+        await tester.tap(find.text(FormStrings.measurementAdvanced));
+        await tester.pumpAndSettle();
+        final scriptField = find.byWidgetPredicate(
+          (widget) => widget is TextFormField && widget.controller == scripts,
+        );
+        expect(scriptField, findsOneWidget);
+        expect(tester.widget<TextFormField>(scriptField).enabled, canEdit);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
   }
 
   for (final (name, enabled, canEdit, url, warned) in [
@@ -318,7 +564,9 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitMeasurementSettings(
-                websitesController: name == 'new website after approval' ? (controllers[5]..text = 'https://new.example') : null,
+                websitesController: name == 'new website after approval'
+                    ? (controllers[5]..text = 'https://new.example')
+                    : null,
                 enabled: enabled,
                 consentLayout: 'bar',
                 canEdit: canEdit,
@@ -334,6 +582,13 @@ void main() {
                   'approved': approved,
                   'organization_allowed': approved,
                   'runtime_supported': approved,
+                  'request_state': requested ? 'requested' : 'not_requested',
+                  'can_request':
+                      (!approved && !requested) ||
+                      name == 'new website after approval',
+                  'saved_origins': name == 'new website after approval'
+                      ? ['https://new.example']
+                      : <String>[],
                   'requested_at': requested
                       ? requestedAt.toIso8601String()
                       : null,
@@ -358,7 +613,9 @@ void main() {
         );
         expect(
           find.text(
-            requested
+            newWebsite
+                ? FormStrings.measurementWebsitesReady
+                : requested
                 ? FormStrings.measurementApprovalRequested(
                     DateFormat.yMd('cs').format(requestedAt.toLocal()),
                   )

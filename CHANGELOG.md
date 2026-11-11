@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Measurement website requests can be retried after cancelled or undelivered notifications; organizer settings distinguish drafts, unsent requests and platform approval, and show website validation while editing.
+
 - Organizer measurement settings now collect proposed websites, show platform approval for each origin and include new websites in repeat approval requests.
 
 - Organizer measurement help recommends embedding the form in website mode for the most accurate measurement and explains that consent takeover on standalone links depends on supported website banners.

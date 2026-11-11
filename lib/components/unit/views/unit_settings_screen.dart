@@ -242,16 +242,19 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     if (!_canEdit ||
         _isSaving ||
         _isRequestingMeasurement ||
+        _isLoadingMeasurementApproval ||
         _unit.id == null) {
       return;
     }
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final sites = UnitMeasurementSettings.parseWebsites(_measurementWebsitesController.text);
-    final stored = List<String>.from(_unit.data?['measurement_websites'] ?? const []);
-    if (sites.join('\n') != stored.join('\n')) {
-      await _saveSettings();
-      if (!mounted || List<String>.from(_unit.data?['measurement_websites'] ?? const []).join('\n') != sites.join('\n')) return;
+    if (_measurementApproval?.canRequest != true ||
+        !(_formKey.currentState?.validate() ?? false)) {
+      return;
     }
+    final sites = UnitMeasurementSettings.parseWebsites(
+      _measurementWebsitesController.text,
+    );
+    final saved = _measurementApproval!.savedOrigins;
+    if (sites.length != saved.length || !sites.every(saved.contains)) return;
     setState(() => _isRequestingMeasurement = true);
     try {
       final approval = await ExceptionHandler.guard(
@@ -314,8 +317,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _initialConsentText = _measurementConsentTextController.text;
     _measurementPrivacyUrlController.text =
         _unit.data?['measurement_privacy_url'] as String? ?? '';
-    _measurementWebsitesController.text =
-        List<String>.from(_unit.data?['measurement_websites'] ?? const []).join('\n');
+    _measurementWebsitesController.text = List<String>.from(
+      _unit.data?['measurement_websites'] ?? const [],
+    ).join('\n');
     _measurementGtmController.text =
         _unit.data?['measurement_gtm_container'] as String? ?? '';
     _measurementScriptsController.text =
@@ -350,6 +354,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
   Future<void> _saveSettings() async {
     if (_isSaving ||
+        _isRequestingMeasurement ||
         !RightsService.hasCapability(
           AuthorizationCapabilities.unitSettingsWrite,
         )) {
@@ -381,7 +386,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     pendingUnit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
       pendingUnit.data!['measurement_websites'] =
-          UnitMeasurementSettings.parseWebsites(_measurementWebsitesController.text);
+          UnitMeasurementSettings.parseWebsites(
+            _measurementWebsitesController.text,
+          );
       pendingUnit.data!['measurement_enabled'] = _measurementEnabled;
       pendingUnit.data!['measurement_consent_bridge'] =
           _measurementConsentBridge;
@@ -449,8 +456,13 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
       if (!mounted) return;
       ToastHelper.Show(context, "${CommonStrings.saved}: ${_unit.title!}");
       widget.onUnitUpdated();
+      if (mounted && _organizationMeasurementEnabled) {
+        await _loadMeasurementApproval();
+      }
     } catch (e) {
-      ToastHelper.Show(context, e.toString(), severity: ToastSeverity.NotOk);
+      if (mounted) {
+        ToastHelper.Show(context, e.toString(), severity: ToastSeverity.NotOk);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -785,7 +797,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                             onConsentLayoutChanged: (value) => setState(
                               () => _measurementConsentLayout = value,
                             ),
-                            canEdit: _canEdit && !_isSaving,
+                            canEdit:
+                                _canEdit &&
+                                !_isSaving &&
+                                !_isRequestingMeasurement,
                             privacyUrlController:
                                 _measurementPrivacyUrlController,
                             gtmController: _measurementGtmController,
@@ -812,7 +827,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                         ),
                                       )
                                     : Text(CommonStrings.save),
-                                onPressed: _isSaving ? null : _saveSettings,
+                                onPressed: _isSaving || _isRequestingMeasurement
+                                    ? null
+                                    : _saveSettings,
                               ),
                             ],
                           ),
