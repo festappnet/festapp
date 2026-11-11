@@ -1,6 +1,7 @@
 import 'form_editor_toolbar.dart';
 import 'form_editor_outline.dart';
 import '../widgets_editor/form_fields_navigation_controller.dart';
+import '../widgets_editor/form_editor_scroll.dart';
 import 'form_unavailable_content_editor.dart';
 import '../sale_opening_strings.dart';
 
@@ -805,10 +806,10 @@ class _FormEditorContentState extends State<FormEditorContent>
     _selectedSection.value = section;
     final target = anchor.currentContext;
     if (target != null) {
-      Scrollable.ensureVisible(
+      revealFormEditorTarget(
         target,
+        controller: _scrollController,
         alignment: 0,
-        duration: const Duration(milliseconds: 250),
       );
     }
   }
@@ -1010,6 +1011,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                                       key: ObjectKey(_bundle),
                                       bundle: _bundle!,
                                       navigationController: _fieldNavigation,
+                                      revealScrollController: _scrollController,
                                       editingEnabled: _canEdit,
                                       onChanged: _draftChanged,
                                     ),
