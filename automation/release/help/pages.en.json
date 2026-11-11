@@ -129,36 +129,6 @@
     "preview": "en/embed/01-generated-code"
   },
   {
-    "id": "wix",
-    "category": "integrations",
-    "slug": "wix",
-    "label": "Wix",
-    "preview": "en/forms/editor",
-    "title": "Add ticket sales to Wix",
-    "seoTitle": "Wix: install the ticket sales app",
-    "description": "Install vstupenky.online from the Wix App Market, save your public form link and check ticket sales on your published website."
-  },
-  {
-    "id": "wordpress",
-    "category": "integrations",
-    "slug": "wordpress",
-    "title": "Sell tickets on WordPress",
-    "seoTitle": "WordPress ticket sales with the vstupenky.online plugin",
-    "description": "Install the official vstupenky.online plugin, insert a public ticket form and configure its appearance. Includes the Custom HTML alternative.",
-    "label": "WordPress",
-    "preview": "en/embed/01-generated-code"
-  },
-  {
-    "id": "joomla",
-    "category": "integrations",
-    "slug": "joomla",
-    "label": "Joomla",
-    "preview": "en/joomla/03-article",
-    "title": "Add ticket sales to Joomla",
-    "seoTitle": "Joomla ticket module: installation and article embedding",
-    "description": "Install the vstupenky.online module in Joomla 5 or 6, configure your public form URL and display ticket sales in an article or template position."
-  },
-  {
     "id": "webnode",
     "category": "integrations",
     "slug": "webnode",
@@ -167,26 +137,6 @@
     "description": "Check the Webnode plan requirements, add an HTML block and verify the published form on mobile.",
     "label": "Webnode",
     "preview": "en/embed/01-generated-code"
-  },
-  {
-    "id": "ai-agents",
-    "category": "integrations",
-    "slug": "ai-agents",
-    "title": "Connect an AI agent through MCP",
-    "seoTitle": "Connect an AI agent through MCP",
-    "description": "Connect an AI assistant to vstupenky.online: quick prompt, general MCP connection setup, permissions and form examples.",
-    "label": "AI agents and MCP",
-    "preview": "en/forms/editor"
-  },
-  {
-    "id": "mcp-reference",
-    "category": "integrations",
-    "slug": "mcp-supported-operations",
-    "title": "MCP capabilities: tools and example prompts",
-    "seoTitle": "MCP capabilities: tools and example prompts",
-    "description": "Generated MCP tools, input schemas and permissions, with prompts for forms, orders, payments, seating, admission and event administration.",
-    "label": "MCP capabilities and prompts",
-    "preview": "en/forms/editor"
   },
   {
     "id": "orders",

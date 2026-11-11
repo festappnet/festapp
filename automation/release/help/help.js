@@ -29,7 +29,7 @@
   const form = document.querySelector('[data-embed-generator]');
   if (!form || initialized.has(form)) return;
   initialized.add(form);
-  const origin = form.dataset.formOrigin || 'https://vstupenky.online';
+  const origin = form.dataset.formOrigin || window.location.origin;
   const english = document.documentElement.lang === 'en';
   const text = english ? {
     invalid: `Paste a saved public form link such as ${origin}/form/your-form, without query parameters or a # fragment.`,

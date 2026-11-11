@@ -110,7 +110,7 @@ const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
-const HELP_PAGES = Object.keys(CSP_MANIFEST.documents).filter(file => /^napoveda\/(?:[a-z-]+\/)?index\.html$/.test(file));
+const HELP_PAGES = Object.keys(CSP_MANIFEST.documents).filter(file => /^(?:napoveda|help)\/(?:[a-z-]+\/)?index\.html$/.test(file));
 const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
 const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]}; // stamped from shared context
 const ORGANIZERS_ENABLED = MARKETING.enabled;
@@ -453,10 +453,11 @@ async function routeRequest(request, env) {
       if (path === "/events") return handleHome(request, env);
     }
 
-    if (path === "/napoveda" || path.startsWith("/napoveda/")) {
-      if (!HELP_PAGES.length) return notFound();
-      if (path === "/napoveda") return Response.redirect(new URL("/napoveda/" + url.search, url).href, 308);
-      if (!path.startsWith("/napoveda/assets/")) {
+    const publicHelpBase = publicHelpRootFromPath(path);
+    if (publicHelpBase) {
+      if (!HELP_PAGES.some(file => file.startsWith(publicHelpBase.slice(1)))) return notFound();
+      if (path === publicHelpBase.slice(0,-1)) return Response.redirect(new URL(publicHelpBase + url.search, url).href, 308);
+      if (!path.startsWith(publicHelpBase + "assets/")) {
         const document = path.slice(1).replace(/index\.html$/, "").replace(/\/?$/, "/") + "index.html";
         if (!HELP_PAGES.includes(document)) return notFound();
         if (path !== "/" + document.replace(/index\.html$/, "")) return Response.redirect(new URL("/" + document.replace(/index\.html$/, "") + url.search, url).href, 308);

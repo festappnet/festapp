@@ -88,8 +88,8 @@
     "en": {
       "slug": "integrations",
       "title": "Integrate ticket sales with your website",
-      "seoTitle": "Website ticket integration: HTML, Joomla, WordPress and Webnode",
-      "description": "Embed ticket sales in your website or connect an AI assistant through MCP. Guides for HTML, Wix, Joomla, WordPress, Webnode and agent access.",
+      "seoTitle": "Website ticket integration: HTML and Webnode",
+      "description": "Embed your ticket sales with an HTML snippet or follow the Webnode guide. Set up your public form and connect website measurement.",
       "intro": "If you already have a saved public form, choose your website platform below. Otherwise start by creating the event and preparing its form.",
       "preview": "en/embed/01-generated-code"
     }

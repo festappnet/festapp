@@ -10,7 +10,7 @@ test('built help owns its complete runtime outside the installed app cache', t=>
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'help-runtime-'));t.after(()=>fs.rmSync(temp,{recursive:true,force:true}));
  const dist=path.join(temp,'dist'),out=path.join(temp,'napoveda');
  for(const dir of ['.vite','web-assets','assets/translations']) fs.mkdirSync(path.join(dist,dir),{recursive:true});
- fs.writeFileSync(path.join(temp,'project.conf'),'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\n');
+ fs.writeFileSync(path.join(temp,'project.conf'),'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs\n');
  fs.writeFileSync(path.join(dist,'.vite/manifest.json'),JSON.stringify({'src/marketing/help.js':{file:'web-assets/help.js'}}));
  fs.writeFileSync(path.join(dist,'index.html'),'<link rel="stylesheet" href="/web-assets/theme.css">');
  fs.writeFileSync(path.join(dist,'web-assets/help.js'),'import "./account.js";');

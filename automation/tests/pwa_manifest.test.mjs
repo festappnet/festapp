@@ -273,7 +273,7 @@ test('marketing streams stay online and do not consume the application offline b
 });
 
 test('public help and plugin downloads do not enter the installed app cache', () => {
-  for (const file of ['co-je-nove/_assets/runtime/landing.js','co-je-nove/_assets/brand-symbol.svg','napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
+  for (const file of ['help/index.html','help/orders/index.html','help/assets/help.js','help/assets/brand-logo.svg','co-je-nove/_assets/runtime/landing.js','co-je-nove/_assets/brand-symbol.svg','napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
 });
 
 test('brand and startup symbols install with the shell for an offline cold start', async () => {

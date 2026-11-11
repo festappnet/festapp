@@ -1,3 +1,4 @@
+import {publicHelpRootFromPath} from '../services/help_action_routes.js';
 // Enhance crawlable help documents without remounting the account or search UI.
 export function initHelpNavigation(win = window) {
     const doc = win.document;
@@ -8,7 +9,7 @@ export function initHelpNavigation(win = window) {
     let renderedPath = win.location.pathname + win.location.search;
     const pages = new Map();
     const scrollPositions = new Map();
-    const isHelp = url => url.origin === win.location.origin && /^\/napoveda\/(?:[a-z-]+\/)?$/.test(url.pathname);
+    const isHelp = url => url.origin === win.location.origin && publicHelpRootFromPath(url.pathname) === publicHelpRootFromPath(win.location.pathname) && /^\/(?:napoveda|help)\/(?:[a-z-]+\/)?$/.test(url.pathname);
     const destination = event => {
         const link = event.target.closest?.('a[href]');
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;

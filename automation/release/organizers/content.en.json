@@ -172,7 +172,7 @@
       "organizers": "For organizers",
       "related": "More options",
       "home": "Home",
-      "contactAction": "Book a demonstration",
+      "contactAction": "Book a demo",
       "legalNav": "Legal and support links",
       "closing": "Prepare your next event.",
       "priceNote": "Contact us to discuss service pricing.",
@@ -192,6 +192,10 @@
       "/organizers-media/global/revised-door.png",
       "/organizers-media/global/revised-qr.svg",
       "/organizers-media/global/sample-ticket.html"
-    ]
+    ],
+    "helpLink": {
+      "href": "/help/",
+      "label": "Help"
+    }
   }
 }

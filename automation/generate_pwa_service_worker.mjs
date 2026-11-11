@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {helpActionWorkerSource} from './lib/help_action_worker_source.mjs';
 
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -33,6 +34,7 @@ const flutterEntry = manifest.flutterEntry;
 const webClientEntry = manifest.webClientEntry;
 const cacheName = `festapp-app-shell-${version}`;
 const source = `'use strict';
+${helpActionWorkerSource}
 
 const BUILD_VERSION = ${JSON.stringify(version)};
 const CACHE_NAME = ${JSON.stringify(cacheName)};
@@ -663,7 +665,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Public help belongs to the live website, including code and downloads.
-  if (url.pathname.startsWith('/organizers-assets/') || url.pathname === '/napoveda' || url.pathname.startsWith('/napoveda/')) {
+  if (url.pathname.startsWith('/organizers-assets/') || publicHelpRootFromPath(url.pathname)) {
     event.respondWith(fetch(request));
     return;
   }
@@ -748,7 +750,7 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.startsWith('/web-assets/') && event.clientId) {
       const client = await self.clients.get(event.clientId);
       const page = client ? new URL(client.url) : null;
-      const helpPage = page?.pathname === '/napoveda' || page?.pathname.startsWith('/napoveda/');
+      const helpPage = publicHelpRootFromPath(page?.pathname);
       const homePage = ORGANIZER_HOMEPAGE && (page?.pathname === '/' || Boolean(MARKETING_ROUTES[page?.pathname?.replace(/\\/$/, '')])) &&
         !page.searchParams.has('q') && !page.searchParams.has('create') && !page.hash.startsWith('#/');
       if (page?.origin === self.location.origin && (helpPage || homePage)) {

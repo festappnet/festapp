@@ -168,11 +168,13 @@ HELP_TIP=$(git -C "$REPO" rev-parse HEAD)
 test -f "$REPO/web_client/public/napoveda/index.html"
 test ! -e "$REPO/web/napoveda"
 test -z "$(git -C "$REPO" ls-tree -r --name-only "$HELP_TIP" -- web/napoveda web_client/public/napoveda)"
-for mode in legacy public; do
+for mode in legacy public global-legacy global-public; do
   git -C "$REPO" switch -qc "tamper-help-$mode" "$HELP_TIP"
   case "$mode" in
     legacy) help_path=web/napoveda/index.html ;;
     public) help_path=web_client/public/napoveda/index.html ;;
+    global-legacy) help_path=web/help/index.html ;;
+    global-public) help_path=web_client/public/help/index.html ;;
   esac
   mkdir -p "$REPO/$(dirname "$help_path")"
   printf 'unauthorized generated copy\n' > "$REPO/$help_path"

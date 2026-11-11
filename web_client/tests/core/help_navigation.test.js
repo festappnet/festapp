@@ -77,3 +77,15 @@ test('clicking the current guide scrolls to its top without document navigation'
  const link=win.document.createElement('a');link.href='/napoveda/';win.document.body.append(link);
  assert.equal(link.dispatchEvent(new win.MouseEvent('click',{bubbles:true,cancelable:true,button:0})),false);assert.equal(top,0);
 });
+
+
+test('English help navigation retains the account header and never falls into a Czech path',async t=>{
+ const english=text=>html(text).replaceAll('lang="cs"','lang="en"').replaceAll('https://vstupenky.online','https://tickets.festapp.net').replaceAll('/napoveda/','/help/');
+ const dom=new JSDOM(english('Home'),{url:'https://tickets.festapp.net/help/',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
+ t.after(()=>dom.window.close());const win=dom.window;win.scrollTo=()=>{};
+ win.fetch=async pathname=>{assert.equal(pathname,'/help/orders/');return response(english('Orders'));};
+ initHelpNavigation(win);const header=win.document.querySelector('user-header');const changed=done(win);
+ assert.equal(click(win,'/help/orders/'),false);await changed;
+ assert.equal(win.location.pathname,'/help/orders/');assert.equal(win.document.querySelector('user-header'),header);
+ assert.equal(win.document.documentElement.lang,'en');
+});
