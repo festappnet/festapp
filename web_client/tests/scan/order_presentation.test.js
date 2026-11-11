@@ -57,3 +57,15 @@ test('different orders retain purchaser names with seats and never group by a ma
  const dom=new JSDOM(ScanPage.prototype.batchHtml.call({batch,storageAvailable:true,row:{locked:false}}));
  try{const cards=[...dom.window.document.querySelectorAll('[data-group-ticket]')];assert.equal(cards.length,2);for(const card of cards)assert.equal(card.querySelector('strong').textContent,'Shared surname');assert.equal(dom.window.document.querySelectorAll('.scan-order-header').length,0);assert.match(cards[0].querySelector('.scan-group-seat').textContent,/S10/);}finally{dom.window.close();}
 });
+
+test('offline manual search finds purchaser, batch and case-insensitive ticket code',async()=>{
+ const now=Date.now(),ticket={ticket_id:10,symbol:'X3485A9H2F',holder_name:'X3485A9H2F',purchaser_name:'Petra Svobodová',batch_title:'Páteční prodej'};
+ const oldNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator');
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:false}});
+ try {
+  const page={row:{partition:'event',wallAt:now,serverAt:now,session:{offline_until:new Date(now+60000).toISOString()}},store:{async list(name,partition){assert.equal(name,'tickets');assert.equal(partition,'event');return [{ticket}];}},render(){}};
+  for(const query of ['Petra Svobodová','páteční','x3485a9h2f']){
+   page.searchQuery=query;await ScanPage.prototype.search.call(page,0);assert.deepEqual(page.searchResults,[ticket]);
+  }
+ } finally {if(oldNavigator)Object.defineProperty(globalThis,'navigator',oldNavigator);else delete globalThis.navigator;}
+});

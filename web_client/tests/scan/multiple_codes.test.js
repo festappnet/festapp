@@ -42,3 +42,9 @@ test('large adjacent ticket codes remain readable in a wide camera frame',()=>{
     const symbols=['SCANNER-1281-95','SCANNER-1281-94','SCANNER-1281-93'],image=frame(symbols,9,360);
     assert.deepEqual(new Set(decodeQRCodes(image.data,image.width,image.height,jsQR).map(c=>c.value)),new Set(symbols));
 });
+
+for (const inverted of [true, false]) test(`PDF ticket QR polarity: inverted=${inverted}`,()=>{
+    const symbol='X3485A9H2F',image=frame([symbol]);
+    if(inverted)for(let i=0;i<image.data.length;i+=4)for(let c=0;c<3;c++)image.data[i+c]=255-image.data[i+c];
+    assert.deepEqual(decodeQRCodes(image.data,image.width,image.height,jsQR).map(c=>c.value),[symbol]);
+});
