@@ -341,9 +341,13 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
             'recipientName': _name.text.trim(),
           });
       if (mounted) setState(() => _instructions = instructions);
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
-        setState(() => _error = PaymentOperationStrings.text('bankQrFailed'));
+        setState(
+          () => _error = PaymentOperationStrings.bankQrError(
+            error is PaymentInstructionsException ? error.code : null,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -805,6 +809,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                               labelText: PaymentOperationStrings.text(
                                 'recipientIban',
                               ),
+                              errorMaxLines: 4,
                               helperText:
                                   widget.refundRecipients.any(
                                     (r) =>
@@ -821,14 +826,24 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                                     ),
                               helperMaxLines: 3,
                             ),
-                            validator: (v) =>
-                                RegExp(
-                                  r'^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$',
-                                ).hasMatch(
-                                  (v ?? '').replaceAll(' ', '').toUpperCase(),
-                                )
-                                ? null
-                                : PaymentOperationStrings.text('invalidIban'),
+                            validator: (v) {
+                              final iban = (v ?? '')
+                                  .replaceAll(' ', '')
+                                  .toUpperCase();
+                              if (!RegExp(r'^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$')
+                                  .hasMatch(iban)) {
+                                return PaymentOperationStrings.text(
+                                  'invalidIban',
+                                );
+                              }
+                              if (widget.currency == 'CZK' &&
+                                  !iban.startsWith('CZ')) {
+                                return PaymentOperationStrings.text(
+                                  'qrDomesticAccountRequired',
+                                );
+                              }
+                              return null;
+                            },
                           ),
                         ],
                         const SizedBox(height: 16),

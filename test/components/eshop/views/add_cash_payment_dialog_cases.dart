@@ -472,6 +472,87 @@ void main() {
     },
   );
 
+  const bankContext = PaymentOperationContext(
+    available: '1000',
+    methods: [
+      PaymentOperationMethod(
+        id: 'bank',
+        displayName: 'Bank',
+        instructions: true,
+        verification: 'bank_event',
+      ),
+    ],
+  );
+  testWidgets(
+    'CZK QR explains the foreign account restriction before dispatch',
+    (tester) async {
+      var calls = 0;
+      await operation(
+        tester,
+        refund: true,
+        currency: 'CZK',
+        context: bankContext,
+        recipients: const [
+          PaymentRefundRecipient(
+            iban: 'SK1211100000001571891008',
+            name: 'Jan Novák',
+          ),
+        ],
+        instructions: (_) async {
+          calls++;
+          return {};
+        },
+      );
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(PaymentOperationStrings.text('qrDomesticAccountRequired')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(PaymentOperationStrings.text('bankQrFailed')),
+        findsNothing,
+      );
+      expect(calls, 0);
+    },
+  );
+
+  testWidgets(
+    'QR failure displays a known server reason and hides unknown details',
+    (tester) async {
+      String? errorCode = 'REFUND_AVAILABLE_EXCEEDED';
+      await operation(
+        tester,
+        refund: true,
+        context: bankContext,
+        recipients: const [
+          PaymentRefundRecipient(
+            iban: 'DE89370400440532013000',
+            name: 'Jan Novák',
+          ),
+        ],
+        instructions: (_) async {
+          if (errorCode != null) throw PaymentInstructionsException(errorCode!);
+          throw StateError('private upstream detail');
+        },
+      );
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(PaymentOperationStrings.text('exceedsAvailable')),
+        findsOneWidget,
+      );
+      errorCode = null;
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(PaymentOperationStrings.text('bankQrFailed')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('private upstream detail'), findsNothing);
+    },
+  );
+
   testWidgets(
     'refund exposes bank QR before submitting and preserves cash choice',
     (tester) async {

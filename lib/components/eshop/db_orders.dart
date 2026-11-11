@@ -36,6 +36,12 @@ class PaymentOperationRejected implements Exception {
   String toString() => code;
 }
 
+/// A stable server reason for a failed read-only instruction request.
+class PaymentInstructionsException implements Exception {
+  const PaymentInstructionsException(this.code);
+  final String code;
+}
+
 class ReservationsBundle {
   final List<OrderModel> orders;
   final List<FormBundle> forms;
@@ -592,17 +598,28 @@ class DbOrders {
   static Future<Map<String, dynamic>> bankRefundInstructions(
     Map<String, dynamic> input,
   ) async {
-    final response = await _supabase.functions.invoke(
-      'payment-operation',
-      body: {
-        'input_data': {...input, 'operation': 'bank_instructions'},
-      },
-    );
-    final result = Map<String, dynamic>.from(response.data as Map);
-    if (result['code'] != 200 || result['instructions'] is! Map) {
-      throw StateError('PAYMENT_INSTRUCTIONS_UNAVAILABLE');
+    try {
+      final response = await _supabase.functions.invoke(
+        'payment-operation',
+        body: {'input_data': {...input, 'operation': 'bank_instructions'}},
+      );
+      final data = response.data;
+      if (data is! Map || data['code'] != 200 || data['instructions'] is! Map) {
+        throw PaymentInstructionsException(
+          data is Map && data['error'] is String
+              ? data['error'] as String
+              : 'payment_operation_unavailable',
+        );
+      }
+      return Map<String, dynamic>.from(data['instructions'] as Map);
+    } on FunctionException catch (error) {
+      final details = error.details;
+      throw PaymentInstructionsException(
+        details is Map && details['error'] is String
+            ? details['error'] as String
+            : 'payment_operation_unavailable',
+      );
     }
-    return Map<String, dynamic>.from(result['instructions']);
   }
 
   static Future<Map<String, dynamic>?> pendingPaymentOperation(

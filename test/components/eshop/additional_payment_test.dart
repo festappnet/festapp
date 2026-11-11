@@ -1,3 +1,6 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/eshop/payment_operation_strings.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/payment_operation_context.dart';
@@ -52,6 +55,9 @@ void main() {
   final previousPaths = PathProviderPlatform.instance;
   late Completer<void> recorded;
   var paymentOutcome = 'success';
+  Completer<void>? transactionsGate;
+  var transactionsFail = false, transactionsReads = 0, contextReads = 0;
+  String? instructionsError;
   setUpAll(() async {
     storage = await Directory.systemTemp.createTemp('festapp-cash-widget-');
     PathProviderPlatform.instance = _CashDocuments(storage.path);
@@ -70,6 +76,14 @@ void main() {
         final payload = jsonDecode(request.body) as Map<String, dynamic>;
         if (endpoint == 'get_transactions_for_order') {
           expect(payload['order_id'], 5);
+          transactionsReads++;
+          await transactionsGate?.future;
+          if (transactionsFail)
+            return http.Response(
+              '{"message":"private fixture failure","code":"P0001"}',
+              503,
+              headers: {'content-type': 'application/json'},
+            );
           return http.Response(
             jsonEncode({
               'order_state': 'sent',
@@ -105,6 +119,7 @@ void main() {
         }
         if (endpoint == 'payment-operation' &&
             payload['input_data']['operation'] == 'read') {
+          contextReads++;
           return http.Response(
             jsonEncode({
               'code': 200,
@@ -120,6 +135,14 @@ void main() {
               },
             }),
             200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (endpoint == 'payment-operation' &&
+            payload['input_data']['operation'] == 'bank_instructions') {
+          return http.Response(
+            jsonEncode({'error': instructionsError}),
+            409,
             headers: {'content-type': 'application/json'},
           );
         }
@@ -155,6 +178,11 @@ void main() {
   setUp(() {
     payments.clear();
     paymentOutcome = 'success';
+    transactionsGate = null;
+    transactionsFail = false;
+    transactionsReads = 0;
+    contextReads = 0;
+    instructionsError = null;
     recorded = Completer<void>();
     _environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
@@ -482,6 +510,107 @@ void main() {
       paymentOutcome = 'success';
       await DbOrders.commandPaymentOperation({...original, 'amount': '30.00'});
       expect(payments.last['p_command_id'], isNot(firstId));
+    },
+  );
+
+  Future<void> tapWithIo(WidgetTester tester, Finder target) async {
+    await tester.runAsync(() async {
+      await tester.tap(target);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pump();
+  }
+
+  test(
+    'bank instructions preserve the structured server error through transport',
+    () async {
+      instructionsError = 'SPD_DOMESTIC_ACCOUNT_REQUIRED';
+      await expectLater(
+        DbOrders.bankRefundInstructions({
+          'orderId': 5,
+          'currency': 'CZK',
+          'amount': '1000',
+          'recipientName': 'Jan Novák',
+          'recipientIban': 'SK1211100000001571891008',
+        }),
+        throwsA(
+          isA<PaymentInstructionsException>().having(
+            (error) => error.code,
+            'code',
+            'SPD_DOMESTIC_ACCOUNT_REQUIRED',
+          ),
+        ),
+      );
+      expect(payments, isEmpty);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'payment dialog opens before its data arrives and uses one authorized read',
+    (tester) async {
+      final gate = transactionsGate = Completer<void>();
+      addTearDown(() {
+        if (!gate.isCompleted) gate.complete();
+      });
+      await grid(tester, paidOrder('sent', actions: {'view', 'edit', 'send'}));
+      await tapWithIo(tester, plus());
+      expect(find.byType(AppAlertDialog), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(TextFormField), findsNothing);
+      gate.complete();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(PaymentOperationDialog), findsOneWidget);
+      expect(find.byKey(const ValueKey('paymentAmount')), findsOneWidget);
+      expect(transactionsReads, 1);
+      expect(contextReads, 0);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'loading payment dialog can close before the request completes',
+    (tester) async {
+      final gate = transactionsGate = Completer<void>();
+      addTearDown(() {
+        if (!gate.isCompleted) gate.complete();
+      });
+      await grid(tester, paidOrder('sent', actions: {'view', 'edit', 'send'}));
+      await tapWithIo(tester, plus());
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      gate.complete();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AppAlertDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'failed payment loading offers retry inside the open dialog',
+    (tester) async {
+      transactionsFail = true;
+      await grid(tester, paidOrder('sent', actions: {'view', 'edit', 'send'}));
+      await tapWithIo(tester, plus());
+      await tester.pumpAndSettle();
+      expect(
+        find.text(PaymentOperationStrings.text('loadFailed')),
+        findsOneWidget,
+      );
+      expect(find.text('private fixture failure'), findsNothing);
+      transactionsFail = false;
+      await tapWithIo(tester, find.text(CommonStrings.retry));
+      await tester.pumpAndSettle();
+      expect(find.byType(PaymentOperationDialog), findsOneWidget);
+      expect(transactionsReads, 2);
+      expect(contextReads, 0);
     },
   );
 
