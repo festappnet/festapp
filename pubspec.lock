@@ -2341,14 +2341,14 @@ packages:
       path: "vendor/blueprint/venue_layout_core"
       relative: true
     source: path
-    version: "0.2.7"
+    version: "0.2.8"
   venue_seat_picker:
     dependency: "direct main"
     description:
       path: "vendor/blueprint/venue_seat_picker"
       relative: true
     source: path
-    version: "0.4.8"
+    version: "0.4.9"
   video_player:
     dependency: transitive
     description:

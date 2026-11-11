@@ -21,7 +21,7 @@
     "test:measurement-adversarial-browser": "node scripts/test_form_measurement_runtime_adversarial.mjs"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.11-2e6b1c8d54bc.tgz",
+    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.12-f63b7a3b6e46.tgz",
     "@supabase/supabase-js": "^2.119.0",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",

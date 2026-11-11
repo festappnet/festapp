@@ -1,5 +1,9 @@
 ## 0.2.7
 
+## 0.2.8
+
+- Reuse stationary physical collision hulls during rigid table translations while checking moving assemblies at their current positions.
+
 - Add `LayoutCollisionIndex`, `collisionIndexFor` and `isLayoutObstacle` as the shared geometry owner for physical placement and collision reporting across all obstacle kinds.
 - Reuse spatial bucket machinery with rendered hit testing while avoiding rendered outline tessellation during table/bar movement, chair reflow and seat fitting.
 - Preserve physical collision checks, spatial bucketing and immutable-document cache invalidation.

@@ -2,12 +2,12 @@
   "documentVersion": 2,
   "resourceProtocol": 2,
   "archives": {
-    "venue_layout_core.tar.gz": "ab64d3f589ad0e6c6435d3af217465ba1299a9b8b0bba73aa3d61e1b02bd4c84",
-    "venue_seat_picker.tar.gz": "dcffcd3fc48bdebf1682881d0cea0d5be96d7c6979f64132c686412a34c311c5",
-    "festapp-venue-layout-0.3.11-2e6b1c8d54bc.tgz": "2e6b1c8d54bcad917942914f7c49ef8006695dd745818076779abe90b3fe651c"
+    "venue_layout_core.tar.gz": "90d7a9a66335f32d378cb03e2390fb729f21240d0e4f09205ce520d9e2f4960d",
+    "venue_seat_picker.tar.gz": "4c66f57ba223d0ea0d0934bd90edc0421c3950b4e9a6beb29656b69e18e87c17",
+    "festapp-venue-layout-0.3.12-f63b7a3b6e46.tgz": "f63b7a3b6e46e91073410d44cf05cee89b729010098f528fa117fd6e47656ab6"
   },
   "files": {
-    "venue_layout_core/CHANGELOG.md": "ad5e3fb5ef5ca201fd613d1ba1e88b78997f0db9d04469853c7d3be01dfabc67",
+    "venue_layout_core/CHANGELOG.md": "0c8382dcdaca2dd60962156f1ceb0b4f4dc6ee07288b9ff841b6c7deff8a6e3a",
     "venue_layout_core/LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
     "venue_layout_core/README.md": "6185d45013af0fb2f6bd6fafa4180730ad879d6bbc90fe618f64b58f0125a366",
     "venue_layout_core/analysis_options.yaml": "089a70cecaf185235ec54e6e207e44958e978d8c2e0887a575a6f1be609c7e5b",
@@ -25,7 +25,7 @@
     "venue_layout_core/lib/src/minimal_appearance.dart": "0c7601d5c21331e5f9e932a3f0b1f7fca63c8e650bbe31dff604fd7a714b7d6c",
     "venue_layout_core/lib/src/model.dart": "62eaab7d2666fb305d803a0e21a3ba14c01536a835313e3167d5cd85c21dbd28",
     "venue_layout_core/lib/src/node_outline.dart": "c7116be7c1117cc3ed148f8e92262a213822164adfc2be861044c49294f8d2b8",
-    "venue_layout_core/lib/src/operations.dart": "f6e168d84eb5b10ecf97a8e5bf37f7e6a4f7e1f2b37d207a69e2901debe11f0e",
+    "venue_layout_core/lib/src/operations.dart": "400f2da0c5931e61e8cebcf9da2a5b9eeaf56d3bcdce5b12f41a2f7c07a2f461",
     "venue_layout_core/lib/src/path_vertices.dart": "5e94afcfd3057f86b2eef11474a022196435b0530ed2ad824b6ed4eb809f798c",
     "venue_layout_core/lib/src/placement.dart": "c78fa633e04fad1229c73727abbce9881d1593b865ed3db9928a6dc502c2f983",
     "venue_layout_core/lib/src/row_resize.dart": "7c48849ef916776d59899c0c6f3fa21fd37fe1a076b41233f5222912c044c11c",
@@ -39,7 +39,7 @@
     "venue_layout_core/lib/src/transport.dart": "b2681aafedceaaf81621f9142281b2b8c44ef4bc866a4e981773ec2ac71e1714",
     "venue_layout_core/lib/src/zigzag.dart": "47ecf1f1598450776848c4bd39c9529f9511b44c5a1dcd0b41ec8b222f5698fe",
     "venue_layout_core/lib/venue_layout_core.dart": "f3539ab60ee52f6bf18705cb640f5c50cad11801b613e8428feabc8afa0644bc",
-    "venue_layout_core/pubspec.yaml": "db46eedd791fa6912eabf3e8651898d21ddaff13a6c0ac30552675f161cd5494",
+    "venue_layout_core/pubspec.yaml": "3e8f2816e8946d8fbbff5d03e57c6d1dbd5516582993fa391715a90a29faf574",
     "venue_layout_core/test/appearance_test.dart": "8879c5a88bdcdeb2cbe527b9200c5ff9cdc17a8b7e2e4ab089e44ed540ec76ac",
     "venue_layout_core/test/arrow_head_test.dart": "f4427b446c195576f135a090a2f9894669de51f268b6c41fc33921190e0f24d6",
     "venue_layout_core/test/banquet_style_test.dart": "5881289de84078f9cd387cd31bd709a91dc1d5459a449fb343787e9faf34dc09",
@@ -103,7 +103,7 @@
     "venue_layout_core/tool/parity_fixture.dart": "8620e6a630ed2a9a2cfae04baa3728a450de461d08d2b8d7c5d3d38603f6d61c",
     "venue_layout_core/tool/qa_export.dart": "20045401bcbbb8009cdf86d20c8191b7583f18ceb42e7d8382c287a8ef318c40",
     "venue_seat_picker/AGENTS.md": "2ecb6f075c963c4cc6b1f61c71cfd522dfe37cc58c6a050f32420cad6981955b",
-    "venue_seat_picker/CHANGELOG.md": "6920da06a51fdb3a17ff2f71847775144ad4070a74faec8bd7123680a797380a",
+    "venue_seat_picker/CHANGELOG.md": "7cd176fb47df2f191c45f3d66f4ea0c8dbbd98fbd83f7d6f45f3c6e3a9749a5d",
     "venue_seat_picker/LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
     "venue_seat_picker/README.md": "52456092b3137c5792eecb299cce85e4f10ca4bd66b22708bcb3765e60807893",
     "venue_seat_picker/analysis_options.yaml": "f57abb82d8e4a5e5a8bf34849e4049a1d84eb25ec2f294c31c5410c426dde7c0",
@@ -193,7 +193,7 @@
     "venue_seat_picker/lib/src/layout_editor/layout_path.dart": "18322264dcafaf9ae170b44598cdb1c47e346414634c544fb9e260b5feda8a8d",
     "venue_seat_picker/lib/src/layout_editor/layout_resources.dart": "1321f570e9b4d847219660bd9fdf94ec7d670c5722e013591271418bf270c34b",
     "venue_seat_picker/lib/src/layout_editor/layout_scene_cache.dart": "8f1087c7b0ccbeac79e276a043fedba62d2e0a174a390fadc63ea812ef273fa6",
-    "venue_seat_picker/lib/src/layout_editor/venue_layout_controller.dart": "6faec3f126072e3a7d101ffe4aefa0f16ee806a086c2c0621b28807fece2665d",
+    "venue_seat_picker/lib/src/layout_editor/venue_layout_controller.dart": "cd14d70a1498b609ef2934a5ca8485095ae79ba10071a6b08b1b18cd4e88a26a",
     "venue_seat_picker/lib/src/layout_editor/widgets/appearance_controls.dart": "ef5e3b4b187ade808996853878da299ee9bef19004b008c73592912bcbd30f10",
     "venue_seat_picker/lib/src/layout_editor/widgets/canonical_appearance_panel.dart": "a81fd00b9fea586ba5d95765f17f78a4da415b6f742a83236c2ac756f1797028",
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_context_menu_stub.dart": "2a5b3fe0aee07b4dd58aaf50e3b3f35bd77c342870a7989443508156b7bbfb1e",
@@ -203,7 +203,7 @@
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_global_style.dart": "29dc404dd6d78a2392359bf889b932a16953c97186a02ba025d3234afcf66f53",
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_inline_label.dart": "0c71b8136cd0d5ce942e55e85b6bdaf2301305d5f35076b5335e9a762a4f4143",
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_inspector.dart": "330929d3e2266302748015cf2a9b1fb119c7263f49b5af9953e564ed46ba2794",
-    "venue_seat_picker/lib/src/layout_editor/widgets/layout_number_slider_control.dart": "57fdee1fabd20b2de422eb8ed28586b92b2f6efc3fa274c7f8f70c365ce39fa5",
+    "venue_seat_picker/lib/src/layout_editor/widgets/layout_number_slider_control.dart": "eb73991700e6b4131df73d40c02893724d5dc618ec25f70927090573d52a7601",
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_palette_drag_feedback.dart": "dfd243426ee3c7429bf8e2109fbcf3c387886d8880677b52a94d6aecdc275c02",
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_palette_thumbnail.dart": "84383f582ae26fc7a1c722d4fe11932096ab3167af3a9a93bea0d345d7646de7",
     "venue_seat_picker/lib/src/layout_editor/widgets/layout_paste_stub.dart": "b3ab22d2eea9ea633e072991fc170651024868a4a030f7e7c50ff72218b11b43",
@@ -241,7 +241,7 @@
     "venue_seat_picker/lib/src/widgets/venue_seat_viewer.dart": "0853e442054a53727b8975702c634b2501a582262bdb38140d00dae7355028cf",
     "venue_seat_picker/lib/venue_layout_templates.dart": "b79deee3d5ccb699e42006e172f87c3d106055681826922af20ff690dcd742c2",
     "venue_seat_picker/lib/venue_seat_picker.dart": "8163c92714af391b8c6886873fbc2c3b3850c04126cac8a3c0e98c37764c1473",
-    "venue_seat_picker/pubspec.yaml": "28d7e4e758f28e93d3c93fbc4dc4dc1f2c2e8f6aad71d74a9d1c6aa5656b7715",
+    "venue_seat_picker/pubspec.yaml": "d20ca3fe6bab2a217a9c18941093a645182d164db3afda6d7639cf3fae96425b",
     "venue_seat_picker/test/editor_dialog_escape_test.dart": "fa121c86ab04216c0957795567b4cfae0b1a03addd1a0b6a3da43f281bd85dff",
     "venue_seat_picker/test/editor_number_scroll_test.dart": "cbc1c1be09831ad1f962f976e50b3c18768ba64eab7208b08782f2387f5eee82",
     "venue_seat_picker/test/editor_ui_test.dart": "cd3e2649ee608414290177d5399983d830399a4fbf3d554f4d932d60a0bdcb1f",
@@ -289,6 +289,7 @@
     "venue_seat_picker/test/layout_inspector_text_scroll_test.dart": "a93c8c7cad4685e209f4aacfec5f49554d3a319df1dfcecf72e5e565bed068f2",
     "venue_seat_picker/test/layout_layer_hover_test.dart": "8dc5f3d61bbf716c0d120c2ca33780fdfa3bb96a4d4bb38238fa615e738bbda8",
     "venue_seat_picker/test/layout_layers_ui_test.dart": "4fa8ed56675a749e936ce5b6b12252a0a55d59e854dd692cc80534f85b7dd76e",
+    "venue_seat_picker/test/layout_live_interaction_test.dart": "be3098452cddb3cf98f295f25b87e728b689096f988ad69be661810b8c715002",
     "venue_seat_picker/test/layout_localizations_test.dart": "0c2934c7d44b9c412123d1efab984877406d095c807f2570b46c77d2f90a54ba",
     "venue_seat_picker/test/layout_mobile_insertion_test.dart": "3d85ac332f92ff63dff787079ac333dcc86366dcd1e1973645ffa473d1f0b376",
     "venue_seat_picker/test/layout_mobile_toolbar_test.dart": "ced5860b0ff4f7e6e88cee1d100802ce8e7512afd692adc7dff94353ff481937",
@@ -376,6 +377,6 @@
     "venue_seat_picker/tool/report_demo.py": "2fc6604817784416c4714623a4209a65e969eac22e26961b5af25d49ad68a4b6",
     "venue_seat_picker/tool/round_table_drag_benchmark.dart": "896a79c0f3c7ebd937d171061cc5d6733c5068c6144f155c3c630189239ea879"
   },
-  "sourceCommit": "47594ae7ae09b707d5a0e0f6e1d960953340083e",
-  "archiveGateReceiptSha256": "9509a70f7884c0d0dde7de373e0d6518419cc93db69287ab4a84f2727e8e47c7"
+  "sourceCommit": "305f2347ffa37d0968ea7bb181453721a030ecde",
+  "archiveGateReceiptSha256": "41af893abcbdbf584d4d84a00b35be982acb93710f8eab1cfbd5b9fdd14d17a4"
 }
