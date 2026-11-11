@@ -318,7 +318,7 @@
     "cmplz_revoke",
     "cmplz_before_categories_consent"
   ];
-  var disabled = (value) => value === void 0 || value === false || value === 0 || value === "0";
+  var disabled = (value) => value === void 0 || value === null || value === "" || value === false || value === 0 || value === "0";
   var policyId = (value) => (typeof value === "string" || Number.isSafeInteger(value)) && /^[1-9][0-9]{0,15}$/.test(String(value)) ? String(value) : null;
   function createComplianzSource(win, input) {
     let config;

@@ -83,3 +83,10 @@ test('updated peers retain the stricter external processing-revision adapter con
   assert.equal(registry.read({...scope,processingRevision:'new-deploy'}),null);
  }finally{stop()}
 });
+
+for(const value of ['',null,false,0,'0',undefined])test('serialized disabled CMP flags '+JSON.stringify(value)+' preserve a saved choice',()=>{
+ const f=fixture();try{
+  Object.assign(f.win.complianz,{forceEnableStats:value,tcf_active:value,consent_per_service:value});
+  assert.deepEqual(f.read(),both);
+ }finally{f.close()}
+});

@@ -2,7 +2,8 @@
 // coverage mapping, not an attestation by Google Consent Mode or by Festapp.
 const events = ['cmplz_status_change', 'cmplz_banner_status', 'cmplz_fire_categories',
     'cmplz_cookie_warning_loaded', 'cmplz_revoke', 'cmplz_before_categories_consent'];
-const disabled = value => value === undefined || value === false || value === 0 || value === '0';
+// WordPress serializes disabled Complianz flags as empty strings on real sites.
+const disabled = value => value === undefined || value === null || value === '' || value === false || value === 0 || value === '0';
 const policyId = value => (typeof value === 'string' || Number.isSafeInteger(value)) &&
     /^[1-9][0-9]{0,15}$/.test(String(value)) ? String(value) : null;
 

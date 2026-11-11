@@ -159,3 +159,11 @@ blueprint/vendor changes and the current package lockfiles. Retain the original
 PR's close/unload revocation fix, not its GCM grant inference. Integration worktree:
 `festapp-consent-complianz-integration-20261111`. Add new test inventory ownership
 and require canonical CI mirror lanes before source publication.
+
+After initial source integration (`71963159b`), read-only HTTP inspection of
+Kuřín's actual Complianz 7.4.4 configuration found disabled `forceEnableStats`
+and `tcf_active` serialized as empty strings. Accept these upstream false values
+(and null) while keeping truthy/ambiguous configurations denied; add explicit
+regressions before the follow-up publication. Real saved-choice browser flows
+on the external site remain unverified; all browser interaction tests use the
+isolated canonical fixtures.
