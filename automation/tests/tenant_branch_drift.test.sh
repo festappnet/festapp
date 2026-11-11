@@ -109,6 +109,23 @@ git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid c
 EN_TIP=$(git -C "$REPO" rev-parse HEAD)
 (cd "$REPO" && CANONICAL_MAIN_REF=main "$TMP_ROOT/checker.sh" "$BASE_SHA" festappticketsglobal "$EN_TIP" >/dev/null)
 
+# Inactive regional press artifacts are deterministically absent in Global.
+# Generated-path permission must still reject reintroducing arbitrary payloads.
+test ! -e "$REPO/web/organizers/press"
+test ! -d "$REPO/web/organizers-media/press-kit"
+for mode in page asset; do
+  git -C "$REPO" switch -qc "tamper-global-press-$mode" "$EN_TIP"
+  case "$mode" in
+    page) press_path=web/organizers/press ;;
+    asset) press_path=web/organizers-media/press-kit/unauthorized.txt ;;
+  esac
+  mkdir -p "$REPO/$(dirname "$press_path")"
+  printf 'unauthorized press output\n' > "$REPO/$press_path"
+  git -C "$REPO" add -- "$press_path"
+  git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm "tamper-global-press-$mode"
+  expect_failure "global-press-$mode" "$(git -C "$REPO" rev-parse HEAD)" festappticketsglobal
+done
+
 # Even the Global branch cannot fork shared code, media recipes or release tools.
 git -C "$REPO" switch -qc tamper-global-shared "$EN_TIP"
 printf '\n# Global-only capture change\n' >> "$REPO/automation/landing_capture/scenario_contract.py"

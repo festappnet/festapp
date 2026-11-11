@@ -204,6 +204,7 @@ test('English illustrated home ships English examples, one regional link and fai
   assert.match(html, /<html lang="en">/);
   assert.equal((html.match(/vstupenky\.online/g) || []).length, 1);
   assert.match(html,/href="https:\/\/vstupenky\.online\/"[^>]*>Czech version/);
+  assert.match(html,/rel="manifest" href="\/site\.webmanifest"/);
   assert.match(html,/classic-ball-en\.png/);
   assert.match(html,/hamlet-ticket-en\.png/);
   assert.match(html,/info@festapp\.net/);

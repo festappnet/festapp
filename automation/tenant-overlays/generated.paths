@@ -59,6 +59,9 @@ web/organizers-page
 
 web/organizers/ball-ticket-sales
 web/organizers/seating-reservations
+# The organizer generator owns both presence and cleanup for each profile.
+web/organizers/press
+web/organizers-media/press-kit/*
 web/organizer-pages.json
 
 web_client/public/brand-logo-light.svg
