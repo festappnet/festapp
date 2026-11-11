@@ -16,7 +16,8 @@ class PaymentOperationContext {
   final List<Map<String, dynamic>> requests;
   bool get canRecord => methods.any((m) => m.record);
   bool get canRefund =>
-      methods.any((m) => m.canStartRefund) ||
+      ((double.tryParse(available) ?? 0) > 0 &&
+          methods.any((m) => m.canStartRefund)) ||
       requests.any(
         (r) =>
             const {

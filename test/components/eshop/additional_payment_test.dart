@@ -197,6 +197,7 @@ void main() {
             home: Scaffold(
               body: Builder(
                 builder: (context) => TrinaGrid(
+                  key: ObjectKey(order),
                   columns: EshopColumns.generateColumns(
                     context,
                     [
@@ -481,6 +482,53 @@ void main() {
       paymentOutcome = 'success';
       await DbOrders.commandPaymentOperation({...original, 'amount': '30.00'});
       expect(payments.last['p_command_id'], isNot(firstId));
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'payment action buttons combine capabilities with available refund balance',
+    (tester) async {
+      const methods = [
+        PaymentOperationMethod(
+          id: 'cash',
+          displayName: 'Cash',
+          record: true,
+          refund: true,
+        ),
+        PaymentOperationMethod(
+          id: 'bank',
+          displayName: 'Bank',
+          instructions: true,
+          verification: 'bank_event',
+        ),
+      ];
+      for (final available in ['0', '0.00', '-1', 'invalid', '0.01', '500']) {
+        final order = paidOrder('sent', actions: {'view', 'edit', 'send'});
+        order.paymentInfoModel!.paymentOperations = PaymentOperationContext(
+          available: available,
+          methods: methods,
+        );
+        await grid(tester, order);
+        expect(tester.widget<IconButton>(plus()).onPressed, isNotNull);
+        final minus = find.widgetWithIcon(
+          IconButton,
+          Icons.remove_circle_outline,
+        );
+        final positive = (double.tryParse(available) ?? 0) > 0;
+        expect(
+          tester.widget<IconButton>(minus).onPressed,
+          positive ? isNotNull : isNull,
+          reason:
+              'Refund availability must match the server balance: $available',
+        );
+        if (!positive) {
+          await tester.tap(minus);
+          await tester.pumpAndSettle();
+          expect(find.byType(PaymentOperationDialog), findsNothing);
+        }
+      }
+      expect(payments, isEmpty);
     },
   );
 

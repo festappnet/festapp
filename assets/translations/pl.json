@@ -3064,11 +3064,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Sposób zwrotu",
-    "bankHint": "Wygeneruj kod QR i wyślij płatność w swojej aplikacji bankowej. Utworzenie kodu QR nie zmienia płatności ani statusu zamówienia.",
+    "bankHint": "Wygeneruj kod QR i wyślij płatność w swojej aplikacji bankowej.",
     "cashHint": "Zarejestruj gotówkę już przekazaną odbiorcy.",
     "bankUnavailable": "Kod QR jest niedostępny dla tego zamówienia. Wymagana jest obsługiwana waluta i pierwotne oznaczenie płatności.",
     "bankQrFailed": "Nie udało się utworzyć kodu QR. Sprawdź dane i spróbuj ponownie.",
-    "bankQrReady": "Kod QR jest gotowy. Wyślij płatność w swojej aplikacji bankowej. Płatności i status zamówienia nie zostały zmienione.",
+    "bankQrReady": "Kod QR jest gotowy. Wyślij płatność w swojej aplikacji bankowej.",
         "refund": "Zwrócić pieniądze",
         "available": "Dostępne do zwrotu",
         "pending": "Oczekujący zwrot",

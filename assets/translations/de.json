@@ -3062,11 +3062,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Erstattungsart",
-    "bankHint": "Erstellen Sie einen QR-Code und senden Sie die Zahlung in Ihrer Banking-App. Dadurch werden weder Zahlungen noch der Bestellstatus geändert.",
+    "bankHint": "Erstellen Sie einen QR-Code und senden Sie die Zahlung in Ihrer Banking-App.",
     "cashHint": "Erfassen Sie Bargeld, das Sie dem Empfänger bereits übergeben haben.",
     "bankUnavailable": "Für diese Bestellung ist kein QR-Code verfügbar. Eine unterstützte Währung und die ursprüngliche Zahlungsreferenz sind erforderlich.",
     "bankQrFailed": "Der QR-Code konnte nicht erstellt werden. Prüfen Sie die Angaben und versuchen Sie es erneut.",
-    "bankQrReady": "Der QR-Code ist bereit. Senden Sie die Zahlung in Ihrer Banking-App. Zahlungen und Bestellstatus wurden nicht geändert.",
+    "bankQrReady": "Der QR-Code ist bereit. Senden Sie die Zahlung in Ihrer Banking-App.",
         "refund": "Geld erstatten",
         "available": "Erstattbarer Betrag",
         "pending": "Ausstehende Erstattung",

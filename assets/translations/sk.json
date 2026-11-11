@@ -3089,11 +3089,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Spôsob vrátenia",
-    "bankHint": "Vygenerujte QR a odošlite platbu vo svojej bankovej aplikácii. Vytvorenie QR nemení platby ani stav objednávky.",
+    "bankHint": "Vygenerujte QR a odošlite platbu vo svojej bankovej aplikácii.",
     "cashHint": "Zaznamenajte hotovosť, ktorú ste už odovzdali príjemcovi.",
     "bankUnavailable": "QR pre túto objednávku nie je dostupné. Vyžaduje podporovanú menu a pôvodnú platobnú referenciu.",
     "bankQrFailed": "QR sa nepodarilo vytvoriť. Skontrolujte údaje a skúste to znova.",
-    "bankQrReady": "QR je pripravené. Platbu odošlite vo svojej bankovej aplikácii. Vytvorenie QR nezmenilo platby ani stav objednávky.",
+    "bankQrReady": "QR je pripravené. Platbu odošlite vo svojej bankovej aplikácii.",
         "refund": "Vrátiť peniaze",
         "available": "Možno vrátiť",
         "pending": "Čaká na vrátenie",

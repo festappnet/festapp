@@ -5245,11 +5245,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Způsob vrácení",
-    "bankHint": "Vygenerujte QR a odešlete platbu ve své bankovní aplikaci. Vytvoření QR nemění platby ani stav objednávky.",
+    "bankHint": "Vygenerujte QR a odešlete platbu ve své bankovní aplikaci.",
     "cashHint": "Zaznamenejte hotovost, kterou jste již předali příjemci.",
     "bankUnavailable": "QR pro tuto objednávku není dostupné. Vyžaduje podporovanou měnu a původní platební referenci.",
     "bankQrFailed": "QR se nepodařilo vytvořit. Zkontrolujte údaje a zkuste to znovu.",
-    "bankQrReady": "QR je připraven. Platbu odešlete ve své bankovní aplikaci. Vytvoření QR nezměnilo platby ani stav objednávky.",
+    "bankQrReady": "QR je připraven. Platbu odešlete ve své bankovní aplikaci.",
         "refund": "Vrátit peníze",
         "available": "Lze vrátit",
         "pending": "Čeká na vrácení",

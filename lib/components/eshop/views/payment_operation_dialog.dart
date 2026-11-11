@@ -427,7 +427,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
   Widget _fact(String label, Object? value) => Padding(
     padding: const EdgeInsets.only(top: 8),
     child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(child: Text(label)),
         const SizedBox(width: 12),

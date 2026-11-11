@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/eshop/models/payment_refund_recipient.dart';
 import 'package:fstapp/components/eshop/models/transaction_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
@@ -498,7 +499,13 @@ void main() {
         },
         instructions: (input) async {
           submitted = input;
-          return {'payload': 'BCD\n002\n1\nSCT', 'amount': '50.00'};
+          return {
+            'payload': 'BCD\n002\n1\nSCT',
+            'amount': '50.00',
+            'recipientName': 'Jana Novakova',
+            'recipientIban': 'CZ6508000000192000145399',
+            'reference': '6817',
+          };
         },
       );
       expect(find.byKey(const ValueKey('refundMethod_cash')), findsOneWidget);
@@ -540,6 +547,16 @@ void main() {
         find.text(PaymentOperationStrings.text('bankQrReady')),
         findsOneWidget,
       );
+      for (final copy in tester.widgetList<CopyButton>(
+        find.byType(CopyButton),
+      )) {
+        final value = find.text(copy.value);
+        final button = find.byWidget(copy);
+        expect(
+          tester.getCenter(button).dy,
+          closeTo(tester.getCenter(value).dy, 0.1),
+        );
+      }
     },
   );
 

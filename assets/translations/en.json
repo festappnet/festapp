@@ -5243,11 +5243,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Refund method",
-    "bankHint": "Generate a QR code and send the payment in your banking app. Generating the QR changes neither payments nor the order status.",
+    "bankHint": "Generate a QR code and send the payment in your banking app.",
     "cashHint": "Record cash you have already handed to the recipient.",
     "bankUnavailable": "QR is unavailable for this order. A supported currency and the original payment reference are required.",
     "bankQrFailed": "Could not generate the QR code. Check the details and try again.",
-    "bankQrReady": "The QR code is ready. Send the payment in your banking app. Generating the QR has not changed payments or the order status.",
+    "bankQrReady": "The QR code is ready. Send the payment in your banking app.",
         "refund": "Refund money",
         "available": "Available to refund",
         "pending": "Pending refund",
