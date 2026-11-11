@@ -61,6 +61,72 @@ void main() {
   });
   testWidgetsWithEnvironment(
     () => _environment,
+    'outline scrolls vertically without animating ancestor tab pages',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final pages = PageController(initialPage: 1);
+      addTearDown(pages.dispose);
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.formsWrite: true},
+      );
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      await _environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: PageView(
+          controller: pages,
+          children: [
+            const SizedBox(),
+            FormEditorContent(
+              formLink: 'ples',
+              loadBundle: (_) async => FormEditBundle(
+                form: FormEditorDraft(
+                  link: 'ples', occasionId: 1, isOpen: true, data: {},
+                  header: '<p>Vítejte na plese</p>',
+                  relatedFields: [for (var i = 1; i <= 8; i++)
+                    FormFieldDraft(id: i, type: 'text', title: 'Otázka $i')],
+                ),
+                productTypes: [], products: [], availableBankAccounts: [],
+              ),
+            ),
+            const SizedBox(),
+          ],
+        ),
+      ));
+      await tester.pumpAndSettle();
+      final horizontalOffset = pages.position.pixels;
+      final outline = find.byKey(const ValueKey('form-editor-outline'));
+      final vertical = tester.widget<SingleChildScrollView>(find.ancestor(
+        of: find.byType(FormFieldsGenerator),
+        matching: find.byType(SingleChildScrollView),
+      ).first).controller!;
+      final save = find.descendant(of: find.byType(EditorActionBar),
+        matching: find.widgetWithText(FilledButton, CommonStrings.save));
+      Future<void> navigate(String label) async {
+        await tester.tap(find.descendant(of: outline, matching: find.text(label)));
+        // A settled-only assertion misses a horizontal animation that snaps back.
+        for (var frame = 0; frame < 8; frame++) {
+          await tester.pump(const Duration(milliseconds: 40));
+          expect(pages.position.pixels, closeTo(horizontalOffset, 0.01));
+        }
+        expect(tester.widget<FilledButton>(save).onPressed, isNull);
+      }
+      await navigate('Otázka 4');
+      final fieldOffset = vertical.offset;
+      expect(fieldOffset, greaterThan(0));
+      expect(tester.widget<TextFormField>(find.widgetWithText(
+        TextFormField, 'Otázka 4')).initialValue, 'Otázka 4');
+      await navigate(FormStrings.formIntroduction);
+      expect(vertical.offset, lessThan(fieldOffset));
+      await navigate(FormStrings.availability);
+      expect(vertical.offset, lessThanOrEqualTo(12));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => _environment,
     'layout C preserves active HTML and field drafts across widths and guards both previews',
     (tester) async {
       tester.view.physicalSize = const Size(1600, 1800);

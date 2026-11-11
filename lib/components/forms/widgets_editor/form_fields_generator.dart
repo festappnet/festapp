@@ -15,6 +15,7 @@ import '../models/form_field_draft.dart';
 import '../widgets_view/form_helper.dart';
 import 'birth_date_editor.dart';
 import 'form_fields_navigation_controller.dart';
+import 'form_editor_scroll.dart';
 import 'description_with_edit.dart';
 import 'sex_editor.dart';
 import 'ticket_editor_widgets.dart';
@@ -34,6 +35,7 @@ class FormFieldsGenerator extends StatefulWidget {
   final bool editingEnabled;
   final bool expandProducts;
   final FormFieldsNavigationController? navigationController;
+  final ScrollController? revealScrollController;
   const FormFieldsGenerator({
     super.key,
     required this.bundle,
@@ -41,6 +43,7 @@ class FormFieldsGenerator extends StatefulWidget {
     this.editingEnabled = true,
     this.expandProducts = false,
     this.navigationController,
+    this.revealScrollController,
   });
 
   @override
@@ -107,10 +110,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
         return;
       final target = _anchors[identity]?.currentContext;
       if (target != null) {
-        Scrollable.ensureVisible(
+        revealFormEditorTarget(
           target,
+          controller: widget.revealScrollController,
           alignment: 0.1,
-          duration: const Duration(milliseconds: 250),
         );
       }
     });
