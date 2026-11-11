@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rebuild the paused website GTM preset with per-event GA4 tags, native conversion contact mapping, separate Ads free-registration conversion and the gallery-linked Meta Pixel template. Keep Google built-in consent checks and explicit Meta consent/CAPI settings.
+
 - Standalone consent links support configured Complianz opt-in records with semantic notice scope; Google Consent Mode alone never supplies imported consent.
 
 - Organizer help now explains website and Unit measurement, saved consent sources, GTM setup and troubleshooting in Czech and English source, with a download of the paused canonical host preset. English publication keeps its existing preview gate.

@@ -122,8 +122,11 @@ source window, origin, instance and generation. Consent Mode default/update prec
 GTM, optional types denied without a saved choice; every event also carries `festapp_consent`.
 Every Consent Mode type is set explicitly: `functionality_storage` is always granted
 (an explicit owner decision), `personalization_storage` follows marketing like the `ad_*` types.
-Custom HTML tags such as Meta Pixel and Unit scripts do not read Consent Mode: require
-consent on the tag in GTM, or read `festapp_consent` and `festapp_consent_update`.
+Third-party tags and Unit scripts do not automatically inherit Google built-in
+consent checks. Configure their supported consent integration or explicit tag
+checks; custom code can consume `festapp_consent` and `festapp_consent_update`.
+The website preset uses the official Meta gallery template, its mapped
+`ad_storage` requirement and the website CMP's SDK revocation integration.
 
 Each Unit retains its separate canonical `PROJECT.pages.dev` site, CSP and sandbox.
 Scripts cannot access checkout DOM or backend credentials. Layout/scroll/theme
@@ -520,4 +523,11 @@ website tags and consent must be configured before enabling host measurement.
 
 A paused, importable website GTM preset and setup instructions are available in
 [`integrations/measurement`](../../integrations/measurement/README.md). Configure
-and preview merchant destinations before publishing.
+and preview merchant destinations before publishing. The preset has ten fixed
+GA4 event tags, two Ads actions and six gallery-template Meta tags. The Ads
+registration trigger selects `free_registration` only; waitlist/opening-interest
+remain generic leads. Native Google User-Provided Data is mapped only on
+conversion events, while the Meta adapter alone strips the E.164 leading plus.
+Retire the previous four-tag preset before enabling its replacement; Google
+consent behavior, Meta initialization/matching and account prerequisites are
+explained in the linked setup guide.
