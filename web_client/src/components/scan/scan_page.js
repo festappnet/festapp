@@ -109,6 +109,7 @@ export class ScanPage extends Component {
         const symbol=codes.map(ticketPayload).find(Boolean);
         if(!symbol)return;
         clearTimeout(this.advanceTimer);this.advanceTimer=null;
+        this.reviewHistory();
         this.input?.pause({keepStream:true});
         this.controller.scanSymbol=symbol;
         await this.controller.loadCode(symbol);
@@ -128,7 +129,9 @@ export class ScanPage extends Component {
         this.handledInputHistory ??= new WeakSet();
         if(this.handledInputHistory.has(event))return true;
         this.handledInputHistory.add(event);
-        if(mode!==this.mode && !this.setInputMode(mode,{fromHistory:true}))view.history.pushState({scannerInput:this.mode},'',view.location.href);
+        const returning=mode==='camera' && !event.state?.scannerReview && this.controller && (this.mode==='manual' || this.controller?.state!=='ready');
+        const changed=returning?this.returnToCamera({fromHistory:true}):mode===this.mode || this.setInputMode(mode,{fromHistory:true});
+        if(!changed)view.history.pushState({scannerInput:this.mode,scannerReview:!this.searchOpen && this.controller?.state!=='ready'},'',view.location.href);
         return true;
     }
     setInputMode(mode,{fromHistory=false}={}) {
@@ -136,8 +139,8 @@ export class ScanPage extends Component {
         const previous=this.mode,view=this.inputHistory();
         if(!fromHistory && mode!==previous){
             if(mode==='manual'){
-                view.history.replaceState({scannerInput:'camera'},'',view.location.href);
-                view.history.pushState({scannerInput:'manual'},'',view.location.href);
+                if(view.history.state?.scannerReview)view.history.replaceState({scannerInput:'manual'},'',view.location.href);
+                else {view.history.replaceState({scannerInput:'camera'},'',view.location.href);view.history.pushState({scannerInput:'manual'},'',view.location.href);}
             }else if(view.history.state?.scannerInput==='manual')view.history.back();
         }
         clearTimeout(this.advanceTimer);this.advanceTimer=null;this.advanceKey=null;
@@ -149,13 +152,22 @@ export class ScanPage extends Component {
         else this.host.querySelector('[name=query]')?.focus();
         return true;
     }
+    reviewHistory() {
+        const view=this.inputHistory();
+        const state={scannerInput:this.mode,scannerReview:true};
+        if(view.history.state?.scannerInput==='manual' || view.history.state?.scannerReview)view.history.replaceState(state,'',view.location.href);
+        else {view.history.replaceState({scannerInput:'camera'},'',view.location.href);view.history.pushState(state,'',view.location.href);}
+    }
+    returnToCamera(options={}) { return this.nextScan('camera',options); }
     loadSelectedTicket(reference) {
-        this.searchOpen=false;
+        this.reviewHistory();this.searchOpen=false;
         return this.controller.loadTicket(reference);
     }
 
-    nextScan(mode=this.cameraWasStarted&&!this.cameraUnavailable?'camera':this.mode,{auto=false}={}) {
-        if(this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state)))return;
+    nextScan(mode=this.cameraWasStarted&&!this.cameraUnavailable?'camera':this.mode,{auto=false,fromHistory=false}={}) {
+        if(!this.controller || this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state)))return false;
+        const view=this.inputHistory();
+        if(!fromHistory && mode==='camera' && (view.history.state?.scannerInput==='manual' || view.history.state?.scannerReview))view.history.back();
         clearTimeout(this.advanceTimer);this.advanceTimer=null;
         if(mode==='manual')this.input.stop();
         clearTimeout(this.searchTimer);this.searchTimer=null;this.searchPending=false;this.searchGeneration=(this.searchGeneration||0)+1;
@@ -165,6 +177,7 @@ export class ScanPage extends Component {
         if(!auto)this.input.allowSame?.();
         this.input.paused=false;this.render();
         if(this.mode==='camera'){if(this.input.stream)this.updateCameraState();else if(!auto||this.cameraWasStarted)this.startCamera();}else this.host.querySelector('[name=query]')?.focus();
+        return true;
     }
     resultHtml(c) {
         return scanResult(c,this.storageAvailable && !this.authBlocked && !this.row.locked);
@@ -331,14 +344,14 @@ export class ScanPage extends Component {
     }
     bind() {
         const one = (s,f) => { const el=this.host.querySelector(s); if(el) el.onclick=f; };
-        one('.scan-home',event=>{if(this.route.page==='scan' && this.mode==='manual'){event.preventDefault();this.setInputMode('camera');}});
+        one('.scan-home',event=>{if(this.route.page==='scan' && (this.mode==='manual' || this.controller && this.controller.state!=='ready')){event.preventDefault();this.returnToCamera();}});
         const eventHistory=async before=>{try{this.eventHistory=(await this.api.call('get_scanner_event_history',{p_occasion:this.row.session.occasion_id,...(before?{p_before:before}:{})},false)).data;this.render();}catch(err){this.error=err.message;this.render();}};
         one('[data-event-history]',()=>eventHistory());one('[data-event-more]',()=>eventHistory(this.eventHistory.at(-1)?.receipt.committed_at));
         one('[data-theme]',()=>ThemeService.toggle());
         one('[data-sound]',async()=>{if(this.sound.ready){this.sound.enabled=false;}else{this.sound.enabled=true;await this.sound.unlock();this.sound.play('good');}this.updateSoundControl();});
         const open=this.host.querySelector('[data-open]'); if(open) open.onsubmit=ev=>{ev.preventDefault();this.open({p_scan_code:open.elements.code.value,p_device_name:open.elements.device.value});};
         this.host.querySelectorAll('[data-session]').forEach(b=>b.onclick=()=>{const row=this.rows[Number(b.dataset.session)]; this.authBlocked=Boolean(row.locked);this.select(row);});
-        this.host.querySelectorAll('[data-mode]').forEach(b=>{b.disabled=this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state));b.onclick=()=>this.setInputMode(b.dataset.mode);});
+        this.host.querySelectorAll('[data-mode]').forEach(b=>{b.disabled=this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state));b.onclick=()=>b.dataset.mode==='camera'?this.returnToCamera():this.setInputMode(b.dataset.mode);});
         const search=this.host.querySelector('[data-search]');
         if(search){
             search.setAttribute('aria-busy',String(Boolean(this.searchPending)));
