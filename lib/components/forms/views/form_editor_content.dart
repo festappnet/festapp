@@ -809,6 +809,16 @@ class _FormEditorContentState extends State<FormEditorContent>
     }
   }
 
+  ButtonStyle _addFieldButtonStyle() => TextButton.styleFrom(
+    minimumSize: const Size(180, 52),
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+    textStyle: Theme.of(context).textTheme.titleMedium
+        ?.copyWith(fontWeight: FontWeight.w600),
+    iconSize: 26,
+    visualDensity: VisualDensity.standard,
+    tapTargetSize: MaterialTapTargetSize.padded,
+  );
+
   Widget _buildHtmlParent(BuildContext context) {
     if (!identical(_anchorBundle, _bundle)) {
       _anchorBundle = _bundle;
@@ -860,6 +870,7 @@ class _FormEditorContentState extends State<FormEditorContent>
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton.icon(
+              style: _addFieldButtonStyle(),
               onPressed: _canEdit ? _addNewField : null,
               icon: const Icon(Icons.add),
               label: Text(FormStrings.addFieldTitle),
@@ -985,6 +996,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: TextButton.icon(
+                                        style: _addFieldButtonStyle(),
                                         key: const ValueKey(
                                           'add-form-field-top',
                                         ),
@@ -1016,6 +1028,7 @@ class _FormEditorContentState extends State<FormEditorContent>
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: TextButton.icon(
+                                        style: _addFieldButtonStyle(),
                                         key: const ValueKey(
                                           'add-form-field-bottom',
                                         ),

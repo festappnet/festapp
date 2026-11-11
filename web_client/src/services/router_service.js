@@ -456,6 +456,7 @@ export class RouterService {
             ? new ScannerDomainPage(host, { client })
             : new ScanPage(host, { client });
         await this._scannerPage.init(route);
+        this._lastPath = window.location.pathname;
     }
 
     static normalizeUrl(url) {
@@ -529,6 +530,13 @@ export class RouterService {
     static initPopStateListener() {
         window.addEventListener('popstate', async (event) => {
             const path = window.location.pathname;
+
+            // Scanner input modes own their same-document history, before route
+            // comparisons: secret-link entry may have canonicalized its URL.
+            if (RouterService._scannerPage?.handleInputHistory?.(event)) {
+                RouterService._lastPath = path;
+                return;
+            }
 
             // Ignore hash changes (SPA overlays)
             if (path === RouterService._lastPath) {
