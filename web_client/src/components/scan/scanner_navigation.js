@@ -17,3 +17,9 @@ export function scannerReturnPath({ location, referrer = '', returnTo, storage }
     try { storage?.setItem(key, path); } catch {}
     return path;
 }
+
+// Only scanner-owned presentation metadata may survive route normalization.
+export function scannerInputHistoryState(state) {
+    if(!['camera','manual'].includes(state?.scannerInput) || !['camera','workspace'].includes(state?.scannerLevel))return null;
+    return {scannerInput:state.scannerInput,scannerLevel:state.scannerLevel,...(state.scannerReview===true?{scannerReview:true}:{})};
+}

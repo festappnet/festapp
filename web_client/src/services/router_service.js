@@ -3,6 +3,7 @@ import { ACCOUNT_CONNECTIONS_PATH } from '../components/users/account_connection
 import { isEmbed } from './embed_context.js';
 import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
 import { resolveScannerRoute } from './scanner_routes.js';
+import { scannerInputHistoryState } from '../components/scan/scanner_navigation.js';
 import { AppConfig } from '../app_config.js';
 import { prepareFlutterRuntime } from './flutter_runtime_handoff.js';
 import { unsupportedOccasionAppRedirect } from './public_occasion_routes.js';
@@ -215,7 +216,8 @@ export class RouterService {
                 scannerRoute.occasion = requestedOccasion;
             }
             const target = scannerRoute.canonical || path;
-            if (!scannerRoute.code) window.history.replaceState(null, '', target);
+            if (!scannerRoute.code) window.history.replaceState(
+                scannerRoute.page==='scan'?scannerInputHistoryState(window.history.state):null, '', target);
             RouterService._lastPath = target;
             await RouterService.mountScanner(scannerRoute);
             return true;

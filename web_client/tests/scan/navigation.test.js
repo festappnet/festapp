@@ -3,7 +3,7 @@ import {JSDOM} from 'jsdom';
 const {ScanPage}=await import('../../src/components/scan/scan_page.js');
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {scannerReturnPath,safeScannerReturn} from '../../src/components/scan/scanner_navigation.js';
+import {scannerReturnPath,safeScannerReturn,scannerInputHistoryState} from '../../src/components/scan/scanner_navigation.js';
 const origin='https://vstupenky.online';
 const tickets='/PlesAKH2025-copy-ad8a55ba/reservations/tickets';
 test('scanner returns to its ticket list after the scan secret is removed and after reload',()=>{
@@ -59,9 +59,10 @@ test('browser Back/Forward stays inside scanner and does not reach the app route
  assert.equal(page.mode,'camera');assert.equal(routerCalls,0);
  dom.window.history.forward();await new Promise(resolve=>setTimeout(resolve,30));
  assert.equal(page.mode,'manual');assert.equal(document.activeElement,page.host.querySelector('[name=query]'));assert.equal(routerCalls,0);
+ const pushes=t.mock.method(dom.window.history,'pushState');
  page.controller.state='awaiting_server';page.searchOpen=false;page.render();
  dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
- assert.equal(page.mode,'manual','history navigation cannot interrupt persisting/server confirmation');assert.equal(dom.window.history.state.scannerInput,'manual');assert.equal(dom.window.history.length,2,'router and component process the same blocked Back only once');
+ assert.equal(page.mode,'manual','history navigation cannot interrupt persisting/server confirmation');assert.equal(dom.window.history.state.scannerInput,'manual');assert.equal(dom.window.history.length,2,'router and component process the same blocked Back only once');assert.equal(pushes.mock.callCount(),0,'busy Back restores the existing workspace without creating skippable history');
 });
 
 test('new ticket arrival animates once per lookup, not on recovery, and respects reduced motion',async t=>{
@@ -97,4 +98,57 @@ test('header Back from a scanned ticket shows camera alone',async t=>{
 test('Back on scanner entry without a session remains a normal exit link',t=>{
  const {page,dom}=navigationPage(t,{loaded:false});page.row=null;page.disposeControllers();page.controller=null;page.render();
  const back=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(back);assert.equal(back.defaultPrevented,false);
+});
+
+
+test('automatic scans after Back reuse the workspace entry without a new pushState',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ await page.loadCodes(['FIRST']);
+ const push=t.mock.method(dom.window.history,'pushState');
+ for(let cycle=0;cycle<3;cycle++){
+  dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
+  assert.equal(page.controller.state,'ready');assert.equal(page.mode,'camera');
+  await page.loadCodes(['NEXT-'+cycle]);await new Promise(resolve=>setTimeout(resolve,30));
+  assert.equal(page.controller.state,'result');assert.equal(dom.window.location.pathname,'/scan');
+ }
+ assert.equal(push.mock.callCount(),0,'async camera detection cannot create skippable browser history after a traversal');
+});
+
+
+test('Back from the initial full camera skips its empty reserved workspace',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ dom.window.history.replaceState(null,'',tickets);dom.window.history.pushState(null,'','/scan');
+ page.prepareInputHistory();dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,60));
+ assert.equal(dom.window.location.pathname,tickets);
+});
+
+test('Back keeps a held QR suppressed; removing and presenting it again allows a new scan',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ const {ScannerInput}=await import('../../src/components/scan/scanner_input.js');
+ page.input=new ScannerInput(code=>page.loadCodes([code]));t.after(()=>page.input.dispose());
+ const frame=[{value:'HELD'}];page.input.dispatchCodes(frame);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(page.controller.state,'result');
+ dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
+ page.input.dispatchCodes(frame);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(page.controller.state,'ready','the same visible QR must not instantly reopen after Back');
+ page.input.dispatchCodes([]);page.input.dispatchCodes(frame);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(page.controller.state,'result','the same ticket works again after it leaves the camera');
+});
+
+test('scanner route normalization preserves only the owned camera/workspace state',()=>{
+ assert.deepEqual(scannerInputHistoryState({scannerInput:'camera',scannerLevel:'camera',secret:'discard'}),{scannerInput:'camera',scannerLevel:'camera'});
+ assert.deepEqual(scannerInputHistoryState({scannerInput:'manual',scannerLevel:'workspace',scannerReview:true}),{scannerInput:'manual',scannerLevel:'workspace',scannerReview:true});
+ for(const state of [null,{}, {scannerInput:'camera'}, {scannerInput:'camera',scannerLevel:'other'}])assert.equal(scannerInputHistoryState(state),null);
+});
+
+
+test('the real router keeps the reserved scanner levels across reload normalization',async t=>{
+ const {dom}=navigationPage(t,{loaded:false});
+ const {RouterService}=await import('../../src/services/router_service.js');
+ const original=RouterService._lastPath;t.after(()=>{RouterService._lastPath=original;});
+ const mounted=t.mock.method(RouterService,'mountScanner',async()=>{});
+ dom.window.history.replaceState({scannerInput:'camera',scannerLevel:'camera',secret:'discard'},'', '/scan');
+ assert.equal(await RouterService.handleInitialLoad(),true);
+ assert.deepEqual(dom.window.history.state,{scannerInput:'camera',scannerLevel:'camera'});
+ assert.equal(mounted.mock.calls[0].arguments[0].page,'scan');
 });
