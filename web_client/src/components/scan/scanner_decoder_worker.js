@@ -1,8 +1,12 @@
-import jsQR from 'jsqr';
-import { decodeQRCodes } from './scanner_codes.js';
+import { decodeQRCodes, prepareQRDecoder } from './scanner_codes.js';
 
-// Decode one transferred frame at a time, outside the interactive UI thread.
-self.onmessage = ({ data: { pixels, width, height } }) => {
-    const codes=decodeQRCodes(pixels,width,height,jsQR,12,progress=>self.postMessage({codes:progress,done:false}));
-    self.postMessage({codes,done:true});
+const ready=prepareQRDecoder();
+ready.catch(()=>{}); // A failed initialization is reported to the camera owner below.
+self.onmessage=async({data:{pixels,width,height}})=>{
+    try {
+        await ready;
+        self.postMessage({codes:await decodeQRCodes(pixels,width,height)});
+    } catch {
+        self.postMessage({error:'camera_unavailable'});
+    }
 };

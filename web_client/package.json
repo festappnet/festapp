@@ -4,12 +4,12 @@
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
-    "dev": "node ../automation/configure_fonts.js .. --assets-only && vite",
-    "build": "node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
+    "dev": "node scripts/build_scanner_decoder.mjs && node ../automation/configure_fonts.js .. --assets-only && vite",
+    "build": "node scripts/build_scanner_decoder.mjs && node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
-    "test": "node scripts/build_runtime.mjs --check && node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node scripts/run_tests.mjs",
+    "test": "node scripts/build_scanner_decoder.mjs --check && node scripts/build_runtime.mjs --check && node scripts/build_embed.mjs --check && node scripts/build_measurement_runtime.mjs --check && node ../automation/generate_email_tlds.mjs --check && node scripts/run_tests.mjs",
     "test:measurement-browser": "node scripts/test_form_measurement_browser.mjs",
     "test:form-interaction-browser": "node scripts/test_form_interaction_browser.mjs",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
@@ -28,11 +28,11 @@
     "dotenv": "^18.0.9",
     "flatpickr": "^4.6.13",
     "glob": "^14.0.2",
-    "jsqr": "^1.4.0",
     "klaro": "0.7.21",
     "node-localstorage": "^3.0.5",
     "pg": "^8.23.1",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "zxing-wasm": "3.1.6"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

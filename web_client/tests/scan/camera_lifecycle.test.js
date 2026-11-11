@@ -89,7 +89,7 @@ test('manual entry from a single result or group starts a focused, usable next-t
         assert.equal(document.activeElement,page.host.querySelector('[name=symbol]'));
         page.row.session.capabilities.search_tickets=true;page.render();
         const search=page.host.querySelector('[data-search]');
-        search.elements.query.value='a';search.querySelector('button').click();
+        search.elements.query.value='a';search.dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
         await new Promise(resolve=>setImmediate(resolve));
         const field=page.host.querySelector('[name=query]'),message=page.host.querySelector('#scan-search-error');
         assert.equal(field.getAttribute('aria-invalid'),'true');

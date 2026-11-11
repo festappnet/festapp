@@ -232,3 +232,6 @@ automation/release/platform_updates/node_modules/
 /fonts/Futura PT Medium.ttf
 /fonts/Gill Sans Bold.otf
 /web_client/src/assets/fonts/
+
+# Generated from the pinned QR engine package before web builds.
+/web_client/public/web-assets/zxing-reader-*.wasm
