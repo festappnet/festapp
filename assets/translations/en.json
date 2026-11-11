@@ -3802,6 +3802,10 @@
         "payment_adjustment_voided": "Corrected cash refund record"
     },
     "Scanner": {
+        "camera_expand": "Expand camera",
+        "ticket_cancelled": "Ticket cancelled",
+        "ticket_waitlisted": "On the waiting list",
+        "search_current_event": "Searching this event",
         "entry_intro": "Connect this device to an event to start checking tickets.",
         "entry_code_hint": "Get the code from the event organizer.",
         "entry_code_retry": "Check the code or ask the organizer for a new one.",
@@ -3946,7 +3950,7 @@
         "worker_active": "A user is signed in or a scanner is active in this browser. Reception sign-in requires a separate browser profile.",
         "login_done": "Signed in",
         "continue_app": "Continue to application",
-        "reason_not_found": "Ticket not found",
+        "reason_not_found": "Ticket not found in this event",
         "reason_offline_not_found": "Not found in prepared data. Verify online or contact a supervisor.",
         "reason_offline_grant_expired": "Offline authorization expired. The queue is preserved.",
         "reason_camera_denied": "Camera permission denied. Enter the code manually.",

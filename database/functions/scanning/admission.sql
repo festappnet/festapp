@@ -20,15 +20,22 @@ BEGIN
  IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=p_ticket AND state='used') THEN RAISE EXCEPTION 'already_used'; END IF;
  UPDATE eshop.tickets SET state='used',updated_at=clock_timestamp() WHERE id=p_ticket;
 END $$;
-CREATE OR REPLACE FUNCTION public.lookup_scanner_ticket(p_session uuid,p_token text,p_symbol text)
+CREATE OR REPLACE FUNCTION public.scanner_lookup_ticket_internal(p_session uuid,p_token text,p_symbol text,p_ticket bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE s public.scanner_sessions; cfg public.scanner_settings; tid bigint; result jsonb;
 BEGIN
  s:=public.scanner_session_internal(p_session,p_token);
  IF NOT public.admit_scan_access_v1(s.occasion_id,true) THEN RETURN jsonb_build_object('code',429,'reason','abuse_limit_exceeded','server_time',now()); END IF;
  SELECT * INTO cfg FROM public.scanner_settings WHERE occasion_id=s.occasion_id;
- SELECT t.id INTO tid FROM eshop.tickets t WHERE t.occasion=s.occasion_id AND t.ticket_symbol=p_symbol LIMIT 1;
- IF tid IS NULL AND p_symbol ~* '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$' THEN
+ IF p_ticket IS NOT NULL AND NOT coalesce((cfg.config#>>'{manual_search,tickets}')::boolean,false) THEN
+  RAISE insufficient_privilege USING MESSAGE='manual_search_disabled';
+ END IF;
+ IF p_ticket IS NOT NULL THEN
+  SELECT t.id INTO tid FROM eshop.tickets t WHERE t.occasion=s.occasion_id AND t.id=p_ticket;
+ ELSE
+  SELECT t.id INTO tid FROM eshop.tickets t WHERE t.occasion=s.occasion_id AND t.ticket_symbol=p_symbol LIMIT 1;
+ END IF;
+ IF p_ticket IS NULL AND tid IS NULL AND p_symbol ~* '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$' THEN
   SELECT t.id INTO tid FROM public.occasion_users ou JOIN eshop.tickets t ON t.id=ou.ticket WHERE ou.occasion=s.occasion_id AND ou."user"=p_symbol::uuid AND t.occasion=s.occasion_id LIMIT 1;
  END IF;
  SELECT dto INTO result FROM public.scanner_ticket_projection_internal(s.occasion_id,cfg.config,tid) WHERE ticket_id=tid;
@@ -36,6 +43,19 @@ BEGIN
  RETURN jsonb_build_object('code',CASE WHEN result IS NULL THEN 404 ELSE 200 END,'reason',CASE WHEN result IS NULL THEN 'not_found' ELSE 'found' END,
  'data',result,'settings_revision',cfg.revision,'server_time',now());
 END $$;
+REVOKE ALL ON FUNCTION public.scanner_lookup_ticket_internal(uuid,text,text,bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.lookup_scanner_ticket(p_session uuid,p_token text,p_symbol text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN public.scanner_lookup_ticket_internal(p_session,p_token,p_symbol,NULL);
+END $$;
+CREATE OR REPLACE FUNCTION public.lookup_scanner_ticket_by_id(p_session uuid,p_token text,p_ticket bigint)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN public.scanner_lookup_ticket_internal(p_session,p_token,NULL,p_ticket);
+END $$;
+REVOKE ALL ON FUNCTION public.lookup_scanner_ticket_by_id(uuid,text,bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.lookup_scanner_ticket_by_id(uuid,text,bigint) TO anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.search_scanner_tickets(p_session uuid,p_token text,p_query text,p_after bigint DEFAULT 0)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE s public.scanner_sessions; cfg public.scanner_settings; result jsonb;

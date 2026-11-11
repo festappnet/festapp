@@ -1772,6 +1772,10 @@
         }
     },
     "Scanner": {
+        "camera_expand": "Rozwiń kamerę",
+        "ticket_cancelled": "Bilet anulowany",
+        "ticket_waitlisted": "Na liście oczekujących",
+        "search_current_event": "Wyszukiwanie w wydarzeniu",
         "entry_intro": "Połącz to urządzenie z wydarzeniem i rozpocznij sprawdzanie biletów.",
         "entry_code_hint": "Kod otrzymasz od organizatora wydarzenia.",
         "entry_code_retry": "Sprawdź kod lub poproś organizatora o nowy.",
@@ -1916,7 +1920,7 @@
         "worker_active": "A user is signed in or a scanner is active in this browser. Reception sign-in requires a separate browser profile.",
         "login_done": "Signed in",
         "continue_app": "Continue to application",
-        "reason_not_found": "Ticket not found",
+        "reason_not_found": "Nie znaleziono biletu na to wydarzenie",
         "reason_offline_not_found": "Not found in prepared data. Verify online or contact a supervisor.",
         "reason_offline_grant_expired": "Offline authorization expired. The queue is preserved.",
         "reason_camera_denied": "Camera permission denied. Enter the code manually.",

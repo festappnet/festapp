@@ -4,7 +4,7 @@ import { Component } from '../base/component.js';
 import { ScannerApi } from '../../services/scanner_api.js';
 import { ScannerStore, offlineGrantValid, isTerminal } from '../../services/scanner_store.js';
 import { ScannerSync } from '../../services/scanner_sync.js';
-import { ScannerController } from './scanner_controller.js';
+import { ScannerController, ticketPayload } from './scanner_controller.js';
 import { ScannerInput } from './scanner_input.js';
 import { scanResult } from './scan_result.js';
 import { tr, reasonText, escape as e } from './scan_strings.js';
@@ -14,7 +14,7 @@ import './scan.css';
 import { icon } from './scan_icons.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { ScannerFeedback } from './scanner_feedback.js';
-import {scannerProductTitle,scannerProductCaption,scannerNotes} from './scanner_presentation.js';
+import {scannerProductTitle,scannerProductCaption,scannerNotes,scannerTicketStatus,scannerSearchPreview} from './scanner_presentation.js';
 import { groupScannerTickets } from './scanner_groups.js';
 export class ScanPage extends Component {
     constructor(host, { client, store = new ScannerStore(), backend = null } = {}) {
@@ -72,6 +72,7 @@ export class ScanPage extends Component {
         }
     }
     async select(row) {
+        this.searchGeneration=(this.searchGeneration||0)+1;this.searchResults=[];this.searchQuery='';this.searchError=null;this.searchScope='tickets';
         this.disposeControllers();this.batch=null;this.groupDetailController=null; this.sync?.stop(); this.summaryAt=0; this.row = row; this.api.session = row.session;
         if (this.store) {
             await this.store.put('preferences', { key: `active:${JSON.stringify(this.backend)}`, partition: row.partition });
@@ -104,7 +105,7 @@ export class ScanPage extends Component {
         if(!this.controller || this.disposed || this.authBlocked || this.row?.locked)return;
         const existing=this.batch || (this.controller.state!=='ready'?[{symbol:this.controller.scanSymbol || this.controller.ticket?.symbol,controller:this.controller}]:[]);
         const known=new Set(existing.map(item=>item.symbol));
-        const unique=[...new Set(codes.map(code=>code.trim()).filter(Boolean))].filter(symbol=>!known.has(symbol)).slice(0,12);
+        const unique=[...new Set(codes.map(ticketPayload).filter(Boolean))].filter(symbol=>!known.has(symbol)).slice(0,12);
         if(!unique.length)return;
         clearTimeout(this.advanceTimer);this.advanceTimer=null;
         const additions=unique.map((symbol,index)=>({symbol,controller:!existing.length&&index===0?this.controller:this.createController()}));
@@ -142,11 +143,10 @@ export class ScanPage extends Component {
     batchHtml() {
         if(!this.batch)return '';
         const eligible=this.batch.filter(({controller:c})=>c.state==='result' && c.ticket?.admission_allowed && !c.ticket.requires_unpaid_confirmation).length;
-        const busy=this.batchConfirming || this.batch.some(({controller:c})=>['ready','looking_up','persisting','awaiting_server'].includes(c.state));
         const card=({symbol,controller:c,index:i,sharedOrder=false})=>{
             const used=(c.state==='result'&&c.ticket?.state==='used')||(['conflict','rejected'].includes(c.state)&&c.operation?.receipt?.reason==='already_used');
             const good=c.state==='accepted',pending=['pending','sending','persisting','awaiting_server'].includes(c.state),unpaid=c.state==='result'&&c.ticket?.requires_unpaid_confirmation,valid=c.state==='result'&&c.ticket?.admission_allowed&&!unpaid;
-            const label=good?tr('accepted'):pending?tr(c.state):c.error?reasonText(c.error):c.state==='ready'||c.state==='looking_up'?tr('looking_up'):c.state==='result'?tr(c.ticket?.state==='used'?'already_used':c.ticket?.requires_unpaid_confirmation?'unpaid':valid?'valid':'not_allowed'):c.operation?.receipt?reasonText(c.operation.receipt.reason):tr(c.state);
+            const label=good?tr('accepted'):pending?tr(c.state):c.error?reasonText(c.error):c.state==='ready'||c.state==='looking_up'?tr('looking_up'):c.state==='result'?tr(scannerTicketStatus(c.ticket).key):c.operation?.receipt?reasonText(c.operation.receipt.reason):tr(c.state);
             const expanded=this.groupDetailController===c;
             const named=c.ticket?.holder_name && c.ticket.holder_name!==symbol;
             const purchaser=c.ticket?.purchaser_name;
@@ -158,7 +158,7 @@ export class ScanPage extends Component {
 
         };
         const groups=groupScannerTickets(this.batch).map(group=>group.sharedOrder?`<section class="scan-order-group"><header class="scan-order-header"><h3>${group.items[0].controller.ticket?.purchaser_name?e(group.items[0].controller.ticket.purchaser_name):tr('shared_order')}</h3>${group.table?`<p>${/^\d+$/.test(group.table)?tr('table')+' ':''}${e(group.table)}</p>`:''}</header>${scannerNotes(group.items[0].controller.ticket,{individual:false})}${group.items.map(item=>card({...item,sharedOrder:true})).join('')}</section>`:group.items.map(card).join('')).join('');
-        return `<section class="scan-group" aria-label="${tr('ticket_group')}"><h2>${tr('ticket_group')} (${this.batch.length})</h2><div class="scan-group-list">${groups}</div><div class="scan-group-actions">${eligible?`<button class="scan-primary" data-group-confirm ${this.batchConfirming||!this.storageAvailable||this.authBlocked||this.row.locked?'disabled':''}>${icon('check')}${tr('confirm_valid')} (${eligible})</button>`:''}<button data-group-next ${busy?'disabled':''}>${tr('next_group')}${icon('arrow')}</button></div></section>`;
+        return `<section class="scan-group" aria-label="${tr('ticket_group')}"><h2>${tr('ticket_group')} (${this.batch.length})</h2><div class="scan-group-list">${groups}</div><div class="scan-group-actions">${eligible?`<button class="scan-primary" data-group-confirm ${this.batchConfirming||!this.storageAvailable||this.authBlocked||this.row.locked?'disabled':''}>${icon('check')}${tr('confirm_valid')} (${eligible})</button>`:''}</div></section>`;
     }
     async recover() {
         if (!this.row || !navigator.onLine || this.disposed) return;
@@ -216,8 +216,10 @@ export class ScanPage extends Component {
     render() {
         if (this.disposed || this.settingsPage) return;
         const c = this.controller;
+        const reviewing=Boolean(this.batch || c && c.state!=='ready');
+        const navigationBusy=Boolean(this.batchConfirming)||this.controllers().some(controller=>['persisting','looking_up','awaiting_server'].includes(controller.state));
         if (!this.canSearchUsers && this.searchScope==='users') { this.searchScope='tickets';this.searchResults=[]; }
-        const drafts = !this.row || c?.state==='ready' && this.mode==='manual' ? [...this.host.querySelectorAll('[data-open] input,[data-code] input:not(:disabled),[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
+        const drafts = !this.row || this.renderedSession===this.row.session && c?.state==='ready' && this.mode==='manual' ? [...this.host.querySelectorAll('[data-open] input,[data-code] input:not(:disabled),[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
         if (!this.row && drafts.length) this.entryDraft = Object.fromEntries(drafts.map(({name,value})=>[name,value]));
         const liveVideo = this.mode==='camera' && this.route.page==='scan' && this.input?.stream ? this.input.video : null;
         if (!liveVideo) this.input?.stop();
@@ -229,9 +231,9 @@ export class ScanPage extends Component {
         <button data-prepare ${this.preparing || !this.store || !navigator.onLine ? 'disabled' : ''}>${tr('prepare')}</button><button data-retry>${tr('retry')}</button><p>${tr('logout_note')}</p><button data-lock>${tr('logout')}</button>
         <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && c?.state==='ready'?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.batch?'is-group':''} ${this.mode==='camera' && !this.batch && c?.state==='ready'?'camera-ready':''} ${this.batch || c && c.state !== 'ready' ? 'has-result' : ''}"><section class="scan-input">
-        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-code><label>${tr('symbol')}<input name="symbol" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" ${c?.state!=='ready' ? 'disabled' : ''}></label><button ${c?.state!=='ready' ? 'disabled' : ''}>${icon('scan')}${tr('lookup')}</button></form>${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}${!this.cameraUnavailable?`<p class="scan-manual-note">${tr('manual_once')}</p>`:''}`}
-        ${this.mode==='manual' && (this.row.session.capabilities.search_tickets || this.canSearchUsers) ? `<form data-search novalidate>${this.row.session.capabilities.search_tickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr('search')}<input name="query" minlength="2" maxlength="100" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p><button>${tr('search')}</button></form><ul class="scan-list">${(this.searchResults||[]).map(t=>`<li><button data-ticket="${e(t.symbol)}">${e(t.holder_name)} · ${e(t.symbol)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}` : ''}</section>
-        <section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${this.batchHtml()}${c && !this.batch ? this.resultHtml(c) : ''}</section></div>`;
+        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video>${reviewing?`<button class="scan-camera-expand" data-camera-expand aria-label="${tr('camera_expand')}" title="${tr('camera_expand')}" ${navigationBusy?'disabled':''}>${icon('expand')}</button>`:''}<div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-code><label>${tr('symbol')}<input name="symbol" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" ${c?.state!=='ready' ? 'disabled' : ''}></label><button ${c?.state!=='ready' ? 'disabled' : ''}>${icon('scan')}${tr('lookup')}</button></form>${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}${!this.cameraUnavailable?`<p class="scan-manual-note">${tr('manual_once')}</p>`:''}`}
+        ${this.mode==='manual' && (this.row.session.capabilities.search_tickets || this.canSearchUsers) ? `<form data-search novalidate>${this.row.session.capabilities.search_tickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr('search')}<input name="query" minlength="2" maxlength="100" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p><button>${tr('search')}</button></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}` : ''}</section>
+        ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('expand')}${tr('camera_expand')}</button><button data-mode="manual">${icon('manual')}${tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${this.batchHtml()}${c && !this.batch ? this.resultHtml(c) : ''}</section></div>`;
         // Recovery updates the shell counters without recreating the review surface.
         // Keep native disclosure state, focused controls and the actual scrolling node.
         const template=document.createElement('template');
@@ -267,7 +269,7 @@ export class ScanPage extends Component {
         this.host.replaceChildren(shell);
         if(focused && this.host.contains(focused))focused.focus({preventScroll:true});
         const detail=this.host.querySelector('.scan-detail');
-        this.renderedContent=content;this.renderedController=c;this.renderedMode=this.mode;
+        this.renderedContent=content;this.renderedController=c;this.renderedMode=this.mode;this.renderedSession=this.row?.session;
         if(footer){
             const reserve=()=>shell.style.setProperty('--scan-bottom-reserve',`${Math.ceil(footer.getBoundingClientRect().height)}px`);
             reserve();
@@ -319,12 +321,19 @@ export class ScanPage extends Component {
         const search=this.host.querySelector('[data-search]'); if(search) search.onsubmit=ev=>{ev.preventDefault();this.searchQuery=search.elements.query.value;this.searchScope=this.host.querySelector('[data-search-scope]')?.value || (this.row.session.capabilities.search_tickets?'tickets':'users');this.search(0);};
         if(search)search.elements.query.oninput=()=>{if(search.elements.query.value.trim().length>=2){this.searchError=null;search.elements.query.setAttribute('aria-invalid','false');search.elements.query.removeAttribute('aria-describedby');this.host.querySelector('#scan-search-error').hidden=true;}};
         one('[data-search-more]',()=>this.search((this.searchResults.at(-1).user_id || this.searchResults.at(-1).ticket_id)));
-        this.host.querySelectorAll('[data-ticket]').forEach(b=>b.onclick=()=>this.controller.loadCode(b.dataset.ticket));
+        this.host.querySelectorAll('[data-search-ticket]').forEach(b=>{
+            b.disabled=Boolean(this.batchConfirming)||this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state));
+            b.onclick=async()=>{
+                await this.controller.loadTicket(this.searchResults[Number(b.dataset.searchTicket)]);
+                // Selecting a row is navigation; background recovery must never do this.
+                if(!this.disposed && this.controller.state==='result')this.host.querySelector('.scan-layout')?.scrollIntoView?.({block:'start'});
+            };
+        });
         one('[data-confirm]',()=>this.controller.confirm(Boolean(this.host.querySelector('[data-unpaid]')?.checked)));
         const reset=this.host.querySelector('[data-reset]'); if(reset) reset.onsubmit=async ev=>{ev.preventDefault();try {await this.api.call('reset_scanner_password',{p_ticket:this.controller.ticket.ticket_id,p_password:reset.elements.password.value});reset.reset();this.error=null;this.message=tr('password_reset_done');this.render();}catch(err){reset.reset();this.error=err.message;this.render();}};
         const unpaid=this.host.querySelector('[data-unpaid]'); if(unpaid){unpaid.checked=Boolean(this.controller.unpaidConfirmed);this.host.querySelector('[data-confirm]').disabled=!unpaid.checked;unpaid.onchange=()=>{this.controller.unpaidConfirmed=unpaid.checked;this.host.querySelector('[data-confirm]').disabled=!unpaid.checked;};}
-        one('[data-next]',()=>this.nextScan());
-        one('[data-group-next]',()=>this.nextScan());one('[data-group-confirm]',()=>this.confirmBatch());
+        one('[data-camera-expand]',()=>this.nextScan('camera'));
+        one('[data-group-confirm]',()=>this.confirmBatch());
         this.host.querySelectorAll('[data-group-ticket]').forEach(button=>button.onclick=()=>{const selected=this.batch[Number(button.dataset.groupTicket)].controller;this.groupDetailController=this.groupDetailController===selected?null:selected;this.controller=selected;this.render();this.host.querySelector(`[data-group-ticket="${button.dataset.groupTicket}"]`)?.focus({preventScroll:true});});
         one('[data-camera]',()=>this.startCamera());
         one('[data-camera-stop]',()=>{this.input.stop();this.updateCameraState();});
@@ -372,19 +381,28 @@ export class ScanPage extends Component {
         catch(err) { this.cameraUnavailable=true;this.error=err.message;this.sound.play('error');this.render(); }
     }
     async search(after) {
+        if(this.disposed)return;
         if (!AppConfig.isAppSupported && this.searchScope==='users') this.searchScope='tickets';
-        this.searchError=null;this.error=null;this.searchQuery=String(this.searchQuery||'').trim();
+        const generation=this.searchGeneration=(this.searchGeneration||0)+1;
+        const row=this.row,session=row?.session,query=String(this.searchQuery||'').trim(),scope=this.searchScope;
+        const current=()=>!this.disposed && this.row===row && this.row?.session===session && this.searchGeneration===generation;
+        this.searchError=null;this.error=null;this.searchQuery=query;
         try {
-            if(this.searchQuery.length<2 || this.searchQuery.length>100)throw new Error('invalid_query');
+            if(query.length<2 || query.length>100)throw new Error('invalid_query');
+            let results;
             if (!navigator.onLine) {
-                if (this.searchScope==='users' || !offlineGrantValid(this.row)) throw new Error('offline_grant_expired');
-                const query=this.searchQuery.toLocaleLowerCase();
-                this.searchResults=(await this.store.list('tickets',this.row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name || ''} ${t.purchaser_name || ''} ${t.batch_title || ''} ${t.symbol || ''}`.toLocaleLowerCase().includes(query)).slice(0,30);
-            } else if (this.searchScope==='users') {
-                this.searchResults=(await this.api.call('search_scanner_users',{p_query:this.searchQuery,...(after?{p_after:after}:{})})).data;
-            } else this.searchResults=await this.api.search(this.searchQuery,after);
-            this.render();
-        } catch(err) {this.searchError=err.message;this.searchResults=[];this.render();this.host.querySelector('[data-search] [name=query]')?.focus({preventScroll:true});}
+                if (scope==='users' || !offlineGrantValid(row)) throw new Error('offline_grant_expired');
+                const normalized=query.toLocaleLowerCase();
+                results=(await this.store.list('tickets',row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name || ''} ${t.purchaser_name || ''} ${t.batch_title || ''} ${t.symbol || ''}`.toLocaleLowerCase().includes(normalized)).slice(0,30);
+            } else if (scope==='users') {
+                results=(await this.api.call('search_scanner_users',{p_query:query,...(after?{p_after:after}:{})})).data;
+            } else results=await this.api.search(query,after);
+            if(!current())return;
+            this.searchResults=results;this.render();
+        } catch(err) {
+            if(!current())return;
+            this.searchError=err.message;this.searchResults=[];this.render();this.host.querySelector('[data-search] [name=query]')?.focus({preventScroll:true});
+        }
     }
     async showSettings() {
         const { ScannerSettingsPage }=await import('./scanner_settings_page.js');

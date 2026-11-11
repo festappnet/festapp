@@ -1,5 +1,6 @@
 // Small local SVG vocabulary shared by scanner controls and status feedback.
 const paths = {
+    expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M3 3l6 6m12-6-6 6M3 21l6-6m12 6-6-6"/>',
     settings: '<path d="M4 7h16M4 17h16M8 4v6m8 4v6"/>',
     sound: '<path d="M4 9h4l5-4v14l-5-4H4zM17 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
     back: '<path d="M20 12H4m6-6-6 6 6 6"/>',

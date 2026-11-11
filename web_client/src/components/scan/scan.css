@@ -366,3 +366,24 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
     .scan-review-footer button {flex:1;min-width:0;padding-inline:12px}
     .scan-review-footer [data-next],.scan-review-footer [data-group-next] {font-size:.95rem}
 }
+
+/* Search previews make each person's ticket and its current status distinguishable. */
+.scan-search-results li {padding:0;border:0;background:transparent}
+.scan-search-results [data-search-ticket] {display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%;text-align:start;padding:16px}
+.scan-search-heading {display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px}
+.scan-search-heading strong {font-weight:500}
+.scan-search-results .scan-ticket-status {font-size:.85rem}
+.scan-search-results .allowed {color:var(--scan-success)}
+.scan-search-results .used {color:var(--scan-used)}
+.scan-search-results .blocked {color:var(--red-color)}
+.scan-search-results .pending {color:var(--scan-warning)}
+.scan-search-customer,.scan-search-seat {font-size:.95rem}
+.scan-search-products {display:grid;gap:4px;font-size:.95rem}
+.scan-search-code,.scan-search-context {font-size:.85rem;color:var(--scan-muted)}
+.scan-search-code {margin-top:4px}
+.scan-shell .scan-camera-expand {position:absolute;top:8px;inset-inline-end:8px;z-index:4;background:var(--surface-color);color:var(--text-color);padding:10px;min-width:48px}
+.scan-review-navigation {display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.scan-review-navigation button {background:transparent;border-color:transparent;color:var(--primary-color)}
+.scan-review-footer .scan-actions,.scan-review-footer .scan-group-actions {width:100%}
+.scan-review-footer [data-confirm],.scan-review-footer [data-group-confirm] {width:100%;flex:1}
+@media(min-width:900px){.scan-layout:has(.scan-review-navigation) {grid-template-rows:max-content 1fr}.scan-review-navigation {grid-column:2;grid-row:1;align-self:start}.scan-layout:has(.scan-review-navigation)>.scan-detail {grid-column:2;align-self:start}.scan-layout:has(.scan-review-navigation)>.scan-input {grid-column:1;grid-row:1 / 3}}

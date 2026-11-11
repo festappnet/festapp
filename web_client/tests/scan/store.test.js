@@ -41,3 +41,13 @@ test('legacy plaintext cache upgrades without removing pending admissions',async
  await store.transaction(['tickets'],'readonly',s=>{s.tickets.get('legacy:1').onsuccess=e=>{raw=e.target.result;};});
  assert.equal(raw.ticket,undefined);assert.equal(raw.encrypted,1);assert.equal((await store.get('tickets','legacy:1')).ticket.purchaser_name,'Old private name');assert.equal((await store.get('outbox','pending')).state,'pending');store.close();
 });
+
+test('ID lookup keeps cancelled symbol-less previews inside the active snapshot partition',async()=>{
+ const s=await make();
+ const activate=async(partition,id,ticket)=>{const raw=JSON.stringify([ticket]),digest=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))).toString('hex');await s.activateSnapshot(partition,{schema_version:1,snapshot_id:id,ticket_count:1,byte_count:new TextEncoder().encode(raw).length,expires_at:new Date(Date.now()+3600000).toISOString(),pages:[{index:0,digest}]},[{page_index:0,payload_text:raw,digest}]);};
+ await activate('current','current-snapshot',{ticket_id:1,state:'storno',admission_allowed:false,products:[]});
+ await activate('other','other-snapshot',{ticket_id:2,symbol:'OTHER-EVENT',state:'sent',admission_allowed:true});
+ assert.equal((await s.lookupTicket('current',1)).state,'storno');
+ await assert.rejects(s.lookupTicket('current',2),/offline_not_found/);
+ s.close();
+});

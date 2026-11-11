@@ -600,7 +600,8 @@
         "database/tests/eshop_orders/customer_order_overview_test.sql",
         "database/tests/eshop/bank_roundtrip_report_test.sql",
         "database/tests/eshop/occasion_report_test.sql",
-        "database/tests/scanning/ball_order_test.sql"
+        "database/tests/scanning/ball_order_test.sql",
+        "database/tests/scanning/authorization_test.sql"
       ]
     },
     "seat-notifications-1": {

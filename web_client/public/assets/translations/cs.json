@@ -3804,6 +3804,10 @@
         "payment_adjustment_voided": "Opravený záznam vrácení hotovosti"
     },
     "Scanner": {
+        "camera_expand": "Rozbalit kameru",
+        "ticket_cancelled": "Vstupenka je stornovaná",
+        "ticket_waitlisted": "Na čekací listině",
+        "search_current_event": "Hledáte v akci",
         "entry_intro": "Připojte toto zařízení k akci a začněte kontrolovat vstupenky.",
         "entry_code_hint": "Kód Vám poskytne pořadatel akce.",
         "entry_code_retry": "Zkontrolujte kód nebo požádejte pořadatele o nový.",
@@ -3948,7 +3952,7 @@
         "worker_active": "V tomto prohlížeči je přihlášený uživatel nebo aktivní scanner. Přihlášení recepce vyžaduje samostatný profil prohlížeče.",
         "login_done": "Přihlášení dokončeno",
         "continue_app": "Pokračovat do aplikace",
-        "reason_not_found": "Vstupenka nenalezena",
+        "reason_not_found": "Vstupenka nebyla v této akci nalezena",
         "reason_offline_not_found": "V offline datech nenalezena. Ověřte online nebo u vedoucího.",
         "reason_offline_grant_expired": "Offline oprávnění vypršelo. Fronta zůstává uložena.",
         "reason_camera_denied": "Kamera není povolena. Zadejte kód ručně.",

@@ -69,3 +69,17 @@ test('offline manual search finds purchaser, batch and case-insensitive ticket c
   }
  } finally {if(oldNavigator)Object.defineProperty(globalThis,'navigator',oldNavigator);else delete globalThis.navigator;}
 });
+
+
+test('ticket status is independent of products and preserves cancellation, waiting and historical use',async()=>{
+ const {scannerTicketStatus}=await import('../../src/components/scan/scanner_presentation.js');
+ const {scanResult}=await import('../../src/components/scan/scan_result.js');
+ for(const [state,key] of [['storno','ticket_cancelled'],['waitlisted','ticket_waitlisted'],['used','already_used'],['ordered','unpaid']]){
+  const ticket={state,symbol:null,products:[],fields:[],admission_allowed:false};
+  assert.equal(scannerTicketStatus(ticket).key,key);
+  const html=scanResult({state:'result',ticket},true);
+  assert.match(html,new RegExp(key));assert.doesNotMatch(html,/no_products|data-confirm|data-next/);
+ }
+ assert.equal(scannerTicketStatus({state:'sent',order_state:'storno',admission_allowed:false}).key,'ticket_cancelled');
+ assert.equal(scannerTicketStatus({state:'used',order_state:'storno'}).key,'already_used');
+});

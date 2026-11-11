@@ -1,11 +1,13 @@
 // jsQR decodes one symbol. Mask each located symbol in a private frame copy
 // and repeat, so adjacent/rotated codes work without native BarcodeDetector.
-export function decodeQRCodes(pixels, width, height, decode, maxCodes = 12) {
+export function decodeQRCodes(pixels, width, height, decode, maxCodes = 12, onProgress = null) {
     const data = new Uint8ClampedArray(pixels);
-    const found = [];
+    const found = [], published=new Set();
     // After masking a symbol, jsQR can choose finder patterns belonging to
     // different remaining tickets. Overlapping regions give it isolated views.
-    const regions=[{x:0,y:0,w:width,h:height}];
+    // The viewfinder is centered; try its smaller image before the full frame.
+    const center=Math.max(1,Math.floor(Math.min(width,height)*.8));
+    const regions=[{x:Math.floor((width-center)/2),y:Math.floor((height-center)/2),w:center,h:center},{x:0,y:0,w:width,h:height}];
     for(let col=0;col<3;col++){const w=Math.ceil(width*.5);regions.push({x:Math.round((width-w)*col/2),y:0,w,h:height});}
     for(let row=0;row<2;row++)for(let col=0;col<3;col++){
         const w=Math.ceil(width*.5),h=Math.ceil(height*.75);
@@ -21,6 +23,10 @@ export function decodeQRCodes(pixels, width, height, decode, maxCodes = 12) {
         const points=['topLeftCorner','topRightCorner','bottomRightCorner','bottomLeftCorner'].map(k=>code.location[k] && ({x:code.location[k].x+region.x,y:code.location[k].y+region.y}));
         if (points.some(p=>!p || !Number.isFinite(p.x) || !Number.isFinite(p.y))) break;
         found.push({value:code.data,x:Math.min(...points.map(p=>p.x)),y:Math.min(...points.map(p=>p.y))});
+        if(onProgress && !published.has(code.data)){
+            published.add(code.data);const seen=new Set();
+            onProgress(found.filter(c=>{if(seen.has(c.value))return false;seen.add(c.value);return true;}));
+        }
         // Only erase the decoded quadrilateral; an axis-aligned rectangle can
         // erase a neighbouring code when the first ticket is rotated.
         const cx=points.reduce((s,p)=>s+p.x,0)/4,cy=points.reduce((s,p)=>s+p.y,0)/4;

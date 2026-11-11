@@ -1942,6 +1942,10 @@
         }
     },
     "Scanner": {
+        "camera_expand": "Розгорнути камеру",
+        "ticket_cancelled": "Квиток скасовано",
+        "ticket_waitlisted": "У списку очікування",
+        "search_current_event": "Пошук у події",
         "entry_intro": "Підключіть цей пристрій до події та почніть перевіряти квитки.",
         "entry_code_hint": "Код надасть організатор події.",
         "entry_code_retry": "Перевірте код або попросіть організатора надати новий.",
@@ -2086,7 +2090,7 @@
         "worker_active": "A user is signed in or a scanner is active in this browser. Reception sign-in requires a separate browser profile.",
         "login_done": "Signed in",
         "continue_app": "Continue to application",
-        "reason_not_found": "Ticket not found",
+        "reason_not_found": "Квиток на цю подію не знайдено",
         "reason_offline_not_found": "Not found in prepared data. Verify online or contact a supervisor.",
         "reason_offline_grant_expired": "Offline authorization expired. The queue is preserved.",
         "reason_camera_denied": "Camera permission denied. Enter the code manually.",

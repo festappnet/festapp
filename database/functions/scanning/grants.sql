@@ -5,10 +5,10 @@ REVOKE ALL ON FUNCTION public.scanner_default_settings_internal(bigint),public.s
 REVOKE ALL ON FUNCTION public.get_scanner_settings(bigint),public.update_scanner_settings(bigint,bigint,jsonb),public.resolve_scanner_conflict(uuid,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_scanner_settings(bigint),public.update_scanner_settings(bigint,bigint,jsonb),public.resolve_scanner_conflict(uuid,text) TO authenticated;
 REVOKE ALL ON FUNCTION public.open_scanner_session(text,bigint,text),public.revoke_scanner_session(uuid,text),public.lookup_scanner_ticket(uuid,text,text),
- public.search_scanner_tickets(uuid,text,text,bigint),public.sync_scanner_operations(uuid,text,jsonb),public.get_scanner_receipts(uuid,text,uuid[]),
+ public.lookup_scanner_ticket_by_id(uuid,text,bigint),public.search_scanner_tickets(uuid,text,text,bigint),public.sync_scanner_operations(uuid,text,jsonb),public.get_scanner_receipts(uuid,text,uuid[]),
  public.get_scanner_summary(uuid,text),public.prepare_scanner_snapshot(uuid,text),public.get_scanner_snapshot_page(uuid,text,uuid,integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.open_scanner_session(text,bigint,text),public.revoke_scanner_session(uuid,text),public.lookup_scanner_ticket(uuid,text,text),
- public.search_scanner_tickets(uuid,text,text,bigint),public.sync_scanner_operations(uuid,text,jsonb),public.get_scanner_receipts(uuid,text,uuid[]),
+ public.lookup_scanner_ticket_by_id(uuid,text,bigint),public.search_scanner_tickets(uuid,text,text,bigint),public.sync_scanner_operations(uuid,text,jsonb),public.get_scanner_receipts(uuid,text,uuid[]),
  public.get_scanner_summary(uuid,text),public.prepare_scanner_snapshot(uuid,text),public.get_scanner_snapshot_page(uuid,text,uuid,integer) TO anon,authenticated;
 -- Seed only existing actions, with their own field references and original price policy.
 INSERT INTO public.scanner_settings(occasion_id,config) SELECT id,public.scanner_default_settings_internal(id) FROM public.occasions ON CONFLICT DO NOTHING;

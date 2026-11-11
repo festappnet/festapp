@@ -36,7 +36,9 @@ test('camera worker keeps decoding off the UI thread, bounds its queue and fence
  const worker=workers[0];assert.ok(worker);
  input.decode=()=>assert.fail('worker-enabled camera must not run jsQR on the UI thread');
  input.frame();input.frame();assert.equal(messages.length,1,'busy worker must not accumulate camera frames');
- worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME']);
+ worker.onmessage({data:{codes:[{value:'SAME'}],done:false}});assert.deepEqual(codes,['SAME']);
+ input.frame();assert.equal(messages.length,1,'progress must keep the frame in flight until full recovery finishes');
+ worker.onmessage({data:{codes:[{value:'SAME'}],done:true}});
  input.frame();worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME']);
  input.allowSame();input.frame();worker.onmessage({data:{codes:[{value:'SAME'}]}});assert.deepEqual(codes,['SAME','SAME']);
  input.pause({keepStream:true});worker.onmessage({data:{codes:[{value:'PAUSED'}]}});assert.deepEqual(codes,['SAME','SAME']);

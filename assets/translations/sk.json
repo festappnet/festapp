@@ -1797,6 +1797,10 @@
         }
     },
     "Scanner": {
+        "camera_expand": "Rozbaliť kameru",
+        "ticket_cancelled": "Vstupenka je stornovaná",
+        "ticket_waitlisted": "Na čakacej listine",
+        "search_current_event": "Hľadáte v podujatí",
         "entry_intro": "Pripojte toto zariadenie k akcii a začnite kontrolovať vstupenky.",
         "entry_code_hint": "Kód Vám poskytne organizátor akcie.",
         "entry_code_retry": "Skontrolujte kód alebo požiadajte organizátora o nový.",
@@ -1941,7 +1945,7 @@
         "worker_active": "A user is signed in or a scanner is active in this browser. Reception sign-in requires a separate browser profile.",
         "login_done": "Signed in",
         "continue_app": "Continue to application",
-        "reason_not_found": "Ticket not found",
+        "reason_not_found": "Vstupenka sa v tomto podujatí nenašla",
         "reason_offline_not_found": "Not found in prepared data. Verify online or contact a supervisor.",
         "reason_offline_grant_expired": "Offline authorization expired. The queue is preserved.",
         "reason_camera_denied": "Camera permission denied. Enter the code manually.",

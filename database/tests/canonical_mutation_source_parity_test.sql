@@ -1426,8 +1426,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.log_canonical_mutation_request_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='20b090f11aff638d1e7c5d000b8bdebd'),'current SQL source parity: public.log_canonical_mutation_request_v1()');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.log_canonical_mutation_scope_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8c008057cc0ccda28733e8068210752e'),'current SQL source parity: public.log_canonical_mutation_scope_internal_v1(bigint)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lookup_scanner_ticket(uuid,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='e6df2b8bda2141512a84e585ea2fe886'),'current SQL source parity: public.lookup_scanner_ticket(uuid,text,text)');
+-- supabase/migrations/20261111170000_scanner_search_previews.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lookup_scanner_ticket(uuid,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='c33c28a593610a0b03d2ce0fb5d92ef0'),'current SQL source parity: public.lookup_scanner_ticket(uuid,text,text)');
+-- supabase/migrations/20261111170000_scanner_search_previews.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lookup_scanner_ticket_by_id(uuid,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0ef22fbb47c4e027cea09fc44a529ccf'),'current SQL source parity: public.lookup_scanner_ticket_by_id(uuid,text,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.maintain_notification_center(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='3f4774c13988019a2dba32fde0747e66'),'current SQL source parity: public.maintain_notification_center(integer)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -2012,10 +2014,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_admit_ticket_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d0ee687cd08261eb60d85d5259dbabc2'),'current SQL source parity: public.scanner_admit_ticket_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_lock_ticket_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f9235ee873f2ddcd81fe4a7d27bf4053'),'current SQL source parity: public.scanner_lock_ticket_internal(bigint)');
+-- supabase/migrations/20261111170000_scanner_search_previews.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_lookup_ticket_internal(uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e1e24b26663c6e6853ffe0be43fffd3f'),'current SQL source parity: public.scanner_lookup_ticket_internal(uuid,text,text,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_settings_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='2b1717b65933cede78c39b44f5d6230d'),'current SQL source parity: public.scanner_settings_rule(boolean,boolean,boolean)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_ticket_projection_internal(bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='edf274d9a6ce4c8eb9ff7dd205a0353f'),'current SQL source parity: public.scanner_ticket_projection_internal(bigint,jsonb,bigint)');
+-- supabase/migrations/20261111170000_scanner_search_previews.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_ticket_projection_internal(bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ebe3e41140a8d104dc81a56812d06f44'),'current SQL source parity: public.scanner_ticket_projection_internal(bigint,jsonb,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_entry_navigation_rule(boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f0258b7a3cc8e3a024dee1a96d34d407'),'current SQL source parity: public.schedule_entry_navigation_rule(boolean)');
 -- supabase/baseline/20261107170000_schema.sql

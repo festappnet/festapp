@@ -29,3 +29,18 @@ test('disposed lookup cannot publish a result after a slow outbox read',async()=
  const loading=c.loadCode('CODE');await started;c.dispose();resolveOutbox([]);await loading;
  assert.notEqual(c.state,'result');assert.equal(c.ticket,undefined);c.store.close();
 });
+
+test('choosing another search result performs a fresh scoped lookup and ignores preview admission flags',async()=>{
+ const c=await setup();c.online=()=>true;
+ c.api.lookupTicket=async id=>({ticket_id:id,symbol:null,state:'storno',products:[],admission_allowed:false,source:'online'});
+ await c.loadCode('FIRST');assert.equal(c.state,'result');
+ await c.loadTicket({ticket_id:2,symbol:null,admission_allowed:true,state:'sent'});
+ assert.equal(c.state,'result');assert.equal(c.ticket.ticket_id,2);assert.equal(c.ticket.state,'storno');assert.equal(c.ticket.admission_allowed,false);c.store.close();
+});
+
+test('offline search selection resolves ticket ID in the active snapshot partition',async()=>{
+ const c=await setup();let requested;
+ c.store.lookupTicket=async(partition,id)=>{requested=[partition,id];return {ticket_id:id,state:'storno',admission_allowed:false,products:[]};};
+ await c.loadTicket({ticket_id:9,symbol:null});
+ assert.deepEqual(requested,['p',9]);assert.equal(c.ticket.source,'offline');assert.equal(c.ticket.state,'storno');c.store.close();
+});

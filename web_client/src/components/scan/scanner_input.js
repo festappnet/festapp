@@ -20,8 +20,8 @@ export class ScannerInput {
                     this.decoderWorker = worker;
                     worker.onmessage = ({ data }) => {
                         if (generation!==this.generation || this.decoderWorker!==worker) return;
-                        this.decodingFrame = false;
-                        if (!this.paused) this.dispatchCodes(data.codes);
+                        if(data.done!==false)this.decodingFrame=false;
+                        if(!this.paused && (data.done!==false || this.continuous))this.dispatchCodes(data.codes,{complete:data.done!==false});
                     };
                     worker.onerror = event => {
                         event.preventDefault?.();
@@ -44,10 +44,10 @@ export class ScannerInput {
             this.decoderWorker.postMessage({pixels:pixels.data,width:w,height:h},[pixels.data.buffer]);
         } else this.dispatchCodes(decodeQRCodes(pixels.data,w,h,this.decode));
     }
-    dispatchCodes(codes) {
+    dispatchCodes(codes,{complete=true}={}) {
         if (this.paused) return;
         const visible=new Set(codes.map(c=>c.value));
-        for(const value of this.suppressedCodes)if(!visible.has(value))this.suppressedCodes.delete(value);
+        if(complete)for(const value of this.suppressedCodes)if(!visible.has(value))this.suppressedCodes.delete(value);
         const fresh=codes.filter(c=>!this.suppressedCodes.has(c.value)).map(c=>c.value);
         if(!fresh.length)return;
         if(this.onCodes && fresh.length>1){

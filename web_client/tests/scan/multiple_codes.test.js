@@ -48,3 +48,11 @@ for (const inverted of [true, false]) test(`PDF ticket QR polarity: inverted=${i
     if(inverted)for(let i=0;i<image.data.length;i+=4)for(let c=0;c<3;c++)image.data[i+c]=255-image.data[i+c];
     assert.deepEqual(decodeQRCodes(image.data,image.width,image.height,jsQR).map(c=>c.value),[symbol]);
 });
+
+test('first readable code is published before exhaustive neighbouring-code recovery',()=>{
+ const image=frame(['FIRST','SECOND','THIRD']);let calls=0;const progress=[];
+ const result=decodeQRCodes(image.data,image.width,image.height,(...args)=>{calls++;return jsQR(...args);},12,codes=>progress.push({calls,codes:codes.map(c=>c.value)}));
+ assert.ok(progress.length>0,'a readable code must not wait for every region');
+ assert.ok(progress[0].calls<calls,'first detection arrives before remaining decode passes');
+ assert.deepEqual(new Set(progress.at(-1).codes),new Set(result.map(c=>c.value)));
+});
