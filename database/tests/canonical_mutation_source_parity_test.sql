@@ -84,7 +84,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.assert_form_seating_source_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c880598042fe1696daaccd5c378fe7de'),'current SQL source parity: public.assert_form_seating_source_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.assert_group_place_owner_internal_v1(bigint,bigint,bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f214b7e152bd8cb9376d675f62642103'),'current SQL source parity: public.assert_group_place_owner_internal_v1(bigint,bigint,bigint,boolean)');
--- supabase/migrations/20261110231000_payment_operations.sql
+-- supabase/migrations/20261111120000_order_read_performance.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.assert_payment_refund_reservations_internal(bigint,numeric)') AND md5(btrim(prosrc,E' \n\r\t'))='54cd7fec4ea8755c2e47d2f3e663c28d'),'current SQL source parity: public.assert_payment_refund_reservations_internal(bigint,numeric)');
 -- supabase/migrations/20261110220000_automatic_form_blueprints.sql
  PERFORM assert_true(to_regprocedure('public.assert_published_admission_seating_internal(bigint,bigint,bigint)') IS NULL,'retired SQL identity remains absent: public.assert_published_admission_seating_internal(bigint,bigint,bigint)');
@@ -110,8 +110,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_account_write_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='74b3d008d897c7c3e1104bb76d47dcf8'),'current SQL source parity: public.bank_account_write_rule(boolean,boolean,boolean)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_context_capabilities(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='707210527fd8e50f3cc5c5bcbf866ab5'),'current SQL source parity: public.bank_context_capabilities(boolean,boolean,boolean)');
--- supabase/migrations/20261111012000_readonly_bank_refund_qr.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_payment_provider_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='9b658cd7c6b5ee970af635f636aa3a90'),'current SQL source parity: public.bank_payment_provider_internal(text,jsonb)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_payment_provider_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f1ac0dfb8f50f68a209f02f20a266652'),'current SQL source parity: public.bank_payment_provider_internal(text,jsonb)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_refund_readiness_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='32afeb3dc482f90033bc0e8fb1c7d6c9'),'current SQL source parity: public.bank_refund_readiness_internal(bigint)');
 -- supabase/migrations/20261110231000_payment_operations.sql
@@ -204,8 +204,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_import_group_assignments(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0bfe1a394c7a5c54cc6e54b354fd206b'),'current SQL source parity: public.can_import_group_assignments(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_link_bank_account_to_unit(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8add58273124a19b3022aeebabbe2351'),'current SQL source parity: public.can_link_bank_account_to_unit(bigint,bigint)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_manage_bank_account(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='528c0a350bafa8395866be27a5274a67'),'current SQL source parity: public.can_manage_bank_account(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_manage_bank_account(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6bfac1cbba475374559dc70aaa366e91'),'current SQL source parity: public.can_manage_bank_account(bigint)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_manage_member_access(text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='3569adcb92a662db9a7f4f73de0528c5'),'current SQL source parity: public.can_manage_member_access(text,bigint)');
 -- supabase/migrations/20261111010000_access_membership.sql
@@ -238,10 +238,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_layout_resources(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ef950b151e237479969a2971a487c84c'),'current SQL source parity: public.can_prepare_layout_resources(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_layout_resources_as_actor_internal_v1(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='05a917184b9ad429b712074638a416ac'),'current SQL source parity: public.can_prepare_layout_resources_as_actor_internal_v1(uuid,bigint)');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_order_bank_refund(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7faaf0bb2865ea8a830a0f8d35ed8fa6'),'current SQL source parity: public.can_prepare_order_bank_refund(bigint)');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_order_provider_refund(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='48d0f4f661bff35206b3f7efbbf0d260'),'current SQL source parity: public.can_prepare_order_provider_refund(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_order_bank_refund(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='da9d3e8bc77893a9ff3c2dcb6d2c840f'),'current SQL source parity: public.can_prepare_order_bank_refund(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_order_provider_refund(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='503bbf101270559ba41f446433274ba3'),'current SQL source parity: public.can_prepare_order_provider_refund(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_preview_ticket_readonly(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='48efb47c1529b5106cbab4edf641fd0a'),'current SQL source parity: public.can_preview_ticket_readonly(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -286,8 +286,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_occasion_editor_data(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7e139aacd91bf549a48a71f17b69c3b5'),'current SQL source parity: public.can_read_occasion_editor_data(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_occasion_email_templates(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e191021c3c4c8f8cb5e62eebff34fb36'),'current SQL source parity: public.can_read_occasion_email_templates(bigint)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_orders(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6b8f1152158aa8ab01bd13cec9dbbdf3'),'current SQL source parity: public.can_read_orders(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_orders(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='795b29c048acb37bc949683bfc586f43'),'current SQL source parity: public.can_read_orders(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_organization_client_commits(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f2e6afdf8964ccd2c756fc3a7d2771b2'),'current SQL source parity: public.can_read_organization_client_commits(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -328,8 +328,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_unit_occasion_catalog(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='33165f7456d2a54738ff7ff0bbb8f1b0'),'current SQL source parity: public.can_read_unit_occasion_catalog(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_read_unit_users(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='76b08038f169406ba1ba56652e44608e'),'current SQL source parity: public.can_read_unit_users(bigint)');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_record_order_cash(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='96fd86b7dd772ae41ad9b7982ea42782'),'current SQL source parity: public.can_record_order_cash(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_record_order_cash(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='fe5df589fd68288d2c2066ff70cc53e2'),'current SQL source parity: public.can_record_order_cash(bigint)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_send_custom_email(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f663658c9f9947ee3e750e04ae1cfc54'),'current SQL source parity: public.can_send_custom_email(bigint)');
 -- supabase/migrations/20261111010000_access_membership.sql
@@ -386,8 +386,8 @@ DO $$ BEGIN
  PERFORM assert_true(to_regprocedure('public.cancel_seating_configuration(uuid,bigint,uuid)') IS NULL,'retired SQL identity remains absent: public.cancel_seating_configuration(uuid,bigint,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_tickets_command_internal(bigint[],uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a2c603e8e00f0f2cf5436327dc5d462f'),'current SQL source parity: public.cancel_tickets_command_internal(bigint[],uuid,jsonb)');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cash_payment_provider_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='da07f387e17762c2ab1acd9ccf79d01c'),'current SQL source parity: public.cash_payment_provider_internal(text,jsonb)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cash_payment_provider_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='6c2db559692ec6427c2645d338dae508'),'current SQL source parity: public.cash_payment_provider_internal(text,jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_bank_account_writable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df39c0ba082b4e785792ee797388eb96'),'current SQL source parity: public.check_bank_account_writable(bigint)');
 -- supabase/migrations/20261110231000_payment_operations.sql
@@ -430,7 +430,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_operator_order_scope_internal_v1(bigint,bigint,bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='dad4a5cc1bbf754c6826ad571cbac64c'),'current SQL source parity: public.check_operator_order_scope_internal_v1(bigint,bigint,bigint,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_order_is_mutable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='691ac22e48b4d0064b3921cfba8de9c6'),'current SQL source parity: public.check_order_is_mutable(bigint)');
--- supabase/migrations/20261110231000_payment_operations.sql
+-- supabase/migrations/20261111120000_order_read_performance.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_order_refund_delete_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0129a4263c35947ed523c5452ce26189'),'current SQL source parity: public.check_order_refund_delete_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_payment_info_is_mutable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='3f483b4f23f1353a916e96e1a4a6b7a9'),'current SQL source parity: public.check_payment_info_is_mutable(bigint)');
@@ -1152,8 +1152,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_order_deletion_context_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='f37bfcda29eea58bc19d03714f1df428'),'current SQL source parity: public.get_order_deletion_context_v1(bigint,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_order_tickets_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ae8174725a715c69dc96ddaad10fc9e5'),'current SQL source parity: public.get_order_tickets_internal(bigint)');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_orders(text,text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='b1a58e8e33815604736a8e39b36708b8'),'current SQL source parity: public.get_orders(text,text,jsonb)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_orders(text,text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='43e1b89b134417bad6fdfef6d4c59955'),'current SQL source parity: public.get_orders(text,text,jsonb)');
 -- supabase/migrations/20261110223000_notification_participant_app_support.sql
  PERFORM assert_true(to_regprocedure('public.get_orders_tab_data(text)') IS NULL,'retired SQL identity remains absent: public.get_orders_tab_data(text)');
 -- supabase/migrations/20261110223000_notification_participant_app_support.sql
@@ -1684,24 +1684,30 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.participant_manage_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='2ddebfa1df2bdd7becf910d5b619a3c0'),'current SQL source parity: public.participant_manage_rule(boolean,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.password_verification_attempt_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c2675a597edfb913dfb7a73f37a74a24'),'current SQL source parity: public.password_verification_attempt_v1(jsonb)');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_financial_totals_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d4e8d7a461cb2fdda2724d4aeece9b5e'),'current SQL source parity: public.payment_financial_totals_internal(bigint)');
--- supabase/migrations/20261111012000_readonly_bank_refund_qr.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_method_context_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='957393102bb156a4d9a3f2dc75cae2e5'),'current SQL source parity: public.payment_method_context_internal(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_financial_totals_bulk_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='e182002625ea2d94e732b74bbeb4cb59'),'current SQL source parity: public.payment_financial_totals_bulk_internal(bigint[])');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_financial_totals_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='4a606c4c58d2aa3115b06de2e4aae3ca'),'current SQL source parity: public.payment_financial_totals_internal(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_method_context_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d21dd2d0468327c8eb2c7a25cf76e6ca'),'current SQL source parity: public.payment_method_context_internal(bigint)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_method_is_online_internal(text)') AND md5(btrim(prosrc,E' \n\r\t'))='ed06b353188d55609737324f469ac389'),'current SQL source parity: public.payment_method_is_online_internal(text)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_method_registered_internal(text)') AND md5(btrim(prosrc,E' \n\r\t'))='3670d09cd0b101fa0538460d0da775b4'),'current SQL source parity: public.payment_method_registered_internal(text)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_method_verification_internal(text)') AND md5(btrim(prosrc,E' \n\r\t'))='ad94fd0e61fe33d5b232fa291439af17'),'current SQL source parity: public.payment_method_verification_internal(text)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_operation_permissions_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='5fa35b9d5f3f7df859d688e73fd81a0c'),'current SQL source parity: public.payment_operation_permissions_internal(bigint[])');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_provider_call_internal(text,text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='fc40ab846f36949806e39f40ce34c63a'),'current SQL source parity: public.payment_provider_call_internal(text,text,jsonb)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_provider_connection_internal(jsonb,text)') AND md5(btrim(prosrc,E' \n\r\t'))='60b47c82acce57bf7dc9f013923a3744'),'current SQL source parity: public.payment_provider_connection_internal(jsonb,text)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_sale_policy_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='b92e129a6b9c555db00feeb908f921c5'),'current SQL source parity: public.payment_sale_policy_internal()');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_transaction_movements_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9dea5dac4b866e76b33410e50934188f'),'current SQL source parity: public.payment_transaction_movements_internal(bigint)');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_transaction_movements_bulk_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='6de41b48a1c41a43979424e85add6035'),'current SQL source parity: public.payment_transaction_movements_bulk_internal(bigint[])');
+-- supabase/migrations/20261111120000_order_read_performance.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_transaction_movements_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='290791b9a40b413265fe25ee5a620062'),'current SQL source parity: public.payment_transaction_movements_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.people_profile_projection_internal_v1(jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='51b92d42556ba52fad3b29dd19d95db1'),'current SQL source parity: public.people_profile_projection_internal_v1(jsonb,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1834,7 +1840,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.recover_email_leases()') AND md5(btrim(prosrc,E' \n\r\t'))='3d5e17c7e1d306f49818a85f8e8afb18'),'current SQL source parity: public.recover_email_leases()');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.refresh_email_quota(text,text,numeric,numeric,numeric)') AND md5(btrim(prosrc,E' \n\r\t'))='d0c5f4b9aa93e55ba962ae1f97a8743d'),'current SQL source parity: public.refresh_email_quota(text,text,numeric,numeric,numeric)');
--- supabase/migrations/20261110231000_payment_operations.sql
+-- supabase/migrations/20261111120000_order_read_performance.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.refresh_payment_info_totals_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c8718db19c553fce4b9c1275602403cc'),'current SQL source parity: public.refresh_payment_info_totals_internal(bigint)');
 -- supabase/migrations/20261110230000_ticket_wallet.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.refresh_ticket_wallet_term_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='2820ed46d362d906e2b74e505d1c6c58'),'current SQL source parity: public.refresh_ticket_wallet_term_internal(bigint)');
