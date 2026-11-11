@@ -3,7 +3,7 @@
   "tenant": "festappticketsglobal",
   "status": "organization-provisioned-release-pending",
   "proposedHostname": "tickets.festapp.net",
-  "hostnameApproved": false,
+  "hostnameApproved": true,
   "productionOrganizationId": 25,
   "productionUnitId": null,
   "pilotOccasionId": null,

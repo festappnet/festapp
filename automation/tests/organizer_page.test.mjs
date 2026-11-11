@@ -182,7 +182,7 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   assert.equal(png.readUInt32BE(20), 630);
 });
 
-test('English uses the same template, no Czech references, and requires real English recordings', t => {
+test('English illustrated home ships English examples, one regional link and fails atomically on missing artwork', t => {
   const root = mkdtempSync(join(tmpdir(), 'festapp-en-marketing-'));
   cpSync(new URL('../../web_client/public', import.meta.url), join(root, 'web_client/public'), {recursive:true});
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -193,26 +193,28 @@ test('English uses the same template, no Czech references, and requires real Eng
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
-  const mediaPath = join(root, 'automation/release/organizers/clips.en.json');
-  const mediaFixture = JSON.parse(readFileSync(mediaPath, 'utf8'));
-  for (const clip of mediaFixture.clips) clip.captureStatus = 'pending';
-  writeFileSync(mediaPath, JSON.stringify(mediaFixture));
+  cpSync(new URL('../../web/organizers-media/global',import.meta.url),join(root,'web/organizers-media/global'),{recursive:true});
   const config = join(root, 'project.conf');
   writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=true\nWEB_SUPPORTED_LANGUAGES=en\nWEB_LINK=https://tickets.example.invalid\nDOMAIN=tickets.example.invalid\nAPP_NAME=Festapp Tickets\nWEB_ORGANIZER_CONTENT_PROFILE=festapp-en\nPRIVACY_URL=https://tickets.example.invalid/privacy/\nTERMS_URL=https://tickets.example.invalid/terms/\nSUPPORT_URL=https://tickets.example.invalid/support/\n');
   const run = (...args) => spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, ...args], { encoding: 'utf8' });
-  const gated = run();
-  assert.notEqual(gated.status, 0);
-  assert.match(gated.stderr, /English product recordings are incomplete/);
-  assert.equal(existsSync(join(root, 'web/organizers-page')), false);
-  const preview = run('--preview');
-  assert.equal(preview.status, 0, preview.stderr);
-  const html = readFileSync(join(root, 'web/organizers-page'), 'utf8');
+  const rendered = run();
+  assert.equal(rendered.status, 0, rendered.stderr);
+  const output=join(root,'web/organizers-page');
+  const html = readFileSync(output, 'utf8');
   assert.match(html, /<html lang="en">/);
-  assert.equal((html.match(/class="feature reveal"/g) || []).length, 6);
-  assert.ok(!html.includes('id="reference"'));
-  assert.ok(!html.includes('vstupenky.online'));
+  assert.equal((html.match(/vstupenky\.online/g) || []).length, 1);
+  assert.match(html,/href="https:\/\/vstupenky\.online\/"[^>]*>Czech version/);
+  assert.match(html,/classic-ball-en\.png/);
+  assert.match(html,/hamlet-ticket-en\.png/);
+  assert.match(html,/info@festapp\.net/);
+  assert.match(html,/href="\/events\?create=1"/);
+  assert.ok(!html.includes('tickets.fesup.net'));
   assert.ok(!html.includes('{{'));
-  assert.ok(html.includes('Stripe Checkout'));
-  assert.ok(html.includes('English recording pending.'));
+  assert.ok(!html.includes('English recording pending.'));
   assert.ok(!html.includes('cloudflareinsights.com'));
+  rmSync(join(root,'web/organizers-media/global/classic-ball-en.png'));
+  const failed=run();
+  assert.notEqual(failed.status,0);
+  assert.match(failed.stderr,/Missing\/foreign marketing media/);
+  assert.equal(readFileSync(output,'utf8'),html,'invalid media cannot overwrite a previously rendered page');
 });

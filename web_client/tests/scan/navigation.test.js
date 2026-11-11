@@ -42,7 +42,9 @@ for(const loaded of [false,true])test(`search is visible and focused with ticket
  const event=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(event);
  assert.equal(event.defaultPrevented,true);assert.equal(page.mode,'camera');assert.equal(dom.window.location.pathname,'/scan');
  await new Promise(resolve=>setTimeout(resolve,30));assert.equal(dom.window.history.state.scannerInput,'camera');
- if(loaded)assert.equal(page.controller.ticket.symbol,'OLD','search navigation preserves the current ticket');
+ assert.equal(page.controller.state,'ready');assert.equal(page.controller.ticket,null,'Back opens camera alone');
+ assert.equal(page.host.querySelector('.scan-result'),null);assert.equal(page.host.querySelector('[data-confirm]'),null);
+ const leave=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(leave);assert.equal(leave.defaultPrevented,false,'only Back from camera may leave the scanner');
 });
 
 test('browser Back/Forward stays inside scanner and does not reach the app router',async t=>{
@@ -71,4 +73,28 @@ test('new ticket arrival animates once per lookup, not on recovery, and respects
  page.nextScan('camera');await page.loadCodes(['FIRST']);assert.equal(animations.length,2,'an explicit new lookup is visible even for the same ticket');
  dom.window.matchMedia=()=>({matches:true});page.nextScan('camera');await page.loadCodes(['SECOND']);assert.equal(animations.length,2);
  page.setInputMode('manual');page.controller.state='accepted';page.controller.operation={payload:{operation_id:'done'},receipt:{outcome:'accepted'}};page.updateAutoAdvance();assert.equal(page.advanceTimer,null,'background acceptance never takes focus away from an open search');
+});
+
+
+test('Back from a camera ticket clears the review before leaving the scanner',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ dom.window.history.replaceState(null,'',tickets);dom.window.history.pushState(null,'','/scan');
+ await page.loadCodes(['SCANNED']);assert.ok(page.host.querySelector('.scan-result'));
+ dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
+ assert.equal(dom.window.location.pathname,'/scan');assert.equal(page.mode,'camera');assert.equal(page.controller.state,'ready');assert.equal(page.controller.ticket,null);assert.equal(page.host.querySelector('.scan-result'),null);
+ dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
+ assert.equal(dom.window.location.pathname,tickets,'second Back from camera leaves scanner');
+});
+
+test('header Back from a scanned ticket shows camera alone',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});await page.loadCodes(['SCANNED']);
+ const back=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(back);
+ assert.equal(back.defaultPrevented,true);assert.equal(page.controller.state,'ready');assert.equal(page.controller.ticket,null);assert.equal(page.mode,'camera');
+ await new Promise(resolve=>setTimeout(resolve,30));assert.equal(dom.window.history.state.scannerInput,'camera');
+});
+
+
+test('Back on scanner entry without a session remains a normal exit link',t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});page.row=null;page.disposeControllers();page.controller=null;page.render();
+ const back=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(back);assert.equal(back.defaultPrevented,false);
 });

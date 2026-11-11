@@ -32,6 +32,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   }
   if (!config.APP_NAME?.trim() || (projection.seo.siteName && projection.seo.siteName !== config.APP_NAME)) throw new Error('Marketing brand must agree with config');
   projection.seo.siteName = config.APP_NAME;
+  if (projection.homeStyle !== undefined && (projection.homeStyle !== 'illustrated' || locale !== 'en' || !Array.isArray(projection.homeMedia) || !projection.homeMedia.length)) throw new Error('Invalid illustrated homepage profile');
   const clips = JSON.parse(fs.readFileSync(path.join(profilesDir,profile.clips),'utf8'));
   const pages = resolvePages(projection.pages.map(page=>page.id === 'home' ? {...page,title:projection.seo.title,description:projection.seo.description} : page), context.origin);
   const redirects = resolveRedirects(projection.redirects, pages);
@@ -68,7 +69,7 @@ export function marketingMedia(context) {
   if (!context.enabled) return [];
   const {projection, clips, pages} = context;
   const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
-  return [...new Set([projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
+  return [...new Set([...(projection.homeMedia ?? []), projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
     ...(clips.clips ?? []).filter(clip=>usedClips.has(clip.id)).flatMap(clip=>[clip.src,clip.poster,clip.mobileSrc,clip.mobilePoster]),
     ...(clips.sections ?? []).flatMap(section=>[section.companion?.image,...(section.showcase?.items ?? []).map(item=>item.image)]), ...(context.updates?.assets ?? [])].filter(Boolean))];
 }

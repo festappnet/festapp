@@ -1,0 +1,6 @@
+Festapp Tickets
+Contact: info@festapp.net
+Navy: #19243b; blue: #80bdf2.
+Use *-dark files on dark surfaces. Transparent and symbol assets have no background.
+Preserve aspect ratio, side notches, canonical corner curves and the asymmetric separator. Do not recolor individual fragments or replace outlined lettering. Use icon/web-icons exports at small sizes.
+SVG masters contain real paths and require no external fonts. Loading SVG respects reduced motion.

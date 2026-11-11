@@ -8,6 +8,6 @@
   "festapp-en": {
     "locale": "en",
     "content": "content.en.json",
-    "clips": "clips.en.json"
+    "clips": "illustrated-home-clips.json"
   }
 }

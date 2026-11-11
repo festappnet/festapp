@@ -1,0 +1,23 @@
+{
+  "name": "Festapp Tickets",
+  "short_name": "Festapp Tickets",
+  "start_url": "https://tickets.festapp.net/",
+  "scope": "https://tickets.festapp.net/",
+  "display": "standalone",
+  "background_color": "#19243b",
+  "theme_color": "#19243b",
+  "icons": [
+    {
+      "src": "android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
