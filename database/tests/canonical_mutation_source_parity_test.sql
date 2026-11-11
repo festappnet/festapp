@@ -1704,9 +1704,9 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_provider_connection_internal(jsonb,text)') AND md5(btrim(prosrc,E' \n\r\t'))='60b47c82acce57bf7dc9f013923a3744'),'current SQL source parity: public.payment_provider_connection_internal(jsonb,text)');
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_sale_policy_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='b92e129a6b9c555db00feeb908f921c5'),'current SQL source parity: public.payment_sale_policy_internal()');
--- supabase/migrations/20261111123041_order_read_performance.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_transaction_movements_bulk_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='6de41b48a1c41a43979424e85add6035'),'current SQL source parity: public.payment_transaction_movements_bulk_internal(bigint[])');
--- supabase/migrations/20261111123041_order_read_performance.sql
+-- supabase/migrations/20261111140000_scanner_search_and_bank_movements.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_transaction_movements_bulk_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='7a80ae971eeee54539d0e1c48405803c'),'current SQL source parity: public.payment_transaction_movements_bulk_internal(bigint[])');
+-- supabase/migrations/20261111140000_scanner_search_and_bank_movements.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.payment_transaction_movements_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='290791b9a40b413265fe25ee5a620062'),'current SQL source parity: public.payment_transaction_movements_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.people_profile_projection_internal_v1(jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='51b92d42556ba52fad3b29dd19d95db1'),'current SQL source parity: public.people_profile_projection_internal_v1(jsonb,bigint)');
@@ -2022,8 +2022,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_feedback_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='a546bbfc24dce06e231e832a11ddb4b4'),'current SQL source parity: public.schedule_feedback_read_rule(boolean,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_participants_read_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7f6977ddb21f0e2044e154b4428275d1'),'current SQL source parity: public.schedule_participants_read_rule(boolean,boolean,boolean)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.search_scanner_tickets(uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8f0c049549994b4a6f17b0239d0a820e'),'current SQL source parity: public.search_scanner_tickets(uuid,text,text,bigint)');
+-- supabase/migrations/20261111140000_scanner_search_and_bank_movements.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.search_scanner_tickets(uuid,text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ecf18baa1e0b6014d730826ea3e67980'),'current SQL source parity: public.search_scanner_tickets(uuid,text,text,bigint)');
 -- supabase/migrations/20261110220000_automatic_form_blueprints.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.seating_admissions_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='94ec9720b675040f9de8c9c00d14a513'),'current SQL source parity: public.seating_admissions_internal(bigint)');
 -- supabase/migrations/20261110220000_automatic_form_blueprints.sql

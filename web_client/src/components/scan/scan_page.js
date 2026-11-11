@@ -23,6 +23,7 @@ export class ScanPage extends Component {
         this.sound=new ScannerFeedback();this.feedbackStates=new WeakMap();
         this.mode = 'camera'; this.rows = []; this.history = []; this.summaryAt = 0; this.online = navigator.onLine; this.disposed = false;
     }
+    get canSearchUsers() { return AppConfig.isAppSupported && Boolean(this.row?.session.capabilities.search_users); }
     async init(route) {
         this.onGesture=event=>{if(event.target.closest?.('[data-sound]'))return;this.sound.unlock().then(()=>this.updateSoundControl());};
         this.host.addEventListener('pointerdown',this.onGesture,true);this.host.addEventListener('keydown',this.onGesture,true);
@@ -214,6 +215,7 @@ export class ScanPage extends Component {
     render() {
         if (this.disposed || this.settingsPage) return;
         const c = this.controller;
+        if (!this.canSearchUsers && this.searchScope==='users') { this.searchScope='tickets';this.searchResults=[]; }
         const drafts = !this.row || c?.state==='ready' && this.mode==='manual' ? [...this.host.querySelectorAll('[data-open] input,[data-code] input:not(:disabled),[data-search] input')].map(input=>({name:input.name,value:input.value,focused:input===document.activeElement,start:input.selectionStart,end:input.selectionEnd})) : [];
         if (!this.row && drafts.length) this.entryDraft = Object.fromEntries(drafts.map(({name,value})=>[name,value]));
         const liveVideo = this.mode==='camera' && this.route.page==='scan' && this.input?.stream ? this.input.video : null;
@@ -227,7 +229,7 @@ export class ScanPage extends Component {
         <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && c?.state==='ready'?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.batch?'is-group':''} ${this.mode==='camera' && !this.batch && c?.state==='ready'?'camera-ready':''} ${this.batch || c && c.state !== 'ready' ? 'has-result' : ''}"><section class="scan-input">
         ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p><button data-same>${tr('same_code')}</button></div></details></div>` : `<form data-code><label>${tr('symbol')}<input name="symbol" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" ${c?.state!=='ready' ? 'disabled' : ''}></label><button ${c?.state!=='ready' ? 'disabled' : ''}>${icon('scan')}${tr('lookup')}</button></form><button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>${!this.cameraUnavailable?`<p class="scan-manual-note">${tr('manual_once')}</p>`:''}`}
-        ${this.mode==='manual' && (this.row.session.capabilities.search_tickets || this.row.session.capabilities.search_users) ? `<form data-search novalidate>${this.row.session.capabilities.search_tickets && this.row.session.capabilities.search_users ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr('search')}<input name="query" minlength="2" maxlength="100" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p><button>${tr('search')}</button></form><ul class="scan-list">${(this.searchResults||[]).map(t=>`<li><button data-ticket="${e(t.symbol)}">${e(t.holder_name)} · ${e(t.symbol)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}` : ''}</section>
+        ${this.mode==='manual' && (this.row.session.capabilities.search_tickets || this.canSearchUsers) ? `<form data-search novalidate>${this.row.session.capabilities.search_tickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr('search')}<input name="query" minlength="2" maxlength="100" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p><button>${tr('search')}</button></form><ul class="scan-list">${(this.searchResults||[]).map(t=>`<li><button data-ticket="${e(t.symbol)}">${e(t.holder_name)} · ${e(t.symbol)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}` : ''}</section>
         <section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${this.batchHtml()}${c && !this.batch ? this.resultHtml(c) : ''}</section></div>`;
         this.host.innerHTML = this.shell(content);
         if (liveVideo) { this.host.querySelector('video')?.replaceWith(liveVideo);liveVideo.play().catch(()=>{});this.updateCameraState(); }
@@ -328,13 +330,14 @@ export class ScanPage extends Component {
         catch(err) { this.cameraUnavailable=true;this.error=err.message;this.sound.play('error');this.render(); }
     }
     async search(after) {
+        if (!AppConfig.isAppSupported && this.searchScope==='users') this.searchScope='tickets';
         this.searchError=null;this.error=null;this.searchQuery=String(this.searchQuery||'').trim();
         try {
             if(this.searchQuery.length<2 || this.searchQuery.length>100)throw new Error('invalid_query');
             if (!navigator.onLine) {
                 if (this.searchScope==='users' || !offlineGrantValid(this.row)) throw new Error('offline_grant_expired');
                 const query=this.searchQuery.toLocaleLowerCase();
-                this.searchResults=(await this.store.list('tickets',this.row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name} ${t.symbol}`.toLocaleLowerCase().includes(query)).slice(0,30);
+                this.searchResults=(await this.store.list('tickets',this.row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name || ''} ${t.purchaser_name || ''} ${t.batch_title || ''} ${t.symbol || ''}`.toLocaleLowerCase().includes(query)).slice(0,30);
             } else if (this.searchScope==='users') {
                 this.searchResults=(await this.api.call('search_scanner_users',{p_query:this.searchQuery,...(after?{p_after:after}:{})})).data;
             } else this.searchResults=await this.api.search(this.searchQuery,after);

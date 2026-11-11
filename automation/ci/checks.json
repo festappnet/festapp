@@ -597,7 +597,10 @@
     "seat-contract-6": {
       "filters": [
         "database/tests/payment_providers",
-        "database/tests/eshop_orders/customer_order_overview_test.sql"
+        "database/tests/eshop_orders/customer_order_overview_test.sql",
+        "database/tests/eshop/bank_roundtrip_report_test.sql",
+        "database/tests/eshop/occasion_report_test.sql",
+        "database/tests/scanning/ball_order_test.sql"
       ]
     },
     "seat-notifications-1": {
@@ -776,6 +779,7 @@
       "database/tests/emails/waitlist_template_visibility_test.sql",
       "database/tests/eshop/atomic_wave_target_test.sql",
       "database/tests/eshop/bank_accounts/unique_pairing_code_test.sql",
+      "database/tests/eshop/bank_roundtrip_report_test.sql",
       "database/tests/eshop/blueprint_authoring_test.sql",
       "database/tests/eshop/blueprint_reservation_integrity_test.sql",
       "database/tests/eshop/cash_account_priority_test.sql",
@@ -1303,6 +1307,7 @@
     "database/tests/emails/waitlist_template_visibility_test.sql",
     "database/tests/eshop/atomic_wave_target_test.sql",
     "database/tests/eshop/bank_accounts/unique_pairing_code_test.sql",
+    "database/tests/eshop/bank_roundtrip_report_test.sql",
     "database/tests/eshop/blueprint_authoring_test.sql",
     "database/tests/eshop/blueprint_finalize_deadline_concurrency.test.mjs",
     "database/tests/eshop/blueprint_reservation_concurrency.test.mjs",
@@ -2081,6 +2086,7 @@
     "web_client/tests/scan/navigation.test.js",
     "web_client/tests/scan/order_presentation.test.js",
     "web_client/tests/scan/routing.test.js",
+    "web_client/tests/scan/search_scope.test.js",
     "web_client/tests/scan/settings.test.js",
     "web_client/tests/scan/startup.test.js",
     "web_client/tests/scan/store.test.js",

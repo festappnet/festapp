@@ -5,7 +5,11 @@ LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
  RETURN QUERY
  SELECT t.id::bigint,t.payment_info::bigint,t.amount,t.currency::text,t.date::timestamptz,
-  coalesce(t.transaction_type='return',false) OR s.transaction_id IS NOT NULL,
+  coalesce(t.transaction_type='return',false) OR s.transaction_id IS NOT NULL
+   -- Linked bank debits are returned money even when historical pairing
+   -- predates refund requests. Keep signed manual corrections as receipts.
+   OR coalesce(t.amount<0 AND t.ingest_source IN ('banksync_api','fio_api','legacy_api','legacy')
+       AND t.transaction_type IS DISTINCT FROM 'manual',false),
   s.voided_at IS NOT NULL
  FROM (
   SELECT tx.* FROM eshop.transactions tx WHERE p_payments IS NULL

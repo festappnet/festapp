@@ -16,7 +16,7 @@ export function decodeQRCodes(pixels, width, height, decode, maxCodes = 12) {
     for(const region of regions)for(let n=0;n<maxCodes && found.length<maxCodes;n++){
         const cropped=new Uint8ClampedArray(region.w*region.h*4);
         for(let y=0;y<region.h;y++)cropped.set(data.subarray(((region.y+y)*width+region.x)*4,((region.y+y)*width+region.x+region.w)*4),y*region.w*4);
-        const code=decode(cropped,region.w,region.h,{inversionAttempts:'dontInvert'});
+        const code=decode(cropped,region.w,region.h,{inversionAttempts:'attemptBoth'});
         if (!code?.data || !code.location) break;
         const points=['topLeftCorner','topRightCorner','bottomRightCorner','bottomLeftCorner'].map(k=>code.location[k] && ({x:code.location[k].x+region.x,y:code.location[k].y+region.y}));
         if (points.some(p=>!p || !Number.isFinite(p.x) || !Number.isFinite(p.y))) break;

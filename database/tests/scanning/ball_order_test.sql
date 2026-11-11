@@ -1,3 +1,4 @@
+-- test-setup: database/functions/scanning/admission.sql
 BEGIN;
 DO $$
 DECLARE fx jsonb; oc bigint; fm bigint; org bigint; a bigint; b bigint; oid bigint; other_order bigint; opt bigint; bp bigint; pt bigint; dinner bigint; dto jsonb; other jsonb; cfg jsonb; ff bigint; session jsonb; manifest jsonb; response jsonb; offline_dto jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); physical_spot bigint;
@@ -38,7 +39,13 @@ BEGIN
  PERFORM assert_eq(dto#>>'{spot_group,title}','28','real blueprint group resolves table for 28A');
  PERFORM assert_eq(dto#>>'{spot_group,blueprint_id}',bp::text,'group includes blueprint identity');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(dto->'products') p WHERE p->>'type'='food' AND p->>'title'='Menu 1: Hovězí guláš, houskový knedlík'),'specific dinner variant and type are projected');
+ UPDATE public.scanner_settings SET config=jsonb_set(config,'{manual_search,tickets}','true') WHERE occasion_id=oc;
  session:=(public.open_scanner_session(fx->>'scan_code'))->'data';
+ response:=public.search_scanner_tickets((session->>'session_id')::uuid,session->>'token','Petra Svobodová');
+ PERFORM assert_eq((response->>'code')::int,200,'purchaser search succeeds');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(response->'data') t WHERE (t->>'ticket_id')::bigint=a),'search finds unnamed ticket by purchaser');
+ response:=public.search_scanner_tickets((session->>'session_id')::uuid,session->>'token',lower(dto->>'symbol'));
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(response->'data') t WHERE (t->>'ticket_id')::bigint=a),'code search is case insensitive');
  manifest:=(public.prepare_scanner_snapshot((session->>'session_id')::uuid,session->>'token'))->'data';
  response:=public.get_scanner_snapshot_page((session->>'session_id')::uuid,session->>'token',(manifest->>'snapshot_id')::uuid,0);
  SELECT value INTO offline_dto FROM jsonb_array_elements((response#>>'{data,payload_text}')::jsonb) WHERE (value->>'ticket_id')::bigint=a;

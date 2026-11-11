@@ -138,6 +138,10 @@ class ProductGridRecord extends ITrinaRowModel {
         productTypeTitle: productTypeTitle ?? record?.productTypeTitle,
         product: ProductModel(
           aggregateVersion: model?.aggregateVersion ?? 0,
+          productTypeId: model?.productTypeId,
+          occasion: model?.occasion,
+          productTypeString: model?.productTypeString,
+          productTypeTitleString: model?.productTypeTitleString,
           id: json[EshopColumnIds.PRODUCT_ID] == -1
               ? null
               : json[EshopColumnIds.PRODUCT_ID],

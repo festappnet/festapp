@@ -1,5 +1,6 @@
 """Assemble the batched order-reader forward from canonical owners."""
 import argparse
+import hashlib
 from pathlib import Path
 import re
 
@@ -49,10 +50,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    content = render()
     if args.check:
-        if not TARGET.exists() or TARGET.read_text() != content:
-            raise SystemExit('Order read performance migration is stale')
-        print('Order read performance migration matches canonical owners')
+        # Installed history is immutable; later forwards own current function bodies.
+        if not TARGET.exists() or hashlib.sha256(TARGET.read_bytes()).hexdigest() != '214a240555f30042f70a3ce63511499edc61ab62e30560e985a2b0ebe04e2e8a':
+            raise SystemExit('Installed order read performance migration bytes changed')
+        from generate_canonical_source_contract import render as source_contract
+        source_contract(ROOT, additional_sources=list(SOURCES))
+        print('Order read performance history and canonical owners verified')
     else:
-        TARGET.write_text(content)
+        raise SystemExit('Installed order read performance migration is immutable; author a scoped forward migration')
