@@ -3301,6 +3301,16 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.scanner_lookup_ticket_internal(uuid,text,text,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.lookup_scanner_ticket_by_id(uuid,text,bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {

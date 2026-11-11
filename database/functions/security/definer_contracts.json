@@ -3170,6 +3170,14 @@
     "b0db3614e773eaa330bdddfbea20f6e03bb457ce9540d8fa4d2fbaa9e83f6071": {
       "signature": "public.get_is_manager_on_unit(bigint)",
       "source": "database/functions/user_permissions/get_is_manager_on_unit.sql"
+    },
+    "1e0d6deef8e56a5e732226429c0b3c563bd5d74ef4398715302de81ecd2c6939": {
+      "signature": "public.scanner_lookup_ticket_internal(uuid,text,text,bigint)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "fb692f78f66a8f85296d9f0b8385d8af6905dd54d03c352ec6812681a010a83c": {
+      "signature": "public.lookup_scanner_ticket_by_id(uuid,text,bigint)",
+      "source": "database/functions/scanning/admission.sql"
     }
   }
 }
