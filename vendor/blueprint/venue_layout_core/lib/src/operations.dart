@@ -773,40 +773,52 @@ List<Map<String, dynamic>> _canvasChairPerimeterSlots(
   return out;
 }
 
-bool _tableBodiesClear(
+bool _tableChairsClear(
   VenueLayoutDocument d,
-  Set<String> tableIds,
-  LayoutCollisionIndex index,
-  Map<String, LayoutNode> byId,
-) {
+  Set<String> tableIds, {
+  VenueLayoutDocument? translationBaseline,
+  Set<String> movingIds = const {},
+}) {
+  if (tableIds.isEmpty) return true;
+  // A rigid translation changes only the moving subtree. Reuse the baseline's
+  // static index rather than rebuilding every outline for every pointer frame.
+  final index = collisionIndexFor(translationBaseline ?? d),
+      matrices = worldMatrices(d),
+      byId = {for (final n in d.nodes) n.id: n};
+  Iterable<String> candidates(Map<String, double> bounds) sync* {
+    for (final id in index.query(bounds)) {
+      if (!movingIds.contains(id)) yield id;
+    }
+    // Moving assemblies must still collide with one another at their new
+    // positions, including chairs on different selected tables.
+    yield* movingIds.where((id) => isLayoutObstacle(byId[id]!));
+  }
+
+  List<List<double>> obstacleHull(String id) => movingIds.contains(id)
+      ? worldHull(byId[id]!, matrices[id]!)
+      : index.hullFor(id);
+
   for (final table in d.nodes.where((n) => tableIds.contains(n.id))) {
     final own = layoutSubtree(d, {table.id});
-    final hull = worldHull(table, index.matrices[table.id]!);
-    for (final id in index.query(boundsOfPoints(hull))) {
+    final hull = worldHull(table, matrices[table.id]!);
+    for (final id in candidates(boundsOfPoints(hull))) {
       if (own.contains(id) || !isLayoutObstacle(byId[id]!)) continue;
-      if (polygonsOverlap(hull, index.hullFor(id))) {
+      if (polygonsOverlap(hull, obstacleHull(id))) {
         return false;
       }
     }
   }
-  return true;
-}
-
-bool _tableChairsClear(VenueLayoutDocument d, Set<String> tableIds) {
-  if (tableIds.isEmpty) return true;
-  final index = collisionIndexFor(d), byId = {for (final n in d.nodes) n.id: n};
-  if (!_tableBodiesClear(d, tableIds, index, byId)) return false;
   for (final seat in d.nodes.where(
     (n) => n.kind == 'seat' && tableIds.contains(n.parentId),
   )) {
-    final hull = worldHull(seat, index.matrices[seat.id]!);
-    for (final id in index.query(boundsOfPoints(hull))) {
+    final hull = worldHull(seat, matrices[seat.id]!);
+    for (final id in candidates(boundsOfPoints(hull))) {
       if (id == seat.id ||
           id == seat.parentId ||
           !isLayoutObstacle(byId[id]!)) {
         continue;
       }
-      if (polygonsOverlap(hull, index.hullFor(id))) {
+      if (polygonsOverlap(hull, obstacleHull(id))) {
         return false;
       }
     }
@@ -1165,7 +1177,14 @@ VenueLayoutDocument _moveLayoutWithinCanvas(
               .toList(),
         );
     if (contained(b)) {
-      return _tableChairsClear(candidate, tables) ? candidate : d;
+      return _tableChairsClear(
+            candidate,
+            tables,
+            translationBaseline: d,
+            movingIds: subtree,
+          )
+          ? candidate
+          : d;
     }
     final correction = clamp(b, 0, 0);
     if (correction == null) break;

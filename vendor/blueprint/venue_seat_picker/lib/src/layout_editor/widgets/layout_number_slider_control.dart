@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 
@@ -38,7 +39,9 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
   late final _text = TextEditingController(text: _display(widget.value));
   final _focus = FocusNode();
   VenueLayoutDocument? _baseline, _lastPreview;
-  double? _dragMin, _dragMax;
+  double? _dragMin, _dragMax, _baselineValue;
+  double? _liveValue, _pendingValue;
+  int? _previewFrame;
   String? _error;
   bool _cancelled = false;
   bool _edited = false;
@@ -48,7 +51,10 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
       !widget.node.locked;
   String _display(double value) => widget.wholeNumbers
       ? value.round().toString()
-      : value.toString().replaceFirst(RegExp(r'\.0$'), '');
+      : double.parse(
+          value.toStringAsPrecision(12),
+        ).toString().replaceFirst(RegExp(r'\.0$'), '');
+  double get _value => _liveValue ?? widget.value;
   double get _min =>
       _dragMin ?? math.min(widget.rangeMin, widget.value).toDouble();
   double get _max =>
@@ -69,6 +75,7 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
   void didUpdateWidget(LayoutNumberSliderControl oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value) {
+      _liveValue = null;
       _text.text = _display(widget.value);
       _edited = false;
     }
@@ -85,33 +92,64 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
     _dragMin = _min;
     _dragMax = _max;
     _baseline = widget.controller.document;
+    _baselineValue = _value;
     _lastPreview = _baseline;
     widget.controller.beginGesture();
   }
 
   void _change(double value) {
     if (!_enabled || _cancelled) return;
+    _pendingValue = value;
+    _previewFrame ??= SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _previewFrame = null;
+      _flushPreview();
+    });
+  }
+
+  void _discardPreview() {
+    final frame = _previewFrame;
+    if (frame != null) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(frame);
+    }
+    _previewFrame = null;
+    _pendingValue = null;
+  }
+
+  void _flushPreview() {
+    final value = _pendingValue;
+    _discardPreview();
+    if (value == null || !mounted || !_enabled || _cancelled) return;
     final rounded = widget.wholeNumbers
         ? value.roundToDouble()
         : (value * 10).round() / 10;
     final baseline = _baseline;
-    if (baseline == null) {
-      widget.controller.apply(
-        _sizedDocument(widget.controller.document, rounded),
-        label: widget.label,
-      );
-    } else {
-      widget.controller.preview(_sizedDocument(baseline, rounded));
-      _lastPreview = widget.controller.document;
+    final next = _sizedDocument(
+      baseline ?? widget.controller.document,
+      rounded,
+    );
+    final accepted = baseline == null
+        ? widget.controller.apply(next, label: widget.label)
+        : widget.controller.preview(next);
+    if (baseline != null) _lastPreview = widget.controller.document;
+    if (accepted) {
+      setState(() {
+        _liveValue = baseline != null && sameLayoutDocument(next, baseline)
+            ? _baselineValue
+            : rounded;
+        _text.text = _display(_value);
+        _edited = false;
+      });
     }
   }
 
   void _finish(double _) {
+    _flushPreview();
     // Pointer cancellation reaches the parent Listener in the same event; defer
     // committing so cancellation can still restore the preview baseline.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _baseline == null) return;
       _baseline = null;
+      _baselineValue = null;
       _lastPreview = null;
       _dragMin = null;
       _dragMax = null;
@@ -120,12 +158,20 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
   }
 
   void _cancel() {
+    _discardPreview();
+    if (!mounted) return;
     if (_baseline == null) return;
     _cancelled = true;
+    final value = _baselineValue ?? widget.value;
+    _baselineValue = null;
     _baseline = null;
     _lastPreview = null;
     _dragMin = null;
     _dragMax = null;
+    setState(() {
+      _liveValue = value;
+      _text.text = _display(value);
+    });
     widget.controller.cancelGesture();
   }
 
@@ -162,6 +208,7 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
 
   @override
   void dispose() {
+    _discardPreview();
     final c = widget.controller, preview = _lastPreview;
     if (_baseline != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -255,8 +302,8 @@ class _LayoutNumberSliderControlState extends State<LayoutNumberSliderControl> {
                     ),
                     min: math.max(widget.min, _min),
                     max: _max,
-                    value: widget.value,
-                    label: _display(widget.value),
+                    value: _value,
+                    label: _display(_value),
                     semanticFormatterCallback: (value) =>
                         '${VenueLayoutStrings.text(context, widget.label)} ${_display(value)}',
                     onChangeStart: _enabled ? _start : null,

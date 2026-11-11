@@ -1,5 +1,11 @@
 ## 0.4.8
 
+## 0.4.9
+
+- Keep numeric sliders live inside cached inspector panels and coalesce pointer samples per frame.
+- Preserve release/cancel/undo semantics and hide floating-point display noise.
+- Avoid repeated overflow work for unchanged objects during geometry previews.
+
 - Reduce table and bar drag-preview cost by using a physical placement index, also shared by chair reflow and automatic seat fitting.
 - Require core 0.2.7; preserve collision rejection and gesture undo.
 
