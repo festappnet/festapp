@@ -26,9 +26,9 @@ export function scannerSearchPreview(ticket) {
     const table=ticket.spot_group?.title;
     const products=(ticket.products||[]).filter(product=>!(ticket.spot && product.type==='spot' && scannerProductTitle(product).trim().toLocaleLowerCase()===product.type_title?.trim().toLocaleLowerCase()));
     return `<span class="scan-search-heading"><strong>${e(heading)}</strong>${ticket.state?`<span class="scan-ticket-status ${status.tone}">${e(tr(status.key))}</span>`:''}</span>
+    ${table || ticket.spot?`<span class="scan-search-seat">${table?`${/^\d+$/.test(table)?tr('table')+' ':''}${e(table)}`:''}${table && ticket.spot?' · ':''}${ticket.spot?`${tr('spot')} ${e(ticket.spot)}`:''}</span>`:''}
     ${ticket.purchaser_name && ticket.purchaser_name!==heading?`<span class="scan-search-customer">${tr('purchaser')}: ${e(ticket.purchaser_name)}</span>`:''}
     ${ticket.purchaser_email?`<span class="scan-search-customer">${e(ticket.purchaser_email)}</span>`:''}
-    ${table || ticket.spot?`<span class="scan-search-seat">${table?`${/^\d+$/.test(table)?tr('table')+' ':''}${e(table)}`:''}${table && ticket.spot?' · ':''}${ticket.spot?`${tr('spot')} ${e(ticket.spot)}`:''}</span>`:''}
     ${products.length?`<span class="scan-search-products">${products.map(product=>`<span>${e(scannerProductCaption(product))}</span>`).join('')}</span>`:''}
     ${ticket.symbol?`<span class="scan-search-code">${e(ticket.symbol)}</span>`:''}`;
 }

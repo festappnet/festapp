@@ -5,7 +5,7 @@ import { icon } from './scan_icons.js';
 import { tr, reasonText, escape as e } from './scan_strings.js';
 export function scanResult(c, storageAvailable) {
     const t = c.ticket, state = c.state;
-    if (state === 'ready') return `<div class="scan-empty"><span class="scan-empty-icon">${icon('ticket')}</span><h2>${tr('ready')}</h2><p>${tr('choose_input')}</p><div class="scan-steps"><span>1 · ${tr('scan')}</span><span>2 · ${tr('check_ticket')}</span><span>3 · ${tr('confirm')}</span></div></div>`;
+    if (state === 'ready') return `<div class="scan-empty"><h2>${tr('ready')}</h2><p>${tr('choose_input')}</p></div>`;
     if (state === 'looking_up') return `<div class="scan-lookup" role="status"><span class="scan-spinner" aria-hidden="true"></span><h2>${tr('looking_up')}</h2></div>`;
     let message, tone = 'blocked';
     if (state === 'accepted') { message = tr('accepted'); tone = 'complete'; }
