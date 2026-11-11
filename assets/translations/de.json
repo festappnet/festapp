@@ -3122,6 +3122,16 @@
         "bankManualPrepared": "Die Überweisungsdaten sind bereit. Für diese Währung ist kein QR verfügbar. Die Bank hat die Überweisung noch nicht bestätigt."
     },
     "MemberAccess": {
+    "selectedRecipients": "Ausgewählte Empfänger",
+    "currentPermissions": "Aktuelle Berechtigungen",
+    "noPermissions": "Keine zusätzlichen Berechtigungen",
+    "preservePermissions": "Bestehende Berechtigungen bleiben erhalten. Die Liste zeigt gespeicherte Mitgliedschaften.",
+    "additionalPermissions": "Wählen Sie zusätzliche Berechtigungen für alle ausgewählten Personen. Bestehende Berechtigungen bleiben erhalten.",
+    "sendSelected": "An ausgewählte Benutzer senden",
+    "retryFailed": "Unbestätigte Anfragen wiederholen",
+    "batchPartial": "Einige Anfragen konnten nicht bestätigt werden. Prüfen Sie die Empfänger und wiederholen Sie nur unbestätigte Anfragen.",
+    "selectionUnavailable": "Einige ausgewählte Zeilen sind nicht gespeichert oder existieren nicht mehr. Schließen Sie den Dialog, speichern oder laden Sie die Tabelle neu und wählen Sie die Benutzer erneut aus.",
+    "is_cleaning_blocked": "Reinigung gesperrt",
         "title": "Zugriff und Einladungen",
         "email": "Anmelde-E-Mail",
         "intent": "Aktion",

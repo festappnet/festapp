@@ -1,3 +1,7 @@
+import '../../test/components/users/member_access_batch_cases.dart'
+    as access_batch;
+import '../../test/components/users/member_access_dialog_cases.dart'
+    as access_dialog;
 import '../../test/support/register_client_suites.dart';
 import '../../test/components/navigation/routed_tab_navigation_cases.dart'
     as s0;
@@ -19,5 +23,7 @@ void main() {
     'single_data_grid_widget': s4.main,
     'profile_commands': s5.main,
     'occasion_user_grid': s6.main,
+    'member_access_batch': access_batch.main,
+    'member_access_dialog': access_dialog.main,
   });
 }

@@ -5303,6 +5303,16 @@
         "bankManualPrepared": "Transfer details are ready. A QR is not available for this currency. The bank has not yet confirmed the transfer."
     },
     "MemberAccess": {
+    "selectedRecipients": "Selected recipients",
+    "currentPermissions": "Current permissions",
+    "noPermissions": "No additional permissions",
+    "preservePermissions": "Existing permissions are preserved. The list shows saved memberships.",
+    "additionalPermissions": "Select additional permissions to offer to every selected person. Existing permissions will remain.",
+    "sendSelected": "Send to selected users",
+    "retryFailed": "Retry unconfirmed recipients",
+    "batchPartial": "Some requests could not be confirmed. Review each recipient and retry only the unconfirmed requests.",
+    "selectionUnavailable": "Some selected rows are unsaved or no longer exist. Close this dialog, save or reload the table and select the users again.",
+    "is_cleaning_blocked": "Cleaning blocked",
         "title": "Access and invitations",
         "email": "Sign-in email",
         "intent": "Action",

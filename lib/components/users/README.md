@@ -154,3 +154,12 @@ a supported participant producer with the old HTTP sent/202 acceptance contract;
 its domain path is shared. Setup only supplies the stored confirmed recipient
 selection. Historical setup retry resolves its original invitation/message and
 does not send again. No general workflow framework or second profile is involved.
+
+The manual access dialog snapshots visible checked identities and reloads their
+saved membership records before opening. Unsaved or removed selected rows block
+sending until the table is saved/reloaded. Current per-person grants are shown
+separately from additive permission offers. Selected members default to an access
+notice bound to `userId`; this sends no role/profile changes. A batch freezes each
+recipient's intent after its first attempt and retries only unconfirmed requests
+through the same command adapter. Queue admission remains distinct from delivery;
+refresh resolves the message receipt against the canonical status projection.

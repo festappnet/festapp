@@ -3124,6 +3124,16 @@
         "bankManualPrepared": "Dane przelewu są gotowe. QR nie jest dostępny dla tej waluty. Bank nie potwierdził jeszcze przelewu."
     },
     "MemberAccess": {
+    "selectedRecipients": "Wybrani odbiorcy",
+    "currentPermissions": "Obecne uprawnienia",
+    "noPermissions": "Brak dodatkowych uprawnień",
+    "preservePermissions": "Istniejące uprawnienia zostaną zachowane. Lista pokazuje zapisane członkostwa.",
+    "additionalPermissions": "Wybierz dodatkowe uprawnienia dla wszystkich wybranych osób. Istniejące uprawnienia zostaną zachowane.",
+    "sendSelected": "Wyślij do wybranych użytkowników",
+    "retryFailed": "Ponów niepotwierdzone żądania",
+    "batchPartial": "Niektórych żądań nie udało się potwierdzić. Sprawdź odbiorców i ponów tylko niepotwierdzone żądania.",
+    "selectionUnavailable": "Niektóre wybrane wiersze nie są zapisane lub już nie istnieją. Zamknij okno, zapisz lub odśwież tabelę i ponownie wybierz użytkowników.",
+    "is_cleaning_blocked": "Sprzątanie zablokowane",
         "title": "Dostęp i zaproszenia",
         "email": "E-mail logowania",
         "intent": "Działanie",
