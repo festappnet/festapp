@@ -1,14 +1,14 @@
 -- test-setup: database/functions/scanning/admission.sql
 BEGIN;
 DO $$
-DECLARE fx jsonb; oc bigint; fm bigint; org bigint; a bigint; b bigint; oid bigint; other_order bigint; opt bigint; bp bigint; pt bigint; dinner bigint; dto jsonb; other jsonb; cfg jsonb; ff bigint; session jsonb; manifest jsonb; response jsonb; offline_dto jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); physical_spot bigint;
+DECLARE fx jsonb; foreign_event jsonb; oc bigint; fm bigint; org bigint; a bigint; b bigint; oid bigint; other_order bigint; opt bigint; bp bigint; pt bigint; dinner bigint; dto jsonb; other jsonb; cfg jsonb; ff bigint; ff_email bigint; session jsonb; manifest jsonb; response jsonb; offline_dto jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); physical_spot bigint;
 BEGIN
  fx:=public.scanner_test_fixture();oc:=(fx->>'occasion')::bigint;fm:=(fx->>'form')::bigint;a:=(fx#>>'{tickets,0}')::bigint;b:=(fx#>>'{tickets,1}')::bigint;
  SELECT organization INTO org FROM public.occasions WHERE id=oc;
  SELECT "order" INTO oid FROM eshop.order_product_ticket WHERE ticket=a LIMIT 1;
  SELECT "order" INTO other_order FROM eshop.order_product_ticket WHERE ticket=b LIMIT 1;
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[oid,other_order]);
- UPDATE eshop.orders SET data='{"name":"Petra","surname":"Svobodová","tickets":[]}' WHERE id=oid;
+ UPDATE eshop.orders SET data='{"name":"Petra","surname":"Svobodová","email":"petra@example.test","tickets":[]}' WHERE id=oid;
  UPDATE eshop.order_product_ticket SET "order"=oid WHERE ticket=b;
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(oc,'Večeře','food') RETURNING id INTO pt;
  INSERT INTO eshop.products(occasion,title,product_type,price) VALUES(oc,'Menu 1: Hovězí guláš, houskový knedlík',pt,160) RETURNING id INTO dinner;
@@ -26,6 +26,7 @@ BEGIN
  SELECT config INTO cfg FROM public.scanner_settings WHERE occasion_id=oc;
  SELECT p.dto INTO dto FROM public.scanner_ticket_projection_internal(oc,cfg,a) p;
  SELECT p.dto INTO other FROM public.scanner_ticket_projection_internal(oc,cfg,b) p;
+ PERFORM assert_true(NOT dto ? 'purchaser_email','disabled manual search omits customer email');
  PERFORM assert_eq(dto->>'order_note','Příchod po 19:00','public order note visible');
  PERFORM assert_eq(dto->>'note','Bez bariér','individual ticket note visible');
  PERFORM assert_true(other->>'note' IS NULL,'ticket note never leaks to sibling ticket');
@@ -39,16 +40,21 @@ BEGIN
  PERFORM assert_eq(dto#>>'{spot_group,title}','28','real blueprint group resolves table for 28A');
  PERFORM assert_eq(dto#>>'{spot_group,blueprint_id}',bp::text,'group includes blueprint identity');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(dto->'products') p WHERE p->>'type'='food' AND p->>'title'='Menu 1: Hovězí guláš, houskový knedlík'),'specific dinner variant and type are projected');
- UPDATE public.scanner_settings SET config=jsonb_set(config,'{manual_search,tickets}','true') WHERE occasion_id=oc;
+ UPDATE public.scanner_settings SET config=jsonb_set(config,'{manual_search,tickets}','true') WHERE occasion_id=oc RETURNING config INTO cfg;
+ SELECT p.dto INTO dto FROM public.scanner_ticket_projection_internal(oc,cfg,a) p;
+ PERFORM assert_eq(dto->>'purchaser_email','petra@example.test','search-enabled projection includes order email');
  session:=(public.open_scanner_session(fx->>'scan_code'))->'data';
  response:=public.search_scanner_tickets((session->>'session_id')::uuid,session->>'token','Petra Svobodová');
  PERFORM assert_eq((response->>'code')::int,200,'purchaser search succeeds');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(response->'data') t WHERE (t->>'ticket_id')::bigint=a),'search finds unnamed ticket by purchaser');
  response:=public.search_scanner_tickets((session->>'session_id')::uuid,session->>'token',lower(dto->>'symbol'));
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(response->'data') t WHERE (t->>'ticket_id')::bigint=a),'code search is case insensitive');
+ response:=public.search_scanner_tickets((session->>'session_id')::uuid,session->>'token','PETRA@EXAMPLE.TEST');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(response->'data') t WHERE (t->>'ticket_id')::bigint=a),'email search is case insensitive');
  manifest:=(public.prepare_scanner_snapshot((session->>'session_id')::uuid,session->>'token'))->'data';
  response:=public.get_scanner_snapshot_page((session->>'session_id')::uuid,session->>'token',(manifest->>'snapshot_id')::uuid,0);
  SELECT value INTO offline_dto FROM jsonb_array_elements((response#>>'{data,payload_text}')::jsonb) WHERE (value->>'ticket_id')::bigint=a;
+ PERFORM assert_eq(offline_dto->>'purchaser_email',dto->>'purchaser_email','offline snapshot preserves searchable email');
  PERFORM assert_eq(offline_dto->>'purchaser_name',dto->>'purchaser_name','offline snapshot preserves purchaser identity separately');
  PERFORM assert_eq(offline_dto->'spot_group',dto->'spot_group','offline snapshot preserves blueprint table identity');
  PERFORM assert_eq(offline_dto->>'order_note',dto->>'order_note','order note preserved offline');
@@ -58,8 +64,14 @@ BEGIN
  PERFORM assert_eq(offline_dto->>'order_note_hidden','INTERNAL ORDER','configured internal order note included');
  PERFORM assert_eq(offline_dto->>'note_hidden','INTERNAL TICKET','configured internal ticket note included');
  INSERT INTO public.form_fields(form,type,is_ticket_field) VALUES(fm,'name',false) RETURNING id INTO ff;
- UPDATE eshop.orders SET data=jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(ff::text,'Eva'))) WHERE id=oid;
+ INSERT INTO public.form_fields(form,type,is_ticket_field) VALUES(fm,'email',false) RETURNING id INTO ff_email;
+ UPDATE eshop.orders SET data=jsonb_build_object('fields',jsonb_build_array(jsonb_build_object(ff::text,'Eva'),jsonb_build_object(ff_email::text,'eva@example.test'))) WHERE id=oid;
  SELECT p.dto INTO dto FROM public.scanner_ticket_projection_internal(oc,cfg,a) p;
  PERFORM assert_eq(dto->>'purchaser_name','Eva','legacy order field name is supported without holder contamination');
+ PERFORM assert_eq(dto->>'purchaser_email','eva@example.test','typed order email is supported');
+ foreign_event:=public.scanner_test_fixture(1);
+ UPDATE eshop.orders SET occasion=(foreign_event->>'occasion')::bigint,order_sequence=10000 WHERE id=oid;
+ response:=public.search_scanner_tickets((session->>'session_id')::uuid,session->>'token','eva@example.test');
+ PERFORM assert_eq(jsonb_array_length(response->'data'),0,'a malformed cross-event order cannot leak customer email');
 END $$;
 ROLLBACK;
