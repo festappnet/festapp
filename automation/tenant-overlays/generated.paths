@@ -70,3 +70,6 @@ web_client/public/loading-animation.svg
 web_client/public/loading-animation-light.svg
 web/loading-animation-light.svg
 web/loading-logo-light.svg
+
+# configure_fonts.js copies only configured font sources into the web client.
+web_client/src/assets/fonts/*

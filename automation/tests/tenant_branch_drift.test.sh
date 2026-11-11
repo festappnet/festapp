@@ -22,11 +22,18 @@ git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid c
 BASE_SHA=$(git -C "$REPO" rev-parse HEAD)
 git -C "$REPO" switch -qc prod/csmostrava2026
 cp "$REPO/automation/tests/fixtures/tenants/csmostrava2026.conf" "$REPO/automation/project.conf"
+# Exercise the actual tenant source -> generated web-font contract, including
+# the filename normalization used by CSM's custom font.
+mkdir -p "$REPO/fonts"
+printf 'tenant-font-fixture' > "$REPO/fonts/Gill Sans Regular.ttf"
+printf '\nFONT_FILES="fonts/Gill Sans Regular.ttf"\n' >> "$REPO/automation/project.conf"
 (cd "$REPO" && bash automation/apply_config.sh automation/project.conf >/dev/null)
 node -e 'const fs=require("fs");fs.writeFileSync(process.argv[1],JSON.stringify({schemaVersion:1,tenantId:"csmostrava2026",baseMainSha:process.argv[2]},null,2)+"\n")' "$REPO/automation/tenant-overlay.json" "$BASE_SHA"
 git -C "$REPO" add -A
+git -C "$REPO" add -f web_client/src/assets/fonts/GillSansRegular.ttf
 git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm valid-overlay
 VALID_TIP=$(git -C "$REPO" rev-parse HEAD)
+cmp "$REPO/fonts/Gill Sans Regular.ttf" "$REPO/web_client/src/assets/fonts/GillSansRegular.ttf"
 git -C "$REPO" show "${BASE_SHA}:automation/check_tenant_branch_drift.sh" > "$TMP_ROOT/checker.sh"
 chmod +x "$TMP_ROOT/checker.sh"
 (grep -Fq 'git hash-object --no-filters "$expected"' "$TMP_ROOT/checker.sh" &&
@@ -57,6 +64,20 @@ printf '\n<!-- drift fixture -->\n' >> "$REPO/web/index.html"
 git -C "$REPO" add web/index.html
 git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm tamper-generated
 expect_failure generated "$(git -C "$REPO" rev-parse HEAD)"
+
+# Generated-font allowlisting still requires exact regeneration from approved
+# tenant source: edited copies and unconfigured additions remain forbidden.
+for mode in changed orphan; do
+  git -C "$REPO" switch -qc "tamper-font-$mode" "$VALID_TIP"
+  if [[ "$mode" == changed ]]; then
+    printf 'tampered-font' > "$REPO/web_client/src/assets/fonts/GillSansRegular.ttf"
+  else
+    printf 'orphan-font' > "$REPO/web_client/src/assets/fonts/Unconfigured.ttf"
+  fi
+  git -C "$REPO" add -f web_client/src/assets/fonts
+  git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm "tamper-font-$mode"
+  expect_failure "generated-font-$mode" "$(git -C "$REPO" rev-parse HEAD)"
+done
 
 git -C "$REPO" switch -qc tamper-policy "$VALID_TIP"
 printf '\nlib/**\n' >> "$REPO/automation/tenant-overlays/csmostrava2026.paths"
