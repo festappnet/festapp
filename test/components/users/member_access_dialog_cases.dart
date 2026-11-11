@@ -1,3 +1,5 @@
+import 'package:fstapp/components/users/member_access_batch.dart';
+
 import 'dart:async';
 
 import 'package:festapp_core/time.dart';
@@ -44,17 +46,52 @@ void main() {
   final sent = <Map<String, dynamic>>[];
   late Completer<void> initialStatus;
   late Completer<void> refreshedStatus;
+  Completer<void>? expectedRead;
+  var statusReads = 0;
+  var deliveryState = 'delivered';
+  String? failingUser;
   setUpAll(() async {
     OccasionTimeContext.initializeTimeZones();
     fixture = await RootSupabaseFixture.open((request) async {
       Object response;
       if (request.url.path.endsWith('/get_member_access_status')) {
-        response = {'invitations': [], 'messages': []};
+        statusReads++;
+        response = {
+          'invitations': [],
+          'messages': [
+            for (var index = 0; index < sent.length; index++)
+              if (sent[index]['userId'] != failingUser || failingUser == null)
+                {
+                  'messageId': 'message-${index + 1}',
+                  'state': deliveryState,
+                  'userId': sent[index]['userId'],
+                  'recipient':
+                      sent[index]['email'] ??
+                      '${sent[index]['userId']}@example.test',
+                  'code': 'TEAM_ACCESS_NOTICE',
+                },
+            {
+              'messageId': 'unrelated',
+              'state': 'delivered',
+              'recipient': 'other@example.test',
+              'code': 'TEAM_ACCESS_NOTICE',
+            },
+          ],
+        };
+        if (expectedRead?.isCompleted == false) expectedRead!.complete();
         final completion = sent.isEmpty ? initialStatus : refreshedStatus;
         if (!completion.isCompleted) completion.complete();
       } else if (request.url.path.endsWith('/manage-member-access')) {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         sent.add(Map<String, dynamic>.from(body['request']));
+        if (failingUser != null && sent.last['userId'] == failingUser) {
+          return http.Response(
+            jsonEncode({'reasonCode': 'preparation_deferred'}),
+            400,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         response = {
           'status': 'applied',
           'code': 200,
@@ -87,6 +124,10 @@ void main() {
   tearDownAll(() => fixture.dispose());
   setUp(() {
     sent.clear();
+    deliveryState = 'delivered';
+    failingUser = null;
+    statusReads = 0;
+    expectedRead = null;
     initialStatus = Completer<void>();
     refreshedStatus = Completer<void>();
     final rights = RightsContextFixture(
@@ -182,6 +223,7 @@ void main() {
         await tester.runAsync(() async {
           await tester.tap(find.text('MemberAccess.sendSelected'));
           await refreshedStatus.future.timeout(const Duration(seconds: 5));
+          await Future<void>.delayed(Duration.zero);
         });
         await tester.pumpAndSettle();
         expect(sent.map((request) => request['userId']), ['manager', 'viewer']);
@@ -200,4 +242,144 @@ void main() {
       },
     );
   }
+  Future<void> completeRead(
+    WidgetTester tester,
+    Completer<void> completion,
+  ) async {
+    // Keep user callbacks and polling timers in the fake clock. Only drain the
+    // mocked HTTP client's real async work between deterministic widget pumps.
+    for (var turn = 0; turn < 20 && !completion.isCompleted; turn++) {
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    }
+    expect(completion.isCompleted, isTrue);
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  Future<void> openDelivery(
+    WidgetTester tester, {
+    required bool selected,
+    bool two = false,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.light(),
+        builder: DependencyMaterialBridge.builder,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              child: const Text('Open'),
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) => MemberAccessDialog(
+                  scope: 'unit',
+                  scopeId: 2,
+                  recipients: selected
+                      ? [
+                          MemberAccessRecipient(
+                            userId: 'manager',
+                            email: 'jana@example.test',
+                            roles: {'is_manager': true},
+                          ),
+                          if (two)
+                            MemberAccessRecipient(
+                              userId: 'viewer',
+                              email: 'petr@example.test',
+                              roles: {'is_editor_view': true},
+                            ),
+                        ]
+                      : const [],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await completeRead(tester, initialStatus);
+    if (!selected)
+      await tester.enterText(find.byType(TextField), 'jana@example.test');
+    await tester.tap(
+      find.text(selected ? 'MemberAccess.sendSelected' : 'MemberAccess.send'),
+    );
+    await completeRead(tester, refreshedStatus);
+  }
+
+  Future<void> poll(WidgetTester tester, Duration elapsed) async {
+    expectedRead = Completer<void>();
+    await tester.pump(elapsed);
+    await completeRead(tester, expectedRead!);
+  }
+
+  for (final selected in [true, false]) {
+    testWidgets(
+      'delivery updates queued accepted delivered automatically for selected $selected',
+      (tester) async {
+        deliveryState = 'queued';
+        await openDelivery(tester, selected: selected);
+        expect(find.text('MemberAccess.deliveryProgress: 0/1'), findsOneWidget);
+        expect(find.text('MemberAccess.deliveryQueued: 1'), findsOneWidget);
+        expect(find.text('MemberAccess.queued'), findsNothing);
+        expect(
+          tester
+              .widget<TextButton>(
+                find.widgetWithText(TextButton, 'MemberAccess.close'),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        deliveryState = 'provider_accepted';
+        await poll(tester, const Duration(seconds: 2));
+        expect(find.text('MemberAccess.provider_accepted: 1'), findsOneWidget);
+        expect(find.text('MemberAccess.deliveryProgress: 0/1'), findsOneWidget);
+        deliveryState = 'delivered';
+        await poll(tester, const Duration(seconds: 5));
+        expect(find.text('MemberAccess.deliveryProgress: 1/1'), findsOneWidget);
+        expect(find.text('MemberAccess.deliveryQueued: 1'), findsNothing);
+        expect(find.text('MemberAccess.deliveryWatching'), findsNothing);
+        final reads = statusReads;
+        await tester.pump(const Duration(minutes: 3));
+        expect(statusReads, reads);
+        expect(sent, hasLength(1));
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
+  testWidgets(
+    'delivery progression retains partial batch failures without resending',
+    (tester) async {
+      deliveryState = 'queued';
+      failingUser = 'viewer';
+      await openDelivery(tester, selected: true, two: true);
+      expect(find.text('MemberAccess.batchPartial'), findsOneWidget);
+      expect(find.text('MemberAccess.deliveryProgress: 0/1'), findsOneWidget);
+      deliveryState = 'delivered';
+      await poll(tester, const Duration(seconds: 2));
+      expect(find.text('MemberAccess.deliveryProgress: 1/1'), findsOneWidget);
+      expect(find.text('MemberAccess.batchPartial'), findsOneWidget);
+      expect(find.text('MemberAccess.retryFailed'), findsOneWidget);
+      expect(sent, hasLength(2));
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('closing pending delivery cancels future status requests', (
+    tester,
+  ) async {
+    deliveryState = 'queued';
+    await openDelivery(tester, selected: true);
+    final reads = statusReads;
+    await tester.tap(find.text('MemberAccess.close'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(minutes: 3));
+    expect(statusReads, reads);
+    expect(sent, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
 }

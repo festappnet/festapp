@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fstapp/services/exception_handler.dart';
 
 import '../member_access_batch.dart';
+import '../member_access_delivery.dart';
 import '../../single_data_grid/single_data_grid_controller.dart';
 
 import 'package:fstapp/data_services/rights_service.dart';
@@ -80,7 +81,13 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
   MemberAccessBatch? batch;
   bool get selected => widget.recipients.isNotEmpty;
   bool get intentLocked => batch != null;
-  Map<String, dynamic>? status;
+  late final MemberAccessDelivery delivery;
+  Map<String, dynamic>? get status => delivery.status;
+  bool get current =>
+      mounted &&
+      !invalidated &&
+      actor == Supabase.instance.client.auth.currentUser?.id &&
+      ClientSyncRuntime.isCurrentMutationContext(contextToken);
   bool busy = false;
   bool invalidated = false;
   late final String? actor;
@@ -108,11 +115,21 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
         'is_approver': false,
         'is_cleaning_crew': false,
       });
+    delivery = MemberAccessDelivery(
+      readStatus: () => commands.status(widget.scope, widget.scopeId),
+      isCurrent: () => current,
+      selectedUserIds: widget.recipients.map((r) => r.userId).toSet(),
+    )..addListener(deliveryChanged);
     load();
+  }
+
+  void deliveryChanged() {
+    if (current) setState(() {});
   }
 
   @override
   void dispose() {
+    delivery.dispose();
     authChanges.cancel();
     RightsService.occasionLinkModelNotifier.removeListener(contextChanged);
     email.dispose();
@@ -129,27 +146,14 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
       return;
     setState(() {
       invalidated = true;
-      status = null;
+      delivery.stop();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) Navigator.of(context).pop();
     });
   }
 
-  Future<void> load() async {
-    try {
-      final value = await commands.status(widget.scope, widget.scopeId);
-      if (mounted)
-        setState(() {
-          status = value;
-        });
-    } catch (_) {
-      if (mounted)
-        setState(() {
-          outcome = t('loadFailed');
-        });
-    }
-  }
+  Future<void> load() => delivery.refresh(restart: true);
 
   Future<void> run(Future<void> Function() action, {String? success}) async {
     if (busy) return;
@@ -159,13 +163,15 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
     });
     try {
       await action();
-      if (mounted)
+      if (current) {
         setState(() {
           outcome =
               success ??
-              t(batch != null && !batch!.complete ? 'batchPartial' : 'queued');
+              (batch != null && !batch!.complete ? t('batchPartial') : null);
         });
-      await load();
+        // Delivery reads are independent of command commit and never block Close.
+        unawaited(delivery.refresh());
+      }
     } on MemberAccessFailure catch (error) {
       if (mounted)
         setState(() {
@@ -202,7 +208,12 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
             actor == Supabase.instance.client.auth.currentUser?.id &&
             ClientSyncRuntime.isCurrentMutationContext(contextToken),
         onProgress: () {
-          if (mounted) setState(() {});
+          if (current) {
+            for (final receipt in batch!.confirmed.values) {
+              delivery.track(receipt);
+            }
+            setState(() {});
+          }
         },
       );
       return;
@@ -211,7 +222,7 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(address))
       throw const MemberAccessFailure('invalid_email');
     final saving = mode == 'save_and_notify';
-    await commands.send({
+    final receipt = await commands.send({
       'scope': {'type': widget.scope, 'id': widget.scopeId},
       'operation': saving ? 'save_member_and_invite' : 'send_invitation',
       'communication': saving ? 'notify_existing_access' : mode,
@@ -224,6 +235,7 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
           'data': {'email': address},
         },
     });
+    delivery.track(receipt);
   });
   String failureText(String reason) {
     const reasons = {
@@ -256,21 +268,51 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
     if (receipt != null) {
       final communication = receipt['communication'] as Map?;
       final messageId = communication?['messageId'];
-      final messages = status?['messages'] as List? ?? [];
-      final matching = messages.where(
-        (message) => message['messageId'] == messageId,
-      );
-      lines.add(
-        t(
-          matching.isEmpty
-              ? (communication?['state'] as String? ?? 'queued')
-              : matching.first['state'] as String,
-        ),
-      );
+      lines.add(deliveryLabel(delivery.states[messageId] ?? 'unknown'));
     } else if (batch?.failures[recipient.userId] != null) {
       lines.add(failureText(batch!.failures[recipient.userId]!));
     }
     return lines.join('\n');
+  }
+
+  String deliveryLabel(String state) => t(switch (state) {
+    'queued' => 'deliveryQueued',
+    'failed' => 'deliveryFailed',
+    'unknown' || 'dispatch_unresolved' => 'deliveryUnknown',
+    _ => state,
+  });
+
+  Widget deliveryProgress() {
+    final counts = <String, int>{};
+    for (final state in delivery.states.values) {
+      counts[state] = (counts[state] ?? 0) + 1;
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              '${t('deliveryProgress')}: ${delivery.delivered}/${delivery.states.length}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (delivery.watching) ...[
+            LinearProgressIndicator(
+              value: delivery.delivered / delivery.states.length,
+            ),
+            const SizedBox(height: 8),
+          ],
+          for (final entry in counts.entries)
+            Text('${deliveryLabel(entry.key)}: ${entry.value}'),
+          if (delivery.watching) Text(t(busy ? 'working' : 'deliveryWatching')),
+          if (delivery.delayed) Text(t('deliveryDelayed')),
+        ],
+      ),
+    );
   }
 
   @override
@@ -356,6 +398,7 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
                               roles[entry.key] = value!;
                             }),
                     ),
+                if (delivery.states.isNotEmpty) deliveryProgress(),
                 if (outcome != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -372,12 +415,20 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
                     ),
                     IconButton(
                       tooltip: t('refresh'),
-                      onPressed: busy ? null : load,
+                      onPressed: delivery.reading ? null : load,
                       icon: const Icon(Icons.refresh),
                     ),
                   ],
                 ),
-                if (status == null) const LinearProgressIndicator(),
+                if (delivery.showingLoading) const LinearProgressIndicator(),
+                if (delivery.readFailed)
+                  Text(
+                    t(
+                      delivery.reading
+                          ? 'deliveryReadSlow'
+                          : 'deliveryReadFailed',
+                    ),
+                  ),
                 if (status != null && invitations.isEmpty && messages.isEmpty)
                   Text(t('not_requested')),
                 for (final invitation in invitations)
@@ -420,8 +471,10 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
                           onPressed: busy
                               ? null
                               : () => run(
-                                  () => commands.resend(
-                                    invitation['id'] as String,
+                                  () async => delivery.track(
+                                    await commands.resend(
+                                      invitation['id'] as String,
+                                    ),
                                   ),
                                 ),
                         ),
@@ -431,7 +484,11 @@ class _MemberAccessDialogState extends State<MemberAccessDialog> {
                 for (final message in messages)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(t(message['state'] as String)),
+                    title: Text(
+                      deliveryLabel(
+                        MemberAccessDelivery.normalize(message['state']),
+                      ),
+                    ),
                     subtitle: Text(
                       '${message['recipient'] ?? ''} - ${t(message['code'] == 'TEAM_INVITATION'
                           ? 'invite_to_accept'

@@ -3149,6 +3149,14 @@
         "bankManualPrepared": "Údaje k prevodu sú pripravené. QR pre túto menu nie je dostupný. Banka prevod zatiaľ nepotvrdila."
     },
     "MemberAccess": {
+    "deliveryProgress": "Doručené e-maily",
+    "deliveryQueued": "Vo fronte",
+    "deliveryFailed": "Doručenie sa nepodarilo",
+    "deliveryUnknown": "Stav doručenia nie je známy",
+    "deliveryWatching": "Stav doručenia sa aktualizuje automaticky. Dialóg môžete zavrieť.",
+    "deliveryDelayed": "Doručenie trvá dlhšie. Automatické kontroly sú pozastavené; aktuálny stav zistíte tlačidlom Obnoviť stav. Zatvorením dialógu doručovanie nezrušíte.",
+    "deliveryReadFailed": "Stav doručenia sa nepodarilo obnoviť. Zobrazuje sa posledný známy stav. Skúste tlačidlo Obnoviť stav.",
+    "deliveryReadSlow": "Načítanie stavu trvá dlhšie. Dialóg môžete zavrieť a znova otvoriť.",
     "selectedRecipients": "Vybraní príjemcovia",
     "currentPermissions": "Súčasné oprávnenia",
     "noPermissions": "Bez ďalších oprávnení",
