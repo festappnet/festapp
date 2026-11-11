@@ -471,6 +471,112 @@
     } };
   }
 
+  // src/embed/host_cookiebot.js
+  var events3 = [
+    "CookiebotOnConsentReady",
+    "CookiebotOnLoad",
+    "CookiebotOnAccept",
+    "CookiebotOnDecline",
+    "CookiebotOnDialogDisplay"
+  ];
+  var uuid = (value) => typeof value === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
+  var instant = (value) => typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+  var consentId = (value) => typeof value === "string" && value.length <= 256 && /^[A-Za-z0-9+/=_-]+$/.test(value) && !/^-?[01]$/.test(value);
+  function persisted(doc, id) {
+    const cookies = doc.cookie.split(";").map((value2) => value2.trim()).filter((value2) => value2.startsWith("CookieConsent="));
+    if (cookies.length !== 1) return false;
+    let value;
+    try {
+      value = decodeURIComponent(cookies[0].slice("CookieConsent=".length));
+    } catch {
+      return false;
+    }
+    const key = `stamp:'${id}'`, at = value.indexOf(key);
+    return value.startsWith("{") && value.endsWith("}") && (value.match(/[{,]stamp:/g) || []).length === 1 && at > 0 && "{,".includes(value[at - 1]) && ",}".includes(value[at + key.length]);
+  }
+  function loader(win, config) {
+    const scripts = [...win.document.querySelectorAll("script[src]")].filter((script2) => {
+      const url2 = new URL(script2.src, win.document.baseURI);
+      return url2.origin === "https://consent.cookiebot.com" && url2.pathname === "/uc.js";
+    });
+    if (scripts.length !== 1) return null;
+    const script = scripts[0], url = new URL(script.src);
+    const attribute = script.getAttribute("data-cbid"), query = url.searchParams.getAll("cbid");
+    if (query.length > 1 || !attribute && !query.length || [attribute, ...query].filter((value) => value !== null).some((value) => !uuid(value) || value.toLowerCase() !== config.cbid)) return null;
+    return { tcf: !!script.getAttribute("data-framework") || !!url.searchParams.get("data-framework") };
+  }
+  function createCookiebotSource(win, input) {
+    let config;
+    try {
+      config = typeof input === "string" ? JSON.parse(input) : { ...input };
+      const origin = new URL(config.origin);
+      if (config.provider !== "cookiebot" || ![config.organization, config.unit].every((value) => Number.isSafeInteger(value) && value > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !uuid(config.cbid) || origin.origin !== config.origin || origin.protocol !== "https:" || !instant(config.consentValidFrom) || !Number.isSafeInteger(config.maxAgeSeconds) || config.maxAgeSeconds <= 0 || config.maxAgeSeconds > 365 * 86400) config = null;
+      else config = Object.freeze({ ...config, cbid: config.cbid.toLowerCase(), validFrom: Date.parse(config.consentValidFrom) });
+    } catch {
+      config = null;
+    }
+    const listeners = /* @__PURE__ */ new Set();
+    let timer, last, pending = false, matched;
+    const read = (scope) => {
+      try {
+        if (!config || pending || win.location.origin !== config.origin || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
+        const script = loader(win, config), cmp = win.Cookiebot, consent = cmp?.consent;
+        if (!script || consent?.method !== "explicit" || consent.necessary !== true || ![consent.preferences, consent.statistics, consent.marketing, cmp.consented, cmp.declined, cmp.hasResponse].every((value) => typeof value === "boolean") || cmp.regulations?.gdprApplies !== true || cmp.regulations.ccpaApplies !== false || typeof cmp.regulations.lgpdApplies !== "boolean" || consent.services !== void 0 || // Undocumented account mode; when exposed it must be an opt-in mode.
+        cmp.responseMode !== void 0 && !["optin", "leveloptin"].includes(cmp.responseMode)) return null;
+        const accepted = consent.preferences || consent.statistics || consent.marketing;
+        if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
+        const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
+        if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) || utc < config.validFrom || utc > now + 6e4 || now - utc >= config.maxAgeSeconds * 1e3) return null;
+        if (persisted(win.document, id)) matched = { id, at: now };
+        else if (matched?.id !== id || now - matched.at >= 1500) return null;
+        return {
+          consentRevision: config.consentRevision,
+          analytics: consent.statistics,
+          marketing: consent.marketing && !script.tcf && typeof win.__tcfapi === "undefined"
+        };
+      } catch {
+        return null;
+      }
+    };
+    const tick = () => {
+      if (!listeners.size) return;
+      const next = JSON.stringify(read());
+      if (next === last) return;
+      last = next;
+      for (const listener of [...listeners]) {
+        try {
+          listener();
+        } catch {
+        }
+      }
+    };
+    const changed = () => {
+      if (pending) return;
+      pending = true;
+      win.queueMicrotask(() => {
+        pending = false;
+        tick();
+      });
+    };
+    return { read, subscribe(listener) {
+      listeners.add(listener);
+      if (listeners.size === 1 && config) {
+        last = JSON.stringify(read());
+        for (const event of events3) win.addEventListener(event, changed);
+        timer = win.setInterval(tick, 1e3);
+      }
+      return () => {
+        listeners.delete(listener);
+        if (!listeners.size) {
+          win.clearInterval(timer);
+          timer = void 0;
+          last = void 0;
+          for (const event of events3) win.removeEventListener(event, changed);
+        }
+      };
+    } };
+  }
+
   // src/embed/protocol.js
   var namespace = "festapp-embed";
   var protocol = 1;
@@ -1153,7 +1259,7 @@
           provider = JSON.parse(input)?.provider;
         } catch {
         }
-        const createSource = provider === "cookieconsent" ? createCookieConsentSource : createComplianzSource;
+        const createSource = provider === "cookiebot" ? createCookiebotSource : provider === "cookieconsent" ? createCookieConsentSource : createComplianzSource;
         consentSource.connect(createSource(window, input));
       }
       installHostConsentLink(window, productOrigin, consentSource);

@@ -463,6 +463,64 @@ The underlying GCM iframe bridge and Complianz adapter are unchanged.
 
 Sources and conservative boundaries: [adapter research](../plans/consent-link-cmp-adapters-2026-11-11.md).
 
+### Configured Cookiebot source
+
+Standard sources also include Cookiebot (`provider:"cookiebot"`). Map Cookiebot
+statistics to analytics and marketing to marketing. The ordinary loader from the
+Cookiebot Manager is enough; both automatic and manual blocking work:
+
+```html
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js"
+  data-cbid="12345678-1234-1234-1234-123456789abc" data-blockingmode="auto"></script>
+<script defer src="https://vstupenky.online/embed.js" data-cookieconsent="ignore"
+  data-festapp-consent='{"provider":"cookiebot","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","cbid":"12345678-1234-1234-1234-123456789abc","origin":"https://organizer.example","consentValidFrom":"2026-11-11T00:00:00.000Z","maxAgeSeconds":15552000}'></script>
+```
+
+Replace every example value. Use `analytics.consent_revision` from form metadata,
+the actual organization/Unit, the website's exact HTTPS origin and the loader's
+CBID (attribute or `?cbid=` query). Exactly one official `.com/uc.js` loader must
+remain in the DOM. Both identifiers must agree if attribute and query are present.
+Opt-in is read from the runtime state, not from loader attributes: the choice
+must be explicit (`consent.method`), GDPR must apply and CCPA must not; implied
+choices, a non-opt-in account mode and unknown state keep the local form notice.
+The persisted `CookieConsent` record must carry this tab's consent ID, so a
+choice in another tab or a removed record ends the transfer within about 2 s. Changing CBID or
+origin invalidates the mapping. `data-blockingmode="none"` or an omitted blocking
+attribute uses manual blocking; this does not change consent eligibility.
+`data-cookieconsent="ignore"` keeps the helper available with auto-blocking.
+
+**Cookiebot's public SDK provides no comparable saved/current policy revision.**
+Neither consent ID/stamp nor the cookie's undocumented `ver` is treated as one.
+Required `consentValidFrom` is the UTC effective instant of the archived notice
+and its mapping to Festapp's semantic revision (exact ISO format with milliseconds
+and Z). Only choices at or after it can transfer. `maxAgeSeconds` is required,
+positive and at most 31536000; set it no greater than the actual consent lifetime
+configured in Cookiebot. The example uses 180 days. When the notice, recipients,
+purposes, CBID or scope change, archive the new notice, renew Cookiebot consents,
+and update the cutoff and `consentRevision`. Never relabel old records. This
+organizer assertion does not verify notice contents, bind a cookie cryptographically
+to CBID or discover remote configuration changes automatically.
+
+Import requires `hasResponse`, explicit `consent.method`, consistent boolean
+`consented`/`declined` and categories, a valid `consentUTC`, and a matching fresh
+CookieConsent cookie with stamp, timestamp and categories. Optional API stamp/ID
+fields, if present, must agree. Missing, stale, malformed, expired, per-service or
+unprovable records return `null`, remain configured and never fall back to GCM.
+A saved refusal transfers without another notice. Cookie parsing accepts only
+flat scalar objects, never executes cookie text, and rejects ambiguous encodings.
+
+The five window events `CookiebotOnConsentReady`, `CookiebotOnLoad`,
+`CookiebotOnAccept`, `CookiebotOnDecline`, `CookiebotOnDialogDisplay` coalesce in
+a microtask and notify only on a changed result. A one-second interval detects
+expiry/removal and other-tab changes. If storage and cached API disagree, the
+visit import ends; reload the website to adopt the other tab's new choice.
+TCF (`__tcfapi`, `data-framework="IAB"`/`"TCF"`, also the query form) always denies
+marketing; vendor/purpose choices cannot become a blanket advertising grant.
+
+Official sources and limits: [Cookiebot research](../plans/consent-link-cmp-adapters-2026-11-11.md#etapa-cookiebot--rešerše-před-implementací).
+Live Cookiebot auto/manual blocking is verified by the website administrator;
+repository tests model the documented SDK boundary without network requests.
+
 `consent_revision` binds organization/Unit, destination code, privacy URL, notice
 text/title, consent version, runtime profile, collector origins and purposes.
 It excludes runtime build revision/origin and approved parent origins. Technical

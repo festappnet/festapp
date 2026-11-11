@@ -52,3 +52,96 @@ Ověřeno:
   nespustí (stávající pravidlo odkazu, beze změny).
 
 Cookiebot a CookieYes jsou další etapy.
+
+## Etapa Cookiebot — rešerše před implementací
+
+Rozsah: pouze Cookiebot, bez změny hotového CookieConsent v3, Complianzu a GCM.
+Živou lištu v automatickém i ručním blokování ověří správce na svém webu;
+jednotkové testy modelují dokumentovanou hranici, nestahují Cookiebot runtime.
+
+| Oblast | Oficiální doklad a konzervativní rozhodnutí |
+| --- | --- |
+| Výslovná volba | SDK dokumentuje `consent.{necessary,preferences,statistics,marketing,method}`, `hasResponse`, `consented`, `declined`. `method` je explicit/implied/null; staré neznámé volby jsou implied. Vyžadujeme explicit, booleany (včetně hasResponse) a konzistentní consented/declined. hasResponse je při otevřeném renew false, i když uložená volba dál platí (změřeno), proto převzetí nepodmiňuje; váže ho uložené ID souhlasu. Pouhá událost ani otevření/zavření dialogu nejsou volbou. [SDK](https://www.cookiebot.com/en/developer/). |
+| Opt-in a regulace | SDK zveřejňuje gdprApplies/ccpaApplies/lgpdApplies; to je geolokace, nikoli nastavení lišty. Běžný loader nemá data-type ani data-level (změřeno), režim pochází z nastavení účtu. Opt-in proto odvozujeme z runtime: method explicit, gdprApplies true, ccpaApplies false. Nedokumentované `responseMode` (naměřeno `leveloptin`) je-li přítomno, musí být optin/leveloptin. Implied, jiný či neznámý režim vrátí null. Automatické versus ruční blokování není režim souhlasu a není podmínkou převzetí. [SDK](https://www.cookiebot.com/en/developer/), [automatické blokování](https://support.cookiebot.com/hc/en-us/articles/360009074960-Automatic-cookie-blocking). |
+| CBID / doména | data-cbid nebo parametr cbid na `https://consent.cookiebot.com/uc.js` označuje skupinu domén, ne verzi zásad. Vyžadujeme právě jeden takový script, shodné povinné `cbid` konfigurace a povinný `origin` shodný s aktuálním webem. Při změně CBID nebo originu vracíme null; kopie staré cookie sama CBID nedokládá. [SDK](https://www.cookiebot.com/en/developer/), [skupiny a sdílení](https://support.cookiebot.com/hc/en-us/articles/360003792573-Cross-domain-Consent-Sharing-in-the-Cookiebot-Admin). |
+| Revize / obnova | Ve zveřejněném seznamu SDK není aktuální a uložená revize zásad k porovnání. Support doporučuje obnovovat podle `Cookiebot.consentUTC`. Povinné `consentValidFrom` (UTC ISO datum s časem) mapuje archivované znění na consentRevision; starší záznamy se odmítnou. Při změně zásad správce nastaví nový cutoff, obnoví souhlasy v Cookiebotu a aktualizuje mapování. To není automatické ověření obsahu zásad ani kryptografické přiřazení CBID; správce nesmí přiřadit nový rozsah starému cutoffu. [Cutoff](https://support.cookiebot.com/hc/en-us/articles/12875664186268-Renewing-consents-after-a-specific-cutoff-date), [obnova](https://support.cookiebot.com/hc/en-us/articles/26380933353372-Renew-existing-user-consents-in-the-Cookiebot-Manager). |
+| stamp / consentID / ver | Seznam veřejných SDK vlastností nepopisuje `consent.stamp` ani `consentID`. Support popisuje náhodný klíč pro vyhledání záznamu a ukazuje cookie s `stamp`, `utc`, `ver`. Není doložen význam `ver` jako verze zásad ani stabilní vztah consentID/stamp: `ver` proto nepoužíváme jako revizi. Naměřeno: `consentID` a `consent.stamp` jsou vždy přítomné a shodné (bez volby `'0'`, po volbě nový base64 klíč). Vyžadujeme je shodné a platné (ne 0/-1). Z cookie čteme jen pole `stamp`, které musí být právě jedno a shodné s consentID; ostatní pole (kategorie, ver, utc, region) neinterpretujeme. Jiný formát vrací null. [Log souhlasů](https://support.cookiebot.com/hc/en-us/articles/360003782654-Logging-and-demonstration-of-user-consents), [oficiální příklad cookie](https://support.cookiebot.com/hc/en-us/articles/360006346473-Extracting-cookie-information-via-API), [SDK](https://www.cookiebot.com/en/developer/). |
+| Expirace / jiná karta | Support uvádí nastavitelnou dobu platnosti, výchozích 12 měsíců a zkrácení prohlížečem. Veřejné SDK nedává getter skutečné expirace cookie. Povinné maxAgeSeconds (nejvýše 365 dní) musí být nejvýše dobou nastavenou správcem; kontrolujeme consentUTC (tolerance 60 s do budoucnosti, změřený předstih je jednotky ms) a uložený stamp. Odstranění/neshoda vrací null i při starém API v paměti; neshoda vzniklá do 1,5 s po shodě téhož ID je zápis nové volby v běhu (Cookiebot zapíše cookie o pár ms dřív než consentID/consentUTC), delší či počáteční neshoda je jiná karta nebo smazaný záznam. Interval 1 s doplňuje události. Neměníme cookies ani neprodlužujeme expiraci. [Expirace](https://support.cookiebot.com/hc/en-us/articles/360023003294-Cookie-consent-expiration-in-Safari-12-1-and-newer), [čtení cookie](https://www.cookiebot.com/en/developer/). |
+| Události | CookiebotOnConsentReady, CookiebotOnLoad, CookiebotOnAccept, CookiebotOnDecline, CookiebotOnDialogDisplay na window. Accept/Decline mohou nastat i při obnovení uložené volby, nikoli pouze při kliknutí. Čteme po microtasku a oznamujeme jen změnu výsledku. [SDK](https://www.cookiebot.com/en/developer/). |
+| Služby / TCF | Základní SDK dokumentuje kategorie, nikoli obecné per-service API. Neinterpretujeme nezdokumentované per-service struktury (null). TCF dovoluje samostatné volby vendorů a účelů: marketing proto zůstává false při __tcfapi nebo data-framework IAB/TCF (také query data-framework). Neprovádíme projekci vendorů do celé kategorie. [TCF](https://support.cookiebot.com/hc/en-us/articles/360007652694-Cookiebot-CMP-and-the-Transparency-and-Consent-Framework-TCF), [SDK](https://www.cookiebot.com/en/developer/). |
+
+### Cookiebot — měření skutečné lišty (2026-11-11)
+
+Testovací web s CBID účtu, `/` (data-blockingmode auto) a `/manual/` (bez
+blokování), headless Chromium, Firefox a WebKit, čistý profil, česká IP.
+Výsledky jsou ve všech třech enginech a na obou stránkách stejné.
+
+- Loader: jen `id`, `src`, `data-cbid`, `type` (a `data-blockingmode` u auto).
+  Bez `data-type`/`data-level`. Lišta se zobrazí i při `navigator.webdriver`.
+- Bez volby: hasResponse false, consented/declined false, consentID a
+  consent.stamp `'0'`, method null, consentUTC null, cookie chybí,
+  regulations `{gdprApplies:true,ccpaApplies:false,lgpdApplies:false}`.
+  Nedokumentované: responseMode `leveloptin`, consentLevel `strict`.
+- Přijetí / odmítnutí / jen statistiky: hasResponse true, method explicit,
+  nový consentID = consent.stamp, consentUTC je Date (o 10 až 350 ms po kliknutí,
+  při CookiebotOnConsentReady až o 14 ms před Date.now()). consented/declined
+  odpovídají kategoriím. `consent.services` neexistuje, `__tcfapi` neexistuje.
+- Cookie `CookieConsent` (Secure, SameSite Lax, platnost 12 měsíců):
+  `{stamp:'…',necessary:true,preferences:…,statistics:…,marketing:…,method:'explicit',ver:1,utc:…,region:'cz'}`,
+  v document.cookie s `%27` a `%2C`. localStorage nepoužívá.
+- Reload: stejné ID, utc i kategorie; consentLifetime je null.
+- Renew (otevřený dialog): hasResponse false, isRenewal true, ostatní (consented,
+  ID, kategorie, cookie) zůstává. Nová volba: nejdřív se změní kategorie, pak se
+  zapíše cookie s novým stamp a až v dalším tasku consentID/consentUTC.
+- Jiná karta a smazaná cookie: API původní karty se nezmění (ani po 12 s),
+  takže samotné API nestačí; uložený stamp je nutný k odhalení jiné volby a
+  expirace. Veřejný getter cookie SDK nedokumentuje (`getCookie` existuje, ale
+  není v seznamu API), proto adaptér čte jen pole stamp.
+
+Konfigurace provider:'cookiebot', organization, unit, consentRevision a povinné
+cbid, origin, consentValidFrom, maxAgeSeconds. Mapování statistics → analytics,
+marketing → marketing. Neplatná konfigurace zůstává configured a denied bez GCM.
+Fixture modeluje naměřený tvar (loader bez data-type/level, consentID '0',
+renew, kódování cookie). Autoritou kategorií a metody je SDK; z cookie se bere
+jen stamp.
+
+### Cookiebot — výsledek implementace
+
+- Nový `host_cookiebot.js` a výběr provideru ve standardním host.js; regenerovaný
+  embed.js. Ostatní adaptéry, GCM, transport odkazů, manifest a registry beze změny.
+- Jednotkové testy v `host_cookiebot.test.js`, vlastní dokumentovaná fixture a
+  integrační `form_consent_link_cookiebot.test.js` se skutečným generovaným
+  helperem, Klaro a FormMeasurementSession. Žádné stažení Cookiebot runtime,
+  simulace síťového blokování ani tvrzení o živé kompatibilitě.
+- Zahrnuto přijetí/odmítnutí/obě částečné volby, preferences-only, implied,
+  neznámé regulace/opt-out, CBID/origin/cutoff, expirace, chybějící a rozbité API,
+  neplatná konfigurace bez GCM fallbacku, TCF, neplatné/duplicitní cookie,
+  coalescing/duplicitní události, jiná karta, retirement listenerů a intervalů,
+  local-choice precedence, replay, lease, změna scope, zavření/reload webu.
+- Doplněn stávající CI vlastník web-measurement a inventář, integrační dokumentace,
+  CS/EN nápověda s ukázkou konfigurace a CHANGELOG. Žádné nové závislosti.
+
+Ověření finálního cíleného stavu: 113/113 Cookiebot testů prošlo; 160/160
+regresních testů Complianz/CookieConsent/GCM/odkazů prošlo; 3/3 help_pages prošly.
+`build_embed.mjs --check`, `build_runtime.mjs --check`,
+`build_measurement_runtime.mjs --check`, CI inventory a `git diff --check` prošly.
+
+Praktické hranice: oficiální loader `.com/uc.js` ponechaný v DOM, opt-in režim
+účtu, známá GDPR regulace bez CCPA, cookie s polem stamp shodným s consentID,
+správně nastavená skutečná platnost a archivovaný cutoff. Původní požadavek
+data-type/data-level byl po měření odstraněn: běžné nasazení ho nemá a adaptér
+by nic nepřevzal. Automatické
+ani ruční blokování se zde nepředstírá. Případné nové/odlišné formáty skončí null;
+není zde univerzální parser všech verzí Cookiebotu. CBID na scriptu a cutoff
+neověřují kryptograficky, ke kterému CBID patřila zkopírovaná cookie.
+
+CookieConsent v3, Complianz a GCM zdrojové soubory i jejich testy jsou proti
+výchozímu stavu této větve beze změny. Nic nebylo commitováno ani publikováno.
+
+Finální celý `test` skript přes pnpm 11.24.0 (`verify-deps-before-run=false`,
+bez automatické reinstalace v sandboxu): běžná sada 1573 testů, 1553 prošlo,
+9 selhalo a 11 přeskočeno. Devět selhání tvoří známý Ghost Listener Logic (1)
+a native_browser při zakázaném loopback listen EPERM (8). DB sada: 31 testů,
+3 prošly, 7 selhalo, 21 přeskočeno; chybí lokální DATABASE_URL / DB prostředí.
+Žádný nový Cookiebot test neselhal. Celkový skript skončil nenulovým kódem;
+nejde o úspěšnou plnou validaci. Dočasné logy byly po zapsání výsledků odstraněny.

@@ -2,6 +2,7 @@ import {createConsentSourceRegistry} from '../components/forms/measurement_conse
 import {installHostConsentLink} from './host_consent_link.js';
 import {createComplianzSource} from './host_complianz.js';
 import {createCookieConsentSource} from './host_cookieconsent.js';
+import {createCookiebotSource} from './host_cookiebot.js';
 import {EmbedChannel} from './channel.js';
 import {limits} from './protocol.js';
 import {measurementProtocol, campaignContext} from '../components/forms/form_measurement_contract.js';
@@ -21,7 +22,8 @@ if (!window.__festappEmbedV1) {
             const input = script.getAttribute('data-festapp-consent');
             let provider;
             try { provider = JSON.parse(input)?.provider; } catch { /* Invalid stays configured and denied. */ }
-            const createSource = provider === 'cookieconsent' ? createCookieConsentSource : createComplianzSource;
+            const createSource = provider === 'cookiebot' ? createCookiebotSource
+                : provider === 'cookieconsent' ? createCookieConsentSource : createComplianzSource;
             consentSource.connect(createSource(window, input));
         }
         installHostConsentLink(window, productOrigin, consentSource);
