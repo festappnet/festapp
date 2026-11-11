@@ -466,7 +466,7 @@ installRuntimeState(window);
        OneSignalDeferred.push(async function(OneSignal) {
            try {
              await OneSignal.User.addTags({
-               app_generation: '',
+               app_generation: 'festapptickets_cutover_v1',
                occasion: ''
              });
              if (callback) callback(null);
@@ -542,7 +542,7 @@ installRuntimeState(window);
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.563+1074";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
