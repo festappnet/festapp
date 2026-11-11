@@ -112,15 +112,15 @@
 
   // src/components/forms/measurement_consent_source.js
   function consentScope(policy) {
-    const revision = policy?.processingRevision ?? policy?.processing_revision;
+    const revision2 = policy?.processingRevision ?? policy?.processing_revision;
     const purposes = policy?.requiredPurposes ?? policy?.required_purposes;
-    if (![policy?.organization, policy?.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof revision !== "string" || !revision.length || revision.length > 128 || purposes !== void 0 && (!Array.isArray(purposes) || purposes.length !== 2 || !purposes.includes("analytics") || !purposes.includes("marketing"))) return null;
+    if (![policy?.organization, policy?.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof revision2 !== "string" || !revision2.length || revision2.length > 128 || purposes !== void 0 && (!Array.isArray(purposes) || purposes.length !== 2 || !purposes.includes("analytics") || !purposes.includes("marketing"))) return null;
     const consentRevision = policy.consentRevision ?? policy.consent_revision;
     if (consentRevision !== void 0 && (typeof consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(consentRevision))) return null;
     return {
       organization: policy.organization,
       unit: policy.unit,
-      processingRevision: revision,
+      processingRevision: revision2,
       requiredPurposes: ["analytics", "marketing"],
       ...consentRevision !== void 0 ? { consentRevision } : {}
     };
@@ -391,6 +391,84 @@
         };
       }
     };
+  }
+
+  // src/embed/host_cookieconsent.js
+  var events2 = ["cc:onConsent", "cc:onChange", "cc:onFirstConsent"];
+  var revision = (value) => Number.isSafeInteger(value) && value > 0;
+  var categoryName = (value) => typeof value === "string" && value.length > 0 && value.length <= 128;
+  var disabled2 = (value) => value === void 0 || value === false;
+  var timestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value));
+  function createCookieConsentSource(win, input) {
+    let config;
+    try {
+      config = typeof input === "string" ? JSON.parse(input) : { ...input };
+      const categories = config.categories === void 0 ? { analytics: "analytics", marketing: "marketing" } : config.categories;
+      if (config.provider !== "cookieconsent" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !revision(config.revision) || !categoryName(categories?.analytics) || !categoryName(categories?.marketing) || categories.analytics === categories.marketing) config = null;
+      else config = Object.freeze({ ...config, categories: Object.freeze({ ...categories }) });
+    } catch {
+      config = null;
+    }
+    const listeners = /* @__PURE__ */ new Set();
+    let timer, last, pending = false;
+    const read = (scope) => {
+      try {
+        if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
+        const cmp = win.CookieConsent;
+        if (cmp?.validConsent() !== true || cmp.getConfig("mode") !== "opt-in" || cmp.getConfig("revision") !== config.revision) return null;
+        const cookie = cmp.getCookie(), categories = cmp.getConfig("categories");
+        if (cookie?.revision !== config.revision || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !timestamp(cookie.consentTimestamp) || !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
+        const choice = {};
+        for (const purpose of ["analytics", "marketing"]) {
+          const name = config.categories[purpose], category = categories?.[name];
+          if (!category || typeof category !== "object" || !disabled2(category.enabled) || !disabled2(category.readOnly) || category.services !== void 0 && (!category.services || typeof category.services !== "object" || Array.isArray(category.services) || Object.keys(category.services).length) || !Array.isArray(cookie.services[name]) || cookie.services[name].length) return null;
+          const accepted = cmp.acceptedCategory(name);
+          if (typeof accepted !== "boolean" || accepted !== cookie.categories.includes(name)) return null;
+          choice[purpose] = accepted;
+        }
+        if (typeof win.__tcfapi !== "undefined") choice.marketing = false;
+        return { consentRevision: config.consentRevision, ...choice };
+      } catch {
+        return null;
+      }
+    };
+    const tick = () => {
+      if (!listeners.size) return;
+      const next = JSON.stringify(read());
+      if (next === last) return;
+      last = next;
+      for (const listener of [...listeners]) {
+        try {
+          listener();
+        } catch {
+        }
+      }
+    };
+    const changed = () => {
+      if (pending) return;
+      pending = true;
+      win.queueMicrotask(() => {
+        pending = false;
+        tick();
+      });
+    };
+    return { read, subscribe(listener) {
+      listeners.add(listener);
+      if (listeners.size === 1 && config) {
+        last = JSON.stringify(read());
+        for (const event of events2) win.addEventListener(event, changed);
+        timer = win.setInterval(tick, 1e3);
+      }
+      return () => {
+        listeners.delete(listener);
+        if (!listeners.size) {
+          win.clearInterval(timer);
+          timer = void 0;
+          last = void 0;
+          for (const event of events2) win.removeEventListener(event, changed);
+        }
+      };
+    } };
   }
 
   // src/embed/protocol.js
@@ -1069,7 +1147,14 @@
       const script = document.currentScript;
       const productOrigin = new URL(script.src, document.baseURI).origin;
       if (script.hasAttribute("data-festapp-consent")) {
-        consentSource.connect(createComplianzSource(window, script.getAttribute("data-festapp-consent")));
+        const input = script.getAttribute("data-festapp-consent");
+        let provider;
+        try {
+          provider = JSON.parse(input)?.provider;
+        } catch {
+        }
+        const createSource = provider === "cookieconsent" ? createCookieConsentSource : createComplianzSource;
+        consentSource.connect(createSource(window, input));
       }
       installHostConsentLink(window, productOrigin, consentSource);
     } catch {

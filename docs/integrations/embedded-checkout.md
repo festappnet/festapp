@@ -364,6 +364,29 @@ vynucené statistiky nebo souhlas po jednotlivých službách ponechá místní 
 Při TCF se automaticky neudělí marketing. Pouhé zavření lišty bez uložené volby
 nic nepovolí. Přímé čtení pevných názvů cookies se nepoužívá; prefix řeší CMP.
 
+Podporované standardní lišty jsou Complianz a CookieConsent v3 od orestbida.
+Pro CookieConsent v3 zpřístupněte veřejné API i při bundlování přes npm:
+
+```js
+import * as CookieConsent from 'vanilla-cookieconsent';
+window.CookieConsent = CookieConsent;
+```
+
+```html
+<script defer src="https://vstupenky.online/embed.js"
+  data-festapp-consent='{"provider":"cookieconsent","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","revision":42,"categories":{"analytics":"analytics","marketing":"marketing"}}'></script>
+```
+
+Hodnota `revision` musí být kladné celé číslo shodné s nastavením CookieConsent
+i uloženou volbou. Archivujte odpovídající zásady a mapování na revizi Festappu.
+Použijte režim `opt-in`; nula, opt-out, předvolené nebo povinné mapované kategorie
+a volby po službách vracejí neznámý stav a ponechají místní lištu. Volitelné
+`categories` určuje oba různé názvy kategorií webu; výchozí jsou `analytics` a
+`marketing`. Při TCF marketing zůstává odmítnutý. Kontroluje se i expirace a změna
+úložiště v jiné kartě; při neshodě se stavem instance je potřeba web znovu načíst.
+Podporována jsou cookies i `useLocalStorage`. Neplatná konfigurace nepřejde na GCM.
+Podrobnosti a zdroje jsou v [rešerši adaptéru](../plans/consent-link-cmp-adapters-2026-11-11.md).
+
 Technická změna runtime ukončí starou vazbu, ale nemění verzi podmínek souhlasu.
 Při změně účelů, příjemců nebo vzdáleného obsahu GTM/zásad zvyšte
 `measurement_consent_version`, zajistěte nové rozhodnutí v CMP a aktualizujte

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Standalone consent links support configured CookieConsent v3 (orestbida) opt-in records, mapped category names and matching saved/current policy revisions, with expiry and other-tab checks.
+
 - Rebuild the paused website GTM preset with per-event GA4 tags, native conversion contact mapping, separate Ads free-registration conversion and the gallery-linked Meta Pixel template. Keep Google built-in consent checks and explicit Meta consent/CAPI settings.
 
 - Standalone consent links support configured Complianz opt-in records with semantic notice scope; Google Consent Mode alone never supplies imported consent.
