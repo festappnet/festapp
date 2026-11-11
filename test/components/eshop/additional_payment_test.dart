@@ -58,6 +58,7 @@ void main() {
   Completer<void>? transactionsGate;
   var transactionsFail = false, transactionsReads = 0, contextReads = 0;
   String? instructionsError;
+  var legacyRefund = false;
   setUpAll(() async {
     storage = await Directory.systemTemp.createTemp('festapp-cash-widget-');
     PathProviderPlatform.instance = _CashDocuments(storage.path);
@@ -87,9 +88,33 @@ void main() {
           return http.Response(
             jsonEncode({
               'order_state': 'sent',
-              'transactions': [],
+              'transactions': legacyRefund
+                  ? [
+                      {
+                        'id': 1,
+                        'payment_info': 55,
+                        'bank_account_id': 99,
+                        'amount': 440,
+                        'currency': 'CZK',
+                        'counter_account': '19-2000145399',
+                        'bank_code': '0800',
+                        'counter_account_name': 'Jan Novák',
+                        'ingest_source': 'legacy',
+                        'transaction_type': 'Okamžitá příchozí platba',
+                      },
+                    ]
+                  : [],
               'paymentOperations': {
+                'available': legacyRefund ? '440.00' : '0',
+                'currency': 'CZK',
                 'methods': [
+                  if (legacyRefund)
+                    {
+                      'id': 'bank',
+                      'displayName': 'Bank',
+                      'instructions': true,
+                      'verification': 'bank_event',
+                    },
                   {
                     'id': 'cash',
                     'displayName': 'Hotově',
@@ -183,6 +208,7 @@ void main() {
     transactionsReads = 0;
     contextReads = 0;
     instructionsError = null;
+    legacyRefund = false;
     recorded = Completer<void>();
     _environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
@@ -567,6 +593,82 @@ void main() {
       expect(find.byKey(const ValueKey('paymentAmount')), findsOneWidget);
       expect(transactionsReads, 1);
       expect(contextReads, 0);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'refund loading preserves legacy incoming bank recipient details',
+    (tester) async {
+      // Open the on-disk intent store on the real clock before the HTTP replay.
+      await tester.runAsync(() => DbOrders.pendingPaymentOperation(5));
+      legacyRefund = true;
+      final gate = transactionsGate = Completer<void>();
+      addTearDown(() {
+        if (!gate.isCompleted) gate.complete();
+      });
+      final order = paidOrder('sent', actions: {'view', 'edit', 'send'});
+      order.paymentInfoModel!.paymentOperations = const PaymentOperationContext(
+        available: '440.00',
+        methods: [
+          PaymentOperationMethod(
+            id: 'bank',
+            displayName: 'Bank',
+            instructions: true,
+            verification: 'bank_event',
+          ),
+        ],
+      );
+      await grid(tester, order);
+      await tapWithIo(
+        tester,
+        find.widgetWithIcon(IconButton, Icons.remove_circle_outline),
+      );
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      gate.complete();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(PaymentOperationDialog), findsOneWidget);
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const ValueKey('paymentAmount')))
+            .controller!
+            .text,
+        '440.00',
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(
+                TextFormField,
+                PaymentOperationStrings.text('recipientName'),
+              ),
+            )
+            .controller!
+            .text,
+        'Jan Novák',
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.widgetWithText(
+                TextFormField,
+                PaymentOperationStrings.text('recipientIban'),
+              ),
+            )
+            .controller!
+            .text,
+        'CZ6508000000192000145399',
+      );
+      expect(
+        find.text(PaymentOperationStrings.text('incomingAccountHint')),
+        findsOneWidget,
+      );
+      expect(transactionsReads, 1);
+      expect(contextReads, 0);
+      expect(payments, isEmpty);
     },
   );
 

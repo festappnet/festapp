@@ -3,6 +3,7 @@ import 'package:festapp_core/eshop.dart';
 import 'transaction_model.dart';
 
 /// Recipient choices come only from active incoming bank facts for this payment.
+/// Historical bank imports keep their original `legacy` provenance.
 class PaymentRefundRecipient {
   const PaymentRefundRecipient({required this.iban, required this.name});
 
@@ -21,6 +22,7 @@ class PaymentRefundRecipient {
           !const {
             'banksync_api',
             'fio_api',
+            'legacy',
           }.contains(transaction.ingestSource)) {
         continue;
       }
