@@ -92,6 +92,7 @@
 .scan-result.allowed .scan-result-icon,.scan-result.complete .scan-result-icon {background:var(--scan-success-bg)}
 .scan-result.pending .scan-result-icon {background:var(--scan-warning-bg)}
 .scan-origin {font-size:.95rem;color:var(--scan-muted)}
+.scan-seat {font-size:1.1rem;margin:4px 0 12px}
 .scan-ticket-code {display:flex;align-items:center;gap:8px;color:var(--scan-muted);font-variant-numeric:tabular-nums;font-size:.95rem}
 .scan-payment,.scan-warning {border:1px solid var(--red-color);border-radius:10px;padding:12px 16px;max-width:1184px;margin:12px auto!important}
 .scan-payment {color:var(--red-color)}
@@ -117,9 +118,9 @@ body.dark-mode .scan-shell .scan-primary:hover:not(:disabled) {background:#a0cdf
 @media(max-width:899px) {.scan-shell {padding:16px}.scan-header {gap:8px}.scan-brand {width:40px;height:40px;border-radius:12px}.scan-brand .scan-icon {width:24px;height:24px}.scan-identity {gap:10px}.scan-eyebrow {font-size:10px}.scan-header h1 {font-size:1.2rem}.scan-header-tools button {padding:10px}.scan-header-tools button span {display:none}.scan-status {padding:12px 0 8px;gap:8px 16px;font-size:.9rem}.scan-shell nav {gap:20px}.scan-shell nav a {flex:1;font-size:.95rem}.scan-input,.scan-detail {padding:16px;border-radius:16px}.scan-layout {gap:16px}.scan-modes {margin-bottom:16px}.scan-modes button {padding:8px 6px;font-size:.95rem}.scan-modes .scan-icon {width:18px;height:18px}.scan-empty {min-height:180px;padding:12px}.scan-empty-icon {width:56px;height:56px;border-radius:16px;margin-bottom:16px}.scan-empty-icon .scan-icon {width:28px;height:28px}.scan-steps {margin-top:16px}.scan-result-status {padding-bottom:12px;margin-bottom:12px}.scan-shell h3 {font-size:1.5rem;margin-top:12px}.scan-products {margin:16px 0;padding-block:12px}.scan-actions {padding-top:12px}.scan-camera {max-height:390px}.scan-shell summary {font-size:.95rem}}
 @media(prefers-reduced-motion:reduce) {.scan-shell * {transition:none!important;animation:none!important}}
 
-.scan-count {display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}
+.scan-count {display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px;margin-inline-start:auto;order:1;text-align:end}
 .scan-percent {display:inline-flex;align-items:center;margin-inline-start:8px;padding:2px 8px;border-radius:6px;background:var(--scan-soft);color:var(--primary-color);font-size:.8rem;font-weight:500}
-.scan-progress {flex-basis:100%;height:6px;border-radius:8px;background:var(--scan-line);overflow:hidden;margin-top:0}
+.scan-progress {order:2;flex-basis:100%;height:6px;border-radius:8px;background:var(--scan-line);overflow:hidden;margin-top:0}
 .scan-progress>span {display:block;height:100%;border-radius:inherit;background:var(--primary-color)}
 /* Camera-first workspace: secondary actions live in the disclosure menu. */
 .scan-header {align-items:center;flex-wrap:nowrap;gap:16px}
@@ -356,5 +357,6 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 @media(min-width:900px){.scan-layout:has(.scan-review-navigation) {grid-template-rows:max-content 1fr}.scan-review-navigation {grid-column:2;grid-row:1;align-self:start}.scan-layout:has(.scan-review-navigation)>.scan-detail {grid-column:2;align-self:start}.scan-layout:has(.scan-review-navigation)>.scan-input {grid-column:1;grid-row:1 / 3}}
 
 /* One current ticket and one full-width primary action. */
-.scan-review-footer .scan-actions {flex-direction:column;align-items:stretch}
+.scan-review-footer .scan-actions {flex-direction:column;align-items:stretch;gap:4px}
 .scan-review-footer [data-confirm],.scan-review-footer [data-next] {width:100%;flex:none}
+.scan-review-footer [data-next]:not(.scan-primary) {min-height:44px;padding:4px 12px;margin:0}
