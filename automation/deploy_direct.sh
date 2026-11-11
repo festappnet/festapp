@@ -143,6 +143,12 @@ if [ ! -f build/web/_worker.js ]; then
   exit 1
 fi
 
+if [ "${FESTAPP_CANONICAL_CUTOVER_RELEASE:-0}" = 1 ]; then
+  node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
+else
+  node automation/release/client_cutover_preflight.mjs
+fi
+
 python3 automation/ci/telemetry.py release.receipt-check python3 automation/release/build_receipt.py verify cloudflare
 if [ "$SKIP_BUILD" -eq 1 ]; then
   python3 automation/ci/telemetry.py release.artifact-checks node automation/verify_web_build.mjs build/web "$VERSION" automation/project.conf cloudflare

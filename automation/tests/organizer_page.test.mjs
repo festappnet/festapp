@@ -20,6 +20,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   mkdirSync(join(root,'web_client/public'),{recursive:true});
   for (const name of ['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg']) cpSync(new URL('../../web_client/public/'+name,import.meta.url),join(root,'web_client/public',name));
   cpSync(new URL('../../assets/brand/vstupenky-online',import.meta.url),join(root,'assets/brand/vstupenky-online'),{recursive:true,filter:source=>!['concepts','source','tools'].includes(source.split('/').pop())});
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web/organizers-media',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
@@ -167,7 +169,7 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   for (const domain of ['vstupenky.online','other.invalid']) {
     const config=join(root,'project.conf');
     writeFileSync(config,readFileSync(new URL('../project.conf',import.meta.url),'utf8').replace(/^DOMAIN=.*$/m,`DOMAIN=${domain}`).replace(/^WEB_LINK=.*$/m,`WEB_LINK=https://${domain}`).replace(/^WEB_ORGANIZER_LANDING_ENABLED=.*$/m,`WEB_ORGANIZER_LANDING_ENABLED=${domain==='vstupenky.online'}`));
-    const run = spawnSync('python3', ['-',output,config,process.cwd()], {input:python,encoding:'utf8'});
+    const run = spawnSync('python3', ['-',output,config,process.cwd()], {input:python,encoding:'utf8',env:{...process.env,PYTHONPATH:join(process.cwd(),'automation/lib')}});
     assert.equal(run.status, 0, run.stderr);
     const xml = readFileSync(output, 'utf8');
     assert.ok(xml.includes(`https://${domain}/`));
@@ -185,6 +187,8 @@ test('English uses the same template, no Czech references, and requires real Eng
   cpSync(new URL('../../web_client/public', import.meta.url), join(root, 'web_client/public'), {recursive:true});
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'automation/release'), { recursive: true });
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});

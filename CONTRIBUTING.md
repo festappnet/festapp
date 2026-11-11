@@ -586,3 +586,64 @@ production assets. Use the generator's `--check` mode when maintaining the fixtu
 Every browser run asserts its original byte length and SHA-256 without repeating
 JPEG encoding. The browser still decodes the same 3000x2000 JPEG
 and verifies the 1200x800 preview and unchanged source bytes.
+
+### Local web build cache and prebuilt uploads
+
+`automation/build_web_bundle.sh <cloudflare|static>` remains the only compiler
+orchestrator. Hosting adapters finish and verify their bundle before sealing
+`festapp-version.json.buildReceipt` with its full inventory in
+`build/web-build-receipt.json`. Flutter and Vite cache their raw output separately
+under `${XDG_CACHE_HOME:-$HOME/.cache}/festapp/web-build/`. Restored files are
+copied before font/JS processing, version stamping, content rendering and PWA/CSP
+generation. Preflights and final verification still run on hits. The exact-source CI gate
+owns the startup suite, preserving main's removal of duplicate release tests.
+
+`automation/web_build_inputs.json` declares conservative input ownership. Unknown
+tracked or untracked files affect both compilers. Ignored generated assets and
+Vite `.env*` files are included explicitly. Resolved dependencies, actual SDK and
+compiler bytes, tool versions, file paths/modes, tenant, build policy and relevant
+environment are fingerprinted by `automation/lib/web_build_cache.mjs`; source SHA
+and mtime are insufficient. Receipts contain hashes, never environment values or
+the private backend release manifest. Flutter version-only reuse is enabled only
+for the SDK revision and compiler bytes proved in `flutterVersionPackaging`.
+Other SDKs conservatively include version until equivalent evidence is added.
+Vite's `APP_VERSION` remains a compilation input. Restored Flutter metadata,
+HTML, bootstrap, main/deferred filenames and PWA state receive the current
+release identity during assembly. Native PackageInfo is unchanged.
+
+Build preparation uses `apply_config.sh <config> --build` to configure the
+catalogue without rendering disposable public documents. Help/organizer pages
+are rendered once against the completed Vite runtime. Their content can change
+without either compiler; SEO changes that modify the Vite HTML still invalidate
+Vite. A separate complete bundle fingerprint protects packaging-only changes
+when validating an upload retry.
+
+Installed dependency hashing preserves actual bytes, modes and alias targets.
+Only pnpm's administrative `prunedAt` and `lastValidatedTimestamp` are normalized;
+changing installed code, settings or dependency bindings invalidates the key.
+The final hosted bundle excludes Flutter's incremental `.last_build_id` scratch
+file; its original raw identity remains in component provenance.
+
+The log distinguishes hits and misses (`inputs-or-first-build`, `invalid-entry`,
+`disabled`). An invalid or incomplete cache entry rebuilds. To diagnose a cache
+problem, run the same adapter with `FESTAPP_WEB_BUILD_CACHE=off`; this disables
+reuse without weakening checks. Per-key locks and the shared Flutter compile
+lock serialize writers. Interrupted owners with no live compiler can be
+recovered; inspect owner metadata before manually removing an incomplete lock.
+Sealing retains up to 12 recent unlocked entries per component, with a 30-day
+maximum age. Cache cleanup never traverses other worktrees.
+
+`automation/deploy_direct.sh --skip-build` validates the receipt and exact file
+inventory, including unexpected additions, current source inputs, packaging
+revision, tenant, hosting target and version before uploading. Reuse the original
+verified `build/web` for an upload retry. On mismatch rebuild through the normal
+adapter; do not edit or bypass the receipt. Exact-source CI admission and image
+and backend preflights remain mandatory.
+
+Build/deploy logs emit `timing phase=... seconds=... status=...` and total time,
+including failed attempts. Measure cold (`FESTAPP_WEB_BUILD_CACHE=off`) and warm
+builds on the same disposable tenant checkout, sequentially, three times per
+main scenario. Include startup tests in total time and report median/range.
+Local measurement never calls the deploy script. Commands, raw-output version
+proof, artifact parity and measured results are recorded in
+`docs/plans/build-speed-RESULT-2026-11-11.md`.

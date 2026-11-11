@@ -1,3 +1,4 @@
+const {writeFileSync, copyFileSync} = require('./lib/write_if_changed.cjs');
 
 const fs = require('fs');
 const path = require('path');
@@ -39,7 +40,7 @@ if (fs.existsSync(pubspecPath)) {
         const currentParams = content.match(regex)[1];
         if (currentParams.trim() !== version) {
             content = content.replace(regex, `version: ${version}`);
-            fs.writeFileSync(pubspecPath, content);
+            writeFileSync(pubspecPath, content);
             console.log(`Updated pubspec.yaml to ${version}`);
         } else {
              console.log(`pubspec.yaml already at ${version}`);
@@ -60,7 +61,7 @@ if (fs.existsSync(packageJsonPath)) {
         const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         if (pkg.version !== semVer) {
             pkg.version = semVer;
-            fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+            writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
             console.log(`Updated package.json to ${semVer}`);
         } else {
             console.log(`package.json already at ${semVer}`);
@@ -85,7 +86,7 @@ if (fs.existsSync(versionJsPath)) {
 }
 
 if (currentVersionJs !== versionJsContent) {
-    fs.writeFileSync(versionJsPath, versionJsContent);
+    writeFileSync(versionJsPath, versionJsContent);
     console.log(`Updated src/version.js to ${version}`);
 } else {
     console.log(`src/version.js is up to date.`);
@@ -104,7 +105,7 @@ for (const entryPoint of ['web/index.html', 'web_client/index.html']) {
     }
     const updatedIndex = indexHtml.replace(buildVersionRegex, `$1"${version}"`);
     if (updatedIndex !== indexHtml) {
-        fs.writeFileSync(indexPath, updatedIndex);
+        writeFileSync(indexPath, updatedIndex);
         console.log(`Updated ${entryPoint} __FESTAPP_BUILD_VERSION__ to ${version}`);
     }
 }

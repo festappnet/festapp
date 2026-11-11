@@ -50,6 +50,8 @@ test('incremental renderer removes published -> draft HTML/feed/sitemap entries 
  for(const dir of ['organizers','platform_updates']) fs.cpSync(new URL('../release/'+dir,import.meta.url),path.join(root,'automation/release',dir),{recursive:true,filter:source=>!source.includes('node_modules')});
  fs.symlinkSync(path.resolve('automation/release/platform_updates/node_modules'),path.join(root,'automation/release/platform_updates/node_modules'),'dir');
  fs.cpSync(new URL('../release/render_organizer_page.mjs',import.meta.url),path.join(root,'automation/release/render_organizer_page.mjs'));
+ fs.mkdirSync(path.join(root,'automation/lib'),{recursive:true});
+ fs.cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),path.join(root,'automation/lib/write_if_changed.cjs'));
  fs.cpSync(new URL('../../web/organizers-media',import.meta.url),path.join(root,'web/organizers-media'),{recursive:true});
  fs.cpSync(f.contentDir,path.join(root,'content/platform-updates'),{recursive:true});
  const config=path.join(root,'project.conf');fs.copyFileSync(new URL('../project.conf',import.meta.url),config);

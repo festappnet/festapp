@@ -1,3 +1,4 @@
+const {writeFileSync, copyFileSync} = require('./lib/write_if_changed.cjs');
 
 const fs = require('fs');
 const path = require('path');
@@ -124,8 +125,8 @@ fontSources.forEach(({ file, source: srcPath }) => {
 console.log(`Found ${fonts.length} fonts. Syncing...`);
 fonts.forEach(font => {
     const flutterTarget = path.join(flutterFontDir, font.appFilename);
-    if (font.srcPath !== flutterTarget) fs.copyFileSync(font.srcPath, flutterTarget);
-    fs.copyFileSync(font.srcPath, path.join(webFontDir, font.webFilename));
+    if (font.srcPath !== flutterTarget) copyFileSync(font.srcPath, flutterTarget);
+    copyFileSync(font.srcPath, path.join(webFontDir, font.webFilename));
 });
 
 if (assetsOnly) process.exit(0);
@@ -147,7 +148,7 @@ if (fs.existsSync(pubspecPath)) {
     
     if (pubspec.match(fontsRegex)) {
         pubspec = pubspec.replace(fontsRegex, newFontSection.trimEnd());
-        fs.writeFileSync(pubspecPath, pubspec);
+        writeFileSync(pubspecPath, pubspec);
         console.log("✔ pubspec.yaml updated.");
     } else {
         console.warn("⚠ Could not find '  fonts:' section to replace.");
@@ -188,7 +189,7 @@ if (fs.existsSync(webThemePath)) {
          });
     }
 
-    fs.writeFileSync(webThemePath, css);
+    writeFileSync(webThemePath, css);
     console.log("✔ theme_config.css updated.");
 }
 
@@ -206,7 +207,7 @@ if (fs.existsSync(dartThemePath)) {
         const capRatio = fontCapHeightRatio(fs.readFileSync(bold.srcPath));
         dart = dart.replace(/static const double\? boldCapHeightRatio = [^;]+;/,
             `static const double? boldCapHeightRatio = ${capRatio};`);
-        fs.writeFileSync(dartThemePath, dart);
+        writeFileSync(dartThemePath, dart);
         console.log("✔ lib/theme_config.dart updated.");
     } else {
          console.warn("⚠ Could not find 'static final fontFamily' in theme_config.dart.");

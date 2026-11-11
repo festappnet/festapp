@@ -15,6 +15,13 @@ sys.path.insert(0, str(ROOT / 'automation/ci'))
 from resources import flutter_slot
 
 MANIFEST = 'festapp-version.json'
+SCHEMA = 2
+
+def details_path(directory):
+    return directory.with_name(directory.name+'-build-receipt.json')
+
+def cache_contract(action, target):
+    return json.loads(command('node', 'automation/lib/web_build_cache.mjs', action, target))
 
 
 def command(*args):
@@ -77,13 +84,14 @@ def inputs(target):
             'tenantId': overlay['tenantId'], 'target': target,
             'configSha256': sha256((ROOT / 'automation/project.conf').read_bytes()),
             'sourceAndGeneratedSha256': sha256(canonical(records)), 'toolchain': tools(),
+            'componentFingerprints': cache_contract('fingerprints', target),
             'flags': {'flutter': ['--release', '--base-href', '/', '--no-web-resources-cdn', '--no-wasm-dry-run'],
                       'environment': {key: sha256(os.environ.get(key, '').encode()) for key in
                                       ('DART_DEFINES', 'FLUTTER_BUILD_MODE', 'FLUTTER_WEB_RENDERER',
                                        'FESTAPP_CANONICAL_CUTOVER_RELEASE')}}}
 
 
-def outputs(directory):
+def output_records(directory):
     records = {}
     for path in sorted(directory.rglob('*')):
         if path.is_symlink():
@@ -96,10 +104,14 @@ def outputs(directory):
             manifest = json.loads(content)
             manifest.pop('buildReceipt', None)
             content = canonical(manifest)
-        records[name] = sha256(content)
+        records[name] = {'sha256': sha256(content), 'mode': path.stat().st_mode & 0o777, 'bytes': len(content)}
     if MANIFEST not in records or len(records) < 2:
         raise ValueError('Incomplete web artifact')
-    return sha256(canonical(records))
+    return records
+
+
+def outputs(directory):
+    return sha256(canonical({name: value['sha256'] for name, value in output_records(directory).items()}))
 
 
 def seal(directory, target, before):
@@ -110,17 +122,34 @@ def seal(directory, target, before):
     current = inputs(target)
     if current != before:
         raise ValueError('Source or toolchain changed during compilation; refusing to seal')
-    manifest['buildReceipt'] = {'schemaVersion': 1, 'builtAtUnixSeconds': time.time(),
-                                'inputs': current, 'outputsSha256': outputs(directory)}
+    proof = cache_contract('provenance', target)
+    if proof['inputFingerprints'] != current['componentFingerprints']:
+        raise ValueError('Compilation inputs changed; refusing to seal')
+    details = {'schemaVersion': SCHEMA, 'inputs': current,
+               'components': proof['components'], 'files': output_records(directory)}
+    details_path(directory).write_text(json.dumps(details, indent=2)+'\n')
+    manifest['buildReceipt'] = {'schemaVersion': SCHEMA, 'builtAtUnixSeconds': time.time(),
+                                'inputs': current, 'components': proof['components'],
+                                'outputsSha256': outputs(directory),
+                                'receiptSha256': sha256(canonical(details))}
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 
 
 def verify(directory, target):
     manifest = json.loads((directory / MANIFEST).read_text())
     receipt = manifest['buildReceipt']
-    if (receipt['schemaVersion'] != 1 or receipt['inputs'] != inputs(target) or
-            receipt['outputsSha256'] != outputs(directory)):
+    details = json.loads(details_path(directory).read_text())
+    if (receipt['schemaVersion'] != SCHEMA or details['schemaVersion'] != SCHEMA or
+            receipt['inputs'] != inputs(target) or details['inputs'] != receipt['inputs'] or
+            receipt['outputsSha256'] != outputs(directory) or
+            receipt['receiptSha256'] != sha256(canonical(details)) or
+            details['files'] != output_records(directory) or
+            details['components'] != receipt['components']):
         raise ValueError('Artifact receipt mismatch; perform a fresh canonical build')
+    proof = cache_contract('provenance', target)
+    if proof['components'] != receipt['components'] or proof['inputFingerprints'] != receipt['inputs']['componentFingerprints']:
+        raise ValueError('Compiler provenance mismatch; rebuild required')
+
     return receipt
 
 
@@ -133,7 +162,7 @@ def preserve(directory):
     if receipt is None:
         return  # Unsealed legacy/partial output is not an immutable artifact.
     actual = outputs(directory)
-    if isinstance(receipt, dict) and receipt.get('schemaVersion') == 1 and receipt.get('outputsSha256') == actual:
+    if isinstance(receipt, dict) and receipt.get('schemaVersion') == SCHEMA and receipt.get('outputsSha256') == actual:
         key = sha256(canonical(receipt))
     else:
         # Preservation is not reuse. Keep altered bytes for diagnosis while a
@@ -143,6 +172,14 @@ def preserve(directory):
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         raise ValueError('Immutable artifact destination already exists; refusing overwrite')
+    detail = details_path(directory)
+    if detail.is_file():
+        retained = directory.parent/'web-artifact-receipts'/(key+'.json')
+        retained.parent.mkdir(parents=True, exist_ok=True)
+        if retained.exists() and retained.read_bytes() != detail.read_bytes():
+            raise ValueError('Immutable receipt destination already exists')
+        if not retained.exists():
+            retained.write_bytes(detail.read_bytes())
     directory.rename(destination)
 
 

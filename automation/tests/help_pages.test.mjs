@@ -6,6 +6,23 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'../..');
+test('compiled help owns fresh bundle sitemap and synchronizes unchanged documents',t=>{
+ const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-built-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
+ const put=(file,content)=>{const target=path.join(temporary,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,content);};
+ put('project.conf','WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\n');
+ put('dist/index.html','<html><head><title>Compiled public client</title></head></html>');
+ put('dist/.vite/manifest.json',JSON.stringify({'src/marketing/help.js':{file:'web-assets/help.js'}}));
+ put('dist/web-assets/help.js','/* compiled helper */');put('dist/assets/translations/cs.json','{}');
+ put('bundle/sitemap.xml','<urlset><url><loc>https://vstupenky.online/events</loc></url></urlset>');
+ const render=()=>spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',path.join(temporary,'project.conf'),'--built-index',path.join(temporary,'dist/index.html'),'--output',path.join(temporary,'bundle/napoveda')],{encoding:'utf8'});
+ const first=render();assert.equal(first.status,0,first.stderr);
+ assert.match(fs.readFileSync(path.join(temporary,'bundle/sitemap.xml'),'utf8'),/https:\/\/vstupenky\.online\/napoveda\/zaciname\//);
+ const index=path.join(temporary,'bundle/napoveda/index.html'),mtime=fs.statSync(index).mtimeMs;
+ put('bundle/napoveda/stale.html','retired guide');const repeat=render();assert.equal(repeat.status,0,repeat.stderr);
+ assert.equal(fs.statSync(index).mtimeMs,mtime);assert.equal(fs.existsSync(path.join(temporary,'bundle/napoveda/stale.html')),false);
+ const sitemap=fs.readFileSync(path.join(temporary,'bundle/sitemap.xml'),'utf8');
+ assert.equal(sitemap.split('https://vstupenky.online/napoveda/zaciname/').length-1,1,'one canonical sitemap entry');
+});
 test('public guides render crawlable linked documents, code generator without unpublished plugin downloads',t=>{
  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
  const target=path.join(temporary,'napoveda');const config=path.join(temporary,'project.conf');

@@ -12,18 +12,34 @@
 # ==============================================================================
 set -e
 
-# Portable in-place sed (GNU on Linux CI, BSD on macOS dev).
-if sed --version >/dev/null 2>&1; then
-    sed_inplace() { sed -i "$@"; }
-else
-    sed_inplace() { sed -i '' "$@"; }
-fi
+# Compare temporary output before replacing a generated input.
+sed_inplace() {
+    local expression="$1" file="$2" temporary
+    temporary="$(mktemp "${file}.XXXXXX")"
+    if sed "$expression" "$file" > "$temporary"; then
+        if ! cmp -s "$file" "$temporary"; then cat "$temporary" > "$file"; fi
+        rm -f "$temporary"
+    else
+        rm -f "$temporary"
+        return 1
+    fi
+}
+write_stdin_if_changed() {
+    local file="$1" temporary
+    temporary="$(mktemp "${file}.XXXXXX")"
+    cat > "$temporary"
+    if ! cmp -s "$file" "$temporary"; then cat "$temporary" > "$file"; fi
+    rm -f "$temporary"
+}
 
 # Usage: ./scripts/configure_project.sh [optional_config_path]
 
 # 1. Load Configuration
 PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 CONFIG_FILE="${1:-$PROJECT_ROOT/automation/project.conf}"
+case "${2:-}" in ''|--build) ;; *) echo 'Usage: apply_config.sh [config] [--build]' >&2; exit 1 ;; esac
+export FESTAPP_WRITE_HELPER="$PROJECT_ROOT/automation/lib/write_if_changed.cjs"
+export PYTHONPATH="$PROJECT_ROOT/automation/lib${PYTHONPATH:+:$PYTHONPATH}"
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "Error: Configuration file not found at $CONFIG_FILE"
@@ -86,6 +102,7 @@ esac
 # project.conf is the sole Flutter SDK pin. FVM files are generated adapters
 # for local tools and IDEs, never independent version owners.
 python3 - "$PROJECT_ROOT" "$FLUTTER_VERSION" <<'PY'
+from write_if_changed import write_text
 import json
 from pathlib import Path
 import sys
@@ -94,15 +111,13 @@ root = Path(sys.argv[1])
 version = sys.argv[2]
 (root / '.fvm').mkdir(exist_ok=True)
 (root / '.vscode').mkdir(exist_ok=True)
-(root / '.fvmrc').write_text(json.dumps({'flutter': version}, indent=2) + '\n')
-(root / '.fvm' / 'fvm_config.json').write_text(
-    json.dumps({'flutterSdkVersion': version}, indent=2) + '\n'
-)
-(root / '.fvm' / 'release').write_text(version + '\n')
+write_text(root / '.fvmrc', json.dumps({'flutter': version}, indent=2) + '\n')
+write_text(root / '.fvm' / 'fvm_config.json', json.dumps({'flutterSdkVersion': version}, indent=2) + '\n')
+write_text(root / '.fvm' / 'release', version + '\n')
 settings_path = root / '.vscode' / 'settings.json'
 settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
 settings['dart.flutterSdkPath'] = f'.fvm/versions/{version}'
-settings_path.write_text(json.dumps(settings, indent=2) + '\n')
+write_text(settings_path, json.dumps(settings, indent=2) + '\n')
 PY
 [[ "$ANDROID_APPLICATION_ID" =~ ^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$ ]] || {
     echo "Error: invalid ANDROID_APPLICATION_ID"; exit 1;
@@ -200,7 +215,7 @@ const document = `${JSON.stringify({
   syncHeadOrigin,
   syncAssetOrigin,
 })}\n`;
-for (const path of paths) fs.writeFileSync(path, document);
+for (const path of paths) require(process.env.FESTAPP_WRITE_HELPER).writeFileSync(path, document);
 NODE
 else
     rm -f "${CLIENT_SYNC_CONFIG_PATHS[@]}"
@@ -269,6 +284,7 @@ if [ -f "$INDEX_FILE" ]; then
     # title and descriptions tenant-owned instead of leaking the generic
     # vstupenky.online branding into every production application.
     python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" <<'PY'
+from write_if_changed import write_text
 import html
 import re
 import sys
@@ -351,7 +367,7 @@ source, count = re.subn(
 )
 if count != 1:
     raise SystemExit(f"missing canonical link in {path}")
-open(path, "w", encoding="utf-8").write(source)
+write_text(path, source, encoding="utf-8")
 PY
     echo "✔ Updated meta tags"
 else
@@ -360,8 +376,9 @@ fi
 
 # Static host fallback; the Cloudflare router supplies the live public catalog.
 if [ -d "$PROJECT_ROOT/web_client/public" ]; then
-    printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" > "$PROJECT_ROOT/web_client/public/robots.txt"
+    printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" | write_stdin_if_changed "$PROJECT_ROOT/web_client/public/robots.txt"
     python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$CONFIG_FILE" "$PROJECT_ROOT" <<'SITEMAP'
+from write_if_changed import write_text
 import html
 import json
 import pathlib
@@ -369,8 +386,7 @@ import subprocess
 import sys
 path, config, root = sys.argv[1:]
 manifest = json.loads(subprocess.check_output(['node', str(pathlib.Path(root) / 'automation/release/organizers/context.mjs'), '--config', config], text=True))
-pathlib.Path(path).write_text(
-    '<?xml version="1.0" encoding="UTF-8"?>\n'
+write_text(pathlib.Path(path), '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     + ''.join(f'  <url><loc>{html.escape(manifest["origin"] + route)}</loc></url>\n' for route in manifest['sitemapPaths'])
     + '</urlset>\n', encoding='utf-8')
@@ -394,6 +410,7 @@ if [ -f "$FLUTTER_INDEX" ]; then
     python3 - "$FLUTTER_INDEX" "${ONESIGNAL_WEB_APP_ID:-}" \
         "${ONESIGNAL_SAFARI_WEB_ID:-}" "${PUSH_APP_GENERATION:-}" \
         "${FORCE_OCCASION_LINK:-}" <<'PY'
+from write_if_changed import write_text
 import re
 import sys
 
@@ -410,25 +427,26 @@ if count != 1:
 source = re.sub(r'safari_web_id: "[^"]*"', f'safari_web_id: "{safari_id}"', source)
 source = re.sub(r"app_generation: '[^']*'", f"app_generation: '{generation}'", source)
 source = re.sub(r"occasion: '[^']*'", f"occasion: '{occasion}'", source)
-open(path, "w", encoding="utf-8").write(source)
+write_text(path, source, encoding="utf-8")
 PY
     sed_inplace "s|<img class=\"initial-logo\" src=\"[^\"]*\"|<img class=\"initial-logo\" src=\"$WEB_LOADING_LOGO_ASSET\"|" "$FLUTTER_INDEX"
     if [ ! -z "$THEME_SEED_2" ]; then
         sed_inplace "s|--festapp-loading-accent: [^;]*;|--festapp-loading-accent: $THEME_SEED_2;|" "$FLUTTER_INDEX"
     fi
     python3 - "$FLUTTER_INDEX" "$PROJECT_ROOT/web_client/index.html" "$WEB_LOADING_STYLE" "$WEB_LOADING_BACKGROUND" <<'BRAND_LOADER'
+from write_if_changed import write_text
 import re, sys
 from pathlib import Path
 flutter, client, style, background = sys.argv[1:]
 for filename in [flutter, client]:
     p = Path(filename); text = p.read_text()
     text = re.sub(r'data-loading-style="[^"]*"', f'data-loading-style="{style}"', text)
-    p.write_text(text)
+    write_text(p, text)
 p = Path(flutter); text = p.read_text()
 text = re.sub(r'(<meta name="theme-color" content=")[^"]*', lambda m: m[1] + background, text)
 text = re.sub(r'(html, body \{ background-color: )#[0-9a-fA-F]{6}', lambda m: m[1] + background, text)
 text = re.sub(r'(background: )#[0-9a-fA-F]{6}(; /\* startup-surface \*/)', lambda m: m[1] + background + m[2], text)
-p.write_text(text)
+write_text(p, text)
 BRAND_LOADER
     echo "✔ Updated web/index.html"
 else
@@ -453,6 +471,7 @@ if [ "$BACKEND_ACTIVATION_PHASE" = canonical ]; then
 fi
 python3 - "$DELETE_ACCOUNT_TEMPLATE" "$DELETE_ACCOUNT_FILE" "$APP_NAME" \
     "$DELETE_ACCOUNT_SUPABASE_URL" "$DELETE_ACCOUNT_ANON_KEY" "$WEB_SUPPORTED_LANGUAGES" <<'PY'
+from write_if_changed import write_text
 import html
 import json
 import sys
@@ -481,7 +500,7 @@ for token, value in replacements.items():
     source = source.replace(token, value)
 if "__FESTAPP_" in source:
     raise SystemExit("Error: unresolved account deletion template token")
-open(output_path, "w", encoding="utf-8").write(source.rstrip() + "\n")
+write_text(output_path, source.rstrip() + "\n", encoding="utf-8")
 PY
 echo "✔ Generated account deletion page"
 
@@ -489,7 +508,7 @@ echo "✔ Generated account deletion page"
 # Generate the installable PWA identity from the same brand source.
 for PWA_MANIFEST in "$PROJECT_ROOT/web/site.webmanifest" "$PROJECT_ROOT/web_client/public/site.webmanifest"; do
     if [ -f "$PWA_MANIFEST" ] && [ -n "$APP_NAME" ] && [ -n "$APP_DESCRIPTION" ]; then
-        node -e 'const fs=require("fs");const p=process.argv[1];const m=JSON.parse(fs.readFileSync(p,"utf8"));const slug=process.argv[5].replace(/^\/+|\/+$/g,"");const start=slug&&process.argv[6]==="true"?"/"+slug+"/event":"/";m.name=process.argv[2];m.short_name=process.argv[3];m.description=process.argv[4];m.id="/";m.start_url=start;m.scope="/";fs.writeFileSync(p,JSON.stringify(m,null,2)+"\n")' "$PWA_MANIFEST" "$APP_NAME" "$APP_TITLE_SHORT" "$APP_DESCRIPTION" "$FORCE_OCCASION_LINK" "$IS_APP_SUPPORTED"
+        node -e 'const fs=require("fs");const p=process.argv[1];const m=JSON.parse(fs.readFileSync(p,"utf8"));const slug=process.argv[5].replace(/^\/+|\/+$/g,"");const start=slug&&process.argv[6]==="true"?"/"+slug+"/event":"/";m.name=process.argv[2];m.short_name=process.argv[3];m.description=process.argv[4];m.id="/";m.start_url=start;m.scope="/";require(process.env.FESTAPP_WRITE_HELPER).writeFileSync(p,JSON.stringify(m,null,2)+"\n")' "$PWA_MANIFEST" "$APP_NAME" "$APP_TITLE_SHORT" "$APP_DESCRIPTION" "$FORCE_OCCASION_LINK" "$IS_APP_SUPPORTED"
         echo "✔ Updated PWA manifest: $PWA_MANIFEST"
     fi
 done
@@ -497,7 +516,7 @@ done
 # 3. Update CNAME file (Domain)
 CNAME_FILE="$PROJECT_ROOT/web_client/public/CNAME"
 mkdir -p "$(dirname "$CNAME_FILE")"
-echo "$DOMAIN" > "$CNAME_FILE"
+echo "$DOMAIN" | write_stdin_if_changed "$CNAME_FILE"
 echo "✔ Updated CNAME"
 
 
@@ -533,6 +552,7 @@ if [ -f "$APP_CONFIG" ]; then
         "$BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL" \
         "$BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY" \
         "$BACKEND_ACTIVATION_CANONICAL_PROFILE_SHA256" <<'PY'
+from write_if_changed import write_text
 import pathlib
 import re
 import sys
@@ -551,7 +571,7 @@ for name, value in zip(names, sys.argv[2:]):
     )
     if count != 1:
         raise SystemExit(f"Could not update web {name}")
-path.write_text(source, encoding="utf-8")
+write_text(path, source, encoding="utf-8")
 PY
     sed_inplace "s|static backendActivationCanonicalOrganizationId = .*;|static backendActivationCanonicalOrganizationId = ${BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID:-0};|g" "$APP_CONFIG"
 
@@ -573,6 +593,7 @@ PY
 
     # Update tenant-specific web behavior from the canonical configuration.
     python3 - "$APP_CONFIG" "$WEB_IS_ALL_UNIT" "$WEB_SUPPORTED_LANGUAGES" <<'PY'
+from write_if_changed import write_text
 import re
 import sys
 
@@ -587,7 +608,7 @@ source = re.sub(r"static isAllUnit = .*;", f"static isAllUnit = {is_all_unit};",
 language_list = ", ".join(repr(language) for language in languages)
 source = re.sub(r"static supportedLanguages = .*;", f"static supportedLanguages = [{language_list}];", source)
 source = re.sub(r"static defaultLanguage = .*;", f"static defaultLanguage = {languages[0]!r};", source)
-open(path, "w", encoding="utf-8").write(source)
+write_text(path, source, encoding="utf-8")
 PY
 
     # Update Web Link
@@ -634,6 +655,7 @@ if [ -f "$FLUTTER_CONFIG" ]; then
     # key in production.
     if [ ! -z "$SUPABASE_ANON_KEY" ]; then
         python3 - "$FLUTTER_CONFIG" "$SUPABASE_ANON_KEY" <<'PY'
+from write_if_changed import write_text
 import pathlib
 import re
 import sys
@@ -648,7 +670,7 @@ source, count = re.subn(
 )
 if count != 1:
     raise SystemExit("Could not update Flutter anonKey")
-pathlib.Path(path).write_text(source, encoding="utf-8")
+write_text(pathlib.Path(path), source, encoding="utf-8")
 PY
     fi
 
@@ -658,6 +680,7 @@ PY
         "$BACKEND_ACTIVATION_CANONICAL_SUPABASE_URL" \
         "$BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY" \
         "$BACKEND_ACTIVATION_CANONICAL_PROFILE_SHA256" <<'PY'
+from write_if_changed import write_text
 import pathlib
 import re
 import sys
@@ -677,7 +700,7 @@ for name, value in zip(names, sys.argv[2:]):
     )
     if count != 1:
         raise SystemExit(f"Could not update Flutter {name}")
-path.write_text(source, encoding="utf-8")
+write_text(path, source, encoding="utf-8")
 PY
     sed_inplace "s|static const int backendActivationCanonicalOrganizationId = .*;|static const int backendActivationCanonicalOrganizationId = ${BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID:-0};|g" "$FLUTTER_CONFIG"
 
@@ -718,6 +741,7 @@ PY
     fi
     python3 - "$FLUTTER_CONFIG" "$PRIVACY_URL" "$PRIVACY_CHOICES_URL" \
         "$TERMS_URL" "$SUPPORT_URL" "$DELETE_ACCOUNT_URL" <<'PY'
+from write_if_changed import write_text
 import pathlib
 import re
 import sys
@@ -737,7 +761,7 @@ for name, value in values.items():
     )
     if count != 1:
         raise SystemExit(f"Could not update Flutter {name}")
-path.write_text(source, encoding="utf-8")
+write_text(path, source, encoding="utf-8")
 PY
 
     sed_inplace "s|static const String syncHeadOrigin = \".*\";|static const String syncHeadOrigin = \"${SYNC_HEAD_ORIGIN:-}\";|g" "$FLUTTER_CONFIG"
@@ -767,6 +791,7 @@ python3 - "$ANDROID_GRADLE" "$ANDROID_MANIFEST" "$PROJECT_ROOT/android/app/src/m
     "$IOS_PROJECT_FILE" "$ANDROID_APPLICATION_ID" "$IOS_BUNDLE_ID" \
     "$IOS_DEVELOPMENT_TEAM" "${IOS_PROVISIONING_PROFILE:-}" \
     "${IOS_ONESIGNAL_PROVISIONING_PROFILE:-}" "$APP_NAME" <<'PY'
+from write_if_changed import write_text
 import pathlib
 import re
 import sys
@@ -779,18 +804,18 @@ if gradle.exists():
     source = gradle.read_text(encoding="utf-8")
     source = re.sub(r'namespace = "[^"]+"', f'namespace = "{android_id}"', source)
     source = re.sub(r'applicationId = "[^"]+"', f'applicationId = "{android_id}"', source)
-    gradle.write_text(source, encoding="utf-8")
+    write_text(gradle, source, encoding="utf-8")
 
 manifest = pathlib.Path(manifest_path)
 if manifest.exists():
     source = manifest.read_text(encoding="utf-8")
     source = re.sub(r'android:label="[^"]*"', f'android:label="{app_name}"', source, count=1)
-    manifest.write_text(source, encoding="utf-8")
+    write_text(manifest, source, encoding="utf-8")
 
 for activity in pathlib.Path(kotlin_root).glob("**/MainActivity.kt"):
     source = activity.read_text(encoding="utf-8")
     source = re.sub(r'^package\s+\S+', f'package {android_id}', source, count=1, flags=re.M)
-    activity.write_text(source, encoding="utf-8")
+    write_text(activity, source, encoding="utf-8")
 
 pbx = pathlib.Path(pbx_path)
 if pbx.exists():
@@ -827,12 +852,13 @@ if pbx.exists():
         return block
 
     source = re.sub(r'buildSettings = \{[\s\S]*?\n\s*\};', signing, source)
-    pbx.write_text(source, encoding="utf-8")
+    write_text(pbx, source, encoding="utf-8")
 PY
 
 # Public associated-domain and OneSignal app-group files are generated too.
 python3 - "$PROJECT_ROOT" "$IOS_DEVELOPMENT_TEAM" "$IOS_BUNDLE_ID" \
     "$IOS_ONESIGNAL_APP_GROUP" "$IOS_ASSOCIATED_DOMAIN" <<'PY'
+from write_if_changed import write_text
 import json
 import pathlib
 import plistlib
@@ -856,7 +882,7 @@ for relative in ('web/apple-app-site-association', 'web/.well-known/apple-app-si
             return f'{team}.{bundle}'
         return value
     data = replace_identifiers(data)
-    path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+    write_text(path, json.dumps(data, indent=2) + '\n', encoding='utf-8')
 
 for relative in (
     'ios/Runner/Info.plist',
@@ -955,8 +981,14 @@ fi
 # Legal and support pages are deterministic generated leaves. Their URLs and
 # tenant identity come from the same project.conf used for the application.
 node "$LEGAL_RENDERER" --config "$CONFIG_FILE"
-node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE"
-node "$PROJECT_ROOT/automation/release/render_help_pages.mjs" --config "$CONFIG_FILE"
+if [ "${2:-}" = --build ]; then
+    # Build documents once, after compilation, using the final Vite runtime.
+    node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE" --catalog-only
+    rm -rf -- "$PROJECT_ROOT/web_client/public/napoveda"
+else
+    node "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" --config "$CONFIG_FILE"
+    node "$PROJECT_ROOT/automation/release/render_help_pages.mjs" --config "$CONFIG_FILE"
+fi
 
 echo "Project configuration applied successfully."
 
@@ -985,6 +1017,7 @@ fi
 node "$PROJECT_ROOT/automation/lib/csp_policy.mjs" --sync-headers
 
 python3 - "$PROJECT_ROOT" "$WEB_ORGANIZER_LANDING_ENABLED" <<'LANDING_CONFIG'
+from write_if_changed import write_text
 from pathlib import Path
 import re,sys
 root, enabled = Path(sys.argv[1]), sys.argv[2]
@@ -995,10 +1028,11 @@ for file, declaration in [('web_client/src/app_config.js', 'static organizerLand
     text = re.sub(pattern, '', text)
     marker = 'class AppConfig {'
     if marker not in text: raise SystemExit('Missing AppConfig class')
-    p.write_text(text.replace(marker, marker + '\n  ' + declaration + enabled + ';', 1))
+    write_text(p, text.replace(marker, marker + '\n  ' + declaration + enabled + ';', 1))
 LANDING_CONFIG
 
 python3 - "$PROJECT_ROOT/lib/app_config.dart" "$WEB_SUPPORTED_LANGUAGES" <<'FLUTTER_LANGUAGES'
+from write_if_changed import write_text
 from pathlib import Path
 import re,sys
 p=Path(sys.argv[1])
@@ -1008,5 +1042,5 @@ if not languages or any(code not in names for code in languages): raise SystemEx
 entries='\n'.join('        LanguageModel(const Locale("'+code+'"), "'+names[code]+'"),' for code in languages)
 source,count=re.subn(r'static List<LanguageModel> availableLanguages\(\) => \[[\s\S]*?\];', 'static List<LanguageModel> availableLanguages() => [\n'+entries+'\n      ];',p.read_text())
 if count != 1: raise SystemExit('Missing Flutter language adapter')
-p.write_text(source)
+write_text(p, source)
 FLUTTER_LANGUAGES

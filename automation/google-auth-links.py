@@ -2,6 +2,10 @@
 """Generate only public verified-link adapters for the currently selected tenant."""
 import json, pathlib, re, sys
 from urllib.parse import urlparse
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / 'lib'))
+from write_if_changed import write_text
+
 root, web_link, android_id, fingerprints = sys.argv[1:]
 root = pathlib.Path(root)
 url = urlparse(web_link)
@@ -30,10 +34,10 @@ if manifest.exists():
         source = re.sub(r'<!-- FESTAPP_GOOGLE_AUTH_LINK_BEGIN -->.*?<!-- FESTAPP_GOOGLE_AUTH_LINK_END -->',block,source,flags=re.S)
     else:
         source = source.replace('        </activity>', '            '+block+'\n        </activity>',1)
-    manifest.write_text(source)
+    write_text(manifest, source)
 assetlinks = [] if not prints else [{'relation':['delegate_permission/common.handle_all_urls'], 'target':{'namespace':'android_app','package_name':android_id,'sha256_cert_fingerprints':prints}}]
 for relative in ['web/.well-known/assetlinks.json','web_client/public/.well-known/assetlinks.json']:
-    path=root/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(assetlinks,indent=2)+'\n')
+    path=root/relative;path.parent.mkdir(parents=True,exist_ok=True);write_text(path, json.dumps(assetlinks,indent=2)+'\n')
 # Existing tenant-generated AASA identifiers stay authoritative.
 for relative in ['web/apple-app-site-association','web/.well-known/apple-app-site-association']:
     path=root/relative
@@ -45,12 +49,12 @@ for relative in ['web/apple-app-site-association','web/.well-known/apple-app-sit
             if 'components' in detail:
                 present = {c.get('/') for c in detail['components']}
                 detail['components'] = [{'/':p} for p in link_paths if p not in present] + detail['components']
-        path.write_text(json.dumps(data,indent=2)+'\n')
+        write_text(path, json.dumps(data,indent=2)+'\n')
 
 well_known = root / 'web/.well-known/apple-app-site-association'
 if well_known.exists():
     for relative in ['web_client/public/.well-known/apple-app-site-association','web_client/public/apple-app-site-association']:
-        path=root/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(well_known.read_text())
+        path=root/relative;path.parent.mkdir(parents=True,exist_ok=True);write_text(path, well_known.read_text())
 headers = root / 'web/_headers'
 if headers.exists():
-    path=root / 'web_client/public/_headers';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(headers.read_text())
+    path=root / 'web_client/public/_headers';path.parent.mkdir(parents=True,exist_ok=True);write_text(path, headers.read_text())

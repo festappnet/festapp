@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import writeIfChanged from '../lib/write_if_changed.cjs';
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,7 +20,7 @@ if (!tenantId) {
   const document = backendActivationDocument(tenantId, phase);
   for (const output of outputs) {
     fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, document, { mode: 0o644 });
+    writeIfChanged.writeFileSync(output, document, { mode: 0o644 });
   }
   process.stdout.write(canonicalBackendActivationSha256(tenantId));
 }

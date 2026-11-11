@@ -22,7 +22,13 @@ export function referenceSourceDigest(root) {
   };
   files.forEach(visit);
   const hash=createHash('sha256');
-  for(const file of [...sources].sort()) hash.update(file+'\0').update(fs.readFileSync(path.join(root,file))).update('\0');
+  for(const file of [...sources].sort()) {
+    const bytes=fs.readFileSync(path.join(root,file));
+    // The generator reads only MCP labels, not unrelated application copy.
+    const input=/^assets\/translations\/(cs|en)\.json$/.test(file)
+      ? JSON.stringify(JSON.parse(bytes).McpConnection) : bytes;
+    hash.update(file+'\0').update(input).update('\0');
+  }
   return hash.digest('hex');
 }
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

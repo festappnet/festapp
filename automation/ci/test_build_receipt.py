@@ -13,6 +13,12 @@ receipt = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(receipt)
 
 
+FINGERPRINTS={'flutter':'f'*64,'vite':'b'*64,'bundle':'c'*64}
+COMPONENTS={name:{'source':'a'*40,'key':FINGERPRINTS[name],'outputHash':'d'*64,'toolchainHash':'e'*64} for name in ['flutter','vite']}
+INPUTS={'source':'fixture','componentFingerprints':FINGERPRINTS}
+def cache_contract(action,target):
+    return FINGERPRINTS if action=='fingerprints' else {'components':COMPONENTS,'inputFingerprints':FINGERPRINTS}
+
 class BuildReceiptTest(unittest.TestCase):
     def test_upload_retry_requires_identical_source_config_tenant_flags_and_artifact(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -30,7 +36,7 @@ class BuildReceiptTest(unittest.TestCase):
             bundle=root/'build/web';bundle.mkdir(parents=True)
             manifest=bundle/'festapp-version.json';manifest.write_text('{"version":"1","main":"main.js"}')
             main=bundle/'main.js';main.write_text('compiled')
-            with patch.object(receipt,'ROOT',root),patch.object(receipt,'tools',return_value={'flutter':'fixture'}):
+            with patch.object(receipt,'ROOT',root),patch.object(receipt,'tools',return_value={'flutter':'fixture'}),patch.object(receipt,'cache_contract',side_effect=cache_contract):
                 initial=receipt.inputs('cloudflare')
                 receipt.seal(bundle,'cloudflare',initial)
                 sealed=manifest.read_bytes()
@@ -43,7 +49,9 @@ class BuildReceiptTest(unittest.TestCase):
                     old=file.read_bytes();file.write_text(content)
                     with self.assertRaises(ValueError):receipt.verify(bundle,'cloudflare')
                     file.write_bytes(old)
-                main.chmod(0o755)  # output byte integrity is unchanged; source mode is significant
+                main.chmod(0o755)
+                with self.assertRaises(ValueError):receipt.verify(bundle,'cloudflare')
+                main.chmod(0o644)
                 source.chmod(0o755)
                 with self.assertRaises(ValueError):receipt.verify(bundle,'cloudflare')
                 source.chmod(0o644)
@@ -68,21 +76,21 @@ class BuildReceiptTest(unittest.TestCase):
             bundle=Path(directory)/'web';bundle.mkdir()
             (bundle/'festapp-version.json').write_text('{"version":"1"}')
             (bundle/'main.js').write_text('first')
-            with patch.object(receipt,'inputs',return_value={'source':'fixture'}):
-                receipt.seal(bundle,'cloudflare',{'source':'fixture'})
+            with patch.object(receipt,'inputs',return_value=INPUTS),patch.object(receipt,'cache_contract',side_effect=cache_contract):
+                receipt.seal(bundle,'cloudflare',INPUTS)
                 receipt.preserve(bundle)
                 self.assertFalse(bundle.exists())
                 first=list((Path(directory)/'web-artifacts').iterdir())[0]
                 self.assertEqual((first/'main.js').read_text(),'first')
                 bundle.mkdir();(bundle/'festapp-version.json').write_text('{"version":"1"}')
                 (bundle/'main.js').write_text('second')
-                receipt.seal(bundle,'cloudflare',{'source':'fixture'})
+                receipt.seal(bundle,'cloudflare',INPUTS)
                 receipt.preserve(bundle)
                 self.assertEqual(len(list((Path(directory)/'web-artifacts').iterdir())),2)
                 self.assertEqual((first/'main.js').read_text(),'first')
                 bundle.mkdir();(bundle/'festapp-version.json').write_text('{"version":"1"}')
                 (bundle/'main.js').write_text('third')
-                receipt.seal(bundle,'cloudflare',{'source':'fixture'})
+                receipt.seal(bundle,'cloudflare',INPUTS)
                 (bundle/'main.js').write_text('changed after sealing')
                 with self.assertRaises(ValueError):receipt.verify(bundle,'cloudflare')
                 receipt.preserve(bundle)

@@ -20,6 +20,7 @@ test('version generation stamps both HTML entry points before module loading', (
     }
     fs.copyFileSync(path.join(projectRoot, 'automation/configure_version.js'),
       path.join(root, 'automation/configure_version.js'));
+    fs.copyFileSync(path.join(projectRoot, 'automation/lib/write_if_changed.cjs'), path.join(root, 'automation/lib/write_if_changed.cjs'));
     fs.copyFileSync(path.join(projectRoot, 'automation/lib/startup_theme.cjs'), path.join(root, 'automation/lib/startup_theme.cjs'));
     fs.copyFileSync(path.join(projectRoot, 'web_client/src/services/theme_preference.js'), path.join(root, 'web_client/src/services/theme_preference.js'));
     fs.cpSync(path.join(projectRoot, 'web_client/src/runtime'), path.join(root, 'web_client/src/runtime'), {recursive:true});
@@ -30,6 +31,11 @@ test('version generation stamps both HTML entry points before module loading', (
     const result = spawnSync(process.execPath,
       [path.join(root, 'automation/configure_version.js'), '1.2.3+456'], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
+    const entries=['web/index.html','web_client/index.html','web_client/src/version.js'];
+    const mtimes=entries.map(entry=>fs.statSync(path.join(root,entry)).mtimeMs);
+    const repeated=spawnSync(process.execPath,[path.join(root,'automation/configure_version.js'),'1.2.3+456'],{encoding:'utf8'});
+    assert.equal(repeated.status,0,repeated.stderr);
+    assert.deepEqual(entries.map(entry=>fs.statSync(path.join(root,entry)).mtimeMs),mtimes);
     for (const entry of ['web/index.html', 'web_client/index.html']) {
       assert.match(fs.readFileSync(path.join(root, entry), 'utf8'), /"1\.2\.3\+456"/);
     }

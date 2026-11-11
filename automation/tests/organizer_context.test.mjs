@@ -22,6 +22,8 @@ function fixture(t) {
   cpSync(new URL('../../web_client/public',import.meta.url),join(root,'web_client/public'),{recursive:true});
   cpSync(new URL('../../assets/brand/vstupenky-online',import.meta.url),join(root,'assets/brand/vstupenky-online'),{recursive:true,filter:source=>!['concepts','source','tools'].includes(source.split('/').pop())});
   cpSync(new URL('../release/render_organizer_page.mjs',import.meta.url),join(root,'automation/release/render_organizer_page.mjs'));
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../../web/organizers-media/',import.meta.url),join(root,'web/organizers-media'),{recursive:true});
   const configPath = join(root,'project.conf');
   const setConfig = config => writeFileSync(configPath,Object.entries(config).map(([k,v])=>`${k}=${v}`).join('\n')+'\n');

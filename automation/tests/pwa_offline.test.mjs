@@ -670,10 +670,11 @@ try {
   const ciContract = JSON.parse(await readFile(path.join(projectRoot, 'automation/ci/checks.json'), 'utf8'));
   assert.ok(ciContract.jobs['web-startup'].steps.includes('web-startup'));
   assert.match(ciContract.steps['web-startup'].script, /bash automation\/test_web_startup\.sh/);
-  assert.match(sharedBuild, /release\.web-client-build pnpm run build/);
+  assert.match(sharedBuild, /release\.web-client-build node automation\/lib\/web_build_cache\.mjs component vite/);
+  assert.match(sharedBuild, /cd web_client && pnpm run build/);
   assert.ok(sharedBuild.indexOf('python3 automation/ci/release_gate.py') < sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile')
     && sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check')
-    && sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check') < sharedBuild.indexOf('release.web-client-build pnpm run build'),
+    && sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check') < sharedBuild.indexOf('release.web-client-build node automation/lib/web_build_cache.mjs component vite'),
     'verify canonical source CI, install dependencies, check tenant runtime, then build the public client');
   assert.match(sharedBuild, /apply_config\.sh/);
   assert.match(sharedBuild, /emit_version_manifest\.sh/);

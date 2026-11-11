@@ -65,7 +65,7 @@ fi
 
 # project.conf is the sole tenant-identity owner. Apply it immediately before
 # compilation so stale generated files can never leak between production apps.
-bash automation/apply_config.sh
+bash automation/apply_config.sh "$PROJECT_ROOT/automation/project.conf" --build
 if [ "${FESTAPP_CANONICAL_CUTOVER_RELEASE:-0}" = 1 ]; then
     node automation/release/client_cutover_preflight.mjs --require-canonical-cutover
 else
@@ -73,6 +73,7 @@ else
 fi
 
 python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" precache --web
+python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" pub get --enforce-lockfile
 FESTAPP_SETUP_BUILD_ARGS=()
 FESTAPP_SETUP_ENABLED="$(sed -n 's/^OCCASION_SETUP_ENABLED=//p' automation/project.conf)"
 case "$FESTAPP_SETUP_ENABLED" in
@@ -83,8 +84,12 @@ esac
 # Pinned esbuild is also used for lexical compaction before immutable stamping.
 (cd web_client && pnpm install --frozen-lockfile)
 node web_client/scripts/build_runtime.mjs --check
+node web_client/scripts/build_embed.mjs
+node web_client/scripts/build_measurement_runtime.mjs
+node automation/configure_fonts.js . --assets-only
 python3 automation/release/build_receipt.py capture "$TARGET"
-python3 automation/ci/telemetry.py release.flutter-build python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
+python3 automation/ci/telemetry.py release.flutter-build node automation/lib/web_build_cache.mjs component flutter "$TARGET" python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
+node automation/lib/web_build_cache.mjs stamp-flutter
 node automation/optimize_web_fonts.mjs build/web automation/project.conf
 node automation/compact_flutter_javascript.mjs build/web
 bash automation/emit_version_manifest.sh build/web
@@ -97,8 +102,9 @@ fi
 
 # CI owns the full source startup suite. The source gate above and completed
 # tenant bundle verification below cover the two distinct release boundaries.
-(cd web_client && python3 ../automation/ci/telemetry.py release.web-client-build pnpm run build)
+python3 automation/ci/telemetry.py release.web-client-build node automation/lib/web_build_cache.mjs component vite "$TARGET" bash -c 'cd web_client && pnpm run build'
 cp -R web_client/dist/. build/web/
+cp web_client/public/sitemap.xml build/web/sitemap.xml
 node automation/minify_web_translations.mjs build/web
 # The standalone organizer document shares the compiled tenant theme and fonts.
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
@@ -119,7 +125,7 @@ if [ "$TARGET" = cloudflare ]; then
     fi
 fi
 
-rm -f build/web/flutter_service_worker.js
+rm -f build/web/flutter_service_worker.js build/web/.last_build_id
 VERSION="$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')"
 FORCED_OCCASION="$(grep -m1 '^FORCE_OCCASION_LINK=' automation/project.conf | cut -d= -f2- | tr -d '\"' | tr -d "'" | tr -d '[:space:]')"
 APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' automation/project.conf | tr -d '[:space:]')"

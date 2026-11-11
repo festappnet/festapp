@@ -1,4 +1,5 @@
-import {readFile, writeFile} from 'node:fs/promises';
+import writeIfChanged from './write_if_changed.cjs';
+import {readFile} from 'node:fs/promises';
 // Promote only after the documented release compatibility gate passes.
 export const CSP_MODE = 'report-only';
 export const BASE_POLICY = "base-uri 'self'; object-src 'none'";
@@ -18,5 +19,5 @@ export function headerBlock(policy, profile) {
 if (process.argv[2] === '--sync-headers') {
   const template = await readFile(new URL('web_headers.template', import.meta.url), 'utf8');
   const headers = template.replace('/*\n', `/*\n  Content-Security-Policy: ${BASE_POLICY}\n`);
-  for (const file of ['../../web/_headers', '../../web_client/public/_headers']) await writeFile(new URL(file, import.meta.url), headers);
+  for (const file of ['../../web/_headers', '../../web_client/public/_headers']) writeIfChanged.writeFileSync(new URL(file, import.meta.url), headers);
 }
