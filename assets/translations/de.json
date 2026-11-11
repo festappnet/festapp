@@ -3122,6 +3122,14 @@
         "bankManualPrepared": "Die Überweisungsdaten sind bereit. Für diese Währung ist kein QR verfügbar. Die Bank hat die Überweisung noch nicht bestätigt."
     },
     "MemberAccess": {
+    "deliveryProgress": "Zugestellte E-Mails",
+    "deliveryQueued": "In der Warteschlange",
+    "deliveryFailed": "Zustellung fehlgeschlagen",
+    "deliveryUnknown": "Zustellstatus unbekannt",
+    "deliveryWatching": "Der Zustellstatus wird automatisch aktualisiert. Sie können diesen Dialog schließen.",
+    "deliveryDelayed": "Die Zustellung dauert länger. Automatische Prüfungen wurden pausiert. Aktualisieren Sie den Status erneut. Das Schließen des Dialogs bricht die Zustellung nicht ab.",
+    "deliveryReadFailed": "Der Zustellstatus konnte nicht aktualisiert werden. Der zuletzt bekannte Status wird angezeigt. Versuchen Sie die Aktualisierung erneut.",
+    "deliveryReadSlow": "Die Statusabfrage dauert länger. Sie können den Dialog schließen und erneut öffnen.",
     "selectedRecipients": "Ausgewählte Empfänger",
     "currentPermissions": "Aktuelle Berechtigungen",
     "noPermissions": "Keine zusätzlichen Berechtigungen",

@@ -3124,6 +3124,14 @@
         "bankManualPrepared": "Dane przelewu są gotowe. QR nie jest dostępny dla tej waluty. Bank nie potwierdził jeszcze przelewu."
     },
     "MemberAccess": {
+    "deliveryProgress": "Dostarczone e-maile",
+    "deliveryQueued": "W kolejce",
+    "deliveryFailed": "Dostarczenie nie powiodło się",
+    "deliveryUnknown": "Status dostarczenia nieznany",
+    "deliveryWatching": "Status dostarczenia aktualizuje się automatycznie. Możesz zamknąć to okno.",
+    "deliveryDelayed": "Dostarczenie trwa dłużej. Automatyczne sprawdzanie zostało wstrzymane. Użyj przycisku Odśwież status. Zamknięcie okna nie anuluje dostarczenia.",
+    "deliveryReadFailed": "Nie udało się odświeżyć statusu dostarczenia. Wyświetlany jest ostatni znany status. Spróbuj odświeżyć ponownie.",
+    "deliveryReadSlow": "Pobieranie statusu trwa dłużej. Możesz zamknąć okno i otworzyć je ponownie.",
     "selectedRecipients": "Wybrani odbiorcy",
     "currentPermissions": "Obecne uprawnienia",
     "noPermissions": "Brak dodatkowych uprawnień",

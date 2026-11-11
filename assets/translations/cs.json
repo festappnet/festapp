@@ -5305,6 +5305,14 @@
         "bankManualPrepared": "Údaje k převodu jsou připravené. QR pro tuto měnu není dostupný. Převod zatím nebyl potvrzen bankou."
     },
     "MemberAccess": {
+    "deliveryProgress": "Doručené e-maily",
+    "deliveryQueued": "Ve frontě",
+    "deliveryFailed": "Doručení se nezdařilo",
+    "deliveryUnknown": "Stav doručení není známý",
+    "deliveryWatching": "Stav doručení se aktualizuje automaticky. Dialog můžete zavřít.",
+    "deliveryDelayed": "Doručení trvá déle. Automatické kontroly jsou pozastavené; aktuální stav zjistíte tlačítkem Obnovit stav. Zavřením dialogu doručování nezrušíte.",
+    "deliveryReadFailed": "Stav doručení se nepodařilo obnovit. Zobrazuje se poslední známý stav. Zkuste tlačítko Obnovit stav.",
+    "deliveryReadSlow": "Načítání stavu trvá déle. Dialog můžete zavřít a znovu otevřít.",
     "selectedRecipients": "Vybraní příjemci",
     "currentPermissions": "Současná oprávnění",
     "noPermissions": "Bez dalších oprávnění",

@@ -75,13 +75,13 @@ class MemberAccessCommands {
     'revoke_access_invitation',
     params: {'p_invitation': invitation},
   );
-  Future<void> resend(String invitation) async {
+  Future<Map<String, dynamic>> resend(String invitation) async {
     final request = Map<String, dynamic>.from(
       await client.rpc(
         'resend_access_invitation',
         params: {'p_invitation': invitation},
       ),
     );
-    await send(request);
+    return send(request);
   }
 }

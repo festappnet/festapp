@@ -1,3 +1,5 @@
+import '../../test/components/users/member_access_delivery_cases.dart'
+    as access_delivery;
 import '../../test/components/users/member_access_batch_cases.dart'
     as access_batch;
 import '../../test/components/users/member_access_dialog_cases.dart'
@@ -25,5 +27,6 @@ void main() {
     'occasion_user_grid': s6.main,
     'member_access_batch': access_batch.main,
     'member_access_dialog': access_dialog.main,
+    'member_access_delivery': access_delivery.main,
   });
 }

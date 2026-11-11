@@ -5303,6 +5303,14 @@
         "bankManualPrepared": "Transfer details are ready. A QR is not available for this currency. The bank has not yet confirmed the transfer."
     },
     "MemberAccess": {
+    "deliveryProgress": "Delivered emails",
+    "deliveryQueued": "Queued",
+    "deliveryFailed": "Delivery failed",
+    "deliveryUnknown": "Delivery status unknown",
+    "deliveryWatching": "Delivery status updates automatically. You can close this dialog.",
+    "deliveryDelayed": "Delivery is taking longer. Automatic checks have paused; use Refresh status to check again. Closing this dialog does not cancel delivery.",
+    "deliveryReadFailed": "Delivery status could not be refreshed. The last known status is shown. Use Refresh status to try again.",
+    "deliveryReadSlow": "The status request is taking longer. You can close and reopen this dialog to check again.",
     "selectedRecipients": "Selected recipients",
     "currentPermissions": "Current permissions",
     "noPermissions": "No additional permissions",

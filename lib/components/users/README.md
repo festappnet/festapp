@@ -163,3 +163,14 @@ notice bound to `userId`; this sends no role/profile changes. A batch freezes ea
 recipient's intent after its first attempt and retries only unconfirmed requests
 through the same command adapter. Queue admission remains distinct from delivery;
 refresh resolves the message receipt against the canonical status projection.
+
+`MemberAccessDelivery` observes canonical message IDs from command receipts and
+pending messages for selected members. Manual send and explicit resend retain
+those receipts too. The summary, recipient rows and history use the same status
+response; provider acceptance is not delivery. Polls only read status, with a
+2/5/10-second backoff and a two-minute observation window. Slow reads stop showing
+loading after 15 seconds without launching an overlapping request. Closing or
+changing identity/context cancels observation and discards stale responses; it
+never cancels the server's email queue. After the observation window, manual
+refresh starts another bounded window. An unresolved HTTP read instead offers
+close/reopen recovery until the original request returns.
