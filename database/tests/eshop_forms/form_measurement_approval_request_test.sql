@@ -157,17 +157,25 @@ BEGIN
  INSERT INTO analytics.unit_runtime(unit,runtime_origin,runtime_profile,parent_origins,revision,operator,reason)
  VALUES(un,'https://request-'||un||'.pages.dev','gtm-v1',ARRAY['https://example.invalid'],1,'test','approval');
  SELECT * INTO m FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST' LIMIT 1;
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_true(public.email_intent_valid(m),'pending origin keeps mail valid after runtime approval');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
  UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}',data->'measurement_websites'||'"https://new.example.invalid"'::jsonb) WHERE id=un;
  r:=public.request_unit_measurement_approval(un);
  PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),2,'new website creates another request after approval');
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_false(public.email_intent_valid(m),'superseded mail is obsolete');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
  PERFORM assert_eq(r->'approved_origins','["https://example.invalid"]'::jsonb,'new request does not approve websites');
  PERFORM public.request_unit_measurement_approval(un);
  PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST'),4::bigint,'repeat request is idempotent');
  SELECT * INTO m FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST' AND data->>'request_revision'='2' LIMIT 1;
  PERFORM assert_eq(m.data->'proposed_websites',r->'requested_origins','email carries all proposals');
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_true(public.email_intent_valid(m),'new request is deliverable after runtime approval');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
  UPDATE analytics.unit_runtime SET parent_origins=ARRAY['https://example.invalid','https://www.example.invalid:443','https://new.example.invalid'] WHERE unit=un;
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_false(public.email_intent_valid(m),'platform approval obsoletes request');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
 END $$;
