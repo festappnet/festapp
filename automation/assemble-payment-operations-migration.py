@@ -26,8 +26,10 @@ if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');a=p.parse_args();dest,content=render()
  if a.check:
   if not migration_inputs.exists(dest) or hashlib.sha256(migration_inputs.read_bytes(dest)).hexdigest()!='268ec4905adf7b863683260e025b6de4b4fbb735f446cfa83a69dccc3b2fc5fa': raise SystemExit('Installed payment operations migration bytes changed')
-  qr_path,qr_content=render_readonly_qr()
-  if migration_inputs.read_text(qr_path)!=qr_content: raise SystemExit('Read-only bank QR migration differs from canonical owners')
+  # Installed history stays immutable when a later scoped forward replaces its readers.
+  # source_contract below validates the effective canonical function owners.
+  qr_path=ROOT/'supabase/migrations/20261111012000_readonly_bank_refund_qr.sql'
+  if hashlib.sha256(migration_inputs.read_bytes(qr_path)).hexdigest()!='59921d7ccbb5f64c5b61bc4635dc3482a2de45d9db789c52c08152b1f72f4b0e': raise SystemExit('Installed read-only bank QR migration bytes changed')
   from generate_canonical_source_contract import render as source_contract
   source_contract(ROOT,additional_sources=json.loads(migration_inputs.read_text(ROOT/'automation/payment-operations-migration.json'))['sources'])
   print('Payment operations migration matches ordered canonical owners')

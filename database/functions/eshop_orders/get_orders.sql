@@ -156,6 +156,10 @@ BEGIN
         FROM eshop.orders o
         WHERE o.occasion = v_occasion_id
           AND (v_form_id IS NULL OR o.form = v_form_id)
+    ), seating_data AS MATERIALIZED (
+        SELECT CASE WHEN (p_options->>'include_full_order_data')::boolean = TRUE
+            THEN public.order_tickets_with_seating_bulk_internal(coalesce(jsonb_object_agg(o.id,coalesce(o.data->'tickets','[]')),'{}')) END snapshots
+        FROM selected_orders o WHERE (p_options->>'include_full_order_data')::boolean = TRUE
     )
         SELECT jsonb_agg(jsonb_build_object(
             'id', o.id, 'order_symbol', o.order_symbol, 'order_sequence', o.order_sequence, 'created_at', o.created_at, 'updated_at', o.updated_at, 'price', o.price, 'state', o.state, 'currency_code', o.currency_code,
@@ -170,13 +174,13 @@ BEGIN
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
-                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data || jsonb_build_object('tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))
+                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data || jsonb_build_object('tickets', sd.snapshots->o.id::text)
                 ELSE jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email', 'note', o.data->>'note')
             END,
             'payment_info', o.payment_info, 'note_hidden', o.note_hidden
         ))
         INTO ordersData
-        FROM selected_orders o;
+        FROM selected_orders o CROSS JOIN seating_data sd;
 
     -- Extract order IDs from the (potentially filtered) ordersData JSONB
     WITH order_ids AS (
@@ -189,21 +193,36 @@ BEGIN
     FROM eshop.order_product_ticket opt
     WHERE opt."order" IN (SELECT id FROM order_ids);
 
-    -- Fetch payment information linked to the orders
+    -- One statement keeps the bulk context and stored payment values on the
+    -- same snapshot. Reuse pending totals and each account's warning as well.
+    WITH payment_contexts AS MATERIALIZED (
+        SELECT jsonb_object_agg(c.order_id,c.context) AS contexts
+        FROM public.payment_method_contexts_internal(ARRAY(
+            SELECT (order_obj->>'id')::bigint
+            FROM jsonb_array_elements(COALESCE(ordersData,'[]'::jsonb)) order_obj
+        )) c
+    ), selected_payments AS MATERIALIZED (
+        SELECT pi.*,pc.contexts->(SELECT id::text FROM eshop.orders WHERE payment_info=pi.id) AS operation_context
+        FROM eshop.payment_info pi CROSS JOIN payment_contexts pc
+        WHERE pi.id IN (
+            SELECT DISTINCT (order_obj->>'payment_info')::bigint
+            FROM jsonb_array_elements(COALESCE(ordersData,'[]'::jsonb)) order_obj
+            WHERE order_obj->>'payment_info' IS NOT NULL
+        )
+    ), bank_warnings AS MATERIALIZED (
+        SELECT scope.bank_account,public.bank_sync_warning(scope.bank_account) AS warning
+        FROM (SELECT DISTINCT bank_account FROM selected_payments) scope
+    )
     SELECT jsonb_agg(jsonb_build_object(
         'id', pi.id, 'payment_method', pi.payment_method, 'bank_account', pi.bank_account, 'variable_symbol', pi.variable_symbol, 'amount', pi.amount, 'deposit_amount', pi.deposit_amount,
         'deposit_deadline', pi.deposit_deadline, 'paid', pi.paid, 'returned', pi.returned, 'net',coalesce(pi.paid,0)-coalesce(pi.returned,0),
-        'pending',(SELECT coalesce(sum(r.amount),0) FROM eshop.refund_requests r WHERE r.payment_info=pi.id AND r.status IN ('pending','processing','unknown')),
-        'paymentOperations',public.payment_method_context_internal((SELECT id FROM eshop.orders WHERE payment_info=pi.id)), 'deadline', pi.deadline, 'currency_code', pi.currency_code, 'data', pi.data,
-        'bank_sync_warning', public.bank_sync_warning(pi.bank_account)
+        'pending',coalesce((pi.operation_context->>'pending')::numeric,0),
+        'paymentOperations',pi.operation_context, 'deadline', pi.deadline, 'currency_code', pi.currency_code, 'data', pi.data,
+        'bank_sync_warning', bw.warning
     ))
     INTO paymentInfoData
-    FROM eshop.payment_info pi
-    WHERE pi.id IN (
-        SELECT DISTINCT (order_obj->>'payment_info')::BIGINT
-        FROM jsonb_array_elements(COALESCE(ordersData, '[]'::jsonb)) order_obj
-        WHERE order_obj->>'payment_info' IS NOT NULL
-    );
+    FROM selected_payments pi
+    JOIN bank_warnings bw ON bw.bank_account IS NOT DISTINCT FROM pi.bank_account;
 
     -- Conditionally fetch orders history and related users based on p_options
     IF (p_options->>'include_orders_history')::BOOLEAN = TRUE THEN

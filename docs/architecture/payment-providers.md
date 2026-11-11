@@ -49,6 +49,15 @@ The same registered SQL handlers supply incoming form availability/configuration
 and operation capabilities. A capability is unavailable unless its actual source,
 currency, identity, permission and adapter requirements hold.
 
+Order lists use `payment_method_contexts_internal` to aggregate selected ledger
+facts and refund history once. `payment_operation_permissions_internal` resolves
+distinct stored unit, occasion and bank scopes once per read; scalar policy
+wrappers use that same owner. Private bank/cash capability handlers can consume
+these prepared permissions within the read. This input has no client execution
+grant and never authorizes a money command. Context, pending amount and stored
+payment values are assembled in one SQL statement snapshot. Single-order readers
+delegate to the same bulk projection; mutation entrypoints still re-authorize.
+
 | Method | Preparation/execution | Financial confirmation |
 |---|---|---|
 | Cash | Atomic authorized negative CASH row plus request/settlement | Local SQL commit |

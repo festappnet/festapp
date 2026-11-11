@@ -27,7 +27,7 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.cash_payment_provider_internal(p_operation text,p_args jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; u bigint; tx bigint; r eshop.refund_requests; pi_id bigint; cfg jsonb;
+DECLARE o eshop.orders; u bigint; tx bigint; r eshop.refund_requests; pi_id bigint; cfg jsonb; can_record boolean;
 BEGIN
  IF p_operation='initialize_payment' THEN
   INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method)
@@ -39,8 +39,10 @@ BEGIN
    'available',coalesce(cfg->'cashEnabled','false'),'supportedSurfaces','[]'::jsonb);
  ELSIF p_operation='operation_capabilities' THEN
   SELECT * INTO STRICT o FROM eshop.orders WHERE id=(p_args->>'orderId')::bigint;
-  RETURN jsonb_build_object('id','cash','displayName','Cash','record',public.can_record_order_cash(o.id),
-   'refund',public.can_record_order_cash(o.id) AND trim(o.currency_code) IN ('CZK','EUR','PLN','USD','GBP'),
+  can_record:=CASE WHEN p_args ? 'permissions' THEN coalesce((p_args#>>'{permissions,can_record_cash}')::boolean,false)
+   ELSE public.can_record_order_cash(o.id) END;
+  RETURN jsonb_build_object('id','cash','displayName','Cash','record',can_record,
+   'refund',can_record AND trim(o.currency_code) IN ('CZK','EUR','PLN','USD','GBP'),
    'verification','local_commit');
  ELSIF p_operation IN ('record_payment','correct_record','prepare_refund') THEN
   SELECT * INTO STRICT o FROM eshop.orders WHERE id=(p_args->>'orderId')::bigint;
@@ -88,7 +90,8 @@ BEGIN
     WHERE o.id=(p_args->>'orderId')::bigint AND public.can_read_orders(o.occasion)
     AND ((trim(pi.currency_code)='CZK' AND pi.variable_symbol IS NOT NULL)
      OR (trim(pi.currency_code)='EUR' AND public.is_valid_creditor_reference(pi.creditor_reference)))),
-   'refund',public.can_prepare_order_bank_refund((p_args->>'orderId')::bigint) AND ready IS NOT NULL,
+   'refund',(CASE WHEN p_args ? 'permissions' THEN coalesce((p_args#>>'{permissions,can_refund_bank}')::boolean,false)
+    ELSE public.can_prepare_order_bank_refund((p_args->>'orderId')::bigint) END) AND ready IS NOT NULL,
    'reason',CASE WHEN ready IS NULL THEN 'original_reference_or_bank_sync_unavailable' END,'verification','bank_event');
  ELSIF p_operation='prepare_refund' THEN
   SELECT * INTO STRICT r FROM eshop.refund_requests WHERE id=(p_args->>'requestId')::uuid;

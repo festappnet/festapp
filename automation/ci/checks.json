@@ -410,7 +410,7 @@
       }
     },
     "seat-contract": {
-      "script": "node web_client/scripts/run_db_tests.js --group seat-contract-1\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\n\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\npython3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\npython3 automation/assemble-payment-operations-migration.py --check\nnode --test database/tests/eshop/payment_operations_concurrency.test.mjs\n",
+      "script": "python3 automation/assemble-order-read-performance-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-1\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\n\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\npython3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\npython3 automation/assemble-payment-operations-migration.py --check\nnode --test database/tests/eshop/payment_operations_concurrency.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -568,7 +568,8 @@
         "automatic_form_binding_test.sql",
         "application_only_checkout_test.sql",
         "database/tests/blueprint/canonical_storage_test.sql",
-        "database/tests/occasion_setup/copy_legacy_empty_blueprint_test.sql"
+        "database/tests/occasion_setup/copy_legacy_empty_blueprint_test.sql",
+        "database/tests/eshop/order_seating_test.sql"
       ]
     },
     "seat-contract-3": {
@@ -578,7 +579,8 @@
         "database/tests/emails/form_timezone_resolution_test.sql",
         "database/tests/emails/waitlist_email_language_timezone_test.sql",
         "database/tests/sale_opening_notifications/contracts_test.sql",
-        "database/tests/emails/delivered_tickets_resolve_confirmation_test.sql"
+        "database/tests/emails/delivered_tickets_resolve_confirmation_test.sql",
+        "database/tests/emails/order_email_bulk_reporting_test.sql"
       ]
     },
     "seat-contract-4": {
@@ -761,6 +763,7 @@
       "database/tests/emails/occasion_template_roundtrip_test.sql",
       "database/tests/emails/order_change_summary_test.sql",
       "database/tests/emails/order_delete_email_cleanup_test.sql",
+      "database/tests/emails/order_email_bulk_reporting_test.sql",
       "database/tests/emails/order_email_form_access_test.sql",
       "database/tests/emails/order_email_recovery_test.sql",
       "database/tests/emails/order_email_service_role_permissions_test.sql",
@@ -1013,6 +1016,8 @@
       "database/tests/payment_providers/cash_setup_roundtrip_test.sql",
       "database/tests/payment_providers/connector_contract_test.sql",
       "database/tests/payment_providers/effects_test.sql",
+      "database/tests/payment_providers/order_read_bulk_test.sql",
+      "database/tests/payment_providers/order_read_plan_cache_test.sql",
       "database/tests/payment_providers/payment_operations_test.sql",
       "database/tests/payment_providers/projections_configuration_test.sql",
       "database/tests/payment_providers/refund_provider_dispatch_test.sql",
@@ -1284,6 +1289,7 @@
     "database/tests/emails/occasion_template_roundtrip_test.sql",
     "database/tests/emails/order_change_summary_test.sql",
     "database/tests/emails/order_delete_email_cleanup_test.sql",
+    "database/tests/emails/order_email_bulk_reporting_test.sql",
     "database/tests/emails/order_email_form_access_test.sql",
     "database/tests/emails/order_email_recovery_concurrency.test.mjs",
     "database/tests/emails/order_email_recovery_test.sql",
@@ -1546,6 +1552,8 @@
     "database/tests/payment_providers/cash_setup_roundtrip_test.sql",
     "database/tests/payment_providers/connector_contract_test.sql",
     "database/tests/payment_providers/effects_test.sql",
+    "database/tests/payment_providers/order_read_bulk_test.sql",
+    "database/tests/payment_providers/order_read_plan_cache_test.sql",
     "database/tests/payment_providers/payment_operations_test.sql",
     "database/tests/payment_providers/projections_configuration_test.sql",
     "database/tests/payment_providers/refund_provider_dispatch_test.sql",

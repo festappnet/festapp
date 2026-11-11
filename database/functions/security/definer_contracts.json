@@ -3158,6 +3158,18 @@
     "c096226dcd214bc902e90792c16de6e967ad839c954f764d20efd0ea7f7590f5": {
       "signature": "public.get_bank_refund_instructions(jsonb)",
       "source": "database/functions/payment_providers/operations.sql"
+    },
+    "aed0e31d0beb994c19321f9ea04f93f8e3cde08e805aa0020f75357944461282": {
+      "signature": "public.can_manage_bank_account(bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "fcb0ba1834ac6129fe2f21f242dec48d54d25dd93fbfbfebd27cf3b161b19ca4": {
+      "signature": "public.can_read_orders(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "b0db3614e773eaa330bdddfbea20f6e03bb457ce9540d8fa4d2fbaa9e83f6071": {
+      "signature": "public.get_is_manager_on_unit(bigint)",
+      "source": "database/functions/user_permissions/get_is_manager_on_unit.sql"
     }
   }
 }

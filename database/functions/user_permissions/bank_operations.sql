@@ -25,13 +25,17 @@ REVOKE ALL ON FUNCTION public.can_read_bank_transactions(bigint) FROM PUBLIC,ano
 GRANT EXECUTE ON FUNCTION public.can_read_bank_transactions(bigint) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.can_manage_bank_account(p_bank_account bigint)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN (
  SELECT public.bank_account_write_rule(public.get_is_admin_on_bank_account(p_bank_account),
  EXISTS(SELECT 1 FROM eshop.unit_bank_accounts link JOIN public.unit_users membership
    ON membership.unit=link.unit AND membership."user"=auth.uid() AND membership.is_manager
    WHERE link.bank_account=p_bank_account AND NOT EXISTS(
      SELECT 1 FROM public.demo_unit_ids_internal() demo WHERE demo.unit_id=membership.unit)),
- public.is_demo_bank_account(p_bank_account));
+ public.is_demo_bank_account(p_bank_account))
+ );
+END;
 $$;
 REVOKE ALL ON FUNCTION public.can_manage_bank_account(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.can_manage_bank_account(bigint) TO authenticated,service_role;
