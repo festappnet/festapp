@@ -59,6 +59,71 @@ void main() {
       ) as Map<String, dynamic>,
     );
   });
+  for (final entry in ['top', 'bottom', 'prototype', 'embedded']) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'adding a field selects its editor immediately via $entry',
+      (tester) async {
+        tester.view.physicalSize = const Size(1600, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          capabilities: {AuthorizationCapabilities.formsWrite: true},
+        );
+        addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+        final original = FormFieldDraft(
+          id: 1, type: 'text', title: 'Původní otázka',
+        );
+        final bundle = FormEditBundle(
+          form: FormEditorDraft(link: 'ples', occasionId: 1, data: {},
+              relatedFields: [original]),
+          productTypes: [], products: [], availableBankAccounts: [],
+        );
+        final prototype = entry == 'prototype' || entry == 'embedded';
+        final editor = prototype
+            ? FormEditorContent.prototype(bundle: bundle,
+                embedded: entry == 'embedded', onPrototypeSave: (_) {})
+            : FormEditorContent(formLink: 'ples', loadBundle: (_) async => bundle);
+        await _environment.pumpWidget(tester, MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: entry == 'embedded'
+              ? Scaffold(body: SingleChildScrollView(child: editor))
+              : editor,
+        ));
+        await tester.pumpAndSettle();
+        final add = entry == 'embedded'
+            ? find.widgetWithText(FilledButton, FormStrings.addFieldTitle)
+            : find.byKey(ValueKey(entry == 'bottom'
+                ? 'add-form-field-bottom' : 'add-form-field-top'));
+        await tester.ensureVisible(add);
+        await tester.tap(add);
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ListTile, FormStrings.textFieldType));
+        await tester.pumpAndSettle();
+        final generator = tester.widget<FormFieldsGenerator>(
+            find.byType(FormFieldsGenerator));
+        final added = generator.bundle.form.relatedFields.last;
+        final navigation = generator.navigationController!;
+        expect(added, isNot(same(original)));
+        expect(added.definition.id, isNull);
+        expect(navigation.fields.last.field, same(added));
+        expect(navigation.selectedIdentity, navigation.fields.last.identity);
+        expect(find.widgetWithText(TextFormField, 'Původní otázka'), findsNothing);
+        final title = find.descendant(
+          of: find.byType(FormFieldsGenerator),
+          matching: find.byWidgetPredicate((widget) =>
+              widget is TextFormField && (widget.initialValue?.isEmpty ?? true)),
+        );
+        expect(title, findsOneWidget);
+        await tester.enterText(title, 'Nová otázka');
+        await tester.pumpAndSettle();
+        expect(added.definition.title, 'Nová otázka');
+        expect(original.definition.title, 'Původní otázka');
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgetsWithEnvironment(
     () => _environment,
     'outline scrolls vertically without animating ancestor tab pages',
