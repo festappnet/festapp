@@ -258,3 +258,14 @@ test('only a server-accepted receipt automatically advances; durable offline pen
   page.disposeControllers();clearTimeout(page.advanceTimer);
  }finally{dom.window.close();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);}
 });
+
+
+test('explicit next in the program scanner also re-arms the same QR',async()=>{
+ const {ScannerDomainPage}=await import('../../src/components/scan/scanner_domain_page.js');
+ const dom=new JSDOM('<div id="scanner"></div>'),previous=globalThis.document;globalThis.document=dom.window.document;
+ try {
+  const page=new ScannerDomainPage(document.getElementById('scanner'),{client:{}});page.route={page:'program'};page.result={id:'person',name:'Anna',surname:'Novotná'};
+  let resets=0;page.input={paused:true,stop(){},allowSame(){resets++;}};page.render();page.host.querySelector('[data-next]').click();
+  assert.equal(resets,1);assert.equal(page.input.paused,false);assert.equal(page.result,undefined);
+ }finally{globalThis.document=previous;dom.window.close();}
+});

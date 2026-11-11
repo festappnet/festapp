@@ -61,7 +61,7 @@ export class ScannerDomainPage extends Component {
         const code=this.host.querySelector('[data-code]');if(code)code.onsubmit=ev=>{ev.preventDefault();this.load(code.elements.code.value);};
         const manual=this.host.querySelector('[data-manual]');if(manual)manual.onsubmit=ev=>{ev.preventDefault();this.login({occasion:Number(manual.elements.occasion.value),manualCode:manual.elements.code.value.trim()});};
         const search=this.host.querySelector('[data-search]');if(search)search.onchange=()=>{this.query=search.value;this.render();};
-        const next=this.host.querySelector('[data-next]');if(next)next.onclick=()=>{this.result=undefined;this.input.paused=false;this.render();};
+        const next=this.host.querySelector('[data-next]');if(next)next.onclick=()=>{this.result=undefined;this.input.allowSame();this.input.paused=false;this.render();};
         this.host.querySelector('[data-result]')?.focus();
     }
     clear(){this.input.dispose();super.clear();}
