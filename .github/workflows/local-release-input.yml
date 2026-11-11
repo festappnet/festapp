@@ -20,7 +20,7 @@ on:
           - hvezdamorska
           - jubileum2025
       recipient_public_key_base64:
-        description: Base64 RSA public key of the release workstation
+        description: Base64 RSA public key (PEM or SPKI DER, at least 3072 bits)
         required: true
         type: string
 permissions:
