@@ -1,5 +1,10 @@
 ## 0.4.8
 
+## 0.4.10
+
+- Keep incremental scene geometry while native draft labels await canonical text preparation, fixing slow dragging of newly numbered tables.
+- Preserve unchanged scene-item identity through native text rendering so painted paths remain cached.
+
 ## 0.4.9
 
 - Keep numeric sliders live inside cached inspector panels and coalesce pointer samples per frame.

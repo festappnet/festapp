@@ -742,18 +742,19 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                     'fill': layoutSelectedSeatFill,
                   },
             };
+      final nativeEditing =
+          widget.retainPendingTextPreview &&
+          widget.inlineTextStyleBuilder != null;
       _scene = _textPreviewCache.update(
         _sceneCache.update(
           widget.document,
           resources: widget.resources,
           presentation: presentation,
+          nativeTextPreview: nativeEditing,
         ),
         widget.document,
         enabled: widget.retainPendingTextPreview,
       );
-      final nativeEditing =
-          widget.retainPendingTextPreview &&
-          widget.inlineTextStyleBuilder != null;
       if (nativeEditing) {
         _loadNativeFonts();
         _scene = _nativeText.update(

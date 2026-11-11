@@ -1,10 +1,136 @@
 import 'package:material_ui/material_ui.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/src/layout_editor/layout_native_text.dart';
+import 'package:venue_seat_picker/src/layout_editor/layout_scene_cache.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 
 void main() {
+  testWidgets('native labels preserve cached geometry while a round table moves', (
+    tester,
+  ) async {
+    final moving = tableLayout(
+      shape: 'ellipse',
+      count: 0,
+      x: 400,
+      y: 400,
+      width: 160,
+      height: 160,
+    ).nodes.first.copyWith(label: '32');
+    final stationary = tableLayout(
+      shape: 'rect',
+      count: 0,
+      x: 1000,
+      y: 400,
+      width: 200,
+      height: 100,
+    ).nodes.first;
+    final fixture =
+        jsonDecode(File('assets/layout_fonts/fixtures.json').readAsStringSync())
+            as Map;
+    final resources = <String, dynamic>{
+      'protocol': 2,
+      'fontFamilies': fixture['fontFamilies'],
+      'textLayouts': <String, dynamic>{},
+      'numberSymbols': <String, dynamic>{},
+    };
+    final document = VenueLayoutDocument(
+      nodes: [moving, stationary],
+      styles: {
+        'label': {'fontFamilyId': (fixture['fontFamilies'] as Map).keys.first},
+      },
+    );
+    final geometry = LayoutSceneCache();
+    final native = LayoutNativeTextCache();
+    addTearDown(native.dispose);
+    const fonts = {'font': TextStyle(fontFamily: 'Ahem')};
+    final firstGeometry = geometry.update(
+      document,
+      resources: resources,
+      nativeTextPreview: true,
+    );
+    expect(
+      (firstGeometry['issues'] as List).single['reason'],
+      'text_layout_unavailable',
+    );
+    final first = native.update(firstGeometry, document, fonts, (_) => 'font');
+    expect(
+      (first['items'] as List).any((i) => i['kind'] == 'nativeText'),
+      isTrue,
+    );
+    Map path(Map scene, String id) =>
+        (scene['items'] as List).cast<Map>().firstWhere(
+          (item) =>
+              (item['nodeId'] ?? item['id']) == id && item['path'] is List,
+        );
+    final stationaryPath = path(firstGeometry, stationary.id);
+    expect(
+      path(first, stationary.id),
+      same(stationaryPath),
+      reason: 'The painter caches parsed paths by scene-item identity',
+    );
+    final movingPath = path(first, moving.id);
+    for (var step = 1; step <= 3; step++) {
+      final next = document.copyWith(
+        nodes: [
+          moving.copyWith(x: 400.0 + step),
+          stationary,
+        ],
+      );
+      final compiled = geometry.update(
+        next,
+        resources: resources,
+        nativeTextPreview: true,
+      );
+      expect(
+        compiled,
+        compileScene(next, resources: resources),
+        reason:
+            'Editor caching preserves canonical geometry and pending-text diagnostics',
+      );
+      final rendered = native.update(compiled, next, fonts, (_) => 'font');
+      expect(path(compiled, stationary.id), same(stationaryPath));
+      expect(path(rendered, stationary.id), same(stationaryPath));
+      expect(
+        path(rendered, moving.id),
+        isNot(same(movingPath)),
+        reason:
+            'The moving table must still receive fresh transformed geometry',
+      );
+      expect(
+        (compiled['items'] as List).any((i) => i['kind'] == 'nativeText'),
+        isFalse,
+        reason: 'Native decoration must not mutate the canonical cached scene',
+      );
+    }
+    final invalid = document.copyWith(
+      nodes: [moving.copyWith(width: 0), stationary],
+    );
+    final rejected = geometry.update(
+      invalid,
+      resources: resources,
+      nativeTextPreview: true,
+    );
+    expect(rejected, compileScene(invalid, resources: resources));
+    expect(
+      rejected['items'],
+      isEmpty,
+      reason:
+          'Allowing pending text must never retain geometry after invalid input',
+    );
+    final viewing = document.copyWith(
+      nodes: [moving.copyWith(x: 410), stationary],
+    );
+    final canonical = geometry.update(viewing, resources: resources);
+    expect(
+      canonical,
+      compileScene(viewing, resources: resources),
+      reason: 'Viewers retain the complete canonical text-resource contract',
+    );
+  });
+
   testWidgets('native custom table label stays entirely on the tabletop', (
     tester,
   ) async {
