@@ -282,7 +282,7 @@
       }
     },
     "deploy-contract": {
-      "script": "node --test automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\n",
+      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\n",
       "after": [
         "renderer-install"
       ],

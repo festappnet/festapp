@@ -4,12 +4,20 @@ import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 // Transfer the existing tenant secret to its owner's workstation, never logs.
-export function sealReleaseManifest(source, publicKeyPem, tenantId = 'festapptickets') {
+export function sealReleaseManifest(source, recipientPublicKey, tenantId = 'festapptickets') {
   assert.ok(source, 'Existing release manifest is required');
   const manifest = JSON.parse(source);
   assert.match(tenantId, /^[a-z][a-z0-9-]*$/);
   assert.equal(manifest.backend?.activation?.tenantId, tenantId);
-  const publicKey = crypto.createPublicKey(publicKeyPem);
+  // Workstations export either PEM text or binary SPKI DER. Keep DER bytes
+  // intact rather than passing them through a lossy UTF-8 conversion.
+  let publicKey;
+  try {
+    publicKey = crypto.createPublicKey(recipientPublicKey);
+  } catch (error) {
+    if (!Buffer.isBuffer(recipientPublicKey)) throw error;
+    publicKey = crypto.createPublicKey({ key: recipientPublicKey, format: 'der', type: 'spki' });
+  }
   assert.equal(publicKey.asymmetricKeyType, 'rsa');
   assert.ok(publicKey.asymmetricKeyDetails.modulusLength >= 3072);
   const key = crypto.randomBytes(32);
@@ -30,7 +38,7 @@ export function sealReleaseManifest(source, publicKeyPem, tenantId = 'festapptic
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const envelope = sealReleaseManifest(process.env.RELEASE_MANIFEST,
-      Buffer.from(process.env.RECIPIENT_PUBLIC_KEY_BASE64 || '', 'base64').toString('utf8'),
+      Buffer.from(process.env.RECIPIENT_PUBLIC_KEY_BASE64 || '', 'base64'),
       process.env.RELEASE_TENANT_ID || 'festapptickets');
     fs.writeFileSync(process.argv[2], JSON.stringify(envelope), { mode: 0o600 });
     console.log('Existing tenant release input sealed for the recipient.');
