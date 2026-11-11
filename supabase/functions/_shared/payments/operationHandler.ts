@@ -20,6 +20,7 @@ export function presentRefundInstructions(value: unknown): Record<string, unknow
 }
 export function decoratePaymentOperation(value: unknown): Record<string, unknown> {
   const result = {...record(value)};
+  if (result.instructions) result.instructions = presentRefundInstructions(result.instructions);
   if (record(result.request).instructions) {
     result.request = {...record(result.request), instructions: presentRefundInstructions(record(result.request).instructions)};
   }
@@ -51,6 +52,8 @@ export async function paymentOperationHandler(request: Request, deps: {
       ? await deps.rpc(authorization, 'get_payment_operation_context', {p_order_id: orderId})
       : input.operation === 'preview'
       ? await deps.rpc(authorization, 'preview_payment_operation', {input_data: input})
+      : input.operation === 'bank_instructions'
+      ? await deps.rpc(authorization, 'get_bank_refund_instructions', {input_data: input})
       : await deps.rpc(authorization, 'command_payment_operation', {input_data: input, p_command_id: body.p_command_id ?? body.commandId});
     rpcCompleted = true;
     return Response.json(decoratePaymentOperation(value), {headers});

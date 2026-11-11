@@ -41,3 +41,20 @@ Deno.test('only proven SQL rollback releases the command; transport loss and pos
   const committed = await paymentOperationHandler(request(), {authenticate: async () => true,rpc: async () => ({code:200,request: {instructions: {...instruction,recipientIban:'invalid'}}})});
   assert.equal(committed.status,409);assert.equal((await committed.json()).mutationNotApplied,false);
 });
+Deno.test('bank QR uses a read-only RPC without command identity or refund writes', async () => {
+  const input = {operation: 'bank_instructions', orderId: 42, amount: '300.25', currency: 'CZK',
+    recipientIban: instruction.recipientIban, recipientName: instruction.recipientName};
+  let calls = 0;
+  const response = await paymentOperationHandler(new Request('https://test', {method: 'POST', headers: {authorization: 'Bearer fixture'},
+    body: JSON.stringify({input_data: input})}), {authenticate: async () => true, rpc: async (_, name, args) => {
+      calls++;
+      assert.equal(name, 'get_bank_refund_instructions');
+      assert.deepEqual(args, {input_data: input});
+      return {code: 200, instructions: instruction};
+    }});
+  assert.equal(calls, 1); assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.request, undefined);
+  assert(String(result.instructions.payload).includes('ACC:'+instruction.recipientIban));
+  assert(String(result.instructions.payload).includes('X-VS:12345'));
+});

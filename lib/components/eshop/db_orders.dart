@@ -589,6 +589,22 @@ class DbOrders {
     return Map<String, dynamic>.from(result['preview']);
   }
 
+  static Future<Map<String, dynamic>> bankRefundInstructions(
+    Map<String, dynamic> input,
+  ) async {
+    final response = await _supabase.functions.invoke(
+      'payment-operation',
+      body: {
+        'input_data': {...input, 'operation': 'bank_instructions'},
+      },
+    );
+    final result = Map<String, dynamic>.from(response.data as Map);
+    if (result['code'] != 200 || result['instructions'] is! Map) {
+      throw StateError('PAYMENT_INSTRUCTIONS_UNAVAILABLE');
+    }
+    return Map<String, dynamic>.from(result['instructions']);
+  }
+
   static Future<Map<String, dynamic>?> pendingPaymentOperation(
     int orderId,
   ) async {

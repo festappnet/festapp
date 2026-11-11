@@ -5245,9 +5245,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Způsob vrácení",
-    "bankHint": "Připravte převod na účet příjemce. Peníze odešlete ve své bankovní aplikaci; vrácení se potvrdí až po spárování bankovního pohybu.",
+    "bankHint": "Vygenerujte QR a odešlete platbu ve své bankovní aplikaci. Vytvoření QR nemění platby ani stav objednávky.",
     "cashHint": "Zaznamenejte hotovost, kterou jste již předali příjemci.",
-    "bankUnavailable": "Bankovní vrácení pro tuto objednávku není dostupné. Vyžaduje oprávnění a účet s podporovanou synchronizací plateb.",
+    "bankUnavailable": "QR pro tuto objednávku není dostupné. Vyžaduje podporovanou měnu a původní platební referenci.",
+    "bankQrFailed": "QR se nepodařilo vytvořit. Zkontrolujte údaje a zkuste to znovu.",
+    "bankQrReady": "QR je připraven. Platbu odešlete ve své bankovní aplikaci. Vytvoření QR nezměnilo platby ani stav objednávky.",
         "refund": "Vrátit peníze",
         "available": "Lze vrátit",
         "pending": "Čeká na vrácení",

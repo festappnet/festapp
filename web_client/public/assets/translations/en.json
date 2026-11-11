@@ -5243,9 +5243,11 @@
     },
     "PaymentOperations": {
     "refundMethod": "Refund method",
-    "bankHint": "Prepare a transfer to the recipient. Send the money in your banking app; the refund is confirmed only after the bank transaction is matched.",
+    "bankHint": "Generate a QR code and send the payment in your banking app. Generating the QR changes neither payments nor the order status.",
     "cashHint": "Record cash you have already handed to the recipient.",
-    "bankUnavailable": "Bank refunds are unavailable for this order. They require permission and an account with supported payment synchronization.",
+    "bankUnavailable": "QR is unavailable for this order. A supported currency and the original payment reference are required.",
+    "bankQrFailed": "Could not generate the QR code. Check the details and try again.",
+    "bankQrReady": "The QR code is ready. Send the payment in your banking app. Generating the QR has not changed payments or the order status.",
         "refund": "Refund money",
         "available": "Available to refund",
         "pending": "Pending refund",

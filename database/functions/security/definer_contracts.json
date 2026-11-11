@@ -3154,6 +3154,10 @@
     "e53c6d33fb1782b7edeb35c3851523d0cdb98add443db976b1c066936aa8dacf": {
       "signature": "public.add_user_to_unit(bigint,uuid)",
       "source": "database/functions/users/add_user_to_unit.sql"
+    },
+    "c096226dcd214bc902e90792c16de6e967ad839c954f764d20efd0ea7f7590f5": {
+      "signature": "public.get_bank_refund_instructions(jsonb)",
+      "source": "database/functions/payment_providers/operations.sql"
     }
   }
 }

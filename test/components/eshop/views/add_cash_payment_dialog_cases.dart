@@ -294,6 +294,7 @@ void main() {
     PaymentOperationContext context = cashContext,
     PaymentOperationSubmit? submit,
     PaymentOperationSubmit? preview,
+    PaymentOperationSubmit? instructions,
     Map<String, dynamic>? pending,
   }) async {
     tester.view.physicalSize = const Size(800, 1200);
@@ -310,6 +311,7 @@ void main() {
             context: context,
             refund: refund,
             onSubmit: submit,
+            onBankInstructions: instructions,
             initialPendingPayload: pending,
             onPreview:
                 preview ??
@@ -332,6 +334,7 @@ void main() {
     'refund exposes bank QR before submitting and preserves cash choice',
     (tester) async {
       Map<String, dynamic>? submitted;
+      var writes = 0;
       await operation(
         tester,
         refund: true,
@@ -343,24 +346,18 @@ void main() {
             const PaymentOperationMethod(
               id: 'bank',
               displayName: 'Bank',
-              refund: true,
+              instructions: true,
               verification: 'bank_event',
             ),
           ],
         ),
-        submit: (input) async {
+        submit: (_) async {
+          writes++;
+          return {};
+        },
+        instructions: (input) async {
           submitted = input;
-          return {
-            'request': {
-              'id': 'refund-qr',
-              'verification': 'bank_event',
-              'status': 'pending',
-              'instructions': {
-                'payload': 'BCD\n002\n1\nSCT',
-                'amount': '50.00',
-              },
-            },
-          };
+          return {'payload': 'BCD\n002\n1\nSCT', 'amount': '50.00'};
         },
       );
       expect(find.byKey(const ValueKey('refundMethod_cash')), findsOneWidget);
@@ -394,11 +391,12 @@ void main() {
       await tester.ensureVisible(generate);
       await tester.tap(generate);
       await tester.pumpAndSettle();
-      expect(submitted?['operation'], 'prepare_refund');
-      expect(submitted?['method'], 'bank');
+      expect(writes, 0);
+      expect(submitted?.containsKey('clientIntentId'), false);
+      expect(submitted?.containsKey('operation'), false);
       expect(submitted?['amount'], '50');
       expect(
-        find.text(PaymentOperationStrings.text('bankPrepared')),
+        find.text(PaymentOperationStrings.text('bankQrReady')),
         findsOneWidget,
       );
     },

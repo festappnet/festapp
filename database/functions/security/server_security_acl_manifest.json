@@ -3296,6 +3296,11 @@
       "anon": false,
       "authenticated": true,
       "service_role": true
+    },
+    "public.get_bank_refund_instructions(jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {

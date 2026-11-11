@@ -1,5 +1,5 @@
 /// Authorized capability and exact financial projection from the payment owner.
-/// Missing context always fails closed; a generic order-edit role is insufficient.
+/// Read-only QR availability is separate from capabilities that record money.
 class PaymentOperationContext {
   const PaymentOperationContext({
     this.gross = '0',
@@ -16,7 +16,7 @@ class PaymentOperationContext {
   final List<Map<String, dynamic>> requests;
   bool get canRecord => methods.any((m) => m.record);
   bool get canRefund =>
-      methods.any((m) => m.refund) ||
+      methods.any((m) => m.refund || m.instructions) ||
       requests.any(
         (r) =>
             const {
@@ -54,17 +54,19 @@ class PaymentOperationMethod {
     required this.id,
     required this.displayName,
     this.refund = false,
+    this.instructions = false,
     this.record = false,
     this.verification = '',
     this.reason,
   });
   final String id, displayName, verification;
-  final bool refund, record;
+  final bool refund, record, instructions;
   final String? reason;
   factory PaymentOperationMethod.fromJson(Map value) => PaymentOperationMethod(
     id: '${value['id']}',
     displayName: '${value['displayName'] ?? value['id']}',
     refund: value['refund'] == true,
+    instructions: value['instructions'] == true,
     record: value['record'] == true,
     verification: '${value['verification'] ?? ''}',
     reason: value['reason']?.toString(),

@@ -15,10 +15,10 @@ BEGIN
   IF NOT r.refund_write_enabled THEN caps:=caps||jsonb_build_object('refund',false,'reason','refund_write_not_enabled'); END IF;
   IF r.hosted_checkout AND NOT public.can_prepare_order_provider_refund(o.id) THEN caps:=caps||jsonb_build_object('refund',false); END IF;
   IF caps->>'id' IS DISTINCT FROM r.provider_key THEN RAISE EXCEPTION 'PAYMENT_CAPABILITY_IDENTITY_MISMATCH'; END IF;
-  IF EXISTS(SELECT 1 FROM eshop.order_deletion_fences WHERE order_id=o.id) THEN caps:=caps||jsonb_build_object('refund',false,'record',false,'reason','order_deletion_in_progress'); END IF;
-  IF EXISTS(SELECT 1 FROM eshop.refund_requests WHERE payment_info=pi.id AND result->'deviation'='true'::jsonb) THEN caps:=caps||jsonb_build_object('refund',false,'reason','refund_requires_review'); END IF;
+  IF EXISTS(SELECT 1 FROM eshop.order_deletion_fences WHERE order_id=o.id) THEN caps:=caps||jsonb_build_object('refund',false,'record',false,'instructions',false,'reason','order_deletion_in_progress'); END IF;
+  IF EXISTS(SELECT 1 FROM eshop.refund_requests WHERE payment_info=pi.id AND result->'deviation'='true'::jsonb) THEN caps:=caps||jsonb_build_object('refund',false,'instructions',false,'reason','refund_requires_review'); END IF;
   IF o.state NOT IN ('created','ordered','paid','sent','storno','expired') OR f.invalid_identity OR f.net_received<0 THEN
-   caps:=caps||jsonb_build_object('refund',false,'reason','payment_identity_or_state_unavailable'); END IF;
+   caps:=caps||jsonb_build_object('refund',false,'instructions',false,'reason','payment_identity_or_state_unavailable'); END IF;
   IF o.state IN ('storno','expired','waiting','preparing') THEN caps:=caps||jsonb_build_object('record',false); END IF;
   methods:=methods||jsonb_build_array(caps);
  END LOOP;
@@ -183,3 +183,29 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.preview_payment_operation(jsonb) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.preview_payment_operation(jsonb) TO authenticated;
+
+-- Rendering payment instructions is a read, not a refund reservation or ledger write.
+CREATE OR REPLACE FUNCTION public.get_bank_refund_instructions(input_data jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE o eshop.orders; pi eshop.payment_info; c jsonb; cap jsonb; amount numeric; iban text; name text;
+BEGIN
+ SELECT * INTO STRICT o FROM eshop.orders WHERE id=(input_data->>'orderId')::bigint;
+ IF NOT public.can_read_orders(o.occasion) THEN RAISE insufficient_privilege; END IF;
+ SELECT * INTO STRICT pi FROM eshop.payment_info WHERE id=o.payment_info;
+ c:=public.payment_method_context_internal(o.id);
+ SELECT value INTO cap FROM jsonb_array_elements(c->'methods') WHERE value->>'id'='bank';
+ IF cap->'instructions' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'PAYMENT_REFUND_UNAVAILABLE'; END IF;
+ IF input_data->>'currency' IS DISTINCT FROM trim(pi.currency_code) THEN RAISE EXCEPTION 'PAYMENT_CURRENCY_MISMATCH'; END IF;
+ IF jsonb_typeof(input_data->'amount') IS DISTINCT FROM 'string' OR input_data->>'amount' !~ '^[0-9]{1,8}(\.[0-9]{1,2})?$' THEN RAISE EXCEPTION 'PAYMENT_AMOUNT_INVALID'; END IF;
+ amount:=(input_data->>'amount')::numeric;
+ IF amount<=0 OR amount>(c->>'available')::numeric THEN RAISE EXCEPTION 'REFUND_AVAILABLE_EXCEEDED'; END IF;
+ iban:=public.canonical_payment_reference_account_internal(input_data->>'recipientIban');
+ name:=trim(input_data->>'recipientName');
+ IF name IS NULL OR length(name) NOT BETWEEN 1 AND 70 OR name ~ '[[:cntrl:]]' THEN RAISE EXCEPTION 'REFUND_RECIPIENT_INVALID'; END IF;
+ IF trim(pi.currency_code)='CZK' AND iban NOT LIKE 'CZ%' THEN RAISE EXCEPTION 'SPD_DOMESTIC_ACCOUNT_REQUIRED'; END IF;
+ RETURN jsonb_build_object('code',200,'instructions',jsonb_build_object('recipientIban',iban,'recipientName',name,
+  'amount',amount::text,'currency',trim(pi.currency_code),'variableSymbol',pi.variable_symbol::text,
+  'creditorReference',pi.creditor_reference,'reference',CASE WHEN trim(pi.currency_code)='EUR' THEN pi.creditor_reference ELSE pi.variable_symbol::text END));
+END $$;
+REVOKE ALL ON FUNCTION public.get_bank_refund_instructions(jsonb) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.get_bank_refund_instructions(jsonb) TO authenticated;

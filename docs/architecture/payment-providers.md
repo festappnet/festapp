@@ -52,7 +52,7 @@ currency, identity, permission and adapter requirements hold.
 | Method | Preparation/execution | Financial confirmation |
 |---|---|---|
 | Cash | Atomic authorized negative CASH row plus request/settlement | Local SQL commit |
-| Bank | Immutable recipient instruction and reservation; no bank API transfer | Authenticated BankSync debit in the original physical-account namespace |
+| Bank QR | Read-only recipient instructions, no reservation or transfer | Existing bank movement processing |
 | External connector | Durable intent followed by leased dispatch or read-only recovery | Existing connector ledger and `apply_provider_payment_effects_internal` |
 
 `refund_requests` record intent, immutable binding and reservation. They are not
@@ -63,8 +63,17 @@ Financial projections expose received/refunded/net/pending separately. Net may
 be negative after a real excessive debit; preparation never changes confirmed
 received/refunded/net. Storno/expired orders retain their admission lifecycle.
 
-Bank preparation requires canonical original reference ownership and active
-account identity protection. CZK SPD uses the saved VS; EUR EPC uses the saved
+The admin bank QR action uses `get_bank_refund_instructions` through the
+`bank_instructions` Edge operation. Its separate `instructions` capability
+requires order-read permission, supported currency and the saved reference.
+It does not require bank administration, synchronization or reference-registry
+activation. It never enters the mutation transport, creates a refund request,
+reserves funds, changes accounting or confirms a transfer. Cash and hosted
+connector refund commands retain their typed financial authorization.
+
+Previously reserved bank requests remain readable and cancellable through their
+existing authorized recovery flow. That mutation path requires canonical
+original reference ownership and active account identity protection. CZK SPD uses the saved VS; EUR EPC uses the saved
 RF. No refund allocator or extra matching token exists. USD has supported import
 and manual instructions without pretending that SPD/EPC supports it. Invalid,
 missing or changed bank references are explicit deviations requiring authorized

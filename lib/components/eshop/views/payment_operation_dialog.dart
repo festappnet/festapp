@@ -33,6 +33,7 @@ class PaymentOperationDialog extends StatefulWidget {
     this.bankOptions,
     this.onSubmit,
     this.onPreview,
+    this.onBankInstructions,
     this.initialPendingPayload,
   });
   final int orderId;
@@ -40,7 +41,7 @@ class PaymentOperationDialog extends StatefulWidget {
   final PaymentOperationContext context;
   final bool refund;
   final Widget? bankOptions;
-  final PaymentOperationSubmit? onSubmit, onPreview;
+  final PaymentOperationSubmit? onSubmit, onPreview, onBankInstructions;
   final Map<String, dynamic>? initialPendingPayload;
   @override
   State<PaymentOperationDialog> createState() => _PaymentOperationDialogState();
@@ -58,7 +59,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
   String? _method;
   bool _saving = false, _changed = false, _confirmNotSent = false;
   String? _error;
-  Map<String, dynamic>? _frozenPayload, _request, _preview;
+  Map<String, dynamic>? _frozenPayload, _request, _preview, _instructions;
   Timer? _previewTimer;
   int _previewRevision = 0;
   bool _previewing = false, _previewFailed = false;
@@ -77,7 +78,9 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
       _previewFailed = false;
       _previewing = false;
     });
-    if (!widget.refund || _request != null || _selected == null) return;
+    if (!widget.refund || _bank || _request != null || _selected == null) {
+      return;
+    }
     final amount = _amount.text.replaceAll(',', '.');
     if (!RegExp(r'^[0-9]{1,8}(\.[0-9]{1,2})?$').hasMatch(amount) ||
         (double.tryParse(amount) ?? 0) <= 0 ||
@@ -121,7 +124,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
   }
 
   List<PaymentOperationMethod> get _methods => _context.methods
-      .where((m) => widget.refund ? m.refund : m.record)
+      .where((m) => widget.refund ? (m.refund || m.instructions) : m.record)
       .toList();
   PaymentOperationMethod? get _selected {
     for (final method in _methods) {
@@ -218,6 +221,10 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
 
   Future<void> _submit({bool cancel = false}) async {
     if (_saving) return;
+    if (!cancel && widget.refund && _bank && _frozenPayload == null) {
+      await _generateBankInstructions();
+      return;
+    }
     if (_frozenPayload == null) {
       if (cancel) {
         if (!_confirmNotSent || _request?['canCancel'] != true) return;
@@ -297,6 +304,62 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<void> _generateBankInstructions() async {
+    if (_selected?.instructions != true || !_formKey.currentState!.validate()) {
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final instructions =
+          await (widget.onBankInstructions ?? DbOrders.bankRefundInstructions)({
+            'orderId': widget.orderId,
+            'amount': _amount.text.replaceAll(',', '.'),
+            'currency': widget.currency,
+            'recipientIban': _iban.text.replaceAll(' ', '').toUpperCase(),
+            'recipientName': _name.text.trim(),
+          });
+      if (mounted) setState(() => _instructions = instructions);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = PaymentOperationStrings.text('bankQrFailed'));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Widget _bankInstructions() {
+    final instructions = _instructions!;
+    final payload = instructions['payload'];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(PaymentOperationStrings.text('bankQrReady')),
+        if (payload is String && payload.isNotEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: ColoredBox(
+                color: Colors.white,
+                child: QrImageView(data: payload, size: 220),
+              ),
+            ),
+          ),
+        for (final key in ['recipientName', 'recipientIban', 'reference'])
+          if (instructions[key] != null)
+            _fact(PaymentOperationStrings.text(key), instructions[key]),
+        _fact(
+          CommonStrings.amount,
+          '${instructions['amount']} ${widget.currency}',
+        ),
+      ],
+    );
   }
 
   Future<void> _correct(Map<String, dynamic> request) async {
@@ -433,7 +496,10 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
 
   Widget _refundMethods(bool locked) {
     final methods = _context.methods
-        .where((method) => method.refund || method.id == 'bank')
+        .where(
+          (method) =>
+              method.refund || method.instructions || method.id == 'bank',
+        )
         .toList();
     // Keep bank instructions discoverable when only cash recording is allowed.
     // Availability still comes exclusively from the server capabilities.
@@ -468,7 +534,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              enabled: !locked && method.refund,
+              enabled: !locked && (method.refund || method.instructions),
               leading: Icon(
                 method.verification == 'bank_event'
                     ? (_supportsBankQr
@@ -490,7 +556,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
               subtitle: method.verification == 'bank_event'
                   ? Text(
                       PaymentOperationStrings.text(
-                        method.refund ? 'bankHint' : 'bankUnavailable',
+                        method.instructions ? 'bankHint' : 'bankUnavailable',
                       ),
                     )
                   : method.id == 'cash'
@@ -501,7 +567,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                     ? Icons.radio_button_checked
                     : Icons.radio_button_unchecked,
               ),
-              onTap: locked || !method.refund
+              onTap: locked || !(method.refund || method.instructions)
                   ? null
                   : () {
                       setState(() => _method = method.id);
@@ -533,7 +599,9 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_request != null)
+                if (_instructions != null)
+                  _bankInstructions()
+                else if (_request != null)
                   _pending()
                 else
                   Form(
@@ -701,48 +769,50 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                           ),
                         ],
                         const SizedBox(height: 16),
-                        ExpansionTile(
-                          tilePadding: EdgeInsets.zero,
-                          title: Text(
-                            CommonStrings.advancedSettings,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          children: [
-                            InkWell(
-                              onTap: locked
-                                  ? null
-                                  : () async {
-                                      final date = await showDatePicker(
-                                        context: context,
-                                        initialDate: _selectedDate,
-                                        firstDate: DateTime(2000),
-                                        lastDate: DateTime(2100),
-                                      );
-                                      if (date != null && mounted) {
-                                        setState(() => _selectedDate = date);
-                                      }
-                                    },
-                              child: InputDecorator(
+                        if (!_bank)
+                          ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            title: Text(
+                              CommonStrings.advancedSettings,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            children: [
+                              InkWell(
+                                onTap: locked
+                                    ? null
+                                    : () async {
+                                        final date = await showDatePicker(
+                                          context: context,
+                                          initialDate: _selectedDate,
+                                          firstDate: DateTime(2000),
+                                          lastDate: DateTime(2100),
+                                        );
+                                        if (date != null && mounted) {
+                                          setState(() => _selectedDate = date);
+                                        }
+                                      },
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: CommonStrings.date,
+                                  ),
+                                  child: Text(
+                                    DateFormat.yMd(
+                                      Localizations.localeOf(context)
+                                          .toString(),
+                                    ).format(_selectedDate),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _note,
+                                enabled: !locked,
                                 decoration: InputDecoration(
-                                  labelText: CommonStrings.date,
-                                ),
-                                child: Text(
-                                  DateFormat.yMd(
-                                    Localizations.localeOf(context).toString(),
-                                  ).format(_selectedDate),
+                                  labelText: CommonStrings.note,
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _note,
-                              enabled: !locked,
-                              decoration: InputDecoration(
-                                labelText: CommonStrings.note,
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                         if (widget.refund)
                           for (final request in _context.requests.where(
                             (r) => r['canCorrect'] == true,
@@ -780,12 +850,13 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
           TextButton(
             onPressed: _saving ? null : _close,
             child: Text(
-              _request == null
+              _request == null && _instructions == null
                   ? CommonStrings.cancel
                   : PaymentOperationStrings.text('close'),
             ),
           ),
-          if (_request == null || _frozenPayload != null)
+          if ((_request == null && _instructions == null) ||
+              _frozenPayload != null)
             ElevatedButton(
               onPressed:
                   _saving ||
@@ -795,6 +866,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                       (_frozenPayload?['operation'] == 'cancel_pending' &&
                           _request?['canCancel'] != true) ||
                       (widget.refund &&
+                          !_bank &&
                           _request == null &&
                           _frozenPayload == null &&
                           !_hasCurrentPreview)
@@ -821,6 +893,11 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                           ? PaymentOperationStrings.text('recordCashRefund')
                           : '${PaymentOperationStrings.text('refundVia')} ${_selected?.displayName ?? ''}',
                     ),
+            ),
+          if (_instructions != null)
+            TextButton(
+              onPressed: () => setState(() => _instructions = null),
+              child: Text(CommonStrings.edit),
             ),
           if (_request?['canCancel'] == true &&
               _confirmNotSent &&

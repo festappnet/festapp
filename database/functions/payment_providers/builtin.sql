@@ -84,6 +84,10 @@ BEGIN
  ELSIF p_operation='operation_capabilities' THEN
   ready:=public.bank_refund_readiness_internal((p_args->>'orderId')::bigint);
   RETURN jsonb_build_object('id','bank','displayName','Bank transfer','record',false,
+   'instructions',EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
+    WHERE o.id=(p_args->>'orderId')::bigint AND public.can_read_orders(o.occasion)
+    AND ((trim(pi.currency_code)='CZK' AND pi.variable_symbol IS NOT NULL)
+     OR (trim(pi.currency_code)='EUR' AND public.is_valid_creditor_reference(pi.creditor_reference)))),
    'refund',public.can_prepare_order_bank_refund((p_args->>'orderId')::bigint) AND ready IS NOT NULL,
    'reason',CASE WHEN ready IS NULL THEN 'original_reference_or_bank_sync_unavailable' END,'verification','bank_event');
  ELSIF p_operation='prepare_refund' THEN

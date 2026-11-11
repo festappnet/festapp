@@ -9,10 +9,24 @@ def render():
  for source in m['sources']:
   parts.append('-- SOURCE: '+source+'\n'+(ROOT/'database/functions'/source).read_text().rstrip())
  return ROOT/'supabase/migrations'/m['migration'],'\n\n'.join(parts)+'\n'
+def render_readonly_qr():
+ sources={'payment_providers/builtin.sql':['bank_payment_provider_internal'],
+          'payment_providers/operations.sql':['payment_method_context_internal','get_bank_refund_instructions']}
+ parts=['-- Read-only bank refund QR; no payment reservation or financial write.']
+ for source,names in sources.items():
+  text=(ROOT/'database/functions'/source).read_text()
+  for name in names:
+   start=text.index('CREATE OR REPLACE FUNCTION public.'+name+'(')
+   end=text.index('END $$;',start)+len('END $$;')
+   parts.append('-- SOURCE: '+source+'\n'+text[start:end])
+ parts.append('REVOKE ALL ON FUNCTION public.get_bank_refund_instructions(jsonb) FROM PUBLIC,anon,service_role;\nGRANT EXECUTE ON FUNCTION public.get_bank_refund_instructions(jsonb) TO authenticated;')
+ return ROOT/'supabase/migrations/20261111012000_readonly_bank_refund_qr.sql','\n\n'.join(parts)+'\n'
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');a=p.parse_args();dest,content=render()
  if a.check:
   if not dest.exists() or hashlib.sha256(dest.read_bytes()).hexdigest()!='268ec4905adf7b863683260e025b6de4b4fbb735f446cfa83a69dccc3b2fc5fa': raise SystemExit('Installed payment operations migration bytes changed')
+  qr_path,qr_content=render_readonly_qr()
+  if qr_path.read_text()!=qr_content: raise SystemExit('Read-only bank QR migration differs from canonical owners')
   from generate_canonical_source_contract import render as source_contract
   source_contract(ROOT,additional_sources=json.loads((ROOT/'automation/payment-operations-migration.json').read_text())['sources'])
   print('Payment operations migration matches ordered canonical owners')
