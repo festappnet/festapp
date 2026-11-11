@@ -431,6 +431,11 @@
         "updatingUsers": "Aktualizace uživatelů"
     },
     "FeatureFormSettings": {
+        "measurementWebsites": "Moje weby",
+        "measurementWebsitesHelp": "Zadejte nejvýše 10 přesných HTTPS adres, každou na samostatný řádek, včetně případného www, bez cesty a koncového lomítka. Uložte je a požádejte o povolení měření. Nežádejte o schválení cizích webů.",
+        "measurementWebsitesInvalid": "Zadejte nejvýše 10 platných HTTPS adres bez cesty, parametrů a koncového lomítka.",
+        "measurementWebsiteApproved": "Schváleno",
+        "measurementWebsitePending": "Čeká na potvrzení platformou",
         "embedInheritStyleHelp": "Použije písmo, pozadí a barvy hostitelského webu pro všechna vložení tohoto formuláře. Změnu uložte s formulářem; projeví se při příštím načtení. Plánek sálu si ponechá vlastní vzhled.",
         "measurementConsentTitle": "Pomozte pořadateli zlepšit formulář a propagaci",
         "measurementConsentAccept": "Přijmout",

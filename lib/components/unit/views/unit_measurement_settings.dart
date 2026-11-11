@@ -9,6 +9,7 @@ import '../unit_measurement_approval.dart';
 /// Destination configuration is independent of permission to run measurement.
 /// The owning screen saves these fields through the canonical Unit aggregate.
 class UnitMeasurementSettings extends StatelessWidget {
+  final TextEditingController? websitesController;
   final bool enabled;
   final bool consentBridge;
   final ValueChanged<bool>? onConsentBridgeChanged;
@@ -34,6 +35,7 @@ class UnitMeasurementSettings extends StatelessWidget {
   const UnitMeasurementSettings({
     super.key,
     required this.enabled,
+    this.websitesController,
     this.consentBridge = false,
     this.onConsentBridgeChanged,
     required this.consentLayout,
@@ -64,6 +66,7 @@ class UnitMeasurementSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([
+      if (websitesController != null) websitesController!,
       gtmController,
       scriptsController,
       privacyUrlController,
@@ -73,8 +76,31 @@ class UnitMeasurementSettings extends StatelessWidget {
     builder: (context, _) => _tile(context),
   );
 
+  static List<String> parseWebsites(String text) =>
+      text.split('\n')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toSet()
+          .toList();
+
+  static String? validateWebsites(String? value) {
+    final sites = parseWebsites(value ?? '');
+    final pattern = RegExp(
+      r'^https://[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$',
+    );
+    return sites.length <= 10 &&
+            sites.every((s) => s.length <= 2048 && pattern.hasMatch(s))
+        ? null
+        : FormStrings.measurementWebsitesInvalid;
+  }
+
   Widget _tile(BuildContext context) {
     final theme = Theme.of(context);
+    final sites = parseWebsites(websitesController?.text ?? '');
+    final newSites = sites.any(
+      (s) => !(approval?.approvedOrigins.contains(s) ?? false) &&
+          !(approval?.requestedOrigins.contains(s) ?? false),
+    );
     const gap = SizedBox(height: 24);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -104,6 +130,26 @@ class UnitMeasurementSettings extends StatelessWidget {
           value: consentBridge,
           onChanged: canEdit ? onConsentBridgeChanged : null,
         ),
+        if (websitesController != null) ...[
+          gap,
+          TextFormField(
+            controller: websitesController,
+            enabled: canEdit,
+            minLines: 2,
+            maxLines: 10,
+            decoration: InputDecoration(
+              labelText: FormStrings.measurementWebsites,
+              helperText: FormStrings.measurementWebsitesHelp,
+              helperMaxLines: 6,
+              border: const OutlineInputBorder(),
+            ),
+            validator: validateWebsites,
+          ),
+          for (final site in sites)
+            Text(
+              '$site: ${approval?.approvedOrigins.contains(site) == true ? FormStrings.measurementWebsiteApproved : FormStrings.measurementWebsitePending}',
+            ),
+        ],
         if (enabled && loadingApproval) ...[
           const SizedBox(height: 8),
           Text(CommonStrings.loading),
@@ -116,7 +162,7 @@ class UnitMeasurementSettings extends StatelessWidget {
               child: Text(CommonStrings.retry),
             ),
           ),
-        ] else if (enabled && approval != null && !approval!.approved) ...[
+        ] else if (enabled && approval != null && (!approval!.approved || newSites)) ...[
           const SizedBox(height: 8),
           Text(
             approval!.requestedAt == null
@@ -133,7 +179,8 @@ class UnitMeasurementSettings extends StatelessWidget {
               onPressed:
                   canEdit &&
                       !requestingApproval &&
-                      approval!.requestedAt == null
+                      (approval!.requestedAt == null || newSites) &&
+                      validateWebsites(websitesController?.text) == null
                   ? onRequestApproval
                   : null,
               child: Text(FormStrings.measurementApprovalRequest),

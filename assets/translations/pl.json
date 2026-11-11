@@ -402,6 +402,11 @@
         "outcomeUnknownHint": "Nie udało się potwierdzić, czy zamówienie zostało utworzone. Przed złożeniem nowego zamówienia prosimy sprawdzić e-mail. Aby ponowić tę samą próbę, prosimy wrócić do formularza bez odświeżania strony."
     },
     "FeatureFormSettings": {
+        "measurementWebsites": "My websites",
+        "measurementWebsitesHelp": "Enter up to 10 exact HTTPS origins, one per line, including www if used, without a path or trailing slash. Save them and request measurement approval. Do not request approval for websites you do not operate.",
+        "measurementWebsitesInvalid": "Enter up to 10 valid HTTPS origins without paths, queries or trailing slashes.",
+        "measurementWebsiteApproved": "Approved",
+        "measurementWebsitePending": "Pending platform confirmation",
         "measurementFormUnitBlocked": "Pomiar jest wyłączony dla tego organizatora. Można zapisać ustawienie tego formularza. Pomiar będzie możliwy po włączeniu go dla organizatora i spełnieniu pozostałych warunków.",
         "measurementOpenUnitSettings": "Otwórz ustawienia pomiaru organizatora",
         "measurementAskUnitManager": "Proszę poprosić administratora organizatora o włączenie pomiaru, skonfigurowanie GTM lub skryptów i dodanie linku do polityki prywatności.",

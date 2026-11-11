@@ -4,9 +4,14 @@ import { measurementApprovalEmail } from "./measurementApprovalEmail.ts";
 for (const lang of ["cs", "en"]) {
   Deno.test(`measurement request email renders ${lang} and escapes organizer content`, () => {
     const email = measurementApprovalEmail("owner@example.invalid", {
+      proposed_websites: ["https://www.example.invalid", "https://example.invalid:443", "<script>alert(1)</script>"],
       lang, organization_title: "vstupenky.online", unit_id: 7,
       unit_title: '<img src=x onerror="alert(1)">', review_url: "https://example.invalid/organizationEdit/3",
     }, "sender@example.invalid");
+    assert.ok(email.html.includes("https://www.example.invalid"));
+    assert.ok(email.html.includes("https://example.invalid:443"));
+    assert.ok(email.html.includes("&lt;script&gt;"));
+    assert.equal(email.html.includes("<script>"), false);
     assert.equal(email.to, "owner@example.invalid");
     assert.equal(email.subject, lang === "en" ? "Request to enable form measurement" : "Žádost o povolení měření formulářů");
     assert.ok(email.html.includes("https://example.invalid/organizationEdit/3"));

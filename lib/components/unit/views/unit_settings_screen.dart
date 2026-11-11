@@ -77,6 +77,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   String _initialConsentTitle = '';
   String _initialConsentText = '';
   final _measurementPrivacyUrlController = TextEditingController();
+  final _measurementWebsitesController = TextEditingController();
   final _measurementGtmController = TextEditingController();
   final _measurementScriptsController = TextEditingController();
   bool get _organizationMeasurementEnabled =>
@@ -106,6 +107,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
     _replyToEmailController.dispose();
+    _measurementWebsitesController.dispose();
     _measurementGtmController.dispose();
     _measurementPrivacyUrlController.dispose();
     _measurementConsentTitleController.dispose();
@@ -243,6 +245,13 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         _unit.id == null) {
       return;
     }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final sites = UnitMeasurementSettings.parseWebsites(_measurementWebsitesController.text);
+    final stored = List<String>.from(_unit.data?['measurement_websites'] ?? const []);
+    if (sites.join('\n') != stored.join('\n')) {
+      await _saveSettings();
+      if (!mounted || List<String>.from(_unit.data?['measurement_websites'] ?? const []).join('\n') != sites.join('\n')) return;
+    }
     setState(() => _isRequestingMeasurement = true);
     try {
       final approval = await ExceptionHandler.guard(
@@ -305,6 +314,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     _initialConsentText = _measurementConsentTextController.text;
     _measurementPrivacyUrlController.text =
         _unit.data?['measurement_privacy_url'] as String? ?? '';
+    _measurementWebsitesController.text =
+        List<String>.from(_unit.data?['measurement_websites'] ?? const []).join('\n');
     _measurementGtmController.text =
         _unit.data?['measurement_gtm_container'] as String? ?? '';
     _measurementScriptsController.text =
@@ -369,6 +380,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     pendingUnit.data![dataTimezone] = _selectedTimezone;
     pendingUnit.data![Tb.units.data_communication_tone] = _communicationTone;
     if (_organizationMeasurementEnabled) {
+      pendingUnit.data!['measurement_websites'] =
+          UnitMeasurementSettings.parseWebsites(_measurementWebsitesController.text);
       pendingUnit.data!['measurement_enabled'] = _measurementEnabled;
       pendingUnit.data!['measurement_consent_bridge'] =
           _measurementConsentBridge;
@@ -752,6 +765,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                             onConsentBridgeChanged: (value) => setState(
                               () => _measurementConsentBridge = value,
                             ),
+                            websitesController: _measurementWebsitesController,
                             approval: _measurementApproval,
                             loadingApproval: _isLoadingMeasurementApproval,
                             approvalLoadFailed: _measurementApprovalLoadFailed,

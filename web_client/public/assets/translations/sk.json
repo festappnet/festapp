@@ -420,6 +420,11 @@
         "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
     },
     "FeatureFormSettings": {
+        "measurementWebsites": "My websites",
+        "measurementWebsitesHelp": "Enter up to 10 exact HTTPS origins, one per line, including www if used, without a path or trailing slash. Save them and request measurement approval. Do not request approval for websites you do not operate.",
+        "measurementWebsitesInvalid": "Enter up to 10 valid HTTPS origins without paths, queries or trailing slashes.",
+        "measurementWebsiteApproved": "Approved",
+        "measurementWebsitePending": "Pending platform confirmation",
         "measurementFormUnitBlocked": "Meranie je u organizátora vypnuté. Voľbu pre tento formulár môžete uložiť; meranie sa spustí až po povolení u organizátora a splnení ďalších podmienok.",
         "measurementOpenUnitSettings": "Otvoriť nastavenia merania organizátora",
         "measurementAskUnitManager": "O povolenie merania, nastavenie GTM či skriptov a doplnenie odkazu na zásady ochrany osobných údajov požiadajte správcu organizátora.",

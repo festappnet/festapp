@@ -24,7 +24,7 @@ DO $$
 DECLARE x jsonb:=pg_temp.measurement_request_fixture(); un bigint:=(x->>'unit')::bigint; org bigint:=(x->>'organization')::bigint;
  r jsonb; m public.email_messages;
 BEGIN
- PERFORM assert_eq(public.get_unit_measurement_approval(un),'{"approved":false,"organization_allowed":false,"runtime_supported":false,"requested_at":null}'::jsonb,'missing policy and runtime deny approval');
+ PERFORM assert_eq(public.get_unit_measurement_approval(un),'{"approved":false,"organization_allowed":false,"runtime_supported":false,"requested_at":null,"approved_origins":[],"requested_origins":[]}'::jsonb,'missing policy and runtime deny approval');
  r:=public.request_unit_measurement_approval(un);
  PERFORM assert_true(r->>'requested_at' IS NOT NULL,'request returns persisted date');
  PERFORM assert_eq((SELECT requested_by FROM analytics.unit_measurement_request WHERE unit=un),(x->>'manager')::uuid,'request records its actor');
@@ -133,4 +133,41 @@ BEGIN
  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM analytics.unit_measurement_request WHERE unit=un),'no recipient leaves the request retryable');
  UPDATE public.organization_users SET is_admin=true WHERE organization=org AND "user"=(x->>'admin')::uuid;
  PERFORM assert_true(public.request_unit_measurement_approval(un)->>'requested_at' IS NOT NULL,'request succeeds once an admin can be notified');
+END $$;
+
+DO $$
+DECLARE x jsonb:=pg_temp.measurement_request_fixture(); un bigint:=(x->>'unit')::bigint; org bigint:=(x->>'organization')::bigint;
+ r jsonb; m public.email_messages; bad jsonb;
+BEGIN
+ FOREACH bad IN ARRAY ARRAY['["http://example.com"]'::jsonb,'["https://example.com/path"]'::jsonb,
+  '["https://example.com/"]'::jsonb,'["https://user@example.com"]'::jsonb,'["https://example.com?x"]'::jsonb,
+  '["https://example.com#x"]'::jsonb,'["https://example.com:65536"]'::jsonb,'[7]'::jsonb,
+  (SELECT jsonb_agg('https://site'||i||'.example') FROM generate_series(1,11) i)] LOOP
+  BEGIN
+   PERFORM public.merge_configuration_settings_internal_v1('{}',jsonb_build_object('measurement_websites',bad),'unit');
+   RAISE EXCEPTION 'invalid website accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ END LOOP;
+ UPDATE public.units SET data=public.merge_configuration_settings_internal_v1(data,
+  '{"measurement_websites":["https://example.invalid","https://www.example.invalid:443"]}','unit') WHERE id=un;
+ r:=public.request_unit_measurement_approval(un);
+ PERFORM assert_eq(r->'approved_origins','[]'::jsonb,'proposals grant no approval');
+ PERFORM assert_eq(r->'requested_origins','["https://example.invalid","https://www.example.invalid:443"]'::jsonb,'request snapshots websites');
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'test','approval');
+ INSERT INTO analytics.unit_runtime(unit,runtime_origin,runtime_profile,parent_origins,revision,operator,reason)
+ VALUES(un,'https://request-'||un||'.pages.dev','gtm-v1',ARRAY['https://example.invalid'],1,'test','approval');
+ SELECT * INTO m FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST' LIMIT 1;
+ PERFORM assert_true(public.email_intent_valid(m),'pending origin keeps mail valid after runtime approval');
+ UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}',data->'measurement_websites'||'"https://new.example.invalid"'::jsonb) WHERE id=un;
+ r:=public.request_unit_measurement_approval(un);
+ PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),2,'new website creates another request after approval');
+ PERFORM assert_false(public.email_intent_valid(m),'superseded mail is obsolete');
+ PERFORM assert_eq(r->'approved_origins','["https://example.invalid"]'::jsonb,'new request does not approve websites');
+ PERFORM public.request_unit_measurement_approval(un);
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST'),4::bigint,'repeat request is idempotent');
+ SELECT * INTO m FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST' AND data->>'request_revision'='2' LIMIT 1;
+ PERFORM assert_eq(m.data->'proposed_websites',r->'requested_origins','email carries all proposals');
+ PERFORM assert_true(public.email_intent_valid(m),'new request is deliverable after runtime approval');
+ UPDATE analytics.unit_runtime SET parent_origins=ARRAY['https://example.invalid','https://www.example.invalid:443','https://new.example.invalid'] WHERE unit=un;
+ PERFORM assert_false(public.email_intent_valid(m),'platform approval obsoletes request');
 END $$;

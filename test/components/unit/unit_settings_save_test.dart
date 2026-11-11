@@ -78,7 +78,8 @@ void main() {
               headers: {'content-type': 'application/json'},
             );
           }
-          approval = {...approval, 'requested_at': '2026-11-09T12:00:00Z'};
+          approval = {...approval, 'requested_at': '2026-11-09T12:00:00Z',
+            'requested_origins': (stored['data'] as Map)['measurement_websites'] ?? <String>[]};
           body = approval;
         } else if (request.url.path == '/rest/v1/occasions') {
           return http.Response(
@@ -388,10 +389,19 @@ void main() {
           expect(approvalReads, 3);
           expect(retry, findsNothing);
         }
+        if (failure == 'none') {
+          final settings = tester.widget<UnitMeasurementSettings>(find.byType(UnitMeasurementSettings));
+          settings.websitesController!.text = 'https://poradatel.example';
+          await tester.pump();
+        }
         await tester.ensureVisible(button);
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(approvalRequests, 1);
+        if (failure == 'none') {
+          expect(saves, hasLength(1));
+          expect((stored['data'] as Map)['measurement_websites'], ['https://poradatel.example']);
+        }
         expect(
           tester.widget<OutlinedButton>(button).onPressed == null,
           !rejectApproval,

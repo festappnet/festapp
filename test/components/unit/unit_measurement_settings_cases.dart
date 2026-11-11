@@ -23,6 +23,8 @@ void main() {
           File('assets/translations/cs.json').readAsStringSync(),
         ) as Map<String, dynamic>,
       );
+      final websites = TextEditingController(text: 'https://approved.example\nhttps://pending.example');
+      addTearDown(websites.dispose);
       final gtm = TextEditingController(text: 'GTM-ABCD');
       final privacy = TextEditingController(
         text: 'https://organizer.example/privacy',
@@ -50,6 +52,8 @@ void main() {
               child: StatefulBuilder(
                 builder: (context, setState) => Form(
                   child: UnitMeasurementSettings(
+                    websitesController: websites,
+                    approval: const UnitMeasurementApproval(approved: true, organizationAllowed: true, runtimeSupported: true, approvedOrigins: ['https://approved.example']),
                     enabled: enabled,
                     consentBridge: consentBridge,
                     onConsentBridgeChanged: (value) =>
@@ -80,6 +84,14 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
+      expect(find.text('https://approved.example: ${FormStrings.measurementWebsiteApproved}'), findsOneWidget);
+      expect(find.text('https://pending.example: ${FormStrings.measurementWebsitePending}'), findsOneWidget);
+      final websitesField = tester.widget<TextFormField>(find.byWidgetPredicate((w) => w is TextFormField && w.controller == websites));
+      expect(websitesField.enabled, canEdit);
+      expect(websitesField.validator!('https://example.com\nhttps://www.example.com:443'), isNull);
+      for (final invalid in ['http://example.com', 'https://example.com/', 'https://example.com/path', 'https://example.com?x', 'https://example.com#x', 'https://user@example.com', 'https://example.com:65536', List.generate(11, (i) => 'https://site$i.example').join('\n')]) {
+        expect(websitesField.validator!(invalid), FormStrings.measurementWebsitesInvalid);
+      }
       final gtmField = find.byWidgetPredicate(
         (widget) => widget is TextFormField && widget.controller == gtm,
       );
@@ -280,6 +292,7 @@ void main() {
     ('missing approval', true, true, false, false, false),
     ('sent request', true, true, false, true, false),
     ('approved', true, true, true, false, false),
+    ('new website after approval', true, true, true, true, false),
     ('measurement off', false, true, false, false, false),
     ('read only', true, false, false, false, false),
     ('sending request', true, true, false, false, true),
@@ -291,7 +304,7 @@ void main() {
           File('assets/translations/cs.json').readAsStringSync(),
         ) as Map<String, dynamic>,
       );
-      final controllers = List.generate(5, (_) => TextEditingController());
+      final controllers = List.generate(6, (_) => TextEditingController());
       for (final controller in controllers) {
         addTearDown(controller.dispose);
       }
@@ -305,6 +318,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitMeasurementSettings(
+                websitesController: name == 'new website after approval' ? (controllers[5]..text = 'https://new.example') : null,
                 enabled: enabled,
                 consentLayout: 'bar',
                 canEdit: canEdit,
@@ -335,11 +349,12 @@ void main() {
         OutlinedButton,
         FormStrings.measurementApprovalRequest,
       );
-      if (enabled && !approved) {
+      final newWebsite = name == 'new website after approval';
+      if (enabled && (!approved || newWebsite)) {
         expect(button, findsOneWidget);
         expect(
           tester.widget<OutlinedButton>(button).onPressed != null,
-          canEdit && !requested && !busy,
+          canEdit && (!requested || newWebsite) && !busy,
         );
         expect(
           find.text(
@@ -351,7 +366,7 @@ void main() {
           ),
           findsOneWidget,
         );
-        if (canEdit && !requested && !busy) {
+        if (canEdit && (!requested || newWebsite) && !busy) {
           await tester.ensureVisible(button);
           await tester.tap(button);
           expect(requests, 1);

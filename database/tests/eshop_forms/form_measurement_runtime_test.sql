@@ -50,6 +50,8 @@ BEGIN
  PERFORM assert_true(denied,'even direct definer owner with non-service claims cannot cross service predicate');
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  config:=public.form_measurement_runtime_internal(fid);
+ UPDATE public.units SET data=data||'{"measurement_websites":["https://new.example"]}'::jsonb WHERE id=un;
+ PERFORM assert_eq(public.form_measurement_runtime_internal(fid),config,'website proposals preserve runtime, hosts and all revisions');
  UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/updated"}' WHERE id=un;
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid)->>'configuration_revision',config->>'configuration_revision','privacy change preserves frame revision');
  PERFORM assert_eq(public.form_measurement_status_internal(fid)->'enhanced_conversions_unavailable','false'::jsonb,'enhanced conversions are available');

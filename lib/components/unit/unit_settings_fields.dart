@@ -13,4 +13,5 @@ const unitSettingsKeys = <String>{
   'measurement_privacy_url',
   'measurement_consent_version',
   'measurement_consent_bridge',
+  'measurement_websites',
 };

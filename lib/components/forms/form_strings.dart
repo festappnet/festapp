@@ -30,6 +30,16 @@ class FormStrings {
       'FeatureFormSettings.measurementOrganizationHelp'.tr();
   static String get measurementUnitEnabled =>
       'FeatureFormSettings.measurementUnitEnabled'.tr();
+  static String get measurementWebsites =>
+      'FeatureFormSettings.measurementWebsites'.tr();
+  static String get measurementWebsitesHelp =>
+      'FeatureFormSettings.measurementWebsitesHelp'.tr();
+  static String get measurementWebsitesInvalid =>
+      'FeatureFormSettings.measurementWebsitesInvalid'.tr();
+  static String get measurementWebsiteApproved =>
+      'FeatureFormSettings.measurementWebsiteApproved'.tr();
+  static String get measurementWebsitePending =>
+      'FeatureFormSettings.measurementWebsitePending'.tr();
   static String get measurementConsentBridge =>
       'FeatureFormSettings.measurementConsentBridge'.tr();
   static String get measurementConsentBridgeConfirmation =>

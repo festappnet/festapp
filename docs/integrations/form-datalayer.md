@@ -531,3 +531,24 @@ conversion events, while the Meta adapter alone strips the E.164 leading plus.
 Retire the previous four-tag preset before enabling its replacement; Google
 consent behavior, Meta initialization/matching and account prerequisites are
 explained in the linked setup guide.
+
+### Organizer website proposals
+
+Organizer settings store `measurement_websites` in `units.data`, alongside the
+other organizer-owned measurement settings. The shared settings contract accepts
+at most ten exact HTTPS origins (no path, query, fragment or trailing slash).
+These are proposals only. The approval status returned to administration compares
+them with `analytics.unit_runtime.parent_origins` using exact string equality.
+They do not participate in processing/consent revisions or approved host output.
+
+`request_unit_measurement_approval` snapshots proposals into the existing request
+and emails the platform administrators. A previously requested or approved Unit
+can request again when a pending origin was not included in its last request.
+Unit locking serializes retries; each request revision has separate email dedupe.
+Old request revisions become obsolete at delivery validation.
+
+Approval continues through platform provisioning: a platform operator reviews
+ownership and updates `analytics.organization_policy` and
+`analytics.unit_runtime` (including `parent_origins`, revision, operator and reason)
+through the existing controlled SQL release procedure. No organizer RPC writes
+these platform tables, and neither saving nor requesting approves an origin.

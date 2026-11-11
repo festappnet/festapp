@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Organizer measurement settings now collect proposed websites, show platform approval for each origin and include new websites in repeat approval requests.
+
+- Organizer measurement help recommends embedding the form in website mode for the most accurate measurement and explains that consent takeover on standalone links depends on supported website banners.
+
 - Rebuild the paused website GTM preset with per-event GA4 tags, native conversion contact mapping, separate Ads free-registration conversion and the gallery-linked Meta Pixel template. Keep Google built-in consent checks and explicit Meta consent/CAPI settings.
 
 - Standalone consent links support configured Complianz opt-in records with semantic notice scope; Google Consent Mode alone never supplies imported consent.
