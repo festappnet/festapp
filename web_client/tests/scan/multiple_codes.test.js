@@ -27,15 +27,15 @@ test('duplicate QR payloads are returned once without hiding a different neighbo
     const image=frame(['TICKET-A','TICKET-A','TICKET-B']);
     assert.deepEqual(new Set((await decodeQRCodes(image.data,image.width,image.height)).map(c=>c.value)),new Set(['TICKET-A','TICKET-B']));
 });
-test('camera dispatches one group, suppresses repeated visible tickets and re-arms after they leave',async()=>{
-    const image=frame(['TICKET-A','TICKET-B']),groups=[],singles=[];
-    const input=new ScannerInput(code=>singles.push(code),{onCodes:codes=>groups.push(codes)});
-    input.video={videoWidth:image.width,videoHeight:image.height};input.canvas={};input.decode=decodeQRCodes;
-    input.context={drawImage(){},getImageData:()=>image};
-    await input.frame();await input.frame();assert.equal(groups.length,1);assert.equal(singles.length,0);
-    input.paused=false;await input.frame();assert.equal(groups.length,1);
-    input.context.getImageData=()=>({...image,data:new Uint8ClampedArray(image.data.length).fill(255)});await input.frame();
-    input.context.getImageData=()=>image;await input.frame();assert.equal(groups.length,2);
+test('two visible QR codes are handled one at a time without suppressing an unseen second ticket',async()=>{
+ const image=frame(['TICKET-A','TICKET-B']),singles=[];
+ const input=new ScannerInput(code=>singles.push(code));
+ input.video={videoWidth:image.width,videoHeight:image.height};input.canvas={};input.decode=decodeQRCodes;
+ input.context={drawImage(){},getImageData:()=>image};
+ await input.frame();await input.frame();assert.equal(singles.length,1);assert.equal(input.paused,true);
+ input.paused=false;await input.frame();assert.equal(singles.length,2);assert.notEqual(singles[0],singles[1]);
+ input.paused=false;await input.frame();assert.equal(singles.length,2,'visible completed codes remain suppressed');
+ input.allowSame();await input.frame();assert.equal(singles.length,3,'an explicit next allows the same code again');
 });
 
 test('large adjacent ticket codes remain readable in a wide camera frame',async()=>{

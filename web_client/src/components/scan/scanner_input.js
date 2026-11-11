@@ -1,7 +1,7 @@
 import { decodeQRCodes } from './scanner_codes.js';
 export const receptionPayload = value => typeof value === 'string' && value.trim().length <= 160 && /^festapp-login:v1:[1-9][0-9]*:[A-Za-z0-9_-]{40,80}$/.test(value.trim()) ? value.trim() : null;
 export class ScannerInput {
-    constructor(onCode, {onCodes=null,continuous=false,onError=()=>{}}={}) { this.onError=onError;this.continuous=continuous;this.onCode = onCode;this.onCodes=onCodes;this.suppressedCodes=new Set(); this.paused = false; this.suppressed = null; this.facing = 'environment'; this.generation=0; }
+    constructor(onCode, {accepts=()=>true,continuous=false,onError=()=>{}}={}) { this.onError=onError;this.continuous=continuous;this.onCode = onCode;this.accepts=accepts;this.suppressedCodes=new Set(); this.paused = false; this.suppressed = null; this.facing = 'environment'; this.generation=0; }
     async start(video) {
         this.stop(); const generation=this.generation; this.paused = false; this.video = video;
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('camera_unavailable');
@@ -60,13 +60,11 @@ export class ScannerInput {
         if (this.paused) return;
         const visible=new Set(codes.map(c=>c.value));
         for(const value of this.suppressedCodes)if(!visible.has(value))this.suppressedCodes.delete(value);
-        const fresh=codes.filter(c=>!this.suppressedCodes.has(c.value)).map(c=>c.value);
-        if(!fresh.length)return;
-        if(this.onCodes && fresh.length>1){
-            this.paused=!this.continuous;fresh.forEach(value=>this.suppressedCodes.add(value));this.onCodes(fresh);
-        }else this.accept(fresh[0]);
+        const fresh=codes.find(c=>!this.suppressedCodes.has(c.value) && this.accepts(c.value));
+        if(fresh)this.accept(fresh.value);
     }
-    accept(value) { if (this.paused || !value?.trim() || (this.continuous && this.suppressedCodes.has(value.trim()))) return; this.paused = !this.continuous; this.suppressed = value.trim();this.suppressedCodes.add(value.trim());this.onCode(value.trim()); }
+    accept(value) { if (this.paused || !value?.trim() || !this.accepts(value.trim()) || this.suppressedCodes.has(value.trim())) return; this.paused = !this.continuous; this.suppress(value);this.onCode(value.trim()); }
+    suppress(value) { if(typeof value==='string' && value.trim()){this.suppressed=value.trim();this.suppressedCodes.add(value.trim());} }
     allowSame() { this.suppressed = null;this.suppressedCodes.clear(); }
     pause({ keepStream=false }={}) { this.paused = true;if(!keepStream)this.stop(); }
     async switchCamera() { const paused=this.paused;this.facing = this.facing === 'environment' ? 'user' : 'environment'; await this.start(this.video);this.paused=paused; }
