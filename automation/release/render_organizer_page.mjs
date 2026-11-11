@@ -119,7 +119,9 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
       return tokens[nested];
     }));
   });
-  let body = template;
+  const illustrated = page.id === 'home' && projection.homeStyle === 'illustrated';
+  let body = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8') : template;
+  const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
   if (projection.locale === 'cs') {
     body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
     const reference=body.match(/<section id="reference"[\s\S]*?<\/section>/)?.[0] ?? '';
@@ -154,7 +156,7 @@ const html = `<!doctype html><html lang="${escape(context.locale)}"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}${page.id === 'press' ? pressCss : ''}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}">${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${illustrated ? '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.json">' : ''}${themeLinks}<style>:root{--primary-color:${primary}}${pageCss}${page.id === 'press' ? pressCss : ''}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}"${illustrated ? ' data-drawing="original" data-story="revised-english" data-cinematic="true"' : ''}>${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.ui)}</script>${entryScript}</body></html>\n`;
 
 outputs.push({asset:page.asset, html});
 }
