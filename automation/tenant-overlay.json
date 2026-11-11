@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festappticketsglobal",
+  "baseMainSha": "a18e84dda0442fcee7dd27c24ad82ffb6a7918d7",
+  "release": {
+    "version": "0.20.392+893",
+    "note": "Illustrated English Festapp Tickets landing page and brand assets"
+  }
+}
