@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Generate the global order cap and migration from project.conf and canonical SQL."""
+import migration_inputs
 from pathlib import Path
 import re
 import argparse
 
 root = Path(__file__).resolve().parent.parent
 match = re.search(r'^MAX_TICKETS_PER_ORDER=([1-9][0-9]{0,3})$',
-                  (root / 'automation/project.conf').read_text(), re.M)
+                  migration_inputs.read_text(root / 'automation/project.conf'), re.M)
 if not match:
     raise SystemExit('MAX_TICKETS_PER_ORDER must be a positive integer up to 9999')
 limit = int(match[1])
@@ -22,11 +23,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--output', required=True, help='New migration path; existing files are never overwritten')
 args = parser.parse_args()
 migration = Path(args.output)
-if migration.exists():
+if migration_inputs.exists(migration):
     raise SystemExit('Refusing to overwrite an existing migration')
-limit_sql.write_text(limit_source)
+migration_inputs.write_text(limit_sql, limit_source)
 sources = [limit_sql, root / 'database/functions/eshop/create_ticket_order.sql',
            root / 'database/functions/eshop_forms/update_form.sql']
-migration.write_text('-- Generated from canonical SQL. Global limit applies to all order creators.\n'
+migration_inputs.write_text(migration, '-- Generated from canonical SQL. Global limit applies to all order creators.\n'
                      + '\n'.join(p.read_text() for p in sources))
 print(f'Generated ticket order limit: {limit}')

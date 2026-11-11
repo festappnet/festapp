@@ -15,11 +15,15 @@ class BaselineContractTest(unittest.TestCase):
         import json
         config = baseline.load_manifest()
         history = json.loads((baseline.ROOT / config['historicalSources']['path']).read_text())
-        with tempfile.TemporaryDirectory() as temporary:
-            with patch.object(baseline.subprocess, 'check_output', side_effect=AssertionError('Git history must not be consulted')):
-                kit = baseline.materialize_history(Path(temporary), include_email=True)
-            for entry in history['files'] + history['emailUpgradeFiles']:
-                self.assertEqual(hashlib.sha256((kit / entry['path']).read_bytes()).hexdigest(), entry['sha256'])
+        for email in [False, True]:
+            with tempfile.TemporaryDirectory() as temporary:
+                with patch.object(baseline.subprocess, 'check_output', side_effect=AssertionError('Git history must not be consulted')):
+                    kit = baseline.materialize_history(Path(temporary), include_email=email)
+                entries = history['emailUpgradeFiles'] if email else history['files']
+                for entry in entries:
+                    self.assertEqual(hashlib.sha256((kit / entry['path']).read_bytes()).hexdigest(), entry['sha256'])
+                if email:
+                    self.assertFalse((kit / 'supabase/migrations/20261106120000_payment_provider_connectors.sql').exists())
 
     def test_recovery_refuses_to_clobber_existing_evidence(self):
         import json

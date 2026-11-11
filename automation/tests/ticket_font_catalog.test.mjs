@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import {strict as assert} from 'node:assert';
-import {readFileSync,readdirSync} from 'node:fs';
+import {readFileSync,readdirSync} from '../lib/migration_inputs.mjs';
 import {generate,extractVariants,extractFaceVariants} from '../generate_ticket_font_catalog.mjs';
 test('deterministic catalog maps display families, locks version and matches all outputs',()=>{
   const outputs=generate(process.cwd());for(const [file,content] of outputs)assert.equal(readFileSync(file,'utf8'),content);

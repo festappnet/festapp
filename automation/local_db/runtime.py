@@ -57,6 +57,23 @@ def sql_sources(root, source):
     return paths
 
 
+def sql_content(root, source, stack=()):
+    """Expand validated literal psql includes before streaming into the container."""
+    source=source.resolve()
+    if source in stack:
+        raise ValueError('Cyclic SQL include')
+    sql_sources(root,source)
+    output=[]
+    for line in source.read_text().splitlines(keepends=True):
+        match=re.fullmatch(r'\s*\\(ir|i)\s+([A-Za-z0-9_./-]+)\s*',line)
+        if match:
+            parent=source.parent if match[1]=='ir' else root
+            target=baseline.repository_path(root,str((parent/match[2]).relative_to(root)))
+            output.append(sql_content(root,target,(*stack,source)))
+        else:output.append(line)
+    return ''.join(output)
+
+
 def core_sources(root):
     paths=set()
     for directory in ('automation/local_db','supabase/baseline'):
@@ -72,6 +89,9 @@ def core_sources(root):
     for key in ('baselineManifest','operationsManifest'):
         paths.add(baseline.repository_path(root,contract[key]))
     paths.update(sql_sources(root,root/'automation/seed_demo_occasions.sql'))
+    for source in (root/'supabase/baseline').glob('*.sql'):
+        paths.update(sql_sources(root,source))
+    paths.update(path for path in (root/'automation/historical-inputs/objects').iterdir() if path.is_file())
     return paths
 
 
@@ -120,7 +140,7 @@ class Runtime:
     def sql(self, sql=None, *, file=None, database='postgres', user='supabase_admin', capture=False):
         command = ['docker','exec','-i','-e','PGPASSWORD=postgres',self.container,
                    'psql','-X','-U',user,'-d',database,'-v','ON_ERROR_STOP=1','-Atq']
-        result = subprocess.run(command, input=Path(file).read_bytes() if file else sql.encode(),
+        result = subprocess.run(command, input=sql_content(ROOT,Path(file)).encode() if file else sql.encode(),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode:
             raise RuntimeError(result.stderr.decode().strip())
@@ -264,7 +284,7 @@ class Runtime:
             self.provider()
             manifest = baseline.load_manifest(ROOT)
             for name,field in [('baseline-prerequisites','bootstrap'),('baseline-restore','schema'),('baseline-reference-seed','referenceSeed')]:
-                with phase('database.'+name): self.sql(file=ROOT/manifest[field]['path'],user='postgres')
+                with phase('database.'+name): self.sql(file=ROOT/manifest[field]['path'],user='supabase_admin')
             with phase('database.reference-tenants'): self.sql(file=ROOT/'automation/local_db/reference_tenants.sql',user='postgres')
             self.sql(baseline.ledger_sql(ROOT),user='postgres')
         with phase('database.checkpoint-tail' if checkpoint else 'database.full-history-replay'):

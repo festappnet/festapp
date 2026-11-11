@@ -534,7 +534,7 @@
       }
     },
     "seat-runtime-contract": {
-      "script": "FESTAPP_RUNTIME_INTEGRATION=1 python3 -m unittest discover -s automation/local_db -p test_runtime.py\n",
+      "script": "FESTAPP_RUNTIME_INTEGRATION=1 python3 -m unittest discover -s automation/local_db -p test_runtime.py\n\nnode --test automation/tests/migration_compaction.test.mjs\npython3 -m unittest discover -s automation/tests -p test_migration_compaction.py\npython3 -m unittest discover -s automation/tests -p test_baseline_contract.py\npython3 -m unittest discover -s automation/tests -p test_historical_inputs.py\n",
       "after": [
         "seat-upgrade"
       ],
@@ -1151,6 +1151,7 @@
     "automation/tests/legacy_origin_redirect.test.mjs",
     "automation/tests/local_release_manifest.test.mjs",
     "automation/tests/measurement_runtimes.test.mjs",
+    "automation/tests/migration_compaction.test.mjs",
     "automation/tests/monitoring_router.test.mjs",
     "automation/tests/netlify_canonical_provider_origin.test.mjs",
     "automation/tests/netlify_retirement.test.mjs",

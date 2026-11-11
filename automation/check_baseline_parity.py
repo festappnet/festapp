@@ -23,13 +23,16 @@ def sql(container, query):
     return result.strip()
 
 
-def schema(container):
-    dump = command(container, 'pg_dump', '--schema-only', '--exclude-schema=supabase_migrations')
+def schema(container, ignore_realtime_partitions=False):
+    excluded = ['--exclude-table=realtime.messages_20*'] if ignore_realtime_partitions else []
+    dump = command(container, 'pg_dump', '--schema-only', '--exclude-schema=supabase_migrations', *excluded)
     # Only pg_dump session delimiters/version metadata are environment-specific.
     return normalize_schema_dump(dump)
 
 
 def normalize_schema_dump(dump):
+    dump = re.sub(r'(?m)(?:^GRANT [^\n]+\n)+',
+                  lambda match: ''.join(sorted(match[0].splitlines(True))), dump)
     # Policy role arrays are unordered sets represented in OID order by pg_dump.
     dump = re.sub(r'(?m)^(CREATE POLICY [^\n]*? TO )([\w\" ,]+)(?= USING | WITH CHECK |;)',
                   lambda match: match[1] + ', '.join(sorted(role.strip() for role in match[2].split(','))), dump)
@@ -38,24 +41,28 @@ def normalize_schema_dump(dump):
 
 
 def sequence_values(container):
-    names = json.loads(sql(container, "SELECT coalesce(json_agg(format('%I.%I',n.nspname,c.relname) ORDER BY n.nspname,c.relname),'[]'::json) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.relkind='S' AND n.nspname IN ('public','eshop')"))
+    names = json.loads(sql(container, "SELECT coalesce(json_agg(format('%I.%I',n.nspname,c.relname) ORDER BY n.nspname,c.relname),'[]'::json) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.relkind='S' AND n.nspname IN ('public','eshop','analytics')"))
     return {name: sql(container, f'SELECT last_value,is_called FROM {name}') for name in names}
 
 
-def compare(left, right):
+def compare(left, right, ignore_realtime_partitions=False):
     versions = [sql(c, 'SHOW server_version_num') for c in [left, right]]
     if versions[0][:2] != versions[1][:2]:
         raise ValueError('Compare catalogs within the same PostgreSQL major')
-    a, b = schema(left), schema(right)
+    a, b = schema(left, ignore_realtime_partitions), schema(right, ignore_realtime_partitions)
     references = {}
     unresolved = {}
-    for table in load_manifest()['referenceTables']:
+    config = load_manifest()
+    for table in config['referenceTables']:
         if not re.fullmatch(r'(public|eshop|storage)\.[a-z_][a-z_0-9]*', table):
             raise ValueError('Invalid reference table')
         # regclass values in JSON are OIDs, which differ across equivalent
         # restores. Resolve typed relation identities; never ignore the column.
         columns = json.loads(sql(left, f"SELECT coalesce(json_agg(attname ORDER BY attnum),'[]'::json) FROM pg_attribute WHERE attrelid='{table}'::regclass AND atttypid='regclass'::regtype AND NOT attisdropped"))
-        projection = 'to_jsonb(t)'
+        ignored = config.get('referenceIgnoredColumns', {}).get(table, [])
+        if any(not re.fullmatch(r'[a-z_][a-z_0-9]*', name) for name in ignored):
+            raise ValueError('Invalid volatile reference column')
+        projection = 'to_jsonb(t)' + ''.join(" - '" + name + "'" for name in ignored)
         for column in columns:
             if not re.fullmatch(r'[a-z_][a-z_0-9]*', column):
                 raise ValueError('Unsupported reference column name')
@@ -75,7 +82,9 @@ def compare(left, right):
     report = {'roles_equal':roles,'role_memberships_equal':memberships,'cron_disabled_both':disabled_cron,'ledger_equal': ledger, 'extensions_equal': extensions, 'postgres_versions': versions, 'schema_equal': a == b,
               'schema_sha256': [hashlib.sha256(s.encode()).hexdigest() for s in [a,b]],
               'reference_rows_equal': references, 'unresolved_reference_counts': unresolved, 'sequence_values_equal': sequences,
-              'ignored_catalog_schema': 'supabase_migrations (ledger verified separately)'}
+              'ignored_catalog_schema': 'supabase_migrations (ledger verified separately)',
+              'ignored_reference_columns': config.get('referenceIgnoredColumns', {}),
+              'ignored_provider_tables': ['realtime.messages_20* (provider-created daily partitions)'] if ignore_realtime_partitions else []}
     return report, ''.join(difflib.unified_diff(a.splitlines(True), b.splitlines(True), fromfile=left, tofile=right))
 
 
@@ -84,8 +93,10 @@ def main():
     parser.add_argument('--left', required=True)
     parser.add_argument('--right', required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--ignore-provider-realtime-partitions', action='store_true',
+                        help='Ignore provider-generated dated Realtime partitions across UTC rollover; retain parent and ACL checks')
     args = parser.parse_args()
-    report, diff = compare(args.left, args.right)
+    report, diff = compare(args.left, args.right, args.ignore_provider_realtime_partitions)
     args.report.write_text(json.dumps(report, indent=2) + '\n')
     if diff:
         args.report.with_suffix('.diff').write_text(diff)

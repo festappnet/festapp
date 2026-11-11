@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import fs from '../lib/migration_inputs.mjs';
 import os from 'node:os';
 import {readHistoricalSql} from '../lib/historical_sql.mjs';
 import test from 'node:test';

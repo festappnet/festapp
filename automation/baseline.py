@@ -35,8 +35,12 @@ def load_manifest(root=ROOT):
         raise ValueError('Unsupported baseline manifest')
     for key in ['schema', 'bootstrap', 'referenceSeed', 'historicalSources']:
         checked_file(root, data[key])
+    if data.get('forwardMigrationRole') not in (None, 'supabase_admin'):
+        raise ValueError('Unsupported compacted migration execution role')
+    for entry in data.get('referenceInputs', []):
+        checked_file(root, entry)
     for stage in data.get('upgradeStages', []):
-        if not re.fullmatch(r'\d{14}', stage['beforeVersion']) or stage['beforeVersion'] <= data['coveredThrough']:
+        if not re.fullmatch(r'\d{14}', stage['beforeVersion']) or stage['beforeVersion'] <= data['supportedUpgradeFrom']:
             raise ValueError('Invalid forward upgrade stage')
         checked_file(root, stage['backfill'])
     history = json.loads((root / data['historicalSources']['path']).read_text())
@@ -80,7 +84,15 @@ def materialize_history(destination, root=ROOT, include_email=False):
     # Checked immutable fixtures are the recovery authority, independent of Git ancestry.
     # Verify every blob before creating files; recovery works without a network.
     blobs = []
-    for entry in history['files'] + (history['emailUpgradeFiles'] if include_email else []):
+    entries = history['files']
+    if include_email:
+        # The email rehearsal is a separate frozen predecessor, not the current
+        # upgrade chain. Its snapshots can intentionally predate later fixes.
+        boundary = data.get('compactedForwardsAfter', data['coveredThrough'])
+        entries = [entry for entry in entries if not entry['path'].startswith('supabase/migrations/')
+                   or Path(entry['path']).name[:14] <= boundary]
+        entries += history['emailUpgradeFiles']
+    for entry in entries:
         repository_path(root, entry['path'])
         source_commit = entry.get('sourceCommit', commit)
         if not re.fullmatch(r'[0-9a-f]{40}', source_commit):
@@ -123,8 +135,22 @@ def upgrade_local(database_url, root=ROOT):
     with tempfile.TemporaryDirectory(prefix='festapp-upgrade-') as temporary:
         with phase('database.history-materialization'):
             kit = materialize_history(Path(temporary), root)
-        forward = sorted((root / 'supabase/migrations').glob('*.sql'))
+        # Stage recovered covered forwards as well as active ones. In particular,
+        # a populated predecessor must finish its backfill before contract SQL.
+        history_directory = kit / 'supabase/.covered-migrations'
+        (kit / 'supabase/migrations').rename(history_directory)
+        (kit / 'supabase/migrations').mkdir()
+        sources = {path.name: path for path in history_directory.glob('*.sql')}
+        config = load_manifest(root)
+        for path in (root / 'supabase/migrations').glob('*.sql'):
+            if path.name[:14] <= config.get('coveredThrough', '00000000000000'):
+                continue
+            if path.name in sources:
+                raise ValueError('Forward SQL overlaps recovered history')
+            sources[path.name] = path
+        forward = [sources[name] for name in sorted(sources)]
         (kit / 'supabase/config.toml').write_text('project_id = "festapp-local-upgrade"\n')
+        first_active = min((path.name for path in forward if path.name[:14] > config.get('coveredThrough', '00000000000000')), default=None)
         added = set()
 
         def migrate(before=None):
@@ -135,6 +161,11 @@ def upgrade_local(database_url, root=ROOT):
                 if destination.exists():
                     raise ValueError('Forward SQL overlaps recovered history')
                 shutil.copy2(path, destination)
+                if path.name == first_active and config.get('forwardMigrationRole') == 'supabase_admin':
+                    # The folded security history left this session role active.
+                    # Preserve that execution boundary for a clean baseline,
+                    # without rewriting the repository's immutable SQL inputs.
+                    destination.write_text('SET ROLE supabase_admin;\n' + path.read_text())
                 added.add(path.name)
             # The local extension-owning admin also runs trusted maintenance
             # migrations. Supply its service context only to the guarded local

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readFile} from 'node:fs/promises';
+import {readFile} from '../../../automation/lib/migration_inputs_async.mjs';
 import {setup,paidAtomicSwap,executor} from './seat-fixtures.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};

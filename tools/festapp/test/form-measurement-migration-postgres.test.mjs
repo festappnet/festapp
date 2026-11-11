@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile} from '../../../automation/lib/migration_inputs_async.mjs';
 import {options,setup,create} from './form-fixtures.mjs';
 const sql=name=>readFile(new URL('../../../'+name,import.meta.url),'utf8');
 const migration=await sql('supabase/migrations/20261106100000_form_measurement_policy.sql');

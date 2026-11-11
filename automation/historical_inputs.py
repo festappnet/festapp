@@ -1,6 +1,7 @@
 """Read exact historical fixture bytes independently of Git ancestry."""
 import argparse
 from functools import lru_cache
+import gzip
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -27,7 +28,8 @@ def read_source(revision, relative, *, root=ROOT):
     sha = _manifest(root)[revision][relative]
     if not re.fullmatch(r'[0-9a-f]{64}', sha):
         raise ValueError('Invalid historical input digest')
-    data = (root / 'automation/historical-inputs/objects' / sha).read_bytes()
+    blob = root / 'automation/historical-inputs/objects' / sha
+    data = blob.read_bytes() if blob.is_file() else gzip.decompress(blob.with_suffix('.gz').read_bytes())
     if hashlib.sha256(data).hexdigest() != sha:
         raise ValueError(f'Historical input checksum mismatch: {revision}:{relative}')
     return data

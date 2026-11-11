@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
+import fs from '../../../automation/lib/migration_inputs_async.mjs';
 import pg from 'pg';
 import { randomUUID } from 'node:crypto';
 import { assertLocalDatabaseUrl, assertDisposableDatabase } from './disposable_database.js';

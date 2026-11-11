@@ -1,7 +1,7 @@
 import {evidenceDirectory} from './evidence.mjs';
 // First domain request on a fresh PostgreSQL backend, sequential and four-way.
 // Only the marker-verified local DB; OS/shared buffers deliberately stay warm.
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile} from '../lib/migration_inputs_async.mjs';
 import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import assert from 'node:assert/strict';

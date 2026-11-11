@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Assemble the unified payment-operation forward; no activation or external effects."""
+import migration_inputs
 import argparse,json,hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def render():
- m=json.loads((ROOT/'automation/payment-operations-migration.json').read_text())
+ m=json.loads(migration_inputs.read_text(ROOT/'automation/payment-operations-migration.json'))
  parts=['-- Unified incoming/outgoing payment operations. No activation or network jobs.']
  for source in m['sources']:
-  parts.append('-- SOURCE: '+source+'\n'+(ROOT/'database/functions'/source).read_text().rstrip())
+  parts.append('-- SOURCE: '+source+'\n'+migration_inputs.read_text(ROOT/'database/functions'/source).rstrip())
  return ROOT/'supabase/migrations'/m['migration'],'\n\n'.join(parts)+'\n'
 def render_readonly_qr():
  sources={'payment_providers/builtin.sql':['bank_payment_provider_internal'],
@@ -24,10 +25,10 @@ def render_readonly_qr():
 if __name__=='__main__':
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');a=p.parse_args();dest,content=render()
  if a.check:
-  if not dest.exists() or hashlib.sha256(dest.read_bytes()).hexdigest()!='268ec4905adf7b863683260e025b6de4b4fbb735f446cfa83a69dccc3b2fc5fa': raise SystemExit('Installed payment operations migration bytes changed')
+  if not migration_inputs.exists(dest) or hashlib.sha256(migration_inputs.read_bytes(dest)).hexdigest()!='268ec4905adf7b863683260e025b6de4b4fbb735f446cfa83a69dccc3b2fc5fa': raise SystemExit('Installed payment operations migration bytes changed')
   qr_path,qr_content=render_readonly_qr()
-  if qr_path.read_text()!=qr_content: raise SystemExit('Read-only bank QR migration differs from canonical owners')
+  if migration_inputs.read_text(qr_path)!=qr_content: raise SystemExit('Read-only bank QR migration differs from canonical owners')
   from generate_canonical_source_contract import render as source_contract
-  source_contract(ROOT,additional_sources=json.loads((ROOT/'automation/payment-operations-migration.json').read_text())['sources'])
+  source_contract(ROOT,additional_sources=json.loads(migration_inputs.read_text(ROOT/'automation/payment-operations-migration.json'))['sources'])
   print('Payment operations migration matches ordered canonical owners')
  else: raise SystemExit('Installed payment operations migration is immutable; author a scoped forward migration')

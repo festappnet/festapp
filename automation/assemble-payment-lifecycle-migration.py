@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the scoped forward migration from frozen canonical payment SQL."""
+import migration_inputs
 import argparse
 from pathlib import Path
 
@@ -19,7 +20,7 @@ def migration_sql():
     )
     # The reconciliation helper is declared before its legacy and product adapters.
     for source in SOURCES:
-        content += '\n-- Source: ' + source + '\n' + (ROOT / source).read_text().rstrip() + '\n'
+        content += '\n-- Source: ' + source + '\n' + migration_inputs.read_text(ROOT / source).rstrip() + '\n'
     content += '''
 -- The caller's authorized domain boundary owns execution of this invoker helper.
 -- Check effective privileges too, including accidental inherited/public grants.
@@ -46,7 +47,7 @@ def main():
     output = Path(args.output)
     content = migration_sql()
     if args.check:
-        if not output.is_file() or output.read_text() != content:
+        if not migration_inputs.is_file(output) or migration_inputs.read_text(output) != content:
             raise SystemExit('Payment lifecycle migration differs from canonical sources')
         print('Payment lifecycle migration matches canonical sources')
         return

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Freeze a one-way rewrite of active template sources and reject the old format."""
+import migration_inputs
 import json
 import hashlib
 import re
@@ -8,8 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 historical = ROOT / 'supabase/migrations/20261109160000_canonical_email_variables.sql'
-assert hashlib.sha256(historical.read_bytes()).hexdigest() == '8e85319731405efe5ce63c05ffcbc438112043efa6eb75680276832576e6eced', 'Installed variable cutover history is immutable'
-renames = json.loads((ROOT / 'automation/email-template-cutover/renames.json').read_text())
+assert hashlib.sha256(migration_inputs.read_bytes(historical)).hexdigest() == '8e85319731405efe5ce63c05ffcbc438112043efa6eb75680276832576e6eced', 'Installed variable cutover history is immutable'
+renames = json.loads(migration_inputs.read_text(ROOT / 'automation/email-template-cutover/renames.json'))
 assert all(re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', name) for pair in renames.items() for name in pair)
 expression = 'p_text'
 for old, new in renames.items():
@@ -65,7 +66,7 @@ for source in [
     'database/functions/eshop_waitlist/email_templates.sql',
     'database/functions/sale_opening_notifications/email_templates.sql',
 ]:
-    content += '\n-- Source: ' + source + '\n' + (ROOT / source).read_text() + '\n'
+    content += '\n-- Source: ' + source + '\n' + migration_inputs.read_text(ROOT / source) + '\n'
 content += '''
 ALTER TABLE public.email_templates DROP CONSTRAINT IF EXISTS email_templates_canonical_variables;
 ALTER TABLE public.email_templates ADD CONSTRAINT email_templates_canonical_variables
@@ -90,7 +91,7 @@ DROP TABLE pg_temp.email_variable_cutover_counts;
 '''
 target = ROOT / 'supabase/migrations/20261109170000_system_email_variables.sql'
 if '--check' in sys.argv:
-    if not target.exists() or target.read_text() != content:
+    if not migration_inputs.exists(target) or migration_inputs.read_text(target) != content:
         raise SystemExit('Canonical email-variable cutover migration is stale')
 else:
-    target.write_text(content)
+    migration_inputs.write_text(target, content)

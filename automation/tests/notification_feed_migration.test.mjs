@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,mkdtempSync,rmSync,mkdirSync,copyFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdtempSync,rmSync,mkdirSync,copyFileSync} from '../lib/migration_inputs.mjs';
 import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -22,7 +22,7 @@ test('default output cannot rewrite a published migration after source changes',
  try {
   const manifest=JSON.parse(readFileSync(join(root,'automation/notification-center-feed-manifest.json'),'utf8'));
   const script='automation/assemble-notification-center-migration.py';
-  const files=[script,'automation/notification-center-feed-manifest.json',manifest.output,
+  const files=[script,'automation/migration_inputs.py','automation/baseline.py','automation/historical_inputs.py','automation/notification-center-feed-manifest.json',manifest.output,
    ...manifest.prerequisites.map(name=>'supabase/migrations/'+name),
    ...manifest.sources.map(name=>'database/functions/'+name),
    'database/tables/tables.sql','database/functions/notification_center/schema.sql',

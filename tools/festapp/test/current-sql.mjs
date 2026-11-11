@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile} from '../../../automation/lib/migration_inputs_async.mjs';
 
 const root=new URL('../../../',import.meta.url);
 const sources=new Map();

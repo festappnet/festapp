@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify installed foundation bytes and current owners without rewriting history."""
+import migration_inputs
 import argparse
 import hashlib
 from pathlib import Path
@@ -17,7 +18,7 @@ def main():
     args = parser.parse_args()
     if args.output:
         raise SystemExit('Installed foundation is immutable; author a new forward migration')
-    if INSTALLED.is_symlink() or hashlib.sha256(INSTALLED.read_bytes()).hexdigest() != INSTALLED_SHA256:
+    if INSTALLED.is_symlink() or hashlib.sha256(migration_inputs.read_bytes(INSTALLED)).hexdigest() != INSTALLED_SHA256:
         raise SystemExit('Installed operations foundation was changed')
     # One source-contract parser owns final-definition comparison, including
     # later corrections and retirement; historical assembly is no longer live.

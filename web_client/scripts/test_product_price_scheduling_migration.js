@@ -1,5 +1,5 @@
 import pg from 'pg';
-import fs from 'node:fs';
+import fs from '../../automation/lib/migration_inputs.mjs';
 import assert from 'node:assert/strict';
 const url=process.env.DATABASE_URL;
 if (!url || !['127.0.0.1','localhost'].includes(new URL(url).hostname) || process.env.FESTAPP_DISPOSABLE_PRICE_DB!=='yes') throw new Error('Disposable loopback database required');

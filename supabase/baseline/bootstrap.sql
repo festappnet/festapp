@@ -1,5 +1,7 @@
+SET ROLE postgres;
 -- Provider prerequisite: caller supplies pg_cron, or the explicit isolated rehearsal stubs.
 CREATE SCHEMA IF NOT EXISTS eshop;
+CREATE SCHEMA IF NOT EXISTS analytics AUTHORIZATION postgres;
 CREATE EXTENSION IF NOT EXISTS dblink WITH SCHEMA public;
 CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
@@ -14,3 +16,15 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTI
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON TABLES FROM anon,authenticated,service_role;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON SEQUENCES FROM anon,authenticated,service_role;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA eshop REVOKE ALL ON FUNCTIONS FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
+RESET ROLE;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON TABLES FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA eshop REVOKE ALL ON TABLES FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA eshop REVOKE ALL ON SEQUENCES FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA eshop REVOKE ALL ON FUNCTIONS FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA analytics REVOKE ALL ON TABLES FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA analytics REVOKE ALL ON SEQUENCES FROM anon,authenticated,service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA analytics REVOKE ALL ON FUNCTIONS FROM anon,authenticated,service_role;

@@ -2,7 +2,7 @@ import test from 'node:test';
 import {readHistoricalSql} from '../../../automation/lib/historical_sql.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {readFileSync} from 'node:fs';
+import {readFileSync} from '../../../automation/lib/migration_inputs.mjs';
 import {readSource} from '../../../automation/lib/historical_inputs.mjs';
 const require=createRequire(new URL('../../../web_client/package.json',import.meta.url));
 const {Client}=require('pg');

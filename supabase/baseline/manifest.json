@@ -1,24 +1,34 @@
 {
   "formatVersion": 1,
-  "coveredThrough": "20260906140000",
+  "coveredThrough": "20261107170000",
   "schema": {
-    "path": "supabase/baseline/20260906140000_schema.sql",
-    "sha256": "346fb4f7d036e5677eaed92c198de4d8c1dc806948629f7828270999f0d9368a"
+    "path": "supabase/baseline/20261107170000_schema.sql",
+    "sha256": "0fa58dbb836cc31394371c5796aa1938afa2531d52ec3705fae2a2c02dc7d9b9"
   },
   "bootstrap": {
     "path": "supabase/baseline/bootstrap.sql",
-    "sha256": "0281cbc2b562984754a06c3c9d16e6a4e18c6bdcf194e1b7e6fe67c4d11b30e2"
+    "sha256": "f42df6bb885b6bfff3cc1c1b7776987600dd2ff976dc894ac5bb7755e4bcd985"
   },
   "referenceSeed": {
-    "path": "supabase/baseline/20260906140000_reference_seed.sql",
-    "sha256": "151d2df3d27ee86c52bed8cf6f947afb25e43b2ba267e524eed0f766b9d6c4f6"
+    "path": "supabase/baseline/20261107170000_reference_seed.sql",
+    "sha256": "272b46818dcc397bcf0ad1c2c702a8caf012f2d4f76ee49088193f4855646e79"
   },
   "historicalSources": {
     "path": "automation/historical-sql-manifest.json",
-    "sha256": "8cb30d5f5d2bc1e2d73b2e9252d47a5820c4b3513febcbc3892d9ff085757915"
+    "sha256": "56d45cfe2a96f79d0c3237b801976f4888a0dc9170b63dc27ab430428d19f778"
   },
   "referenceTables": [
-    "public.client_sync_component_sources"
+    "eshop.payment_providers",
+    "public.abuse_policy_revision",
+    "public.abuse_policy_rules",
+    "public.canonical_asset_cutover",
+    "public.client_sync_component_sources",
+    "public.email_capacity",
+    "public.email_templates",
+    "public.notification_runtime",
+    "public.wix_billing_activation",
+    "public.ticket_font_assets",
+    "public.ticket_font_families"
   ],
   "supportedUpgradeFrom": "20260805230000",
   "providerContract": "Supabase PG15/PG17 provider roles and managed schemas; provider default ACL remains provider-owned.",
@@ -31,5 +41,22 @@
       },
       "remainingQuery": "SELECT count(*) FROM eshop.orders WHERE order_symbol IS NULL"
     }
-  ]
+  ],
+  "compactedForwardsAfter": "20260906140000",
+  "referenceInputs": [
+    {
+      "path": "database/seeds/ticket_font_assets.sql",
+      "sha256": "e8abab003e730646c6b791969e0c898bacf27f80befb5acfa10bd7972fc719f5"
+    },
+    {
+      "path": "database/seeds/ticket_font_families.sql",
+      "sha256": "1447d107d2f6d25c71123b5e954967a37ccd2fa822c616d1f48328aa48fe54fa"
+    }
+  ],
+  "referenceIgnoredColumns": {
+    "public.email_capacity": [
+      "next_send_at"
+    ]
+  },
+  "forwardMigrationRole": "supabase_admin"
 }

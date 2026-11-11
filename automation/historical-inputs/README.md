@@ -5,7 +5,7 @@ assembly, predecessor/security regression tests and capture-reference checks.
 They are fixtures, never current installable migrations or application sources.
 
 `manifest.json` maps the original full revision and path to a SHA256-addressed
-file in `objects/`. The Python and Node readers verify that digest before use.
+file in `objects/`, either raw or gzip-compressed (`<sha256>.gz`). The Python and Node readers decompress when needed and verify the original byte digest before use.
 Runtime readers never consult Git history or fall back to current source.
 Repeated bytes share one file. Original revision IDs remain provenance only.
 
@@ -25,5 +25,8 @@ matching digest; changing current source must never update these snapshots.
 Current installable SQL lives in `database/functions`, the baseline and forward
 `supabase/migrations`; objects here remain immutable test/recovery inputs. No
 snapshot has a proven retired recovery contract in the 2026-11-06 reduction, so
-all mappings and raw objects are retained. Moving or compressing them is not a
-runtime code reduction.
+all previous mappings and objects remain retained. The November baseline
+compaction adds checksum-pinned compressed originals for 370 covered forwards.
+These recovery fixtures preserve populated upgrades and predecessor tests; the
+installable SQL reduction comes from the new final-state baseline, not from
+compression alone.

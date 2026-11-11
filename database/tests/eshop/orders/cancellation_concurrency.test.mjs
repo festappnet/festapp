@@ -162,7 +162,7 @@ test('blueprint removal waits for a real hold and rechecks its committed allocat
 test('forward reassembly preserves Auth consumption and receipts and installs the authored bodies/ACL',async()=>{
  const c=await connect();
  try {
-  const {readFile}=await import('node:fs/promises');
+  const {readFile}=await import('../../../../automation/lib/migration_inputs_async.mjs');
   const key=randomUUID().replaceAll('-','').repeat(2);
   await c.query("SELECT set_config('request.jwt.claim.role','service_role',false)");
   assert.equal((await c.query("SELECT public.consume_auth_abuse_v1('reset.account',$1) AS allowed",[key])).rows[0].allowed,true);
@@ -580,7 +580,7 @@ test('owned companion deletion waits for an admitted attendance command and repl
 test('ownership cleanup refuses an unresolved stored caller and rolls back its definition change',async()=>{
  const ownerURL=new URL(connectionString);ownerURL.username='supabase_admin';
  const owner=new Client({connectionString:ownerURL.toString()});await owner.connect();
- const {readFile}=await import('node:fs/promises');
+ const {readFile}=await import('../../../../automation/lib/migration_inputs_async.mjs');
  const migration=await readFile(new URL('../../../../supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql',import.meta.url),'utf8');
  const definition="SELECT prosrc FROM pg_proc WHERE oid='public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)'::regprocedure";
  try {

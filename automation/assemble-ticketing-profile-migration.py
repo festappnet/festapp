@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the forward ticketing profile contract without rewriting old migrations."""
+import migration_inputs
 from pathlib import Path
 import argparse
 import sys
@@ -28,6 +29,6 @@ feature = feature[feature.index('CREATE OR REPLACE FUNCTION public.stripe_unit_f
 body += '-- SOURCE: eshop_stripe/feature_settings.sql (discovery function only)\n' + feature + '\n'
 body += '\n\n'.join('-- SOURCE: ' + source + '\n' + source_text(source).rstrip() for source in SOURCES) + '\n'
 if args.check:
-    if not target.exists() or target.read_text() != body: raise SystemExit('Ticketing profile migration is stale')
-else: target.write_text(body)
+    if not migration_inputs.exists(target) or migration_inputs.read_text(target) != body: raise SystemExit('Ticketing profile migration is stale')
+else: migration_inputs.write_text(target, body)
 print('Ticketing profile migration matches sources' if args.check else 'Assembled ticketing profile migration')

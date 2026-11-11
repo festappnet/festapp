@@ -1,7 +1,7 @@
 // Real disposable SQL -> current UI/MCP projections, paired with the exact
 // pre-cutover UI RPC source. No HTTP/provider call or production fixture.
 import assert from 'node:assert/strict';
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile} from '../lib/migration_inputs_async.mjs';
 import {readSource} from '../lib/historical_inputs.mjs';
 import {createHash} from 'node:crypto';
 import {fixture} from '../authorization/benchmark.mjs';

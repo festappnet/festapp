@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import fs from '../lib/migration_inputs.mjs';
 import { execFileSync, spawnSync } from 'node:child_process';
 const read = p => fs.readFileSync(p, 'utf8');
 const inventory = JSON.parse(read('docs/security/abuse-surface-inventory.json'));
@@ -57,14 +57,16 @@ test('unmigrated canonical function changes still fail the immutable-history che
   const result = spawnSync('python3', ['-c', `
 from pathlib import Path
 from unittest.mock import patch
-import runpy
-original = Path.read_text
+import runpy,sys
+sys.path.insert(0,'automation')
+import migration_inputs
+original = migration_inputs.read_text
 def changed(path, *args, **kwargs):
     value = original(path, *args, **kwargs)
     if str(path).endswith('/database/functions/occasion_setup/finalize.sql'):
         value = value.replace('Draft review required', 'Unmigrated test-only drift')
     return value
-with patch.object(Path, 'read_text', changed):
+with patch.object(migration_inputs, 'read_text', changed):
     runpy.run_path('automation/assemble-abuse-migration.py', run_name='__main__')
 `], { encoding: 'utf8' });
   assert.equal(result.status, 1);

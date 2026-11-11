@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync } from '../../../automation/lib/migration_inputs.mjs';
 import { randomUUID, createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import test from 'node:test';

@@ -18,7 +18,7 @@ class RuntimeIdentityTest(unittest.TestCase):
                 target.parent.mkdir(parents=True,exist_ok=True)
                 # Preserve the two declarations that resolve other inputs;
                 # all other fixture bytes are sufficient for fingerprinting.
-                target.write_bytes(source.read_bytes() if source.name in ('seed_demo_occasions.sql','canonical-source-contract.json') else b'fixture')
+                target.write_bytes(source.read_bytes() if (source.name in ('seed_demo_occasions.sql','canonical-source-contract.json') or source.name.endswith('_reference_seed.sql')) else b'fixture')
             artwork=root/'database/fixtures/demo_occasions/artwork.sql'
             artwork.write_text('\\ir nested.sql\n')
             nested=artwork.with_name('nested.sql');nested.write_text('SELECT 1;')
@@ -41,6 +41,17 @@ class RuntimeIdentityTest(unittest.TestCase):
                             self.assertNotEqual(before[0],changed[0])
                             self.assertNotEqual(before[1],changed[1])
                         finally:path.write_bytes(original)
+
+    def test_nested_sql_include_streams_exact_content_and_rejects_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve()
+            (root/'seed').mkdir()
+            seed=root/'seed/main.sql';nested=root/'seed/nested.sql'
+            seed.write_text("SELECT 1;\n\\ir nested.sql\nSELECT 3;\n")
+            nested.write_text('SELECT 2;\n')
+            self.assertEqual(runtime.sql_content(root,seed),'SELECT 1;\nSELECT 2;\nSELECT 3;\n')
+            nested.write_text('\\ir ../../outside.sql\n')
+            with self.assertRaises(ValueError):runtime.sql_content(root,seed)
 
     def test_same_name_content_rewrite_invalidates_inputs(self):
         with tempfile.TemporaryDirectory() as directory:

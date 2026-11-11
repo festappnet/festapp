@@ -1,4 +1,4 @@
-import {readFile} from 'node:fs/promises';
+import {readFile} from '../../../automation/lib/migration_inputs_async.mjs';
 import {pathToFileURL} from 'node:url';
 import {openDisposableDatabase} from './postgres.mjs';
 import {installCurrentMigrationOwners,installCurrentLayoutContract,installCurrentSql} from './current-sql.mjs';

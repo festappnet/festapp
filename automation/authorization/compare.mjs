@@ -1,7 +1,7 @@
 import {evidenceDirectory} from './evidence.mjs';
 import { createHash } from 'node:crypto';
 // Alternating paired measurements with identical transaction-local fixtures.
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from '../lib/migration_inputs_async.mjs';
 import { connect,fixture,measure,executionContract } from './benchmark.mjs';
 const root=new URL('../../',import.meta.url);
 const folder=await evidenceDirectory('baseline.sql');

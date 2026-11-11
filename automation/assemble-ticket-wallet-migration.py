@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the additive Google Wallet migration from its canonical SQL owners."""
+import migration_inputs
 from pathlib import Path
 import re
 import sys
@@ -19,7 +20,7 @@ SOURCES = [(f'ticket_wallet/{name}.sql', None) for name in
 parts = ['-- Google Wallet: additive capability and provider metadata; no tenant activation.\n']
 for path, names in SOURCES:
     source = ROOT / 'database/functions' / path
-    text = source.read_text()
+    text = migration_inputs.read_text(source)
     if names:
         matches = [re.search(r'CREATE OR REPLACE FUNCTION public\.' + name + r'\([\s\S]*?\$\$;', text)
                    for name in names]
@@ -30,7 +31,7 @@ for path, names in SOURCES:
 result = ''.join(parts)
 target = ROOT / 'supabase/migrations/20261110230000_ticket_wallet.sql'
 if '--check' in sys.argv:
-    if target.read_text() != result:
+    if migration_inputs.read_text(target) != result:
         raise SystemExit('Ticket Wallet migration differs from canonical SQL')
 else:
-    target.write_text(result)
+    migration_inputs.write_text(target, result)

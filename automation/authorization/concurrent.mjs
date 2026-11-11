@@ -1,6 +1,6 @@
 import {evidenceDirectory} from './evidence.mjs';
 // Paired four-client SQL load on committed synthetic fixtures in our own DB.
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile} from '../lib/migration_inputs_async.mjs';
 import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import {connect,fixture,workloads,executionContract,verifyWorkload} from './benchmark.mjs';

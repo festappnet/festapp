@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Seal a private, main-sourced one-shot data + schema transaction (no network)."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import migration_inputs
 import argparse
 import hashlib
 import json
@@ -32,7 +36,7 @@ def main():
     source = directory / 'prepared-proposals.json'
     if source.stat().st_mode & 0o077:
         parser.error('prepared proposals must be private (chmod 600)')
-    plans = json.loads(source.read_text())
+    plans = json.loads(migration_inputs.read_text(source))
     if not isinstance(plans, list) or not plans:
         parser.error('nonempty reviewed proposals required')
     ids = [p['source']['id'] for p in plans]
@@ -85,7 +89,7 @@ INSERT INTO blueprint_cutover_manifest VALUES({delimiter}{payload}{delimiter}::j
                 'database': args.database, 'scopeOrganizationIds': organizations,
                 'blueprintIds': sorted(ids), 'plans': len(plans),
                 'seatBindings': sum(len(p['seatBindings']) for p in plans),
-                'inputSha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                'inputSha256': hashlib.sha256(migration_inputs.read_bytes(source)).hexdigest(),
                 'sources': {k: hashlib.sha256(v.encode()).hexdigest() for k, v in sources.items()}}
     for mode, ending in [('dry-run', 'ROLLBACK;'), ('apply', 'COMMIT;')]:
         data = (body + '\n' + ending + '\n').encode()
@@ -96,7 +100,7 @@ INSERT INTO blueprint_cutover_manifest VALUES({delimiter}{payload}{delimiter}::j
         os.chmod(target, 0o600)
         evidence[mode + 'Sha256'] = hashlib.sha256(data).hexdigest()
     receipt = directory / 'bundle.json'
-    receipt.write_text(json.dumps(evidence, indent=2) + '\n')
+    migration_inputs.write_text(receipt, json.dumps(evidence, indent=2) + '\n')
     os.chmod(receipt, 0o600)
     print(f"Sealed {len(plans)} plans / {evidence['seatBindings']} bindings from {args.source_sha}")
 

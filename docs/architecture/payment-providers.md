@@ -154,8 +154,11 @@ same payment engine. There is no duplicate checkout implementation. Some legacy
 report DTO keys retain their old names while their data comes from the provider
 movement contract.
 
-`20261106120000_payment_provider_connectors.sql` and its exact reproducible inputs
-are frozen under `docs/plans/payment-provider-hardening/history/`. The original
+`20261106120000_payment_provider_connectors.sql` retains its exact historical SQL
+inputs in ordered `SOURCE` blocks. The original assembler reconstructs them in
+memory and checks the original hashes in
+`docs/plans/payment-provider-hardening/frozen-inputs.json`; `history/` retains only
+the small source manifest. The original
 assembler verifies history and refuses regeneration. Their historical bytes remain immutable. The current unified forward is
 `20261110140000_payment_operations.sql`, assembled from the explicit ordered
 `automation/payment-operations-migration.json`. Historical cash, integration,
