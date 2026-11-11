@@ -1,3 +1,4 @@
+import {publicHelpRoot} from '../../services/help_action_routes.js';
 import { ACCOUNT_CONNECTIONS_PATH } from './account_connections_links.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { RouterService } from '../../services/router_service.js';
@@ -148,6 +149,7 @@ export class UserHeader extends HTMLElement {
         const brandAssetBase = this.getAttribute('brand-asset-base') || '/';
         // Logo
         const ticketBrand = new URL(AppConfig.webLink).hostname === 'vstupenky.online';
+        const helpRoot = AppConfig.organizerLandingEnabled ? publicHelpRoot(AppConfig.supportedLanguages[0]) : null;
         const logo = document.createElement('img');
         logo.src = brandAssetBase + 'brand-logo.svg';
         logo.alt = AppConfig.appName;
@@ -206,7 +208,7 @@ export class UserHeader extends HTMLElement {
 
         const actions = document.createElement('div');
         actions.className = 'header-actions';
-        if (ticketBrand) {
+        if (helpRoot) {
             container.classList.add('has-public-navigation');
             const navigation = document.createElement('nav');
             navigation.className = 'header-public-navigation';
@@ -214,11 +216,11 @@ export class UserHeader extends HTMLElement {
             navigation.setAttribute('aria-label', english ? 'Main navigation' : 'Hlavní navigace');
             const onHome = window.location.pathname === '/';
             const primaryLink = onHome ? ['/events', english ? 'Find an event' : 'Najít akci'] : ['/', english ? 'For organizers' : 'Pro pořadatele'];
-            for (const [href, label] of [primaryLink, ['/napoveda/', english ? 'Help' : 'Nápověda']]) {
+            for (const [href, label] of [primaryLink, [helpRoot, english ? 'Help' : 'Nápověda']]) {
                 const link = document.createElement('a');
                 link.href = href;
                 link.textContent = label;
-                if (href === '/napoveda/' && window.location.pathname.startsWith('/napoveda/')) {
+                if (href === helpRoot && window.location.pathname.startsWith(helpRoot)) {
                     link.setAttribute('aria-current', 'location');
                 }
                 navigation.appendChild(link);

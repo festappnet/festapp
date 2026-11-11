@@ -19,10 +19,10 @@ test('an installed worker serves help branding without an application version re
   caches:{open(){assert.fail('Public help must not enter a version-pinned application cache');}},
   self:{location:{origin:'https://app.test'},clients:{get(){assert.fail('Help branding must not require a client version');}},addEventListener:(type,handler)=>{handlers[type]=handler;}},
  });
- for(const base of ['/napoveda/assets/','/co-je-nove/_assets/'])for(const name of ['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg']){
+ for(const base of ['/napoveda/assets/','/help/assets/','/co-je-nove/_assets/'])for(const name of ['brand-logo.svg','brand-logo-light.svg','brand-symbol.svg','brand-wordmark.svg','brand-wordmark-stacked.svg']){
   let pending;
   handlers.fetch({request:new Request('https://app.test'+base+name),clientId:'help-without-app-version',respondWith:value=>{pending=value;}});
   const response=await pending;assert.equal(response.status,200);assert.equal(await response.text(),body);
  }
- assert.equal(requests.length,10);
+ assert.equal(requests.length,15);
 });

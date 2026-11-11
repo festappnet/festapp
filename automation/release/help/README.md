@@ -1,10 +1,10 @@
-# Public Czech help
+# Localized public help
 
 The approved outline is in `docs/plans/help-content-and-localization-2026-10-24.md`.
 The implementation shares the homepage header/footer fragments, canonical
 organizer CSS and account-header startup. The current outline supersedes the
 initial ordering: eight areas and task guides, with matching English
-preview routes and stable topic IDs. Start with the new-event wizard, then
+production routes and stable topic IDs. Start with the new-event wizard, then
 existing-event administration, tickets/seating, banking, website publication,
 order management, check-in and troubleshooting. The hub has separate entry
 choices for creating an event, editing an existing one and preparing banking.
@@ -17,24 +17,23 @@ wizard-only screenshots are rejected in administration articles by the renderer.
 Scanner guides show only responsive mobile webclient images, never native
 Flutter screens. Bank and event administration screenshots remain actual
 Flutter organizer UI because that is the administration used by the product.
-English never substitutes Czech interface captures. English publication and
-full Webnode verification remain separately gated.
+English never substitutes Czech interface captures. English publication uses reviewed localized screenshots. Regional plugins and MCP
+setup remain unpublished in the global profile until their global equivalents exist.
 
 `videos.json` owns localized video references. The Fio guide embeds the verified
-public v4 video on our YouTube channel; the earlier upload is private. English
-explicitly labels the existing video as Czech. Future English video URLs can be
+public v4 video on our YouTube channel; the earlier upload is private. English uses written instructions until an English video is available. English video URLs can be
 supplied independently without changing article or topic structure. New video
 production remains out of scope.
 
-Source content for `https://vstupenky.online/napoveda/`. `pages.json` owns the
+Source content for `https://vstupenky.online/napoveda/` and `https://tickets.festapp.net/help/`. `pages*.json` owns the
 routes and SEO metadata; each route has an authored HTML body. Keep real UI
 names and external-platform instructions verified. The Wix-specific guide is
 added only after its actual installation flow is qualified.
 
 `automation/release/help/` owns the versioned content and media.
 `render_help_pages.mjs` generates a single ignored local output at
-`web_client/public/napoveda/` only for the vstupenky.online organizer site.
-Production builds render directly into `build/web/napoveda/` with the compiled
+`web_client/public/napoveda/` or `web_client/public/help/` for the active organizer profile.
+Production builds render directly into the matching directory in `build/web/` with the compiled
 runtime. Do not commit generated help or create a second copy under `web/`.
 The build ships static HTML and hashed assets without unpublished integration packages.
 Cloudflare binds each guide to its generated CSP profile and includes it in the
@@ -62,9 +61,9 @@ node automation/release/preview_help.mjs --en
 ```
 
 The preview commands emit complete file:// links with embedded fonts, styles,
-scripts and screenshot images under `.private/help-preview/{cs,en}/napoveda/`.
+scripts and screenshot images under `.private/help-preview/cs/napoveda/` and `.private/help-preview/en/help/`.
 They require no server. The lower-level renderer owns a dedicated output
-directory named `napoveda`. Production generation accepts `--built-index` to
+directory named `napoveda` or `help`. Production generation accepts `--built-index` to
 include the same account header and theme assets as the homepage.
 
 ## Webnode verification status (2026-10-26)
@@ -120,7 +119,8 @@ Multiple organizers require an explicit choice. Each organization target reloads
 its current server capabilities before routing. Recent context is only a preference. The intent allowlist
 contains fixed section paths, and the application boundary reloads permissions.
 This mechanism uses the active tenant and locale and is shared with future global
-help. English production publication remains explicitly gated.
+help. English production uses `/help/`; Czech production uses `/napoveda/`. Both use
+the same renderer, search, account header and application action policy.
 
 Fresh application screenshots and reproducible video chapters are recorded in
 `docs/development/public-help-walkthrough-2026-10-25.json`. It includes actual

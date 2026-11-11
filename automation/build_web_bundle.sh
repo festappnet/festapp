@@ -110,7 +110,7 @@ node automation/minify_web_translations.mjs build/web
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
 
 # Render compiled help directly into the bundle, replacing the local Vite copy.
-node automation/release/render_help_pages.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/napoveda
+node automation/release/render_help_pages.mjs --config automation/project.conf --built-index web_client/dist/index.html --output-root build/web
 
 # Ship marketing media only when the shared organizer page is enabled.
 LANDING_ENABLED="$(node automation/release/organizers/context.mjs --config automation/project.conf | node -e 'let input="";process.stdin.on("data",part=>input+=part);process.stdin.on("end",()=>process.stdout.write(String(JSON.parse(input).enabled)))')"

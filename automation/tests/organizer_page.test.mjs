@@ -208,6 +208,12 @@ test('English illustrated home ships English examples, one regional link and fai
   assert.match(html,/classic-ball-en\.png/);
   assert.match(html,/hamlet-ticket-en\.png/);
   assert.match(html,/info@festapp\.net/);
+  const canonicalBooking=JSON.parse(readFileSync(new URL('../release/organizers/content.json',import.meta.url),'utf8')).publicProjection.bookingUrl;
+  const globalBooking=JSON.parse(readFileSync(new URL('../release/organizers/content.en.json',import.meta.url),'utf8')).publicProjection.bookingUrl;
+  assert.equal(globalBooking,canonicalBooking,'global demo uses the canonical booking flow');
+  assert.equal((html.match(new RegExp('href="'+canonicalBooking+'"','g'))??[]).length,3,'demo is available in hero, support and footer');
+  assert.match(html,/href="\/help\/"/,'global guides are reachable from the homepage');
+
   assert.match(html,/href="\/events\?create=1"/);
   assert.ok(!html.includes('tickets.fesup.net'));
   assert.ok(!html.includes('{{'));

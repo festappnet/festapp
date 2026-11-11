@@ -8,7 +8,7 @@ for(const locale of ['cs','en']) test(`self-contained ${locale} preview binds th
  const root=new URL('../../../',import.meta.url);
  const run=spawnSync(process.execPath,[new URL('automation/release/preview_help.mjs',root).pathname,...(locale==='en'?['--en']:[])],{encoding:'utf8'});
  assert.equal(run.status,0,run.stderr);
- const file=new URL(`.private/help-preview/${locale}/napoveda/${locale==='en'?'embed':'vlozeni-na-web'}/index.html`,root);
+ const file=new URL(`.private/help-preview/${locale}/${locale==='en'?'help':'napoveda'}/${locale==='en'?'embed':'vlozeni-na-web'}/index.html`,root);
  const errors=[];const console=new VirtualConsole();console.on('jsdomError',error=>{if(error.type==='unhandled-exception')errors.push(error.message);});
  const dom=new JSDOM(readFileSync(file,'utf8'),{url:file.href,runScripts:'dangerously',virtualConsole:console,beforeParse(window){ window.matchMedia=query=>({matches:false,media:query,addEventListener(){},removeEventListener(){}}); }});
  t.after(()=>dom.window.close());

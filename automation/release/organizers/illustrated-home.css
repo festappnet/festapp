@@ -55,3 +55,8 @@ body[data-story^="revised-"] .story-real-code{left:76.6%;top:36.5%;width:18.5%;h
 .brand{white-space:nowrap}.hero h1{max-width:760px}.copy h2{max-width:560px}::selection{background:#92cafa;color:#0a111d}
 @media(max-width:700px){html{scroll-padding-top:24px}.brand{font-size:19px}.hero h1{font-size:clamp(42px,12vw,52px)}}
 .brand{display:inline-flex;align-items:center}.brand img{display:block;width:184px;height:auto}footer .brand{margin-bottom:10px}@media(max-width:700px){.brand img{width:157px}}@media(max-width:370px){.brand img{width:140px}}
+.actions{flex-wrap:wrap}.button.secondary{background:transparent;color:var(--blue);border:1px solid var(--blue)}header .header-help{font:700 14px Body,sans-serif;white-space:nowrap}.demo-note{font-size:15px;margin-top:18px}@media(max-width:700px){.header-inner{gap:10px}.brand img{width:135px}header nav{gap:12px}header .header-help{font-size:13px}}@media(max-width:370px){.brand img{width:110px}header nav{gap:9px}header .header-help{font-size:12px}.button.compact{padding-inline:9px;font-size:11px}.button.compact svg{display:none}}
+/* The illustration fills the viewport; only copy uses the reading-width wrap. */
+body[data-page="organizers"][data-cinematic="true"]>main#main{width:100%;max-width:none;margin:0;padding:0}
+body[data-page="organizers"][data-cinematic="true"] .hero{width:100%;max-width:none;margin:0;padding:0;border-radius:0}
+body[data-page="organizers"][data-cinematic="true"] .hero-background{inset:0;border-radius:0}
