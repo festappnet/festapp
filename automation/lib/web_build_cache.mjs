@@ -1,4 +1,4 @@
-// The single component-cache and final-bundle receipt implementation.
+// Component cache and compiler provenance for the canonical web builder.
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -23,7 +23,12 @@ export function dependencyDigest(directory,normalizeInstallerMetadata=false) {
     if (visited.has(real)) {hash.update(JSON.stringify(['alias',path.relative(dependencyRoot,real)]));return;}
     visited.add(real);
     if(stat.isDirectory()) {
-      for(const name of fs.readdirSync(file).sort()) if(!['.git','.dart_tool','__pycache__'].includes(name))visit(path.join(file,name),`${relative}/${name}`);
+      for(const name of fs.readdirSync(file).sort()) {
+        // Vite creates and removes bundled config files here on first build.
+        // Their inputs are the tracked Vite config and installed dependencies.
+        if(normalizeInstallerMetadata && relative==='' && name==='.vite-temp')continue;
+        if(!['.git','.dart_tool','__pycache__'].includes(name))visit(path.join(file,name),`${relative}/${name}`);
+      }
     } else if(stat.isFile()) {
       const bytes=fs.readFileSync(file);
       const timestamp=relative==='/.modules.yaml'?'prunedAt':relative==='/.pnpm-workspace-state-v1.json'?'lastValidatedTimestamp':null;

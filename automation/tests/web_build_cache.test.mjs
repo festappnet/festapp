@@ -66,6 +66,15 @@ test('frozen pnpm install timestamps do not invalidate installed dependency byte
  put('package/lib.js',{code:'changed dependency'});assert.notEqual(dependencyDigest(directory,true),before);
  const changed=dependencyDigest(directory,true);put('.modules.yaml',{prunedAt:'new',nodeLinker:'hoisted'});assert.notEqual(dependencyDigest(directory,true),changed);
 });
+test('Vite temporary config directory does not change installed dependency identity',t=>{
+ const f=fixture(t),directory=path.join(f.root,'node_modules');
+ fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'dependency.js'),'export const value=1;');
+ const before=dependencyDigest(directory,true);
+ fs.mkdirSync(path.join(directory,'.vite-temp'));fs.writeFileSync(path.join(directory,'.vite-temp','config.mjs'),'temporary bundled config');
+ assert.equal(dependencyDigest(directory,true),before);
+ fs.writeFileSync(path.join(directory,'dependency.js'),'export const value=2;');
+ assert.notEqual(dependencyDigest(directory,true),before);
+});
 test('installed dependency alias changes invalidate even when both targets were already hashed',t=>{
  const f=fixture(t),directory=path.join(f.root,'.private/graph');
  f.put('.private/graph/a/entry.js','library a');f.put('.private/graph/b/entry.js','library b');
