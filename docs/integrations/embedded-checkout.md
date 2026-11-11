@@ -342,22 +342,9 @@ Web s `embed.js` může předat uloženou volbu svého CMP do samostatného form
    href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
 ```
 
-Pořadatel zapne `measurement_consent_bridge` a schválí origin webu. Bez dalšího
-kódu se převezme stav Google Consent Mode webu (Complianz, Cookiebot, CookieYes…)
-přesně jako u vloženého formuláře: výchozí stav i aktualizace, regionální výchozí
-stav jako odmítnutý, reklama jen se všemi třemi reklamními souhlasy, s TCF
-zůstává odmítnutá. Převezme se jen rozhodnutý web: aspoň jedna aktualizace
-souhlasu, nebo výchozí stav s uděleným účelem (uložená volba). Jen odmítnuté
-výchozí hodnoty bez aktualizace znamenají, že návštěvník ještě nevolil, a
-formulář zobrazí vlastní lištu; odmítnutí poslané jako aktualizace se převezme bez lišty. Lišty, u kterých
-je odmítnutí totéž co výchozí stav (Complianz při odmítnutí žádnou aktualizaci
-nepošle), tak po odmítnutí na webu dostanou ve formuláři lištu znovu. Vložený formulář se nemění.
-Web bez Consent Mode ponechá vlastní lištu formuláře. Web,
-který bez volby návštěvníka nastaví výchozí udělení, se převezme stejně jako
-u vloženého formuláře; odpovídá za to pořadatel potvrzením přepínače.
-
-Pro doložení konkrétní revize zpracování lze místo toho napojit živý zdroj přes
-`FestappEmbed.connectMeasurementSource`; napojený zdroj má vždy přednost. Zdroj vrací uložený záznam CMP jen pro
+Samotný odkaz ani Consent Mode nestačí. Pořadatel zapne
+`measurement_consent_bridge`, schválí origin webu a napojí živý zdroj přes
+`FestappEmbed.connectMeasurementSource`. Zdroj vrací uložený záznam CMP jen pro
 odpovídající organizaci, jednotku a revizi zpracování. Revize musí být součástí
 uložené volby, nesmí se pouze převzít z příchozí žádosti. Lišta webu a archivovaná
 konfigurace CMP musí výslovně pokrývat i nákup ve formuláři se stejnými účely,

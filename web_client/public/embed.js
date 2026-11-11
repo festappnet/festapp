@@ -198,7 +198,7 @@
 
   // src/embed/host_consent_link.js
   var consentLinkNamespace = "festapp-consent-link";
-  function installHostConsentLink(win, productOrigin, source, consentMode = null) {
+  function installHostConsentLink(win, productOrigin, source) {
     const opened = /* @__PURE__ */ new Map();
     const click = (event) => {
       try {
@@ -255,16 +255,9 @@
           envelope: { namespace: consentLinkNamespace, protocol: 1, nonce: data.nonce, scope }
         };
         sessions.set(child, session);
-        const automatic = !source?.configured && !!consentMode;
-        const readChoice = () => {
-          if (source?.generation !== session.generation) return null;
-          if (!automatic) return source?.read(scope);
-          const value = consentMode.read();
-          return value && typeof value.analytics === "boolean" && typeof value.marketing === "boolean" ? { analytics: value.analytics, marketing: value.marketing } : null;
-        };
         const send = () => {
           if (sessions.get(child) !== session) return;
-          const choice = readChoice();
+          const choice = source?.generation === session.generation ? source?.read(scope) : null;
           if (child.closed || Date.now() >= session.until || !choice) {
             end(child);
             return;
@@ -281,11 +274,7 @@
             end(child);
           }
         };
-        const stopSource = source?.subscribe(send), stopMode = automatic ? consentMode.subscribe(send) : null;
-        session.unsubscribe = () => {
-          stopSource?.();
-          stopMode?.();
-        };
+        session.unsubscribe = source?.subscribe(send);
         session.timer = win.setInterval(send, 2e4);
         send();
       } catch {
@@ -308,6 +297,67 @@
       opened.clear();
     };
   }
+
+  // src/embed/protocol.js
+  var namespace = "festapp-embed";
+  var protocol = 1;
+  var limits = Object.freeze({ minHeight: 120, legacyMinHeight: 240, viewportMax: 4e3, heightMax: 2e4 });
+  var validId = (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+  var viewport = (value) => Number.isFinite(value) && value >= limits.legacyMinHeight && value <= limits.viewportMax;
+  var toChild = /* @__PURE__ */ new Set(["init", "viewport", "theme", "price-ready", "price-activate", "measurement-consent", "measurement-ack"]);
+  var toHost = /* @__PURE__ */ new Set(["ready", "resize", "scroll-request", "scroll-save", "scroll-restore", "scroll-discard", "price", "measurement-context", "measurement-activate", "analytics"]);
+  var bounded = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
+  function validMessage(data, destination) {
+    if (!data || typeof data !== "object" || Array.isArray(data) || data.namespace !== namespace || data.protocol !== protocol || !(destination === "child" ? toChild : toHost).has(data.type)) return false;
+    if (data.type === "ready") return true;
+    if (!validId(data.instance)) return false;
+    switch (data.type) {
+      case "init":
+      case "viewport":
+        return viewport(data.viewportHeight);
+      case "resize":
+        return bounded(data.height, limits.minHeight, limits.heightMax);
+      case "scroll-request":
+        return bounded(data.y, 0, limits.heightMax) && (data.height === void 0 || bounded(data.height, 0, limits.heightMax)) && (data.block === void 0 || ["start", "end", "nearest"].includes(data.block));
+      case "scroll-save":
+      case "scroll-restore":
+      case "scroll-discard":
+        return validId(data.snapshot);
+      default:
+        return true;
+    }
+  }
+  function envelope(type, instance, values = {}) {
+    return { namespace, protocol, type, instance, ...values };
+  }
+
+  // src/embed/channel.js
+  var EmbedChannel = class {
+    constructor({ peer, destination, origin, instance, current = () => true }) {
+      Object.assign(this, { peer, destination, origin, instance, current });
+      this.closed = false;
+    }
+    receive(event) {
+      if (this.closed || !this.current() || event.source !== this.peer() || !/^https?:\/\//.test(event.origin) || !validMessage(event.data, this.destination)) return null;
+      const data = event.data;
+      if (this.origin && (event.origin !== this.origin || data.type !== "ready" && data.instance !== this.instance)) return null;
+      if (!this.origin) {
+        if (this.destination !== "child" || data.type !== "init") return null;
+        this.origin = event.origin;
+        this.instance = data.instance;
+      }
+      return data;
+    }
+    send(type, values) {
+      if (!this.closed && this.origin && this.current()) this.peer()?.postMessage(envelope(type, this.instance, values), this.origin);
+    }
+    announce() {
+      if (!this.closed && !this.origin) this.peer()?.postMessage({ namespace, protocol, type: "ready" }, "*");
+    }
+    destroy() {
+      this.closed = true;
+    }
+  };
 
   // src/embed/host_consent_mode.js
   var keys = ["analytics_storage", "ad_storage", "ad_user_data", "ad_personalization"];
@@ -373,39 +423,9 @@
       }
     };
   }
-  var readHostConsentMode = (win) => createReader(win)();
-  function hasHostConsentMode(win) {
-    try {
-      const entries = win.google_tag_data?.ics?.entries;
-      if (entries !== void 0) {
-        if (!object(entries)) return true;
-        if (Object.values(entries).some((entry) => !object(entry) || entry.default !== void 0 || entry.update !== void 0)) return true;
-      }
-      const layer = win.dataLayer;
-      return Array.isArray(layer) && layer.some((command) => Object.prototype.toString.call(command) === "[object Arguments]" && command[0] === "consent");
-    } catch {
-      return false;
-    }
-  }
-  function hostConsentModeDecided(win) {
-    if (!hasHostConsentMode(win)) return false;
-    try {
-      const entries = win.google_tag_data?.ics?.entries;
-      const updated = object(entries) && Object.values(entries).some((entry) => object(entry) && entry.update !== void 0) || Array.isArray(win.dataLayer) && win.dataLayer.some((command) => Object.prototype.toString.call(command) === "[object Arguments]" && command[0] === "consent" && command[1] === "update" && object(command[2]));
-      if (updated) return true;
-      const choice = readHostConsentMode(win);
-      return choice.analytics || choice.marketing;
-    } catch {
-      return false;
-    }
-  }
-  function createHostConsentMode(win, { linked = false } = {}) {
+  function createHostConsentMode(win) {
     const listeners = /* @__PURE__ */ new Set();
-    const reader = createReader(win);
-    const read = linked ? () => {
-      const choice = reader();
-      return hostConsentModeDecided(win) ? choice : null;
-    } : reader;
+    const read = createReader(win);
     let timer = null, last = null, delay = null;
     const schedule = () => {
       let next = 1e3;
@@ -450,67 +470,6 @@
       }
     };
   }
-
-  // src/embed/protocol.js
-  var namespace = "festapp-embed";
-  var protocol = 1;
-  var limits = Object.freeze({ minHeight: 120, legacyMinHeight: 240, viewportMax: 4e3, heightMax: 2e4 });
-  var validId = (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
-  var viewport = (value) => Number.isFinite(value) && value >= limits.legacyMinHeight && value <= limits.viewportMax;
-  var toChild = /* @__PURE__ */ new Set(["init", "viewport", "theme", "price-ready", "price-activate", "measurement-consent", "measurement-ack"]);
-  var toHost = /* @__PURE__ */ new Set(["ready", "resize", "scroll-request", "scroll-save", "scroll-restore", "scroll-discard", "price", "measurement-context", "measurement-activate", "analytics"]);
-  var bounded = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
-  function validMessage(data, destination) {
-    if (!data || typeof data !== "object" || Array.isArray(data) || data.namespace !== namespace || data.protocol !== protocol || !(destination === "child" ? toChild : toHost).has(data.type)) return false;
-    if (data.type === "ready") return true;
-    if (!validId(data.instance)) return false;
-    switch (data.type) {
-      case "init":
-      case "viewport":
-        return viewport(data.viewportHeight);
-      case "resize":
-        return bounded(data.height, limits.minHeight, limits.heightMax);
-      case "scroll-request":
-        return bounded(data.y, 0, limits.heightMax) && (data.height === void 0 || bounded(data.height, 0, limits.heightMax)) && (data.block === void 0 || ["start", "end", "nearest"].includes(data.block));
-      case "scroll-save":
-      case "scroll-restore":
-      case "scroll-discard":
-        return validId(data.snapshot);
-      default:
-        return true;
-    }
-  }
-  function envelope(type, instance, values = {}) {
-    return { namespace, protocol, type, instance, ...values };
-  }
-
-  // src/embed/channel.js
-  var EmbedChannel = class {
-    constructor({ peer, destination, origin, instance, current = () => true }) {
-      Object.assign(this, { peer, destination, origin, instance, current });
-      this.closed = false;
-    }
-    receive(event) {
-      if (this.closed || !this.current() || event.source !== this.peer() || !/^https?:\/\//.test(event.origin) || !validMessage(event.data, this.destination)) return null;
-      const data = event.data;
-      if (this.origin && (event.origin !== this.origin || data.type !== "ready" && data.instance !== this.instance)) return null;
-      if (!this.origin) {
-        if (this.destination !== "child" || data.type !== "init") return null;
-        this.origin = event.origin;
-        this.instance = data.instance;
-      }
-      return data;
-    }
-    send(type, values) {
-      if (!this.closed && this.origin && this.current()) this.peer()?.postMessage(envelope(type, this.instance, values), this.origin);
-    }
-    announce() {
-      if (!this.closed && !this.origin) this.peer()?.postMessage({ namespace, protocol, type: "ready" }, "*");
-    }
-    destroy() {
-      this.closed = true;
-    }
-  };
 
   // src/components/forms/form_measurement_consent.js
   function bindKlaroConsent(manager, setConsent) {
@@ -1013,7 +972,7 @@
     const consentSource = createConsentSourceRegistry();
     try {
       const productOrigin = new URL(document.currentScript.src, document.baseURI).origin;
-      installHostConsentLink(window, productOrigin, consentSource, createHostConsentMode(window, { linked: true }));
+      installHostConsentLink(window, productOrigin, consentSource);
     } catch {
     }
     const frames = /* @__PURE__ */ new Map();

@@ -382,33 +382,9 @@ form. The Unit must enable `measurement_consent_bridge` and approve the exact
 host origin. The website notice and its archived CMP configuration must cover
 this Unit's form, purposes, destinations, recipients and processing revision.
 An opt-in switch is configuration, not evidence that a visitor confirmed a notice.
+Google Consent Mode alone does not prove this record or its revision.
 
-Without a registered source, the link reads the website's Google Consent Mode
-exactly like the automatic iframe bridge, under the same opt-in: defaults and
-updates (CMPs such as Complianz restore a saved choice as the default on later
-pages), regional defaults stay denied, analytics follows `analytics_storage`,
-marketing requires `ad_storage`, `ad_user_data` and `ad_personalization`, and
-TCF denies marketing. The link imports only a decided website: at least one
-Consent Mode update (Google tag `update` or dataLayer `consent update`), or a
-projected grant of at least one purpose (a saved choice restored as default).
-Denied or missing defaults alone, including regional defaults, are undecided
-and end the request, so the form shows its own notice; a decided state that
-is cleared later ends the visit the same way. A denial update is decided and is
-taken over without a notice. A CMP whose denial equals its default (Complianz
-sends no update when the visitor declines; verified on a live Complianz site)
-therefore gets the form's notice again after a denial. This rule applies to links only; the iframe bridge
-is unchanged. A website without any Consent Mode state keeps the local
-notice; a Google tag without Consent Mode (only `implicit` entries, no default
-or update) counts as none. Consent Mode carries no processing revision, so the organizer's opt-in
-is the coverage statement, exactly as for embeds; a website that grants by
-default without a visitor choice is taken over the same way. The host streams
-Consent Mode changes over the same renewable lease, so withdrawal in the website
-CMP reaches the open form. The form also ends the import when the website tab
-is closed, even if that tab never delivered pagehide, and when the website
-reloads or navigates: an unloading page's terminal `end` arrives with another
-source, so `end` alone is accepted on origin, nonce, scope and sequence.
-
-For revision-aware evidence, register a live source after `embed.js` loads with
+Register a live source after `embed.js` loads with
 `FestappEmbed.connectMeasurementSource({read(scope), subscribe(notify)})`.
 It uses the same record contract as `connectMeasurementConsent(frame, source)`.
 `scope` contains `organization`, `unit`, `processingRevision` and the two
@@ -434,8 +410,7 @@ const disconnect = FestappEmbed.connectMeasurementSource({
 ```
 
 `disconnect()` retires that source. Replacement, broken subscriptions and explicit
-disconnect remain denied; they never restore Google's automatic fallback, for
-iframes or links. A source registered during a Consent Mode visit ends that visit. The
+disconnect remain denied; they never restore Google's automatic fallback. The
 global source also supplies existing automatic Unit iframe bindings; explicit
 per-frame adapters keep precedence. Existing embeds with no global source ever
 registered retain their existing automatic bridge behavior.
