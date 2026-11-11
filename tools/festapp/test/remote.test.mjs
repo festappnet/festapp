@@ -1444,8 +1444,12 @@ test('replacement commit failure returns OAuth error without tokens', async t =>
     } finally { f.storage.activateConnection = activate; }
 });
 
-for (const clientId of ['desktop-fixture', 'browser-fixture']) test(`consent duration and fixed token deadlines for ${clientId}`, async t => {
+for (const millisecond of [0, 999]) for (const clientId of ['desktop-fixture', 'browser-fixture']) test(`consent duration and fixed token deadlines for ${clientId} at ${millisecond}ms`, async t => {
     const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
+    // Provider timestamps use whole seconds while delegation deadlines use
+    // milliseconds. Exercise both ends of a second without scheduler jitter
+    // moving token issuance across that boundary. Keep the expiry assertions.
+    t.mock.timers.enable({ apis: ['Date'], now: Math.floor(Date.now() / 1000) * 1000 + millisecond });
     const db = new DatabaseSync(join(f.root, 'remote.sqlite'), { readOnly: true });
     t.after(() => db.close());
     const deadline = (model, id) => db.prepare('SELECT expires FROM records WHERE model=? AND id=?').get(model, digest(id))?.expires;
