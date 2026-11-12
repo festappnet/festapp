@@ -1290,8 +1290,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticketing_product_versions_internal_v1(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='566a904c1297bc2de12938376b8b8b9e'),'current SQL source parity: public.get_ticketing_product_versions_internal_v1(bigint,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_tickets_with_details(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='363257b5ad3442b5407b4df5f1c7cd8d'),'current SQL source parity: public.get_tickets_with_details(bigint)');
--- supabase/migrations/20261112210000_payment_policy_release_integration.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e55676ff53f7554945dc55fbc830fe25'),'current SQL source parity: public.get_transactions_for_order(bigint)');
+-- supabase/migrations/20261112230000_order_bank_setup_projection.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1c028c222428d9e59ebd7e2faa5bb13f'),'current SQL source parity: public.get_transactions_for_order(bigint)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order_all_available(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9622d7c2c8efc07ccbd49a8bc2e7487c'),'current SQL source parity: public.get_transactions_for_order_all_available(bigint)');
 -- supabase/baseline/20261107170000_schema.sql

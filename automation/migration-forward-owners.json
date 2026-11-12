@@ -149,6 +149,15 @@
     {
       "migration": "20261112220000_cash_policy_defaults.sql",
       "manifest": "cash-policy-defaults-migration.json",
+      "sha256": "36b728b6742b1d8b815171bbd30c90435065915a80e9ea21d59139a885a15e42",
+      "checkSources": true
+    },
+    {
+      "migration": "20261112230000_order_bank_setup_projection.sql",
+      "header": "-- Keep bank setup prompts consistent with the configured unit account; pairing permissions are unchanged.",
+      "sources": [
+        "eshop_transactions/get_transactions_for_order.sql"
+      ],
       "active": true
     }
   ]

@@ -21,6 +21,21 @@ BEGIN
  -- A bank reservation plus a confirmed cash refund exercise request history,
  -- instructions, decimal text and the difference between ledger and intent.
  PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
+ result:=public.get_transactions_for_order((x->>'order')::bigint);
+ PERFORM assert_eq(result#>>'{actions,bankState}','configured','stored unit bank account is configured');
+ PERFORM assert_eq(result#>>'{actions,pairingAccountId}',x->>'bank','known receiving account remains available for pairing');
+ PERFORM assert_false((result#>>'{actions,showBankSetup}')::boolean,'configured bank account must not be presented as missing');
+ DELETE FROM eshop.unit_bank_accounts WHERE unit=(x->>'unit')::bigint AND bank_account=(x->>'bank')::bigint;
+ result:=public.get_transactions_for_order((x->>'order')::bigint);
+ PERFORM assert_eq(result#>>'{actions,bankState}','absent','missing unit account stays distinct from configured');
+ PERFORM assert_true((result#>>'{actions,showBankSetup}')::boolean,'authorized manager can set up a genuinely missing account');
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES((x->>'unit')::bigint,(x->>'bank')::bigint);
+ UPDATE eshop.organization_payment_method_policies SET enabled=false WHERE organization_id=(x->>'organization')::bigint AND method='bank';
+ result:=public.get_transactions_for_order((x->>'order')::bigint);
+ PERFORM assert_eq(result#>>'{actions,bankState}','disabled','disabled policy remains authoritative');
+ PERFORM assert_false((result#>>'{actions,showBankSetup}')::boolean,'disabled bank method does not request account setup');
+ PERFORM assert_true(result#>'{actions,pairingAccountId}'='null'::jsonb,'disabled bank method never exposes pairing');
+ UPDATE eshop.organization_payment_method_policies SET enabled=true WHERE organization_id=(x->>'organization')::bigint AND method='bank';
  result:=public.command_payment_operation(jsonb_build_object('operation','prepare_refund','orderId',x->'order','method','bank','amount','100.25',
   'recipientIban',public.canonical_payment_reference_account_internal('1234/2010'),'recipientName','Jan Novák'),request_id);
  result:=public.command_payment_operation(jsonb_build_object('operation','prepare_refund','orderId',x->'order','method','cash','amount','50.25',

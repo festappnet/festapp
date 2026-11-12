@@ -15,9 +15,13 @@ class SeatSwapOutcome {
           (data['orders'] as List? ?? const [])
               .map((row) => (row['orderId'] as num).toInt())
               .toSet(),
-        );
+        ),
+        hasFinancialChanges = (data['orders'] as List? ?? const []).any((row) =>
+            !RegExp(r'^-?0(?:\.0+)?$').hasMatch('${row['delta']}') ||
+            row['beforeState'] != row['afterState']);
 
   final List<int> orderIds;
+  final bool hasFinancialChanges;
 }
 
 class TicketCancellationOutcome {

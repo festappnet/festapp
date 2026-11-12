@@ -5,7 +5,7 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 DECLARE
-  v_occasion_id bigint; bank_allowed boolean; payment_context jsonb; provider_rows jsonb:='[]'; provider_complete boolean:=true; method text; movement jsonb;
+  v_occasion_id bigint; bank_allowed boolean; bank_configured boolean; payment_context jsonb; provider_rows jsonb:='[]'; provider_complete boolean:=true; method text; movement jsonb;
 BEGIN
 
   SELECT occasion INTO v_occasion_id FROM eshop.orders WHERE id = order_id;
@@ -13,7 +13,10 @@ BEGIN
     RAISE EXCEPTION 'User is not authorized to view transactions for this occasion.' USING ERRCODE = 'P0001';
   END IF;
 
-  SELECT pi.payment_method='bank' AND public.payment_method_policy_enabled_internal(oc.unit,'bank') INTO bank_allowed
+  SELECT pi.payment_method='bank' AND public.payment_method_policy_enabled_internal(oc.unit,'bank'),
+   EXISTS(SELECT 1 FROM eshop.unit_bank_accounts l JOIN eshop.bank_accounts b ON b.id=l.bank_account
+    WHERE l.unit=oc.unit AND upper(b.type)<>'CASH')
+  INTO bank_allowed,bank_configured
   FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=order_id;
   payment_context:=public.payment_method_context_internal(order_id);
   SELECT pi.payment_method INTO method FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=order_id;
@@ -36,11 +39,10 @@ BEGIN
       'actions', jsonb_build_object(
         'canAddCash', EXISTS(SELECT 1 FROM jsonb_array_elements(payment_context->'methods') m WHERE m->>'id'='cash' AND m->'record'='true'::jsonb),
         'canConfigureBank', bank_allowed AND public.can_manage_unit_bank_accounts(oc.unit),
-        'showBankSetup',bank_allowed AND public.can_manage_unit_bank_accounts(oc.unit),
+        'showBankSetup',bank_allowed AND NOT bank_configured AND public.can_manage_unit_bank_accounts(oc.unit),
         'showBankAccess',bank_allowed AND NOT public.can_manage_unit_bank_accounts(oc.unit),
         'bankState', CASE WHEN NOT bank_allowed THEN 'disabled' WHEN NOT public.can_read_unit_bank_accounts(oc.unit) THEN 'restricted'
-          WHEN EXISTS(SELECT 1 FROM eshop.unit_bank_accounts l JOIN eshop.bank_accounts b ON b.id=l.bank_account
-            WHERE l.unit=oc.unit AND upper(b.type)<>'CASH') THEN 'configured' ELSE 'absent' END,
+          WHEN bank_configured THEN 'configured' ELSE 'absent' END,
         'pairingAccountId', CASE WHEN bank_allowed AND pi.payment_method='bank' AND public.can_manage_bank_account(pi.bank_account)
           AND public.can_write_orders(o.occasion) AND o.state IN ('created','ordered','paid','sent') THEN pi.bank_account END,
         'unitId', oc.unit,
