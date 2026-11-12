@@ -74,3 +74,18 @@ body[data-cinematic="true"] user-header[data-marketing] .btn-add-event {
 body[data-cinematic="true"] user-header[data-marketing] .avatar-circle {
   background:var(--blue);color:var(--night);
 }
+
+/* The document scrollbar belongs to the dark illustration, even in light UI mode. */
+html:has(body[data-cinematic="true"]) {
+  background:var(--night);
+}
+html:has(body[data-cinematic="true"])::-webkit-scrollbar {width:6px;height:6px}
+html:has(body[data-cinematic="true"])::-webkit-scrollbar-track {background:var(--night)}
+html:has(body[data-cinematic="true"])::-webkit-scrollbar-thumb {background:#5e7c99;border-radius:3px}
+html:has(body[data-cinematic="true"])::-webkit-scrollbar-thumb:hover {background:var(--blue)}
+@supports not selector(::-webkit-scrollbar) {
+  html:has(body[data-cinematic="true"]) {
+    scrollbar-width:thin;
+    scrollbar-color:#5e7c99 var(--night);
+  }
+}
