@@ -320,3 +320,9 @@ to `forms.blueprint`, preserves ordinary registrations and their waiting lists, 
 and removes the obsolete publication table and RPCs without touching placements,
 orders, ticket identities or financial data. Historical migration files remain
 immutable. Superseded transition plans are historical records of the removed flow.
+
+Swap follow-up groups recipients by trimmed, case-insensitive email. A seat-only
+permutation within one order and multiple affected orders of the same recipient
+offer no update email. Meaningful single-order amount/state changes stay eligible.
+Accepted updates are not offered again in the completed dialog while delivery
+history catches up; dismissing the preview keeps the offer available.

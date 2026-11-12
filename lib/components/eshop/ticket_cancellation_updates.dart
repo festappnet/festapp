@@ -55,13 +55,16 @@ Future<void> showTicketCancellationUpdates(
 }
 
 /// Uses current order details and the canonical sent-history comparison.
-Future<void> showOrderUpdateEmails(
+/// Returns accepted order updates so a caller can suppress duplicate offers
+/// while asynchronous delivery history catches up.
+Future<Set<int>> showOrderUpdateEmails(
   BuildContext context,
   Iterable<int> orderIds, {
   bool onlyIfChanged = false,
 }) async {
+  final dispatchedOrderIds = <int>{};
   for (final orderId in orderIds.toSet()) {
-    if (!context.mounted) return;
+    if (!context.mounted) return dispatchedOrderIds;
     final bundle = await ExceptionHandler.guard<TicketDetailsBundle?>(
       context,
       defaultErrorMessage: OrdersStrings.sendEmailFailed,
@@ -89,10 +92,12 @@ Future<void> showOrderUpdateEmails(
         },
       ],
     );
+    if (sent) dispatchedOrderIds.add(orderId);
     if (context.mounted && sent) {
       ToastHelper.Show(context, OrdersStrings.sendEmailSuccess);
     }
   }
+  return dispatchedOrderIds;
 }
 
 /// Resolve a surviving ticket and the authoritative customer email baseline.

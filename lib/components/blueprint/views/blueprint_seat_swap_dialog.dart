@@ -33,6 +33,7 @@ class BlueprintSeatSwapDialog extends StatefulWidget {
 class _BlueprintSeatSwapDialogState extends State<BlueprintSeatSwapDialog> {
   SeatSwapOutcome? _outcome;
   List<TicketDetailsBundle> _updates = [];
+  final _notifiedRecipients = <String>{};
   bool _working = false;
   bool _sending = false;
   String? _error;
@@ -53,23 +54,38 @@ class _BlueprintSeatSwapDialogState extends State<BlueprintSeatSwapDialog> {
     if (!_working && !_sending) Navigator.of(context).pop(_outcome != null);
   }
 
+  String _recipient(TicketDetailsBundle bundle) =>
+      (bundle.order.data?['email'] as String? ?? '').trim().toLowerCase();
+
   Future<void> _loadUpdates({bool closeIfEmpty = false}) async {
     setState(() {
       _working = true;
       _error = null;
     });
     try {
-      final updates = <TicketDetailsBundle>[];
-      for (final id in _outcome!.orderIds) {
-        final bundle = await loadOrderUpdateEmail(id);
-        if (!mounted) return;
-        final email = bundle?.order.data?['email'] as String? ?? '';
-        if (bundle != null &&
-            bundle.changes.hasChanges &&
-            email.trim().isNotEmpty) {
-          updates.add(bundle);
+      final byRecipient = <String, List<TicketDetailsBundle>>{};
+      // A permutation inside one order needs no customer notification. Keep
+      // meaningful price/payment changes (such as moving to a free pricier seat).
+      if (_outcome!.orderIds.length > 1 || _outcome!.hasFinancialChanges) {
+        for (final id in _outcome!.orderIds) {
+          final bundle = await loadOrderUpdateEmail(id);
+          if (!mounted) return;
+          if (bundle == null) continue;
+          final recipient = _recipient(bundle);
+          if (recipient.isNotEmpty) {
+            byRecipient.putIfAbsent(recipient, () => []).add(bundle);
+          }
         }
       }
+      // Two affected orders of one customer must not become two offers, nor
+      // one arbitrary partial order update. A within-customer swap offers none.
+      final updates = [
+        for (final entry in byRecipient.entries)
+          if (entry.value.length == 1 &&
+              !_notifiedRecipients.contains(entry.key) &&
+              entry.value.single.changes.hasChanges)
+            entry.value.single,
+      ];
       if (!mounted) return;
       setState(() {
         _updates = updates;
@@ -110,9 +126,12 @@ class _BlueprintSeatSwapDialogState extends State<BlueprintSeatSwapDialog> {
   Future<void> _send(TicketDetailsBundle bundle) async {
     setState(() => _sending = true);
     try {
-      await showOrderUpdateEmails(context, [
+      final dispatched = await showOrderUpdateEmails(context, [
         bundle.order.id!,
       ], onlyIfChanged: true);
+      if (dispatched.contains(bundle.order.id)) {
+        _notifiedRecipients.add(_recipient(bundle));
+      }
     } finally {
       if (mounted) {
         setState(() => _sending = false);

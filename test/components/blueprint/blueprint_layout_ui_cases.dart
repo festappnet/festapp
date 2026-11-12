@@ -1,3 +1,5 @@
+import 'package:fstapp/components/blueprint/views/blueprint_seat_swap_dialog.dart';
+import 'package:fstapp/components/eshop/ticket_commands.dart';
 import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
@@ -1265,6 +1267,96 @@ void main() {
     expect(
         find.byKey(const ValueKey('commercial-cancel-tickets')), findsNothing);
   });
+
+  for (final scenario in [
+    (name: 'same order', ids: [77, 77], emails: ['buyer@example.invalid', 'buyer@example.invalid'], delta: '0.00', offers: 0),
+    (name: 'same customer', ids: [77, 78], emails: [' Buyer@Example.invalid ', 'buyer@example.invalid'], delta: '0.00', offers: 0),
+    (name: 'different customers', ids: [77, 78], emails: ['first@example.invalid', 'second@example.invalid'], delta: '0.00', offers: 2),
+    (name: 'expanded duplicate customer', ids: [77, 78, 79], emails: ['same@example.invalid', ' SAME@example.invalid ', 'other@example.invalid'], delta: '0.00', offers: 1),
+    (name: 'single order price change', ids: [77], emails: ['buyer@example.invalid'], delta: '100.00', offers: 1),
+  ]) {
+    testWidgetsWithEnvironment(() => environment,
+        'swap follow-up recipient offers: ${scenario.name}', (tester) async {
+      const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+      var reads = 0;
+      var sends = 0;
+      Map<String, dynamic> order(int id) => {
+        'id': id, 'order_sequence': id, 'price': 300, 'currency_code': 'CZK',
+        'state': 'ordered', 'data': {
+          'email': scenario.emails[scenario.ids.indexOf(id)],
+          'tickets': [{'id': id}],
+        },
+      };
+      pickerResponse = (request) {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        late Map<String, dynamic> response;
+        if (request.url.path.endsWith('/get_order_history')) {
+          reads++;
+          response = {'code': 200, 'data': {'order': order(body['order_id'] as int), 'history': [], 'users': []}};
+        } else if (request.url.path.endsWith('/get_products_for_ticket')) {
+          final id = body['ticket_id'] as int;
+          response = {'code': 200, 'data': {
+            'ticket': {'id': id}, 'order': order(id),
+            'order_history': {'is_newer_version_available': true},
+            'order_changes': {'version': 1, 'hasChanges': true,
+              'referenceTotal': 200, 'currentTotal': 300, 'currencyCode': 'CZK',
+              'cancelledTickets': [], 'removedTickets': [], 'addedTickets': [], 'productChanges': []},
+          }};
+        } else if (request.url.path.endsWith('/send-email')) {
+          sends++;
+          response = {'code': 200};
+        } else {
+          throw StateError('Unexpected email follow-up request: ${request.url.path}');
+        }
+        return http.Response(jsonEncode(response), 200, request: request,
+            headers: {'content-type': 'application/json'});
+      };
+      final outcome = SeatSwapOutcome.fromJson({'orders': [
+        for (final id in scenario.ids) {'orderId': id, 'delta': scenario.delta,
+          'beforeState': 'paid', 'afterState': 'paid'},
+      ]});
+      await environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: Builder(builder: (context) => TextButton(
+          onPressed: () => showDialog<void>(context: context,
+            builder: (_) => BlueprintSeatSwapDialog(initialOutcome: outcome)),
+          child: const Text('Otevřít prohození'),
+        ))),
+      ));
+      Future<void> settleUntil(bool Function() ready) async {
+        for (var attempt = 0; attempt < 80; attempt++) {
+          await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 10)));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (ready()) break;
+        }
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Otevřít prohození'));
+      await settleUntil(() => scenario.offers == 0
+        ? find.byType(BlueprintSeatSwapDialog).evaluate().isEmpty
+        : find.text(OrdersStrings.sendUpdateButton).evaluate().length == scenario.offers);
+      expect(find.text(OrdersStrings.sendUpdateButton), findsNWidgets(scenario.offers));
+      expect(sends, 0);
+      if (scenario.name == 'same order') expect(reads, 0);
+      if (scenario.name == 'different customers') {
+        await tester.runAsync(() => tester.tap(find.text(OrdersStrings.sendUpdateButton).first));
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateTitle).evaluate().isNotEmpty);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateButton).evaluate().length == 2);
+        expect(sends, 0, reason: 'Canceling preview does not notify or consume the offer');
+        await tester.runAsync(() => tester.tap(find.text(OrdersStrings.sendUpdateButton).first));
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateTitle).evaluate().isNotEmpty);
+        await tester.runAsync(() => tester.tap(find.widgetWithText(ElevatedButton, OrdersStrings.sendEmailButton)));
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateButton).evaluate().length == 1);
+        expect(sends, 1);
+        expect(find.text(OrdersStrings.sendUpdateButton), findsOneWidget,
+          reason: 'An accepted update is not offered again while sent history catches up');
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final outcome in ['merge', 'removed', 'replaced', 'reload', 'failed']) {
     testWidgetsWithEnvironment(
