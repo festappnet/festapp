@@ -34,6 +34,9 @@ scoped email delivery dialog. Delivery RPCs and the outbound queue remain shared
 owns bank-fact and product-edit eligibility, preserving the saved deposit,
 protected ticket states and provider boundary. Actual product changes invalidate
 email content once; receipt replay and unchanged commands add no effects.
+Seat swaps use this same owner once per affected order after all products and
+prices are final. They preserve sent eligibility and expose pending customer
+updates through the existing product editor and `TICKET_ORDER_UPDATE` email path.
 The helper writes no order history. Product edits append one final snapshot;
 creation, accepted delivery and cancellation keep their existing snapshot owners.
 Manual mark-paid does not enqueue delivery. See the
