@@ -14,6 +14,8 @@ BEGIN
  SELECT occasion INTO STRICT ball FROM public.demo_occasions WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='ball';
  SELECT occasion INTO STRICT concert FROM public.demo_occasions WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='concert';
  SELECT occasion INTO STRICT weekend FROM public.demo_occasions WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='weekend';
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.demo_occasions d JOIN public.occasions o ON o.id=d.occasion WHERE d.organization=1 AND public.resolve_occasion_link_internal(o.link,1) IS DISTINCT FROM o.id),'Czech demo occasion links resolve through the canonical registry');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.demo_occasions d JOIN public.forms f ON f.occasion=d.occasion WHERE d.organization=1 AND public.resolve_form_link_internal(f.link) IS DISTINCT FROM f.id),'Czech demo form links resolve through the canonical registry');
  PERFORM assert_eq((SELECT count(*) FROM public.occasions WHERE id IN(ball,concert,weekend) AND data->>'image' LIKE 'https://img.festapp.net/images/demo-occasions/20261014/%-cover-v1.jpg'),3::bigint,'all demos have introductory artwork');
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=ball AND f->>'code'='ticket' AND (f#>>'{layout,templates,wide,ticketArea,width}')::numeric <= (f#>>'{layout,templates,wide,ticketArea,height}')::numeric),'ball ticket is landscape');
  PERFORM assert_true(EXISTS(SELECT 1 FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=concert AND f->>'code'='ticket' AND (f#>>'{layout,templates,wide,ticketArea,width}')::numeric < (f#>>'{layout,templates,wide,ticketArea,height}')::numeric),'concert ticket is portrait');
@@ -101,6 +103,8 @@ BEGIN
    WHERE n->>'kind'='text' AND n->>'text' NOT IN('Balcony','Stage','Entrance','Stairs','Bar')),'English labels use actual canonical shaped resources');
  END LOOP;
  FOR demo_row IN SELECT * FROM public.demo_occasions WHERE organization=org LOOP
+  PERFORM assert_eq(public.resolve_occasion_link_internal((SELECT link FROM public.occasions WHERE id=demo_row.occasion),org),demo_row.occasion,'English demo occasion resolves through canonical URL');
+  PERFORM assert_false(EXISTS(SELECT 1 FROM public.forms WHERE occasion=demo_row.occasion AND public.resolve_form_link_internal(link) IS DISTINCT FROM id),'English demo form resolves through canonical URL');
   PERFORM assert_true(public.is_demo_occasion(demo_row.occasion),'same server-owned demo identity');
   PERFORM assert_true(public.is_demo_unit((SELECT unit FROM public.occasions WHERE id=demo_row.occasion)),'dedicated organizer is protected');
   PERFORM assert_true((SELECT NOT is_fetch_enabled AND account_number IS NULL AND secret IS NULL FROM eshop.bank_accounts WHERE id=demo_row.bank_account),'no real payment routing');
@@ -121,10 +125,14 @@ BEGIN
  IF untranslated IS NOT NULL THEN RAISE EXCEPTION 'Untranslated English demo content: %',left(untranslated,240); END IF;
  SELECT jsonb_build_object('orders',(SELECT count(*) FROM eshop.orders WHERE occasion=ANY(identities)),
   'tickets',(SELECT count(*) FROM eshop.tickets WHERE occasion=ANY(identities))) INTO counts_before;
+ DELETE FROM public.occasion_link_reservations WHERE occasion=identities[1];
+ DELETE FROM public.form_link_reservations WHERE form IN(SELECT id FROM public.forms WHERE occasion=identities[1]);
  PERFORM pg_temp.seed_demo_occasions_localized(org,'en');
  PERFORM assert_eq((SELECT array_agg(occasion ORDER BY sort_order) FROM public.demo_occasions WHERE organization=org),identities,'English replay keeps identities');
  PERFORM assert_eq(jsonb_build_object('orders',(SELECT count(*) FROM eshop.orders WHERE occasion=ANY(identities)),
   'tickets',(SELECT count(*) FROM eshop.tickets WHERE occasion=ANY(identities))),counts_before,'English replay creates no extra examples');
+ PERFORM assert_eq(public.resolve_occasion_link_internal((SELECT link FROM public.occasions WHERE id=identities[1]),org),identities[1],'replay repairs existing event URL claims');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.forms WHERE occasion=identities[1] AND public.resolve_form_link_internal(link) IS DISTINCT FROM id),'replay repairs existing form URL claims');
  PERFORM assert_eq((SELECT md5(string_agg(o::text,'|' ORDER BY o.id)) FROM public.occasions o JOIN public.demo_occasions d ON d.occasion=o.id WHERE d.organization=1),cs_before,'Czech source catalogue remains unchanged');
  BEGIN
   PERFORM pg_temp.seed_demo_occasions_localized(org,'cs');

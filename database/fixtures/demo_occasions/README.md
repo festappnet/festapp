@@ -17,6 +17,8 @@ The default locale remains `cs` for existing callers. Unsupported locales,
 incomplete catalogues and attempts to overwrite another locale fail. English
 replay preserves the same three versioned events and creates no duplicates.
 Each tenant has its own demo organizer, separate from real organizer Units.
+The same seed reserves event and form URLs through the canonical link registry,
+including on replay; activation rejects examples whose URLs do not resolve.
 
 The seating geometry, seat identity and numeric lettering remain shared.
 `reference.en.sql` changes only four labels and their immutable shaped text

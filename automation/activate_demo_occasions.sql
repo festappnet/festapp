@@ -6,7 +6,10 @@ BEGIN;
 \else
 \set demo_locale cs
 \endif
-SELECT current_user='postgres' AND count(*)=3 AND count(DISTINCT d.demo_key)=3 AS demo_ready
+SELECT current_user='postgres' AND count(*)=3 AND count(DISTINCT d.demo_key)=3
+ AND bool_and(public.resolve_occasion_link_internal(o.link,d.organization) IS NOT DISTINCT FROM o.id)
+ AND bool_and(NOT EXISTS(SELECT 1 FROM public.forms f WHERE f.occasion=o.id
+  AND public.resolve_form_link_internal(f.link) IS DISTINCT FROM f.id)) AS demo_ready
 FROM public.demo_occasions d JOIN public.occasions o ON o.id=d.occasion
 WHERE d.organization=:demo_organization AND d.fixture_version='2026-10-14.3'
  AND coalesce(o.data->>'demo_locale','cs')=:'demo_locale'
