@@ -1,7 +1,7 @@
 import {assertEquals,assert,assertRejects} from 'jsr:@std/assert@1';
 import {GoogleWallet,googleSigner,walletDate,walletDocuments,walletIds} from './googleWallet.ts';
 const identity={issuer:'123456',environment:'local-immutable',organization:3,occasion:9,ticketId:44};
-const projection:any={state:'ACTIVE',ticket:{id:44,ticket_symbol:'ČÍSLO-1',order_product_ticket:[{spot_title:'12',spot_group_title:'A',product:{title:'Dospělý'}}]},occasion:{id:9,organization:3,title:'Večer hudby',start_time:'2026-07-01T18:00:00Z',end_time:'2026-07-02T00:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
+const projection:any={branding:{APP_NAME:'vstupenky.online',DEFAULT_URL:'https://vstupenky.online'},state:'ACTIVE',ticket:{id:44,ticket_symbol:'ČÍSLO-1',order_product_ticket:[{spot_title:'12',spot_group_title:'A',product:{title:'Dospělý'}}]},occasion:{id:9,organization:3,title:'Večer hudby',start_time:'2026-07-01T18:00:00Z',end_time:'2026-07-02T00:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
 Deno.test('Wallet identities isolate environments/tenants and preserve exact QR without purchaser data',async()=>{
  const ids=await walletIds(identity);assertEquals(await walletIds(identity),ids);
  assert((await walletIds({...identity,environment:'production'})).objectId!==ids.objectId);
@@ -12,6 +12,22 @@ Deno.test('Wallet identities isolate environments/tenants and preserve exact QR 
  assertEquals(walletDate('2026-12-01T18:00:00Z','Europe/Prague'),'2026-12-01T19:00:00+01:00');
  assert(!JSON.stringify(docs).includes('purchaser'));assert(!Object.hasOwn(docs.objectBody,'ticketHolderName'));
  const standing=walletDocuments(ids,{...projection,ticket:{...projection.ticket,order_product_ticket:[]}});assert(!Object.hasOwn(standing.objectBody,'seatInfo'));
+});
+Deno.test('Wallet displays the stored portal brand and platform logo without changing pass identity',async()=>{
+ const ids=await walletIds(identity);
+ for(const [name,origin,logo] of [
+  ['vstupenky.online','https://vstupenky.online','regional'],
+  ['Festapp Tickets','https://tickets.festapp.net','global'],
+ ]){
+  const documents=walletDocuments(ids,{...projection,branding:{APP_NAME:name,DEFAULT_URL:origin,WALLET_LOGO_URL:`https://img.festapp.net/assets/${logo}.png`},occasion:{...projection.occasion,data:{...projection.occasion.data,logo:'https://img.festapp.net/images/event-logo.png'}}});
+  assertEquals(documents.classBody.issuerName,name);
+  assertEquals(documents.classBody.logo!.sourceUri.uri,`https://img.festapp.net/assets/${logo}.png?f=png`);
+  assertEquals(documents.classBody.id,ids.classId);
+  assertEquals(documents.objectBody.barcode.value,projection.ticket.ticket_symbol);
+ }
+ const removed=walletDocuments(ids,{...projection,branding:{...projection.branding,WALLET_LOGO_URL:'https://img.festapp.net/assets/portal.png'},occasion:{...projection.occasion,ticketFeature:{wallet_appearance:{logo:null}}}});
+ assert(!Object.hasOwn(removed.classBody,'logo'));
+ await assertRejects(async()=>walletDocuments(ids,{...projection,branding:{APP_NAME:'',DEFAULT_URL:'https://tenant.invalid'}}));
 });
 Deno.test('real RSA signature signs short-lived reference-only Save JWT',async()=>{
  const keys=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);

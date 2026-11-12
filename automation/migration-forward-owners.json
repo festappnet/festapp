@@ -159,6 +159,17 @@
         "eshop_transactions/get_transactions_for_order.sql"
       ],
       "active": true
+    },
+    {
+      "migration": "20261112233000_ticket_wallet_branding.sql",
+      "header": "-- Tenant-owned Wallet branding and inert, representative email previews. No provider activation or customer sends.",
+      "sources": [
+        "ticket_wallet/projection.sql",
+        "occasion_setup/email_preview.sql",
+        "others/get_entity_email_templates.sql",
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ],
+      "active": true
     }
   ]
 }

@@ -8,16 +8,41 @@ export function ticketWalletEnabled(feature:any):boolean {
  return feature.wallet_enabled;
 }
 const labels:Record<string,string>={cs:'Přidat do Peněženky Google',sk:'Pridať do Peňaženky Google',en:'Add to Google Wallet',de:'Zu Google Wallet hinzufügen',pl:'Dodaj do Portfela Google',uk:'Додати в Google Гаманець'};
-export function walletEmailLink(url:string,badge:string|undefined,label:string,lang:string) {
+const badgeWidths:Record<string,number>={cs:333.12,sk:394.56,en:271.68,de:339.84,pl:307.2,uk:325.44};
+export const walletEmailCopy:Record<string,{title:string;help:string;ticket:string;fallback:string}>={
+ cs:{title:'Vstupenky v telefonu',help:'Uložte si vstupenky do peněženky v telefonu. U vstupu pak stačí ukázat jejich QR kód.',ticket:'Vstupenka {n} z {count}',fallback:'Uložit vstupenku do telefonu'},
+ sk:{title:'Vstupenky v telefóne',help:'Uložte si vstupenky do peňaženky v telefóne. Pri vstupe potom stačí ukázať ich QR kód.',ticket:'Vstupenka {n} z {count}',fallback:'Uložiť vstupenku do telefónu'},
+ en:{title:'Tickets on your phone',help:'Save your tickets to your phone’s wallet. Show their QR code at the entrance.',ticket:'Ticket {n} of {count}',fallback:'Save ticket to your phone'},
+ de:{title:'Tickets auf Ihrem Smartphone',help:'Speichern Sie Ihre Tickets in der Wallet auf Ihrem Smartphone. Zeigen Sie am Eingang den QR-Code vor.',ticket:'Ticket {n} von {count}',fallback:'Ticket auf dem Smartphone speichern'},
+ pl:{title:'Bilety w telefonie',help:'Zapisz bilety w portfelu w telefonie. Przy wejściu wystarczy pokazać ich kod QR.',ticket:'Bilet {n} z {count}',fallback:'Zapisz bilet w telefonie'},
+ uk:{title:'Квитки в телефоні',help:'Збережіть квитки в гаманці на телефоні. На вході достатньо показати їхній QR-код.',ticket:'Квиток {n} із {count}',fallback:'Зберегти квиток у телефоні'},
+};
+export function walletTicketLabel(index:number,count:number,lang:string) {
+ return (walletEmailCopy[lang]??walletEmailCopy.en).ticket.replace('{n}',String(index)).replace('{count}',String(count));
+}
+export function googleWalletBadgeUrl(lang:string) {
+ return `https://img.festapp.net/assets/google-wallet/v1/${Object.hasOwn(labels,lang)?lang:'en'}.png`;
+}
+export function walletEmailSection(rows:string[],lang:string) {
+ if(!rows.length)return '';
+ const copy=walletEmailCopy[lang]??walletEmailCopy.en;
+ return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:24px;border-top:1px solid #e2e8f0"><tr><td style="padding-top:24px"><h2 style="margin:0 0 8px;font-size:20px;line-height:1.35;color:#19243b">${escapeTicketText(copy.title)}</h2><p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#334155">${escapeTicketText(copy.help)}</p>${rows.join('')}</td></tr></table>`;
+}
+/** One ticket's action area; previews omit href rather than inventing a pass. */
+export function walletEmailLink(url:string|undefined,badge:string|undefined,label:string,lang:string) {
  const text=labels[lang]??labels.en;
- const image=badge?`<img src="${escapeTicketText(badge)}" height="48" alt="${escapeTicketText(text)}" style="height:48px;width:auto;margin:8px 0" />`:'';
- return `<div style="margin:24px 0"><p>${escapeTicketText(label)}</p><a href="${escapeTicketText(url)}">${image}<span style="display:block">${escapeTicketText(text)}</span></a></div>`;
+ const copy=walletEmailCopy[lang]??walletEmailCopy.en;
+ const image=badge?`<img src="${escapeTicketText(badge)}" height="48" alt="${escapeTicketText(text)}" style="display:block;border:0;width:${badgeWidths[lang]??badgeWidths.en}px;height:auto;max-width:100%" />`:escapeTicketText(text);
+ const open=url?`a href="${escapeTicketText(url)}"`:'span';
+ const close=url?'a':'span';
+ // A contained action area leaves space for another supported Wallet without overflow.
+ return `<div style="margin:0 0 20px"><p style="margin:0 0 4px;font-size:14px;line-height:1.5;font-weight:600;color:#19243b">${escapeTicketText(label)}</p><div style="text-align:center"><${open} style="display:block;box-sizing:border-box;width:100%;max-width:${(badgeWidths[lang]??badgeWidths.en)+16}px;margin:0 auto;padding:8px;color:#334155;text-decoration:none;text-align:center">${image}<span style="display:block;margin-top:8px;font-size:12px;line-height:1.5;text-decoration:underline">${escapeTicketText(copy.fallback)}</span></${close}></div></div>`;
 }
 export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:WalletRpc,ready?:boolean) {
  if(!feature?.is_enabled||!ticketWalletEnabled(feature)||ready===false)return '';
  // SQL checks publishing readiness. Email only creates an encrypted capability;
  // the isolated Wallet workers own signing credentials and Google API calls.
- let html='';
+ const rows:string[]=[];
  for(const [index,ticket] of tickets.entries()) {
   let context=await rpc('prepare_ticket_wallet',{p_message:row.message_id,p_ticket:ticket.id});
   if(!context)continue;
@@ -34,11 +59,11 @@ export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:W
   const url=new URL('/wallet',base);url.hash=source.token;
   const lang=row.data?.lang??'cs';
   const spot=ticket.order_product_ticket?.find((p:any)=>p.spot_title);
-  const description=[`${index+1}/${tickets.length}`,ticket.ticket_symbol,spot?.spot_title,spot?.spot_group_title].filter(Boolean).join(' - ');
+  const description=[walletTicketLabel(index+1,tickets.length,lang),spot?.spot_title,spot?.spot_group_title].filter(Boolean).join(' - ');
   const badge=context.badgeUrls?.[lang]??context.badgeUrls?.en;
   // Published badges must be immutable public canonical asset URLs configured by operations.
   if(!badge||!/^https:\/\/img\.festapp\.net\/assets\/google-wallet\/v1\/(cs|sk|en|de|pl|uk)\.png$/.test(badge))continue;
-  html+=walletEmailLink(url.href,badge,description,lang);
+  rows.push(walletEmailLink(url.href,badge,description,lang));
  }
- return html;
+ return walletEmailSection(rows,row.data?.lang??'cs');
 }

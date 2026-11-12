@@ -4722,7 +4722,12 @@
     "walletHelp": "Do e-mailu se vstupenkami přidá možnost uložit každou vstupenku do Google Wallet.",
     "walletFuture": "Změna se projeví v dalších e-mailech. Již přidané vstupenky zůstávají platné.",
     "walletUnavailable": "Google Wallet zatím není k dispozici. Po zprovoznění se nabídka začne přidávat automaticky.",
-    "walletPreview": "Google Wallet - ukázka nabídky u každé vstupenky"
+    "walletPreview": "Google Wallet - ukázka nabídky u každé vstupenky",
+    "walletEmailTitle": "Vstupenky v telefonu",
+    "walletEmailHelp": "Uložte si vstupenky do peněženky v telefonu. U vstupu pak stačí ukázat jejich QR kód.",
+    "walletEmailTicket": "Vstupenka {n} z {count}",
+    "walletEmailFallback": "Uložit vstupenku do telefonu",
+    "walletEmailButton": "Přidat do Peněženky Google"
   },
   "NotificationCenter": {
     "unreadHeading": "Nepřečtené",

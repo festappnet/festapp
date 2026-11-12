@@ -99,8 +99,17 @@ class EmailAuthoringContext {
   final String senderAddress;
   final String? wrapperHtml;
   final List<EmailPreviewPaymentAccount> paymentAccounts;
-  const EmailAuthoringContext({required this.senderAddress, this.wrapperHtml,
-    this.paymentAccounts = const []});
+  final bool walletEnabled;
+  final String language;
+  final String? ticketDeliveryMode;
+  const EmailAuthoringContext({
+    required this.senderAddress,
+    this.wrapperHtml,
+    this.paymentAccounts = const [],
+    this.walletEnabled = false,
+    this.language = 'cs',
+    this.ticketDeliveryMode,
+  });
 
   factory EmailAuthoringContext.fromJson(Map<String, dynamic> json) {
     final sender = json['senderAddress'];
@@ -108,13 +117,24 @@ class EmailAuthoringContext {
       throw const FormatException('Missing canonical sender');
     }
     return EmailAuthoringContext(
-        senderAddress: sender, wrapperHtml: json['wrapperHtml'] as String?,
-        paymentAccounts: [
-          for (final value in (json['paymentAccounts'] as List? ?? const []))
-            if (value is Map && value['accountNumber'] is String && value['iban'] is String && value['currencies'] is List)
-              EmailPreviewPaymentAccount(accountNumber: value['accountNumber'],
-                iban: value['iban'], currencies: List<String>.from(value['currencies'])),
-        ]);
+      senderAddress: sender,
+      wrapperHtml: json['wrapperHtml'] as String?,
+      walletEnabled: json['walletEnabled'] == true,
+      language: json['language'] as String? ?? 'cs',
+      ticketDeliveryMode: json['ticketDeliveryMode'] as String?,
+      paymentAccounts: [
+        for (final value in (json['paymentAccounts'] as List? ?? const []))
+          if (value is Map &&
+              value['accountNumber'] is String &&
+              value['iban'] is String &&
+              value['currencies'] is List)
+            EmailPreviewPaymentAccount(
+              accountNumber: value['accountNumber'],
+              iban: value['iban'],
+              currencies: List<String>.from(value['currencies']),
+            ),
+      ],
+    );
   }
 
   String composeHtml(EmailPreviewScenario scenario, String body) =>
@@ -123,11 +143,11 @@ class EmailAuthoringContext {
   /// Only images from the resolved wrapper can opt into remote preview.
   /// Other email images, including tracking pixels, remain inert.
   Set<String> get bannerImageSources => {
-        for (final image
-            in html_parser.parse(wrapperHtml ?? '').querySelectorAll('img'))
-          if (_isCanonicalBanner(image.attributes['src'] ?? ''))
-            image.attributes['src']!,
-      };
+    for (final image
+        in html_parser.parse(wrapperHtml ?? '').querySelectorAll('img'))
+      if (_isCanonicalBanner(image.attributes['src'] ?? ''))
+        image.attributes['src']!,
+  };
 
   static bool _isCanonicalBanner(String source) {
     final uri = Uri.tryParse(source);

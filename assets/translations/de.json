@@ -2580,7 +2580,12 @@
     "walletHelp": "Fügt Ticket-E-Mails die Möglichkeit hinzu, jedes Ticket in Google Wallet zu speichern.",
     "walletFuture": "Die Änderung gilt für zukünftige E-Mails. Bereits hinzugefügte Tickets bleiben gültig.",
     "walletUnavailable": "Google Wallet ist noch nicht verfügbar. Die Option erscheint automatisch, sobald die Integration bereit ist.",
-    "walletPreview": "Google Wallet - Vorschau der Option für jedes Ticket"
+    "walletPreview": "Google Wallet - Vorschau der Option für jedes Ticket",
+    "walletEmailTitle": "Tickets auf Ihrem Smartphone",
+    "walletEmailHelp": "Speichern Sie Ihre Tickets in der Wallet auf Ihrem Smartphone. Zeigen Sie am Eingang den QR-Code vor.",
+    "walletEmailTicket": "Ticket {n} von {count}",
+    "walletEmailFallback": "Ticket auf dem Smartphone speichern",
+    "walletEmailButton": "Zu Google Wallet hinzufügen"
   },
   "NotificationCenter": {
     "unreadHeading": "Ungelesen",

@@ -12,9 +12,11 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   EmailAuthoringProvider(this.template, {required this.field, this.scenario});
   final EmailTemplateModel template;
   bool inlineTicketsEnabled = false;
+  bool walletTicketsEnabled = false;
   bool includesPdfTickets = false;
   List<EmailTemplateSub> get _subs => template.substitutions.where((sub) {
-    if (sub.code == 'tickets' && !inlineTicketsEnabled) return false;
+    if (sub.code == 'tickets' && !inlineTicketsEnabled && !walletTicketsEnabled)
+      return false;
     final defaults = scenario?.contextDefaults;
     if (defaults == null || !defaults.containsKey('preview_payment_method'))
       return true;
@@ -177,12 +179,21 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   }) {
     Widget render() {
       if (code == 'tickets') {
-        return inlineTicketsEnabled
-            ? TicketEmailPreview.inlineSample(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (inlineTicketsEnabled)
+              TicketEmailPreview.inlineSample(
                 count: 1,
                 includesPdf: includesPdfTickets,
-              )
-            : const SizedBox.shrink();
+              ),
+            if (walletTicketsEnabled)
+              TicketEmailPreview.walletSample(
+                count: 1,
+                language: scenario?.locale ?? 'en',
+              ),
+          ],
+        );
       }
       final value =
           completion?.call()?.forToken(code, occurrence?.call() ?? 0) ??
