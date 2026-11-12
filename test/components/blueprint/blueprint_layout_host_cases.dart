@@ -863,6 +863,37 @@ void main() {
     expect(controller.snapshot.seatBindings[node]!.title, 'Custom');
     expect(controller.snapshot.seatBindings[node]!.productId, 99);
   });
+  test('reservation scene preserves authored fills and crosses unavailable seats', () {
+    final existing = snapshot();
+    final source = BlueprintModel(
+      layoutSnapshot: existing,
+      products: [ProductModel(id: 1, title: 'Seat')],
+    );
+    final controller = BlueprintLayoutController(
+      source: source,
+      saver: BlueprintLayoutSaver(Commands((input) async => accepted(input))),
+    );
+    addTearDown(controller.dispose);
+    final binding = existing.seatBindings[node]!;
+    final document = setKindStyleLeaf(existing.document, 'seat', ['fill'],
+        value: '#D9B788FF');
+    for (final fill in [null, '#DBEAFEFF']) {
+      final authored = fill == null ? document : document.copyWith(nodes: [
+        for (final seat in document.nodes)
+          seat.id == node ? seat.copyWith(style: {'fill': fill}) : seat,
+      ]);
+      final presentation = controller.adapter.customerPresentation(binding);
+      final items = compileScene(authored, presentation: {node: presentation})['items'] as List;
+      expect(items.firstWhere((item) => item['id'] == node)['fill'],
+          fill ?? '#D9B788FF');
+      expect(items.where((item) => item['kind'] == 'state'), isEmpty);
+      final blocked = controller.adapter.customerPresentation(binding.copyWith(blocked: true));
+      final unavailable = compileScene(authored, presentation: {node: blocked})['items'] as List;
+      expect(unavailable.where((item) => item['kind'] == 'state'), hasLength(1));
+      expect(blocked['selectable'], false);
+    }
+  });
+
   test(
       'customer sees blocked seats like ordered seats while admin retains blocked state',
       () {
@@ -876,7 +907,7 @@ void main() {
     addTearDown(controller.dispose);
     final admin = controller.adapter.publicPresentation(binding);
     final customer = controller.adapter.customerPresentation(binding);
-    expect(admin['status'], 'blocked');
+    expect(admin['status'], 'occupied');
     expect(admin['fill'], '#000000DE');
     expect(customer['status'], 'occupied');
     expect(customer['fill'], '#0000001F');

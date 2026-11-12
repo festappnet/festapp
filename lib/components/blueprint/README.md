@@ -46,6 +46,11 @@ immediately and are not reversed by geometry undo or draft discard.
 
 ## Reservation and financial authority
 
+Available seats inherit the saved document appearance, including per-seat color
+overrides, in admin reservations and both customer pickers. Selected seats retain
+the selection check; unavailable seats use the canonical cross regardless of
+their lifecycle state. Status colors remain presentation overlays.
+
 Both customer pickers apply optimistic presentation through the package and
 rollback rejected callbacks. Only `select_spot` creates/releases the actual
 secret/expiry hold. SQL locks the complete atomic unit, validates the assigned blueprint bindings,

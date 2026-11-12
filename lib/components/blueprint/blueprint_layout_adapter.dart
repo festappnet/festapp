@@ -106,6 +106,7 @@ class BlueprintLayoutAdapter {
         hasProduct: facts['hasProduct'] == true,
       ),
       label: facts['title']?.toString() ?? '',
+      productAvailable: facts['hasProduct'] == true,
     );
   }
 
@@ -151,17 +152,15 @@ class BlueprintLayoutAdapter {
     String? productTitle,
     bool productAvailable = false,
   }) => {
-    'stateMarker': state == BlueprintSeatState.used ? 'none' : 'auto',
+    'stateMarker': 'auto',
     'label': label,
-    'fill': blueprintSeatStateFills[state]!,
-    'status': switch (state) {
-      BlueprintSeatState.ordered || BlueprintSeatState.used => 'occupied',
-      BlueprintSeatState.selected => 'reserved',
-      BlueprintSeatState.selectedByMe => 'available',
-      BlueprintSeatState.blocked => 'blocked',
-      BlueprintSeatState.empty => 'unavailable',
-      _ => 'available',
-    },
+    // Available seats inherit the document's resolved appearance.
+    if (state != BlueprintSeatState.available || !productAvailable)
+      'fill': blueprintSeatStateFills[state]!,
+    'status': state == BlueprintSeatState.selectedByMe ||
+            (state == BlueprintSeatState.available && productAvailable)
+        ? 'available'
+        : 'occupied',
     'selectable':
         state == BlueprintSeatState.selectedByMe ||
         (state == BlueprintSeatState.available && productAvailable),

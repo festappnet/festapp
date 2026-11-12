@@ -114,23 +114,23 @@ test('unassigned available seat is empty while protected live state survives mis
     const source=data();source.products=[];source.spots[1].state='used';
     const adapter=new BlueprintLayoutAdapter(source,{session:{}});
     assert.equal(adapter.seatModel('a').state,'empty');
-    assert.equal(adapter.seatPresentation.a.status,'unavailable');
+    assert.equal(adapter.seatPresentation.a.status,'occupied');
     assert.equal(adapter.seatPresentation.a.selectable,false);
     assert.equal(adapter.seatModel('b').state,'used');
     assert.equal(adapter.seatPresentation.b.status,'occupied');
 });
 
 test('public status palette renders blocked seats like ordered seats', () => {
-    const cases = [['available','#267329FF'],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#0000001F'],['empty','#267329FF']];
+    const cases = [['available',undefined],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#0000001F'],['empty','#267329FF']];
     for (const [state, fill] of cases) {
         const fixture = data(); fixture.spots[0].state = state;
         if (state === 'black') fixture.seatBindings[0].blocked = true;
         if (state === 'empty') fixture.seatBindings[0].productId = null;
         const item = new BlueprintLayoutAdapter(fixture).seatPresentation.a;
         assert.equal(item.fill, fill, state);
-        assert.equal(item.stateMarker, state === 'used' ? 'none' : 'auto');
+        assert.equal(item.stateMarker, 'auto');
         assert.equal(item.selected, state === 'selected_by_me');
-        if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'unavailable'); }
+        if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
         if (state === 'black') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
     }
 });
@@ -331,4 +331,24 @@ test('standing availability disables sold out and unbound areas with an explanat
     assert.ok(adapter.capacityPresentation.unbound.tooltip);
     assert.equal(adapter.capacityPresentation.sold.selectable,false);
     assert.ok(adapter.capacityPresentation.sold.tooltip);
+});
+
+
+test('reservation scene keeps document and individual seat colors with canonical unavailable markers', () => {
+    const corpus = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    const {document, resources} = corpus.public;
+    const seat = document.nodes.find(node => node.kind === 'seat');
+    assert.ok(seat);
+    for (const fill of ['#D9B788FF', '#DBEAFEFF']) {
+        const authored = {...document, nodes: document.nodes.map(node => node.id === seat.id ? {...node, style: {...node.style, fill}} : node)};
+        const source = data();
+        const adapter = new BlueprintLayoutAdapter(source);
+        const render = () => JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(authored), JSON.stringify(resources), JSON.stringify({[seat.id]: adapter.seatPresentation.a})));
+        assert.equal(render().items.find(item => item.id === seat.id).fill, fill);
+        for (const state of ['selected', 'ordered', 'used', 'black', 'empty']) {
+            adapter.models.get('a').state = state;
+            assert.equal(adapter.seatPresentation.a.selectable, false, state);
+            assert.ok(render().items.some(item => item.nodeId === seat.id && item.kind === 'state'), state);
+        }
+    }
 });
