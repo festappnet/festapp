@@ -498,7 +498,7 @@
       }
     },
     "web-measurement": {
-      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
+      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
       "after": [
         "web-startup"
       ],
@@ -1968,6 +1968,7 @@
     "web_client/tests/core/home_startup.test.js",
     "web_client/tests/core/host_complianz.test.js",
     "web_client/tests/core/host_cookieconsent.test.js",
+    "web_client/tests/core/host_cookiebot.test.js",
     "web_client/tests/core/host_consent_mode.test.js",
     "web_client/tests/core/host_gtm_preset.test.js",
     "web_client/tests/core/initialize_core_services.test.js",
@@ -2021,6 +2022,7 @@
     "web_client/tests/forms/form_consent_link.test.js",
     "web_client/tests/forms/form_consent_link_cmp.test.js",
     "web_client/tests/forms/form_consent_link_cookieconsent.test.js",
+    "web_client/tests/forms/form_consent_link_cookiebot.test.js",
     "web_client/tests/forms/form_data_reader.test.js",
     "web_client/tests/forms/form_datalayer.test.js",
     "web_client/tests/forms/form_loading.test.js",
