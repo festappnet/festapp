@@ -40,6 +40,10 @@ test('public guides render crawlable linked documents, code generator without un
   assert.ok(html.includes(`rel="canonical" href="https://vstupenky.online/napoveda/${page.slug?page.slug+'/':''}"`));
   assert.match(html,/data-help-search/);assert.match(html,/assets\/search\.[a-f0-9]+\.js/);assert.match(html,/BreadcrumbList/);if(page.id.startsWith('category.'))assert.match(html,/ItemList/);
   assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{/);
+  assert.match(html, /property="og:image" content="https:\/\/vstupenky\.online\/organizers-media\/organizers-social\.png"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
+  assert.match(html, /name="twitter:description"/);
+
   if(page.id==='ai-agents') assert.doesNotMatch(html,/codex/i,'MCP guide metadata and body are client independent');
   if(page.id==='fio-token') {
    assert.equal((html.match(/<iframe /g)||[]).length,1);
@@ -117,6 +121,12 @@ test('public guides render crawlable linked documents, code generator without un
  for(const page of englishPages){
   const html=fs.readFileSync(path.join(enTarget,page.slug,'index.html'),'utf8');
   assert.match(html,/<html lang="en">/);assert.match(html,/noindex,nofollow/);
+  for (const tag of ['property="og:image"', 'name="twitter:image"']) assert.ok(html.includes(`${tag} content="https://tickets.festapp.net/organizers-media/global/festapp-tickets-social.png"`));
+  assert.match(html, /property="og:locale" content="en_US"/);
+  assert.match(html, /property="og:image:width" content="1200"/);
+  assert.match(html, /property="og:image:height" content="630"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
+
   assert.doesNotMatch(html,/vstupenky\.online|\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English guide has no regional branding, Czech chrome or screenshot fallback');
   assert.match(html,/https:\/\/cal\.com\/michael-bujnovsky-5srszz\/ukazka/,'all guides use the canonical booking target');
   if(coreTopics.includes(page.id))assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing localized screenshot: ${page.id}`);

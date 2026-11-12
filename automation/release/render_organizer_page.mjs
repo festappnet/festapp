@@ -42,6 +42,14 @@ const html = fs.readFileSync(index, 'utf8')
         '@context':'https://schema.org', '@type':'WebSite', name:seo.siteName, url:new URL('/', value('WEB_LINK')).href,
       })}</script>`);
   }
+  if (enabled && seo) {
+    // Replace inherited app-icon metadata with this marketing profile's card.
+    catalog = catalog.replace(/<meta\b[^>]*(?:name|property)=["'](?:(?:og|twitter):image(?::(?:width|height|alt))?|og:locale|og:site_name)["'][^>]*>\s*/gi, '');
+    const image = escape(new URL(seo.image, context.origin).href);
+    const tags = `<meta property="og:image" content="${image}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">`
+      + `<meta name="twitter:image" content="${image}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}"><meta property="og:locale" content="${escape(projection.ogLocale)}"><meta property="og:site_name" content="${escape(seo.siteName)}">`;
+    catalog = catalog.replace('</head>', tags + '</head>');
+  }
   catalogOutput = catalog.replace(/<html lang="[^"]*"/, `<html lang="${context.locale ?? 'cs'}"`);
 }
 const manifestPath = path.join(path.dirname(target), 'organizer-pages.json');
