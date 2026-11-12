@@ -875,6 +875,13 @@
       "sources": [
         "test/components/unit/unit_settings_save_test.dart"
       ]
+    },
+    "test/components/notification_center/notification_email_settings_test.dart": {
+      "kind": "environment",
+      "reason": "Controller preference writes and stale revisions use the real notification controller with an injected RPC boundary.",
+      "sources": [
+        "test/components/notification_center/notification_email_settings_test.dart"
+      ]
     }
   }
 }

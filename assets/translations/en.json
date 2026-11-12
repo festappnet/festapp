@@ -4796,7 +4796,10 @@
       "capacity_full": "Capacity reached",
       "capacity_reopened": "Places available again",
       "bank_problem": "Bank connection needs attention",
-      "email_problem": "Email delivery needs attention"
+      "email_problem": "Email delivery needs attention",
+      "provider_problem": "Payment gateway problem",
+      "order_payment_received": "Payment received",
+      "payment_problem": "Payment needs attention"
     },
     "states": {
       "membership_active": "Joined the occasion",
@@ -4837,7 +4840,10 @@
       "fio_receiving_account_mismatch": "Bank token belongs to a different receiving account",
       "bank_sync_retry_required": "Bank account check needs a retry",
       "transport_unavailable": "Bank service is temporarily unavailable",
-      "stale_health": "Bank account has not been checked recently"
+      "stale_health": "Bank account has not been checked recently",
+      "provider_restricted": "The payment gateway restricts payment collection.",
+      "provider_access_revoked": "Access to the payment gateway was revoked.",
+      "provider_unavailable": "Repeated attempts to reach the payment gateway failed."
     },
     "places": {
       "one": "{count} place",
@@ -4891,12 +4897,48 @@
         "few": "{count} expired offers",
         "many": "{count} expired offers",
         "other": "{count} expired offers"
+      },
+      "order_payment_received": {
+        "one": "Payment changes: {count}",
+        "few": "Payment changes: {count}",
+        "many": "Payment changes: {count}",
+        "other": "Payment changes: {count}"
       }
     },
     "preparing": "Preparing your current notifications…",
     "expiredView": "This overview has expired. Open it again.",
     "viewLimit": "Close another open overview and try again.",
-    "viewLimitAction": "Close other overviews"
+    "viewLimitAction": "Close other overviews",
+    "emailEnabled": "Optional email summaries",
+    "requiredKinds": {
+      "bank_problem": "Bank problems",
+      "provider_problem": "Payment gateway problems"
+    },
+    "emailRequiredHelp": "Required alerts for authorized recipients. Muting an event or turning summaries off does not disable them.",
+    "emailAlwaysOn": "Always on",
+    "emailHelp": "A summary every {minutes} minutes across selected events and organizations",
+    "emailOrganization": "Organization default subscription",
+    "emailCategories": {
+      "problems": "Problems",
+      "registrations": "Registrations",
+      "orders": "Orders",
+      "payments": "Payments"
+    },
+    "emailStates": {
+      "no_address": "Delivery email is missing",
+      "pending": "Waiting to send",
+      "preparing": "Preparing",
+      "sending": "Sending",
+      "accepted": "Accepted by provider",
+      "retry_wait": "Waiting to retry",
+      "unknown": "Send outcome under reconciliation",
+      "dead": "Delivery failed",
+      "cancelled": "Cancelled",
+      "suppressed": "Delivery suppressed",
+      "expired": "Expired",
+      "blocked": "Waiting to send"
+    },
+    "paymentAssigned": "Assignment of a received payment"
   },
   "TicketBatches": {
     "selectedCount": "Selected: {count}",

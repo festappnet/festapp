@@ -1,0 +1,14 @@
+Check supabase/functions/_shared/adminNotificationEmail_test.ts
+Check supabase/functions/_shared/adminNotificationSender_test.ts
+running 6 tests from ./supabase/functions/_shared/adminNotificationEmail_test.ts
+digest renders escaped authorized contributions, separate currencies and safe tenant links without RPC ... ok (22ms)
+renderer obtains one authorized SQL context with explicit recipient and never loads item DTOs ... ok (60ms)
+one shared bank item links each authorized tenant context without multiplying the incident ... ok (524µs)
+reassignment is presented separately from new income and never as newly registered people ... ok (424µs)
+large activity stays in one bounded HTML summary with an authorized overflow link ... ok (6ms)
+required gateway incidents use the same localized digest and authorized unit link ... ok (279µs)
+running 1 test from ./supabase/functions/_shared/adminNotificationSender_test.ts
+recipient digest uses the sole sender without tenant tags or engagement tracking; unknown never retries blindly ... ok (1ms)
+
+ok | 7 passed | 0 failed (135ms)
+

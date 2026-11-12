@@ -120,6 +120,22 @@ BEGIN
     IF v_order_id IS NOT NULL THEN PERFORM public.recalculate_order_payment_status(v_order_id); END IF;
   END IF;
 
+
+  IF v_old_payment_info_id IS DISTINCT FROM p_payment_info_id THEN
+    PERFORM public.notification_center_prepared_invalidate(e.id) FROM public.notification_center_events e
+     JOIN eshop.orders o ON o.occasion=e.occasion AND o.id=(e.data->>'orderId')::bigint
+     WHERE e.kind='order_payment_received' AND e.data->>'paymentFact'='transaction:'||p_transaction_id AND o.payment_info=v_old_payment_info_id;
+    UPDATE public.notification_center_events e SET status='resolved' FROM eshop.orders o
+     WHERE e.kind='order_payment_received' AND e.data->>'paymentFact'='transaction:'||p_transaction_id
+      AND o.id=(e.data->>'orderId')::bigint AND o.occasion=e.occasion AND o.payment_info=v_old_payment_info_id;
+    IF p_payment_info_id IS NOT NULL AND v_transaction.amount>0 THEN
+      FOR v_order_id IN SELECT id FROM eshop.orders WHERE payment_info=p_payment_info_id LOOP
+       PERFORM public.notification_center_payment_fact_internal(v_order_id,'transaction',p_transaction_id::text,
+        v_transaction.amount,v_transaction.currency::text,coalesce(v_transaction.date,now()),
+        EXISTS(SELECT 1 FROM eshop.transaction_pairing_events WHERE transaction_id=p_transaction_id AND new_payment_info_id IS NOT NULL));
+      END LOOP;
+    END IF;
+  END IF;
   INSERT INTO eshop.transaction_pairing_events (
     transaction_snapshot_id, transaction_id, old_payment_info_id,
     new_payment_info_id, action, method, actor_id, actor_kind, details

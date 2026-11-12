@@ -462,6 +462,17 @@
     "occasion_setup/bank_accounts.sql",
     "others/get_email_authoring_payment_accounts.sql",
     "occasion_setup/finalize.sql",
-    "payment_providers/released_bank_readers.sql"
+    "payment_providers/released_bank_readers.sql",
+    "notification_center/email_preferences.sql",
+    "notification_center/email_context.sql",
+    "notification_center/email_delivery.sql",
+    "abuse/email.sql",
+    "emails/email_reporting.sql",
+    "notification_center/payment_sources.sql",
+    "payment_providers/effects.sql",
+    "eshop_bank_sync/bank_sync_health.sql",
+    "notification_center/email_policy.sql",
+    "payment_providers/connection_access.sql",
+    "notification_center/provider_connections.sql"
   ]
 }

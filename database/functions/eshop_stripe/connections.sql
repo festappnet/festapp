@@ -1,9 +1,7 @@
 CREATE OR REPLACE FUNCTION public.check_stripe_unit_manager_internal(p_unit bigint,p_actor uuid)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
- IF p_actor IS NULL OR NOT EXISTS(SELECT 1 FROM public.units u JOIN public.unit_users uu ON uu.unit=u.id
-  JOIN public.user_info i ON i.id=uu."user" AND i.organization=u.organization
-  WHERE u.id=p_unit AND uu."user"=p_actor AND uu.is_manager) THEN
+ IF NOT public.payment_provider_unit_manager_internal(p_unit,p_actor) THEN
   RAISE insufficient_privilege USING MESSAGE='STRIPE_UNIT_MANAGER_REQUIRED'; END IF;
  IF public.is_demo_unit(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='DEMO_UNIT_READ_ONLY'; END IF;
 END $$;
@@ -119,6 +117,10 @@ BEGIN
  UPDATE eshop.stripe_connection_flows SET state='completed',result=v_result WHERE id=f.id;
  INSERT INTO eshop.stripe_connection_audit(connection_id,flow_id,actor,action)
  VALUES(c.id,f.id,f.actor,CASE WHEN current_connection=c.id THEN 'reconnected' WHEN current_connection IS NOT NULL THEN 'replaced' ELSE 'connected' END);
+ PERFORM public.notification_center_provider_connection_internal('stripe',c.id);
+ IF current_connection IS NOT NULL AND current_connection IS DISTINCT FROM c.id THEN
+  PERFORM public.notification_center_provider_connection_internal('stripe',current_connection);
+ END IF;
  RETURN v_result;
 END $$;
 REVOKE ALL ON FUNCTION public.complete_stripe_connection_flow_internal(uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated;

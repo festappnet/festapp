@@ -28,6 +28,7 @@ DECLARE m public.email_messages; a public.notification_center_organizations; old
  reason text; fact_at timestamptz; ev uuid; seen jsonb; key text:='email:'||p_message; due_at timestamptz;
 BEGIN
  SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
+ IF m.message_kind='admin_notification_digest' THEN RETURN; END IF;
  IF NOT FOUND THEN RETURN; END IF;
  PERFORM pg_advisory_xact_lock_shared(hashtextextended('notification-center-organization:'||m.organization,0));
  p_at:=coalesce(p_at,clock_timestamp());

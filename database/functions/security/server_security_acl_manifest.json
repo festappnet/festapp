@@ -19,7 +19,10 @@
     "get_notification_center_overview",
     "get_notification_center_daily_overview",
     "mark_notification_center_item_read",
-    "enqueue_occasion_setup_invitation"
+    "enqueue_occasion_setup_invitation",
+    "claim_notification_center_bank_health",
+    "complete_notification_center_bank_health",
+    "enqueue_bank_sync_health_alerts"
   ],
   "sync_tables": [
     "external_sync_sources",
@@ -1011,16 +1014,6 @@
       "anon": true,
       "authenticated": true,
       "service_role": false
-    },
-    "public.claim_notification_center_bank_health(integer)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
-    },
-    "public.complete_notification_center_bank_health(bigint,uuid,timestamp with time zone,text,timestamp with time zone)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
     },
     "public.project_notification_center(integer)": {
       "anon": false,
@@ -3366,6 +3359,36 @@
       "anon": false,
       "authenticated": true,
       "service_role": true
+    },
+    "public.save_notification_center_email_settings(bigint,bigint,bigint,boolean,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.activate_notification_center_emails(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_notification_center_email_context(uuid,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.collect_notification_center_emails(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.enqueue_notification_center_emails(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_notification_center_email_health()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -3407,7 +3430,10 @@
     "database/functions/user_permissions/payment_operations.sql",
     "database/functions/occasion_setup/email_preview.sql",
     "database/functions/payment_providers/released_bank_readers.sql",
-    "database/functions/scanning/access_codes.sql"
+    "database/functions/scanning/access_codes.sql",
+    "database/functions/notification_center/email_preferences.sql",
+    "database/functions/notification_center/email_context.sql",
+    "database/functions/notification_center/email_delivery.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

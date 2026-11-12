@@ -1,4 +1,8 @@
 export const emailRegistry = {
+  admin_notification_digest: {
+    code: "ADMIN_NOTIFICATION_DIGEST",
+    sensitive: true,
+  },
   sale_opening_opened: { code: "sale_opening_opened", sensitive: true },
   waitlist_confirmation: { code: "waitlist_confirmation", sensitive: true },
   waitlist_offer: { code: "waitlist_offer", sensitive: true },

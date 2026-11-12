@@ -1,0 +1,49 @@
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.015s
+
+OK
+Unplanned canonical source drift: eshop_stripe/connections.sql
+✔ one authored owner per selected PostgreSQL function identity (9239.229625ms)
+✔ forward manifest is deterministic, definition-only and refuses historical targets (1221.535209ms)
+✔ current order callers reach the command and have no automatic email follow-up (3.152958ms)
+✔ pool and cleaning facade graphs terminate in private owners without recursion (1.8875ms)
+✔ activity publication no longer performs broad post-publish autosave deletion (0.954833ms)
+✔ all forward SECURITY DEFINER owners pin the trusted search path (14.782083ms)
+✔ effective SQL source fingerprints are reproducible from release inputs (1698.947083ms)
+✔ retired implementations have no authored identity or live SQL caller (1305.375666ms)
+✔ ticket batch ACL restoration uses the canonical access owner (1.653042ms)
+✖ payment lifecycle retains recovery history and provider-aware reconciliation (1069.834ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14742.322666
+
+✖ failing tests:
+
+test at automation/tests/canonical_operation_sources.test.mjs:117:1
+✖ payment lifecycle retains recovery history and provider-aware reconciliation (1069.834ms)
+  Error: Command failed: python3 automation/assemble-payment-provider-hardening-migration.py --check
+  Unplanned canonical source drift: eshop_stripe/connections.sql
+  
+      at genericNodeError (node:internal/errors:999:15)
+      at wrappedFn (node:internal/errors:544:14)
+      at checkExecSyncError (node:child_process:942:11)
+      at execFileSync (node:child_process:978:15)
+      at TestContext.<anonymous> (file:///Users/miakh/source/festapp/automation/tests/canonical_operation_sources.test.mjs:122:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12) {
+    status: 1,
+    signal: null,
+    output: [ null, <Buffer >, <Buffer 55 6e 70 6c 61 6e 6e 65 64 20 63 61 6e 6f 6e 69 63 61 6c 20 73 6f 75 72 63 65 20 64 72 69 66 74 3a 20 65 73 68 6f 70 5f 73 74 72 69 70 65 2f 63 6f 6e ... 13 more bytes> ],
+    pid: 19895,
+    stdout: <Buffer >,
+    stderr: <Buffer 55 6e 70 6c 61 6e 6e 65 64 20 63 61 6e 6f 6e 69 63 61 6c 20 73 6f 75 72 63 65 20 64 72 69 66 74 3a 20 65 73 68 6f 70 5f 73 74 72 69 70 65 2f 63 6f 6e ... 13 more bytes>
+  }

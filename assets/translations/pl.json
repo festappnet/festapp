@@ -2658,7 +2658,10 @@
       "capacity_full": "Osiągnięto limit miejsc",
       "capacity_reopened": "Miejsca ponownie dostępne",
       "bank_problem": "Połączenie bankowe wymaga uwagi",
-      "email_problem": "Dostarczenie e-maila wymaga uwagi"
+      "email_problem": "Dostarczenie e-maila wymaga uwagi",
+      "provider_problem": "Problem z bramką płatniczą",
+      "order_payment_received": "Otrzymano płatność",
+      "payment_problem": "Płatność wymaga uwagi"
     },
     "states": {
       "membership_active": "Uczestnik wydarzenia",
@@ -2699,7 +2702,10 @@
       "fio_receiving_account_mismatch": "Token bankowy należy do innego konta odbiorczego",
       "bank_sync_retry_required": "Kontrolę konta bankowego należy powtórzyć",
       "transport_unavailable": "Usługa bankowa jest tymczasowo niedostępna",
-      "stale_health": "Konto bankowe nie zostało sprawdzone na czas"
+      "stale_health": "Konto bankowe nie zostało sprawdzone na czas",
+      "provider_restricted": "Bramka płatnicza ogranicza przyjmowanie płatności.",
+      "provider_access_revoked": "Dostęp do bramki płatniczej został cofnięty.",
+      "provider_unavailable": "Kolejne próby połączenia z bramką płatniczą nie powiodły się."
     },
     "places": {
       "one": "{count} miejsce",
@@ -2753,12 +2759,48 @@
         "few": "{count} wygasłe oferty",
         "many": "{count} wygasłych ofert",
         "other": "{count} wygasłych ofert"
+      },
+      "order_payment_received": {
+        "one": "Zmiany płatności: {count}",
+        "few": "Zmiany płatności: {count}",
+        "many": "Zmiany płatności: {count}",
+        "other": "Zmiany płatności: {count}"
       }
     },
     "preparing": "Przygotowujemy aktualne powiadomienia…",
     "expiredView": "Ten przegląd wygasł. Proszę otworzyć go ponownie.",
     "viewLimit": "Proszę zamknąć inny otwarty przegląd i spróbować ponownie.",
-    "viewLimitAction": "Zamknij inne przeglądy"
+    "viewLimitAction": "Zamknij inne przeglądy",
+    "emailEnabled": "Opcjonalne podsumowania e-mail",
+    "requiredKinds": {
+      "bank_problem": "Problemy bankowe",
+      "provider_problem": "Problemy z bramkami płatniczymi"
+    },
+    "emailRequiredHelp": "Obowiązkowe alerty dla uprawnionych odbiorców. Wyciszenie wydarzenia lub wyłączenie podsumowań ich nie wyłącza.",
+    "emailAlwaysOn": "Zawsze włączone",
+    "emailHelp": "Co {minutes} minut podsumowanie wybranych wydarzeń i organizacji",
+    "emailOrganization": "Domyślna subskrypcja organizacji",
+    "emailCategories": {
+      "problems": "Problemy",
+      "registrations": "Zgłoszenia",
+      "orders": "Zamówienia",
+      "payments": "Płatności"
+    },
+    "emailStates": {
+      "no_address": "Brak adresu e-mail do doręczeń",
+      "pending": "Oczekuje na wysłanie",
+      "preparing": "Przygotowywanie",
+      "sending": "Wysyłanie",
+      "accepted": "Przyjęto przez dostawcę",
+      "retry_wait": "Oczekuje na ponowienie",
+      "unknown": "Wynik wysyłki jest sprawdzany",
+      "dead": "Doręczenie nie powiodło się",
+      "cancelled": "Anulowano",
+      "suppressed": "Doręczenie wstrzymane",
+      "expired": "Wygasło",
+      "blocked": "Oczekuje na wysłanie"
+    },
+    "paymentAssigned": "Przypisanie otrzymanej płatności"
   },
   "TicketBatches": {
     "selectedCount": "Wybrano: {count}",

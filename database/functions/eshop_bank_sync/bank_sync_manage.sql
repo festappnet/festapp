@@ -139,6 +139,7 @@ BEGIN
     state=CASE WHEN p_state IN ('connected','degraded') AND observation_id>p_observation_id THEN state ELSE p_state END
     WHERE id=p_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_CONNECTION_NOT_FOUND'; END IF;
+  PERFORM public.notification_center_bank_incident_internal(p_id);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,bigint,text) FROM PUBLIC,anon,authenticated;
@@ -172,7 +173,13 @@ BEGIN
     state=CASE WHEN state IN ('connected','degraded') THEN
       CASE WHEN p_error IS NOT NULL THEN 'degraded' WHEN p_success_at IS NOT NULL THEN 'connected' ELSE state END
       ELSE state END WHERE id=p_id AND observation_id<p_observation_id;
-  RETURN FOUND;
+  IF NOT FOUND THEN RETURN false; END IF;
+  -- Successful pull recovery invalidates the projected incident immediately.
+  IF p_error IS NULL AND p_success_at IS NOT NULL THEN
+   UPDATE eshop.bank_sync_health SET warning_code=NULL,warning_since=NULL,incident_id=NULL WHERE connection_id=p_id;
+  END IF;
+  PERFORM public.notification_center_bank_incident_internal(p_id);
+  RETURN true;
 END;
 $$;
 REVOKE ALL ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text,bigint) FROM PUBLIC,anon,authenticated;

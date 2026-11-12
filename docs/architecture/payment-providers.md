@@ -418,3 +418,31 @@ Only unprepared, never-attempted pending bank demand envelopes receive current
 server policy metadata. Business data, hash, recipient, dedupe, state and sealed
 snapshots are preserved. Prepared, unknown, attempted and foreign envelopes are
 untouched; repeated execution is idempotent and performs no send or resend.
+
+Administrative notification facts use the existing connector registry operation
+`notification_facts(attemptId)`. Each connector returns immutable positive
+payment movement identities, amount, currency and occurrence time from its own
+stored ledger. The shared effects owner publishes these facts through the
+notification center; it does not branch on provider names or infer income from
+paid state. Refunds, repricing and callback revisions create no payment-received
+identity. `eshop.payment_notification_incidents` retains the payment domain's
+problem episode and recovery; delivery does not evaluate that domain again.
+
+Operational connection alerts use the same registry with
+`notification_connection_health(connectionId)`. Stripe reads its confirmed
+connection state and status-worker failure count; Barion reads the failure
+counts persisted by its existing recovery worker. The shared threshold owner is
+`payment_provider_connection_failure_threshold_internal` (three consecutive
+failures). There is no second health poller or provider request from email.
+`provider_connection_notification_incidents` owns only episode identity and
+recovery, not financial facts. Reason changes preserve the episode; recovery
+closes it and a new failure opens a new UUID. Intentional Stripe disconnection
+is excluded using its existing actor audit. Barion stays sandbox-only.
+
+`payment_provider_unit_manager_internal` owns connection-administration identity
+for both Stripe commands and notification scopes; existing demo guards remain.
+Only current connection administrators receive mandatory `provider_problem`
+email, independently of optional summary stop, subscriptions and occasion mute.
+The existing recipient capture, prepared center, SQL authorization context and
+single email queue/SES gate deliver it. The digest never computes connector
+health, payment totals or ticket counts again.

@@ -1,0 +1,22 @@
+✔ forward assembler checks canonical tables without rewriting historical notification migration (207.130625ms)
+✔ explicit output refuses an existing different artifact (94.229ms)
+✔ default output cannot rewrite a published migration after source changes (151.454125ms)
+﹣ assembled prerequisite rejects a missing canonical scope owner (0.787708ms) # SKIP
+✔ open is unacknowledged during repair, frozen membership survives later arrivals and reverse tab reads (3.0345ms)
+✔ unknown totals, independent recipients and quotas never silently invent data or evict live views (0.20925ms)
+✔ forward security migrations agree with canonical SQL (1248.39175ms)
+✔ security activation has digest, target, lock, validation and live readback gates (22.398292ms)
+✔ online restore refuses mutable images, production mounts, network and preexisting evidence (1.297958ms)
+✔ every definer in the security package declares its path and direct ACL (14.217709ms)
+✔ root runtime observer sanitizes Docker data and rejects a different host (157.700584ms)
+✔ new application definer headers require an explicit signature and ACL declaration (146.946709ms)
+✔ direct ACL declarations accept explicit function lists and reject a different statement (0.260625ms)
+✔ form measurement predicate declares its scoped definer contract and exact client ACL (1.6175ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 1698.296458

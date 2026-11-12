@@ -23,13 +23,22 @@ CREATE OR REPLACE FUNCTION public.enqueue_email(p_kind text,p_context jsonb,p_re
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_hash text; v_row public.email_messages; v_org bigint:=(p_context->>'organization')::bigint; v_occ bigint:=(p_context->>'occasion')::bigint; v_unit bigint:=(p_context->>'unit')::bigint;
 BEGIN
+ IF p_code='BANK_SYNC_WARNING' THEN RAISE EXCEPTION 'bank_warning_producer_retired'; END IF;
  p_recipient:=public.normalize_order_email_contact(p_recipient);
  PERFORM public.check_occasion_writable(v_occ);
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
- IF v_org IS NULL OR p_kind NOT IN ('order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer','sale_opening_opened')
+ IF (v_org IS NULL AND p_kind<>'admin_notification_digest') OR p_kind NOT IN ('admin_notification_digest','order_confirmation','order_payment_notice','order_tickets','order_reminder','order_update','order_storno','custom','registration','sign_in','reset_password','app_links','deletion_confirm','deletion_complete','google_mailbox','gotrue','waitlist_confirmation','waitlist_offer','sale_opening_opened')
  OR p_dedupe IS NULL OR length(p_dedupe)>512 OR (p_recipient IS NOT NULL AND (length(p_recipient)>320 OR position('@' in p_recipient)=0)) THEN RAISE EXCEPTION 'invalid_email_intent'; END IF;
- IF NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org) OR
+ IF (v_org IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.organizations WHERE id=v_org)) OR
  (v_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=v_occ AND organization=v_org AND (NOT p_context ? 'unit' OR unit IS NOT DISTINCT FROM v_unit))) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
+ IF p_kind='admin_notification_digest' THEN
+  IF v_org IS NOT NULL OR v_occ IS NOT NULL OR v_unit IS NOT NULL OR p_order IS NOT NULL OR
+   p_recipient IS DISTINCT FROM public.get_user_delivery_email((p_context->>'recipient_user')::uuid) OR
+   NOT EXISTS(SELECT 1 FROM public.notification_center_email_dispatches d
+    WHERE d.id=(p_data->>'dispatchId')::uuid AND d.recipient=(p_context->>'recipient_user')::uuid AND d.state IN ('collecting','queued')) THEN
+   RAISE EXCEPTION 'email_recipient_scope_mismatch';
+  END IF;
+ END IF;
  IF p_order IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.orders WHERE id=p_order AND occasion=v_occ) THEN RAISE EXCEPTION 'email_order_scope_mismatch'; END IF;
  IF v_occ IS NOT NULL THEN SELECT unit INTO v_unit FROM public.occasions WHERE id=v_occ; END IF;
  IF p_order IS NOT NULL AND p_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice') THEN
@@ -46,13 +55,22 @@ BEGIN
    p_data:=coalesce(p_data,'{}'::jsonb)||'{"lang":"en"}'::jsonb;
  END IF;
  v_hash:=encode(extensions.digest(jsonb_build_object('context',p_context-'tracking_policy','recipient',p_recipient,'data',CASE WHEN p_order IS NOT NULL AND p_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice','order_storno','order_tickets') THEN p_data-'requested_by'-'collectionAction'-'paymentTemplateEpoch' ELSE p_data-'requested_by' END,'code',p_code,'version',p_version,'post',p_post_action)::text,'sha256'),'hex');
- INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,recipient,recipient_user,order_id,source_version,expires_at,producer_actor,priority,workflow_state,post_action,tracking_policy)
+ IF p_kind='admin_notification_digest' THEN
+ INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,recipient,recipient_user,order_id,source_version,expires_at,producer_actor,priority,workflow_state,post_action,tracking_policy,notification_dispatch_id)
  VALUES(p_not_before,p_code,p_data,v_org,v_occ,v_unit,p_kind,p_dedupe,v_hash,p_recipient,(p_context->>'recipient_user')::uuid,p_order,p_version,p_expires,coalesce((p_context->>'actor_id')::uuid,auth.uid()),
  CASE WHEN p_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue') THEN 0 WHEN p_kind='order_confirmation' THEN 10 ELSE 50 END,
- CASE WHEN p_not_before='infinity' THEN 'blocked' ELSE 'pending' END,p_post_action,CASE WHEN p_kind LIKE 'order_%' OR p_kind IN ('app_links','custom') THEN CASE WHEN p_context->>'tracking_policy'='engagement' THEN 'engagement' ELSE 'open' END ELSE 'disabled' END)
+ CASE WHEN p_not_before='infinity' THEN 'blocked' ELSE 'pending' END,p_post_action,CASE WHEN p_kind LIKE 'order_%' OR p_kind IN ('app_links','custom') THEN CASE WHEN p_context->>'tracking_policy'='engagement' THEN 'engagement' ELSE 'open' END ELSE 'disabled' END,CASE WHEN p_kind='admin_notification_digest' THEN (p_data->>'dispatchId')::uuid END)
+ ON CONFLICT(recipient_user,message_kind,dedupe_key) WHERE message_kind='admin_notification_digest' DO NOTHING RETURNING * INTO v_row;
+ ELSE
+ INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,recipient,recipient_user,order_id,source_version,expires_at,producer_actor,priority,workflow_state,post_action,tracking_policy,notification_dispatch_id)
+ VALUES(p_not_before,p_code,p_data,v_org,v_occ,v_unit,p_kind,p_dedupe,v_hash,p_recipient,(p_context->>'recipient_user')::uuid,p_order,p_version,p_expires,coalesce((p_context->>'actor_id')::uuid,auth.uid()),
+ CASE WHEN p_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue') THEN 0 WHEN p_kind='order_confirmation' THEN 10 ELSE 50 END,
+ CASE WHEN p_not_before='infinity' THEN 'blocked' ELSE 'pending' END,p_post_action,CASE WHEN p_kind LIKE 'order_%' OR p_kind IN ('app_links','custom') THEN CASE WHEN p_context->>'tracking_policy'='engagement' THEN 'engagement' ELSE 'open' END ELSE 'disabled' END,CASE WHEN p_kind='admin_notification_digest' THEN (p_data->>'dispatchId')::uuid END)
  ON CONFLICT(organization,message_kind,dedupe_key) DO NOTHING RETURNING * INTO v_row;
+ END IF;
  IF v_row.id IS NULL THEN
-  SELECT * INTO v_row FROM public.email_messages WHERE organization=v_org AND message_kind=p_kind AND dedupe_key=p_dedupe;
+  SELECT * INTO v_row FROM public.email_messages WHERE (organization=v_org OR (p_kind='admin_notification_digest' AND recipient_user=(p_context->>'recipient_user')::uuid)) AND message_kind=p_kind AND dedupe_key=p_dedupe;
+  IF v_row.id IS NULL THEN RAISE EXCEPTION 'email_active_notification_conflict'; END IF;
   IF v_row.input_hash<>v_hash THEN RAISE EXCEPTION 'email_dedupe_conflict'; END IF;
   RETURN jsonb_build_object('message_id',v_row.message_id,'state',v_row.workflow_state,'replayed',true);
  END IF;
@@ -66,6 +84,22 @@ CREATE OR REPLACE FUNCTION public.email_intent_valid(p_message public.email_mess
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_occ public.occasions; v_form public.forms; v_feature jsonb; v_deposit jsonb; v_template_epoch bigint; template_audit jsonb; bank_enabled boolean;
 BEGIN
+ IF p_message.message_kind='custom' AND p_message.code='MEASUREMENT_APPROVAL_REQUEST' THEN
+  RETURN EXISTS(SELECT 1 FROM analytics.unit_measurement_request q JOIN public.units u ON u.id=q.unit
+   JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
+   WHERE q.unit=p_message.unit AND u.organization=p_message.organization AND NOT public.is_demo_unit(u.id)
+    AND q.revision=coalesce((p_message.data->>'request_revision')::integer,1)
+    AND (public.unit_measurement_approval_internal(u.id)->'approved'='false'::jsonb
+     OR EXISTS(SELECT FROM jsonb_array_elements(q.requested_origins) x
+      WHERE coalesce(u.data->'measurement_websites','[]'::jsonb) @> jsonb_build_array(x.value)
+       AND NOT (public.unit_measurement_approval_internal(u.id)->'approved_origins' @> jsonb_build_array(x.value))))
+    AND public.get_user_delivery_email(ou."user")=p_message.recipient);
+ END IF;
+ IF p_message.message_kind='admin_notification_digest' THEN
+  RETURN p_message.recipient IS NOT DISTINCT FROM public.get_user_delivery_email(p_message.recipient_user)
+   AND coalesce(jsonb_array_length(public.notification_center_email_context_internal(p_message.notification_dispatch_id,p_message.recipient_user)->'items'),0)>0;
+ END IF;
+
  PERFORM public.require_service_role();
  IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
  IF p_message.expires_at<=now() THEN RETURN false; END IF;
@@ -90,26 +124,6 @@ BEGIN
    WHERE p.unit_id=p_message.unit AND u.organization=p_message.organization AND p.status='pending'
     AND p.revision=p_message.source_version
     AND public.get_user_delivery_email(ou."user")=p_message.recipient);
- END IF;
- IF p_message.message_kind='custom' AND p_message.code='MEASUREMENT_APPROVAL_REQUEST' THEN
-  RETURN EXISTS(SELECT 1 FROM analytics.unit_measurement_request q JOIN public.units u ON u.id=q.unit
-   JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
-   WHERE q.unit=p_message.unit AND u.organization=p_message.organization AND NOT public.is_demo_unit(u.id)
-    AND q.revision=coalesce((p_message.data->>'request_revision')::integer,1)
-    AND (public.unit_measurement_approval_internal(u.id)->'approved'='false'::jsonb
-     OR EXISTS(SELECT FROM jsonb_array_elements(q.requested_origins) x
-      WHERE coalesce(u.data->'measurement_websites','[]'::jsonb) @> jsonb_build_array(x.value)
-       AND NOT (public.unit_measurement_approval_internal(u.id)->'approved_origins' @> jsonb_build_array(x.value))))
-    AND public.get_user_delivery_email(ou."user")=p_message.recipient);
- END IF;
- IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN
-  IF NOT EXISTS (SELECT 1 FROM eshop.bank_sync_health h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id
-    WHERE h.connection_id=(p_message.data->>'connection_id')::bigint
-      AND h.incident_id::text=p_message.data->>'incident_id'
-      AND public.bank_sync_alert_ready(c.id)
-      AND EXISTS(SELECT 1 FROM eshop.bank_account_users bau WHERE bau."user"=p_message.recipient_user AND bau.is_admin
-        AND (bau.bank_account=c.bank_account_id OR bau.bank_account IN
-          (SELECT x.bank_account_id FROM eshop.bank_sync_account_aliases x WHERE x.connection_id=c.id)))) THEN RETURN false; END IF;
  END IF;
  IF p_message.message_kind='custom' AND p_message.code='ORDER_OVERVIEW' THEN RETURN false; END IF;
  IF p_message.message_kind='sale_opening_confirmation' THEN RETURN false; END IF;
@@ -238,14 +252,18 @@ BEGIN
    AND heavy.message_kind NOT IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation'))<greatest(1,v_cap.max_preparing-1))
  AND NOT EXISTS(SELECT 1 FROM public.email_messages prior WHERE prior.order_id=m.order_id AND prior.message_kind='order_confirmation'
   AND m.message_kind<>'order_confirmation' AND prior.workflow_state NOT IN ('accepted','cancelled','expired'))
- ORDER BY CASE WHEN m.created_at<=now()-make_interval(secs=>v_wait) THEN 0 ELSE priority END,
+ ORDER BY CASE WHEN m.message_kind='admin_notification_digest' THEN 80 WHEN m.created_at<=now()-make_interval(secs=>v_wait) THEN 0 ELSE priority END,
  (SELECT max(served.last_claimed_at) FROM public.email_messages served WHERE served.organization=m.organization AND served.last_claimed_at IS NOT NULL) NULLS FIRST,
  CASE WHEN m.unit IS NULL THEN (SELECT max(served.last_claimed_at) FROM public.email_messages served WHERE served.organization=m.organization AND served.unit IS NULL AND served.last_claimed_at IS NOT NULL)
  ELSE (SELECT max(served.last_claimed_at) FROM public.email_messages served WHERE served.unit=m.unit AND served.last_claimed_at IS NOT NULL) END NULLS FIRST,target_time,id FOR UPDATE SKIP LOCKED LIMIT 1;
  IF v_row.id IS NULL THEN RETURN NULL; END IF;
  IF NOT public.email_intent_valid(v_row) THEN
-  UPDATE public.email_messages SET workflow_state=CASE WHEN expires_at<=now() THEN 'expired' ELSE 'cancelled' END,last_error='intent_invalid' WHERE id=v_row.id;
+  UPDATE public.email_messages SET workflow_state=CASE WHEN expires_at<=now() THEN 'expired' ELSE 'cancelled' END,last_error=CASE WHEN v_row.message_kind='admin_notification_digest' AND v_row.recipient IS DISTINCT FROM public.get_user_delivery_email(v_row.recipient_user) THEN 'destination_changed' ELSE 'intent_invalid' END WHERE id=v_row.id;
   RETURN jsonb_build_object('skipped',true);
+ END IF;
+ IF v_row.message_kind='admin_notification_digest' AND v_row.prepared IS NULL THEN
+  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.notification.prepare',NULL,NULL),
+   jsonb_build_object('global','all','recipient',v_row.recipient_user::text));
  END IF;
  UPDATE public.email_messages SET workflow_state='preparing',last_claimed_at=now(),lease_token=v_token,lease_until=now()+interval '90 seconds' WHERE id=v_row.id RETURNING * INTO v_row;
  INSERT INTO public.email_attempts(message_id,lease_token,state) VALUES(v_row.message_id,v_token,'preparing') RETURNING attempt_id INTO v_attempt;
@@ -268,6 +286,9 @@ CREATE OR REPLACE FUNCTION public.prepare_email(p_message uuid,p_token uuid,p_pr
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
+ PERFORM 1 FROM public.notification_center_email_profiles p JOIN public.email_messages m ON m.recipient_user=p.recipient
+ WHERE m.message_id=p_message AND m.message_kind='admin_notification_digest' FOR UPDATE OF p;
+
  IF octet_length(p_prepared::text)>(SELECT (x->>'base_limit')::bigint
   FROM jsonb_array_elements(public.abuse_effective_rules_v1('email.payload',NULL,NULL)->'rules') x LIMIT 1) THEN
   RAISE configuration_limit_exceeded USING MESSAGE='email_payload_too_large'; END IF;
@@ -286,6 +307,9 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_attempt public.email_attempts; v_row public.email_messages; v_cap public.email_capacity; v_rate numeric; v_daily numeric; v_used numeric; v_detail text; v_retry integer;
 BEGIN
  PERFORM public.require_service_role();
+ PERFORM 1 FROM public.notification_center_email_profiles p JOIN public.email_messages m ON m.recipient_user=p.recipient
+ JOIN public.email_attempts a ON a.message_id=m.message_id WHERE a.attempt_id=p_attempt AND m.message_kind='admin_notification_digest' FOR UPDATE OF p;
+
  PERFORM public.payment_policy_fence_internal(m.organization) FROM public.email_messages m
  JOIN public.email_attempts a ON a.message_id=m.message_id WHERE a.attempt_id=p_attempt AND m.order_id IS NOT NULL;
  PERFORM 1 FROM public.forms f JOIN public.sale_opening_campaigns c ON c.form_id=f.id
@@ -302,7 +326,7 @@ BEGIN
  IF v_attempt.state<>'preparing' THEN RETURN jsonb_build_object('disposition','replay','state',v_attempt.state); END IF;
  IF v_row.workflow_state<>'preparing' OR v_row.lease_until<=now() OR v_row.prepared IS NULL THEN RAISE EXCEPTION 'stale_email_attempt'; END IF;
  IF NOT public.email_intent_valid(v_row) OR EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN
-  UPDATE public.email_messages SET last_error='intent_invalid',workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
+  UPDATE public.email_messages SET last_error=CASE WHEN v_row.message_kind='admin_notification_digest' AND v_row.recipient IS DISTINCT FROM public.get_user_delivery_email(v_row.recipient_user) THEN 'destination_changed' ELSE 'intent_invalid' END,workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
   PERFORM public.notification_center_email_internal(v_row.message_id);
   RETURN jsonb_build_object('disposition','cancelled');
@@ -329,6 +353,7 @@ BEGIN
   UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='wallet_snapshot_changed' WHERE attempt_id=p_attempt;
   RETURN jsonb_build_object('disposition','deferred');
  END IF;
+ BEGIN
  v_rate:=CASE WHEN v_cap.shared_account THEN least(v_cap.max_rate*0.8,v_cap.allocated_rate) ELSE v_cap.max_rate*0.8 END*v_cap.rate_factor;
  v_daily:=CASE WHEN v_cap.shared_account THEN least(v_cap.daily_quota,v_cap.allocated_daily) ELSE v_cap.daily_quota END*0.9;
  -- Count all local starts since snapshot plus provider's rolling usage; conservative during drift.
@@ -347,7 +372,7 @@ BEGIN
  -- classes so ordinary bulk cannot consume Auth or accepted-order capacity.
  BEGIN
   PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.send.'||v_row.admission_class,v_row.unit,v_row.organization),
-   jsonb_build_object('recipient',public.abuse_recipient_key_v1(v_row.recipient)));
+   jsonb_build_object('recipient',CASE WHEN v_row.admission_class='notification' THEN v_row.recipient_user::text ELSE public.abuse_recipient_key_v1(v_row.recipient) END,'global','all'));
  EXCEPTION WHEN SQLSTATE 'PT429' THEN
   GET STACKED DIAGNOSTICS v_detail=PG_EXCEPTION_DETAIL;
   v_retry:=greatest(coalesce((v_detail::jsonb->>'retryAfterSeconds')::integer,60),1);
@@ -358,9 +383,46 @@ BEGIN
  UPDATE public.email_capacity SET next_send_at=clock_timestamp()+make_interval(secs=>(1/v_rate)::double precision),
  probe_until=CASE WHEN provider_outage_streak>0 THEN now()+interval '90 seconds' ELSE NULL END,
  probe_attempt=CASE WHEN provider_outage_streak>0 THEN p_attempt ELSE NULL END WHERE singleton;
- UPDATE public.email_attempts SET state='sending',began_at=now() WHERE attempt_id=p_attempt;
- UPDATE public.email_messages SET workflow_state='sending',attempt_count=attempt_count+1 WHERE id=v_row.id;
+ IF v_row.message_kind='admin_notification_digest' THEN
+  WITH context AS MATERIALIZED(SELECT public.notification_center_email_context_internal(v_row.notification_dispatch_id,v_row.recipient_user) value),
+  decision AS MATERIALIZED(SELECT CASE
+   WHEN value IS NULL OR jsonb_array_length(value->'items')=0 THEN 'cancelled'
+   WHEN value->>'address' IS DISTINCT FROM v_row.recipient THEN 'destination_changed'
+   WHEN value->>'fingerprint' IS DISTINCT FROM v_row.post_action->>'notification_fingerprint' THEN 'snapshot_changed'
+   ELSE 'send' END action FROM context),
+  attempt AS(UPDATE public.email_attempts SET state=CASE WHEN decision.action='send' THEN 'sending' ELSE 'cancelled' END,
+   began_at=CASE WHEN decision.action='send' THEN now() END,
+   error_code=CASE WHEN decision.action<>'send' THEN decision.action END FROM decision WHERE attempt_id=p_attempt)
+  UPDATE public.email_messages SET workflow_state=CASE WHEN decision.action='send' THEN 'sending' WHEN decision.action='snapshot_changed' THEN 'pending' ELSE 'cancelled' END,
+   prepared=CASE WHEN decision.action='snapshot_changed' THEN NULL ELSE prepared END,
+   prepared_hash=CASE WHEN decision.action='snapshot_changed' THEN NULL ELSE prepared_hash END,
+   prepared_at=CASE WHEN decision.action='snapshot_changed' THEN NULL ELSE prepared_at END,
+   post_action=CASE WHEN decision.action='snapshot_changed' THEN post_action-'notification_fingerprint' ELSE post_action END,
+   attempt_count=attempt_count+(decision.action='send')::integer,
+   last_error=CASE WHEN decision.action<>'send' THEN decision.action END,
+   lease_token=CASE WHEN decision.action='send' THEN lease_token END,
+   lease_until=CASE WHEN decision.action='send' THEN lease_until END
+   FROM decision WHERE id=v_row.id RETURNING last_error INTO v_detail;
+  IF v_detail IS NOT NULL THEN
+   RAISE SQLSTATE 'PN001' USING MESSAGE=v_detail;
+  END IF;
+ ELSE
+  UPDATE public.email_attempts SET state='sending',began_at=now() WHERE attempt_id=p_attempt;
+  UPDATE public.email_messages SET workflow_state='sending',attempt_count=attempt_count+1 WHERE id=v_row.id;
+ END IF;
  RETURN jsonb_build_object('disposition','send','message',to_jsonb(v_row));
+ EXCEPTION WHEN SQLSTATE 'PN001' THEN
+  -- Metering, capacity reservation and final state changes roll back together.
+  GET STACKED DIAGNOSTICS v_detail=MESSAGE_TEXT;
+  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code=v_detail WHERE attempt_id=p_attempt;
+  UPDATE public.email_messages SET workflow_state=CASE WHEN v_detail='snapshot_changed' THEN 'pending' ELSE 'cancelled' END,
+   target_time=now(),prepared=CASE WHEN v_detail='snapshot_changed' THEN NULL ELSE prepared END,
+   prepared_hash=CASE WHEN v_detail='snapshot_changed' THEN NULL ELSE prepared_hash END,
+   prepared_at=CASE WHEN v_detail='snapshot_changed' THEN NULL ELSE prepared_at END,
+   post_action=post_action-'notification_fingerprint',lease_token=NULL,lease_until=NULL,last_error=v_detail WHERE id=v_row.id;
+  RETURN jsonb_build_object('disposition',CASE WHEN v_detail='snapshot_changed' THEN 'deferred' ELSE 'cancelled' END);
+ END;
+
 END $$;
 
 CREATE OR REPLACE FUNCTION public.finish_email_attempt(p_attempt uuid,p_token uuid,p_outcome text,p_provider_id text DEFAULT NULL,p_error text DEFAULT NULL)

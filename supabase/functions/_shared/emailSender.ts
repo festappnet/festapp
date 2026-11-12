@@ -59,7 +59,9 @@ export async function sendEmailAttempt(
         message_id: row.message_id,
         attempt_id: attemptId,
         message_kind: row.message_kind,
-        organization_id: String(row.organization),
+        ...(row.organization == null
+          ? {}
+          : { organization_id: String(row.organization) }),
       },
       sensitive,
       row.tracking_policy === "engagement",

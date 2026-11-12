@@ -1,14 +1,14 @@
+import { measurementApprovalEmail } from "./measurementApprovalEmail.ts";
+import { renderAdminNotificationEmail } from "./adminNotificationEmail.ts";
 import { providerPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import { paymentRegistry } from "./payments/runtime.ts";
 import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
-import { measurementApprovalEmail } from "./measurementApprovalEmail.ts";
 import {
   orderEmailOverviewUrl,
   overviewEmailSubstitutions,
 } from "./orderEmailOverview.ts";
-import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
 import { prepareWalletEmail } from "./ticketWalletEmail.ts";
@@ -28,7 +28,8 @@ export type EmailRow = {
   code: string;
   data: any;
   recipient: string;
-  organization: number;
+  recipient_user?: string | null;
+  organization: number | null;
   occasion: number;
   unit: number;
   order_id: number;
@@ -37,21 +38,26 @@ export type EmailRow = {
   prepared: Record<string, string> | null;
 };
 export async function renderQueuedEmail(
-  row: EmailRow,
+  input: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
-  if (row.message_kind === "sale_opening_opened") return await renderSaleOpeningEmail(row);
+  if (input.message_kind === "admin_notification_digest") {
+    if (!input.recipient_user || input.organization !== null) {
+      throw new Error("notification_scope_invalid");
+    }
+    return await renderAdminNotificationEmail({
+      ...input,
+      recipient_user: input.recipient_user,
+    });
+  }
+  if (input.organization === null) {
+    throw new Error("email_tenant_scope_required");
+  }
+  const row = { ...input, organization: input.organization };
+  if (row.message_kind === "sale_opening_opened") {
+    return await renderSaleOpeningEmail(row);
+  }
   if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
     return await renderWaitlistEmail(row);
-  }
-  if (row.message_kind === "custom" && row.code === "BANK_SYNC_WARNING") {
-    return {
-      prepared: bankSyncWarningEmail(
-        row.recipient,
-        row.data,
-        Deno.env.get("DEFAULT_EMAIL") ?? "",
-      ),
-      postAction: { tracking_policy: "disabled" },
-    };
   }
   if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
     return {
@@ -104,14 +110,25 @@ export async function renderQueuedEmail(
     const walletSettings = result.data.wallet;
     const walletFingerprint = walletSettings.fingerprint;
     const lang = row.data?.lang ?? occasion.locale ?? "cs";
-    let walletHtml = '';
+    let walletHtml = "";
     try {
-      walletHtml = await prepareWalletEmail({...row,data:{...row.data,lang}}, delivery.tickets, walletSettings.feature, emailRpc);
+      walletHtml = await prepareWalletEmail(
+        { ...row, data: { ...row.data, lang } },
+        delivery.tickets,
+        walletSettings.feature,
+        emailRpc,
+      );
     } catch {
-      console.warn('ticket_wallet_email_unavailable');
+      console.warn("ticket_wallet_email_unavailable");
     }
     const method = result.data.payment_info?.payment_method;
-    const payment = ticketEmailSubstitutions(result.data, lang, paymentRegistry.has(method) ? paymentRegistry.resolve(method).connector.displayName : String(method ?? ''));
+    const payment = ticketEmailSubstitutions(
+      result.data,
+      lang,
+      paymentRegistry.has(method)
+        ? paymentRegistry.resolve(method).connector.displayName
+        : String(method ?? ""),
+    );
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
     return {
       prepared: await renderEmail({
@@ -157,17 +174,35 @@ export async function renderQueuedEmail(
   }, null);
   // Server context and snapshotted recipient are authoritative, never live replacement recipient.
   const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
-  if (row.message_kind !== 'order_confirmation') {
-    const current = await emailRpc('get_order_details_for_email', {p_order_id: row.order_id});
+  if (row.message_kind !== "order_confirmation") {
+    const current = await emailRpc("get_order_details_for_email", {
+      p_order_id: row.order_id,
+    });
     const payment = current.data?.payment_info;
     if (payment) {
-      rendered.subs.paymentMethodName = paymentRegistry.has(payment.payment_method) ? paymentRegistry.resolve(payment.payment_method).connector.displayName : String(payment.payment_method ?? '');
-      rendered.subs.paymentAction = payment.payment_method === 'bank' && payment.collectionAction?.allowed === true ? rendered.subs.paymentDetails || rendered.subs.balanceReasoning || '' : '';
+      rendered.subs.paymentMethodName =
+        paymentRegistry.has(payment.payment_method)
+          ? paymentRegistry.resolve(payment.payment_method).connector
+            .displayName
+          : String(payment.payment_method ?? "");
+      rendered.subs.paymentAction = payment.payment_method === "bank" &&
+          payment.collectionAction?.allowed === true
+        ? rendered.subs.paymentDetails || rendered.subs.balanceReasoning || ""
+        : "";
     }
     if (payment && paymentRegistry.hasHosted(payment.payment_method)) {
-      const name = paymentRegistry.resolve(payment.payment_method).connector.displayName;
-      Object.assign(rendered.subs, providerPaymentSubstitutions(payment, name, row.data?.lang ?? 'cs',
-        overviewEmailSubstitutions(overviewUrl, row.data?.lang).order_overview_button));
+      const name =
+        paymentRegistry.resolve(payment.payment_method).connector.displayName;
+      Object.assign(
+        rendered.subs,
+        providerPaymentSubstitutions(
+          payment,
+          name,
+          row.data?.lang ?? "cs",
+          overviewEmailSubstitutions(overviewUrl, row.data?.lang)
+            .order_overview_button,
+        ),
+      );
     }
   }
 

@@ -150,6 +150,12 @@ BEGIN
   END IF;
   IF v_request.public_deleted THEN RETURN jsonb_build_object('status','already_deleted'); END IF;
   v_user := v_request.user_id;
+  -- Recipient scheduling disappears before role/profile removal. Queue audit
+  -- keeps only its original UUID; final context validation cancels unsent mail.
+  PERFORM 1 FROM public.notification_center_email_profiles WHERE recipient=v_user FOR UPDATE;
+  DELETE FROM public.notification_center_email_profiles WHERE recipient=v_user;
+  DELETE FROM public.notification_center_email_dispatches WHERE recipient=v_user AND state IN ('collecting','omitted');
+
 
   PERFORM public.record_account_deletion_sync_v1(
     v_user,v_request.organization);

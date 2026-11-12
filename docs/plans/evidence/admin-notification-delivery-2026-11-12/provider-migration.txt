@@ -1,0 +1,12 @@
+✔ forward assembler checks canonical tables without rewriting historical notification migration (195.453375ms)
+✔ explicit output refuses an existing different artifact (75.834042ms)
+✔ default output cannot rewrite a published migration after source changes (118.263ms)
+✔ assembled prerequisite rejects a missing canonical scope owner (79.248292ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 548.600167

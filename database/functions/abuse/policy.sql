@@ -21,6 +21,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extens
   WHEN 'cleaning.report' THEN 3
   WHEN 'push.dispatch' THEN 2
   WHEN 'image.records' THEN 9 WHEN 'auth.password' THEN 2 WHEN 'document.output' THEN 4 WHEN 'image.storage' THEN 3 WHEN 'monitor.thresholds' THEN 6 WHEN 'auth.password.change' THEN 3
+  WHEN 'email.notification' THEN 3 WHEN 'email.notification.backlog' THEN 4 WHEN 'email.notification.prepare' THEN 2 WHEN 'email.send.notification' THEN 3
   WHEN 'email.send.ordinary' THEN 2 WHEN 'email.send.auth' THEN 2 WHEN 'email.send.commitment' THEN 2
   ELSE -1 END;
 $$;

@@ -2656,7 +2656,10 @@
       "capacity_full": "Kapazität erreicht",
       "capacity_reopened": "Plätze wieder verfügbar",
       "bank_problem": "Bankverbindung erfordert Aufmerksamkeit",
-      "email_problem": "E-Mail-Zustellung erfordert Aufmerksamkeit"
+      "email_problem": "E-Mail-Zustellung erfordert Aufmerksamkeit",
+      "provider_problem": "Problem mit dem Zahlungsanbieter",
+      "order_payment_received": "Zahlung eingegangen",
+      "payment_problem": "Zahlung erfordert Aufmerksamkeit"
     },
     "states": {
       "membership_active": "Angemeldet",
@@ -2697,7 +2700,10 @@
       "fio_receiving_account_mismatch": "Bank-Token gehört zu einem anderen Empfängerkonto",
       "bank_sync_retry_required": "Bankkontoprüfung muss wiederholt werden",
       "transport_unavailable": "Bankdienst ist vorübergehend nicht verfügbar",
-      "stale_health": "Bankkonto wurde nicht rechtzeitig geprüft"
+      "stale_health": "Bankkonto wurde nicht rechtzeitig geprüft",
+      "provider_restricted": "Der Zahlungsanbieter schränkt den Zahlungsempfang ein.",
+      "provider_access_revoked": "Der Zugang zum Zahlungsanbieter wurde widerrufen.",
+      "provider_unavailable": "Der Zahlungsanbieter ist wiederholt nicht erreichbar."
     },
     "places": {
       "one": "{count} Platz",
@@ -2751,12 +2757,48 @@
         "few": "{count} abgelaufene Angebote",
         "many": "{count} abgelaufene Angebote",
         "other": "{count} abgelaufene Angebote"
+      },
+      "order_payment_received": {
+        "one": "Zahlungsänderungen: {count}",
+        "few": "Zahlungsänderungen: {count}",
+        "many": "Zahlungsänderungen: {count}",
+        "other": "Zahlungsänderungen: {count}"
       }
     },
     "preparing": "Aktuelle Benachrichtigungen werden vorbereitet…",
     "expiredView": "Diese Übersicht ist abgelaufen. Öffnen Sie sie erneut.",
     "viewLimit": "Schließen Sie eine andere geöffnete Übersicht und versuchen Sie es erneut.",
-    "viewLimitAction": "Andere Übersichten schließen"
+    "viewLimitAction": "Andere Übersichten schließen",
+    "emailEnabled": "Optionale E-Mail-Zusammenfassungen",
+    "requiredKinds": {
+      "bank_problem": "Bankprobleme",
+      "provider_problem": "Probleme mit Zahlungsanbietern"
+    },
+    "emailRequiredHelp": "Pflichtmeldungen für berechtigte Empfänger. Stummschalten einer Veranstaltung oder Ausschalten der Zusammenfassungen deaktiviert sie nicht.",
+    "emailAlwaysOn": "Immer aktiv",
+    "emailHelp": "Alle {minutes} Minuten eine Zusammenfassung ausgewählter Veranstaltungen und Organisationen",
+    "emailOrganization": "Standardabonnement der Organisation",
+    "emailCategories": {
+      "problems": "Probleme",
+      "registrations": "Anmeldungen",
+      "orders": "Bestellungen",
+      "payments": "Zahlungen"
+    },
+    "emailStates": {
+      "no_address": "E-Mail-Adresse für die Zustellung fehlt",
+      "pending": "Wartet auf Versand",
+      "preparing": "Wird vorbereitet",
+      "sending": "Wird gesendet",
+      "accepted": "Vom Anbieter angenommen",
+      "retry_wait": "Wartet auf erneuten Versuch",
+      "unknown": "Versandergebnis wird geprüft",
+      "dead": "Zustellung fehlgeschlagen",
+      "cancelled": "Abgebrochen",
+      "suppressed": "Zustellung unterdrückt",
+      "expired": "Abgelaufen",
+      "blocked": "Wartet auf Versand"
+    },
+    "paymentAssigned": "Zuordnung einer eingegangenen Zahlung"
   },
   "TicketBatches": {
     "selectedCount": "Ausgewählt: {count}",

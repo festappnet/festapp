@@ -4798,7 +4798,10 @@
       "capacity_full": "Kapacita naplněna",
       "capacity_reopened": "Místa znovu dostupná",
       "bank_problem": "Bankovní spojení vyžaduje pozornost",
-      "email_problem": "Doručení e-mailu vyžaduje pozornost"
+      "email_problem": "Doručení e-mailu vyžaduje pozornost",
+      "provider_problem": "Problém platební brány",
+      "order_payment_received": "Přijatá platba",
+      "payment_problem": "Platba vyžaduje pozornost"
     },
     "states": {
       "membership_active": "Účastníkem akce",
@@ -4839,7 +4842,10 @@
       "fio_receiving_account_mismatch": "Bankovní token patří k jinému příjmovému účtu",
       "bank_sync_retry_required": "Kontrolu bankovního účtu je potřeba zopakovat",
       "transport_unavailable": "Bankovní služba je dočasně nedostupná",
-      "stale_health": "Bankovní účet nebyl včas zkontrolován"
+      "stale_health": "Bankovní účet nebyl včas zkontrolován",
+      "provider_restricted": "Platební brána omezuje přijímání plateb.",
+      "provider_access_revoked": "Přístup k platební bráně byl odvolán.",
+      "provider_unavailable": "Opakovaně se nedaří spojit s platební bránou."
     },
     "places": {
       "one": "{count} místo",
@@ -4893,12 +4899,48 @@
         "few": "{count} vypršelé nabídky",
         "many": "{count} vypršelých nabídek",
         "other": "{count} vypršelých nabídek"
+      },
+      "order_payment_received": {
+        "one": "Změny plateb: {count}",
+        "few": "Změny plateb: {count}",
+        "many": "Změny plateb: {count}",
+        "other": "Změny plateb: {count}"
       }
     },
     "preparing": "Připravujeme aktuální oznámení…",
     "expiredView": "Platnost přehledu vypršela. Otevřete jej znovu.",
     "viewLimit": "Zavřete některý z dalších otevřených přehledů a zkuste to znovu.",
-    "viewLimitAction": "Zavřít ostatní přehledy"
+    "viewLimitAction": "Zavřít ostatní přehledy",
+    "emailEnabled": "Volitelné e-mailové souhrny",
+    "requiredKinds": {
+      "bank_problem": "Bankovní problémy",
+      "provider_problem": "Problémy platebních bran"
+    },
+    "emailRequiredHelp": "Povinné upozornění pro oprávněné příjemce. Ztlumení akce ani vypnutí souhrnů jej nevypne.",
+    "emailAlwaysOn": "Vždy zapnuto",
+    "emailHelp": "Jednou za {minutes} minut souhrn napříč vybranými akcemi a organizacemi",
+    "emailOrganization": "Výchozí odběr organizace",
+    "emailCategories": {
+      "problems": "Problémy",
+      "registrations": "Přihlášky",
+      "orders": "Objednávky",
+      "payments": "Platby"
+    },
+    "emailStates": {
+      "no_address": "Chybí doručovací e-mail",
+      "pending": "Čeká na odeslání",
+      "preparing": "Připravuje se",
+      "sending": "Odesílá se",
+      "accepted": "Předáno poskytovateli",
+      "retry_wait": "Čeká na opakování",
+      "unknown": "Výsledek odeslání se ověřuje",
+      "dead": "Doručení selhalo",
+      "cancelled": "Zrušeno",
+      "suppressed": "Doručení potlačeno",
+      "expired": "Platnost vypršela",
+      "blocked": "Čeká na odeslání"
+    },
+    "paymentAssigned": "Přiřazení přijaté platby"
   },
   "TicketBatches": {
     "selectedCount": "Vybráno: {count}",

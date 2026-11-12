@@ -4,13 +4,8 @@ CREATE TABLE public.notification_center_maintenance (
  last_deferred integer NOT NULL DEFAULT 0,last_failed integer NOT NULL DEFAULT 0,
  last_elapsed_ms numeric,last_run_at timestamptz
 );
-CREATE TABLE public.notification_center_bank_health (
- connection_id bigint PRIMARY KEY, lease_token uuid, lease_until timestamptz,next_at timestamptz NOT NULL DEFAULT '-infinity',
- failure_since timestamptz, failures integer NOT NULL DEFAULT 0,last_success timestamptz,reason text
-);
 ALTER TABLE public.notification_center_maintenance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notification_center_bank_health ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.notification_center_maintenance,public.notification_center_bank_health FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON public.notification_center_maintenance FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.initialize_notification_center_internal(p_organization bigint,p_timezone text DEFAULT 'Europe/Prague')
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE baseline_at timestamptz;
@@ -95,9 +90,9 @@ BEGIN
  -- Retain active incidents; cleanup is projection-only, never business/email history.
  DELETE FROM public.notification_center_deliveries WHERE (event_id,recipient,attention_revision) IN (
   SELECT d.event_id,d.recipient,d.attention_revision FROM public.notification_center_deliveries d JOIN public.notification_center_events e ON e.id=d.event_id
-  WHERE d.delivered_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning')) LIMIT greatest(1,least(p_limit,500)));
+  WHERE d.delivered_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','payment_problem','provider_problem','capacity_full','capacity_warning')) LIMIT greatest(1,least(p_limit,500)));
  SELECT array_agg(id) INTO purge_ids FROM (SELECT e.id FROM public.notification_center_events e
-  WHERE e.occurred_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','capacity_full','capacity_warning'))
+  WHERE e.occurred_at<clock_timestamp()-interval '90 days' AND (e.status='recovered' OR e.kind NOT IN ('email_problem','bank_problem','payment_problem','provider_problem','capacity_full','capacity_warning'))
   AND NOT EXISTS(SELECT 1 FROM public.notification_center_deliveries WHERE event_id=e.id) AND e.projected_revision=e.attention_revision
   LIMIT greatest(1,least(p_limit,500)) FOR UPDATE SKIP LOCKED) expired;
  -- Retract derived counts and dirty-source debt before recipients cascade away.

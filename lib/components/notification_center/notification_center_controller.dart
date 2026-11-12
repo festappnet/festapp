@@ -82,6 +82,8 @@ class NotificationCenterController extends ChangeNotifier {
   DateTime? snapshotAt, snapshotDay;
   List<NotificationItem> items = [];
   List<Map<String, dynamic>> occasions = [];
+  Map<String, dynamic> emailSettings = {};
+  bool emailSaving = false;
   dynamic nextCursor, settingsCursor;
   Timer? _timer;
   bool get hasReadyItems => items.any((item) => item.isReady);
@@ -156,6 +158,8 @@ class NotificationCenterController extends ChangeNotifier {
     occasions = [];
     viewToken = null;
     nextCursor = settingsCursor = null;
+    emailSettings = {};
+    emailSaving = false;
     snapshot = 0;
     previousReadThrough = null;
     snapshotAt = snapshotDay = null;
@@ -504,6 +508,7 @@ class NotificationCenterController extends ChangeNotifier {
           .toList();
       occasions = more ? [...occasions, ...rows] : rows;
       settingsCursor = result['nextCursor'];
+      emailSettings = Map<String, dynamic>.from(result['email'] as Map? ?? {});
     } catch (error) {
       if (generation == _generation && !_accessFailure(error)) {
         settingsFailed = true;
@@ -613,6 +618,39 @@ class NotificationCenterController extends ChangeNotifier {
       }
     } catch (_) {
       /* Keep the last confirmed badge while offline. */
+    }
+  }
+
+  Future<bool> saveEmailSettings({
+    int? occasion,
+    required bool stopped,
+    required String locale,
+    required Map<String, bool> kinds,
+  }) async {
+    if (emailSaving || organization == null || user == null) return false;
+    final generation = _generation;
+    emailSaving = true;
+    notifyListeners();
+    try {
+      await _read('save_notification_center_email_settings', {
+        'p_organization': organization,
+        'p_occasion': occasion,
+        'p_revision': emailSettings['revision'] ?? 0,
+        'p_stopped': stopped,
+        'p_locale': locale,
+        'p_kinds': kinds,
+      });
+      if (generation != _generation) return false;
+      await loadSettings();
+      return !settingsFailed;
+    } catch (error) {
+      if (generation == _generation) _accessFailure(error);
+      return false;
+    } finally {
+      if (generation == _generation) {
+        emailSaving = false;
+        notifyListeners();
+      }
     }
   }
 

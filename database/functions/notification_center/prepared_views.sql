@@ -5,7 +5,7 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH state AS (
   SELECT coalesce((SELECT read_through_sequence FROM public.notification_center_user_state
    WHERE organization=d.organization AND recipient=d.recipient),0) baseline,
-   CASE WHEN e.occasion IS NOT NULL AND e.kind NOT IN ('email_problem','bank_problem')
+   CASE WHEN e.occasion IS NOT NULL AND e.kind NOT IN ('email_problem','bank_problem','payment_problem','provider_problem')
     THEN 'occasion-kind:'||e.occasion||':'||e.kind ELSE 'event:'||e.id END key),
  receipt AS (
   SELECT b.* FROM public.notification_center_read_batches b,state s
@@ -51,6 +51,7 @@ CREATE OR REPLACE FUNCTION public.notification_center_prepared_event_access(e pu
 RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT coalesce(e.organization=p_org AND public.notification_center_subject_visible_internal(e.organization,e.kind,e.data) AND
  CASE WHEN e.kind IN ('occasion_joined','event_capacity_full') THEN ('app:'||e.occasion)=ANY(p_scopes)
+ WHEN e.kind='provider_problem' THEN ('provider-unit:'||(e.data->>'unitId'))=ANY(p_scopes)
  WHEN e.kind='email_problem' THEN 'email-admin:shared'=ANY(p_scopes) OR ('email-admin:'||e.occasion)=ANY(p_scopes)
  WHEN e.kind='bank_problem' THEN ('bank:'||(e.data->>'bankConnectionId'))=ANY(p_scopes)
   OR EXISTS(SELECT 1 FROM unnest(e.affected_occasions) oc WHERE ('bank-occasion:'||oc)=ANY(p_scopes))
@@ -68,7 +69,7 @@ BEGIN
   ELSE public.notification_center_prepared_event_access(e,v.organization,p_scopes) END) THEN RETURN jsonb_build_object('id',r.id,'position',r.position,'state','removed'); END IF;
  SELECT * INTO d FROM public.notification_center_deliveries WHERE event_id=e.id AND recipient=v.recipient AND sequence<=v.snapshot ORDER BY sequence DESC LIMIT 1;
  IF NOT FOUND THEN RETURN jsonb_build_object('id',r.id,'position',r.position,'state','removed'); END IF;
- grouped:=e.occasion IS NOT NULL AND e.kind NOT IN ('email_problem','bank_problem');
+ grouped:=e.occasion IS NOT NULL AND e.kind NOT IN ('email_problem','bank_problem','payment_problem','provider_problem');
  IF grouped AND public.notification_center_order_activity_internal(e.kind) THEN
   contact:=coalesce(public.notification_center_prepared_contact(e),'{}');
   SELECT coalesce(jsonb_agg(coalesce(public.notification_center_prepared_contact(ev),'{}') ORDER BY p.position),'[]') INTO previews
@@ -77,8 +78,7 @@ BEGIN
    jsonb_build_object('contact',contact,'previewContacts',previews,'activityCount',r.activity_count,'relatedOrders',true,
     'allowsMultiple',r.multiple_count>0,'afterSequence',r.after_sequence,'throughSequence',r.through_sequence)||
    CASE WHEN r.multiple_count>0 AND r.known_count=r.activity_count THEN jsonb_build_object('placeCount',r.places) ELSE '{}'::jsonb END;
-  dto:=(SELECT jsonb_build_object('kind',e.kind,'status',e.status,'data',payload,'occasionId',e.occasion,'occasionLink',oc.link,'occasionTitle',oc.title)
-   FROM (SELECT 1) seed LEFT JOIN public.occasions oc ON oc.id=e.occasion AND oc.organization=e.organization);
+  dto:=public.notification_center_event_display_internal(e)||jsonb_build_object('kind',e.kind,'status',e.status,'data',payload);
  ELSE
   dto:=public.notification_center_dto(e,d);
   IF grouped THEN dto:=jsonb_set(dto,'{data}',coalesce(dto->'data','{}')||jsonb_build_object('eventCount',r.activity_count)); END IF;
@@ -303,7 +303,7 @@ BEGIN
    AND (public.notification_center_app_admin_internal(p_organization,oc.id,auth.uid()) OR EXISTS(SELECT 1 FROM public.occasion_users m WHERE m.occasion=oc.id AND m."user"=auth.uid() AND m.is_editor_order_view)) ORDER BY oc.id LIMIT lim+1)
  SELECT jsonb_build_object('items',coalesce(jsonb_agg(jsonb_build_object('id',id,'title',title,'muted',muted) ORDER BY id) FILTER(WHERE position<=lim),'[]'),
   'nextCursor',CASE WHEN count(*)>lim THEN max(id) FILTER(WHERE position<=lim) END) INTO result FROM rows;
- RETURN result;
+ RETURN result||jsonb_build_object('email',public.notification_center_email_settings_internal(p_organization));
 END $$;
 REVOKE ALL ON FUNCTION public.get_notification_center_settings(bigint,bigint,integer) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_notification_center_settings(bigint,bigint,integer) TO authenticated;

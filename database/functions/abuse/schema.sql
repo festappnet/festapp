@@ -47,7 +47,7 @@ ALTER TABLE public.abuse_identity_key ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.abuse_identity_key FROM PUBLIC,anon,authenticated,service_role;
 ALTER TABLE public.email_messages ADD COLUMN last_claimed_at timestamptz;
 ALTER TABLE public.email_messages ADD COLUMN producer_actor uuid;
-ALTER TABLE public.email_messages ADD COLUMN admission_class text NOT NULL DEFAULT 'ordinary' CHECK(admission_class IN ('ordinary','auth','commitment'));
+ALTER TABLE public.email_messages ADD COLUMN admission_class text NOT NULL DEFAULT 'ordinary' CHECK(admission_class IN ('ordinary','auth','commitment','notification'));
 CREATE INDEX email_last_org_claim ON public.email_messages(organization,last_claimed_at DESC) WHERE last_claimed_at IS NOT NULL;
 CREATE INDEX email_last_unit_claim ON public.email_messages(unit,last_claimed_at DESC) WHERE last_claimed_at IS NOT NULL;
 CREATE INDEX email_pending_org ON public.email_messages(organization,id) WHERE workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown');

@@ -172,6 +172,11 @@
       "active": true
     },
     {
+      "migration": "20261112234500_admin_notification_delivery.sql",
+      "manifest": "admin-notification-delivery-manifest.json",
+      "sha256": "5b7309f41384475fddc0f120fd82294c11f166dcc5405431cd78926410a6c6ab"
+    },
+    {
       "migration": "20261112235500_scanner_occasion_isolation.sql",
       "header": "-- Scanner credentials and navigation are bound to one occasion.",
       "sources": [

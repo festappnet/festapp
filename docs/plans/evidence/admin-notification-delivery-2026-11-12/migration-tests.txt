@@ -1,0 +1,13 @@
+✔ legacy drain gate rolls back pending cancellation while unknown exists, then retains accepted audit (23.803167ms)
+✔ forward assembler checks canonical tables without rewriting historical notification migration (86.8795ms)
+✔ explicit output refuses an existing different artifact (34.134334ms)
+✔ default output cannot rewrite a published migration after source changes (49.931458ms)
+✔ assembled prerequisite rejects a missing canonical scope owner (18.613875ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 232.261917

@@ -6,7 +6,14 @@ DECLARE input jsonb; connection uuid; payment_id bigint; attempt uuid; expires t
  amount numeric; currency text; target bigint; result jsonb;
 BEGIN
  target:=(p_args->>'orderId')::bigint;
- IF p_operation='operation_capabilities' THEN
+ IF p_operation='notification_connection_health' THEN
+  SELECT jsonb_build_object('organizationId',c.organization_id,'unitId',c.unit_id,'title','Stripe',
+   'reason',CASE WHEN c.state='retired' OR (c.state='revoked' AND (SELECT a.action FROM eshop.stripe_connection_audit a
+    WHERE a.connection_id=c.id AND a.actor IS NOT NULL AND a.action IN ('connected','reconnected','replaced','revoked') ORDER BY a.id DESC LIMIT 1)='revoked') THEN NULL WHEN c.state='revoked' THEN 'provider_access_revoked'
+    WHEN c.state='restricted' THEN 'provider_restricted' WHEN c.status_failures>=public.payment_provider_connection_failure_threshold_internal() THEN 'provider_unavailable' END)
+  INTO result FROM eshop.stripe_connections c WHERE c.id=(p_args->>'connectionId')::uuid;
+  RETURN result;
+ ELSIF p_operation='operation_capabilities' THEN
   result:=public.stripe_payment_provider_internal('refund_binding',p_args);
   RETURN jsonb_build_object('id','stripe','displayName','Stripe','record',false,'refund',result IS NOT NULL,
    'verification','verified_provider_observation','reason',CASE WHEN result IS NULL THEN 'original_payment_unavailable' ELSE NULL END);
@@ -69,6 +76,10 @@ BEGIN
    FROM eshop.stripe_checkout_attempts a JOIN eshop.stripe_disputes d ON d.attempt_id=a.id WHERE a.payment_info_id=payment_id)
   SELECT jsonb_build_object('received',received,'returned',returned,'invalid',invalid,'held',held) INTO result FROM money CROSS JOIN holds;
   RETURN result;
+ ELSIF p_operation='notification_facts' THEN
+  RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('identity',m.connection_id::text||':'||m.provider_id||':'||m.kind,
+   'amount',m.amount_minor::numeric/100,'currency',m.currency,'occurredAt',m.occurred_at)),'[]')
+   FROM eshop.stripe_payment_movements m WHERE m.attempt_id=(p_args->>'attemptId')::uuid AND m.kind='payment');
  ELSIF p_operation='effect_context' THEN
   SELECT jsonb_build_object('attemptId',a.id,'orderId',a.order_id,'paymentId',a.payment_info_id,'connectionId',a.connection_id,
    'organizationId',a.organization_id,'unitId',a.unit_id,'accountId',c.account_id,'livemode',a.livemode,

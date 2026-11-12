@@ -207,3 +207,19 @@ INSERT INTO public.abuse_policy_rules(rule_key,budget_key,scope_kind,kind,window
  ('password.change.account.window','auth.password.change','recipient','rolling',900,60,3,10);
 INSERT INTO public.abuse_policy_rules(rule_key,budget_key,scope_kind,kind,measure_unit,base_limit,hard_cap) VALUES
  ('password.change.payload.bytes','auth.password.change','actor','bytes','bytes',1024,4096);
+
+-- Notification budgets share the existing admission and usage backend.
+-- Conservative default; selected-tenant activation must fit account allocation.
+INSERT INTO public.abuse_policy_rules(rule_key,budget_key,scope_kind,kind,window_seconds,bucket_seconds,base_limit,hard_cap) VALUES
+ ('email.notification.recipient.burst','email.notification','recipient','rolling',60,60,2,6),
+ ('email.notification.recipient.day','email.notification','recipient','rolling',86400,3600,288,576),
+ ('email.notification.global.day','email.notification','global','rolling',86400,3600,1000,10000),
+ ('email.send.notification.recipient.burst','email.send.notification','recipient','rolling',60,60,2,6),
+ ('email.send.notification.recipient.day','email.send.notification','recipient','rolling',86400,3600,288,576),
+ ('email.send.notification.global.day','email.send.notification','global','rolling',86400,3600,1000,10000),
+ ('email.notification.prepare.recipient.burst','email.notification.prepare','recipient','rolling',60,60,6,12),
+ ('email.notification.prepare.global.burst','email.notification.prepare','global','rolling',60,60,60,300),
+ ('email.notification.backlog.recipient','email.notification.backlog','recipient','occupancy',NULL,NULL,1,1),
+ ('email.notification.backlog.global','email.notification.backlog','global','occupancy',NULL,NULL,1000,5000),
+ ('email.notification.backlog.recipient.bytes','email.notification.backlog','recipient','bytes',NULL,NULL,1048576,16777216),
+ ('email.notification.backlog.global.bytes','email.notification.backlog','global','bytes',NULL,NULL,134217728,1073741824);

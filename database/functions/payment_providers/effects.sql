@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.apply_provider_payment_effects_internal(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE context jsonb; prior jsonb; o eshop.orders; pi eshop.payment_info; totals record; projection jsonb; transition jsonb;
  received numeric; refunded numeric; payment_time timestamptz; deadline timestamptz; cancelled bigint[];
- conflict boolean; action_required boolean; changed boolean:=false; args jsonb:=jsonb_build_object('attemptId',p_attempt); decision jsonb;
+ conflict boolean; action_required boolean; changed boolean:=false; args jsonb:=jsonb_build_object('attemptId',p_attempt); decision jsonb; fact jsonb;
 BEGIN
  IF p_provider IS NULL OR p_provider='bank' OR p_attempt IS NULL OR nullif(p_revision,'') IS NULL
   OR p_action IS NULL OR p_action NOT IN ('observe','keep','cancel_selected') THEN RAISE EXCEPTION 'PAYMENT_EFFECT_INPUT_INVALID'; END IF;
@@ -101,6 +101,12 @@ BEGIN
   IF projection->>'admissionState'='valid' THEN PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
   changed:=true;
  END IF;
+
+ FOR fact IN SELECT value FROM jsonb_array_elements(public.payment_provider_call_internal(p_provider,'notification_facts',args)) LOOP
+  PERFORM public.notification_center_payment_fact_internal(o.id,p_provider,fact->>'identity',(fact->>'amount')::numeric,fact->>'currency',(fact->>'occurredAt')::timestamptz);
+ END LOOP;
+ PERFORM public.notification_center_payment_problem_internal(o.id,action_required OR conflict,
+  CASE WHEN conflict THEN 'financial_conflict' ELSE 'action_required' END);
  RETURN jsonb_build_object('changed',changed,'payment',projection);
 END $$;
 REVOKE ALL ON FUNCTION public.apply_provider_payment_effects_internal(text,uuid,text,jsonb,boolean,boolean,text,bigint[]) FROM PUBLIC,anon,authenticated,service_role;

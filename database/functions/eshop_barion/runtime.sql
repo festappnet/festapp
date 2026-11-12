@@ -90,7 +90,7 @@ BEGIN
   IF facts->>'id' IS NULL OR facts->>'id' !~ '^[a-f0-9]{32}$' OR (a.remote_id IS NOT NULL AND a.remote_id<>facts->>'id')
    OR facts->>'url' IS DISTINCT FROM ('https://secure.test.barion.com/Pay?Id='||(facts->>'id'))
    OR (facts->>'expiresAt')::bigint IS DISTINCT FROM extract(epoch FROM a.reservation_expires_at)::bigint THEN RAISE EXCEPTION 'BARION_CHECKOUT_INVALID'; END IF;
-  UPDATE eshop.barion_attempts SET remote_id=facts->>'id',checkout_url=facts->>'url',state=CASE WHEN state IN ('preparing','uncertain') THEN 'open' ELSE state END,
+  UPDATE eshop.barion_attempts SET remote_id=facts->>'id',checkout_url=facts->>'url',reconcile_failures=0,state=CASE WHEN state IN ('preparing','uncertain') THEN 'open' ELSE state END,
    lease_token=NULL,lease_expires_at=NULL,next_reconcile_at=stamp+interval '6 seconds' WHERE id=a.id;
  ELSIF p_operation IN ('fail','defer') THEN
   seconds:=CASE WHEN p_operation='fail' THEN 60 ELSE (p_args->>'seconds')::integer END;
@@ -133,6 +133,7 @@ BEGIN
   UPDATE eshop.barion_attempts SET lease_token=NULL,lease_expires_at=NULL,next_reconcile_at=stamp+CASE WHEN total>0 THEN interval '15 minutes' ELSE interval '1 minute' END WHERE id=a.id;
  ELSE RAISE EXCEPTION 'BARION_RUNTIME_OPERATION_UNSUPPORTED';
  END IF;
+ PERFORM public.notification_center_provider_connection_internal('barion',a.connection_id);
  RETURN jsonb_build_object('committed',true,'payment',public.provider_order_payment_projection_internal(a.order_id));
 END $$;
 REVOKE ALL ON FUNCTION public.barion_runtime_internal(text,jsonb) FROM PUBLIC,anon,authenticated;

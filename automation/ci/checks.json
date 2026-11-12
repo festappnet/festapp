@@ -421,7 +421,7 @@
       }
     },
     "seat-notifications": {
-      "script": "python3 automation/assemble-notification-center-migration.py --check\nnode --test automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock supabase/functions/_shared/notificationDispatcher_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
+      "script": "python3 automation/assemble-admin-notification-delivery-migration.py --check\nnode --test automation/tests/admin_notification_upgrade.test.mjs automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net supabase/functions/_shared/notificationDispatcher_test.ts supabase/functions/_shared/adminNotificationEmail_test.ts supabase/functions/_shared/adminNotificationSender_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
       "after": [
         "seat-database"
       ],
@@ -468,7 +468,7 @@
       }
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart test/components/blueprint/blueprint_template_groups_test.dart\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/components/notification_center/notification_email_settings_test.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart test/components/blueprint/blueprint_template_groups_test.dart\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -649,7 +649,8 @@
         "test/sessions/ticket_palette_cases.dart",
         "test/sessions/occasion_setup_email_templates_test_ci_cases.dart",
         "test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart",
-        "test/sessions/setup_font_catalog_test_ci_cases.dart"
+        "test/sessions/setup_font_catalog_test_ci_cases.dart",
+        "test/components/notification_center/notification_email_settings_test.dart"
       ],
       "standalone": [
         "test/components/eshop/ticket_delivery_request_test.dart",
@@ -659,7 +660,8 @@
         "test/data_services/form_editor_rpc_test.dart",
         "test/components/occasion/occasion_setup_email_templates_test.dart",
         "test/components/occasion/occasion_setup_blueprint_open_test.dart",
-        "test/components/occasion/setup_font_catalog_test.dart"
+        "test/components/occasion/setup_font_catalog_test.dart",
+        "test/components/notification_center/notification_email_settings_test.dart"
       ],
       "reason": "Four compatible catalog/font groups; eight root SDK/client/font registries remain isolated. Normal and reverse order required."
     }
@@ -939,6 +941,12 @@
       "database/tests/groups/add_members_test.sql",
       "database/tests/groups/canonical_group_commands_test.sql",
       "database/tests/hidden_admin_visibility_test.sql",
+      "database/tests/notification_center/admin_email_bank_identity_test.sql",
+      "database/tests/notification_center/admin_email_budget_test.sql",
+      "database/tests/notification_center/admin_email_delivery_test.sql",
+      "database/tests/notification_center/admin_email_no_address_test.sql",
+      "database/tests/notification_center/admin_email_required_bank_test.sql",
+      "database/tests/notification_center/admin_email_send_test.sql",
       "database/tests/notification_center/administration_visibility_test.sql",
       "database/tests/notification_center/app_activity_test.sql",
       "database/tests/notification_center/bank_sources_test.sql",
@@ -951,6 +959,7 @@
       "database/tests/notification_center/email_preparation_failure_test.sql",
       "database/tests/notification_center/email_recovery_test.sql",
       "database/tests/notification_center/email_sources_test.sql",
+      "database/tests/notification_center/email_window_policy_test.sql",
       "database/tests/notification_center/form_availability_save_test.sql",
       "database/tests/notification_center/form_availability_test.sql",
       "database/tests/notification_center/hidden_identity_surfaces_test.sql",
@@ -959,6 +968,7 @@
       "database/tests/notification_center/legacy_place_totals_test.sql",
       "database/tests/notification_center/lifecycle_test.sql",
       "database/tests/notification_center/open_latency_test.sql",
+      "database/tests/notification_center/payment_facts_test.sql",
       "database/tests/notification_center/prepared_history_test.sql",
       "database/tests/notification_center/prepared_lifecycle_test.sql",
       "database/tests/notification_center/prepared_orders_test.sql",
@@ -968,6 +978,7 @@
       "database/tests/notification_center/presentation_test.sql",
       "database/tests/notification_center/producers_test.sql",
       "database/tests/notification_center/projection_lifecycle_test.sql",
+      "database/tests/notification_center/provider_connection_alerts_test.sql",
       "database/tests/notification_center/purge_hidden_history_test.sql",
       "database/tests/notification_center/read_history_compaction_test.sql",
       "database/tests/notification_center/serving_contraction_test.sql",
@@ -1122,6 +1133,7 @@
   },
   "knownTestInputs": [
     "automation/tests/abuse_policy_coverage.test.mjs",
+    "automation/tests/admin_notification_upgrade.test.mjs",
     "automation/tests/android_ci_release_contract.test.mjs",
     "automation/tests/android_gradle_contract.test.mjs",
     "automation/tests/android_play_release_contract.test.mjs",
@@ -1485,6 +1497,13 @@
     "database/tests/groups/add_members_test.sql",
     "database/tests/groups/canonical_group_commands_test.sql",
     "database/tests/hidden_admin_visibility_test.sql",
+    "database/tests/notification_center/admin_email_bank_identity_test.sql",
+    "database/tests/notification_center/admin_email_budget_test.sql",
+    "database/tests/notification_center/admin_email_concurrency.test.mjs",
+    "database/tests/notification_center/admin_email_delivery_test.sql",
+    "database/tests/notification_center/admin_email_no_address_test.sql",
+    "database/tests/notification_center/admin_email_required_bank_test.sql",
+    "database/tests/notification_center/admin_email_send_test.sql",
     "database/tests/notification_center/administration_visibility_test.sql",
     "database/tests/notification_center/app_activity_test.sql",
     "database/tests/notification_center/bank_sources_test.sql",
@@ -1498,6 +1517,7 @@
     "database/tests/notification_center/email_preparation_failure_test.sql",
     "database/tests/notification_center/email_recovery_test.sql",
     "database/tests/notification_center/email_sources_test.sql",
+    "database/tests/notification_center/email_window_policy_test.sql",
     "database/tests/notification_center/form_availability_concurrency.test.mjs",
     "database/tests/notification_center/form_availability_save_test.sql",
     "database/tests/notification_center/form_availability_test.sql",
@@ -1507,6 +1527,7 @@
     "database/tests/notification_center/legacy_place_totals_test.sql",
     "database/tests/notification_center/lifecycle_test.sql",
     "database/tests/notification_center/open_latency_test.sql",
+    "database/tests/notification_center/payment_facts_test.sql",
     "database/tests/notification_center/prepared_history_test.sql",
     "database/tests/notification_center/prepared_lifecycle_test.sql",
     "database/tests/notification_center/prepared_orders_test.sql",
@@ -1516,6 +1537,7 @@
     "database/tests/notification_center/presentation_test.sql",
     "database/tests/notification_center/producers_test.sql",
     "database/tests/notification_center/projection_lifecycle_test.sql",
+    "database/tests/notification_center/provider_connection_alerts_test.sql",
     "database/tests/notification_center/purge_hidden_history_test.sql",
     "database/tests/notification_center/read_cursor_concurrency.test.mjs",
     "database/tests/notification_center/read_history_compaction_test.sql",
@@ -1678,12 +1700,13 @@
     "database/tests/users/reset_user_password_permissions_test.sql",
     "supabase/functions/_shared/accountAssets_test.ts",
     "supabase/functions/_shared/accountDeletion_test.ts",
+    "supabase/functions/_shared/adminNotificationEmail_test.ts",
+    "supabase/functions/_shared/adminNotificationSender_test.ts",
     "supabase/functions/_shared/bankSyncDiagnostic_test.ts",
     "supabase/functions/_shared/bankSyncHealth_test.ts",
     "supabase/functions/_shared/bankSyncOperation_test.ts",
     "supabase/functions/_shared/bankSyncStatusOrder_test.ts",
     "supabase/functions/_shared/bankSyncToken_test.ts",
-    "supabase/functions/_shared/bankSyncWarningEmail_test.ts",
     "supabase/functions/_shared/bankSyncWorkerEnvironment_test.ts",
     "supabase/functions/_shared/barion/adapter_test.ts",
     "supabase/functions/_shared/barion/provider_test.ts",
@@ -1712,7 +1735,6 @@
     "supabase/functions/_shared/measurementApprovalEmail_test.ts",
     "supabase/functions/_shared/metaSurcharge_test.ts",
     "supabase/functions/_shared/monitoring_test.ts",
-    "supabase/functions/_shared/notificationCenterHealth_test.ts",
     "supabase/functions/_shared/notificationDispatcher_test.ts",
     "supabase/functions/_shared/orderEmailOverview_test.ts",
     "supabase/functions/_shared/orderEmailPresentation_test.ts",
@@ -1826,6 +1848,7 @@
     "test/components/navigation/help_occasion_picker_test.dart",
     "test/components/notification_center/notification_batch_panel_test.dart",
     "test/components/notification_center/notification_center_bell_requests_test.dart",
+    "test/components/notification_center/notification_email_settings_test.dart",
     "test/components/occasion/occasion_creation_recovery_test.dart",
     "test/components/occasion/occasion_list_refresh_test.dart",
     "test/components/occasion/occasion_setup_blueprint_open_test.dart",

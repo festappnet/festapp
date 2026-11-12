@@ -1,0 +1,11 @@
+✔ recipient profile serializes two collectors, cursor commit and lost enqueue response (120.137792ms)
+✔ collect commit survives an enqueue failure; concurrent close and new delivery lose no membership (68.631375ms)
+✔ two send workers obtain one permit; replay cannot cross the same attempt twice (81.301667ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 331.202958

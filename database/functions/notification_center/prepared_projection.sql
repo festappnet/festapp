@@ -32,6 +32,7 @@ RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
   CASE WHEN cardinality(e.affected_occasions)=0 THEN ARRAY['bank-shared:'||(e.data->>'bankConnectionId')] ELSE '{}'::text[] END||
   ARRAY(SELECT 'bank-occasion:'||x FROM unnest(e.affected_occasions) x)||
   ARRAY(SELECT 'bank-current:'||(e.data->>'bankConnectionId')||':'||x FROM unnest(e.affected_occasions) x)
+ WHEN e.kind='provider_problem' THEN ARRAY['provider-unit:'||(e.data->>'unitId')]
  WHEN e.kind='email_problem' THEN ARRAY['email-admin:'||coalesce(e.occasion::text,'shared')]||
   CASE WHEN e.occasion IS NOT NULL THEN ARRAY['orders:'||e.occasion] ELSE '{}'::text[] END
  WHEN e.kind IN ('occasion_joined','event_capacity_full') THEN ARRAY['app:'||e.occasion]
@@ -70,6 +71,8 @@ RETURNS TABLE(scope text,section integer) LANGUAGE sql STABLE SET search_path=pu
  UNION ALL SELECT 'email-admin:'||id,priority FROM occasions WHERE email
  UNION ALL SELECT 'email-admin:shared',0 FROM admin WHERE is_admin
  UNION ALL SELECT 'bank-occasion:'||id,CASE WHEN p_current IS NULL OR id=p_current THEN 0 ELSE 2 END FROM occasions WHERE bank
+ UNION ALL SELECT 'provider-unit:'||un.id,0 FROM public.units un JOIN public.unit_users um ON um.unit=un.id
+ WHERE un.organization=p_org AND um."user"=p_user AND um.is_manager AND public.payment_provider_unit_manager_internal(un.id,p_user) AND NOT public.is_demo_unit(un.id)
  UNION ALL SELECT 'bank:'||id,CASE WHEN p_current IS NULL THEN 0 ELSE 2 END FROM banks
  UNION ALL SELECT 'bank-shared:'||id,0 FROM banks
  UNION ALL SELECT 'bank-current:'||id||':'||p_current,0 FROM banks WHERE p_current IS NOT NULL;
@@ -97,32 +100,22 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT NOT EXISTS(SELECT 1 FROM public.notification_center_prepared_subjects(e) subject
   JOIN (SELECT 'u:'||(x->>'user') subject FROM jsonb_array_elements(p_privacy) x WHERE x->>'profile'='true'
    UNION SELECT 'e:'||(x->>'email') FROM jsonb_array_elements(p_privacy) x WHERE x->>'email' IS NOT NULL) hidden USING(subject))
- AND CASE WHEN e.kind IN ('email_problem','bank_problem') THEN e.status NOT IN ('recovered','resolved') AND public.notification_center_bank_episode_current(e)
- ELSE e.occurred_at>=p_anchor-interval '30 days'
-  AND (e.kind<>'order_created' OR coalesce((SELECT o.state FROM eshop.orders o WHERE o.id=CASE WHEN e.data->>'orderId' ~ '^[0-9]{1,18}$' THEN (e.data->>'orderId')::bigint END AND o.occasion=e.occasion),e.status,'')<>'storno')
-  AND (e.kind<>'occasion_joined' OR (EXISTS(SELECT 1 FROM public.organizations org
-    WHERE org.id=e.organization AND org.data->>'IS_APP_SUPPORTED'='true') AND EXISTS(SELECT 1 FROM public.occasion_users m JOIN public.user_info u ON u.id=m."user" AND u.organization=e.organization
-   WHERE m.occasion=e.occasion AND m."user"::text=e.data->>'userId'))) END;
+ AND public.notification_center_event_relevant_internal(e,p_anchor);
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_prepared_apply(e public.notification_center_events,d public.notification_center_deliveries,p_anchor timestamptz DEFAULT clock_timestamp(),p_privacy jsonb DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 #variable_conflict use_column
-DECLARE old public.notification_center_view_members; b record; id text; visible boolean; places bigint; context jsonb; multi boolean; legacy_count bigint;
+DECLARE old public.notification_center_view_members; b record; id text; visible boolean; places bigint; context jsonb; multi boolean; facts jsonb;
 BEGIN
  SELECT * INTO old FROM public.notification_center_view_members WHERE organization=d.organization AND recipient=d.recipient AND event_id=d.event_id;
  IF FOUND AND old.sequence>d.sequence THEN RETURN; END IF;
  SELECT * INTO b FROM public.notification_center_prepared_batch_at(e,d,p_anchor);
- id:=CASE WHEN e.kind IN ('email_problem','bank_problem') OR e.occasion IS NULL THEN e.id::text WHEN b.is_read THEN b.group_key||':history:read' ELSE b.batch_id||':unread' END;
+ id:=CASE WHEN e.kind IN ('email_problem','bank_problem','payment_problem','provider_problem') OR e.occasion IS NULL THEN e.id::text WHEN b.is_read THEN b.group_key||':history:read' ELSE b.batch_id||':unread' END;
  visible:=public.notification_center_prepared_policy(e,p_anchor,coalesce(p_privacy,(SELECT privacy FROM public.notification_center_projection_scopes WHERE organization=d.organization AND recipient=d.recipient)));
- places:=CASE WHEN e.data->>'count' ~ '^[0-9]{1,9}$' THEN nullif((e.data->>'count')::bigint,0) END;
- context:=nullif(e.data->'formContext','null'::jsonb);
- IF public.notification_center_order_activity_internal(e.kind) AND (e.data->>'count' IS NULL OR context IS NULL) THEN
-  SELECT nullif(count(DISTINCT x.ticket),0),public.notification_center_order_form_context_internal(o.form)
-   INTO legacy_count,context FROM eshop.orders o LEFT JOIN eshop.order_product_ticket x ON x."order"=o.id
-   WHERE o.occasion=e.occasion AND o.id=CASE WHEN e.data->>'orderId' ~ '^[0-9]{1,18}$' THEN (e.data->>'orderId')::bigint END GROUP BY o.id;
-  places:=coalesce(places,legacy_count);context:=coalesce(nullif(e.data->'formContext','null'::jsonb),context);
- END IF;
- multi:=coalesce(places>1 OR context->'allowsMultiple'='true'::jsonb,false);
+ facts:=public.notification_center_event_facts_internal(e);
+ places:=nullif((facts->>'count')::bigint,0);
+ context:=facts->'formContext';
+ multi:=(facts->>'allowsMultiple')::boolean;
  IF old.eligible THEN
   UPDATE public.notification_center_batch_summaries SET activity_count=activity_count-1,known_count=known_count-(old.places IS NOT NULL)::int,
    places=places-coalesce(old.places,0),multiple_count=multiple_count-old.multiple::int
@@ -130,7 +123,7 @@ BEGIN
  END IF;
  INSERT INTO public.notification_center_view_members(organization,recipient,event_id,sequence,attention_revision,source_revision,group_key,batch_id,is_read,after_sequence,through_sequence,eligible,occurred_at,expires_at,places,multiple)
  VALUES(d.organization,d.recipient,e.id,d.sequence,d.attention_revision,e.view_revision,b.group_key,id,b.is_read,b.after_sequence,b.through_sequence,visible,e.occurred_at,
-  CASE WHEN e.kind NOT IN ('email_problem','bank_problem') THEN e.occurred_at+interval '30 days' END,places,multi)
+  CASE WHEN e.kind NOT IN ('email_problem','bank_problem','payment_problem','provider_problem') THEN e.occurred_at+interval '30 days' END,places,multi)
  ON CONFLICT(organization,recipient,event_id) DO UPDATE SET sequence=excluded.sequence,attention_revision=excluded.attention_revision,source_revision=excluded.source_revision,
  group_key=excluded.group_key,batch_id=excluded.batch_id,is_read=excluded.is_read,after_sequence=excluded.after_sequence,through_sequence=excluded.through_sequence,
  eligible=excluded.eligible,occurred_at=excluded.occurred_at,expires_at=excluded.expires_at,places=excluded.places,multiple=excluded.multiple;
@@ -221,7 +214,7 @@ BEGIN
  PERFORM public.notification_center_prepared_apply(e,d);
  UPDATE public.notification_center_recipients SET view_required_revision=e.view_revision,view_applied_revision=e.view_revision WHERE event_id=e.id AND recipient=d.recipient;
  UPDATE public.notification_center_projection_scopes SET prepared_sequence=d.sequence,
-  next_expiry=least(next_expiry,CASE WHEN e.kind NOT IN ('email_problem','bank_problem') AND public.notification_center_prepared_policy(e,clock_timestamp(),s.privacy) THEN e.occurred_at+interval '30 days' END)
+  next_expiry=least(next_expiry,CASE WHEN e.kind NOT IN ('email_problem','bank_problem','payment_problem','provider_problem') AND public.notification_center_prepared_policy(e,clock_timestamp(),s.privacy) THEN e.occurred_at+interval '30 days' END)
   WHERE organization=d.organization AND recipient=d.recipient;
 END $$;
 -- One receipt owner serves both external serializers after their scope checks.
@@ -258,7 +251,7 @@ RETURNS SETOF uuid LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT e.id FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion
  JOIN public.notification_center_events e ON e.organization=oc.organization AND e.occasion=o.occasion
  WHERE o.id=p_order AND e.data->>'orderId'=p_order::text
-  AND e.kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted','offer_declined','offer_expired')
+  AND e.kind IN ('order_created','waitlist_registered','order_cancelled','order_payment_received','payment_problem','offer_accepted','offer_declined','offer_expired')
  UNION
  SELECT e.id FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion
  JOIN public.email_messages m ON m.order_id=o.id AND m.occasion=o.occasion AND m.organization=oc.organization

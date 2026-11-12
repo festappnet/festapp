@@ -1,0 +1,13 @@
+Found 1 test file(s) to execute.
+>>> Setup: Resetting Sequences (Global)...
+>>> Setup Complete.
+
+
+▶ Running: database/tests/notification_center/admin_email_bank_identity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (51 ms): database/tests/notification_center/admin_email_bank_identity_test.sql
+
+==================================================
+SUMMARY: 1 Passed, 0 Failed
+==================================================

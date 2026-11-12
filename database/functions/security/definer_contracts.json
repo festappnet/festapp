@@ -1285,14 +1285,6 @@
       "signature": "public.get_news_with_versions_v1(bigint)",
       "source": "database/functions/news/get_news_with_versions_v1.sql"
     },
-    "72ddb24977b26ec6f8007691b70ea6852370ea07674cb1efcd8c98340c15b60b": {
-      "signature": "public.claim_notification_center_bank_health(integer)",
-      "source": "database/functions/notification_center/bank.sql"
-    },
-    "2aa9af714dbf720427eb55b481c7c3db1ca620477cbf86ea4b372a66a941f3d4": {
-      "signature": "public.complete_notification_center_bank_health(bigint,uuid,timestamp with time zone,text,timestamp with time zone)",
-      "source": "database/functions/notification_center/bank.sql"
-    },
     "451fc8b39be47c10765bea9a1e68c49de1d1ae1b8f9d5ded515b48652055e609": {
       "signature": "public.project_notification_center(integer)",
       "source": "database/functions/notification_center/core.sql"
@@ -3222,6 +3214,30 @@
     "7a7f2864b837b6e2d2007e72cbd7a4913faef5c041fa42c4e328c1870b7e956d": {
       "signature": "public.get_or_create_scan_code(text,boolean)",
       "source": "database/functions/scanning/access_codes.sql"
+    },
+    "89b46c580f612e0a1ea12e1dc0cf314b4112299298fc84a33aacc6ad13e38ae9": {
+      "signature": "public.save_notification_center_email_settings(bigint,bigint,bigint,boolean,text,jsonb)",
+      "source": "database/functions/notification_center/email_preferences.sql"
+    },
+    "f1cd32b6ac2cb4a5ff6dce30cdcac3159c84164450a919cb8723877776aeac50": {
+      "signature": "public.activate_notification_center_emails(bigint)",
+      "source": "database/functions/notification_center/email_preferences.sql"
+    },
+    "560ec1948e512ecb921d323a3ec7d2aa7e7671fb2152a319e446293d63ffc726": {
+      "signature": "public.get_notification_center_email_context(uuid,uuid)",
+      "source": "database/functions/notification_center/email_context.sql"
+    },
+    "18b46183fa268a326e5dc65c109002ee0cd4aa8355ef0bb1d99a3238a5416ef5": {
+      "signature": "public.collect_notification_center_emails(integer)",
+      "source": "database/functions/notification_center/email_delivery.sql"
+    },
+    "d9e272e4016491b8c6c0ba43ef169114c69c6df79e215cf9a278e9ad25a9cd8c": {
+      "signature": "public.enqueue_notification_center_emails(integer)",
+      "source": "database/functions/notification_center/email_delivery.sql"
+    },
+    "8d1d40820ab9d06d9cdfbb49dfee0a892a214b9a2bcdcb8a4860639a2b5c38fa": {
+      "signature": "public.get_notification_center_email_health()",
+      "source": "database/functions/notification_center/email_delivery.sql"
     }
   }
 }

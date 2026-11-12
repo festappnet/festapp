@@ -64,8 +64,5 @@ export async function monitorBankSyncHealth(organizationId: number) {
     });
     checked++;
   }
-  const queued = await rpc("enqueue_bank_sync_health_alerts", {
-    p_organization_id: organizationId,
-  });
-  return { checked, queued };
+  return { checked };
 }

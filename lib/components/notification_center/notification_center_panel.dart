@@ -28,9 +28,135 @@ class NotificationCenterPanel extends StatefulWidget {
 
 class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   bool settings = false;
+  int? emailOccasion;
   final _feedScroll = ScrollController();
   double _feedOffset = 0;
   final _settingsScroll = ScrollController();
+
+  List<Widget> _emailControls(BuildContext context) {
+    final c = widget.controller;
+    final settings = c.emailSettings;
+    if (emailOccasion != null &&
+        !c.occasions.any((occasion) => occasion['id'] == emailOccasion)) {
+      emailOccasion = null;
+    }
+    final catalog = Map<String, dynamic>.from(
+      (emailOccasion == null
+                  ? settings['catalog']
+                  : (settings['scopeCatalogs'] as Map?)?[emailOccasion
+                        .toString()])
+              as Map? ??
+          {},
+    );
+    final requiredKinds = (settings['requiredKinds'] as List? ?? [])
+        .whereType<String>()
+        .where(catalog.containsKey)
+        .toSet();
+    catalog.removeWhere((kind, _) => requiredKinds.contains(kind));
+    final hasOptionalKinds = (settings['catalog'] as Map? ?? {}).keys.any(
+      (kind) => !(settings['requiredKinds'] as List? ?? []).contains(kind),
+    );
+    final windowSeconds = settings['windowSeconds'];
+    if ((settings['catalog'] as Map? ?? {}).isEmpty || windowSeconds is! num) {
+      return [];
+    }
+    final subscriptions = (settings['subscriptions'] as List? ?? [])
+        .whereType<Map>();
+    Map? own;
+    Map? parent;
+    for (final source in subscriptions) {
+      if (source['occasion'] == emailOccasion) own = source;
+      if (source['occasion'] == null) parent = source;
+    }
+    final effective = Map<String, dynamic>.from(
+      (own ?? parent)?['kinds'] as Map? ?? {},
+    );
+    final kinds = <String, bool>{
+      for (final kind in catalog.keys)
+        kind: (effective[kind] as Map?)?['enabled'] == true,
+    };
+    Future<void> save({bool? stopped, Map<String, bool>? next}) async {
+      final success = await c.saveEmailSettings(
+        occasion: emailOccasion,
+        stopped: stopped ?? settings['stopped'] != false,
+        locale: context.locale.languageCode,
+        kinds: next ?? kinds,
+      );
+      if (!success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(NotificationCenterStrings.text('saveFailed'))),
+        );
+      }
+    }
+
+    String s(String key) => NotificationCenterStrings.text(key);
+    return [
+      for (final kind in requiredKinds)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.lock_outline),
+          title: Text(s('requiredKinds.$kind')),
+          subtitle: Text(s('emailRequiredHelp')),
+          trailing: Text(s('emailAlwaysOn')),
+        ),
+      if (hasOptionalKinds)
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(s('emailEnabled')),
+          subtitle: Text(
+            NotificationCenterStrings.emailHelp(windowSeconds.toInt()),
+          ),
+          value: settings['stopped'] == false,
+          onChanged: c.emailSaving ? null : (value) => save(stopped: !value),
+        ),
+      if (hasOptionalKinds)
+        DropdownButton<int>(
+          isExpanded: true,
+          value: emailOccasion ?? -1,
+          items: [
+            DropdownMenuItem(value: -1, child: Text(s('emailOrganization'))),
+            for (final occasion in c.occasions)
+              DropdownMenuItem(
+                value: occasion['id'] as int,
+                child: Text(occasion['title']?.toString() ?? ''),
+              ),
+          ],
+          onChanged: c.emailSaving
+              ? null
+              : (value) =>
+                    setState(() => emailOccasion = value == -1 ? null : value),
+        ),
+      for (final category in catalog.values.toSet())
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(s('emailCategories.$category')),
+          tristate: true,
+          value:
+              catalog.entries
+                  .where((entry) => entry.value == category)
+                  .every((entry) => kinds[entry.key] == true)
+              ? true
+              : catalog.entries
+                    .where((entry) => entry.value == category)
+                    .every((entry) => kinds[entry.key] != true)
+              ? false
+              : null,
+          onChanged: c.emailSaving
+              ? null
+              : (value) => save(
+                  next: {
+                    ...kinds,
+                    for (final entry in catalog.entries.where(
+                      (entry) => entry.value == category,
+                    ))
+                      entry.key: value == true,
+                  },
+                ),
+        ),
+      if (settings['state'] != null)
+        Text(s('emailStates.${settings['state']}')),
+    ];
+  }
 
   @override
   void dispose() {
@@ -83,11 +209,15 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           unawaited(c.loadSettings());
                         } else {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && !settings && _feedScroll.hasClients) {
-                              _feedScroll.jumpTo(_feedOffset.clamp(
-                                0.0,
-                                _feedScroll.position.maxScrollExtent,
-                              ));
+                            if (mounted &&
+                                !settings &&
+                                _feedScroll.hasClients) {
+                              _feedScroll.jumpTo(
+                                _feedOffset.clamp(
+                                  0.0,
+                                  _feedScroll.position.maxScrollExtent,
+                                ),
+                              );
                             }
                           });
                         }
@@ -114,6 +244,8 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     primary: false,
                     padding: const EdgeInsets.all(16),
                     children: [
+                      ..._emailControls(context),
+                      const Divider(),
                       Text(s('muteHelp')),
                       const SizedBox(height: 16),
                       if (c.settingsFailed) Text(s('loadFailed')),
@@ -311,11 +443,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.sizeOf(context).height * .85,
           ),
-          child: SizedBox(
-            width: 440,
-            height: size.height * .85,
-            child: body,
-          ),
+          child: SizedBox(width: 440, height: size.height * .85, child: body),
         ),
       );
     },

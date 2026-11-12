@@ -1,7 +1,7 @@
 # Organization notification center
 
-A private personal projection, outside public sync, news/mobile push delivery,
-the outbound email queue and BankSync. Trusted explicit domain owners publish;
+A private personal feed, independent of public sync, news/mobile push delivery,
+the outbound email lifecycle and BankSync facts. Trusted explicit domain owners publish;
 there are no application triggers, parallel queues or client publishers.
 
 ## Canonical serving and read ownership
@@ -37,11 +37,6 @@ group keys and their indexes remain valid persisted history. The serving
 contraction deletes functions, not that history or its source facts.
 
 ## Publication, projection and workers
-
-Participant rows require the organization setting `IS_APP_SUPPORTED=true`;
-ticketing-only organizations retain order notifications. The app-support forward
-migration invalidates existing participant projections, including read history
-and badges, without deleting source events.
 
 Publication captures eligible recipients. Hidden membership suppresses personal
 participant enrollment; authorized order/waitlist activity and its delivery
@@ -104,3 +99,52 @@ for the benchmark's nonempty three-order smoke. Sustained and maintenance append
 to its receipt. Prefix receipts now produce compacted read history plus unread
 activity, rather than thirty presentation rows. These SQL timings are not a
 production-capacity or browser-latency claim.
+
+Admin notification email uses the existing deliveries as its durable input.
+`collect_notification_center_emails` advances a per-organization/recipient sequence
+cursor and commits membership independently of feed projection.
+`enqueue_notification_center_emails` closes a recipient's fixed 300-second window
+in a separate commit through the single `email_messages` queue. A terminal or
+unknown intent is never replaced to compensate for an uncertain provider result.
+Profiles lock before source cursors, dispatches and the existing queue locks;
+feed projection never acquires a profile lock. Recipient settings only write
+preferences, without mutating queued messages.
+
+Captured facts, domain relevance, display metadata and current permission scope
+vectors are shared with UI preparation. Email creates no UI projection scope,
+read receipt, prepared-facts cache or new financial calculation. The final send
+statement validates the same authorized context/fingerprint and changes both
+attempt and message atomically. Failed snapshot validation rolls back send
+metering/capacity and prepares the same intent again. A changed address cancels
+that intent permanently.
+
+`admin_notification_digest` is the only recipient-scoped, tenant-null kind.
+Tenant reports exclude it. Its owner sees only self delivery status in the
+existing settings panel; operational diagnostics remain service-only.
+Bank incidents use BankSync's incident UUID and readiness across tenant
+projections. There is no independent center bank poller or bank email producer.
+The forward migration refuses legacy in-flight/unknown bank messages until the
+original queue reconciliation resolves them with evidence. Historical accepted
+message content and audit remain intact. See the
+[local implementation receipt](../../../docs/plans/admin-notification-delivery-RESULT-2026-11-12.md).
+
+
+`email_policy.sql` is the sole owner of the fixed aggregation interval. Envelope
+creation, the database deadline CHECK and the settings projection use it; the
+localized panel caption derives its duration from the same server metadata.
+This is product policy, not a recipient setting. Future interval changes need a
+forward migration accounting for existing envelopes.
+
+Bank email is required only for canonical administrators of the affected account
+(`bank:<connection>`, never `bank-occasion:<occasion>` alone). Optional stop,
+subscriptions and event muting do not disable it. `email_policy.sql` owns the
+required-kind policy; settings expose required kinds without editable toggles.
+Captured required work can enroll an optional-off profile using the shared
+profile-creation advisory fence. Current permissions, tenant activation, domain
+readiness and the sole email queue/provider gate remain mandatory.
+
+`provider_problem` is the corresponding required connection-administrator alert
+for Stripe/Barion. Connector registry adapters project their existing state and
+worker failures into one serialized connection episode. Prepared views and
+email reuse the episode and the same live scope vector (`provider-unit:<unit>`),
+with no connector-health or financial recalculation while serving or sending.
