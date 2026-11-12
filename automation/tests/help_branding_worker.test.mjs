@@ -56,7 +56,9 @@ test('global responsive adapters use the canonical distinct vector masters', t =
   assert.match(animation,/outline-ticket/);
   assert.match(animation,/fill-center/);
   assert.match(animation,/prefers-reduced-motion/);
-  assert.doesNotMatch(animation,/fill-name|fill-domain|vstupenky/);
+  assert.match(animation,/outline-name/);
+  assert.match(animation,/fill-domain/);
+  assert.doesNotMatch(animation,/vstupenky/);
  }
  }
 
