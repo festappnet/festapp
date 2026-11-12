@@ -223,7 +223,8 @@ test('Cookiebot link: renew on the website keeps the import and the new choice r
  const form = linkedForm(site);
  try {
   await ready(form);
-  site.renew(); await settle(1200);
+  // Real Cookiebot switches to inline opt-in while its renewal dialog is open.
+  site.cmp.responseMode='inlineoptin';site.renew(); await settle(1200);
   assert.deepEqual(form.consent(), both, 'an open renew dialog is not a withdrawal');
   assert.equal(form.notice(), false);
   site.choose({analytics:true, marketing:false}); await settle(1200);
@@ -291,6 +292,19 @@ test('Cookiebot link: an undecided website leaves the form notice; a saved refus
  } finally { b.close(); refused.close(); }
 });
 
+for(const otherTab of [false,true])test('Cookiebot link: a fresh form cannot import cached acceptance after '+(otherTab?'another-tab refusal':'cookie removal'),async()=>{
+ const site=await website();site.choose(both);
+ // Establish a matching read before storage changes, without advancing time.
+ const first=linkedForm(site);await ready(first);first.close();
+ if(otherTab)site.store({stamp:'b3RoZXI=',necessary:true,statistics:false,marketing:false});
+ else site.win.document.cookie='CookieConsent=;max-age=0;path=/';
+ const form=linkedForm(site);
+ try{
+  await ready(form);assert.deepEqual(form.consent(),none);assert.ok(form.notice());
+  for(const grant of form.log.activations)assert.deepEqual(grant.consent,none,'the runtime must never receive stale acceptance');
+ }finally{form.close();site.close()}
+});
+
 test('Cookiebot link: a fresh form cannot relabel an old choice with a new semantic scope', async () => {
  const site = await website(); site.choose(both);
  const form = linkedForm(site, {policy:{...basePolicy(), consent_revision:'b'.repeat(32), processing_revision:'new-processing'}});
@@ -322,8 +336,8 @@ for(const kind of ['implied','old-cutoff','invalid-config','TCF','cookie-removed
    if(kind==='TCF'){assert.deepEqual(form.consent(),{analytics:true,marketing:false});assert.equal(form.notice(),false)}
    else if(kind==='cookie-removed'){
     assert.deepEqual(form.consent(),both);site.win.document.cookie='CookieConsent=;max-age=0;path=/';
-    // A removed record ends the import once it outlasts the write-in-progress window.
-    await settle(2200);assert.deepEqual(form.consent(),none);assert.ok(form.notice());
+    // The first poll must revoke the import even with a cached accepting API.
+    await settle(1100);assert.deepEqual(form.consent(),none);assert.ok(form.notice());
    }else{assert.deepEqual(form.consent(),none);assert.ok(form.notice())}
    assert.equal(form.win.document.cookie,'');
   }finally{form.close();site.close()}

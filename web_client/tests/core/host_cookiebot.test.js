@@ -12,9 +12,7 @@ function fixture(choice=both,input=cookiebotConfig,options={}) {
  const win=new JSDOM('',{url:cookiebotConfig.origin,runScripts:'outside-only',...options}).window;
  const cmp=cookiebotFixture(win,{choice});
  const source=createCookiebotSource(win,input),registry=createConsentSourceRegistry(),stop=registry.connect(source);
- // Lasting storage mismatches: move the clock past the write-in-progress window.
- const lasting=(ms=1600)=>{const now=win.Date.now.bind(win.Date);win.Date.now=()=>now()+ms};
- return {win,...cmp,source,registry,lasting,read:()=>registry.read(scope),close(){stop();win.close()}};
+ return {win,...cmp,source,registry,read:()=>registry.read(scope),close(){stop();win.close()}};
 }
 for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false,marketing:true},{preferences:true,...none}])
  test('Cookiebot transfers saved choice '+JSON.stringify(choice),()=>{
@@ -42,7 +40,7 @@ const invalid={
  'future choice':f=>f.cmp.consentUTC=new f.win.Date(f.win.Date.now()+120000),
  'missing date':f=>delete f.cmp.consentUTC,'invalid date':f=>f.cmp.consentUTC=new f.win.Date('invalid'),
  'date string':f=>f.cmp.consentUTC=f.cmp.consentUTC.toISOString(),
- 'expired cookie':f=>{f.win.document.cookie='CookieConsent=;max-age=0;path=/';f.lasting()},
+ 'expired cookie':f=>{f.win.document.cookie='CookieConsent=;max-age=0;path=/'},
  'different CBID':f=>f.script.setAttribute('data-cbid','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
  'missing CBID':f=>f.script.removeAttribute('data-cbid'),
  'duplicate loaders':f=>f.win.document.head.append(f.script.cloneNode(true)),
@@ -52,7 +50,7 @@ const invalid={
  'opt-out account mode':f=>f.cmp.responseMode='optout','implied account mode':f=>f.cmp.responseMode='implied',
  'missing consent ID':f=>delete f.cmp.consentID,'undecided consent ID':f=>{f.cmp.consentID='0';f.cmp.consent.stamp='0'},
  'sentinel consent ID':f=>{f.cmp.consentID='-1';f.cmp.consent.stamp='-1'},
- 'persisted record of another choice':f=>{f.store({stamp:'b3RoZXI=',necessary:true,preferences:false,statistics:false,marketing:false,method:'explicit',ver:1,utc:f.cmp.consentUTC.getTime()});f.lasting()},
+ 'persisted record of another choice':f=>{f.store({stamp:'b3RoZXI=',necessary:true,preferences:false,statistics:false,marketing:false,method:'explicit',ver:1,utc:f.cmp.consentUTC.getTime()})},
  'per-service':f=>f.cmp.consent.services={ad:false},
  'ID mismatch':f=>f.cmp.consentID='different', 'stamp mismatch':f=>f.cmp.consent.stamp='different',
  'missing API':f=>delete f.win.Cookiebot,
@@ -74,7 +72,7 @@ for(const cookie of ['-1','%zz',"{stamp:'-1',necessary:true,preferences:true,sta
  "{stamp:'x',stamp:'y'}","{stamp:'x',services:{ad:false}}",'{"statistics":true,}',
  "{stamp:(window.executed=true)}"])
  test('unsupported cookie never grants or executes '+cookie,()=>{
-  const f=fixture();try{f.win.document.cookie='CookieConsent='+cookie+';path=/';f.lasting();assert.equal(f.read(),null);assert.equal(f.win.executed,undefined)}finally{f.close()}
+  const f=fixture();try{f.win.document.cookie='CookieConsent='+cookie+';path=/';assert.equal(f.read(),null);assert.equal(f.win.executed,undefined)}finally{f.close()}
  });
 test('persisted record binds by consent ID only; other cookie fields are not interpreted',()=>{
  const f=fixture();try{
@@ -83,7 +81,7 @@ test('persisted record binds by consent ID only; other cookie fields are not int
   f.win.document.cookie='CookieConsent='+encodeURIComponent("{stamp:'"+stamp+"',necessary:true}")+';path=/';assert.deepEqual(f.read(),both,'plain URI encoding');
   for(const cookie of ["{stamp:'"+stamp+"x'}","{xstamp:'"+stamp+"'}","{stamp:'"+stamp+"',stamp:'"+stamp+"'}","{stamp:'"+stamp+"'","stamp:'"+stamp+"'}",
    '{"stamp":"'+stamp+'"}',"{stamp:'"+stamp.slice(1)+"'}"]){
-   f.win.document.cookie='CookieConsent='+encodeURIComponent(cookie)+';path=/';f.lasting();assert.equal(f.read(),null,cookie);
+   f.win.document.cookie='CookieConsent='+encodeURIComponent(cookie)+';path=/';assert.equal(f.read(),null,cookie);
   }
  }finally{f.close()}
 });
@@ -93,6 +91,16 @@ test('renew keeps the saved choice until a new explicit choice replaces it',asyn
   f.renew();await settle();assert.equal(f.cmp.hasResponse,false);assert.deepEqual(f.read(),both);assert.deepEqual(seen,[]);
   f.choose({analytics:true,marketing:false});await settle();assert.deepEqual(seen,[{analytics:true,marketing:false}]);
   f.renew();f.choose(none);await settle();assert.deepEqual(seen.at(-1),none);
+ }finally{stop();f.close()}
+});
+test('Cookiebot inline opt-in renewal retains only the matching explicit saved choice',async()=>{
+ const f=fixture(both),seen=[];const stop=f.source.subscribe(()=>seen.push(f.read()));
+ try{
+  f.cmp.responseMode='inlineoptin';f.renew();await settle();
+  assert.deepEqual(f.read(),both);assert.deepEqual(seen,[]);
+  f.choose(none);await settle();assert.deepEqual(seen,[none]);
+  f.win.document.cookie='CookieConsent=;max-age=0;path=/';
+  assert.equal(f.read(),null,'inline mode cannot bypass the persisted choice');
  }finally{stop();f.close()}
 });
 test('ordinary embed without data-type, data-level or blocking attributes transfers',()=>{
@@ -130,6 +138,17 @@ test('event bursts coalesce and unchanged events publish no messages',async()=>{
   assert.deepEqual(seen,[both,{analytics:true,marketing:false}]);
  }finally{stop();f.close()}
 });
+test('missing or replaced storage denies immediately after a matching read',()=>{
+ for(const cookie of ['', "CookieConsent={stamp:'b3RoZXI='}"]){
+  const f=fixture(both);
+  try{
+   assert.deepEqual(f.read(),both);
+   f.win.document.cookie='CookieConsent=;max-age=0;path=/';
+   if(cookie)f.win.document.cookie=cookie+';path=/';
+   assert.equal(f.read(),null,'cached acceptance cannot authorize a new transfer');
+  }finally{f.close()}
+ }
+});
 test('poll detects removal and other-tab refusal despite stale API',async()=>{
  for(const otherTab of [false,true]){
   const jar=new CookieJar(),f=fixture(both,cookiebotConfig,{cookieJar:jar});let other;
@@ -137,7 +156,6 @@ test('poll detects removal and other-tab refusal despite stale API',async()=>{
   try{
    if(otherTab){other=fixture(null,cookiebotConfig,{cookieJar:jar});other.choose(none)}
    else f.win.document.cookie='CookieConsent=;max-age=0;path=/';
-   await settle(1100);assert.deepEqual(seen,[],'write-in-progress window');
    await settle(1100);assert.deepEqual(seen,[null]);assert.equal(f.cmp.hasResponse,true);
   }finally{stop();other?.close();f.close()}
  }
@@ -182,23 +200,23 @@ test('configuration is snapshotted and listener failures do not stop other consu
 test('ambiguous duplicate cookies fail closed',()=>{
  const f=fixture();try{
   const original=f.win.document.cookie;
-  Object.defineProperty(f.win.document,'cookie',{configurable:true,get:()=>original+'; '+original});f.lasting();assert.equal(f.read(),null);
+  Object.defineProperty(f.win.document,'cookie',{configurable:true,get:()=>original+'; '+original});assert.equal(f.read(),null);
   delete f.win.document.cookie;assert.deepEqual(f.read(),both);
  }finally{f.close()}
 });
 
-test('a new choice written to the cookie before consentID follows is a write in progress',()=>{
+test('a non-atomic Cookiebot write denies until storage and the API agree',()=>{
  const f=fixture(both);try{
   assert.deepEqual(f.read(),both);
   // Measured order: categories, then cookie with the new stamp, then consentID/consentUTC.
   Object.assign(f.cmp.consent,{statistics:true,marketing:false,preferences:false});
   assert.deepEqual(f.read(),{analytics:true,marketing:false});
   f.store({stamp:'bmV3Y2hvaWNl',necessary:true,preferences:false,statistics:true,marketing:false,method:'explicit',ver:1,utc:f.win.Date.now(),region:'cz'});
-  assert.deepEqual(f.read(),{analytics:true,marketing:false},'no transient null');
+  assert.equal(f.read(),null,'a transient mismatch cannot grant consent');
   f.cmp.consentID=f.cmp.consent.stamp='bmV3Y2hvaWNl';f.cmp.consentUTC=new f.win.Date(f.win.Date.now()+15);
   assert.deepEqual(f.read(),{analytics:true,marketing:false},'consentUTC a few ms ahead');
   f.store({stamp:'b3RoZXI=',necessary:true,preferences:false,statistics:false,marketing:false,method:'explicit',ver:1,utc:1,region:'cz'});
-  f.lasting();assert.equal(f.read(),null,'a lasting mismatch is another decision');
+  assert.equal(f.read(),null,'a lasting mismatch is another decision');
  }finally{f.close()}
 });
 test('a mismatch present before any match never grants',()=>{

@@ -77,17 +77,19 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       final outlined = await tester.runAsync(() => paintedMeasure(tester));
       expect(outlined!.alpha, greaterThan(0));
-      await tester.pump(const Duration(milliseconds: 4101));
+      if (origin == origins.last) {
+        await tester.pump(const Duration(milliseconds: 1100));
+        final symbol = await tester.runAsync(() => paintedMeasure(tester));
+        expect(symbol!.height, lessThan(75));
+        await tester.pump(const Duration(milliseconds: 3001));
+      } else {
+        await tester.pump(const Duration(milliseconds: 4101));
+      }
       await tester.pump();
       final completed = await tester.runAsync(() => paintedMeasure(tester));
       final complete = completed!.alpha;
       expect(complete, greaterThan(outlined.alpha));
-      expect(
-        completed.height,
-        origin.contains('tickets.festapp.net')
-            ? lessThan(90)
-            : greaterThan(100),
-      );
+      expect(completed.height, greaterThan(100));
       expect(complete, greaterThan(0));
       await tester.pump(const Duration(milliseconds: 1100));
       final dimmed = (await tester.runAsync(() => paintedMeasure(tester)))!

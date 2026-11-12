@@ -403,7 +403,7 @@ v DOM. Opt-in se čte ze stavu lišty, ne z atributů loaderu: volba musí být
 výslovná (`consent.method`), musí platit GDPR a nesmí CCPA; implied volba, jiný
 než opt-in režim účtu a neznámý stav souhlas nepřevezmou. Uložený záznam
 `CookieConsent` musí nést ID souhlasu této karty, takže volba v jiné kartě nebo
-smazaný záznam převzetí ukončí zhruba do 2 s. Pro ruční blokování použijte `data-blockingmode="none"`;
+smazaný záznam převzetí ukončí při následující sekundové kontrole. Pro ruční blokování použijte `data-blockingmode="none"`;
 blokování samo nedokládá souhlas. Atribut ignore ponechá helper dostupný i při
 automatickém blokování.
 

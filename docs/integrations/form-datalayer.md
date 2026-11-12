@@ -484,7 +484,7 @@ Opt-in is read from the runtime state, not from loader attributes: the choice
 must be explicit (`consent.method`), GDPR must apply and CCPA must not; implied
 choices, a non-opt-in account mode and unknown state keep the local form notice.
 The persisted `CookieConsent` record must carry this tab's consent ID, so a
-choice in another tab or a removed record ends the transfer within about 2 s. Changing CBID or
+choice in another tab or a removed record ends the transfer at the next one-second poll. Changing CBID or
 origin invalidates the mapping. `data-blockingmode="none"` or an omitted blocking
 attribute uses manual blocking; this does not change consent eligibility.
 `data-cookieconsent="ignore"` keeps the helper available with auto-blocking.
@@ -501,13 +501,18 @@ and update the cutoff and `consentRevision`. Never relabel old records. This
 organizer assertion does not verify notice contents, bind a cookie cryptographically
 to CBID or discover remote configuration changes automatically.
 
-Import requires `hasResponse`, explicit `consent.method`, consistent boolean
-`consented`/`declined` and categories, a valid `consentUTC`, and a matching fresh
-CookieConsent cookie with stamp, timestamp and categories. Optional API stamp/ID
-fields, if present, must agree. Missing, stale, malformed, expired, per-service or
+Import requires boolean `hasResponse`, explicit `consent.method`, consistent
+boolean `consented`/`declined` and categories, and a valid SDK `consentUTC`.
+`hasResponse:false` is allowed while renewing an existing saved choice. Both SDK
+`consentID` and `consent.stamp` are required and must match the persisted cookie's
+stamp. Categories and timestamps come from the SDK, not other cookie fields.
+Missing, stale, malformed, expired, per-service or
 unprovable records return `null`, remain configured and never fall back to GCM.
-A saved refusal transfers without another notice. Cookie parsing accepts only
-flat scalar objects, never executes cookie text, and rejects ambiguous encodings.
+A saved refusal transfers without another notice. The cookie reader checks exactly one matching stamp field and never executes cookie
+text. Other fields are not interpreted; they do not grant consent. Any missing or
+mismatched stamp immediately denies a new transfer. An existing linked visit is
+revoked at the next one-second poll. A non-atomic CMP write may therefore end the
+import and restore the form notice instead of reusing a cached grant.
 
 The five window events `CookiebotOnConsentReady`, `CookiebotOnLoad`,
 `CookiebotOnAccept`, `CookiebotOnDecline`, `CookiebotOnDialogDisplay` coalesce in

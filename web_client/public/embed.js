@@ -516,19 +516,18 @@
       config = null;
     }
     const listeners = /* @__PURE__ */ new Set();
-    let timer, last, pending = false, matched;
+    let timer, last, pending = false;
     const read = (scope) => {
       try {
         if (!config || pending || win.location.origin !== config.origin || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
         const script = loader(win, config), cmp = win.Cookiebot, consent = cmp?.consent;
         if (!script || consent?.method !== "explicit" || consent.necessary !== true || ![consent.preferences, consent.statistics, consent.marketing, cmp.consented, cmp.declined, cmp.hasResponse].every((value) => typeof value === "boolean") || cmp.regulations?.gdprApplies !== true || cmp.regulations.ccpaApplies !== false || typeof cmp.regulations.lgpdApplies !== "boolean" || consent.services !== void 0 || // Undocumented account mode; when exposed it must be an opt-in mode.
-        cmp.responseMode !== void 0 && !["optin", "leveloptin"].includes(cmp.responseMode)) return null;
+        cmp.responseMode !== void 0 && !["optin", "leveloptin", "inlineoptin"].includes(cmp.responseMode)) return null;
         const accepted = consent.preferences || consent.statistics || consent.marketing;
         if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
         const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
         if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) || utc < config.validFrom || utc > now + 6e4 || now - utc >= config.maxAgeSeconds * 1e3) return null;
-        if (persisted(win.document, id)) matched = { id, at: now };
-        else if (matched?.id !== id || now - matched.at >= 1500) return null;
+        if (!persisted(win.document, id)) return null;
         return {
           consentRevision: config.consentRevision,
           analytics: consent.statistics,

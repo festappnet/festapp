@@ -47,7 +47,7 @@ export function createCookiebotSource(win, input) {
         else config = Object.freeze({...config, cbid:config.cbid.toLowerCase(), validFrom:Date.parse(config.consentValidFrom)});
     } catch { config = null; }
     const listeners = new Set();
-    let timer, last, pending = false, matched;
+    let timer, last, pending = false;
     const read = scope => {
         try {
             if (!config || pending || win.location.origin !== config.origin || (scope && (scope.organization !== config.organization ||
@@ -62,19 +62,17 @@ export function createCookiebotSource(win, input) {
                 cmp.regulations?.gdprApplies !== true || cmp.regulations.ccpaApplies !== false ||
                 typeof cmp.regulations.lgpdApplies !== 'boolean' || consent.services !== undefined ||
                 // Undocumented account mode; when exposed it must be an opt-in mode.
-                (cmp.responseMode !== undefined && !['optin', 'leveloptin'].includes(cmp.responseMode))) return null;
+                (cmp.responseMode !== undefined && !['optin', 'leveloptin', 'inlineoptin'].includes(cmp.responseMode))) return null;
             const accepted = consent.preferences || consent.statistics || consent.marketing;
             if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
             const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
             // consentUTC can lead Date.now() by a few ms right after a choice (measured).
             if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) || utc < config.validFrom ||
                 utc > now + 60000 || now - utc >= config.maxAgeSeconds * 1000) return null;
-            if (persisted(win.document, id)) matched = {id, at:now};
-            // A new choice writes the cookie a few ms before consentID/consentUTC
-            // follow (measured). Only a mismatch that starts right after this same
-            // ID was seen persisted is such a write; a lasting or initial mismatch
-            // is another tab's decision or a removed/expired record.
-            else if (matched?.id !== id || now - matched.at >= 1500) return null;
+            // Cookiebot writes storage and its cached API non-atomically. Until
+            // both agree, no reader may reuse the previous grant: the same
+            // mismatch also means withdrawal in another tab or cookie removal.
+            if (!persisted(win.document, id)) return null;
             return {consentRevision:config.consentRevision, analytics:consent.statistics,
                 marketing:consent.marketing && !script.tcf && typeof win.__tcfapi === 'undefined'};
         } catch { return null; }

@@ -128,10 +128,14 @@ for dark in (False,True):
  save(prefix+'-social'+suffix,svg(social,'Festapp Tickets','0 0 1200 630',(1200,630)))
 
 # Both products use one outline/fill animation generator and timing contract.
-# The global loading identity is the symbol alone, with its canonical viewport.
+# Reveal the symbol first, then the canonical wordmark when loading takes longer.
+# The same timeline emits browser SVG and Flutter geometry, without client timers.
 timeline=json.loads((REGIONAL/'source/loading-timeline.json').read_text())
-timeline['viewBox']=[170,225,685,365]
-timeline['parts']={name:timeline['parts'][name] for name in ('ticket','center')}
+for name,delay in [('name',.18),('domain',.16)]:
+ times=timeline['parts'][name]
+ times['draw']=[round(t+delay,2) for t in times['draw']]
+ for kind in ('fill','outline'):
+  times[kind]=[[round(t+delay,2) if 0<t<1 else t,v] for t,v in times[kind]]
 (ROOT/'source/loading-timeline.json').write_text(json.dumps(timeline,indent=2)+'\n')
 import sys
 sys.path.insert(0,str(REGIONAL/'tools'))
