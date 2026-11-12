@@ -8,7 +8,6 @@ import '../unit_measurement_approval.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
 import 'package:fstapp/components/forms/email_validation.dart';
-import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 
 import '../verification/verification_strings.dart';
@@ -32,8 +31,7 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
-import 'package:fstapp/components/stripe_payments/stripe_connection_strings.dart';
+import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/router_service.dart';
 
@@ -54,7 +52,6 @@ class UnitSettingsScreen extends StatefulWidget {
 class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  bool _bankPolicyEnabled = false;
   bool _isLoading = true;
   bool _canEdit = false;
   late UnitModel _unit;
@@ -335,7 +332,29 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         )) {
       return;
     }
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final invalidFields = _formKey.currentState?.validateGranularly();
+    if (invalidFields == null) return;
+    if (invalidFields.isNotEmpty) {
+      // Both sections and the nested advanced fields remain registered while
+      // collapsed. Reveal every invalid field's ancestors before scrolling.
+      final sections = <ExpansibleController>{};
+      for (final field in invalidFields) {
+        field.context.visitAncestorElements((element) {
+          final controller = ExpansibleController.maybeOf(element);
+          if (controller != null) sections.add(controller);
+          return true;
+        });
+      }
+      for (final section in sections) {
+        section.expand();
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final field = invalidFields.first;
+        if (field.mounted) Scrollable.ensureVisible(field.context);
+      });
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -747,41 +766,66 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                           ),
                         if (_organizationMeasurementEnabled) ...[
                           const SizedBox(height: 32),
-                          UnitMeasurementSettings(
-                            consentBridge: _measurementConsentBridge,
-                            onConsentBridgeChanged: (value) => setState(
-                              () => _measurementConsentBridge = value,
+                          ExpansionTile(
+                            key: const PageStorageKey(
+                              'unit-measurement-settings',
                             ),
-                            websitesController: _measurementWebsitesController,
-                            approval: _measurementApproval,
-                            loadingApproval: _isLoadingMeasurementApproval,
-                            approvalLoadFailed: _measurementApprovalLoadFailed,
-                            onRetryApproval: _loadMeasurementApproval,
-                            requestingApproval: _isRequestingMeasurement,
-                            onRequestApproval: _requestMeasurementApproval,
-                            enabled: _measurementEnabled,
-                            consentLayout: _measurementConsentLayout,
-                            hasStoredTitle: _storedConsentTitle != null,
-                            hasStoredText: _storedConsentText != null,
-                            onRestore: (controller) =>
-                                _restoredConsent.add(controller),
-                            consentTitleController:
-                                _measurementConsentTitleController,
-                            consentTextController:
-                                _measurementConsentTextController,
-                            onConsentLayoutChanged: (value) => setState(
-                              () => _measurementConsentLayout = value,
+                            maintainState: true,
+                            expansionAnimationStyle: AnimationStyle.noAnimation,
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: const EdgeInsets.only(
+                              top: 8,
+                              bottom: 16,
                             ),
-                            canEdit:
-                                _canEdit &&
-                                !_isSaving &&
-                                !_isRequestingMeasurement,
-                            privacyUrlController:
-                                _measurementPrivacyUrlController,
-                            gtmController: _measurementGtmController,
-                            scriptsController: _measurementScriptsController,
-                            onEnabledChanged: (value) =>
-                                setState(() => _measurementEnabled = value),
+                            title: Text(FormStrings.measurementTitle),
+                            subtitle: Text(
+                              _measurementEnabled
+                                  ? UnitSettingsStrings
+                                        .measurementSummaryEnabled
+                                  : UnitSettingsStrings
+                                        .measurementSummaryDisabled,
+                            ),
+                            children: [
+                              UnitMeasurementSettings(
+                                consentBridge: _measurementConsentBridge,
+                                onConsentBridgeChanged: (value) => setState(
+                                  () => _measurementConsentBridge = value,
+                                ),
+                                websitesController:
+                                    _measurementWebsitesController,
+                                approval: _measurementApproval,
+                                loadingApproval: _isLoadingMeasurementApproval,
+                                approvalLoadFailed:
+                                    _measurementApprovalLoadFailed,
+                                onRetryApproval: _loadMeasurementApproval,
+                                requestingApproval: _isRequestingMeasurement,
+                                onRequestApproval: _requestMeasurementApproval,
+                                enabled: _measurementEnabled,
+                                consentLayout: _measurementConsentLayout,
+                                hasStoredTitle: _storedConsentTitle != null,
+                                hasStoredText: _storedConsentText != null,
+                                onRestore: (controller) =>
+                                    _restoredConsent.add(controller),
+                                consentTitleController:
+                                    _measurementConsentTitleController,
+                                consentTextController:
+                                    _measurementConsentTextController,
+                                onConsentLayoutChanged: (value) => setState(
+                                  () => _measurementConsentLayout = value,
+                                ),
+                                canEdit:
+                                    _canEdit &&
+                                    !_isSaving &&
+                                    !_isRequestingMeasurement,
+                                privacyUrlController:
+                                    _measurementPrivacyUrlController,
+                                gtmController: _measurementGtmController,
+                                scriptsController:
+                                    _measurementScriptsController,
+                                onEnabledChanged: (value) =>
+                                    setState(() => _measurementEnabled = value),
+                              ),
+                            ],
                           ),
                         ],
                         const SizedBox(height: 24),
@@ -826,57 +870,41 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                       ),
                     ),
                   if (!_isLoading) ...[
-                    const SizedBox(height: 24),
-                    const SizedBox(height: 24),
-                    if (_canEdit && _bankPolicyEnabled)
-                      ListTile(
-                        leading: const Icon(Icons.account_balance),
-                        title: Text(BankAccountStrings.bankAccountsTitle),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          context.tabsRouter.navigate(
-                            const UnitBankAccountsNavigationRoute(),
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 16),
                     if (_canEdit &&
                         _unit.id != null &&
                         _unit.organization != null)
-                      PaymentPolicySettings(
-                        organizationId: _unit.organization!,
-                        unitId: _unit.id,
-                        configureMethods: const {'bank', 'stripe'},
-                        onConfigure: (method) {
-                          if (method == 'bank') {
-                            context.tabsRouter.navigate(
-                              const UnitBankAccountsNavigationRoute(),
-                            );
-                          }
-                          if (method == 'stripe') {
-                            context.tabsRouter.navigate(
-                              const UnitCardPaymentsRoute(),
-                            );
-                          }
-                        },
-                        onChanged: (policy) {
-                          if (mounted) {
-                            setState(
-                              () => _bankPolicyEnabled =
-                                  policy.methods['bank']?.enabled == true,
-                            );
-                          }
-                        },
-                      ),
-                    if (StripeFeature.visible && StripeFeature.canManage)
-                      ListTile(
-                        leading: const Icon(Icons.credit_card),
-                        title: Text(StripeConnectionStrings.title),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.tabsRouter.navigate(
-                          const UnitCardPaymentsRoute(),
+                      ExpansionTile(
+                        key: const PageStorageKey('unit-payment-settings'),
+                        maintainState: true,
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: 16),
+                        title: Text(PaymentMethodStrings.text('policyTitle')),
+                        subtitle: Text(
+                          PaymentMethodStrings.text('policyUnitSummary'),
                         ),
+                        children: [
+                          PaymentPolicySettings(
+                            organizationId: _unit.organization!,
+                            unitId: _unit.id,
+                            showHeading: false,
+                            configureMethods: const {'bank', 'stripe'},
+                            onConfigure: (method) {
+                              if (method == 'bank') {
+                                context.tabsRouter.navigate(
+                                  const UnitBankAccountsNavigationRoute(),
+                                );
+                              }
+                              if (method == 'stripe') {
+                                context.tabsRouter.navigate(
+                                  const UnitCardPaymentsRoute(),
+                                );
+                              }
+                            },
+                          ),
+                        ],
                       ),
+                    const SizedBox(height: 24),
                     if (_canEdit)
                       Center(
                         child: Tooltip(

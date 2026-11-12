@@ -1820,7 +1820,9 @@
     "deleteUnit": "Delete Organization",
     "deleteUnitConfirmation": "Are you sure you want to delete this organization? All data including events will be lost.",
     "cannotDeleteUnitWithOccasions": "Cannot delete organization that has events.",
-    "cannotDeleteLastUnit": "Cannot delete your last organization."
+    "cannotDeleteLastUnit": "Cannot delete your last organization.",
+    "measurementSummaryEnabled": "Measurement is on",
+    "measurementSummaryDisabled": "Measurement is off"
   },
   "PublicOrder": {
     "paymentInfoWithEmailUnconfirmed_informal": "Your order is complete. Confirmation email status is not yet confirmed. Payment details are shown below.",
@@ -4497,7 +4499,7 @@
     "priceChanged": "The order price has changed.",
     "reviewPrices": "Review the order again.",
     "reviewCurrentPrices": "Review current prices",
-    "cash": "Cash only",
+    "cash": "Cash",
     "cashDescription": "The reservation is confirmed without advance payment. Record payment after receiving cash.",
     "cashInstructionsDefault": "Please pay in cash at the venue.",
     "cashInstructions": "Payment instructions",
@@ -4527,7 +4529,7 @@
     "policySaveFailed": "Unable to save. Reload the current state and confirm a new impact preview.",
     "policyRetry": "Retry",
     "policyTenantHint": "Permission for the entire tenant. Provider connection is configured separately.",
-    "policyUnitHint": "The organizer inherits tenant settings and cannot override a tenant restriction.",
+    "policyUnitHint": "Only payment methods allowed by the platform are shown. You can turn other methods off or restore the platform setting.",
     "policyEnabled": "Enabled",
     "policyDisabled": "Disabled",
     "policyInherit": "Inherit",
@@ -4540,7 +4542,11 @@
     "policyTemplateReview": "Review payment email content",
     "policyTemplateReviewHint": "Review the body and wrapper in the template editor. Gateway payments must not contain fixed bank instructions or payment QR codes. Confirmation approves only this exact version.",
     "policyTemplateRepair": "Bank details or a payment QR were found in the body or wrapper. Repair the template and run this review again.",
-    "policyTemplateApprove": "I reviewed the current version"
+    "policyTemplateApprove": "I reviewed the current version",
+    "barion": "Card through Barion",
+    "policyCashManaged": "Cash availability is managed by the platform.",
+    "policyNoMethods": "The platform has no enabled payment methods.",
+    "policyUnitSummary": "Accounts and payment methods"
   },
   "CardRefundDecision": {
     "title": "Admission after a refund",

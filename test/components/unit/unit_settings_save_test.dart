@@ -24,6 +24,13 @@ import '../../support/fixtures/client_command_response_fixture.dart';
 void main() {
   WidgetEnvironmentFixture.register();
 
+  Future<void> toggleMeasurement(WidgetTester tester) async {
+    final heading = find.text(FormStrings.measurementTitle).first;
+    await tester.ensureVisible(heading);
+    await tester.tap(heading);
+    await tester.pumpAndSettle();
+  }
+
   group('organizer settings Save button', () {
     late RootSupabaseFixture backend;
     late Map<String, dynamic> stored;
@@ -50,6 +57,26 @@ void main() {
         Object body;
         if (request.url.path.endsWith('/get_unit_for_edit')) {
           body = {'code': 200, 'data': stored};
+        } else if (request.url.path.endsWith('/get_payment_method_policy')) {
+          body = {
+            'organizationId': 1,
+            'unitId': 7,
+            'revision': 1,
+            'preferredMethod': 'bank',
+            'methods': {
+              for (final method in ['bank', 'cash', 'barion'])
+                method: {
+                  'id': method,
+                  'mode': 'inherit',
+                  'inheritedFrom': 'organization',
+                  'organizationEnabled': method != 'barion',
+                  'policyEnabled': method != 'barion',
+                  'configured': method != 'barion',
+                  'ready': method != 'barion',
+                  'canConfigure': method == 'bank',
+                },
+            },
+          };
         } else if (request.url.path.endsWith(
           '/get_unit_measurement_approval',
         )) {
@@ -212,6 +239,7 @@ void main() {
         rejectSave = rejected;
         stored = {
           'id': 7,
+          'organization': 1,
           'title': 'Slavnostní ples',
           'aggregate_version': 4,
           'data': {
@@ -255,7 +283,38 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text(FormStrings.measurementTitle));
+        expect(
+          find.byType(UnitMeasurementSettings),
+          findsNothing,
+          reason: 'Measurement starts collapsed',
+        );
+        final payments = find.byKey(
+          const PageStorageKey('unit-payment-settings'),
+        );
+        expect(payments, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('payment-policy-bank')),
+          findsNothing,
+          reason: 'Payment details start collapsed',
+        );
+        await tester.ensureVisible(payments);
+        await tester.tap(
+          find.descendant(of: payments, matching: find.byType(ListTile)).first,
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('payment-policy-bank')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('payment-policy-barion')),
+          findsNothing,
+        );
+        await tester.tap(
+          find.descendant(of: payments, matching: find.byType(ListTile)).first,
+        );
+        await tester.pumpAndSettle();
+        await toggleMeasurement(tester);
         await tester.ensureVisible(find.text(FormStrings.measurementAdvanced));
         await tester.tap(find.text(FormStrings.measurementAdvanced));
         await tester.pumpAndSettle();
@@ -285,6 +344,10 @@ void main() {
         );
         await tester.ensureVisible(code);
         await tester.enterText(code, edited);
+        // Collapse with an unsaved draft: Save must still validate and persist it.
+        await toggleMeasurement(tester);
+        expect(find.byType(UnitMeasurementSettings), findsNothing);
+        expect(settings.scriptsController.text, edited);
         final save = find.widgetWithText(ElevatedButton, CommonStrings.save);
         await tester.ensureVisible(save);
         await tester.tap(save);
@@ -346,6 +409,7 @@ void main() {
         rejectApprovalRead = failure == 'read RPC';
         stored = {
           'id': 7,
+          'organization': 1,
           'title': 'Slavnostní ples',
           'aggregate_version': 4,
           'data': {'measurement_enabled': true, 'timezone': 'Europe/Prague'},
@@ -377,6 +441,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          await toggleMeasurement(tester);
         }
 
         await load();
@@ -407,6 +472,25 @@ void main() {
         if (failure == 'none') {
           final settings = tester.widget<UnitMeasurementSettings>(
             find.byType(UnitMeasurementSettings),
+          );
+          settings.websitesController!.text = 'not a website';
+          await toggleMeasurement(tester);
+          final invalidSave = find.widgetWithText(
+            ElevatedButton,
+            CommonStrings.save,
+          );
+          await tester.ensureVisible(invalidSave);
+          await tester.tap(invalidSave);
+          await tester.pumpAndSettle();
+          expect(saves, isEmpty);
+          expect(
+            find.byType(UnitMeasurementSettings),
+            findsOneWidget,
+            reason: 'Saving must reveal a collapsed invalid field',
+          );
+          expect(
+            find.text(FormStrings.measurementWebsitesInvalid),
+            findsOneWidget,
           );
           settings.websitesController!.text = 'https://poradatel.example';
           await tester.pump();

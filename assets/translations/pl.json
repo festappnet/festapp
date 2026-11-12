@@ -2445,7 +2445,7 @@
     "priceChanged": "Cena zamówienia się zmieniła.",
     "reviewPrices": "Sprawdź ponownie podsumowanie.",
     "reviewCurrentPrices": "Sprawdź aktualne ceny",
-    "cash": "Tylko gotówka",
+    "cash": "Gotówka",
     "cashDescription": "Rezerwacja jest potwierdzana bez przedpłaty. Zarejestruj płatność po otrzymaniu gotówki.",
     "cashInstructionsDefault": "Prosimy zapłacić gotówką na miejscu.",
     "cashInstructions": "Instrukcje płatności",
@@ -2475,7 +2475,7 @@
     "policySaveFailed": "Nie udało się zapisać. Wczytaj aktualny stan i ponownie potwierdź skutki zmiany.",
     "policyRetry": "Spróbuj ponownie",
     "policyTenantHint": "Zezwolenie dla całego tenanta. Połączenie z dostawcą konfiguruje się osobno.",
-    "policyUnitHint": "Organizator dziedziczy ustawienia tenanta i nie może zmienić jego zakazu.",
+    "policyUnitHint": "Wyświetlane są tylko metody płatności dozwolone przez platformę. Inne metody można wyłączyć lub przywrócić ustawienie platformy.",
     "policyEnabled": "Włączone",
     "policyDisabled": "Wyłączone",
     "policyInherit": "Dziedzicz",
@@ -2488,7 +2488,11 @@
     "policyTemplateReview": "Sprawdź treść płatniczą e-maili",
     "policyTemplateReviewHint": "Sprawdź treść i oprawę w edytorze szablonów. Płatności przez operatora nie mogą zawierać stałych instrukcji bankowych ani kodów QR do płatności. Potwierdzenie dotyczy tylko tej wersji.",
     "policyTemplateRepair": "W treści lub oprawie znaleziono dane bankowe lub kod QR. Popraw szablon i ponów sprawdzenie.",
-    "policyTemplateApprove": "Sprawdziłem/am aktualną wersję"
+    "policyTemplateApprove": "Sprawdziłem/am aktualną wersję",
+    "barion": "Kartą przez Barion",
+    "policyCashManaged": "Dostępnością gotówki zarządza platforma.",
+    "policyNoMethods": "Platforma nie ma włączonych metod płatności.",
+    "policyUnitSummary": "Konta i metody płatności"
   },
   "CardRefundDecision": {
     "title": "Wstęp po zwrocie płatności",
@@ -3245,5 +3249,9 @@
     "publicPage": "Strona publiczna",
     "formIntroduction": "Wprowadzenie",
     "formOutline": "Struktura formularza"
+  },
+  "UnitSettings": {
+    "measurementSummaryEnabled": "Pomiar jest włączony",
+    "measurementSummaryDisabled": "Pomiar jest wyłączony"
   }
 }

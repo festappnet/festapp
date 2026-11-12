@@ -1821,7 +1821,9 @@
     "deleteUnit": "Smazat organizaci",
     "deleteUnitConfirmation": "Opravdu chcete smazat tuto organizaci? Všechna data včetně událostí budou ztracena.",
     "cannotDeleteUnitWithOccasions": "Nelze smazat organizaci, která má události.",
-    "cannotDeleteLastUnit": "Nelze smazat vaši poslední organizaci."
+    "cannotDeleteLastUnit": "Nelze smazat vaši poslední organizaci.",
+    "measurementSummaryEnabled": "Měření je zapnuté",
+    "measurementSummaryDisabled": "Měření je vypnuté"
   },
   "PublicOrder": {
     "paymentInfoWithEmailUnconfirmed_informal": "Objednávka je dokončena. Stav odeslání potvrzení zatím není potvrzen. Platební údaje najdeš níže.",
@@ -4499,7 +4501,7 @@
     "priceChanged": "Cena objednávky se změnila.",
     "reviewPrices": "Ověřte znovu rekapitulaci.",
     "reviewCurrentPrices": "Zkontrolovat aktuální ceny",
-    "cash": "Pouze hotově",
+    "cash": "Hotovost",
     "cashDescription": "Rezervace se potvrdí bez platby předem. Platbu zaevidujete po přijetí hotovosti.",
     "cashInstructionsDefault": "Zaplaťte prosím v hotovosti na místě.",
     "cashInstructions": "Pokyny k platbě",
@@ -4529,7 +4531,7 @@
     "policySaveFailed": "Změnu se nepodařilo uložit. Načtěte aktuální stav a potvrďte nový přehled dopadů.",
     "policyRetry": "Zkusit znovu",
     "policyTenantHint": "Povolení pro celý tenant. Připojení poskytovatele se nastavuje samostatně.",
-    "policyUnitHint": "Organizace dědí nastavení tenantu. Jeho zákaz nelze přebít.",
+    "policyUnitHint": "Zobrazují se pouze platební metody povolené platformou. Ostatní metody můžete vypnout nebo znovu převzít z platformy.",
     "policyEnabled": "Povoleno",
     "policyDisabled": "Zakázáno",
     "policyInherit": "Dědit",
@@ -4542,7 +4544,11 @@
     "policyTemplateReview": "Kontrola platebního obsahu e-mailů",
     "policyTemplateReviewHint": "Zkontrolujte text i obal e-mailů v editoru šablon. Pro platby přes bránu nesmí obsahovat pevné bankovní instrukce ani platební QR. Potvrzením schválíte pouze tuto aktuální verzi.",
     "policyTemplateRepair": "V šabloně nebo jejím obalu jsou bankovní údaje či QR. Opravte obsah v editoru e-mailových šablon a spusťte kontrolu znovu.",
-    "policyTemplateApprove": "Aktuální verzi jsem zkontroloval/a"
+    "policyTemplateApprove": "Aktuální verzi jsem zkontroloval/a",
+    "barion": "Kartou přes Barion",
+    "policyCashManaged": "Dostupnost hotovosti spravuje platforma.",
+    "policyNoMethods": "Platforma nemá povolenou žádnou platební metodu.",
+    "policyUnitSummary": "Účty a platební metody"
   },
   "CardRefundDecision": {
     "title": "Vstup po vrácení platby",

@@ -2,6 +2,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/payment_operation_strings.dart';
 import 'package:fstapp/components/payments/payment_policy_settings.dart';
+import 'package:fstapp/components/payments/payment_policy.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/payment_operation_context.dart';
@@ -61,26 +62,30 @@ void main() {
   String? instructionsError;
   var legacyRefund = false;
   var policyFailure = false;
+  Map<String, dynamic>? policyMethods;
+  final policyPreviews = <Map<String, dynamic>>[];
   var delayPolicy = false;
   final policyPending = <int, Completer<http.Response>>{};
-  http.Response policyResponse(int unit) => http.Response(
+  http.Response policyResponse(int? unit) => http.Response(
     jsonEncode({
       'organizationId': 1,
       'unitId': unit,
       'revision': 1,
       'preferredMethod': 'stripe',
-      'methods': {
-        'stripe': {
-          'id': 'stripe',
-          'ready': false,
-          'mode': 'inherit',
-          'organizationEnabled': true,
-          'policyEnabled': unit == 9,
-          'inheritedFrom': 'organization',
-          'configured': false,
-          'canConfigure': unit == 9,
-        },
-      },
+      'methods':
+          policyMethods ??
+          {
+            'stripe': {
+              'id': 'stripe',
+              'ready': false,
+              'mode': 'inherit',
+              'organizationEnabled': true,
+              'policyEnabled': unit == 9,
+              'inheritedFrom': 'organization',
+              'configured': false,
+              'canConfigure': unit == 9,
+            },
+          },
     }),
     200,
     request: http.Request(
@@ -108,9 +113,9 @@ void main() {
         final endpoint = request.url.path.split('/').last;
         final payload = jsonDecode(request.body) as Map<String, dynamic>;
         if (endpoint == 'get_payment_method_policy') {
-          final unit = payload['p_unit'] as int;
+          final unit = payload['p_unit'] as int?;
           if (delayPolicy)
-            return (policyPending[unit] = Completer<http.Response>()).future;
+            return (policyPending[unit!] = Completer<http.Response>()).future;
           if (policyFailure)
             return http.Response(
               '{"message":"denied"}',
@@ -119,6 +124,31 @@ void main() {
               headers: {'content-type': 'application/json'},
             );
           return policyResponse(unit);
+        }
+        if (endpoint == 'preview_payment_method_policy') {
+          policyPreviews.add(
+            Map<String, dynamic>.from(payload['input_data'] as Map),
+          );
+          return http.Response(
+            jsonEncode({
+              'confirmation': List.filled(64, 'a').join(),
+              'impact': {
+                'openCollections': 0,
+                'pendingRequests': 0,
+                'issuedReferences': 0,
+                'pendingBankInstructions': 0,
+                'obligations': 0,
+                'providerIntents': {
+                  'undispatched': 0,
+                  'dispatched': 0,
+                  'unknown': 0,
+                },
+              },
+            }),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
         }
         if (endpoint == 'get_transactions_for_order') {
           expect(payload['order_id'], 5);
@@ -250,6 +280,8 @@ void main() {
   setUp(() {
     payments.clear();
     policyFailure = false;
+    policyMethods = null;
+    policyPreviews.clear();
     delayPolicy = false;
     policyPending.clear();
     paymentOutcome = 'success';
@@ -336,7 +368,7 @@ void main() {
     );
   }
 
-  Future<void> policy(WidgetTester tester, int unit) async {
+  Future<void> policy(WidgetTester tester, int? unit) async {
     await _environment.pumpWidget(
       tester,
       MaterialApp(
@@ -366,7 +398,7 @@ void main() {
       policyFailure = false;
       await tester.tap(find.byIcon(Icons.refresh));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
       expect(find.byType(TextButton), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -410,7 +442,121 @@ void main() {
         findsNothing,
         reason: 'unit A cannot restore its onboarding in unit B',
       );
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  Map<String, dynamic> method(
+    String id, {
+    bool allowed = true,
+    bool enabled = true,
+  }) => {
+    'id': id,
+    'ready': enabled,
+    'mode': enabled ? 'inherit' : 'disabled',
+    'organizationEnabled': allowed,
+    'policyEnabled': allowed && enabled,
+    'inheritedFrom': enabled ? 'organization' : 'unit',
+    'configured': enabled,
+    'canConfigure': allowed && enabled,
+  };
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'organizer hides tenant-blocked providers and keeps cash read only',
+    (tester) async {
+      policyMethods = {
+        'cash': method('cash'),
+        'bank': method('bank', allowed: false),
+        'stripe': method('stripe', enabled: false),
+        'barion': method('barion', allowed: false),
+      };
+      await policy(tester, 9);
+      await tester.pumpAndSettle();
+      expect(find.text('Hotovost'), findsOneWidget);
+      expect(find.byKey(const ValueKey('payment-policy-bank')), findsNothing);
+      expect(find.byKey(const ValueKey('payment-policy-barion')), findsNothing);
+      expect(find.byType(DropdownButton<PaymentPolicyMode>), findsNothing);
+      final cash = tester.widget<Switch>(
+        find.byKey(const ValueKey('payment-policy-cash')),
+      );
+      expect(cash.value, isTrue);
+      expect(cash.onChanged, isNull);
+      final stripe = tester.widget<Switch>(
+        find.byKey(const ValueKey('payment-policy-stripe')),
+      );
+      expect(stripe.value, isFalse);
+      expect(stripe.onChanged, isNotNull);
+      expect(find.byType(TextButton), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'organizer restores inheritance and disabling still requires explicit confirmation',
+    (tester) async {
+      for (final enabled in [false, true]) {
+        policyMethods = {'stripe': method('stripe', enabled: enabled)};
+        // Construct a new policy state for each initial server snapshot.
+        await _environment.pumpWidget(tester, const SizedBox.shrink());
+        await policy(tester, 9);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('payment-policy-stripe')));
+        await tester.pumpAndSettle();
+        expect(policyPreviews.last, {
+          'organizationId': 1,
+          'unitId': 9,
+          'method': 'stripe',
+          'mode': enabled ? 'disabled' : 'inherit',
+        });
+        await tester.tap(find.text(CommonStrings.cancel));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<Switch>(
+                find.byKey(const ValueKey('payment-policy-stripe')),
+              )
+              .value,
+          enabled,
+        );
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'tenant retains disabled connector controls and localized Barion on narrow screens',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      policyMethods = {
+        'cash': method('cash'),
+        'barion': method('barion', allowed: false),
+      };
+      await policy(tester, null);
+      await tester.pumpAndSettle();
+      expect(find.text('Kartou přes Barion'), findsOneWidget);
+      final barion = tester.widget<Switch>(
+        find.byKey(const ValueKey('payment-policy-barion')),
+      );
+      expect(barion.value, isFalse);
+      expect(barion.onChanged, isNotNull);
+      expect(
+        tester
+            .widget<Switch>(find.byKey(const ValueKey('payment-policy-cash')))
+            .onChanged,
+        isNotNull,
+      );
+      await tester.tap(find.byKey(const ValueKey('payment-policy-barion')));
+      await tester.pumpAndSettle();
+      expect(policyPreviews.last['mode'], 'enabled');
+      await tester.tap(find.text(CommonStrings.cancel));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     },
   );

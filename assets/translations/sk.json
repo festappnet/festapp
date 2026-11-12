@@ -2470,7 +2470,7 @@
     "priceChanged": "Cena objednávky sa zmenila.",
     "reviewPrices": "Znovu overte rekapituláciu.",
     "reviewCurrentPrices": "Skontrolovať aktuálne ceny",
-    "cash": "Iba v hotovosti",
+    "cash": "Hotovosť",
     "cashDescription": "Rezervácia sa potvrdí bez platby vopred. Platbu zaevidujete po prijatí hotovosti.",
     "cashInstructionsDefault": "Zaplaťte prosím v hotovosti na mieste.",
     "cashInstructions": "Pokyny k platbe",
@@ -2500,7 +2500,7 @@
     "policySaveFailed": "Zmenu sa nepodarilo uložiť. Načítajte aktuálny stav a potvrďte nový prehľad dopadov.",
     "policyRetry": "Skúsiť znova",
     "policyTenantHint": "Povolenie pre celý tenant. Pripojenie poskytovateľa sa nastavuje samostatne.",
-    "policyUnitHint": "Organizácia dedí nastavenia tenantu. Jeho zákaz nemožno zmeniť.",
+    "policyUnitHint": "Zobrazujú sa iba platobné metódy povolené platformou. Ostatné metódy môžete vypnúť alebo znova prevziať z platformy.",
     "policyEnabled": "Povolené",
     "policyDisabled": "Zakázané",
     "policyInherit": "Dediť",
@@ -2513,7 +2513,11 @@
     "policyTemplateReview": "Kontrola platobného obsahu e-mailov",
     "policyTemplateReviewHint": "Skontrolujte text aj obal e-mailov v editore šablón. Platby cez bránu nesmú obsahovať pevné bankové pokyny ani platobné QR. Potvrdenie schváli iba túto verziu.",
     "policyTemplateRepair": "Šablóna alebo jej obal obsahuje bankové údaje či QR. Opravte obsah a spustite kontrolu znova.",
-    "policyTemplateApprove": "Aktuálnu verziu som skontroloval/a"
+    "policyTemplateApprove": "Aktuálnu verziu som skontroloval/a",
+    "barion": "Kartou cez Barion",
+    "policyCashManaged": "Dostupnosť hotovosti spravuje platforma.",
+    "policyNoMethods": "Platforma nemá povolenú žiadnu platobnú metódu.",
+    "policyUnitSummary": "Účty a platobné metódy"
   },
   "CardRefundDecision": {
     "title": "Vstup po vrátení platby",
@@ -3270,5 +3274,9 @@
     "publicPage": "Verejná stránka",
     "formIntroduction": "Úvod",
     "formOutline": "Osnova formulára"
+  },
+  "UnitSettings": {
+    "measurementSummaryEnabled": "Meranie je zapnuté",
+    "measurementSummaryDisabled": "Meranie je vypnuté"
   }
 }
