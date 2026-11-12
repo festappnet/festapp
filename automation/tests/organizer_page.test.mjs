@@ -250,9 +250,8 @@ test('cinematic document scrollbar stays visible and matches its dark canvas', (
   const css = readFileSync(new URL('../release/organizers/illustrated-home.css', import.meta.url), 'utf8');
   const rootRule = css.match(/html:has\(body\[data-cinematic="true"\]\)\s*\{([^}]*)\}/)?.[1];
   assert.ok(rootRule, 'Only the illustrated document owns its scrollbar theme');
-  assert.doesNotMatch(rootRule, /scrollbar-width|scrollbar-color/, 'Chromium keeps the existing 6px gutter');
-  assert.match(css, /@supports not selector\(::-webkit-scrollbar\)\s*\{\s*html:has\(body\[data-cinematic="true"\]\)\s*\{\s*scrollbar-width:thin;/);
+  assert.match(css, /html:has\(body\[data-cinematic="true"\]\),body\[data-cinematic="true"\]\s*\{[^}]*scrollbar-width:thin;/);
   assert.match(css, /scrollbar-color:#[a-f0-9]+ var\(--night\)/);
-  assert.match(rootRule, /background:var\(--night\)/);
+  assert.match(rootRule, /background:var\(--night\)!important/);
   assert.doesNotMatch(rootRule, /overflow[^;]*hidden|scrollbar-width:none/);
 });

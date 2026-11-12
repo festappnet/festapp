@@ -77,15 +77,15 @@ body[data-cinematic="true"] user-header[data-marketing] .avatar-circle {
 
 /* The document scrollbar belongs to the dark illustration, even in light UI mode. */
 html:has(body[data-cinematic="true"]) {
-  background:var(--night);
+  /* Startup theme paints the root inline; the illustration owns this canvas. */
+  background:var(--night)!important;
+}
+html:has(body[data-cinematic="true"]),body[data-cinematic="true"] {
+  /* Native Chrome overlay scrollbars need the standard color properties. */
+  scrollbar-width:thin;
+  scrollbar-color:#5e7c99 var(--night);
 }
 html:has(body[data-cinematic="true"])::-webkit-scrollbar {width:6px;height:6px}
 html:has(body[data-cinematic="true"])::-webkit-scrollbar-track {background:var(--night)}
 html:has(body[data-cinematic="true"])::-webkit-scrollbar-thumb {background:#5e7c99;border-radius:3px}
 html:has(body[data-cinematic="true"])::-webkit-scrollbar-thumb:hover {background:var(--blue)}
-@supports not selector(::-webkit-scrollbar) {
-  html:has(body[data-cinematic="true"]) {
-    scrollbar-width:thin;
-    scrollbar-color:#5e7c99 var(--night);
-  }
-}
