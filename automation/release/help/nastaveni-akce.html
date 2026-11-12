@@ -1,7 +1,43 @@
-<p class="lead">Akce už existuje. Název, termín, místo a další údaje měňte v její administraci; průvodce založením znovu neprocházíte.</p>
-<h2 id="otevreni">Vyberte akci a otevřete Nastavení</h2><p>V seznamu akcí pořadatele otevřete správnou akci a záložku <strong>Nastavení</strong>. Před úpravou ověřte název v hlavičce. Odkaz z tohoto návodu Vás po přihlášení nechá akci výslovně vybrat.<span class="guide-step-link">{{APP_LINK:settings}}</span></p>
-{{MEDIA:cs/setup/dates}}
-<h2 id="udaje">Změňte údaje akce</h2><p>Upravte název, začátek a konec, místo nebo popis podle dostupných polí. Konec musí následovat po začátku. Změnu uložte a ověřte zobrazení pro návštěvníky. Termín samotné akce není termín otevření prodeje.</p>
-<h2 id="zverejneni">Zveřejnění a otevření prodeje</h2><p>Viditelnost akce v přehledu a dostupnost objednávkového formuláře jsou samostatné volby. Začátek a konec prodeje nastavujete u <a href="/napoveda/prodejni-formular/">formuláře</a>. <span class="guide-step-link">{{APP_LINK:forms}}</span></p>
-<h2 id="editory">Kterou část upravujete jinde</h2><ul><li><a href="/napoveda/prodejni-formular/">Formuláře</a>: otázky, veřejný odkaz a dostupnost prodeje.</li><li><a href="/napoveda/ceny-a-kapacity/">Produkty a kapacity</a>: varianty vstupenek, ceny a limity.</li><li><a href="/napoveda/planek-salu/">Plánek</a>: uspořádání sálu a prodej konkrétních míst.</li><li><a href="/napoveda/vzhled-vstupenky/">Vzhled vstupenky</a>: editor a PDF dostupné z nastavení funkce vstupenek.</li><li><a href="/napoveda/bankovni-ucet/">Bankovní účty</a>: samostatná správa u pořadatele; formulář používá první účet podporující jeho měnu podle pořadí u pořadatele.</li></ul>
-<h2 id="kontrola">Zkontrolujte uložený výsledek</h2><p>Po uložení znovu otevřete změněnou část a veřejný formulář. Dříve odeslané vstupenky a e-maily se změnou údajů znovu neodesílají.</p>
+<p class="lead">V Nastavení již vytvořené akce upravíte její název, termín, místo, popis i viditelnost. Najdete zde také e-mail pro odpovědi, časové pásmo a funkce akce.</p>
+<h2 id="otevreni">Vyberte akci a otevřete Nastavení</h2>
+<p>V administraci pořadatele otevřete požadovanou akci a záložku <strong>Nastavení</strong>. V hlavičce zkontrolujte, že upravujete správnou akci. Odkaz níže Vás po přihlášení nechá akci vybrat.<span class="guide-step-link">{{APP_LINK:settings}}</span></p>
+<p>Pro úpravy potřebujete oprávnění k editaci akce. Pokud jsou pole nepřístupná, požádejte správce pořadatele o odpovídající přístup. Pro založení nové akce použijte samostatný <a href="/napoveda/zaciname/">návod k průvodci založením</a>.</p>
+{{MEDIA:cs/administration/event-settings-overview}}
+<h2 id="udaje">Upravte název, termín a místo</h2>
+<ol class="steps">
+<li><h3>Zkontrolujte název</h3><p>Do pole <strong>Název</strong> zadejte název, pod kterým mají návštěvníci akci poznat. Toto pole je povinné.</p></li>
+<li><h3>Nastavte začátek a konec akce</h3><p>Upravte datum i čas obou údajů. U večerní akce končící po půlnoci vyberte u konce následující den. Jde o termín konání; dobu prodeje nastavíte samostatně ve formuláři.</p></li>
+<li><h3>Vyplňte místo konání</h3><p>Pole <strong>Místo konání</strong> je nepovinné. Zadejte například název kulturního domu a adresu. Má-li být místo také na vstupence, přidejte odpovídající údaj do její <a href="/napoveda/vzhled-vstupenky/">šablony</a>.</p></li>
+</ol>
+<h2 id="popis">Přidejte úvodní obrázek a popis</h2>
+<p>V části <strong>Úvodní obrázek</strong> vyberte obrázek akce. Doporučený poměr stran najdete přímo u pole. V části <strong>Popis</strong> otevřete editor a upravte informace pro návštěvníky, například program, příchod do sálu nebo kontakt na pořadatele. Po dokončení úprav uložte celé Nastavení.</p>
+<h2 id="zverejneni">Nastavte viditelnost a odlište ji od prodeje</h2>
+<ul>
+<li><strong>Skrýt</strong> určuje, zda bude akce skrytá ve výpisech. Samotné skrytí nenahrazuje uzavření prodeje.</li>
+<li><strong>Propagované</strong> slouží ke zvýraznění akce ve výpisech nebo na domovské stránce. Pro zapnutí musí mít akce úvodní obrázek.</li>
+<li>Pokud Vaše varianta aplikace nabízí přepínač <strong>Veřejné</strong>, řídí dostupnost detailů akce, například programu a informací.</li>
+</ul>
+<p>Prodej ovládáte v <a href="/napoveda/prodejni-formular/">prodejním formuláři</a>, včetně jeho dostupnosti a začátku či konce prodeje. Chcete-li prodej zastavit, změňte dostupnost formuláře a ověřte výsledek na jeho veřejném odkazu.<span class="guide-step-link">{{APP_LINK:forms}}</span></p>
+<h2 id="pokrocile">Zkontrolujte e-mail pro odpovědi a časové pásmo</h2>
+<p>Rozbalte <strong>Pokročilá nastavení</strong>.</p>
+<ul>
+<li><strong>E-mail pro odpovědi</strong>: adresa, na kterou mají chodit odpovědi zákazníků na automatické e-maily. Zadejte schránku, kterou pořadatel skutečně sleduje. Pokud je u pořadatele nastavená výchozí adresa, uvidíte ji jako nápovědu u pole.</li>
+<li><strong>Časové pásmo</strong>: vyberte platnou položku z nabídky. Pro akci v Česku použijte <strong>Europe/Prague</strong>. Po změně zkontrolujte začátek i konec akce.</li>
+<li>Pokud zde aplikace zobrazuje také <strong>Odkaz</strong>, jde o odkaz akce. Veřejný odkaz objednávkového formuláře spravujete přímo u formuláře.</li>
+</ul>
+{{MEDIA:cs/administration/event-settings-advanced}}
+<h2 id="editory">Funkce akce a související nastavení</h2>
+<p>V části <strong>Funkce</strong> najdete zapnuté i další dostupné funkce. Vyhledávání Vám pomůže najít požadovanou položku. Nabídka závisí na variantě aplikace a nastavení akce. Podrobnosti k jednotlivým úpravám najdete v navazujících návodech:</p>
+<ul>
+<li><a href="/napoveda/prodejni-formular/">Prodejní formulář</a>: otázky, veřejný odkaz, vzhled formuláře a dostupnost prodeje.</li>
+<li><a href="/napoveda/ceny-a-kapacity/">Ceny a kapacity</a>: nabídka vstupenek, ceny a limity.</li>
+<li><a href="/napoveda/planek-salu/">Plánek sálu</a>: uspořádání sálu a prodej konkrétních míst.</li>
+<li><a href="/napoveda/vzhled-vstupenky/">Vzhled vstupenky</a>: šablona, editor a kontrola výsledného PDF.</li>
+<li><a href="/napoveda/bankovni-ucet/">Bankovní účty</a> a <a href="/napoveda/platby/">platby formuláře</a>: bankovní spojení pořadatele a nastavení přijímaných plateb.</li>
+</ul>
+<h2 id="kontrola">Uložte změny a ověřte výsledek</h2>
+<ol class="steps">
+<li><h3>Uložte Nastavení</h3><p>Po úpravách použijte <strong>Uložit</strong> ve spodní liště. Volbou <strong>Zahodit změny</strong> se po potvrzení vrátíte k uloženému stavu. Pokud ukládání upozorní na neplatné pole, opravte jej a změny uložte znovu.</p></li>
+<li><h3>Znovu otevřete upravenou část</h3><p>Ověřte, že název, termín, místo a ostatní změny zůstaly uložené i po opětovném otevření Nastavení.</p></li>
+<li><h3>Zkontrolujte pohled návštěvníka</h3><p>Otevřete veřejný formulář a případně náhled vstupenky. Zkontrolujte také telefon, zejména čitelnost názvu, obrázku a popisu. Již odeslaný e-mail ani stažený soubor PDF se úpravou Nastavení nezmění; pokud potřebujete návštěvníky o změně informovat, zajistěte to samostatně.</p></li>
+</ol>

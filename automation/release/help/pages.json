@@ -24,11 +24,11 @@
     "category": "administration",
     "slug": "nastaveni-akce",
     "title": "Jak změnit nastavení vytvořené akce",
-    "seoTitle": "Nastavení akce: změna názvu, termínu a zveřejnění",
-    "description": "Upravte již vytvořenou akci v administraci: název, termín, místo, zveřejnění a funkce. Odlište nastavení akce od prodejního formuláře.",
+    "seoTitle": "Nastavení akce: termín, místo, viditelnost a kontakty",
+    "description": "Upravte vytvořenou akci: název, termín, místo, obrázek, popis, viditelnost, e-mail pro odpovědi a časové pásmo. Změny uložte a ověřte.",
     "label": "Nastavení hotové akce",
     "workflow": "administration",
-    "preview": "cs/setup/dates"
+    "preview": "cs/administration/event-settings-overview"
   },
   {
     "id": "form",

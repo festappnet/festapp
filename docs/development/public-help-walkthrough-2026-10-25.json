@@ -738,6 +738,22 @@
       "capturedAt": "2026-11-05",
       "captureStep": "order-detail-add-payment-en",
       "alt": "Cash payment dialog from order detail, including Find and link a transaction."
+    },
+    {
+      "mediaId": "cs/administration/event-settings-overview",
+      "file": "cs/administration/event-settings-20261112-overview.png",
+      "sha256": "ca45e9eabe3afdcbf087b8a0b61f048089f5d06bb52a373b0d2d94e430e044a3",
+      "capturedAt": "2026-11-12T17:07:54.956424+00:00",
+      "captureStep": "event-settings-current-20261112/event-settings-overview",
+      "alt": "Nastavení vytvořeného Městského plesu v Lípě: název, termín přes půlnoc, místo konání, obrázek, popis a viditelnost."
+    },
+    {
+      "mediaId": "cs/administration/event-settings-advanced",
+      "file": "cs/administration/event-settings-20261112-advanced.png",
+      "sha256": "380ba55339171a5fbe1d980577baae391d1b613aa1ede28ec346b42a122187c3",
+      "capturedAt": "2026-11-12T17:08:56.137818+00:00",
+      "captureStep": "event-settings-current-20261112/event-settings-advanced",
+      "alt": "Pokročilá nastavení akce s e-mailem pro odpovědi, časovým pásmem Europe/Prague a začátkem sekce Funkce."
     }
   ],
   "chapters": [
@@ -1152,6 +1168,75 @@
         "Mobile captures are Chrome, not Safari"
       ],
       "catalogTranslation": "1.0.4 suggestions were Waiting; revised1.0.5 translation must follow new stable source, never claim approved"
+    },
+    {
+      "id": "event-settings-current-20261112",
+      "guides": [
+        "event-settings"
+      ],
+      "locale": "cs",
+      "eventFixture": "Městský ples v Lípě",
+      "organizerFixture": "Spolek U Lípy",
+      "sourceBase": "742d614b722bbe619b3a095f66605bd4bb536006",
+      "sourceState": "Current working tree including pre-existing uncommitted application changes; captured UI sources matched the task-only runtime copy byte-for-byte.",
+      "sourceFiles": {
+        "lib/components/occasion_settings/occasion_settings_tab.dart": "4bb0d4f9edb564fee956218f171d047f887e0b55be789b506728248bd10707c6",
+        "lib/components/occasion_settings/occasion_advanced_settings.dart": "cce3ee4f77ba35f6a00883d29858b3dd3f24f86d3be3de6c81d1b9eb097ef227",
+        "lib/components/occasion_settings/occasion_features_section.dart": "5ca2da9333f549a795c2b5afcbb0f0555d513f7c47b255246f81d6d80685ab8d",
+        "lib/components/_shared/editor_action_bar.dart": "da0159ddb2d125952e50801d1beaf2ebab02fd89a4af655f59971550cbe74737",
+        "lib/widgets/time_data_range_picker.dart": "cae5144942826b7d438ce21f98a3a8735e6cf7604bdb90ea522a8c8af837dff8",
+        "assets/translations/cs.json": "3b71d05f08d4bdc55fe5d6d8b908f30c33f885d2e6d3b79f293aab0d55c44942"
+      },
+      "environment": {
+        "backend": "Fresh owned disposable Supabase festapp-settings-help-20261112; loopback API 58921, DB 58922; canonical baseline and forward migrations through 20261112190000",
+        "application": "Current real Flutter full_app_e2e entry, ticketing variant FESTAPP_APP_SUPPORTED=false; isolated headless Chromium, CS, light, 1440x1000",
+        "runtimeAdapters": [
+          "Copied source tree only: main.dart selects installed v219 app-config contract on loopback instead of transition v218.",
+          "Copied source tree only: app_config.dart sets empty sync origins to https://sync.invalid so endpoint validation succeeds; no public sync service is certified.",
+          "Existing E2E entry stubs external notification callbacks; production backend requests are blocked."
+        ],
+        "fixture": "Canonical navigation fixture localized before captures: Czech event, organizer, venue, description and Europe/Prague. Before successful save testing, replace its obsolete schemaVersion-2 ticket feature layout with test/fixtures/ticket_layout/layouts.json valid[0], mapping productTypeId 123 to actual same-event product 1; validate_ticket_layout_references must succeed. Never apply this fixture to production."
+      },
+      "steps": [
+        {
+          "action": "Log in to local Auth, select organizer and existing event, open Nastavení using fresh semantics; DOM semantic click fallback used for Flutter controls.",
+          "outcome": "Existing-event settings selected; real Czech title, start/end dates across midnight, place, intro image, description, Skrýt and Propagované. Veřejné and event link are absent in this ticketing variant."
+        },
+        {
+          "action": "Expand Pokročilá nastavení and inspect the following Funkce section.",
+          "outcome": "Real E-mail pro odpovědi and Časové pásmo controls; Europe/Prague selected; actual Zahodit změny and Uložit actions."
+        },
+        {
+          "action": "Edit title, place and reply-to, then Uložit.",
+          "outcome": "Initial attempt rejected with HTTP 400 P0001 Invalid ticket layout; database retained original values. Corrected only the obsolete local fixture using the current valid layout and validated same-event product references. Repeated real save_occasion_client_sync_v1 returned HTTP 200."
+        },
+        {
+          "action": "Reopen the existing event Settings after saving; compare actual rendered fields with the disposable database.",
+          "outcome": "UI reloaded title Městský ples U Lípy, venue Kulturní dům U Lípy, hlavní sál and reply-to poradatele@example.cz; Uložit disabled because no further edits remained. SQL independently confirmed the same persisted values."
+        },
+        {
+          "action": "Open generated standalone file:// guide at desktop and 390px width, scroll to lazy screenshots.",
+          "outcome": "Both new screenshots load, correct H1 and seven content headings, no unresolved template tokens or horizontal overflow at 1440px and 390px."
+        }
+      ],
+      "stills": [
+        "cs/administration/event-settings-overview",
+        "cs/administration/event-settings-advanced"
+      ],
+      "notVerified": [
+        "No image upload, external mail delivery, production configuration, public sync, PDF regeneration or production deployment.",
+        "No physical phone or mobile Safari check; narrow preview uses desktop Chromium.",
+        "Feature toggling and event deletion are not exercised.",
+        "Zahodit změny is described from the current EditorActionBar source; this walkthrough did not exercise discarding a draft."
+      ],
+      "privateEvidence": ".private/settings-help-20261112/evidence.md",
+      "validation": {
+        "helpTests": "pnpm --dir web_client exec node --test ../automation/tests/help_pages.test.mjs ../automation/tests/help_search.test.mjs: 6 passed, 0 failed, 0 skipped. Final article, route metadata and media inputs unchanged after this check.",
+        "preview": "Standalone generated file:// preview; real headless browser verified 1440px and 390px, both screenshots loaded and no horizontal overflow.",
+        "persistence": "Actual UI save, real local RPC HTTP 200, reopen and independent SQL readback succeeded.",
+        "publication": "Canonical source updated locally; no source push or production deployment performed."
+      },
+      "cleanup": "Owned Flutter web-server, isolated browser and only the owned Supabase project stopped after successful readback. Other sessions and the control-channel server preserved."
     }
   ],
   "notVerified": [

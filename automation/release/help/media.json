@@ -1484,5 +1484,34 @@
     "openLabel": "Enlarge the English code generator (new tab)",
     "sha256": "8c2c0c7619be47f41c652e65f9b87e3f6b9aca1b08e33ae348384278dc1258bf",
     "reviewedAt": "2026-11-12"
+  },
+  {
+    "id": "cs/administration/event-settings-overview",
+    "file": "cs/administration/event-settings-20261112-overview.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-12T17:07:54.956424+00:00",
+    "source": "Actual current Flutter organizer administration; isolated current-schema local Supabase tenant; Czech Spolek U Lípy fixture; ticketing variant; capture runtime adapters recorded in the canonical walkthrough catalogue.",
+    "workflow": "administration",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "ca45e9eabe3afdcbf087b8a0b61f048089f5d06bb52a373b0d2d94e430e044a3",
+    "alt": "Nastavení vytvořeného Městského plesu v Lípě: název, termín přes půlnoc, místo konání, obrázek, popis a viditelnost.",
+    "caption": "Nastavení již vytvořené akce ve variantě vstupenky.online. Ukázkový ples začíná 20. února 2027 v 19:00 a končí následující den ve 2:00.",
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "previewCrop": "upper"
+  },
+  {
+    "id": "cs/administration/event-settings-advanced",
+    "file": "cs/administration/event-settings-20261112-advanced.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-12T17:08:56.137818+00:00",
+    "source": "Actual current Flutter organizer administration; isolated current-schema local Supabase tenant; Czech Spolek U Lípy fixture; ticketing variant; capture runtime adapters recorded in the canonical walkthrough catalogue.",
+    "workflow": "administration",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "380ba55339171a5fbe1d980577baae391d1b613aa1ede28ec346b42a122187c3",
+    "alt": "Pokročilá nastavení akce s e-mailem pro odpovědi, časovým pásmem Europe/Prague a začátkem sekce Funkce.",
+    "caption": "Pokročilá nastavení rozbalíte přímo v Nastavení akce. Zkontrolujte adresu pro odpovědi zákazníků a vyberte časové pásmo z nabídky.",
+    "openLabel": "Zvětšit snímek (nová karta)"
   }
 ]

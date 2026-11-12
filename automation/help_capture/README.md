@@ -30,6 +30,22 @@ local backend. Follow `festapp-local-e2e` for a fresh Flutter/local-backend setu
 reuse an already running owned fixture when available. Never use production
 credentials or repeat order/admission/settings writes against production.
 
+## Existing-event settings
+
+The `event-settings-current-20261112` chapter in the canonical catalogue records
+the current Czech administration walkthrough, source hashes and runtime-only
+loopback adapters. It owns the two `cs/administration/event-settings-*` media
+identities used by the existing-event guide. Follow that chapter instead of
+reusing the October settings capture.
+
+A current-schema backend is required. The older navigation seed contains a
+schemaVersion-2 ticket layout that current whole-event saves reject. In the
+owned disposable fixture, use the valid schemaVersion-3 layout from
+`test/fixtures/ticket_layout/layouts.json`, resolve its product references to that
+fixture's actual products and require `validate_ticket_layout_references` to
+succeed before walking through Save and reopening the settings. Keep the real
+save RPC and validation enabled; a rejected save is not persistence evidence.
+
 ## Scanner errors and settings
 
 `scanner_light.py` captures all six scanner states in Czech and English, using
