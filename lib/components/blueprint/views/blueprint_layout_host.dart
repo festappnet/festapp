@@ -1,3 +1,6 @@
+import 'blueprint_seat_swap_dialog.dart';
+import 'package:fstapp/components/eshop/ticket_commands.dart';
+
 import '../seating_controller.dart';
 import '../seating_transport.dart';
 import '../seating_panel.dart';
@@ -582,81 +585,38 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _message = null;
     });
     try {
-      if (await session.recoverSwap()) {
+      final recovered = await session.recoverSwap();
+      if (recovered != null) {
         if (mounted && identical(session, controller)) {
-          await _refresh();
-          if (mounted) controller.setMode(BlueprintLayoutMode.manage);
+          await _completeSwap(recovered);
+          if (mounted) {
+            await showDialog<bool>(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => BlueprintSeatSwapDialog(initialOutcome: recovered));
+          }
         }
         return;
       }
       if (!mounted || !_canOrder || !identical(session, controller)) return;
       final preview = await session.previewSwap();
       if (!mounted || !_canOrder || !identical(session, controller)) return;
-      final confirmed = await showDialog<bool>(
+      await showDialog<bool>(
           context: context,
-          builder: (dialogContext) => AppAlertDialog(
-                title: Text(BlueprintStrings.legendSwapSeats),
-                content: SizedBox(
-                    width: 520,
-                    height: (MediaQuery.sizeOf(context).height * .6)
-                        .clamp(240.0, 520.0)
-                        .toDouble(),
-                    child: ListView.builder(
-                        itemCount:
-                            preview.seats.length + preview.orders.length + 1,
-                        itemBuilder: (context, index) {
-                          if (index < preview.seats.length) {
-                            final seat = preview.seats[index];
-                            return ListTile(
-                                title: Text(seat.title ?? '#${seat.id}'),
-                                subtitle: Text([
-                                  preview.sourceIds.contains(seat.id)
-                                      ? BlueprintStrings.swapSourceSeats
-                                      : BlueprintStrings.swapTargetSeats,
-                                  BlueprintStrings.seatState(seat.state),
-                                  seat.productTitle,
-                                  seat.customerName,
-                                  seat.customerSurname,
-                                  seat.customerEmail,
-                                  if (seat.ticketId != null)
-                                    '${BlueprintStrings.ticketLabel}: ${seat.ticketId}',
-                                ]
-                                    .whereType<String>()
-                                    .where((s) => s.isNotEmpty)
-                                    .join(' - ')));
-                          }
-                          final moneyIndex = index - preview.seats.length;
-                          if (moneyIndex < preview.orders.length) {
-                            final order = preview.orders[moneyIndex];
-                            return ListTile(
-                                title: Text(
-                                    '${BlueprintStrings.orderLabel} ${order.orderId}'),
-                                subtitle: Text(
-                                    '${Utilities.formatPrice(context, double.parse(order.beforeAmount), currencyCode: order.currencyCode)} → '
-                                    '${Utilities.formatPrice(context, double.parse(order.afterAmount), currencyCode: order.currencyCode)}'),
-                                trailing: Text(Utilities.formatPrice(
-                                    context, double.parse(order.delta),
-                                    currencyCode: order.currencyCode)));
-                          }
-                          return Text(BlueprintStrings.swapServerNotice);
-                        })),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(dialogContext, false),
-                      child: Text(CommonStrings.storno)),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(dialogContext, true),
-                      child: Text(BlueprintStrings.legendSwapSeats)),
-                ],
-              ));
-      if (confirmed == true &&
-          mounted &&
-          _canOrder &&
-          identical(session, controller)) {
-        await session.swapSelected(preview);
-        await _refresh();
-        if (mounted) controller.setMode(BlueprintLayoutMode.manage);
-      }
+          barrierDismissible: false,
+          builder: (_) => BlueprintSeatSwapDialog(
+              preview: preview,
+              onSwap: () {
+                if (!mounted || !_canOrder || !identical(session, controller)) {
+                  throw StateError('swap_confirmation_scope_changed');
+                }
+                return session.swapSelected(preview);
+              },
+              onSwapped: (outcome) async {
+                if (mounted && identical(session, controller)) {
+                  await _completeSwap(outcome);
+                }
+              }));
     } catch (error) {
       if (mounted)
         setState(() => _message =
@@ -666,6 +626,13 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     } finally {
       if (mounted) setState(() => _operationPending = false);
     }
+  }
+
+  Future<void> _completeSwap(SeatSwapOutcome outcome) async {
+    controller.setMode(BlueprintLayoutMode.manage);
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(BlueprintStrings.swapSuccess)));
+    await _refresh();
   }
 
   String _productText(int? id) {

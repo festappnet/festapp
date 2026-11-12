@@ -1,3 +1,4 @@
+import '../components/eshop/payment_grid_actions_cases.dart' as payment_grid_actions;
 import '../components/occasion/occasion_sale_cases.dart' as occasion_sale;
 import '../components/occasion/occasion_setup_copy_cases.dart'
     as occasion_setup_copy;
@@ -68,6 +69,7 @@ void main() {
     'czech_catalog_3': suite0.main,
     'czech_catalog_2': suite1.main,
     'czech_catalog_1': suite2.main,
+    'payment_grid_actions': payment_grid_actions.main,
     'blueprint_layout_ui': blueprintLayoutUi.main,
     'blueprint_background_picker': blueprint_background_picker.main,
     'blueprint_layout_host': blueprintHost.main,

@@ -1,3 +1,4 @@
+import '../eshop/ticket_commands.dart';
 import 'blueprint_seat_swap_preview.dart';
 import 'dart:convert';
 import 'package:collection/collection.dart';
@@ -708,14 +709,14 @@ class BlueprintLayoutController extends ChangeNotifier
         secondSpotId: spots[1]);
   }
 
-  Future<bool> recoverSwap() {
+  Future<SeatSwapOutcome?> recoverSwap() {
     final blueprintId = snapshot.blueprintId;
-    if (blueprintId == null) return Future.value(false);
+    if (blueprintId == null) return Future.value(null);
     return DbTickets.recoverBlueprintSwap(
         occasionId: snapshot.occasionId, blueprintId: blueprintId);
   }
 
-  Future<void> swapSelected(BlueprintSeatSwapPreview preview) async {
+  Future<SeatSwapOutcome> swapSelected(BlueprintSeatSwapPreview preview) async {
     if (isBusy ||
         preview.occasionId != snapshot.occasionId ||
         preview.blueprintId != snapshot.blueprintId) {
@@ -725,8 +726,9 @@ class BlueprintLayoutController extends ChangeNotifier
     error = null;
     notifyListeners();
     try {
-      await DbTickets.swapBlueprintSpots(preview);
+      final outcome = await DbTickets.swapBlueprintSpots(preview);
       _operationSelection.clear();
+      return outcome;
     } catch (e) {
       error = e;
       rethrow;

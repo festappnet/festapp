@@ -143,6 +143,12 @@
     {
       "migration": "20261112210000_payment_policy_release_integration.sql",
       "manifest": "payment-policy-release-integration-migration.json",
+      "sha256": "475af36674e0c38dbe1869c7708d06dca7a430e3a2ee1028808b567235b34e8f",
+      "checkSources": true
+    },
+    {
+      "migration": "20261112220000_cash_policy_defaults.sql",
+      "manifest": "cash-policy-defaults-migration.json",
       "active": true
     }
   ]

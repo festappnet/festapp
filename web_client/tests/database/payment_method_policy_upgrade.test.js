@@ -40,6 +40,12 @@ test('pre-policy upgrade preserves historical selections and money, rejects unkn
   await db.query(fs.readFileSync(new URL('database/functions/payment_providers/method_policy.sql',root),'utf8'));
   assert.deepEqual((await db.query('select to_jsonb(p) value from eshop.organization_payment_method_policies p order by organization_id,method')).rows,beforeReload,'runtime reload after contraction never replays backfill');
   assert.deepEqual(await snapshot(),before,'runtime reload preserves economic facts');
+  await db.query("update public.organizations set data=coalesce(data,'{}')||jsonb_build_object('DEFAULT_URL','https://vstupenky.online') where id=$1",[regional.id]);
+  await db.query(fs.readFileSync(new URL('supabase/migrations/20261112220000_cash_policy_defaults.sql',root),'utf8'));
+  assert.equal(await enabled(units[0].id,'cash'),true,'cash default forward repairs the selected tenant inferred disable');
+  assert.equal(await enabled(globalUnit.id,'cash'),false,'cash forward preserves other organizations');
+  assert.equal(await enabled(globalUnit.id,'bank'),false,'cash forward preserves other historical selections');
+  assert.deepEqual(await snapshot(),before,'cash default forward preserves economic facts');
   assert.equal((await db.query("select to_regprocedure('public.get_bank_transaction_history(bigint)') is null and to_regprocedure('public.get_my_admin_bank_accounts()') is null absent")).rows[0].absent,true);
  });
 });

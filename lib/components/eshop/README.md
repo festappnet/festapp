@@ -217,6 +217,12 @@ Local review setup and actual evidence are recorded in
 
 ## Cash payments and payment deadlines
 
+Cash is enabled by default in organization payment-method settings and inherited
+by units. Explicit organization/unit disables remain authoritative. The cash
+default forward repairs only inferred installation disables, preserving recorded
+organization decisions; form checkout methods remain an independent selection.
+
+
 `payment_providers/registry.sql` classifies builtin bank/cash and installed
 online connectors. `payment_policy.sql` resolves a policy once during checkout;
 `payment_info.data.payment_policy` stores its metadata and cash instructions.
@@ -241,3 +247,7 @@ removes bank write rights. CASH movements remain correctable by the actual
 unit manager. The shared cash dialog keeps its draft during nested setup and
 history navigation. The transaction foreign key restricts account deletion
 instead of cascading away financial facts.
+
+The cash-default forward repairs inferred policy disables only for the activated
+`vstupenky.online` organization. It uses the policy writer fence and retains
+explicit decisions, unit overrides and all other organizations’ stored policies.

@@ -1,0 +1,7 @@
+{
+  "header": "-- Cash is enabled by default at organization scope; repair inferred disables only for vstupenky.online, preserving explicit policies.",
+  "sources": [
+    "payment_providers/cash_policy_defaults.sql",
+    "payment_providers/method_policy.sql"
+  ]
+}

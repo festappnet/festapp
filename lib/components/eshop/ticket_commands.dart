@@ -8,6 +8,18 @@ import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// A confirmed swap, including orders eligible for a customer update.
+class SeatSwapOutcome {
+  SeatSwapOutcome.fromJson(Map<String, dynamic> data)
+      : orderIds = List.unmodifiable(
+          (data['orders'] as List? ?? const [])
+              .map((row) => (row['orderId'] as num).toInt())
+              .toSet(),
+        );
+
+  final List<int> orderIds;
+}
+
 class TicketCancellationOutcome {
   const TicketCancellationOutcome({
     this.cancelledOrderIds = const [],
@@ -41,8 +53,8 @@ abstract interface class TicketCommands {
       required int blueprintId,
       required int firstSpotId,
       required int secondSpotId});
-  Future<void> swapSpots(BlueprintSeatSwapPreview preview);
-  Future<bool> recoverSwap(
+  Future<SeatSwapOutcome> swapSpots(BlueprintSeatSwapPreview preview);
+  Future<SeatSwapOutcome?> recoverSwap(
       {required int occasionId,
       required int organizationId,
       int? unitId,
@@ -251,18 +263,18 @@ class SupabaseTicketCommands implements TicketCommands {
   }
 
   @override
-  Future<bool> recoverSwap(
+  Future<SeatSwapOutcome?> recoverSwap(
       {required int occasionId,
       required int organizationId,
       int? unitId,
       required int blueprintId}) async {
-    if (_transport.principalBinding == null) return false;
+    if (_transport.principalBinding == null) return null;
     final pending = await _transport.pendingIntent('swap_blueprint_seats', {
       'p_occasion': occasionId,
       'p_unit': unitId,
       'p_blueprint': blueprintId,
     });
-    if (pending == null) return false;
+    if (pending == null) return null;
     final request = jsonDecode(pending.requestJson) as Map;
     if (request['p_occasion'] != occasionId ||
         request['p_organization'] != organizationId ||
@@ -283,11 +295,11 @@ class SupabaseTicketCommands implements TicketCommands {
       throw BlueprintCommandRejection(response.code, response.data);
     }
     await response.applyConfirmedReplacements();
-    return true;
+    return SeatSwapOutcome.fromJson(response.data);
   }
 
   @override
-  Future<void> swapSpots(BlueprintSeatSwapPreview preview) async {
+  Future<SeatSwapOutcome> swapSpots(BlueprintSeatSwapPreview preview) async {
     final response = ClientCommandResponse.from(
         await _transport.invoke('swap_blueprint_seats', {
       'p_occasion': preview.occasionId,
@@ -306,5 +318,6 @@ class SupabaseTicketCommands implements TicketCommands {
       throw BlueprintCommandRejection(response.code, response.data);
     }
     await response.applyConfirmedReplacements();
+    return SeatSwapOutcome.fromJson(response.data);
   }
 }
