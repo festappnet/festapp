@@ -37,12 +37,18 @@ test('global responsive adapters use the canonical distinct vector masters', t =
   '--logo',brand+'/festapp-tickets-header.svg','--dark-logo',brand+'/festapp-tickets-header-dark.svg',
   '--loading-style','spinner','--icon-dir',brand+'/web-icons'],{encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
- for(const [adapter,master] of [['brand-symbol','symbol'],['brand-wordmark-stacked','wordmark'],['brand-wordmark','wordmark-horizontal']]) {
+ for(const [adapter,master] of [['brand-symbol','symbol'],['brand-wordmark','wordmark-horizontal']]) {
   assert.deepEqual(fs.readFileSync(path.join(root,'web_client/public',adapter+'.svg')),fs.readFileSync(brand+'/festapp-tickets-'+master+'-dark.svg'));
  }
  const stacked=fs.readFileSync(brand+'/festapp-tickets-wordmark-dark.svg','utf8');
  const horizontal=fs.readFileSync(brand+'/festapp-tickets-wordmark-horizontal-dark.svg','utf8');
- const glyphs=svg=>[...svg.matchAll(/<path[^>]* d="([^"]+)"/g)].map(match=>match[1]);
+ const glyphs=svg=>[...svg.matchAll(/<(?:[\w-]+:)?path\b[^>]*\bd="([^"]+)"/g)].map(match=>match[1]);
  assert.ok(glyphs(stacked).length>0);
  assert.deepEqual(glyphs(horizontal),glyphs(stacked));
+ const adapted=fs.readFileSync(path.join(root,'web_client/public/brand-wordmark-stacked.svg'),'utf8');
+ assert.deepEqual(glyphs(adapted),glyphs(stacked),'Header fitting preserves every canonical outlined glyph');
+ assert.match(adapted,/viewBox="65 580 900 330"/);
+ assert.match(adapted,/transform="translate\(512 598\) scale\(0\.9292307692307692\) translate\(-512 -600\)"/);
+ assert.doesNotMatch(adapted,/<(?:[\w-]+:)?(?:text|image)\b/);
+
 });
