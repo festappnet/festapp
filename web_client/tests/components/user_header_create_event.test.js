@@ -22,9 +22,8 @@ test('create-event invitation respects the tenant and explicit registration perm
         'FeatureUser.addEventShort': 'Založit zdarma',
     }[key] || key));
     const previousLink = AppConfig.webLink;
-    const previousLanding = AppConfig.organizerLandingEnabled;
     const previousContext = RightsService._context;
-    t.after(() => { AppConfig.webLink = previousLink; AppConfig.organizerLandingEnabled = previousLanding; RightsService._context = previousContext; });
+    t.after(() => { AppConfig.webLink = previousLink; RightsService._context = previousContext; });
     document.body.dataset.page = 'organizers';
     const heading = document.createElement('h1');
     heading.textContent = 'Organizers';
@@ -44,7 +43,6 @@ test('create-event invitation respects the tenant and explicit registration perm
         ['https://hvezdamorska.festapp.net', { IS_REGISTRATION_ENABLED: true }, false],
     ]) {
         AppConfig.webLink = link;
-        AppConfig.organizerLandingEnabled = new URL(link).hostname !== 'hvezdamorska.festapp.net';
         header.context = RightsService._context = { organization };
         header.render();
         assert.equal(document.querySelectorAll('h1').length, 1);
