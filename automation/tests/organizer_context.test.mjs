@@ -156,3 +156,36 @@ test('invalid paths, duplicate identities and missing media never replace accept
   assert.notEqual(f.render().status,0);assert.equal(readFileSync(target,'utf8'),before);
   for(const override of [{WEB_LINK:'https://vstupenky.online/prefix'},{DOMAIN:'wrong.invalid'},{WEB_ORGANIZER_CONTENT_PROFILE:'missing'}]) assert.throws(()=>resolveContext({...csConfig,...override}));
 });
+
+test('real marketing profiles give catalogue and homepage the same published social card', t => {
+  const enConfig = readConfig(new URL('./fixtures/tenants/festappticketsglobal.conf', import.meta.url));
+  for (const config of [csConfig, enConfig]) {
+    const f = fixture(t);
+    f.setConfig(config);
+    cpSync(new URL('../../web_client/index.html', import.meta.url), join(f.root, 'web_client/index.html'));
+    const result = f.render();
+    assert.equal(result.status, 0, result.stderr);
+    const context = resolveContext(config);
+    const image = new URL(context.projection.seo.image, context.origin).href;
+    const png = readFileSync(join(f.root, 'web', context.projection.seo.image));
+    assert.equal(png.readUInt32BE(16), 1200);
+    assert.equal(png.readUInt32BE(20), 630);
+    const catalogue = readFileSync(join(f.root, 'web_client/index.html'), 'utf8');
+    const homepage = readFileSync(join(f.root, 'web/organizers-page'), 'utf8');
+    for (const html of [catalogue, homepage]) {
+      assert.ok(html.includes(`property="og:image" content="${image}"`));
+      assert.ok(html.includes(`name="twitter:image" content="${image}"`));
+      assert.ok(html.includes(`property="og:locale" content="${context.projection.ogLocale}"`));
+      assert.equal((html.match(/(?:name|property)="og:image"/g) ?? []).length, 1);
+      assert.equal((html.match(/(?:name|property)="twitter:image"/g) ?? []).length, 1);
+      assert.match(html, /property="og:image:width" content="1200"/);
+      assert.match(html, /property="og:image:height" content="630"/);
+      assert.doesNotMatch(html, /(?:og|twitter):image" content="[^" ]*android-chrome/);
+    }
+    assert.ok(catalogue.includes(`<title>${context.projection.seo.catalogTitle}</title>`));
+    assert.ok(catalogue.includes(`rel="canonical" href="${context.origin}/events"`));
+    const repeated = f.render();
+    assert.equal(repeated.status, 0, repeated.stderr);
+    assert.equal(readFileSync(join(f.root, 'web_client/index.html'), 'utf8'), catalogue);
+  }
+});
