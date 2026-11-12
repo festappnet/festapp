@@ -2,27 +2,27 @@
   "cases": [
     {
       "major": 5,
-      "package": "mod_vstupenky_online-1.0.4.zip",
-      "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
-      "installed_files_match": 11
+      "package": "mod_vstupenky_online-1.0.5.zip",
+      "sha256": "104d98e8c83cea25b5e3fbf343dc7fd5969dcee89d83f3b986526bed25b8d31c",
+      "installed_files_match": 12
     },
     {
       "major": 5,
-      "package": "mod_festapp_tickets-1.0.1.zip",
-      "sha256": "a2ed0512986875d11616318ee2fbc0ff98ea50a5e089578dd6acc7834f4fb9e2",
-      "installed_files_match": 11
+      "package": "mod_festapp_tickets-1.0.2.zip",
+      "sha256": "31e35cd06d9234ffb45d4ac555ae665751dc6cc8985d92c69ba28d0fb0a1b312",
+      "installed_files_match": 12
     },
     {
       "major": 6,
-      "package": "mod_vstupenky_online-1.0.4.zip",
-      "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
-      "installed_files_match": 11
+      "package": "mod_vstupenky_online-1.0.5.zip",
+      "sha256": "104d98e8c83cea25b5e3fbf343dc7fd5969dcee89d83f3b986526bed25b8d31c",
+      "installed_files_match": 12
     },
     {
       "major": 6,
-      "package": "mod_festapp_tickets-1.0.1.zip",
-      "sha256": "a2ed0512986875d11616318ee2fbc0ff98ea50a5e089578dd6acc7834f4fb9e2",
-      "installed_files_match": 11
+      "package": "mod_festapp_tickets-1.0.2.zip",
+      "sha256": "31e35cd06d9234ffb45d4ac555ae665751dc6cc8985d92c69ba28d0fb0a1b312",
+      "installed_files_match": 12
     }
   ]
 }

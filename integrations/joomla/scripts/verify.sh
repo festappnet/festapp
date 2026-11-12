@@ -17,6 +17,7 @@ for major in 5 6; do
     docker exec "$container" sh -c "find modules/$product -name '*.php' -print0 | xargs -0 -n1 php -l" > ".private/lint-$major-$product.log"
   done
   docker exec "$container" php /tests/contract.php > "evidence/contract-$major.json"
+  docker exec --env FESTAPP_JOOMLA_MODULE_ROOT=/var/www/html/modules "$container" php /tests/measurement-defaults.php > "evidence/measurement-defaults-$major.json"
   docker exec "$container" php /tests/seed.php > ".private/seed-$major.json"
   docker exec "$container" php /tests/clear-cache.php > ".private/seed-cache-$major.log"
 done

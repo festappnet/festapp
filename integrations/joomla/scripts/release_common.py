@@ -3,7 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = ['contract-5.json','contract-6.json','installed-files.json','cms.json','native-publication.json','browser.json','updater-5.json','updater-6.json','live-links.json','live-browser.json','lifecycle-5.json','lifecycle-6.json','uninstall-http.json']
+EVIDENCE = ['contract-5.json','contract-6.json','measurement-defaults-5.json','measurement-defaults-6.json','installed-files.json','cms.json','native-publication.json','browser.json','updater-5.json','updater-6.json','live-links.json','live-browser.json','lifecycle-5.json','lifecycle-6.json','uninstall-http.json']
 
 
 def sha(path):

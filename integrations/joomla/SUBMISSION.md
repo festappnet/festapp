@@ -1,6 +1,6 @@
 # Vydání českého Joomla modulu
 
-Rozsah: **vstupenky.online 1.0.4**, soubor `vstupenky.online.zip`.
+Rozsah: **vstupenky.online 1.0.5**, soubor `vstupenky.online.zip`.
 Globální varianta není předmětem veřejného vydání. GitHub release a Joomla
 Extensions Directory jsou samostatné distribuční kroky.
 
@@ -29,7 +29,7 @@ publikaci musí následovat kontrola skutečných veřejných URL.
 Veřejný repozitář: `festappnet/festapp`. Kanonické zdroje v `main`.
 Stabilní feed je `integrations/joomla/updates/vstupenky-online.xml`, veřejně
 přístupný přes `raw.githubusercontent.com`. Jeho obsah odkazuje na neměnný tag
-`joomla-vstupenky-online-v1.0.3` a asset `vstupenky.online.zip` s SHA-256.
+`joomla-vstupenky-online-v1.0.5` a asset `vstupenky.online.zip` s SHA-256.
 
 Před prvním pushem načíst aktuální `origin/main`, založit izolovaný checkout
 z jeho hlavy a přenést jen vlastní Joomla změny. Zkontrolovat případné intervenující

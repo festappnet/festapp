@@ -3,7 +3,7 @@
 Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
 and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
 
-Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED; central-appearance runtime0.1.2 hosting and the refreshed public gallery are deployed and verified; see `evidence/hosting-central-appearance-20261106.json` and `evidence/market-listing-update-20261106.json`. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
+Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED. The [live hosted manifest](https://festapp-wix.pages.dev/manifest.json) is authoritative for the separately deployed runtime version and asset hashes. The November 6 central-appearance runtime0.1.2 hosting and gallery publication remain recorded; see `evidence/hosting-central-appearance-20261106.json` and `evidence/market-listing-update-20261106.json`. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
 
 Repository entry point: [all platform integrations](../README.md).
 
@@ -57,6 +57,14 @@ This is a self-managed **Site Widget (Custom Element)** with an editor settings
 panel. It loads the existing public checkout and service-owned `/embed.js`.
 Orders, prices, reservations, payments and confirmation stay in the canonical
 vstupenky.online service. There is no second checkout or Wix customer-data store.
+
+## Runtime 0.1.3
+
+Adds an explicit measurement destination in the native settings panel. New
+widgets default to website measurement; saved widgets without a value retain
+Unit mode. The panel discloses conversion contact and transaction-identifier
+sharing. Hosted asset publication and native live verification are separate
+release steps; the dated receipts above remain historical.
 
 ## What is ready
 
