@@ -2,6 +2,27 @@ import {assert,assertEquals,assertRejects,assertThrows} from 'jsr:@std/assert@1'
 import {prepareWalletEmail,ticketWalletEnabled} from './ticketWalletEmail.ts';
 import {prepareTicketDelivery} from './ticketDelivery.ts';
 import {renderEmail} from './emailDelivery.ts';
+Deno.test('email worker offers Wallet without access to the isolated signing credential',async()=>{
+ const previousKey=Deno.env.get('EMAIL_PAYLOAD_KEY');
+ const previousSigning=Deno.env.get('GOOGLE_WALLET_SERVICE_ACCOUNT');
+ Deno.env.set('EMAIL_PAYLOAD_KEY',btoa('a'.repeat(32)));
+ Deno.env.delete('GOOGLE_WALLET_SERVICE_ACCOUNT');
+ try {
+  let source:any;
+  const rpc=async(name:string,p:any)=>{
+   assertEquals(name,'prepare_ticket_wallet');
+   if(p.p_hash)source={sealed:p.p_sealed,tokenHash:p.p_hash};
+   return {organization:3,occasion:7,webOrigin:'https://vstupenky.online',badgeUrls:{cs:'https://img.festapp.net/assets/google-wallet/v1/cs.png'},source};
+  };
+  const html=await prepareWalletEmail({message_id:'message',data:{lang:'cs'}},[{id:1,ticket_symbol:'SAMPLE'}],{is_enabled:true},rpc);
+  assert(html.includes('https://vstupenky.online/wallet#'));
+  assert(html.includes('Přidat do Peněženky Google'));
+  assertEquals(Deno.env.get('GOOGLE_WALLET_SERVICE_ACCOUNT'),undefined);
+ }finally{
+  if(previousKey===undefined)Deno.env.delete('EMAIL_PAYLOAD_KEY');else Deno.env.set('EMAIL_PAYLOAD_KEY',previousKey);
+  if(previousSigning===undefined)Deno.env.delete('GOOGLE_WALLET_SERVICE_ACCOUNT');else Deno.env.set('GOOGLE_WALLET_SERVICE_ACCOUNT',previousSigning);
+ }
+});
 Deno.test('Wallet preference defaults true, rejects invalid values, and false/readiness skip issuance',async()=>{
  assertEquals(ticketWalletEnabled({}),true);assertEquals(ticketWalletEnabled({wallet_enabled:false}),false);
  for(const v of [null,0,'false'])assertThrows(()=>ticketWalletEnabled({wallet_enabled:v}));

@@ -1,6 +1,6 @@
 import { escapeTicketText } from './ticketDelivery.ts';
 import { openEmail, sealEmail } from './emailPayload.ts';
-import { configuredGoogleWallet, walletHash } from './googleWallet.ts';
+import { walletHash } from './googleWallet.ts';
 import type { WalletRpc } from './ticketWallet.ts';
 export function ticketWalletEnabled(feature:any):boolean {
  if(!Object.hasOwn(feature??{},'wallet_enabled'))return true;
@@ -15,7 +15,8 @@ export function walletEmailLink(url:string,badge:string|undefined,label:string,l
 }
 export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:WalletRpc,ready?:boolean) {
  if(!feature?.is_enabled||!ticketWalletEnabled(feature)||ready===false)return '';
- if(ready===undefined){try{await configuredGoogleWallet();}catch{return '';}}
+ // SQL checks publishing readiness. Email only creates an encrypted capability;
+ // the isolated Wallet workers own signing credentials and Google API calls.
  let html='';
  for(const [index,ticket] of tickets.entries()) {
   let context=await rpc('prepare_ticket_wallet',{p_message:row.message_id,p_ticket:ticket.id});
