@@ -38,6 +38,8 @@ test('create-event invitation respects the tenant and explicit registration perm
         ['https://vstupenky.online', { IS_REGISTRATION_ENABLED: null }, false],
         ['https://vstupenky.online', {}, false],
         ['https://vstupenky.online', undefined, false],
+        ['https://tickets.festapp.net', { IS_REGISTRATION_ENABLED: true }, true],
+        ['https://tickets.festapp.net', { IS_REGISTRATION_ENABLED: false }, false],
         ['https://hvezdamorska.festapp.net', { IS_REGISTRATION_ENABLED: true }, false],
     ]) {
         AppConfig.webLink = link;

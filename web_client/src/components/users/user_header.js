@@ -148,7 +148,9 @@ export class UserHeader extends HTMLElement {
         // Public help owns its branding outside version-pinned app resources.
         const brandAssetBase = this.getAttribute('brand-asset-base') || '/';
         // Logo
-        const ticketBrand = new URL(AppConfig.webLink).hostname === 'vstupenky.online';
+        const tenantHost = new URL(AppConfig.webLink).hostname;
+        const ticketBrand = tenantHost === 'vstupenky.online';
+        const ticketingSite = ticketBrand || tenantHost === 'tickets.festapp.net';
         const helpRoot = AppConfig.organizerLandingEnabled ? publicHelpRoot(AppConfig.supportedLanguages[0]) : null;
         const logo = document.createElement('img');
         logo.src = brandAssetBase + 'brand-logo.svg';
@@ -241,7 +243,7 @@ export class UserHeader extends HTMLElement {
              // My events is account navigation on the ticketing site. Opening
              // it does not grant access to any unit or occasion; the destination
              // resolves the signed-in workspace and checks its own capabilities.
-             const canOpenMyEvents = ticketBrand ||
+             const canOpenMyEvents = ticketingSite ||
                  RightsService.canSeeAdmin() || RightsService.canSeeReservations();
              if (canOpenMyEvents) {
                  const adminBtn = document.createElement('button');
@@ -280,7 +282,7 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
-            if (new URL(AppConfig.webLink).hostname === 'vstupenky.online' &&
+            if (ticketingSite &&
                 RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
                 const addEventBtn = document.createElement('button');
                 addEventBtn.type = 'button';

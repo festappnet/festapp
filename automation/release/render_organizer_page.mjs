@@ -120,7 +120,7 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
     }));
   });
   const illustrated = page.id === 'home' && projection.homeStyle === 'illustrated';
-  let body = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8') : template;
+  let body = illustrated ? expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8')) : template;
   const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
   if (projection.locale === 'cs') {
     body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
