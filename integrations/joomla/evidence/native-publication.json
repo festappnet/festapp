@@ -2,8 +2,8 @@
   "checks": [
     {
       "joomla_major": 5,
-      "new_module_id": 125,
-      "article_id": 3,
+      "new_module_id": 131,
+      "article_id": 4,
       "baseline_restored": true,
       "cases": [
         "native New/type selection/save/publish/template position/all-menu assignment/public readback",
@@ -67,8 +67,8 @@
     },
     {
       "joomla_major": 6,
-      "new_module_id": 125,
-      "article_id": 3,
+      "new_module_id": 131,
+      "article_id": 4,
       "baseline_restored": true,
       "cases": [
         "native New/type selection/save/publish/template position/all-menu assignment/public readback",

@@ -1,48 +1,51 @@
 {
   "inputs": {
-    "products.json": "8918d55e3af1aa6e033c892706b33462eade20223754cad5a481492d7d9f9f8b",
-    "translations.json": "73de2ebe7c49c3fc10e09d32058353e03e358282064700216af576d46c93c02e",
+    "products.json": "cbb2c82317000a094f411b21de36a4b6e9fbc2524eebab0da45f924f943b0f2f",
+    "translations.json": "05db5d4fe9bae7764065e52e97ac6c629f864923161bb9c12566990c6006ff1b",
     "scripts/build.py": "7d10d4cfb4c7d1ad75b7d1a2c135872480621f160dca2a3b6e3cc6fc567daea4",
     "scripts/package.py": "5324c4d53057ed5c70fc2c854597b650884f38f567617f984dee61a2e8956c40",
     "shared/LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-    "shared/module.xml.in": "2786267bdbb2b2b654a03c854323135b903802397dd2a11f3487073819980ecc",
+    "shared/module.xml.in": "23ad986c57369da5393694caa70abf6d6b4d8b700e2f955b1f543e55f5528b34",
     "shared/services/provider.php.in": "94d8d25286d8aeffb1a865000108e2edf48ca5dee93f489e78f3cc7b9be1c146",
     "shared/src/Dispatcher/Dispatcher.php.in": "94c77b6cfae356fafd638a307c3d3124523f7b9bcb336dc17711db0679fc0847",
-    "shared/src/Helper/EmbedHelper.php.in": "43610a5bb68c25711b2a32e0c7b29476e1602acb631f5b9cfd1fac6ba7c4b965",
+    "shared/src/Field/MeasurementField.php.in": "70f33d43f3ad2799ade14eba6529d9940e436e3cb4b370046b7b7db81d34e0f3",
+    "shared/src/Helper/EmbedHelper.php.in": "359675c84bb78215c7ab3bcd48be3d0e434d6bd1c84f16f0ab20662858b5fba5",
     "shared/src/Rule/PublicformRule.php.in": "5228d2a44cec2dfe88dedb61bd02da5a3e2996d5b542deec5b8a31078ccf9cb1",
     "shared/tmpl/default.php.in": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
   },
   "packages": {
-    "mod_vstupenky_online-1.0.4.zip": {
-      "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
-      "immutable": "artifacts/sha256/75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c/mod_vstupenky_online-1.0.4.zip",
+    "mod_vstupenky_online-1.0.5.zip": {
+      "sha256": "104d98e8c83cea25b5e3fbf343dc7fd5969dcee89d83f3b986526bed25b8d31c",
+      "immutable": "artifacts/sha256/104d98e8c83cea25b5e3fbf343dc7fd5969dcee89d83f3b986526bed25b8d31c/mod_vstupenky_online-1.0.5.zip",
       "files": {
         "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-        "language/cs-CZ/mod_vstupenky_online.ini": "c9bc381aa6ace4ce59045f27fdad5d215f5656deeb09cb5b6b0152ab07174101",
-        "language/cs-CZ/mod_vstupenky_online.sys.ini": "c9bc381aa6ace4ce59045f27fdad5d215f5656deeb09cb5b6b0152ab07174101",
-        "language/en-GB/mod_vstupenky_online.ini": "466239e18401a25dfe6ebfaae67da4b1fe8a735dda07ee8513317f9e224dce3a",
-        "language/en-GB/mod_vstupenky_online.sys.ini": "466239e18401a25dfe6ebfaae67da4b1fe8a735dda07ee8513317f9e224dce3a",
-        "mod_vstupenky_online.xml": "d92f328bef2e18fec6dcd8a583d041ea6d53cdf540ddc5de45dca559d2fccbd8",
+        "language/cs-CZ/mod_vstupenky_online.ini": "5a394277e20b20af7f2507fad54987b8f27b87d64c887301707e0d2ffc1708c6",
+        "language/cs-CZ/mod_vstupenky_online.sys.ini": "5a394277e20b20af7f2507fad54987b8f27b87d64c887301707e0d2ffc1708c6",
+        "language/en-GB/mod_vstupenky_online.ini": "95fc6df281b91a28d65bf19f0742b3eb58f0ea13fe36a0e23fc7202454ec1080",
+        "language/en-GB/mod_vstupenky_online.sys.ini": "95fc6df281b91a28d65bf19f0742b3eb58f0ea13fe36a0e23fc7202454ec1080",
+        "mod_vstupenky_online.xml": "7186390a991b5f7fb453ba85264976b2d1c340ec2f370522e4785dcc2daebec7",
         "services/provider.php": "8c5c9053d2add1b6931fc05ef7d7e82886679e3ecc91ccbfcf0acbf257f5a961",
         "src/Dispatcher/Dispatcher.php": "2d8e6616f9ae42310b7b3d142ac098e4b0c1f5082ef8efa8af7bca2ff1730b8e",
-        "src/Helper/EmbedHelper.php": "f690d90422b2e772cf013125cd7d580db193a765249472927ff68effdb076bdc",
+        "src/Field/MeasurementField.php": "d478bc4244419071fc035250dca0cd5d21bf4312924b2101082f2f268d6d4af6",
+        "src/Helper/EmbedHelper.php": "5e86403e599a48a8a6b17fb1e554c11dab623f3018485ec43aade3fccdeeaa87",
         "src/Rule/PublicformRule.php": "fe7d5a543cb1a4ac19a6da7d8deb4f53b53b6304b3a0536ae48e324965a5ad7d",
         "tmpl/default.php": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
       }
     },
-    "mod_festapp_tickets-1.0.1.zip": {
-      "sha256": "a2ed0512986875d11616318ee2fbc0ff98ea50a5e089578dd6acc7834f4fb9e2",
-      "immutable": "artifacts/sha256/a2ed0512986875d11616318ee2fbc0ff98ea50a5e089578dd6acc7834f4fb9e2/mod_festapp_tickets-1.0.1.zip",
+    "mod_festapp_tickets-1.0.2.zip": {
+      "sha256": "31e35cd06d9234ffb45d4ac555ae665751dc6cc8985d92c69ba28d0fb0a1b312",
+      "immutable": "artifacts/sha256/31e35cd06d9234ffb45d4ac555ae665751dc6cc8985d92c69ba28d0fb0a1b312/mod_festapp_tickets-1.0.2.zip",
       "files": {
         "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-        "language/cs-CZ/mod_festapp_tickets.ini": "d5bfb6696acc677ed1047a428a143b830b6fb798d79811524f892b97f7a3298c",
-        "language/cs-CZ/mod_festapp_tickets.sys.ini": "d5bfb6696acc677ed1047a428a143b830b6fb798d79811524f892b97f7a3298c",
-        "language/en-GB/mod_festapp_tickets.ini": "ae2a294cbcc74aa6280c0053001156745dd5194698de09de34690093808752eb",
-        "language/en-GB/mod_festapp_tickets.sys.ini": "ae2a294cbcc74aa6280c0053001156745dd5194698de09de34690093808752eb",
-        "mod_festapp_tickets.xml": "126e262e8a8ef6d5d1e322b307435957c8af570d3d3ca462d18094f7f172de0d",
+        "language/cs-CZ/mod_festapp_tickets.ini": "4d0c49f324894acffa5bdba2b46d1d990a5cd81d44b1f171ac5f99938104e75f",
+        "language/cs-CZ/mod_festapp_tickets.sys.ini": "4d0c49f324894acffa5bdba2b46d1d990a5cd81d44b1f171ac5f99938104e75f",
+        "language/en-GB/mod_festapp_tickets.ini": "2e8e81aa94792ca64c65e1ee0a0e0490cf26df8b44db0dac2ec19482234ffd39",
+        "language/en-GB/mod_festapp_tickets.sys.ini": "2e8e81aa94792ca64c65e1ee0a0e0490cf26df8b44db0dac2ec19482234ffd39",
+        "mod_festapp_tickets.xml": "f95752b8dc9e904c87bbd4a7d3cdfd3073609e940dfa6266640ac2d41b7175b4",
         "services/provider.php": "b70209d465a990f39c2c2845536e4f1b75c87019a37b44768396b20cec0fac25",
         "src/Dispatcher/Dispatcher.php": "281a42c0e0ea1c3926140ab8d581501e1f6a7f9592fb1257f08c01cf17bbaa7c",
-        "src/Helper/EmbedHelper.php": "b81acac6163679287d26bd78cd69f693e9c193974873e2ee46acb66a6f3cd870",
+        "src/Field/MeasurementField.php": "7ba81eaad91d65cdc12ecd63ee1cbb80994b059362e7ab3bd3c9f5ab42404605",
+        "src/Helper/EmbedHelper.php": "fc0344a4ab4620c344e6a03b312d3810d38039fcf1c95dd0d5e198d5a141e64d",
         "src/Rule/PublicformRule.php": "a7ea6a4be94cff894c245c59912f19636363d8f11e30503bb1584a411775dd98",
         "tmpl/default.php": "18110197e1dc76f6a47aecda266c4be3c031fd687a832b69733eabba130035e5"
       }

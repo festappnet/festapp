@@ -22,6 +22,17 @@ BEGIN
     SELECT * INTO v_order FROM eshop.orders WHERE id=p_order_id FOR UPDATE;
     SELECT * INTO v_payment FROM eshop.payment_info WHERE id=v_order.payment_info FOR UPDATE;
     v_was_eligible := coalesce(v_order.state IN ('paid','sent'),false);
+    -- Online payment prices are immutable at the mutation boundary. A seat-only
+    -- edit still invalidates queued content, without reinterpreting provider facts.
+    IF p_reason='product_edit' AND public.payment_method_is_online_internal(v_payment.payment_method)
+       AND v_order.state IN ('created','ordered','expired','paid','sent') THEN
+        PERFORM public.cancel_order_email_intents(p_order_id);
+        UPDATE eshop.orders SET email_payment_version=email_payment_version+1,updated_at=now()
+        WHERE id=p_order_id RETURNING email_payment_version INTO v_final_version;
+        PERFORM public.enqueue_paid_order_tickets(p_order_id);
+        RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_order.state,
+            'eligibility_changed',false,'email_payment_version',v_final_version);
+    END IF;
     -- Provider facts and non-admission shells retain their existing owners.
     IF v_payment.id IS NULL OR public.payment_method_is_online_internal(v_payment.payment_method)
        OR v_order.state NOT IN ('created','ordered','expired','paid','sent') THEN

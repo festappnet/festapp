@@ -1,15 +1,24 @@
 -- test-setup: database/tests/blueprint/fixtures.sql
 
 DO $$
-DECLARE f jsonb; r jsonb; req jsonb; seat_ids bigint[]; order_id bigint; ticket_id bigint; opt_id bigint; pay bigint; history_before int; snapshot jsonb; prod2 bigint; ticket2 bigint; opt2 bigint;
+DECLARE f jsonb; r jsonb; req jsonb; seat_ids bigint[]; order_id bigint; ticket_id bigint; opt_id bigint; pay bigint; history_before int; snapshot jsonb; prod2 bigint; ticket2 bigint; opt2 bigint; bank bigint;
 BEGIN
  f:=public.blueprint_test_fixture_internal(); req:=f->'request'; PERFORM set_config('request.jwt.claim.sub',f->>'actor',true);
  r:=public.update_blueprint_client_sync_v1(req,gen_random_uuid());
  SELECT array_agg(spot ORDER BY spot) INTO seat_ids FROM eshop.blueprint_seat_bindings WHERE blueprint=(f->>'blueprint')::bigint;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code) SELECT occasion,product_type,'Expensive',150,'CZK' FROM eshop.products WHERE id=(f->>'product')::bigint RETURNING id INTO prod2;
  UPDATE eshop.spots SET product=prod2 WHERE id=seat_ids[2];
+ -- Shared reconciliation requires a valid receiving account for the new balance.
+ INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Swap bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account) SELECT unit,bank FROM public.occasions WHERE id=(f->>'occasion')::bigint;
+ IF to_regclass('eshop.organization_payment_method_policies') IS NOT NULL THEN
+  INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method)
+  SELECT organization,'bank' FROM public.occasions WHERE id=(f->>'occasion')::bigint ON CONFLICT DO NOTHING;
+  INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled)
+  SELECT organization,'bank',true FROM public.occasions WHERE id=(f->>'occasion')::bigint ON CONFLICT DO NOTHING;
+ END IF;
  order_id:=public.allocate_ticket_order_identity_internal((f->>'form')::bigint);
- INSERT INTO eshop.payment_info(amount,paid,currency_code) VALUES(100,100,'CZK') RETURNING id INTO pay;
+ INSERT INTO eshop.payment_info(amount,paid,currency_code,bank_account,variable_symbol) VALUES(100,100,'CZK',bank,123456) RETURNING id INTO pay;
  INSERT INTO eshop.tickets(occasion,state) VALUES((f->>'occasion')::bigint,'paid') RETURNING id INTO ticket_id;
  INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(order_id,ticket_id,(f->>'product')::bigint) RETURNING id INTO opt_id;
  UPDATE eshop.orders SET state='paid',price=100,payment_info=pay,data=jsonb_build_object('name','Private customer','email','private@example.invalid','tickets',jsonb_build_array(jsonb_build_object('id',ticket_id,'products',jsonb_build_array(public._swap_spots_generate_product_json((f->>'product')::bigint,seat_ids[1]))))) WHERE id=order_id;
@@ -17,7 +26,7 @@ BEGIN
  SELECT count(*) INTO history_before FROM eshop.orders_history WHERE "order"=order_id;
  SELECT to_jsonb(o) INTO snapshot FROM eshop.orders o WHERE id=order_id;
  r:=public.preview_blueprint_swap(seat_ids[1],seat_ids[2]);
- PERFORM public.assert_eq((r->>'code')::int,200,'paid swap preview accepted');
+ PERFORM public.assert_eq((r->>'code')::int,200,'paid swap preview accepted: '||r::text);
  PERFORM public.assert_eq((r#>>'{orders,0,afterAmount}')::numeric,150::numeric,'preview effective destination amount');
  PERFORM public.assert_eq((r#>>'{orders,0,delta}')::numeric,50::numeric,'preview delta');
  PERFORM public.assert_eq((SELECT to_jsonb(o) FROM eshop.orders o WHERE id=order_id),snapshot,'preview rolls back complete order');

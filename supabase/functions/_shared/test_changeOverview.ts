@@ -124,3 +124,17 @@ Deno.test("each change block starts with its ticket and only cancelled tickets a
   assertStringIncludes(neutralHtml, "(Odebraná)");
   assertEquals(neutralHtml.includes("text-decoration: line-through"), false);
 });
+
+Deno.test("seat-only update shows escaped old and new seat labels without a price change", () => {
+  const value = structuredClone(fixture);
+  value.cancelledTickets = [];
+  value.referenceTotal = value.currentTotal = 100;
+  value.productChanges = [{id: 2, ticket_symbol: "SP26", changed: [{
+    from: {id: 7, title: "Místo", price: 100, spot_title: "7F"},
+    to: {id: 7, title: "Místo", price: 100, spot_title: "6G<script>"},
+  }]}];
+  const html = generateChangeOverview(value);
+  assertStringIncludes(html, "Místo - 7F → Místo - 6G&lt;script&gt;");
+  assertEquals(html.includes("<script>"), false);
+  assertEquals(html.includes("Celková cena"), false);
+});
