@@ -1,3 +1,4 @@
+import { bankCollectionAllowed, unavailableCollectionText } from "../_shared/orderEmailPresentation.ts";
 import { requireHostedPayment } from "../_shared/payments/contracts.ts";
 import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
@@ -73,26 +74,27 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   }, { id: task.occasion, organization: task.organization });
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
+  const {data: currentDetails, error: detailsError} = await supabaseAdmin.rpc('get_order_details_for_email', {p_order_id: order.id});
+  if (detailsError || currentDetails?.code !== 200) throw new Error('payment_email_policy_unavailable');
+  paymentInfo.collectionAction = currentDetails.data.payment_info.collectionAction;
   const attachments: Attachment[] = [];
   if (paymentRegistry.hasHosted(paymentInfo.payment_method)) {
     const binding=requireHostedPayment(paymentRegistry.resolve(paymentInfo.payment_method));
     if (!binding.order) throw new Error("payment_email_not_configured");
     const source=await binding.order.readSource(order.id,task.data.command_id);
     const sourcePayment=(source as {payment?:{status?:string}})?.payment;
-    const payable=["open","preparing"].includes(sourcePayment?.status ?? "");
+    const payable=paymentInfo.collectionAction?.allowed === true && ["open","preparing"].includes(sourcePayment?.status ?? "");
     const secrets=payable ? await binding.openSource(source) : undefined;
+    const balanceReasoning = !payable && ["open","preparing"].includes(sourcePayment?.status ?? "") ? unavailableCollectionText(lang) : paymentConfirmationBalance(source, secrets, lang,
+      formatCurrency(paymentInfo.amount, paymentInfo.currency_code, 2), formatDatetime(paymentInfo.deadline, lang) ?? "",
+      {providerId: binding.connector.id, providerName: binding.connector.displayName, payPath: binding.routes.payPath, allowedOrigins: binding.allowedOrigins});
+    const paymentAction = balanceReasoning.match(/<p><a href="[^"]+">[^<]+<\/a><\/p>/)?.[0] ?? "";
     return {
       subs: {
+        paymentAction, paymentMethodName: binding.connector.displayName,
         occasionTitle: occasion.title,
         orderSymbol: order.order_symbol,
-        balanceReasoning: paymentConfirmationBalance(
-          source,
-          secrets,
-          lang,
-          formatCurrency(paymentInfo.amount, paymentInfo.currency_code, 2),
-          formatDatetime(paymentInfo.deadline, lang) ?? "",
-          { providerId: binding.connector.id, providerName: binding.connector.displayName, payPath: binding.routes.payPath, allowedOrigins: binding.allowedOrigins },
-        ),
+        balanceReasoning,
         price: paymentInfo.amount,
         currencyCode: paymentInfo.currency_code,
         amount: formatCurrency(
@@ -125,6 +127,12 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     };
   }
 
+  // Unverified external attachment/invoice hooks cannot issue a parallel payment demand.
+  if (!bankCollectionAllowed(paymentInfo)) return {
+    subs: confirmationSubstitutions(order, lang), sender: occasion.title, receiver: order.data.email,
+    context: {organization: occasion.organization, unit: occasion.unit, occasion: occasion.id}, attachments, reply_to: order.reply_to,
+  };
+
   const { data: externalServices, error } = await supabaseAdmin.rpc(
     "get_external_services",
     { p_order_id: order.id },
@@ -146,7 +154,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       commandId: String(task.data.command_id),
     });
     if (invoice.attachment) attachments.push(invoice.attachment);
-  } else if (isBankPaymentInfo(paymentInfo) && paymentInfo.amount > 0) {
+  } else if (bankCollectionAllowed(paymentInfo) && ['CZK','EUR'].includes(paymentInfo.currency_code) && paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }

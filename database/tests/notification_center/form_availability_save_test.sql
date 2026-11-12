@@ -5,6 +5,9 @@ DECLARE org bigint; un bigint; oc bigint; f bigint; editor uuid:=gen_random_uuid
  cmd uuid:=gen_random_uuid(); result jsonb; input jsonb; n bigint; at_time timestamptz:=clock_timestamp(); copy_id bigint; new_form_id bigint;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Availability save') RETURNING id INTO org;
+ -- This notification fixture opens paid default products with explicit cash policy.
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'cash',true);
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'cash');
  INSERT INTO public.units(organization,title) VALUES(org,'Unit') RETURNING id INTO un;
  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time) VALUES(org,un,'Save',gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
  UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',oc,link,true) WHERE id=oc;
@@ -24,12 +27,12 @@ BEGIN
  PERFORM public.update_form_client_sync_v1(input,cmd);
  PERFORM public.update_form_client_sync_v1(input,gen_random_uuid());
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='form_opened'),1::bigint,'command replay and no-op quiet');
- result:=public.update_form_internal_v1(jsonb_build_object('id',f,'occasion',oc,'is_open',false,'deadline_duration_seconds',-1));
+ result:=public.update_form_internal_v1(jsonb_build_object('id',f,'occasion',oc,'is_open',false,'bank_account',-1));
  PERFORM assert_true((result->>'code')::int<>200,'save failure is real');
  PERFORM assert_eq((SELECT count(*) FROM public.notification_center_events WHERE organization=org AND kind='form_closed'),0::bigint,'failed save does not publish');
  PERFORM assert_true((SELECT is_open FROM public.forms WHERE id=f),'failed save rolls back domain');
  -- A late save drains OLD boundaries before the new schedule can erase them.
- UPDATE public.forms SET data=jsonb_build_object('schedule',jsonb_build_object('start_time',at_time-interval '2 hours','end_time',at_time-interval '1 hour')) WHERE id=f;
+ UPDATE public.forms SET data=coalesce(data,'{}'::jsonb)||jsonb_build_object('schedule',jsonb_build_object('start_time',at_time-interval '2 hours','end_time',at_time-interval '1 hour')) WHERE id=f;
  PERFORM public.notification_center_form_availability_internal(f,at_time-interval '3 hours',NULL,true);
  -- Rebaseline clamps a caller's older timestamp, so set up an actual historical baseline explicitly.
  UPDATE public.notification_center_source_state SET observed_at=at_time-interval '3 hours',state=public.get_form_availability_snapshot_internal(f,at_time-interval '3 hours')||jsonb_build_object('formId',f,'title','Real save'),next_evaluation_at=at_time-interval '2 hours' WHERE organization=org AND source_key='form-availability:'||f;

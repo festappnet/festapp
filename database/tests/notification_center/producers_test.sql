@@ -7,11 +7,13 @@ CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE pl
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN
  INSERT INTO organizations(title) VALUES('Waitlist regression '||suffix) RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
  INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
- INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
+ INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies) VALUES('Regression bank','FIO','123/0100',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
+ UPDATE forms SET bank_account=bank,data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=f;
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Admission',pt,100,'CZK',oc) RETURNING id INTO prod;
  INSERT INTO form_fields(form,product_type,type) VALUES(f,pt,'product_type');

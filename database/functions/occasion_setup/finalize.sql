@@ -26,6 +26,7 @@ BEGIN
  payload := public.normalize_occasion_setup_appearance_internal(d.data);
  payload:=public.normalize_setup_payments_internal(payload);
  IF payload->'paymentRepairRequired'='true'::jsonb THEN RAISE invalid_parameter_value USING MESSAGE='Payment recipient requires explicit repair'; END IF;
+ PERFORM public.payment_policy_fence_internal(d.organization);
  payment_method:=CASE WHEN payload#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' WHEN payload#>'{payments,bankEnabled}'='false'::jsonb THEN 'online' ELSE 'bank' END;
  blueprint_mode:=CASE payload->>'blueprintMode'
   WHEN 'Bez plánku' THEN 'none' WHEN 'Nový' THEN 'new' WHEN 'Převzít' THEN 'copy'
@@ -106,6 +107,7 @@ BEGIN
  CROSS JOIN LATERAL jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p
  WHERE coalesce((payload->>'formEnabled')::boolean,true) AND NOT coalesce((f->>'is_hidden')::boolean,false)
    AND NOT coalesce((p->>'is_hidden')::boolean,false) AND (p->>'price')::numeric>0;
+ IF payment_method='bank' AND NOT coalesce(public.payment_method_policy_enabled_internal(d.unit,'bank'),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
  IF required_currencies IS NOT NULL AND payment_method='bank' AND (payload ? 'bankAccountId' OR payload ? 'bankAccountConfirmed' OR sale_mode<>'preparation') THEN
   IF nullif(payload->>'bankAccountId','') IS NULL THEN
    RAISE invalid_parameter_value USING MESSAGE='Bank account selection required'; END IF;

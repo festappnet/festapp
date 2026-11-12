@@ -3,6 +3,7 @@ DECLARE org bigint:=-971510; unit_id bigint:=-971510; oc bigint:=-971510; bank b
  form_id bigint:=-971510; pi bigint:=-971510; actor uuid; conn bigint; bundle jsonb; item jsonb;
 BEGIN
  INSERT INTO public.organizations(id,title) VALUES(org,'Bank warning bundle tenant');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO public.units(id,title,organization) VALUES(unit_id,'Bank warning bundle unit',org);
  INSERT INTO public.occasions(id,title,organization,unit,link,start_time,end_time)
  VALUES(oc,'Bank warning bundle occasion',org,unit_id,'bank-health-bundle',now(),now()+interval '1 day');

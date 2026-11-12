@@ -13,9 +13,30 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   final EmailTemplateModel template;
   bool inlineTicketsEnabled = false;
   bool includesPdfTickets = false;
-  List<EmailTemplateSub> get _subs => template.substitutions
-      .where((sub) => sub.code != 'tickets' || inlineTicketsEnabled)
-      .toList();
+  List<EmailTemplateSub> get _subs => template.substitutions.where((sub) {
+    if (sub.code == 'tickets' && !inlineTicketsEnabled) return false;
+    final defaults = scenario?.contextDefaults;
+    if (defaults == null || !defaults.containsKey('preview_payment_method'))
+      return true;
+    final bankCollection =
+        defaults['preview_payment_method'] == 'bank' &&
+        defaults['preview_collection_allowed'] == 'true';
+    if (const {
+      'accountNumber',
+      'iban',
+      'bankCode',
+      'bankName',
+      'variableSymbol',
+      'specificSymbol',
+      'constantSymbol',
+      'qrPayment',
+      'qrCode',
+    }.contains(sub.code))
+      return bankCollection;
+    if (sub.code == 'paymentAction')
+      return defaults['preview_collection_allowed'] == 'true';
+    return true;
+  }).toList();
   final EmailTargetField field;
   EmailPreviewScenario? scenario;
   WidgetBuilder? footerBuilder;

@@ -164,13 +164,6 @@ class SupabaseBankAccounts {
     return accounts;
   }
 
-  Future<List<BankAccountModel>> getBankAccountsForOrganization(
-    int organizationId,
-  ) async {
-    // Fallback to my admin accounts until specific RPC is verified
-    return getMyAdminBankAccounts();
-  }
-
   Future<int> updateBankAccount(
     BankAccountModel account, {
     int? unitId,
@@ -239,8 +232,8 @@ class SupabaseBankAccounts {
     );
   }
 
-  Future<List<BankAccountModel>> getMyAdminBankAccounts() async {
-    final response = await _rpc('get_my_admin_bank_accounts');
+  Future<List<BankAccountModel>> getLinkableBankAccounts(int unitId) async {
+    final response = await _rpc('get_linkable_bank_accounts', params: {'p_unit_id': unitId});
     return (response as List).map((e) => BankAccountModel.fromJson(e)).toList();
   }
 

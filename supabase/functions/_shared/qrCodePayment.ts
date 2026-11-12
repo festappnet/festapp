@@ -15,6 +15,9 @@ export async function generateQrCode(
   order: any,
   occasionTitle: string,
 ): Promise<Uint8Array> {
+  if (paymentInfo?.payment_method !== 'bank' || paymentInfo?.collectionAction?.method !== 'bank' ||
+    paymentInfo?.collectionAction?.purpose !== 'collect_payment' || paymentInfo?.collectionAction?.allowed !== true ||
+    !(Number(paymentInfo.amount) > 0) || !['CZK','EUR'].includes(paymentInfo.currency_code)) throw new Error('payment_qr_action_forbidden');
   const message = determinePaymentMessage(order, occasionTitle);
   const payment = presentPayment(paymentInfo, message);
   const canvas = createCanvas(500, 700);

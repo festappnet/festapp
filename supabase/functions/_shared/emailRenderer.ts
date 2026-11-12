@@ -1,3 +1,5 @@
+import { providerPaymentSubstitutions } from "./orderEmailPresentation.ts";
+import { paymentRegistry } from "./payments/runtime.ts";
 import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
@@ -108,7 +110,8 @@ export async function renderQueuedEmail(
       console.warn('ticket_wallet_email_unavailable');
     }
     const lang = row.data?.lang ?? "cs";
-    const payment = ticketEmailSubstitutions(result.data, lang);
+    const method = result.data.payment_info?.payment_method;
+    const payment = ticketEmailSubstitutions(result.data, lang, paymentRegistry.has(method) ? paymentRegistry.resolve(method).connector.displayName : String(method ?? ''));
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
     return {
       prepared: await renderEmail({
@@ -154,6 +157,20 @@ export async function renderQueuedEmail(
   }, null);
   // Server context and snapshotted recipient are authoritative, never live replacement recipient.
   const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
+  if (row.message_kind !== 'order_confirmation') {
+    const current = await emailRpc('get_order_details_for_email', {p_order_id: row.order_id});
+    const payment = current.data?.payment_info;
+    if (payment) {
+      rendered.subs.paymentMethodName = paymentRegistry.has(payment.payment_method) ? paymentRegistry.resolve(payment.payment_method).connector.displayName : String(payment.payment_method ?? '');
+      rendered.subs.paymentAction = payment.payment_method === 'bank' && payment.collectionAction?.allowed === true ? rendered.subs.paymentDetails || rendered.subs.balanceReasoning || '' : '';
+    }
+    if (payment && paymentRegistry.hasHosted(payment.payment_method)) {
+      const name = paymentRegistry.resolve(payment.payment_method).connector.displayName;
+      Object.assign(rendered.subs, providerPaymentSubstitutions(payment, name, row.data?.lang ?? 'cs',
+        overviewEmailSubstitutions(overviewUrl, row.data?.lang).order_overview_button));
+    }
+  }
+
   const prepared = await renderEmail({
     to: row.recipient,
     templateCode: row.code,

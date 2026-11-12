@@ -146,7 +146,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   bool _measurementEnabled = false;
 
-  bool _bankEnabled = true,
+  bool _bankEnabled = false,
       _paymentRecipientFailed = false,
       _paymentRecipientLoaded = false,
       _paymentRecipientLoading = false;
@@ -267,6 +267,30 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _linkNotifier.value = _linkController.text;
   }
 
+  bool _reviewingPaymentTemplates = false;
+  Future<void> _reviewPaymentTemplates() async {
+    final form = _form;
+    final id = form?.definition.id;
+    if (id == null || _reviewingPaymentTemplates) return;
+    setState(() => _reviewingPaymentTemplates = true);
+    try {
+      final audit = await DbForms.getPaymentTemplateAudit(id);
+      if (!mounted || !identical(form, _form)) return;
+      final compatible = audit['compatible'] == true;
+      final confirmed = await showDialog<bool>(context: context, builder: (context) => AppAlertDialog(
+        title: Text(PaymentMethodStrings.text('policyTemplateReview')),
+        content: Text(PaymentMethodStrings.text(compatible ? 'policyTemplateReviewHint' : 'policyTemplateRepair')),
+        actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: Text(CommonStrings.cancel)),
+          if (compatible && audit['canReview'] == true) FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(PaymentMethodStrings.text('policyTemplateApprove')))],
+      ));
+      if (confirmed == true && mounted && identical(form, _form)) await DbForms.reviewPaymentTemplates(id, audit['revision'] as String);
+    } catch (error) {
+      if (mounted) ToastHelper.Show(context, PaymentMethodStrings.text('policySaveFailed'), severity: ToastSeverity.NotOk);
+    } finally {
+      if (mounted) setState(() => _reviewingPaymentTemplates = false);
+    }
+  }
+
   bool _refreshingBankAccounts = false;
   late final ValueListenable<({int accountId, int revision})> _bankChanges;
 
@@ -316,7 +340,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (form != null) {
       _form = form;
       final payments = _form!.definition.data?['payments'];
-      _bankEnabled = payments is! Map || payments['bankEnabled'] != false;
+      _bankEnabled = payments is Map && payments['bankEnabled'] == true;
       _cashEnabled = payments is Map && payments['cashEnabled'] == true;
       _cashInstructionsController.text = payments is Map
           ? payments['cashInstructions'] as String? ?? ''
@@ -965,7 +989,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           Text(PaymentMethodStrings.reason('not_configured')),
         if (_onlinePaymentsVisible && !_cashEnabled && compatibility != null)
           Text(PaymentMethodStrings.reason(compatibility)),
+        if (!_bankEnabled && cardEnabled) TextButton.icon(
+          onPressed: _reviewingPaymentTemplates ? null : _reviewPaymentTemplates,
+          icon: const Icon(Icons.mark_email_read_outlined),
+          label: Text(PaymentMethodStrings.text('policyTemplateReview'))),
         PaymentMethodCards(
+          showBank: (_form?.paymentMethodPolicy?['methods'] as Map?)?['bank']?['policyEnabled'] == true,
+          showCash: (_form?.paymentMethodPolicy?['methods'] as Map?)?['cash']?['policyEnabled'] == true,
           showOnline: _onlinePaymentsVisible,
           value: _cashEnabled
               ? FormPaymentMethod.cash
@@ -1018,7 +1048,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         const SizedBox(height: 16),
         if (!_cashEnabled && !_bankEnabled && !cardEnabled)
           Text(PaymentMethodStrings.text('noMethodSelected')),
-        if (_bankEnabled) ...[
+        if (_bankEnabled && (_form?.paymentMethodPolicy?['methods'] as Map?)?['bank']?['policyEnabled'] == true) ...[
           Text(
             PaymentMethodStrings.text('bank'),
             style: Theme.of(context).textTheme.titleSmall,

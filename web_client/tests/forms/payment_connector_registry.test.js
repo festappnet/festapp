@@ -23,7 +23,7 @@ test('unknown providers cannot create a payment owner and duplicate registration
 });
 test('availability uses each connector recipient and never invents an available method',()=>{
     const registry=new PaymentConnectorRegistry([bankPaymentConnector,connector]);
-    const result=formPaymentOptions({available:['bank','another_gateway','uninstalled'],providers:{another_gateway:{configured:true,available:true,recipient:{connectionId:'merchant-42'}}}},'web',registry);
+    const result=formPaymentOptions({available:['bank','another_gateway','uninstalled'],bank:{available:true},providers:{another_gateway:{configured:true,available:true,recipient:{connectionId:'merchant-42'}}}},'web',registry);
     assert.deepEqual(result.available,['bank','another_gateway']);assert.equal(result.providers.another_gateway.recipient.connectionId,'merchant-42');
     assert.deepEqual(formPaymentOptions({available:[],providers:{another_gateway:{configured:true,available:true}}},'web',registry).available,[]);
 });

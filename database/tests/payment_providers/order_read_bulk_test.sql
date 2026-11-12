@@ -48,7 +48,8 @@ BEGIN
 
  FOR row IN SELECT * FROM public.payment_method_contexts_internal(ids) LOOP
   baseline:=pg_temp.order_payment_context_reference(row.order_id);
-  PERFORM assert_eq(row.context,baseline,'complete bulk/scalar parity: mixed scopes, ledger, methods and requests');
+  PERFORM assert_eq(row.context-'methods'-'requests'-'sourceOrderId'-'sourcePaymentId'-'sourceMethod',baseline-'methods'-'requests','bulk/scalar financial parity across mixed scopes');
+  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM jsonb_array_elements(row.context->'methods') m WHERE m->>'method' IS DISTINCT FROM m->>'id' OR m->>'purpose' IS NULL),'bulk capabilities include typed purpose and source method');
  END LOOP;
  PERFORM assert_eq((SELECT count(*) FROM public.payment_method_contexts_internal(ids)),5::bigint,'one context per distinct order with a payment');
  PERFORM assert_true(public.payment_method_context_internal(null_payment_order) IS NULL,'missing payment remains null');

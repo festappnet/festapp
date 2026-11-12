@@ -49,6 +49,7 @@ void main() {
       );
       final options = FormPaymentOptions.fromJson({
         'available': ['bank', 'other_gateway', 'uninstalled'],
+        'bank': {'available': true},
         'providers': {
           'other_gateway': {
             'configured': true,

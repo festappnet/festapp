@@ -3022,11 +3022,6 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.get_bank_transaction_history(bigint)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
     "public.get_form_by_link(jsonb)": {
       "anon": true,
       "authenticated": true,
@@ -3311,6 +3306,61 @@
       "anon": true,
       "authenticated": true,
       "service_role": true
+    },
+    "public.can_manage_payment_method_policy(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_payment_method_policy(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_payment_method_policy(jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.command_payment_method_policy(jsonb,uuid,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_payment_template_audit(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.review_payment_templates(bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_bank_transaction_history(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_linkable_bank_accounts(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_order_details_for_email(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_my_admin_bank_accounts()": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_bank_transaction_history(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3350,7 +3400,8 @@
     "database/functions/payment_providers/refund_dispatch.sql",
     "database/functions/payment_providers/operations.sql",
     "database/functions/user_permissions/payment_operations.sql",
-    "database/functions/occasion_setup/email_preview.sql"
+    "database/functions/occasion_setup/email_preview.sql",
+    "database/functions/payment_providers/released_bank_readers.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

@@ -44,6 +44,7 @@ CREATE OR REPLACE FUNCTION public.begin_bank_sync_operation(p_id uuid,p_account_
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_operation eshop.bank_sync_operations%ROWTYPE; v_inserted integer;
 BEGIN
+  PERFORM public.require_bank_authoring_scope_internal(p_account_id,NULL);
   PERFORM public.check_is_admin_for_bank_account(p_account_id);
   IF p_operation='suspend' THEN PERFORM public.check_bank_refund_source_operation_internal(p_account_id); END IF;
   INSERT INTO eshop.bank_sync_operations(id,bank_account_id,actor,operation,payload_sha256,state)

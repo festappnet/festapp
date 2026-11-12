@@ -7,7 +7,8 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  INSERT INTO organizations(title,data) VALUES('English locale test','{"DEFAULT_URL":"https://tickets.example","DEFAULT_LANGUAGE":"en"}') RETURNING id INTO org;
  INSERT INTO units(title,organization) VALUES('English organizer',org) RETURNING id INTO u;
- INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT organization,m,true FROM public.units CROSS JOIN unnest(ARRAY['bank','stripe']) m WHERE id=u ON CONFLICT(organization_id,method) DO UPDATE SET enabled=true;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) SELECT organization,'stripe' FROM public.units WHERE id=u ON CONFLICT DO NOTHING;
  INSERT INTO occasions(title,organization,unit,link,start_time,end_time) VALUES('English evening',org,u,'locale-'||gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
  INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,paused,model_verified,charges_enabled,card_payments_active) VALUES(org,u,'acct_localeFixture',false,'connected',false,true,true,true) RETURNING id INTO conn;
  INSERT INTO eshop.stripe_runtime_policy(organization_id,livemode,new_payments_enabled,online_admission_verified,reservation_policy_verified,dispute_policy_accepted,supported_surfaces) VALUES(org,false,true,true,true,true,ARRAY['web']);

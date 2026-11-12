@@ -7,7 +7,7 @@ export function builtinPaymentConnector(id, confirmation, currencies) {
             const projection = value?.[id];
             return {configured: projection?.configured === true, recipient: null,
                 // Released bank payloads could omit the bank object.
-                available: projection == null ? id === 'bank' && value?.available?.includes(id) : projection.available === true,
+                available: projection?.available === true,
                 unavailableReason: projection?.reason?.code ?? 'unavailable'};
         },
     });

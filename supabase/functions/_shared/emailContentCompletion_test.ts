@@ -29,3 +29,17 @@ Deno.test("action HTML preserves separate producer styles and escaping", () => {
   assert.equal(overviewEmailSubstitutions(null).order_overview_button, "");
   assert.deepEqual(overviewRequiredLinks(null), []);
 });
+Deno.test('payment action occupies one body or wrapper slot and legacy aliases cannot duplicate it', () => {
+  const action='<p><a href="https://tickets.example/pay#pay=private">Continue payment</a></p>';
+  for (const [body,wrapper] of [
+    ['<!--festapp-payment-action--><!--festapp-payment-action-->','<div>{{content}}</div>'],
+    ['<!--festapp-payment-action-->','<div>{{content}}{{paymentAction}}</div>'],
+    [action,'<div>{{content}}{{paymentAction}}</div>'],
+  ]) {
+    const html=completeEmailContent(body,[],wrapper,action);
+    assert.equal(html.split('Continue payment').length-1,1);
+    assert.equal(html.includes('festapp-payment-action'),false);
+    assert.equal(html.includes('{{paymentAction}}'),false);
+  }
+  assert.equal(completeEmailContent('{{paymentAction}}',[],null,''),'');
+});

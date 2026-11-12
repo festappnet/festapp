@@ -10,7 +10,7 @@ BEGIN
   ('public.get_customer_order_overview(text,bigint)',true,true,true),
   ('public.get_customer_order_overview_internal(text,bigint)',false,false,false),
   ('public.insert_manual_transaction(jsonb,uuid)',false,true,false),
-  ('public.get_bank_transaction_history(bigint)',false,true,false),
+  ('public.get_bank_transaction_history(bigint,bigint)',false,true,false),
   ('public.can_read_bank_transactions(bigint)',false,true,true)
  ) AS permissions(signature,anon,authenticated,service_role) LOOP
   function_id:=to_regprocedure(contract.signature);

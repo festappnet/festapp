@@ -120,3 +120,14 @@ The old `sync_db.js` migration applicator and `instanceInstall` UI/Edge installe
 were removed. Never install or upgrade a tenant through `supabase db push`, cloud
 Function deploy commands, or browser-submitted SQL. Supabase CLI remains a local
 development dependency of `bootstrap_local_db.sh`.
+
+## Payment method policy forwards
+
+`python3 automation/assemble-payment-method-policy-migration.py --check` checks
+both additive and contraction artifacts against their explicit source manifest.
+Use `bootstrap_local_db.sh` with a task-specific disposable project/port for a
+fresh installation. The isolated upgrade proof is
+`web_client/tests/database/payment_method_policy_upgrade.test.js`; it owns a
+logical clone, restores prior function owners and never downgrades the source DB.
+Do not replay the additive one-time historical backfill after contraction.
+These local checks do not authorize production activation or real payments.

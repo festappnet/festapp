@@ -340,6 +340,9 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
             'recipientIban': _iban.text.replaceAll(' ', '').toUpperCase(),
             'recipientName': _name.text.trim(),
           });
+      if (!isBankRefundInstruction(instructions, widget.orderId)) {
+        throw StateError('PAYMENT_REFUND_UNAVAILABLE');
+      }
       if (mounted) setState(() => _instructions = instructions);
     } catch (error) {
       if (mounted) {
@@ -442,12 +445,18 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
   );
 
   Widget _pending() {
-    final instructions = _request!['instructions'] is Map
+    final bank =
+        _request!['method'] == 'bank' &&
+        _request!['verification'] == 'bank_event';
+    final allowed = isBankRefundInstruction(
+      _request!,
+      widget.orderId,
+      request: true,
+    );
+    final instructions = allowed && _request!['instructions'] is Map
         ? _request!['instructions'] as Map
         : const {};
-    final payload = instructions['payload'];
-    final bank =
-        _request!['verification'] == 'bank_event' || instructions.isNotEmpty;
+    final payload = allowed ? instructions['payload'] : null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,18 +506,18 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
             ),
           const SizedBox(height: 12),
           Text(PaymentOperationStrings.text('sourceWarning')),
-          if (_request!['canCancel'] == true)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _confirmNotSent,
-              onChanged: _saving || _frozenPayload != null
-                  ? null
-                  : (v) => setState(() => _confirmNotSent = v == true),
-              title: Text(PaymentOperationStrings.text('confirmNotSent')),
-            ),
-          if (_request!['canCancel'] == true && _confirmNotSent)
-            Text(PaymentOperationStrings.text('cancelWarning')),
         ],
+        if (_request!['canCancel'] == true)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _confirmNotSent,
+            onChanged: _saving || _frozenPayload != null
+                ? null
+                : (v) => setState(() => _confirmNotSent = v == true),
+            title: Text(PaymentOperationStrings.text('confirmNotSent')),
+          ),
+        if (_request!['canCancel'] == true && _confirmNotSent)
+          Text(PaymentOperationStrings.text('cancelWarning')),
       ],
     );
   }
@@ -517,20 +526,8 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
 
   Widget _refundMethods(bool locked) {
     final methods = _context.methods
-        .where((method) => method.canStartRefund || method.id == 'bank')
+        .where((method) => method.canStartRefund)
         .toList();
-    // Keep bank instructions discoverable when only cash recording is allowed.
-    // Availability still comes exclusively from the server capabilities.
-    if (!methods.any((method) => method.id == 'bank') &&
-        methods.any((method) => method.id == 'cash')) {
-      methods.add(
-        const PaymentOperationMethod(
-          id: 'bank',
-          displayName: 'Bank',
-          verification: 'bank_event',
-        ),
-      );
-    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -638,6 +635,10 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                             ),
                           const SizedBox(height: 12),
                         ],
+                        if (widget.refund && _context.invalidIdentity)
+                          Text(
+                            PaymentOperationStrings.text('ledgerIncomplete'),
+                          ),
                         if (widget.refund) _refundMethods(locked),
                         if (!widget.refund && _methods.length > 1)
                           DropdownButtonFormField<String>(
@@ -670,6 +671,9 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
                           key: const ValueKey('paymentAmount'),
                           onChanged: (_) => _draftChanged(),
                           controller: _amount,
+                          readOnly:
+                              widget.refund &&
+                              _selected?.partialRefundSupported != true,
                           autofocus: true,
                           enabled: !locked,
                           decoration: InputDecoration(

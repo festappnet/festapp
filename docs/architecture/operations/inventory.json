@@ -17,7 +17,7 @@
       "Migration/baseline lookup is a fallback for missing authored definitions, not runtime precedence proof. Tests and operator automation are excluded. SQL declarations include internal helpers and overloads, not just callable APIs."
     ]
   },
-  "scannedFiles": 1531,
+  "scannedFiles": 1545,
   "rpc": [
     {
       "name": "accept_access_invitation",
@@ -114,7 +114,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 122,
+          "line": 123,
           "via": "rpc"
         }
       ],
@@ -370,22 +370,22 @@
       "references": [
         {
           "file": "supabase/functions/_shared/payments/operationHandler.ts",
-          "line": 52,
+          "line": 64,
           "via": "local-selector-candidate"
         },
         {
           "file": "supabase/functions/_shared/payments/operationHandler.ts",
-          "line": 54,
+          "line": 66,
           "via": "local-selector-candidate"
         },
         {
           "file": "supabase/functions/_shared/payments/operationHandler.ts",
-          "line": 56,
+          "line": 68,
           "via": "local-selector-candidate"
         },
         {
           "file": "supabase/functions/_shared/payments/operationHandler.ts",
-          "line": 57,
+          "line": 69,
           "via": "local-selector-candidate"
         }
       ],
@@ -440,7 +440,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 146,
+          "line": 147,
           "arguments": "p_connection_id bigint"
         }
       ]
@@ -494,7 +494,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 247,
+          "line": 284,
           "arguments": "p_attempt uuid,p_token uuid"
         }
       ]
@@ -548,7 +548,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 30,
+          "line": 34,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -646,7 +646,7 @@
       "references": [
         {
           "file": "web_client/src/components/users/user_header.js",
-          "line": 447,
+          "line": 450,
           "via": "rpc"
         }
       ],
@@ -749,7 +749,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 68,
+          "line": 69,
           "arguments": "p_id uuid"
         }
       ]
@@ -797,7 +797,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 186,
+          "line": 223,
           "arguments": ""
         }
       ]
@@ -833,7 +833,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/checkout.sql",
-          "line": 111,
+          "line": 113,
           "arguments": "p_account text,p_livemode boolean, p_attempt uuid DEFAULT NULL,p_session text DEFAULT NULL,p_intent text DEFAULT NULL"
         }
       ]
@@ -871,6 +871,24 @@
           "file": "database/functions/account_deletion/account_deletion_contract.sql",
           "line": 138,
           "arguments": "p_request_id uuid"
+        }
+      ]
+    },
+    {
+      "name": "command_payment_method_policy",
+      "references": [
+        {
+          "file": "lib/components/payments/db_payment_policy.dart",
+          "line": 35,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 85,
+          "arguments": "input_data jsonb,p_command_id uuid,p_confirmation text"
         }
       ]
     },
@@ -936,7 +954,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 89,
+          "line": 90,
           "arguments": "p_id uuid,p_state text,p_result jsonb,p_lease_token uuid"
         }
       ]
@@ -1121,7 +1139,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 166,
+          "line": 199,
           "arguments": "p_command uuid,p_order bigint,p_hash text"
         }
       ]
@@ -1504,7 +1522,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 162,
+          "line": 163,
           "via": "rpc"
         }
       ],
@@ -1599,7 +1617,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 464,
+          "line": 470,
           "via": "invoke"
         }
       ],
@@ -1974,7 +1992,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 410,
+          "line": 449,
           "arguments": "p_kind text,p_context jsonb,p_recipient text,p_sealed jsonb,p_dedupe text,p_content_hash text,p_code text,p_expires timestamptz DEFAULT NULL"
         }
       ]
@@ -2079,7 +2097,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 327,
+          "line": 366,
           "arguments": "p_attempt uuid,p_token uuid,p_outcome text,p_provider_id text DEFAULT NULL,p_error text DEFAULT NULL"
         }
       ]
@@ -2131,12 +2149,12 @@
       "references": [
         {
           "file": "supabase/functions/_shared/emailRenderer.ts",
-          "line": 148,
+          "line": 151,
           "via": "emailRpc"
         },
         {
           "file": "supabase/functions/send-email/getTicketOrderConfirmationTemplate.ts",
-          "line": 28,
+          "line": 29,
           "via": "rpc"
         }
       ],
@@ -2262,7 +2280,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 330,
+          "line": 363,
           "via": "rpc"
         }
       ],
@@ -2406,7 +2424,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 176,
+          "line": 179,
           "via": "rpc"
         }
       ],
@@ -2491,7 +2509,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 193,
+          "line": 226,
           "arguments": "p_user uuid"
         }
       ]
@@ -2568,7 +2586,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/bank_operations.sql",
-          "line": 75,
+          "line": 79,
           "arguments": "p_link text"
         }
       ]
@@ -2578,12 +2596,12 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 97,
+          "line": 98,
           "via": "argument-branch-candidate"
         },
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 97,
+          "line": 98,
           "via": "local-selector-candidate"
         }
       ],
@@ -2591,6 +2609,12 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql",
+          "line": 37,
+          "arguments": "p_bank_account_id bigint,p_unit_id bigint"
+        },
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/released_bank_readers.sql",
           "line": 36,
           "arguments": "p_bank_account_id bigint"
         }
@@ -2601,7 +2625,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 288,
+          "line": 321,
           "via": "rpc"
         },
         {
@@ -2624,7 +2648,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 310,
+          "line": 343,
           "via": "rpc"
         },
         {
@@ -2952,7 +2976,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 179,
+          "line": 212,
           "arguments": "p_hash text"
         }
       ]
@@ -2985,7 +3009,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 153,
+          "line": 186,
           "arguments": "p_message uuid"
         }
       ]
@@ -3003,7 +3027,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 131,
+          "line": 164,
           "arguments": "p_occasion bigint,p_before bigint DEFAULT NULL,p_limit integer DEFAULT 30,p_order bigint DEFAULT NULL,p_kind text DEFAULT NULL,p_state text DEFAULT NULL,p_organization bigint DEFAULT NULL,p_user uuid DEFAULT NULL,p_since timestamptz DEFAULT NULL,p_orders_only boolean DEFAULT false"
         }
       ]
@@ -3021,7 +3045,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 1,
+          "line": 78,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -3057,7 +3081,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 199,
+          "line": 200,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint,p_code text"
         }
       ]
@@ -3274,11 +3298,6 @@
           "file": "supabase/functions/generate-order-agreement/index.ts",
           "line": 497,
           "via": "rpc"
-        },
-        {
-          "file": "supabase/functions/send-email/getTicketOrderConfirmationTemplate.ts",
-          "line": 128,
-          "via": "rpc"
         }
       ],
       "definitions": [
@@ -3313,7 +3332,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 254,
+          "line": 264,
           "via": "rpc"
         },
         {
@@ -3342,7 +3361,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 267,
+          "line": 300,
           "via": "rpc"
         }
       ],
@@ -3350,7 +3369,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/get_form_for_edit.sql",
-          "line": 204,
+          "line": 205,
           "arguments": "form_link text"
         }
       ]
@@ -3414,12 +3433,12 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 197,
+          "line": 200,
           "via": "rpc"
         },
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 209,
+          "line": 212,
           "via": "rpc"
         }
       ],
@@ -3523,7 +3542,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 423,
+          "line": 462,
           "arguments": "p_message uuid"
         }
       ]
@@ -3718,7 +3737,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 453,
+          "line": 492,
           "arguments": ""
         }
       ]
@@ -3728,7 +3747,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 247,
+          "line": 253,
           "via": "rpc"
         }
       ],
@@ -3965,13 +3984,13 @@
         {
           "schema": "public",
           "file": "database/functions/occasion_setup/email_preview.sql",
-          "line": 121,
+          "line": 122,
           "arguments": "p_id uuid,p_expected_revision bigint,p_message_type text,p_occasion bigint,p_delivery_mode text"
         },
         {
           "schema": "public",
           "file": "database/functions/occasion_setup/email_preview.sql",
-          "line": 129,
+          "line": 130,
           "arguments": "p_id uuid,p_expected_revision bigint"
         }
       ]
@@ -4076,7 +4095,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 381,
+          "line": 387,
           "via": "rpc"
         },
         {
@@ -4099,8 +4118,18 @@
       "references": [
         {
           "file": "supabase/functions/_shared/emailRenderer.ts",
-          "line": 87,
+          "line": 89,
           "via": "emailRpc"
+        },
+        {
+          "file": "supabase/functions/_shared/emailRenderer.ts",
+          "line": 161,
+          "via": "emailRpc"
+        },
+        {
+          "file": "supabase/functions/send-email/getTicketOrderConfirmationTemplate.ts",
+          "line": 77,
+          "via": "rpc"
         },
         {
           "file": "supabase/functions/send-email/index.ts",
@@ -4150,7 +4179,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 499,
+          "line": 505,
           "via": "rpc"
         },
         {
@@ -4191,7 +4220,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 219,
+          "line": 225,
           "via": "rpc"
         }
       ],
@@ -4215,7 +4244,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 232,
+          "line": 238,
           "via": "rpc"
         }
       ],
@@ -4265,6 +4294,42 @@
       ]
     },
     {
+      "name": "get_payment_method_policy",
+      "references": [
+        {
+          "file": "lib/components/payments/db_payment_policy.dart",
+          "line": 14,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 38,
+          "arguments": "p_organization bigint,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "get_payment_template_audit",
+      "references": [
+        {
+          "file": "lib/components/forms/db_forms.dart",
+          "line": 284,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/template_policy.sql",
+          "line": 37,
+          "arguments": "p_form bigint"
+        }
+      ]
+    },
+    {
       "name": "get_pending_bank_sync_details",
       "references": [
         {
@@ -4277,7 +4342,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 229,
+          "line": 230,
           "arguments": "p_bank_account_id bigint"
         }
       ]
@@ -4305,7 +4370,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 226,
+          "line": 227,
           "via": "rpc"
         }
       ],
@@ -4346,7 +4411,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 192,
+          "line": 193,
           "via": "rpc"
         }
       ],
@@ -4364,7 +4429,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 178,
+          "line": 179,
           "via": "rpc"
         }
       ],
@@ -4459,7 +4524,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 215,
+          "line": 216,
           "arguments": ""
         }
       ]
@@ -4523,7 +4588,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 401,
+          "line": 402,
           "via": "rpc"
         }
       ],
@@ -4618,7 +4683,7 @@
       "references": [
         {
           "file": "web_client/src/services/scanner_api.js",
-          "line": 21,
+          "line": 22,
           "via": "call"
         }
       ],
@@ -4626,7 +4691,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 116,
+          "line": 136,
           "arguments": "p_session uuid,p_token text,p_operation_ids uuid[]"
         }
       ]
@@ -4636,7 +4701,7 @@
       "references": [
         {
           "file": "web_client/src/services/scanner_api.js",
-          "line": 27,
+          "line": 28,
           "via": "call"
         }
       ],
@@ -4654,7 +4719,7 @@
       "references": [
         {
           "file": "web_client/src/services/scanner_api.js",
-          "line": 23,
+          "line": 24,
           "via": "call"
         }
       ],
@@ -4662,7 +4727,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 126,
+          "line": 146,
           "arguments": "p_session uuid,p_token text"
         }
       ]
@@ -4916,7 +4981,7 @@
       "references": [
         {
           "file": "supabase/functions/_shared/emailRenderer.ts",
-          "line": 95,
+          "line": 97,
           "via": "emailRpc"
         }
       ],
@@ -4952,12 +5017,12 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 97,
+          "line": 98,
           "via": "argument-branch-candidate"
         },
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 97,
+          "line": 98,
           "via": "local-selector-candidate"
         }
       ],
@@ -5073,7 +5138,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/unit_measurement_approval.sql",
-          "line": 26,
+          "line": 55,
           "arguments": "p_unit bigint"
         }
       ]
@@ -5531,7 +5596,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 439,
+          "line": 478,
           "arguments": "p_reason text"
         }
       ]
@@ -5626,8 +5691,26 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 23,
+          "line": 47,
           "arguments": "p_session uuid,p_token text,p_symbol text"
+        }
+      ]
+    },
+    {
+      "name": "lookup_scanner_ticket_by_id",
+      "references": [
+        {
+          "file": "web_client/src/services/scanner_api.js",
+          "line": 20,
+          "via": "call"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/scanning/admission.sql",
+          "line": 52,
+          "arguments": "p_session uuid,p_token text,p_ticket bigint"
         }
       ]
     },
@@ -5662,7 +5745,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 162,
+          "line": 163,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint, p_expected_revision text,p_banner_url text,p_command_id uuid"
         }
       ]
@@ -5680,7 +5763,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 86,
+          "line": 87,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint, p_action text,p_code text,p_expected_revision text,p_payload jsonb,p_command_id uuid"
         }
       ]
@@ -5892,7 +5975,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 97,
+          "line": 98,
           "via": "local-selector-candidate"
         }
       ],
@@ -5943,6 +6026,17 @@
       "definitions": []
     },
     {
+      "name": "p_unit_id",
+      "references": [
+        {
+          "file": "lib/components/eshop/db_eshop.dart",
+          "line": 98,
+          "via": "local-selector-candidate"
+        }
+      ],
+      "definitions": []
+    },
+    {
       "name": "p_user",
       "references": [
         {
@@ -5969,7 +6063,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 97,
+          "line": 98,
           "via": "local-selector-candidate"
         }
       ],
@@ -5988,7 +6082,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 230,
+          "line": 267,
           "arguments": "p_message uuid,p_token uuid,p_prepared jsonb,p_post_action jsonb DEFAULT '{}'"
         }
       ]
@@ -5998,7 +6092,7 @@
       "references": [
         {
           "file": "web_client/src/services/scanner_api.js",
-          "line": 25,
+          "line": 26,
           "via": "call"
         }
       ],
@@ -6049,6 +6143,24 @@
           "file": "database/functions/occasion_setup/invitations.sql",
           "line": 28,
           "arguments": "p_id uuid,p_emails text[]"
+        }
+      ]
+    },
+    {
+      "name": "preview_payment_method_policy",
+      "references": [
+        {
+          "file": "lib/components/payments/db_payment_policy.dart",
+          "line": 28,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 62,
+          "arguments": "input_data jsonb"
         }
       ]
     },
@@ -6111,7 +6223,7 @@
       "references": [
         {
           "file": "supabase/functions/send-email/getTicketOrderConfirmationTemplate.ts",
-          "line": 67,
+          "line": 68,
           "via": "rpc"
         },
         {
@@ -6142,7 +6254,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 360,
+          "line": 399,
           "arguments": ""
         }
       ]
@@ -6200,7 +6312,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 160,
+          "line": 161,
           "arguments": "p_id bigint,p_success_at timestamptz,p_error text,p_observation_id bigint"
         }
       ]
@@ -6218,7 +6330,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 392,
+          "line": 431,
           "arguments": "p_events jsonb"
         }
       ]
@@ -6251,7 +6363,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 429,
+          "line": 468,
           "arguments": "p_account text,p_region text,p_rate numeric,p_daily numeric,p_used numeric"
         }
       ]
@@ -6399,7 +6511,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 142,
+          "line": 143,
           "via": "rpc"
         }
       ],
@@ -6425,7 +6537,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 219,
+          "line": 256,
           "arguments": "p_message uuid,p_token uuid"
         }
       ]
@@ -6520,7 +6632,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/unit_measurement_approval.sql",
-          "line": 37,
+          "line": 66,
           "arguments": "p_unit bigint"
         }
       ]
@@ -6556,7 +6668,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 458,
+          "line": 497,
           "arguments": ""
         }
       ]
@@ -6713,6 +6825,24 @@
       ]
     },
     {
+      "name": "review_payment_templates",
+      "references": [
+        {
+          "file": "lib/components/forms/db_forms.dart",
+          "line": 293,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/template_policy.sql",
+          "line": 45,
+          "arguments": "p_form bigint,p_revision text"
+        }
+      ]
+    },
+    {
       "name": "review_unit_verification",
       "references": [
         {
@@ -6779,7 +6909,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 101,
+          "line": 102,
           "arguments": "p_operation_id uuid,p_instance_id text,p_remote_id text,p_pairing_code text,p_mode text"
         }
       ]
@@ -7150,7 +7280,7 @@
       "references": [
         {
           "file": "web_client/src/services/scanner_api.js",
-          "line": 20,
+          "line": 21,
           "via": "call"
         }
       ],
@@ -7158,7 +7288,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 39,
+          "line": 59,
           "arguments": "p_session uuid,p_token text,p_query text,p_after bigint DEFAULT 0"
         }
       ]
@@ -7168,7 +7298,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 162,
+          "line": 168,
           "via": "rpc"
         },
         {
@@ -7277,24 +7407,6 @@
       ]
     },
     {
-      "name": "set_stripe_unit_feature",
-      "references": [
-        {
-          "file": "lib/components/unit/views/unit_settings_screen.dart",
-          "line": 164,
-          "via": "rpc"
-        }
-      ],
-      "definitions": [
-        {
-          "schema": "public",
-          "file": "database/functions/eshop_stripe/feature_settings.sql",
-          "line": 19,
-          "arguments": "p_unit bigint,p_enabled boolean"
-        }
-      ]
-    },
-    {
       "name": "set_unit_app_landing",
       "references": [
         {
@@ -7348,7 +7460,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 198,
+          "line": 199,
           "arguments": "p_id uuid,p_hash text,p_request jsonb,p_token_cipher jsonb"
         }
       ]
@@ -7489,7 +7601,7 @@
       "references": [
         {
           "file": "web_client/src/services/scanner_api.js",
-          "line": 22,
+          "line": 23,
           "via": "call"
         }
       ],
@@ -7497,7 +7609,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 52,
+          "line": 72,
           "arguments": "p_session uuid,p_token text,p_operations jsonb"
         }
       ]
@@ -7620,7 +7732,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 128,
+          "line": 129,
           "arguments": "p_id bigint,p_pairing_code text,p_expiry timestamptz,p_state text,p_observation_id bigint,p_mode text DEFAULT NULL"
         }
       ]
@@ -7648,7 +7760,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 486,
+          "line": 492,
           "via": "rpc"
         }
       ],
@@ -7666,7 +7778,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 435,
+          "line": 441,
           "via": "rpc"
         }
       ],
@@ -7684,7 +7796,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 476,
+          "line": 482,
           "via": "rpc"
         }
       ],
@@ -7702,7 +7814,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 454,
+          "line": 460,
           "via": "rpc"
         }
       ],
@@ -7828,7 +7940,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 217,
+          "line": 218,
           "via": "rpc"
         }
       ],
@@ -8052,7 +8164,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 402,
+          "line": 408,
           "via": "invoke"
         }
       ],
@@ -8213,7 +8325,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 543,
+          "line": 549,
           "via": "invoke"
         }
       ],
@@ -8410,22 +8522,22 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 563,
+          "line": 569,
           "via": "invoke"
         },
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 579,
+          "line": 585,
           "via": "invoke"
         },
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 595,
+          "line": 602,
           "via": "invoke"
         },
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 650,
+          "line": 667,
           "via": "invoke"
         }
       ],
@@ -8721,7 +8833,7 @@
         },
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 533,
+          "line": 539,
           "via": "invoke"
         }
       ],
@@ -8808,7 +8920,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 109,
+          "line": 115,
           "via": "invoke"
         },
         {
@@ -8966,7 +9078,7 @@
       "references": [
         {
           "file": "web_client/src/services/router_service.js",
-          "line": 164,
+          "line": 165,
           "via": "invoke"
         }
       ],
@@ -9386,7 +9498,7 @@
     },
     {
       "file": "lib/components/eshop/db_eshop.dart",
-      "line": 97,
+      "line": 98,
       "kind": "rpc",
       "expression": "historyAccountId",
       "via": "rpc"
@@ -9659,7 +9771,7 @@
     },
     {
       "file": "web_client/src/services/router_service.js",
-      "line": 450,
+      "line": 452,
       "kind": "rpc",
       "expression": ".",
       "via": "rpc"
@@ -9701,28 +9813,28 @@
     },
     {
       "file": "supabase/functions/_shared/payments/operationHandler.ts",
-      "line": 52,
+      "line": 64,
       "kind": "rpc",
       "expression": "authorization",
       "via": "rpc"
     },
     {
       "file": "supabase/functions/_shared/payments/operationHandler.ts",
-      "line": 54,
+      "line": 66,
       "kind": "rpc",
       "expression": "authorization",
       "via": "rpc"
     },
     {
       "file": "supabase/functions/_shared/payments/operationHandler.ts",
-      "line": 56,
+      "line": 68,
       "kind": "rpc",
       "expression": "authorization",
       "via": "rpc"
     },
     {
       "file": "supabase/functions/_shared/payments/operationHandler.ts",
-      "line": 57,
+      "line": 69,
       "kind": "rpc",
       "expression": "authorization",
       "via": "rpc"
@@ -10777,7 +10889,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/payment_totals.sql",
-          "line": 59,
+          "line": 100,
           "arguments": "p_payment bigint,p_removed numeric DEFAULT 0"
         }
       ]
@@ -10832,7 +10944,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 40,
+          "line": 54,
           "arguments": "p_order bigint,p_command uuid,p_input jsonb"
         }
       ]
@@ -10909,7 +11021,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/bank_operations.sql",
-          "line": 47,
+          "line": 51,
           "arguments": "p_admin boolean,p_support boolean,p_unit_manager boolean"
         }
       ]
@@ -10942,7 +11054,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/builtin.sql",
-          "line": 60,
+          "line": 63,
           "arguments": "p_operation text,p_args jsonb"
         }
       ]
@@ -11085,7 +11197,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 146,
+          "line": 147,
           "arguments": "p_connection_id bigint"
         }
       ]
@@ -11146,7 +11258,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 247,
+          "line": 284,
           "arguments": "p_attempt uuid,p_token uuid"
         }
       ]
@@ -11762,7 +11874,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 50,
+          "line": 54,
           "arguments": "p_unit bigint"
         }
       ]
@@ -11806,7 +11918,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 38,
+          "line": 42,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -11839,7 +11951,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 62,
+          "line": 66,
           "arguments": "p_occasion bigint,p_target_unit bigint DEFAULT NULL"
         }
       ]
@@ -11883,7 +11995,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/bank_operations.sql",
-          "line": 39,
+          "line": 43,
           "arguments": "p_bank_account bigint,p_unit bigint"
         }
       ]
@@ -11938,7 +12050,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 119,
+          "line": 123,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -11973,6 +12085,17 @@
           "file": "database/functions/user_permissions/feature_operations.sql",
           "line": 484,
           "arguments": "p_organization bigint"
+        }
+      ]
+    },
+    {
+      "name": "can_manage_payment_method_policy",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 32,
+          "arguments": "p_organization bigint,p_unit bigint DEFAULT NULL"
         }
       ]
     },
@@ -12026,7 +12149,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 115,
+          "line": 119,
           "arguments": "p_unit bigint"
         }
       ]
@@ -12103,7 +12226,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/payment_operations.sql",
-          "line": 7,
+          "line": 38,
           "arguments": "p_order bigint"
         }
       ]
@@ -12114,7 +12237,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/payment_operations.sql",
-          "line": 14,
+          "line": 42,
           "arguments": "p_order bigint"
         }
       ]
@@ -12125,7 +12248,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 99,
+          "line": 103,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -12147,7 +12270,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/bank_operations.sql",
-          "line": 53,
+          "line": 57,
           "arguments": "p_bank_account bigint,p_unit bigint DEFAULT NULL"
         }
       ]
@@ -12279,7 +12402,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 91,
+          "line": 95,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -12301,7 +12424,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 74,
+          "line": 78,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -12609,7 +12732,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 110,
+          "line": 114,
           "arguments": "p_unit bigint"
         }
       ]
@@ -12620,7 +12743,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/payment_operations.sql",
-          "line": 2,
+          "line": 34,
           "arguments": "p_order bigint"
         }
       ]
@@ -12763,7 +12886,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 30,
+          "line": 34,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -12774,7 +12897,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 22,
+          "line": 26,
           "arguments": "p_actor uuid,p_occasion bigint"
         }
       ]
@@ -13170,7 +13293,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 25,
+          "line": 26,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint,p_write boolean DEFAULT false"
         }
       ]
@@ -13401,7 +13524,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/payment_totals.sql",
-          "line": 73,
+          "line": 114,
           "arguments": "p_order bigint"
         }
       ]
@@ -13566,7 +13689,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 68,
+          "line": 69,
           "arguments": "p_id uuid"
         }
       ]
@@ -13577,7 +13700,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 186,
+          "line": 223,
           "arguments": ""
         }
       ]
@@ -13665,7 +13788,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/checkout.sql",
-          "line": 111,
+          "line": 113,
           "arguments": "p_account text,p_livemode boolean, p_attempt uuid DEFAULT NULL,p_session text DEFAULT NULL,p_intent text DEFAULT NULL"
         }
       ]
@@ -13803,12 +13926,23 @@
       ]
     },
     {
+      "name": "command_payment_method_policy",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 85,
+          "arguments": "input_data jsonb,p_command_id uuid,p_confirmation text"
+        }
+      ]
+    },
+    {
       "name": "command_payment_operation",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/payment_providers/operations.sql",
-          "line": 49,
+          "line": 21,
           "arguments": "input_data jsonb,p_command_id uuid"
         }
       ]
@@ -13819,7 +13953,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/checkout.sql",
-          "line": 45,
+          "line": 47,
           "arguments": "p_attempt uuid,p_lease uuid,p_session text,p_url text,p_expires bigint"
         }
       ]
@@ -13852,7 +13986,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 89,
+          "line": 90,
           "arguments": "p_id uuid,p_state text,p_result jsonb,p_lease_token uuid"
         }
       ]
@@ -14369,7 +14503,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 166,
+          "line": 199,
           "arguments": "p_command uuid,p_order bigint,p_hash text"
         }
       ]
@@ -14424,7 +14558,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/form_creation_domain.sql",
-          "line": 95,
+          "line": 96,
           "arguments": "p_occasion_id bigint,p_link text,p_title text"
         }
       ]
@@ -15721,7 +15855,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 59,
+          "line": 65,
           "arguments": "p_message public.email_messages"
         }
       ]
@@ -15732,7 +15866,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 120,
+          "line": 153,
           "arguments": "p_org bigint,p_occasion bigint,p_user uuid DEFAULT NULL"
         }
       ]
@@ -15743,7 +15877,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 9,
+          "line": 86,
           "arguments": "m public.email_messages"
         }
       ]
@@ -15908,7 +16042,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 410,
+          "line": 449,
           "arguments": "p_kind text,p_context jsonb,p_recipient text,p_sealed jsonb,p_dedupe text,p_content_hash text,p_code text,p_expires timestamptz DEFAULT NULL"
         }
       ]
@@ -16117,7 +16251,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/checkout.sql",
-          "line": 67,
+          "line": 69,
           "arguments": "p_attempt uuid,p_lease uuid"
         }
       ]
@@ -16194,7 +16328,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 327,
+          "line": 366,
           "arguments": "p_attempt uuid,p_token uuid,p_outcome text,p_provider_id text DEFAULT NULL,p_error text DEFAULT NULL"
         }
       ]
@@ -16403,7 +16537,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 125,
+          "line": 139,
           "arguments": "p_form bigint"
         }
       ]
@@ -16992,7 +17126,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 193,
+          "line": 226,
           "arguments": "p_user uuid"
         }
       ]
@@ -17086,7 +17220,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/operations.sql",
-          "line": 188,
+          "line": 179,
           "arguments": "input_data jsonb"
         }
       ]
@@ -17108,7 +17242,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/bank_operations.sql",
-          "line": 75,
+          "line": 79,
           "arguments": "p_link text"
         }
       ]
@@ -17130,7 +17264,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 180,
+          "line": 181,
           "arguments": "p_bank_account_id bigint,p_limit integer DEFAULT 50"
         }
       ]
@@ -17141,6 +17275,12 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql",
+          "line": 37,
+          "arguments": "p_bank_account_id bigint,p_unit_id bigint"
+        },
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/released_bank_readers.sql",
           "line": 36,
           "arguments": "p_bank_account_id bigint"
         }
@@ -17505,7 +17645,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 149,
+          "line": 150,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint"
         }
       ]
@@ -17516,7 +17656,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 131,
+          "line": 132,
           "arguments": "p_context jsonb"
         }
       ]
@@ -17527,7 +17667,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 179,
+          "line": 212,
           "arguments": "p_hash text"
         }
       ]
@@ -17538,7 +17678,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 153,
+          "line": 186,
           "arguments": "p_message uuid"
         }
       ]
@@ -17560,7 +17700,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 200,
+          "line": 233,
           "arguments": "p_occasion bigint,p_organization bigint DEFAULT NULL"
         }
       ]
@@ -17571,7 +17711,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 131,
+          "line": 164,
           "arguments": "p_occasion bigint,p_before bigint DEFAULT NULL,p_limit integer DEFAULT 30,p_order bigint DEFAULT NULL,p_kind text DEFAULT NULL,p_state text DEFAULT NULL,p_organization bigint DEFAULT NULL,p_user uuid DEFAULT NULL,p_since timestamptz DEFAULT NULL,p_orders_only boolean DEFAULT false"
         }
       ]
@@ -17582,7 +17722,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 1,
+          "line": 78,
           "arguments": "p_occasion bigint"
         }
       ]
@@ -17604,7 +17744,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 67,
+          "line": 68,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint,p_code text DEFAULT NULL"
         }
       ]
@@ -17615,7 +17755,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 199,
+          "line": 200,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint,p_code text"
         }
       ]
@@ -17626,7 +17766,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 51,
+          "line": 52,
           "arguments": "p_context jsonb,p_code text"
         }
       ]
@@ -17995,7 +18135,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/get_form_for_edit.sql",
-          "line": 204,
+          "line": 205,
           "arguments": "form_link text"
         }
       ]
@@ -18221,7 +18361,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 423,
+          "line": 462,
           "arguments": "p_message uuid"
         }
       ]
@@ -18667,6 +18807,17 @@
       ]
     },
     {
+      "name": "get_linkable_bank_accounts",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop_bank_accounts/get_my_admin_bank_accounts.sql",
+          "line": 1,
+          "arguments": "p_unit_id bigint"
+        }
+      ]
+    },
+    {
       "name": "get_map_editor_bundle_v1",
       "locations": [
         {
@@ -18693,8 +18844,8 @@
       "locations": [
         {
           "schema": "public",
-          "file": "database/functions/eshop_bank_accounts/get_my_admin_bank_accounts.sql",
-          "line": 3,
+          "file": "database/functions/payment_providers/released_bank_readers.sql",
+          "line": 15,
           "arguments": ""
         }
       ]
@@ -18782,7 +18933,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 453,
+          "line": 492,
           "arguments": ""
         }
       ]
@@ -19042,13 +19193,13 @@
         {
           "schema": "public",
           "file": "database/functions/occasion_setup/email_preview.sql",
-          "line": 121,
+          "line": 122,
           "arguments": "p_id uuid,p_expected_revision bigint,p_message_type text,p_occasion bigint,p_delivery_mode text"
         },
         {
           "schema": "public",
           "file": "database/functions/occasion_setup/email_preview.sql",
-          "line": 129,
+          "line": 130,
           "arguments": "p_id uuid,p_expected_revision bigint"
         }
       ]
@@ -19334,7 +19485,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 82,
+          "line": 107,
           "arguments": "p_occasion bigint,p_orders bigint[]"
         }
       ]
@@ -19345,7 +19496,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 110,
+          "line": 143,
           "arguments": "p_order bigint"
         }
       ]
@@ -19445,13 +19596,35 @@
       ]
     },
     {
+      "name": "get_payment_method_policy",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 38,
+          "arguments": "p_organization bigint,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
       "name": "get_payment_operation_context",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/payment_providers/operations.sql",
-          "line": 38,
+          "line": 10,
           "arguments": "p_order_id bigint"
+        }
+      ]
+    },
+    {
+      "name": "get_payment_template_audit",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/template_policy.sql",
+          "line": 37,
+          "arguments": "p_form bigint"
         }
       ]
     },
@@ -19461,7 +19634,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 229,
+          "line": 230,
           "arguments": "p_bank_account_id bigint"
         }
       ]
@@ -19714,7 +19887,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 215,
+          "line": 216,
           "arguments": ""
         }
       ]
@@ -19912,7 +20085,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 116,
+          "line": 136,
           "arguments": "p_session uuid,p_token text,p_operation_ids uuid[]"
         }
       ]
@@ -19945,7 +20118,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 126,
+          "line": 146,
           "arguments": "p_session uuid,p_token text"
         }
       ]
@@ -20319,7 +20492,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/unit_measurement_approval.sql",
-          "line": 26,
+          "line": 55,
           "arguments": "p_unit bigint"
         }
       ]
@@ -20996,7 +21169,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/insert_manual_transaction_internal_v1.sql",
-          "line": 113,
+          "line": 116,
           "arguments": "p_amount numeric,p_currency text,p_unit_id bigint,p_variable_symbol text,p_date timestamptz, p_note text DEFAULT NULL,p_payment_info_id bigint DEFAULT NULL"
         }
       ]
@@ -21040,7 +21213,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 439,
+          "line": 478,
           "arguments": "p_reason text"
         }
       ]
@@ -21498,8 +21671,19 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 23,
+          "line": 47,
           "arguments": "p_session uuid,p_token text,p_symbol text"
+        }
+      ]
+    },
+    {
+      "name": "lookup_scanner_ticket_by_id",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/scanning/admission.sql",
+          "line": 52,
+          "arguments": "p_session uuid,p_token text,p_ticket bigint"
         }
       ]
     },
@@ -21564,7 +21748,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 162,
+          "line": 163,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint, p_expected_revision text,p_banner_url text,p_command_id uuid"
         }
       ]
@@ -21575,7 +21759,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/email_template_commands.sql",
-          "line": 86,
+          "line": 87,
           "arguments": "p_entity_type text,p_entity_id bigint,p_organization bigint,p_unit bigint, p_action text,p_code text,p_expected_revision text,p_payload jsonb,p_command_id uuid"
         }
       ]
@@ -23105,7 +23289,7 @@
         {
           "schema": "public",
           "file": "database/functions/user_permissions/domain_operations.sql",
-          "line": 14,
+          "line": 18,
           "arguments": "p_actor uuid,p_occasion bigint"
         }
       ]
@@ -23116,8 +23300,19 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_reporting.sql",
-          "line": 21,
+          "line": 98,
           "arguments": "p_order bigint"
+        }
+      ]
+    },
+    {
+      "name": "order_email_current_issues_bulk",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/emails/email_reporting.sql",
+          "line": 1,
+          "arguments": "p_orders bigint[]"
         }
       ]
     },
@@ -23155,13 +23350,35 @@
       ]
     },
     {
+      "name": "order_spot_metadata_bulk_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/order_seating.sql",
+          "line": 1,
+          "arguments": "p_spots bigint[]"
+        }
+      ]
+    },
+    {
       "name": "order_spot_metadata_internal",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/eshop/order_seating.sql",
-          "line": 2,
+          "line": 89,
           "arguments": "p_spot bigint"
+        }
+      ]
+    },
+    {
+      "name": "order_tickets_with_seating_bulk_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/order_seating.sql",
+          "line": 31,
+          "arguments": "p_snapshots jsonb"
         }
       ]
     },
@@ -23171,7 +23388,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop/order_seating.sql",
-          "line": 15,
+          "line": 102,
           "arguments": "p_order bigint,p_tickets jsonb"
         }
       ]
@@ -23254,12 +23471,34 @@
       ]
     },
     {
+      "name": "payment_collection_action_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/collection_action.sql",
+          "line": 2,
+          "arguments": "p_order bigint"
+        }
+      ]
+    },
+    {
+      "name": "payment_financial_totals_bulk_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop_transactions/payment_totals.sql",
+          "line": 23,
+          "arguments": "p_payments bigint[]"
+        }
+      ]
+    },
+    {
       "name": "payment_financial_totals_internal",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/payment_totals.sql",
-          "line": 19,
+          "line": 73,
           "arguments": "p_payment bigint"
         }
       ]
@@ -23276,13 +23515,35 @@
       ]
     },
     {
+      "name": "payment_method_contexts_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/operation_contexts.sql",
+          "line": 3,
+          "arguments": "p_orders bigint[]"
+        }
+      ]
+    },
+    {
       "name": "payment_method_is_online_internal",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 21,
+          "line": 34,
           "arguments": "p_method text"
+        }
+      ]
+    },
+    {
+      "name": "payment_method_policy_enabled_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 23,
+          "arguments": "p_unit bigint,p_method text"
         }
       ]
     },
@@ -23292,7 +23553,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 17,
+          "line": 30,
           "arguments": "p_method text"
         }
       ]
@@ -23303,8 +23564,30 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 218,
+          "line": 247,
           "arguments": "p_method text"
+        }
+      ]
+    },
+    {
+      "name": "payment_operation_permissions_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/user_permissions/payment_operations.sql",
+          "line": 1,
+          "arguments": "p_orders bigint[]"
+        }
+      ]
+    },
+    {
+      "name": "payment_policy_fence_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 28,
+          "arguments": "p_organization bigint"
         }
       ]
     },
@@ -23325,7 +23608,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 78,
+          "line": 92,
           "arguments": "p_config jsonb,p_provider text"
         }
       ]
@@ -23347,8 +23630,41 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 121,
+          "line": 135,
           "arguments": ""
+        }
+      ]
+    },
+    {
+      "name": "payment_template_audit_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/template_policy.sql",
+          "line": 16,
+          "arguments": "p_occasion bigint"
+        }
+      ]
+    },
+    {
+      "name": "payment_template_write_scope_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/template_policy.sql",
+          "line": 64,
+          "arguments": "p_context jsonb,p_invalidate boolean DEFAULT false"
+        }
+      ]
+    },
+    {
+      "name": "payment_transaction_movements_bulk_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop_transactions/payment_totals.sql",
+          "line": 1,
+          "arguments": "p_payments bigint[]"
         }
       ]
     },
@@ -23358,7 +23674,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/payment_totals.sql",
-          "line": 5,
+          "line": 60,
           "arguments": "p_payment bigint DEFAULT NULL"
         }
       ]
@@ -23391,7 +23707,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 230,
+          "line": 267,
           "arguments": "p_message uuid,p_token uuid,p_prepared jsonb,p_post_action jsonb DEFAULT '{}'"
         }
       ]
@@ -23595,12 +23911,23 @@
       ]
     },
     {
+      "name": "preview_payment_method_policy",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 62,
+          "arguments": "input_data jsonb"
+        }
+      ]
+    },
+    {
       "name": "preview_payment_operation",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/payment_providers/operations.sql",
-          "line": 165,
+          "line": 155,
           "arguments": "input_data jsonb"
         }
       ]
@@ -23743,7 +24070,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 194,
+          "line": 223,
           "arguments": "p_unit bigint,p_occasion bigint,p_livemode boolean"
         }
       ]
@@ -23754,7 +24081,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 30,
+          "line": 43,
           "arguments": "p_order bigint"
         }
       ]
@@ -23765,7 +24092,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 60,
+          "line": 74,
           "arguments": "p_order bigint"
         }
       ]
@@ -23776,7 +24103,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 68,
+          "line": 82,
           "arguments": "p_payment bigint"
         }
       ]
@@ -23787,7 +24114,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 54,
+          "line": 68,
           "arguments": "p_ticket bigint"
         }
       ]
@@ -23798,7 +24125,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 49,
+          "line": 63,
           "arguments": "p_ticket bigint"
         }
       ]
@@ -23809,7 +24136,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 92,
+          "line": 106,
           "arguments": "p_unit bigint"
         }
       ]
@@ -23820,7 +24147,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 106,
+          "line": 120,
           "arguments": "p_unit bigint"
         }
       ]
@@ -23908,7 +24235,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/queue_payment_reminders.sql",
-          "line": 87,
+          "line": 89,
           "arguments": "p_occasion_id BIGINT,p_seconds_before_deadline BIGINT"
         }
       ]
@@ -23985,7 +24312,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/checkout.sql",
-          "line": 94,
+          "line": 96,
           "arguments": "p_token text,p_livemode boolean"
         }
       ]
@@ -23996,7 +24323,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/checkout.sql",
-          "line": 79,
+          "line": 81,
           "arguments": "p_token text,p_livemode boolean"
         }
       ]
@@ -24062,7 +24389,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 360,
+          "line": 399,
           "arguments": ""
         }
       ]
@@ -24084,7 +24411,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 494,
+          "line": 533,
           "arguments": "p_message uuid,p_decision text,p_evidence text,p_provider_id text DEFAULT NULL"
         }
       ]
@@ -24128,7 +24455,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 160,
+          "line": 161,
           "arguments": "p_id bigint,p_success_at timestamptz,p_error text,p_observation_id bigint"
         }
       ]
@@ -24139,7 +24466,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 404,
+          "line": 443,
           "arguments": "p_event jsonb"
         }
       ]
@@ -24150,7 +24477,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 392,
+          "line": 431,
           "arguments": "p_events jsonb"
         }
       ]
@@ -24205,7 +24532,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 466,
+          "line": 505,
           "arguments": ""
         }
       ]
@@ -24216,7 +24543,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 170,
+          "line": 207,
           "arguments": ""
         }
       ]
@@ -24249,7 +24576,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 429,
+          "line": 468,
           "arguments": "p_account text,p_region text,p_rate numeric,p_daily numeric,p_used numeric"
         }
       ]
@@ -24271,7 +24598,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_transactions/payment_totals.sql",
-          "line": 44,
+          "line": 85,
           "arguments": "p_payment bigint"
         }
       ]
@@ -24398,6 +24725,17 @@
       ]
     },
     {
+      "name": "released_bank_unit_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/released_bank_readers.sql",
+          "line": 3,
+          "arguments": "p_account bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
       "name": "remap_blueprint_layout_ids_internal",
       "locations": [
         {
@@ -24458,7 +24796,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 219,
+          "line": 256,
           "arguments": "p_message uuid,p_token uuid"
         }
       ]
@@ -24579,8 +24917,19 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/unit_measurement_approval.sql",
-          "line": 37,
+          "line": 66,
           "arguments": "p_unit bigint"
+        }
+      ]
+    },
+    {
+      "name": "require_bank_authoring_scope_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 126,
+          "arguments": "p_account bigint,p_unit bigint DEFAULT NULL"
         }
       ]
     },
@@ -24634,7 +24983,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_queue.sql",
-          "line": 458,
+          "line": 497,
           "arguments": ""
         }
       ]
@@ -24866,6 +25215,17 @@
       ]
     },
     {
+      "name": "resolve_payment_method_policy_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/method_policy.sql",
+          "line": 2,
+          "arguments": "p_organization bigint,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
       "name": "resolve_payment_policy_internal",
       "locations": [
         {
@@ -24893,7 +25253,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 144,
+          "line": 164,
           "arguments": "p_operation uuid,p_reason text"
         }
       ]
@@ -24939,6 +25299,17 @@
           "file": "database/functions/notification_center/prepared_operations.sql",
           "line": 19,
           "arguments": "p_organization bigint,p_recipient uuid DEFAULT NULL,p_limit integer DEFAULT 100"
+        }
+      ]
+    },
+    {
+      "name": "review_payment_templates",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/payment_providers/template_policy.sql",
+          "line": 45,
+          "arguments": "p_form bigint,p_revision text"
         }
       ]
     },
@@ -25069,7 +25440,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 101,
+          "line": 102,
           "arguments": "p_operation_id uuid,p_instance_id text,p_remote_id text,p_pairing_code text,p_mode text"
         }
       ]
@@ -25603,6 +25974,17 @@
       ]
     },
     {
+      "name": "scanner_lookup_ticket_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/scanning/admission.sql",
+          "line": 23,
+          "arguments": "p_session uuid,p_token text,p_symbol text,p_ticket bigint"
+        }
+      ]
+    },
+    {
       "name": "scanner_require_settings_editor_internal",
       "locations": [
         {
@@ -25707,7 +26089,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 39,
+          "line": 59,
           "arguments": "p_session uuid,p_token text,p_query text,p_after bigint DEFAULT 0"
         }
       ]
@@ -25993,7 +26375,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/feature_settings.sql",
-          "line": 19,
+          "line": 9,
           "arguments": "p_unit bigint,p_enabled boolean"
         }
       ]
@@ -26125,7 +26507,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 198,
+          "line": 199,
           "arguments": "p_id uuid,p_hash text,p_request jsonb,p_token_cipher jsonb"
         }
       ]
@@ -26224,7 +26606,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 87,
+          "line": 101,
           "arguments": "p_metadata jsonb"
         }
       ]
@@ -26235,7 +26617,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 26,
+          "line": 39,
           "arguments": "p_input jsonb"
         }
       ]
@@ -26312,7 +26694,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_stripe/feature_settings.sql",
-          "line": 11,
+          "line": 4,
           "arguments": "p_unit bigint"
         }
       ]
@@ -26444,7 +26826,7 @@
         {
           "schema": "public",
           "file": "database/functions/scanning/admission.sql",
-          "line": 52,
+          "line": 72,
           "arguments": "p_session uuid,p_token text,p_operations jsonb"
         }
       ]
@@ -26664,7 +27046,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_forms/unit_measurement_approval.sql",
-          "line": 11,
+          "line": 18,
           "arguments": "p_unit bigint"
         }
       ]
@@ -26752,7 +27134,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
-          "line": 128,
+          "line": 129,
           "arguments": "p_id bigint,p_pairing_code text,p_expiry timestamptz,p_state text,p_observation_id bigint,p_mode text DEFAULT NULL"
         }
       ]
@@ -27445,7 +27827,7 @@
         {
           "schema": "public",
           "file": "database/functions/payment_providers/registry.sql",
-          "line": 162,
+          "line": 185,
           "arguments": "p_form bigint"
         }
       ]

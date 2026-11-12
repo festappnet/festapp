@@ -193,6 +193,7 @@ BEGIN
             'form_fields', formFieldsData,
             'product_types', productTypesData,
             'products', productsData,
+            'payment_method_policy',public.resolve_payment_method_policy_internal((SELECT organization FROM public.units WHERE id=v_unit_id),v_unit_id),
             'available_bank_accounts', availableBankAccountsData
         )
     );

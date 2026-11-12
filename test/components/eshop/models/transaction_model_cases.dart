@@ -4,6 +4,22 @@ import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 
 void main() {
   group('TransactionModel', () {
+    test('provider dispute is a status fact without a signed cash amount', () {
+      final dispute = TransactionModel.fromJson({
+        'source': 'provider',
+        'sourceId': 'account:dispute:dp_1',
+        'provider': 'stripe',
+        'transaction_type': 'dispute',
+        'status': 'under_review',
+        'heldAmount': 200,
+        'amount': null,
+      });
+      expect(dispute.amount, isNull);
+      expect(dispute.heldAmount, 200);
+      expect(dispute.status, 'under_review');
+      expect(dispute.sourceId, 'account:dispute:dp_1');
+      expect(dispute.isRefund, isFalse);
+    });
     test('fromJson correctly parses comment field', () {
       final json = {
         TbEshop.transactions.id: 1,
@@ -23,9 +39,7 @@ void main() {
       expect(transaction.vs, isNull);
     });
 
-    test(
-        'fromJson correctly parses legacy message_for_recipient if comment is missing',
-        () {
+    test('fromJson correctly parses legacy message_for_recipient if comment is missing', () {
       final json = {
         TbEshop.transactions.id: 2,
         TbEshop.transactions.transaction_id: 67890,

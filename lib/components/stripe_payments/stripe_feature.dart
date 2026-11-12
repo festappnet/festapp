@@ -13,5 +13,5 @@ abstract final class StripeFeature {
           AuthorizationCapabilities.organizationSettingsWrite);
   static bool get visible =>
       !RightsService.isDemoReadOnly &&
-      (RightsService.currentUnit()?.stripePreviewEnabled ?? false);
+      ((RightsService.currentUnit()?.paymentMethodPolicy?['methods'] as Map?)?['stripe']?['policyEnabled'] == true);
 }

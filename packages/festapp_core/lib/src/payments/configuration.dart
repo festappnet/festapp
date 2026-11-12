@@ -3,7 +3,7 @@ bool isBuiltinPaymentMethod(String? method) => method == 'bank' || method == 'ca
 
 /// Canonical saved payment choice. Legacy Stripe aliases are decoded here only.
 class FormPaymentConfiguration {
-  const FormPaymentConfiguration({this.bankEnabled = true, this.cashEnabled = false, this.cashInstructions = '', this.connections = const {}});
+  const FormPaymentConfiguration({this.bankEnabled = false, this.cashEnabled = false, this.cashInstructions = '', this.connections = const {}});
   final bool bankEnabled;
   final bool cashEnabled;
   final String cashInstructions;
@@ -23,7 +23,7 @@ class FormPaymentConfiguration {
       }
       connections['stripe'] = legacy;
     }
-    return FormPaymentConfiguration(bankEnabled: value?['bankEnabled'] != false, cashEnabled: value?['cashEnabled'] == true, cashInstructions: value?['cashInstructions'] as String? ?? '', connections: Map.unmodifiable(connections));
+    return FormPaymentConfiguration(bankEnabled: value?['bankEnabled'] == true, cashEnabled: value?['cashEnabled'] == true, cashInstructions: value?['cashInstructions'] as String? ?? '', connections: Map.unmodifiable(connections));
   }
   Map<String, dynamic> toJson() => {'bankEnabled': bankEnabled, 'cashEnabled': cashEnabled, 'cashInstructions': cashInstructions, 'providerConnections': Map<String, String>.from(connections)};
   static void normalizeDraft(Map<String, dynamic> data) {

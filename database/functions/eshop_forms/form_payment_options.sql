@@ -7,7 +7,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'supported_currencies',ba.supported_currencies,'type',ba.type,
   'bank_sync_warning',public.bank_sync_warning(ba.id)) ORDER BY uba.priority,ba.id),'[]')
  FROM eshop.unit_bank_accounts uba JOIN eshop.bank_accounts ba ON ba.id=uba.bank_account
- WHERE uba.unit=p_unit AND ba.type IS DISTINCT FROM 'CASH';
+ WHERE uba.unit=p_unit AND ba.type IS DISTINCT FROM 'CASH' AND public.payment_method_policy_enabled_internal(p_unit,'bank');
 $$;
 REVOKE ALL ON FUNCTION public.get_form_bank_accounts_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -19,6 +19,7 @@ BEGIN
  IF p_livemode IS NULL OR NOT EXISTS(SELECT 1 FROM public.forms WHERE id=p_form AND occasion=p_occasion) THEN
   RAISE insufficient_privilege USING MESSAGE='foreign form or missing Stripe environment'; END IF;
  result:=jsonb_build_object('occasionId',p_occasion,'formId',p_form,'livemode',p_livemode,
+  'paymentMethodPolicy',public.resolve_payment_method_policy_internal(p_organization,p_unit),
   'bankAccounts',public.get_form_bank_accounts_internal(p_unit),
   'availability',public.form_payment_availability_internal(p_form))||public.provider_form_editor_fields_internal(p_unit,p_occasion,p_livemode);
  IF octet_length(result::text)>1048576 OR jsonb_array_length(result->'bankAccounts')>100 THEN

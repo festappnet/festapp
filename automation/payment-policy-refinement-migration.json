@@ -1,0 +1,9 @@
+{
+  "migration": "20261112180000_payment_policy_refinement.sql",
+  "header": "-- Payment policy refinement: explicit authoring invalidates only actual changes.",
+  "sources": [
+    "others/update_email_template.sql",
+    "others/delete_entity_email_template.sql",
+    "others/update_entity_email_banner.sql"
+  ]
+}

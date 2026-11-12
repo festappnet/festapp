@@ -1,3 +1,4 @@
+import {bankCollectionAllowed} from '../_shared/orderEmailPresentation.ts';
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { ticketEmailSubstitutions } from "../_shared/ticketEmail.ts";
 import {
@@ -58,7 +59,8 @@ export function previewOrder(
     payment_info: {
       amount,
       currency_code: currency,
-      payment_method: configuration?.paymentInfo?.payment_method ?? 'bank',
+      payment_method: configuration?.paymentInfo?.payment_method ?? null,
+      collectionAction: configuration?.paymentInfo?.collectionAction,
       data: configuration?.paymentInfo?.data,
       deadline: configuration?.paymentInfo && Object.hasOwn(configuration.paymentInfo, 'deadline') ? configuration.paymentInfo.deadline : deadline,
       account_number: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number || defaults.iban : null,
@@ -189,7 +191,7 @@ export async function renderDraftPreview(context: any) {
     authoringContext: {
       senderAddress: prepared.from,
       wrapperHtml: context.resolved?.wrapper?.html,
-      paymentAccounts: context.paymentInfo && isBankPaymentInfo(context.paymentInfo)
+      paymentAccounts: context.paymentInfo && bankCollectionAllowed(context.paymentInfo)
         ? [{
           accountNumber: context.paymentInfo.account_number_human_readable ||
             context.paymentInfo.account_number,

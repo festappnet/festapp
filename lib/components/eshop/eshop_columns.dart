@@ -1109,7 +1109,7 @@ class EshopColumns {
 
                 Widget action(bool refund) {
                   final enabled =
-                      (refund ? operations?.canRefund : operations?.canRecord) ==
+                      (refund ? ((operations?.canRefund ?? false) || (operations?.canViewHistory ?? false)) : operations?.canRecord) ==
                       true;
                   return SizedBox(
                     width: 32,

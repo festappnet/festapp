@@ -72,11 +72,14 @@ const paymentRecipient=z.strictObject({connectionId:z.uuid(),name:z.string().nul
 const paymentReason=z.strictObject({code:z.string().nullable()});
 const stripeRecipient=z.strictObject({connectionId:z.uuid(),name:z.string().nullable(),state:z.enum(['connected','restricted']),paused:z.boolean(),
  modelVerified:z.boolean(),chargesEnabled:z.boolean(),payoutsEnabled:z.boolean(),cardPaymentsActive:z.boolean(),checkedAt:z.string().nullable(),unsupportedReason:z.string().nullable()});
-const providerAvailability=z.strictObject({providerId,configured:z.boolean(),available:z.boolean(),recipient:paymentRecipient.nullable(),
+const providerAvailability=z.strictObject({providerId,configured:z.boolean(),available:z.boolean(),collectionAvailable:z.boolean().optional(),recipient:paymentRecipient.nullable(),
  supportedSurfaces:z.array(z.string()),reason:paymentReason,policy:paymentPolicy});
 const providerEditorFields=z.union([z.strictObject({stripeRecipient:stripeRecipient.nullable()}),z.strictObject({}),
  z.strictObject({available:z.literal(false),reason:paymentReason})]);
-const paymentOptions=z.strictObject({occasionId:id,formId:id,livemode:z.boolean(),
+const methodPolicy=z.strictObject({organizationId:id,unitId:id.nullable(),revision:version,preferredMethod:providerId.nullable(),
+ methods:z.record(providerId,z.strictObject({id:providerId,supported:z.literal(true),policyEnabled:z.boolean(),revision:z.string().max(100),
+ organizationEnabled:z.boolean(),mode:z.enum(['inherit','enabled','disabled']),inheritedFrom:z.enum(['organization','unit']),reason:z.string().nullable()}))});
+const paymentOptions=z.strictObject({occasionId:id,formId:id,livemode:z.boolean(),paymentMethodPolicy:methodPolicy,
  bankAccounts:z.array(z.strictObject({id,account_number:z.string().nullable(),account_number_human_readable:z.string().nullable(),
   title:z.string().nullable(),supported_currencies:z.array(z.string()).nullable(),type:z.string().nullable(),bank_sync_warning:z.json().nullable()})).max(100),
  providerEditorFields:z.record(providerId,providerEditorFields),policy:paymentPolicy,
@@ -147,6 +150,12 @@ export async function invokeFormOperation(owner,client,operation,args){
  if(operation==='forms.paymentOptions'){
   const parsed=formDataSchemas[operation].safeParse(data);
   check(parsed.success&&data.occasionId===args.occasionId&&data.formId===args.formId&&data.livemode===args.livemode);
+  const policy=parsed.data.paymentMethodPolicy;
+  check(policy.organizationId===scope.organizationId&&policy.unitId===scope.unitId);
+  check(Object.entries(policy.methods).every(([key,method])=>method.id===key&&(!method.policyEnabled||(method.organizationEnabled&&method.mode!=='disabled'))));
+  check(policy.methods.bank?.policyEnabled===true||parsed.data.bankAccounts.length===0);
+  check(parsed.data.availability.available.every(method=>policy.methods[method]?.policyEnabled===true));
+  check(Object.entries(parsed.data.availability.providers).every(([method,value])=>value.collectionAvailable!==true||policy.methods[method]?.policyEnabled===true));
   return parsed.data;
  }
  if(operation==='forms.list'||operation==='forms.inspect'){

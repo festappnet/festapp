@@ -20,7 +20,7 @@ class FormPaymentOptions {
   }) {
     registry ??= paymentConnectors;
     if (value == null)
-      return FormPaymentOptions._(const ['bank'], const {}, 1860);
+      return FormPaymentOptions._(const [], const {}, 1860);
     final providers = <String, ProviderPaymentOptions>{};
     for (final connector in registry.hosted) {
       final all = value['providers'];
@@ -69,7 +69,7 @@ class FormPaymentOptions {
                     if (connector == null) return false;
                     if (connector.hostedCheckout == null) {
                       final projected = value[id];
-                      return projected is Map ? projected['available'] == true : id == 'bank';
+                      return projected is Map && projected['available'] == true;
                     }
                     return value['providers'] is! Map ||
                         (value['providers'][id] is Map && value['providers'][id]['available'] == true);

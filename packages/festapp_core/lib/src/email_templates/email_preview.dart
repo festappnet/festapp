@@ -12,6 +12,7 @@ class EmailRequiredLink {
       );
 }
 
+const emailPaymentActionSlot = '<!--festapp-payment-action-->';
 const emailOverviewSlot = '<!-- customer-order-overview-link -->';
 String escapeEmailHtml(String value) => value
     .replaceAll('&', '&amp;')
@@ -25,7 +26,8 @@ String completeEmailContent(
   String html,
   List<EmailRequiredLink> links, [
   String? wrapperHtml,
-]) => _completeEmailContent(_wrapEmailContent(html, wrapperHtml), links);
+  String paymentAction = '',
+]) => _completeEmailContent(_wrapEmailContent(html, wrapperHtml), links, paymentAction: paymentAction);
 
 String _wrapEmailContent(String content, String? wrapperHtml) =>
     wrapperHtml == null || wrapperHtml.isEmpty
@@ -40,7 +42,19 @@ String _completeEmailContent(
   String html,
   List<EmailRequiredLink> links, {
   void Function(int offset, String html, int replacedLength)? onInsertion,
+  String paymentAction = '',
 }) {
+  html = html.replaceAll('{{paymentAction}}', emailPaymentActionSlot);
+  if (html.contains(emailPaymentActionSlot)) {
+    if (paymentAction.isNotEmpty && !html.contains(paymentAction)) {
+      onInsertion?.call(html.indexOf(emailPaymentActionSlot), paymentAction, emailPaymentActionSlot.length);
+      html = html.replaceFirst(emailPaymentActionSlot, paymentAction);
+    }
+    while (html.contains(emailPaymentActionSlot)) {
+      onInsertion?.call(html.indexOf(emailPaymentActionSlot), '', emailPaymentActionSlot.length);
+      html = html.replaceFirst(emailPaymentActionSlot, '');
+    }
+  }
   for (final link in links) {
     if (!_missingRequiredLink(html, link)) continue;
     if (html.contains(emailOverviewSlot)) {
@@ -209,6 +223,8 @@ class EmailPreviewScenario {
       ...contextDefaults,
       if (context.singleApplication) ...singleApplicationDefaults,
       ...context.bindings(zero: scenario == 'zero'),
+      if (contextDefaults['preview_payment_method'] != 'bank' || contextDefaults['preview_collection_allowed'] != 'true') 'preview_account_number': '',
+      if (contextDefaults['preview_payment_method'] != 'bank' || contextDefaults['preview_collection_allowed'] != 'true') 'preview_iban': '',
     };
     final result = Map<String, String>.from(values);
     if (result.containsKey('occasionTitle') &&
@@ -216,7 +232,7 @@ class EmailPreviewScenario {
       result['occasionTitle'] = context.occasionTitle!;
     }
 
-    if (context.paymentAccount != null) {
+    if (context.paymentAccount != null && contextDefaults['preview_payment_method'] == 'bank' && contextDefaults['preview_collection_allowed'] == 'true') {
       if (result.containsKey('accountNumber'))
         result['accountNumber'] = context.paymentAccount!.accountNumber;
       if (result.containsKey('iban'))
@@ -303,6 +319,8 @@ class EmailPreviewScenario {
   }) {
     assertCanonicalEmailTemplate(html);
     assertCanonicalEmailTemplate(wrapperHtml);
+    final paymentAction = values['paymentAction'] ?? '';
+    final separatePaymentAction = html.contains('{{paymentAction}}') || (wrapperHtml?.contains('{{paymentAction}}') ?? false);
     final out = StringBuffer();
     var offset = 0;
     var inTag = false;
@@ -338,7 +356,8 @@ class EmailPreviewScenario {
         );
         if (match != null) {
           final code = match[1]!;
-          final value = values[code];
+          var value = code == 'paymentAction' ? emailPaymentActionSlot : values[code];
+          if (separatePaymentAction && paymentAction.isNotEmpty && (code == 'balanceReasoning' || code == 'paymentDetails')) value = value?.replaceAll(paymentAction, '');
           if (value != null &&
               (!inTag || (quote.isNotEmpty && !richCodes.contains(code)))) {
             if (capture != null && richCodes.contains(code)) {
@@ -393,6 +412,7 @@ class EmailPreviewScenario {
       wrapped,
       requiredLinks,
       onInsertion: capture?.insert,
+      paymentAction: paymentAction,
     );
   }
 }

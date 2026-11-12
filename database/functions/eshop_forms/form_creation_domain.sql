@@ -12,7 +12,7 @@ DECLARE
     payment_default text;
     initial_data jsonb := '{"is_reminder_enabled": true,"design":{"presale_header":"event_and_date"}}'::jsonb;
 BEGIN
-    SELECT org.data->>'DEFAULT_FORM_PAYMENT_METHOD' INTO payment_default
+    SELECT public.resolve_payment_method_policy_internal(o.organization,o.unit)->>'preferredMethod' INTO payment_default
     FROM public.occasions o JOIN public.organizations org ON org.id=o.organization
     WHERE o.id=p_occasion_id;
     IF payment_default='cash' THEN
@@ -21,6 +21,7 @@ BEGIN
       -- A closed draft can await Connect without inventing a recipient or bank.
       initial_data := initial_data || '{"payments":{"bankEnabled":false}}'::jsonb;
     END IF;
+    IF NOT (initial_data ? 'payments') THEN initial_data:=initial_data||jsonb_build_object('payments',jsonb_build_object('bankEnabled',payment_default='bank' AND public.payment_method_policy_enabled_internal((SELECT unit FROM public.occasions WHERE id=p_occasion_id),'bank'))); END IF;
     PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion_id));
     -- Create the new form
     INSERT INTO public.forms(

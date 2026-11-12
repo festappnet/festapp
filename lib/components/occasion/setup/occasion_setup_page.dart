@@ -2749,6 +2749,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       ],
       if (d['paymentChoicesEnabled'] == true || !_setupHasOnline(d)) ...[
         PaymentMethodCards(
+              showBank: (RightsService.currentUnit()?.paymentMethodPolicy?['methods'] as Map?)?['bank']?['policyEnabled'] == true,
+              showCash: (RightsService.currentUnit()?.paymentMethodPolicy?['methods'] as Map?)?['cash']?['policyEnabled'] == true,
           value: _setupPayments(d).cashEnabled ? FormPaymentMethod.cash : _setupHasOnline(d)
               ? (_setupOnlineOnly(d)
                     ? FormPaymentMethod.online

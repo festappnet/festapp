@@ -7,6 +7,7 @@ AS $$
 <<checkout>>
 DECLARE
     result JSONB;
+    selected_payment_options jsonb;
     order_id BIGINT;
     assigned_order_symbol TEXT;
     assigned_order_sequence BIGINT;
@@ -88,6 +89,8 @@ BEGIN
         END IF;
 
         form_key := (input_data->>'form')::UUID;
+        PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.forms f
+          JOIN public.occasions oc ON oc.id=f.occasion WHERE f.key=form_key;
         SELECT id, occasion, bank_account, deadline_duration_seconds, data, is_open, blueprint
         INTO form_id, occasion_id, bank_account_id, form_deadline_duration, form_data, is_open_val, form_blueprint
         FROM public.forms
@@ -113,6 +116,9 @@ BEGIN
         IF organization_id IS NULL THEN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1005, 'message', 'No organization found for the occasion')::TEXT;
         END IF;
+
+        IF unit_id IS NULL THEN RAISE EXCEPTION 'PAYMENT_POLICY_SCOPE_MISMATCH'; END IF;
+        PERFORM public.resolve_payment_method_policy_internal(organization_id,unit_id);
 
         IF input_data ? 'fields' THEN
             DECLARE
@@ -226,10 +232,18 @@ BEGIN
 
         order_data := public.strip_payment_sources_internal(input_data) - 'ticket' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
 
-        -- Revalidate current configuration under the form lock, including invoice
-        -- services added after the form was saved. Never bypass mandatory invoicing.
-        PERFORM public.validate_form_payment_configuration_internal(form_id);
-        v_payment_method:=coalesce(input_data->>'payment_method',CASE WHEN form_data#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END);
+        v_payment_method:=input_data->>'payment_method';
+        IF v_payment_method IS NULL THEN
+          IF calculated_price=0 THEN
+            -- Released no-money registration rows retain their bank-shaped storage
+            -- identity only. No bank service, account, reference or action is issued.
+            v_payment_method:=CASE WHEN form_data#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END;
+          ELSE
+            selected_payment_options:=public.form_payment_availability_internal(form_id)->'available';
+            IF jsonb_array_length(selected_payment_options)<>1 THEN RAISE EXCEPTION 'PAYMENT_METHOD_REQUIRED'; END IF;
+            v_payment_method:=selected_payment_options->>0;
+          END IF;
+        END IF;
         IF NOT public.payment_method_registered_internal(v_payment_method) THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
         -- Selection exclusivity applies to free orders too; repricing must retain
         -- a method that the form actually offered. Online readiness and recipient
@@ -244,6 +258,12 @@ BEGIN
           RAISE EXCEPTION 'PAYMENT_METHOD_UNAVAILABLE'; END IF;
         IF v_payment_method='cash' THEN v_total_deposit:=0; END IF;
         IF calculated_price=0 THEN
+          IF public.payment_method_is_online_internal(v_payment_method) THEN
+            IF public.payment_provider_connection_internal(form_data->'payments',v_payment_method) IS NULL THEN RAISE EXCEPTION 'PAYMENT_METHOD_UNAVAILABLE'; END IF;
+            -- A selected hosted method still needs no provider identity for a
+            -- no-money registration. Reuse the bounded released storage shape.
+            v_payment_method:='bank';
+          END IF;
           bank_account_id:=NULL;
           INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method) VALUES(0,first_currency_code,now,v_payment_method) RETURNING id INTO payment_info_id;
         ELSE
@@ -257,7 +277,13 @@ BEGIN
           bank_account_id:=NULL;
         END IF;
 
-        UPDATE eshop.payment_info SET data=coalesce(data,'{}')||jsonb_build_object('payment_policy',v_payment_policy-'durationSeconds') WHERE id=payment_info_id;
+        -- The locked connector first validates its original recipient identity,
+        -- preserving the released stale-recipient rejection. Full configuration
+        -- validation still runs before the order/attempt commits; failure rolls
+        -- back the local preparation and never dispatches a remote request.
+        PERFORM public.validate_form_payment_configuration_internal(form_id);
+
+        UPDATE eshop.payment_info SET data=coalesce(data,'{}')||jsonb_build_object('no_money_registration',calculated_price=0,'payment_policy',v_payment_policy-'durationSeconds') WHERE id=payment_info_id;
         PERFORM public.notification_center_prepared_invalidate_order(order_id);
         -- persist all of the non‐state fields
         UPDATE eshop.orders

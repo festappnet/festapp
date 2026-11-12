@@ -15,6 +15,7 @@ function order(currency = "CZK", amount = 0) {
     form: { data: {} },
     data: { email: "test@example.invalid", tickets: [], fields: [] },
     payment_info: {
+      payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
       amount,
       currency_code: currency,
       account_number: null,

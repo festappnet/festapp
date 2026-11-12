@@ -90,10 +90,10 @@ Prefer explicit RPC/service boundaries whose callers and transaction semantics
 are visible in code. A temporary operational trigger is allowed only when its
 removal is part of the same release workflow and is verified immediately after
 the replacement client or RPC is deployed. Never leave a compatibility merge
-trigger behind after cutover. Narrow technical triggers that maintain purely
-mechanical metadata such as `updated_at` or audit timestamps are allowed; they
-must not encode domain decisions, permissions, patch semantics, or workflow
-transitions.
+trigger behind after cutover. Only narrow technical triggers that maintain mechanical last-updated metadata
+(`updated_at` / `last_updated`) are allowed. No other persistent application
+trigger may encode domain decisions, permissions, invalidation, patch semantics
+or workflow transitions.
 
 ## Critical: Canonical Main and Tenant Overlays
 
@@ -269,6 +269,16 @@ There is no standalone package/style URL downloader or renderer rollback flag.
 See [offline map tooling](../../automation/offline-map/README.md).
 
 ## Payment provider connectors
+
+Payment product permission is organization -> unit -> form through the canonical
+`payment_providers/method_policy.sql` resolver. Missing policy fails closed.
+Sales permission is separate from operation support, RBAC, readiness and financial
+facts. Preserve original-payment recovery/refund observation after closing sales.
+Bank authoring/statements require stored linked unit scope; order history never
+offers unrelated admin accounts. Collection/queue actions bind current purpose,
+source and policy/template epoch; acquire the shared policy fence before money
+or queue locks. Template/policy writers use the exclusive fence. The payment
+provider ownership document below defines the migration and retained boundaries.
 
 Online payments use a shared engine and explicit provider registries across SQL,
 Edge Functions, Dart and the web client. Stripe is an installed connector. See

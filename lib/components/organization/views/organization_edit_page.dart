@@ -1,3 +1,4 @@
+import '../../payments/payment_policy_settings.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 
 import '../../unit/verification/verification_queue.dart';
@@ -274,6 +275,8 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                                     MaterialPageRoute(
                                         builder: (_) => VerificationQueue(
                                             organizationId: orgId)))),
+                            PaymentPolicySettings(organizationId: orgId),
+                            const SizedBox(height: 24),
                             Text("Organization Settings",
                                 style:
                                     Theme.of(context).textTheme.headlineMedium),

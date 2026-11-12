@@ -1,6 +1,7 @@
 CREATE OR REPLACE FUNCTION public.get_order_details_for_email(p_order_id bigint)
 RETURNS jsonb
-STABLE
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
     result_data jsonb;
@@ -22,7 +23,7 @@ BEGIN
           'fingerprint',coalesce(((SELECT f->>'is_enabled' FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'))::boolean,false)::text
             ||'/'||public.ticket_wallet_enabled((SELECT f FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'))::text
             ||'/'||public.ticket_wallet_ready(occ.organization)::text),
-        'payment_info', to_jsonb(pi.*),
+        'payment_info', to_jsonb(pi.*)||jsonb_build_object('collectionAction',public.payment_collection_action_internal(o.id),'providerPayment',CASE WHEN public.payment_method_is_online_internal(pi.payment_method) THEN public.provider_order_payment_projection_internal(o.id) END),
         'bank_account', CASE
             WHEN upper(o.currency_code) = 'EUR'
               AND ba.id IS NOT NULL
@@ -100,4 +101,8 @@ BEGIN
     RETURN jsonb_build_object('code', 200, 'data', result_data);
 
 END;
-$$ LANGUAGE plpgsql;
+$$;
+-- The worker is the external consumer. Already-authorized definer commands
+-- (contact repair) share this read owner without granting it to clients.
+REVOKE ALL ON FUNCTION public.get_order_details_for_email(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_order_details_for_email(bigint) TO service_role;

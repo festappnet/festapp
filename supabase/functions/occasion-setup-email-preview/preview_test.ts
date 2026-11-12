@@ -17,7 +17,9 @@ const resolved = {
   },
   wrapper: { html: "<main>{{content}}</main>" },
 };
+const bankAction = {method:'bank',purpose:'collect_payment',allowed:true};
 const context = {
+  paymentInfo:{payment_method:'bank',collectionAction:bankAction},
   sampleProducts: [{title:"Sample",price:1000,currency_code:"CZK"}],
   revision: 3,
   title: "Ukázková událost",
@@ -59,10 +61,12 @@ Deno.test("formal/informal only changes generated content, preserving custom sta
 });
 
 Deno.test("pure confirmation retains zero order and deposit semantics", () => {
-  const order: any = previewOrder("Test", "informal");
+  const order: any = previewOrder("Test", "informal",context);
   order.payment_info.amount = 0;
-  assert(confirmationSubstitutions(order).variableSymbol === defaults.variableSymbol);
+  order.payment_info.collectionAction={...bankAction,allowed:false};
+  assert(confirmationSubstitutions(order).variableSymbol === "");
   order.payment_info.amount = 1000;
+  order.payment_info.collectionAction=bankAction;
   order.payment_info.deposit_amount = 500;
   order.occasion.features = [{ code: "deposit", deposit_deadline: "on_site" }];
   const subs = confirmationSubstitutions(order);
@@ -143,7 +147,7 @@ Deno.test("preview reflects configured ticket/product content and retains author
 Deno.test('shared preview defaults and configured bank details render in full', async () => {
   const sample = previewOrder('Moje akce','formal',{
     sampleProducts:[{title:'Vstupné',price:725,currency_code:'CZK'}],
-    paymentInfo:{account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800'},
+    paymentInfo:{payment_method:'bank',collectionAction:bankAction,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800'},
     deadlineDurationSeconds:3*86400,
   },new Date('2026-10-22T12:00:00Z'));
   assert(sample.payment_info.deadline==='2026-10-25T12:00:00.000Z');
@@ -246,7 +250,7 @@ Deno.test('cash draft preview hydrates the real confirmation helper without bank
  assert(rendered.authoringContext.paymentAccounts.length===0);
 });
 Deno.test('bank none draft preview retains bank instructions with explicit null date',async()=>{
- const paymentInfo={payment_method:'bank',deadline:null,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',data:{payment_policy:{mode:'none'}}};
+ const paymentInfo={payment_method:'bank',collectionAction:bankAction,deadline:null,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',data:{payment_policy:{mode:'none'}}};
  const rendered=await renderDraftPreview({...context,paymentInfo});
  assert(rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));assert(rendered.previewContext.deadline===null);
  assert(!rendered.html.includes(defaults.deadline));
@@ -259,4 +263,12 @@ Deno.test("ticket preview and delivery share raw identity values and escape them
   assert(result.subject === "A & <B>");
   assert(result.html.includes("A &amp; &lt;B&gt;"));
   assert(!result.html.includes("&amp;amp;"));
+});
+
+Deno.test('missing or disabled preview method has no implicit bank instructions or authoring account',async()=>{
+ for(const paymentInfo of [undefined,{payment_method:'bank',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',collectionAction:{...bankAction,allowed:false}}]) {
+  const rendered=await renderDraftPreview({...context,paymentInfo});
+  assert(!rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));
+  assert(rendered.authoringContext.paymentAccounts.length===0);
+ }
 });

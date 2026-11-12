@@ -18,6 +18,8 @@ DECLARE
 BEGIN
     -- 1. Setup: org, unit, mock user (manager)
     INSERT INTO public.organizations (title) VALUES ('Test Org IMT') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(v_org_id,'bank');
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org_id,'bank',true),(v_org_id,'cash',true);
     INSERT INTO public.units (organization, title) VALUES (v_org_id, 'Test Unit IMT') RETURNING id INTO v_unit_id;
 
     INSERT INTO auth.users (id, email) VALUES (v_user_id, 'test_imt_' || v_user_id || '@example.com');
@@ -108,6 +110,7 @@ DECLARE
 BEGIN
  PERFORM set_config('festapp.email_wake','scheduled',true);
  INSERT INTO public.organizations(title) VALUES('Sent additional payment regression') RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'cash',true);
  INSERT INTO public.units(title,organization) VALUES('Additional cash unit',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,link,organization,unit,start_time,end_time)
  VALUES('Additional cash event',gen_random_uuid()::text,org,un,now(),now()+interval '1 day') RETURNING id INTO oc;

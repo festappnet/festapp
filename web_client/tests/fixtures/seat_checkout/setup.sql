@@ -4,6 +4,7 @@ DECLARE org bigint; un bigint; oc bigint; fid bigint; bank bigint; pt bigint; pr
  bp bigint; seat bigint; email_field bigint; name_field bigint; surname_field bigint;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Browser seat regression') RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO public.units(title,organization) VALUES('Browser seat regression',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,unit,organization,link,start_time,end_time,features)
  VALUES('Browser seat regression',un,org,gen_random_uuid()::text,now(),now()+interval '1 day','[{"code":"blueprint","is_enabled":true}]'::jsonb) RETURNING id INTO oc;
@@ -14,6 +15,7 @@ BEGIN
  VALUES('Regression seats',org,oc) RETURNING id INTO bp;
  INSERT INTO public.forms(title,occasion,link,is_open,blueprint,bank_account)
  VALUES('Browser seat regression',oc,'seat-checkout-regression',true,bp,bank) RETURNING id INTO fid;
+ UPDATE public.forms SET data=coalesce(data,'{}'::jsonb)||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=fid;
  -- Direct fixture inserts must participate in the same URL reservation contract.
  PERFORM public.reserve_public_link_internal('occasion',oc,(SELECT link FROM public.occasions WHERE id=oc),true);
  PERFORM public.reserve_public_link_internal('form',fid,'seat-checkout-regression',true);

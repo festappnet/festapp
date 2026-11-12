@@ -32,6 +32,12 @@ BEGIN
  (v_occ IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=v_occ AND organization=v_org AND (NOT p_context ? 'unit' OR unit IS NOT DISTINCT FROM v_unit))) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
  IF p_order IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.orders WHERE id=p_order AND occasion=v_occ) THEN RAISE EXCEPTION 'email_order_scope_mismatch'; END IF;
  IF v_occ IS NOT NULL THEN SELECT unit INTO v_unit FROM public.occasions WHERE id=v_occ; END IF;
+ IF p_order IS NOT NULL AND p_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice') THEN
+  p_data:=coalesce(p_data,'{}')||jsonb_build_object('collectionAction',public.payment_collection_action_internal(p_order));
+ END IF;
+ IF p_order IS NOT NULL AND p_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice','order_storno','order_tickets') THEN
+  p_data:=coalesce(p_data,'{}')||jsonb_build_object('paymentTemplateEpoch',coalesce((SELECT revision FROM eshop.payment_template_epochs WHERE occasion_id=v_occ),0));
+ END IF;
  -- Snapshot the tenant default only for new unlocalized domain intents. Existing
  -- messages, explicit locales and prepared/encrypted Auth content are untouched.
  IF NOT coalesce(p_data,'{}'::jsonb) ? 'lang' AND
@@ -39,7 +45,7 @@ BEGIN
     (SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=v_org)='en' THEN
    p_data:=coalesce(p_data,'{}'::jsonb)||'{"lang":"en"}'::jsonb;
  END IF;
- v_hash:=encode(extensions.digest(jsonb_build_object('context',p_context-'tracking_policy','recipient',p_recipient,'data',p_data-'requested_by','code',p_code,'version',p_version,'post',p_post_action)::text,'sha256'),'hex');
+ v_hash:=encode(extensions.digest(jsonb_build_object('context',p_context-'tracking_policy','recipient',p_recipient,'data',CASE WHEN p_order IS NOT NULL AND p_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice','order_storno','order_tickets') THEN p_data-'requested_by'-'collectionAction'-'paymentTemplateEpoch' ELSE p_data-'requested_by' END,'code',p_code,'version',p_version,'post',p_post_action)::text,'sha256'),'hex');
  INSERT INTO public.email_messages(target_time,code,data,organization,occasion,unit,message_kind,dedupe_key,input_hash,recipient,recipient_user,order_id,source_version,expires_at,producer_actor,priority,workflow_state,post_action,tracking_policy)
  VALUES(p_not_before,p_code,p_data,v_org,v_occ,v_unit,p_kind,p_dedupe,v_hash,p_recipient,(p_context->>'recipient_user')::uuid,p_order,p_version,p_expires,coalesce((p_context->>'actor_id')::uuid,auth.uid()),
  CASE WHEN p_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue') THEN 0 WHEN p_kind='order_confirmation' THEN 10 ELSE 50 END,
@@ -58,7 +64,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.email_intent_valid(p_message public.email_messages) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_occ public.occasions; v_form public.forms; v_feature jsonb; v_deposit jsonb;
+DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_occ public.occasions; v_form public.forms; v_feature jsonb; v_deposit jsonb; v_template_epoch bigint; template_audit jsonb; bank_enabled boolean;
 BEGIN
  PERFORM public.require_service_role();
  IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
@@ -139,6 +145,32 @@ BEGIN
    SELECT 1 FROM eshop.waitlist_offers w JOIN eshop.waitlist_offer_slots s ON s.offer_id=w.id
    WHERE w.id=(p_message.data->>'offer_id')::uuid AND w.order_id=v_order.id AND w.expires_at>clock_timestamp() AND s.outcome='pending');
  END IF;
+ IF p_message.message_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice','order_storno','order_tickets') THEN
+  SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
+  SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
+  v_template_epoch:=coalesce((SELECT e.revision FROM eshop.payment_template_epochs e WHERE e.occasion_id=v_order.occasion),0);
+  bank_enabled:=coalesce(public.payment_method_policy_enabled_internal(v_occ.unit,'bank'),false);
+  IF p_message.data ? 'paymentTemplateEpoch' THEN
+   IF (p_message.data->>'paymentTemplateEpoch')::bigint IS DISTINCT FROM v_template_epoch THEN RETURN false; END IF;
+  ELSIF p_message.prepared IS NOT NULL AND (NOT bank_enabled OR public.payment_method_is_online_internal(v_pi.payment_method)) THEN
+   -- An encrypted legacy snapshot has no attestation for the current template.
+   -- Preserve it as audit; a new authorized preparation must replace the intent.
+   RETURN false;
+  END IF;
+  IF NOT bank_enabled OR public.payment_method_is_online_internal(v_pi.payment_method) THEN
+   template_audit:=public.payment_template_audit_internal(v_order.occasion);
+   IF template_audit->'compatible' IS DISTINCT FROM 'true'::jsonb THEN RETURN false; END IF;
+  END IF;
+ END IF;
+ IF p_message.message_kind IN ('order_confirmation','order_update','order_reminder','order_payment_notice') THEN
+  IF p_message.data#>>'{collectionAction,policyRevision}' IS NULL THEN RETURN false; END IF;
+  IF public.payment_collection_action_internal(v_order.id)->'policyRevision' IS DISTINCT FROM p_message.data#>'{collectionAction,policyRevision}' THEN RETURN false; END IF;
+ END IF;
+ IF p_message.data#>'{collectionAction,allowed}'='true'::jsonb THEN
+ IF (
+  public.payment_collection_action_internal(v_order.id)->'allowed' IS DISTINCT FROM 'true'::jsonb OR
+  public.payment_collection_action_internal(v_order.id)->'policyRevision' IS DISTINCT FROM p_message.data#>'{collectionAction,policyRevision}') THEN RETURN false; END IF;
+ END IF;
  IF p_message.message_kind='order_storno' THEN RETURN true; END IF;
  IF v_order.state IN ('storno','expired','preparing_payment') THEN RETURN false; END IF;
  IF p_message.message_kind IN ('order_payment_notice','order_tickets') THEN
@@ -153,6 +185,7 @@ BEGIN
    AND v_order.data->>'email'=p_message.recipient;
  END IF;
  IF p_message.message_kind='order_reminder' THEN
+  IF public.payment_collection_action_internal(v_order.id)->'allowed' IS DISTINCT FROM 'true'::jsonb THEN RETURN false; END IF;
   SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
   IF v_pi.payment_method<>'bank' OR v_pi.data#>>'{payment_policy,mode}'='none' THEN RETURN false; END IF;
   SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
@@ -253,6 +286,8 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_attempt public.email_attempts; v_row public.email_messages; v_cap public.email_capacity; v_rate numeric; v_daily numeric; v_used numeric; v_detail text; v_retry integer;
 BEGIN
  PERFORM public.require_service_role();
+ PERFORM public.payment_policy_fence_internal(m.organization) FROM public.email_messages m
+ JOIN public.email_attempts a ON a.message_id=m.message_id WHERE a.attempt_id=p_attempt AND m.order_id IS NOT NULL;
  PERFORM 1 FROM public.forms f JOIN public.sale_opening_campaigns c ON c.form_id=f.id
   JOIN public.email_messages m ON m.data->>'campaign_id'=c.id::text
   JOIN public.email_attempts a ON a.message_id=m.message_id
@@ -267,7 +302,7 @@ BEGIN
  IF v_attempt.state<>'preparing' THEN RETURN jsonb_build_object('disposition','replay','state',v_attempt.state); END IF;
  IF v_row.workflow_state<>'preparing' OR v_row.lease_until<=now() OR v_row.prepared IS NULL THEN RAISE EXCEPTION 'stale_email_attempt'; END IF;
  IF NOT public.email_intent_valid(v_row) OR EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN
-  UPDATE public.email_messages SET last_error=CASE WHEN v_row.message_kind='sale_opening_opened' THEN 'intent_invalid' ELSE last_error END,workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
+  UPDATE public.email_messages SET last_error='intent_invalid',workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
   PERFORM public.notification_center_email_internal(v_row.message_id);
   RETURN jsonb_build_object('disposition','cancelled');

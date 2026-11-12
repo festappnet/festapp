@@ -13,6 +13,7 @@ DECLARE
     v_conflict_data jsonb;
     v_is_reordering boolean;
 BEGIN
+    PERFORM public.require_bank_authoring_scope_internal(NULL,p_unit_id);
     PERFORM public.check_bank_account_writable(p_bank_account_id);
     v_is_reordering := EXISTS (
         SELECT 1 FROM eshop.unit_bank_accounts

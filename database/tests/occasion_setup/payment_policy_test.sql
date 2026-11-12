@@ -8,6 +8,8 @@ BEGIN
  PERFORM public.create_user_for_test('wizard-policy','wizard-policy-'||gen_random_uuid()||'@example.invalid');
  actor:=public.get_user_id('wizard-policy');
  INSERT INTO public.organizations(title) VALUES('Wizard policy fixture') RETURNING id INTO org;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  UPDATE public.user_info SET organization=org WHERE id=actor;
  INSERT INTO public.units(title,organization) VALUES('Wizard policy unit',org) RETURNING id INTO unit_id;
  INSERT INTO public.unit_users("user",unit,is_manager,is_editor) VALUES(actor,unit_id,true,true);

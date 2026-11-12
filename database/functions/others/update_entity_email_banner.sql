@@ -23,19 +23,22 @@ declare
     v_entity_title text;
     v_new_html text;
     v_before jsonb;
+    v_changed bigint;
 begin
-    -- Match template command lock order before wrapper/data changes.
-    IF p_entity_type IN ('occasion','unit') THEN
-      PERFORM public.lock_email_template_hierarchy_internal(CASE WHEN p_entity_type='occasion' THEN
-        (SELECT jsonb_build_object('occasion',id,'unit',unit,'organization',organization) FROM public.occasions WHERE id=p_entity_id)
-        ELSE (SELECT jsonb_build_object('unit',id,'organization',organization) FROM public.units WHERE id=p_entity_id) END);
+    -- Authorize before taking private policy or hierarchy locks.
+    IF p_entity_type='occasion' THEN
+      IF public.can_write_occasion_email_templates(p_entity_id) IS NOT TRUE THEN
+        PERFORM public.raise_error('permission_denied'); END IF;
+    ELSIF p_entity_type='unit' THEN
+      IF public.can_write_unit_email_templates(p_entity_id) IS NOT TRUE THEN
+        PERFORM public.raise_error('permission_denied'); END IF;
+    ELSE RAISE EXCEPTION 'Invalid entity type: %',p_entity_type;
     END IF;
-    -- 1. Validate Entity Type and Permissions
-    if p_entity_type = 'occasion' then
-        if (public.can_write_occasion_email_templates(p_entity_id) IS NOT TRUE) then
-            perform public.raise_error('permission_denied');
-        end if;
+    PERFORM public.lock_email_template_hierarchy_internal(CASE WHEN p_entity_type='occasion' THEN
+      (SELECT jsonb_build_object('occasion',id,'unit',unit,'organization',organization) FROM public.occasions WHERE id=p_entity_id)
+      ELSE (SELECT jsonb_build_object('unit',id,'organization',organization) FROM public.units WHERE id=p_entity_id) END);
 
+    if p_entity_type = 'occasion' then
         SELECT data INTO v_before FROM public.occasions WHERE id=p_entity_id FOR UPDATE;
         -- Update Occasion Data
         update public.occasions
@@ -44,10 +47,6 @@ begin
         returning organization, title into v_org_id, v_entity_title;
 
     elsif p_entity_type = 'unit' then
-        if (public.can_write_unit_email_templates(p_entity_id) IS NOT TRUE) then
-            perform public.raise_error('permission_denied');
-        end if;
-
         SELECT data INTO v_before FROM public.units WHERE id=p_entity_id FOR UPDATE;
         -- Update Unit Data
         update public.units
@@ -76,7 +75,7 @@ begin
         if p_entity_type = 'occasion' then
              -- For occasion, check existing wrapper
             if exists (select 1 from public.email_wrappers where occasion = p_entity_id) then
-                update public.email_wrappers set html = v_new_html where occasion = p_entity_id;
+                update public.email_wrappers set html = v_new_html where occasion = p_entity_id AND html IS DISTINCT FROM v_new_html;
             else
                 insert into public.email_wrappers (occasion, organization, unit, title, html)
                 values (p_entity_id, v_org_id, (select unit from occasions where id = p_entity_id), 'Occasion Banner Wrapper', v_new_html);
@@ -84,7 +83,7 @@ begin
         elsif p_entity_type = 'unit' then
              -- For unit (occasion is null)
             if exists (select 1 from public.email_wrappers where unit = p_entity_id and occasion is null) then
-                update public.email_wrappers set html = v_new_html where unit = p_entity_id and occasion is null;
+                update public.email_wrappers set html = v_new_html where unit = p_entity_id and occasion is null AND html IS DISTINCT FROM v_new_html;
             else
                 insert into public.email_wrappers (occasion, organization, unit, title, html)
                 values (null, v_org_id, p_entity_id, 'Unit Banner Wrapper', v_new_html);
@@ -98,6 +97,10 @@ begin
             delete from public.email_wrappers where unit = p_entity_id and occasion is null;
         end if;
     end if;
+    GET DIAGNOSTICS v_changed=ROW_COUNT;
+    IF v_changed>0 THEN
+      PERFORM public.payment_template_write_scope_internal(jsonb_build_object(p_entity_type,p_entity_id),true);
+    END IF;
 end;
 $$;
 

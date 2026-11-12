@@ -6,7 +6,7 @@ DECLARE x jsonb:=pg_temp.fixture(1); f bigint:=(x->>'form')::bigint; r jsonb; w 
 BEGIN
  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
  VALUES((x->>'organization')::bigint,true,1,'fixture','local waitlist conversion test');
- UPDATE public.forms SET data='{"analytics":{"enabled":true}}' WHERE id=f;
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":true}}' WHERE id=f;
  r:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x),gen_random_uuid(),gen_random_uuid());
  PERFORM assert_eq(r#>>'{data,code}','200','fill capacity');regular:=(r#>>'{data,order,id}')::bigint;
  reg_payload:=jsonb_build_object('form',x->'key','email','regression@example.invalid','tickets',jsonb_build_array(jsonb_build_object('fields','[]'::jsonb)));

@@ -9,9 +9,16 @@ export function completeEmailContent(
   html: string,
   links: EmailRequiredLink[],
   wrapperHtml?: string | null,
+  paymentAction = "",
 ): string {
   if (wrapperHtml) {
     html = wrapperHtml.replace("{{content}}", html);
+  }
+  const paymentSlot = "<!--festapp-payment-action-->", authoredSlot = "{{paymentAction}}";
+  html = html.replaceAll(authoredSlot, paymentSlot);
+  if (html.includes(paymentSlot)) {
+    if (paymentAction && !html.includes(paymentAction)) html = html.replace(paymentSlot, paymentAction);
+    html = html.replaceAll(paymentSlot, "");
   }
   for (const link of links) {
     if (!link.url || html.includes(`href="${escapeEmailHtml(link.url)}"`) ||

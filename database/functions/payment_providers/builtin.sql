@@ -39,6 +39,7 @@ BEGIN
    'available',coalesce(cfg->'cashEnabled','false'),'supportedSurfaces','[]'::jsonb);
  ELSIF p_operation='operation_capabilities' THEN
   SELECT * INTO STRICT o FROM eshop.orders WHERE id=(p_args->>'orderId')::bigint;
+  -- Only the private context reader supplies prepared, stored-scope permissions.
   can_record:=CASE WHEN p_args ? 'permissions' THEN coalesce((p_args#>>'{permissions,can_record_cash}')::boolean,false)
    ELSE public.can_record_order_cash(o.id) END;
   RETURN jsonb_build_object('id','cash','displayName','Cash','record',can_record,
@@ -53,7 +54,7 @@ BEGIN
    UPDATE eshop.refund_requests SET status='succeeded',updated_at=now() WHERE id=r.id;
   ELSE
    tx:=public.write_cash_movement_internal((p_args->>'amount')::numeric,trim(o.currency_code),u,NULL,
-    (p_args->>'receivedAt')::timestamptz,p_args->>'note',o.payment_info,'correction',NULL);
+    (p_args->>'receivedAt')::timestamptz,p_args->>'note',o.payment_info,CASE WHEN p_operation='correct_record' THEN 'correct_record' ELSE 'correction' END,NULL);
   END IF;
   RETURN jsonb_build_object('nextAction','recorded','transactionId',tx);
  END IF;
@@ -75,7 +76,7 @@ BEGIN
  ELSIF p_operation='form_availability' THEN
   p_form:=(p_args->>'formId')::bigint;
   SELECT data->'payments' INTO cfg FROM public.forms WHERE id=p_form;
-  bank:=FOUND AND coalesce(cfg->'bankEnabled','true')='true'::jsonb;
+  bank:=FOUND AND coalesce(cfg->'bankEnabled','false')='true'::jsonb;
   bank:=bank AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion
    JOIN eshop.unit_bank_accounts link ON link.unit=oc.unit JOIN eshop.bank_accounts b ON b.id=link.bank_account
    WHERE f.id=p_form AND (f.bank_account IS NULL OR f.bank_account=b.id) AND b.type IS DISTINCT FROM 'CASH'
@@ -87,7 +88,7 @@ BEGIN
   ready:=public.bank_refund_readiness_internal((p_args->>'orderId')::bigint);
   RETURN jsonb_build_object('id','bank','displayName','Bank transfer','record',false,
    'instructions',EXISTS(SELECT 1 FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
-    WHERE o.id=(p_args->>'orderId')::bigint AND public.can_read_orders(o.occasion)
+    WHERE o.id=(p_args->>'orderId')::bigint AND pi.payment_method='bank' AND public.can_read_orders(o.occasion)
     AND ((trim(pi.currency_code)='CZK' AND pi.variable_symbol IS NOT NULL)
      OR (trim(pi.currency_code)='EUR' AND public.is_valid_creditor_reference(pi.creditor_reference)))),
    'refund',(CASE WHEN p_args ? 'permissions' THEN coalesce((p_args#>>'{permissions,can_refund_bank}')::boolean,false)

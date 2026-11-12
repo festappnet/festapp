@@ -48,6 +48,8 @@ Deno.test({
  INSERT INTO eshop.barion_connections(id,organization_id,unit_id,account_id,enabled,business_name,sandbox_form_ids)
  VALUES(c,org,u,'${snapshot.accountId}',true,'Testovací pořadatel',ARRAY[(fx->>'form')::bigint]);
  INSERT INTO eshop.payment_info(amount,currency_code,payment_method,barion_connection_id) VALUES(1,'CZK','barion',c) RETURNING id INTO pi;
+ UPDATE public.forms SET data=jsonb_build_object('payments',jsonb_build_object('bankEnabled',false,'providerConnections',jsonb_build_object('barion',c))) WHERE id=(fx->>'form')::bigint;
+ UPDATE eshop.payment_info SET deadline=clock_timestamp()+interval '20 minutes' WHERE id=pi;
  UPDATE eshop.orders SET payment_info=pi,price=1,currency_code='CZK',state='ordered' WHERE id=oid;
  UPDATE eshop.tickets SET state='ordered' WHERE id=t;
  PERFORM assert_eq(public.provider_paid_guard_internal(oid)->>'code','409','missing Barion attempt cannot authorize manual paid');
@@ -59,6 +61,15 @@ Deno.test({
  PERFORM public.barion_payment_provider_internal('attach_source',jsonb_build_object('orderId',oid,'commandId',extensions.gen_random_uuid(),
   'source',jsonb_build_object('tokenHash',encode(extensions.digest(repeat('a',64),'sha256'),'hex'),'returnHash',encode(extensions.digest(repeat('b',64),'sha256'),'hex'),
    'contentHash',repeat('c',64),'sealed',jsonb_build_object('v',1,'iv','fixture','ciphertext','fixture'))));
+ UPDATE eshop.barion_connections SET enabled=false WHERE id=c;
+ claim:=public.barion_runtime_internal('claim_checkout',jsonb_build_object('token',repeat('a',64)));
+ PERFORM assert_eq(claim->>'disposition','read','sandbox technical gate still blocks collection');
+ UPDATE eshop.barion_connections SET enabled=true WHERE id=c;
+ INSERT INTO eshop.unit_payment_method_policies(unit_id,method,mode) VALUES(u,'barion','disabled');
+ claim:=public.barion_runtime_internal('claim_checkout',jsonb_build_object('token',repeat('a',64)));
+ PERFORM assert_eq(claim->>'disposition','read','sandbox cannot bypass the product policy');
+ PERFORM assert_true((SELECT dispatched_at IS NULL FROM eshop.barion_attempts WHERE id=a),'blocked attempts create no dispatch');
+ DELETE FROM eshop.unit_payment_method_policies WHERE unit_id=u AND method='barion';
  claim:=public.barion_runtime_internal('claim_checkout',jsonb_build_object('token',repeat('a',64)));
  PERFORM assert_eq(claim->>'disposition','dispatch','first dispatch is durably fenced');
  lease:=(claim->>'lease')::uuid;
@@ -72,6 +83,7 @@ Deno.test({
  claim:=public.barion_runtime_internal('claim_checkout',jsonb_build_object('token',repeat('a',64)));
  PERFORM assert_true(claim->>'disposition' IN ('read','busy'),'lost response never creates another remote payment');
  PERFORM assert_true((SELECT dispatched_at IS NOT NULL FROM eshop.barion_attempts WHERE id=a),'dispatch intent retained');
+ INSERT INTO eshop.unit_payment_method_policies(unit_id,method,mode) VALUES(u,'barion','disabled');
  BEGIN PERFORM public.barion_runtime_internal('claim_sync',jsonb_build_object('attemptId',a,'accountId','foreign'));RAISE EXCEPTION 'foreign account accepted';
  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'BARION_SCOPE_INVALID' THEN RAISE; END IF; END;
  UPDATE eshop.barion_attempts SET remote_id='${success.PaymentId}',state='open' WHERE id=a;

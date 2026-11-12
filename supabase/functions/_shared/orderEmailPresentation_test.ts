@@ -18,6 +18,7 @@ export function examples(p: typeof presentation) {
         account_number_human_readable: "0000000000/0000",
       };
       const payment = {
+      payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
         ...bank,
         amount: 800,
         paid: 0,
@@ -134,6 +135,7 @@ Deno.test("payment presentation retains exact pre-extraction producer output", a
 
 Deno.test("zero and deposit confirmation use canonical text and total scalar", () => {
   const payment = {
+    payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
     amount: 800,
     currency_code: "CZK",
     deposit_amount: 300,
@@ -182,7 +184,7 @@ Deno.test("generated confirmation examples retain canonical zero text and deposi
     ),
   );
   const confirmations = asset.records.filter((r: any) =>
-    r.templateCode === "TICKET_ORDER_CONFIRMATION"
+    r.templateCode === "TICKET_ORDER_CONFIRMATION" && r.paymentMethod === "bank"
   );
   assertEquals(confirmations.length, 12);
   for (const record of confirmations) {
@@ -209,7 +211,7 @@ Deno.test('cash confirmation, updates and paid notices share saved instructions 
   }
 });
 Deno.test('bank none keeps deposit amounts but never inherits feature deadline text',()=>{
-  const info={payment_method:'bank',amount:800,deposit_amount:300,currency_code:'CZK',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',variable_symbol:123,data:{payment_policy:{mode:'none'}}};
+  const info={collectionAction:{method:'bank',purpose:'collect_payment',allowed:true},payment_method:'bank',amount:800,deposit_amount:300,currency_code:'CZK',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',variable_symbol:123,data:{payment_policy:{mode:'none'}}};
   const features=[{code:'deposit',deposit_deadline_days:7}];
   for(const lang of ['cs','en']) {
     const text=presentation.confirmationPaymentSubstitutions(info,features,lang,'formal').balanceReasoning;

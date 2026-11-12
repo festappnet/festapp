@@ -6,6 +6,7 @@ DECLARE org bigint; un bigint; oc bigint; fm bigint; form_key uuid; bank bigint;
  invalid_payload jsonb;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Application-only checkout') RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO public.units(title,organization) VALUES('Application-only checkout',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Application without admission ticket',org,un,gen_random_uuid()::text,now(),now()+interval '2 days') RETURNING id INTO oc;
@@ -13,6 +14,7 @@ BEGIN
  VALUES('Fixture bank','123/0100','FIO',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(un,bank,1);
  INSERT INTO public.forms(occasion,is_open,bank_account) VALUES(oc,true,bank) RETURNING id,key INTO fm,form_key;
+ UPDATE public.forms SET data='{"payments":{"bankEnabled":true}}' WHERE id=fm;
  INSERT INTO public.form_fields(form,type,is_hidden,is_required,data)
  VALUES(fm,'ticket',true,true,'{"max_tickets":1}') RETURNING id INTO parent;
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(oc,'Participation fee',NULL) RETURNING id INTO pt;

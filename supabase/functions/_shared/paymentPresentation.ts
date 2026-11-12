@@ -1,7 +1,6 @@
-// Released historical payment rows can omit the method. Only that bounded
-// shape retains bank presentation; explicit cash/provider identities never do.
+// Stored method identity is mandatory; missing/unknown identities fail closed.
 export function isBankPaymentInfo(payment: any): boolean {
-  return payment != null && (payment.payment_method == null || payment.payment_method === "bank");
+  return payment != null && payment.payment_method === "bank";
 }
 export function hasNoPaymentDeadline(payment: any): boolean {
   return payment?.data?.payment_policy?.mode === "none";

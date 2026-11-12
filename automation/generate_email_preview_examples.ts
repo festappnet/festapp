@@ -3,7 +3,7 @@ import { emailVariableContract } from "../supabase/functions/_shared/emailVariab
 import { orderCommunication } from "../supabase/functions/_shared/emailCommunication.ts";
 import { communicationTones } from "../supabase/functions/_shared/communicationTone.ts";
 import { saleOpeningSubstitutions } from '../supabase/functions/_shared/saleOpeningPresentation.ts';
-import { confirmationPaymentSubstitutions, updateBalanceReasoning, paidPaymentSubstitutions, reminderBalanceReasoning } from "../supabase/functions/_shared/orderEmailPresentation.ts";
+import { confirmationPaymentSubstitutions, providerPaymentSubstitutions, updateBalanceReasoning, paidPaymentSubstitutions, reminderBalanceReasoning } from "../supabase/functions/_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../supabase/functions/_shared/orderOverview.ts";
 import { generateChangeOverview } from "../supabase/functions/_shared/changeOverview.ts";
 import { csTranslations } from "../supabase/functions/_shared/translations/translations.cs.ts";
@@ -131,6 +131,7 @@ for (const locale of ["cs", "en"] as const) {
         const amountPaid = paid ? total
           : templateCode === "TICKET_ORDER_PAYMENT_DONE" && deposit ? 300 : 0;
         const payment = {
+          payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
           amount: total, paid: amountPaid, deposit_amount: deposit ? 300 : 0,
           currency_code: "CZK", account_number: fixture.iban,
           account_number_human_readable: fixture.accountNumber,
@@ -160,10 +161,13 @@ for (const locale of ["cs", "en"] as const) {
         records.push({
           templateCode,
           scenario,
+          paymentMethod: 'bank', collectionAllowed: total > amountPaid,
           locale,
           tone,
           values: {
             ...scalar,
+            accountNumber: total > amountPaid ? fixture.accountNumber : '', iban: total > amountPaid ? formatIBAN(fixture.iban) : '', variableSymbol: total > amountPaid ? fixture.variableSymbol : '',
+            paymentAction: total > amountPaid ? balanceReasoning : '', paymentMethodName: locale === 'cs' ? 'Bankovní převod' : 'Bank transfer',
             orderCommunication: orderCommunication(templateCode, fixture.occasionTitle, tone, locale),
             // Delivery is optional; absent ticket content renders as an empty block.
             tickets: "",
@@ -275,6 +279,23 @@ for (const tone of communicationTones) {
 }
 // Build display-only binding templates with the SAME production HTML owners.
 // Slots only replace fixture data; the client never recreates order/payment layout.
+for (const locale of ['cs','en'] as const) {
+ for (const [method,name] of [['stripe','Stripe'],['barion','Barion'],['orchard','Orchard Pay'],['unknown','Unknown provider']]) {
+  for (const status of ['open','paid','partially_refunded','refunded','disputed','action_required','expired','pending']) {
+   for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE','TICKET_ORDER_STORNO']) {
+    const payment={payment_method:method,providerPayment:{status},collectionAction:{allowed:method!=='unknown'&&status==='open'}};
+    const substitutions=providerPaymentSubstitutions(payment,name,locale,overviewEmailSubstitutions(fixture.overviewUrl,locale).order_overview_button);
+    records.push({templateCode,scenario:method+'-'+status,locale,tone:'formal',paymentMethod:method,collectionAllowed:payment.collectionAction.allowed,
+     values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale),...substitutions,amount:formatCurrency(800,'CZK'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol)},requiredLinks:overviewRequiredLinks(fixture.overviewUrl,locale)});
+   }
+  }
+ }
+ for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE']) {
+  const payment={payment_method:'cash',amount:800,paid:0,currency_code:'CZK',data:{payment_policy:{cashInstructions:locale==='cs'?'U vstupu.':'At the entrance.'}},collectionAction:{allowed:true}};
+  records.push({templateCode,scenario:'cash-unpaid',locale,tone:'formal',paymentMethod:'cash',collectionAllowed:true,values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale),
+   ...confirmationPaymentSubstitutions(payment,[],locale,'formal'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol),accountNumber:'',iban:'',variableSymbol:'',paymentAction:'',paymentMethodName:locale==='cs'?'Hotovost':'Cash'},requiredLinks:[]});
+ }
+}
 const moneySlots: Record<string, string> = {
   [formatCurrency(450, "CZK")]: "{{preview_price_0}}",
   [formatCurrency(350, "CZK")]: "{{preview_price_1}}",
@@ -342,13 +363,15 @@ for (const record of records) {
       record.locale as "cs" | "en",
       fixture.orderSymbol,
     ),
-    balanceReasoning: values.balanceReasoning,
-    paymentDetails: values.paymentDetails,
+    paymentAction: values.paymentAction ?? "",
+    balanceReasoning: values.balanceReasoning ?? "",
+    paymentDetails: values.paymentDetails ?? "",
     changeOverview: zero
       ? ""
       : generateChangeOverview(changes, record.locale as "cs" | "en"),
   };
   record.contextDefaults = {
+    preview_payment_method: String(record.paymentMethod ?? ''), preview_collection_allowed: String(record.collectionAllowed === true),
     preview_occasion: fixture.occasionTitle,
     preview_product_0_title: fixture.tickets[0].products[0].title,
     preview_product_0_type: fixture.tickets[0].products[0].type_title,
@@ -365,8 +388,8 @@ for (const record of records) {
     preview_zero_explanation: "0 CZK",
     preview_deadline: values.deadline || fixture.deadline,
     preview_currency: "CZK",
-    preview_account_number: fixture.accountNumber,
-    preview_iban: formatIBAN(fixture.iban),
+    preview_account_number: record.paymentMethod === 'bank' && record.collectionAllowed === true ? fixture.accountNumber : '',
+    preview_iban: record.paymentMethod === 'bank' && record.collectionAllowed === true ? formatIBAN(fixture.iban) : '',
   };
   const contextualize = (templates: Record<string, string>) => Object.fromEntries(
     Object.entries(templates).map((
@@ -420,6 +443,11 @@ for (const record of records) {
 const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
 for (const record of records) {
+  // Every declared slot is defined; unavailable method-specific slots stay empty.
+  // This never fabricates a bank account/action for another method or closed state.
+  for (const code of (emailVariableContract.templates as Record<string, readonly string[]>)[record.templateCode] ?? []) {
+    if (!(code in record.values)) record.values[code] = '';
+  }
   record.richCodes = Object.keys(record.values).filter((code) =>
     (emailVariableContract.variables as Record<string, { html: boolean }>)[code]?.html === true);
 }

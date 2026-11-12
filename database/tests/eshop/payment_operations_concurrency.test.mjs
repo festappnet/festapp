@@ -96,7 +96,8 @@ test('issued reservation blocks a concurrent negative receipt correction',async(
  try{
   const x=await fixture(observer);await begin(first,x);await begin(second,x);
   await command(first,payload(x,'bank',700));
-  const waiting=pending(command(second,payload(x,'cash',-400,'correct_record')));
+  // The released negative-cash boundary still shares the reservation fence.
+  const waiting=pending(second.query("select public.insert_manual_transaction(-400,'CZK',(select unit::int from public.occasions where id=$1),NULL,now()::text,'Receipt correction',$2::int)",[x.occasion,x.payment]));
   await blocked(observer,await pid(second),await pid(first));await first.query('commit');
   await assert.rejects(outcome(waiting),e=>e.message==='PAYMENT_REFUND_RESERVATION_CONFLICT');await second.query('rollback');
   assert.equal(Number((await totals(observer,x)).gross_received),1000);
@@ -143,3 +144,102 @@ for(const action of ['delete','unlink','suspend']){
   }finally{await close(other,preparing,observer);}
  });
 }
+
+async function policyInput(c,x,mode='disabled') {
+ const unit=(await c.query('select unit from public.occasions where id=$1',[x.occasion])).rows[0].unit;
+ return {organizationId:x.organization,unitId:Number(unit),method:'bank',mode};
+}
+async function policyPreview(c,input) {
+ await c.query('set local role authenticated');
+ try {return (await c.query('select public.preview_payment_method_policy($1) r',[input])).rows[0].r;}
+ finally {await c.query('reset role');}
+}
+async function policyCommand(c,input,preview) {
+ await c.query('set local role authenticated');
+ try {return (await c.query('select public.command_payment_method_policy($1,$2,$3) r',[input,randomUUID(),preview.confirmation])).rows[0].r;}
+ finally {await c.query('reset role').catch(()=>{});}
+}
+test('policy disable fences a waiting new bank instruction and reserves no money',async()=>{
+ const observer=await connect(),disabling=await connect(),issuing=await connect();
+ try {
+  const x=await fixture(observer);await begin(disabling,x);await begin(issuing,x);
+  const input=await policyInput(observer,x),preview=await policyPreview(disabling,input);
+  await policyCommand(disabling,input,preview);
+  const waiting=pending(command(issuing,payload(x,'bank',100)));
+  await blocked(observer,pid(issuing),pid(disabling),waiting);await disabling.query('commit');
+  await assert.rejects(outcome(waiting),e=>e.message==='PAYMENT_REFUND_UNAVAILABLE');await issuing.query('rollback');
+  assert.equal((await observer.query('select count(*)::int n from eshop.refund_requests where order_id=$1',[x.order])).rows[0].n,0);
+ } finally {await close(issuing,disabling,observer);}
+});
+test('an instruction committed before disable requires a fresh impact confirmation',async()=>{
+ const observer=await connect(),issuing=await connect(),disabling=await connect();
+ try {
+  const x=await fixture(observer);await begin(issuing,x);await begin(disabling,x);
+  const input=await policyInput(observer,x),preview=await policyPreview(disabling,input);
+  await command(issuing,payload(x,'bank',100));
+  const waiting=pending(policyCommand(disabling,input,preview));
+  await blocked(observer,pid(disabling),pid(issuing),waiting);await issuing.query('commit');
+  await assert.rejects(outcome(waiting),e=>e.message==='PAYMENT_POLICY_PREVIEW_STALE');await disabling.query('rollback');
+  await begin(disabling,x);await policyCommand(disabling,input,await policyPreview(disabling,input));await disabling.query('commit');
+  assert.equal((await observer.query('select status from eshop.refund_requests where order_id=$1',[x.order])).rows[0].status,'pending');
+ } finally {await close(disabling,issuing,observer);}
+});
+test('policy disable wins against a waiting public checkout without a new bank reference',async()=>{
+ const observer=await connect(),disabling=await connect(),checkout=await connect();
+ try {
+  const x=await fixture(observer);await begin(disabling,x);await begin(checkout,x);
+  const input=await policyInput(observer,x);await policyCommand(disabling,input,await policyPreview(disabling,input));
+  const form=(await observer.query('select key from public.forms where id=$1',[x.form])).rows[0].key;
+  const count=(await observer.query('select count(*)::int n from eshop.payment_reference_reservations')).rows[0].n;
+  await checkout.query('set local role authenticated');
+  const waiting=pending(checkout.query('select public.create_ticket_order_client_sync_v1($1,$2,$3) r',[
+   {form,email:'policy-race@example.invalid',payment_method:'bank',ticket:[{fields:[{product_type:x.product}]}]},randomUUID(),randomUUID()]));
+  await blocked(observer,pid(checkout),pid(disabling),waiting);await disabling.query('commit');
+  const result=(await outcome(waiting)).rows[0].r;assert.equal(result.status,'rejected');await checkout.query('commit');
+  assert.equal((await observer.query('select count(*)::int n from eshop.payment_reference_reservations')).rows[0].n,count);
+ } finally {await close(checkout,disabling,observer);}
+});
+
+async function preparedCollection(c) {
+ await c.query('begin');await c.query(assertions);await c.query(fixtureSQL);
+ const x=(await c.query('select pg_temp.payment_fixture() x')).rows[0].x;
+ await c.query("update eshop.payment_info set deadline=now()+interval '1 day' where id=$1",[x.payment]);
+ await c.query("update public.email_messages set workflow_state='cancelled' where order_id<>$1 or order_id is null",[x.order]);
+ await c.query(`update public.email_messages set data=data||jsonb_build_object('collectionAction',public.payment_collection_action_internal(order_id)),target_time=now()
+  where order_id=$1 and message_kind='order_confirmation'`,[x.order]);
+ await c.query(`update public.email_capacity set paused=false,shared_account=false,quota_at=now(),max_rate=100,daily_quota=100000,provider_sent_24h=0,
+  worker_url=null,next_send_at=now(),circuit_until=null,provider_outage_streak=0,probe_until=null`);
+ await c.query("select set_config('request.jwt.claim.role','service_role',true)");
+ const claimed=(await c.query('select public.claim_email() r')).rows[0].r;
+ assert.equal(Number(claimed.order_id),Number(x.order));
+ await c.query("select public.prepare_email($1,$2,'{\"sealed\":\"immutable-template-race\"}')",[claimed.message_id,claimed.lease_token]);
+ await c.query('commit');return {...x,...claimed};
+}
+test('template authoring committed before send cancels the immutable old collection snapshot',async()=>{
+ const observer=await connect(),author=await connect(),sender=await connect();
+ try {
+  const x=await preparedCollection(observer);
+  await begin(author,x);
+  await author.query("select public.update_entity_email_banner('occasion',$1,'https://img.festapp.net/images/template-race-first.png')",[x.occasion]);
+  await begin(sender,x,'service_role');
+  const waiting=pending(sender.query('select public.begin_email_send($1,$2) r',[x.attempt_id,x.lease_token]));
+  await blocked(observer,pid(sender),pid(author),waiting);
+  await author.query('commit');
+  assert.equal((await outcome(waiting)).rows[0].r.disposition,'cancelled');
+  assert.deepEqual((await sender.query('select prepared from public.email_messages where message_id=$1',[x.message_id])).rows[0].prepared,{sealed:'immutable-template-race'});
+  await sender.query('commit');
+ } finally {await close(sender,author,observer);}
+});
+test('send permit acquired first serializes a later template edit without rewriting its snapshot',async()=>{
+ const observer=await connect(),author=await connect(),sender=await connect();
+ try {
+  const x=await preparedCollection(observer);await begin(sender,x,'service_role');
+  const started=(await sender.query('select public.begin_email_send($1,$2) r',[x.attempt_id,x.lease_token])).rows[0].r;
+  assert.equal(started.disposition,'send');
+  await begin(author,x);
+  const waiting=pending(author.query("select public.update_entity_email_banner('occasion',$1,'https://img.festapp.net/images/template-race-second.png')",[x.occasion]));
+  await blocked(observer,pid(author),pid(sender),waiting);
+  await sender.query('commit');await outcome(waiting);await author.query('commit');
+  assert.deepEqual((await observer.query('select prepared from public.email_messages where message_id=$1',[x.message_id])).rows[0].prepared,{sealed:'immutable-template-race'});
+ } finally {await close(sender,author,observer);}
+});

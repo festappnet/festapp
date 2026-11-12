@@ -13,6 +13,7 @@ class UnitBankAccountCard extends StatelessWidget {
   final Set<String> primaryCurrencies;
   final int index;
   final VoidCallback? onOpen;
+  final VoidCallback? onHistory;
   final VoidCallback? onUnlink;
   final Widget? selection;
   final bool showSyncHelp;
@@ -23,6 +24,7 @@ class UnitBankAccountCard extends StatelessWidget {
     required this.primaryCurrencies,
     required this.index,
     this.onOpen,
+    this.onHistory,
     this.onUnlink,
     this.selection,
     this.showSyncHelp = true,
@@ -35,6 +37,7 @@ class UnitBankAccountCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (selection != null) selection!,
+        if (onHistory != null) IconButton(tooltip: BankAccountStrings.bankAccount, icon: const Icon(Icons.history), onPressed: onHistory),
         if (onOpen != null)
           IconButton(
             tooltip: RightsService.hasBankCapability(

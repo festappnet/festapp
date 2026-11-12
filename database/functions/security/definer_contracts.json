@@ -2913,7 +2913,7 @@
     },
     "7a22bfb468ab07f801369c0617d2c22bea287254538b0fd3051d0a6787bdcc53": {
       "signature": "public.get_bank_transaction_history(bigint)",
-      "source": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql"
+      "source": "database/functions/payment_providers/released_bank_readers.sql"
     },
     "3fb1ec78c0ba9b718da226ecd973c5e9f773e00bb512a1c0a564d5f17d58cb2a": {
       "signature": "public.get_form_by_link(jsonb)",
@@ -3178,6 +3178,46 @@
     "fb692f78f66a8f85296d9f0b8385d8af6905dd54d03c352ec6812681a010a83c": {
       "signature": "public.lookup_scanner_ticket_by_id(uuid,text,bigint)",
       "source": "database/functions/scanning/admission.sql"
+    },
+    "bfc1bb267476d67ab31e2c9a79aa1b45eceebc3d1e4a884fbc8f05c1830bc9d7": {
+      "signature": "public.can_manage_payment_method_policy(bigint,bigint)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "6215d89bb5aa66e9c354e9589e8be94b942100ba0d617c7e0634a867455fc503": {
+      "signature": "public.get_payment_method_policy(bigint,bigint)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "aea7700fe6f6e04eb708f458da10d1689383af664300b46d261bce2e6125a4fa": {
+      "signature": "public.preview_payment_method_policy(jsonb)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "328ee8d59b471dd7c486ff13facb57344de12066d7ac4e64959a0ec03b991fd1": {
+      "signature": "public.command_payment_method_policy(jsonb,uuid,text)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "77eef535552455f8901ba71e76504634dae10365319faf996b3cff1fd5ae83f3": {
+      "signature": "public.get_payment_template_audit(bigint)",
+      "source": "database/functions/payment_providers/template_policy.sql"
+    },
+    "4d2f27acd84fb682dd233b5baecedef4cae14a22df7dd0e2db16f4f305755efa": {
+      "signature": "public.review_payment_templates(bigint,text)",
+      "source": "database/functions/payment_providers/template_policy.sql"
+    },
+    "add7e4f6fdc5d0f5bfb99913406a564075bf4422cc94a9afc04662f9cd2452d3": {
+      "signature": "public.get_bank_transaction_history(bigint,bigint)",
+      "source": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql"
+    },
+    "8e04141669f9902ecfd316abe44ec7f29c8f27729690483b80237b764205281f": {
+      "signature": "public.get_linkable_bank_accounts(bigint)",
+      "source": "database/functions/eshop_bank_accounts/get_my_admin_bank_accounts.sql"
+    },
+    "211e97014c5256432675d6404d9f1a3db74ba92510a2c5b116728ebe0a0271df": {
+      "signature": "public.get_order_details_for_email(bigint)",
+      "source": "database/functions/eshop/get_order_details_for_email.sql"
+    },
+    "01b856f65e3b17cf8a7ff79eae4c2a890e10b2513606b347b9e8d32d5a01376c": {
+      "signature": "public.get_my_admin_bank_accounts()",
+      "source": "database/functions/payment_providers/released_bank_readers.sql"
     }
   }
 }

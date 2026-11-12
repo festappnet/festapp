@@ -1,3 +1,4 @@
+import '../../eshop/views/search_transactions_dialog.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'unit_bank_account_card.dart';
@@ -150,14 +151,10 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       );
 
   Future<List<BankAccountModel>> _loadAvailableAccounts() async {
-    final organizationAccounts = _organizationId == null
-        ? <BankAccountModel>[]
-        : await DbBankAccounts.current
-            .getBankAccountsForOrganization(_organizationId!);
-    final myAccounts = await DbBankAccounts.current.getMyAdminBankAccounts();
+    final myAccounts = await DbBankAccounts.current.getLinkableBankAccounts(widget.unitId);
     final linkedIds = _unitAccounts.map((account) => account.id).toSet();
     final available = <int, BankAccountModel>{};
-    for (final account in [...organizationAccounts, ...myAccounts]) {
+    for (final account in myAccounts) {
       if (!linkedIds.contains(account.id)) {
         available.putIfAbsent(account.id, () => account);
       }
@@ -516,6 +513,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                           return UnitBankAccountCard(
                             key: ValueKey(account.id),
                             account: account,
+                            onHistory: account.isAdmin == true ? () => showDialog<void>(context: context, builder: (_) => SearchTransactionsDialog(paymentInfoId: null, bankAccount: account.id, unitId: widget.unitId, readOnly: true)) : null,
                             primaryCurrencies: account.supportedCurrencies
                                 .where((currency) => !higherPriorityCurrencies
                                     .contains(currency))

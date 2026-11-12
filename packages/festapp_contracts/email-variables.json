@@ -270,6 +270,16 @@
       "kind": "text",
       "repeatable": true,
       "html": false
+    },
+    "paymentAction": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "paymentMethodName": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
     }
   },
   "templates": {
@@ -359,7 +369,9 @@
       "variableSymbol",
       "deadline",
       "balanceReasoning",
-      "fullOrder"
+      "fullOrder",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_UPDATE": [
       "orderCommunication",
@@ -369,7 +381,9 @@
       "occasionTitle",
       "fullOrder",
       "changeOverview",
-      "balanceReasoning"
+      "balanceReasoning",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_PAYMENT_DONE": [
       "orderCommunication",
@@ -380,7 +394,9 @@
       "occasionTitle",
       "fullOrder",
       "balanceReasoning",
-      "amount"
+      "amount",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_REMINDER": [
       "orderCommunication",
@@ -393,7 +409,9 @@
       "amount",
       "deadline",
       "paymentDetails",
-      "remainingTime"
+      "remainingTime",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_STORNO": [
       "orderCommunication",
@@ -401,7 +419,9 @@
       "order_overview_button",
       "orderSymbol",
       "occasionTitle",
-      "amount"
+      "amount",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TEAM_INVITATION": [
       "appName",

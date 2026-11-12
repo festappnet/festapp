@@ -271,6 +271,16 @@ export const emailVariableContract = {
       "kind": "text",
       "repeatable": true,
       "html": false
+    },
+    "paymentAction": {
+      "kind": "richBlock",
+      "repeatable": false,
+      "html": true
+    },
+    "paymentMethodName": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
     }
   },
   "templates": {
@@ -360,7 +370,9 @@ export const emailVariableContract = {
       "variableSymbol",
       "deadline",
       "balanceReasoning",
-      "fullOrder"
+      "fullOrder",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_UPDATE": [
       "orderCommunication",
@@ -370,7 +382,9 @@ export const emailVariableContract = {
       "occasionTitle",
       "fullOrder",
       "changeOverview",
-      "balanceReasoning"
+      "balanceReasoning",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_PAYMENT_DONE": [
       "orderCommunication",
@@ -381,7 +395,9 @@ export const emailVariableContract = {
       "occasionTitle",
       "fullOrder",
       "balanceReasoning",
-      "amount"
+      "amount",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_REMINDER": [
       "orderCommunication",
@@ -394,7 +410,9 @@ export const emailVariableContract = {
       "amount",
       "deadline",
       "paymentDetails",
-      "remainingTime"
+      "remainingTime",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TICKET_ORDER_STORNO": [
       "orderCommunication",
@@ -402,7 +420,9 @@ export const emailVariableContract = {
       "order_overview_button",
       "orderSymbol",
       "occasionTitle",
-      "amount"
+      "amount",
+      "paymentAction",
+      "paymentMethodName"
     ],
     "TEAM_INVITATION": [
       "appName",

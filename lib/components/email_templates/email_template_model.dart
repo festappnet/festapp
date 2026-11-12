@@ -254,6 +254,8 @@ class EmailTemplateModel {
       balanceReasoningSub,
       orderCommunicationSub,
       paymentDetailsSub,
+      EmailTemplateSub(code: 'paymentAction', description: EmailTemplatesStrings.subPaymentAction, defaultValue: ''),
+      EmailTemplateSub(code: 'paymentMethodName', description: EmailTemplatesStrings.subPaymentMethodName, defaultValue: ''),
       remainingTimeSub,
       confirmationUrlSub,
       expiresAtSub,

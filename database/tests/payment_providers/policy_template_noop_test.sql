@@ -1,0 +1,88 @@
+-- test-setup: database/tests/helpers/payment_lifecycle_fixture.sql
+-- No-op authoring must preserve a prepared intent; actual changes still fence it.
+DO $$
+DECLARE x jsonb:=pg_temp.payment_fixture(); oc bigint:=(x->>'occasion')::bigint; org bigint:=(x->>'organization')::bigint;
+ un bigint; msg public.email_messages; queued jsonb; epoch bigint; revision text;
+ content jsonb; banner text:='https://img.festapp.net/images/noop-banner.png';
+BEGIN
+ SELECT unit INTO un FROM public.occasions WHERE id=oc;
+ UPDATE public.unit_users SET is_editor=true WHERE unit=un AND "user"=(x->>'actor')::uuid;
+ content:=jsonb_build_object('occasion',oc,'code','TICKET_ORDER_CONFIRMATION','title','Potvrzení','subject','Vaše objednávka','html','<p>{{fullOrder}}</p>');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_email_template(content);
+ PERFORM public.update_entity_email_banner('occasion',oc,banner);
+ RESET ROLE;
+ epoch:=(SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc);
+ revision:=public.payment_template_audit_internal(oc)->>'revision';
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ queued:=public.enqueue_email('order_confirmation',jsonb_build_object('organization',org,'unit',un,'occasion',oc),
+  (SELECT data->>'email' FROM eshop.orders WHERE id=(x->>'order')::bigint),'{}',gen_random_uuid()::text,
+  'TICKET_ORDER_CONFIRMATION',now(),NULL,(x->>'order')::bigint,(SELECT email_payment_version FROM eshop.orders WHERE id=(x->>'order')::bigint));
+ UPDATE public.email_messages SET prepared='{"sealed":"unchanged-content"}' WHERE message_id=(queued->>'message_id')::uuid RETURNING * INTO msg;
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM assert_true(public.email_intent_valid(msg),'prepared fixture is eligible before authoring');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_email_template(content);
+ PERFORM public.update_entity_email_banner('occasion',oc,banner);
+ PERFORM public.delete_entity_email_template('occasion',oc,'TICKET_ORDER_PAYMENT_DONE');
+ RESET ROLE;
+ PERFORM assert_eq((SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc),epoch,'identical save and absent reset do not invalidate');
+ PERFORM assert_eq(public.payment_template_audit_internal(oc)->>'revision',revision,'no-op preserves exact review revision');
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM assert_true(public.email_intent_valid(msg),'no-op preserves the prepared intent');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_email_template(content||'{"html":"<p>Nové potvrzení {{fullOrder}}</p>"}');
+ PERFORM public.update_email_template(content);
+ RESET ROLE;
+ PERFORM assert_true((SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc)>epoch,'A-B-A retains monotonic invalidation');
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM assert_false(public.email_intent_valid(msg),'actual change and restoration cannot revive prepared content');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.delete_entity_email_template('occasion',oc,'TICKET_ORDER_CONFIRMATION');
+ RESET ROLE;
+ epoch:=(SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.delete_entity_email_template('occasion',oc,'TICKET_ORDER_CONFIRMATION');
+ RESET ROLE;
+ PERFORM assert_eq((SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc),epoch,'second reset is a no-op');
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_entity_email_banner('occasion',oc,NULL);
+ RESET ROLE;
+ epoch:=(SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_entity_email_banner('occasion',oc,NULL);
+ RESET ROLE;
+ PERFORM assert_eq((SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc),epoch,'already inherited banner is a no-op');
+ -- The same contract applies to inherited unit and organization overrides.
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_email_template((content-'occasion')||jsonb_build_object('unit',un));
+ PERFORM public.update_entity_email_banner('unit',un,banner);
+ RESET ROLE;
+ epoch:=(SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.update_email_template((content-'occasion')||jsonb_build_object('unit',un));
+ PERFORM public.update_entity_email_banner('unit',un,banner);
+ PERFORM public.delete_entity_email_template('unit',un,'TICKET_ORDER_PAYMENT_DONE');
+ RESET ROLE;
+ PERFORM assert_eq((SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc),epoch,'unit identical save/reset preserves inherited epoch');
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ SET LOCAL ROLE service_role;
+ PERFORM public.update_email_template((content-'occasion')||jsonb_build_object('organization',org));
+ RESET ROLE;
+ epoch:=(SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc);
+ SET LOCAL ROLE service_role;
+ PERFORM public.update_email_template((content-'occasion')||jsonb_build_object('organization',org));
+ RESET ROLE;
+ PERFORM assert_eq((SELECT e.revision FROM eshop.payment_template_epochs e WHERE occasion_id=oc),epoch,'organization identical save preserves inherited epoch');
+ PERFORM assert_eq((SELECT prepared FROM public.email_messages WHERE id=msg.id),'{"sealed":"unchanged-content"}'::jsonb,'prepared audit is never rewritten');
+END $$;

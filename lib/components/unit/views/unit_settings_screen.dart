@@ -1,3 +1,5 @@
+import '../../payments/payment_policy_settings.dart';
+
 import 'package:festapp_core/communication_tone.dart';
 
 import 'unit_measurement_settings.dart';
@@ -7,7 +9,6 @@ import 'package:fstapp/services/exception_handler.dart';
 
 import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 
 import '../verification/verification_strings.dart';
@@ -53,7 +54,7 @@ class UnitSettingsScreen extends StatefulWidget {
 class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  bool _isUpdatingStripeFeature = false;
+  bool _bankPolicyEnabled = false;
   bool _isLoading = true;
   bool _canEdit = false;
   late UnitModel _unit;
@@ -152,32 +153,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
       }
     } catch (e) {
       AppLogger.error("Error checking delete constraints: $e");
-    }
-  }
-
-  Future<void> _setStripeFeature(bool enabled) async {
-    final unitId = _unit.id;
-    if (unitId == null ||
-        !StripeFeature.canActivate ||
-        RightsService.currentUnit()?.id != unitId)
-      return;
-    setState(() => _isUpdatingStripeFeature = true);
-    try {
-      await Supabase.instance.client.rpc(
-        'set_stripe_unit_feature',
-        params: {'p_unit': unitId, 'p_enabled': enabled},
-      );
-      await RightsService.refreshAfterAuthorizationChange();
-      if (mounted) widget.onUnitUpdated();
-    } catch (_) {
-      if (mounted)
-        ToastHelper.Show(
-          context,
-          'Nastavení Stripe se nepodařilo uložit.',
-          severity: ToastSeverity.NotOk,
-        );
-    } finally {
-      if (mounted) setState(() => _isUpdatingStripeFeature = false);
     }
   }
 
@@ -853,7 +828,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                   if (!_isLoading) ...[
                     const SizedBox(height: 24),
                     const SizedBox(height: 24),
-                    if (_canEdit)
+                    if (_canEdit && _bankPolicyEnabled)
                       ListTile(
                         leading: const Icon(Icons.account_balance),
                         title: Text(BankAccountStrings.bankAccountsTitle),
@@ -865,22 +840,33 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         },
                       ),
                     const SizedBox(height: 48),
-                    if (StripeFeature.canActivate &&
-                        RightsService.currentUnit()?.id == _unit.id)
-                      ExpansionTile(
-                        title: const Text('Skryté funkce'),
-                        children: [
-                          SwitchListTile(
-                            title: const Text('Platby kartou přes Stripe'),
-                            subtitle: const Text(
-                              'Zpřístupní nastavení pouze této organizaci. Ostré platby se tím nezapnou.',
-                            ),
-                            value: StripeFeature.visible,
-                            onChanged: _isUpdatingStripeFeature
-                                ? null
-                                : _setStripeFeature,
-                          ),
-                        ],
+                    if (_canEdit &&
+                        _unit.id != null &&
+                        _unit.organization != null)
+                      PaymentPolicySettings(
+                        organizationId: _unit.organization!,
+                        unitId: _unit.id,
+                        configureMethods: const {'bank', 'stripe'},
+                        onConfigure: (method) {
+                          if (method == 'bank') {
+                            context.tabsRouter.navigate(
+                              const UnitBankAccountsNavigationRoute(),
+                            );
+                          }
+                          if (method == 'stripe') {
+                            context.tabsRouter.navigate(
+                              const UnitCardPaymentsRoute(),
+                            );
+                          }
+                        },
+                        onChanged: (policy) {
+                          if (mounted) {
+                            setState(
+                              () => _bankPolicyEnabled =
+                                  policy.methods['bank']?.enabled == true,
+                            );
+                          }
+                        },
                       ),
                     if (StripeFeature.visible && StripeFeature.canManage)
                       ListTile(

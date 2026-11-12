@@ -9,6 +9,7 @@ import 'form_bundle.dart';
 /// freeze is the sole boundary that assembles a complete immutable definition.
 class FormEditorDraft {
   FormDefinition definition;
+  Map<String, dynamic>? paymentMethodPolicy;
   int aggregateVersion;
   Map<String, int> _productVersions = {};
   Map<String, int> _productTypeVersions = {};
@@ -148,6 +149,13 @@ class FormEditorDraft {
       ..remove('account_number')
       ..remove('secret')
       ..remove('payments');
+    // A disabled bank service must not clear or reselect the stored recipient.
+    // The server keeps that historical binding until an authorized repair.
+    if (paymentMethodPolicy != null &&
+        (paymentMethodPolicy!['methods'] as Map?)?['bank']?['policyEnabled'] !=
+            true) {
+      result.remove('bank_account');
+    }
     result['settings'] = FormMetadata.authoringSettingsSnapshot(
       result.remove('data') as Map<String, dynamic>?,
     );

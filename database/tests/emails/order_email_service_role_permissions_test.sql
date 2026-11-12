@@ -65,7 +65,7 @@ BEGIN
     'TICKET_ORDER_PAYMENT_DONE', 'TICKET_ORDER_REMINDER', 'ORDER_TICKETS'
   ] LOOP
     v_order_id := (v_fixture->>CASE WHEN v_code = 'TICKET_ORDER_STORNO' THEN 'order' ELSE 'update_order' END)::bigint;
-    -- These invoker RPCs are the actual worker preparation boundary. Merely
+    -- These scoped worker RPCs are the actual preparation boundary. Merely
     -- enqueueing as service_role does not detect missing renderer table grants.
     IF current_user<>'service_role' THEN RAISE EXCEPTION 'Test must use the runtime role'; END IF;
     v_details:=public.get_order_details_for_email(v_order_id);

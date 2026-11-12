@@ -17,12 +17,14 @@ class SearchTransactionsDialog extends StatefulWidget {
   final int? paymentInfoId;
   final int bankAccount;
   final bool readOnly;
+  final int? unitId;
 
   const SearchTransactionsDialog({
     super.key,
     required this.paymentInfoId,
     required this.bankAccount,
     this.readOnly = false,
+    this.unitId,
   });
 
   @override
@@ -65,6 +67,7 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
       final transactions = await DbEshop.getTransactionsForOrderAllAvailable(
         widget.paymentInfoId,
         historyAccountId: widget.readOnly ? widget.bankAccount : null,
+        historyUnitId: widget.unitId,
       );
       if (!mounted) return;
       setState(() {

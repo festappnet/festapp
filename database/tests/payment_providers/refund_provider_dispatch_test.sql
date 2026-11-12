@@ -47,8 +47,8 @@ BEGIN
  payload:=jsonb_build_object('operation','prepare_refund','orderId',oid,'method',p_provider,'amount','100.00');
  BEGIN
   PERFORM public.command_payment_operation(payload,command);RAISE EXCEPTION 'disabled provider write accepted';
- EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'PAYMENT_REFUND_UNAVAILABLE' THEN RAISE; END IF; END;
- UPDATE eshop.payment_providers SET refund_write_enabled=true WHERE provider_key=p_provider;
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM NOT IN ('PAYMENT_REFUND_UNAVAILABLE','PAYMENT_SOURCE_MISMATCH') THEN RAISE; END IF; END;
+ UPDATE eshop.payment_providers SET refund_write_enabled=true,refund_write_supported=true,partial_refund_supported=true WHERE provider_key=p_provider;
  SET LOCAL ROLE authenticated;
  r:=public.command_payment_operation(payload,command);
  RESET ROLE;
@@ -62,7 +62,7 @@ BEGIN
  FOR c IN SELECT jsonb_build_object('operation','prepare_refund','orderId',oid,'method',method,'amount','1.00','receivedAt',now()) FROM unnest(ARRAY['cash','bank']) method LOOP
   BEGIN PERFORM public.command_payment_operation(c,extensions.gen_random_uuid());RAISE EXCEPTION 'external payment bypassed through builtin';
   EXCEPTION WHEN insufficient_privilege THEN NULL; WHEN raise_exception THEN
-   IF SQLERRM<>'PAYMENT_REFUND_UNAVAILABLE' THEN RAISE; END IF; END;
+   IF SQLERRM NOT IN ('PAYMENT_REFUND_UNAVAILABLE','PAYMENT_SOURCE_MISMATCH') THEN RAISE; END IF; END;
  END LOOP;
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  BEGIN PERFORM public.complete_payment_refund(command,NULL,'{"status":"succeeded","refundId":"unleased"}');RAISE EXCEPTION 'missing lease accepted';

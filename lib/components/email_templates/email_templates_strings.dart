@@ -106,6 +106,8 @@ class EmailTemplatesStrings {
       'EmailTemplates.subs.changeOverview'.tr();
   static String get subBalanceReasoning =>
       'EmailTemplates.subs.balanceReasoning'.tr();
+  static String get subPaymentAction => 'EmailTemplates.subs.paymentAction'.tr();
+  static String get subPaymentMethodName => 'EmailTemplates.subs.paymentMethodName'.tr();
   static String get subPaymentDetails =>
       'EmailTemplates.subs.paymentDetails'.tr();
   static String get subRemainingTime =>

@@ -444,6 +444,24 @@
     "people/unit_membership.sql",
     "people/access_policy.sql",
     "people/access_management.sql",
-    "people/access_invitations.sql"
+    "people/access_invitations.sql",
+    "payment_providers/operation_support.sql",
+    "payment_providers/method_policy.sql",
+    "payment_providers/operation_contexts.sql",
+    "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql",
+    "eshop_bank_accounts/update_bank_account.sql",
+    "eshop_stripe/feature_settings.sql",
+    "occasion_setup/drafts.sql",
+    "payment_providers/template_policy.sql",
+    "payment_providers/collection_action.sql",
+    "eshop_stripe/checkout.sql",
+    "eshop_barion/runtime.sql",
+    "eshop_bank_accounts/get_my_admin_bank_accounts.sql",
+    "eshop_bank_accounts/update_bank_account_user.sql",
+    "eshop_stripe/form_availability.sql",
+    "occasion_setup/bank_accounts.sql",
+    "others/get_email_authoring_payment_accounts.sql",
+    "occasion_setup/finalize.sql",
+    "payment_providers/released_bank_readers.sql"
   ]
 }

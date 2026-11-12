@@ -28,6 +28,22 @@ late WidgetEnvironmentFixture _environment;
 
 late ValueNotifier<({int accountId, int revision})> _bankChanges;
 void main() {
+  test('disabled bank projection omits recipient writes and preserves its stored identity', () {
+    final draft =
+        FormEditorDraft(
+            bankAccountId: 42,
+            data: {
+              'payments': {'bankEnabled': true},
+            },
+          )
+          ..paymentMethodPolicy = {
+            'methods': {
+              'bank': {'policyEnabled': false},
+            },
+          };
+    expect(draft.toEditedJson().containsKey('bank_account'), isFalse);
+    expect(draft.definition.bankAccountId, 42);
+  });
   setUp(() {
     _bankChanges = ValueNotifier((accountId: 0, revision: 0));
     addTearDown(_bankChanges.dispose);
@@ -275,8 +291,22 @@ void main() {
     ('missing link', true, true, true, ['no_privacy_policy'], true),
     ('form editor only', false, true, true, ['no_privacy_policy'], true),
     ('form off', true, false, true, ['disabled', 'no_privacy_policy'], false),
-    ('unit off', true, true, false, ['unit_disabled', 'no_privacy_policy'], true),
-    ('no destination', true, true, true, ['no_destination', 'no_privacy_policy'], true),
+    (
+      'unit off',
+      true,
+      true,
+      false,
+      ['unit_disabled', 'no_privacy_policy'],
+      true,
+    ),
+    (
+      'no destination',
+      true,
+      true,
+      true,
+      ['no_destination', 'no_privacy_policy'],
+      true,
+    ),
     ('platform block editor', false, true, true, ['platform_block'], false),
     ('unsaved enable', true, false, true, <String>[], false),
     ('unknown block', true, true, true, ['future_block'], false),
@@ -347,21 +377,35 @@ void main() {
           warned ? findsOneWidget : findsNothing,
         );
         await tester.ensureVisible(find.text(FormStrings.measurementTitle));
-        expect(find.text(FormStrings.measurementReady),
-            reasons.isEmpty && formOn ? findsOneWidget : findsNothing);
+        expect(
+          find.text(FormStrings.measurementReady),
+          reasons.isEmpty && formOn ? findsOneWidget : findsNothing,
+        );
         if (name == 'platform block editor') {
-          expect(find.text(FormStrings.measurementPlatformBlocked), findsNothing);
-          expect(find.text(FormStrings.measurementAskUnitManager), findsWidgets);
+          expect(
+            find.text(FormStrings.measurementPlatformBlocked),
+            findsNothing,
+          );
+          expect(
+            find.text(FormStrings.measurementAskUnitManager),
+            findsWidgets,
+          );
         }
         if (name == 'unsaved enable') {
-          final toggle = find.widgetWithText(SwitchListTile, FormStrings.measurementEnabled);
+          final toggle = find.widgetWithText(
+            SwitchListTile,
+            FormStrings.measurementEnabled,
+          );
           await tester.ensureVisible(toggle);
           await tester.tap(toggle);
           await tester.pumpAndSettle();
           expect(find.text(FormStrings.measurementReady), findsNothing);
         }
         if (formOn && reasons.contains('no_privacy_policy')) {
-          expect(find.text(FormStrings.measurementNoPrivacyPolicy), findsWidgets);
+          expect(
+            find.text(FormStrings.measurementNoPrivacyPolicy),
+            findsWidgets,
+          );
         }
         expect(tester.takeException(), isNull);
       },
@@ -486,10 +530,17 @@ void main() {
           TextFormField,
           FormStrings.labelReminderInterval,
         );
-        final deadlineMode = find.byKey(const ValueKey('form-payment-deadline-mode'));
-        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('custom');
+        final deadlineMode = find.byKey(
+          const ValueKey('form-payment-deadline-mode'),
+        );
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!(
+          'custom',
+        );
         await tester.pumpAndSettle();
-        final deadline = find.widgetWithText(TextFormField, FormStrings.labelDeadlineDays);
+        final deadline = find.widgetWithText(
+          TextFormField,
+          FormStrings.labelDeadlineDays,
+        );
         await tester.enterText(interval, '2');
         await tester.enterText(deadline, '4');
         await tester
@@ -508,13 +559,19 @@ void main() {
         await tester.pumpAndSettle();
         expect(form.definition.deadlineDurationSeconds, 0);
         await tester.enterText(interval, '');
-        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('none');
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!(
+          'none',
+        );
         await tester.pumpAndSettle();
-        await tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+        await tester
+            .widget<EditorActionBar>(find.byType(EditorActionBar))
+            .onSave();
         await tester.pumpAndSettle();
         expect(form.definition.deadlineDurationSeconds, isNull);
-        expect(form.definition.data?['payment_deadline'], {'mode':'none'});
-        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!('inherit');
+        expect(form.definition.data?['payment_deadline'], {'mode': 'none'});
+        tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!(
+          'inherit',
+        );
         await tester.pumpAndSettle();
         await tester
             .widget<EditorActionBar>(find.byType(EditorActionBar))
@@ -528,16 +585,34 @@ void main() {
         );
         expect(form.definition.deadlineDurationSeconds, isNull);
         if (override == null) {
-          tester.widget<PaymentMethodCards>(find.byType(PaymentMethodCards)).onChanged(FormPaymentMethod.cash);
+          tester
+              .widget<PaymentMethodCards>(find.byType(PaymentMethodCards))
+              .onChanged(FormPaymentMethod.cash);
           await tester.pumpAndSettle();
-          await tester.enterText(find.widgetWithText(TextFormField, PaymentMethodStrings.text('cashInstructions')), 'Uhraďte u vstupu.');
-          await tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+          await tester.enterText(
+            find.widgetWithText(
+              TextFormField,
+              PaymentMethodStrings.text('cashInstructions'),
+            ),
+            'Uhraďte u vstupu.',
+          );
+          await tester
+              .widget<EditorActionBar>(find.byType(EditorActionBar))
+              .onSave();
           await tester.pumpAndSettle();
           final settings = form.toEditedJson()['settings'] as Map;
-          expect(settings['payments'], {'bankEnabled':false,'cashEnabled':true,'cashInstructions':'Uhraďte u vstupu.','providerConnections':<String,String>{}});
-          expect(settings['payment_deadline'], {'mode':'none'});
+          expect(settings['payments'], {
+            'bankEnabled': false,
+            'cashEnabled': true,
+            'cashInstructions': 'Uhraďte u vstupu.',
+            'providerConnections': <String, String>{},
+          });
+          expect(settings['payment_deadline'], {'mode': 'none'});
           expect(form.definition.deadlineDurationSeconds, isNull);
-          expect(find.text(PaymentMethodStrings.reason('not_configured')), findsNothing);
+          expect(
+            find.text(PaymentMethodStrings.reason('not_configured')),
+            findsNothing,
+          );
         }
         await _environment.pumpWidget(tester, const SizedBox.shrink());
         await tester.pump(const Duration(seconds: 4));

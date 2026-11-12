@@ -5,7 +5,7 @@ DECLARE x jsonb:=pg_temp.fixture(NULL); fid bigint:=(x->>'form')::bigint; comman
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE eshop.products SET price=0,currency_code='EUR' WHERE id=(x->>'product')::bigint;
- UPDATE forms SET data='{"analytics":{"enabled":false}}' WHERE id=fid;
+ UPDATE forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":false}}' WHERE id=fid;
  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
  VALUES((x->>'organization')::bigint,true,1,'fixture','conversion matrix');
  payload:=pg_temp.checkout(x)||'{"analytics":{"enabled":true,"organization_allowed":true}}'::jsonb;
@@ -14,7 +14,7 @@ BEGIN
  oid:=(result#>>'{data,order,id}')::bigint;
  PERFORM assert_true(result#>'{data,analytics}' IS NULL OR result#>'{data,analytics}'='null','client-supplied analytics cannot turn on stored policy');
  PERFORM assert_eq((SELECT count(*) FROM analytics.conversion_facts WHERE "order"=oid),0::bigint,'no facts captured for a disabled form');
- UPDATE forms SET data='{"analytics":{"enabled":true}}' WHERE id=fid;
+ UPDATE forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":true}}' WHERE id=fid;
  replay:=create_ticket_order_client_sync_v1(payload,command,client);
  PERFORM assert_true(replay#>'{data,analytics}' IS NULL OR replay#>'{data,analytics}'='null','later enable cannot backfill old receipt');
  command:=gen_random_uuid();
@@ -33,9 +33,9 @@ BEGIN
  PERFORM assert_eq(conversion->>'lead_source','free_registration','free registration distinguished from waitlist');
  PERFORM assert_true((conversion->>'event_id')::uuid IS NOT NULL,'stable non-capability UUID');
  PERFORM assert_eq(create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}',conversion,'free registration replay identity stable');
- UPDATE forms SET data='{"analytics":{"enabled":false}}' WHERE id=fid;
+ UPDATE forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":false}}' WHERE id=fid;
  PERFORM assert_true(create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}'='null','form-level revocation also filters replay');
- UPDATE forms SET data='{"analytics":{"enabled":true}}' WHERE id=fid;
+ UPDATE forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":true}}' WHERE id=fid;
  PERFORM assert_eq(create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}',conversion,'re-enabled authorized replay retains original facts');
  BEGIN
   replay:=create_ticket_order_client_sync_v1(payload,command,gen_random_uuid());

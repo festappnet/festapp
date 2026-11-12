@@ -5,15 +5,16 @@ const id = '12345678-1234-4234-8234-123456789abc';
 Map<String, dynamic> options() => {
   'configured': {'bank': true, 'stripe': true},
   'available': ['stripe', 'bank'],
+  'bank': {'available': true},
   'supportedSurfaces': ['web'],
   'recipient': {'connectionId': id, 'name': 'Organizer'},
   'reservationSeconds': 1860,
 };
 void main() {
   test(
-    'A06 legacy defaults to bank; explicit unavailability never falls back',
+    'A06 absent projection and explicit unavailability fail closed',
     () {
-      expect(FormPaymentOptions.fromJson(null).availableFor('web'), ['bank']);
+      expect(FormPaymentOptions.fromJson(null).availableFor('web'), isEmpty);
       expect(
         FormPaymentOptions.fromJson({
           ...options(),

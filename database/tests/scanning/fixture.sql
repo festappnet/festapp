@@ -4,6 +4,11 @@ RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE org bigint; un bigint; oc bigint; fm bigint; product bigint; tid bigint; oid bigint; h bigint; ids bigint[]:='{}'; i integer;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Scanner isolated fixture') RETURNING id INTO org;
+ -- Explicit test-only compatibility with the reconstructed pre-policy upgrade clone.
+ IF to_regclass('eshop.organization_payment_method_policies') IS NOT NULL THEN
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT org,provider_key,true FROM eshop.payment_providers;
+ END IF;
  INSERT INTO public.units(title,organization) VALUES('Scanner fixture',org) RETURNING id INTO un;
  INSERT INTO public.occasions_hidden(secret) VALUES('TEST_'||gen_random_uuid()) RETURNING id INTO h;
  INSERT INTO public.occasions(title,organization,unit,occasion_hidden,features,link,start_time,end_time) VALUES('Testovací akce skeneru',org,un,h,'[]','scanner-test-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO oc;

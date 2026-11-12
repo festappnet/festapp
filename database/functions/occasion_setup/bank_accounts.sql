@@ -14,6 +14,7 @@ BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id;
  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
+ IF NOT coalesce(public.payment_method_policy_enabled_internal(d.unit,'bank'),false) THEN RETURN '{"canManage":false,"accounts":[]}'::jsonb; END IF;
  RETURN jsonb_build_object('canManage',public.get_is_manager_on_unit(d.unit),'accounts',coalesce((
   SELECT jsonb_agg(jsonb_build_object('id',b.id,'title',b.title,
     'display',coalesce(nullif(b.account_number_human_readable,''),b.account_number),

@@ -7,7 +7,7 @@ import {assertLocalDatabaseUrl,assertDisposableDatabase} from './disposable_data
 import {createTestWorkspace} from './runtime_workspace.js';
 const root=new URL('../../../',import.meta.url);
 export async function withPaymentUpgradeFixture(phase,run){
- assert(['connector','hardening'].includes(phase));
+ assert(['connector','hardening','policy'].includes(phase));
  const source=process.env.DATABASE_URL;assert(source);assertLocalDatabaseUrl(source);
  const admin=new pg.Client({connectionString:source});await admin.connect();
  const workspace=await createTestWorkspace();
@@ -20,6 +20,17 @@ export async function withPaymentUpgradeFixture(phase,run){
   await assertDisposableDatabase(db);
   assert.equal((await db.query('SELECT current_database() name')).rows[0].name,name);
   await db.query("BEGIN; SET LOCAL ROLE postgres; SET LOCAL festapp.email_wake='scheduled'; SET LOCAL request.jwt.claim.role='service_role'; SET LOCAL request.jwt.claim.sub=''");
+  if (phase === 'policy') {
+    const predecessor = execFileSync('python3', ['database/tests/helpers/payment_policy_predecessor.py'], {cwd:root,encoding:'utf8',maxBuffer:16*1024*1024});
+    await db.query(predecessor);
+    assert.equal((await db.query("select to_regprocedure('public.resolve_payment_method_policy_internal(bigint,bigint)') is null absent")).rows[0].absent,true);
+    await run(db);
+    return;
+  }
+  // Later policy owners must not leak into an older connector predecessor.
+  // Reconstruction is confined to this owned logical clone, never the source DB.
+  const prePolicy = execFileSync('python3', ['database/tests/helpers/payment_policy_predecessor.py'], {cwd:root,encoding:'utf8',maxBuffer:16*1024*1024});
+  await db.query(prePolicy);
   // This clone retains reference/configuration rows but creates its own business
   // facts below. No other test's Barion payment may prevent predecessor setup.
   await db.query(`TRUNCATE eshop.payment_info CASCADE;

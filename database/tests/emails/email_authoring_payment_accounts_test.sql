@@ -31,6 +31,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', true);
 
   INSERT INTO public.organizations(title) VALUES ('Authoring accounts fixture') RETURNING id INTO v_org;
+  INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org,'bank',true);
   INSERT INTO public.units(title, organization) VALUES ('Scope', v_org) RETURNING id INTO v_unit;
   INSERT INTO public.units(title, organization) VALUES ('Other scope', v_org) RETURNING id INTO v_other_unit;
   INSERT INTO public.occasions(title, organization, unit, link, start_time, end_time)

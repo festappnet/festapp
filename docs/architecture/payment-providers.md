@@ -37,6 +37,90 @@ record a production migration or activation.
   root for provider-specific authoring capabilities, currencies and setup links.
   Form settings retain other providers' account bindings when editing one.
 
+## Scoped product policy and collection
+
+`payment_providers/method_policy.sql` owns organization permissions, unit
+inherit/enabled/disabled overrides and the preferred method over the installed
+registry. Organization denial always wins. Missing policy and unknown methods
+fail closed; installation, configuration, readiness, operation support and RBAC
+remain independent. Unit preferences never grant permission. New forms start as
+closed drafts using this preference, without inventing a bank account or provider
+connection. Global provisioning explicitly selects Stripe and disables bank.
+
+`get_payment_method_policy`, `preview_payment_method_policy` and the receipted
+`command_payment_method_policy` are connected to tenant/unit settings. Commands
+re-authorize before receipt replay and require the current impact hash, covering
+open collections, issued references, bank instructions, provider intent dispatch
+states and obligations. Closing sales never cancels debts, revokes an issued URL,
+settles a refund or discards financial facts. Cash corrections after disable must
+reverse one actual manual cash source exactly once and preserve its audit.
+
+The organization policy advisory lock is exclusive for policy/template writes
+and shared for new collection/instruction actions. Acquire it before transaction,
+capacity/order/payment/message locks. Template authoring uses the same fence;
+a send permit either precedes an edit or rechecks its committed template epoch.
+No database lock spans a remote provider call. The registered form projection
+also attests `collectionAvailable`: normally the same technical eligibility as
+public availability, with an explicit connector-owned private gate for an
+already approved sandbox attempt. Barion keeps public `available=false`; its
+private gate requires an enabled original connection, exact organization/unit,
+saved binding and sandbox form allowlist. Policy/template denial still wins.
+This does not expose a new public sales method or onboard a provider.
+
+Refund dispatch uses the existing
+durable lease and observes the independent connector write kill-switch.
+
+`collection_action.sql` owns current purpose, method, source order, eligibility
+and policy/template epoch for emails and customer reopen. Queue claim/send
+rechecks that epoch without rewriting prepared snapshots. Re-enabling a method
+cannot revive an old demand. The worker-only `get_order_details_for_email` definer reads private eligibility
+through its service-only EXECUTE boundary; authenticated clients cannot call it.
+Already-authorized contact repair shares the same read owner.
+Explicit template/banner save and reset owners acquire the policy fence before hierarchy locks and advance a private monotonic epoch for affected occasions; no persistent application trigger is installed. Privileged authored-wrapper/data migrations must call `payment_template_write_scope_internal(context,true)` in the same transaction. New occasion initialization has no prior snapshots to invalidate;
+unit A edits do not invalidate unit B. The template audit binds that epoch and
+the inherited body/wrapper, reports authored bank instructions and requires exact clean review for
+online-only collection. It never rewrites an organizer's custom text. New disabled-bank envelopes with authored fixed bank text are blocked too.
+A-B-A edits cannot revive a prepared snapshot. Derived policy/template attestations
+are excluded from the immutable business dedupe hash; changing actual business
+content still conflicts. Old encrypted envelopes without a template attestation
+are held from online/disabled-bank dispatch and require a fresh authorized resend.
+Their audit payload is preserved.
+
+Bank discovery, linking, management, setup and email authoring require an enabled
+stored unit scope. `get_linkable_bank_accounts(unit)` is the authorized linking
+picker. `get_bank_transaction_history(account,unit)` additionally verifies the
+actual account link and both unit/account roles. Order finance does not enumerate
+other admin accounts. Provider history merges existing movements and dispute
+status facts with stable source identities; a dispute has `amount=null` and a
+separate contested `heldAmount`. `ledgerComplete=false`/`invalidIdentity` must
+remain visible as uncertainty rather than a fabricated zero balance.
+
+Registry `refund_write_supported`, `partial_refund_supported` and
+`refund_observation_supported` describe different operations. Unsupported writes
+are rejected before intent creation; full-only connectors reject partial amounts.
+Observation and original-payment servicing continue after new sales close when
+support, readiness and current roles allow them. Gateway actions have no cash,
+bank picker or QR fallback.
+
+Email variables `paymentMethodName` and `paymentAction` are generated from the
+shared contract. Legacy safe aliases remain defined but method-inapplicable
+bank values are empty. Body, wrapper and legacy balance slots yield one action.
+Payment QR owners require an explicit bank action; CZK uses SPD, EUR EPC, USD
+uses manual instructions. Ticket, login and wallet QR owners are separate.
+Unverified invoice/external attachment hooks are suppressed outside permitted
+bank collection. Preview scenarios use the same production presenters.
+
+The additive/contraction forwards are assembled from
+`automation/payment-method-policy-migration.json`. Backfill is one-time: it
+materializes historical implicit form selection, refuses unknown methods and
+preserves hidden sibling Stripe settings. Contraction archives original policy
+evidence, drops `stripe_unit_features`, removes `DEFAULT_FORM_PAYMENT_METHOD`
+and retires unscoped account RPCs. Replaying additive backfill after contraction
+is not a supported update path. Use a fresh bootstrap or normal forward history.
+Financial ledgers, account/reference identities and immutable email audit remain.
+See [the local implementation receipt](../plans/payment-method-policy-RESULT-2026-11-12.md)
+for validation and explicitly retained protocol boundaries.
+
 ## Shared incoming and outgoing operations
 
 `command_payment_operation(input_data,p_command_id)` owns `record_payment`,
@@ -299,3 +383,38 @@ Additive source-owned migration:
 `automation/assemble-barion-sandbox-migration.py`. Existing migration history is
 unchanged. Real sandbox and disposable database evidence:
 [Barion integration result](../plans/payment-provider-hardening/BARION-INTEGRATION-RESULT-2026-11-06.md).
+
+## Runtime reload and migration ownership
+
+`method_policy.sql` contains repeatable function/ACL declarations only. Its one-time schema and historical backfill remain in the checksum-pinned160000 migration; contraction170000 is immutable too. Reloading functions after contraction never reads retired Stripe feature storage or materializes defaults again. Refinement180000 owns the subsequent authoring change.
+
+`automation/migration-forward-owners.json` declares frozen digests, source manifests, explicit later owners and current forwards. The shared checker reads these records without importing assembler scripts. Frozen source text must still match unless a registered later owner supersedes it; every current function must match effective migration head. `functionOnlySources` explicitly records the method_policy boundary whose DDL/backfill is retained solely in frozen history. Existing assembler CLI names are checked adapters, not independent ownership engines.
+
+Authoring acquires the existing policy/hierarchy fence even for no-op requests. Only actual template/wrapper insert/update/delete advances the epoch. Identical saves and resets without a local override preserve prepared intents and reviews; actual A-B-A edits still invalidate them. The settings widget consumes typed policy/impact/change DTO through DbPaymentPolicy; JSON/RPC stays inside that boundary.
+
+
+### Released bank-reader transition (2026-11-12)
+
+Issued web versions through 0.20.590 call the no-argument
+`get_my_admin_bank_accounts()` and account-only
+`get_bank_transaction_history(account)`. These two signatures are temporary
+protocol adapters in `payment_providers/released_bank_readers.sql`. They derive
+one unambiguous real managed unit from stored membership/link relations and
+immediately delegate to the canonical explicit-unit readers. Multiple possible
+units, demo units, missing rights and disabled bank policy fail closed. Disabled
+units participate in ambiguity detection, so another unit cannot be inferred by
+filtering policy first. The adapters own no bank or policy business logic.
+
+Current Dart clients use only the explicit-unit signatures. Remove both legacy
+signatures and the private scope resolver when supported deployed/cached client
+versions no longer call them; keep their parity/ACL and ambiguity tests until
+that consumer is retired. This is the narrow released-client exception allowed
+by the payment policy plan, not a second policy authority.
+
+The release operator may run
+`automation/payment-policy-release/transition_legacy_email_metadata.sql` for the
+explicitly selected organization while the queue is paused. Dry-run is default.
+Only unprepared, never-attempted pending bank demand envelopes receive current
+server policy metadata. Business data, hash, recipient, dedupe, state and sealed
+snapshots are preserved. Prepared, unknown, attempted and foreign envelopes are
+untouched; repeated execution is idempotent and performs no send or resend.

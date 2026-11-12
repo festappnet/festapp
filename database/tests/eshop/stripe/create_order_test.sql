@@ -13,7 +13,8 @@ BEGIN
  INSERT INTO public.units(title,organization) VALUES('Card receiver',org) RETURNING id INTO u;
  UPDATE public.organizations SET data=data||'{"FORM_MEASUREMENT_ENABLED":true}'::jsonb WHERE id=org;
  UPDATE public.units SET data=coalesce(data,'{}')||'{"measurement_privacy_url":"https://organizer.example/privacy","measurement_enabled":true}'::jsonb WHERE id=u;
- INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT organization,m,true FROM public.units CROSS JOIN unnest(ARRAY['bank','stripe']) m WHERE id=u ON CONFLICT(organization_id,method) DO UPDATE SET enabled=true;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) SELECT organization,'stripe' FROM public.units WHERE id=u ON CONFLICT DO NOTHING;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Card order',org,u,'stripe-create-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
  INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,paused,model_verified,charges_enabled,card_payments_active)
@@ -262,7 +263,7 @@ BEGIN
  -- method, without a provider payment source or a card quote.
  payload:=(payload-ARRAY['stripePaymentSource','stripe_connection_id','payment_surface','expected_payment_amount_minor','expected_payment_currency'])||'{"payment_method":"bank"}'::jsonb;
  result:=public.create_ticket_order_client_sync_v1(payload,extensions.gen_random_uuid(),client);
- PERFORM assert_eq(result#>>'{data,code}','200','free order needs no bank or Stripe account');
+ PERFORM assert_eq(result#>>'{data,code}','200','free order needs no bank or Stripe account: '||result::text);
  oid:=(result#>>'{data,order,id}')::bigint;
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'paid','free order completes through canonical transition');
  PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_checkout_attempts WHERE order_id=oid),0::bigint,'free order never creates Checkout');

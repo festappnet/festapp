@@ -8,7 +8,6 @@ import 'package:material_ui/material_ui.dart';
 import '../db_eshop.dart';
 import '../db_orders.dart';
 import '../models/payment_refund_recipient.dart';
-import '../models/order_payment_actions.dart';
 import '../../bank_accounts/views/unit_bank_accounts_screen.dart';
 import '../../forms/payment_method_strings.dart';
 import 'payment_operation_dialog.dart';
@@ -66,7 +65,8 @@ class _PaymentOperationFlowState extends State<_PaymentOperationFlow> {
       final allowed =
           pending != null ||
           (refund
-                  ? data?.paymentOperations.canRefund
+                  ? ((data?.paymentOperations.canRefund ?? false) ||
+                        (data?.paymentOperations.canViewHistory ?? false))
                   : data?.paymentOperations.canRecord) ==
               true;
       setState(() {
@@ -120,6 +120,7 @@ class _PaymentOperationFlowState extends State<_PaymentOperationFlow> {
       builder: (_) => SearchTransactionsDialog(
         paymentInfoId: _data!.paymentInfo!.id!,
         bankAccount: account,
+        unitId: _data!.actions.unitId ?? widget.unitId,
         readOnly: readOnly,
       ),
     );
@@ -181,8 +182,6 @@ class _PaymentOperationFlowState extends State<_PaymentOperationFlow> {
         onPair: _data!.actions.pairingAccountId == null
             ? null
             : () => _search(_data!.actions.pairingAccountId!, readOnly: false),
-        onHistory: (PaymentHistoryAccount account) =>
-            _search(account.id, readOnly: true),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:fstapp/components/_shared/copy_button.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:fstapp/components/eshop/models/payment_refund_recipient.dart';
 import 'package:fstapp/components/eshop/models/transaction_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
@@ -94,6 +95,7 @@ void main() {
           actions: const OrderPaymentActions(
             bankState: 'absent',
             canConfigureBank: true,
+            showBankSetup: true,
           ),
           setup: true,
           pair: false,
@@ -128,21 +130,17 @@ void main() {
           actions: const OrderPaymentActions(
             bankState: 'absent',
             canConfigureBank: true,
-            historyAccounts: [PaymentHistoryAccount(9, 'Historický účet')],
           ),
           setup: false,
           pair: false,
-          history: true,
+          history: false,
         ),
         (
           name: 'cash with bank history',
-          actions: const OrderPaymentActions(
-            bankState: 'configured',
-            historyAccounts: [PaymentHistoryAccount(9, 'Účet')],
-          ),
+          actions: const OrderPaymentActions(bankState: 'configured'),
           setup: false,
           pair: false,
-          history: true,
+          history: false,
         ),
       ]) {
     testWidgets('cash banking options: ${scenario.name}', (tester) async {
@@ -154,7 +152,6 @@ void main() {
             body: OrderPaymentBankOptions(
               actions: scenario.actions,
               onPair: () => pairCalls++,
-              onHistory: (_) => historyCalls++,
               onConfigure: () => setupCalls++,
             ),
           ),
@@ -211,6 +208,7 @@ void main() {
                 actions: const OrderPaymentActions(
                   bankState: 'absent',
                   canConfigureBank: true,
+                  showBankSetup: true,
                 ),
                 onConfigure: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -581,6 +579,8 @@ void main() {
         instructions: (input) async {
           submitted = input;
           return {
+            'method': 'bank', 'verification': 'bank_event', 'purpose': 'bank_refund_instruction',
+            'allowed': true, 'sourceMethod': 'bank', 'sourceOrderId': 9, 'sourcePaymentId': 55,
             'payload': 'BCD\n002\n1\nSCT',
             'amount': '50.00',
             'recipientName': 'Jana Novakova',
@@ -665,26 +665,14 @@ void main() {
     },
   );
 
-  testWidgets('unavailable bank QR is explained and cannot be selected', (
-    tester,
-  ) async {
-    await operation(tester, refund: true);
-    final bank = tester.widget<ListTile>(
-      find.byKey(const ValueKey('refundMethod_bank')),
-    );
-    expect(bank.enabled, isFalse);
-    expect(bank.onTap, isNull);
-    expect(
-      find.text(PaymentOperationStrings.text('bankUnavailable')),
-      findsOneWidget,
-    );
-    expect(
-      tester
-          .widget<ListTile>(find.byKey(const ValueKey('refundMethod_cash')))
-          .selected,
-      isTrue,
-    );
-  });
+  testWidgets(
+    'cash-only server capabilities never synthesize a bank refund choice',
+    (tester) async {
+      await operation(tester, refund: true);
+      expect(find.byKey(const ValueKey('refundMethod_bank')), findsNothing);
+      expect(find.byKey(const ValueKey('refundMethod_cash')), findsOneWidget);
+    },
+  );
 
   testWidgets('new plus rejects negative and overprecision without dispatch', (
     tester,
@@ -819,12 +807,18 @@ void main() {
               'id': 'request-1',
               'method': 'bank',
               'verification': 'bank_event',
+              'purpose': 'bank_refund_instruction',
+              'instructionAllowed': true,
+              'sourceMethod': 'bank',
+              'sourceOrderId': 9,
               'status': 'pending',
               'canReopen': true,
               'canCancel': true,
               'amount': '300.00',
               'instructions': {
-                'payload': 'BCD\n002\n1\nSCT',
+                'method': 'bank', 'verification': 'bank_event', 'purpose': 'bank_refund_instruction',
+            'allowed': true, 'sourceMethod': 'bank', 'sourceOrderId': 9, 'sourcePaymentId': 55,
+            'payload': 'BCD\n002\n1\nSCT',
                 'format': 'epc',
                 'reference': 'RF18539007547034',
                 'sourceAccount': 'CZ6508000000192000145399',
@@ -1029,6 +1023,44 @@ void main() {
       );
     },
   );
+  testWidgets(
+    'disabled bank instructions retain truthful cancellation without a QR',
+    (tester) async {
+      const context = PaymentOperationContext(
+        requests: [
+          {
+            'id': 'disabled-bank',
+            'method': 'bank',
+            'verification': 'bank_event',
+            'status': 'pending',
+            'canReopen': false,
+            'canCancel': true,
+            'amount': '20',
+            'instructionAllowed': false,
+            'purpose': 'bank_refund_instruction',
+            'sourceMethod': 'bank',
+            'sourceOrderId': 9,
+            'instructions': {
+              'payload': 'SHOULD-NOT-RENDER',
+              'reference': 'PRIVATE-REFERENCE',
+            },
+          },
+        ],
+      );
+      expect(context.canViewHistory, isTrue);
+      await operation(tester, refund: true, context: context);
+      expect(find.text('PRIVATE-REFERENCE'), findsNothing);
+      expect(find.byType(QrImageView), findsNothing);
+      expect(find.byType(CheckboxListTile), findsOneWidget);
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(PaymentOperationStrings.text('cancelPending')),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('reopen permission alone never grants bank cancellation', (
     tester,
   ) async {
@@ -1037,6 +1069,11 @@ void main() {
         {
           'id': 'read-bank',
           'method': 'bank',
+          'verification': 'bank_event',
+          'purpose': 'bank_refund_instruction',
+          'instructionAllowed': true,
+          'sourceMethod': 'bank',
+          'sourceOrderId': 9,
           'status': 'pending',
           'canReopen': true,
           'canCancel': false,
@@ -1160,6 +1197,10 @@ void main() {
               'id': 'manual-usd',
               'method': 'bank',
               'verification': 'bank_event',
+              'purpose': 'bank_refund_instruction',
+              'instructionAllowed': true,
+              'sourceMethod': 'bank',
+              'sourceOrderId': 9,
               'status': 'pending',
               'canReopen': true,
               'canCancel': true,

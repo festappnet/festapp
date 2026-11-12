@@ -109,8 +109,14 @@ BEGIN
  ELSIF p_operation='form_editor_fields' THEN
   RETURN jsonb_build_object('stripeRecipient',public.get_form_stripe_recipient((p_args->>'unitId')::bigint,(p_args->>'occasionId')::bigint,(p_args->>'livemode')::boolean));
  ELSIF p_operation='movements' THEN
-  SELECT coalesce(jsonb_agg(jsonb_build_object('kind',m.kind,'amount_minor',m.amount_minor,'currency',m.currency,'occurred_at',m.occurred_at)),'[]') INTO result
-   FROM eshop.stripe_checkout_attempts a JOIN eshop.stripe_payment_movements m ON m.attempt_id=a.id WHERE a.payment_info_id=(p_args->>'paymentId')::bigint;
+  SELECT coalesce(jsonb_agg(jsonb_build_object('sourceId',m.source_id,'kind',m.kind,'amount_minor',m.amount_minor,'currency',m.currency,'occurred_at',m.occurred_at,'status',m.status)),'[]') INTO result
+   FROM (
+    SELECT m.connection_id::text||':'||m.provider_id source_id,m.kind,m.amount_minor,m.currency,m.occurred_at,NULL::text status
+    FROM eshop.stripe_checkout_attempts a JOIN eshop.stripe_payment_movements m ON m.attempt_id=a.id WHERE a.payment_info_id=(p_args->>'paymentId')::bigint
+    UNION ALL
+    SELECT d.connection_id::text||':dispute:'||d.provider_id,'dispute',d.amount_minor,a.currency,d.observed_at,d.status
+    FROM eshop.stripe_checkout_attempts a JOIN eshop.stripe_disputes d ON d.attempt_id=a.id WHERE a.payment_info_id=(p_args->>'paymentId')::bigint
+   ) m;
   RETURN result;
  END IF;
  RAISE EXCEPTION 'PAYMENT_PROVIDER_OPERATION_UNSUPPORTED';

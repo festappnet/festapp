@@ -117,7 +117,7 @@ BEGIN
     UPDATE public.occasion_setup_drafts SET data =
       public.normalize_setup_payments_internal(jsonb_build_object('defaultConfiguration',configuration,
         'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true,
-        'paymentMethod',(SELECT CASE WHEN public.payment_method_registered_internal(data->>'DEFAULT_FORM_PAYMENT_METHOD') AND data->>'DEFAULT_FORM_PAYMENT_METHOD'<>'bank' THEN data->>'DEFAULT_FORM_PAYMENT_METHOD' END FROM public.organizations WHERE id=d.organization),
+        'paymentMethod',public.resolve_payment_method_policy_internal(d.organization,d.unit)->>'preferredMethod',
         'paymentChoicesEnabled',EXISTS(SELECT 1 FROM jsonb_each(public.provider_unit_features_internal(d.unit)) x WHERE x.value='true'::jsonb))
       || d.data) WHERE id = p_id RETURNING * INTO d;
     PERFORM public.admit_occasion_draft_v1(auth.uid(),p_unit,d.organization,octet_length(d.data::text),false,false,policy);
@@ -145,7 +145,7 @@ BEGIN
   UPDATE public.occasion_setup_drafts SET data =
     public.normalize_setup_payments_internal(jsonb_build_object('defaultConfiguration',configuration,
       'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true,
-        'paymentMethod',(SELECT CASE WHEN public.payment_method_registered_internal(data->>'DEFAULT_FORM_PAYMENT_METHOD') AND data->>'DEFAULT_FORM_PAYMENT_METHOD'<>'bank' THEN data->>'DEFAULT_FORM_PAYMENT_METHOD' END FROM public.organizations WHERE id=d.organization),
+        'paymentMethod',public.resolve_payment_method_policy_internal(d.organization,d.unit)->>'preferredMethod',
         'paymentChoicesEnabled',EXISTS(SELECT 1 FROM jsonb_each(public.provider_unit_features_internal(d.unit)) x WHERE x.value='true'::jsonb))
     || (d.data-'defaultConfiguration')), revision = revision+1, updated_at=now()
     WHERE id=p_id RETURNING * INTO d;

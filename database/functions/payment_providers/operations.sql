@@ -25,6 +25,8 @@ DECLARE o eshop.orders; pi eshop.payment_info; op text:=input_data->>'operation'
 BEGIN
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=(input_data->>'orderId')::bigint;
  SELECT * INTO STRICT pi FROM eshop.payment_info WHERE id=o.payment_info;
+ PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=o.occasion;
+ IF public.payment_method_is_online_internal(pi.payment_method) AND v_method IS DISTINCT FROM pi.payment_method THEN RAISE EXCEPTION 'PAYMENT_SOURCE_MISMATCH'; END IF;
  IF input_data ? 'currency' AND input_data->>'currency' IS DISTINCT FROM trim(pi.currency_code) THEN RAISE EXCEPTION 'PAYMENT_CURRENCY_MISMATCH'; END IF;
  IF jsonb_typeof(input_data)<>'object' OR octet_length(input_data::text)>8192 THEN RAISE EXCEPTION 'PAYMENT_INPUT_INVALID'; END IF;
  IF op NOT IN ('record_payment','prepare_refund','cancel_pending','correct_record') OR op IS NULL THEN RAISE EXCEPTION 'PAYMENT_OPERATION_INVALID'; END IF;
@@ -37,6 +39,13 @@ BEGIN
   WHEN public.payment_method_verification_internal(v_method)='bank_event' THEN public.can_prepare_order_bank_refund(o.id)
   ELSE public.payment_method_verification_internal(v_method)='verified_provider_observation' AND v_method=pi.payment_method AND public.can_prepare_order_provider_refund(o.id) END),false)
  THEN RAISE insufficient_privilege USING MESSAGE='PAYMENT_OPERATION_FORBIDDEN'; END IF;
+ IF public.payment_method_is_online_internal(pi.payment_method) AND v_method IS DISTINCT FROM pi.payment_method THEN RAISE EXCEPTION 'PAYMENT_SOURCE_MISMATCH'; END IF;
+ IF op='correct_record' AND req.id IS NULL THEN
+  SELECT t.* INTO tx FROM eshop.transactions t JOIN eshop.bank_accounts b ON b.id=t.bank_account_id
+  WHERE t.id=(input_data->>'transactionId')::bigint AND t.payment_info=pi.id AND upper(b.type)='CASH' AND t.ingest_source='manual'
+   AND NOT EXISTS(SELECT 1 FROM eshop.refund_settlements s WHERE s.transaction_id=t.id) FOR UPDATE OF t;
+  IF tx.id IS NULL OR (input_data->>'amount')::numeric IS DISTINCT FROM -tx.amount THEN RAISE EXCEPTION 'PAYMENT_CORRECTION_INVALID'; END IF;
+ END IF;
  -- Existing imported debits are locked before capacity/order/payment, matching
  -- ingest/pairing. A later unseen debit causes a retry instead of a reverse lock.
  IF op='prepare_refund' AND public.payment_method_verification_internal(v_method)='bank_event' THEN
@@ -50,8 +59,15 @@ BEGIN
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[o.id]);
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=o.id FOR UPDATE;
  SELECT * INTO STRICT pi FROM eshop.payment_info WHERE id=o.payment_info FOR UPDATE;
+ IF op='correct_record' AND req.id IS NULL AND EXISTS(SELECT 1 FROM eshop.transaction_pairing_events e WHERE e.transaction_snapshot_id=tx.id AND e.method='exact_cash_correction') THEN RAISE EXCEPTION 'PAYMENT_CORRECTION_ALREADY_APPLIED'; END IF;
  start_result:=public.begin_client_mutation_v1(p_command_id,'orders.payment.operation',o.occasion,auth.uid(),encode(extensions.digest(input_data::text,'sha256'),'hex'));
- IF start_result->>'disposition'='replay' THEN RETURN jsonb_set(start_result->'response','{mutation,replayed}','true'); END IF;
+ IF start_result->>'disposition'='replay' THEN
+  result:=start_result->'response'; c:=public.payment_method_context_internal(o.id);
+  SELECT value INTO cap FROM jsonb_array_elements(c->'requests') WHERE value->>'id'=p_command_id::text;
+  result:=(result-'request'-'instructions')||jsonb_build_object('context',c,'request',cap);
+  IF result ? 'data' THEN result:=jsonb_set(result,'{data}',((result->'data')-'request'-'instructions')||jsonb_build_object('context',c,'request',cap)); END IF;
+  RETURN jsonb_set(result,'{mutation,replayed}','true');
+ END IF;
  IF EXISTS(SELECT 1 FROM eshop.order_deletion_fences WHERE order_id=o.id) THEN RAISE EXCEPTION 'ORDER_DELETION_IN_PROGRESS'; END IF;
  c:=public.payment_method_context_internal(o.id);
  IF op='cancel_pending' THEN
@@ -85,6 +101,7 @@ BEGIN
   amount:=(input_data->>'amount')::numeric;
   IF amount=0 OR (op<>'correct_record' AND amount<0) THEN RAISE EXCEPTION 'PAYMENT_AMOUNT_INVALID'; END IF;
   IF op='prepare_refund' THEN
+   IF EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=v_method AND NOT partial_refund_supported) AND amount IS DISTINCT FROM (c->>'net')::numeric THEN RAISE EXCEPTION 'PAYMENT_PARTIAL_REFUND_UNSUPPORTED'; END IF;
    IF amount>(c->>'available')::numeric THEN RAISE EXCEPTION 'REFUND_AVAILABLE_EXCEEDED'; END IF;
    IF public.payment_method_verification_internal(v_method)='bank_event' THEN
     PERFORM 1 FROM eshop.unit_bank_accounts link JOIN public.occasions oc ON oc.unit=link.unit
@@ -114,16 +131,17 @@ BEGIN
    END IF;
   ELSE
    result:=public.payment_provider_call_internal(v_method,op,input_data);
+   IF op='correct_record' THEN
+    INSERT INTO eshop.transaction_pairing_events(transaction_snapshot_id,transaction_id,old_payment_info_id,new_payment_info_id,action,method,actor_kind,actor_id,details)
+    VALUES(tx.id,tx.id,pi.id,pi.id,'paired','exact_cash_correction','user',auth.uid(),jsonb_build_object('reason',input_data->>'reason','correctionTransactionId',result->'transactionId'));
+   END IF;
   END IF;
  END IF;
  IF req.id IS NOT NULL THEN
   INSERT INTO eshop.payment_operation_events(request_id,operation,actor,details) VALUES(req.id,op,auth.uid(),input_data);
   SELECT * INTO req FROM eshop.refund_requests WHERE id=req.id;
-  result:=result||jsonb_build_object('request',jsonb_build_object('id',req.id,'method',req.method,'verification',public.payment_method_verification_internal(req.method),'status',req.status,
-   'amount',req.amount::text,'currency',req.currency,'instructions',req.payload->'instructions',
-   'canReopen',CASE WHEN public.payment_method_verification_internal(req.method)='bank_event' THEN public.can_prepare_order_bank_refund(o.id) ELSE public.can_prepare_order_provider_refund(o.id) END,
-   'canCancel',public.payment_method_verification_internal(req.method)='bank_event' AND req.status='pending' AND public.can_prepare_order_bank_refund(o.id),
-   'canCorrect',public.payment_method_verification_internal(req.method)='local_commit' AND req.status='succeeded' AND public.can_record_order_cash(o.id)));
+  SELECT value INTO cap FROM jsonb_array_elements(public.payment_method_context_internal(o.id)->'requests') WHERE value->>'id'=req.id::text;
+  result:=result||jsonb_build_object('request',cap);
  END IF;
  SELECT coalesce(array_agg(DISTINCT "user"),'{}') INTO users FROM public.occasion_users WHERE occasion=o.occasion;
  RETURN public.complete_private_inventory_mutation_v1(p_command_id,o.occasion,'orders.payment.operation',
@@ -146,6 +164,7 @@ BEGIN
  IF cap->'refund' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'PAYMENT_REFUND_UNAVAILABLE'; END IF;
  IF jsonb_typeof(input_data->'amount') IS DISTINCT FROM 'string' OR input_data->>'amount' !~ '^[0-9]{1,8}(\.[0-9]{1,2})?$' THEN RAISE EXCEPTION 'PAYMENT_AMOUNT_INVALID'; END IF;
  amount:=(input_data->>'amount')::numeric;
+ IF EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=input_data->>'method' AND NOT partial_refund_supported) AND amount IS DISTINCT FROM (c->>'net')::numeric THEN RAISE EXCEPTION 'PAYMENT_PARTIAL_REFUND_UNSUPPORTED'; END IF;
  IF amount<=0 OR amount>(c->>'available')::numeric THEN RAISE EXCEPTION 'REFUND_AVAILABLE_EXCEEDED'; END IF;
  threshold:=least(coalesce(pi.deposit_amount,o.price),o.price);
  RETURN jsonb_build_object('code',200,'preview',jsonb_build_object('netAfter',((c->>'net')::numeric-amount)::text,
@@ -163,6 +182,7 @@ DECLARE o eshop.orders; pi eshop.payment_info; c jsonb; cap jsonb; amount numeri
 BEGIN
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=(input_data->>'orderId')::bigint;
  IF NOT public.can_read_orders(o.occasion) THEN RAISE insufficient_privilege; END IF;
+ PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=o.occasion;
  SELECT * INTO STRICT pi FROM eshop.payment_info WHERE id=o.payment_info;
  c:=public.payment_method_context_internal(o.id);
  SELECT value INTO cap FROM jsonb_array_elements(c->'methods') WHERE value->>'id'='bank';
@@ -175,7 +195,7 @@ BEGIN
  name:=trim(input_data->>'recipientName');
  IF name IS NULL OR length(name) NOT BETWEEN 1 AND 70 OR name ~ '[[:cntrl:]]' THEN RAISE EXCEPTION 'REFUND_RECIPIENT_INVALID'; END IF;
  IF trim(pi.currency_code)='CZK' AND iban NOT LIKE 'CZ%' THEN RAISE EXCEPTION 'SPD_DOMESTIC_ACCOUNT_REQUIRED'; END IF;
- RETURN jsonb_build_object('code',200,'instructions',jsonb_build_object('recipientIban',iban,'recipientName',name,
+ RETURN jsonb_build_object('code',200,'sourceOrderId',o.id,'instructions',jsonb_build_object('purpose','bank_refund_instruction','method','bank','verification','bank_event','allowed',true,'sourceOrderId',o.id,'sourcePaymentId',pi.id,'sourceMethod',pi.payment_method,'recipientIban',iban,'recipientName',name,
   'amount',amount::text,'currency',trim(pi.currency_code),'variableSymbol',pi.variable_symbol::text,
   'creditorReference',pi.creditor_reference,'reference',CASE WHEN trim(pi.currency_code)='EUR' THEN pi.creditor_reference ELSE pi.variable_symbol::text END));
 END $$;

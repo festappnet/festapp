@@ -7,7 +7,8 @@ LOCK TABLE public.organizations IN SHARE ROW EXCLUSIVE MODE;
 DO $$
 DECLARE
   org_id bigint;
-  expected_data jsonb := '{"title":"Festapp Tickets Global","APP_NAME":"Festapp Tickets","DEFAULT_URL":"https://tickets.festap.net","DEFAULT_LANGUAGE":"en","DEFAULT_FORM_PAYMENT_METHOD":"stripe","IS_APP_SUPPORTED":false,"IS_GOOGLE_LOGIN_ENABLED":true,"IS_REGISTRATION_ENABLED":true,"IS_UNIT_CREATION_ENABLED":true}'::jsonb;
+  new_organization boolean:=false;
+  expected_data jsonb := '{"title":"Festapp Tickets Global","APP_NAME":"Festapp Tickets","DEFAULT_URL":"https://tickets.festap.net","DEFAULT_LANGUAGE":"en","IS_APP_SUPPORTED":false,"IS_GOOGLE_LOGIN_ENABLED":true,"IS_REGISTRATION_ENABLED":true,"IS_UNIT_CREATION_ENABLED":true}'::jsonb;
 BEGIN
   IF current_database() <> 'festapp_rehearsal_20260909220601' THEN
     RAISE EXCEPTION 'Canonical database assertion failed';
@@ -19,11 +20,21 @@ BEGIN
   SELECT id INTO org_id FROM public.organizations
     WHERE title = 'Festapp Tickets Global' OR data->>'DEFAULT_URL' = 'https://tickets.festap.net';
   IF org_id IS NULL THEN
+    new_organization:=true;
     INSERT INTO public.organizations(title,data)
     VALUES ('Festapp Tickets Global',expected_data) RETURNING id INTO org_id;
   ELSIF NOT EXISTS (SELECT 1 FROM public.organizations
     WHERE id=org_id AND title='Festapp Tickets Global' AND data=expected_data) THEN
     RAISE EXCEPTION 'Existing organization differs; refusing overwrite';
+  END IF;
+  IF new_organization THEN
+    INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org_id,'stripe');
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled)
+      SELECT org_id,provider_key,provider_key='stripe' FROM eshop.payment_providers;
+  ELSIF NOT EXISTS(SELECT 1 FROM eshop.organization_payment_method_policies WHERE organization_id=org_id AND method='bank' AND NOT enabled)
+   OR NOT EXISTS(SELECT 1 FROM eshop.organization_payment_method_policies WHERE organization_id=org_id AND method='stripe' AND enabled)
+   OR NOT EXISTS(SELECT 1 FROM eshop.payment_method_policy_scopes WHERE organization_id=org_id AND preferred_method='stripe') THEN
+    RAISE EXCEPTION 'GLOBAL_PAYMENT_POLICY_REQUIRES_PREFLIGHT';
   END IF;
   IF org_id = 3 THEN RAISE EXCEPTION 'Czech organization must remain separate'; END IF;
   INSERT INTO eshop.stripe_runtime_policy(organization_id,livemode,new_payments_enabled)
@@ -35,6 +46,6 @@ BEGIN
   END IF;
 END $$;
 SELECT id,title,data->>'DEFAULT_URL' AS default_url,data->>'DEFAULT_LANGUAGE' AS locale,
-  data->>'DEFAULT_FORM_PAYMENT_METHOD' AS default_payment
+  (SELECT preferred_method FROM eshop.payment_method_policy_scopes WHERE organization_id=organizations.id) AS default_payment
 FROM public.organizations WHERE title='Festapp Tickets Global';
 COMMIT;

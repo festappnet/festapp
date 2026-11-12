@@ -1,6 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/payment_operation_strings.dart';
+import 'package:fstapp/components/payments/payment_policy_settings.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/payment_operation_context.dart';
@@ -59,6 +60,37 @@ void main() {
   var transactionsFail = false, transactionsReads = 0, contextReads = 0;
   String? instructionsError;
   var legacyRefund = false;
+  var policyFailure = false;
+  var delayPolicy = false;
+  final policyPending = <int, Completer<http.Response>>{};
+  http.Response policyResponse(int unit) => http.Response(
+    jsonEncode({
+      'organizationId': 1,
+      'unitId': unit,
+      'revision': 1,
+      'preferredMethod': 'stripe',
+      'methods': {
+        'stripe': {
+          'id': 'stripe',
+          'ready': false,
+          'mode': 'inherit',
+          'organizationEnabled': true,
+          'policyEnabled': unit == 9,
+          'inheritedFrom': 'organization',
+          'configured': false,
+          'canConfigure': unit == 9,
+        },
+      },
+    }),
+    200,
+    request: http.Request(
+      'POST',
+      Uri.parse(
+        'https://fixture.invalid/rest/v1/rpc/get_payment_method_policy',
+      ),
+    ),
+    headers: {'content-type': 'application/json'},
+  );
   setUpAll(() async {
     storage = await Directory.systemTemp.createTemp('festapp-cash-widget-');
     PathProviderPlatform.instance = _CashDocuments(storage.path);
@@ -75,6 +107,19 @@ void main() {
       httpClient: MockClient((request) async {
         final endpoint = request.url.path.split('/').last;
         final payload = jsonDecode(request.body) as Map<String, dynamic>;
+        if (endpoint == 'get_payment_method_policy') {
+          final unit = payload['p_unit'] as int;
+          if (delayPolicy)
+            return (policyPending[unit] = Completer<http.Response>()).future;
+          if (policyFailure)
+            return http.Response(
+              '{"message":"denied"}',
+              403,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          return policyResponse(unit);
+        }
         if (endpoint == 'get_transactions_for_order') {
           expect(payload['order_id'], 5);
           transactionsReads++;
@@ -105,6 +150,7 @@ void main() {
                     ]
                   : [],
               'paymentOperations': {
+                'invalidIdentity': false,
                 'available': legacyRefund ? '440.00' : '0',
                 'currency': 'CZK',
                 'methods': [
@@ -149,6 +195,7 @@ void main() {
             jsonEncode({
               'code': 200,
               'context': {
+                'invalidIdentity': false,
                 'methods': [
                   {
                     'id': 'cash',
@@ -202,6 +249,9 @@ void main() {
   });
   setUp(() {
     payments.clear();
+    policyFailure = false;
+    delayPolicy = false;
+    policyPending.clear();
     paymentOutcome = 'success';
     transactionsGate = null;
     transactionsFail = false;
@@ -285,6 +335,85 @@ void main() {
       greaterThanOrEqualTo(grid.columns.first.width - 1),
     );
   }
+
+  Future<void> policy(WidgetTester tester, int unit) async {
+    await _environment.pumpWidget(
+      tester,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: PaymentPolicySettings(
+            key: const ValueKey('policy'),
+            organizationId: 1,
+            unitId: unit,
+            onConfigure: (_) {},
+            configureMethods: const {'stripe'},
+          ),
+        ),
+      ),
+    );
+  }
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'payment policy retry recovers denied load and exposes supported onboarding',
+    (tester) async {
+      policyFailure = true;
+      await policy(tester, 9);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
+      policyFailure = false;
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.byType(TextButton), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'payment policy discards late responses after unit switch',
+    (tester) async {
+      delayPolicy = true;
+      final selected = ValueNotifier<int>(9);
+      addTearDown(selected.dispose);
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: ValueListenableBuilder<int>(
+              valueListenable: selected,
+              builder: (_, unit, __) => PaymentPolicySettings(
+                key: const ValueKey('policy'),
+                organizationId: 1,
+                unitId: unit,
+                onConfigure: (_) {},
+                configureMethods: const {'stripe'},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      selected.value = 10;
+      await tester.pump();
+      await tester.pump();
+      policyPending[10]!.complete(policyResponse(10));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextButton), findsNothing);
+      policyPending[9]!.complete(policyResponse(9));
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(TextButton),
+        findsNothing,
+        reason: 'unit A cannot restore its onboarding in unit B',
+      );
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   Finder plus() => find.widgetWithIcon(IconButton, Icons.add_circle_outline);
   OrderModel paidOrder(String state, {Set<String>? actions}) {
