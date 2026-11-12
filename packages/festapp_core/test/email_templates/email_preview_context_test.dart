@@ -97,6 +97,13 @@ void main() {
       );
       final html = adjusted.values['paymentDetails']!;
       final text = html.replaceAll(RegExp(r'<[^>]*>'), '');
+      if (original.contextDefaults['preview_payment_method'] != 'bank' ||
+          original.contextDefaults['preview_collection_allowed'] != 'true') {
+        expect(adjusted.values['accountNumber'], isEmpty);
+        expect(adjusted.values['iban'], isEmpty);
+        expect(text, isNot(contains(account.accountNumber)));
+        continue;
+      }
       expect(text, contains(account.accountNumber));
       expect(text, contains(account.iban));
       expect(text, isNot(contains('0000000000/0000')));

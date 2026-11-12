@@ -34,7 +34,7 @@ const fixture = JSON.parse(
 const sources = [
   "automation/generate_email_preview_examples.ts",
   "automation/fixtures/email_preview/order.json",
-  "supabase/functions/send-sign-in-code/teamAccessNotice.ts",
+  "supabase/functions/send-sign-in-code/index.ts",
   "supabase/functions/send-reset-password-link/index.ts",
   "supabase/functions/send-occasion-team-invitations/handler.ts",
   "packages/festapp_contracts/email-variables.json",
@@ -196,13 +196,13 @@ for (const locale of ["cs", "en"] as const) {
                 : fixture.changes,
               locale,
             ),
-            paymentDetails: generatePaymentDetails({
+            paymentDetails: total > amountPaid ? generatePaymentDetails({
               accountNumber: fixture.accountNumber,
               iban: formatIBAN(fixture.iban),
               variableSymbol: fixture.variableSymbol,
               amount,
               lang: locale,
-            }),
+            }) : "",
           },
           requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale),
         });
@@ -366,7 +366,7 @@ for (const record of records) {
     paymentAction: values.paymentAction ?? "",
     balanceReasoning: values.balanceReasoning ?? "",
     paymentDetails: values.paymentDetails ?? "",
-    changeOverview: zero
+    changeOverview: zero || !values.changeOverview
       ? ""
       : generateChangeOverview(changes, record.locale as "cs" | "en"),
   };
