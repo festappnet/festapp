@@ -20,7 +20,6 @@ import 'package:fstapp/components/inventory/views/user_stay_page.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
 import 'package:fstapp/components/unit/views/unit_page.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
-import 'package:fstapp/components/users/views/my_events_page.dart';
 import 'package:fstapp/components/users/views/occasion_team_invitation_page.dart';
 import 'package:fstapp/components/users/views/transfer_page.dart';
 import 'package:fstapp/components/users/views/reset_password_page.dart';
@@ -89,7 +88,6 @@ class AppRouter extends RootStackRouter {
     ),
     RedirectRoute(path: '/app/google-auth', redirectTo: '/login'),
     AutoRoute(page: LoginRoute.page, path: sl(LoginPage.ROUTE)),
-    AutoRoute(page: MyEventsRoute.page, path: sl(MyEventsPage.ROUTE)),
     AutoRoute(
       page: OccasionTeamInvitationRoute.page,
       path: sl(OccasionTeamInvitationPage.ROUTE),

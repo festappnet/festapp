@@ -228,3 +228,19 @@ test('English illustrated home ships English examples, one regional link and fai
   assert.match(failed.stderr,/Missing\/foreign marketing media/);
   assert.equal(readFileSync(output,'utf8'),html,'invalid media cannot overwrite a previously rendered page');
 });
+
+
+test('illustrated branding preserves the canonical account header layout', () => {
+  const css = readFileSync(new URL('../release/organizers/illustrated-home.css', import.meta.url), 'utf8');
+  const allowed = new Set(['background', 'color', 'border-color', 'border-bottom-color', 'box-shadow']);
+  let themedRules = 0;
+  for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!selectors.includes('user-header[data-marketing]')) continue;
+    themedRules++;
+    for (const declaration of declarations.split(';').filter(value => value.trim())) {
+      const property = declaration.slice(0, declaration.indexOf(':')).trim();
+      assert.ok(allowed.has(property), `Account header layout must stay shared: ${property}`);
+    }
+  }
+  assert.ok(themedRules > 0);
+});

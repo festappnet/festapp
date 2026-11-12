@@ -26,24 +26,3 @@ test('cached help navigations receive the real document in both tenant modes', a
   }
  }
 });
-
-
-test('My events belongs to authenticated Flutter while login keeps the public sign-in client', async () => {
-  for (const supported of [true, false]) {
-    const source = scanner + '\n' + template
-      .replace('const IS_APP_SUPPORTED = true;', `const IS_APP_SUPPORTED = ${supported};`)
-      .replace('// PUBLIC_OCCASION_ROUTE_POLICY', policy);
-    const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
-    for (const [path, entry] of [['/admin/my-events', '/flutter'], ['/login', '/webclient']]) {
-      const requests = [];
-      const response = await worker.fetch(new Request('https://tenant.invalid' + path), {
-        ASSETS: {fetch: async request => {
-          requests.push(new URL(request.url).pathname);
-          return new Response('workspace shell', {headers: {'content-type': 'text/html'}});
-        }},
-      });
-      assert.equal(response.status, 200);
-      assert.equal(requests.at(-1), entry, JSON.stringify({supported, path, requests}));
-    }
-  }
-});
