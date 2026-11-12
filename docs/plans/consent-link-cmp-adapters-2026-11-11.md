@@ -159,7 +159,9 @@ adaptér jej přijímá při zachování všech kontrol explicitní uložené vo
 
 [Živý průchod a jeho hranice](consent-link-cookiebot-824-validation-2026-11-12.md)
 popisuje skutečný Cookiebot, formulářový modul a přenos změn na stejné vazbě.
-TCF je v tomto průchodu simulované; živá TCF lišta ani živé Firefox/WebKit nejsou
+Následoval skutečný WordPress s oficiálním pluginem Cookiebot, vlastním testovacím
+účtem a živou TCF lištou; marketing zůstal odmítnutý i po přijetí všech kategorií
+a další odmítnutí se přeneslo do stejné otevřené vazby. Živé Firefox/WebKit nejsou
 tímto dokladem pokryty. Kanonické fixture testy zůstávají součástí
 `web-measurement`; závěrečné lokální ověření používá `automation/test_ci.sh`
 pro všechny kanonické joby. Schválení PR a produkční nasazení jsou oddělené kroky.
