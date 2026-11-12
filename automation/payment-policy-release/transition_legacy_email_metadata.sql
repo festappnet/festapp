@@ -27,7 +27,7 @@ BEGIN
   proposed.data:=coalesce(original.data,'{}')||jsonb_build_object(
    'collectionAction',public.payment_collection_action_internal(original.order_id),
    'paymentTemplateEpoch',coalesce((SELECT revision FROM eshop.payment_template_epochs WHERE occasion_id=original.occasion),0),
-   'paymentPolicyRelease',jsonb_build_object('contract','20261112200000','previousInputHash',original.input_hash));
+   'paymentPolicyRelease',jsonb_build_object('contract','20261112210000','previousInputHash',original.input_hash));
   IF NOT public.email_intent_valid(proposed) THEN CONTINUE; END IF;
   eligible:=eligible+1;
   IF apply_changes THEN

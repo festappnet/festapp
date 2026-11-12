@@ -133,7 +133,15 @@
       "checkSources": true
     },
     {
-      "migration": "20261112200000_payment_policy_release_integration.sql",
+      "migration": "20261112200000_blueprint_group_default_removal.sql",
+      "sha256": "8c7c92ef0168bf5992d753a3568eb1082e7436a35efe45f78b80bf2545b45bf8",
+      "sources": [
+        "blueprint/save.sql"
+      ],
+      "checkSources": true
+    },
+    {
+      "migration": "20261112210000_payment_policy_release_integration.sql",
       "manifest": "payment-policy-release-integration-migration.json",
       "active": true
     }

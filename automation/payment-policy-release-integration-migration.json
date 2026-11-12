@@ -1,5 +1,5 @@
 {
-  "migration": "20261112200000_payment_policy_release_integration.sql",
+  "migration": "20261112210000_payment_policy_release_integration.sql",
   "header": "-- Payment policy integrated with current canonical main; no money rewrite or connector activation.",
   "sources": [
     "payment_providers/operation_support.sql",
