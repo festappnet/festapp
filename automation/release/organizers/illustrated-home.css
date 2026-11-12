@@ -61,52 +61,16 @@ body[data-page="organizers"][data-cinematic="true"]>main#main{width:100%;max-wid
 body[data-page="organizers"][data-cinematic="true"] .hero{width:100%;max-width:none;margin:0;padding:0;border-radius:0}
 body[data-page="organizers"][data-cinematic="true"] .hero-background{inset:0;border-radius:0}
 
-/* The public homepage uses the shared account header, with the illustrated brand chrome. */
-body[data-cinematic="true"] .site-header,
+/* Keep the canonical account header geometry; this theme changes colors only. */
 body[data-cinematic="true"] user-header[data-marketing] .user-header-container {
-  display:flex;align-items:center;justify-content:space-between;gap:24px;
-  height:80px;min-height:80px;padding:0 max(24px,calc((100% - 1200px)/2));
-  background:var(--night);color:var(--ink);border:0;border-bottom:1px solid var(--line);box-shadow:none;
+  background:var(--night);color:var(--ink);border-bottom-color:var(--line);box-shadow:none;
 }
-body[data-cinematic="true"] .site-header .header-actions,
-body[data-cinematic="true"] user-header[data-marketing] .header-actions {display:flex;align-items:center;gap:16px;border:0;padding:0;min-height:0}
-body[data-cinematic="true"] .site-header .header-home-link {line-height:0;flex-shrink:0}
-body[data-cinematic="true"] .site-header .brand-image,
-body[data-cinematic="true"] user-header[data-marketing] .header-logo:not(.header-brand-wordmark) {display:block;width:184px;max-width:none;height:auto}
-body[data-cinematic="true"] user-header[data-marketing] .header-public-navigation {display:flex;gap:12px;margin-left:auto;border:0;padding:0}
-body[data-cinematic="true"] .site-header .header-signin,
-body[data-cinematic="true"] .site-header .header-cta,
 body[data-cinematic="true"] user-header[data-marketing] :is(.btn-sign-in,.btn-add-event,.btn-admin) {
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;
-  padding:10px 18px;border:1px solid var(--blue);border-radius:4px;background:transparent;
-  color:var(--blue);font:700 15px Body,sans-serif;line-height:1.25;white-space:nowrap;box-shadow:none;backdrop-filter:none;
+  border-color:var(--blue);color:var(--blue);background:transparent;
 }
-body[data-cinematic="true"] .site-header .header-cta,
-body[data-cinematic="true"] user-header[data-marketing] .btn-add-event {background:var(--blue);color:var(--night)}
-body[data-cinematic="true"] :is(.header-signin,.header-cta,.btn-sign-in,.btn-add-event,.btn-admin):focus-visible {outline:2px solid var(--blue);outline-offset:4px}
-body[data-cinematic="true"] .site-header .add-event-short {display:none}
-body[data-cinematic="true"] user-header[data-marketing] .header-actions>.settings-icon-btn {display:none}
-body[data-cinematic="true"] user-header[data-marketing] .avatar-circle {background:var(--blue);color:var(--night)}
-@media(max-width:900px){
-  body[data-cinematic="true"] user-header[data-marketing] .user-header-container.has-public-navigation {display:flex}
-  body[data-cinematic="true"] user-header[data-marketing] .header-home-link {min-height:0}
+body[data-cinematic="true"] user-header[data-marketing] .btn-add-event {
+  background:var(--blue);color:var(--night);
 }
-@media(max-width:900px){
-  body[data-cinematic="true"] .site-header,
-  body[data-cinematic="true"] user-header[data-marketing] .user-header-container {height:76px;min-height:76px;padding-inline:16px;gap:12px}
-  body[data-cinematic="true"] .site-header .brand-image,
-  body[data-cinematic="true"] user-header[data-marketing] .header-logo:not(.header-brand-wordmark) {width:126px}
-  body[data-cinematic="true"] .site-header .header-actions,
-  body[data-cinematic="true"] user-header[data-marketing] .header-actions {gap:8px}
-  body[data-cinematic="true"] user-header[data-marketing] .header-public-navigation {gap:0}
-  body[data-cinematic="true"] user-header[data-marketing] .header-public-navigation a[href="/events"],
-  body[data-cinematic="true"] .site-header .header-cta,
-  body[data-cinematic="true"] user-header[data-marketing] .btn-add-event {display:none}
-  body[data-cinematic="true"] .site-header .header-signin {width:44px;padding:0}
-  body[data-cinematic="true"] .site-header .header-signin>span {display:none}
-  body[data-cinematic="true"] user-header[data-marketing] :is(.btn-sign-in,.btn-admin) {padding:8px 10px}
-}
-@media(max-width:370px){
-  body[data-cinematic="true"] .site-header .brand-image,
-  body[data-cinematic="true"] user-header[data-marketing] .header-logo:not(.header-brand-wordmark) {width:110px}
+body[data-cinematic="true"] user-header[data-marketing] .avatar-circle {
+  background:var(--blue);color:var(--night);
 }
