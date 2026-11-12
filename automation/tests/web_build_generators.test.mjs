@@ -62,8 +62,10 @@ test('clean web build prepares the real scanner asset before fingerprinting and 
  const decoderFile=path.join(assets,names[0]),bytes=fs.readFileSync(decoderFile);
  assert.deepEqual([...bytes.subarray(0,4)],[0,97,115,109],'real WebAssembly decoder bytes');
  const before=fingerprint(f.root,'vite','static',f.tools).key;
+ // Run the real compile-only payload directly: pnpm's CI dependency verifier
+ // must not try to install into this synthetic project with linked dependencies.
  await componentBuild({...f,component:'vite',target:'static',output:path.join(f.root,'web_client/dist'),
-  command:['bash','-c','cd web_client && '+policy.viteCommand.join(' ')]});
+  command:[process.execPath,path.join(sourceRoot,'web_client/node_modules/vite/bin/vite.js'),'build','web_client']});
  assert.equal(fingerprint(f.root,'vite','static',f.tools).key,before,'compilation consumes stable prepared inputs');
  assert.deepEqual(fs.readFileSync(path.join(f.root,'web_client/dist/web-assets',names[0])),bytes);
  fs.appendFileSync(decoderFile,'changed');
