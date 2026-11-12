@@ -2,52 +2,34 @@
   "vstupenky-online": {
     "files": {
       "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-      "blocks/ticket-form/block.json": "647b665502cdd4cde670be2615f99e272f54b081982341bb44e375688d8d2aa3",
+      "blocks/ticket-form/block.json": "2a970e1b223c047d639894a6b64f6fc70af2359fe908d3c3e08c65b69aa7154a",
       "blocks/ticket-form/editor.js": "68d58659d5aa27cdf4fdbb352493efdc4782bed914b8d1124eb6c97dac49fa8e",
       "blocks/ticket-form/style.css": "28fca64ee334efbf98f947d7c7ff52cb2cfa64cb0f0925ef27b31fbf6d89a727",
       "includes/admin.php": "61ed7ebbf15628684d19f324d8f6a87465df5f98f3edd9b74d0ef9294cb63981",
       "includes/embed.php": "12d0cc8dcc15ad6a57b8bf9d56a582908493dabbf6ad3f478b902aea2902fa24",
-      "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "b4f91db0820e2acfd1df07e7c0ab90c53327e0cca6fdd458de8a8623d7549474",
-      "languages/vstupenky-online-cs_CZ.mo": "e4b567f76141d5850cb530e997622a9aee8a87b0cbe33fcca62cfb26ad32925b",
-      "languages/vstupenky-online-cs_CZ.po": "c9981b0e595125e4aafd3c9206b2b7b3319c1e1478d2f2fb33e7be73df7dc83c",
-      "languages/vstupenky-online.pot": "7197a9b448cc2687e8ce49c56ba553e4c0e5bab847f97f8c82dd16221388311e",
-      "readme.txt": "06ada17a9b1d81394b41f8716152b9c1070e84ab590882a479af95dbeab4575b",
-      "vstupenky-online.php": "7359f72ce2d19860a4eb5141d902a292593c291d010225a33c2ed2aa283e44f1"
-    },
-    "messages": 52,
-    "czech_translations": 54
-  },
-  "festapp-tickets": {
-    "files": {
-      "LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
-      "blocks/ticket-form/block.json": "7a3065ef2cc3bdffaac4c9778381da832fa032fb6b75ea85310bc9bb3118c146",
-      "blocks/ticket-form/editor.js": "68894265b4f31218d7fe2ab059fffee316423d33bcc1d86b9c90d6b4c09be298",
-      "blocks/ticket-form/style.css": "81fcaba306e27593cd3adb8eac4387a8487fa136733d8025fd79d47ce83b3a09",
-      "festapp-tickets.php": "f38d787e51dfb4334dcd32339bd5c6a2c41bbc66f49ef1fcfe19a94eb32e8c2f",
-      "includes/admin.php": "543358dce4daada82886c23efd7bca30939d462d25170636fcd3e99da7e99d0d",
-      "includes/embed.php": "decac179ce1ec33c76b82d5e42735ba61f36eb714ef4d5b3a37b6e3f49efb511",
-      "languages/festapp-tickets-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "a4df1d9d336e446f8cf2b39056235570e482da3070f89c9946e2dcd73a77b9b2",
-      "languages/festapp-tickets-cs_CZ.mo": "7657e05cd3e23964ed2a6900f8e4a1c70ac7f572de8c0bb6d76e441b81b9baa2",
-      "languages/festapp-tickets-cs_CZ.po": "3557b15baea95465137c3c20484abdbca4f5d340001f8c4aeeb340803e85b3a3",
-      "languages/festapp-tickets.pot": "f0ece3b29d8d86f550b47b30a1776dd6753d33298b7f6b07e8b93bc6a96b1d8c",
-      "readme.txt": "d9933f873dbd74ccbd61bcdff7df2348f6a92c8a44708846e7c2faab4906b931"
+      "languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json": "2998544ede6bc7bff7cf36b3c625ce1a52da1bbec789e431a9926884fc86dd83",
+      "languages/vstupenky-online-cs_CZ.mo": "d3b42d9645e5d1453c0c7d91e030b57ee4bc1fe7a5bb58055c2ca4f1e6435798",
+      "languages/vstupenky-online-cs_CZ.po": "c10665d6552a7cbc6047527e63f6001e5bf7cd25bb83d889e114eee696674f86",
+      "languages/vstupenky-online.pot": "768c5de4ad9a1b0be4f08c22d1051a55e3e12a58a70a3e6241467686ca68c5e6",
+      "readme.txt": "2e63ce9c2aaff6e32f26fe07f106d6069a8e5895643674ce4e8927bc6aa4191c",
+      "vstupenky-online.php": "ac1ec6ac7ee7e463c5b0bf943cd60130d6fda7fb9ff6e34702cd459733fcfdd8"
     },
     "messages": 52,
     "czech_translations": 54
   },
   "shared_inputs": {
-    "products.json": "c73ea80b7687261d62f4a23ab7f83b663ec94ee9e6b86387a2e4768b4629c0e1",
-    "scripts/build-plugins.py": "059cf7481c81765659239d6531860bc1f07e2da243b8d6dfa78963c9e8f14652",
+    "products.json": "b7119a81151033f3183b017a6b1d1d6b3b62a55be87ed25d6aed30b07fd1fdf3",
+    "scripts/build-plugins.py": "997bb7307c5781c0fedcc1e2974a5e5b283f2e6192374f0f95d0475d904b15db",
     "scripts/package.py": "9e92790a26b0a0363c7d25c30729fc08211a2ed8784aecb4a4dfec546baa3e6e",
     "scripts/metadata_contract.py": "b4d1e7be024291a685ece8cf29967319545dfe1131d3687b1bbca1640190bf8a",
     "shared/LICENSE.txt": "edaef632cbb643e4e7a221717a6c441a4c1a7c918e6e4d56debc3d8739b233f6",
     "shared/admin.php.in": "f6b519ab0e359309117fbd8f24c000239eb1d0cf253a490317cb1c357d5f74ba",
     "shared/block.json.in": "3e21299cd6dc995c874c059d0c82776eed4952a57d9c1b213a535dfa0f1c4119",
-    "shared/cs_CZ.json": "2aaf137c15be1ea202099e739b7b9f2200f90ad4d9b9d69269a72fd692ed39bb",
+    "shared/cs_CZ.json": "200bee533ae602aa4a455209a3b064eebdac866eb220273efcff49ef794697af",
     "shared/editor.js.in": "009ba30137fab9c6c9f6eef7ea9d00790c8739fa91fe33bf7c5f9d4986eac432",
     "shared/embed.php.in": "d93b9919eceba078602ea3c2e3d31bde8b56f6bb661cc851346d705d13c44e19",
-    "shared/plugin.php.in": "e5ec0fae9a2d425dcad2b141cf363f97a77a1fa31d152215ae008e1891296158",
-    "shared/readme.txt.in": "c2d63b58ce5a6bfd7e3dca5fd3094360e8dd0532710b74b83981016db8cf3bfc",
+    "shared/plugin.php.in": "a6ebfbb17d6e62df5e6fedeb8b65d9fbb894f2ad5b096f5f68944f2e2316e2d5",
+    "shared/readme.txt.in": "30eb38efbde071eeb125750f7c9f9ee1aedf5643b802b3df6010417b3fa9e32e",
     "shared/style.css.in": "3e3b6b9c3c1bcc1f036dd9997c68df6118bb61774e7b5cf18972198c8cf598e6"
   }
 }

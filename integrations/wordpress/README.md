@@ -189,3 +189,19 @@ page scripts. It does not install tags, grant consent or enable measurement.
 Both modes require enabled Festapp measurement and an approved website origin.
 Unit mode requires a consent adapter. See the canonical
 [measurement contract](../../docs/integrations/form-datalayer.md).
+
+## Katalogový popis a české překlady
+
+Anglický popis v `shared/readme.txt.in` je zdrojem katalogových řetězců pro
+WordPress.org. Český překlad katalogu udržuje
+`translations/vstupenky-online-readme-cs_CZ.po`. České ovládání doplňku se dál
+sestavuje z `shared/cs_CZ.json` do přibalených PHP a editorových katalogů.
+Jazyk rozhraní respektuje nastavení WordPressu.
+
+Přibalený český katalog automaticky nezveřejní češtinu na WordPress.org.
+Překlady je třeba importovat do projektů Stable a Stable Readme na
+[translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/vstupenky-online/).
+Účet bez validačních práv je odesílá jako návrhy `Waiting`. První oficiální
+jazykový balíček vyžaduje alespoň 90 % schválených řetězců Stable (`Current`);
+text katalogové stránky má samostatný překladový projekt. Stav importu proto
+neoznačujte jako schválený ani jako veřejně dostupný jazykový balíček.
