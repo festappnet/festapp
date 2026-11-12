@@ -9,11 +9,11 @@ BEGIN
  SELECT jsonb_build_object('organizationId',p_organization,'unitId',p_unit,'revision',coalesce(s.revision,0),
   'preferredMethod',coalesce(up.preferred_method,s.preferred_method),'methods',(
   SELECT jsonb_object_agg(p.provider_key,jsonb_build_object('id',p.provider_key,'supported',true,
-   'policyEnabled',coalesce(op.enabled,false) AND coalesce(u.mode,'inherit')<>'disabled',
+   'policyEnabled',coalesce(op.enabled,p.provider_key='cash') AND coalesce(u.mode,'inherit')<>'disabled',
    'revision',coalesce(op.revision,0)::text||':'||coalesce(u.revision,0)::text,
-   'organizationEnabled',coalesce(op.enabled,false),'mode',coalesce(u.mode,'inherit'),
+   'organizationEnabled',coalesce(op.enabled,p.provider_key='cash'),'mode',coalesce(u.mode,'inherit'),
    'inheritedFrom',CASE WHEN coalesce(u.mode,'inherit')='inherit' THEN 'organization' ELSE 'unit' END,
-   'reason',CASE WHEN NOT coalesce(op.enabled,false) THEN 'organization_disabled' WHEN u.mode='disabled' THEN 'unit_disabled' END))
+   'reason',CASE WHEN NOT coalesce(op.enabled,p.provider_key='cash') THEN 'organization_disabled' WHEN u.mode='disabled' THEN 'unit_disabled' END))
   FROM eshop.payment_providers p LEFT JOIN eshop.organization_payment_method_policies op ON op.organization_id=p_organization AND op.method=p.provider_key
   LEFT JOIN eshop.unit_payment_method_policies u ON u.unit_id=p_unit AND u.method=p.provider_key)) INTO result
  FROM (SELECT 1) seed LEFT JOIN eshop.payment_method_policy_scopes s ON s.organization_id=p_organization

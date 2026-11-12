@@ -1115,6 +1115,8 @@ class EshopColumns {
                     width: 32,
                     child: IconButton(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
+                      color: ctx.stateManager.style.cellTextStyle.color,
+                      disabledColor: ctx.stateManager.style.cellTextStyle.color?.withValues(alpha: .38),
                       tooltip: refund
                           ? PaymentOperationStrings.text('refund')
                           : OrdersStrings.addPayment,

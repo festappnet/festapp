@@ -84,9 +84,9 @@ esac
 # Pinned esbuild is also used for lexical compaction before immutable stamping.
 (cd web_client && pnpm install --frozen-lockfile)
 node web_client/scripts/build_runtime.mjs --check
-node web_client/scripts/build_embed.mjs
-node web_client/scripts/build_measurement_runtime.mjs
-node automation/configure_fonts.js . --assets-only
+# Share all input generation with the standalone web build, before any receipt
+# or component fingerprint. The cached compiler must only consume these files.
+pnpm --dir web_client run prepare:build
 python3 automation/release/build_receipt.py capture "$TARGET"
 python3 automation/ci/telemetry.py release.flutter-build node automation/lib/web_build_cache.mjs component flutter "$TARGET" python3 automation/ci/resources.py "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
 node automation/lib/web_build_cache.mjs stamp-flutter
@@ -102,7 +102,7 @@ fi
 
 # CI owns the full source startup suite. The source gate above and completed
 # tenant bundle verification below cover the two distinct release boundaries.
-python3 automation/ci/telemetry.py release.web-client-build node automation/lib/web_build_cache.mjs component vite "$TARGET" bash -c 'cd web_client && pnpm run build'
+python3 automation/ci/telemetry.py release.web-client-build node automation/lib/web_build_cache.mjs component vite "$TARGET" bash -c 'cd web_client && pnpm run compile'
 cp -R web_client/dist/. build/web/
 cp web_client/public/sitemap.xml build/web/sitemap.xml
 node automation/minify_web_translations.mjs build/web

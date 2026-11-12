@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/seat_order_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -989,6 +991,13 @@ void main() {
     await tester.pumpAndSettle();
     final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
     await tester.ensureVisible(action);
+    for (var attempt = 0;
+        attempt < 100 && tester.widget<OutlinedButton>(action).onPressed == null;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    expect(tester.widget<OutlinedButton>(action).onPressed, isNotNull);
     // Cancellation recovery uses the same durable journal as hold release.
     // Let its filesystem/HTTP continuation run outside the fake clock.
     await tester.runAsync(() => tester.tap(action));
@@ -1055,6 +1064,21 @@ void main() {
         {seats.first.id, seats.last.id});
     var swapPreviews = 0;
     Map<String, dynamic>? approvedSwap;
+    var updateEmailsSent = 0;
+    var hasCustomerChanges = true;
+    final updatedOrder = {
+      'id': 77,
+      'order_sequence': 77,
+      'price': 300,
+      'currency_code': 'CZK',
+      'state': 'ordered',
+      'data': {
+        'email': 'swap@example.invalid',
+        'tickets': [
+          {'id': 51},
+        ],
+      },
+    };
     final swapWrites = <Map<String, dynamic>>[];
     pickerResponse = (request) {
       final body = jsonDecode(request.body) as Map<String, dynamic>;
@@ -1073,7 +1097,38 @@ void main() {
         approvedSwap = response;
       } else if (request.url.path.endsWith('/swap_blueprint_seats')) {
         swapWrites.add(body);
-        response = commandResponseFixture(body['p_command_id'] as String);
+        response = commandResponseFixture(body['p_command_id'] as String,
+            data: {'orders': blueprintSwapPreviewFixture()['orders']});
+      } else if (request.url.path.endsWith('/get_order_history')) {
+        expect(body['order_id'], 77);
+        response = {
+          'code': 200,
+          'data': {'order': updatedOrder, 'history': [], 'users': []},
+        };
+      } else if (request.url.path.endsWith('/get_products_for_ticket')) {
+        expect(body['ticket_id'], 51);
+        response = {
+          'code': 200,
+          'data': {
+            'ticket': {'id': 51},
+            'order': updatedOrder,
+            'order_history': {'is_newer_version_available': true},
+            'order_changes': {
+              'version': 1,
+              'hasChanges': hasCustomerChanges,
+              'referenceTotal': 200,
+              'currentTotal': 300,
+              'currencyCode': 'CZK',
+              'cancelledTickets': [],
+              'removedTickets': [],
+              'addedTickets': [],
+              'productChanges': [],
+            },
+          },
+        };
+      } else if (request.url.path.endsWith('/send-email')) {
+        updateEmailsSent++;
+        response = {'code': 200};
       } else {
         throw StateError('Unexpected swap request: ${request.url.path}');
       }
@@ -1107,7 +1162,7 @@ void main() {
                   .map((t) => t.data)
                   .join(' | '));
       expect(find.text('Destination companion'), findsOneWidget);
-      expect(find.text(BlueprintStrings.swapServerNotice), findsOneWidget);
+      expect(find.text(BlueprintStrings.swapServerNotice), findsNothing);
     }
 
     await openSwap();
@@ -1137,6 +1192,57 @@ void main() {
           () async => Future<void>.delayed(const Duration(milliseconds: 20)));
     }
     await tester.pumpAndSettle();
+    for (var attempt = 0;
+        attempt < 100 && find.text(OrdersStrings.sendUpdateButton).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.swapSuccess), findsWidgets);
+    expect(find.text(OrdersStrings.sendUpdateButton), findsOneWidget);
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsNothing,
+        reason: 'The completed swap stays open with an explicit update action');
+    await tester.runAsync(() => tester.tap(find.text(OrdersStrings.sendUpdateButton)));
+    for (var attempt = 0;
+        attempt < 100 && find.text(OrdersStrings.sendUpdateTitle).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsOneWidget);
+    expect(find.text(OrdersStrings.sendUpdateContent('swap@example.invalid')), findsOneWidget);
+    expect(updateEmailsSent, 0, reason: 'Customer updates require explicit confirmation');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    for (var attempt = 0;
+        attempt < 100 && find.text(OrdersStrings.sendUpdateButton).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateButton), findsOneWidget,
+        reason: 'Dismissing the email preview retains the completed swap');
+    expect(swapWrites, hasLength(1), reason: 'Follow-up cannot repeat the swap');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(updateEmailsSent, 0);
+    hasCustomerChanges = false;
+    await tester.runAsync(() => showOrderUpdateEmails(
+        tester.element(find.byType(BlueprintLayoutHost)), [77], onlyIfChanged: true));
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsNothing,
+        reason: 'An unchanged customer summary does not need another email');
+    hasCustomerChanges = true;
+    (updatedOrder['data'] as Map)['email'] = '';
+    await tester.runAsync(() => showOrderUpdateEmails(
+        tester.element(find.byType(BlueprintLayoutHost)), [77], onlyIfChanged: true));
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsNothing,
+        reason: 'Orders without a recipient do not offer email');
+    expect(updateEmailsSent, 0);
     expect(swapPreviews, 2);
     expect(swapWrites, hasLength(1));
     expect(swapWrites.single['p_first'], approvedSwap!['firstSpotId']);

@@ -359,7 +359,8 @@
         "test/components/occasion/occasion_setup_draft_card_cases.dart",
         "test/components/occasion/occasion_cover_draft_cases.dart",
         "test/components/occasion/demo_occasions_section_cases.dart",
-        "test/components/occasion/demo_occasion_banner_cases.dart"
+        "test/components/occasion/demo_occasion_banner_cases.dart",
+        "test/components/eshop/payment_grid_actions_cases.dart"
       ]
     },
     "test/sessions/shared_sdk_widgets_test.dart": {

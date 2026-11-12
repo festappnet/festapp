@@ -157,6 +157,11 @@ keyboard focus transfer does not discard an active clone. Numeric property and
 slider fields share focused wheel edits with normal validation/commit behavior.
 Graphic import is one image/SVG action with the existing combined allowlist.
 
+A confirmed seat swap stays in its dialog when the canonical customer change
+summary offers an email update. Each affected order uses the product-editing
+summary and explicit send confirmation. Skipping or sending an email never
+repeats the swap; receipt recovery opens the same follow-up state.
+
 Operation entry reuses commercial selection: order mode expands atomic units and
 seeds only available priced seats; swap mode seeds at most two eligible seats,
 leaving larger selections unseeded. Existing confirmation/command owners remain.

@@ -335,7 +335,7 @@ class DbTickets {
           firstSpotId: firstSpotId,
           secondSpotId: secondSpotId);
 
-  static Future<bool> recoverBlueprintSwap(
+  static Future<SeatSwapOutcome?> recoverBlueprintSwap(
           {required int occasionId, required int blueprintId}) =>
       _commands.recoverSwap(
           occasionId: occasionId,
@@ -343,7 +343,7 @@ class DbTickets {
           unitId: RightsService.currentUnit()?.id,
           blueprintId: blueprintId);
 
-  static Future<void> swapBlueprintSpots(BlueprintSeatSwapPreview preview) =>
+  static Future<SeatSwapOutcome> swapBlueprintSpots(BlueprintSeatSwapPreview preview) =>
       _commands.swapSpots(preview);
 
   static Future<Map<String, dynamic>?> getOccasionByScanCode(
