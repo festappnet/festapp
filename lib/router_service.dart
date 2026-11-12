@@ -473,6 +473,39 @@ class RouterService {
   static bool isStripeConnectionReturnPath(String? path) =>
       path == '/stripe/connect/callback';
 
+  /// Revalidate a remembered real workspace without resuming a read-only demo.
+  @visibleForTesting
+  static Future<bool> canRestoreAdministrationContext(
+      String path, String? userId) async {
+    final parts = Uri.parse(path).pathSegments;
+    try {
+      if (parts.first == 'unit') {
+        final id = int.parse(parts[1]);
+        await RightsService.updateAppData(
+            unitId: id, force: true, refreshOffline: false);
+        return !RightsService.isDemoReadOnly &&
+            RightsService.currentUser()?.id == userId &&
+            RightsService.currentUnit()?.id == id &&
+            RightsService.hasCapability(
+                AuthorizationCapabilities.unitAdministrationRead);
+      }
+      await RightsService.updateAppData(
+          link: parts.first, force: true, refreshOffline: false);
+      return !RightsService.isDemoReadOnly &&
+          RightsService.currentUser()?.id == userId &&
+          RightsService.currentLink == parts.first &&
+          (parts.last == 'reservations' || !AppConfig.isAppSupported
+              ? RightsService.canAccessReservationsWorkspace()
+              : RightsService.canSeeAdministration());
+    } catch (_) {
+      final state = RightsService.occasionLinkModel;
+      if (state?.isAccessDenied() == true || state?.isNotFound() == true) {
+        return false;
+      }
+      rethrow;
+    }
+  }
+
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
     final invitationToken = AccessInvitationDestination.token(fallbackPath);
@@ -586,33 +619,8 @@ class RouterService {
     if (LastAdministrationContext.canRestoreFor(fallbackPath)) {
       final userId = RightsService.currentUser()?.id;
       final remembered = await LastAdministrationContext.instance
-          .restore(AppConfig.organization, userId, canAccess: (path) async {
-        final parts = Uri.parse(path).pathSegments;
-        try {
-          if (parts.first == 'unit') {
-            final id = int.parse(parts[1]);
-            await RightsService.updateAppData(
-                unitId: id, force: true, refreshOffline: false);
-            return RightsService.currentUser()?.id == userId &&
-                RightsService.currentUnit()?.id == id &&
-                RightsService.hasCapability(
-                    AuthorizationCapabilities.unitAdministrationRead);
-          }
-          await RightsService.updateAppData(
-              link: parts.first, force: true, refreshOffline: false);
-          return RightsService.currentUser()?.id == userId &&
-              RightsService.currentLink == parts.first &&
-              (parts.last == 'reservations' || !AppConfig.isAppSupported
-                  ? RightsService.canAccessReservationsWorkspace()
-                  : RightsService.canSeeAdministration());
-        } catch (_) {
-          final state = RightsService.occasionLinkModel;
-          if (state?.isAccessDenied() == true || state?.isNotFound() == true) {
-            return false;
-          }
-          rethrow;
-        }
-      });
+          .restore(AppConfig.organization, userId,
+              canAccess: (path) => canRestoreAdministrationContext(path, userId));
       if (!context.mounted) return;
       if (remembered != null) {
         await replaceRootPath(context.router.root, remembered);
