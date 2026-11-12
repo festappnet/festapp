@@ -10,6 +10,8 @@ SET search_path=public,extensions AS $$
    FROM public.occasions occasion
    JOIN public.occasions_hidden hidden ON hidden.id=occasion.occasion_hidden
    WHERE p_code IS NOT NULL AND p_code<>'' AND hidden.secret=p_code
+   AND NOT EXISTS (SELECT 1 FROM public.scanner_revoked_credentials revoked
+       WHERE revoked.secret_hash=encode(extensions.digest(p_code,'sha256'),'hex'))
  ) candidate WHERE candidate.matches=1;
 $$;
 REVOKE ALL ON FUNCTION public.get_scanner_occasion_for_scan_code_internal(text) FROM PUBLIC,anon,authenticated,service_role;

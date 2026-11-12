@@ -37,6 +37,9 @@ BEGIN
  PERFORM assert_eq(response->>'reason','shared_scan_credential','server generation returns the group repair requirement without retrying candidates');
  PERFORM assert_eq((SELECT occasion_hidden FROM public.occasions WHERE id=other_oc),shared_hidden,'failed split preserves the ambiguous group');
  PERFORM assert_eq((SELECT count(*) FROM public.get_scanner_occasion_for_scan_code_internal(fx->>'scan_code')),0::bigint,'old shared credential remains unusable');
+ -- Model the migration's security metadata for this historical fixture.
+ INSERT INTO public.scanner_revoked_credentials(secret_hash,reason)
+ VALUES(encode(extensions.digest(fx->>'scan_code','sha256'),'hex'),'historical_shared');
  -- Restore the independent fixture relationship to exercise normal rotation.
  UPDATE public.occasions SET occasion_hidden=other_initial_hidden WHERE id=other_oc;
  response:=public.update_scan_code(original_other_code,fx->>'scan_code');
@@ -44,6 +47,7 @@ BEGIN
  response:=public.update_scan_code(original_other_code,rotated);
  PERFORM assert_eq(response->>'code','200','independent rotation succeeds');
  PERFORM assert_eq((SELECT secret FROM public.occasions_hidden WHERE id=shared_hidden),fx->>'scan_code','rotation never changes original event secret');
+ PERFORM assert_eq((SELECT count(*) FROM public.get_scanner_occasion_for_scan_code_internal(fx->>'scan_code')),0::bigint,'a formerly shared credential remains revoked after only one occasion remains');
  PERFORM assert_eq((SELECT id FROM public.get_scanner_occasion_for_scan_code_internal(rotated)),other_oc,'rotated code resolves only the selected event');
  response:=public.update_scan_code(original_other_code,NULL);
  PERFORM assert_eq(response->>'code','400','NULL cannot create a public proof');
@@ -83,5 +87,11 @@ BEGIN
  response:=public.get_or_create_scan_code(link,true);
  PERFORM assert_eq(response->>'scan_code','BBBBB','a colliding candidate is retried before returning a fresh code');
  PERFORM assert_eq(currval('forced_scan_entropy'),2::bigint,'collision retry consumed two candidates');
+ INSERT INTO public.scanner_revoked_credentials(secret_hash,reason)
+ VALUES(encode(extensions.digest('ZZZZZ','sha256'),'hex'),'historical_shared');
+ response:=public.update_scan_code(link,'ZZZZZ');
+ PERFORM assert_eq(response->>'reason','scan_code_collision','a retired value cannot be recycled even without a hidden row');
+ PERFORM assert_false(has_table_privilege('anon','public.scanner_revoked_credentials','SELECT'),'anonymous callers cannot enumerate revoked credentials');
+ PERFORM assert_false(has_table_privilege('authenticated','public.scanner_revoked_credentials','SELECT'),'editors cannot enumerate revoked credentials');
 END $$;
 ROLLBACK;

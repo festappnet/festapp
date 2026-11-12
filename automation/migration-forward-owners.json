@@ -164,6 +164,7 @@
       "migration": "20261112235500_scanner_occasion_isolation.sql",
       "header": "-- Scanner credentials and navigation are bound to one occasion.",
       "sources": [
+        "scanning/credential_revocations.sql",
         "user_permissions/technical_operations.sql",
         "eshop_orders/update_scan_code.sql",
         "scanning/access_codes.sql",

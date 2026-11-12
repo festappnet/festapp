@@ -1,5 +1,26 @@
 -- Scanner credentials and navigation are bound to one occasion.
 
+-- SOURCE: scanning/credential_revocations.sql
+-- A previously shared bearer credential must never become valid again merely
+-- because one of its occasions was deleted or an old hidden row was removed.
+CREATE TABLE IF NOT EXISTS public.scanner_revoked_credentials (
+ secret_hash text PRIMARY KEY CHECK(secret_hash ~ '^[0-9a-f]{64}$'),
+ revoked_at timestamptz NOT NULL DEFAULT now(),
+ reason text NOT NULL CHECK(reason='historical_shared')
+);
+ALTER TABLE public.scanner_revoked_credentials ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.scanner_revoked_credentials FROM PUBLIC,anon,authenticated,service_role;
+
+-- Security metadata only: no occasion, ticket, session or credential is changed.
+-- Freeze the rejection of every currently ambiguous secret across this shared
+-- backend, including identical secret text on separate historical hidden rows.
+INSERT INTO public.scanner_revoked_credentials(secret_hash,reason)
+ SELECT encode(extensions.digest(h.secret,'sha256'),'hex'),'historical_shared'
+ FROM public.occasions o JOIN public.occasions_hidden h ON h.id=o.occasion_hidden
+ WHERE h.secret IS NOT NULL
+ GROUP BY h.secret HAVING count(*)>1
+ ON CONFLICT(secret_hash) DO NOTHING;
+
 -- SOURCE: user_permissions/technical_operations.sql
 -- One live scan-link proof owner for session bootstrap and retained legacy
 -- readers. The actual occasion comes from the stored secret relationship;
@@ -13,6 +34,8 @@ SET search_path=public,extensions AS $$
    FROM public.occasions occasion
    JOIN public.occasions_hidden hidden ON hidden.id=occasion.occasion_hidden
    WHERE p_code IS NOT NULL AND p_code<>'' AND hidden.secret=p_code
+   AND NOT EXISTS (SELECT 1 FROM public.scanner_revoked_credentials revoked
+       WHERE revoked.secret_hash=encode(extensions.digest(p_code,'sha256'),'hex'))
  ) candidate WHERE candidate.matches=1;
 $$;
 REVOKE ALL ON FUNCTION public.get_scanner_occasion_for_scan_code_internal(text) FROM PUBLIC,anon,authenticated,service_role;
@@ -74,6 +97,10 @@ BEGIN
         WHERE o.occasion_hidden=occasions_hidden_id AND o.id<>v_occasion_id) THEN
         RETURN jsonb_build_object('code',409,'reason','shared_scan_credential',
             'message','Copied occasions require separate scanner links from an administrator.');
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.scanner_revoked_credentials revoked
+        WHERE revoked.secret_hash=encode(extensions.digest(new_scan_code,'sha256'),'hex')) THEN
+        RETURN jsonb_build_object('code',409,'reason','scan_code_collision','message','Scan code is already in use.');
     END IF;
     IF EXISTS (
         SELECT 1 FROM public.occasions_hidden h WHERE h.secret=new_scan_code

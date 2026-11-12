@@ -35,7 +35,10 @@ operations and existing scan-link sessions, and refuses ordinary rotation of a l
 requires a whole-group credential retirement, so gradual splitting cannot
 reactivate a previously disclosed code for its last remaining event. Rotations serialize
 allocation and reject empty or already-used codes before changing the epoch.
-It does not repair or rotate other events or tenants.
+A private fingerprint registry also permanently rejects currently shared historical
+codes, even if a copy is later deleted; retired values cannot be recycled.
+This preserves current rejection as security metadata without rotating event
+credentials in other tenants.
 
 The new `scan_code_isolation_test.sql` failed before the correction with
 `shared hidden row must never identify an occasion: expected 0, got 2`.

@@ -54,6 +54,10 @@ BEGIN
         RETURN jsonb_build_object('code',409,'reason','shared_scan_credential',
             'message','Copied occasions require separate scanner links from an administrator.');
     END IF;
+    IF EXISTS (SELECT 1 FROM public.scanner_revoked_credentials revoked
+        WHERE revoked.secret_hash=encode(extensions.digest(new_scan_code,'sha256'),'hex')) THEN
+        RETURN jsonb_build_object('code',409,'reason','scan_code_collision','message','Scan code is already in use.');
+    END IF;
     IF EXISTS (
         SELECT 1 FROM public.occasions_hidden h WHERE h.secret=new_scan_code
         AND (h.id IS DISTINCT FROM occasions_hidden_id OR EXISTS (
