@@ -140,13 +140,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
+  <meta name="apple-mobile-web-app-title" content="Festapp Tickets">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="vstupenky.online">
+  <meta name="apple-mobile-web-app-title" content="Festapp Tickets">
   <link rel="manifest" href="site.webmanifest" />
   <!-- Match browser chrome to the loading surface before Flutter starts. -->
   <meta name="theme-color" content="#19243b">
@@ -346,10 +346,10 @@ installRuntimeState(window);
     html[data-startup-theme="light"] .main-content { background: #ffffff; }
   </style>
 
-  <title>vstupenky.online</title>
+  <title>Festapp Tickets</title>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
-    const oneSignalWebAppId = "73f77f22-961a-4ded-9647-e33a7ac14f90";
+    const oneSignalWebAppId = "";
 
    let oneSignalSdkPromise;
    function loadOneSignalSdk() {
@@ -380,7 +380,7 @@ installRuntimeState(window);
                try {
                  await OneSignal.init({
                        appId: oneSignalWebAppId,
-                       safari_web_id: "web.onesignal.auto.34cabfa2-ddd9-46d0-b8b2-6fad793020e0",
+                       safari_web_id: "",
                        allowLocalhostAsSecureOrigin: true,
                        persistNotification: false,
                        welcomeNotification: {
@@ -466,7 +466,7 @@ installRuntimeState(window);
        OneSignalDeferred.push(async function(OneSignal) {
            try {
              await OneSignal.User.addTags({
-               app_generation: '',
+               app_generation: 'festappticketsglobal_v1',
                occasion: ''
              });
              if (callback) callback(null);
@@ -542,7 +542,7 @@ installRuntimeState(window);
     atomic updates and offline cold starts.
   -->
   <script>
-    window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+    window.__FESTAPP_BUILD_VERSION__ = "0.20.586+1101";
     window.__FESTAPP_LOCAL_DEVELOPMENT__ =
       ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   </script>
@@ -798,20 +798,20 @@ installRuntimeState(window);
     margin: 8px;
   }
 
-  [data-loading-style="vstupenky-outline"] .initial-logo {
+  [data-loading-style="spinner"] .initial-logo {
     width: min(72vw, 300px);
     max-width: 300px;
     max-height: none;
   }
-  [data-loading-style="vstupenky-outline"] .loader { display: none; }
+  [data-loading-style="spinner"] .loader { display: none; }
   @media (prefers-reduced-motion: reduce) { .loader, .loader::before { animation: none; } }
   @keyframes l16 {
     100%{transform: rotate(1turn)}
   }
 </style>
 
-  <div class="main-content" id="loader-content" data-loading-style="vstupenky-outline" role="status" aria-label="Načítání aplikace">
-    <img class="initial-logo" src="loading-animation.svg" alt="">
+  <div class="main-content" id="loader-content" data-loading-style="spinner" role="status" aria-label="Načítání aplikace">
+    <img class="initial-logo" src="loading-logo.svg" alt="">
     <div class="loader" aria-hidden="true"></div>
   </div>
   <script>window.applyFestappStartupTheme();</script>
