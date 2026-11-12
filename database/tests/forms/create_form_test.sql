@@ -16,8 +16,8 @@ BEGIN
     -- Create temporary Org/Unit/Occasion to avoid polluting real data (e.g. Occasion 1)
     INSERT INTO public.organizations (title) VALUES ('Temp Test Org Form') RETURNING id INTO v_org_id;
     INSERT INTO public.units (organization, title) VALUES (v_org_id, 'Temp Test Unit Form') RETURNING id INTO v_unit_id;
-    INSERT INTO public.occasions (unit, title, link, start_time, end_time) 
-    VALUES (v_unit_id, 'Temp Occasion Form', 'temp-occasion-form-' || floor(random()*100000)::text, now(), now() + interval '1 day') 
+    INSERT INTO public.occasions (unit, organization, title, link, start_time, end_time) 
+    VALUES (v_unit_id, v_org_id, 'Temp Occasion Form', 'temp-occasion-form-' || floor(random()*100000)::text, now(), now() + interval '1 day') 
     RETURNING id INTO v_occasion_id;
 
     PERFORM public.create_user_for_test('create-form-manager','create-form-manager@example.invalid');

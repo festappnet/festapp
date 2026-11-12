@@ -120,6 +120,8 @@ test('two connections serialize capacity save with the real checkout owner; chec
   }
  }finally{await checkout.end();await admin.end();}});
  await admin.query('BEGIN');await assertSchema(admin);const {fixture}=await import('../../../automation/authorization/benchmark.mjs');f=await fixture(admin,1);
+ await admin.query("insert into eshop.payment_method_policy_scopes(organization_id,preferred_method) values($1,'cash')",[f.org]);
+ await admin.query("insert into eshop.organization_payment_method_policies(organization_id,method,enabled) values($1,'cash',true)",[f.org]);
  await admin.query(`update occasions set features='[{"code":"ticket","is_enabled":true},{"code":"form","is_enabled":true}]' where id=$1`,[f.occasion]);
  const made=await create(admin,f);formId=made.formId;await admin.query('update forms set is_open=true,participant_capacity=2 where id=$1',[formId]);const key=(await admin.query('select key from forms where id=$1',[formId])).rows[0].key;await admin.query('COMMIT');
  await admin.query('BEGIN');await admin.query("set local statement_timeout='5s'");await admin.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[f.actor]);await admin.query('SET LOCAL ROLE authenticated');
