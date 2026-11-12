@@ -174,7 +174,7 @@
     {
       "migration": "20261112234500_admin_notification_delivery.sql",
       "manifest": "admin-notification-delivery-manifest.json",
-      "sha256": "5b7309f41384475fddc0f120fd82294c11f166dcc5405431cd78926410a6c6ab"
+      "sha256": "47bad82361fdd48072f3ad09e99c1e16271d43bfd4b217641ca931a60fcefc22"
     },
     {
       "migration": "20261112235500_scanner_occasion_isolation.sql",

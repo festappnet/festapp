@@ -1655,7 +1655,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_event_facts_internal(public.notification_center_events)') AND md5(btrim(prosrc,E' \n\r\t'))='d1781aa79896bdae6d0bd08eed5c27b2'),'current SQL source parity: public.notification_center_event_facts_internal(public.notification_center_events)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_event_relevant_internal(public.notification_center_events,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='c15e129a3240709bbf7da81d2b558fb2'),'current SQL source parity: public.notification_center_event_relevant_internal(public.notification_center_events,timestamp with time zone)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_event_relevant_internal(public.notification_center_events,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='3c59e6ab494a36f1f6e805bdf2f87ffe'),'current SQL source parity: public.notification_center_event_relevant_internal(public.notification_center_events,timestamp with time zone)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_form_capacity_internal(bigint,uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e739b02c3858742b050fb4d68b977de0'),'current SQL source parity: public.notification_center_form_capacity_internal(bigint,uuid,uuid)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql

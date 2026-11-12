@@ -1,11 +1,14 @@
 -- Deliberately different connector storage; no Stripe session or cursor model.
 CREATE TEMP TABLE alternate_payment_facts(attempt uuid PRIMARY KEY, context jsonb NOT NULL);
+CREATE TEMP TABLE alternate_payment_movements(attempt uuid,identity text,kind text,amount numeric,currency text,occurred_at timestamptz);
 CREATE FUNCTION public.test_alternate_effects(p_operation text,p_args jsonb)
 RETURNS jsonb LANGUAGE plpgsql SET search_path=public,extensions AS $$
 DECLARE c jsonb; result jsonb; o eshop.orders;
 BEGIN
  SELECT context INTO c FROM pg_temp.alternate_payment_facts WHERE attempt=(p_args->>'attemptId')::uuid;
  IF p_operation='effect_context' THEN RETURN c;
+ ELSIF p_operation='notification_facts' THEN
+  RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('identity',identity,'amount',amount,'currency',currency,'occurredAt',occurred_at)),'[]') FROM pg_temp.alternate_payment_movements WHERE attempt=(p_args->>'attemptId')::uuid AND kind='payment');
  ELSIF p_operation='effect_lock' THEN PERFORM 1 FROM pg_temp.alternate_payment_facts WHERE attempt=(p_args->>'attemptId')::uuid FOR UPDATE; RETURN NULL;
  ELSIF p_operation='effect_state' THEN
   UPDATE pg_temp.alternate_payment_facts SET context=jsonb_set(context,'{state}',p_args->'state') WHERE attempt=(p_args->>'attemptId')::uuid;RETURN NULL;
@@ -38,9 +41,12 @@ BEGIN
   'reservationExpiresAt',now()+interval '20 minutes','state','paid','incomplete',false,'receivedMinor',10000,'refundedMinor',0,
   'paymentTime',now(),'decisions','[]'::jsonb);
  INSERT INTO pg_temp.alternate_payment_facts VALUES(a,c);
+ INSERT INTO pg_temp.alternate_payment_movements VALUES(a,'connection:stored-payment:payment','payment',100,'CZK',now());
+ INSERT INTO public.notification_center_organizations(organization,initialized_at) VALUES(org,now()-interval '1 day') ON CONFLICT DO NOTHING;
  result:=public.apply_provider_payment_effects_internal('different_gateway',a,'first',NULL);
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'sent','another storage protocol runs the same owner');
  PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),100::numeric,'generic owner refreshes actual ledger totals');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.notification_center_events WHERE organization=org AND kind='order_payment_received' AND data->>'paymentFact'='different_gateway:connection:stored-payment:payment'),'notification identity comes from connector storage');
  UPDATE pg_temp.alternate_payment_facts SET context=context-'receivedMinor' WHERE attempt=a;
  BEGIN PERFORM public.apply_provider_payment_effects_internal('different_gateway',a,'missing',NULL);RAISE EXCEPTION 'missing financial field accepted';
  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'PAYMENT_EFFECT_CONTEXT_INVALID' THEN RAISE; END IF; END;

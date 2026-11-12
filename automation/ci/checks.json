@@ -607,7 +607,8 @@
     "seat-notifications-1": {
       "filters": [
         "notification_center",
-        "delete_order_history_permissions_test"
+        "delete_order_history_permissions_test",
+        "database/tests/eshop/transactions/bank_sync_health_test.sql"
       ]
     },
     "seat-measurement-1": {
