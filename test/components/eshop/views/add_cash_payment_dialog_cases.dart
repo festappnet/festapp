@@ -579,8 +579,13 @@ void main() {
         instructions: (input) async {
           submitted = input;
           return {
-            'method': 'bank', 'verification': 'bank_event', 'purpose': 'bank_refund_instruction',
-            'allowed': true, 'sourceMethod': 'bank', 'sourceOrderId': 9, 'sourcePaymentId': 55,
+            'method': 'bank',
+            'verification': 'bank_event',
+            'purpose': 'bank_refund_instruction',
+            'allowed': true,
+            'sourceMethod': 'bank',
+            'sourceOrderId': 9,
+            'sourcePaymentId': 55,
             'payload': 'BCD\n002\n1\nSCT',
             'amount': '50.00',
             'recipientName': 'Jana Novakova',
@@ -657,11 +662,7 @@ void main() {
       );
       expect(context.canRefund, isFalse);
       await operation(tester, refund: true, currency: 'USD', context: context);
-      final bank = tester.widget<ListTile>(
-        find.byKey(const ValueKey('refundMethod_bank')),
-      );
-      expect(bank.enabled, isFalse);
-      expect(bank.onTap, isNull);
+      expect(find.byKey(const ValueKey('refundMethod_bank')), findsNothing);
     },
   );
 
@@ -816,9 +817,14 @@ void main() {
               'canCancel': true,
               'amount': '300.00',
               'instructions': {
-                'method': 'bank', 'verification': 'bank_event', 'purpose': 'bank_refund_instruction',
-            'allowed': true, 'sourceMethod': 'bank', 'sourceOrderId': 9, 'sourcePaymentId': 55,
-            'payload': 'BCD\n002\n1\nSCT',
+                'method': 'bank',
+                'verification': 'bank_event',
+                'purpose': 'bank_refund_instruction',
+                'allowed': true,
+                'sourceMethod': 'bank',
+                'sourceOrderId': 9,
+                'sourcePaymentId': 55,
+                'payload': 'BCD\n002\n1\nSCT',
                 'format': 'epc',
                 'reference': 'RF18539007547034',
                 'sourceAccount': 'CZ6508000000192000145399',

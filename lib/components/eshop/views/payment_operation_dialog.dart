@@ -179,7 +179,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
               'unknown',
               'processing',
             }.contains(r['status']) &&
-            r['canReopen'] == true) {
+            (r['canReopen'] == true || r['canCancel'] == true)) {
           _request = r;
           break;
         }
@@ -201,7 +201,7 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
         Map<String, dynamic>? current;
         for (final request in _context.requests) {
           if (request['id'] == _request!['id'] &&
-              request['canReopen'] == true) {
+              (request['canReopen'] == true || request['canCancel'] == true)) {
             current = request;
           }
         }
@@ -463,15 +463,16 @@ class _PaymentOperationDialogState extends State<PaymentOperationDialog> {
       children: [
         Text(PaymentOperationStrings.text(bank ? 'bankPending' : 'processing')),
         const SizedBox(height: 8),
-        Text(
-          PaymentOperationStrings.text(
-            bank
-                ? (payload is String && payload.isNotEmpty
-                      ? 'bankPrepared'
-                      : 'bankManualPrepared')
-                : 'providerPending',
+        if (!bank || allowed)
+          Text(
+            PaymentOperationStrings.text(
+              bank
+                  ? (payload is String && payload.isNotEmpty
+                        ? 'bankPrepared'
+                        : 'bankManualPrepared')
+                  : 'providerPending',
+            ),
           ),
-        ),
         if (payload is String && payload.isNotEmpty)
           Center(
             child: Padding(
