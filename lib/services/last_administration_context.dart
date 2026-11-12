@@ -9,9 +9,9 @@ class LastAdministrationContext {
     Future<String?> Function(String)? read,
     Future<void> Function(String, String)? write,
     Future<void> Function(String)? remove,
-  })  : _read = read ?? StorageHelper.get,
-        _write = write ?? StorageHelper.set,
-        _remove = remove ?? StorageHelper.remove;
+  }) : _read = read ?? StorageHelper.get,
+       _write = write ?? StorageHelper.set,
+       _remove = remove ?? StorageHelper.remove;
 
   final Future<String?> Function(String) _read;
   final Future<void> Function(String, String) _write;
@@ -21,7 +21,11 @@ class LastAdministrationContext {
       'last-administration/v1/$tenant/$user';
 
   static bool canRestoreFor(String? path) =>
-      path == null || path.isEmpty || path == '/' || path == '/login';
+      path == null ||
+      path.isEmpty ||
+      path == '/' ||
+      path == '/login' ||
+      path == '/admin/my-events';
 
   static bool isValidPath(String path) =>
       RegExp(r'^/unit/[1-9][0-9]*/edit$').hasMatch(path) ||
@@ -36,8 +40,11 @@ class LastAdministrationContext {
     }
   }
 
-  Future<String?> restore(int tenant, String? user,
-      {required Future<bool> Function(String) canAccess}) async {
+  Future<String?> restore(
+    int tenant,
+    String? user, {
+    required Future<bool> Function(String) canAccess,
+  }) async {
     if (user == null || user.isEmpty) return null;
     final key = _key(tenant, user);
     try {

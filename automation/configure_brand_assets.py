@@ -61,6 +61,11 @@ if args.loading_style == 'vstupenky-outline':
     domain.set('transform', 'translate(610 -166)')
     outputs['web_client/public/brand-wordmark.svg'] = ET.tostring(wordmark)
     outputs['web_client/public/brand-symbol.svg'] = (brand / 'vstupenky-online-symbol-dark.svg').read_bytes()
+elif args.icon_dir == 'assets/brand/festapp-tickets/web-icons':
+    brand = root / 'assets/brand/festapp-tickets'
+    outputs['web_client/public/brand-wordmark-stacked.svg'] = (brand / 'festapp-tickets-wordmark-dark.svg').read_bytes()
+    outputs['web_client/public/brand-wordmark.svg'] = (brand / 'festapp-tickets-wordmark-horizontal-dark.svg').read_bytes()
+    outputs['web_client/public/brand-symbol.svg'] = (brand / 'festapp-tickets-symbol-dark.svg').read_bytes()
 else:
     outputs['web_client/public/brand-wordmark-stacked.svg'] = dark
     outputs['web_client/public/brand-wordmark.svg'] = dark

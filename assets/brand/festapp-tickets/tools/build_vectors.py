@@ -93,6 +93,8 @@ for dark in (False,True):
  save(prefix+'-transparent'+suffix,svg(mark+words))
  save(prefix+'-symbol'+suffix,svg(mark,'Festapp Tickets - symbol','170 225 685 365',(685,365)))
  save(prefix+'-wordmark'+suffix,svg(words,'Festapp Tickets - wordmark','65 580 900 370',(900,370)))
+ horizontal=group('name',ink)+'<g transform="translate(628.4381866455078 -155)">'+group('domain',BLUE)+'</g>'
+ save(prefix+'-wordmark-horizontal'+suffix,svg(horizontal,'Festapp Tickets - horizontal wordmark','185 580 1240 200',(1240,200)))
  header=f'<g transform="translate(16 14) scale(.65) translate(-196 -254)">{mark}</g><g transform="translate(470 14) scale(.65) translate(-82 -600)">{words}</g>'
  save(prefix+'-header'+suffix,svg(header,'Festapp Tickets','0 0 1060 240',(1060,240)))
  icon=f'<path fill="{bg}" d="M0 0H1024V1024H0Z"/><g transform="translate(102.4 311.7) scale(1.2962) translate(-196 -254)">{mark}</g>'

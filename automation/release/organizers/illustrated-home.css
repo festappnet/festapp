@@ -72,7 +72,7 @@ body[data-cinematic="true"] .site-header .header-actions,
 body[data-cinematic="true"] user-header[data-marketing] .header-actions {display:flex;align-items:center;gap:16px;border:0;padding:0;min-height:0}
 body[data-cinematic="true"] .site-header .header-home-link {line-height:0;flex-shrink:0}
 body[data-cinematic="true"] .site-header .brand-image,
-body[data-cinematic="true"] user-header[data-marketing] .header-logo {display:block;width:184px;max-width:none;height:auto}
+body[data-cinematic="true"] user-header[data-marketing] .header-logo:not(.header-brand-wordmark) {display:block;width:184px;max-width:none;height:auto}
 body[data-cinematic="true"] user-header[data-marketing] .header-public-navigation {display:flex;gap:12px;margin-left:auto;border:0;padding:0}
 body[data-cinematic="true"] .site-header .header-signin,
 body[data-cinematic="true"] .site-header .header-cta,
@@ -95,7 +95,7 @@ body[data-cinematic="true"] user-header[data-marketing] .avatar-circle {backgrou
   body[data-cinematic="true"] .site-header,
   body[data-cinematic="true"] user-header[data-marketing] .user-header-container {height:76px;min-height:76px;padding-inline:16px;gap:12px}
   body[data-cinematic="true"] .site-header .brand-image,
-  body[data-cinematic="true"] user-header[data-marketing] .header-logo {width:126px}
+  body[data-cinematic="true"] user-header[data-marketing] .header-logo:not(.header-brand-wordmark) {width:126px}
   body[data-cinematic="true"] .site-header .header-actions,
   body[data-cinematic="true"] user-header[data-marketing] .header-actions {gap:8px}
   body[data-cinematic="true"] user-header[data-marketing] .header-public-navigation {gap:0}
@@ -108,5 +108,5 @@ body[data-cinematic="true"] user-header[data-marketing] .avatar-circle {backgrou
 }
 @media(max-width:370px){
   body[data-cinematic="true"] .site-header .brand-image,
-  body[data-cinematic="true"] user-header[data-marketing] .header-logo {width:110px}
+  body[data-cinematic="true"] user-header[data-marketing] .header-logo:not(.header-brand-wordmark) {width:110px}
 }

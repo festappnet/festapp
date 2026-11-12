@@ -11,15 +11,16 @@ test('canonical account header keeps responsive tenant logos within the public p
  const context=RightsService._context,link=AppConfig.webLink;
  t.after(()=>{RightsService._context=context;AppConfig.webLink=link;dom.window.close();});
  RightsService._context={organization:{}};
- for(const [site,base]of[['https://vstupenky.online','/napoveda/assets/'],['https://vstupenky.online','/'],['https://festapp.net','/napoveda/assets/']]){
+ for(const [site,base]of[['https://vstupenky.online','/napoveda/assets/'],['https://vstupenky.online','/'],['https://tickets.festapp.net','/help/assets/'],['https://tickets.festapp.net','/'],['https://festapp.net','/napoveda/assets/']]){
   AppConfig.webLink=site;
   const header=new UserHeader();
   if(base!=='/')header.setAttribute('brand-asset-base',base);
   document.body.append(header);
   const urls=[...header.querySelectorAll('img')].map(img=>img.getAttribute('src'));
-  if(site.includes('vstupenky.online')){
+  if(['https://vstupenky.online','https://tickets.festapp.net'].includes(site)){
    assert.deepEqual(urls,[base+'brand-symbol.svg',base+'brand-wordmark.svg']);
    assert.equal(header.querySelector('source').getAttribute('srcset'),base+'brand-wordmark-stacked.svg');
+   assert.equal(header.querySelector('source').getAttribute('media'),'(max-width: 1100px)');
   }else assert.deepEqual(urls,[base+'brand-logo.svg']);
   assert.equal(header.querySelector('.header-home-link').getAttribute('href'),'/');
   header.remove();

@@ -15,13 +15,14 @@ class HelpOccasionPicker extends StatelessWidget {
     required this.onSelected,
     this.onCreateNew,
     required this.onDismiss,
+    this.emptyText,
     this.selectedLink,
     this.recentLink,
   });
 
   final List<OccasionModel> occasions;
   final List<UnitModel> organizers;
-  final String? selectedLink, recentLink;
+  final String? selectedLink, recentLink, emptyText;
   final ValueChanged<OccasionModel> onSelected;
   final VoidCallback? onCreateNew;
   final VoidCallback onDismiss;
@@ -73,7 +74,7 @@ class HelpOccasionPicker extends StatelessWidget {
       upcomingText: CommonStrings.upcomingEvents,
       pastText: CommonStrings.pastEvents,
       emptyText: occasions.isEmpty
-          ? 'HelpNavigation.noEvents'.tr()
+          ? (emptyText ?? 'HelpNavigation.noEvents'.tr())
           : 'HelpNavigation.noMatches'.tr(),
       clearSearchText: 'HelpNavigation.clearSearch'.tr(),
       onItemSelected: onSelected,
