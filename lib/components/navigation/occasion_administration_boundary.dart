@@ -48,7 +48,7 @@ class RightsAdministrationAccess implements AdministrationAccess {
       refreshOffline: false,
     );
     final allowed = loadedLink != null && canAccess(reservations: reservations);
-    if (allowed) {
+    if (allowed && !RightsService.isDemoReadOnly) {
       await LastAdministrationContext.instance.remember(
         AppConfig.organization,
         RightsService.currentUser()?.id,

@@ -1,3 +1,5 @@
+import 'package:fstapp/services/last_administration_context.dart';
+import 'package:fstapp/router_service.dart';
 import '../support/fixtures/client_command_response_fixture.dart';
 
 import 'package:fstapp/components/navigation/unit_administration_access.dart';
@@ -143,14 +145,16 @@ void main() {
               'occasion': {'id': 1072557, 'link': context['link'], 'data': {}},
             if (context['unit_id'] != null) 'unit': {'id': context['unit_id']},
             'occasion_user': {'is_editor_view': true},
+            'demo_read_only': context['link'] == 'demo-workspace',
             'capabilities': {
               'forms.write': formWriteAllowed,
               'navigation.administration': context['link'] != 'access-revoked',
-              if (context['link'] == 'access-recovery')
+              if (['access-recovery','demo-workspace','real-workspace'].contains(context['link']))
                 'forms.catalog.read': true,
               if (context['unit_id'] == 12) 'media.unit.write': true,
             },
             if (context['unit_id'] == 12) 'user_info': {'id': 'self-user'},
+            if (['demo-workspace','real-workspace'].contains(context['link'])) 'user_info': {'id': actor},
             if (context['link'] == 'bank-changed')
               'bank_capabilities': {
                 '7': {'bank_sync.manage': true},
@@ -177,6 +181,38 @@ void main() {
     addTearDown(state.dispose);
     final storage = await LocalAppStorageFixture.open();
     addTearDown(storage.dispose);
+  });
+
+  test('viewing a demo preserves the real workspace preference', () async {
+    await signInFixture();
+    final history = LastAdministrationContext.instance;
+    await history.remember(AppConfig.organization, actor, '/unit/12/edit');
+    final allowed = await const RightsAdministrationAccess().load(
+      'demo-workspace', reservations: true,
+    );
+    expect(allowed, isTrue);
+    expect(RightsService.isDemoReadOnly, isTrue);
+    expect(await history.restore(AppConfig.organization, actor,
+      canAccess: (_) async => true), '/unit/12/edit');
+    await const RightsAdministrationAccess().load('real-workspace', reservations: true);
+    expect(await history.restore(AppConfig.organization, actor,
+      canAccess: (_) async => true), '/real-workspace/reservations');
+  });
+
+  test('legacy demo history is discarded while demo viewing stays allowed', () async {
+    await signInFixture();
+    final history = LastAdministrationContext.instance;
+    await history.remember(AppConfig.organization, actor, '/demo-workspace/reservations');
+    expect(await history.restore(AppConfig.organization, actor,
+      canAccess: (path) => RouterService.canRestoreAdministrationContext(path, actor)), isNull);
+    expect(RightsService.isDemoReadOnly, isTrue);
+    expect(const RightsAdministrationAccess().canAccess(reservations: true), isTrue);
+    expect(await history.restore(AppConfig.organization, actor,
+      canAccess: (_) async => fail('Legacy demo preference must have been removed')), isNull);
+    await history.remember(AppConfig.organization, actor, '/real-workspace/reservations');
+    expect(await history.restore(AppConfig.organization, actor,
+      canAccess: (path) => RouterService.canRestoreAdministrationContext(path, actor)),
+      '/real-workspace/reservations');
   });
 
   test(
