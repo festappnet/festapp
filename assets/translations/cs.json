@@ -4472,7 +4472,7 @@
     "availableRecipient": "Dostupný příjemce",
     "title": "Způsob platby",
     "bank": "Bankovní převod",
-    "stripe": "Kartou přes Stripe",
+    "stripe": "Platební brána Stripe",
     "fullAmount": "Úhrada celé objednávky",
     "reservation": "Rezervace platí {minutes} minut.",
     "stripeHint": "Zaplatíte bezpečně přes Stripe. Vstupenky obdržíte po potvrzení platby.",
@@ -4545,7 +4545,7 @@
     "policyTemplateReviewHint": "Zkontrolujte text i obal e-mailů v editoru šablon. Pro platby přes bránu nesmí obsahovat pevné bankovní instrukce ani platební QR. Potvrzením schválíte pouze tuto aktuální verzi.",
     "policyTemplateRepair": "V šabloně nebo jejím obalu jsou bankovní údaje či QR. Opravte obsah v editoru e-mailových šablon a spusťte kontrolu znovu.",
     "policyTemplateApprove": "Aktuální verzi jsem zkontroloval/a",
-    "barion": "Kartou přes Barion",
+    "barion": "Platební brána Barion",
     "policyCashManaged": "Dostupnost hotovosti spravuje platforma.",
     "policyNoMethods": "Platforma nemá povolenou žádnou platební metodu.",
     "policyUnitSummary": "Účty a platební metody"

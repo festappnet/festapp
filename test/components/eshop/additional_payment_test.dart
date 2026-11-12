@@ -540,7 +540,7 @@ void main() {
       };
       await policy(tester, null);
       await tester.pumpAndSettle();
-      expect(find.text('Kartou přes Barion'), findsOneWidget);
+      expect(find.text('Platební brána Barion'), findsOneWidget);
       final barion = tester.widget<Switch>(
         find.byKey(const ValueKey('payment-policy-barion')),
       );

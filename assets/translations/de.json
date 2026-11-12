@@ -2414,7 +2414,7 @@
     "availableRecipient": "Verfügbarer Empfänger",
     "title": "Zahlungsart",
     "bank": "Banküberweisung",
-    "stripe": "Karte über Stripe",
+    "stripe": "Zahlungsgateway Stripe",
     "fullAmount": "Zahlung der gesamten Bestellung",
     "reservation": "Die Reservierung gilt für {minutes} Minuten.",
     "stripeHint": "Bezahlen Sie sicher über Stripe. Die Tickets erhalten Sie nach Bestätigung der Zahlung.",
@@ -2487,7 +2487,7 @@
     "policyTemplateReviewHint": "Prüfen Sie Inhalt und Rahmen im Vorlageneditor. Zahlungen über Anbieter dürfen keine festen Bankanweisungen oder Zahlungs-QR-Codes enthalten. Die Bestätigung gilt nur für diese Version.",
     "policyTemplateRepair": "Bankdaten oder Zahlungs-QR-Code im Inhalt oder Rahmen gefunden. Korrigieren Sie die Vorlage und prüfen Sie erneut.",
     "policyTemplateApprove": "Aktuelle Version geprüft",
-    "barion": "Karte über Barion",
+    "barion": "Zahlungsgateway Barion",
     "policyCashManaged": "Die Verfügbarkeit von Barzahlung wird von der Plattform verwaltet.",
     "policyNoMethods": "Die Plattform hat keine Zahlungsarten aktiviert.",
     "policyUnitSummary": "Konten und Zahlungsarten"

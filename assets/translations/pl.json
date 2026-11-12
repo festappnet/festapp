@@ -2416,7 +2416,7 @@
     "availableRecipient": "Dostępny odbiorca",
     "title": "Metoda płatności",
     "bank": "Przelew bankowy",
-    "stripe": "Kartą przez Stripe",
+    "stripe": "Bramka płatnicza Stripe",
     "fullAmount": "Płatność za całe zamówienie",
     "reservation": "Rezerwacja jest ważna przez {minutes} minut.",
     "stripeHint": "Zapłać bezpiecznie przez Stripe. Bilety otrzymasz po potwierdzeniu płatności.",
@@ -2489,7 +2489,7 @@
     "policyTemplateReviewHint": "Sprawdź treść i oprawę w edytorze szablonów. Płatności przez operatora nie mogą zawierać stałych instrukcji bankowych ani kodów QR do płatności. Potwierdzenie dotyczy tylko tej wersji.",
     "policyTemplateRepair": "W treści lub oprawie znaleziono dane bankowe lub kod QR. Popraw szablon i ponów sprawdzenie.",
     "policyTemplateApprove": "Sprawdziłem/am aktualną wersję",
-    "barion": "Kartą przez Barion",
+    "barion": "Bramka płatnicza Barion",
     "policyCashManaged": "Dostępnością gotówki zarządza platforma.",
     "policyNoMethods": "Platforma nie ma włączonych metod płatności.",
     "policyUnitSummary": "Konta i metody płatności"

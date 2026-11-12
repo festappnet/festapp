@@ -4470,7 +4470,7 @@
     "availableRecipient": "Available recipient",
     "title": "Payment method",
     "bank": "Bank transfer",
-    "stripe": "Card through Stripe",
+    "stripe": "Stripe payment gateway",
     "fullAmount": "Full order payment",
     "reservation": "The reservation lasts {minutes} minutes.",
     "stripeHint": "Pay securely through Stripe. Tickets are issued after payment confirmation.",
@@ -4543,7 +4543,7 @@
     "policyTemplateReviewHint": "Review the body and wrapper in the template editor. Gateway payments must not contain fixed bank instructions or payment QR codes. Confirmation approves only this exact version.",
     "policyTemplateRepair": "Bank details or a payment QR were found in the body or wrapper. Repair the template and run this review again.",
     "policyTemplateApprove": "I reviewed the current version",
-    "barion": "Card through Barion",
+    "barion": "Barion payment gateway",
     "policyCashManaged": "Cash availability is managed by the platform.",
     "policyNoMethods": "The platform has no enabled payment methods.",
     "policyUnitSummary": "Accounts and payment methods"
