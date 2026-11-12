@@ -103,13 +103,13 @@ export async function renderQueuedEmail(
     // Read before optional preparation; begin_email_send fences any later preference change.
     const walletSettings = result.data.wallet;
     const walletFingerprint = walletSettings.fingerprint;
+    const lang = row.data?.lang ?? occasion.locale ?? "cs";
     let walletHtml = '';
     try {
-      walletHtml = await prepareWalletEmail(row, delivery.tickets, walletSettings.feature, emailRpc);
+      walletHtml = await prepareWalletEmail({...row,data:{...row.data,lang}}, delivery.tickets, walletSettings.feature, emailRpc);
     } catch {
       console.warn('ticket_wallet_email_unavailable');
     }
-    const lang = row.data?.lang ?? "cs";
     const method = result.data.payment_info?.payment_method;
     const payment = ticketEmailSubstitutions(result.data, lang, paymentRegistry.has(method) ? paymentRegistry.resolve(method).connector.displayName : String(method ?? ''));
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
@@ -117,7 +117,7 @@ export async function renderQueuedEmail(
       prepared: await renderEmail({
         to: row.recipient,
         templateCode: row.code,
-        requiredLinks: overviewRequiredLinks(overviewUrl, row.data?.lang),
+        requiredLinks: overviewRequiredLinks(overviewUrl, lang),
         context: {
           organization: row.organization,
           occasion: row.occasion,

@@ -1,8 +1,9 @@
 /** Google Event Tickets only. No ticket/admission decisions live in this adapter. */
-import { googleWalletAppearance } from './googleWalletAppearance.ts';
+import { googleWalletAppearance, walletPublicImage } from './googleWalletAppearance.ts';
+import { parseOrganizationBranding } from './organizationBranding.ts';
 import { normalizeTicketData } from './ticketRenderData.ts';
 export type WalletState = 'ACTIVE' | 'COMPLETED' | 'INACTIVE' | 'EXPIRED';
-export type WalletProjection = { state: WalletState; ticket: any; occasion: any };
+export type WalletProjection = { state: WalletState; ticket: any; occasion: any; branding?: any };
 export type WalletIdentity = { issuer: string; environment: string; organization: number; occasion: number; ticketId: number };
 const encoder = new TextEncoder();
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -31,10 +32,13 @@ export function walletDocuments(ids:{classId:string;objectId:string},projection:
  const normalized=normalizeTicketData(ticket,occasion,{});
  const zone=occasion.data?.timezone||'Europe/Prague';
  const appearance=googleWalletAppearance(occasion.ticketFeature,occasion.data);
+ const branding=parseOrganizationBranding(projection.branding);
+ const overrides=occasion.ticketFeature?.wallet_appearance??{};
+ const logo=Object.hasOwn(overrides,'logo')?appearance.logo:walletPublicImage(projection.branding?.WALLET_LOGO_URL)??appearance.logo;
  const image=(uri:string,description:string)=>({sourceUri:{uri},contentDescription:localized(description)});
  const classBody={...(appearance.backgroundColor?{hexBackgroundColor:appearance.backgroundColor}:{}),
- ...(appearance.logo?{logo:image(appearance.logo,occasion.title)}:{}),
- ...(appearance.heroImage?{heroImage:image(appearance.heroImage,occasion.title)}:{}),id:ids.classId,issuerName:'Festapp Tickets',eventName:localized(occasion.title),reviewStatus:'UNDER_REVIEW',
+ ...(logo?{logo:image(logo,branding.appName)}:{}),
+ ...(appearance.heroImage?{heroImage:image(appearance.heroImage,occasion.title)}:{}),id:ids.classId,issuerName:branding.appName,eventName:localized(occasion.title),reviewStatus:'UNDER_REVIEW',
  eventId:ids.classId.split('.')[1].slice(0,64),dateTime:{start:walletDate(occasion.start_time,zone),end:walletDate(occasion.end_time,zone)},
  textModulesData:normalized.occasionPlace?[{id:'place',header:'Místo / Venue',body:normalized.occasionPlace}]:[]};
  const products=ticket.order_product_ticket??[];

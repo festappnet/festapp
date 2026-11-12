@@ -1,5 +1,5 @@
 import {assert,assertEquals,assertRejects,assertThrows} from 'jsr:@std/assert@1';
-import {prepareWalletEmail,ticketWalletEnabled} from './ticketWalletEmail.ts';
+import {prepareWalletEmail,ticketWalletEnabled,walletEmailCopy,walletEmailLink,walletEmailSection,walletTicketLabel,googleWalletBadgeUrl} from './ticketWalletEmail.ts';
 import {prepareTicketDelivery} from './ticketDelivery.ts';
 import {renderEmail} from './emailDelivery.ts';
 Deno.test('email worker offers Wallet without access to the isolated signing credential',async()=>{
@@ -54,4 +54,23 @@ Deno.test('Wallet RPC failures propagate only from the optional owner, not origi
  await assertRejects(()=>prepareWalletEmail({},[{id:1}],{is_enabled:true},async()=>{throw new Error('offline');},true));
  const delivery=await prepareTicketDelivery({id:7,features:[{is_enabled:true,code:'ticket',delivery_mode:'inline_qr'}]}, {},[{id:1,occasion:7,ticket_symbol:'ORIGINAL',state:'paid'}],async()=>{throw new Error('no pdf expected');},async()=>new Uint8Array([1]));
  assert(delivery.html.includes('ORIGINAL'));assertEquals(delivery.attachments.length,1);
+});
+Deno.test('Wallet offer uses localized official artwork and readable ticket labels in live and inert previews',async()=>{
+ for(const lang of ['cs','sk','en','de','pl','uk']){
+  const translations=JSON.parse(await Deno.readTextFile(new URL(`../../../assets/translations/${lang}.json`,import.meta.url))).TicketDelivery;
+  const copy=walletEmailCopy[lang];
+  assertEquals(copy.title,translations.walletEmailTitle);
+  assertEquals(copy.help,translations.walletEmailHelp);
+  assertEquals(copy.ticket,translations.walletEmailTicket);
+  assertEquals(copy.fallback,translations.walletEmailFallback);
+  const label=walletTicketLabel(2,3,lang)+' <script>';
+  const preview=walletEmailSection([walletEmailLink(undefined,googleWalletBadgeUrl(lang),label,lang)],lang);
+  assert(preview.includes(`/${lang}.png`));assert(preview.includes('height="48"'));
+  assert(!preview.includes('href='));assert(!preview.includes('<script>'));assert(preview.includes('&lt;script&gt;'));
+  assert(!preview.includes('Apple'));
+  const live=walletEmailSection([walletEmailLink('https://tenant.invalid/wallet#capability',googleWalletBadgeUrl(lang),label,lang)],lang);
+  assertEquals((live.match(/href=/g)??[]).length,1);
+  assertEquals(live.replace(/href="[^"]+" /,'').replaceAll('<a ','<span ').replaceAll('</a>','</span>'),preview);
+ }
+ assertEquals(walletEmailSection([],'cs'),'');
 });

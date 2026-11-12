@@ -6,8 +6,51 @@ import 'package:fstapp/components/ticket_layout/google_wallet_appearance.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_wallet_selector.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_email_preview.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:fstapp/components/ticket_layout/ticket_delivery_strings.dart';
 
 void main() {
+  test('PDF email still reserves its ticket block for an available Wallet offer exactly once', () {
+    expect(
+      TicketEmailPreview.ticketBody('Text', TicketDeliveryMode.pdfAttachment),
+      'Text',
+    );
+    final body = TicketEmailPreview.ticketBody(
+      'Text {{tickets}} {{tickets}}',
+      TicketDeliveryMode.pdfAttachment,
+      walletEnabled: true,
+    );
+    expect('FESTAPP_TICKET_PREVIEW_BLOCK'.allMatches(body).length, 1);
+  });
+  testWidgets(
+    'Wallet email preview shows localized real badges with no QR or active action',
+    (tester) async {
+      await tester.runAsync(() => TicketDeliveryStrings.walletCopy('en'));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: TicketEmailPreview.walletSample(count: 3, language: 'en'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Tickets on your phone'), findsOneWidget);
+      expect(find.text('Ticket 2 of 3'), findsOneWidget);
+      expect(find.byType(QrImageView), findsNothing);
+      expect(find.byType(Image), findsNWidgets(3));
+      expect(find.byType(TextButton), findsNothing);
+      for (final image in tester.widgetList<Image>(find.byType(Image))) {
+        expect(image.height, 48);
+        expect(
+          (image.image as AssetImage).assetName,
+          'assets/brand/google-wallet/en.png',
+        );
+      }
+    },
+  );
   test('Native Wallet appearance shares the backend contract and preserves overrides', () {
     final cases = jsonDecode(
       File('packages/festapp_contracts/ticket-wallet-appearance-cases.json')
