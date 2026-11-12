@@ -33,11 +33,13 @@ test('global responsive adapters use the canonical distinct vector masters', t =
  const brand='assets/brand/festapp-tickets';
  fs.mkdirSync(path.join(root,'assets/brand'),{recursive:true});
  fs.cpSync(brand,path.join(root,brand),{recursive:true});
+ for (const style of ['spinner','brand-outline']) {
  const result=spawnSync('python3',['automation/configure_brand_assets.py','--root',root,
   '--logo',brand+'/festapp-tickets-header.svg','--dark-logo',brand+'/festapp-tickets-header-dark.svg',
-  '--loading-style','spinner','--icon-dir',brand+'/web-icons'],{encoding:'utf8'});
+  '--loading-style',style,'--icon-dir',brand+'/web-icons',
+  '--animation',brand+'/festapp-tickets-loading.svg','--dark-animation',brand+'/festapp-tickets-loading-dark.svg'],{encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
- for(const [adapter,master] of [['brand-symbol','symbol'],['brand-wordmark','wordmark-horizontal']]) {
+ for(const [adapter,master] of [['brand-symbol','symbol'],['brand-wordmark-stacked','wordmark-stacked-header'],['brand-wordmark','wordmark-horizontal']]) {
   assert.deepEqual(fs.readFileSync(path.join(root,'web_client/public',adapter+'.svg')),fs.readFileSync(brand+'/festapp-tickets-'+master+'-dark.svg'));
  }
  const stacked=fs.readFileSync(brand+'/festapp-tickets-wordmark-dark.svg','utf8');
@@ -47,8 +49,16 @@ test('global responsive adapters use the canonical distinct vector masters', t =
  assert.deepEqual(glyphs(horizontal),glyphs(stacked));
  const adapted=fs.readFileSync(path.join(root,'web_client/public/brand-wordmark-stacked.svg'),'utf8');
  assert.deepEqual(glyphs(adapted),glyphs(stacked),'Header fitting preserves every canonical outlined glyph');
- assert.match(adapted,/viewBox="65 580 900 330"/);
- assert.match(adapted,/transform="translate\(512 598\) scale\(0\.9292307692307692\) translate\(-512 -600\)"/);
  assert.doesNotMatch(adapted,/<(?:[\w-]+:)?(?:text|image)\b/);
+ if (style === 'brand-outline') {
+  const animation=fs.readFileSync(path.join(root,'web/loading-animation.svg'),'utf8');
+  assert.equal(animation,fs.readFileSync(brand+'/festapp-tickets-loading-dark.svg','utf8'));
+  assert.match(animation,/outline-ticket/);
+  assert.match(animation,/fill-center/);
+  assert.match(animation,/prefers-reduced-motion/);
+  assert.doesNotMatch(animation,/fill-name|fill-domain|vstupenky/);
+ }
+ }
+
 
 });

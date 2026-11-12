@@ -80,6 +80,24 @@ def lettering(text,x,y,width,height):
 layers['name']=lettering('Festapp',82,600,860,170)
 layers['domain']=lettering('Tickets',180,795,664,130)
 
+# Header variants preserve the reference's visible height and icon-to-text gap.
+regional_words=ET.parse(REGIONAL/'vstupenky-online-wordmark.svg').getroot()
+def svg_bounds(element):
+ wrapper=ET.Element(NS+'svg');wrapper.append(copy.deepcopy(element))
+ p=pathops.Path();SVGPath.fromstring(ET.tostring(wrapper)).draw(p.getPen())
+ return bounds(p)
+reference_words=svg_bounds(regional_words)
+reference_name=svg_bounds(next(e for e in regional_words if e.get('id')=='name'))
+reference_box=list(map(float,regional_words.get('viewBox').split()))
+name_bounds=bounds(path(layers['name']))
+word_bounds=bounds(union([path(layers['name']),path(layers['domain'])]))
+header_scale=(reference_words[3]-reference_words[1])/(word_bounds[3]-word_bounds[1])
+word_center=(word_bounds[0]+word_bounds[2])/2
+header_first_x=word_center+(name_bounds[0]-word_center)*header_scale
+header_box=[header_first_x-(reference_name[0]-reference_box[0]),*reference_box[1:]]
+header_transform=f'translate({word_center} {reference_words[1]}) scale({header_scale}) translate({-word_center} {-word_bounds[1]})'
+
+
 def group(name,color):return f'<g id="{name}" fill="{color}"><path d="{layers[name]}"/></g>'
 def svg(body,title='Festapp Tickets',box='0 0 1024 1024',size=(1024,1024)):
  return f'<svg xmlns="http://www.w3.org/2000/svg" width="{size[0]}" height="{size[1]}" viewBox="{box}" role="img" aria-label="{title}"><title>{title}</title>{body}</svg>\n'
@@ -95,6 +113,7 @@ for dark in (False,True):
  save(prefix+'-transparent'+suffix,svg(mark+words))
  save(prefix+'-symbol'+suffix,svg(mark,'Festapp Tickets - symbol','170 225 685 365',(685,365)))
  save(prefix+'-wordmark'+suffix,svg(words,'Festapp Tickets - wordmark','65 580 900 370',(900,370)))
+ save(prefix+'-wordmark-stacked-header'+suffix,svg(f'<g transform="{header_transform}">{words}</g>','Festapp Tickets - stacked header wordmark',' '.join(str(v) for v in header_box),(900,330)))
  # Align the actual font baselines, not the bounding boxes (Festapp has descenders).
  horizontal=group('name',ink)+f'<g transform="translate(628.4381866455078 {baselines["Festapp"]-baselines["Tickets"]})">'+group('domain',BLUE)+'</g>'
  save(prefix+'-wordmark-horizontal'+suffix,svg(horizontal,'Festapp Tickets - horizontal wordmark','126 580 1320 200',(1320,200)))
@@ -108,22 +127,17 @@ for dark in (False,True):
  social=f'<path fill="{bg}" d="M0 0H1200V630H0Z"/><g transform="translate(310 -20) scale(.57)">{mark+words}</g>'
  save(prefix+'-social'+suffix,svg(social,'Festapp Tickets','0 0 1200 630',(1200,630)))
 
-# Match the regional animation timing and accessibility behavior without writing
-# the regional Flutter adapter or changing any production tenant identity.
-timeline=json.loads((REGIONAL/'source/loading-timeline.json').read_text());timeline['viewBox']=[60,210,904,740]
+# Both products use one outline/fill animation generator and timing contract.
+# The global loading identity is the symbol alone, with its canonical viewport.
+timeline=json.loads((REGIONAL/'source/loading-timeline.json').read_text())
+timeline['viewBox']=[170,225,685,365]
+timeline['parts']={name:timeline['parts'][name] for name in ('ticket','center')}
 (ROOT/'source/loading-timeline.json').write_text(json.dumps(timeline,indent=2)+'\n')
-for dark in (False,True):
- suffix='-dark' if dark else '';ink='#ffffff' if dark else NAVY;css=[];body=[];duration=timeline['durationMs']
- for name,times in timeline['parts'].items():
-  color=BLUE if name in ('center','domain') else ink
-  for kind in ('fill','outline'):
-   frames=''.join(f'{t*100:g}%{{opacity:{v:g}}}' for t,v in times[kind])
-   css.append(f'@keyframes {kind}-{name}{{{frames}}}')
-  a,b=times['draw'];css.append(f'@keyframes draw-{name}{{0%,{a*100:g}%{{stroke-dashoffset:1}}{b*100:g}%,100%{{stroke-dashoffset:0}}}}')
-  body.append(f'<g class="filled fill-{name}" fill="{color}" style="animation:fill-{name} {duration}ms linear forwards"><path d="{layers[name]}"/></g>')
-  body.append(f'<g class="outline outline-{name}" stroke="{color}" style="animation:outline-{name} {duration}ms linear forwards"><path d="{layers[name]}" pathLength="1" vector-effect="non-scaling-stroke" style="animation:draw-{name} {duration}ms linear forwards"/></g>')
- pulse=timeline['pulse'];css+=['.outline{fill:none;stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}.outline path{fill:none;stroke-dasharray:1;stroke-dashoffset:1}',f'@keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:{pulse["minOpacity"]}}}}}',f'.pulse{{animation:pulse {pulse["durationMs"]}ms ease-in-out {duration}ms infinite}}','@media(prefers-reduced-motion:reduce){.pulse,.filled{animation:none!important;opacity:1!important}.outline{display:none}}']
- save(prefix+'-loading'+suffix,svg('<style>'+''.join(css)+'</style><g class="pulse">'+''.join(body)+'</g>','Festapp Tickets - loading','60 210 904 740',(360,295)),False)
+import sys
+sys.path.insert(0,str(REGIONAL/'tools'))
+from outline_animation import emit_outline_assets
+emit_outline_assets(ROOT,prefix='festapp-tickets',title='Festapp Tickets',
+                    dart_prefix='_globalBrand',dart_filename='brand_loading_global_paths.dart')
 icons=ROOT/'web-icons';icons.mkdir(exist_ok=True)
 icon_svg=(ROOT/f'{prefix}-icon-dark.svg').read_text()
 for filename,n in [('favicon-16x16.png',16),('favicon-32x32.png',32),('android-chrome-192x192.png',192),('android-chrome-512x512.png',512),('apple-touch-icon.png',180)]:

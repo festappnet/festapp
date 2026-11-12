@@ -483,3 +483,12 @@ button.user-info-container { padding: 0; color: white; }
         height: 44px;
     }
 }
+
+/* Keep both ticketing lockups at their canonical size on narrow tablets. */
+@media (min-width: 601px) and (max-width: 900px) {
+    .add-event-full { display: none; }
+    .add-event-short { display: inline; }
+    .btn-add-event { padding: 8px 12px; }
+    .header-actions { gap: 12px; }
+    .header-brand-lockup, .header-brand-lettering { flex-shrink: 0; }
+}

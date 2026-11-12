@@ -18,7 +18,6 @@ void main() {
             isDarkMode: dark,
             forceDark: null,
             programVariant: false,
-            compact: true,
             webLink: brand.key,
           ),
           dark ? darkAsset : '${brand.value}.svg',
@@ -29,7 +28,6 @@ void main() {
           isDarkMode: false,
           forceDark: true,
           programVariant: true,
-          compact: true,
           webLink: brand.key,
         ),
         darkAsset,
@@ -43,6 +41,7 @@ void main() {
         isDarkMode: false,
         forceDark: true,
         programVariant: true,
+        webLink: 'https://festapp.net',
       ),
       AppConfig.darkLogoAsset,
     );
@@ -54,6 +53,7 @@ void main() {
         isDarkMode: false,
         forceDark: null,
         programVariant: true,
+        webLink: 'https://festapp.net',
       ),
       AppConfig.programLogoAsset,
     );

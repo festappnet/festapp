@@ -27,10 +27,12 @@ The Flutter startup screen selects it with `WEB_LOADING_LOGO_ASSET=loading-logo.
 and lays out the wordmark above its loading indicator. Its accent color is
 generated from `THEME_SEED_2`, matching the dark-theme brand accent. Installation/PWA icons
 remain separate brand assets; custom tenant startup assets remain configurable.
-`WEB_LOADING_STYLE=vstupenky-outline` selects the canonical product outline/fill
+`WEB_LOADING_STYLE=brand-outline` selects the canonical product outline/fill
 loop. `WEB_LOADING_ANIMATION_ASSET` and `WEB_LOADING_DARK_ANIMATION_ASSET` select
-the light/dark SVG animations. The Flutter painter is generated from the same
-unioned SVG geometry and `assets/brand/vstupenky-online/source/loading-timeline.json`.
+the light/dark SVG animations. The shared Flutter painter consumes paths
+generated from each product's canonical SVG geometry and loading timeline.
+Global uses its symbol alone; both
+products share the outline/fill generator and reduced-motion/pulse behavior.
 Other profiles default to their existing spinner; they do not display this logo.
 `WEB_LOADING_BACKGROUND` defaults to `#242424`. `WEB_BRAND_ICON_DIR` optionally
 selects an icon export set. The generator emits normal/dark public logos and
