@@ -13,6 +13,7 @@ import '../../features/ticket_feature.dart';
 
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:html/parser.dart' as html;
+import 'package:easy_localization/easy_localization.dart';
 
 import '../ticket_delivery_strings.dart';
 
@@ -71,18 +72,107 @@ class TicketEmailPreview extends StatelessWidget {
         ],
       );
 
-  static String ticketBody(String body, TicketDeliveryMode? mode) {
+  static Widget walletSample({required int count, String? language}) => Builder(
+    builder: (context) {
+      final requested = language ?? context.locale.languageCode;
+      final lang =
+          const {'cs', 'sk', 'en', 'de', 'pl', 'uk'}.contains(requested)
+          ? requested
+          : 'en';
+      return FutureBuilder<Map<String, String>>(
+        future: TicketDeliveryStrings.walletCopy(lang),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox.shrink();
+          String text(String key) => snapshot.data![key]!;
+          return Container(
+            margin: const EdgeInsets.only(top: 24),
+            padding: const EdgeInsets.only(top: 24),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Color(0xffe2e8f0))),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text('Title'),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  text('Help'),
+                  style: const TextStyle(fontSize: 14, height: 1.6),
+                ),
+                const SizedBox(height: 20),
+                for (var i = 1; i <= count; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          text('Ticket')
+                              .replaceAll('{n}', '$i')
+                              .replaceAll('{count}', '$count'),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/brand/google-wallet/$lang.png',
+                              height: 48,
+                              fit: BoxFit.contain,
+                              semanticLabel: text('Button'),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Center(
+                            child: Text(
+                              text('Fallback'),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+
+  static String ticketBody(
+    String body,
+    TicketDeliveryMode? mode, {
+    bool walletEnabled = false,
+  }) {
     final tokens = RegExp(r'\{\{\s*tickets\s*\}\}');
     if (!tokens.hasMatch(body) &&
         mode != null &&
-        mode != TicketDeliveryMode.pdfAttachment) {
+        (mode != TicketDeliveryMode.pdfAttachment || walletEnabled)) {
       body += '{{tickets}}';
     }
     var seen = false;
     return body.replaceAllMapped(tokens, (_) {
       if (seen) return '';
       seen = true;
-      return mode == null || mode == TicketDeliveryMode.pdfAttachment
+      return mode == null ||
+              (mode == TicketDeliveryMode.pdfAttachment && !walletEnabled)
           ? ''
           : _ticketMarker;
     });
@@ -114,16 +204,21 @@ class TicketEmailPreview extends StatelessWidget {
         ticketsEnabled: true,
       ),
     );
-    final body =
-        ticketBody('${template['html'] ?? ''}', mode) +
-        (context['walletEnabled'] != false && context['walletReady'] == true
-            ? '<p>${TicketDeliveryStrings.text('walletPreview')} ($count)</p>'
-            : '');
+    final walletEnabled =
+        context['walletEnabled'] != false && context['walletReady'] == true;
+    final body = ticketBody(
+      '${template['html'] ?? ''}',
+      mode,
+      walletEnabled: walletEnabled,
+    );
     final wrapper = (resolved['wrapper'] as Map?)?['html'] as String?;
     return {
       'subject': scenario.composeSubject('${template['subject'] ?? ''}'),
       'html': scenario.composeHtml(body, wrapperHtml: wrapper),
       'wrapper': wrapper,
+      'walletEnabled': walletEnabled,
+      'walletTicketCount': count,
+      'walletLanguage': context['lang'] ?? scenario.locale,
       'includesPdf': mode.includesPdf,
       'attachments': sampleAttachments(mode, count),
     };
@@ -177,9 +272,20 @@ class TicketEmailPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final tickets = HtmlEmbeddedBlock(
       cssClass: 'ticket-email-preview',
-      builder: (_) => inlineSample(
-        count: sampleCount,
-        includesPdf: includesPdf || preview['includesPdf'] == true,
+      builder: (_) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (sampleCount > 0)
+            inlineSample(
+              count: sampleCount,
+              includesPdf: includesPdf || preview['includesPdf'] == true,
+            ),
+          if (preview['walletEnabled'] == true)
+            walletSample(
+              count: preview['walletTicketCount'] as int? ?? 1,
+              language: preview['walletLanguage'] as String?,
+            ),
+        ],
       ),
     );
     final body = '${preview['html'] ?? ''}'.replaceAll(

@@ -2582,7 +2582,12 @@
     "walletHelp": "Dodaje do wiadomości z biletami możliwość zapisania każdego biletu w Portfelu Google.",
     "walletFuture": "Zmiana dotyczy kolejnych wiadomości. Dodane bilety pozostają ważne.",
     "walletUnavailable": "Portfel Google nie jest jeszcze dostępny. Opcja pojawi się automatycznie po uruchomieniu.",
-    "walletPreview": "Portfel Google - podgląd opcji dla każdego biletu"
+    "walletPreview": "Portfel Google - podgląd opcji dla każdego biletu",
+    "walletEmailTitle": "Bilety w telefonie",
+    "walletEmailHelp": "Zapisz bilety w portfelu w telefonie. Przy wejściu wystarczy pokazać ich kod QR.",
+    "walletEmailTicket": "Bilet {n} z {count}",
+    "walletEmailFallback": "Zapisz bilet w telefonie",
+    "walletEmailButton": "Dodaj do Portfela Google"
   },
   "NotificationCenter": {
     "unreadHeading": "Nieprzeczytane",

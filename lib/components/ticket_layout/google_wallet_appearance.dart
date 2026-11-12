@@ -4,8 +4,10 @@ class GoogleWalletAppearance {
     this.backgroundColor,
     this.logo,
     this.heroImage,
+    this.logoOverridden = false,
   });
   final String? backgroundColor, logo, heroImage;
+  final bool logoOverridden;
   static String? publicImage(Object? value) {
     if (value is! String) return null;
     final uri = Uri.tryParse(value);
@@ -43,6 +45,7 @@ class GoogleWalletAppearance {
         ? '#${color.replaceFirst('#', '').toLowerCase()}'
         : null;
     return GoogleWalletAppearance(
+      logoOverridden: overrides.containsKey('logo'),
       backgroundColor: parsed,
       logo: publicImage(
         overrides.containsKey('logo') ? overrides['logo'] : data['logo'],

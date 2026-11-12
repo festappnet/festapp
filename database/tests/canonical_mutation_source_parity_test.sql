@@ -1014,8 +1014,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_email_template_preview_context(text,bigint,bigint,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='9d0615c5f8e74c15223e636962ce71d8'),'current SQL source parity: public.get_email_template_preview_context(text,bigint,bigint,bigint,text)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_email_template_state_internal(jsonb,text)') AND md5(btrim(prosrc,E' \n\r\t'))='9a0d0b55b66a1886da65c24327124249'),'current SQL source parity: public.get_email_template_state_internal(jsonb,text)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_entity_email_templates(text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f38acc5e40bc1786de40f01ca1dcede4'),'current SQL source parity: public.get_entity_email_templates(text,bigint)');
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_entity_email_templates(text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='dbdabd0a2307aa00465c971b10ae7f6e'),'current SQL source parity: public.get_entity_email_templates(text,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_event_attendance_summary(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='2c52672d12accc92ba35a5959cb9f8ec'),'current SQL source parity: public.get_event_attendance_summary(bigint[])');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1148,12 +1148,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_draft(uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='d93caf4a0b81f104b82f7a617c26d5f1'),'current SQL source parity: public.get_occasion_setup_draft(uuid)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_drafts(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c59e0186c721c98cbaf90e024f627607'),'current SQL source parity: public.get_occasion_setup_drafts(bigint)');
--- supabase/migrations/20261112210000_payment_policy_release_integration.sql
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e9c32c22047d627a5f8bd7712643c606'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint)');
--- supabase/migrations/20261112210000_payment_policy_release_integration.sql
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='c06c46b42e5776f8b0741318038d782f'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text)');
--- supabase/migrations/20261112210000_payment_policy_release_integration.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='2656db7330368c8e8e25764ee834721e'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)');
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='d72a3023e9253d14205eb934b1b1d391'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_team_invitation(text)') AND md5(btrim(prosrc,E' \n\r\t'))='f45cad0bb2f2701ab104d17d7e535238'),'current SQL source parity: public.get_occasion_team_invitation(text)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1284,7 +1284,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_details_for_generating(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9ba9b0ca73d1962300dddcb28bb9cb29'),'current SQL source parity: public.get_ticket_details_for_generating(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='48ec81f2cb122a32f6674d8ef09a1c5b'),'current SQL source parity: public.get_ticket_layout_for_authoring_v1(bigint)');
--- supabase/migrations/20261112210000_payment_policy_release_integration.sql
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_write_contract_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='7d7a8723648b484b526dbb130bf134d3'),'current SQL source parity: public.get_ticket_layout_write_contract_v1()');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticketing_product_versions_internal_v1(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='566a904c1297bc2de12938376b8b8b9e'),'current SQL source parity: public.get_ticketing_product_versions_internal_v1(bigint,text)');
@@ -1898,7 +1898,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.refresh_email_quota(text,text,numeric,numeric,numeric)') AND md5(btrim(prosrc,E' \n\r\t'))='d0c5f4b9aa93e55ba962ae1f97a8743d'),'current SQL source parity: public.refresh_email_quota(text,text,numeric,numeric,numeric)');
 -- supabase/migrations/20261111123041_order_read_performance.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.refresh_payment_info_totals_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c8718db19c553fce4b9c1275602403cc'),'current SQL source parity: public.refresh_payment_info_totals_internal(bigint)');
--- supabase/migrations/20261110230000_ticket_wallet.sql
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.refresh_ticket_wallet_term_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='2820ed46d362d906e2b74e505d1c6c58'),'current SQL source parity: public.refresh_ticket_wallet_term_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.register_delegated_blueprint_text_resources(bigint,bigint,bigint,uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a9f5c4b56104238750afbe8e403bfecb'),'current SQL source parity: public.register_delegated_blueprint_text_resources(bigint,bigint,bigint,uuid,jsonb)');
@@ -2238,8 +2238,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_wallet_fingerprint(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b925aa31ec85daa749b9be964813dfbd'),'current SQL source parity: public.ticket_wallet_fingerprint(bigint)');
 -- supabase/migrations/20261110230000_ticket_wallet.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_wallet_health()') AND md5(btrim(prosrc,E' \n\r\t'))='a475dba4896944bec4ac9a57b8034f00'),'current SQL source parity: public.ticket_wallet_health()');
--- supabase/migrations/20261110230000_ticket_wallet.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_wallet_projection_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ddae84eb8ae9897fbf03ca99419dab40'),'current SQL source parity: public.ticket_wallet_projection_internal(bigint)');
+-- supabase/migrations/20261112233000_ticket_wallet_branding.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_wallet_projection_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='86b453c9b6b88a0c24b9bb1a0a77ed0d'),'current SQL source parity: public.ticket_wallet_projection_internal(bigint)');
 -- supabase/migrations/20261110230000_ticket_wallet.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_wallet_ready(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d1827ba2afea0b03bf617631d00c9515'),'current SQL source parity: public.ticket_wallet_ready(bigint)');
 -- supabase/baseline/20261107170000_schema.sql

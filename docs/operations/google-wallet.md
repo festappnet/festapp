@@ -8,10 +8,11 @@ No application trigger, separate ticket lifecycle or email queue is introduced.
 
 ## Activation boundary
 
-This implementation does not authorize a production migration, deployment,
-source publication or tenant selection. The issuer is in demo mode; see the
-[registration receipt](google-wallet-registration-2026-11-10.md).
-A local API success and a saved demo card are distinct from public availability.
+Google approved publishing on 2026-11-12. Wallet is activated for the explicitly
+selected `vstupenky.online` organization only. The original
+[registration receipt](google-wallet-registration-2026-11-10.md) describes the
+earlier demo stage. Each additional tenant still needs its own readiness and
+authorized rollout; shared issuer access alone does not activate it.
 
 After a separately authorized release, use the canonical release gate, approved
 backend access/restart process and one explicitly selected tenant. Configure:
@@ -42,6 +43,33 @@ URLs. Verify badge URLs before switching readiness on. Website and email links
 must use the official artwork with a text fallback. Confirm the gateway replaces
 client-supplied forwarding headers before relying on the per-source limiter.
 The capability limiter remains effective independently of source headers.
+
+## Portal branding and email previews
+
+The stored ticket's organization owns its Wallet brand. `organizations.data.APP_NAME`
+is the existing canonical display name, `DEFAULT_URL` is its canonical portal
+URL, and `WALLET_LOGO_URL` selects an immutable public platform logo on the image
+Worker. Configure these values per organization, not on the shared Functions
+environment and not by guessing a brand from a hostname or numeric tenant ID.
+For the regional portal use `vstupenky.online`; the global portal uses
+`Festapp Tickets`. A shared Google issuer can retain both brands on distinct
+ticket classes. Changing branding never changes the class/object identity or QR.
+The platform logo is the default ahead of an inherited event logo. Explicit
+Wallet appearance overrides, including removal, still apply; event artwork,
+colors and the native QR retain their separate roles. `DEFAULT_LANGUAGE` supplies the
+default email and badge language when no message-specific language is present.
+
+The forward `20261112233000_ticket_wallet_branding.sql` projects branding and
+read-only preview availability. Assemble/check it with
+`automation/assemble-ticket-wallet-branding-migration.py`; earlier migration
+bytes remain immutable. Setting a logo does not enable Wallet publishing.
+
+Real delivery and server-rendered draft previews use the same Wallet email
+section. Native template/ticket previews use the same localized copy and
+unmodified official badge assets, including PDF-only delivery. Preview actions
+are inert and never mint a capability, call Google or create an email intent.
+The per-ticket action area can accommodate Apple Wallet after that integration
+is operational; no Apple badge, device claim or placeholder action is shown now.
 
 ## Claims, rate and recovery
 

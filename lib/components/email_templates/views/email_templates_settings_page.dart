@@ -78,6 +78,12 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   _suggestion;
   TicketDeliveryMode? get _ticketMode {
     if (widget.template.code != 'TICKET_ORDER_PAYMENT_DONE') return null;
+    final projectedMode = _authoringContext?.ticketDeliveryMode;
+    if (projectedMode != null) {
+      return TicketDeliveryMode.values
+          .where((mode) => mode.value == projectedMode)
+          .firstOrNull;
+    }
     final occasion = widget.emailTemplatesResponse.occasion;
     if (occasion == null) return null;
     final current = RightsService.currentOccasion();
@@ -153,7 +159,17 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               (s) =>
                   s.scenario == previous?.scenario &&
                   s.locale == previous?.locale &&
-                  s.tone == previous?.tone,
+                  s.tone == previous?.tone &&
+                  (_authoringContext == null ||
+                      s.locale == _authoringContext!.language),
+            )
+            .firstOrNull ??
+        _scenarios
+            .where(
+              (s) =>
+                  s.locale == _authoringContext?.language &&
+                  (examples.context?.communicationTone == null ||
+                      s.tone == examples.context?.communicationTone),
             )
             .firstOrNull ??
         _scenarios
@@ -163,6 +179,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     _bodyProvider.inlineTicketsEnabled =
         _ticketMode != null && _ticketMode != TicketDeliveryMode.pdfAttachment;
     _bodyProvider.includesPdfTickets = _ticketMode?.includesPdf == true;
+    _bodyProvider.walletTicketsEnabled =
+        _ticketMode != null && _authoringContext?.walletEnabled == true;
     _subjectProvider.scenario = _scenario;
     _bodyProvider.scenario = _scenario;
   }
@@ -389,9 +407,13 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             TicketEmailPreview.ticketBody(
                               _bodyDraft?.html ?? _htmlContent ?? '',
                               _ticketMode,
+                              walletEnabled: _bodyProvider.walletTicketsEnabled,
                             ),
                           ),
                           'wrapper': _authoringContext!.wrapperHtml,
+                          'walletEnabled': _bodyProvider.walletTicketsEnabled,
+                          'walletTicketCount': 1,
+                          'walletLanguage': _scenario!.locale,
                           'attachments': TicketEmailPreview.sampleAttachments(
                             _ticketMode,
                             1,

@@ -12,7 +12,7 @@ BEGIN
  PERFORM assert_eq(public.merge_ticket_layout_features('[{"code":"ticket","wallet_appearance":{"logo":null}}]','[{"code":"ticket"}]')->0#>>'{wallet_appearance,logo}',NULL::text,'appearance preserved for older clients');
  PERFORM assert_true(NOT has_function_privilege('anon','public.resolve_ticket_wallet(text,text)','EXECUTE'),'no public ticket-id RPC');
  PERFORM assert_true(NOT has_table_privilege('authenticated','eshop.ticket_wallet_capabilities','SELECT'),'RLS private');
- INSERT INTO public.organizations(title) VALUES('Wallet test') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Wallet test','{"APP_NAME":"Ukázkový portál","DEFAULT_URL":"https://tenant.invalid","WALLET_LOGO_URL":"https://img.festapp.net/assets/test-logo.png"}') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Pořadatel',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time,features)
  VALUES('Večer hudby',org,un,gen_random_uuid()::text,now()+interval '1 day',now()+interval '2 days','[{"code":"ticket","is_enabled":true}]') RETURNING id INTO oc;
@@ -30,6 +30,8 @@ BEGIN
  PERFORM assert_eq(public.prepare_ticket_wallet(mid,tid,repeat('b',64),'{"other":true}')#>>'{source,tokenHash}',repeat('a',64),'replay retains original');
  BEGIN PERFORM public.prepare_ticket_wallet(mid,other_tid);RAISE EXCEPTION 'cross ticket allowed';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  resolved:=public.resolve_ticket_wallet(repeat('a',64),repeat('f',64));
+ PERFORM assert_eq(resolved#>>'{projection,branding,APP_NAME}','Ukázkový portál','Wallet brand is scoped to the stored organization');
+ PERFORM assert_eq(resolved#>>'{projection,branding,WALLET_LOGO_URL}','https://img.festapp.net/assets/test-logo.png','Wallet logo is configured independently of the event');
  PERFORM assert_eq(resolved#>>'{projection,ticket,ticket_symbol}','WALLET-EXACT-QR','exact QR');
  PERFORM assert_true(NOT resolved::text LIKE '%guest@example.invalid%','no customer email');
  PERFORM assert_true(public.resolve_ticket_wallet(repeat('b',64),repeat('f',64)) IS NULL,'unguessable hash');

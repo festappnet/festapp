@@ -178,6 +178,7 @@ flutter:
   assets:
     - automation/tickets/setup-appearance-fonts.json
     - assets/email_templates/preview_examples.json
+    - assets/brand/google-wallet/
     - supabase/functions/_shared/ticket-assets/
     - supabase/functions/_shared/ticket-assets/backgrounds/
     - supabase/functions/_shared/ticket-assets/gallery-fonts/

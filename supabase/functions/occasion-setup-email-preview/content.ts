@@ -6,6 +6,7 @@ import {
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
+import { googleWalletBadgeUrl, walletEmailLink, walletEmailSection, walletTicketLabel } from '../_shared/ticketWalletEmail.ts';
 import defaults from "../_shared/emailPreviewDefaults.json" with {
   type: "json",
 };
@@ -137,7 +138,8 @@ export async function renderDraftPreview(context: any) {
       };
     });
     if (context.walletEnabled !== false && context.walletReady === true && context.ticketsEnabled === true) {
-      delivery.html += '<p>Google Wallet - ukázka nabídky u každé vstupenky (' + tickets.length + ')</p>';
+      const lang=context.lang??'cs';
+      delivery.html += walletEmailSection(tickets.map((_,i)=>walletEmailLink(undefined,googleWalletBadgeUrl(lang),walletTicketLabel(i+1,tickets.length,lang),lang)),lang);
     }
     // Admission QR stays deliberately invalid; only its human-readable sample
     // code is shown. Production delivery continues to show the real symbol.
@@ -152,7 +154,7 @@ export async function renderDraftPreview(context: any) {
     occasion: order.occasion,
     payment_info: { ...order.payment_info, paid: order.payment_info.amount },
     form_data: { communication_tone: context.tone },
-  });
+  }, context.lang ?? 'cs');
   const prepared = await renderEmail({
     to: "preview@example.invalid",
     context: { organization: 0 }, // Resolver below owns the already-authorized hierarchy.
@@ -166,9 +168,7 @@ export async function renderDraftPreview(context: any) {
       ? ticketSubs
       : {
         ...defaults,
-        ...confirmationSubstitutions(
-          order,
-        ),
+        ...confirmationSubstitutions(order, context.lang ?? 'cs'),
       },
     replyTo: context.replyTo ?? undefined,
   }, () => Promise.resolve(context.resolved));
@@ -189,6 +189,10 @@ export async function renderDraftPreview(context: any) {
     emailScope: context.emailScope,
     inheritedEmailBanner: context.inheritedEmailBanner,
     authoringContext: {
+      language:context.lang??'cs',
+      walletReady:context.walletReady===true,
+      walletEnabled:context.ticketsEnabled===true && context.walletReady===true && context.walletEnabled!==false,
+      ticketDeliveryMode:context.ticketsEnabled===true?context.deliveryMode??'pdf_attachment':null,
       senderAddress: prepared.from,
       wrapperHtml: context.resolved?.wrapper?.html,
       paymentAccounts: context.paymentInfo && bankCollectionAllowed(context.paymentInfo)

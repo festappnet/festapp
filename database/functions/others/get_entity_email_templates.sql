@@ -69,7 +69,7 @@ BEGIN
 
     -- Occasion (if applicable)
     IF v_occasion_id IS NOT NULL THEN
-        SELECT jsonb_build_object('id', id, 'title', title, 'data', COALESCE(data, '{}'::jsonb), 'email', data->>'reply_to')
+        SELECT jsonb_build_object('id', id, 'title', title, 'features', features, 'data', COALESCE(data, '{}'::jsonb), 'email', data->>'reply_to')
         INTO occasion_data
         FROM public.occasions WHERE id = v_occasion_id;
     ELSE
@@ -82,6 +82,7 @@ BEGIN
         'unit',         unit_data,
         'organization', org_data,
         'templates',    email_data,
+        'walletReady', public.ticket_wallet_ready(v_org_id),
         'banner', public.get_email_banner_state_internal(context)
     );
 
