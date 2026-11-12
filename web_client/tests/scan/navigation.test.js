@@ -5,19 +5,38 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {scannerReturnPath,safeScannerReturn,scannerInputHistoryState} from '../../src/components/scan/scanner_navigation.js';
 const origin='https://vstupenky.online';
-const tickets='/PlesAKH2025-copy-ad8a55ba/reservations/tickets';
-test('scanner returns to its ticket list after the scan secret is removed and after reload',()=>{
- const entries=new Map(),storage={getItem:k=>entries.get(k),setItem:(k,v)=>entries.set(k,v)};
- assert.equal(scannerReturnPath({location:{href:origin+'/scan/SECRET?returnTo='+encodeURIComponent(tickets)},storage}),tickets);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan'},storage}),tickets);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan/settings'},returnTo:tickets,storage}),tickets);
+const country={occasion_id:32316,organization_id:3,occasion_link:'skautskyples2026-copy-ae6d7140'};
+const original={occasion_id:13,organization_id:3,occasion_link:'skautskyples2025'};
+const tickets='/'+country.occasion_link+'/reservations/tickets';
+const location=path=>({href:origin+path});
+const memory=()=>{const entries=new Map();return {getItem:k=>entries.get(k),setItem:(k,v)=>entries.set(k,v)};};
+test('return destination survives secret removal and reload within the same occasion',()=>{
+ const storage=memory();
+ assert.equal(scannerReturnPath({location:location('/scan/SECRET?returnTo='+encodeURIComponent(tickets)),storage,session:country}),tickets);
+ assert.equal(scannerReturnPath({location:location('/scan/settings'),storage,session:country}),tickets);
 });
-test('scanner return paths reject other origins and scanner loops, and work without storage',()=>{
+test('direct Country code ignores original event storage, referrer and explicit returnTo',()=>{
+ const storage=memory();
+ const foreign='/'+original.occasion_link+'/reservations/tickets';
+ storage.setItem('festapp-scanner-return',foreign);
+ scannerReturnPath({location:location('/scan'),returnTo:foreign,storage,session:original});
+ for(const input of [{},{returnTo:foreign},{referrer:origin+foreign}])
+  assert.equal(scannerReturnPath({location:location('/scan/SECRET'),storage,session:country,...input}),'/'+country.occasion_link);
+ assert.equal(scannerReturnPath({location:location('/scan'),storage,session:original}),foreign);
+});
+test('return paths are isolated across backends and require authenticated occasion metadata',()=>{
+ const storage=memory();
+ scannerReturnPath({location:location('/scan'),returnTo:tickets,storage,session:country,backend:{origin:'https://api.example',generation:1}});
+ assert.equal(scannerReturnPath({location:location('/scan'),storage,session:country,backend:{origin:'https://api.example',generation:2}}),'/'+country.occasion_link);
+ assert.equal(scannerReturnPath({location:location('/scan'),returnTo:tickets,storage}),'/');
+ assert.equal(scannerReturnPath({location:location('/scan'),returnTo:tickets,storage,session:{occasion_id:32316}}),'/');
+});
+test('rejects foreign origins, scanner loops and event prefix lookalikes; works without storage',()=>{
  for(const value of ['https://evil.invalid','//evil.invalid','/scan','/scan/settings','/login-qr'])assert.equal(safeScannerReturn(value,origin),null);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan'},referrer:origin+tickets,storage:{getItem(){throw Error();},setItem(){throw Error();}}}),tickets);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan'}}),'/');
+ for(const value of ['/'+country.occasion_link+'-other/reservations','/'+country.occasion_link+'%2fother/reservations'])
+  assert.equal(scannerReturnPath({location:location('/scan'),returnTo:value,session:country}),'/'+country.occasion_link);
+ assert.equal(scannerReturnPath({location:location('/scan'),referrer:origin+tickets,session:country,storage:{getItem(){throw Error();},setItem(){throw Error();}}}),tickets);
 });
-
 
 function navigationPage(t,{loaded=true}={}) {
  const dom=new JSDOM('<div id="scanner"></div>',{url:'https://vstupenky.online/scan'});

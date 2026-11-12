@@ -619,7 +619,8 @@
     },
     "occasion-lifecycle-1": {
       "filters": [
-        "database/tests/occasion_copy_lifecycle_test.sql"
+        "database/tests/occasion_copy_lifecycle_test.sql",
+        "database/tests/scanning/scan_code_isolation_test.sql"
       ]
     },
     "seat-authorization-1": {
@@ -1067,6 +1068,7 @@
       "database/tests/scanning/field_catalog_test.sql",
       "database/tests/scanning/legacy_scan_proof_test.sql",
       "database/tests/scanning/password_capability_test.sql",
+      "database/tests/scanning/scan_code_isolation_test.sql",
       "database/tests/scanning/settings_roles_test.sql",
       "database/tests/scanning/settings_test.sql",
       "database/tests/scanning/snapshot_test.sql",
@@ -1620,6 +1622,7 @@
     "database/tests/scanning/field_catalog_test.sql",
     "database/tests/scanning/legacy_scan_proof_test.sql",
     "database/tests/scanning/password_capability_test.sql",
+    "database/tests/scanning/scan_code_isolation_test.sql",
     "database/tests/scanning/settings_roles_test.sql",
     "database/tests/scanning/settings_test.sql",
     "database/tests/scanning/snapshot_test.sql",

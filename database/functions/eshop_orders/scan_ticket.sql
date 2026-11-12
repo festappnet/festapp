@@ -129,7 +129,10 @@ BEGIN
     -----------------------------------------------------
     -- 5. Validate the scanned_code
     -----------------------------------------------------
-    IF scanned_code IS DISTINCT FROM expected_scan_code THEN
+    IF scanned_code IS DISTINCT FROM expected_scan_code OR NOT EXISTS (
+        SELECT 1 FROM public.get_scanner_occasion_for_scan_code_internal(scanned_code) proof
+        WHERE proof.id=occasion_id
+    ) THEN
         PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object('code', 401, 'message', 'Scan code is not correct');
     END IF;
