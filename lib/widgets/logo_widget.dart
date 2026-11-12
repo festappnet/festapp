@@ -61,14 +61,24 @@ String resolveLogoAsset({
   required bool? forceDark,
   required bool programVariant,
   bool compact = false,
+  String webLink = AppConfig.webLink,
 }) {
   // An explicit dark request is a contrast requirement and must win over the
   // optional program variant. Schedule headers use both flags on dark app bars.
   final dark = forceDark == true || (forceDark != false && isDarkMode);
-  if (compact && Uri.parse(AppConfig.webLink).host == 'vstupenky.online') {
-    return dark
-        ? 'assets/icons/vstupenky-symbol.dark.svg'
-        : 'assets/icons/vstupenky-symbol.svg';
+  if (compact) {
+    final symbols = switch (Uri.parse(webLink).host) {
+      'vstupenky.online' => (
+        'assets/icons/vstupenky-symbol.svg',
+        'assets/icons/vstupenky-symbol.dark.svg',
+      ),
+      'tickets.festapp.net' => (
+        'assets/brand/festapp-tickets/festapp-tickets-symbol.svg',
+        'assets/brand/festapp-tickets/festapp-tickets-symbol-dark.svg',
+      ),
+      _ => null,
+    };
+    if (symbols != null) return dark ? symbols.$2 : symbols.$1;
   }
   if (dark) {
     return AppConfig.darkLogoAsset;

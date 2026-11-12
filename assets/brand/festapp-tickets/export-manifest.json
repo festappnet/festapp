@@ -37,10 +37,10 @@
   "festapp-tickets-transparent.svg": "76ab04ca68c8c48d6056261a4500bf3dc3b17a8cfabc600ce3f85e4573208afb",
   "festapp-tickets-wordmark-dark.png": "b9029f91e0c4f200c1babb79ce8c9f9383f1cf2b2f9b6dfda4d2291e1407cce1",
   "festapp-tickets-wordmark-dark.svg": "dc6383d2f558d114b0fc28e30a14a19a58fb6ee3bb4d3782139e0f7754518641",
-  "festapp-tickets-wordmark-horizontal-dark.png": "7d2e670e479388434b86f8b59fab0abb34bfa21f17592d14cd850001268d3dc9",
-  "festapp-tickets-wordmark-horizontal-dark.svg": "c37d0cd3218545d1fe8ca1f1c76b1a1d14786d096dc528bcd24acca2d0436419",
-  "festapp-tickets-wordmark-horizontal.png": "6059839c18ee72a53fcd1ec23994bb1f037d3e3243e788471138a57cc1eab51b",
-  "festapp-tickets-wordmark-horizontal.svg": "1a9ed30f0c46b47b11369507c07c58f36d6612f019ac4e7346cc3ff162adb2d6",
+  "festapp-tickets-wordmark-horizontal-dark.png": "d502095c0ca9d25082440f24e66e185a5cb7dd96af814e2e25e59a8f9c5e825a",
+  "festapp-tickets-wordmark-horizontal-dark.svg": "45e166b2769424291a2bd253865ed85f35e094c4c8d3d7a4c63e4da89392f026",
+  "festapp-tickets-wordmark-horizontal.png": "e4982e85dc018d2c23cdae886e2ab59be854ea6feac0fb3e90f04afd12c1ba8b",
+  "festapp-tickets-wordmark-horizontal.svg": "3f4a1353a6b9868bc6e3572a8aeab83443a2754478ad3c90113b2186086d5cec",
   "festapp-tickets-wordmark.png": "97022a6d3b5fb55f1f97e05fcf395b9aa7f807296f5e43e061ebfeb28630fed4",
   "festapp-tickets-wordmark.svg": "e8e0856e04cfb9518d36d2a00fd86f49ae223d70f1a543e244ec84bc8fa5f74c",
   "usage.txt": "175bf754b6739a158cf7c394127d6fe5517cbb506b99f5560fe4c9c3b23a4ab6",
@@ -50,5 +50,5 @@
   "web-icons/favicon-16x16.png": "d114c2b9ec5fc3f4aaa3b8ba6c5c1885cd554194ddcce77af104b2344e239d56",
   "web-icons/favicon-32x32.png": "1814a8dd8f34cb92e6a7402c1f08e8aeb2ab2d323f7f7d3b1250eb799b2d42dd",
   "web-icons/favicon.ico": "df5f81832c139c7dc38e3570b83ef29823c060bcba43f459680a27bed8514574",
-  "web-icons/site.webmanifest": "6b38910d5d947d8575b0349574479546cd5ec64b25b033c88ba26225f009aa39"
+  "web-icons/site.webmanifest": "9c63387f62048ba9496fbdc2ac111b6bc829fcc4a4ad06c738494ce94e44ac80"
 }

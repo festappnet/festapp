@@ -68,12 +68,14 @@ right=pathops.op(envelope,transformed(right_region,mapping),pathops.PathOp.INTER
 layers={'ticket':dstring(left),'center':dstring(right)}
 
 # Each complete word is a boolean-unioned path from the exact canonical font.
+baselines={}
 def lettering(text,x,y,width,height):
  parts=[];cursor=0
  for ch in text:
   g=glyphs[cmap[ord(ch)]];p=pathops.Path();g.draw(TransformPen(p.getPen(glyphs),(1,0,0,-1,cursor,0)));parts.append(p)
   cursor+=g.width-upm*.035
  word=union(parts);x0,y0,x1,y1=bounds(word);scale=min(width/(x1-x0),height/(y1-y0))
+ baselines[text]=y+(height-(y1-y0)*scale)/2-y0*scale
  return dstring(transformed(word,(scale,0,0,scale,x+(width-(x1-x0)*scale)/2-x0*scale,y+(height-(y1-y0)*scale)/2-y0*scale)))
 layers['name']=lettering('Festapp',82,600,860,170)
 layers['domain']=lettering('Tickets',180,795,664,130)
@@ -93,8 +95,9 @@ for dark in (False,True):
  save(prefix+'-transparent'+suffix,svg(mark+words))
  save(prefix+'-symbol'+suffix,svg(mark,'Festapp Tickets - symbol','170 225 685 365',(685,365)))
  save(prefix+'-wordmark'+suffix,svg(words,'Festapp Tickets - wordmark','65 580 900 370',(900,370)))
- horizontal=group('name',ink)+'<g transform="translate(628.4381866455078 -155)">'+group('domain',BLUE)+'</g>'
- save(prefix+'-wordmark-horizontal'+suffix,svg(horizontal,'Festapp Tickets - horizontal wordmark','185 580 1240 200',(1240,200)))
+ # Align the actual font baselines, not the bounding boxes (Festapp has descenders).
+ horizontal=group('name',ink)+f'<g transform="translate(628.4381866455078 {baselines["Festapp"]-baselines["Tickets"]})">'+group('domain',BLUE)+'</g>'
+ save(prefix+'-wordmark-horizontal'+suffix,svg(horizontal,'Festapp Tickets - horizontal wordmark','126 580 1320 200',(1320,200)))
  header=f'<g transform="translate(16 14) scale(.65) translate(-196 -254)">{mark}</g><g transform="translate(470 14) scale(.65) translate(-82 -600)">{words}</g>'
  save(prefix+'-header'+suffix,svg(header,'Festapp Tickets','0 0 1060 240',(1060,240)))
  icon=f'<path fill="{bg}" d="M0 0H1024V1024H0Z"/><g transform="translate(102.4 311.7) scale(1.2962) translate(-196 -254)">{mark}</g>'
@@ -129,7 +132,7 @@ Image.open(icons/'android-chrome-512x512.png').save(icons/'favicon.ico',format='
 
 (icons/'site.webmanifest').write_text(json.dumps({
  'name':'Festapp Tickets','short_name':'Festapp Tickets',
- 'start_url':'https://tickets.fesup.net/','scope':'https://tickets.fesup.net/',
+ 'start_url':'https://tickets.festapp.net/','scope':'https://tickets.festapp.net/',
  'display':'standalone','background_color':NAVY,'theme_color':NAVY,
  'icons':[{'src':f'android-chrome-{n}x{n}.png','sizes':f'{n}x{n}','type':'image/png','purpose':'any'} for n in (192,512)]
 },indent=2)+'\n')

@@ -63,7 +63,20 @@ if args.loading_style == 'vstupenky-outline':
     outputs['web_client/public/brand-symbol.svg'] = (brand / 'vstupenky-online-symbol-dark.svg').read_bytes()
 elif args.icon_dir == 'assets/brand/festapp-tickets/web-icons':
     brand = root / 'assets/brand/festapp-tickets'
-    outputs['web_client/public/brand-wordmark-stacked.svg'] = (brand / 'festapp-tickets-wordmark-dark.svg').read_bytes()
+    wordmark = ET.parse(brand / 'festapp-tickets-wordmark-dark.svg').getroot()
+    # Fit the centered two-line lettering to the same header viewport as Czech.
+    # Preserve every outlined glyph and the relative placement of both words.
+    wordmark.set('viewBox', '65 580 900 330')
+    wordmark.set('height', '330')
+    words = ET.Element('{http://www.w3.org/2000/svg}g', {
+        'transform': 'translate(512 598) scale(0.9292307692307692) translate(-512 -600)',
+    })
+    for child in list(wordmark):
+        if child.tag.endswith('}g'):
+            wordmark.remove(child)
+            words.append(child)
+    wordmark.append(words)
+    outputs['web_client/public/brand-wordmark-stacked.svg'] = ET.tostring(wordmark)
     outputs['web_client/public/brand-wordmark.svg'] = (brand / 'festapp-tickets-wordmark-horizontal-dark.svg').read_bytes()
     outputs['web_client/public/brand-symbol.svg'] = (brand / 'festapp-tickets-symbol-dark.svg').read_bytes()
 else:
