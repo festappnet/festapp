@@ -1,4 +1,8 @@
 import 'dart:io';
+
+import 'package:fstapp/components/users/widgets/my_events_overview.dart';
+import 'package:fstapp/components/users/user_strings.dart';
+
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -57,6 +61,31 @@ void main() {
     Intl.defaultLocale = 'en_US';
     addTearDown(() => Intl.defaultLocale = previous);
   });
+
+  testWidgets(
+    'empty My events stays useful and respects event creation rights',
+    (tester) async {
+      var creations = 0;
+      Widget overview(bool allowed) => MyEventsOverview(
+        occasions: const [],
+        units: const [],
+        canCreate: allowed,
+        onCreate: () => creations++,
+        onOpen: (_) {},
+        onOpenUnit: (_) {},
+      );
+      await mount(tester, overview(true));
+      expect(find.text(UserStrings.myEvents), findsOneWidget);
+      expect(find.text(CommonStrings.noEventsFound), findsOneWidget);
+      await tester.tap(find.text('HelpNavigation.createEvent'));
+      await tester.pumpAndSettle();
+      expect(creations, 1);
+      expect(find.text(UserStrings.myEvents), findsOneWidget);
+      await mount(tester, overview(false));
+      expect(find.text(CommonStrings.noEventsFound), findsOneWidget);
+      expect(find.text('HelpNavigation.createEvent'), findsNothing);
+    },
+  );
 
   testWidgets(
     'organizers contain the ordinary temporal sections and dense dated rows',

@@ -26,3 +26,23 @@ test('an installed worker serves help branding without an application version re
  }
  assert.equal(requests.length,15);
 });
+
+
+test('global responsive adapters use the canonical distinct vector masters', t => {
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'global-brand-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const brand='assets/brand/festapp-tickets';
+ fs.mkdirSync(path.join(root,'assets/brand'),{recursive:true});
+ fs.cpSync(brand,path.join(root,brand),{recursive:true});
+ const result=spawnSync('python3',['automation/configure_brand_assets.py','--root',root,
+  '--logo',brand+'/festapp-tickets-header.svg','--dark-logo',brand+'/festapp-tickets-header-dark.svg',
+  '--loading-style','spinner','--icon-dir',brand+'/web-icons'],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr);
+ for(const [adapter,master] of [['brand-symbol','symbol'],['brand-wordmark-stacked','wordmark'],['brand-wordmark','wordmark-horizontal']]) {
+  assert.deepEqual(fs.readFileSync(path.join(root,'web_client/public',adapter+'.svg')),fs.readFileSync(brand+'/festapp-tickets-'+master+'-dark.svg'));
+ }
+ const stacked=fs.readFileSync(brand+'/festapp-tickets-wordmark-dark.svg','utf8');
+ const horizontal=fs.readFileSync(brand+'/festapp-tickets-wordmark-horizontal-dark.svg','utf8');
+ const glyphs=svg=>[...svg.matchAll(/<path[^>]* d="([^"]+)"/g)].map(match=>match[1]);
+ assert.ok(glyphs(stacked).length>0);
+ assert.deepEqual(glyphs(horizontal),glyphs(stacked));
+});

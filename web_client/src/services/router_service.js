@@ -78,7 +78,7 @@ export class RouterService {
         if (Number.isInteger(normalizedUnitId) && normalizedUnitId > 0) {
             return `/unit/${normalizedUnitId}/edit`;
         }
-        return '/login';
+        return '/admin/my-events';
     }
 
     static async navigateToAdmin(unitId = null) {
