@@ -122,6 +122,17 @@
       "sha256": "7d9470dfa5736ccba150324af5c82a271d8c4ebd9985dea4b081c20af8104cef"
     },
     {
+      "migration": "20261112190000_seat_swap_lifecycle.sql",
+      "sha256": "9f8e53660aec1c33de8be2b874bfc04f899b22d483f22587bad8fc0487c23428",
+      "sources": [
+        "eshop_orders/recalculate_order_payment_status.sql",
+        "eshop/swap_spot_tickets.sql",
+        "blueprint/apply_seat_swap_internal.sql",
+        "eshop_orders/get_order_change_summary_v1.sql"
+      ],
+      "checkSources": true
+    },
+    {
       "migration": "20261112200000_payment_policy_release_integration.sql",
       "manifest": "payment-policy-release-integration-migration.json",
       "active": true
