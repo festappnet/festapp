@@ -136,8 +136,9 @@ void main() {
             SwitchListTile,
             FormStrings.measurementEnabled,
           );
-          // A regular section like the others: no expansion step.
+          expect(toggle, findsNothing);
           await tester.ensureVisible(find.text(FormStrings.measurementTitle));
+          await tester.tap(find.text(FormStrings.measurementTitle));
           await tester.pumpAndSettle();
           expect(tester.widget<SwitchListTile>(toggle).value, false);
           expect(
@@ -371,6 +372,13 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
+        expect(
+          find.widgetWithText(SwitchListTile, FormStrings.measurementEnabled),
+          findsNothing,
+        );
+        await tester.ensureVisible(find.text(FormStrings.measurementTitle));
+        await tester.tap(find.text(FormStrings.measurementTitle));
         await tester.pumpAndSettle();
         expect(
           find.text(FormStrings.measurementNoPrivacyPolicy),
