@@ -7,9 +7,10 @@ setup instructions together. Shared Festapp checkout behavior stays in
 
 | Platform | Products | Recorded state | Start here |
 | --- | --- | --- | --- |
-| WordPress | vstupenky.online; Festapp Tickets | Czech 1.0.0 submitted on 2026-10-24; manual review pending. Global ZIP prepared, not submitted. | [Development](wordpress/README.md), [readiness and evidence](wordpress/READINESS.md) |
-| Wix | vstupenky.online | App and widget registered; assets hosted on free Cloudflare Pages. Real editor/checkout qualification and marketplace commercial approval are in progress. | [Development and status](wix/README.md), [setup](wix/SETUP.md), [validation receipt](wix/VALIDATION.json) |
-| Make | vstupenky.online | Five read-only modules deployed; one verified-app review and follow-up form submitted on 2026-10-28. Approval and catalogue release pending. | [Connector and status](make/README.md), [setup](make/SETUP.md), [submission receipt](make/evidence/submission-20261028.json) |
+| WordPress | vstupenky.online; Festapp Tickets | Czech plugin is public on WordPress.org and mirrored in GitHub Releases. Global ZIP remains a separate prepared distribution. | [Directory](https://wordpress.org/plugins/vstupenky-online/), [development](wordpress/README.md) |
+| Joomla | vstupenky.online; Festapp Tickets | Czech module is public in GitHub Releases and JED; the canonical update feed owns its version and checksum. Global packages are not part of the regional release. | [Update feed](joomla/updates/vstupenky-online.xml), [development](joomla/README.md) |
+| Wix | vstupenky.online | Existing App Market app uses hosted widget/settings assets. The live manifest owns runtime version and file hashes. Native app registration and hosted runtime are separate releases. | [Live manifest](https://festapp-wix.pages.dev/manifest.json), [development](wix/README.md) |
+| Make | vstupenky.online | Five read-only modules deployed; one verified-app review and follow-up form submitted on 2026-10-28. Approval and catalogue release pending in the dated evidence. | [Connector and status](make/README.md), [setup](make/SETUP.md), [submission receipt](make/evidence/submission-20261028.json) |
 
 These are recorded states, not a live marketplace monitor. Record dated external
 receipts in the platform directory when the state changes.
@@ -28,7 +29,7 @@ WordPress has its established `shared/` + product-directory layout; do not move
 it merely to force the same source layout as Wix. Each JavaScript package owns
 its pnpm 11.24.0 manifest and lockfile. Do not copy dependencies between worktrees.
 
-Future Shoptet/Joomla/Shopify integrations belong here when implemented. General
+Future Shoptet/Shopify integrations belong here when implemented. General
 HTML and Webnode embed guides belong in public help, not in empty plugin folders.
 Plans under `docs/plans/` describe decisions; they are not another source copy.
 

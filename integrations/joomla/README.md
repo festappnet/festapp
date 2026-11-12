@@ -1,6 +1,6 @@
 # Joomla: vstupenky.online / Festapp Tickets
 
-Česká distribuce **vstupenky.online 1.0.3** a samostatná globální varianta 1.0.0
+Česká distribuce **vstupenky.online 1.0.5** a samostatná globální varianta 1.0.2
 ze společného zdroje. Toto vydání se týká pouze vstupenky.online. Finální český balíček má název
 [vstupenky.online.zip](dist/vstupenky.online.zip). Kandidáti obou značek jsou
 v [artifacts/](artifacts/); SHA-256 a vstupní/souborové manifesty obsahuje
@@ -34,7 +34,7 @@ službou; cena služby se sjednává samostatně.
    `https://tickets.festapp.net/form/slug`. Parametry, fragmenty, administrace
    ani URL druhé značky nejsou přípustné. Diakritiku ponechte kanonicky
    zakódovanou ze zkopírovaného odkazu, například `%C5%BE`.
-4. V aktualizovaném modulu nastavte **Přizpůsobit vzhled webu** (výchozí zapnuto), nezávisle na výšce. Volba patří tomuto modulu. Nastavte modul jako **Zveřejněný**, přístup **Veřejný**, zvolte pozici své
+4. Zvolte **Cíl měření**. Nový modul doporučuje **Web**, existující modul bez této volby zachovává **Jednotka Festapp**. Režim webu předává události a konverzní kontakty skriptům stránky, proto vyžaduje odpovídající souhlas a schválenou doménu. Vzhled se řídí uloženým nastavením formuláře ve službě. Nastavte modul jako **Zveřejněný**, přístup **Veřejný**, zvolte pozici své
    šablony a v **Přiřazení nabídky** vyberte požadované stránky. Uložte a
    otevřete veřejnou stránku. V nastavení modulu se externí formulář nenačítá.
 5. Pro vložení do článku zapněte standardní Joomla plugin **Obsah - Načítání
@@ -46,7 +46,7 @@ službou; cena služby se sjednává samostatně.
 Čeština a angličtina jsou součástí obou ZIPů; Joomla zvolí jazyk podle svého
 aktivního jazyka. Pro celou českou administraci nainstalujte český jazyk Joomly.
 Přístupný název iframe popisuje formulář pro čtečky. Výchozí výška je 800 px,
-povolený rozsah 240-4000 px. Automatická výška a převzetí vzhledu jsou výchozí.
+povolený rozsah 240-4000 px. Výchozí je automatická výška; vzhled vlastní uložený formulář.
 Pevná výška používá stejný externí helper pro vzhled jako automatická. Záložní
 odkaz otevírá běžný formulář v nové záložce i při blokování helperu.
 
@@ -121,7 +121,11 @@ v ignorovaném `.private/` (0600). Moduly se instalují z ZIPů, nejsou mountova
 ze zdrojů. K opakování celé sady začněte novým prostředím nebo proveďte stop/start.
 
 Browser používá existující [disposable fixture](../wordpress/README.md#disposable-služba)
-na 59821, formuláře `embedded-synthetic` a `embedded-seats`. Neseedujte znovu
+na 59821, nebo samostatný označený Joomla backend na 59931. Backend musí
+odpovídat aktuálnímu RPC kontraktu; starou neprázdnou fixture nepřepisujte.
+Pro aktuální schéma použijte oddělenou databázi s kanonickou baseline a upgrady.
+Browser scénáře používají české odkazy `ples-u-lipy` a `ples-u-lipy-mistenky`
+navázané v této nové fixture na její syntetické formuláře. Neseedujte znovu
 neprázdnou cizí databázi. Je-li již spuštěná, použijte ji bez restartu či změn.
 Pro službu použijte její existující snapshot a příkaz `pnpm run web:start`
 z adresáře `integrations/wordpress`; pnpm 11.24.0. Vlastní testovací TLS

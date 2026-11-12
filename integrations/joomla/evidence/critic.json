@@ -1,48 +1,30 @@
 {
   "status": "APPROVED",
-  "reviewed_at": "2026-11-06T12:55:33.529549+00:00",
-  "reviewer_role": "Independent AI critic of the exact release; not a human review or an approval by Joomla Extensions Directory",
-  "approval_scope": "Technical readiness of the exact regional vstupenky.online Joomla 1.0.4 ZIP for owned GitHub distribution, public updater and update of its existing JED listing. No global Festapp Tickets publication, no publication performed, no JED acceptance claimed.",
-  "zip_sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
-  "verification_sha256": "77dc5cfcf5575a0136c89dd6d9331925dc6609c248696bfbf2c129886cf725ec",
+  "reviewed_at": "2026-11-12T16:08:40.491860+00:00",
+  "reviewer_role": "Independent AI critic of the exact release; not a human review or approval by Joomla Extensions Directory",
+  "approval_scope": "Technical readiness of the exact regional vstupenky.online Joomla 1.0.5 ZIP and stable update feed for owned GitHub distribution. No global Festapp Tickets publication, no publication performed, and no JED acceptance claimed. Normal source-publication CI and final public readbacks remain separate gates.",
+  "zip_sha256": "104d98e8c83cea25b5e3fbf343dc7fd5969dcee89d83f3b986526bed25b8d31c",
+  "verification_sha256": "51971a4c052e25dd1ac46d366633f509af395ee1eeb3cee746d73f63c374ddf8",
   "unresolved_release_blockers": [],
   "evidence_summary": {
-    "frozen_source_files": 34,
-    "frozen_evidence_files": 13,
-    "zip_files_matching_package_manifest_and_generated_build": 11,
-    "joomla_5_contract_assertions": 278,
-    "joomla_6_contract_assertions": 278,
+    "frozen_source_files": 36,
+    "frozen_evidence_files": 15,
+    "zip_files_matching_package_manifest_and_generated_build": 12,
+    "joomla_5_contract_assertions": 304,
+    "joomla_6_contract_assertions": 304,
+    "installed_measurement_default_assertions_per_cms": 8,
     "verified_cms": [
       "Joomla 5.4.10 / PHP 8.3.36",
       "Joomla 6.1.4 / PHP 8.4.27"
     ],
     "reviewed_checks": [
-      "Exact candidate ZIP and alias SHA-256, identity, manifest, regional release URL and update feed match",
-      "All current source and evidence hashes match the VERIFIED receipt",
-      "Native module save/reload, publication, article-only cold/warm auto/fixed paths and ignored legacy appearance preferences",
-      "Installed 11-file hashes, local native updater discovery/checksum/install/settings preservation, lifecycle and remaining-product rendering",
-      "Isolated 320px real form, seat selector, Escape, blocked-helper fallback; production smoke was read-only with zero orders/seats submitted"
-    ],
-    "boundary": "Existing execution receipts were reviewed; no browser, runtime, CMS, live writes or repeated full verification were performed by this critic."
-  },
-  "findings_resolutions": [
-    {
-      "finding": "Previous release exposed local appearance overrides",
-      "resolution": "Packaged module manifest and helper have no local appearance field or data-festapp-style output. URL, title and height remain local; saved-form service setting owns appearance. Contracts cover both legacy values ignored."
-    },
-    {
-      "finding": "Guidance contradicted central appearance ownership and actual labels",
-      "resolution": "Central form Vzhled guidance, safe generic /events?help=forms links and corrected Joomla storage disclosure are packaged. Help says saved form applies on next load without replacing HTML or switching an active checkout."
-    },
-    {
-      "finding": "Prior critic approved a different 1.0.3 ZIP",
-      "resolution": "This independent AI review binds the exact 1.0.4 ZIP and current VERIFIED receipt. Publication and public byte/updater verification remain separate steps."
-    }
-  ],
-  "external_publication_prerequisites": [
-    "Primary must seal the current reviewed ZIP, verification, this receipt and final documentation through scripts/release-gate.py --seal.",
-    "Publish the exact reviewed source to canonical main and pass required CI for that commit.",
-    "Coordinate canonical saved-form appearance service rollout under the separately authorized tenant release; this receipt does not certify that rollout as already live.",
-    "Publish exact regional GitHub ZIP/checksum and public update feed, verify their bytes and native public updater behavior; update only the existing regional JED listing under authorized publication scope."
-  ]
+      "Current source and all 15 receipt fingerprints equal the VERIFIED record; exact verification digest independently checked.",
+      "Immutable ZIP, convenience ZIP, all 12 file hashes, generated module, manifest identity/version/update URL and 1.0.5 feed/checksum agree.",
+      "Measurement default test retains generated-tree CI behavior while release verification explicitly selects installed modules; both receipts are fingerprint-bound.",
+      "Real native updater discovery/download/checksum/install preserves settings on both CMS versions; test boundary is a local feed with the same artifact bytes and synthetic older metadata.",
+      "Installed native forms, URL validation, translations, cache/reinstall, lifecycle/uninstall and real mobile form/seat/keyboard/helper paths passed.",
+      "Actual installed regional module reached live production helper/form with one helper, mobile auto-height, seat map and Escape; no order or seat selection.",
+      "Regional documentation describes Website choice, legacy Unit behavior and conversion-contact disclosure; package retains a single canonical external checkout/helper owner."
+    ]
+  }
 }
