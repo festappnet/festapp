@@ -170,6 +170,23 @@
         "others/get_ticket_layout_write_contract_v1.sql"
       ],
       "active": true
+    },
+    {
+      "migration": "20261112235500_scanner_occasion_isolation.sql",
+      "header": "-- Scanner credentials and navigation are bound to one occasion.",
+      "sources": [
+        "scanning/credential_revocations.sql",
+        "user_permissions/technical_operations.sql",
+        "eshop_orders/update_scan_code.sql",
+        "scanning/access_codes.sql",
+        "eshop_orders/get_occasion_by_scan_code.sql",
+        "eshop_orders/get_all_tickets_for_scan.sql",
+        "eshop_orders/scan_ticket.sql",
+        "eshop_orders/update_ticket_to_used.sql",
+        "eshop_orders/reset_password_via_scan.sql",
+        "scanning/sessions.sql"
+      ],
+      "active": true
     }
   ]
 }

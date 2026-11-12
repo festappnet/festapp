@@ -3361,6 +3361,11 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.get_or_create_scan_code(text,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -3401,7 +3406,8 @@
     "database/functions/payment_providers/operations.sql",
     "database/functions/user_permissions/payment_operations.sql",
     "database/functions/occasion_setup/email_preview.sql",
-    "database/functions/payment_providers/released_bank_readers.sql"
+    "database/functions/payment_providers/released_bank_readers.sql",
+    "database/functions/scanning/access_codes.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

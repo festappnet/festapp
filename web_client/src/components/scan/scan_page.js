@@ -28,7 +28,8 @@ export class ScanPage extends Component {
         this.onGesture=event=>{if(event.target.closest?.('[data-sound]'))return;this.sound.unlock().then(()=>this.updateSoundControl());};
         this.host.addEventListener('pointerdown',this.onGesture,true);this.host.addEventListener('keydown',this.onGesture,true);
         let returnStorage; try { returnStorage=window.sessionStorage; } catch {}
-        this.returnPath = scannerReturnPath({location:window.location,referrer:document.referrer,returnTo:route.returnTo,storage:returnStorage});
+        this.returnNavigation = {location:{href:window.location.href},referrer:document.referrer,returnTo:route.returnTo,storage:returnStorage};
+        this.returnPath = '/';
         this.route = route; document.querySelector('meta[name=referrer]')?.remove();
         const meta = document.createElement('meta'); meta.name = 'referrer'; meta.content = 'no-referrer'; document.head.append(meta);
         this.referrerMeta = meta;
@@ -73,6 +74,7 @@ export class ScanPage extends Component {
         }
     }
     async select(row) {
+        this.returnPath = scannerReturnPath({...this.returnNavigation,session:row.session,backend:this.backend});
         clearTimeout(this.searchTimer);this.searchTimer=null;this.searchPending=false;
         this.searchGeneration=(this.searchGeneration||0)+1;this.searchResults=[];this.searchQuery='';this.searchError=null;this.searchScope='tickets';this.presentedTicketKey=null;this.searchOpen=this.mode==='manual';
         this.disposeControllers();this.sync?.stop(); this.summaryAt=0; this.row = row; this.api.session = row.session;

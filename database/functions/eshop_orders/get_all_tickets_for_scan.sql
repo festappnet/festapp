@@ -13,10 +13,7 @@ BEGIN
     END IF;
     SELECT o.id
     INTO occasion_id_val
-    FROM public.occasions o
-    JOIN public.occasions_hidden oh ON o.occasion_hidden = oh.id
-    WHERE oh.secret = scan_code
-    LIMIT 1;
+    FROM public.get_scanner_occasion_for_scan_code_internal(scan_code) o;
 
     IF occasion_id_val IS NULL THEN
          PERFORM public.admit_scan_access_v1(NULL,false);

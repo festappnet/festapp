@@ -10,6 +10,7 @@ AS $$
 DECLARE
     v_occasion_id BIGINT;
     occasions_hidden_id BIGINT;
+    previous_scan_code TEXT;
 BEGIN
     -- 1. Retrieve occasion_id using occasion_link
     SELECT id
@@ -33,16 +34,50 @@ BEGIN
         );
     END IF;
 
+    IF new_scan_code IS NULL OR btrim(new_scan_code)='' THEN
+        RETURN jsonb_build_object('code',400,'message','Scan code must not be empty.');
+    END IF;
+
+    -- Per-event locking owns rotation; the unique index arbitrates cross-event collisions.
+    PERFORM 1 FROM public.occasions WHERE id=v_occasion_id FOR UPDATE;
     PERFORM 1 FROM public.scanner_settings WHERE scanner_settings.occasion_id=v_occasion_id FOR UPDATE;
-    UPDATE public.scanner_settings SET epoch=epoch+1 WHERE scanner_settings.occasion_id=v_occasion_id;
     -- 4. Check if occasions_hidden exists for the occasion
     SELECT o.occasion_hidden
     INTO occasions_hidden_id
     FROM public.occasions o
     WHERE o.id = v_occasion_id;
 
+    SELECT secret INTO previous_scan_code FROM public.occasions_hidden
+    WHERE id=occasions_hidden_id FOR UPDATE;
+    -- Do not gradually revive a credential that every copied event already knows.
+    -- Historical groups need one explicit repair that retires their shared proof.
+    IF EXISTS (SELECT 1 FROM public.occasions o
+        WHERE o.occasion_hidden=occasions_hidden_id AND o.id<>v_occasion_id) THEN
+        RETURN jsonb_build_object('code',409,'reason','shared_scan_credential',
+            'message','Copied occasions require separate scanner links from an administrator.');
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.scanner_revoked_credentials revoked
+        WHERE revoked.secret_hash=encode(extensions.digest(new_scan_code,'sha256'),'hex')) THEN
+        RETURN jsonb_build_object('code',409,'reason','scan_code_collision','message','Scan code is already in use.');
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM public.occasions_hidden h WHERE h.secret=new_scan_code
+        AND (h.id IS DISTINCT FROM occasions_hidden_id OR EXISTS (
+            SELECT 1 FROM public.occasions o
+            WHERE o.occasion_hidden=h.id AND o.id<>v_occasion_id
+        ))
+    ) THEN
+        RETURN jsonb_build_object('code',409,'reason','scan_code_collision','message','Scan code is already in use.');
+    END IF;
+
     IF occasions_hidden_id IS NOT NULL THEN
-        -- Update existing scan_code
+        -- The existing record is exclusively owned by this event.
+        -- Rotation must not allow a future event to inherit its old bearer URL.
+        IF previous_scan_code IS NOT NULL AND previous_scan_code IS DISTINCT FROM new_scan_code THEN
+            INSERT INTO public.scanner_revoked_credentials(secret_hash,reason)
+            VALUES(encode(extensions.digest(previous_scan_code,'sha256'),'hex'),'rotated')
+            ON CONFLICT(secret_hash) DO NOTHING;
+        END IF;
         UPDATE public.occasions_hidden
         SET secret = new_scan_code
         WHERE id = occasions_hidden_id;
@@ -58,6 +93,8 @@ BEGIN
         WHERE id = v_occasion_id;
     END IF;
 
+    UPDATE public.scanner_settings SET epoch=epoch+1 WHERE scanner_settings.occasion_id=v_occasion_id;
+
     -- 5. Return a success message
     RETURN jsonb_build_object(
         'code', 200,
@@ -65,6 +102,8 @@ BEGIN
     );
 
 EXCEPTION
+    WHEN unique_violation THEN
+        RETURN jsonb_build_object('code',409,'reason','scan_code_collision','message','Scan code is already in use.');
     WHEN OTHERS THEN
         -- Handle any unexpected exceptions
         RETURN jsonb_build_object(

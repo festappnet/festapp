@@ -11,7 +11,10 @@ BEGIN
   RAISE SQLSTATE 'PT403' USING MESSAGE='scanner_actor_changed'; END IF;
  SELECT oh.secret INTO secret FROM public.occasions o JOIN public.occasions_hidden oh ON oh.id=o.occasion_hidden WHERE o.id=s.occasion_id;
  IF NOT p_allow_expired AND (s.revoked_at IS NOT NULL OR s.expires_at<=now() OR s.epoch<>cfg.epoch
- OR (s.access_origin='scan_link' AND s.scan_secret_hash IS DISTINCT FROM encode(digest(secret,'sha256'),'hex'))) THEN
+ OR (s.access_origin='scan_link' AND (
+   s.scan_secret_hash IS DISTINCT FROM encode(digest(secret,'sha256'),'hex')
+   OR NOT EXISTS (SELECT 1 FROM public.get_scanner_occasion_for_scan_code_internal(secret) proof WHERE proof.id=s.occasion_id)
+ ))) THEN
   RAISE SQLSTATE 'PT401' USING MESSAGE='scanner_session_expired'; END IF;
  RETURN s;
 END $$;
@@ -37,7 +40,7 @@ BEGIN
  VALUES(oc.id,CASE WHEN origin='authenticated' THEN auth.uid() END,origin,encode(digest(token,'sha256'),'hex'),encode(digest(sec,'sha256'),'hex'),cfg.epoch,left(p_device_name,80),now()+interval '12 hours',
  now()+make_interval(hours=>CASE WHEN (cfg.config#>>'{offline,enabled}')::boolean THEN (cfg.config#>>'{offline,max_hours}')::integer ELSE 0 END)) RETURNING * INTO s;
  RETURN jsonb_build_object('code',200,'server_time',now(),'data',jsonb_build_object('session_id',s.id,'token',token,'occasion_id',oc.id,'organization_id',oc.organization,
- 'title',oc.title,'epoch',s.epoch,'expires_at',s.expires_at,'offline_until',s.offline_until,'settings_revision',cfg.revision,'settings',cfg.config,'device_name',s.device_name,
+ 'title',oc.title,'occasion_link',oc.link,'epoch',s.epoch,'expires_at',s.expires_at,'offline_until',s.offline_until,'settings_revision',cfg.revision,'settings',cfg.config,'device_name',s.device_name,
  'capabilities',jsonb_build_object('search_tickets',(cfg.config#>>'{manual_search,tickets}')::boolean,'search_users',(cfg.config#>>'{manual_search,users}')::boolean,
  'settings',public.scanner_can_manage_settings_internal(oc.id),'event_history',auth.uid() IS NOT NULL AND public.can_write_orders(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
 END $$;

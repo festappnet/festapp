@@ -3218,6 +3218,10 @@
     "01b856f65e3b17cf8a7ff79eae4c2a890e10b2513606b347b9e8d32d5a01376c": {
       "signature": "public.get_my_admin_bank_accounts()",
       "source": "database/functions/payment_providers/released_bank_readers.sql"
+    },
+    "7a7f2864b837b6e2d2007e72cbd7a4913faef5c041fa42c4e328c1870b7e956d": {
+      "signature": "public.get_or_create_scan_code(text,boolean)",
+      "source": "database/functions/scanning/access_codes.sql"
     }
   }
 }
