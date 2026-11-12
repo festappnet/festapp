@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/build_scanner_decoder.mjs && node ../automation/configure_fonts.js .. --assets-only && vite",
-    "build": "node scripts/build_scanner_decoder.mjs && node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only && vite build",
+    "build": "pnpm run prepare:build && pnpm run compile",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
     "start": "pnpm run dev",
@@ -18,7 +18,9 @@
     "test:measurement-cmp": "node scripts/test_form_measurement_browser.mjs --cmp",
     "test:measurement-runtime-browser": "node scripts/test_form_measurement_runtime_browser.mjs",
     "test:measurement-nested-browser": "node scripts/test_form_measurement_nested_browser.mjs",
-    "test:measurement-adversarial-browser": "node scripts/test_form_measurement_runtime_adversarial.mjs"
+    "test:measurement-adversarial-browser": "node scripts/test_form_measurement_runtime_adversarial.mjs",
+    "prepare:build": "node scripts/build_scanner_decoder.mjs && node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only",
+    "compile": "vite build"
   },
   "dependencies": {
     "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.13-39a53b150114.tgz",

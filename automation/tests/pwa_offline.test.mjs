@@ -671,7 +671,7 @@ try {
   assert.ok(ciContract.jobs['web-startup'].steps.includes('web-startup'));
   assert.match(ciContract.steps['web-startup'].script, /bash automation\/test_web_startup\.sh/);
   assert.match(sharedBuild, /release\.web-client-build node automation\/lib\/web_build_cache\.mjs component vite/);
-  assert.match(sharedBuild, /cd web_client && pnpm run build/);
+  assert.match(sharedBuild, /cd web_client && pnpm run compile/);
   assert.ok(sharedBuild.indexOf('python3 automation/ci/release_gate.py') < sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile')
     && sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check')
     && sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check') < sharedBuild.indexOf('release.web-client-build node automation/lib/web_build_cache.mjs component vite'),
