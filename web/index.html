@@ -798,19 +798,19 @@ installRuntimeState(window);
     margin: 8px;
   }
 
-  [data-loading-style="vstupenky-outline"] .initial-logo {
+  [data-loading-style="brand-outline"] .initial-logo {
     width: min(72vw, 300px);
     max-width: 300px;
     max-height: none;
   }
-  [data-loading-style="vstupenky-outline"] .loader { display: none; }
+  [data-loading-style="brand-outline"] .loader { display: none; }
   @media (prefers-reduced-motion: reduce) { .loader, .loader::before { animation: none; } }
   @keyframes l16 {
     100%{transform: rotate(1turn)}
   }
 </style>
 
-  <div class="main-content" id="loader-content" data-loading-style="vstupenky-outline" role="status" aria-label="Načítání aplikace">
+  <div class="main-content" id="loader-content" data-loading-style="brand-outline" role="status" aria-label="Načítání aplikace">
     <img class="initial-logo" src="loading-animation.svg" alt="">
     <div class="loader" aria-hidden="true"></div>
   </div>

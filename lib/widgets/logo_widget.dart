@@ -19,9 +19,6 @@ class LogoWidget extends StatelessWidget {
   /// asset through `PROGRAM_LOGO_ASSET` when needed.
   final bool programVariant;
 
-  /// Keep the brand symbol without lettering, regardless of screen width.
-  final bool symbolOnly;
-
   const LogoWidget({
     super.key,
     this.onTap,
@@ -29,7 +26,6 @@ class LogoWidget extends StatelessWidget {
     this.width,
     this.forceDark,
     this.programVariant = false,
-    this.symbolOnly = false,
   });
 
   @override
@@ -38,7 +34,6 @@ class LogoWidget extends StatelessWidget {
       isDarkMode: ThemeConfig.isDarkMode(context),
       forceDark: forceDark,
       programVariant: programVariant,
-      compact: symbolOnly || MediaQuery.sizeOf(context).width <= 600,
     );
 
     // If the asset file is an SVG, use SvgPicture; otherwise, use Image.
@@ -60,26 +55,24 @@ String resolveLogoAsset({
   required bool isDarkMode,
   required bool? forceDark,
   required bool programVariant,
-  bool compact = false,
   String webLink = AppConfig.webLink,
 }) {
   // An explicit dark request is a contrast requirement and must win over the
   // optional program variant. Schedule headers use both flags on dark app bars.
   final dark = forceDark == true || (forceDark != false && isDarkMode);
-  if (compact) {
-    final symbols = switch (Uri.parse(webLink).host) {
-      'vstupenky.online' => (
-        'assets/icons/vstupenky-symbol.svg',
-        'assets/icons/vstupenky-symbol.dark.svg',
-      ),
-      'tickets.festapp.net' => (
-        'assets/brand/festapp-tickets/festapp-tickets-symbol.svg',
-        'assets/brand/festapp-tickets/festapp-tickets-symbol-dark.svg',
-      ),
-      _ => null,
-    };
-    if (symbols != null) return dark ? symbols.$2 : symbols.$1;
-  }
+  // Ticketing application chrome always uses its symbol, at every width.
+  final symbols = switch (Uri.parse(webLink).host) {
+    'vstupenky.online' => (
+      'assets/icons/vstupenky-symbol.svg',
+      'assets/icons/vstupenky-symbol.dark.svg',
+    ),
+    'tickets.festapp.net' => (
+      'assets/brand/festapp-tickets/festapp-tickets-symbol.svg',
+      'assets/brand/festapp-tickets/festapp-tickets-symbol-dark.svg',
+    ),
+    _ => null,
+  };
+  if (symbols != null) return dark ? symbols.$2 : symbols.$1;
   if (dark) {
     return AppConfig.darkLogoAsset;
   }

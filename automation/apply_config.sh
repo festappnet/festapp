@@ -243,7 +243,7 @@ for asset_path in "$LOGO_ASSET" "$DARK_LOGO_ASSET" "$PROGRAM_LOGO_ASSET"; do
 done
 WEB_LOADING_STYLE="${WEB_LOADING_STYLE:-spinner}"
 WEB_LOADING_BACKGROUND="${WEB_LOADING_BACKGROUND:-#242424}"
-case "$WEB_LOADING_STYLE" in spinner|vstupenky-outline) ;; *) echo "Error: invalid WEB_LOADING_STYLE"; exit 1 ;; esac
+case "$WEB_LOADING_STYLE" in spinner|brand-outline) ;; *) echo "Error: invalid WEB_LOADING_STYLE"; exit 1 ;; esac
 [[ "$WEB_LOADING_BACKGROUND" =~ ^#[0-9A-Fa-f]{6}$ ]] || { echo "Error: invalid WEB_LOADING_BACKGROUND"; exit 1; }
 python3 "$PROJECT_ROOT/automation/configure_brand_assets.py" --root "$PROJECT_ROOT" \
     --logo "$LOGO_ASSET" --dark-logo "$DARK_LOGO_ASSET" \
@@ -436,14 +436,18 @@ PY
     if [ ! -z "$THEME_SEED_2" ]; then
         sed_inplace "s|--festapp-loading-accent: [^;]*;|--festapp-loading-accent: $THEME_SEED_2;|" "$FLUTTER_INDEX"
     fi
-    python3 - "$FLUTTER_INDEX" "$PROJECT_ROOT/web_client/index.html" "$WEB_LOADING_STYLE" "$WEB_LOADING_BACKGROUND" <<'BRAND_LOADER'
+    python3 - "$FLUTTER_INDEX" "$PROJECT_ROOT/web_client/index.html" "$WEB_LOADING_STYLE" "$WEB_LOADING_BACKGROUND" "$PROJECT_ROOT/web/loading-animation.svg" <<'BRAND_LOADER'
 from write_if_changed import write_text
 import re, sys
 from pathlib import Path
-flutter, client, style, background = sys.argv[1:]
+flutter, client, style, background, animation = sys.argv[1:]
+import xml.etree.ElementTree as ET
+box = ET.parse(animation).getroot().get("viewBox", "").split()
+ratio = f"{box[2]}/{box[3]}" if len(box) == 4 else "auto"
 for filename in [flutter, client]:
     p = Path(filename); text = p.read_text()
     text = re.sub(r'data-loading-style="[^"]*"', f'data-loading-style="{style}"', text)
+    text = re.sub(r'(startup-spinner\[data-loading-style="brand-outline"\]\{[^}]*aspect-ratio:)[^;}]+', lambda m: m[1] + ratio, text)
     write_text(p, text)
 p = Path(flutter); text = p.read_text()
 text = re.sub(r'(<meta name="theme-color" content=")[^"]*', lambda m: m[1] + background, text)
