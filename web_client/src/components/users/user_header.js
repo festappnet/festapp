@@ -241,7 +241,7 @@ export class UserHeader extends HTMLElement {
              // My events is account navigation on the ticketing site. Opening
              // it does not grant access to any unit or occasion; the destination
              // resolves the signed-in workspace and checks its own capabilities.
-             const canOpenMyEvents = ticketBrand ||
+             const canOpenMyEvents = Boolean(helpRoot) ||
                  RightsService.canSeeAdmin() || RightsService.canSeeReservations();
              if (canOpenMyEvents) {
                  const adminBtn = document.createElement('button');
@@ -280,7 +280,7 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
-            if (new URL(AppConfig.webLink).hostname === 'vstupenky.online' &&
+            if (helpRoot &&
                 RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
                 const addEventBtn = document.createElement('button');
                 addEventBtn.type = 'button';

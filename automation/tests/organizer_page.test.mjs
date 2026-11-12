@@ -213,6 +213,9 @@ test('English illustrated home ships English examples, one regional link and fai
   assert.equal(globalBooking,canonicalBooking,'global demo uses the canonical booking flow');
   assert.equal((html.match(new RegExp('href="'+canonicalBooking+'"','g'))??[]).length,3,'demo is available in hero, support and footer');
   assert.match(html,/href="\/help\/"/,'global guides are reachable from the homepage');
+  assert.match(html,/<header class="site-header auth-pending"/,'illustrated home exposes the shared account-header mount');
+  assert.match(html,/class="header-signin" href="\/login"/,'sign-in remains reachable before account hydration');
+  assert.doesNotMatch(html,/href="#how-it-works"/,'Help owns guidance; duplicate scroll actions are removed');
 
   assert.match(html,/href="\/events\?create=1"/);
   assert.ok(!html.includes('tickets.fesup.net'));
