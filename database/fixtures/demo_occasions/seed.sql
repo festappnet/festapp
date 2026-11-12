@@ -1,4 +1,24 @@
 -- Synthetic fixture maintenance only. No checkout, email or payment producer is called.
+CREATE OR REPLACE FUNCTION pg_temp.ensure_demo_public_links(p_org bigint)
+RETURNS void LANGUAGE plpgsql AS $links$
+DECLARE example record; example_form record;
+BEGIN
+ IF current_user<>'postgres' THEN RAISE insufficient_privilege; END IF;
+ PERFORM pg_advisory_xact_lock(7141014,p_org::integer);
+ IF (SELECT count(*) FROM public.demo_occasions
+   WHERE organization=p_org AND fixture_version='2026-10-14.3')<>3 THEN
+  RAISE EXCEPTION 'Expected three registered demo fixtures';
+ END IF;
+ FOR example IN SELECT o.id,o.link FROM public.demo_occasions d
+  JOIN public.occasions o ON o.id=d.occasion AND o.organization=d.organization
+  WHERE d.organization=p_org AND d.fixture_version='2026-10-14.3' ORDER BY d.sort_order LOOP
+  PERFORM public.reserve_public_link_internal('occasion',example.id,example.link,true);
+  FOR example_form IN SELECT id,link FROM public.forms WHERE occasion=example.id ORDER BY id LOOP
+   PERFORM public.reserve_public_link_internal('form',example_form.id,example_form.link,true);
+  END LOOP;
+ END LOOP;
+END $links$;
+
 CREATE OR REPLACE FUNCTION pg_temp.refresh_demo_presentation(p_org bigint)
 RETURNS void LANGUAGE plpgsql AS $presentation$
 DECLARE d record; o record; anchor timestamptz := '2026-10-14 12:00:00+00';
@@ -172,6 +192,7 @@ BEGIN
   PERFORM pg_temp.refresh_demo_artwork(p_org);
   PERFORM pg_temp.refresh_demo_titles(p_org);
   PERFORM pg_temp.refresh_demo_ball_prices(p_org);
+  PERFORM pg_temp.ensure_demo_public_links(p_org);
   RETURN;
  END IF;
  INSERT INTO public.units(title,organization) VALUES('Ukázkový pořadatel',p_org) RETURNING id INTO un;
@@ -402,4 +423,5 @@ BEGIN
   PERFORM pg_temp.refresh_demo_artwork(p_org);
   PERFORM pg_temp.refresh_demo_titles(p_org);
   PERFORM pg_temp.refresh_demo_ball_prices(p_org);
+  PERFORM pg_temp.ensure_demo_public_links(p_org);
 END $fixture$;

@@ -47,7 +47,8 @@ BEGIN
  IF existing<>0 THEN
   IF existing=3 AND (SELECT count(*) FROM public.demo_occasions d JOIN public.occasions o ON o.id=d.occasion
     WHERE d.organization=p_org AND d.fixture_version='2026-10-14.3' AND o.data->>'demo_locale'=p_locale)=3 THEN
-   RETURN; -- Versioned localized examples are immutable; replay creates nothing.
+   PERFORM pg_temp.ensure_demo_public_links(p_org);
+   RETURN; -- Replay repairs URL claims without creating or rewriting examples.
   END IF;
   RAISE EXCEPTION 'Existing or incomplete demo fixtures require investigation';
  END IF;
