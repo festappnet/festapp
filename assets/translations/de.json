@@ -2443,7 +2443,7 @@
     "priceChanged": "Der Bestellpreis hat sich geändert.",
     "reviewPrices": "Prüfen Sie die Zusammenfassung erneut.",
     "reviewCurrentPrices": "Aktuelle Preise prüfen",
-    "cash": "Nur Barzahlung",
+    "cash": "Barzahlung",
     "cashDescription": "Die Reservierung wird ohne Vorauszahlung bestätigt. Erfassen Sie die Zahlung nach Erhalt des Bargelds.",
     "cashInstructionsDefault": "Bitte bezahlen Sie vor Ort in bar.",
     "cashInstructions": "Zahlungshinweise",
@@ -2473,7 +2473,7 @@
     "policySaveFailed": "Speichern fehlgeschlagen. Laden Sie den aktuellen Stand und bestätigen Sie die Auswirkungen erneut.",
     "policyRetry": "Erneut versuchen",
     "policyTenantHint": "Freigabe für den gesamten Mandanten. Die Anbieterverbindung wird separat eingerichtet.",
-    "policyUnitHint": "Der Veranstalter übernimmt die Mandanteneinstellungen und kann dessen Sperren nicht aufheben.",
+    "policyUnitHint": "Es werden nur von der Plattform erlaubte Zahlungsarten angezeigt. Andere Zahlungsarten können Sie deaktivieren oder wieder die Plattformeinstellung übernehmen.",
     "policyEnabled": "Aktiviert",
     "policyDisabled": "Deaktiviert",
     "policyInherit": "Übernehmen",
@@ -2486,7 +2486,11 @@
     "policyTemplateReview": "Zahlungsinhalte der E-Mails prüfen",
     "policyTemplateReviewHint": "Prüfen Sie Inhalt und Rahmen im Vorlageneditor. Zahlungen über Anbieter dürfen keine festen Bankanweisungen oder Zahlungs-QR-Codes enthalten. Die Bestätigung gilt nur für diese Version.",
     "policyTemplateRepair": "Bankdaten oder Zahlungs-QR-Code im Inhalt oder Rahmen gefunden. Korrigieren Sie die Vorlage und prüfen Sie erneut.",
-    "policyTemplateApprove": "Aktuelle Version geprüft"
+    "policyTemplateApprove": "Aktuelle Version geprüft",
+    "barion": "Karte über Barion",
+    "policyCashManaged": "Die Verfügbarkeit von Barzahlung wird von der Plattform verwaltet.",
+    "policyNoMethods": "Die Plattform hat keine Zahlungsarten aktiviert.",
+    "policyUnitSummary": "Konten und Zahlungsarten"
   },
   "CardRefundDecision": {
     "title": "Einlass nach Rückerstattung",
@@ -3243,5 +3247,9 @@
     "publicPage": "Öffentliche Seite",
     "formIntroduction": "Einleitung",
     "formOutline": "Formularübersicht"
+  },
+  "UnitSettings": {
+    "measurementSummaryEnabled": "Messung ist aktiviert",
+    "measurementSummaryDisabled": "Messung ist deaktiviert"
   }
 }

@@ -14,9 +14,11 @@ class PaymentPolicySettings extends StatefulWidget {
     required this.organizationId,
     this.unitId,
     this.onChanged,
+    this.showHeading = true,
     this.onConfigure,
     this.configureMethods = const {},
   });
+  final bool showHeading;
   final int organizationId;
   final int? unitId;
   final ValueChanged<String>? onConfigure;
@@ -77,7 +79,13 @@ class _PaymentPolicySettingsState extends State<PaymentPolicySettings> {
     PaymentPolicyMode mode, {
     bool preferred = false,
   }) async {
-    if (_busy) return;
+    final methodPolicy = _policy?.methods[method];
+    if (_busy || methodPolicy == null) return;
+    if (widget.unitId != null &&
+        (!methodPolicy.organizationEnabled ||
+            (method == 'cash' && mode != methodPolicy.mode))) {
+      return;
+    }
     final generation = _generation;
     final change = PaymentPolicyChange(
       organizationId: widget.organizationId,
@@ -140,91 +148,104 @@ class _PaymentPolicySettingsState extends State<PaymentPolicySettings> {
               ),
       );
     }
-    final methods = _policy!.methods;
+    final methods = _policy!.methods.entries
+        .where(
+          (entry) => widget.unitId == null || entry.value.organizationEnabled,
+        )
+        .toList();
+    final canChoosePreferred =
+        methods.where((entry) => entry.value.enabled).length > 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(t('policyTitle'), style: Theme.of(context).textTheme.titleLarge),
-        Text(t(widget.unitId == null ? 'policyTenantHint' : 'policyUnitHint')),
+        if (widget.showHeading) ...[
+          Text(t('policyTitle'), style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            t(widget.unitId == null ? 'policyTenantHint' : 'policyUnitHint'),
+          ),
+        ],
         if (_failed)
           Text(
             t('policySaveFailed'),
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
-        for (final entry in methods.entries)
-          ListTile(
-            title: Text(t(entry.key)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${t(entry.value.enabled ? 'policyEnabled' : 'policyDisabled')} - ${t(entry.value.origin == PaymentPolicyOrigin.unit ? 'policyUnit' : 'policyTenant')}',
-                ),
-                if (widget.unitId != null)
-                  Text(
-                    t(
-                      entry.value.configured
-                          ? 'policyConfigured'
-                          : 'policyNotConfigured',
-                    ),
-                  ),
-                if (widget.onConfigure != null &&
-                    widget.configureMethods.contains(entry.key) &&
-                    entry.value.canConfigure)
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => widget.onConfigure!(entry.key),
-                    child: Text(t('policyConfigure')),
-                  ),
-              ],
+        if (methods.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(t('policyNoMethods')),
+          ),
+        for (final entry in methods)
+          _methodTile(entry.key, entry.value, canChoosePreferred),
+      ],
+    );
+  }
+
+  Widget _methodTile(
+    String method,
+    PaymentMethodPolicy policy,
+    bool canChoosePreferred,
+  ) {
+    final cashIsManaged = widget.unitId != null && method == 'cash';
+    final enabled = widget.unitId == null
+        ? policy.organizationEnabled
+        : policy.enabled;
+    final canConfigure =
+        widget.onConfigure != null &&
+        widget.configureMethods.contains(method) &&
+        policy.canConfigure;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(t(method)),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t(enabled ? 'policyEnabled' : 'policyDisabled')),
+          if (cashIsManaged) Text(t('policyCashManaged')),
+          if (widget.unitId != null && method != 'cash' && enabled)
+            Text(
+              t(policy.configured ? 'policyConfigured' : 'policyNotConfigured'),
             ),
-            trailing: DropdownButton<PaymentPolicyMode>(
-              value: widget.unitId == null
-                  ? (entry.value.organizationEnabled
-                        ? PaymentPolicyMode.enabled
-                        : PaymentPolicyMode.disabled)
-                  : entry.value.mode,
-              onChanged: _busy
-                  ? null
-                  : (mode) {
-                      if (mode != null) _change(entry.key, mode);
-                    },
-              items: [
-                if (widget.unitId != null)
-                  DropdownMenuItem(
-                    value: PaymentPolicyMode.inherit,
-                    child: Text(t('policyInherit')),
-                  ),
-                DropdownMenuItem(
-                  value: PaymentPolicyMode.enabled,
-                  child: Text(t('policyEnabled')),
-                ),
-                DropdownMenuItem(
-                  value: PaymentPolicyMode.disabled,
-                  child: Text(t('policyDisabled')),
-                ),
-              ],
+          if (canConfigure)
+            TextButton(
+              onPressed: _busy ? null : () => widget.onConfigure!(method),
+              child: Text(t('policyConfigure')),
             ),
-            leading: IconButton(
+        ],
+      ),
+      trailing: Semantics(
+        label: t(method),
+        child: Switch(
+          key: ValueKey('payment-policy-$method'),
+          value: enabled,
+          onChanged: _busy || cashIsManaged
+              ? null
+              : (value) => _change(
+                  method,
+                  value
+                      ? (widget.unitId == null
+                            ? PaymentPolicyMode.enabled
+                            : PaymentPolicyMode.inherit)
+                      : PaymentPolicyMode.disabled,
+                ),
+        ),
+      ),
+      leading: canChoosePreferred
+          ? IconButton(
               tooltip: t('policyPreferred'),
-              icon: Icon(
-                _policy!.preferredMethod == entry.key
-                    ? Icons.star
-                    : Icons.star_border,
-              ),
-              onPressed: _busy || !entry.value.enabled
+              isSelected: _policy!.preferredMethod == method,
+              icon: const Icon(Icons.star_border),
+              selectedIcon: const Icon(Icons.star),
+              onPressed: _busy || !policy.enabled
                   ? null
                   : () => _change(
-                      entry.key,
+                      method,
                       widget.unitId == null
                           ? PaymentPolicyMode.enabled
-                          : entry.value.mode,
+                          : policy.mode,
                       preferred: true,
                     ),
-            ),
-          ),
-      ],
+            )
+          : null,
     );
   }
 }
