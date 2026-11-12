@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS public.scanner_revoked_credentials (
  secret_hash text PRIMARY KEY CHECK(secret_hash ~ '^[0-9a-f]{64}$'),
  revoked_at timestamptz NOT NULL DEFAULT now(),
- reason text NOT NULL CHECK(reason='historical_shared')
+ reason text NOT NULL CHECK(reason IN ('historical_shared','rotated'))
 );
 ALTER TABLE public.scanner_revoked_credentials ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.scanner_revoked_credentials FROM PUBLIC,anon,authenticated,service_role;

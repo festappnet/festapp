@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS public.scanner_revoked_credentials (
  secret_hash text PRIMARY KEY CHECK(secret_hash ~ '^[0-9a-f]{64}$'),
  revoked_at timestamptz NOT NULL DEFAULT now(),
- reason text NOT NULL CHECK(reason='historical_shared')
+ reason text NOT NULL CHECK(reason IN ('historical_shared','rotated'))
 );
 ALTER TABLE public.scanner_revoked_credentials ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.scanner_revoked_credentials FROM PUBLIC,anon,authenticated,service_role;
@@ -54,6 +54,7 @@ AS $$
 DECLARE
     v_occasion_id BIGINT;
     occasions_hidden_id BIGINT;
+    previous_scan_code TEXT;
 BEGIN
     -- 1. Retrieve occasion_id using occasion_link
     SELECT id
@@ -90,7 +91,8 @@ BEGIN
     FROM public.occasions o
     WHERE o.id = v_occasion_id;
 
-    PERFORM 1 FROM public.occasions_hidden WHERE id=occasions_hidden_id FOR UPDATE;
+    SELECT secret INTO previous_scan_code FROM public.occasions_hidden
+    WHERE id=occasions_hidden_id FOR UPDATE;
     -- Do not gradually revive a credential that every copied event already knows.
     -- Historical groups need one explicit repair that retires their shared proof.
     IF EXISTS (SELECT 1 FROM public.occasions o
@@ -114,6 +116,12 @@ BEGIN
 
     IF occasions_hidden_id IS NOT NULL THEN
         -- The existing record is exclusively owned by this event.
+        -- Rotation must not allow a future event to inherit its old bearer URL.
+        IF previous_scan_code IS NOT NULL AND previous_scan_code IS DISTINCT FROM new_scan_code THEN
+            INSERT INTO public.scanner_revoked_credentials(secret_hash,reason)
+            VALUES(encode(extensions.digest(previous_scan_code,'sha256'),'hex'),'rotated')
+            ON CONFLICT(secret_hash) DO NOTHING;
+        END IF;
         UPDATE public.occasions_hidden
         SET secret = new_scan_code
         WHERE id = occasions_hidden_id;

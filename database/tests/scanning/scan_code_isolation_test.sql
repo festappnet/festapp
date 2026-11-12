@@ -62,6 +62,10 @@ BEGIN
  PERFORM assert_eq(response->>'code','200','server rotation succeeds');
  PERFORM assert_true((response->>'scan_code') ~ '^[A-Z0-9]{5}$','server generates the established five character format');
  PERFORM assert_true(response->>'scan_code'<>rotated,'rotation changes the credential');
+ PERFORM assert_eq((SELECT reason FROM public.scanner_revoked_credentials
+   WHERE secret_hash=encode(extensions.digest(rotated,'sha256'),'hex')),'rotated'::text,'normal rotation permanently retires the previous credential');
+ response:=public.update_scan_code(original_other_code,rotated);
+ PERFORM assert_eq(response->>'reason','scan_code_collision','a rotated credential cannot be assigned again');
 END $$;
 -- Deterministically force a collision, then a fresh code, through the real RPC.
 CREATE TEMP SEQUENCE forced_scan_entropy;
