@@ -45,3 +45,45 @@ test('file-delivery connectors submit capability only in a native POST body to t
  page.saveFile(apple.connector);assert.deepEqual(submitted,{url:page.walletEndpoint,method:'post',values:{token:'a'.repeat(64),provider:'apple'}});assert.equal(dom.window.location.hash,'');assert.equal(dom.window.document.querySelector('form'),null);assert.equal(dom.window.localStorage.length,0);
  submitted=null;page.walletEndpoint='javascript:alert(1)';page.saveFile(apple.connector);assert.equal(submitted,null);assert.match(page.status.textContent,/dočasně/);page.clear();page.saveFile(apple.connector);assert.equal(submitted,null);dom.window.close();
 });
+
+test('native delivery preserves the trusted Origin while withholding private URL paths',async()=>{
+ const {dom,page}=fixture();await page.init();
+ assert.equal(dom.window.document.querySelector('meta[name="referrer"]').content,'strict-origin');dom.window.close();
+});
+test('email-selected file connector starts automatically and uses the email language',async()=>{
+ const {dom,page}=fixture();page.win.__festappWalletOptions={provider:'apple',lang:'en'};
+ let submits=0;dom.window.HTMLFormElement.prototype.submit=function(){submits++;assert.equal(new dom.window.FormData(this).get('provider'),'apple');};
+ await page.init();assert.equal(submits,1);assert.equal(page.locale,'en');assert.equal(page.actions.get('apple').label.textContent,'Add to Apple Wallet');assert.equal(page.win.__festappWalletOptions,undefined);dom.window.close();
+});
+test('email-selected redirect connector starts automatically without an extra click',async()=>{
+ const url='https://pay.google.com/gp/v/save/a.b.c';const {dom,page,navigations}=fixture('a'.repeat(64),async()=>({state:'ACTIVE',url}));
+ page.win.__festappWalletOptions={provider:'google',lang:'cs'};await page.init();assert.deepEqual(navigations,[url]);dom.window.close();
+});
+test('legacy email links on Apple devices start the native connector automatically',async()=>{
+ const {dom,page}=fixture();page.win.navigator={userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_5 like Mac OS X)'};
+ let submits=0;dom.window.HTMLFormElement.prototype.submit=function(){submits++;};await page.init();assert.equal(submits,1);dom.window.close();
+});
+
+test('Czech Apple action uses Czech text without English artwork; English uses official artwork',async()=>{
+ for(const lang of ['cs','en']){
+  const {dom,page}=fixture('');page.win.__festappWalletOptions={lang};await page.init();
+  const apple=page.actions.get('apple');assert.equal(Boolean(apple.button.querySelector('img')),lang==='en');
+  assert.equal(apple.label.textContent,lang==='cs'?'Přidat do Apple Peněženky':'Add to Apple Wallet');dom.window.close();
+ }
+});
+
+test('early email bootstrap retains only provider and language in memory while removing the capability',()=>{
+ const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+ const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+ const dom=new JSDOM('',{url:'https://tenant.invalid/wallet?provider=apple&lang=en#'+'a'.repeat(64),runScripts:'outside-only'});
+ dom.window.eval(script);
+ assert.equal(dom.window.location.href,'https://tenant.invalid/wallet');
+ assert.equal(dom.window.__festappWalletOptions.provider,'apple');assert.equal(dom.window.__festappWalletOptions.lang,'en');
+ assert.equal(takeWalletToken(dom.window),'a'.repeat(64));assert.equal(takeWalletToken(dom.window),null);dom.window.close();
+});
+test('invalid provider and missing capability never trigger automatic issuance',async()=>{
+ for(const [token,provider] of [['a'.repeat(64),'unregistered'],['','apple']]){
+  let calls=0;const {dom,page}=fixture(token,async()=>{calls++;});page.win.__festappWalletOptions={provider,lang:'invalid'};
+  dom.window.HTMLFormElement.prototype.submit=function(){calls++;};await page.init();assert.equal(calls,0);assert.equal(page.locale,'cs');dom.window.close();
+ }
+});
