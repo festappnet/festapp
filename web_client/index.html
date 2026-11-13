@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
   <script>
     // Remove a Wallet capability before any external resource or analytics executes.
@@ -211,27 +211,23 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     global.addEventListener('festapp-embed-theme-changed', applyStartup);
 })(globalThis);
 </script>
-    <title>Akce a plesy - vstupenky online | vstupenky.online</title>
-    <meta name="description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
+    <title>Events and tickets | Festapp Tickets</title>
+    <meta name="description" content="Find events and buy tickets with Festapp Tickets. View event details, available seats and registration options.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://vstupenky.online/events">
+    <link rel="canonical" href="https://tickets.festapp.net/events">
 
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"vstupenky.online","url":"https://vstupenky.online/"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Festapp Tickets","url":"https://tickets.festapp.net/"}</script>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://vstupenky.online/events">
-    <meta property="og:title" content="Akce a plesy - vstupenky online | vstupenky.online">
-    <meta property="og:description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
-    <meta property="og:image" content="https://vstupenky.online/android-chrome-512x512.png">
-
+    <meta property="og:url" content="https://tickets.festapp.net/events">
+    <meta property="og:title" content="Events and tickets | Festapp Tickets">
+    <meta property="og:description" content="Find events and buy tickets with Festapp Tickets. View event details, available seats and registration options.">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://vstupenky.online/events">
-    <meta property="twitter:title" content="Akce a plesy - vstupenky online | vstupenky.online">
-    <meta property="twitter:description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
-    <meta property="twitter:image" content="https://vstupenky.online/android-chrome-512x512.png">
-
+    <meta property="twitter:url" content="https://tickets.festapp.net/events">
+    <meta property="twitter:title" content="Events and tickets | Festapp Tickets">
+    <meta property="twitter:description" content="Find events and buy tickets with Festapp Tickets. View event details, available seats and registration options.">
     <!-- Used font stylesheets and their binaries are persisted by the Festapp
          service worker after their first real use. -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -249,7 +245,7 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     <script>
         // This handshake must not depend on the module it unlocks. A resumed
         // mobile worker can forget the client generation before loading JS.
-        window.__FESTAPP_BUILD_VERSION__ = "0.20.1+485";
+        window.__FESTAPP_BUILD_VERSION__ = "0.20.603+1128";
         const startupCopy = navigator.language.startsWith('cs') || navigator.language.startsWith('sk')
             ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
             : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
@@ -387,7 +383,7 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     html[data-embed-startup] #web-client-startup p { margin: 0 0 8px; }
     html[data-embed-startup] #web-client-startup button { padding: 8px 12px !important; }
   </style>
-</head>
+<meta property="og:image" content="https://tickets.festapp.net/organizers-media/global/festapp-tickets-social.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Festapp Tickets"><meta name="twitter:image" content="https://tickets.festapp.net/organizers-media/global/festapp-tickets-social.png"><meta name="twitter:image:alt" content="Festapp Tickets"><meta property="og:locale" content="en_US"><meta property="og:site_name" content="Festapp Tickets"></head>
 <body>
     <div id="web-client-startup" role="status"
          style="position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--festapp-startup-background,#ffffff);color:var(--festapp-startup-foreground,#000000);font:16px sans-serif;padding:24px;text-align:center">
@@ -408,8 +404,8 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
 
         <main>
             <section id="site-introduction" hidden style="margin:24px 0;color:var(--text-color,inherit)">
-                <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">vstupenky.online</h1>
-                <p style="margin:0;line-height:1.6">Prodej vstupenek a registrace na plesy, kulturní akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.</p>
+                <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">Festapp Tickets</h1>
+                <p style="margin:0;line-height:1.6">Sell tickets, take registrations and manage your events with Festapp Tickets.</p>
             </section>
             <section id="unit-introduction" class="unit-introduction" hidden>
                 <h1></h1>
@@ -424,9 +420,9 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
 
             <!-- Content -->
             <div id="events-grid"></div>
-            <nav class="site-legal-links" aria-label="Právní informace">
-                <a href="/privacy/">Soukromí</a>
-                <a href="/terms/">Podmínky</a>
+            <nav class="site-legal-links" aria-label="Legal information">
+                <a href="/privacy/">Privacy</a>
+                <a href="/terms/">Terms</a>
             </nav>
         </main>
 
