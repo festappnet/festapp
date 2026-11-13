@@ -12,7 +12,9 @@ export function verifiedSessionAssurance(accessToken, user, backendOrigin) {
     try {
         const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url'));
         const now = Math.floor(Date.now() / 1000);
-        const issuer = new URL('auth/v1', backendOrigin.endsWith('/') ? backendOrigin : backendOrigin + '/').href;
+        // Canonical Festapp GoTrue config pins JWT issuer to the backend
+        // origin; /auth/v1 is its REST route, not the token issuer.
+        const issuer = new URL(backendOrigin).origin;
         if (payload.sub !== user.id || payload.iss !== issuer || payload.role !== 'authenticated' ||
             ![payload.aud].flat().includes('authenticated') || payload.aal !== 'aal2' ||
             !/^[a-f0-9-]{36}$/i.test(payload.session_id ?? '') ||

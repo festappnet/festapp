@@ -1,0 +1,43 @@
+{
+  "head": "f961bacff3d201f0311267a0687b652e1a5ed8b4",
+  "inputSha256": "d3082d50393abe7673e2c78122451a58a9e607d82a0649d92c7431be02313e9a",
+  "complete": true,
+  "inputsUnchanged": true,
+  "jobs": [
+    {
+      "name": "image-contract",
+      "status": "PASS"
+    },
+    {
+      "name": "web-startup",
+      "status": "PASS"
+    },
+    {
+      "name": "wix-checkout-compatibility",
+      "status": "PASS"
+    },
+    {
+      "name": "navigation-interactions",
+      "status": "PASS"
+    },
+    {
+      "name": "server-policy",
+      "status": "PASS"
+    },
+    {
+      "name": "client-contract",
+      "status": "PASS"
+    },
+    {
+      "name": "seat-checkout",
+      "status": "PASS"
+    },
+    {
+      "name": "ticket-preview-and-delivery",
+      "status": "PASS"
+    }
+  ],
+  "verification": "full canonical local CI mirror",
+  "run": "20261113T184237-7a2cff5bf59f",
+  "correction": "Shared SessionOwner MFA assurance validates the exact canonical GoTrue issuer at backend origin, not its /auth/v1 REST path. The production-pinned GoTrue MFA integration now mirrors actual production issuer/external URL settings; wrong same-origin REST-path issuer is explicitly rejected. No issuer aliases or backend Auth configuration changes."
+}

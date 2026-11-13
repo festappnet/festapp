@@ -48,7 +48,7 @@ export async function postgresApi(t,{strong=false,seed,sqlSetup=programSetup}={}
     const scopes=[READ_SCOPE,CREATE_SCOPE,...Object.keys(MCP_PERMISSIONS)];
     const service=await setup(t,{profileValue:p,userId:f.actor,fetchImpl:backend,proofProfile:strong?'dpop':'bearer',
         apiPolicy:{allowedScopes:scopes,allowedOperations:operationIds,...(strong?{requirePar:true}:{})},
-        ...(strong?{sessionClaims:{iss:p.backendOrigin+'/auth/v1',aud:'authenticated',aal:'aal2',session_id:randomUUID(),amr:[{method:'totp',timestamp:now}]},
+        ...(strong?{sessionClaims:{iss:p.backendOrigin,aud:'authenticated',aal:'aal2',session_id:randomUUID(),amr:[{method:'totp',timestamp:now}]},
             userFactors:[{id:randomUUID(),status:'verified',factor_type:'totp'}]}:{})});
     let sign;
     if(strong){const keys=await generateKeyPair('ES256'),jwk=await exportJWK(keys.publicKey);

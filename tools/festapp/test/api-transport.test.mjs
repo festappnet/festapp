@@ -366,7 +366,7 @@ test('all delegated operations use one catalog, validation and executor through 
     const sign=async(htu,ath)=>new SignJWT({htm:'POST',htu,iat:Math.floor(Date.now()/1000),jti:randomUUID(),...(ath?{ath}:{})}).setProtectedHeader({alg:'ES256',typ:'dpop+jwt',jwk}).sign(privateKey);
     const f=await setup(t,{proofProfile:'dpop',rateLimiter:()=>{},
         apiPolicy:{requirePar:true,allowedScopes:DOMAIN_SCOPES,allowedOperations:operationIds},
-        sessionClaims:{iss:'http://127.0.0.1:54321/auth/v1',aud:'authenticated',aal:'aal2',session_id:randomUUID(),amr:[{method:'totp',timestamp:Math.floor(Date.now()/1000)}]},
+        sessionClaims:{iss:'http://127.0.0.1:54321',aud:'authenticated',aal:'aal2',session_id:randomUUID(),amr:[{method:'totp',timestamp:Math.floor(Date.now()/1000)}]},
         userFactors:[{id:randomUUID(),factor_type:'totp',status:'verified'}],
         fetchImpl:async(url)=>{
             if(url.pathname.endsWith('/get_operator_access_v1'))return;
