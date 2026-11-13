@@ -1,0 +1,249 @@
+{
+  "status": "backend_and_live_oauth_verified",
+  "source": {
+    "exactGitHubJobs": "8/8 PASS",
+    "localCanonicalCi": "8/8 PASS",
+    "mainSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "sourceDigest": "c1e037420561e2a543c77081e206d07c88dd2d47270246fbebb45223032181b0"
+  },
+  "image": {
+    "architecture": "arm64",
+    "archiveSha256": "7fb4590445ba4a9eed992cc1dd69f24bcc730d77ba64764632ca1fac8c882d3a",
+    "base": "node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c",
+    "dockerfile": "tools/festapp/Dockerfile.remote",
+    "globalAndRegionalSameImmutableId": true,
+    "id": "sha256:0979040896ab82d05431183fbb3c7281f40f003449d3944d453e720d8810a6a9",
+    "limits": {
+      "cpu": 0.5,
+      "heapMiB": 192,
+      "memoryMiB": 384
+    },
+    "os": "linux",
+    "tag": "festapp-mcp-global:d9f0e34cd5fc53e1873a63762017c952ad44cfb2-arm64"
+  },
+  "database": {
+    "migration": {
+      "ledgerVerified": true,
+      "name": "shared_bank_writer_acl",
+      "sha256": "127d5a17ba8391cf4d8075e98331c4a0d3aa50d993422c28dd245cf9306fabd1",
+      "version": "20261113160000"
+    },
+    "organizations": [
+      3,
+      25
+    ],
+    "updateBankAccountAcl": {
+      "anonExecute": false,
+      "authenticatedExecute": true,
+      "owner": "postgres",
+      "serviceRoleExecute": true
+    }
+  },
+  "functions": {
+    "bundleArchiveSha256": "7056fcf06c45527aa90dcb4035c899212bb47ecf83d7cdd42b35bd79c14f497c",
+    "bundleSourceSha": "f961bacff3d201f0311267a0687b652e1a5ed8b4",
+    "containerConfigVerified": true,
+    "emailHealth": {
+      "alerts": 0,
+      "producerAccessOk": true,
+      "queuePaused": false
+    },
+    "installedTreeSha256": "49795e9be65966f73faec2d39cb0901df0506a1572ba8fe1bd50557386a18faf",
+    "noRestartAfterD9": true,
+    "sourceChangesBetweenF961AndD9": false,
+    "unauthenticatedWorkerProbePassed": true
+  },
+  "publicChecks": {
+    "global_docs": {
+      "sha256": "2aeb9ae9f7840feb8b90575dd8ffb58034051fb1166d266d6d9538d9abfedbf2",
+      "status": 200
+    },
+    "global_oauth_metadata": {
+      "sha256": "6cf52d61dde596655b237243740f4c266db57a308ff0a9e5ec27676bc22d68b3",
+      "status": 200
+    },
+    "global_resource_metadata": {
+      "sha256": "a5ecc81396d20d9f0a6f9238ea7b9e3714f0dc8170bcae046afa7d66be8d6ddf",
+      "status": 200
+    },
+    "regional_docs": {
+      "sha256": "778c0a9642a15402d503a1d20e26de770dbedc1d711233ff1474c3eb1ce2b1c9",
+      "status": 200
+    },
+    "regional_make_docs": {
+      "sha256": "3db872065f7272d4b722d726c1e10c4f6fac05234dad9598b980dad38855258a",
+      "status": 200
+    }
+  },
+  "runtime": {
+    "globalAndRegionalSameImage": true,
+    "bothHealthy": true,
+    "pendingIntentMigration": {
+      "global": 0,
+      "regional": 0
+    }
+  },
+  "make": {
+    "cutover": "held_until_existing_review_accepted",
+    "regionalMakeDocsHttp": 200,
+    "connectorPublicationReconsentAndScenarioCalls": false,
+    "regionalConfigurationKeysAndPolicyPreserved": true,
+    "originalGlobalClientsPreserved": 5,
+    "grantSemanticAudit": {
+      "global": {
+        "preCount": 10,
+        "postCount": 10,
+        "commonCount": 10,
+        "addedCount": 0,
+        "removedCount": 0,
+        "semanticInvariantChanges": 0,
+        "hardExpiryPolicyFailures": 0,
+        "makeGrantCount": 0,
+        "changedFieldNames": {
+          "lastTokenExchangeAt": {
+            "added": 0,
+            "modified": 1,
+            "removed": 0
+          }
+        }
+      },
+      "regional": {
+        "preCount": 16,
+        "postCount": 16,
+        "commonCount": 16,
+        "addedCount": 0,
+        "removedCount": 0,
+        "semanticInvariantChanges": 0,
+        "hardExpiryPolicyFailures": 0,
+        "makeGrantCount": 0,
+        "changedFieldNames": {
+          "dataProfile": {
+            "added": 16,
+            "modified": 0,
+            "removed": 0
+          },
+          "endpointId": {
+            "added": 16,
+            "modified": 0,
+            "removed": 0
+          },
+          "lastTokenExchangeAt": {
+            "added": 0,
+            "modified": 1,
+            "removed": 0
+          },
+          "proofProfile": {
+            "added": 16,
+            "modified": 0,
+            "removed": 0
+          },
+          "resource": {
+            "added": 16,
+            "modified": 0,
+            "removed": 0
+          }
+        }
+      }
+    }
+  },
+  "qualification": {
+    "bearerOperations": 174,
+    "dpopOperations": 196,
+    "summaryOperations": 5,
+    "sensitiveDpopParAal2Operations": 22,
+    "adapterParityOperations": 196,
+    "realPostgresTests": 270,
+    "disposableIngressChecks": 23,
+    "liveBusinessMutations": 0,
+    "positiveMfa": "production-pinned disposable GoTrue, exact production root issuer",
+    "liveMfa": "missing-MFA rejection before dispatch",
+    "liveGrantOrganization": 3,
+    "organization25": "registry/activation and selected web release; no successful user grant claimed"
+  },
+  "benchmark": {
+    "fixtureSha256": "4ed3782b3e79ed0da0692e9de94712dae419efd6b3b73a563551612b0afc9fcb",
+    "probeCount": 100,
+    "intervalMs": 1250,
+    "limits": {
+      "cpu": 0.5,
+      "heapMiB": 192,
+      "memoryMiB": 384
+    },
+    "runs": {
+      "baseline": {
+        "ok": true,
+        "runtimeDigest": "7c7a4dbf4d867f658b5813ba72ef3647c0b0ed3141e58b73d8a0bd0301575d79",
+        "node": "v24.22.1",
+        "mcpP95Ms": 25.193528999996488,
+        "memory": {
+          "idle": {
+            "rss": 140124160,
+            "heapTotal": 55865344,
+            "heapUsed": 49627000,
+            "external": 4839581,
+            "arrayBuffers": 592014
+          },
+          "afterWork": {
+            "rss": 229933056,
+            "heapTotal": 70447104,
+            "heapUsed": 57922552,
+            "external": 18640117,
+            "arrayBuffers": 2704520
+          },
+          "afterGc": {
+            "rss": 229421056,
+            "heapTotal": 66252800,
+            "heapUsed": 57960080,
+            "external": 13669366,
+            "arrayBuffers": 2339700
+          },
+          "peakRss": 236892160
+        },
+        "limitations": [
+          "fixture backend/renderer response; production renderer/network/DB costs excluded",
+          "32-element near-input-limit text fixture; remote image-worker/network failure costs excluded",
+          "queue exhaustion and disconnect admission covered by targeted HTTP tests, not this timing sample"
+        ],
+        "containerPeakBytes": 196509696
+      },
+      "candidate": {
+        "ok": true,
+        "runtimeDigest": "190a505f7b928ebd3e8e54d879a59a3a81ba87339b30fdae99bbe5046e37509c",
+        "node": "v24.22.1",
+        "mcpP95Ms": 22.532344999999623,
+        "memory": {
+          "idle": {
+            "rss": 143814656,
+            "heapTotal": 60583936,
+            "heapUsed": 53175952,
+            "external": 4985932,
+            "arrayBuffers": 530435
+          },
+          "afterWork": {
+            "rss": 242524160,
+            "heapTotal": 76132352,
+            "heapUsed": 61921920,
+            "external": 19149910,
+            "arrayBuffers": 2988952
+          },
+          "afterGc": {
+            "rss": 242143232,
+            "heapTotal": 70627328,
+            "heapUsed": 62235512,
+            "external": 13867095,
+            "arrayBuffers": 2536308
+          },
+          "peakRss": 248754176
+        },
+        "limitations": [
+          "fixture backend/renderer response; production renderer/network/DB costs excluded",
+          "32-element near-input-limit text fixture; remote image-worker/network failure costs excluded",
+          "queue exhaustion and disconnect admission covered by targeted HTTP tests, not this timing sample"
+        ],
+        "containerPeakBytes": 208646144
+      }
+    },
+    "idleRssDeltaMiB": 3.51953125,
+    "interpretation": "Controlled diagnostic sample, not a claim of production latency improvement; host process RSS and cgroup memory.peak are distinct measurements."
+  }
+}
