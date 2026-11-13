@@ -529,7 +529,14 @@ void main() {
               AuthorizationCapabilities.occasionsWrite: true,
               AuthorizationCapabilities.bankAccountsUnitManage: canManage,
             },
-            unit: UnitModel(id: 5),
+            unit: UnitModel(
+              id: 5,
+              paymentMethodPolicy: {
+                'methods': {
+                  'bank': {'policyEnabled': true},
+                },
+              },
+            ),
             unitUser: OccasionUserModel(isEditor: canManage),
             occasionUser: OccasionUserModel(isEditor: true),
             occasion: OccasionModel(
@@ -571,8 +578,14 @@ void main() {
                     link: 'test',
                     relatedFields: [field],
                     availableBankAccounts: accounts,
-                    data: {},
-                  ),
+                    data: {
+                      'payments': {'bankEnabled': true},
+                    },
+                  )..paymentMethodPolicy = {
+                    'methods': {
+                      'bank': {'policyEnabled': true},
+                    },
+                  },
                   productTypes: [],
                   products: [],
                   availableBankAccounts: accounts,

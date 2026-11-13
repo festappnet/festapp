@@ -1,6 +1,9 @@
-import '../components/occasion_settings/occasion_settings_layout_cases.dart' as occasion_settings_layout;
-import '../components/occasion_settings/occasion_features_grid_cases.dart' as occasion_features_grid;
-import '../components/eshop/payment_grid_actions_cases.dart' as payment_grid_actions;
+import '../components/occasion_settings/occasion_settings_layout_cases.dart'
+    as occasion_settings_layout;
+import '../components/occasion_settings/occasion_features_grid_cases.dart'
+    as occasion_features_grid;
+import '../components/eshop/payment_grid_actions_cases.dart'
+    as payment_grid_actions;
 import '../components/occasion/occasion_sale_cases.dart' as occasion_sale;
 import '../components/occasion/occasion_setup_copy_cases.dart'
     as occasion_setup_copy;

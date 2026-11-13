@@ -108,7 +108,11 @@ remote fields and writes actual drift; time boundaries enqueue the same work.
 Scheduling, leases and retry state live only in ticket_wallet_work. See the
 [implementation plan](../plans/ticket-wallet-change-queue-plan-2026-11-13.md)
 and [local execution record](../plans/ticket-wallet-change-queue-RESULT-2026-11-13.md).
-These queue migrations and scheduler changes have **not been deployed**.
+The queue migrations and the single 10-second scheduler were deployed for
+`vstupenky.online` (organization 3) on 2026-11-13 from canonical source
+`e05a9b68d50f8e898c1fe390239d1b7251a8fbd4`. The existing pass identity was
+preserved, the worker and email queue resumed, and live product save/readback
+with an idempotent replay succeeded.
 
 Measured synthetic burst limits are approximately 4 object updates/second under
 continuous dispatch: 1,000 cards take at least 251 seconds; 10,000 take at least
