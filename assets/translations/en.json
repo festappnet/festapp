@@ -4766,7 +4766,7 @@
     "unread": "Notifications - new events",
     "settings": "Notification settings",
     "back": "Back to notifications",
-    "muteHelp": "Mute an event to stop new notifications. Your history stays available. Unmuting does not replay missed events.",
+    "muteHelp": "Muting stops new in-app notifications and optional emails for that event. Your history stays available. Unmuting does not replay missed events.",
     "muted": "Mute new notifications",
     "saveFailed": "Could not save notification settings. Try again.",
     "newNotification": "New notification",
@@ -4915,7 +4915,7 @@
       "bank_problem": "Bank problems",
       "provider_problem": "Payment gateway problems"
     },
-    "emailRequiredHelp": "Required alerts for authorized recipients. Muting an event or turning summaries off does not disable them.",
+    "emailRequiredHelp": "Always on. Turning summaries off or muting events does not disable these alerts.",
     "emailAlwaysOn": "Always on",
     "emailHelp": "One summary every {minutes} minutes. This switch applies to your account across portals.",
     "emailCategories": {
@@ -4940,7 +4940,16 @@
       "blocked": "Waiting to send"
     },
     "paymentAssigned": "Assignment of a received payment",
-    "emailScopeHelp": "Selected categories apply to all accessible events on this portal. You can mute individual events below."
+    "emailScopeHelp": "Selected categories apply to all accessible events on this portal. You can mute individual events below.",
+    "emailRequiredTitle": "Required alerts",
+    "emailDisabledHelp": "Turn summaries on to change categories. Your selections are saved.",
+    "muteTitle": "Mute individual events",
+    "muteEmpty": "You have no available events to mute.",
+    "emailIssues": {
+      "no_address": "Summaries cannot be sent because no delivery email address is available. You can read notifications in the overview.",
+      "dead": "The last email summary could not be sent. You can read notifications in the overview.",
+      "suppressed": "The last email summary was blocked from being sent. You can read notifications in the overview."
+    }
   },
   "TicketBatches": {
     "selectedCount": "Selected: {count}",

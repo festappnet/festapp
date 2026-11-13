@@ -2653,7 +2653,7 @@
     "unread": "Upozornenia - nové udalosti",
     "settings": "Nastavenia upozornení",
     "back": "Späť na upozornenia",
-    "muteHelp": "Stlmenie akcie zastaví nové upozornenia. História zostane dostupná. Zmeškané udalosti sa po zapnutí nedoplnia.",
+    "muteHelp": "Stlmenie zastaví nové upozornenia v aplikácii aj voliteľné e-maily z danej akcie. História zostane dostupná. Zmeškané udalosti sa po zapnutí nedoplnia.",
     "muted": "Stlmiť nové upozornenia",
     "saveFailed": "Nastavenia sa nepodarilo uložiť. Skúste znova.",
     "newNotification": "Nové oznámenie",
@@ -2802,7 +2802,7 @@
       "bank_problem": "Bankové problémy",
       "provider_problem": "Problémy platobných brán"
     },
-    "emailRequiredHelp": "Povinné upozornenia pre oprávnených príjemcov. Stíšenie akcie ani vypnutie súhrnov ich nevypne.",
+    "emailRequiredHelp": "Vždy zapnuté. Vypnutie súhrnov ani stlmenie akcií tieto upozornenia nevypne.",
     "emailAlwaysOn": "Vždy zapnuté",
     "emailHelp": "Jeden súhrn každých {minutes} minút. Prepínač platí pre Váš účet naprieč portálmi.",
     "emailCategories": {
@@ -2827,7 +2827,16 @@
       "blocked": "Čaká na odoslanie"
     },
     "paymentAssigned": "Priradenie prijatej platby",
-    "emailScopeHelp": "Vybrané kategórie platia pre všetky dostupné akcie na tomto portáli. Jednotlivé akcie môžete stíšiť nižšie."
+    "emailScopeHelp": "Vybrané kategórie platia pre všetky dostupné akcie na tomto portáli. Jednotlivé akcie môžete stíšiť nižšie.",
+    "emailRequiredTitle": "Povinné upozornenia",
+    "emailDisabledHelp": "Ak chcete zmeniť kategórie, zapnite súhrny. Váš výber zostáva uložený.",
+    "muteTitle": "Stlmenie jednotlivých akcií",
+    "muteEmpty": "Nemáte žiadne dostupné akcie na stlmenie.",
+    "emailIssues": {
+      "no_address": "Súhrny nemožno odoslať, pretože nie je dostupná doručovacia e-mailová adresa. Upozornenia si môžete prečítať v prehľade.",
+      "dead": "Posledný e-mailový súhrn sa nepodarilo odoslať. Upozornenia si môžete prečítať v prehľade.",
+      "suppressed": "Odoslanie posledného e-mailového súhrnu bolo zablokované. Upozornenia si môžete prečítať v prehľade."
+    }
   },
   "TicketBatches": {
     "selectedCount": "Vybrané: {count}",

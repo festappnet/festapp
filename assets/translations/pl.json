@@ -2628,7 +2628,7 @@
     "unread": "Powiadomienia - nowe zdarzenia",
     "settings": "Ustawienia powiadomień",
     "back": "Powrót do powiadomień",
-    "muteHelp": "Wyciszenie wydarzenia zatrzymuje nowe powiadomienia. Historia pozostaje dostępna. Pominięte zdarzenia nie zostaną odtworzone.",
+    "muteHelp": "Wyciszenie zatrzymuje nowe powiadomienia w aplikacji i opcjonalne e-maile z danego wydarzenia. Historia pozostaje dostępna. Pominięte zdarzenia nie zostaną odtworzone.",
     "muted": "Wycisz nowe powiadomienia",
     "saveFailed": "Nie udało się zapisać ustawień. Spróbuj ponownie.",
     "newNotification": "Nowe powiadomienie",
@@ -2777,7 +2777,7 @@
       "bank_problem": "Problemy bankowe",
       "provider_problem": "Problemy z bramkami płatniczymi"
     },
-    "emailRequiredHelp": "Obowiązkowe alerty dla uprawnionych odbiorców. Wyciszenie wydarzenia lub wyłączenie podsumowań ich nie wyłącza.",
+    "emailRequiredHelp": "Zawsze włączone. Wyłączenie podsumowań ani wyciszenie wydarzeń nie wyłącza tych alertów.",
     "emailAlwaysOn": "Zawsze włączone",
     "emailHelp": "Jedno podsumowanie co {minutes} minut. Przełącznik dotyczy konta we wszystkich portalach.",
     "emailCategories": {
@@ -2802,7 +2802,16 @@
       "blocked": "Oczekuje na wysłanie"
     },
     "paymentAssigned": "Przypisanie otrzymanej płatności",
-    "emailScopeHelp": "Wybrane kategorie dotyczą wszystkich dostępnych wydarzeń w tym portalu. Poniżej można wyciszyć poszczególne wydarzenia."
+    "emailScopeHelp": "Wybrane kategorie dotyczą wszystkich dostępnych wydarzeń w tym portalu. Poniżej można wyciszyć poszczególne wydarzenia.",
+    "emailRequiredTitle": "Obowiązkowe alerty",
+    "emailDisabledHelp": "Włącz podsumowania, aby zmienić kategorie. Twój wybór pozostaje zapisany.",
+    "muteTitle": "Wyciszanie poszczególnych wydarzeń",
+    "muteEmpty": "Nie masz dostępnych wydarzeń do wyciszenia.",
+    "emailIssues": {
+      "no_address": "Nie można wysyłać podsumowań, ponieważ adres e-mail do doręczeń jest niedostępny. Powiadomienia możesz przeczytać w przeglądzie.",
+      "dead": "Nie udało się wysłać ostatniego podsumowania e-mail. Powiadomienia możesz przeczytać w przeglądzie.",
+      "suppressed": "Wysyłka ostatniego podsumowania e-mail została zablokowana. Powiadomienia możesz przeczytać w przeglądzie."
+    }
   },
   "TicketBatches": {
     "selectedCount": "Wybrano: {count}",

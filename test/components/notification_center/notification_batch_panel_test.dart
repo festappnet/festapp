@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -49,6 +50,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final saves = <Map<String, dynamic>>[];
       var revision = 0;
+      var stopped = false;
+      var failLoad = false;
+      var failSave = false;
+      Completer<void>? saving;
+
       var selected = <String, dynamic>{
         'email_problem': {'enabled': true},
         'payment_problem': {'enabled': false},
@@ -56,6 +62,9 @@ void main() {
       final controller = NotificationCenterController(
         read: (name, params) async {
           if (name == 'save_notification_center_email_settings') {
+            if (failSave) throw StateError('save unavailable');
+            await saving?.future;
+            stopped = params['p_stopped'] == true;
             saves.add(Map<String, dynamic>.from(params));
             selected = {
               for (final entry in (params['p_kinds'] as Map).entries)
@@ -63,6 +72,7 @@ void main() {
             };
             return ++revision;
           }
+          if (failLoad) throw StateError('settings unavailable');
           return {
             'items': [
               {'id': 12, 'title': 'Ples hasičů', 'muted': false},
@@ -70,10 +80,13 @@ void main() {
             'email': {
               'revision': revision,
               'windowSeconds': 300,
-              'stopped': false,
+              'stopped': stopped,
+              'state': 'accepted',
               'locale': 'cs',
               'catalog': {
                 'order_created': 'orders',
+                'waitlist_registered': 'waitlist',
+                'order_payment_received': 'payments',
                 'bank_problem': 'problems',
                 'provider_problem': 'problems',
                 'email_problem': 'problems',
@@ -149,7 +162,9 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Vždy zapnuto'), findsNWidgets(2));
+      expect(find.text('Povinná upozornění'), findsOneWidget);
+      expect(find.textContaining('Vždy zapnuto.'), findsOneWidget);
+      expect(find.text('Předáno poskytovateli'), findsNothing);
       expect(find.text('Problémy platebních bran'), findsOneWidget);
       final gateway = NotificationItem.fromJson({
         'id': 'gateway-incident',
@@ -176,6 +191,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(saves.single['p_kinds'], {
         'order_created': true,
+        'waitlist_registered': false,
+        'order_payment_received': false,
         'email_problem': true,
         'payment_problem': false,
       });
@@ -184,18 +201,162 @@ void main() {
       expect(find.byType(DropdownButton<int>), findsNothing);
       expect(tester.takeException(), isNull);
       const capturePath = String.fromEnvironment('NOTIFICATION_CAPTURE_DIR');
-      if (capturePath.isNotEmpty) {
+      Future<void> capture(String name) async {
+        expect(tester.takeException(), isNull);
+        if (capturePath.isEmpty) return;
         final boundary = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(imageKey),
         );
         await tester.runAsync(() async {
           final image = await boundary.toImage(pixelRatio: 1);
           final data = await image.toByteData(format: ui.ImageByteFormat.png);
-          File('$capturePath/email-settings-light.png')
+          File('$capturePath/$name.png')
               .writeAsBytesSync(data!.buffer.asUint8List());
           image.dispose();
         });
       }
+
+      final settingsList = find.byKey(
+        const PageStorageKey('notification-settings'),
+      );
+      Future<void> top() async {
+        tester.widget<ListView>(settingsList).controller!.jumpTo(0);
+        await tester.pumpAndSettle();
+      }
+
+      await capture('email-settings-light');
+      for (final size in [const Size(390, 844), const Size(1000, 1000)]) {
+        tester.view.physicalSize = size;
+        await tester.pumpAndSettle();
+        await top();
+        await capture('email-settings-${size.width.toInt()}-light');
+        await tester.drag(settingsList, const Offset(0, -700));
+        await tester.pumpAndSettle();
+        await capture('email-settings-${size.width.toInt()}-bottom-light');
+      }
+      tester.view.physicalSize = const Size(390, 1000);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+      await top();
+      await capture('email-settings-large-text-light');
+      final scroll = tester.widget<ListView>(settingsList).controller!;
+      scroll.jumpTo(scroll.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.widgetWithText(SwitchListTile, 'Ples hasičů'),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .getBottomRight(find.widgetWithText(SwitchListTile, 'Ples hasičů'))
+            .dy,
+        lessThanOrEqualTo(tester.getBottomRight(settingsList).dy),
+      );
+      await capture('email-settings-large-text-bottom-light');
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+      tester.view.physicalSize = const Size(390, 1200);
+      await tester.pumpAndSettle();
+      await top();
+
+      // Saving is visible and prevents conflicting edits. Switching off preserves
+      // the selected categories and disables them until summaries are enabled.
+      saving = Completer<void>();
+      await tester.tap(
+        find.widgetWithText(SwitchListTile, 'Volitelné e-mailové souhrny'),
+      );
+      await tester.pump();
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, 'Objednávky'),
+            )
+            .onChanged,
+        isNull,
+      );
+      saving.complete();
+      await tester.pumpAndSettle();
+      saving = null;
+      expect(stopped, true);
+      final disabledOrder = tester.widget<CheckboxListTile>(
+        find.widgetWithText(CheckboxListTile, 'Objednávky'),
+      );
+      expect(disabledOrder.value, true);
+      expect(disabledOrder.onChanged, isNull);
+      expect(find.textContaining('Váš výběr zůstává uložený.'), findsOneWidget);
+      expect(find.byIcon(Icons.lock_outline), findsNWidgets(2));
+      await capture('email-settings-disabled-light');
+      await tester.tap(
+        find.widgetWithText(SwitchListTile, 'Volitelné e-mailové souhrny'),
+      );
+      await tester.pumpAndSettle();
+      expect(stopped, false);
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, 'Objednávky'),
+            )
+            .value,
+        true,
+      );
+
+      failSave = true;
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'Objednávky'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, 'Objednávky'),
+            )
+            .value,
+        true,
+      );
+      failSave = false;
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      for (final state in [
+        'accepted',
+        'pending',
+        'sending',
+        'retry_wait',
+        'unknown',
+      ]) {
+        controller.emailSettings['state'] = state;
+        controller.notifyListeners();
+        await tester.pumpAndSettle();
+        expect(
+          find.text('NotificationCenter.emailStates.$state'.tr()),
+          findsNothing,
+        );
+        expect(find.byIcon(Icons.info_outline), findsNothing);
+      }
+      for (final state in ['no_address', 'dead', 'suppressed']) {
+        controller.emailSettings['state'] = state;
+        controller.notifyListeners();
+        await tester.pumpAndSettle();
+        await tester.drag(settingsList, const Offset(0, -600));
+        await tester.pumpAndSettle();
+        expect(find.byIcon(Icons.info_outline), findsOneWidget);
+        expect(
+          find.textContaining('Notifikace si můžete přečíst v přehledu.'),
+          findsOneWidget,
+        );
+      }
+      controller.emailSettings.remove('state');
+      failLoad = true;
+      await controller.loadSettings();
+      await tester.pumpAndSettle();
+      await top();
+      expect(find.text('Zkusit znovu'), findsOneWidget);
+      failLoad = false;
+      await tester.tap(find.text('Zkusit znovu'));
+      await tester.pumpAndSettle();
+      expect(controller.settingsFailed, false);
+      expect(find.text('Zkusit znovu'), findsNothing);
+      expect(tester.takeException(), isNull);
     },
   );
   for (final width in [390.0, 1000.0]) {

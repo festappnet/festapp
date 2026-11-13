@@ -2626,7 +2626,7 @@
     "unread": "Benachrichtigungen - neue Ereignisse",
     "settings": "Benachrichtigungseinstellungen",
     "back": "Zurück zu Benachrichtigungen",
-    "muteHelp": "Stummgeschaltete Veranstaltungen senden keine neuen Benachrichtigungen. Der Verlauf bleibt erhalten. Verpasste Ereignisse werden nicht nachgeholt.",
+    "muteHelp": "Stummschalten stoppt neue In-App-Benachrichtigungen und optionale E-Mails für diese Veranstaltung. Der Verlauf bleibt erhalten. Verpasste Ereignisse werden nicht nachgeholt.",
     "muted": "Neue Benachrichtigungen stummschalten",
     "saveFailed": "Einstellungen konnten nicht gespeichert werden. Erneut versuchen.",
     "newNotification": "Neue Benachrichtigung",
@@ -2775,7 +2775,7 @@
       "bank_problem": "Bankprobleme",
       "provider_problem": "Probleme mit Zahlungsanbietern"
     },
-    "emailRequiredHelp": "Pflichtmeldungen für berechtigte Empfänger. Stummschalten einer Veranstaltung oder Ausschalten der Zusammenfassungen deaktiviert sie nicht.",
+    "emailRequiredHelp": "Immer aktiv. Auch bei ausgeschalteten Zusammenfassungen oder stummgeschalteten Veranstaltungen erhalten Sie diese Meldungen.",
     "emailAlwaysOn": "Immer aktiv",
     "emailHelp": "Eine Zusammenfassung alle {minutes} Minuten. Dieser Schalter gilt für Ihr Konto in allen Portalen.",
     "emailCategories": {
@@ -2800,7 +2800,16 @@
       "blocked": "Wartet auf Versand"
     },
     "paymentAssigned": "Zuordnung einer eingegangenen Zahlung",
-    "emailScopeHelp": "Die gewählten Kategorien gelten für alle zugänglichen Veranstaltungen dieses Portals. Einzelne Veranstaltungen können Sie unten stummschalten."
+    "emailScopeHelp": "Die gewählten Kategorien gelten für alle zugänglichen Veranstaltungen dieses Portals. Einzelne Veranstaltungen können Sie unten stummschalten.",
+    "emailRequiredTitle": "Pflichtmeldungen",
+    "emailDisabledHelp": "Aktivieren Sie Zusammenfassungen, um Kategorien zu ändern. Ihre Auswahl bleibt gespeichert.",
+    "muteTitle": "Einzelne Veranstaltungen stummschalten",
+    "muteEmpty": "Es sind keine Veranstaltungen zum Stummschalten verfügbar.",
+    "emailIssues": {
+      "no_address": "Zusammenfassungen können nicht gesendet werden, da keine Zustelladresse für E-Mails verfügbar ist. Sie können Benachrichtigungen in der Übersicht lesen.",
+      "dead": "Die letzte E-Mail-Zusammenfassung konnte nicht gesendet werden. Sie können Benachrichtigungen in der Übersicht lesen.",
+      "suppressed": "Der Versand der letzten E-Mail-Zusammenfassung wurde blockiert. Sie können Benachrichtigungen in der Übersicht lesen."
+    }
   },
   "TicketBatches": {
     "selectedCount": "Ausgewählt: {count}",

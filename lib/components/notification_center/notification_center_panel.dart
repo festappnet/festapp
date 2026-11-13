@@ -35,20 +35,24 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   List<Widget> _emailControls(BuildContext context) {
     final c = widget.controller;
     final settings = c.emailSettings;
-    final catalog = Map<String, dynamic>.from(settings['catalog'] as Map? ?? {});
+    final catalog = Map<String, dynamic>.from(
+      settings['catalog'] as Map? ?? {},
+    );
     final requiredKinds = (settings['requiredKinds'] as List? ?? [])
         .whereType<String>()
         .where(catalog.containsKey)
         .toSet();
     catalog.removeWhere((kind, _) => requiredKinds.contains(kind));
-    final hasOptionalKinds = (settings['catalog'] as Map? ?? {}).keys.any(
-      (kind) => !(settings['requiredKinds'] as List? ?? []).contains(kind),
-    );
+    final hasOptionalKinds = catalog.isNotEmpty;
+    final enabled = settings['stopped'] == false;
+    final busy = c.emailSaving || c.settingsLoading;
     final windowSeconds = settings['windowSeconds'];
     if ((settings['catalog'] as Map? ?? {}).isEmpty || windowSeconds is! num) {
       return [];
     }
-    final effective = Map<String, dynamic>.from(settings['kinds'] as Map? ?? {});
+    final effective = Map<String, dynamic>.from(
+      settings['kinds'] as Map? ?? {},
+    );
     final kinds = <String, bool>{
       for (final kind in catalog.keys)
         kind: (effective[kind] as Map?)?['enabled'] == true,
@@ -68,14 +72,6 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
 
     String s(String key) => NotificationCenterStrings.text(key);
     return [
-      for (final kind in requiredKinds)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.lock_outline),
-          title: Text(s('requiredKinds.$kind')),
-          subtitle: Text(s('emailRequiredHelp')),
-          trailing: Text(s('emailAlwaysOn')),
-        ),
       if (hasOptionalKinds)
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
@@ -83,10 +79,18 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           subtitle: Text(
             NotificationCenterStrings.emailHelp(windowSeconds.toInt()),
           ),
-          value: settings['stopped'] == false,
-          onChanged: c.emailSaving ? null : (value) => save(stopped: !value),
+          value: enabled,
+          onChanged: busy ? null : (value) => save(stopped: !value),
         ),
-      if (hasOptionalKinds) Text(s('emailScopeHelp')),
+      if (hasOptionalKinds) ...[
+        const SizedBox(height: 8),
+        _settingsHelp(context, s('emailScopeHelp')),
+        if (!enabled) ...[
+          const SizedBox(height: 8),
+          _settingsHelp(context, s('emailDisabledHelp')),
+        ],
+        const SizedBox(height: 8),
+      ],
       for (final category in catalog.values.toSet())
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
@@ -102,7 +106,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     .every((entry) => kinds[entry.key] != true)
               ? false
               : null,
-          onChanged: c.emailSaving
+          onChanged: busy || !enabled
               ? null
               : (value) => save(
                   next: {
@@ -114,10 +118,70 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                   },
                 ),
         ),
-      if (settings['state'] != null)
-        Text(s('emailStates.${settings['state']}')),
+      if (requiredKinds.isNotEmpty) ...[
+        if (hasOptionalKinds) const Divider(height: 32),
+        _settingsHeading(context, s('emailRequiredTitle')),
+        const SizedBox(height: 8),
+        _settingsHelp(context, s('emailRequiredHelp')),
+        const SizedBox(height: 8),
+        for (final kind in requiredKinds)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(s('requiredKinds.$kind'))),
+              ],
+            ),
+          ),
+      ],
+      if (const {
+        'no_address',
+        'dead',
+        'suppressed',
+      }.contains(settings['state']))
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: _settingsNotice(
+            context,
+            s('emailIssues.${settings['state']}'),
+          ),
+        ),
+      const Divider(height: 32),
     ];
   }
+
+  Widget _settingsHeading(BuildContext context, String text) => Semantics(
+    header: true,
+    child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+  );
+
+  Widget _settingsHelp(BuildContext context, String text) => Text(
+    text,
+    style: Theme.of(context).textTheme.bodyMedium
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+  );
+
+  Widget _settingsNotice(BuildContext context, String text) => Semantics(
+    liveRegion: true,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.info_outline,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text)),
+      ],
+    ),
+  );
 
   @override
   void dispose() {
@@ -149,10 +213,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ),
                 child: AppDialogHeader(
                   title: Text(
-                    NotificationCenterStrings.title,
+                    settings ? s('settings') : NotificationCenterStrings.title,
                     textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      fontSize: 28,
+                    style: TextStyle(
+                      fontSize: settings ? 22 : 28,
                       height: 1.15,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0,
@@ -193,8 +257,21 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           const Divider(height: 1),
           SizedBox(
             height: 4,
-            child: c.loading || c.preparing || c.settingsLoading
-                ? const LinearProgressIndicator()
+            child:
+                c.loading ||
+                    c.preparing ||
+                    c.settingsLoading ||
+                    c.emailSaving ||
+                    c.occasions.any((occasion) => occasion['saving'] == true)
+                ? LinearProgressIndicator(
+                    semanticsLabel:
+                        c.emailSaving ||
+                            c.occasions.any(
+                              (occasion) => occasion['saving'] == true,
+                            )
+                        ? CommonStrings.saving
+                        : null,
+                  )
                 : null,
           ),
           Flexible(
@@ -205,18 +282,39 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     primary: false,
                     padding: const EdgeInsets.all(16),
                     children: [
+                      if (c.settingsFailed) ...[
+                        _settingsNotice(context, s('loadFailed')),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton(
+                            onPressed: c.settingsLoading
+                                ? null
+                                : () => c.loadSettings(),
+                            child: Text(CommonStrings.retry),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       ..._emailControls(context),
-                      const Divider(),
-                      Text(s('muteHelp')),
-                      const SizedBox(height: 16),
-                      if (c.settingsFailed) Text(s('loadFailed')),
+                      _settingsHeading(context, s('muteTitle')),
+                      const SizedBox(height: 8),
+                      _settingsHelp(context, s('muteHelp')),
+                      const SizedBox(height: 8),
+                      if (c.occasions.isEmpty &&
+                          !c.settingsLoading &&
+                          !c.settingsFailed)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(s('muteEmpty')),
+                        ),
                       for (final occasion in c.occasions)
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(occasion['title']?.toString() ?? ''),
                           subtitle: Text(s('muted')),
                           value: occasion['muted'] == true,
-                          onChanged: occasion['saving'] == true
+                          onChanged:
+                              occasion['saving'] == true || c.settingsLoading
                               ? null
                               : (value) async {
                                   final success = await c.mute(occasion, value);

@@ -4768,7 +4768,7 @@
     "unread": "Notifikace - nové události",
     "settings": "Nastavení notifikací",
     "back": "Zpět na notifikace",
-    "muteHelp": "Ztlumení akce zastaví nové notifikace. Historie zůstane dostupná. Po odtlumení se zmeškané události nedoplní.",
+    "muteHelp": "Ztlumení zastaví nové notifikace v aplikaci i volitelné e-maily z dané akce. Historie zůstane dostupná. Po odtlumení se zmeškané události nedoplní.",
     "muted": "Ztlumit nové notifikace",
     "saveFailed": "Nastavení se nepodařilo uložit. Zkuste to znovu.",
     "newNotification": "Nová notifikace",
@@ -4917,7 +4917,7 @@
       "bank_problem": "Bankovní problémy",
       "provider_problem": "Problémy platebních bran"
     },
-    "emailRequiredHelp": "Povinné upozornění pro oprávněné příjemce. Ztlumení akce ani vypnutí souhrnů jej nevypne.",
+    "emailRequiredHelp": "Vždy zapnuto. Vypnutí souhrnů ani ztlumení akcí tato upozornění nevypne.",
     "emailAlwaysOn": "Vždy zapnuto",
     "emailHelp": "Jednou za {minutes} minut jeden souhrn. Přepínač platí pro Váš účet napříč portály.",
     "emailCategories": {
@@ -4942,7 +4942,16 @@
       "blocked": "Čeká na odeslání"
     },
     "paymentAssigned": "Přiřazení přijaté platby",
-    "emailScopeHelp": "Vybrané kategorie platí pro všechny dostupné akce na tomto portálu. Jednotlivé akce můžete ztlumit níže."
+    "emailScopeHelp": "Vybrané kategorie platí pro všechny dostupné akce na tomto portálu. Jednotlivé akce můžete ztlumit níže.",
+    "emailRequiredTitle": "Povinná upozornění",
+    "emailDisabledHelp": "Pro změnu kategorií zapněte souhrny. Váš výběr zůstává uložený.",
+    "muteTitle": "Ztlumení jednotlivých akcí",
+    "muteEmpty": "Nemáte žádné dostupné akce ke ztlumení.",
+    "emailIssues": {
+      "no_address": "Souhrny nelze odeslat, protože není dostupná doručovací e-mailová adresa. Notifikace si můžete přečíst v přehledu.",
+      "dead": "Poslední e-mailový souhrn se nepodařilo odeslat. Notifikace si můžete přečíst v přehledu.",
+      "suppressed": "Odeslání posledního e-mailového souhrnu bylo zablokováno. Notifikace si můžete přečíst v přehledu."
+    }
   },
   "TicketBatches": {
     "selectedCount": "Vybráno: {count}",
