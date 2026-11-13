@@ -1,0 +1,73 @@
+{
+  "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+  "proofs": [
+    {
+      "status": "PASS",
+      "resource": "https://api.festapp.net/integrations",
+      "expectedOrganizationId": 3,
+      "observedOrganizationId": 3,
+      "tokenType": "DPoP",
+      "contextInspect": 200,
+      "stepUpRequiredBeforeDispatch": true,
+      "stepUpProbeOperation": "orders.delete",
+      "strongAuthenticationChallenge": true,
+      "operatorScopeCount": 84,
+      "immediateBoundRefresh": 200,
+      "refreshedContextInspect": 200,
+      "bearerDowngradeRejected": true,
+      "crossResourceRejected": true,
+      "refreshTokenRevoked": true,
+      "postRevokeAccessRejected": true
+    },
+    {
+      "status": "PASS",
+      "resource": "https://api.vstupenky.online/integrations",
+      "expectedOrganizationId": 3,
+      "observedOrganizationId": 3,
+      "tokenType": "DPoP",
+      "contextInspect": 200,
+      "stepUpRequiredBeforeDispatch": true,
+      "stepUpProbeOperation": "orders.delete",
+      "strongAuthenticationChallenge": true,
+      "operatorScopeCount": 84,
+      "immediateBoundRefresh": 200,
+      "refreshedContextInspect": 200,
+      "bearerDowngradeRejected": true,
+      "crossResourceRejected": true,
+      "refreshTokenRevoked": true,
+      "postRevokeAccessRejected": true
+    },
+    {
+      "status": "PASS",
+      "resource": "https://mcp.festapp.net/mcp",
+      "expectedOrganizationId": 3,
+      "observedOrganizationId": 3,
+      "tokenType": "Bearer",
+      "contextInspect": 200,
+      "immediateBoundRefresh": 200,
+      "refreshedContextInspect": 200,
+      "mcpContextTool": "festapp_context_inspect",
+      "apiResourcesRejected": true,
+      "refreshTokenRevoked": true,
+      "postRevokeAccessRejected": true
+    }
+  ],
+  "fixtureOrganization": 3,
+  "businessMutations": 0,
+  "browserCleanup": {
+    "ownAuthLocalLogoutHttp": 204,
+    "globalSignOut": false,
+    "isolatedSessionClosed": true
+  },
+  "scopePolicy": {
+    "permissionGroups": 83,
+    "registeredOperatorScopeCeiling": 85,
+    "apiGrantScopes": 84,
+    "unrequestedScopesGranted": 0,
+    "occasionOnlyConsentExcludesCreateScope": true
+  },
+  "limitations": [
+    "Positive MFA is qualified with production-pinned GoTrue and production issuer shape in the disposable suite; live probes verify missing-MFA rejection without business dispatch.",
+    "Live own-user grants use the controlled organization3 fixture; organization25 has registry/activation and selected web-release verification."
+  ]
+}
