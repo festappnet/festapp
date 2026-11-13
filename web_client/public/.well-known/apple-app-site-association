@@ -1,12 +1,12 @@
 {
   "applinks": {
     "apps": [
-      "8WKBB6L8LT.festapp.festapp"
+      "8WKBB6L8LT.festapp.festivalslunovrat"
     ],
     "details": [
       {
         "appIDs": [
-          "8WKBB6L8LT.festapp.festapp"
+          "8WKBB6L8LT.festapp.festivalslunovrat"
         ],
         "components": [
           {
@@ -42,7 +42,7 @@
   },
   "webcredentials": {
     "apps": [
-      "8WKBB6L8LT.festapp.festapp"
+      "8WKBB6L8LT.festapp.festivalslunovrat"
     ]
   }
 }
