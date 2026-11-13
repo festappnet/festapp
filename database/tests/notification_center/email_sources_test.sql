@@ -14,7 +14,7 @@ BEGIN
  PERFORM assert_eq(v->>'state','ready','actual producers reach prepared ready');
  FOR k IN SELECT DISTINCT kind FROM public.notification_center_events WHERE organization=p_org LOOP
   SELECT count(*) INTO expected FROM public.notification_center_events e
-  WHERE e.organization=p_org AND e.kind=k AND public.notification_center_in_center_internal(e,clock_timestamp())
+  WHERE e.organization=p_org AND e.kind=k AND e.kind<>'order_payment_received' AND public.notification_center_in_center_internal(e,clock_timestamp())
    AND public.notification_center_allowed(e,p_user) AND EXISTS(SELECT 1 FROM public.notification_center_deliveries d WHERE d.event_id=e.id AND d.recipient=p_user);
   SELECT coalesce(sum(coalesce((x#>>'{data,activityCount}')::bigint,(x#>>'{data,eventCount}')::bigint,1)),0) INTO actual
    FROM jsonb_array_elements(v->'items') x WHERE x->>'kind'=k AND x->>'state'='ready';

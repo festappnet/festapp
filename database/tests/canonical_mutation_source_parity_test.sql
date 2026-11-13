@@ -1694,45 +1694,45 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_payment_fact_internal(bigint,text,text,numeric,text,timestamp with time zone,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='a1a2825c36079355a030b5421b1250da'),'current SQL source parity: public.notification_center_payment_fact_internal(bigint,text,text,numeric,text,timestamp with time zone,boolean)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_payment_problem_internal(bigint,boolean,text)') AND md5(btrim(prosrc,E' \n\r\t'))='09286c7686d849860207ff64a8ffd821'),'current SQL source parity: public.notification_center_payment_problem_internal(bigint,boolean,text)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_allowed_scopes(bigint,bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='6d1b178f65d31dd9eed2d8971f309803'),'current SQL source parity: public.notification_center_prepared_allowed_scopes(bigint,bigint,uuid)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_apply(public.notification_center_events,public.notification_center_deliveries,timestamp with time zone,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='7da0addca647dd25e8e279650fa6eb78'),'current SQL source parity: public.notification_center_prepared_apply(public.notification_center_events,public.notification_center_deliveries,timestamp with time zone,jsonb)');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_batch_at(public.notification_center_events,public.notification_center_deliveries,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='9040690dfe3a3859737d45931bf9a02e'),'current SQL source parity: public.notification_center_prepared_batch_at(public.notification_center_events,public.notification_center_deliveries,timestamp with time zone)');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_contact(public.notification_center_events)') AND md5(btrim(prosrc,E' \n\r\t'))='0ddadcf1fce208c0728f74f5703116c3'),'current SQL source parity: public.notification_center_prepared_contact(public.notification_center_events)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_defer(uuid,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='183899f11213eaf7be1cb69098429ae3'),'current SQL source parity: public.notification_center_prepared_defer(uuid,uuid,bigint)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_delete_events(uuid[])') AND md5(btrim(prosrc,E' \n\r\t'))='301992ce3f0fadbb5fcafe9397efcac4'),'current SQL source parity: public.notification_center_prepared_delete_events(uuid[])');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_delete_member(bigint,uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='0996ea3774ed4e11e0dba2d35364368c'),'current SQL source parity: public.notification_center_prepared_delete_member(bigint,uuid,uuid)');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_display_key(uuid,integer,integer,text[])') AND md5(btrim(prosrc,E' \n\r\t'))='9bd487581b9c32833f47f32bcd01ff4f'),'current SQL source parity: public.notification_center_prepared_display_key(uuid,integer,integer,text[])');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_event_access(public.notification_center_events,bigint,text[])') AND md5(btrim(prosrc,E' \n\r\t'))='f29bab1f18c7dfbdfc6cc6667cdbf605'),'current SQL source parity: public.notification_center_prepared_event_access(public.notification_center_events,bigint,text[])');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_invalidate(uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='030008671535b42ace5d88474d107a6b'),'current SQL source parity: public.notification_center_prepared_invalidate(uuid)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_invalidate_order(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='fda5ffe651e3dc35d53de981332aee08'),'current SQL source parity: public.notification_center_prepared_invalidate_order(bigint)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_invalidate_user(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ff9bc52ce3484a1174de1562a3c783a1'),'current SQL source parity: public.notification_center_prepared_invalidate_user(uuid,bigint)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_on_delivery(public.notification_center_events,public.notification_center_deliveries)') AND md5(btrim(prosrc,E' \n\r\t'))='d3a00c649ec9d533eafab77ead410744'),'current SQL source parity: public.notification_center_prepared_on_delivery(public.notification_center_events,public.notification_center_deliveries)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_order_events(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f32ccbce2602a33327f275d45ea84a88'),'current SQL source parity: public.notification_center_prepared_order_events(bigint)');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_payload(uuid,integer,integer,text)') AND md5(btrim(prosrc,E' \n\r\t'))='7ca72f306575ca8e6bcefb56a5270ea3'),'current SQL source parity: public.notification_center_prepared_payload(uuid,integer,integer,text)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_policy(public.notification_center_events,timestamp with time zone,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='db447279cdb8d40985ae78e8c2db39ea'),'current SQL source parity: public.notification_center_prepared_policy(public.notification_center_events,timestamp with time zone,jsonb)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_policy(public.notification_center_events,timestamp with time zone,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='4c50b64607d14696eed73bed8587bae9'),'current SQL source parity: public.notification_center_prepared_policy(public.notification_center_events,timestamp with time zone,jsonb)');
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_privacy(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='bef700332eadc7c83bf1d06ab1323dfd'),'current SQL source parity: public.notification_center_prepared_privacy(bigint)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_privacy_keys(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d2578b66f231ecfefd92000301b5c052'),'current SQL source parity: public.notification_center_prepared_privacy_keys(jsonb)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_record_read(bigint,text,bigint,bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='ba06b12104ae73c1c2385a8052cd0751'),'current SQL source parity: public.notification_center_prepared_record_read(bigint,text,bigint,bigint,boolean)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_refresh_summary(bigint,uuid,text)') AND md5(btrim(prosrc,E' \n\r\t'))='ee23a3bcbf3eddf5fcb24e924cd9f605'),'current SQL source parity: public.notification_center_prepared_refresh_summary(bigint,uuid,text)');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_render(public.notification_center_view_rows,public.notification_center_views,text[])') AND md5(btrim(prosrc,E' \n\r\t'))='c46d3d3c83905048c3980c12e59aa72f'),'current SQL source parity: public.notification_center_prepared_render(public.notification_center_view_rows,public.notification_center_views,text[])');
@@ -1740,11 +1740,11 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_scope(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='2ab822bb8c7a88aa13ce6f83da2bddad'),'current SQL source parity: public.notification_center_prepared_scope(bigint,jsonb)');
 -- supabase/migrations/20261113110000_notification_settings_unit_groups.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_scope_member(public.notification_center_events,public.notification_center_deliveries,text,text,bigint,bigint,timestamp with time zone,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='65e24cbcbf6435a9f99b7fa367c419a7'),'current SQL source parity: public.notification_center_prepared_scope_member(public.notification_center_events,public.notification_center_deliveries,text,text,bigint,bigint,timestamp with time zone,boolean)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_seal(bigint,text,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9f2d365327402c8c5e1b69b3a237e24c'),'current SQL source parity: public.notification_center_prepared_seal(bigint,text,bigint,bigint)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_subjects(public.notification_center_events)') AND md5(btrim(prosrc,E' \n\r\t'))='f7d19aeecc8197a88b05abbc42786201'),'current SQL source parity: public.notification_center_prepared_subjects(public.notification_center_events)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
+-- supabase/migrations/20261113123000_notification_payment_channels.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_tags(public.notification_center_events)') AND md5(btrim(prosrc,E' \n\r\t'))='63942090ab9a079961c3622774f84a74'),'current SQL source parity: public.notification_center_prepared_tags(public.notification_center_events)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.notification_center_prepared_wake()') AND md5(btrim(prosrc,E' \n\r\t'))='ae694ee15d0d594babd1d8a4194f9584'),'current SQL source parity: public.notification_center_prepared_wake()');
