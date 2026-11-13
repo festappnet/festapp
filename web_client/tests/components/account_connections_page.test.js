@@ -115,3 +115,15 @@ test('device names render as text next to the registered application name', asyn
     assert.equal(f.container.querySelector('img'), null);
     f.page.dispose();
 });
+
+test('global issuer selector stays on the protected broker transport', async () => {
+    const { AccountConnectionsPage } = await import('../../src/components/users/account_connections_page.js');
+    const calls = [];
+    const page = new AccountConnectionsPage(null, {
+        browser: { location: { href: 'https://vstupenky.online/settings/mcp-connect?request=' + 'a'.repeat(43) + '&issuer=https%3A%2F%2Fmcp.festapp.net' } },
+        client: { functions: { invoke: async (_name, request) => { calls.push(request); return { data: {} }; } } },
+    });
+    await page.call('connections.list');
+    assert.equal(calls[0].headers['X-Festapp-Mcp-Issuer'], 'https://mcp.festapp.net');
+    assert.equal(calls[0].body.organizationId, undefined);
+});

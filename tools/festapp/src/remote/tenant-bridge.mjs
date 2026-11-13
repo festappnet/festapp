@@ -1,3 +1,4 @@
+import { contextConfig, remoteContexts } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
 import { connectionActive, connectionIssuable } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { activeConnections, verifyConnectionChoice } from './connection-choice.mjs';
@@ -14,8 +15,8 @@ const equal = (a, b) => typeof a === 'string' && typeof b === 'string' &&
 
 // Only the first-party Edge broker can exchange a live app proof for a separate
 // downstream session. OAuth completion still requires the original issuer cookie.
-export function tenantBridge(app, { config, storage, brokerSecret, owner, available, canRequestCreate, complete, details, provider }) {
-    if (!config.tenantOrigin) return null;
+export function tenantBridge(app, { config: serviceConfig, storage, brokerSecret, owner, flowConfig, available, canRequestCreate, complete, details, provider }) {
+    if (!remoteContexts(serviceConfig).every(c => c.tenantOrigin)) return null;
     check(typeof brokerSecret === 'string' && brokerSecret.length >= 43, 'INVALID_BROKER_SECRET');
     const read = request => {
         check(typeof request === 'string' && /^[A-Za-z0-9_-]{43}$/.test(request), 'FORBIDDEN');
@@ -27,6 +28,11 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
     const save = (uid, flow) => storage.put('Connect', uid, flow, Math.max(1, (flow.expiresAt - Date.now()) / 1000));
     app.post('/tenant-connection', express.json({ limit: '24kb' }), async (req, res) => {
         check(equal(req.headers['x-festapp-mcp-broker'], brokerSecret), 'FORBIDDEN');
+        const requestId = req.body?.request;
+        const resultContext = typeof requestId === 'string' && storage.get('TenantResult', digest(requestId));
+        const context = resultContext ? contextConfig(serviceConfig, resultContext.profileBinding ?? serviceConfig.profile?.binding)
+            : flowConfig(read(requestId).uid);
+        const config = context;
         check(req.body?.tenantId === config.profile.tenantId &&
             req.body?.organizationId === config.profile.organizationId &&
             req.body?.tenantOrigin === config.tenantOrigin, 'FORBIDDEN');
@@ -37,7 +43,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
             const pending = !result && read(request);
             const uid = result?.uid ?? pending.uid;
             const userId = result?.userId ?? pending.flow.userId;
-            await owner(uid).withAccessToken(accessToken, async (_backend, context) =>
+            await owner(uid, config).withAccessToken(accessToken, async (_backend, context) =>
                 check(context.userId === userId, 'FORBIDDEN'));
             if (!result) return res.json({ status: 'pending' });
             const grant = storage.get('Delegation', result.grantId);
@@ -52,7 +58,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
             save(uid, { ...flow, state: 'denied', resumeHash: digest(resume) });
             return res.json({ resumeUrl: `${config.issuer}/connect/${uid}/finish?resume=${resume}` });
         }
-        const userOwner = owner(uid);
+        const userOwner = owner(uid, config);
         if (operation === 'check') {
             check(flow.state === 'preparing' && equal(req.body.lease, flow.lease), 'FORBIDDEN');
             return res.json({ valid: true, userId: flow.userId });
@@ -97,6 +103,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         return complete(req, res, d, flow, flow.selected);
     });
     return (res, d, flow) => {
+        const config = flowConfig(d.uid);
         let request = flow.request;
         if (!request) {
             request = nonce();
@@ -106,6 +113,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         }
         const target = new URL('/settings/mcp-connect', config.tenantOrigin);
         target.searchParams.set('request', request);
+        if (serviceConfig.contexts) target.searchParams.set('issuer', serviceConfig.issuer);
         return res.redirect(303, target.href);
     };
 }

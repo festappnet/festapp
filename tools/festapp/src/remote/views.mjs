@@ -44,3 +44,16 @@ export const connectionsPage = (csrf, grants) => page('Připojené aplikace',
     `${grants.length ? grants.map(g => `<section><h2>${escape(g.clientName ?? 'Aplikace')}${g.name ? ` · ${escape(g.name)}` : ''}</h2><p>${accessSelection(g.access).units.map(u => `Pořadatel #${u.unitId}, včetně budoucích akcí${u.canCreateOccasions ? ' a zakládání skrytých akcí' : ''}.`).join(' ')} ${accessSelection(g.access).occasionIds.length ? `Jednotlivé akce: ${accessSelection(g.access).occasionIds.length}.` : ''} Platnost do ${escape(new Date(g.expiresAt).toLocaleDateString('cs-CZ'))}.</p><form method="post" action="/connections/revoke"><input type="hidden" name="csrf" value="${escape(csrf)}"><input type="hidden" name="grant" value="${escape(g.id)}"><button type="submit">Odpojit</button></form></section>`).join('') : '<p>Nemáte žádné aktivní připojení.</p>'}
     <form method="post" action="/connections/logout"><input type="hidden" name="csrf" value="${escape(csrf)}"><button class="secondary" type="submit">Odhlásit správu připojení</button></form>`,
 );
+
+export const contextChoiceForm = ({ csrf, action, contexts }) => page('Vyberte prostředí Festapp',
+    `<p>Vyberte prostředí svého účtu. Přihlášení a souhlas platí pouze pro toto prostředí. Pro další prostředí vytvořte nové připojení.</p>
+    <form method="post" action="${escape(action)}"><input type="hidden" name="csrf" value="${escape(csrf)}">
+    <label>Prostředí<select name="context" required>${contexts.map(c => `<option value="${escape(c.profile.binding)}">${escape(c.name)}</option>`).join('')}</select></label>
+    <button type="submit">Pokračovat</button></form>`);
+
+export const contextManagementPage = config => page('Správa připojení Festapp',
+    `<p>Přihlaste se v prostředí, pro které jste přístup udělili.</p><ul>${config.contexts.map(c => {
+        const target = new URL('/settings/connections', c.tenantOrigin);
+        target.searchParams.set('issuer', config.issuer);
+        return `<li><a href="${escape(target.href)}">${escape(c.name)}</a></li>`;
+    }).join('')}</ul>`);

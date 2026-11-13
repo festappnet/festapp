@@ -53,6 +53,8 @@ export class McpConnectionPage {
 
     async call(operation) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
+            headers: new URL(this.browser.location.href).searchParams.has('issuer')
+                ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
             body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: this.details?.requestedPermissions ?? [], ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');

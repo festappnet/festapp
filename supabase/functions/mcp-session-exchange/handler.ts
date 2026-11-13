@@ -10,7 +10,7 @@ type Dependencies = { config: McpTenant; admin: SupabaseClient; makeAnon: () => 
 export async function handleMcpExchange(req: Request, deps: Dependencies): Promise<Response> {
   const { config, admin } = deps;
   const headers = { "Access-Control-Allow-Origin": config.tenantOrigin,
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-festapp-mcp-issuer",
     "Access-Control-Expose-Headers": "Retry-After",
     "Access-Control-Allow-Methods": "POST, OPTIONS", "Vary": "Origin",
     "Cache-Control": "no-store", "Content-Type": "application/json" };

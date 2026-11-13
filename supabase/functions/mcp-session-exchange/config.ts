@@ -14,9 +14,19 @@ export function parseMcpTenants(raw: string): McpTenant[] {
     }
     if (!/^[a-z0-9][a-z0-9-]{0,99}$/.test(tenant.tenantId) ||
         !Number.isSafeInteger(tenant.organizationId) || tenant.organizationId <= 0 ||
-        !/^[A-Za-z0-9_-]{43}$/.test(tenant.brokerSecret) || origins.has(tenant.tenantOrigin)) throw new Error("invalid_mcp_tenant");
-    origins.add(tenant.tenantOrigin);
+        !/^[A-Za-z0-9_-]{43}$/.test(tenant.brokerSecret) || origins.has(`${tenant.tenantOrigin}|${tenant.issuer}`)) throw new Error("invalid_mcp_tenant");
+    origins.add(`${tenant.tenantOrigin}|${tenant.issuer}`);
     return Object.freeze({ tenantId: tenant.tenantId, tenantOrigin: tenant.tenantOrigin,
       issuer: tenant.issuer, brokerSecret: tenant.brokerSecret, organizationId: tenant.organizationId });
   });
+}
+
+/** Missing selectors retain the regional entry, never arbitrarily choose a new issuer. */
+export function selectMcpTenant(tenants: McpTenant[], origin: string | null, issuer: string | null): McpTenant | undefined {
+  const originEntries = tenants.filter(t => t.tenantOrigin === origin);
+  // Existing first-party clients without a selector keep their sole service.
+  // The regional service stays the default when the origin serves both issuers.
+  if (!issuer && originEntries.length === 1) return originEntries[0];
+  const candidates = originEntries.filter(t => t.issuer === (issuer ?? "https://mcp.vstupenky.online"));
+  return candidates.length === 1 ? candidates[0] : undefined;
 }

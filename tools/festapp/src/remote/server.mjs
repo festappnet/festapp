@@ -17,10 +17,10 @@ import { authChallenge } from '../mcp/protocol.mjs';
 import { check, safeError } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
 import { operatorAccess, verifySelection, canCreateWithAccess } from '../operations/access.mjs';
-import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
+import { contextConfig, remoteContexts, canonicalRemote, READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
 import { DOMAIN_SCOPES, clientPolicy, allowsMetadataFetch, allowsMetadataClient } from './client-policy.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
-import { loginForm, consentForm, connectionsPage, page, oauthFailure } from './views.mjs';
+import { loginForm, consentForm, contextChoiceForm, contextManagementPage, connectionsPage, page, oauthFailure } from './views.mjs';
 import { makeStatus, validateMakePage, makeDocumentation } from './make-transport.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
@@ -35,7 +35,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         .flatMap(c => c.redirectUris).map(value => new URL(value)).filter(u => u.protocol === 'https:')
         .map(u => u.href.replace(/;/g, '%3B').replace(/'/g, '%27')))].sort();
     const formAction = ["'self'", ...webFormCallbacks].join(' ');
-    const binding = digest(JSON.stringify([config.issuer, config.profile.binding]));
+    const binding = digest(JSON.stringify([config.issuer, config.contexts ? config.contexts.map(c => c.profile.binding) : config.profile.binding]));
     const previous = storage.get('Metadata', 'deployment');
     check(!previous || previous.binding === binding, 'REMOTE_STORAGE_TARGET_MISMATCH');
     storage.put('Metadata', 'deployment', { binding }, 86400 * 3650);
@@ -108,7 +108,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     });
     // Only a loopback-bound listener behind the configured trusted TLS proxy.
     // The outer host/proto check below rejects forged forwarded destinations.
-    provider.proxy = config.profile.kind === 'canonical';
+    provider.proxy = canonicalRemote(config);
     installConnectionActivation(provider, storage, audit);
     provider.on('server_error', () => audit({ event: 'issuer_error' }));
     const app = express();
@@ -133,7 +133,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     };
     app.use((req, res, next) => {
         const expected = new URL(config.issuer);
-        const canonical = config.profile.kind === 'canonical';
+        const canonical = canonicalRemote(config);
         const loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
         if (req.headers.host !== expected.host || !loopback ||
             (canonical && req.headers['x-forwarded-proto'] !== 'https')) return res.sendStatus(400);
@@ -153,7 +153,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     app.get('/healthz', (_req, res) => res.json({ ok: true }));
     app.get('/make/v1', (_req, res) => res.json(makeDocumentation(config,
         new Operations({ root: storage.root, orderSummaryOnly: true, allowedOperations: MAKE_READ_OPERATIONS }).catalog)));
-    const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: DOMAIN_SCOPES };
+    const metadata = { resource_name: config.regionalPortal?.name ?? 'Festapp', resource: config.resource, authorization_servers: [config.issuer], scopes_supported: DOMAIN_SCOPES };
     for (const route of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'])
         app.get(route, (_req, res) => res.set('Access-Control-Allow-Origin', '*').json(metadata));
     app.get('/auth', (req, _res, next) => {
@@ -181,22 +181,28 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return d;
     };
     const flow = (uid) => storage.get('Connect', uid);
-    const loginOwner = uid => boundOwner(config, storage, connectionBinding(config.profile, uid), { fetchImpl });
+    const flowConfig = uid => contextConfig(config, flow(uid)?.profileBinding ?? (!config.contexts ? config.profile.binding : undefined));
+    const loginOwner = (uid, selectedConfig) => {
+        const selected = selectedConfig ?? flowConfig(uid);
+        return boundOwner(selected, storage, connectionBinding(selected.profile, uid), { fetchImpl });
+    };
     // Upgrade existing selected-event delegations once without widening them.
     for (const previousGrant of storage.values('Delegation')) {
         if (previousGrant.access || !previousGrant.occasions) continue;
         const { occasions, ...grant } = previousGrant;
         storage.putUntil('Delegation', grant.id, { ...grant, access: { type: 'occasions', occasionIds: occasions } }, grant.expiresAt);
     }
-    const availableAccess = async (_owner, backend) => operatorAccess(backend, config.profile);
+    const availableAccess = async (owner, backend) => operatorAccess(backend, owner.profile);
     const canRequestCreate = d => String(d.params.scope ?? '').split(' ').includes(CREATE_SCOPE);
     const completeConsent = async (req, res, d, f, selection) => {
-        const access = await loginOwner(d.uid).authorized(async backend =>
-            verifySelection(selection, await availableAccess(null, backend), canRequestCreate(d)));
+        const selectedConfig = flowConfig(d.uid);
+        const consentOwner = loginOwner(d.uid);
+        const access = await consentOwner.authorized(async backend =>
+            verifySelection(selection, await availableAccess(consentOwner, backend), canRequestCreate(d)));
         const permissions = verifyPermissions(f.permissions, String(d.params.scope ?? '').split(' '));
         const scopes = [READ_SCOPE, ...(canCreateWithAccess(access) ? [CREATE_SCOPE] : []), ...permissions].join(' ');
         check(clientAllowsScopes(config, d.params.client_id, scopes.split(' ')), 'FORBIDDEN');
-        const choice = verifyConnectionChoice(f.connection, storage, f.userId, d.params.client_id, config.profile.binding);
+        const choice = verifyConnectionChoice(f.connection, storage, f.userId, d.params.client_id, selectedConfig.profile.binding);
         const durationSeconds = choice.durationDays * DAY_SECONDS;
         const createdAt = Date.now();
         const expiresAt = consentDeadline(choice.durationDays, createdAt);
@@ -211,24 +217,26 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         grant.rejectOIDCScope(rejected.join(' '));
         grant.rejectResourceScope(config.resource, rejected.filter(s => s !== 'openid' && s !== 'offline_access').join(' '));
         const grantId = await grant.save();
-        const sessionBinding = connectionBinding(config.profile, d.uid);
+        const sessionBinding = connectionBinding(selectedConfig.profile, d.uid);
         storage.putUntil('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
-            profileBinding: config.profile.binding, binding: sessionBinding,
+            profileBinding: selectedConfig.profile.binding, interactionId: d.uid, binding: sessionBinding,
             access, permissions, ...choice, createdAt, expiresAt, lifecycle: 'pending', pendingExpiresAt, revoked: false }, pendingExpiresAt);
         storage.putUntil('Binding', sessionBinding, { id: grantId }, pendingExpiresAt);
         await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
-        if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid }, 600);
+        if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid, profileBinding: selectedConfig.profile.binding }, 600);
         storage.remove('Connect', d.uid);
         audit({ event: 'consent', connection: digest(grantId), client: d.params.client_id });
         return provider.interactionFinished(req, res, { login: { accountId: f.userId }, consent: { grantId } }, { mergeWithLastSubmission: false });
     };
     tenantConnections(app, { config, storage, brokerSecret, owner: loginOwner, audit });
     const tenantRedirect = tenantBridge(app, { config, storage, brokerSecret,
-        owner: loginOwner, available: availableAccess, canRequestCreate, complete: completeConsent, details, provider });
+        owner: loginOwner, flowConfig, available: availableAccess, canRequestCreate, complete: completeConsent, details, provider });
     const renderConnect = async (req, res, error = '') => {
         const d = await details(req);
         let f = flow(d.uid);
         if (!f) { f = { csrf: nonce() }; storage.put('Connect', d.uid, f, 600); }
+        if (config.contexts && !f.profileBinding) return res.type('html').send(contextChoiceForm({
+            csrf: f.csrf, action: `/connect/${d.uid}/context`, contexts: config.contexts }));
         if (tenantRedirect) return tenantRedirect(res, d, f);
         const client = clientPolicy(config, d.params.client_id).name;
         if (!f.userId) return res.type('html').send(loginForm({ csrf: f.csrf, client,
@@ -243,6 +251,14 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return res.type('html').send(consentForm({ csrf: f.csrf, client,
             connections: activeConnections(storage, f.userId, d.params.client_id, config.profile.binding), action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, selectedTenant: config.profile.tenantId }));
     };
+    app.post('/connect/:uid/context', form, async (req, res) => {
+        const d = await details(req), f = flow(d.uid);
+        check(config.contexts && f && !f.profileBinding && !f.request, 'FORBIDDEN');
+        csrfCheck(req, f);
+        const selected = contextConfig(config, req.body.context);
+        storage.put('Connect', d.uid, { ...f, profileBinding: selected.profile.binding }, 600);
+        return res.redirect(303, `/connect/${d.uid}`);
+    });
     app.get('/connect/:uid', (req, res) => renderConnect(req, res));
     app.post('/connect/:uid/login', form, async (req, res) => {
         check(!tenantRedirect, 'FORBIDDEN');
@@ -295,11 +311,12 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         if (!f) {
             const id = nonce();
             f = { id, csrf: nonce() }; storage.put('Management', id, f, 600);
-            res.cookie(cookieName, id, { httpOnly: true, secure: config.profile.kind === 'canonical', sameSite: 'strict', path: '/connections', maxAge: 600000 });
+            res.cookie(cookieName, id, { httpOnly: true, secure: canonicalRemote(config), sameSite: 'strict', path: '/connections', maxAge: 600000 });
         }
         return f;
     };
     app.get('/connections', (req, res) => {
+        if (config.contexts) return res.type('html').send(contextManagementPage(config));
         if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res);
         return res.type('html').send(f.userId ? connectionsPage(f.csrf,
@@ -308,6 +325,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             : loginForm({ csrf: f.csrf, action: '/connections/login' }));
     });
     app.post('/connections/login', form, async (req, res) => {
+        if (config.contexts) return res.type('html').send(contextManagementPage(config));
         if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res); csrfCheck(req, f); limit(`manage:${f.id}`, 5);
         const owner = loginOwner(f.id);
@@ -318,11 +336,12 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             const id = nonce();
             storage.remove('Management', f.id);
             storage.put('Management', id, { id, csrf: nonce(), userId }, 600);
-            res.cookie(cookieName, id, { httpOnly: true, secure: config.profile.kind === 'canonical', sameSite: 'strict', path: '/connections', maxAge: 600000 });
+            res.cookie(cookieName, id, { httpOnly: true, secure: canonicalRemote(config), sameSite: 'strict', path: '/connections', maxAge: 600000 });
             return res.redirect(303, '/connections');
         } finally { await owner.logout(); }
     });
     app.post('/connections/revoke', form, (req, res) => {
+        if (config.contexts) return res.type('html').send(contextManagementPage(config));
         if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res); csrfCheck(req, f);
         const g = typeof req.body.grant === 'string' && storage.get('Delegation', req.body.grant);
@@ -332,6 +351,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return res.redirect(303, '/connections');
     });
     app.post('/connections/logout', form, (req, res) => {
+        if (config.contexts) return res.type('html').send(contextManagementPage(config));
         if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res); csrfCheck(req, f);
         storage.remove('Management', f.id); res.clearCookie(cookieName, { path: '/connections' });
@@ -380,7 +400,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
                 const result = await invoke(id, args);
                 audit({ event: 'operation', requestId: result.meta.requestId,
                     connection: digest(token.grantId), actor: digest(token.accountId),
-                    client: token.clientId, tenant: config.profile.tenantId,
+                    client: token.clientId, tenant: owner.profile.tenantId,
                     operation: id, outcome: result.ok ? 'ok' : result.error.code });
                 return result;
             };

@@ -1,3 +1,4 @@
+import { remoteContexts, contextConfig } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
 import { connectionActive, connectionDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import express from 'express';
@@ -9,19 +10,23 @@ import { MCP_SCOPES } from './config.mjs';
 
 /** Account management uses a transient ordinary-user proof, never a consent
  * request, a new backend session, or a second grant store. */
-export function tenantConnections(app, { config, storage, brokerSecret, owner, audit }) {
-    if (!config.tenantOrigin) return;
+export function tenantConnections(app, { config: serviceConfig, storage, brokerSecret, owner, audit }) {
+    if (!remoteContexts(serviceConfig).every(c => c.tenantOrigin)) return;
     app.post('/tenant-connections', express.json({ limit: '12kb' }), async (req, res) => {
         const secret = req.headers['x-festapp-mcp-broker'];
         check(typeof secret === 'string' && typeof brokerSecret === 'string' &&
             timingSafeEqual(Buffer.from(digest(secret)), Buffer.from(digest(brokerSecret))), 'FORBIDDEN');
         const body = req.body;
+        const selected = remoteContexts(serviceConfig).find(c => c.profile.tenantId === body?.tenantId &&
+            c.profile.organizationId === body?.organizationId && c.tenantOrigin === body?.tenantOrigin);
+        check(selected, 'FORBIDDEN');
+        const config = contextConfig(serviceConfig, selected.profile.binding);
         const fields = ['operation', 'accessToken', 'tenantId', 'tenantOrigin', 'organizationId', ...(body?.operation === 'revoke' ? ['connectionId'] : [])];
         check(body && Object.keys(body).every(k => fields.includes(k)), 'FORBIDDEN');
         check(body?.tenantId === config.profile.tenantId && body.organizationId === config.profile.organizationId &&
             body.tenantOrigin === config.tenantOrigin && ['list', 'revoke'].includes(body.operation), 'FORBIDDEN');
         const owns = (grant, userId) => grant?.userId === userId && grant.profileBinding === config.profile.binding;
-        return owner(`management:${randomUUID()}`).withAccessToken(body.accessToken, async (_client, { userId }) => {
+        return owner(`management:${randomUUID()}`, config).withAccessToken(body.accessToken, async (_client, { userId }) => {
             if (body.operation === 'list') {
                 const connections = storage.values('Delegation')
                     .filter(g => owns(g, userId) && connectionActive(g))

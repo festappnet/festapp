@@ -2,7 +2,7 @@
 import { readFile, open, lstat } from 'node:fs/promises';
 import { resolve, isAbsolute, dirname } from 'node:path';
 import { generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
-import { parseRemoteConfig } from './config.mjs';
+import { parseRemoteConfig, remoteContexts } from './config.mjs';
 import { privateRoot } from '../context/profile.mjs';
 import { safeError, check } from '../errors.mjs';
 import { openRemoteStorage } from './storage.mjs';
@@ -29,7 +29,7 @@ try {
     } else if (args[0] === 'check' && args.length === 2) {
         const c = parseRemoteConfig(JSON.parse(await readFile(args[1], 'utf8')));
         process.stdout.write(JSON.stringify({ ok: true, issuer: c.issuer, resource: c.resource,
-            tenant: c.profile.tenantId, clients: c.clients.length }) + '\n');
+            tenants: remoteContexts(c).map(context => context.profile.tenantId), clients: c.clients.length }) + '\n');
     } else {
         check(args.length === 8 && args[0] === 'serve' && args[2] === '--secrets' &&
             args[4] === '--data' && args[6] === '--port', 'INVALID_COMMAND');

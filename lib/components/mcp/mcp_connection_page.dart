@@ -173,7 +173,9 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
     await context.router.push(LoginRoute(
         redirect: Uri(
             path: McpConnectionPage.routePath,
-            queryParameters: {'request': widget.request!}).toString()));
+            queryParameters: {'request': widget.request!,
+              if (Uri.base.queryParameters['issuer'] case final String issuer)
+                'issuer': issuer}).toString()));
     if (mounted && _loggedIn) _load();
   }
 

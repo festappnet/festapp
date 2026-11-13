@@ -11,8 +11,8 @@ import { connectionPageStyles } from './connection_page_styles.js';
 /** One account surface, with independent identity and delegation owners. */
 export class AccountConnectionsPage {
     constructor(container, { client = SupabaseService.getClient(), google = GoogleAuthService,
-        login = async () => { const { LoginModal } = await import('./login_modal.js'); document.body.appendChild(new LoginModal()); } } = {}) {
-        this.container = container; this.client = client; this.google = google; this.login = login;
+        browser = globalThis.window, login = async () => { const { LoginModal } = await import('./login_modal.js'); document.body.appendChild(new LoginModal()); } } = {}) {
+        this.browser = browser; this.container = container; this.client = client; this.google = google; this.login = login;
         this.generation = 0; this.state = 'loading'; this.appsState = 'loading'; this.googleState = 'loading';
     }
     text(key, args = {}) { return LocalizationService.tr(`AccountConnections.${key}`, args); }
@@ -41,6 +41,8 @@ export class AccountConnectionsPage {
     }
     async call(operation, connectionId) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
+            headers: this.browser?.location?.href && new URL(this.browser.location.href).searchParams.has('issuer')
+                ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
             body: { operation, ...(connectionId ? { connectionId } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection management failed');

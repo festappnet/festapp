@@ -46,6 +46,8 @@ test('tree consent keeps real SQL reads, future creation, moves and revoked righ
     assert.deepEqual(await owner.delegatedContext(client,created.occasionId),{organizationId:f.org,unitId:second});
     assert.deepEqual(await owner.delegatedContext(client,individual),{organizationId:f.org,unitId:null});
     await assert.rejects(create(excluded),/FORBIDDEN/);
+    const ticketing = await db.query('select public.get_ticket_layout_for_authoring_v1($1) ordinary, public.get_delegated_ticket_layout_for_authoring_v1($1,$2,$3) delegated', [f.occasion, f.org, f.unit]);
+    assert.deepEqual(ticketing.rows[0].ordinary, ticketing.rows[0].delegated, 'ticket layout reads share the ordinary application owner');
     const scope=await owner.delegatedContext(client,f.occasion);
     await db.query('RESET ROLE');await db.query('update occasions set unit=$1 where id=$2',[excluded,f.occasion]);await db.query('SET LOCAL ROLE authenticated');
     const raced=await client.rpc('get_delegated_ticket_layout_for_authoring_v1',{p_occasion:f.occasion,p_organization:scope.organizationId,p_unit:scope.unitId});
@@ -54,4 +56,46 @@ test('tree consent keeps real SQL reads, future creation, moves and revoked righ
     await db.query('RESET ROLE');await db.query('update unit_users set is_editor=false,is_manager=false,is_editor_view=false where unit=$1 and "user"=$2',[second,f.actor]);await db.query('SET LOCAL ROLE authenticated');
     await assert.rejects(create(second),/FORBIDDEN/);
     assert(!(await owner.listAccess(client)).occasions.some(o=>o.id===created.occasionId));
+});
+
+
+test('global contexts preserve canonical SQL membership, ordinary-app writes, retry and live revocation',
+    { skip: !process.env.FESTAPP_AUTHORIZATION_DATABASE_URL }, async t => {
+    const db = await connect(); await db.query('BEGIN');
+    t.after(async () => { await db.query('ROLLBACK'); await db.end(); });
+    const first = await fixture(db, 1);
+    const second = await fixture(db, 1);
+    await db.query("select set_config('request.jwt.claim.sub',$1,true)", [first.actor]);
+    await db.query('SET LOCAL ROLE authenticated');
+    const access = async org => (await db.query('select public.get_operator_access_v1($1,null,null) value', [org])).rows[0].value;
+    assert((await access(first.org)).occasions.some(o => o.id === first.occasion));
+    await db.query('SAVEPOINT foreign_scope');
+    try {
+        const foreign = await access(second.org);
+        assert.equal(foreign.occasions.length, 0);
+    } catch (error) { assert.equal(error.code, '42501'); }
+    await db.query('ROLLBACK TO SAVEPOINT foreign_scope');
+    const rpc = async (name, args) => {
+        await db.query('SAVEPOINT operation');
+        try {
+            assert(['create_occasion_client_sync_v1', 'create_delegated_occasion_client_sync_v1'].includes(name));
+            const data = (await db.query(`select public.${name}($1,$2::jsonb) value`,
+                [args.p_command_id, JSON.stringify(args.p_config)])).rows[0].value;
+            await db.query('RELEASE SAVEPOINT operation'); return { data, error: null };
+        } catch (error) {
+            await db.query('ROLLBACK TO SAVEPOINT operation'); return { data: null, error: { code: error.code, status: 403 } };
+        }
+    };
+    const args = { commandId: randomUUID(), unitId: first.unit, title: 'Autumn conference',
+        start: '2027-01-01T18:00:00Z', end: '2027-01-02T02:00:00Z', description: '' };
+    const profile = { organizationId: first.org };
+    const delegated = await createOccasion({ rpc }, profile, args, { delegated: true });
+    const ordinary = await createOccasion({ rpc }, profile, args);
+    assert.deepEqual(ordinary, delegated, 'ordinary application and MCP retry resolve the same canonical receipt');
+    await assert.rejects(createOccasion({ rpc }, { organizationId: second.org },
+        { ...args, commandId: randomUUID(), unitId: second.unit }, { delegated: true }));
+    await db.query('RESET ROLE');
+    await db.query('update unit_users set is_editor=false,is_manager=false,is_editor_view=false where unit=$1 and "user"=$2', [first.unit, first.actor]);
+    await db.query('SET LOCAL ROLE authenticated');
+    await assert.rejects(createOccasion({ rpc }, profile, args, { delegated: true }), 'receipt replay rechecks current rights');
 });

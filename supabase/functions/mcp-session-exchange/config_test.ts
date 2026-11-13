@@ -1,5 +1,5 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
-import { parseMcpTenants } from "./config.ts";
+import { parseMcpTenants, selectMcpTenant } from "./config.ts";
 const one = { tenantId: "one", tenantOrigin: "https://one.invalid", organizationId: 3,
   issuer: "https://mcp.invalid", brokerSecret: "s".repeat(43) };
 Deno.test("tenant registry preserves distinct first-party origin, organization and issuer bindings", () => {
@@ -15,4 +15,15 @@ Deno.test("tenant registry rejects ambiguous origins, insecure issuers and incom
     [{ ...one, organizationId: 0 }], [{ ...one, brokerSecret: "short" }], [{ ...one, tenantId: "" }]]) {
     assertThrows(() => parseMcpTenants(JSON.stringify(raw)));
   }
+});
+
+Deno.test("one first-party origin routes global and regional issuers only through exact trusted entries", () => {
+  const regional = { ...one, issuer: "https://mcp.vstupenky.online" };
+  const global = { ...one, issuer: "https://mcp.festapp.net", brokerSecret: "g".repeat(43) };
+  const tenants = parseMcpTenants(JSON.stringify([regional, global]));
+  assertEquals(selectMcpTenant(tenants, one.tenantOrigin, null), regional);
+  assertEquals(selectMcpTenant(tenants, one.tenantOrigin, global.issuer), global);
+  assertEquals(selectMcpTenant([global], one.tenantOrigin, null), global);
+  assertEquals(selectMcpTenant(tenants, one.tenantOrigin, "https://evil.invalid"), undefined);
+  assertEquals(selectMcpTenant(tenants, "https://evil.invalid", global.issuer), undefined);
 });

@@ -1,3 +1,4 @@
+import { contextConfig } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
 import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
@@ -26,7 +27,8 @@ export class DelegatedOwner {
         this.token = token;
         this.orderSummaryOnly = clientPolicy(config, token.clientId)?.dataProfile === 'order-summary';
         const grant = this.current();
-        this.session = boundOwner(config, storage, grant.binding, options);
+        this.config = contextConfig(config, grant.profileBinding);
+        this.session = boundOwner(this.config, storage, grant.binding, options);
         this.profile = this.session.profile;
         this.root = storage.root;
         this.allowedOperations = [...READ_OPERATIONS, 'occasions.create',
@@ -55,7 +57,10 @@ export class DelegatedOwner {
         const grant = this.storage.get('Delegation', t.grantId);
         check(connectionActive(grant) && grant.userId === t.accountId &&
             clientPolicy(this.config, grant.clientId) &&
-            grant.clientId === t.clientId && grant.profileBinding === this.config.profile.binding &&
+            grant.clientId === t.clientId &&
+            (!this.session || (this.session.profile.binding === grant.binding && this.config.profile.binding === grant.profileBinding)) &&
+            contextConfig(this.config, grant.profileBinding).profile.binding === grant.profileBinding &&
+            (!grant.interactionId ? !this.config.contexts : grant.binding === connectionBinding(contextConfig(this.config, grant.profileBinding).profile, grant.interactionId)) &&
             t.exp * 1000 > Date.now() &&
             t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
             clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');

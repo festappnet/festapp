@@ -423,3 +423,15 @@ test('unused legacy connections require an explicit choice and eligible default 
     assert.equal(f.page.connection.connectionId, 'issued');
     assert.match(f.container.textContent, /30 dnech bez obnovy tokenu/);
 });
+
+test('global issuer selector stays on the protected broker transport', async () => {
+    const { McpConnectionPage } = await import('../../src/components/mcp/mcp_connection_page.js');
+    const calls = [];
+    const page = new McpConnectionPage(null, {
+        browser: { location: { href: 'https://vstupenky.online/settings/mcp-connect?request=' + 'a'.repeat(43) + '&issuer=https%3A%2F%2Fmcp.festapp.net' } },
+        client: { functions: { invoke: async (_name, request) => { calls.push(request); return { data: {} }; } } },
+    });
+    await page.call('details');
+    assert.equal(calls[0].headers['X-Festapp-Mcp-Issuer'], 'https://mcp.festapp.net');
+    assert.equal(calls[0].body.organizationId, undefined);
+});

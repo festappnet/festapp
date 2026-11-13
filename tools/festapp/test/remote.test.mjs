@@ -1,6 +1,7 @@
 import { activeConnections, verifyConnectionChoice } from '../src/remote/connection-choice.mjs';
 import { connectionActive, connectionDeadline } from '../../../packages/festapp_contracts/mcp-connection.mjs';
 import { DatabaseSync } from 'node:sqlite';
+import { canonicalBackendProfileSha256 } from '../../../automation/lib/backend_activation_manifest.mjs';
 import { digest } from '../src/context/profile.mjs';
 import { createRateLimiter } from '../src/remote/rate-limit.mjs';
 import {canonicalPreview} from './render-fixture.mjs';
@@ -36,8 +37,9 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
-    const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
+async function setup(t, { global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
+    const base = await fixture(t, { fetchImpl: (url, init) => global && url.pathname === '/second-activation.json'
+        ? reply({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' }) : url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
     const key = randomBytes(32);
@@ -55,6 +57,16 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     if (genericClients) raw.clients = raw.clients.map((c, i) => ({ ...c, id: i ? 'browser-fixture' : 'desktop-fixture', name: i ? 'Browser application' : 'Desktop application' }));
     if (clientMetadataDocuments) raw.clientMetadataDocuments = clientMetadataDocuments;
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
+    if (global) {
+        const second = { ...rawProfile(), tenantId: 'second', name: 'second', organizationId: 2,
+            activationUrl: rawProfile().backendOrigin + '/second-activation.json',
+            activationSha256: digest(JSON.stringify({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' })) };
+        second.canonicalProfileSha256 = canonicalBackendProfileSha256({ tenantId: second.tenantId,
+            canonicalOrigin: second.backendOrigin, canonicalAnonKey: second.publicApiKey, canonicalOrganizationId: 2 });
+        raw.contexts = [{ name: 'First environment', profile: raw.profile, tenantOrigin: 'https://first.fixture.test' },
+            { name: 'Second environment', profile: second, tenantOrigin: 'https://second.fixture.test' }];
+        delete raw.profile; delete raw.tenantOrigin;
+    }
     const parsedConfig = parseRemoteConfig(raw);
     const config = canonical ? { ...parsedConfig, profile: { ...parsedConfig.profile, kind: 'canonical' } } : parsedConfig;
     const audit = [];
@@ -72,7 +84,7 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
         }
         return r;
     };
-    return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
+    return { ...base, root, key, storage, server, issuer, config, audit, browser, clearBrowserCookies: () => jar.clear(), ...service };
 }
 async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
@@ -243,7 +255,7 @@ for (const guide of ['automation/release/help/ai-agenti.html', 'automation/relea
                 body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
                     organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }),
             });
-            r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2,
+            r = await broker('prepare', { accessToken: proofToken, access: { consentVersion: 2,
                 selection: { type: 'occasions', occasionIds: [7] }, permissions } });
             assert.equal(r.status, 200, await r.clone().text());
             const prepared = await r.json();
@@ -362,7 +374,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     // Merely displaying consent never mints or adopts a backend refresh session.
     assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
     assert.equal(f.storage.values('Delegation').length, 0);
-    r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2, selection: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] }, permissions: MCP_SCOPES } });
+    r = await broker('prepare', { accessToken: proofToken, access: { consentVersion: 2, selection: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] }, permissions: MCP_SCOPES } });
     const prepared = await r.json();
     assert.equal(prepared.userId, actor);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
@@ -907,26 +919,34 @@ test('configuration scopes and whole-unit selection stay separate from occasion-
  token.scope=READ_SCOPE+' festapp:unit-settings:read';assert(!owner().allowedOperations.includes('units.settings.save'));
 });
 
-async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200 } = {}) {
+async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200, contextIndex = 0, proofToken = supabaseToken, sessionRefresh = 'independent-fixture-refresh' } = {}) {
     const callbackUri = f.config.clients.find(c => c.id === clientId).redirectUris[0];
     const verifier = randomBytes(32).toString('base64url');
     let r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, resource: f.config.resource, scope: ['openid', 'offline_access', ...scopes].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' }));
     assert.equal(r.status, 303);
-    r = await f.browser(r.headers.get('location'));
+    const interaction = r.headers.get('location');
+    r = await f.browser(interaction);
+    if (f.config.contexts) {
+        assert.equal(r.status, 200);
+        r = await f.browser(interaction + '/context', { csrf: csrf(await r.text()), context: f.config.contexts[contextIndex].profile.binding });
+        assert.equal(r.status, 303);
+        r = await f.browser(r.headers.get('location'));
+    }
     assert.equal(r.status, 303);
     const request = new URL(r.headers.get('location')).searchParams.get('request');
+    const selected = f.config.contexts?.[contextIndex] ?? f.config;
     const broker = (operation, extra) => fetch(f.issuer + '/tenant-connection', { method: 'POST',
         headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) },
-        body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
-            organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }) });
-    r = await broker('prepare', { accessToken: supabaseToken, access: legacy ? { type: 'occasions', occasionIds: [7] } : { consentVersion: 2,
+        body: JSON.stringify({ operation, request, tenantId: selected.profile.tenantId,
+            organizationId: selected.profile.organizationId, tenantOrigin: selected.tenantOrigin, ...extra }) });
+    r = await broker('prepare', { accessToken: proofToken, access: legacy ? { type: 'occasions', occasionIds: [7] } : { consentVersion: 2,
         selection, permissions: scopes.filter(s => MCP_SCOPES.includes(s)), ...(connection ? { connection } : {}) } });
     assert.equal(r.status, prepareStatus);
     if (prepareStatus !== 200) return;
     const { lease } = await r.json();
-    r = await broker('complete', { lease, session: { access_token: supabaseToken, refresh_token: 'independent-fixture-refresh' } });
+    r = await broker('complete', { lease, session: { access_token: proofToken, refresh_token: sessionRefresh } });
     assert.equal(r.status, 200);
     r = await f.browser((await r.json()).resumeUrl);
     let target = r.headers.get('location');
@@ -1896,4 +1916,77 @@ test('standalone full-function consent accepts all 100 supported occasion select
     assert.deepEqual(grant.access.occasionIds, occasionIds);
     assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
     assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
+});
+
+test('global issuer pins selected first-party context through PKCE, grants and authenticated HTTP', async t => {
+    const f = await setup(t, { global: true });
+    const tokens = await connectTenant(f);
+    const grant = f.storage.values('Delegation')[0];
+    assert.equal(grant.profileBinding, f.config.contexts[0].profile.binding);
+    const token = await f.provider.AccessToken.find(tokens.access_token);
+    const owner = new DelegatedOwner(f.config, f.storage, token, { fetchImpl: f.owner.fetch });
+    assert.equal(owner.profile.organizationId, 1);
+    assert.deepEqual(await owner.delegatedContext({}, 7), { organizationId: 1, unitId: null });
+    const response = await jsonRpc(f, tokens.access_token, 'tools/call', { name: 'festapp_access_inspect', arguments: {} });
+    assert.equal(response.status, 200);
+    const otherAudience = { ...token, aud: 'https://mcp.vstupenky.online/mcp' };
+    assert.throws(() => new DelegatedOwner(f.config, f.storage, otherAudience));
+    f.storage.putUntil('Delegation', grant.id, { ...grant, profileBinding: f.config.contexts[1].profile.binding }, grant.expiresAt);
+    assert.throws(() => new DelegatedOwner(f.config, f.storage, token));
+    f.storage.putUntil('Delegation', grant.id, grant, grant.expiresAt);
+    // The selected second tenant cannot adopt the first tenant's live identity.
+    await connectTenant(f, { contextIndex: 1, prepareStatus: 400 });
+    f.storage.revoke(grant.id);
+    assert.equal((await jsonRpc(f, tokens.access_token, 'tools/list', {})).status, 401);
+});
+
+test('global context selection rejects unknown and cross-origin changes and cannot be rebound', async t => {
+    const f = await setup(t, { global: true });
+    let response = await f.browser('/auth?' + new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
+        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: READ_SCOPE,
+        code_challenge: 'a'.repeat(43), code_challenge_method: 'S256' }));
+    const interaction = response.headers.get('location');
+    response = await f.browser(interaction);
+    const secret = csrf(await response.text());
+    for (const [context, extra] of [['unknown', {}], [f.config.contexts[0].profile.binding, { origin: 'https://evil.invalid' }]]) {
+        assert.equal((await f.browser(interaction + '/context', { csrf: secret, context }, extra)).status, 403);
+    }
+    assert.equal((await f.browser(interaction + '/context', { csrf: secret, context: f.config.contexts[0].profile.binding })).status, 303);
+    assert.equal((await f.browser(interaction + '/context', { csrf: secret, context: f.config.contexts[1].profile.binding })).status, 403);
+});
+
+test('two concurrent global connections keep independent tenant sessions, rights and revocation', async t => {
+    const secondActor = '00000000-0000-4000-8000-000000000002';
+    const parts = supabaseToken.split('.');
+    const claims = JSON.parse(Buffer.from(parts[1], 'base64url'));
+    const secondToken = parts[0] + '.' + Buffer.from(JSON.stringify({ ...claims, sub: secondActor })).toString('base64url') + '.fixture';
+    const f = await setup(t, { global: true, fetchImpl: (url, init) => {
+        const bearer = new Headers(init.headers).get('authorization')?.slice(7);
+        const second = bearer === secondToken;
+        if (url.pathname === '/auth/v1/user' && second) return reply({ id: secondActor, factors: [], app_metadata: {}, user_metadata: {} });
+        if (url.pathname === '/rest/v1/user_info' && second) return reply({ id: secondActor, organization: 2 });
+        if (url.pathname === '/auth/v1/token' && JSON.parse(init.body).refresh_token?.startsWith('second'))
+            return reply({ access_token: secondToken, refresh_token: 'second-rotated', expires_in: 3600, token_type: 'bearer',
+                user: { id: secondActor, factors: [], app_metadata: {}, user_metadata: {} } });
+        if (url.pathname === '/rest/v1/rpc/get_operator_access_v1' && second)
+            return reply({ units: [], occasions: [{ id: 8, title: 'Second environment event', unitId: 4, capabilities: { 'ticket_layouts.read': false } }] });
+    } });
+    const first = await connectTenant(f, { scopes: [READ_SCOPE, 'festapp:orders:read'] });
+    f.clearBrowserCookies(); // independent browser session for the second account
+    const second = await connectTenant(f, { contextIndex: 1, proofToken: secondToken, sessionRefresh: 'second-initial',
+        scopes: [READ_SCOPE], selection: { type: 'occasions', occasionIds: [8] } });
+    const clients = await Promise.all([first, second].map(async tokens => {
+        const client = new Client({ name: 'context-fixture', version: '1' });
+        await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+            requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } } }));
+        t.after(() => client.close()); return client;
+    }));
+    const results = await Promise.all(clients.map(client => client.callTool({ name: 'festapp_access_inspect', arguments: {} })));
+    assert.deepEqual(results.map(r => r.structuredContent.data.occasions.map(o => o.id)), [[7], [8]]);
+    const tools = await Promise.all(clients.map(client => client.listTools()));
+    assert(tools[0].tools.some(t => t.name === 'festapp_orders_report'));
+    assert(!tools[1].tools.some(t => t.name === 'festapp_orders_report'));
+    f.storage.revoke((await f.provider.AccessToken.find(first.access_token)).grantId);
+    assert.equal((await jsonRpc(f, first.access_token, 'tools/list', {})).status, 401);
+    assert.equal((await clients[1].callTool({ name: 'festapp_access_inspect', arguments: {} })).structuredContent.ok, true);
 });

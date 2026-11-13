@@ -18,7 +18,8 @@ const identifier = z.string().min(1).max(200);
 const schema = z.strictObject({
     schemaVersion: z.literal(2),
     issuer: z.url(),
-    profile: z.unknown(),
+    profile: z.unknown().optional(),
+    contexts: z.array(z.strictObject({ name: identifier, profile: z.unknown(), tenantOrigin: z.url() })).min(2).max(100).optional(),
     tenantOrigin: z.url().optional(),
     regionalPortal: z.strictObject({ name: identifier, platform: identifier }).optional(),
     clientMetadataDocuments: z.strictObject({
@@ -39,14 +40,25 @@ const schema = z.strictObject({
 
 export function parseRemoteConfig(raw) {
     const config = schema.parse(raw);
-    const profile = parseProfile(config.profile);
+    if (config.contexts && (config.profile || config.tenantOrigin || config.regionalPortal))
+        throw new Error('AMBIGUOUS_REMOTE_CONTEXT');
+    const contexts = config.contexts?.map(c => Object.freeze({ ...c, profile: parseProfile(c.profile) }));
+    const profile = contexts ? undefined : parseProfile(config.profile);
+    if (contexts && (new Set(contexts.map(c => c.profile.binding)).size !== contexts.length ||
+        new Set(contexts.map(c => c.profile.tenantId)).size !== contexts.length ||
+        new Set(contexts.map(c => c.tenantOrigin)).size !== contexts.length ||
+        new Set(contexts.map(c => c.profile.kind)).size !== 1)) throw new Error('DUPLICATE_REMOTE_CONTEXT');
+    for (const context of contexts ?? []) {
+        const origin = new URL(context.tenantOrigin);
+        if (origin.origin !== context.tenantOrigin || origin.protocol !== 'https:') throw new Error('INVALID_TENANT_ORIGIN');
+    }
     const url = new URL(config.issuer);
     if (config.tenantOrigin) {
         const tenant = new URL(config.tenantOrigin);
         if (tenant.origin !== config.tenantOrigin || tenant.protocol !== 'https:')
             throw new Error('INVALID_TENANT_ORIGIN');
     }
-    const local = profile.kind === 'disposable-local';
+    const local = (profile ?? contexts[0].profile).kind === 'disposable-local';
     const validOrigin = (u) => !u.username && !u.password && !u.search && !u.hash;
     if (!validOrigin(url) || url.pathname !== '/' ||
         (local ? url.protocol !== 'http:' || url.hostname !== '127.0.0.1' : url.protocol !== 'https:'))
@@ -64,5 +76,15 @@ export function parseRemoteConfig(raw) {
         if (!validRedirect(uri, client.applicationType, local))
             throw new Error('INVALID_REMOTE_REDIRECT');
     }
-    return Object.freeze({ ...config, profile, issuer: url.origin, resource: url.origin + '/mcp' });
+    return Object.freeze({ ...config, profile, ...(contexts ? { contexts: Object.freeze(contexts) } : {}), issuer: url.origin, resource: url.origin + '/mcp' });
 }
+
+/** Only protected configuration defines contexts. A request may select an entry,
+ * never provide a profile, origin, organization or backend destination. */
+export const remoteContexts = config => config.contexts ?? [{ profile: config.profile, tenantOrigin: config.tenantOrigin, name: config.profile.tenantId }];
+export function contextConfig(config, binding) {
+    const context = remoteContexts(config).find(c => c.profile.binding === binding);
+    check(context, 'FORBIDDEN');
+    return Object.freeze({ ...config, profile: context.profile, tenantOrigin: context.tenantOrigin });
+}
+export const canonicalRemote = config => remoteContexts(config).every(c => c.profile.kind === 'canonical');

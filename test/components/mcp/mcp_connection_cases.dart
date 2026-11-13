@@ -24,6 +24,10 @@ void main() {
                 'https://mcp.festapp.net/connect/uid/finish?resume=$code')
             .host,
         'mcp.festapp.net');
+    expect(
+        McpConnectionService.resumeUri(
+            'https://mcp.vstupenky.online/connect/uid/finish?resume=$code').host,
+        'mcp.vstupenky.online');
     for (final url in [
       'not-a-url',
       'https://evil.invalid/connect/uid/finish?resume=$code',
