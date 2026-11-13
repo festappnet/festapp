@@ -37,7 +37,7 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
+async function setup(t, { global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch, registeredClient } = {}) {
     const base = await fixture(t, { fetchImpl: (url, init) => global && url.pathname === '/second-activation.json'
         ? reply({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' }) : url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
@@ -51,6 +51,7 @@ async function setup(t, { global = false, native = false, tenant = false, pilot 
     const raw = configuration(issuer);
     if (webCallback) raw.clients[0].redirectUris = [webCallback];
     if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
+    if (registeredClient) raw.clients[0] = registeredClient;
     if (pilot) raw.clients = [raw.clients[0], { id: 'portable-fixture', name: 'Portable fixture', redirectUris: [issuer + '/callback/portable'], allowedScopes: [READ_SCOPE] }].map((c, i) => i ? c : { ...c, allowedScopes: [READ_SCOPE, 'festapp:orders:read'] });
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
     if (publicClient) { raw.clients[0].id = 'arbitrary-summary-client'; raw.clients[0].dataProfile = 'order-summary'; }
@@ -1776,6 +1777,49 @@ const nativeMetadataPolicy = () => ({ allowedOrigins: ['https://desktop.fixture.
 const nativeMetadata = () => ({ client_id: nativeMetadataId, client_name: 'Desktop fixture',
     application_type: 'native', redirect_uris: ['http://127.0.0.1/oauth/callback'],
     token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'] });
+
+test('pre-registered hosted metadata identity supports public PKCE without trusting its whole origin or enabling DCR', async t => {
+    const id = 'https://hosted.fixture.test/oauth/client-metadata.json';
+    const callbackUri = 'https://hosted.fixture.test/oauth/callback';
+    const f = await setup(t, {
+        registeredClient: { id, name: 'Hosted client', applicationType: 'web', dataProfile: 'order-summary',
+            redirectUris: [callbackUri], allowedScopes: [READ_SCOPE, 'festapp:orders:read'] },
+        clientMetadataDocuments: { allowedOrigins: ['https://issuer.fixture.test'], dataProfile: 'order-summary', allowedScopes: [READ_SCOPE] },
+        metadataFetch: () => { throw new Error('Untrusted metadata fetch'); },
+    });
+    const discovery = await (await fetch(f.issuer + '/.well-known/oauth-authorization-server')).json();
+    assert.equal(discovery.client_id_metadata_document_supported, true);
+    assert.equal(discovery.registration_endpoint, undefined);
+    const { tokens } = await connect(f, { clientId: id, callbackUri, scope: `${READ_SCOPE} festapp:orders:read` });
+    const tools = await jsonRpc(f, tokens.access_token, 'tools/list');
+    assert.equal(tools.status, 200);
+    const body = await tools.json();
+    assert(body.result.tools.every(tool => tool.annotations.readOnlyHint === true));
+    assert(body.result.tools.some(tool => tool.name === 'festapp_orders_report'));
+    const refreshed = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', client_id: id, refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(refreshed.status, 200);
+    assert.notEqual((await refreshed.json()).refresh_token, tokens.refresh_token);
+    const authorization = { client_id: id, redirect_uri: callbackUri, response_type: 'code', resource: f.config.resource,
+        code_challenge: 'a'.repeat(43), code_challenge_method: 'S256', scope: READ_SCOPE };
+    for (const override of [
+        { redirect_uri: 'https://evil.fixture.test/callback' },
+        { scope: `${READ_SCOPE} festapp:orders:read festapp:orders:write` },
+        { client_id: 'https://hosted.fixture.test/oauth/unregistered.json' },
+    ]) {
+        const rejected = await f.browser('/auth?' + new URLSearchParams({ ...authorization, ...override }));
+        if (override.scope) {
+            assert.equal(rejected.status, 303);
+            const target = new URL(rejected.headers.get('location'));
+            assert.equal(target.origin + target.pathname, callbackUri);
+            assert.equal(target.searchParams.get('error'), 'invalid_scope');
+            assert.equal(target.searchParams.get('code'), null);
+        } else assert.equal(rejected.status, 400, JSON.stringify(override));
+    }
+    const grant = f.storage.values('Delegation')[0];
+    f.storage.revoke(grant.id);
+    assert.equal((await jsonRpc(f, tokens.access_token, 'tools/list')).status, 401);
+});
 
 test('trusted native client metadata uses normal PKCE, consent, MCP and refresh', async t => {
     const requests = [];

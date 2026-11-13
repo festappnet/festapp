@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "net.festapp/festapp",
   "title": "Festapp",
-  "description": "Manage authorized Festapp events and Festapp Tickets with explicit per-connection consent.",
-  "version": "0.1.0",
+  "description": "Manage authorized Festapp events, programs, attendees and Festapp Tickets with explicit consent.",
+  "version": "0.1.1",
   "repository": {
     "url": "https://github.com/festappnet/festapp",
     "source": "github"
@@ -12,6 +12,16 @@
     {
       "type": "streamable-http",
       "url": "https://mcp.festapp.net/mcp"
+    }
+  ],
+  "websiteUrl": "https://festapp.net",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/festappnet/festapp/a37389cc225a139725a935d014f1df10f091484e/assets/icons/fstappicon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "1024x1024"
+      ]
     }
   ]
 }
