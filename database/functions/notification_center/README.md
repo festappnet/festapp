@@ -38,6 +38,12 @@ contraction deletes functions, not that history or its source facts.
 
 ## Publication, projection and workers
 
+Received-payment facts remain in the financial history and optional email
+digests. The prepared in-app policy excludes them from the panel and bell;
+email category settings do not enable them in the app. Optional email remains
+off until the recipient explicitly opts in. Payment problems remain actionable
+in-app notifications.
+
 Publication captures eligible recipients. Hidden membership suppresses personal
 participant enrollment; authorized order/waitlist activity and its delivery
 incidents remain visible for hidden buyers. Unrelated hidden personal email stays

@@ -100,6 +100,8 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT NOT EXISTS(SELECT 1 FROM public.notification_center_prepared_subjects(e) subject
   JOIN (SELECT 'u:'||(x->>'user') subject FROM jsonb_array_elements(p_privacy) x WHERE x->>'profile'='true'
    UNION SELECT 'e:'||(x->>'email') FROM jsonb_array_elements(p_privacy) x WHERE x->>'email' IS NOT NULL) hidden USING(subject))
+ -- Payment receipts remain financial/email facts, not in-app notices.
+ AND e.kind<>'order_payment_received'
  AND public.notification_center_event_relevant_internal(e,p_anchor);
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_prepared_apply(e public.notification_center_events,d public.notification_center_deliveries,p_anchor timestamptz DEFAULT clock_timestamp(),p_privacy jsonb DEFAULT NULL)
