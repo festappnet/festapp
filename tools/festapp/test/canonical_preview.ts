@@ -39,6 +39,16 @@ const dependencies = {
     }),
 };
 const results: Record<string, unknown> = {};
+let stressLayout;
+if(Deno.args[1]==='heavy') {
+    const {defaultTicketTemplate,ticketLayoutByteSize,validateLayout}=await import('../../../supabase/functions/_shared/ticketLayout.ts');
+    const template=defaultTicketTemplate('named');
+    while(template.elements.length<32)template.elements.push({...structuredClone(template.elements[0]),id:'stress'+template.elements.length,binding:'text',text:'Qualified bounded preview text. '.repeat(32),style:{...template.elements[0].style,maxLines:12}});
+    stressLayout={schemaVersion:3,templates:{named:template}};
+    while(ticketLayoutByteSize(stressLayout)>32768)for(const element of template.elements)if(element.binding==='text')element.text=element.text!.slice(0,-32);
+    validateLayout(stressLayout);
+}
+
 for (const mode of ['resolve', 'pdf']) {
     const response = await handlePreview(
         new Request('https://fixture.invalid', {
@@ -49,13 +59,14 @@ for (const mode of ['resolve', 'pdf']) {
                 type: 'named',
                 mode,
                 fontProtocol: 2,
-                scenario: 'normal',
+                scenario: Deno.args[0] ?? 'normal',
+                ...(stressLayout?{layout:stressLayout}:{}),
             }),
         }),
         dependencies,
     );
     if (response.status !== 200)
-        throw new Error('Canonical renderer fixture failed');
+        throw new Error('Canonical renderer fixture failed: '+response.status+' '+(await response.text()).slice(0,500));
     results[mode] = await response.json();
 }
 console.log(JSON.stringify(results));

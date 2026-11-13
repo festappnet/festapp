@@ -74,6 +74,11 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
             ? (_details?.containsKey('requestedPermissions') == true
                   ? {
                       'consentVersion': 2,
+                      if (_details?['api'] is Map)
+                        'apiReview': {
+                          ...Map<String, dynamic>.from(_details!['api'] as Map),
+                          'version': 1,
+                        },
                       'selection': _selection,
                       'permissions': List<String>.from(
                         _details!['requestedPermissions'] as List,
@@ -245,6 +250,10 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                                   '{client}', _details!['client'].toString()),
                               style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: 8),
+                          if (_details?['api'] is Map) ...[
+                            Text('API: ${_details!['api']['resource']}'),
+                            Text('Data: ${_details!['api']['dataProfile']}'),
+                          ],
                           Text(_email),
                           const SizedBox(height: 16),
                           Text(text('sameRights')),

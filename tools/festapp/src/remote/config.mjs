@@ -1,5 +1,6 @@
 import { check } from '../errors.mjs';
 import { z } from 'zod';
+import { endpointSchema, normalizeEndpoints, normalizeClient } from './endpoints.mjs';
 import { parseProfile } from '../context/profile.mjs';
 
 export { READ_SCOPE, CREATE_SCOPE, READ_OPERATIONS, MCP_PERMISSIONS, MCP_SCOPES, scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
@@ -16,7 +17,7 @@ export function verifyPermissions(raw, requested) {
 
 const identifier = z.string().min(1).max(200);
 const schema = z.strictObject({
-    schemaVersion: z.literal(2),
+    schemaVersion: z.union([z.literal(2), z.literal(3)]),
     issuer: z.url(),
     profile: z.unknown().optional(),
     contexts: z.array(z.strictObject({ name: identifier, profile: z.unknown(), tenantOrigin: z.url() })).min(2).max(100).optional(),
@@ -27,11 +28,20 @@ const schema = z.strictObject({
         allowedScopes: z.array(z.enum(DOMAIN_SCOPES)).min(1).max(DOMAIN_SCOPES.length).optional(),
         dataProfile: z.enum(['operator', 'order-summary']),
     }).optional(),
+    endpoints: z.array(endpointSchema).max(2).optional(),
     clients: z.array(z.strictObject({
         id: identifier,
         name: identifier,
         applicationType: z.enum(['web', 'native']).default('web'),
         dataProfile: z.enum(['operator', 'order-summary']).default('operator'),
+        transports: z.array(z.enum(['mcp', 'legacy-make', 'api'])).min(1).max(3).optional(),
+        resources: z.array(z.url()).min(1).max(3).optional(),
+        allowedOperations: z.array(identifier).min(1).max(300).optional(),
+        proofProfile: z.enum(['bearer', 'dpop']).optional(),
+        requirePar: z.boolean().optional(),
+        maxConsentDays: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(365)]).optional(),
+        tokenEndpointAuthMethod: z.enum(['none', 'private_key_jwt']).optional(),
+        jwks: z.strictObject({ keys: z.array(z.record(z.string(), z.unknown())).min(1).max(4) }).optional(),
         redirectUris: z.array(z.url()).min(1).max(4),
         allowedScopes: z.array(z.enum(DOMAIN_SCOPES)).min(1).max(DOMAIN_SCOPES.length).optional(),
     })).min(1).max(10),
@@ -76,7 +86,10 @@ export function parseRemoteConfig(raw) {
         if (!validRedirect(uri, client.applicationType, local))
             throw new Error('INVALID_REMOTE_REDIRECT');
     }
-    return Object.freeze({ ...config, profile, ...(contexts ? { contexts: Object.freeze(contexts) } : {}), issuer: url.origin, resource: url.origin + '/mcp' });
+    const normalized = { ...config, profile, contexts, issuer: url.origin, resource: url.origin + '/mcp' };
+    const endpoints = normalizeEndpoints(normalized);
+    const clients = config.clients.map(client => normalizeClient(client, normalized, endpoints));
+    return Object.freeze({ ...config, clients, endpoints, profile, ...(contexts ? { contexts: Object.freeze(contexts) } : {}), issuer: url.origin, resource: url.origin + '/mcp' });
 }
 
 /** Only protected configuration defines contexts. A request may select an entry,

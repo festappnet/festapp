@@ -1,5 +1,5 @@
 {
-  "url": "/make/v1/operations/access.inspect",
+  "url": "/operations/access.inspect",
   "method": "POST",
   "type": "json",
   "body": {},

@@ -32,6 +32,8 @@ export function tenantConnections(app, { config: serviceConfig, storage, brokerS
                     .filter(g => owns(g, userId) && connectionActive(g))
                     .sort((a, b) => b.expiresAt - a.expiresAt || a.id.localeCompare(b.id))
                     .map(g => ({ id: g.id, client: clientPolicy(config, g.clientId)?.name ?? g.clientId,
+                        resource: g.resource ?? config.resource, dataProfile: g.dataProfile ?? clientPolicy(config, g.clientId)?.dataProfile,
+                        proofProfile: g.proofProfile ?? 'bearer', lastUsedAt: g.lastUsedAt ? new Date(g.lastUsedAt).toISOString() : null,
                         name: g.name || null, expiresAt: new Date(connectionDeadline(g)).toISOString(), access: accessSelection(g.access),
                         permissions: MCP_SCOPES.filter(p => g.permissions?.includes(p)) }));
                 return res.json({ connections });

@@ -456,3 +456,10 @@ test('global issuer selector stays on the protected broker transport', async () 
     assert.equal(calls[0].headers['X-Festapp-Mcp-Issuer'], 'https://mcp.festapp.net');
     assert.equal(calls[0].body.organizationId, undefined);
 });
+
+test('API consent displays the exact resource/profile and sends the acknowledgement with approved scope',async()=>{
+ const api={resource:'https://api.vstupenky.online/integrations',dataProfile:'order-summary'};
+ const f=fixture({occasions:[{id:99,title:'Ples'}],invoke:body=>({data:body.operation==='details'?{client:'Make',applicationType:'web',occasions:[{id:99,title:'Ples'}],requestedPermissions:[],api}:body.operation==='status'?{status:'connected'}:{resumeUrl:resume,issuer}})});
+ await f.page.init();assert(f.container.textContent.includes(api.resource));assert(f.container.textContent.includes(api.dataProfile));
+ f.page.selected.add(99);await f.page.call('approve');assert.deepEqual(f.calls.at(-1).access.apiReview,{...api,version:1});
+});

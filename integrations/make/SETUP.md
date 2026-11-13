@@ -14,7 +14,7 @@ record payments, send tickets or export buyer contacts.
 - **List orders** returns one bundle per order, with cursor pagination.
 - **Get an order** returns one matching order from the selected event.
 - **Make an API call** calls one of the five documented read operations. Enter
-  a service-relative path such as `/make/v1/operations/context.inspect` and a
+  a service-relative path such as `/integrations/v1/operations/context.inspect` and a
   JSON body. The API currently supports POST for five authorized read operations.
   The module exposes method, supported headers, query string, body, response
   headers and status code; write operations and foreign URLs remain forbidden.
@@ -62,10 +62,16 @@ corrected. Throttling or a temporary upstream failure can require a later retry;
 do not configure another unbounded retry loop. `PAGINATION_LIMIT_EXCEEDED`
 means the requested export did not complete.
 
-[API schemas and authentication](https://mcp.vstupenky.online/make/v1).
+[API schemas and authentication](https://api.vstupenky.online/integrations/v1/docs/).
 [Privacy](https://vstupenky.online/privacy/).
 [Service terms](https://vstupenky.online/terms/).
 Support: info@festapp.net.
 
 An optional connection label helps distinguish connections to different accounts
 or events. Account identifiers and contacts are not exposed by the summary API.
+
+
+This source prepares the general API connection; it is not yet published. A new
+connection and reconsent are required at https://mcp.festapp.net for resource
+https://api.vstupenky.online/integrations. Existing regional MCP credentials
+cannot be reused. The new API currently limits consent to seven days.

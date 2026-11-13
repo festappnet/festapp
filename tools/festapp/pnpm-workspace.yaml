@@ -3,3 +3,6 @@ enableGlobalVirtualStore: false
 allowBuilds:
   esbuild: true
   workerd: true
+
+minimumReleaseAgeExclude:
+  - '@redocly/cli@2.78.0'

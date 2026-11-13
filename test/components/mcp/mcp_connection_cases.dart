@@ -83,6 +83,10 @@ void main() {
         expect(selected, isEmpty);
         return {
           'client': 'Codex',
+          'api': {
+            'resource': 'https://api.festapp.net/integrations',
+            'dataProfile': 'operator',
+          },
           'occasions': [
             {'id': 7, 'title': 'Test event'}
           ]
@@ -90,6 +94,8 @@ void main() {
       },
     )));
     await tester.pumpAndSettle();
+    expect(find.text('API: https://api.festapp.net/integrations'), findsOneWidget);
+    expect(find.text('Data: operator'), findsOneWidget);
     expect(find.text('fixture@invalid'), findsOneWidget);
     expect(find.text('Test event'), findsOneWidget);
     FilledButton approve() => tester.widget<FilledButton>(

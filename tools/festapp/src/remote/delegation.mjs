@@ -1,3 +1,4 @@
+import { grantEndpoint, clientForResource } from './endpoints.mjs';
 import { contextConfig } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
 import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
@@ -25,6 +26,8 @@ export class DelegatedOwner {
         this.config = config;
         this.storage = storage;
         this.token = token;
+        this.expectedResource = options.expectedResource ?? config.resource;
+        this.transport = options.transport ?? 'mcp';
         this.orderSummaryOnly = clientPolicy(config, token.clientId)?.dataProfile === 'order-summary';
         const grant = this.current();
         this.config = contextConfig(config, grant.profileBinding);
@@ -37,6 +40,9 @@ export class DelegatedOwner {
     }
     permitsOperation(id, grant = this.current()) {
         const scopes = scopesForOperation(id);
+        const client = clientPolicy(this.config, this.token.clientId);
+        if (grant.operationAllowlist && !grant.operationAllowlist.includes(id)) return false;
+        if (client?.allowedOperations && !client.allowedOperations.includes(id)) return false;
         return clientAllowsScopes(this.config, this.token.clientId, scopes) && scopes.every(s =>
             this.token.scope?.split(' ').includes(s) && (s === READ_SCOPE ||
                 (s === CREATE_SCOPE ? canCreateWithAccess(grant.access) : grant.permissions?.includes(s))));
@@ -48,9 +54,9 @@ export class DelegatedOwner {
     }
     challengeFor(code, id) {
         if (['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(code))
-            return authChallenge(this.config, { error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
+            return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
         if (code === 'INSUFFICIENT_SCOPE' && clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)))
-            return authChallenge(this.config, { error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
+            return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
     }
     current() {
         const t = this.token;
@@ -58,10 +64,14 @@ export class DelegatedOwner {
         check(connectionActive(grant) && grant.userId === t.accountId &&
             clientPolicy(this.config, grant.clientId) &&
             grant.clientId === t.clientId &&
+            (!grant.dataProfile || grant.dataProfile === clientPolicy(this.config, t.clientId)?.dataProfile) &&
             (!this.session || (this.session.profile.binding === grant.binding && this.config.profile.binding === grant.profileBinding)) &&
             connectionContext(this.config, grant) &&
             t.exp * 1000 > Date.now() &&
-            t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
+            t.aud === this.expectedResource &&
+            grantEndpoint(this.config, grant).resource === this.expectedResource &&
+            (grant.proofProfile ?? 'bearer') === (t.jkt ? 'dpop' : 'bearer') &&
+            clientForResource(this.config, t.clientId, this.expectedResource) && t.scope?.split(' ').includes(READ_SCOPE) &&
             clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');
         return grant;
     }

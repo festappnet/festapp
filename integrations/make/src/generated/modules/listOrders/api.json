@@ -1,5 +1,5 @@
 {
-  "url": "/make/v1/operations/orders.list",
+  "url": "/operations/orders.list",
   "method": "POST",
   "type": "json",
   "body": {
@@ -11,11 +11,11 @@
   "response": {
     "iterate": "{{body.data.orders}}",
     "output": "{{item}}",
-    "limit": "{{if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, 3200), 10)}}"
-  },
-  "headers": {
-    "x-festapp-make-page": "{{ifempty(pagination.page, 1)}}",
-    "x-festapp-make-total-limit": "{{parameters.limit}}"
+    "limit": "{{if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, 3200), 10)}}",
+    "valid": "{{if(body.ok, if(body.data.nextCursor != null, if(ifempty(pagination.page, 1) >= 50, if((if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, 3200), 10)) <= ifempty(pagination.page, 1) * 50, true, false), true), true), false)}}",
+    "error": {
+      "message": "{{if(body.ok, 'PAGINATION_LIMIT_EXCEEDED: This run still has more orders. Narrow the filter or request an explicit smaller limit.', ifempty(body.code, 'REQUEST_FAILED'))}}"
+    }
   },
   "pagination": {
     "condition": "{{body.data.nextCursor != null}}",

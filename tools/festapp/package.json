@@ -14,7 +14,12 @@
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.test.mjs",
     "docs:generate": "node scripts/generate-reference.mjs",
-    "docs:check": "node scripts/generate-reference.mjs --check"
+    "docs:check": "node scripts/generate-reference.mjs --check",
+    "api:generate": "node scripts/generate-api-reference.mjs",
+    "api:check": "node scripts/generate-api-reference.mjs --check && node scripts/check-api-contract.mjs && node scripts/build-api-docs.mjs --check",
+    "api:compatibility": "node scripts/check-api-compatibility.mjs",
+    "api:docs": "node scripts/build-api-docs.mjs",
+    "api:ingress": "node scripts/check-api-ingress.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.11",
@@ -25,11 +30,15 @@
     "pdfjs-dist": "6.4.299",
     "zod": "4.6.7",
     "@modelcontextprotocol/server": "2.3.1",
-    "@modelcontextprotocol/node": "2.1.2"
+    "@modelcontextprotocol/node": "2.1.2",
+    "jose": "6.2.13"
   },
   "packageManager": "pnpm@11.24.0",
   "devDependencies": {
     "@modelcontextprotocol/client": "2.3.1",
-    "mcp-sdk-legacy": "npm:@modelcontextprotocol/sdk@1.32.1"
+    "mcp-sdk-legacy": "npm:@modelcontextprotocol/sdk@1.32.1",
+    "@redocly/cli": "2.78.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
   }
 }

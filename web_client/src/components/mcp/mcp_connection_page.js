@@ -56,7 +56,7 @@ export class McpConnectionPage {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
             headers: new URL(this.browser.location.href).searchParams.has('issuer')
                 ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: permissionsForConsent(this.details?.requestedPermissions ?? [], this.permissionMode), ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
+            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: permissionsForConsent(this.details?.requestedPermissions ?? [], this.permissionMode), ...(this.details?.api ? {apiReview:{...this.details.api,version:1}} : {}), ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -208,6 +208,7 @@ export class McpConnectionPage {
         add('h1', this.text(this.state === 'connected' ? 'connected' : 'heading'));
         if (this.state === 'consent') {
             add('h2', this.details.client);
+            if(this.details.api){add('p',`API: ${this.details.api.resource}`);add('p',`Data: ${this.details.api.dataProfile}`);}
             if (this.details.regionalPortal) {
                 const { name: portal, platform } = this.details.regionalPortal;
                 add('p', this.text('regionalPlatform', { portal, platform }));
@@ -230,7 +231,7 @@ export class McpConnectionPage {
                 const choices = this.details.connections;
                 const durationLabel = add('label', this.text('durationLabel'));
                 const duration = add('select', '', durationLabel); duration.name = 'durationDays'; duration.disabled = this.busy;
-                for (const days of CONNECTION_DURATION_DAYS) {
+                for (const days of CONNECTION_DURATION_DAYS.filter(days=>days<=(this.details.maxConsentDays??365))) {
                     const option = add('option', this.text(`duration${days}`), duration); option.value = String(days);
                     option.selected = this.connection.durationDays === days;
                 }
