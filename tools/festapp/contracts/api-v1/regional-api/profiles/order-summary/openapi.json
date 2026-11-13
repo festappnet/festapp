@@ -23,7 +23,7 @@
   "x-oauth-resource": "https://api.vstupenky.online/integrations",
   "x-oauth-issuer": "https://mcp.festapp.net",
   "x-data-profile": "order-summary",
-  "x-source-digest": "aef1d39ef0a06817806b35a3db928709fff96516feea21d726d8fb0f0ff7c047",
+  "x-source-digest": "c1e037420561e2a543c77081e206d07c88dd2d47270246fbebb45223032181b0",
   "x-body-limit-bytes": 49152,
   "x-json-limits": {
     "bytes": 49152,
@@ -4906,5 +4906,5 @@
       }
     }
   },
-  "x-projection-digest": "3508f891a5357bb51c2eff11f72e7c68e93a23f5f387fc26f00591268cf2d220"
+  "x-projection-digest": "8bc2000fe6430cd283743c2af066f1c3d59a518e27c9e8382614ea25fd80eb5e"
 }

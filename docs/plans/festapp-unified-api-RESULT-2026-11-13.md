@@ -13,6 +13,7 @@ Nová migrace `20261113160000_shared_bank_writer_acl.sql` vrací podporované
 volání bankovního writeru po jeho znovuvytvoření a drží ACL u deklarace.
 Živé dvourolové kontroly a payment policy zůstávají uvnitř kanonické SQL funkce.
 Všech osm lokálních CI jobs prošlo; [evidence zdrojových kontrol](festapp-unified-api-evidence-2026-11-13/operator-source-ci.json) rozlišuje původní běh a dotčené opakované kontroly.
+Před přepnutím MCP byla opravena přesná shoda JWT issueru s produkčním GoTrue: backend origin, nikoli REST cesta `/auth/v1`. [Nový úplný lokální CI běh](festapp-unified-api-evidence-2026-11-13/operator-issuer-ci.json) prošel všemi osmi jobs včetně skutečného MFA průchodu. Předchozí MCP image zůstává aktivní až do kvalifikace této opravy.
 Následující produkční evidence stále popisuje předchozí ověřený release.
 
 
