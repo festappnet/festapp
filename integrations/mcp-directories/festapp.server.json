@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "net.festapp/festapp",
   "title": "Festapp",
-  "description": "Manage authorized Festapp events, programs, attendees and Festapp Tickets with explicit consent.",
-  "version": "0.1.1",
+  "description": "Create events, plan programs and seating, set ticket prices and track sales with your AI assistant.",
+  "version": "0.1.2",
   "repository": {
     "url": "https://github.com/festappnet/festapp",
     "source": "github"

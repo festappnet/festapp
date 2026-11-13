@@ -13,7 +13,7 @@
         "event-management",
         "ticketing"
       ],
-      "description": "Manage authorized Festapp events and Festapp Tickets with explicit per-connection consent.",
+      "description": "Create events, plan programs and seating, set ticket prices and track sales with your AI assistant.",
       "directories": {
         "officialMcpRegistry": {
           "status": "published-readback-verified",
@@ -65,7 +65,7 @@
         "ticketing",
         "event-management"
       ],
-      "description": "Manage authorized events, ticket sales, seating, orders and check-in on vstupenky.online.",
+      "description": "Set up events, seating and ticket prices, then manage orders, sales and check-in with AI.",
       "directories": {
         "officialMcpRegistry": {
           "status": "published-readback-verified",
@@ -116,5 +116,6 @@
     "documentation": "https://vstupenky.online/napoveda/mcp-podporovane-operace/",
     "availability": "Current rights, explicit consent, client data profile and selected application variant apply."
   },
-  "additionalDirectoryEvidence": "docs/operations/releases/global-mcp-20261113/additional-directories-20261113.json"
+  "additionalDirectoryEvidence": "docs/operations/releases/global-mcp-20261113/additional-directories-20261113.json",
+  "catalogueCopyFile": "integrations/mcp-directories/catalogue-copy.json"
 }
