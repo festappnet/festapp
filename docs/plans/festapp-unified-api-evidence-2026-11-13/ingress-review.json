@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "checks": 22,
+  "facades": 2,
+  "canonicalListeners": 1,
+  "preserved": [
+    "auth/v1",
+    "rest/v1",
+    "functions/v1"
+  ],
+  "dpopPublicPrefix": true,
+  "forgedForwardingStripped": true,
+  "resourceSubstitutionRejected": true,
+  "productionChanged": false,
+  "candidateImage": "sha256:ca66d9390e21892e52341289aac4a512e1b228272318266be4d5c7bf2d1c2c30",
+  "runtimeDigest": "28273370348b8a8cd72546eb38c7edb5d2246973c1180a8d11306bd90e89b2d2"
+}

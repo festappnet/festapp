@@ -1,5 +1,5 @@
 {
-  "url": "https://mcp.vstupenky.online{{switch(parameters.url, \"/make/v1/operations/context.inspect\", \"/make/v1/operations/context.inspect\", \"/make/v1/operations/access.inspect\", \"/make/v1/operations/access.inspect\", \"/make/v1/operations/orders.report\", \"/make/v1/operations/orders.report\", \"/make/v1/operations/orders.list\", \"/make/v1/operations/orders.list\", \"/make/v1/operations/orders.inspect\", \"/make/v1/operations/orders.inspect\", '/make/v1/operations/forbidden')}}",
+  "url": "https://api.vstupenky.online/integrations/v1{{switch(parameters.url, \"/operations/orders.report\", \"/operations/orders.report\", \"/operations/orders.list\", \"/operations/orders.list\", \"/operations/orders.inspect\", \"/operations/orders.inspect\", \"/operations/access.inspect\", \"/operations/access.inspect\", \"/operations/context.inspect\", \"/operations/context.inspect\", '/operations/forbidden')}}",
   "method": "{{ifempty(parameters.method, 'POST')}}",
   "type": "raw",
   "headers": {

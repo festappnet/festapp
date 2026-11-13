@@ -1,0 +1,118 @@
+{
+  "baseline": {
+    "mode": "baseline",
+    "sourceSha": "742d614b722bbe619b3a095f66605bd4bb536006",
+    "runtimeDigest": "86a948ca5d05bbd8f86c0a0b4e4b780c5d2bcae732be8d74a20ccd00fce2ffb1",
+    "recordedAt": "2026-11-13T02:40:21.864Z",
+    "heapLimitMiB": 192,
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 184844288,
+        "heapTotal": 110002176,
+        "heapUsed": 39986136,
+        "external": 5161845,
+        "arrayBuffers": 333587
+      },
+      "after": {
+        "rss": 200491008,
+        "heapTotal": 111050752,
+        "heapUsed": 42063064,
+        "external": 4895173,
+        "arrayBuffers": 333587
+      },
+      "peakRss": 200065024
+    },
+    "mcpP95Ms": 7.41316699999993,
+    "allP95Ms": 7.41316699999993,
+    "eventLoopP95Ms": 20.283391,
+    "node": "v24.20.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "limitations": [
+      "native process slice; container/CPU limits not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ]
+  },
+  "candidate": {
+    "mode": "candidate",
+    "sourceSha": "742d614b722bbe619b3a095f66605bd4bb536006",
+    "runtimeDigest": "6790c8039927aadbbc700bce75eb27839985c04336a3076a4ab62be84515e76e",
+    "recordedAt": "2026-11-13T02:55:38.013Z",
+    "heapLimitMiB": 192,
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 189366272,
+        "heapTotal": 113410048,
+        "heapUsed": 43045752,
+        "external": 10112762,
+        "arrayBuffers": 5277597
+      },
+      "after": {
+        "rss": 202178560,
+        "heapTotal": 114393088,
+        "heapUsed": 44373968,
+        "external": 9728312,
+        "arrayBuffers": 5277741
+      },
+      "peakRss": 202047488
+    },
+    "mcpP95Ms": 7.093250000000012,
+    "allP95Ms": 7.093250000000012,
+    "eventLoopP95Ms": 15.810559,
+    "node": "v24.20.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "limitations": [
+      "native process slice; container/CPU limits not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ]
+  },
+  "comparison": {
+    "idleRssDeltaMiB": 4.3125,
+    "mcpP95ChangePercent": -4.315523985901326,
+    "releaseGate": "NOT_PROVEN: diagnostic native read slice only; full constrained container workload still required"
+  },
+  "candidateBeforeLastUsedFix": {
+    "mode": "candidate",
+    "sourceSha": "742d614b722bbe619b3a095f66605bd4bb536006",
+    "runtimeDigest": "c25cea8184533c68632f65e85edfb9efa3691195d7914e8b34cfac01548d587f",
+    "recordedAt": "2026-11-13T02:53:47.331Z",
+    "heapLimitMiB": 192,
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 200392704,
+        "heapTotal": 114982912,
+        "heapUsed": 43049760,
+        "external": 10285294,
+        "arrayBuffers": 5277597
+      },
+      "after": {
+        "rss": 213352448,
+        "heapTotal": 116228096,
+        "heapUsed": 44389136,
+        "external": 9798269,
+        "arrayBuffers": 5277741
+      },
+      "peakRss": 212910080
+    },
+    "mcpP95Ms": 13.847125000000005,
+    "allP95Ms": 13.847125000000005,
+    "eventLoopP95Ms": 32.997375,
+    "node": "v24.20.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "limitations": [
+      "native process slice; container/CPU limits not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ]
+  }
+}

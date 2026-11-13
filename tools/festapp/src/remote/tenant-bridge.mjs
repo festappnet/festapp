@@ -78,10 +78,18 @@ export function tenantBridge(app, { config: serviceConfig, storage, brokerSecret
         const client = clientPolicy(config, flow.clientId);
         check(client, 'FORBIDDEN');
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
+            ...(flow.api ? {api:flow.api} : {}), maxConsentDays:client.maxConsentDays ?? 365,
             ...(config.regionalPortal ? { regionalPortal: config.regionalPortal } : {}),
-            connections: activeConnections(storage, proof.userId, flow.clientId, config.profile.binding), tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
-        const { selected, permissions, connection } = verifyConsent(req.body.access, proof.available, flow.canRequestCreate === true, flow.requestedPermissions ?? []);
-        verifyConnectionChoice(connection, storage, proof.userId, flow.clientId, config.profile.binding);
+            connections: activeConnections(storage, proof.userId, flow.clientId, config.profile.binding, {resource:flow.api?.resource ?? serviceConfig.resource,legacyResource:serviceConfig.resource}), tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
+        let access = req.body.access;
+        if(flow.api){
+            const review=access?.apiReview;
+            check(review?.version===1&&review.resource===flow.api.resource&&review.dataProfile===flow.api.dataProfile&&
+                Object.keys(review).every(key=>['version','resource','dataProfile'].includes(key))&&client.dataProfile===flow.api.dataProfile,'FORBIDDEN');
+            const {apiReview,...consent}=access;access=consent;
+        }
+        const { selected, permissions, connection } = verifyConsent(access, proof.available, flow.canRequestCreate === true, flow.requestedPermissions ?? []);
+        verifyConnectionChoice(connection, storage, proof.userId, flow.clientId, config.profile.binding, {resource:flow.api?.resource ?? serviceConfig.resource,legacyResource:serviceConfig.resource});
         // Re-read after remote authorization so concurrent approval cannot fork a mint.
         check(read(request).flow.state === 'pending', 'FORBIDDEN');
         const lease = nonce();
@@ -107,7 +115,7 @@ export function tenantBridge(app, { config: serviceConfig, storage, brokerSecret
         let request = flow.request;
         if (!request) {
             request = nonce();
-            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), requestedPermissions: MCP_SCOPES.filter(scope => String(d.params.scope ?? '').split(' ').includes(scope)), expiresAt: Date.now() + 600000 };
+            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), ...(d.integrationEndpoint?.endpointId!=='mcp'?{api:{resource:d.integrationEndpoint.resource,dataProfile:clientPolicy(config,d.params.client_id).dataProfile}}:{}), requestedPermissions: MCP_SCOPES.filter(scope => String(d.params.scope ?? '').split(' ').includes(scope)), expiresAt: Date.now() + 600000 };
             save(d.uid, pending);
             storage.put('TenantRequest', digest(request), { uid: d.uid }, 600);
         }

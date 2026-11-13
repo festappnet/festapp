@@ -1,0 +1,10 @@
+telemetry: off
+extends:
+  - recommended
+rules:
+  no-server-example.com: off
+  operation-4xx-response: error
+  info-license-strict: off
+  no-unused-components: error
+  operation-singular-tag: off
+  security-defined: error

@@ -1,5 +1,5 @@
 {
-  "url": "/make/v1/operations/orders.report",
+  "url": "/operations/orders.report",
   "method": "POST",
   "type": "json",
   "body": {

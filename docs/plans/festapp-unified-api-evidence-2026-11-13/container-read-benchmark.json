@@ -1,0 +1,93 @@
+{
+  "baseline": {
+    "mode": "baseline",
+    "sourceSha": "09cdd991fa30dd848324df586e188040931d3bd2",
+    "runtimeDigest": "c008245f64a2ffb1082b980383950871feb83620c4dc8c61661ff4ac4ae097cf",
+    "cgroup": {
+      "memory.peak": "93892608",
+      "memory.max": "402653184",
+      "cpu.max": "50000 100000"
+    },
+    "recordedAt": "2026-11-13T03:07:24.667Z",
+    "heapLimitMiB": 192,
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 134057984,
+        "heapTotal": 44900352,
+        "heapUsed": 39696872,
+        "external": 4745482,
+        "arrayBuffers": 399143
+      },
+      "after": {
+        "rss": 138645504,
+        "heapTotal": 49618944,
+        "heapUsed": 42482504,
+        "external": 5349120,
+        "arrayBuffers": 399143
+      },
+      "peakRss": 138645504
+    },
+    "mcpP95Ms": 49.58183699999972,
+    "allP95Ms": 49.58183699999972,
+    "eventLoopP95Ms": 64.880639,
+    "node": "v24.22.1",
+    "platform": "linux",
+    "arch": "arm64",
+    "limitations": [
+      "native process slice; container/CPU limits not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ],
+    "image": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b"
+  },
+  "candidate": {
+    "mode": "candidate",
+    "sourceSha": "742d614b722bbe619b3a095f66605bd4bb536006+working-runtime",
+    "runtimeDigest": "c5437ec223f65ee52599f1e6e91699467c03f83e3f4e8203147b00be05114456",
+    "cgroup": {
+      "memory.peak": "97714176",
+      "memory.max": "402653184",
+      "cpu.max": "50000 100000"
+    },
+    "recordedAt": "2026-11-13T03:07:27.942Z",
+    "heapLimitMiB": 192,
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 141996032,
+        "heapTotal": 48570368,
+        "heapUsed": 42868072,
+        "external": 10019247,
+        "arrayBuffers": 5343153
+      },
+      "after": {
+        "rss": 146059264,
+        "heapTotal": 51896320,
+        "heapUsed": 44374864,
+        "external": 10339306,
+        "arrayBuffers": 6096015
+      },
+      "peakRss": 150687744
+    },
+    "mcpP95Ms": 72.34883000000036,
+    "allP95Ms": 55.935455999999704,
+    "eventLoopP95Ms": 77.660159,
+    "node": "v24.22.1",
+    "platform": "linux",
+    "arch": "arm64",
+    "limitations": [
+      "native process slice; container/CPU limits not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ],
+    "image": "sha256:6e9db11d8052537730700464759c2e19b3c31bd79cb92a28745b930de3f290c0"
+  },
+  "comparison": {
+    "idleRssDeltaMiB": 7.5703125,
+    "mcpP95ChangePercent": 45.91801025847584,
+    "releaseGate": "READ SLICE ONLY: bounded export/preview, token refresh, exhaustion and disconnect scenarios remain required"
+  }
+}

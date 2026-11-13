@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 3,
+  "issuer": "https://mcp.festapp.net",
+  "contexts": [
+    {
+      "name": "global-example",
+      "profile": {
+        "schemaVersion": 1,
+        "name": "global-example",
+        "kind": "canonical",
+        "tenantId": "global-example",
+        "backendOrigin": "https://backend.example.invalid",
+        "publicApiKey": "sb_publishable_example_only",
+        "organizationId": 101,
+        "activationUrl": "https://global-example.example.invalid/backend-activation.json",
+        "activationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "generation": 1,
+        "canonicalProfileSha256": "f1bb792632856d26ad25e5aee35d7eb5cba561f8a038745e98908de201e27b8d"
+      },
+      "tenantOrigin": "https://global-example.example.invalid"
+    },
+    {
+      "name": "regional-example",
+      "profile": {
+        "schemaVersion": 1,
+        "name": "regional-example",
+        "kind": "canonical",
+        "tenantId": "regional-example",
+        "backendOrigin": "https://backend.example.invalid",
+        "publicApiKey": "sb_publishable_example_only",
+        "organizationId": 102,
+        "activationUrl": "https://regional-example.example.invalid/backend-activation.json",
+        "activationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "generation": 1,
+        "canonicalProfileSha256": "466b23ca1310dcc4e556d5c304119da0878b8d17156408d3cf1f3f52327e1f70"
+      },
+      "tenantOrigin": "https://regional-example.example.invalid"
+    }
+  ],
+  "endpoints": [
+    {
+      "endpointId": "global-api",
+      "publicBase": "https://api.festapp.net/integrations/v1",
+      "resource": "https://api.festapp.net/integrations",
+      "issuer": "https://mcp.festapp.net",
+      "brand": "Festapp",
+      "profilePolicy": {
+        "type": "selected"
+      },
+      "allowedClients": [
+        "operator-example"
+      ]
+    },
+    {
+      "endpointId": "regional-api",
+      "publicBase": "https://api.vstupenky.online/integrations/v1",
+      "resource": "https://api.vstupenky.online/integrations",
+      "issuer": "https://mcp.festapp.net",
+      "brand": "vstupenky.online",
+      "profilePolicy": {
+        "type": "fixed",
+        "profileBinding": "1bb82b4f5ad52a477ac0c19dacf87e52687977d641f7fe0b8e6e175c2f0150e9"
+      },
+      "allowedClients": [
+        "festapp-make"
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "id": "operator-example",
+      "name": "Operator example",
+      "redirectUris": [
+        "https://client.example.invalid/callback"
+      ],
+      "transports": [
+        "api"
+      ],
+      "resources": [
+        "https://api.festapp.net/integrations"
+      ],
+      "dataProfile": "operator",
+      "allowedScopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:products:read",
+        "festapp:products:write"
+      ],
+      "allowedOperations": [
+        "context.inspect",
+        "access.inspect",
+        "products.list",
+        "products.save"
+      ],
+      "proofProfile": "bearer",
+      "tokenEndpointAuthMethod": "none"
+    },
+    {
+      "id": "festapp-make",
+      "name": "Make - vstupenky.online",
+      "redirectUris": [
+        "https://www.make.com/oauth/cb/app"
+      ],
+      "transports": [
+        "api"
+      ],
+      "resources": [
+        "https://api.vstupenky.online/integrations"
+      ],
+      "dataProfile": "order-summary",
+      "allowedScopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read"
+      ],
+      "allowedOperations": [
+        "context.inspect",
+        "access.inspect",
+        "orders.report",
+        "orders.list",
+        "orders.inspect"
+      ],
+      "proofProfile": "bearer",
+      "tokenEndpointAuthMethod": "none"
+    }
+  ]
+}

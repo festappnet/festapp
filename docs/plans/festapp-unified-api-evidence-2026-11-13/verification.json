@@ -1,0 +1,71 @@
+{
+  "verification": "standard",
+  "sourceHead": "742d614b722bbe619b3a095f66605bd4bb536006",
+  "comparedUpstream": "09cdd991fa30dd848324df586e188040931d3bd2",
+  "runtimeDigest": "44bc78a3ccd0af86018ddddcb2544c9db1a46cae3d788548a2b36564b32a838b",
+  "candidateImage": "sha256:fdaa8f2685dc3bbd025ff663f45cb93fd1ba69270d52aea54d7050e780e7c495",
+  "uncommitted": true,
+  "checks": [
+    {
+      "name": "auth/API/shared runner/legacy Make/contract",
+      "command": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/api-transport.test.mjs test/remote.test.mjs test/make-transport.test.mjs test/api-contract.test.mjs",
+      "passed": 122,
+      "skipped": 0
+    },
+    {
+      "name": "final surface including public proof routes, artifacts, operations and runtime image contract",
+      "command": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/api-transport.test.mjs test/api-docs.test.mjs test/operations.test.mjs test/remote-image.test.mjs",
+      "passed": 28,
+      "skipped": 0,
+      "overlapsPreviousSuite": true
+    },
+    {
+      "name": "full auth storage capacity and operation/image contracts",
+      "passed": 17,
+      "skipped": 0,
+      "reusedPassingEvidence": "/tmp/festapp-api-node-fix.log"
+    },
+    {
+      "name": "real local HTTP product retry and SQL Make summary",
+      "passed": 2,
+      "skipped": 0,
+      "reusedPassingEvidence": "/tmp/festapp-api-db3.log",
+      "limitation": "outer rollback fixture; does not prove independent committed reconnect recovery"
+    },
+    {
+      "name": "CI mirror contract",
+      "passed": 7,
+      "reusedPassingEvidence": "/tmp/festapp-api-ci-contract2.log"
+    },
+    {
+      "name": "api:check",
+      "result": "passed: eight schema/parity/example/lint projections and deterministic HTML comparison"
+    },
+    {
+      "name": "docs:check",
+      "result": "passed: 193 MCP tools, 83 permissions"
+    },
+    {
+      "name": "Make generated check",
+      "result": "passed: 42 files"
+    },
+    {
+      "name": "api:compatibility",
+      "result": "EXPECTED BLOCK: no published baseline; first baseline requires authorized publication"
+    },
+    {
+      "name": "Caddy ingress",
+      "passed": 22
+    },
+    {
+      "name": "offline browser",
+      "result": "passed: isolated muted headless file://, zero external requests, operation search/details and local profile links; DPoP onboarding checked"
+    }
+  ],
+  "notRun": [
+    "full canonical CI mirror lanes (required before source publication)",
+    "full release benchmark",
+    "actual Make reconsent and scenario qualification",
+    "production migrations, ingress deployment or connector publication"
+  ]
+}

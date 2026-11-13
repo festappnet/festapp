@@ -1,6 +1,8 @@
 import { isIP } from 'node:net';
 import { DOMAIN_SCOPES, READ_SCOPE, MCP_SCOPES, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 
+export const API_SUMMARY_OPERATIONS = Object.freeze(['context.inspect','access.inspect','orders.report','orders.list','orders.inspect']);
+
 export { DOMAIN_SCOPES } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 
 export function validScopeCeiling(scopes) {

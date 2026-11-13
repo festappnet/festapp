@@ -1,0 +1,112 @@
+{
+  "baselineImage": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+  "candidateImage": "sha256:fdaa8f2685dc3bbd025ff663f45cb93fd1ba69270d52aea54d7050e780e7c495",
+  "baseline": {
+    "mode": "baseline",
+    "sourceSha": "09cdd991fa30dd848324df586e188040931d3bd2",
+    "runtimeDigest": "c008245f64a2ffb1082b980383950871feb83620c4dc8c61661ff4ac4ae097cf",
+    "cgroup": {
+      "memory.peak": "92557312",
+      "memory.max": "402653184",
+      "cpu.max": "50000 100000"
+    },
+    "recordedAt": "2026-11-13T04:16:18.267Z",
+    "heapLimitMiB": 192,
+    "paceMs": 0,
+    "cpuWorkloadMicros": {
+      "user": 167265,
+      "system": 11697
+    },
+    "cpuBefore": "usage_usec 725964\nuser_usec 624880\nsystem_usec 101083\ncore_sched.force_idle_usec 0\nnr_periods 14\nnr_throttled 13\nthrottled_usec 672840\nnr_bursts 0\nburst_usec 0\n",
+    "cpuAfter": "usage_usec 904978\nuser_usec 791740\nsystem_usec 113237\ncore_sched.force_idle_usec 0\nnr_periods 18\nnr_throttled 17\nthrottled_usec 953346\nnr_bursts 0\nburst_usec 0\n",
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 138682368,
+        "heapTotal": 45424640,
+        "heapUsed": 40206984,
+        "external": 4777611,
+        "arrayBuffers": 399143
+      },
+      "after": {
+        "rss": 140779520,
+        "heapTotal": 50405376,
+        "heapUsed": 42511352,
+        "external": 5352892,
+        "arrayBuffers": 399159
+      },
+      "peakRss": 140517376
+    },
+    "mcpP95Ms": 50.6586420000001,
+    "allP95Ms": 50.6586420000001,
+    "eventLoopP95Ms": 65.568767,
+    "node": "v24.22.1",
+    "platform": "linux",
+    "arch": "arm64",
+    "limitations": [
+      "container read slice only; full release workload not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ]
+  },
+  "candidate": {
+    "mode": "candidate",
+    "sourceSha": "local-20261113-validated",
+    "runtimeDigest": "44bc78a3ccd0af86018ddddcb2544c9db1a46cae3d788548a2b36564b32a838b",
+    "cgroup": {
+      "memory.peak": "97054720",
+      "memory.max": "402653184",
+      "cpu.max": "50000 100000"
+    },
+    "recordedAt": "2026-11-13T04:16:42.861Z",
+    "heapLimitMiB": 192,
+    "paceMs": 0,
+    "cpuWorkloadMicros": {
+      "user": 125409,
+      "system": 8614
+    },
+    "cpuBefore": "usage_usec 784776\nuser_usec 681319\nsystem_usec 103456\ncore_sched.force_idle_usec 0\nnr_periods 16\nnr_throttled 15\nthrottled_usec 959285\nnr_bursts 0\nburst_usec 0\n",
+    "cpuAfter": "usage_usec 918810\nuser_usec 806783\nsystem_usec 112027\ncore_sched.force_idle_usec 0\nnr_periods 18\nnr_throttled 17\nthrottled_usec 1048467\nnr_bursts 0\nburst_usec 0\n",
+    "workload": "12 MCP warmups + 32 sequential context reads; candidate 16 API/16 MCP, baseline 32 MCP",
+    "totalOperations": 44,
+    "memory": {
+      "idle": {
+        "rss": 138784768,
+        "heapTotal": 49094656,
+        "heapUsed": 42947944,
+        "external": 5148818,
+        "arrayBuffers": 464679
+      },
+      "after": {
+        "rss": 141930496,
+        "heapTotal": 51896320,
+        "heapUsed": 44450848,
+        "external": 5457180,
+        "arrayBuffers": 464839
+      },
+      "peakRss": 147656704
+    },
+    "mcpP95Ms": 54.73905500000001,
+    "allP95Ms": 43.26786500000003,
+    "eventLoopP95Ms": 70.254591,
+    "node": "v24.22.1",
+    "platform": "linux",
+    "arch": "arm64",
+    "limitations": [
+      "container read slice only; full release workload not exercised",
+      "exports, preview, refresh and exhaustion require the full release workload",
+      "MCP p95 has a small sample and is diagnostic, not release approval"
+    ]
+  },
+  "comparison": {
+    "idleRssDeltaMiB": 0.09765625,
+    "mcpP95ChangePercent": 8.054722430182593,
+    "releaseGate": "OPEN: sequential small-sample read slice only; full mixed export/preview/refresh/exhaustion/disconnect workload remains required"
+  },
+  "notes": [
+    "Baseline and final candidate executed sequentially with the same benchmark, test fixtures, Docker CPU/memory/heap limits and workload.",
+    "Earlier container-read-benchmark.json retains the intermediate-candidate latency regression; it is not final-source evidence.",
+    "No production configuration was changed."
+  ]
+}

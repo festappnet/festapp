@@ -1,0 +1,5150 @@
+{
+  "openapi": "3.2.1",
+  "info": {
+    "title": "Festapp integrations API",
+    "version": "0.1.0",
+    "description": "Delegated personal OAuth, code + PKCE S256, explicit resource and consent. Not an autonomous organization identity. Read-only POSTs may be repeated; keyset pages are not a snapshot. Decimal money remains a string. Never generate a new commandId after a timeout. Refresh once per connection; atomically persist the rotated token. Reuse, lost refresh responses and grant expiry require reconnect. API consent is currently limited to 7 days pending refresh-store capacity qualification; legacy MCP 30/90/365-day choices remain on their original boundary. A 30-day idle limit never extends consent. Access tokens live at most 300 seconds. OAuth 2.1 and Idempotency-Key are drafts; no FAPI compliance claim. API data uses no-store. Runtime cross-field refinements remain mandatory.",
+    "contact": {
+      "name": "Festapp",
+      "url": "https://festapp.net"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.festapp.net/integrations/v1"
+    }
+  ],
+  "x-profile-policy": "selected",
+  "x-proof-profile": "bearer",
+  "x-client-proof-policy": "A registered DPoP-only client must also supply a bound DPoP token and fresh DPoP proof. OAuth alone is never sufficient for that client.",
+  "x-oauth-resource": "https://api.festapp.net/integrations",
+  "x-oauth-issuer": "https://mcp.festapp.net",
+  "x-data-profile": "order-summary",
+  "x-source-digest": "f240018485d35b169543ab48d87c6808d3501b45da8072a06fe04188447fdd69",
+  "x-body-limit-bytes": 49152,
+  "x-json-limits": {
+    "bytes": 49152,
+    "depth": 32,
+    "nodes": 8192
+  },
+  "x-readiness": [
+    {
+      "operationId": "occasions.copy",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "occasions.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "lifecycle.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "lifecycle.pending",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "lifecycle.resume",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "occasions.setup.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "occasions.setup.finalize",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.quotes.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "units.quotes.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.quotes.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.legal.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "units.legal.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.legal.submit",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "banks.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "banks.candidates",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "banks.users",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "banks.status",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "banks.operations",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "banks.observations",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "banks.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "banks.link",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "banks.user",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "banks.sync",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "banks.suspend",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "banks.resume",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "cards.status",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "cards.disconnectImpact",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "cards.pause",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "cards.disconnect",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "cards.refund.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "cards.refund.decide",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "history.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "orders.deletion.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "orders.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "history.commits",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "history.commit",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "history.activity",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "history.orders",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "history.email",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "feedback.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "reports.export",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exports.people",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exports.orders",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exports.events",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exports.speakers",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exports.places",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exports.feedback",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "events.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "events.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "events.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "events.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "exclusiveGroups.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exclusiveGroups.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "exclusiveGroups.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "exclusiveGroups.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "places.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "places.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "places.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "places.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "placeTypes.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "placeTypes.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "placeTypes.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "placeTypes.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "paths.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "paths.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "paths.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "paths.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "speakers.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "speakers.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "speakers.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "speakers.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "topics.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "topics.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "topics.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "topics.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "places.move",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "places.icons",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "events.roles",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "attendance.set",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "eventSpeakers.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "eventSpeakers.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "counseling.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "counseling.createSlots",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "counseling.deleteEmptySlots",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "counseling.deleteSlot",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "activities.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "activities.saveDraft",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "activities.discardDraft",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "activities.publish",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "services.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "services.create",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "services.update",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "services.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "scanner.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "scanner.admit",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "blueprints.fonts",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "blueprints.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "blueprints.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "blueprints.validate",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "blueprints.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "blueprints.prepare_text",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "profiles.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "profiles.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "profiles.create",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "profiles.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "profiles.roles",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "profiles.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "profiles.import",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "profiles.importTickets",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "groups.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "groups.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "groups.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "groups.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "groups.addMembers",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "groups.replaceAssignments",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.people.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "units.people.create",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.people.roles",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.people.profile",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.people.revoke",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "occasions.settings.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "occasions.settings.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "units.settings.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "units.settings.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "occasions.publicLink",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "occasions.setPublicLink",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "occasions.game.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "occasions.game.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "forms.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "forms.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "forms.paymentOptions",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "forms.publicLink",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "forms.setPublicLink",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "forms.create",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "forms.save",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "forms.duplicate",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "forms.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "forms.previewOrder",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "forms.createOrder",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "waitlist.previewAccept",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "waitlist.accept",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "waitlist.decline",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "waitlist.proposal",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "waitlist.detail",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "waitlist.send",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "waitlist.cancel",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "waitlist.withdraw",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "email_templates.banner.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "email_templates.banner.change",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "email_templates.preview",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "email_templates.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "email_templates.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "email_templates.change",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "orders.report",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "orders.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "orders.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "orders.update",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "orders.cancel",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "orders.mark_paid",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "payments.record",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "orders.send_tickets",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "products.options",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "products.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "products.save",
+      "supported": true,
+      "retry": "Keep commandId, payload and expected aggregate version unchanged. Reconnect requires an authorized administrator to establish the original outcome."
+    },
+    {
+      "operationId": "products.delete",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "product_schedules.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "product_schedules.change",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "inventory.pools.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "inventory.contexts.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "inventory.prepare_standing",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "inventory.pools.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "inventory.resources.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "inventory.change",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "seats.list",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "seats.preview_block",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "seats.block",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "seats.preview_release",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "seats.release_holds",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "seats.preview_swap",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "seats.swap",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "seats.preview_order",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "seats.create_order",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "seats.preview_cancel",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "seats.cancel_tickets",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "access.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "occasions.create",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "context.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "ticket_layouts.inspect",
+      "supported": true,
+      "retry": "Read may be repeated. Keyset pages are not a snapshot."
+    },
+    {
+      "operationId": "ticket_layouts.preview",
+      "supported": false,
+      "reason": "HTTP mutation admission, proof/step-up and receipt/revocation recovery evidence not yet closed for this family."
+    },
+    {
+      "operationId": "ticket_layouts.save",
+      "supported": false,
+      "reason": "Layout contract, bounded media and recovery evidence required."
+    },
+    {
+      "operationId": "ticket_layouts.pending",
+      "supported": false,
+      "reason": "Layout contract, bounded media and recovery evidence required."
+    },
+    {
+      "operationId": "ticket_layouts.resume",
+      "supported": false,
+      "reason": "Layout contract, bounded media and recovery evidence required."
+    }
+  ],
+  "tags": [
+    {
+      "name": "orders",
+      "description": "orders operations"
+    },
+    {
+      "name": "access",
+      "description": "access operations"
+    },
+    {
+      "name": "context",
+      "description": "context operations"
+    },
+    {
+      "name": "artifacts",
+      "description": "artifacts operations"
+    }
+  ],
+  "paths": {
+    "/operations/orders.report": {
+      "post": {
+        "operationId": "orders.report",
+        "summary": "orders.report",
+        "description": "Read the canonical event report for one explicitly selected occasion: distinct valid ticket counts, waiting tickets, order/ticket states and amounts by currency. Resolve ambiguous event names with the user first; never read or combine multiple matching events unless explicitly requested. An order may contain multiple people. Cancelled and waitlisted tickets are excluded from valid totals.\n\nRead may be repeated. Keyset pages are not a snapshot.",
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "oauth": [
+              "festapp:ticket-layouts:read",
+              "festapp:orders:read"
+            ]
+          }
+        ],
+        "x-domain-read-only": true,
+        "x-data-profile": "order-summary",
+        "x-runtime-refinements": "Runtime validation remains authoritative, including cross-field, scope, preview and aggregate version conditions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/orders.report.Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated canonical operation result. Private data is never cached.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Private response policy."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/orders.report.Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 9457 problem (400). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/malformed_json",
+                  "title": "MALFORMED_JSON",
+                  "status": 400,
+                  "code": "MALFORMED_JSON",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 9457 problem (401). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/authentication_required",
+                  "title": "AUTHENTICATION_REQUIRED",
+                  "status": 401,
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 9457 problem (403). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/forbidden",
+                  "title": "FORBIDDEN",
+                  "status": 403,
+                  "code": "FORBIDDEN",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 9457 problem (404). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/not_found_or_inaccessible",
+                  "title": "NOT_FOUND_OR_INACCESSIBLE",
+                  "status": 404,
+                  "code": "NOT_FOUND_OR_INACCESSIBLE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "RFC 9457 problem (405). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "const": "POST"
+                },
+                "description": "Supported method."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/method_not_allowed",
+                  "title": "METHOD_NOT_ALLOWED",
+                  "status": 405,
+                  "code": "METHOD_NOT_ALLOWED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 9457 problem (409). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/agenda_changed_reload_required",
+                  "title": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "status": 409,
+                  "code": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "RFC 9457 problem (410). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/command_expired_do_not_replay",
+                  "title": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "status": 410,
+                  "code": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 9457 problem (413). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/body_too_large",
+                  "title": "BODY_TOO_LARGE",
+                  "status": 413,
+                  "code": "BODY_TOO_LARGE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "RFC 9457 problem (415). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/unsupported_media_type",
+                  "title": "UNSUPPORTED_MEDIA_TYPE",
+                  "status": 415,
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 9457 problem (422). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/invalid_input",
+                  "title": "INVALID_INPUT",
+                  "status": 422,
+                  "code": "INVALID_INPUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 9457 problem (429). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Actual limiter delay in seconds when provided."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/temporarily_limited",
+                  "title": "TEMPORARILY_LIMITED",
+                  "status": 429,
+                  "code": "TEMPORARILY_LIMITED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "RFC 9457 problem (502). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/upstream_contract_failure",
+                  "title": "UPSTREAM_CONTRACT_FAILURE",
+                  "status": 502,
+                  "code": "UPSTREAM_CONTRACT_FAILURE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 9457 problem (503). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/family_not_ready",
+                  "title": "FAMILY_NOT_READY",
+                  "status": 503,
+                  "code": "FAMILY_NOT_READY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "RFC 9457 problem (504). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/timeout",
+                  "title": "TIMEOUT",
+                  "status": 504,
+                  "code": "TIMEOUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/orders.list": {
+      "post": {
+        "operationId": "orders.list",
+        "summary": "orders.list",
+        "description": "List a bounded page of orders for one selected occasion, at most 50. Search only by the exact 10-character order symbol. Returns order identifiers, stored state, ticket count and amounts. No buyer names, email addresses, registration answers, notes, QR codes or personal ticket content.\n\nRead may be repeated. Keyset pages are not a snapshot.",
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "oauth": [
+              "festapp:ticket-layouts:read",
+              "festapp:orders:read"
+            ]
+          }
+        ],
+        "x-domain-read-only": true,
+        "x-data-profile": "order-summary",
+        "x-runtime-refinements": "Runtime validation remains authoritative, including cross-field, scope, preview and aggregate version conditions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/orders.list.Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated canonical operation result. Private data is never cached.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Private response policy."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/orders.list.Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 9457 problem (400). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/malformed_json",
+                  "title": "MALFORMED_JSON",
+                  "status": 400,
+                  "code": "MALFORMED_JSON",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 9457 problem (401). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/authentication_required",
+                  "title": "AUTHENTICATION_REQUIRED",
+                  "status": 401,
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 9457 problem (403). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/forbidden",
+                  "title": "FORBIDDEN",
+                  "status": 403,
+                  "code": "FORBIDDEN",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 9457 problem (404). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/not_found_or_inaccessible",
+                  "title": "NOT_FOUND_OR_INACCESSIBLE",
+                  "status": 404,
+                  "code": "NOT_FOUND_OR_INACCESSIBLE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "RFC 9457 problem (405). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "const": "POST"
+                },
+                "description": "Supported method."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/method_not_allowed",
+                  "title": "METHOD_NOT_ALLOWED",
+                  "status": 405,
+                  "code": "METHOD_NOT_ALLOWED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 9457 problem (409). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/agenda_changed_reload_required",
+                  "title": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "status": 409,
+                  "code": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "RFC 9457 problem (410). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/command_expired_do_not_replay",
+                  "title": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "status": 410,
+                  "code": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 9457 problem (413). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/body_too_large",
+                  "title": "BODY_TOO_LARGE",
+                  "status": 413,
+                  "code": "BODY_TOO_LARGE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "RFC 9457 problem (415). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/unsupported_media_type",
+                  "title": "UNSUPPORTED_MEDIA_TYPE",
+                  "status": 415,
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 9457 problem (422). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/invalid_input",
+                  "title": "INVALID_INPUT",
+                  "status": 422,
+                  "code": "INVALID_INPUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 9457 problem (429). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Actual limiter delay in seconds when provided."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/temporarily_limited",
+                  "title": "TEMPORARILY_LIMITED",
+                  "status": 429,
+                  "code": "TEMPORARILY_LIMITED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "RFC 9457 problem (502). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/upstream_contract_failure",
+                  "title": "UPSTREAM_CONTRACT_FAILURE",
+                  "status": 502,
+                  "code": "UPSTREAM_CONTRACT_FAILURE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 9457 problem (503). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/family_not_ready",
+                  "title": "FAMILY_NOT_READY",
+                  "status": 503,
+                  "code": "FAMILY_NOT_READY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "RFC 9457 problem (504). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/timeout",
+                  "title": "TIMEOUT",
+                  "status": 504,
+                  "code": "TIMEOUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/orders.inspect": {
+      "post": {
+        "operationId": "orders.inspect",
+        "summary": "orders.inspect",
+        "description": "Read one order identifier, stored state, ticket count and amounts for one selected occasion. Buyer names, emails, registration answers, internal notes and personal ticket content are withheld. This connection cannot change orders or send tickets.\n\nRead may be repeated. Keyset pages are not a snapshot.",
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "oauth": [
+              "festapp:ticket-layouts:read",
+              "festapp:orders:read"
+            ]
+          }
+        ],
+        "x-domain-read-only": true,
+        "x-data-profile": "order-summary",
+        "x-runtime-refinements": "Runtime validation remains authoritative, including cross-field, scope, preview and aggregate version conditions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/orders.inspect.Input"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated canonical operation result. Private data is never cached.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Private response policy."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/orders.inspect.Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 9457 problem (400). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/malformed_json",
+                  "title": "MALFORMED_JSON",
+                  "status": 400,
+                  "code": "MALFORMED_JSON",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 9457 problem (401). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/authentication_required",
+                  "title": "AUTHENTICATION_REQUIRED",
+                  "status": 401,
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 9457 problem (403). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/forbidden",
+                  "title": "FORBIDDEN",
+                  "status": 403,
+                  "code": "FORBIDDEN",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 9457 problem (404). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/not_found_or_inaccessible",
+                  "title": "NOT_FOUND_OR_INACCESSIBLE",
+                  "status": 404,
+                  "code": "NOT_FOUND_OR_INACCESSIBLE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "RFC 9457 problem (405). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "const": "POST"
+                },
+                "description": "Supported method."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/method_not_allowed",
+                  "title": "METHOD_NOT_ALLOWED",
+                  "status": 405,
+                  "code": "METHOD_NOT_ALLOWED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 9457 problem (409). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/agenda_changed_reload_required",
+                  "title": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "status": 409,
+                  "code": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "RFC 9457 problem (410). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/command_expired_do_not_replay",
+                  "title": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "status": 410,
+                  "code": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 9457 problem (413). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/body_too_large",
+                  "title": "BODY_TOO_LARGE",
+                  "status": 413,
+                  "code": "BODY_TOO_LARGE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "RFC 9457 problem (415). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/unsupported_media_type",
+                  "title": "UNSUPPORTED_MEDIA_TYPE",
+                  "status": 415,
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 9457 problem (422). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/invalid_input",
+                  "title": "INVALID_INPUT",
+                  "status": 422,
+                  "code": "INVALID_INPUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 9457 problem (429). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Actual limiter delay in seconds when provided."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/temporarily_limited",
+                  "title": "TEMPORARILY_LIMITED",
+                  "status": 429,
+                  "code": "TEMPORARILY_LIMITED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "RFC 9457 problem (502). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/upstream_contract_failure",
+                  "title": "UPSTREAM_CONTRACT_FAILURE",
+                  "status": 502,
+                  "code": "UPSTREAM_CONTRACT_FAILURE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 9457 problem (503). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/family_not_ready",
+                  "title": "FAMILY_NOT_READY",
+                  "status": 503,
+                  "code": "FAMILY_NOT_READY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "RFC 9457 problem (504). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/timeout",
+                  "title": "TIMEOUT",
+                  "status": 504,
+                  "code": "TIMEOUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/access.inspect": {
+      "post": {
+        "operationId": "access.inspect",
+        "summary": "access.inspect",
+        "description": "List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.\n\nRead may be repeated. Keyset pages are not a snapshot.",
+        "tags": [
+          "access"
+        ],
+        "security": [
+          {
+            "oauth": [
+              "festapp:ticket-layouts:read"
+            ]
+          }
+        ],
+        "x-domain-read-only": true,
+        "x-data-profile": "order-summary",
+        "x-runtime-refinements": "Runtime validation remains authoritative, including cross-field, scope, preview and aggregate version conditions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/access.inspect.Input"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated canonical operation result. Private data is never cached.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Private response policy."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/access.inspect.Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 9457 problem (400). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/malformed_json",
+                  "title": "MALFORMED_JSON",
+                  "status": 400,
+                  "code": "MALFORMED_JSON",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 9457 problem (401). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/authentication_required",
+                  "title": "AUTHENTICATION_REQUIRED",
+                  "status": 401,
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 9457 problem (403). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/forbidden",
+                  "title": "FORBIDDEN",
+                  "status": 403,
+                  "code": "FORBIDDEN",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 9457 problem (404). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/not_found_or_inaccessible",
+                  "title": "NOT_FOUND_OR_INACCESSIBLE",
+                  "status": 404,
+                  "code": "NOT_FOUND_OR_INACCESSIBLE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "RFC 9457 problem (405). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "const": "POST"
+                },
+                "description": "Supported method."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/method_not_allowed",
+                  "title": "METHOD_NOT_ALLOWED",
+                  "status": 405,
+                  "code": "METHOD_NOT_ALLOWED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 9457 problem (409). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/agenda_changed_reload_required",
+                  "title": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "status": 409,
+                  "code": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "RFC 9457 problem (410). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/command_expired_do_not_replay",
+                  "title": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "status": 410,
+                  "code": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 9457 problem (413). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/body_too_large",
+                  "title": "BODY_TOO_LARGE",
+                  "status": 413,
+                  "code": "BODY_TOO_LARGE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "RFC 9457 problem (415). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/unsupported_media_type",
+                  "title": "UNSUPPORTED_MEDIA_TYPE",
+                  "status": 415,
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 9457 problem (422). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/invalid_input",
+                  "title": "INVALID_INPUT",
+                  "status": 422,
+                  "code": "INVALID_INPUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 9457 problem (429). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Actual limiter delay in seconds when provided."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/temporarily_limited",
+                  "title": "TEMPORARILY_LIMITED",
+                  "status": 429,
+                  "code": "TEMPORARILY_LIMITED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "RFC 9457 problem (502). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/upstream_contract_failure",
+                  "title": "UPSTREAM_CONTRACT_FAILURE",
+                  "status": 502,
+                  "code": "UPSTREAM_CONTRACT_FAILURE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 9457 problem (503). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/family_not_ready",
+                  "title": "FAMILY_NOT_READY",
+                  "status": 503,
+                  "code": "FAMILY_NOT_READY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "RFC 9457 problem (504). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/timeout",
+                  "title": "TIMEOUT",
+                  "status": 504,
+                  "code": "TIMEOUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/context.inspect": {
+      "post": {
+        "operationId": "context.inspect",
+        "summary": "context.inspect",
+        "description": "Inspect tenant and read-only capabilities. Does not return the connected user identifier.\n\nRead may be repeated. Keyset pages are not a snapshot.",
+        "tags": [
+          "context"
+        ],
+        "security": [
+          {
+            "oauth": [
+              "festapp:ticket-layouts:read"
+            ]
+          }
+        ],
+        "x-domain-read-only": true,
+        "x-data-profile": "order-summary",
+        "x-runtime-refinements": "Runtime validation remains authoritative, including cross-field, scope, preview and aggregate version conditions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/context.inspect.Input"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated canonical operation result. Private data is never cached.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Private response policy."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/context.inspect.Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 9457 problem (400). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/malformed_json",
+                  "title": "MALFORMED_JSON",
+                  "status": 400,
+                  "code": "MALFORMED_JSON",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 9457 problem (401). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/authentication_required",
+                  "title": "AUTHENTICATION_REQUIRED",
+                  "status": 401,
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 9457 problem (403). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/forbidden",
+                  "title": "FORBIDDEN",
+                  "status": 403,
+                  "code": "FORBIDDEN",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 9457 problem (404). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/not_found_or_inaccessible",
+                  "title": "NOT_FOUND_OR_INACCESSIBLE",
+                  "status": 404,
+                  "code": "NOT_FOUND_OR_INACCESSIBLE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "RFC 9457 problem (405). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "const": "POST"
+                },
+                "description": "Supported method."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/method_not_allowed",
+                  "title": "METHOD_NOT_ALLOWED",
+                  "status": 405,
+                  "code": "METHOD_NOT_ALLOWED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 9457 problem (409). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/agenda_changed_reload_required",
+                  "title": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "status": 409,
+                  "code": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "RFC 9457 problem (410). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/command_expired_do_not_replay",
+                  "title": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "status": 410,
+                  "code": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 9457 problem (413). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/body_too_large",
+                  "title": "BODY_TOO_LARGE",
+                  "status": 413,
+                  "code": "BODY_TOO_LARGE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "RFC 9457 problem (415). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/unsupported_media_type",
+                  "title": "UNSUPPORTED_MEDIA_TYPE",
+                  "status": 415,
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 9457 problem (422). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/invalid_input",
+                  "title": "INVALID_INPUT",
+                  "status": 422,
+                  "code": "INVALID_INPUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 9457 problem (429). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Actual limiter delay in seconds when provided."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/temporarily_limited",
+                  "title": "TEMPORARILY_LIMITED",
+                  "status": 429,
+                  "code": "TEMPORARILY_LIMITED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "RFC 9457 problem (502). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/upstream_contract_failure",
+                  "title": "UPSTREAM_CONTRACT_FAILURE",
+                  "status": 502,
+                  "code": "UPSTREAM_CONTRACT_FAILURE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 9457 problem (503). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/family_not_ready",
+                  "title": "FAMILY_NOT_READY",
+                  "status": 503,
+                  "code": "FAMILY_NOT_READY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "RFC 9457 problem (504). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/timeout",
+                  "title": "TIMEOUT",
+                  "status": 504,
+                  "code": "TIMEOUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/artifacts/read": {
+      "post": {
+        "operationId": "artifacts.read",
+        "summary": "Read an authorized artifact",
+        "tags": [
+          "artifacts"
+        ],
+        "security": [
+          {
+            "oauth": []
+          }
+        ],
+        "description": "Requires the original operation scopes, active grant, actor and session binding. Artifacts expire after 15 minutes; cache holds at most 8 items/16 MiB and is lost on restart. Recreate missing read exports through their read operation. No arbitrary URL fetching.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArtifactInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized binary content.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                },
+                "description": "Private response policy."
+              }
+            },
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "contentEncoding": "binary"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "contentEncoding": "binary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "contentEncoding": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 9457 problem (400). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/malformed_json",
+                  "title": "MALFORMED_JSON",
+                  "status": 400,
+                  "code": "MALFORMED_JSON",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 9457 problem (401). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/authentication_required",
+                  "title": "AUTHENTICATION_REQUIRED",
+                  "status": 401,
+                  "code": "AUTHENTICATION_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 9457 problem (403). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Resource-specific OAuth challenge."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/forbidden",
+                  "title": "FORBIDDEN",
+                  "status": 403,
+                  "code": "FORBIDDEN",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 9457 problem (404). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/not_found_or_inaccessible",
+                  "title": "NOT_FOUND_OR_INACCESSIBLE",
+                  "status": 404,
+                  "code": "NOT_FOUND_OR_INACCESSIBLE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "RFC 9457 problem (405). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "const": "POST"
+                },
+                "description": "Supported method."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/method_not_allowed",
+                  "title": "METHOD_NOT_ALLOWED",
+                  "status": 405,
+                  "code": "METHOD_NOT_ALLOWED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 9457 problem (409). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/agenda_changed_reload_required",
+                  "title": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "status": 409,
+                  "code": "AGENDA_CHANGED_RELOAD_REQUIRED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "RFC 9457 problem (410). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/command_expired_do_not_replay",
+                  "title": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "status": 410,
+                  "code": "COMMAND_EXPIRED_DO_NOT_REPLAY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "RFC 9457 problem (413). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/body_too_large",
+                  "title": "BODY_TOO_LARGE",
+                  "status": 413,
+                  "code": "BODY_TOO_LARGE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "RFC 9457 problem (415). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/unsupported_media_type",
+                  "title": "UNSUPPORTED_MEDIA_TYPE",
+                  "status": 415,
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 9457 problem (422). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/invalid_input",
+                  "title": "INVALID_INPUT",
+                  "status": 422,
+                  "code": "INVALID_INPUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 9457 problem (429). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "Actual limiter delay in seconds when provided."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/temporarily_limited",
+                  "title": "TEMPORARILY_LIMITED",
+                  "status": 429,
+                  "code": "TEMPORARILY_LIMITED",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "RFC 9457 problem (502). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/upstream_contract_failure",
+                  "title": "UPSTREAM_CONTRACT_FAILURE",
+                  "status": 502,
+                  "code": "UPSTREAM_CONTRACT_FAILURE",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RFC 9457 problem (503). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/family_not_ready",
+                  "title": "FAMILY_NOT_READY",
+                  "status": 503,
+                  "code": "FAMILY_NOT_READY",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "RFC 9457 problem (504). On an uncertain write outcome retain the original commandId and payload.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "https://api.festapp.net/integrations/problems/timeout",
+                  "title": "TIMEOUT",
+                  "status": 504,
+                  "code": "TIMEOUT",
+                  "requestId": "11111111-1111-4111-8111-111111111111",
+                  "retryable": false,
+                  "outcome": "rejected"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Problem": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "rejected",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "requestId",
+          "retryable",
+          "outcome"
+        ],
+        "additionalProperties": false
+      },
+      "orders.report.Input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId"
+        ],
+        "additionalProperties": false
+      },
+      "orders.report.Output": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "operation": {
+            "type": "string",
+            "const": "orders.report"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "occasionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "schema_version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "occasion": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "generated_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "spots": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "occupied": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "free": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "total",
+                          "occupied",
+                          "free"
+                        ],
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "orders": {
+                    "type": "object",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "by_state": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string"
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "state",
+                            "count"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      }
+                    },
+                    "required": [
+                      "total"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "tickets": {
+                    "type": "object",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "by_state": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string"
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "state",
+                            "count"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      }
+                    },
+                    "required": [
+                      "total"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "valid": {
+                    "type": "object",
+                    "properties": {
+                      "tickets": {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "by_state": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "count"
+                              ],
+                              "additionalProperties": {}
+                            }
+                          }
+                        },
+                        "required": [
+                          "total"
+                        ],
+                        "additionalProperties": {}
+                      },
+                      "orders": {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "by_state": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "count"
+                              ],
+                              "additionalProperties": {}
+                            }
+                          }
+                        },
+                        "required": [
+                          "total"
+                        ],
+                        "additionalProperties": {}
+                      },
+                      "order_days": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "day": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "day",
+                            "currency",
+                            "count"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "ticket_days": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "day": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "day",
+                            "currency",
+                            "count"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      }
+                    },
+                    "required": [
+                      "tickets"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "money_by_currency": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "currency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "current_order_value": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "received": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "returned": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "net_received": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "manual_received": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "other_received": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "deposit_received_gross": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "beyond_deposit_received_gross": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "stripe_received": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "stripe_refunded": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "disputed": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "available_after_disputes": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "external_unattributed": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^-?\\d+(\\.\\d+)?$"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "has_deposits": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "currency"
+                      ],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "timeline": {
+                    "type": "object",
+                    "properties": {
+                      "order_timezone": {
+                        "type": "string"
+                      },
+                      "payment_date_basis": {
+                        "type": "string"
+                      },
+                      "orders": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "day": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "day",
+                            "currency",
+                            "count"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "tickets": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "day": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "day",
+                            "currency",
+                            "count"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "payments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "day": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "currency": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "received": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "returned": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "day",
+                            "currency",
+                            "received",
+                            "returned"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      }
+                    },
+                    "additionalProperties": {}
+                  },
+                  "products": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "product_id": {
+                          "type": "string"
+                        },
+                        "product_title": {
+                          "type": "string"
+                        },
+                        "type_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "type_title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "confirmed_count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "product_id",
+                        "product_title",
+                        "type_id",
+                        "type_title",
+                        "confirmed_count"
+                      ],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "ticket_batches": {
+                    "type": "object",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "available": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "sold_active": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "voided_unsold": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "cancelled_after_sale": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "total",
+                      "available",
+                      "sold_active",
+                      "voided_unsold",
+                      "cancelled_after_sale"
+                    ],
+                    "additionalProperties": {}
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "code"
+                      ],
+                      "additionalProperties": {}
+                    }
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "valid"
+                ],
+                "additionalProperties": {}
+              },
+              "waitingTickets": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "occasionId",
+              "report",
+              "waitingTickets"
+            ],
+            "additionalProperties": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "contractVersion": {
+                "type": "number",
+                "const": 1
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "profile": {
+                "type": "string"
+              },
+              "tenantId": {
+                "type": "string"
+              },
+              "organizationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "readAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "contractVersion",
+              "requestId",
+              "profile",
+              "tenantId",
+              "organizationId",
+              "readAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "operation",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "orders.list.Input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "default": 25,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "before": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "search": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{10}$",
+            "description": "Exact 10-character order symbol. Names and email addresses are not supported."
+          }
+        },
+        "required": [
+          "occasionId"
+        ],
+        "additionalProperties": false
+      },
+      "orders.list.Output": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "operation": {
+            "type": "string",
+            "const": "orders.list"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "occasionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "orders": {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "occasionId": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "symbol": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "ticketCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "price": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "currency": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "allowedActions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "const": "view"
+                      }
+                    },
+                    "payment": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "paid": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "returned": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "net": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "pending": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "paid",
+                            "returned"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "occasionId",
+                    "symbol",
+                    "state",
+                    "ticketCount",
+                    "price",
+                    "currency",
+                    "allowedActions",
+                    "payment"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "nextCursor": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "occasionId",
+              "orders",
+              "nextCursor"
+            ],
+            "additionalProperties": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "contractVersion": {
+                "type": "number",
+                "const": 1
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "profile": {
+                "type": "string"
+              },
+              "tenantId": {
+                "type": "string"
+              },
+              "organizationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "readAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "contractVersion",
+              "requestId",
+              "profile",
+              "tenantId",
+              "organizationId",
+              "readAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "operation",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "orders.inspect.Input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "orderId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId",
+          "orderId"
+        ],
+        "additionalProperties": false
+      },
+      "orders.inspect.Output": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "operation": {
+            "type": "string",
+            "const": "orders.inspect"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "occasionId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "orders": {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "occasionId": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "symbol": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "ticketCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "price": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "currency": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "allowedActions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "const": "view"
+                      }
+                    },
+                    "payment": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "paid": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "returned": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "net": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "pending": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "paid",
+                            "returned"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "occasionId",
+                    "symbol",
+                    "state",
+                    "ticketCount",
+                    "price",
+                    "currency",
+                    "allowedActions",
+                    "payment"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "nextCursor": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "occasionId",
+              "orders",
+              "nextCursor"
+            ],
+            "additionalProperties": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "contractVersion": {
+                "type": "number",
+                "const": 1
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "profile": {
+                "type": "string"
+              },
+              "tenantId": {
+                "type": "string"
+              },
+              "organizationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "readAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "contractVersion",
+              "requestId",
+              "profile",
+              "tenantId",
+              "organizationId",
+              "readAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "operation",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "access.inspect.Input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "access.inspect.Output": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "operation": {
+            "type": "string",
+            "const": "access.inspect"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "units": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "canCreateOccasions": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "canCreateOccasions"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "occasions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "unitId": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "capabilities": {
+                      "type": "object",
+                      "properties": {
+                        "ticket_layouts.read": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "ticket_layouts.read"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "unitId",
+                    "capabilities"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "units",
+              "occasions"
+            ],
+            "additionalProperties": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "contractVersion": {
+                "type": "number",
+                "const": 1
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "profile": {
+                "type": "string"
+              },
+              "tenantId": {
+                "type": "string"
+              },
+              "organizationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "readAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "contractVersion",
+              "requestId",
+              "profile",
+              "tenantId",
+              "organizationId",
+              "readAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "operation",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "context.inspect.Input": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "context.inspect.Output": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "operation": {
+            "type": "string",
+            "const": "context.inspect"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "backend": {
+                "type": "string",
+                "format": "uri"
+              },
+              "enabledOperations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "writesEnabled": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "backend",
+              "enabledOperations",
+              "writesEnabled"
+            ],
+            "additionalProperties": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "contractVersion": {
+                "type": "number",
+                "const": 1
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "profile": {
+                "type": "string"
+              },
+              "tenantId": {
+                "type": "string"
+              },
+              "organizationId": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "readAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "contractVersion",
+              "requestId",
+              "profile",
+              "tenantId",
+              "organizationId",
+              "readAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ok",
+          "operation",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "ArtifactInput": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string",
+            "maxLength": 2048,
+            "pattern": "^festapp-(?:export|preview):\\/\\/[A-Za-z0-9/_-]+(?:\\.[A-Za-z0-9]+)?$"
+          }
+        },
+        "required": [
+          "uri"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "headers": {
+      "RequestId": {
+        "description": "Correlation ID, matching meta.requestId or problem.requestId.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "securitySchemes": {
+      "oauth": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://mcp.festapp.net/auth",
+            "tokenUrl": "https://mcp.festapp.net/token",
+            "scopes": {
+              "festapp:ticket-layouts:read": "festapp:ticket-layouts:read",
+              "festapp:orders:read": "festapp:orders:read"
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-projection-digest": "def70c57c26780e2a38cfd18643869e4d005e5a819a04c8cf5dc1de71a2dc17e"
+}

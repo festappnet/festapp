@@ -10,6 +10,7 @@ RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 RUN pnpm --dir tools/festapp install --frozen-lockfile --prod --ignore-scripts
 RUN pnpm --dir tools/festapp licenses list --prod --json | node tools/festapp/scripts/runtime-notices.mjs /app/THIRD_PARTY_NOTICES
 COPY tools/festapp/src ./tools/festapp/src
+COPY tools/festapp/contracts/api-v1 ./tools/festapp/contracts/api-v1
 COPY packages/festapp_contracts ./packages/festapp_contracts
 COPY supabase/functions/_shared/ticket-assets/font-catalog.json ./supabase/functions/_shared/ticket-assets/font-catalog.json
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs

@@ -1,6 +1,6 @@
 {
   "authorize": {
-    "url": "https://mcp.vstupenky.online/auth",
+    "url": "https://mcp.festapp.net/auth",
     "temp": {
       "code_verifier": "{{sha256(join(add(emptyarray, uuid, uuid, uuid), ''))}}"
     },
@@ -9,7 +9,7 @@
       "response_type": "code",
       "redirect_uri": "{{oauth.localRedirectUri}}",
       "scope": "{{join(oauth.scope, ' ')}}",
-      "resource": "https://mcp.vstupenky.online/mcp",
+      "resource": "https://api.vstupenky.online/integrations",
       "code_challenge": "{{replace(replace(replace(sha256(temp.code_verifier, 'base64'), '/\\+/g', '-'), '/\\//g', '_'), '/=+$/', '')}}",
       "code_challenge_method": "S256"
     },
@@ -26,7 +26,7 @@
     }
   },
   "token": {
-    "url": "https://mcp.vstupenky.online/token",
+    "url": "https://mcp.festapp.net/token",
     "method": "POST",
     "type": "urlencoded",
     "body": {
@@ -35,7 +35,7 @@
       "redirect_uri": "{{oauth.localRedirectUri}}",
       "code": "{{temp.code}}",
       "code_verifier": "{{temp.code_verifier}}",
-      "resource": "https://mcp.vstupenky.online/mcp"
+      "resource": "https://api.vstupenky.online/integrations"
     },
     "response": {
       "data": {
@@ -59,14 +59,14 @@
     }
   },
   "refresh": {
-    "url": "https://mcp.vstupenky.online/token",
+    "url": "https://mcp.festapp.net/token",
     "method": "POST",
     "type": "urlencoded",
     "body": {
       "grant_type": "refresh_token",
       "client_id": "{{common.clientId}}",
       "refresh_token": "{{data.refreshToken}}",
-      "resource": "https://mcp.vstupenky.online/mcp"
+      "resource": "https://api.vstupenky.online/integrations"
     },
     "response": {
       "data": {
@@ -91,7 +91,7 @@
     "condition": "{{data.expires < addSeconds(now, 30)}}"
   },
   "info": {
-    "url": "https://mcp.vstupenky.online/make/v1/operations/context.inspect",
+    "url": "https://api.vstupenky.online/integrations/v1/operations/context.inspect",
     "method": "POST",
     "type": "json",
     "headers": {

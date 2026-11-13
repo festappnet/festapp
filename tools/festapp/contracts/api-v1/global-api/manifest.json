@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "sourceSha": "8aa7379d3a2f337fe298b48bbd2c318932cc5106",
+  "sourceDigest": "02e4f4d2f7d125f95a4f754ac76bf6e83b44ce7ef69967985b9cc3c74602c1f8",
+  "apiMajor": 1,
+  "contractVersion": "0.1.0",
+  "generator": "festapp-api-v1",
+  "redocly": "2.78.0",
+  "endpointId": "global-api",
+  "publicBase": "https://api.festapp.net/integrations/v1",
+  "resource": "https://api.festapp.net/integrations",
+  "issuer": "https://mcp.festapp.net",
+  "dataProfile": "operator",
+  "proofProfile": "bearer",
+  "schemaDigest": "463eb50532acf69b8a78a112991c76ee79f81bba4b24393016e81809a28a5327",
+  "projectionDigest": "4af31e524e414b34b4cf5ea73c37947b6ccd918c04263fe94a5897d3f683593a",
+  "reference": "docs/index.html"
+}

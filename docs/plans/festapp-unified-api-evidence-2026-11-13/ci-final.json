@@ -1,0 +1,113 @@
+{
+  "head": "8aa7379d3a2f337fe298b48bbd2c318932cc5106",
+  "dirty": true,
+  "inputSha256": "0d66e4127ef4b9de731f8394b2a06dfe1fd49b52a6fad7ddf7b9bbd731df326d",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "selectedJobs": [
+    "server-policy",
+    "seat-checkout"
+  ],
+  "scope": "partial",
+  "complete": true,
+  "inputsUnchanged": true,
+  "seconds": 169.43362941700616,
+  "originalReceipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T071656-33b87098d27f/receipt.json",
+  "jobs": [
+    {
+      "name": "server-policy",
+      "status": "PASS"
+    },
+    {
+      "name": "seat-checkout",
+      "status": "PASS"
+    }
+  ],
+  "units": {
+    "seat-install": {
+      "status": "PASS",
+      "seconds": 1.3757851670088712,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "mcp-auth-install": {
+      "status": "PASS",
+      "seconds": 1.3743759999924805,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-upgrade": {
+      "status": "PASS",
+      "seconds": 27.317895166022936,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-runtime-contract": {
+      "status": "PASS",
+      "seconds": 29.850514999998268,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-database": {
+      "status": "PASS",
+      "seconds": 1.8139941249974072,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-google-auth": {
+      "status": "PASS",
+      "seconds": 1.1588163750129752,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-authorization": {
+      "status": "PASS",
+      "seconds": 0.7177615000109654,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-browser": {
+      "status": "PASS",
+      "seconds": 5.316742790979333,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "mcp-auth-contract": {
+      "status": "PASS",
+      "seconds": 74.27042058299412,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "occasion-lifecycle": {
+      "status": "PASS",
+      "seconds": 3.522182166983839,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-measurement": {
+      "status": "PASS",
+      "seconds": 12.73203262500465,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-notifications": {
+      "status": "PASS",
+      "seconds": 34.39230729200062,
+      "exitCode": 0,
+      "node": "22.23.4"
+    },
+    "seat-contract": {
+      "status": "PASS",
+      "seconds": 64.83746300000348,
+      "exitCode": 0,
+      "node": "22.23.4"
+    }
+  },
+  "apiPostgres": {
+    "passed": 2,
+    "skipped": 0
+  },
+  "targetedFlutterConsent": {
+    "passed": 10,
+    "skipped": 0
+  }
+}

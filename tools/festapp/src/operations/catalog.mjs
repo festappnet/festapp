@@ -188,6 +188,7 @@ const descriptors = [
     },
     {
         id: 'ticket_layouts.preview',
+        costClass: 'document',
         name: 'festapp_ticket_layouts_preview',
         description:
             'Explicitly render an unsaved synthetic ticket using the canonical PDF renderer. Returns a viewable PNG and an expiring PDF resource. Consumes preview quota; never saves artwork or sends mail.',

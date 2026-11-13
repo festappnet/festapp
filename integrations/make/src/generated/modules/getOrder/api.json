@@ -1,5 +1,5 @@
 {
-  "url": "/make/v1/operations/orders.inspect",
+  "url": "/operations/orders.inspect",
   "method": "POST",
   "type": "json",
   "body": {

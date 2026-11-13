@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "state": "unreleased",
+  "contracts": [],
+  "reason": "No public API release authorized or published. Seal the initial approved snapshots and source digests at first publication; never replace a released baseline to accept a break."
+}

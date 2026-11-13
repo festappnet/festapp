@@ -1,0 +1,1 @@
+{"ok":true,"checks":["live-owner-lock","protected-secret-files","offline-CLI-rotation","old-key-rejection","new-key-readback","no-secret-output"]}
