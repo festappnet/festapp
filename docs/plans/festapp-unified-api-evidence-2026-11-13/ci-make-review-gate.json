@@ -1,0 +1,30 @@
+{
+  "runId": "20261113T084002-23d1ceb418ff",
+  "head": "97a579e218c1793769a195a88861382de47769ee",
+  "selectedJobs": [
+    "server-policy"
+  ],
+  "jobs": [
+    {
+      "name": "server-policy",
+      "status": "PASS"
+    }
+  ],
+  "units": {
+    "mcp-auth-install": {
+      "status": "PASS"
+    },
+    "mcp-auth-contract": {
+      "status": "PASS"
+    }
+  },
+  "scope": "Follow-up source only; existing production Make runtime/definitions/connection/scenarios unchanged. Removes automatic calendar retirement until accepted review and verified consumer migration.",
+  "targetedRegression": {
+    "futureDate": "2027-01-01",
+    "legacyDocsHttpStatus": 200,
+    "sunsetHeader": null,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  }
+}

@@ -10,11 +10,12 @@ directional: requests may widen, responses may narrow; strict response consumers
 make added response fields a breaking change. Unrecognized constraint changes
 are conservative breaks. Never overwrite a released baseline to accept a break.
 
-`release-baseline.json` seals eight **approved-initial** snapshots under the
-explicit user publication approval of 2026-11-13. Before first publication,
-`api:compatibility` requires exact equality with those immutable snapshots.
-After live publication the state becomes `released` and directional comparison
-applies. Initial approval does not claim compatibility with a previous release.
+`release-baseline.json` seals the first **released** projections from main
+`97a579e218c1793769a195a88861382de47769ee`. Both public facades passed
+metadata/spec/manifest readback. The explicit initial publication approval is
+retained alongside the immutable snapshots; subsequent `api:check` executions
+include the directional compatibility gate. Never replace this baseline to
+accept an incompatible change.
 
 Commands (pnpm 11.24.0, Node 24 LTS): `api:generate`, `api:check`, `api:docs`,
 `api:compatibility`. Generation needs the repository source and Git metadata,

@@ -223,11 +223,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     const run = createHostedRunner({ config, storage, provider, fetchImpl, audit, limit });
     installApi(app, { config, run });
     const legacyMake = config.clients.some(c => c.transports?.includes('legacy-make'));
-    if (legacyMake) app.use('/make/v1', (_req, res, next) => {
-        res.set({ Deprecation: '@1794528000', Sunset: 'Sun, 13 Dec 2026 00:00:00 GMT', Link: '<https://api.vstupenky.online/integrations/v1/docs/>; rel="deprecation"' });
-        if (Date.now() >= Date.UTC(2026, 11, 13)) return res.status(410).json({ error: 'legacy_make_sunset' });
-        next();
-    });
+    // Retirement requires accepted Make review and verified consumer migration.
+    // A calendar deadline must never disable the connector during its review.
     if (legacyMake) app.get('/make/v1', (_req, res) => res.json(makeDocumentation(config,
         new Operations({ root: storage.root, orderSummaryOnly: true, allowedOperations: MAKE_READ_OPERATIONS }).catalog)));
     const metadata = { resource_documentation: config.issuer + '/docs', resource_name: config.regionalPortal?.name ?? 'Festapp', resource: config.resource, authorization_servers: [config.issuer], scopes_supported: DOMAIN_SCOPES };

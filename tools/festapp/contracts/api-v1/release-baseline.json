@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "state": "approved-initial",
+  "state": "released",
   "approval": {
     "date": "2026-11-13",
     "authority": "Explicit user approval: Ano, cel\u00fd uveden\u00fd rozsah",
@@ -39,5 +39,13 @@
       "file": "regional-api/proofs/dpop/openapi.json",
       "snapshot": "regional-api/contracts/2286730e5a5e487aef4b2921bab26127a4f639d0a4d04a1701de9b826d6713f5/openapi.json"
     }
-  ]
+  ],
+  "publishedSourceSha": "97a579e218c1793769a195a88861382de47769ee",
+  "verifiedAt": "2026-11-13T08:20:55.649827+00:00",
+  "publicationEvidence": {
+    "bothPublicFacades": true,
+    "metadataSpecManifestHttpStatus": 200,
+    "manifestSourceShaMatched": true,
+    "verification": "Delegated production owner readback after Caddy/DNS/TLS activation; all previous immutable approved snapshots retained."
+  }
 }
