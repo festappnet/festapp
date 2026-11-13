@@ -21,10 +21,22 @@ documents 196 operations. Discovery depends on current rights, consent, client
 profile and application variant. The 83 functional permissions are delegation
 ceilings over the application's canonical authorization, not new account roles.
 
-[PulseMCP submissions](https://www.pulsemcp.com/submit) are paused; automatic
-Official Registry ingestion awaits resumption. MCP.so's remote form is paid;
-no paid submission was made and a current supported free route was not established.
-No support email or separate ChatGPT publication was sent.
+## Additional directory distribution
+
+| Directory | Verified state on 2026-11-13 |
+| --- | --- |
+| [MCPfinder](https://mcpfinder.dev/) | Both canonical 0.1.1 identities are present in the current public snapshot, imported from Official Registry. |
+| [MCPservers.org](https://mcpservers.org/submit) | Both Free submissions accepted into review; not yet published. The form estimates review within two weeks. |
+| MCP.so | No-charge manual review requested in [Festapp #7255](https://github.com/chatmcp/mcpso/issues/7255) and [vstupenky.online #7256](https://github.com/chatmcp/mcpso/issues/7256). Acceptance and free review remain unconfirmed. |
+| Awesome Remote MCP Servers | [PR #4589](https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589) adds both endpoints; endpoint/OAuth/badge validation passed. Maintainer review is pending. |
+| [PulseMCP](https://www.pulsemcp.com/submit) | Submissions paused; automatic Official Registry ingestion awaits resumption. |
+| [MCP.directory](https://mcp.directory/submit) | Advertises automatic import; our entries are not verified there. Its repo-only form was not used to create an ambiguous monorepo listing. |
+| [Smithery](https://www.smithery.ai/future) | Public curated directory remains after the October 31 shutdown of its proxy/accounts/API/CLI. No current new-submission route found. |
+| [LobeHub](https://market.lobehub.com/s/publish-mcp) | Not submitted. Its publisher guide requires human CLI login and GitHub ownership connection and explicitly says not to automate these steps. Remote cloudEndpoint metadata is supported; LobeHub-client OAuth compatibility is unverified. |
+
+See [additional-directory evidence](../../docs/operations/releases/global-mcp-20261113/additional-directories-20261113.json).
+No paid placement, support email, new service, or separate ChatGPT publication
+was used. Existing production endpoints and retained health grants were preserved.
 
 ## English
 

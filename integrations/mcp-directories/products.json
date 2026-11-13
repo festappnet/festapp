@@ -31,6 +31,28 @@
           "oauthRefresh": "verified-after-access-token-expiry",
           "clientCompatibility": "Works in Glama",
           "healthGrant": "dedicated account; basic read scope; one occasion; no units or functional writes"
+        },
+        "mcpfinder": {
+          "status": "indexed-readback-verified",
+          "version": "0.1.1",
+          "source": "https://mcpfinder.dev/api/v1/snapshot/manifest.json",
+          "snapshotPublishedAt": "2026-11-13T06:54:55.233Z"
+        },
+        "mcpserversOrg": {
+          "status": "submitted-for-review",
+          "plan": "free",
+          "url": "https://mcpservers.org/submit",
+          "publicListingVerified": false
+        },
+        "mcpSo": {
+          "status": "free-manual-review-requested",
+          "url": "https://github.com/chatmcp/mcpso/issues/7255",
+          "freeAcceptanceOrPublicationConfirmed": false
+        },
+        "awesomeRemoteMcpServers": {
+          "status": "pull-request-awaiting-maintainer",
+          "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
+          "submissionValidation": "passed"
         }
       }
     },
@@ -61,6 +83,28 @@
           "oauthRefresh": "verified-after-access-token-expiry",
           "clientCompatibility": "Works in Glama",
           "healthGrant": "dedicated account; basic read scope; one occasion; no units or functional writes"
+        },
+        "mcpfinder": {
+          "status": "indexed-readback-verified",
+          "version": "0.1.1",
+          "source": "https://mcpfinder.dev/api/v1/snapshot/manifest.json",
+          "snapshotPublishedAt": "2026-11-13T06:54:55.233Z"
+        },
+        "mcpserversOrg": {
+          "status": "submitted-for-review",
+          "plan": "free",
+          "url": "https://mcpservers.org/submit",
+          "publicListingVerified": false
+        },
+        "mcpSo": {
+          "status": "free-manual-review-requested",
+          "url": "https://github.com/chatmcp/mcpso/issues/7256",
+          "freeAcceptanceOrPublicationConfirmed": false
+        },
+        "awesomeRemoteMcpServers": {
+          "status": "pull-request-awaiting-maintainer",
+          "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
+          "submissionValidation": "passed"
         }
       }
     }
@@ -71,5 +115,6 @@
     "functionalPermissions": 83,
     "documentation": "https://vstupenky.online/napoveda/mcp-podporovane-operace/",
     "availability": "Current rights, explicit consent, client data profile and selected application variant apply."
-  }
+  },
+  "additionalDirectoryEvidence": "docs/operations/releases/global-mcp-20261113/additional-directories-20261113.json"
 }

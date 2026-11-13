@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-13T07:23:37.892671+00:00",
+  "publisher": "Festapp",
+  "mcpfinder": {
+    "status": "indexed-readback-verified",
+    "source": "https://mcpfinder.dev/api/v1/snapshot/manifest.json",
+    "snapshotPublishedAt": "2026-11-13T06:54:55.233Z",
+    "snapshotSha256": "8543d7a04e8c65989b9a71eaad6caf33af6b951eca6ac7b2131dfe63d86596a9",
+    "matchingRecords": [
+      {
+        "name": "net.festapp/festapp",
+        "slug": "net-festapp-festapp",
+        "version": "0.1.1",
+        "registry_type": null,
+        "remote_url": "https://mcp.festapp.net/mcp",
+        "repository_url": "https://github.com/festappnet/festapp",
+        "status": "active",
+        "sources": "[\"official\"]",
+        "listing_url": null,
+        "updated_at": "2026-11-13T05:07:12.363759Z"
+      },
+      {
+        "name": "net.festapp/vstupenky-online",
+        "slug": "net-festapp-vstupenky-online",
+        "version": "0.1.1",
+        "registry_type": null,
+        "remote_url": "https://mcp.vstupenky.online/mcp",
+        "repository_url": "https://github.com/festappnet/festapp",
+        "status": "active",
+        "sources": "[\"official\"]",
+        "listing_url": null,
+        "updated_at": "2026-11-13T05:07:29.713086Z"
+      }
+    ],
+    "automaticImport": true
+  },
+  "mcpserversOrg": {
+    "submission_url": "https://mcpservers.org/submit",
+    "plan": "Free, review within two weeks",
+    "search": "Festapp and vstupenky searches returned no matching server results before submission",
+    "submissions": [
+      {
+        "name": "Festapp",
+        "registry_name": "net.festapp/festapp",
+        "endpoint": "https://mcp.festapp.net/mcp",
+        "status": "Submission Successful - pending review"
+      },
+      {
+        "name": "vstupenky.online",
+        "registry_name": "net.festapp/vstupenky-online",
+        "endpoint": "https://mcp.vstupenky.online/mcp",
+        "status": "Submission Successful - pending review"
+      }
+    ],
+    "auth": "OAuth",
+    "no_credentials_shared": true
+  },
+  "mcpSo": {
+    "status": "free-manual-review-requested",
+    "freeAcceptanceOrPublicationConfirmed": false,
+    "requests": [
+      {
+        "name": "Festapp",
+        "url": "https://github.com/chatmcp/mcpso/issues/7255",
+        "state": "open"
+      },
+      {
+        "name": "vstupenky.online",
+        "url": "https://github.com/chatmcp/mcpso/issues/7256",
+        "state": "open"
+      }
+    ],
+    "paidRemoteFormUsed": false
+  },
+  "awesomeRemoteMcpServers": {
+    "status": "pull-request-awaiting-maintainer",
+    "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
+    "authoritativeBaseSha": "37c0470e5285023f52b77537eb43b5744cb60418",
+    "headSha": "0023963f232b00dd880ecdff1d1c054f3a523ce8",
+    "changedFiles": [
+      "README.md"
+    ],
+    "addedEntries": 2,
+    "validationCheck": "check-submission: SUCCESS",
+    "labels": [
+      "endpoint-ok",
+      "has-connector"
+    ],
+    "canonicalBadgesVerified": true,
+    "publicSignUpEntryObserved": true,
+    "successfulNewAccountRegistrationTested": false,
+    "requiredUpstreamStarApplied": true
+  },
+  "lobehub": {
+    "status": "not-submitted-human-publisher-auth-required",
+    "publishGuide": "https://market.lobehub.com/s/publish-mcp",
+    "manifestReference": "https://market.lobehub.com/s/publish-mcp/references/manifest",
+    "supportedRemoteField": "cloudEndpoint",
+    "guideRequirement": "Two commands require a human with a browser: lhm login and lhm github connect.",
+    "guideAlsoSaysNotToAutomateTheseSteps": true,
+    "requiredHumanSteps": [
+      "CLI publisher OIDC login",
+      "GitHub ownership connection"
+    ],
+    "cliPackage": "@lobehub/market-cli",
+    "cliVersionObserved": "0.0.46",
+    "cliInstalledOrExecuted": false,
+    "cliGithubConnectScopes": "not observed",
+    "actualClientOAuthCompatibility": "not verified"
+  },
+  "mcpDirectory": {
+    "status": "automatic-import-not-yet-verified",
+    "source": "https://mcp.directory/submit",
+    "manualSubmission": false,
+    "reason": "Repo-only form cannot describe both canonical remote identities; avoid a misleading monorepo install or duplicate future imports."
+  },
+  "smithery": {
+    "status": "no-current-supported-submission-found",
+    "source": "https://www.smithery.ai/future",
+    "publicDirectoryRemains": true,
+    "proxyAccountsApiCliStopped": "2026-10-31",
+    "accountOrHostingCreated": false
+  },
+  "pulseMcp": {
+    "status": "submissions-paused",
+    "source": "https://www.pulsemcp.com/submit",
+    "automaticOfficialRegistryImport": "awaiting resumption"
+  },
+  "scope": {
+    "productionRuntimeChanged": false,
+    "healthGrantsChanged": false,
+    "credentialsSharedWithCatalogues": false,
+    "supportEmailSent": false,
+    "payments": false,
+    "newChatGptPublication": false,
+    "thirdDuplicateMcpServiceCreated": false
+  }
+}
