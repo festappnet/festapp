@@ -213,7 +213,8 @@
     {
       "migration": "20261113090000_ticket_wallet_queue_expand.sql",
       "manifest": "ticket-wallet-queue-expand-migration.json",
-      "active": true
+      "checkSources": true,
+      "sha256": "1ff67d4bbd55031d9206e64b385f8139ffa4422ae4cbb3067800b817fe745961"
     },
     {
       "migration": "20261113090100_ticket_wallet_queue_contract.sql",
@@ -229,6 +230,15 @@
       "migration": "20261113123000_notification_payment_channels.sql",
       "manifest": "notification-payment-channels-migration.json",
       "active": true
+    },
+    {
+      "migration": "20261113143000_product_catalog_detail_save.sql",
+      "sha256": "28ec4a4f7f10ba0f904e52e850375f75ddfaf61af959ddf9d72f1859434de006",
+      "checkSources": true,
+      "sources": [
+        "eshop/update_product.sql",
+        "eshop/update_product_client_sync_v1.sql"
+      ]
     }
   ]
 }
