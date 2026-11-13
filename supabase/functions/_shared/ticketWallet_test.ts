@@ -1,9 +1,11 @@
 import {assertEquals,assert,assertRejects} from 'jsr:@std/assert@1';
-import {issueTicketWallet,reconcileTicketWallet} from './ticketWallet.ts';
+import {issueTicketWallet,reconcileTicketWallet} from './wallet/connectors/google.ts';
 import {GoogleWallet} from './googleWallet.ts';
+import {WalletRegistry} from './wallet/registry.ts';
+import {googleWalletConnector} from './wallet/connectors/google.ts';
 import {walletHandler} from '../ticket-wallet/handler.ts';
 Deno.test('endpoint rejects GET, foreign origin and arbitrary ticket ID before Google I/O',async()=>{
- let calls=0;const handler=walletHandler(async()=>{calls++;},async()=>{throw new Error('unexpected');},['https://tenant.invalid']);
+ let calls=0;const handler=walletHandler(new WalletRegistry([['google',()=>googleWalletConnector(async()=>{calls++;},async()=>{throw new Error('unexpected');})]],'google'),['https://tenant.invalid']);
  for(const [method,origin,body,status] of [['GET','https://tenant.invalid',null,405],['POST','https://foreign.invalid',{token:'a'.repeat(64)},403],['POST','https://tenant.invalid',{ticketId:9},400],['POST','https://tenant.invalid',{token:'a'.repeat(2048)},400]] as const){
   const res=await handler(new Request('https://backend.invalid',{method,headers:{origin},...(body?{body:JSON.stringify(body)}:{})}));assertEquals(res.status,status);assertEquals(res.headers.get('cache-control'),'no-store');
  }assertEquals(calls,0);

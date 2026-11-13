@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION public.ticket_wallet_ready(p_organization bigint)
 RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  IF NOT public.is_service_role() AND NOT EXISTS(SELECT 1 FROM public.units u WHERE u.organization=p_organization AND public.can_create_occasion(u.id)) THEN RETURN false; END IF;
- RETURN EXISTS(SELECT 1 FROM eshop.ticket_wallet_integrations WHERE organization=p_organization AND publishing_ready);
+ RETURN EXISTS(SELECT 1 FROM eshop.ticket_wallet_integrations WHERE organization=p_organization AND (publishing_ready OR apple_publishing_ready));
 END $$;
 REVOKE ALL ON FUNCTION public.ticket_wallet_ready(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.ticket_wallet_ready(bigint) TO authenticated,service_role;
@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.ticket_wallet_fingerprint(p_occasion bigint)
 RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
- RETURN (SELECT coalesce((f->>'is_enabled')::boolean,false)::text||'/'||public.ticket_wallet_enabled(f)::text||'/'||public.ticket_wallet_ready(o.organization)::text
+ RETURN (SELECT coalesce((f->>'is_enabled')::boolean,false)::text||'/'||public.ticket_wallet_enabled(f)::text||'/'||public.ticket_wallet_ready(o.organization)::text||'/'||coalesce((SELECT publishing_ready::text||'/'||apple_publishing_ready::text FROM eshop.ticket_wallet_integrations WHERE organization=o.organization),'false/false')
  FROM public.occasions o LEFT JOIN LATERAL (SELECT x f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket') x ON true WHERE o.id=p_occasion);
 END $$;
 REVOKE ALL ON FUNCTION public.ticket_wallet_fingerprint(bigint) FROM PUBLIC,anon,authenticated;

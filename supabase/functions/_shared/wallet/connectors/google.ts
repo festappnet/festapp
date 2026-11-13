@@ -1,5 +1,6 @@
-import { GoogleWallet, walletHash, walletIds } from './googleWallet.ts';
-export type WalletRpc=(name:string,params?:Record<string,unknown>)=>Promise<any>;
+import { GoogleWallet,walletIds } from '../../googleWallet.ts';
+import {walletHash} from '../identity.ts';
+import type {WalletRpc,WalletConnector} from '../contracts.ts';
 export async function synchronizeWallet(claim:any,rpc:WalletRpc,google:GoogleWallet) {
  try {
   await (claim.kind==='class'?google.synchronizeClass.bind(google):google.synchronize.bind(google))(claim,claim.projection,async()=>{
@@ -15,6 +16,7 @@ export async function synchronizeWallet(claim:any,rpc:WalletRpc,google:GoogleWal
 export async function issueTicketWallet(token:string,source:string,origin:string,rpc:WalletRpc,google:GoogleWallet) {
  const resolved=await rpc('resolve_ticket_wallet',{p_hash:await walletHash(token),p_source:await walletHash(source)});
  if(!resolved||resolved.webOrigin!==origin||!['ACTIVE','COMPLETED'].includes(resolved.projection?.state))return null;
+ if(resolved.providers?.google===false)throw new Error('wallet_provider_unavailable');
  const ids=await walletIds(resolved);
  let claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId,p_object:ids.objectId,p_class:ids.classId});
  if(!claim)throw new Error('wallet_busy');
@@ -39,4 +41,11 @@ export async function reconcileTicketWallet(rpc:WalletRpc,google:GoogleWallet,li
   try{await synchronizeWallet(claim,rpc,google);synced++;}catch{failed++;}
  }
  return {synced,failed};
+}
+
+
+export function googleWalletConnector(rpc:WalletRpc,configured:()=>Promise<GoogleWallet>):WalletConnector {
+ return {id:'google',delivery:'redirect',
+  async issue(input){const result=await issueTicketWallet(input.token,input.source,input.origin,rpc,await configured());return result?{kind:'redirect',...result}:null;},
+  async reconcile(limit){return await reconcileTicketWallet(rpc,await configured(),limit);}};
 }

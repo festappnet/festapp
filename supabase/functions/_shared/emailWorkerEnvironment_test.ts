@@ -81,3 +81,10 @@ Deno.test('only Wallet owners receive signing credentials and only its public ha
   for(const service of ['payment-operation','process-email-queue','send-custom-email','fetch-http-data','unknown'])
     assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)),{DEFAULT_EMAIL:'sender'});
 });
+
+Deno.test('Apple signing inputs only reach Wallet adapters, never email or other provider workers',()=>{
+ const environment={APPLE_WALLET_CREDENTIALS:'protected',APPLE_WALLET_WEB_SERVICE_URL:'https://api.festapp.net/functions/v1/apple-wallet',TICKET_WALLET_ALLOWED_ORIGINS:'https://vstupenky.online',DEFAULT_EMAIL:'sender'};
+ assertEquals(Object.fromEntries(emailWorkerEnvironment('ticket-wallet',environment)),environment);
+ for(const service of ['sync-ticket-wallet','apple-wallet'])assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)),{APPLE_WALLET_CREDENTIALS:'protected',APPLE_WALLET_WEB_SERVICE_URL:environment.APPLE_WALLET_WEB_SERVICE_URL,DEFAULT_EMAIL:'sender'});
+ for(const service of ['process-email-queue','send-custom-email','fetch-http-data','payment-operation','unknown'])assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)),{DEFAULT_EMAIL:'sender'});
+});

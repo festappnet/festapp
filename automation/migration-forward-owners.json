@@ -248,6 +248,16 @@
         "eshop_bank_accounts/update_bank_account.sql"
       ],
       "active": true
+    },
+    {
+      "migration": "20261113180000_apple_ticket_wallet.sql",
+      "manifest": "apple-ticket-wallet-migration.json",
+      "active": true
+    },
+    {
+      "migration": "20261113190000_apple_ticket_wallet_updates.sql",
+      "manifest": "apple-ticket-wallet-updates-migration.json",
+      "active": true
     }
   ]
 }
