@@ -205,6 +205,27 @@ test('general consent uses current user rights without a functional checklist',a
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions:MCP_SCOPES});
 });
+test('basic consent narrows a full request and removes organizer creation without changing selected resources', async () => {
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Glama',units:[{id:4,title:'Pořadatel',canCreateOccasions:true}],occasions:[{id:99,title:'Ples',unitId:4}],canRequestCreate:true,requestedPermissions:MCP_SCOPES}:{resumeUrl:resume,issuer}})});
+ await f.page.init();
+ f.container.querySelector('[data-unit="4"]').click();
+ assert.equal(f.page.access.units[0].canCreateOccasions,true);
+ const mode=f.container.querySelector('[name="permissionMode"]');
+ mode.value='basic';mode.dispatchEvent(new dom.window.Event('change'));
+ assert.equal(f.page.access.units[0].canCreateOccasions,false);
+ assert.equal(f.page.canApprove,true);
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'selection',units:[{unitId:4,canCreateOccasions:false}],occasionIds:[]},permissions:[]});
+});
+test('read-only consent excludes writes while retaining requested reads and their dependencies', async () => {
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',occasions:[{id:99,title:'Ples'}],requestedPermissions:MCP_SCOPES}:{resumeUrl:resume,issuer}})});
+ await f.page.init();f.container.querySelector('[data-occasion="99"]').click();
+ const mode=f.container.querySelector('[name="permissionMode"]');
+ mode.value='read-only';mode.dispatchEvent(new dom.window.Event('change'));
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,MCP_SCOPES.filter(scope=>scope.endsWith(':read')));
+ assert.doesNotMatch(f.container.textContent,/festapp:/);
+});
 test('organizer selection includes its available creation rights without another toggle',async()=>{
  const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',units:[{id:4,title:'Testovací organizace',canCreateOccasions:true}],occasions:[{id:99,title:'Ples',unitId:4}],canRequestCreate:true,requestedPermissions:[]}:{resumeUrl:resume,issuer}})});
  await f.page.init();f.container.querySelector('[data-unit="4"]').click();

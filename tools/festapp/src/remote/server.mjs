@@ -20,6 +20,7 @@ import { digest } from '../context/profile.mjs';
 import { operatorAccess, verifySelection, canCreateWithAccess } from '../operations/access.mjs';
 import { contextConfig, remoteContexts, canonicalRemote, READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
 import { DOMAIN_SCOPES, clientPolicy, allowsMetadataFetch, allowsMetadataClient } from './client-policy.mjs';
+import { MCP_CONSENT_MODES, permissionsForConsent } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding, connectionContext } from './delegation.mjs';
 import { loginForm, consentForm, contextChoiceForm, contextManagementPage, publicDocument, serviceDocumentation, connectionsPage, page, oauthFailure } from './views.mjs';
 import { makeStatus, validateMakePage, makeDocumentation } from './make-transport.mjs';
@@ -264,6 +265,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         f.permissions = MCP_SCOPES.filter(s => String(d.params.scope ?? '').split(' ').includes(s));
         storage.put('Connect', d.uid, f, 600);
         return res.type('html').send(consentForm({ csrf: f.csrf, client,
+            permissions: f.permissions, canCreate: canRequestCreate(d),
             connections: activeConnections(storage, f.userId, d.params.client_id, config.profile.binding), action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, selectedTenant: config.profile.tenantId }));
     };
     app.post('/connect/:uid/context', form, async (req, res) => {
@@ -302,9 +304,14 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             await loginOwner(d.uid).logout(); storage.remove('Connect', d.uid);
             return provider.interactionFinished(req, res, { error: 'access_denied' }, { mergeWithLastSubmission: false });
         }
-        const selection = req.body.unit ? { type: 'unit', unitId: Number(req.body.unit), canCreateOccasions: req.body.consentVersion === '3'
+        const permissionMode = req.body.permissionMode ?? 'requested';
+        check(MCP_CONSENT_MODES.includes(permissionMode), 'FORBIDDEN');
+        const requestedPermissions = verifyPermissions(req.body.consentVersion === '3' ? f.permissions ?? []
+            : req.body.permission === undefined ? [] : [req.body.permission].flat(), String(d.params.scope ?? '').split(' '));
+        const permissions = permissionsForConsent(requestedPermissions, permissionMode);
+        const selection = req.body.unit ? { type: 'unit', unitId: Number(req.body.unit), canCreateOccasions: permissionMode === 'requested' && (req.body.consentVersion === '3'
             ? canRequestCreate(d) && f.available?.units.some(u => u.id === Number(req.body.unit) && u.canCreateOccasions) === true
-            : req.body.create === '1' }
+            : req.body.create === '1') }
             : { type: 'occasions', occasionIds: [req.body.occasion].flat().map(Number) };
         // The standalone select also submits in New device mode. Validate every
         // supplied ID before discarding that unused, owned selection.
@@ -314,10 +321,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const connection = req.body.mode === undefined && req.body.durationDays === undefined ? undefined : { mode: req.body.mode ?? 'new',
             ...(req.body.durationDays !== undefined ? { durationDays: Number(req.body.durationDays) } : {}),
             ...(req.body.mode === 'replace' ? { connectionId: req.body.connectionId } : {}), name: req.body.name };
-        // Functions follow the validated OAuth request, not another user role matrix.
-        // Honor narrower approvals from pages already open before this UI change.
-        const permissions = verifyPermissions(req.body.consentVersion === '3' ? f.permissions
-            : req.body.permission === undefined ? [] : [req.body.permission].flat(), String(d.params.scope ?? '').split(' '));
+        // Both UI adapters use the same narrowing contract. Older open pages
+        // retain their explicit permission approvals and default requested mode.
         return completeConsent(req, res, d, { ...f, permissions, connection }, selection);
     });
     const manage = (req, res) => {

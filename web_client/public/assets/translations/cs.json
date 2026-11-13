@@ -4035,6 +4035,13 @@
         "no_matching_answers": "Žádné další odpovídající údaje."
     },
     "McpConnection": {
+        "permissionMode": "Rozsah funkcí",
+        "permissionMode_requested": "Všechny požadované funkce",
+        "permissionMode_read-only": "Jen požadované čtení",
+        "permissionMode_basic": "Základní přístup",
+        "permissionHint_requested": "Povolí požadované funkce včetně změn, pokud je dovolují vaše aktuální práva.",
+        "permissionHint_read-only": "Povolí pouze požadované čtení a exporty v rozsahu vašich aktuálních práv.",
+        "permissionHint_basic": "Povolí informace o připojení, přehled dostupných akcí a podklady vstupenek.",
         "durationLabel": "Platnost připojení",
         "duration7": "7 dní",
         "duration30": "30 dní",

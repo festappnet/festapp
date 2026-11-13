@@ -10,7 +10,7 @@ import { profile } from './fixture.mjs';
 import { parseRemoteConfig, READ_SCOPE } from '../src/remote/config.mjs';
 import { DOMAIN_SCOPES, clientPolicy, clientAllowsScopes } from '../src/remote/client-policy.mjs';
 import { inspectorConfiguration } from '../src/remote/inspector.mjs';
-import { MCP_PERMISSIONS, READ_OPERATIONS, scopesForOperation } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
+import { MCP_PERMISSIONS, MCP_SCOPES, READ_OPERATIONS, scopesForOperation, permissionsForConsent, validPermissions } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 
 function configuration(extra = {}) {
@@ -19,6 +19,23 @@ function configuration(extra = {}) {
         clients: [{ id: 'public-fixture', name: 'Public fixture', dataProfile: 'order-summary',
             redirectUris: ['https://public.fixture.test/callback'], allowedScopes: [READ_SCOPE] }], ...extra });
 }
+
+test('consent presets only narrow requested functions and classify every read as domain read-only', () => {
+    assert.deepEqual(permissionsForConsent(MCP_SCOPES), MCP_SCOPES);
+    assert.deepEqual(permissionsForConsent(MCP_SCOPES, 'basic'), []);
+    const reads = permissionsForConsent(MCP_SCOPES, 'read-only');
+    assert(reads.length > 0 && reads.length < MCP_SCOPES.length);
+    assert(validPermissions(reads));
+    const ids = [...READ_OPERATIONS, 'occasions.create', ...Object.values(MCP_PERMISSIONS).flatMap(p => p.operations)];
+    const ops = new Operations({ root: '/consent-contract-only', allowedOperations: ids });
+    ops.setWriteReady(true);
+    const catalog = new Map(ops.catalog.map(tool => [tool.id, tool]));
+    for (const scope of reads) for (const operation of MCP_PERMISSIONS[scope].operations)
+        assert.equal(catalog.get(operation).domainReadOnly, true, operation);
+    assert.deepEqual(permissionsForConsent(['festapp:orders:read'], 'read-only'), ['festapp:orders:read']);
+    assert.throws(() => permissionsForConsent(MCP_SCOPES, 'arbitrary'));
+    assert.throws(() => permissionsForConsent(['unknown'], 'basic'));
+});
 
 test('Inspector setup CLI emits only public configuration and never edits its input', async t => {
     const root = await mkdtemp(join(tmpdir(), 'festapp-inspector-config-'));

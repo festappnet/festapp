@@ -1,5 +1,6 @@
 import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, CONNECTION_IDLE_SECONDS, DAY_SECONDS, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { accessSelection } from '../operations/access.mjs';
+import { MCP_CONSENT_MODES } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 const escape = value => String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 export function oauthFailure(code) {
     const messages = {
@@ -25,10 +26,11 @@ export const loginForm = ({ csrf, client, action, error = '', consent = false })
     <small>Heslo ani přihlašovací token Festapp se nepředává připojené aplikaci.</small>`,
 );
 
-export const consentForm = ({ csrf, client, action, occasions, units = [], selectedTenant, connections = [] }) => page('Povolit přístup',
+export const consentForm = ({ csrf, client, action, occasions, units = [], selectedTenant, connections = [], permissions = [], canCreate = false }) => page('Povolit přístup',
     `<p>Aplikace <strong>${escape(client)}</strong> žádá o přístup k účtu v ${escape(selectedTenant)}.</p>
     <p>Přístup aplikace se řídí Vašimi aktuálními právy ve vybraných akcích. Při každém úkonu je ověřuje server. Výběr celého pořadatele zahrnuje i jeho budoucí akce.</p>
     <form method="post" action="${escape(action)}"><input type="hidden" name="csrf" value="${escape(csrf)}"><input type="hidden" name="consentVersion" value="3">
+    ${permissions.length || canCreate ? `<label>Rozsah funkcí<select name="permissionMode">${MCP_CONSENT_MODES.map(mode => `<option value="${mode}">${{ requested: 'Všechny požadované funkce', 'read-only': 'Jen požadované čtení', basic: 'Základní přístup' }[mode]}</option>`).join('')}</select></label><small>Základní přístup zahrnuje pouze informace o připojení, přehled dostupných akcí a podklady vstupenek. Ostatní volby povolí odpovídající požadované funkce v mezích vašich aktuálních práv.</small>` : ''}
     ${connections.length ? `<fieldset><legend>Připojení</legend><label><input type="radio" name="mode" value="replace" ${connections.some(c => c.defaultEligible) ? 'checked' : ''}>Nahradit</label><label><input type="radio" name="mode" value="new">Nové zařízení (zadejte název)</label><label>Připojení k nahrazení<select name="connectionId">${connections.some(c => c.defaultEligible) ? '' : '<option value="" selected>Vyberte připojení</option>'}${connections.map(c => `<option value="${escape(c.id)}" ${c.id === connections.find(item => item.defaultEligible)?.id ? 'selected' : ''}>${escape(c.name || client)} · ${escape(new Date(c.expiresAt).toLocaleString('cs-CZ'))} · ${escape(c.access.units.map(u => `Pořadatel #${u.unitId}, včetně budoucích akcí${u.canCreateOccasions ? ' a zakládání akcí' : ''}`).join('; '))} ${escape(c.access.occasionIds.map(id => `Akce #${id}`).join('; '))}</option>`).join('')}</select></label><p>Původní připojení se odpojí až po úspěšné výměně kódu za tokeny. Nové přístupy schvalujete níže.</p></fieldset>` : '<input type="hidden" name="mode" value="new">'}
     <label>Platnost připojení<select name="durationDays">${CONNECTION_DURATION_DAYS.map(days => `<option value="${days}" ${days === DEFAULT_CONNECTION_DURATION_DAYS ? 'selected' : ''}>${days === 365 ? '1 rok' : `${days} dní`} - při potvrzení nyní do ${escape(new Date(consentDeadline(days)).toLocaleString('cs-CZ'))}</option>`).join('')}</select></label>
     <p>Připojení skončí nejpozději po zvolené době nebo po ${CONNECTION_IDLE_SECONDS / DAY_SECONDS} dnech bez obnovy tokenu. Přihlášení k účtu může skončit dříve. Název je pouze Váš štítek, nikoli ověřená identita zařízení.</p>
