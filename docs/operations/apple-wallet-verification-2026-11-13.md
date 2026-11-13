@@ -12,7 +12,8 @@ Apple WWDR G4 chain and private-key match were verified. Certificate and key are
 retained in encrypted login Keychain; iCloud synchronization is not verified.
 No secret material is included here.
 
-The production-image local smoke used `public.ecr.aws/supabase/edge-runtime:v1.74.2`,
+The exact production-image local smoke used
+`supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7`,
 the real certificate and an explicitly invalid sample admission QR. It generated
 a signed 10079-byte pass with native update metadata. An HTTP/2 mutual-TLS APNs
 request returned the expected invalid-device result for the all-zero test token;

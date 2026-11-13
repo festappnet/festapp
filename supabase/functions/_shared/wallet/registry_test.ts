@@ -22,3 +22,11 @@ Deno.test('one unavailable provider cannot stop another providers reconciliation
  assertEquals(await registry.reconcile(),{bad:{error:'wallet_sync_unavailable'},healthy:{synced:1,failed:0}});
  await assertRejects(()=>new WalletRegistry([['bad',bad]],'bad').reconcile());
 });
+
+Deno.test('native delivery failures provide readable instructions without leaking provider errors or capability',async()=>{
+ const registry=new WalletRegistry([['third',()=>({...connector('third'),issue:async()=>{throw new Error('private provider failure');}})]],'third');
+ const handler=walletHandler(registry,['https://tenant.invalid']);
+ const res=await handler(new Request('https://api.invalid',{method:'POST',headers:{origin:'https://tenant.invalid','Content-Type':'application/x-www-form-urlencoded','Accept-Language':'cs-CZ'},body:new URLSearchParams({provider:'third',token:'a'.repeat(64)})}));
+ assertEquals(res.status,503);assertEquals(res.headers.get('content-type'),'text/html; charset=utf-8');
+ const text=await res.text();assertEquals(text.includes('Vstupenku se nepodařilo připravit'),true);assertEquals(text.includes('private provider failure'),false);assertEquals(text.includes('a'.repeat(64)),false);assertEquals(text.includes('wallet_retry'),false);
+});
