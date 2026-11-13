@@ -191,6 +191,17 @@
         "eshop_orders/reset_password_via_scan.sql",
         "scanning/sessions.sql"
       ],
+      "sha256": "d05cd77892e3d46b5d0795658c6982de829c7ff2b6eeb0762071191146eec604",
+      "checkSources": true
+    },
+    {
+      "migration": "20261113013000_scanner_ownership_contraction.sql",
+      "header": "-- Complete historical scanner isolation; operator must explicitly scope organization data repair.",
+      "sources": [
+        "scanning/access_code_generator.sql",
+        "scanning/access_codes.sql",
+        "scanning/ownership.sql"
+      ],
       "active": true
     }
   ]

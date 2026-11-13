@@ -7,8 +7,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS occasions_hidden_scan_secret_unique_idx
 CREATE OR REPLACE FUNCTION public.get_or_create_scan_code(occasion_link text, p_rotate boolean DEFAULT false)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path=public,extensions AS $$
-DECLARE oc public.occasions; existing text; candidate text; bytes bytea;
- ch integer; i integer; attempt integer; result jsonb;
+DECLARE oc public.occasions; existing text; candidate text;
+ attempt integer; result jsonb;
 BEGIN
  p_rotate:=coalesce(p_rotate,false);
  SELECT * INTO oc FROM public.occasions WHERE id=public.resolve_occasion_link_internal(occasion_link);
@@ -26,15 +26,7 @@ BEGIN
    RETURN jsonb_build_object('code',403,'message','User is not authorized to initialize this scanner.');
  END IF;
  FOR attempt IN 1..32 LOOP
-   candidate:='';
-   WHILE length(candidate)<5 LOOP
-     bytes:=gen_random_bytes(16);
-     FOR i IN 0..15 LOOP
-       ch:=get_byte(bytes,i);
-       IF ch<252 THEN candidate:=candidate||substr('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',1+(ch%36),1); END IF;
-       EXIT WHEN length(candidate)=5;
-     END LOOP;
-   END LOOP;
+   candidate:=public.generate_scanner_access_code_internal();
    -- A rotation must actually replace the old credential, even on a random hit.
    IF candidate IS NOT DISTINCT FROM existing THEN CONTINUE; END IF;
    result:=public.update_scan_code(occasion_link,candidate);
