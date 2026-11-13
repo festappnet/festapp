@@ -140,8 +140,9 @@ if (!/target\.name == ['"]geolocator_apple['"]/.test(podfile) ||
   fail('geolocator_apple must compile with the background-location permission bypass');
 }
 if (!/ENV\[['"]ONESIGNAL_DISABLE_LOCATION['"]\]\s*=\s*['"]true['"]/.test(podfile) ||
-    !/pod ['"]OneSignalXCFramework\/OneSignal['"], ['"]5\.5\.5['"]/.test(podfile) ||
-    !/pod ['"]OneSignalXCFramework\/OneSignalInAppMessages['"], ['"]5\.5\.5['"]/.test(podfile)) {
+    !/onesignal_sdk_version\s*=\s*onesignal_dependency\.requirement\.to_s/.test(podfile) ||
+    !/pod ['"]OneSignalXCFramework\/OneSignal['"], onesignal_sdk_version/.test(podfile) ||
+    !/pod ['"]OneSignalXCFramework\/OneSignalInAppMessages['"], onesignal_sdk_version/.test(podfile)) {
   fail('OneSignal must resolve without its unused native location module');
 }
 const notificationExtensionInfo = fs.readFileSync(
