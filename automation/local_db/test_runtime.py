@@ -77,6 +77,38 @@ class RuntimeIdentityTest(unittest.TestCase):
             self.assertIn('@127.0.0.1:',runtime.Runtime().url())
 
 
+    def test_incremental_upgrade_restores_role_on_first_pending_migration(self):
+        baseline = runtime.baseline
+        for resumed in [False, True]:
+            with self.subTest(resumed=resumed), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / 'history.json').write_text(json.dumps({'originalBaselineVersion': '20260805230000'}))
+                migrations = root / 'supabase/migrations'
+                migrations.mkdir(parents=True)
+                names = ['20261108000000_first.sql', '20261109000000_tail.sql']
+                for name in names:
+                    (migrations / name).write_text('SELECT current_user;')
+                kit = root / 'kit'
+                (kit / 'supabase/migrations').mkdir(parents=True)
+                config = {'historicalSources': {'path': 'history.json'},
+                          'coveredThrough': '20261107170000',
+                          'forwardMigrationRole': 'supabase_admin'}
+                recorded = '20260805230000\n' + ('20261108000000\n' if resumed else '')
+                def migrate(*args, **kwargs):
+                    staged = kit / 'supabase/migrations'
+                    pending = names[1] if resumed else names[0]
+                    self.assertEqual((staged / pending).read_text(),
+                                     'SET ROLE supabase_admin;\nSELECT current_user;')
+                    if resumed:
+                        self.assertEqual((staged / names[0]).read_text(), 'SELECT current_user;')
+                with patch.object(baseline, 'load_manifest', return_value=config), \
+                     patch.object(baseline, 'covered_migrations', return_value=[{'version': '20260805230000'}]), \
+                     patch.object(baseline, 'materialize_history', return_value=kit), \
+                     patch.object(baseline.subprocess, 'check_output', side_effect=[
+                         'supabase_db_festapp-fixture 127.0.0.1:55432->5432/tcp', recorded]), \
+                     patch.object(baseline.subprocess, 'run', side_effect=migrate):
+                    baseline.upgrade_local('postgresql://supabase_admin:postgres@127.0.0.1:55432/postgres', root)
+
 @unittest.skipUnless(os.environ.get('FESTAPP_RUNTIME_INTEGRATION')=='1','explicit disposable runtime required')
 class RuntimeLifecycleTest(unittest.TestCase):
     @classmethod
@@ -141,7 +173,10 @@ class RuntimeLifecycleTest(unittest.TestCase):
         tail=runtime.ROOT/'supabase/migrations/29991231235959_runtime_checkpoint_probe.sql'
         self.assertFalse(tail.exists())
         try:
-            tail.write_text('CREATE TABLE public.runtime_checkpoint_probe(id bigint);\n')
+            tail.write_text(
+                "DO $$ BEGIN EXECUTE pg_get_functiondef("
+                "'public.get_or_create_scan_code(text,boolean)'::regprocedure); END $$;\n"
+                'CREATE TABLE public.runtime_checkpoint_probe(id bigint);\n')
             with self.db.locked(): result=self.db.prepare()
             self.assertEqual(result['mode'],'checkpoint-tail')
             self.assertEqual(self.db.sql("SELECT to_regclass('public.runtime_checkpoint_probe') IS NOT NULL",capture=True).strip(),b't')
