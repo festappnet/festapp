@@ -1,0 +1,42 @@
+{
+  "capturedAt": "2026-11-13T14:16:10.610013+00:00",
+  "lobeHub": {
+    "status": "skipped-at-user-request",
+    "cliPackage": "@lobehub/market-cli",
+    "cliVersion": "0.0.46",
+    "temporaryPublisherLogin": "completed then logged out using supported CLI",
+    "afterCleanupAuthStatus": "No credentials found",
+    "afterCleanupAuthExitCode": 1,
+    "githubOwnershipConnection": false,
+    "publication": false,
+    "gmailConsent": "Not granted, explicitly confirmed by the user",
+    "accountDeleted": false
+  },
+  "remainingModeration": {
+    "mcpserversOrg": "Two Free submissions accepted; pending review",
+    "mcpSo": [
+      "https://github.com/chatmcp/mcpso/issues/7255",
+      "https://github.com/chatmcp/mcpso/issues/7256"
+    ],
+    "awesomeRemoteMcpServers": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589"
+  },
+  "sourceDocumentation": "Root README now explicitly distinguishes hosted MCP endpoints from application developer setup, for repository crawlers.",
+  "productionRuntimeChanged": false,
+  "supportEmailSent": false,
+  "paymentMade": false,
+  "secretValuesRecorded": false,
+  "browserCleanup": {
+    "user_reported_gmail_consent_granted": false,
+    "cli_authorization_scopes": [
+      "sign-in",
+      "basic profile",
+      "email address",
+      "persistent sign-in"
+    ],
+    "cli_logout": "confirmed by coordinator; no credentials found afterwards",
+    "github_connection": "not performed",
+    "lobehub_publication": "not performed",
+    "website_signout": "not available in onboarding; website session may remain signed in",
+    "task_owned_tabs": "closed"
+  }
+}
