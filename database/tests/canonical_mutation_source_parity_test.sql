@@ -2430,12 +2430,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_note_hidden(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='c29366f7fcd88ab8f2c377a2cfa92205'),'current SQL source parity: public.update_order_note_hidden(bigint,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_responses(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='514613a35894bb33760647362da32079'),'current SQL source parity: public.update_order_responses(bigint,jsonb)');
--- supabase/migrations/20261113090000_ticket_wallet_queue_expand.sql
+-- supabase/migrations/20261113143000_product_catalog_detail_save.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='919445bfaf0efad23c2e4563d6f7952b'),'current SQL source parity: public.update_product(jsonb)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product_client_sync_v1(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='dc4600ce9be11f5698cd779b42a43551'),'current SQL source parity: public.update_product_client_sync_v1(jsonb,uuid)');
--- supabase/migrations/20261113090000_ticket_wallet_queue_expand.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='268b72517bd9fafdf88cf1b4a639fa97'),'current SQL source parity: public.update_product_internal_v1(jsonb)');
+-- supabase/migrations/20261113143000_product_catalog_detail_save.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product_client_sync_v1(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='67547e218bbe786dd4593129ec863e8f'),'current SQL source parity: public.update_product_client_sync_v1(jsonb,uuid)');
+-- supabase/migrations/20261113143000_product_catalog_detail_save.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1a499076c6bfae4fd8d3e6dacf987748'),'current SQL source parity: public.update_product_internal_v1(jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product_inventory_contexts(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='5c2f34facf4507a1685e9217b2f70b76'),'current SQL source parity: public.update_product_inventory_contexts(bigint,jsonb)');
 -- supabase/baseline/20261107170000_schema.sql

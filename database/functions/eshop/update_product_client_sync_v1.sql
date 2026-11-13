@@ -57,6 +57,13 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE='new product cannot have expected version';
   END IF;
   v_product:=public.update_product_internal_v1(p_product-'expected_aggregate_version');
+  -- Replacing unchanged contexts is a no-op, but saving catalog details must
+  -- still invalidate the original editor snapshot and return a numeric version.
+  IF coalesce((SELECT version FROM public.client_aggregate_versions
+    WHERE aggregate_type='product' AND scope_type='occasion'
+      AND scope_id=v_occasion AND aggregate_id=v_product::text),0)=coalesce(v_version,0) THEN
+    PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion,v_product);
+  END IF;
   PERFORM public.assert_form_seating_source_internal(id) FROM public.forms WHERE occasion=v_occasion;
   SELECT version INTO v_version FROM public.client_aggregate_versions WHERE aggregate_type='product'
     AND scope_type='occasion' AND scope_id=v_occasion AND aggregate_id=v_product::text;

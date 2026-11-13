@@ -10,6 +10,8 @@ DECLARE
   v_input_price NUMERIC;
   v_effective_price NUMERIC;
   v_input_deposit NUMERIC;
+  v_existing_hidden boolean;
+  v_existing_type bigint;
   v_primary_forms bigint[];
   v_primary_form bigint;
 BEGIN
@@ -19,8 +21,8 @@ BEGIN
   -- Try to find the product to determine if we are updating or creating.
   -- This also gets the *current* occasion for the permission check on UPDATE.
   IF v_product_id IS NOT NULL THEN
-    SELECT pt.occasion, p.price
-    INTO v_occasion_id, v_existing_price
+    SELECT pt.occasion, p.price, p.is_hidden, p.product_type
+    INTO v_occasion_id, v_existing_price, v_existing_hidden, v_existing_type
     FROM eshop.products p
     JOIN eshop.product_types pt ON p.product_type = pt.id
     WHERE p.id = v_product_id FOR UPDATE OF p;
@@ -89,9 +91,17 @@ BEGIN
       updated_at    = NOW()
     WHERE p.id = v_product_id;
 
-    FOREACH v_primary_form IN ARRAY v_primary_forms LOOP
-      PERFORM public.assert_form_primary_products_internal(v_primary_form);
-    END LOOP;
+    -- Catalog details do not change form structure. Older seated forms may
+    -- retain a hidden catalog field; only visibility/type edits can remove
+    -- their primary offer and need the structural guard.
+    IF COALESCE(NULLIF(p_input->>'is_hidden','')::boolean,v_existing_hidden)
+         IS DISTINCT FROM v_existing_hidden
+      OR COALESCE(NULLIF(p_input->>'product_type','')::bigint,v_existing_type)
+         IS DISTINCT FROM v_existing_type THEN
+      FOREACH v_primary_form IN ARRAY v_primary_forms LOOP
+        PERFORM public.assert_form_primary_products_internal(v_primary_form);
+      END LOOP;
+    END IF;
 
     -- Return the ID of the updated product on success.
     IF p_input ? 'inventory_contexts' THEN
