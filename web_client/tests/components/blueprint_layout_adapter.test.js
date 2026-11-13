@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom';
 import { BlueprintLayoutAdapter } from '../../src/components/blueprint/blueprint_layout_adapter.js';
 import { FormSession } from '../../src/components/forms/form_session.js';
 import { DbForms } from '../../src/components/forms/db_forms.js';
+import { mount } from '@festapp/venue-layout';
 const dom = new JSDOM('<html><body></body></html>', {url:'http://localhost'});
 globalThis.window = dom.window; globalThis.document = dom.window.document;
 const data = () => ({layout:{nodes:[{id:'a',kind:'seat'},{id:'b',kind:'seat'}],selectionUnits:[{id:'unit',nodeIds:['a','b']}]},
@@ -360,4 +361,48 @@ test('reservation scene keeps document and individual seat colors with canonical
             assert.ok(render().items.some(item => item.nodeId === seat.id && item.kind === 'state'), state);
         }
     }
+});
+
+test('seat color stays authored throughout pending selection, release and rejection', async t => {
+    const corpus = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    const seat = corpus.public.document.nodes.find(node => node.kind === 'seat');
+    const fill = '#6030EEFF';
+    const layout = {...corpus.public.document, nodes: corpus.public.document.nodes.map(node => node.id === seat.id ? {...node, style: {...node.style, fill}} : node)};
+    const source = data();
+    source.layout = layout; source.layoutResources = corpus.public.resources;
+    source.seatBindings[0].nodeId = seat.id;
+    let finish;
+    const adapter = new BlueprintLayoutAdapter(source, {
+        seatFills: {[seat.id]: fill},
+        session: {toggleSpotUnit: () => new Promise(resolve => { finish = resolve; })},
+    });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const previousScreenCTM = dom.window.SVGElement.prototype.getScreenCTM;
+    dom.window.SVGElement.prototype.getScreenCTM = () => null;
+    t.after(() => { dom.window.SVGElement.prototype.getScreenCTM = previousScreenCTM; });
+    const viewer = mount(host, adapter.options());
+    adapter.onPresentationChanged = seatPresentation => viewer.update({seatPresentation});
+    t.after(() => { adapter.dispose(); viewer.dispose(); host.remove(); });
+    const assertScene = selected => {
+        assert.equal(viewer.scene.items.find(item => item.id === seat.id).fill, fill);
+        assert.equal(viewer.selected.has(seat.id), selected);
+        assert.equal(viewer.scene.items.some(item => item.nodeId === seat.id && item.kind === 'state'), selected || viewer.pending.has(seat.id));
+    };
+    const toggle = () => viewer.list.querySelector(`[data-node-id="${seat.id}"]`).onclick();
+    assertScene(false);
+    for (const selecting of [true, false]) {
+        const pending = toggle();
+        assert.equal(viewer.pending.has(seat.id), true);
+        assertScene(selecting);
+        finish({});
+        await pending;
+        assertScene(selecting);
+    }
+    adapter.session.toggleSpotUnit = () => new Promise((_, reject) => { finish = reject; });
+    const rejected = toggle();
+    assertScene(true);
+    finish(new Error('Seat no longer available'));
+    await rejected;
+    assertScene(false);
 });

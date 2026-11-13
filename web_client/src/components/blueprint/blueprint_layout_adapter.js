@@ -81,15 +81,17 @@ export class BlueprintLayoutAdapter {
             const own = model.state === SeatStates.SELECTED_BY_ME;
             const available = model.state === SeatStates.AVAILABLE || own;
             const selectable = own || (available && model.productModel != null && model.productModel.isAvailable !== false && model.productModel.is_dynamically_available !== false && model.productModel.is_available_dynamic_capacity !== false);
+            // The renderer selects optimistically before the hold completes.
+            // Supply the authored fill up front so that pending checks keep it too.
+            const fill = selectable
+                ? this.authoredFills[id] ?? (own ? basicSeatFills[SeatStates.AVAILABLE] : undefined)
+                : basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY];
             return [id, {
                 status: selectable ? 'available' : 'occupied',
                 selectable,
                 stateMarker: 'auto',
                 selected: own, label: model.title,
-                // Selected seats retain their resolved authored fill and check.
-                ...(!selectable || own ? {fill: own
-                    ? this.authoredFills[id] ?? basicSeatFills[SeatStates.AVAILABLE]
-                    : basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY]} : {}),
+                ...(fill != null ? {fill} : {}),
                 tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${CommonStrings.price}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, LocalizationService.currentLocale)}`,
             }];
         }));
