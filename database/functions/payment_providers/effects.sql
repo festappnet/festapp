@@ -54,6 +54,7 @@ BEGIN
    IF EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE state<>'storno') THEN PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
   END IF;
   decision:=public.payment_provider_call_internal(p_provider,'effect_decision',args||jsonb_build_object('reason',CASE WHEN p_action='keep' THEN 'partial_refund_keep' ELSE 'partial_refund_cancel' END,'revision',p_revision,'tickets',to_jsonb(p_tickets)));
+  PERFORM public.enqueue_order_wallet_internal(o.id);
   RETURN jsonb_build_object('changed',true,'decisionId',decision,'payment',public.provider_order_payment_projection_internal(o.id));
  END IF;
  IF conflict AND NOT context->'decisions' ? 'financial_conflict' THEN
@@ -107,6 +108,7 @@ BEGIN
  END LOOP;
  PERFORM public.notification_center_payment_problem_internal(o.id,action_required OR conflict,
   CASE WHEN conflict THEN 'financial_conflict' ELSE 'action_required' END);
+ PERFORM public.enqueue_order_wallet_internal(o.id);
  RETURN jsonb_build_object('changed',changed,'payment',projection);
 END $$;
 REVOKE ALL ON FUNCTION public.apply_provider_payment_effects_internal(text,uuid,text,jsonb,boolean,boolean,text,bigint[]) FROM PUBLIC,anon,authenticated,service_role;

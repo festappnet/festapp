@@ -3095,11 +3095,6 @@
       "authenticated": false,
       "service_role": true
     },
-    "public.finish_ticket_wallet(bigint,uuid,boolean)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
-    },
     "public.ticket_wallet_health()": {
       "anon": false,
       "authenticated": false,
@@ -3389,6 +3384,21 @@
       "anon": false,
       "authenticated": false,
       "service_role": true
+    },
+    "public.maintain_ticket_wallet(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.pause_ticket_wallet(bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_ticket_wallet(bigint,uuid,boolean,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -3433,7 +3443,9 @@
     "database/functions/scanning/access_codes.sql",
     "database/functions/notification_center/email_preferences.sql",
     "database/functions/notification_center/email_context.sql",
-    "database/functions/notification_center/email_delivery.sql"
+    "database/functions/notification_center/email_delivery.sql",
+    "database/functions/ticket_wallet/maintenance.sql",
+    "database/functions/ticket_wallet/control.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

@@ -31,3 +31,15 @@ Deno.test('a stale completion never returns a Save JWT',async()=>{
  const context={issuer:'1234',environment:'test',organization:1,occasion:2,ticketId:3,webOrigin:'https://tenant.invalid',projection:{state:'ACTIVE'}};
  await assertRejects(()=>issueTicketWallet('a'.repeat(64),'ip',context.webOrigin,async name=>name==='resolve_ticket_wallet'?context:name==='claim_ticket_wallet'?{...context,objectId:'1234.x',classId:'1234.c',lease:'lease'}:false,google));assert(!saved);
 });
+Deno.test('first issuance drains approved class work before claiming the object and signing Save',async()=>{
+ const context={issuer:'1234',environment:'test',organization:1,occasion:2,ticketId:3,webOrigin:'https://tenant.invalid',projection:{state:'ACTIVE'}};
+ const order:string[]=[];let claims=0;
+ const google={synchronizeClass:async()=>{order.push('class');},synchronize:async()=>{order.push('object');},saveUrl:async()=>{order.push('save');return 'url';}} as unknown as GoogleWallet;
+ const rpc=async(name:string)=>{
+  if(name==='resolve_ticket_wallet')return context;
+  if(name==='claim_ticket_wallet')return {...context,kind:claims++===0?'class':'object',objectId:'1234.o',classId:'1234.c',lease:crypto.randomUUID()};
+  if(name==='finish_ticket_wallet')return true;
+ };
+ assertEquals((await issueTicketWallet('a'.repeat(64),'ip',context.webOrigin,rpc,google))?.url,'url');
+ assertEquals(order,['class','object','save']);
+});

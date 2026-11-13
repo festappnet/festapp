@@ -22,13 +22,19 @@ test('default output cannot rewrite a published migration after source changes',
  try {
   const manifest=JSON.parse(readFileSync(join(root,'automation/admin-notification-delivery-manifest.json'),'utf8'));
   const script='automation/assemble-admin-notification-delivery-migration.py';
-  const files=[script,'automation/migration-forward-owners.json','automation/migration_inputs.py','automation/baseline.py','automation/historical_inputs.py','automation/admin-notification-delivery-manifest.json',manifest.output,
+  const files=[script,'automation/migration-forward-owners.json','automation/migration_forward_owners.py','automation/generate_canonical_source_contract.py','automation/migration_inputs.py','automation/baseline.py','automation/historical_inputs.py','automation/admin-notification-delivery-manifest.json',manifest.output,
    ...manifest.prerequisites.map(name=>'supabase/migrations/'+name),
    ...manifest.sources.map(name=>'database/functions/'+name),
    'database/functions/abuse/seeds.sql',
    'database/tables/tables.sql','database/functions/notification_center/schema.sql',
    'database/functions/notification_center/maintenance.sql',
    'database/functions/notification_center/prepared_schema.sql'];
+  const forwards=JSON.parse(readFileSync(join(root,'automation/migration-forward-owners.json'),'utf8')).migrations
+   .filter(entry=>entry.migration>manifest.output.split('/').at(-1));
+  for(const entry of forwards){
+   if(entry.manifest)files.push('automation/'+entry.manifest);
+   files.push('supabase/migrations/'+entry.migration);
+  }
   for(const file of new Set(files)) {
    const target=join(dir,file);mkdirSync(dirname(target),{recursive:true});copyFileSync(join(root,file),target);
   }

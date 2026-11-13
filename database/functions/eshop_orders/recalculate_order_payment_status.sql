@@ -30,6 +30,7 @@ BEGIN
         UPDATE eshop.orders SET email_payment_version=email_payment_version+1,updated_at=now()
         WHERE id=p_order_id RETURNING email_payment_version INTO v_final_version;
         PERFORM public.enqueue_paid_order_tickets(p_order_id);
+        PERFORM public.enqueue_order_wallet_internal(p_order_id);
         RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_order.state,
             'eligibility_changed',false,'email_payment_version',v_final_version);
     END IF;
@@ -89,6 +90,7 @@ BEGIN
         PERFORM public.queue_payment_reminders_internal(v_order.occasion,v_payment.id);
     END IF;
 
+    PERFORM public.enqueue_order_wallet_internal(p_order_id);
     PERFORM public.notification_center_order_state_internal(p_order_id);
     SELECT state,email_payment_version INTO v_final_state,v_final_version FROM eshop.orders WHERE id=p_order_id;
     RETURN jsonb_build_object('previous_state',v_order.state,'final_state',v_final_state,

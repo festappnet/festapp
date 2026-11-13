@@ -122,6 +122,7 @@ BEGIN
     PERFORM public.validate_ticket_layout_references(p_occasion,f->'layout')
       FROM jsonb_array_elements(v_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
     UPDATE public.occasions SET features=v_features,updated_at=clock_timestamp() WHERE id=p_occasion;
+    PERFORM public.enqueue_wallet_scope_internal(p_occasion);
   ELSE
     PERFORM public.update_occasion_internal_v1(
       public.apply_occasion_settings_intent_internal_v1(p_occasion,p_config));

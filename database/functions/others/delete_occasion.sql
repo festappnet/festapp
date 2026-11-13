@@ -138,6 +138,7 @@ BEGIN
   -- ***********************************************************
   -- 6. Delete remaining records from the eshop schema.
   -- ***********************************************************
+  PERFORM public.enqueue_wallet_scope_internal(oc);
   DELETE FROM eshop.tickets
     WHERE occasion = oc;
 

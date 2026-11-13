@@ -259,6 +259,7 @@ SET search_path = public, extensions
          PERFORM public.enqueue_paid_order_tickets(v_email_order.id);
        END LOOP;
      END IF;
+     PERFORM public.enqueue_wallet_scope_internal(occ_id);
      -- Check if the blueprint feature is enabled in the final, saved state
      IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
          -- Prepare a plan even when all forms use capacity/waitlisting.

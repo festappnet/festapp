@@ -207,6 +207,7 @@ BEGIN
     v_currency_code
   );
 
+  PERFORM public.enqueue_ticket_wallet_internal(ARRAY[p_ticket_id]);
   RETURN jsonb_build_object('code',200,'data',v_new_data);
 END;
 $$;

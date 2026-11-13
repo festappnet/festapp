@@ -1,0 +1,26 @@
+[
+  {
+    "registrations": 1000,
+    "scopeFanoutMs": 256,
+    "batchSize": 100,
+    "batches": 10,
+    "batchP95Ms": 30,
+    "batchMaxMs": 30,
+    "invalidationEnqueueMs": 40,
+    "providerCalls": 0,
+    "rows": 1000,
+    "minimumRequested": 3
+  },
+  {
+    "registrations": 10000,
+    "scopeFanoutMs": 11212,
+    "batchSize": 100,
+    "batches": 100,
+    "batchP95Ms": 226,
+    "batchMaxMs": 340,
+    "invalidationEnqueueMs": 325,
+    "providerCalls": 0,
+    "rows": 10000,
+    "minimumRequested": 3
+  }
+]

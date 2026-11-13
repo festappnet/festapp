@@ -5,6 +5,7 @@ import json
 import hashlib
 from pathlib import Path
 import migration_inputs
+from migration_forward_owners import forward_sources, historical_source, check_effective_sources
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
@@ -21,8 +22,14 @@ for prerequisite in manifest['prerequisites']:
         raise SystemExit('Historical prerequisite digest differs: ' + prerequisite)
 text = '-- Generated forward migration: ' + manifest['name'] + '\nBEGIN;\n'
 text += "DO $$ BEGIN IF to_regclass('public.notification_center_view_members') IS NULL OR to_regclass('public.abuse_policy_rules') IS NULL OR to_regprocedure('public.notification_center_prepared_scope(bigint,jsonb)') IS NULL THEN RAISE EXCEPTION 'admin_notification_prerequisites_missing'; END IF; END $$;\n"
+later = forward_sources(root, after=canonical.name)
 for source in manifest['sources']:
-    content = migration_inputs.read_text(root / 'database/functions' / source)
+    if source in later:
+        # Installed bytes are immutable. A declared later migration owns the
+        # current body, whose effective parity is checked independently below.
+        content = historical_source(root, canonical.name, source) + '\n'
+    else:
+        content = migration_inputs.read_text(root / 'database/functions' / source)
     if source == 'notification_center/maintenance.sql':
         content = content[content.index('CREATE OR REPLACE FUNCTION'):]
     text += '\n-- SOURCE: ' + source + '\n' + content + '\n'
@@ -34,6 +41,7 @@ registry = json.loads(registry_path.read_text())
 entry = next((entry for entry in registry['migrations'] if entry['migration'] == canonical.name), None)
 digest = hashlib.sha256(text.encode()).hexdigest()
 if args.check:
+    check_effective_sources(root, set(manifest['sources']) & later)
     if not output.is_file() or output.read_text() != text:
         raise SystemExit('Admin notification migration differs from canonical sources')
     if entry is None or entry.get('manifest') != 'admin-notification-delivery-manifest.json' or entry.get('sha256') != digest:

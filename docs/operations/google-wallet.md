@@ -90,14 +90,27 @@ conditional on that lease. A late external response cannot be made atomic with
 SQL; subsequent reconciliation repairs remote state. Failed attempts retain the
 same identity and back off from 15 seconds to one hour.
 
-The worker processes all registered objects by `next_attempt,ticket_id`, including
-failed, deleted and inactive tickets. Each healthy pass is due again after three
-minutes; each invocation processes at most 25 claims for up to 45 seconds. Issuer
-requests share an 8 requests/second SQL reservation across tenant rows. Before
-activation, measure `ticket_wallet_health()` and prove the selected issuer's
-volume fits the five-minute healthy reconciliation target; scale invocation
-frequency/batch work within Google's quota when required. A static batch size
-alone is not evidence of the target at production volume.
+The locally prepared change queue replaces periodic full writes. Canonical domain
+commands atomically increment requested work; claims capture a version, and an
+acknowledgement applies only that captured version. Class and object have distinct
+leases; object synchronization never writes its shared class. Issuance prepares
+class work through the same owner before claiming an object. Integrations can be
+paused without dropping changes, and tenant claims rotate using the last claimed_at stored on their work rows.
+
+The new worker processes at most 200 claims for 45 seconds per invocation. The
+prepared control-plane upgrade changes the single existing schedule to 10 seconds;
+SQL issuer reservation remains 8 requests/second. Daily repair compares managed
+remote fields and writes actual drift; time boundaries enqueue the same work.
+Scheduling, leases and retry state live only in ticket_wallet_work. See the
+[implementation plan](../plans/ticket-wallet-change-queue-plan-2026-11-13.md)
+and [local execution record](../plans/ticket-wallet-change-queue-RESULT-2026-11-13.md).
+These queue migrations and scheduler changes have **not been deployed**.
+
+Measured synthetic burst limits are approximately 4 object updates/second under
+continuous dispatch: 1,000 cards take at least 251 seconds; 10,000 take at least
+2,501 seconds. The 60-second p95 objective does not hold for either bulk burst.
+Real SQL fanout measurements are separate from simulated provider latency; no
+production cards or mass Google requests were used.
 
 A timeout after a remote write is retried with the same object identity. Expired
 leases can be reclaimed; stale owners cannot complete or begin another request.
