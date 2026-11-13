@@ -32,7 +32,7 @@ ceilings over the application's canonical authorization, not new account roles.
 | [PulseMCP](https://www.pulsemcp.com/submit) | Submissions paused; automatic Official Registry ingestion awaits resumption. |
 | [MCP.directory](https://mcp.directory/submit) | Advertises automatic import; our entries are not verified there. Its repo-only form was not used to create an ambiguous monorepo listing. |
 | [Smithery](https://www.smithery.ai/future) | Public curated directory remains after the October 31 shutdown of its proxy/accounts/API/CLI. No current new-submission route found. |
-| [LobeHub](https://market.lobehub.com/s/publish-mcp) | Not submitted. Its publisher guide requires human CLI login and GitHub ownership connection and explicitly says not to automate these steps. Remote cloudEndpoint metadata is supported; LobeHub-client OAuth compatibility is unverified. |
+| [LobeHub](https://market.lobehub.com/s/publish-mcp) | Skipped at the user’s request after a reported broad Gmail permission prompt. The user confirmed no Gmail consent was granted. Temporary publisher CLI access was logged out; no GitHub ownership connection or publication was performed. |
 
 See [additional-directory evidence](../../docs/operations/releases/global-mcp-20261113/additional-directories-20261113.json).
 No paid placement, support email, new service, or separate ChatGPT publication

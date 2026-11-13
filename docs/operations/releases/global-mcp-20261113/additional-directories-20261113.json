@@ -95,7 +95,7 @@
     "initialHeadSha": "0023963f232b00dd880ecdff1d1c054f3a523ce8"
   },
   "lobehub": {
-    "status": "not-submitted-human-publisher-auth-required",
+    "status": "skipped-at-user-request",
     "publishGuide": "https://market.lobehub.com/s/publish-mcp",
     "manifestReference": "https://market.lobehub.com/s/publish-mcp/references/manifest",
     "supportedRemoteField": "cloudEndpoint",
@@ -107,9 +107,17 @@
     ],
     "cliPackage": "@lobehub/market-cli",
     "cliVersionObserved": "0.0.46",
-    "cliInstalledOrExecuted": false,
+    "cliInstalledOrExecuted": true,
     "cliGithubConnectScopes": "not observed",
-    "actualClientOAuthCompatibility": "not verified"
+    "actualClientOAuthCompatibility": "not verified",
+    "userDecision": "Skip LobeHub after the user reported a request for broad Gmail access.",
+    "gmailConsent": "User explicitly confirmed that no Gmail consent was granted.",
+    "temporaryCliLoginCompleted": true,
+    "temporaryCliLoginRevoked": true,
+    "cliAuthAfterCleanup": "No credentials found (auth status exit 1)",
+    "githubOwnershipConnected": false,
+    "publicationPerformed": false,
+    "doNotResumeWithoutNewUserInstruction": true
   },
   "mcpDirectory": {
     "status": "automatic-import-not-yet-verified",

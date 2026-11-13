@@ -59,6 +59,25 @@ Website plugins and connectors live in the
 [integration directory](integrations/README.md), together with their setup
 instructions and publication status.
 
+## Use Festapp with your AI assistant
+
+Create an event, prepare its program and seating plan, set ticket categories and
+prices, and work with orders, sales and guest check-in through a supported MCP
+client. The global Festapp connection includes Festapp Tickets.
+
+- **Festapp:** `https://mcp.festapp.net/mcp`
+- **vstupenky.online:** `https://mcp.vstupenky.online/mcp`
+
+Sign in to the selected environment and approve the events and functions the
+connection may use. Available actions depend on your current account rights,
+client profile and enabled application features.
+
+Try: “Prepare a ball for 180 guests, with tables of six and two ticket categories.”
+
+These URLs connect to the hosted service. See the
+[connection guide and catalogue](integrations/mcp-directories/README.md) for
+supported clients and capabilities; the developer setup below builds the app.
+
 ## The event app
 
 Attendees can browse schedules and venue maps, read news, sign up for workshops
