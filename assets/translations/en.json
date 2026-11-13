@@ -4040,6 +4040,13 @@
     "no_matching_answers": "No more matching fields."
   },
   "McpConnection": {
+    "permissionMode": "Functions to allow",
+    "permissionMode_requested": "All requested functions",
+    "permissionMode_read-only": "Requested read-only functions",
+    "permissionMode_basic": "Basic access",
+    "permissionHint_requested": "Allows the requested functions, including changes where your current rights permit them.",
+    "permissionHint_read-only": "Allows only the requested reads and exports within your current rights.",
+    "permissionHint_basic": "Allows connection information, accessible-event discovery and ticket artwork.",
     "durationLabel": "Connection duration",
     "duration7": "7 days",
     "duration30": "30 days",

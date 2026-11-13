@@ -2059,6 +2059,13 @@
     "legacyReinviteConfirm": "Niektórzy użytkownicy otrzymali już zaproszenie. Wysłać ponownie?"
   },
   "McpConnection": {
+    "permissionMode": "Zakres funkcji",
+    "permissionMode_requested": "Wszystkie żądane funkcje",
+    "permissionMode_read-only": "Tylko żądany odczyt",
+    "permissionMode_basic": "Podstawowy dostęp",
+    "permissionHint_requested": "Zezwala na żądane funkcje, w tym zmiany, jeśli pozwalają na nie Twoje obecne uprawnienia.",
+    "permissionHint_read-only": "Zezwala tylko na żądany odczyt i eksport w zakresie Twoich obecnych uprawnień.",
+    "permissionHint_basic": "Zezwala na informacje o połączeniu, listę dostępnych wydarzeń i projekty biletów.",
     "title": "Connect application",
     "heading": "Allow access to your account?",
     "invalid": "The request is missing or invalid. Start connecting again in the application.",

@@ -87,10 +87,10 @@ async function setup(t, { global = false, native = false, tenant = false, pilot 
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, clearBrowserCookies: () => jar.clear(), ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, protocolScopes = ['openid', 'offline_access'], unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
-        redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
+        redirect_uri: callbackUri, scope: [...protocolScopes, scope].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
         code_challenge_method: 'S256', state: 'fixture-state' });
     for (const resource of resources) params.append('resource', resource);
@@ -1819,6 +1819,43 @@ test('pre-registered hosted metadata identity supports public PKCE without trust
     const grant = f.storage.values('Delegation')[0];
     f.storage.revoke(grant.id);
     assert.equal((await jsonRpc(f, tokens.access_token, 'tools/list')).status, 401);
+});
+
+for (const mode of ['basic', 'read-only']) test(`full hosted-client scope request can receive ${mode} consent without a loop or creation grant`, async t => {
+    const id = 'https://hosted.fixture.test/oauth/client-metadata.json';
+    const callbackUri = 'https://hosted.fixture.test/oauth/callback';
+    const f = await setup(t, {
+        registeredClient: { id, name: 'Hosted operator', applicationType: 'web', redirectUris: [callbackUri] },
+        clientMetadataDocuments: { allowedOrigins: ['https://issuer.fixture.test'], dataProfile: 'order-summary', allowedScopes: [READ_SCOPE] },
+        metadataFetch: () => { throw new Error('Untrusted metadata fetch'); },
+    });
+    const { tokens } = await connect(f, { clientId: id, callbackUri, unitId: 3, create: true,
+        scope: DOMAIN_SCOPES.join(' '), ...(mode === 'basic' ? { protocolScopes: [] } : {}), consentFields: { permissionMode: mode } });
+    assert.equal(typeof tokens.scope, 'string');
+    const expected = [READ_SCOPE, ...(mode === 'read-only' ? MCP_SCOPES.filter(scope => scope.endsWith(':read')) : [])];
+    assert.deepEqual(tokens.scope.split(' ').filter(scope => DOMAIN_SCOPES.includes(scope)).sort(), expected.sort());
+    assert.equal(f.storage.values('Delegation')[0].access.canCreateOccasions, false);
+    const response = await jsonRpc(f, tokens.access_token, 'tools/list');
+    assert.equal(response.status, 200);
+    const tools = (await response.json()).result.tools;
+    assert(tools.every(tool => tool.annotations.readOnlyHint === true));
+    if (mode === 'basic') assert.deepEqual(tools.map(tool => tool.name).sort(),
+        ['festapp_access_inspect', 'festapp_context_inspect', 'festapp_ticket_layouts_inspect']);
+    const write = await jsonRpc(f, tokens.access_token, 'tools/call', { name: 'festapp_orders_cancel', arguments: { occasionId: 7 } });
+    assert.equal(write.status, 403);
+    assert.equal((await write.json()).error, 'insufficient_scope');
+    const refreshed = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', client_id: id, refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(refreshed.status, 200);
+    const next = await refreshed.json();
+    assert.notEqual(next.refresh_token, tokens.refresh_token);
+    assert.deepEqual(next.scope.split(' ').filter(scope => DOMAIN_SCOPES.includes(scope)).sort(), expected.sort());
+});
+
+test('unknown consent mode cannot mint a grant', async t => {
+    const f = await setup(t);
+    await connect(f, { scope: `${READ_SCOPE} festapp:orders:read`, consentFields: { permissionMode: 'arbitrary' }, consentStatus: 403 });
+    assert.equal(f.storage.values('Delegation').length, 0);
 });
 
 test('trusted native client metadata uses normal PKCE, consent, MCP and refresh', async t => {

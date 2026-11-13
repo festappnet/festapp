@@ -2079,6 +2079,13 @@
         "legacyReinviteConfirm": "Niektorí používatelia už dostali pozvánku. Odoslať ju znova?"
     },
     "McpConnection": {
+        "permissionMode": "Rozsah funkcií",
+        "permissionMode_requested": "Všetky požadované funkcie",
+        "permissionMode_read-only": "Len požadované čítanie",
+        "permissionMode_basic": "Základný prístup",
+        "permissionHint_requested": "Povolí požadované funkcie vrátane zmien, ak ich umožňujú vaše aktuálne práva.",
+        "permissionHint_read-only": "Povolí len požadované čítanie a exporty v rozsahu vašich aktuálnych práv.",
+        "permissionHint_basic": "Povolí informácie o pripojení, prehľad dostupných akcií a podklady vstupeniek.",
         "title": "Connect application",
         "heading": "Allow access to your account?",
         "invalid": "The request is missing or invalid. Start connecting again in the application.",

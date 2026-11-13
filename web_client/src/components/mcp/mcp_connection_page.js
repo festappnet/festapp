@@ -1,5 +1,5 @@
 import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, CONNECTION_IDLE_SECONDS, DAY_SECONDS, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
-import { MCP_PERMISSIONS, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
+import { MCP_PERMISSIONS, MCP_CONSENT_MODES, permissionsForConsent, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { ACCOUNT_CONNECTIONS_PATH } from '../users/account_connections_links.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
@@ -47,6 +47,7 @@ export class McpConnectionPage {
         this.generation = 0;
         this.busy = false;
         this.state = 'loading';
+        this.permissionMode = 'requested';
     }
 
     text(key, args = {}) { return LocalizationService.tr(`McpConnection.${key}`, args); }
@@ -55,7 +56,7 @@ export class McpConnectionPage {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
             headers: new URL(this.browser.location.href).searchParams.has('issuer')
                 ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: this.details?.requestedPermissions ?? [], ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
+            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: permissionsForConsent(this.details?.requestedPermissions ?? [], this.permissionMode), ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -64,8 +65,10 @@ export class McpConnectionPage {
     get access() {
         if (!this.selectedUnits.size) return { type: 'occasions', occasionIds: [...this.selected] };
         return { type: 'selection', units: [...this.selectedUnits].map(([unitId, canCreateOccasions]) =>
-            ({ unitId, canCreateOccasions })), occasionIds: [...this.selected] };
+            ({ unitId, canCreateOccasions: canCreateOccasions && this.canRequestCreate })), occasionIds: [...this.selected] };
     }
+
+    get canRequestCreate() { return this.permissionMode === 'requested' && this.details?.canRequestCreate === true; }
 
     get canApprove() {
         if (this.connection && (!['new', 'replace'].includes(this.connection.mode) || !CONNECTION_DURATION_DAYS.includes(this.connection.durationDays) || this.connection.name.length > 80 || /[\u0000-\u001f\u007f]/u.test(this.connection.name) ||
@@ -73,7 +76,7 @@ export class McpConnectionPage {
             (this.connection.mode === 'new' && this.details.connections?.length && !this.connection.name.trim()))) return false;
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
         const units = this.details?.units || [];
-        if (!validPermissions(this.details?.requestedPermissions ?? [])) return false;
+        if (!MCP_CONSENT_MODES.includes(this.permissionMode) || !validPermissions(this.details?.requestedPermissions ?? [])) return false;
         return this.selected.size + this.selectedUnits.size > 0 && this.selected.size <= 100 && this.selectedUnits.size <= 100 &&
             [...this.selected].every(id => ids.has(id)) && [...this.selectedUnits].every(([id, create]) =>
                 units.some(u => u.id === id && (!create || (this.details.canRequestCreate && u.canCreateOccasions))));
@@ -119,8 +122,8 @@ export class McpConnectionPage {
                 const permissions = this.details.requestedPermissions ?? [];
                 if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p))) throw new Error('Invalid permissions');
                 if (!validPermissions(permissions)) throw new Error('Invalid permissions');
-                // OAuth scopes remain an internal client contract. One approval
-                // delegates the requested functions; live SQL still owns user rights.
+                // Human-readable presets only narrow the requested scopes;
+                // live SQL still owns current account rights.
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
@@ -210,6 +213,19 @@ export class McpConnectionPage {
                 add('p', this.text('regionalPlatform', { portal, platform }));
             }
             add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
+            if (this.details.requestedPermissions?.length || this.details.canRequestCreate) {
+                const label = add('label', this.text('permissionMode'));
+                const mode = add('select', '', label); mode.name = 'permissionMode'; mode.disabled = this.busy;
+                for (const value of MCP_CONSENT_MODES) {
+                    const option = add('option', this.text(`permissionMode_${value}`), mode);
+                    option.value = value; option.selected = this.permissionMode === value;
+                }
+                add('p', this.text(`permissionHint_${this.permissionMode}`));
+                mode.addEventListener('change', () => {
+                    this.permissionMode = mode.value; this.render();
+                    this.container.querySelector('[name="permissionMode"]')?.focus();
+                });
+            }
             if (this.connection) {
                 const choices = this.details.connections;
                 const durationLabel = add('label', this.text('durationLabel'));
@@ -318,7 +334,7 @@ export class McpConnectionPage {
                 header.className = 'mcp-organizer-header';
                 const heading = add('h3', '', header);
                 const whole = this.selectedUnits.has(id);
-                const creates = whole ? this.selectedUnits.get(id) : this.details.canRequestCreate === true && group.unit?.canCreateOccasions === true;
+                const creates = this.canRequestCreate && (whole ? this.selectedUnits.get(id) : group.unit?.canCreateOccasions === true);
                 const parent = checkbox(title([id, group]), whole, () => {
                     if (whole) this.selectedUnits.delete(id);
                     else {

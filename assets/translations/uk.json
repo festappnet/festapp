@@ -2229,6 +2229,13 @@
     "legacyReinviteConfirm": "Деякі користувачі вже отримали запрошення. Надіслати знову?"
   },
   "McpConnection": {
+    "permissionMode": "Обсяг функцій",
+    "permissionMode_requested": "Усі запитані функції",
+    "permissionMode_read-only": "Лише запитане читання",
+    "permissionMode_basic": "Базовий доступ",
+    "permissionHint_requested": "Дозволяє запитані функції, зокрема зміни, якщо це дозволено вашими поточними правами.",
+    "permissionHint_read-only": "Дозволяє лише запитане читання та експорт у межах ваших поточних прав.",
+    "permissionHint_basic": "Дозволяє інформацію про підключення, перелік доступних подій і шаблони квитків.",
     "title": "Connect application",
     "heading": "Allow access to your account?",
     "invalid": "The request is missing or invalid. Start connecting again in the application.",

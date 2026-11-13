@@ -106,3 +106,12 @@ export function validPermissions(permissions) {
     return Array.isArray(permissions) && permissions.every(p => Object.hasOwn(MCP_PERMISSIONS, p) &&
         MCP_PERMISSIONS[p].requires.every(required => permissions.includes(required)));
 }
+
+// Consent presets narrow the client's request. Account authorization remains
+// owned by the shared domain operations; presets never add a permission.
+export const MCP_CONSENT_MODES = Object.freeze(['requested', 'read-only', 'basic']);
+export function permissionsForConsent(requested, mode = 'requested') {
+    if (!MCP_CONSENT_MODES.includes(mode) || !validPermissions(requested))
+        throw new Error('INVALID_CONSENT_MODE');
+    return requested.filter(scope => mode === 'requested' || (mode === 'read-only' && scope.endsWith(':read')));
+}
