@@ -41,8 +41,8 @@ test('production-pinned GoTrue verifies independent MFA delegation and refresh n
     await new Promise(resolve=>proxy.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>proxy.close(resolve)));
     const origin='http://127.0.0.1:'+proxy.address().port;
     const authEnvironment={GOTRUE_API_HOST:'0.0.0.0',PORT:'9999',GOTRUE_API_PORT:'9999',
-        API_EXTERNAL_URL:origin+'/auth/v1',GOTRUE_SITE_URL:origin,GOTRUE_DB_DRIVER:'postgres',GOTRUE_DB_NAMESPACE:'auth',
-        GOTRUE_DB_DATABASE_URL:database.href,GOTRUE_JWT_SECRET:secret,GOTRUE_JWT_ISSUER:origin+'/auth/v1',
+        API_EXTERNAL_URL:origin,GOTRUE_SITE_URL:origin,GOTRUE_DB_DRIVER:'postgres',GOTRUE_DB_NAMESPACE:'auth',
+        GOTRUE_DB_DATABASE_URL:database.href,GOTRUE_JWT_SECRET:secret,GOTRUE_JWT_ISSUER:origin,
         GOTRUE_JWT_AUD:'authenticated',GOTRUE_JWT_DEFAULT_GROUP_NAME:'authenticated',GOTRUE_JWT_EXP:'3600',
         GOTRUE_MAILER_AUTOCONFIRM:'true',GOTRUE_DISABLE_SIGNUP:'true',GOTRUE_JWT_ADMIN_ROLES:'service_role',
         GOTRUE_RATE_LIMIT_EMAIL_SENT:'100',GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED:'true'};
