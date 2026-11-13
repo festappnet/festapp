@@ -30,12 +30,18 @@ const cookieName = 'festapp_mcp_management';
 export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecret, fetchImpl = fetch, audit = () => {}, rateLimiter = createRateLimiter(), metadataFetch = fetch } = {}) {
     check(cookieKeys?.length >= 2 && cookieKeys.every(k => typeof k === 'string' && k.length >= 32), 'INVALID_COOKIE_KEYS');
     check(jwks?.keys?.length > 0, 'INVALID_ISSUER_KEYS');
-    // Account-switch form POSTs may redirect to a registered web callback.
-    // Use protected exact HTTPS URLs, never an incoming redirect parameter.
-    const webFormCallbacks = [...new Set(config.clients.filter(c => c.applicationType === 'web')
-        .flatMap(c => c.redirectUris).map(value => new URL(value)).filter(u => u.protocol === 'https:')
-        .map(u => u.href.replace(/;/g, '%3B').replace(/'/g, '%27')))].sort();
-    const formAction = ["'self'", ...webFormCallbacks].join(' ');
+    // Browsers enforce form-action across redirects too: context selection
+    // reaches first-party consent, and account switching reaches the callback.
+    // Derive destinations only from protected configuration, never request data.
+    // Native registrations deliberately permit an ephemeral loopback port.
+    const formDestinations = [...new Set([
+        ...remoteContexts(config).flatMap(c => c.tenantOrigin ? [new URL('/settings/mcp-connect', c.tenantOrigin).href] : []),
+        ...config.clients.flatMap(c => c.redirectUris.map(value => {
+            const u = new URL(value);
+            return c.applicationType === 'native' ? `${u.protocol}//${u.hostname}:*${u.pathname}` : u.href;
+        })),
+    ].map(value => value.replace(/;/g, '%3B').replace(/'/g, '%27')))].sort();
+    const formAction = ["'self'", ...formDestinations].join(' ');
     const binding = digest(JSON.stringify(config.contexts ? ['global-contexts', config.issuer] : [config.issuer, config.profile.binding]));
     const boundGrant = grant => { try { connectionContext(config, grant); return true; } catch { return false; } };
     const previous = storage.get('Metadata', 'deployment');

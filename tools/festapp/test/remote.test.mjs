@@ -135,11 +135,12 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     return { callback, exchange, response, tokens: await response.json() };
 }
 
-test('OAuth account switching authorizes only the provider auto-submit script and completes the protected POST', async t => {
+for (const native of [false, true]) test(`OAuth ${native ? 'native' : 'web'} account switching authorizes the callback and only the provider auto-submit script`, async t => {
     let switchedFetch;
-    const callbackUri = 'https://chatgpt.com/connector_platform_oauth_redirect';
-    const f = await setup(t, { webCallback: callbackUri, fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
-    const first = await connect(f, { callbackUri });
+    const callbackUri = native ? 'http://127.0.0.1:51789/callback' : 'https://chatgpt.com/connector_platform_oauth_redirect';
+    const clientId = native ? 'codex-fixture' : 'chatgpt-fixture';
+    const f = await setup(t, { native, ...(native ? {} : { webCallback: callbackUri }), fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
+    const first = await connect(f, { callbackUri, clientId });
     const baseline = (await f.browser('/healthz')).headers.get('content-security-policy');
     assert.match(baseline, /(?:^|;)\s*script-src\s*(?:;|$)/);
     assert.doesNotMatch(baseline, /script-src[^;]*unsafe-inline|sha256-/);
@@ -147,7 +148,7 @@ test('OAuth account switching authorizes only the provider auto-submit script an
     const other = await fixture(t, { userId: otherActor });
     switchedFetch = other.owner.fetch;
     let posts = 0;
-    const second = await connect(f, { callbackUri, handleFormPost: async response => {
+    const second = await connect(f, { callbackUri, clientId, handleFormPost: async response => {
         const html = await response.text();
         assert.match(html, /<title>Submitting Callback<\/title>/);
         const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
@@ -158,7 +159,8 @@ test('OAuth account switching authorizes only the provider auto-submit script an
         assert.equal(directive, 'script-src ' + expected);
         assert.match(policy, /default-src 'none'/);
         assert.match(policy, /form-action 'self'/);
-        assert.equal(policy.split(';').find(s => s.trim().startsWith('form-action')).trim(), "form-action 'self' " + callbackUri);
+        assert.equal(policy.split(';').find(s => s.trim().startsWith('form-action')).trim(),
+            "form-action 'self' " + (native ? 'http://127.0.0.1:*/callback' : callbackUri));
         assert.doesNotMatch(directive, /unsafe-inline|unsafe-eval|'self'|https:/);
         const action = new URL(html.match(/<form method="post" action="([^"]+)"/)[1], f.issuer);
         assert.equal(action.origin, f.issuer);
@@ -176,7 +178,7 @@ test('OAuth account switching authorizes only the provider auto-submit script an
     assert.deepEqual(new Set(f.storage.values('Delegation').map(g => g.userId)), new Set([actor, otherActor]));
     assert(f.storage.values('Delegation').every(g => !g.revoked));
     for (const redirectUri of ['https://chatgpt.com/not-registered','https://evil.example/callback']) {
-        const r = await f.browser('/auth?' + new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code', redirect_uri: redirectUri,
+        const r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri,
             scope: READ_SCOPE, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) }));
         assert.equal(r.status, 400);
     }
@@ -1950,6 +1952,12 @@ test('global context selection rejects unknown and cross-origin changes and cann
         code_challenge: 'a'.repeat(43), code_challenge_method: 'S256' }));
     const interaction = response.headers.get('location');
     response = await f.browser(interaction);
+    // CSP applies to the selector POST's complete redirect chain, including
+    // first-party consent. A successful manual-fetch 303 alone missed this bug.
+    const formAction = response.headers.get('content-security-policy').split(';').find(s => s.trim().startsWith('form-action')).trim();
+    assert.deepEqual(formAction.split(' ').slice(1), ["'self'", f.issuer + '/callback',
+        'https://first.fixture.test/settings/mcp-connect', 'https://second.fixture.test/settings/mcp-connect']);
+    assert(!formAction.includes('evil.invalid'));
     const secret = csrf(await response.text());
     for (const [context, extra] of [['unknown', {}], [f.config.contexts[0].profile.binding, { origin: 'https://evil.invalid' }]]) {
         assert.equal((await f.browser(interaction + '/context', { csrf: secret, context }, extra)).status, 403);
