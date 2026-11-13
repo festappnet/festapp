@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "publisher": "Festapp",
+  "repository": "https://github.com/festappnet/festapp",
+  "supportEmail": "info@festapp.net",
+  "products": [
+    {
+      "name": "Festapp",
+      "namespace": "net.festapp/festapp",
+      "endpoint": "https://mcp.festapp.net/mcp",
+      "status": "not-released",
+      "categories": [
+        "event-management",
+        "ticketing"
+      ],
+      "description": "Manage authorized Festapp events and Festapp Tickets with explicit per-connection consent."
+    },
+    {
+      "name": "vstupenky.online",
+      "namespace": "net.festapp/vstupenky-online",
+      "endpoint": "https://mcp.vstupenky.online/mcp",
+      "status": "regional-existing-release",
+      "categories": [
+        "ticketing",
+        "event-management"
+      ],
+      "description": "Sales reports and order status for authorized vstupenky.online event organizers."
+    }
+  ]
+}

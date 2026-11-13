@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "net.festapp/vstupenky-online",
+  "title": "vstupenky.online",
+  "description": "Sales reports and order status for authorized vstupenky.online event organizers.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/festappnet/festapp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.vstupenky.online/mcp"
+    }
+  ]
+}

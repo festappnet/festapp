@@ -2,8 +2,13 @@ FROM node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31b
 ENV NODE_ENV=production
 WORKDIR /app
 COPY tools/festapp/package.json tools/festapp/pnpm-lock.yaml tools/festapp/pnpm-workspace.yaml ./tools/festapp/
+COPY tools/festapp/scripts/runtime-notices.mjs ./tools/festapp/scripts/runtime-notices.mjs
+COPY LICENCE ./LICENCE
+COPY automation/release/legal/mcp-privacy.en.md automation/release/legal/mcp-privacy.cs.md automation/release/legal/mcp-terms.en.md automation/release/legal/mcp-terms.cs.md ./automation/release/legal/
+COPY tools/festapp/licenses ./tools/festapp/licenses
 RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 RUN pnpm --dir tools/festapp install --frozen-lockfile --prod --ignore-scripts
+RUN pnpm --dir tools/festapp licenses list --prod --json | node tools/festapp/scripts/runtime-notices.mjs /app/THIRD_PARTY_NOTICES
 COPY tools/festapp/src ./tools/festapp/src
 COPY packages/festapp_contracts ./packages/festapp_contracts
 COPY supabase/functions/_shared/ticket-assets/font-catalog.json ./supabase/functions/_shared/ticket-assets/font-catalog.json

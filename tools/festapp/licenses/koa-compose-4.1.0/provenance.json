@@ -1,0 +1,8 @@
+{
+  "package": "koa-compose@4.1.0",
+  "npm_git_head": "06e82e65a368ac12cd6405beaf19fd5d208a1477",
+  "npm_license": "MIT",
+  "source": "https://github.com/koajs/compose/blob/903480c36957776f8561a33a840cdd0a06ad611f/LICENSE",
+  "source_context": "Upstream added this license in 2021, after 2018 release; package metadata and release README identify MIT. It is not a file from the release commit.",
+  "sha256": "44a7ca64cb59fbe6481a7260e4317ff0177127a6e50e6077a9bfa60f89f905a2"
+}

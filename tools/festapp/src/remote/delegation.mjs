@@ -59,8 +59,7 @@ export class DelegatedOwner {
             clientPolicy(this.config, grant.clientId) &&
             grant.clientId === t.clientId &&
             (!this.session || (this.session.profile.binding === grant.binding && this.config.profile.binding === grant.profileBinding)) &&
-            contextConfig(this.config, grant.profileBinding).profile.binding === grant.profileBinding &&
-            (!grant.interactionId ? !this.config.contexts : grant.binding === connectionBinding(contextConfig(this.config, grant.profileBinding).profile, grant.interactionId)) &&
+            connectionContext(this.config, grant) &&
             t.exp * 1000 > Date.now() &&
             t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
             clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');
@@ -134,3 +133,13 @@ export class DelegatedOwner {
 
 export const connectionBinding = (profile, interaction) =>
     digest(JSON.stringify(['remote', profile.binding, interaction]));
+
+/** OAuth credentials and requests share this immutable connection identity check.
+ * Historical regional grants keep their supported stored binding. Global grants
+ * always carry an interaction and may never adopt those historical sessions. */
+export function connectionContext(config, grant) {
+    const selected = contextConfig(config, grant?.profileBinding);
+    check(grant.interactionId ? grant.binding === connectionBinding(selected.profile, grant.interactionId)
+        : !config.contexts, 'AUTHENTICATION_REQUIRED');
+    return selected;
+}

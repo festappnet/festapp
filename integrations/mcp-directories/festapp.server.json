@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "net.festapp/festapp",
+  "title": "Festapp",
+  "description": "Manage authorized Festapp events and Festapp Tickets with explicit per-connection consent.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/festappnet/festapp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.festapp.net/mcp"
+    }
+  ]
+}

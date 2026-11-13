@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { connectionActive, connectionIssuable, connectionRefreshSeconds, connectionDeadline, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { CONNECTION_DURATION_DAYS, MAX_CONNECTION_DURATION_DAYS, DAY_SECONDS } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { activeConnections, verifyConnectionChoice, installConnectionActivation } from './connection-choice.mjs';
@@ -19,8 +20,8 @@ import { digest } from '../context/profile.mjs';
 import { operatorAccess, verifySelection, canCreateWithAccess } from '../operations/access.mjs';
 import { contextConfig, remoteContexts, canonicalRemote, READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions, clientAllowsScopes } from './config.mjs';
 import { DOMAIN_SCOPES, clientPolicy, allowsMetadataFetch, allowsMetadataClient } from './client-policy.mjs';
-import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
-import { loginForm, consentForm, contextChoiceForm, contextManagementPage, connectionsPage, page, oauthFailure } from './views.mjs';
+import { DelegatedOwner, boundOwner, connectionBinding, connectionContext } from './delegation.mjs';
+import { loginForm, consentForm, contextChoiceForm, contextManagementPage, publicDocument, serviceDocumentation, connectionsPage, page, oauthFailure } from './views.mjs';
 import { makeStatus, validateMakePage, makeDocumentation } from './make-transport.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
@@ -35,7 +36,8 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         .flatMap(c => c.redirectUris).map(value => new URL(value)).filter(u => u.protocol === 'https:')
         .map(u => u.href.replace(/;/g, '%3B').replace(/'/g, '%27')))].sort();
     const formAction = ["'self'", ...webFormCallbacks].join(' ');
-    const binding = digest(JSON.stringify([config.issuer, config.contexts ? config.contexts.map(c => c.profile.binding) : config.profile.binding]));
+    const binding = digest(JSON.stringify(config.contexts ? ['global-contexts', config.issuer] : [config.issuer, config.profile.binding]));
+    const boundGrant = grant => { try { connectionContext(config, grant); return true; } catch { return false; } };
     const previous = storage.get('Metadata', 'deployment');
     check(!previous || previous.binding === binding, 'REMOTE_STORAGE_TARGET_MISMATCH');
     storage.put('Metadata', 'deployment', { binding }, 86400 * 3650);
@@ -71,7 +73,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         ttl: { AccessToken: 300, IdToken: 300, AuthorizationCode: 60, Interaction: 600, Grant: DAY_SECONDS * MAX_CONNECTION_DURATION_DAYS,
             RefreshToken: (ctx, token) => {
                 const grant = storage.get('Delegation', token.grantId);
-                if (!(connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))))
+                if (!boundGrant(grant) || !(connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))))
                     throw new errors.InvalidGrant('connection expired or revoked');
                 return connectionRefreshSeconds(grant);
             }, Session: 3600 },
@@ -79,7 +81,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!clientAllowsScopes(config, client.clientId, source.scope?.split(' ') ?? []))
                 throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
-            return Boolean(grant?.clientId === client.clientId && (connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))));
+            return Boolean(boundGrant(grant) && grant?.clientId === client.clientId && (connectionActive(grant) || (ctx.oidc.params.grant_type === 'authorization_code' && connectionIssuable(grant))));
         },
         expiresWithSession: () => false,
         rotateRefreshToken: ctx => {
@@ -89,7 +91,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (!clientAllowsScopes(config, ctx.oidc.client.clientId, source.scope?.split(' ') ?? []))
                 throw new errors.InvalidGrant('client scope policy changed; reconnect');
             const grant = storage.get('Delegation', source.grantId);
-            if (!connectionActive(grant) || grant.clientId !== ctx.oidc.client.clientId)
+            if (!boundGrant(grant) || !connectionActive(grant) || grant.clientId !== ctx.oidc.client.clientId)
                 throw new errors.InvalidGrant('connection expired or revoked');
             return true;
         },
@@ -150,10 +152,17 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         try { ip = clientIdentity(req, canonical); } catch { return res.sendStatus(400); }
         try { limit(`http:${ip}`, 240); next(); } catch (error) { limited(req, res, error); }
     });
+    app.get(['/', '/docs'], (_req, res) => res.type('html').send(serviceDocumentation(config)));
+    app.get('/support', (_req, res) => res.type('html').send(page('Festapp support',
+        '<p>Provider: Michael Bujnovský, IČO 06455361. Contact <a href="mailto:info@festapp.net">info@festapp.net</a> for MCP connection support. Include the client and a safe error/request ID. Never send passwords, access tokens or customer data. Event and order questions belong to the selected organizer.</p><p><a href="/docs">Documentation</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>', 'en')));
+    for (const language of ['en', 'cs']) for (const kind of ['privacy', 'terms']) {
+        const source = readFileSync(new URL(`../../../../automation/release/legal/mcp-${kind}.${language}.md`, import.meta.url), 'utf8');
+        app.get(language === 'en' ? `/${kind}` : `/cs/${kind}`, (_req, res) => res.type('html').send(publicDocument(source, language)));
+    }
     app.get('/healthz', (_req, res) => res.json({ ok: true }));
     app.get('/make/v1', (_req, res) => res.json(makeDocumentation(config,
         new Operations({ root: storage.root, orderSummaryOnly: true, allowedOperations: MAKE_READ_OPERATIONS }).catalog)));
-    const metadata = { resource_name: config.regionalPortal?.name ?? 'Festapp', resource: config.resource, authorization_servers: [config.issuer], scopes_supported: DOMAIN_SCOPES };
+    const metadata = { resource_documentation: config.issuer + '/docs', resource_name: config.regionalPortal?.name ?? 'Festapp', resource: config.resource, authorization_servers: [config.issuer], scopes_supported: DOMAIN_SCOPES };
     for (const route of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'])
         app.get(route, (_req, res) => res.set('Access-Control-Allow-Origin', '*').json(metadata));
     app.get('/auth', (req, _res, next) => {

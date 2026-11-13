@@ -255,7 +255,7 @@ for (const guide of ['automation/release/help/ai-agenti.html', 'automation/relea
                 body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
                     organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }),
             });
-            r = await broker('prepare', { accessToken: proofToken, access: { consentVersion: 2,
+            r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2,
                 selection: { type: 'occasions', occasionIds: [7] }, permissions } });
             assert.equal(r.status, 200, await r.clone().text());
             const prepared = await r.json();
@@ -374,7 +374,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     // Merely displaying consent never mints or adopts a backend refresh session.
     assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
     assert.equal(f.storage.values('Delegation').length, 0);
-    r = await broker('prepare', { accessToken: proofToken, access: { consentVersion: 2, selection: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] }, permissions: MCP_SCOPES } });
+    r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2, selection: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] }, permissions: MCP_SCOPES } });
     const prepared = await r.json();
     assert.equal(prepared.userId, actor);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
@@ -1933,6 +1933,9 @@ test('global issuer pins selected first-party context through PKCE, grants and a
     assert.throws(() => new DelegatedOwner(f.config, f.storage, otherAudience));
     f.storage.putUntil('Delegation', grant.id, { ...grant, profileBinding: f.config.contexts[1].profile.binding }, grant.expiresAt);
     assert.throws(() => new DelegatedOwner(f.config, f.storage, token));
+    const wrongContextRefresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', client_id: 'chatgpt-fixture', refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(wrongContextRefresh.status, 400);
     f.storage.putUntil('Delegation', grant.id, grant, grant.expiresAt);
     // The selected second tenant cannot adopt the first tenant's live identity.
     await connectTenant(f, { contextIndex: 1, prepareStatus: 400 });
@@ -1989,4 +1992,30 @@ test('two concurrent global connections keep independent tenant sessions, rights
     f.storage.revoke((await f.provider.AccessToken.find(first.access_token)).grantId);
     assert.equal((await jsonRpc(f, first.access_token, 'tools/list', {})).status, 401);
     assert.equal((await clients[1].callTool({ name: 'festapp_access_inspect', arguments: {} })).structuredContent.ok, true);
+});
+
+test('global configuration rejects ambiguous, duplicate and untrusted context definitions', () => {
+    const raw = configuration('http://127.0.0.1:3456');
+    const contexts = [{ name: 'First', profile: raw.profile, tenantOrigin: 'https://one.invalid' },
+        { name: 'Duplicate', profile: raw.profile, tenantOrigin: 'https://two.invalid' }];
+    assert.throws(() => parseRemoteConfig({ ...raw, contexts }));
+    const { profile: unused, ...global } = raw;
+    assert.throws(() => parseRemoteConfig({ ...global, contexts }));
+    assert.throws(() => parseRemoteConfig({ ...global, contexts: [contexts[0]] }));
+    assert.throws(() => parseRemoteConfig({ ...global, contexts: contexts.map(c => ({ ...c, tenantOrigin: 'https://user@one.invalid' })) }));
+});
+
+test('public MCP identity, documentation and bilingual privacy need no account and disclose supported boundaries', async t => {
+    const f = await setup(t, { global: true });
+    const metadata = await (await fetch(f.issuer + '/.well-known/oauth-protected-resource')).json();
+    assert.equal(metadata.resource_name, 'Festapp');
+    assert.equal(metadata.resource_documentation, f.issuer + '/docs');
+    for (const route of ['/docs', '/privacy', '/terms', '/cs/privacy', '/cs/terms', '/support']) {
+        const response = await fetch(f.issuer + route);
+        assert.equal(response.status, 200);
+        assert.equal(response.headers.get('x-frame-options'), 'DENY');
+        const body = await response.text();
+        assert.match(body, /Festapp/);
+        assert.doesNotMatch(body, /<script/);
+    }
 });

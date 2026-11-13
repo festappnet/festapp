@@ -11,7 +11,7 @@ export function oauthFailure(code) {
     const message = messages[code] ?? 'Požadavek není platný nebo vypršel. Spusťte připojení znovu v aplikaci.';
     return page('Připojení se nezdařilo', `<p>${message}</p>${Object.hasOwn(messages, code) ? `<p>Kód: <code>${code}</code></p>` : ''}`);
 }
-export const page = (title, body) => `<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)} | Festapp</title><style>
+export const page = (title, body, language = 'cs') => `<!doctype html><html lang="${escape(language)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)} | Festapp</title><style>
 :root{font:16px/1.5 system-ui;color:#1b2421;background:#f7f8f7}body{max-width:560px;margin:48px auto;padding:0 24px}h1{font-size:1.7rem}label{display:block;margin:16px 0 4px}input:not([type=checkbox]){box-sizing:border-box;width:100%;padding:12px;border:1px solid #68746d;border-radius:6px;font:inherit}input[type=checkbox]{width:24px;height:24px;vertical-align:middle;margin-right:8px}button{font:inherit;min-height:48px;padding:8px 20px;border:1px solid #174d37;border-radius:6px;background:#174d37;color:white;margin:16px 8px 0 0}button.secondary{background:white;color:#174d37}:focus-visible{outline:3px solid #b46d00;outline-offset:3px}.error{border-left:4px solid #b02618;padding:8px 16px}small{display:block;color:#44524a}fieldset{margin:24px 0;padding:16px;border:1px solid #68746d}a{color:#174d37}form:has(select[name=durationDays] option:checked:not([value="365"])) .long-duration-hint{display:none}</style><main><p>Festapp</p><h1>${escape(title)}</h1>${body}</main></html>`;
 
 export const loginForm = ({ csrf, client, action, error = '', consent = false }) => page(
@@ -57,3 +57,21 @@ export const contextManagementPage = config => page('Správa připojení Festapp
         target.searchParams.set('issuer', config.issuer);
         return `<li><a href="${escape(target.href)}">${escape(c.name)}</a></li>`;
     }).join('')}</ul>`);
+
+// Trusted canonical Markdown is presented through a small escaped transport
+// adapter; the legal source is shared in automation/release/legal/.
+export function publicDocument(source, language = 'en') {
+    const blocks = source.trim().split(/\n\s*\n/);
+    const title = blocks.shift().replace(/^# /, '');
+    const body = blocks.map(block => block.startsWith('## ')
+        ? `<h2>${escape(block.slice(3))}</h2>` : `<p>${escape(block.replaceAll('\n', ' '))}</p>`).join('');
+    return page(title, `<nav><a href="/docs">Documentation</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/support">Support</a> · <a href="/cs/privacy">Česky</a></nav>${body}`, language);
+}
+export const serviceDocumentation = config => page(config.regionalPortal?.name ?? 'Festapp',
+    `<p>Publisher: Festapp. Authenticated event management, including Festapp Tickets, within your current account rights and explicit connection consent.</p>
+    <p>Streamable HTTP endpoint: <code>${escape(config.resource)}</code>. Start the connection in your registered MCP client with OAuth PKCE. Select one environment, sign in on its trusted first-party page, then approve organizers/events and functions. Each environment requires its own connection.</p>
+    <p>Examples: list accessible events; inspect ticket artwork; read sales or order status when granted; create a hidden event under a selected organizer when explicitly granted. The tool catalog reflects the client's scopes, data profile and your consent. Writes retain application authorization, transaction and retry rules. Retry an uncertain write with the same command ID and payload.</p>
+    <p>The server supports modern and legacy HTTP MCP clients tested with the official SDKs. Callback URLs must match a registration, or an expressly allowed client metadata document. Unrestricted dynamic registration is disabled. MFA session issuance is currently unsupported and fails closed. A profile may be read-only. Public ChatGPT order-summary access does not grant arbitrary clients operator access or imply ChatGPT publication approval.</p>
+    <p>You need an authorized account in the selected environment. Existing service prices and event agreements apply; this listing adds no paid subscription. Revoke connections in the environment's account settings. <a href="/connections">Connection management</a>.</p>
+    <p><a href="/privacy">Privacy</a> · <a href="/terms">Connection terms</a> · <a href="/support">Support</a> · <a href="/cs/privacy">Ochrana osobních údajů</a> · <a href="/cs/terms">Podmínky připojení</a></p>
+    <p><a href="https://github.com/festappnet/festapp">MIT source and documentation</a>. Original copyright and dependency notices, including embedded native libraries and MPL source availability, are retained in the source and runtime distribution.</p>`, 'en');
