@@ -4,7 +4,16 @@ Oba API vstupy jsou nasazené ze zdroje
 `97a579e218c1793769a195a88861382de47769ee` a veřejně vracejí metadata,
 OpenAPI, manifest i úplnou statickou dokumentaci přes ověřené HTTPS.
 `vstupenky.online` a `tickets.festapp.net` běží na shodné verzi
-`0.20.600+1125`. Závěrečné živé OAuth ověření ještě probíhá.
+`0.20.600+1125`. Oba živé OAuth průchody prošly na izolované fixture org3:
+čtení a okamžitý DPoP-bound refresh HTTP 200, chybná audience a Bearer downgrade
+HTTP 401, po revokaci další přístup HTTP 401. Testovací granty byly odvolány a
+izolované browser relace uzavřeny. Business data se živým ověřením neměnila.
+
+[Produkční receipt](festapp-unified-api-evidence-2026-11-13/production-rollout-97.json)
+obsahuje přesné image/config/projection digests, tenant revisions a výsledky.
+Navazující zdroj `e4fa4a359a0d3424a85e7cc451ee000f63ec4850` je na mainu;
+[všech osm GitHub jobs prošlo](festapp-unified-api-evidence-2026-11-13/github-final-source.json).
+Neprováděl se další produkční release pouze kvůli této navazující zdrojové pojistce.
 
 Uživatel výslovně odložil **Make cutover až po přijetí stávající aplikace
 v review**. Původní `/make/v1`, publikovaný konektor, native README, připojení,
@@ -33,7 +42,8 @@ znovu popisuje původní review kontrakt; připravená migrace je odděleně v
 - Pro globální souhlas byl chráněným one-key postupem doplněn broker binding org25.
   Ostatní tři záznamy zůstaly shodné. Worker probe a email health prošly,
   fronta se vrátila do původního nepozastaveného stavu. Business SQL ani kód
-  Edge Functions se neměnily.
+  Edge Functions se neměnily. Autentizovaná produkční evidence používá pouze org3;
+  org25 má ověřený registry binding a nasazené UI, nikoli úspěšný grant v této evidenci.
 
 ## Ověření
 

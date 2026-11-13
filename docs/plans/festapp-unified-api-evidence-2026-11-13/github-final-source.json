@@ -1,0 +1,57 @@
+{
+  "sourceSha": "e4fa4a359a0d3424a85e7cc451ee000f63ec4850",
+  "requiredJobs": [
+    {
+      "name": "image-contract",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799699/job/131779762263"
+    },
+    {
+      "name": "web-startup",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799611/job/131779762203"
+    },
+    {
+      "name": "wix-checkout-compatibility",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799585/job/131779762758"
+    },
+    {
+      "name": "navigation-interactions",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799570/job/131779762400"
+    },
+    {
+      "name": "server-policy",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799669/job/131779763114"
+    },
+    {
+      "name": "client-contract",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799669/job/131779762778"
+    },
+    {
+      "name": "seat-checkout",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799596/job/131779762230"
+    },
+    {
+      "name": "ticket-preview-and-delivery",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/festappnet/festapp/actions/runs/43393799596/job/131779762636"
+    }
+  ],
+  "gate": {
+    "command": "python3 automation/ci/release_gate.py --source-sha e4fa4a359a0d3424a85e7cc451ee000f63ec4850",
+    "result": "passed"
+  }
+}
