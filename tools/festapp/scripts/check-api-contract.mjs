@@ -10,7 +10,7 @@ for (const facade of facades) for (const profile of API_DATA_PROFILES) for (cons
     const relative = apiProjectionDirectory(facade.endpointId,profile,proofProfile) + '/openapi.json';
     const url = new URL('../contracts/api-v1/' + relative, import.meta.url);
     const spec = JSON.parse(fs.readFileSync(url));
-    const catalog = publicCatalog(profile).filter(d=>readiness(d,profile).supported);
+    const catalog = publicCatalog(profile).filter(d=>readiness(d,profile,proofProfile).supported);
     assert.deepEqual(Object.values(spec.paths).map(p=>p.post.operationId).sort(), [...catalog.map(d=>d.id),...(profile === 'operator' ? ['artifacts.read'] : [])].sort());
     for (const descriptor of catalog) {
         const operation = spec.paths['/operations/' + descriptor.id].post;

@@ -14,7 +14,8 @@ export async function issueExistingUserSession(
   admin: SupabaseClient,
   anon: SupabaseClient,
   options: {
-    purpose?: "login" | "revoke";
+    purpose?: "login" | "revoke" | "delegation";
+    completeMfa?: (session: Session) => Promise<Session>;
     validateContext?: () => Promise<boolean>;
     useSession?: (session: Session) => Promise<void>;
   } = {},
@@ -23,6 +24,7 @@ export async function issueExistingUserSession(
   const params = { p_user: target.targetUserId, p_owner: owner };
   let session: Session | null = null;
   let acquired = false;
+  let strongSession = false;
   // On any uncertain remote result quarantine the lease until its TTL. A late
   // generateLink must never overlap an immediately retried application mint.
   let safelyFinished = false;
@@ -31,7 +33,7 @@ export async function issueExistingUserSession(
   try {
     const lease = await admin.rpc("acquire_existing_user_session_lease_v1", params);
     acquired = !lease.error && matches(lease.data);
-    if (acquired && lease.data.requiresMfa && options.purpose !== "revoke") { safelyFinished = true; throw new SessionIssuanceError("mfa_required"); }
+    if (acquired && lease.data.requiresMfa && options.purpose !== "revoke" && !(options.purpose === "delegation" && options.completeMfa)) { safelyFinished = true; throw new SessionIssuanceError("mfa_required"); }
     if (!acquired || Date.now() - started > 20_000) throw new SessionIssuanceError();
     if (options.validateContext && !await options.validateContext()) {
       safelyFinished = true;
@@ -42,6 +44,19 @@ export async function issueExistingUserSession(
     const verified = await anon.auth.verifyOtp({ type: "recovery", token_hash: link.data.properties.hashed_token });
     session = verified.data.session;
     if (verified.error || session?.user.id !== target.targetUserId || Date.now() - started > 20_000) throw new SessionIssuanceError();
+    if (lease.data.requiresMfa && options.purpose === "delegation") {
+      session = await options.completeMfa!(session!);
+      // The callback cannot assert assurance. Verify its actual GoTrue session
+      // and the dedicated client's current AAL before transferring credentials.
+      const identity = await admin.auth.getUser(session.access_token);
+      const current = await anon.auth.getSession();
+      const assurance = await anon.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (identity.error || identity.data.user?.id !== target.targetUserId ||
+          session.user.id !== target.targetUserId || current.error ||
+          current.data.session?.access_token !== session.access_token || assurance.error ||
+          assurance.data.currentLevel !== "aal2") throw new SessionIssuanceError("mfa_required");
+      strongSession = true;
+    }
     const live = await admin.rpc("check_existing_user_session_lease_v1", params);
     if (live.error || !matches(live.data) || Date.now() - started > 20_000 || (options.validateContext && !await options.validateContext())) throw new SessionIssuanceError();
     // Revocation callers hold the lease until their global signout completes.
@@ -49,7 +64,7 @@ export async function issueExistingUserSession(
     // Including callbacks and revocation HTTP responses in the same deadline
     // prevents a delayed response from returning a mint after lease expiry.
     const finalLease = await admin.rpc("check_existing_user_session_lease_v1", params);
-    if (finalLease.error || !matches(finalLease.data) || (finalLease.data.requiresMfa && options.purpose !== "revoke")) throw new SessionIssuanceError();
+    if (finalLease.error || !matches(finalLease.data) || (finalLease.data.requiresMfa && options.purpose !== "revoke" && !strongSession)) throw new SessionIssuanceError();
     if (options.validateContext && !await options.validateContext()) throw new SessionIssuanceError();
     if (Date.now() - started > 20_000) throw new SessionIssuanceError();
     safelyFinished = true;

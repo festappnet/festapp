@@ -89,7 +89,7 @@ test('Make order-summary reads use real SQL scope and paginate 52 stable synthet
     const full = (await db.query('select get_operator_orders_v1($1,$2,$3,25,null,null,null,$4) value',[f.occasion,f.org,f.unit,chosen])).rows[0].value.orders[0];
     const safe = exact.data.orders[0];
     for (const key of ['ticketCount','price','currency']) assert.equal(safe[key],full[key]);
-    assert.deepEqual(safe.payment,{amount:full.payment.amount,paid:full.payment.paid,returned:full.payment.returned});
+    assert.deepEqual(safe.payment,{amount:full.payment.amount,paid:full.payment.paid,returned:full.payment.returned,net:full.payment.net,pending:full.payment.pending});
     assert.equal(safe.ticketCount,1);
     assert.equal(safe.payment.amount,'123.45'); assert.equal(safe.payment.paid,'67.89'); assert.equal(safe.payment.returned,'1.23');
     const contactOnly = await invoke('orders.list',{search:'ABCDEFGHIJ'}); assert.deepEqual(contactOnly.data.orders,[]);

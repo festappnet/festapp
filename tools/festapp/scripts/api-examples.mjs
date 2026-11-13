@@ -43,6 +43,9 @@ export function schemaExample(schema, root = schema, key = '', depth = 0) {
 }
 export function operationExamples(descriptor, inputSchema, outputSchema) {
     const request = descriptor.id === 'products.save' ? {occasionId:7,commandId:UUID,product:{title:'Admission',price:'100.00',currency_code:'CZK',product_type:1}} : schemaExample(inputSchema);
+    if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
+    if (descriptor.id === 'payments.record') request.amount = '100.00';
+    if (descriptor.id === 'seats.swap') { request.sourceSpotIds = [request.firstSpotId]; request.targetSpotIds = [request.secondSpotId]; }
     const response = {...schemaExample(outputSchema),ok:true};
     delete response.error;
     if (outputSchema.properties?.data) response.data = schemaExample(outputSchema.properties.data,outputSchema,'data');

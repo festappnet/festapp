@@ -38,7 +38,7 @@ function fixture({ invalidProof = false, wrongActor = false, failTransfer = fals
       headers: { Origin: origin, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ request: "r".repeat(43), operation, access, userId: "attacker", issuer: "https://attacker.invalid", email: "attacker@invalid" }),
     }), deps);
-  return { request, calls };
+  return { request, calls, deps };
 }
 Deno.test("tenant proof and explicit consent mint only the verified actor and never return backend credentials", async () => {
   const f = fixture(); const response = await f.request(); assertEquals(response.status, 200);
@@ -92,4 +92,12 @@ Deno.test("broker 429 preserves Retry-After without replay or extra session mint
     assertEquals(f.calls.filter(c => c === "mint").length, operation === "complete" ? 1 : 0);
     if (operation === "complete") assertEquals(f.calls.at(-1), "revoke:local");
   }
+});
+
+Deno.test("maximum valid canonical consent fits the streamed boundary while oversized bodies never reach Auth", async () => {
+  const {MCP_SCOPES}=await import("../../../packages/festapp_contracts/mcp-permissions.mjs");
+  const access={consentVersion:2,selection:{type:"selection",units:Array.from({length:100},(_,i)=>({unitId:1_000_000_000+i,canCreateOccasions:true})),occasionIds:Array.from({length:100},(_,i)=>1_000_000_000+i)},permissions:MCP_SCOPES,apiReview:{version:1,resource:"https://api.festapp.net/integrations",dataProfile:"operator"}};
+  const f=fixture({access});assertEquals((await f.request()).status,200);
+  const blocked=fixture();const response=await handleMcpExchange(new Request("https://api.invalid/mcp-session-exchange",{method:"POST",headers:{Origin:config.tenantOrigin,Authorization:"Bearer app-access","Content-Type":"application/json"},body:JSON.stringify({request:"r".repeat(43),operation:"details",padding:"x".repeat(16384)})}),blocked.deps);
+  assertEquals(response.status,403);assertEquals(blocked.calls,[]);
 });

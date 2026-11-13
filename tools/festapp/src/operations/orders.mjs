@@ -11,7 +11,9 @@ const order = z.strictObject({
     customer: z.strictObject({ name: text, surname: text, email: text }),
     ticketCount: z.number().int().nonnegative(), price: text, currency: text,
     allowedActions: z.array(z.string()),
-    payment: z.strictObject({ policy: z.json().nullable().optional(), method: text, amount: text, paid: text, returned: text, variableSymbol: text, deadline: text }).nullable(),
+    // The canonical SQL snapshot also carries UI-only net/pending fields.
+    // Project the documented operator payment boundary for every adapter.
+    payment: z.object({ policy: z.json().nullable().optional(), method: text, amount: text, paid: text, returned: text, variableSymbol: text, deadline: text }).nullable(),
     note: text.optional(), responses: z.array(z.record(z.string(), z.json())).optional(),
     formFields: z.array(z.strictObject({ id: orderId, title: text, type: text })).optional(),
     tickets: z.array(z.strictObject({ id: orderId, state: z.string(), products: z.array(z.strictObject({ id: orderId, title: text, price: text, currentPrice: text })) })).optional(),

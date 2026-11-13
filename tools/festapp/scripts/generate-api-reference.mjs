@@ -40,7 +40,7 @@ export function specification(endpoint, dataProfile, proofProfile = 'bearer') {
         return { $ref: '#/components/schemas/' + key };
     };
     const catalog = publicCatalog(dataProfile);
-    const supported = catalog.filter(d => readiness(d,dataProfile).supported);
+    const supported = catalog.filter(d => readiness(d,dataProfile,proofProfile).supported);
     const errors = Object.fromEntries([...new Set(Object.values(errorStatuses))].sort((a,b)=>a-b).map(status => [status, {
         description: `RFC 9457 problem (${status}). On an uncertain write outcome retain the original commandId and payload.`,
         headers: { 'X-Request-Id': { $ref: '#/components/headers/RequestId' },
@@ -60,6 +60,7 @@ export function specification(endpoint, dataProfile, proofProfile = 'bearer') {
         return ['/operations/' + d.id, { post: {
         operationId: d.id, summary: d.id, description: d.description + '\n\n' + readiness(d).retry,
         tags: [d.id.split('.')[0]], security: security(scopesForOperation(d.id)), ...(proofParameters.length ? {parameters:proofParameters} : {}),
+        ...(readiness(d,dataProfile,proofProfile).authentication ? {'x-authentication':readiness(d,dataProfile,proofProfile).authentication} : {}),
         'x-cost-class': d.costClass ?? 'ordinary', 'x-domain-read-only': d.domainReadOnly, 'x-data-profile': dataProfile,
         'x-runtime-refinements': 'Runtime validation remains authoritative, including cross-field, scope, preview and aggregate version conditions.',
         requestBody: { required: true, content: { 'application/json': { schema: register(d.input, d.id + '.Input'), example: examples.request } } },
@@ -77,7 +78,7 @@ export function specification(endpoint, dataProfile, proofProfile = 'bearer') {
         'x-proof-profile': proofProfile, 'x-client-proof-policy': 'A registered DPoP-only client must also supply a bound DPoP token and fresh DPoP proof. OAuth alone is never sufficient for that client.',
         'x-oauth-resource': endpoint.resource, 'x-oauth-issuer': endpoint.issuer, 'x-data-profile': dataProfile,
         'x-source-digest': sourceDigest, 'x-body-limit-bytes': API_JSON_LIMITS.bytes, 'x-json-limits': API_JSON_LIMITS, 'x-cost-budget': API_COST_BUDGET,
-        'x-readiness': catalog.map(d => ({ operationId: d.id, ...readiness(d,dataProfile) })),
+        'x-readiness': catalog.map(d => ({ operationId: d.id, ...readiness(d,dataProfile,proofProfile) })),
         tags: [...new Set([...supported.map(d => d.id.split('.')[0]), ...(dataProfile === 'operator' ? ['artifacts'] : [])])].map(name => ({ name, description: name + ' operations' })),
         paths, components: { schemas, headers: { RequestId: { description: 'Correlation ID, matching meta.requestId or problem.requestId.', schema: { type: 'string', minLength: 1, maxLength: 128 } } }, securitySchemes: { ...(proofProfile === 'dpop' ? {dpop:{type:'apiKey',in:'header',name:'DPoP',description:'A per-request signed RFC 9449 proof, not an API key. OAuth and this proof are both required. The OAuth access token uses Authorization: DPoP.'}} : {}), oauth: { type: 'oauth2', description:proofProfile === 'dpop' ? 'DPoP-bound opaque token in Authorization: DPoP. OAuth alone is insufficient; the signed DPoP header is also mandatory.' : 'Bearer opaque token in Authorization: Bearer.', flows: { authorizationCode: { authorizationUrl: endpoint.issuer + '/auth', tokenUrl: endpoint.issuer + '/token', scopes: Object.fromEntries([...new Set(supported.flatMap(d=>scopesForOperation(d.id)))].map(s=>[s,s])) } } } } },
     };

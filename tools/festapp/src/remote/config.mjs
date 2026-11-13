@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { endpointSchema, normalizeEndpoints, normalizeClient } from './endpoints.mjs';
 import { parseProfile } from '../context/profile.mjs';
 
-export { READ_SCOPE, CREATE_SCOPE, READ_OPERATIONS, MCP_PERMISSIONS, MCP_SCOPES, scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
+export { READ_SCOPE, CREATE_SCOPE, READ_OPERATIONS, DELEGATED_OPERATIONS, MCP_PERMISSIONS, MCP_SCOPES, scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { DOMAIN_SCOPES, validScopeCeiling, validRedirect, validMetadataOrigin } from './client-policy.mjs';
 export { DOMAIN_SCOPES, clientAllowsScopes } from './client-policy.mjs';

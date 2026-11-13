@@ -219,3 +219,49 @@ test('corrupted persisted request cannot be rebound to the original command ID',
     assert.equal(result.error.code, 'PENDING_RECOVERY_REQUIRED');
     assert.equal(f.sent.length, 1);
 });
+
+test('concurrent intent publication never replaces an unresolved command UUID', async t => {
+    const f = await fixture(t);
+    const store = new FileIntentStore(f.owner.root);
+    const input = request(f.owner.profile);
+    const claims = await Promise.all(Array.from({length: 12}, () => store.claim(f.owner.profile, '00000000-0000-4000-8000-000000000001', input)));
+    assert.equal(new Set(claims.map(c => c.commandId)).size, 1);
+    const current = await store.read(f.owner.profile, '00000000-0000-4000-8000-000000000001', input.occasionId);
+    assert.equal(current.commandId, claims[0].commandId);
+    const changed = request(f.owner.profile, { expectedVersion: 99 });
+    await assert.rejects(() => store.claim(f.owner.profile, '00000000-0000-4000-8000-000000000001', changed), /PENDING_RECOVERY_REQUIRED/);
+    assert.equal((await store.read(f.owner.profile, '00000000-0000-4000-8000-000000000001', input.occasionId)).commandId, current.commandId);
+});
+
+test('legacy connection intent rebind preserves SQL command and baseline; conflicting intent is retained',async t=>{
+    const f=await fixture(t),store=new FileIntentStore(f.owner.root),actor='00000000-0000-4000-8000-000000000001';
+    const previous={...f.owner.profile,binding:'previous-connection'},canonical=f.owner.profile;
+    const original=await store.claim(previous,actor,request(previous));
+    await store.rebind(previous,canonical,actor,7);
+    const migrated=await store.read(canonical,actor,7);
+    assert.equal(migrated.commandId,original.commandId);
+    assert.equal(migrated.request.expectedVersion,original.request.expectedVersion);
+    assert.deepEqual(migrated.request.nextLayout,original.request.nextLayout);
+    assert.equal(await store.read(previous,actor,7),null);
+    const another={...previous,binding:'another-connection'};
+    const competing=await store.claim(another,actor,request(another));
+    await assert.rejects(()=>store.rebind(another,canonical,actor,7),/PENDING_RECOVERY_REQUIRED/);
+    assert.equal((await store.read(another,actor,7)).commandId,competing.commandId);
+    assert.equal((await store.read(canonical,actor,7)).commandId,original.commandId);
+});
+
+test('offline layout migration is restartable and never infers a foreign profile or actor',async t=>{
+    const {migrateLayoutIntents}=await import('../src/remote/migrate-layout-intents.mjs');
+    const f=await fixture(t),profile=f.owner.profile,actor='00000000-0000-4000-8000-000000000001';
+    const store=new FileIntentStore(f.owner.root),old={...profile,binding:'legacy-connection'};
+    const intent=await store.claim(old,actor,request(old));
+    const storage={root:f.owner.root,values:()=>[{profileBinding:profile.binding,binding:old.binding,userId:actor}]};
+    const config={profile,tenantOrigin:'https://tenant.invalid'};
+    assert.deepEqual(await migrateLayoutIntents(config,storage),{inspected:1,migrated:1});
+    assert.equal((await store.read(profile,actor,7)).commandId,intent.commandId);
+    assert.deepEqual(await migrateLayoutIntents(config,storage),{inspected:1,migrated:0});
+    const foreign={...profile,binding:'unknown-profile'};
+    const retained=await store.claim(foreign,actor,request(foreign));
+    await assert.rejects(()=>migrateLayoutIntents(config,storage),/PENDING_RECOVERY_REQUIRED/);
+    assert.equal((await store.read(foreign,actor,7)).commandId,retained.commandId);
+});

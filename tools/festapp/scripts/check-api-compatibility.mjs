@@ -50,7 +50,19 @@ export function compatibilityBreaks(before, after) {
     for (const [name, schema] of Object.entries(before.components?.schemas ?? {}))
         issues.push(...schemaBreaks(schema, after.components?.schemas?.[name], name.endsWith('.Input') || name === 'ArtifactInput' ? 'request' : 'response', '#/components/schemas/' + name));
     for (const key of ['x-oauth-resource','x-oauth-issuer','x-data-profile']) if (!equal(before[key],after[key])) issues.push(key + ': binding changed');
-    if (!equal(before.components?.securitySchemes,after.components?.securitySchemes)) issues.push('security schemes changed');
+    for (const [name, scheme] of Object.entries(before.components?.securitySchemes ?? {})) {
+        const next = structuredClone(after.components?.securitySchemes?.[name]);
+        // Advertising an additional optional OAuth scope does not change any
+        // existing operation's exact security requirement (checked above).
+        if (scheme.type === 'oauth2' && next?.type === 'oauth2') {
+            for (const [flow, definition] of Object.entries(scheme.flows ?? {})) {
+                const scopes = next.flows?.[flow]?.scopes;
+                if (scopes) next.flows[flow].scopes = Object.fromEntries(
+                    Object.keys(definition.scopes ?? {}).filter(scope => Object.hasOwn(scopes,scope)).map(scope => [scope,scopes[scope]]));
+            }
+        }
+        if (!equal(scheme,next)) issues.push('security scheme changed: ' + name);
+    }
     return issues;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

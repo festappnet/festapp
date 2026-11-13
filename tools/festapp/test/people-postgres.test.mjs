@@ -98,7 +98,10 @@ test('organizer creation retains confirmed identity and never overwrites an exis
  assert.deepEqual(await rpc(db,f,'units.create',payload,command,true),first);
  const state=(await rpc(db,f,'units.list',{},null,true)).items.find(x=>x.userId===first.data.userId);assert.equal(state.isManager,false);assert.equal(state.aggregateVersion,1);
  const granted=await rpc(db,f,'units.roles',{userId:first.data.userId,expectedVersion:1,changes:{is_editor:true}},randomUUID(),true);assert.equal(granted.code,200,JSON.stringify(granted));
- assert.equal((await rpc(db,f,'units.create',payload,randomUUID(),true)).code,409);
+ await db.query('RESET ROLE');const membership=(await db.query('select to_jsonb(uu) value from unit_users uu where unit=$1 and \"user\"=$2',[f.unit,first.data.userId])).rows[0].value;await db.query('SET LOCAL ROLE authenticated');
+ const repeated=await rpc(db,f,'units.create',{profile:{...payload.profile,name:'Do not overwrite'}},randomUUID(),true);
+ assert.equal(repeated.code,200);assert.equal(repeated.status,'unchanged');
+ await db.query('RESET ROLE');assert.deepEqual((await db.query('select to_jsonb(uu) value from unit_users uu where unit=$1 and \"user\"=$2',[f.unit,first.data.userId])).rows[0].value,membership);await db.query('SET LOCAL ROLE authenticated');
  assert.equal((await rpc(db,f,'units.list',{},null,true)).items.find(x=>x.userId===first.data.userId).isEditor,true);
 });
 test('another ordinary identity cannot escalate, edit a foreign profile or reuse a manager command receipt',async t=>{

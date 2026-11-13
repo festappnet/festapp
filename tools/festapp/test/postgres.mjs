@@ -28,10 +28,18 @@ export function expectedDisposableProject(connection, env=process.env) {
     return env.FESTAPP_LOCAL_DB_PROJECT_ID;
 }
 
-export async function openDisposableDatabase(connection) {
+export async function openDisposableDatabase(connection,{administrative=false}={}) {
     const expectedProject=expectedDisposableProject(connection);
     const url=new URL(connection);
-    const db=new Client({connectionString:connection});await db.connect();
+    let selected=connection;
+    if(administrative){
+        assert(process.env.FESTAPP_TEST_ADMIN_DATABASE_URL,'Explicit owned test admin URL required');
+        const admin=new URL(process.env.FESTAPP_TEST_ADMIN_DATABASE_URL);
+        assert.equal(admin.username,'supabase_admin');
+        for(const key of ['protocol','hostname','port','pathname','search'])assert.equal(admin[key],url[key],'Admin must target the same marked local workspace');
+        selected=admin.href;
+    }
+    const db=new Client({connectionString:selected});await db.connect();
     try {
         const project=(await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project;
         assert.equal(project,expectedProject);

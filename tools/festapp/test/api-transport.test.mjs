@@ -10,6 +10,7 @@ test('real OAuth API grants isolate resources, transports, immutable profile and
     const f = await setup(t);
     const browser=f.browser;let consentHtml;f.browser=async(...args)=>{const response=await browser(...args);if(response.status===200&&response.headers.get('content-type')?.includes('text/html')){const html=await response.clone().text();if(html.includes('consentVersion'))consentHtml=html;}return response;};
     const global = await connect(f);
+    assert.doesNotMatch(consentHtml,/name="occasion" value="8"/);
     assert(consentHtml.includes(f.config.endpoints[0].resource));assert(consentHtml.includes('Data: <code>operator</code>'));
     let r = await apiRequest(f, global.tokens);
     assert.equal(r.status,200,await r.clone().text());
@@ -344,4 +345,56 @@ for(const endpointId of ['global-api','regional-api'])test(`first-party API cons
  const code=new URL(target,f.issuer).searchParams.get('code');assert(code);
  response=await fetch(f.issuer+'/token',{method:'POST',body:new URLSearchParams({grant_type:'authorization_code',code,client_id:'api-fixture',redirect_uri:f.issuer+'/callback',code_verifier:verifier,resource:endpoint.resource})});assert.equal(response.status,200,await response.clone().text());
  const tokens=await response.json();assert.equal((await apiRequest(f,tokens,'context.inspect',{},endpointId)).status,200);assert.equal(f.storage.values('Delegation')[0].resource,endpoint.resource);
+});
+
+test('schema rejection before SQL admission reports a rejected write outcome', async t => {
+    const f = await setup(t);
+    const {tokens} = await connect(f, { scope: 'festapp:ticket-layouts:read festapp:products:read festapp:products:write', occasionIds: [7] });
+    const response = await apiRequest(f, tokens, 'products.save', {occasionId: 7, commandId: 'invalid'});
+    assert.equal(response.status, 422);
+    assert.equal((await response.json()).outcome, 'rejected');
+    assert(!f.calls.some(c => c.url.pathname.endsWith('/manage_product')));
+});
+
+test('all delegated operations use one catalog, validation and executor through real API and MCP adapters',async t=>{
+    const {Client,StreamableHTTPClientTransport}=await import('@modelcontextprotocol/client');
+    const {publicCatalog,jsonSchema,operationIds}=await import('../src/remote/api-contract.mjs');
+    const {operationExamples}=await import('../scripts/api-examples.mjs');
+    const {DOMAIN_SCOPES}=await import('../../../packages/festapp_contracts/mcp-permissions.mjs');
+    const {reply,actor}=await import('./fixture.mjs');
+    const {publicKey,privateKey}=await generateKeyPair('ES256'),jwk=await exportJWK(publicKey);
+    const sign=async(htu,ath)=>new SignJWT({htm:'POST',htu,iat:Math.floor(Date.now()/1000),jti:randomUUID(),...(ath?{ath}:{})}).setProtectedHeader({alg:'ES256',typ:'dpop+jwt',jwk}).sign(privateKey);
+    const f=await setup(t,{proofProfile:'dpop',rateLimiter:()=>{},
+        apiPolicy:{requirePar:true,allowedScopes:DOMAIN_SCOPES,allowedOperations:operationIds},
+        sessionClaims:{iss:'http://127.0.0.1:54321/auth/v1',aud:'authenticated',aal:'aal2',session_id:randomUUID(),amr:[{method:'totp',timestamp:Math.floor(Date.now()/1000)}]},
+        userFactors:[{id:randomUUID(),factor_type:'totp',status:'verified'}],
+        fetchImpl:async(url)=>{
+            if(url.pathname.endsWith('/get_operator_access_v1'))return;
+            if(url.pathname.endsWith('/get_ticket_layout_write_contract_v1'))return reply({family:'ticket_layouts',contractVersion:1,ready:true});
+            // This test proves adapter parity, not business success. Consequential
+            // effects and replay are covered by the real-SQL HTTP family suite.
+            if(url.pathname.startsWith('/rest/v1/rpc/')||url.pathname.startsWith('/functions/v1/'))return reply({code:'42501'},403);
+        }});
+    f.tokenProof=()=>sign(f.issuer+'/token');
+    const api=await connect(f,{usePar:true,unitId:3,create:true,scope:DOMAIN_SCOPES.join(' ')});
+    delete f.tokenProof;f.clearBrowserCookies();
+    const mcp=await connect(f,{clientId:'chatgpt-fixture',resources:[f.config.resource],unitId:3,create:true,scope:DOMAIN_SCOPES.join(' ')});
+    const sdk=new Client({name:'shared-executor-parity',version:'1'});t.after(()=>sdk.close());
+    await sdk.connect(new StreamableHTTPClientTransport(new URL(f.config.resource),{requestInit:{headers:{authorization:'Bearer '+mcp.tokens.access_token}}}));
+    const tools=new Set((await sdk.listTools()).tools.map(tool=>tool.name));
+    for(const descriptor of publicCatalog()){
+        assert(tools.has(descriptor.name),descriptor.id+' missing from MCP');
+        const {request}=operationExamples(descriptor,jsonSchema(descriptor.input),jsonSchema(descriptor.output,'output'));
+        if(Object.hasOwn(request,'occasionId'))request.occasionId=7;
+        if(Object.hasOwn(request,'unitId'))request.unitId=3;
+        if(Object.hasOwn(request,'targetUnitId'))request.targetUnitId=3;
+        const headers={authorization:'DPoP '+api.tokens.access_token,dpop:await sign('https://api.festapp.net/integrations/v1/operations/'+descriptor.id,createHash('sha256').update(api.tokens.access_token).digest('base64url'))};
+        const response=await apiRequest(f,api.tokens,descriptor.id,request,'global-api',headers),http=await response.json();
+        const tool=(await sdk.callTool({name:descriptor.name,arguments:request})).structuredContent;
+        assert(tool,descriptor.id+' missing structured result');
+        assert.equal(http.ok===true,tool.ok,descriptor.id+': HTTP '+JSON.stringify(http));
+        if(tool.ok)assert.deepEqual(http.data,tool.data,descriptor.id);
+        else assert.equal(http.code,tool.error.code,descriptor.id);
+    }
+    assert.equal(publicCatalog().length,operationIds.length);
 });

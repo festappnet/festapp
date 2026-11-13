@@ -1,5 +1,21 @@
 # Společné API Festapp - produkční výsledek
 
+
+Navazující rozšíření společného operator katalogu je zatím připravené ve zdroji,
+nikoli nasazené. API a MCP používají jeden seznam `DELEGATED_OPERATIONS`, stejné
+`Operations`, vstupní/výstupní schéma, doménové vlastníky a SQL oprávnění.
+Oprava v této cestě platí pro oba adaptéry. DPoP/PAR a čerstvé AAL2 jsou
+podmínky veřejného API transportu pro 22 citlivých operací; nevytvářejí druhou
+implementaci doménové operace. Připraveno je 174 Bearer / 196 DPoP operací.
+Parity test porovnává všech 196 přes skutečné OAuth/HTTP a MCP SDK;
+účinky ověřují samostatné testy nad skutečným PostgreSQL.
+Nová migrace `20261113160000_shared_bank_writer_acl.sql` vrací podporované
+volání bankovního writeru po jeho znovuvytvoření a drží ACL u deklarace.
+Živé dvourolové kontroly a payment policy zůstávají uvnitř kanonické SQL funkce.
+Všech osm lokálních CI jobs prošlo; [evidence zdrojových kontrol](festapp-unified-api-evidence-2026-11-13/operator-source-ci.json) rozlišuje původní běh a dotčené opakované kontroly.
+Následující produkční evidence stále popisuje předchozí ověřený release.
+
+
 Oba API vstupy jsou nasazené ze zdroje
 `97a579e218c1793769a195a88861382de47769ee` a veřejně vracejí metadata,
 OpenAPI, manifest i úplnou statickou dokumentaci přes ověřené HTTPS.

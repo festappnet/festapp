@@ -2,14 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {catalogProjection,schemaProjection} from '../src/operations/contract-projection.mjs';
-import {READ_OPERATIONS, MCP_PERMISSIONS, scopesForOperation} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
+import {DELEGATED_OPERATIONS, MCP_PERMISSIONS, scopesForOperation} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import {clientAllowsScopes} from '../src/remote/config.mjs';
 import {referenceSourceDigest} from '../../../automation/release/help/mcp_reference.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = file => JSON.parse(fs.readFileSync(path.join(root,file),'utf8'));
 const policy = read('integrations/chatgpt/client-policy.json');
-const ids = [...READ_OPERATIONS, 'occasions.create', ...Object.values(MCP_PERMISSIONS).flatMap(p => p.operations)];
+const ids = DELEGATED_OPERATIONS;
 const catalog = catalogProjection;
 const schema = value => schemaProjection(value, 'input');
 const tool = d => ({id:d.id,name:d.name,description:d.description,scopes:scopesForOperation(d.id),

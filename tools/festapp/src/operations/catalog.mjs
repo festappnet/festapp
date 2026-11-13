@@ -323,7 +323,7 @@ export class Operations {
         check(data && !data.error);
         return data;
     }
-    async invoke(id, raw) {
+    async invoke(id, raw, { onAccepted } = {}) {
         const meta = {
             contractVersion: 1,
             requestId: randomUUID(),
@@ -350,6 +350,7 @@ export class Operations {
             return await this.owner.authorized(async (client, context) => {
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
+                onAccepted?.();
                 let data;
                 if (id === 'context.inspect') {
                     data = {
@@ -503,7 +504,7 @@ export class Operations {
                         scenario: args.scenario,
                     };
                     const fingerprint = fingerprintDraft(
-                        this.owner.profile.binding,
+                        (this.owner.layoutProfile ?? this.owner.profile).binding,
                         saveRequest,
                     );
                     saveRequest.draftFingerprint = fingerprint;

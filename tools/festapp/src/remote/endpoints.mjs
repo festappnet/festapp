@@ -1,7 +1,7 @@
 import { clientPolicy, API_SUMMARY_OPERATIONS } from './client-policy.mjs';
 import { z } from 'zod';
 import { check } from '../errors.mjs';
-import { READ_SCOPE, READ_OPERATIONS, MCP_PERMISSIONS, scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
+import { READ_SCOPE, DELEGATED_OPERATIONS, scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 
 export const API_DATA_PROFILES = Object.freeze(['operator','order-summary']);
 export const API_PROOF_PROFILES = Object.freeze(['bearer','dpop']);
@@ -59,7 +59,7 @@ export function normalizeClient(client, config, endpoints) {
     const api = policy.transports.includes('api');
     check(new Set(policy.transports).size === policy.transports.length && new Set(policy.resources).size === policy.resources.length, 'DUPLICATE_CLIENT_POLICY');
     if (client.allowedOperations) {
-        const known = new Set([...READ_OPERATIONS, 'occasions.create', ...Object.values(MCP_PERMISSIONS).flatMap(p => p.operations)]);
+        const known = new Set(DELEGATED_OPERATIONS);
         check(new Set(client.allowedOperations).size === client.allowedOperations.length && client.allowedOperations.every(id => known.has(id)), 'INVALID_CLIENT_OPERATIONS');
         if (api) check(client.allowedOperations.every(id => scopesForOperation(id).every(scope => client.allowedScopes?.includes(scope))), 'INVALID_CLIENT_OPERATION_SCOPES');
     }

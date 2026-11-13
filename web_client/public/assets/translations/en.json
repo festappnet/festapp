@@ -4033,6 +4033,12 @@
         "no_matching_answers": "No more matching fields."
     },
     "McpConnection": {
+    "mfaLoginHint": "Enter the six-digit code from your authenticator to continue.",
+    "mfaApprovalHint": "Wait for a new code in your authenticator, then enter it to secure this independent connection.",
+    "mfaCode": "Verification code",
+    "mfaVerify": "Verify code",
+    "mfaFailed": "The code could not be verified. Enter a new code and try again.",
+    "mfaUnsupported": "This connection requires a verified authenticator app.",
         "permissionMode": "Functions to allow",
         "permissionMode_requested": "All requested functions",
         "permissionMode_read-only": "Requested read-only functions",

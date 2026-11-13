@@ -4,14 +4,23 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// the browser. The SDK supplies the current app access proof in its header.
 class McpConnectionService {
   static Future<Map<String, dynamic>> request(
-      String request, String operation, Map<String, dynamic> access) async {
+    String request,
+    String operation,
+    Map<String, dynamic> access, {
+    Map<String, String>? mfa,
+  }) async {
     final response = await Supabase.instance.client.functions.invoke(
       'mcp-session-exchange',
       headers: {
         if (Uri.base.queryParameters['issuer'] case final String issuer)
           'X-Festapp-Mcp-Issuer': issuer,
       },
-      body: {'request': request, 'operation': operation, 'access': access},
+      body: {
+        'request': request,
+        'operation': operation,
+        'access': access,
+        'mfa': ?mfa,
+      },
     );
     return Map<String, dynamic>.from(response.data as Map);
   }
@@ -20,8 +29,10 @@ class McpConnectionService {
     final uri = Uri.tryParse(value?.toString() ?? '');
     if (uri == null ||
         uri.scheme != 'https' ||
-        !const {'https://mcp.festapp.net', 'https://mcp.vstupenky.online'}
-            .contains(uri.origin) ||
+        !const {
+          'https://mcp.festapp.net',
+          'https://mcp.vstupenky.online',
+        }.contains(uri.origin) ||
         uri.userInfo.isNotEmpty ||
         uri.fragment.isNotEmpty ||
         !RegExp(r'^/connect/[A-Za-z0-9_-]+/finish$').hasMatch(uri.path) ||

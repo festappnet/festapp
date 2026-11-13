@@ -2067,6 +2067,12 @@
     "legacyReinviteConfirm": "Niektórzy użytkownicy otrzymali już zaproszenie. Wysłać ponownie?"
   },
   "McpConnection": {
+    "mfaLoginHint": "Aby kontynuować, wpisz sześciocyfrowy kod z aplikacji uwierzytelniającej.",
+    "mfaApprovalHint": "Poczekaj na nowy kod w aplikacji uwierzytelniającej i wpisz go, aby zabezpieczyć to niezależne połączenie.",
+    "mfaCode": "Kod weryfikacyjny",
+    "mfaVerify": "Zweryfikuj kod",
+    "mfaFailed": "Nie udało się zweryfikować kodu. Wpisz nowy kod i spróbuj ponownie.",
+    "mfaUnsupported": "To połączenie wymaga zweryfikowanej aplikacji uwierzytelniającej.",
     "permissionMode": "Zakres funkcji",
     "permissionMode_requested": "Wszystkie żądane funkcje",
     "permissionMode_read-only": "Tylko żądany odczyt",

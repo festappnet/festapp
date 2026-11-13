@@ -1,5 +1,5 @@
 import { API_PREFIX } from './endpoints.mjs';
-import { publicCatalog, readiness, API_COST_BUDGET } from './api-contract.mjs';
+import { publicCatalog, API_COST_BUDGET } from './api-contract.mjs';
 import { randomUUID } from 'node:crypto';
 import { DelegatedOwner } from './delegation.mjs';
 import { clientPolicy } from './client-policy.mjs';
@@ -11,7 +11,6 @@ import { digest } from '../context/profile.mjs';
 
 /** One admission budget, artifact owner and credential verifier for all hosted
  * adapters. Mutable owners and operation contexts live for one request only. */
-const apiSupported = new Set(publicCatalog().filter(d => readiness(d).supported).map(d => d.id));
 const documentOperations = new Set(publicCatalog().filter(d => d.costClass === 'document').map(d => d.id));
 
 export function createHostedRunner({ config, storage, provider, fetchImpl, audit, limit }) {
@@ -32,7 +31,6 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
         try { owner = new DelegatedOwner(config, storage, token, { fetchImpl, expectedResource: endpoint.resource, transport }); }
         catch { throw new OperationError('AUTHENTICATION_REQUIRED'); }
         const grant = owner.current();
-        if (transport === 'api') owner.allowedOperations = owner.allowedOperations.filter(id => apiSupported.has(id));
         limit(`client:${client.id}:${owner.profile.organizationId}`, 120);
         limit(`organization:${owner.profile.organizationId}`, 240);
         check((client.transports ?? ['mcp']).includes(transport), 'FORBIDDEN');
@@ -65,11 +63,13 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
                 limit(`documentClient:${documentClient}`, API_COST_BUDGET.documentPerClientOrgPerMinute);
                 documentCount++;documentOrgs.add(documentOrg);documentClients.add(documentClient);documentAdmitted = true;
             }
+            if (publicCatalog().find(d => d.id === id)?.requiresLayoutWriteContract ||
+                (id === 'context.inspect' && owner.allowedOperations.some(id => publicCatalog().find(d => d.id === id)?.requiresLayoutWriteContract))) await operations.prepare();
             const invoke = operations.invoke.bind(operations);
             const readArtifact = operations.readArtifact.bind(operations);
             operations.readArtifact = (...args) => track(readArtifact(...args));
-            operations.invoke = (id, args) => track((async () => {
-                const result = await invoke(id, args);
+            operations.invoke = (id, args, lifecycle) => track((async () => {
+                const result = await invoke(id, args, lifecycle);
                 audit({ event: 'operation', requestId: result.meta.requestId,
                     connection: digest(token.grantId), actor: digest(token.accountId), client: token.clientId,
                     tenant: owner.profile.tenantId, transport, resource: endpoint.resource,

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, open, rename, unlink, lstat } from 'node:fs/promises';
+import { mkdir, readFile, open, link, unlink, lstat } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { digest, privateRoot } from '../context/profile.mjs';
 import { check } from '../errors.mjs';
@@ -7,8 +7,9 @@ import {
     canonical,
     pendingIntentSchema,
     fingerprintDraft,
+    layoutCommandId,
 } from './layout-contract.mjs';
-// The SessionOwner profile lock must cover claim, submission and compare-and-clear.
+// The owner recovery lock must cover claim, submission and compare-and-clear.
 // This is client recovery state; SQL receipts remain the idempotency authority.
 export class FileIntentStore {
     constructor(root) {
@@ -71,10 +72,14 @@ export class FileIntentStore {
             schemaVersion: 1,
             profileBinding: profile.binding,
             userId,
-            commandId: randomUUID(),
+            commandId: layoutCommandId(profile.binding, userId, request.draftFingerprint),
             createdAt: new Date().toISOString(),
             request: structuredClone(request),
         };
+        return this.publish(profile, userId, intent);
+    }
+    async publish(profile, userId, intent) {
+        const request = intent.request;
         const path = await this.path(profile, userId, request.occasionId),
             temporary = path + '.' + randomUUID();
         const file = await open(temporary, 'wx', 0o600);
@@ -85,13 +90,33 @@ export class FileIntentStore {
             await file.close();
         }
         try {
-            await rename(temporary, path);
+            // Atomic no-replace publication: a concurrent claimant must keep
+            // the original command UUID even when its payload is identical.
+            await link(temporary, path);
             await this.syncDirectory(path);
         } catch (error) {
+            if (error.code !== 'EEXIST') throw error;
+            const current = await this.read(profile, userId, request.occasionId);
+            check(current && JSON.stringify(canonical(current.request)) === JSON.stringify(canonical(request)), 'PENDING_RECOVERY_REQUIRED');
+            return current;
+        } finally {
             await unlink(temporary).catch(() => {});
-            throw error;
         }
         return intent;
+    }
+    async rebind(previous, profile, userId, occasionId) {
+        if (previous.binding === profile.binding) return;
+        const original = await this.read(previous, userId, occasionId);
+        if (!original) return;
+        const request = { ...original.request };
+        request.draftFingerprint = fingerprintDraft(profile.binding, request);
+        const candidate = { ...original, profileBinding: profile.binding, request };
+        const current = await this.read(profile, userId, occasionId);
+        check(!current || (current.commandId === original.commandId &&
+            JSON.stringify(canonical(current.request)) === JSON.stringify(canonical(request))), 'PENDING_RECOVERY_REQUIRED');
+        const retained = current ?? await this.publish(profile, userId, candidate);
+        check(retained.commandId === original.commandId, 'PENDING_RECOVERY_REQUIRED');
+        await this.clear(previous, userId, occasionId, original.commandId);
     }
     async clear(profile, userId, occasionId, commandId) {
         const current = await this.read(profile, userId, occasionId);

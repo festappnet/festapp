@@ -9,10 +9,13 @@ test('contract exposes only supported operations and distinct summary output fro
     const summary=JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/regional-api/profiles/order-summary/openapi.json',import.meta.url)));
     assert.equal(operator.openapi,'3.2.1');
     assert.equal(operator['x-oauth-resource'],'https://api.vstupenky.online/integrations');
-    assert.deepEqual(Object.values(operator.paths).map(p=>p.post.operationId).sort(),[...publicCatalog().filter(d=>readiness(d).supported).map(d=>d.id),'artifacts.read'].sort());
+    assert.deepEqual(Object.values(operator.paths).map(p=>p.post.operationId).sort(),[...publicCatalog().filter(d=>readiness(d,'operator','bearer').supported).map(d=>d.id),'artifacts.read'].sort());
     assert.notDeepEqual(operator.components.schemas['orders.list.Output'],summary.components.schemas['orders.list.Output']);
-    for(const d of publicCatalog())assert.equal(typeof readiness(d).supported,'boolean');
-    assert(!operator.paths['/operations/orders.cancel']);
+    for(const d of publicCatalog())assert.equal(typeof readiness(d,'operator','bearer').supported,'boolean');
+    assert(operator.paths['/operations/orders.cancel']);
+    assert(!operator.paths['/operations/banks.save']);
+    const strong=JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/regional-api/proofs/dpop/openapi.json',import.meta.url)));
+    assert(strong.paths['/operations/banks.save']);
 });
 
 test('directional compatibility catches request narrowing, response widening, required, limits, media and security changes',()=>{
@@ -32,6 +35,17 @@ test('directional compatibility catches request narrowing, response widening, re
     assert(compatibilityBreaks(spec,shape).length,'referenced component changes must be compared, not only identical $ref strings');
     const security=structuredClone(spec);security.paths['/operations/context.inspect'].post.security=[];
     assert(compatibilityBreaks(spec,security).length);
+    const additionalScope=structuredClone(spec);
+    additionalScope.components.securitySchemes.oauth.flows.authorizationCode.scopes['festapp:additional:read']='Additional read';
+    additionalScope.components.securitySchemes.oauth.flows.authorizationCode.scopes=Object.fromEntries(Object.entries(additionalScope.components.securitySchemes.oauth.flows.authorizationCode.scopes).reverse());
+    assert.deepEqual(compatibilityBreaks(spec,additionalScope),[]);
+    const removedScope=structuredClone(spec);
+    delete removedScope.components.securitySchemes.oauth.flows.authorizationCode.scopes[Object.keys(spec.components.securitySchemes.oauth.flows.authorizationCode.scopes)[0]];
+    assert(compatibilityBreaks(spec,removedScope).length,'removing an existing scope is incompatible');
+    const tokenEndpoint=structuredClone(spec);
+    tokenEndpoint.components.securitySchemes.oauth.flows.authorizationCode.tokenUrl+='-changed';
+    assert(compatibilityBreaks(spec,tokenEndpoint).length,'issuer endpoints remain immutable');
+
 });
 
 test('schema 3 requires explicit API policy and preserves Make identity, regional resource and summary ceiling',()=>{
@@ -58,7 +72,7 @@ test('schema 3 requires explicit API policy and preserves Make identity, regiona
  const read=proof=>JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/global-api/'+(proof==='dpop'?'proofs/dpop/':'')+'openapi.json',import.meta.url)));
  const bearer=read('bearer'),bound=read('dpop');
  for(const route of Object.values(bound.paths)){assert.equal(route.post.security.length,1);assert.deepEqual(route.post.security[0].dpop,[]);assert(route.post.security[0].oauth);assert(route.post.parameters.some(p=>p.name==='DPoP'&&p.required));}
- assert.deepEqual(bearer.components.schemas,bound.components.schemas);assert.notEqual(bearer['x-projection-digest'],bound['x-projection-digest']);
+ for(const [name,schema] of Object.entries(bearer.components.schemas))assert.deepEqual(schema,bound.components.schemas[name],name+' uses the same canonical schema');assert.notEqual(bearer['x-projection-digest'],bound['x-projection-digest']);
  });
 
  test('published success examples show success and preview PNG/PDF schemas remain explicit',()=>{

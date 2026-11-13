@@ -7,7 +7,7 @@ import express from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { digest } from '../context/profile.mjs';
 import { check } from '../errors.mjs';
-import { READ_SCOPE, MCP_SCOPES } from './config.mjs';
+import { READ_SCOPE, MCP_SCOPES, MCP_PERMISSIONS } from './config.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' &&
@@ -80,7 +80,8 @@ export function tenantBridge(app, { config: serviceConfig, storage, brokerSecret
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
             ...(flow.api ? {api:flow.api} : {}), maxConsentDays:client.maxConsentDays ?? 365,
             ...(config.regionalPortal ? { regionalPortal: config.regionalPortal } : {}),
-            connections: activeConnections(storage, proof.userId, flow.clientId, config.profile.binding, {resource:flow.api?.resource ?? serviceConfig.resource,legacyResource:serviceConfig.resource}), tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
+            connections: activeConnections(storage, proof.userId, flow.clientId, config.profile.binding, {resource:flow.api?.resource ?? serviceConfig.resource,legacyResource:serviceConfig.resource}), tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [],
+            requestedPermissionLabels: Object.fromEntries((flow.requestedPermissions ?? []).map(scope => [scope, MCP_PERMISSIONS[scope].label])), expiresAt: flow.expiresAt });
         let access = req.body.access;
         if(flow.api){
             const review=access?.apiReview;

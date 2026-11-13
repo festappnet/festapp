@@ -216,7 +216,7 @@ test('two connections: swap waits for checkout and role revocation, preserving h
 
 
 test('atomic four-seat swap aggregates each order once and rolls back an earlier member when the later member fails',options,async t=>{
- const s=await paidAtomicSwap(t),{db,f,source,target}=s;
+ const s=await paidAtomicSwap(t,false,{administrative:true}),{db,f,source,target}=s;
  await db.query('RESET ROLE');await db.query("set local track_functions='all'");await db.query('SET LOCAL ROLE authenticated');
  const measured=['lock_spot_assignment_scope_internal','lock_spot_assignment_scope_internal_v1','swap_spot_pair_internal_v1','apply_blueprint_seat_pair_locked_internal'];
  const beforeCalls=new Map((await db.query('select funcname,calls from pg_stat_xact_user_functions where funcname=any($1)',[measured])).rows.map(r=>[r.funcname,Number(r.calls)]));
@@ -266,11 +266,11 @@ test('foreign product, ticket or order parents cannot escape a narrowed swap sco
 });
 
 
-test('unknown order money cannot become a zero quote or commit before a typed response fails',options,async t=>{
- const s=await paidSwap(t);await s.db.query('RESET ROLE');await s.db.query('update eshop.orders set price=NULL where id=$1',[s.order]);await s.db.query('SET LOCAL ROLE authenticated');
- const before=await swapState(s),preview=await s.preview();assert.equal(preview.code,409);assert.equal(preview.reason,'BLUEPRINT_SWAP_MONEY_UNAVAILABLE');assert.deepEqual(await swapState(s),before);
- // A legacy read can still return its historical shape. Its opaque token cannot
- // force incomplete money through the new confirmed command.
- const legacy=(await s.db.query('select preview_blueprint_swap($1,$2) v',[s.first,s.second])).rows[0].v;assert.equal(legacy.code,200);assert.equal(legacy.orders[0].beforeAmount,null);
- const rejected=await s.apply({...legacy,layoutRevision:legacy.blueprints[0].revision});assert.equal(rejected.status,'rejected');assert.equal(rejected.data.reason,'BLUEPRINT_SWAP_REJECTED');assert.deepEqual(await swapState(s),before);
+test('unknown order money rejects both fresh quotes and a previously approved financial intent atomically',options,async t=>{
+ const s=await paidSwap(t),approved=await s.preview();assert.equal(approved.code,200);
+ await s.db.query('RESET ROLE');await s.db.query('update eshop.orders set price=NULL where id=$1',[s.order]);await s.db.query('SET LOCAL ROLE authenticated');
+ const before=await swapState(s),preview=await s.preview();assert.equal(preview.code,409);
+ assert(['BLUEPRINT_SWAP_MONEY_UNAVAILABLE','BLUEPRINT_SWAP_REJECTED'].includes(preview.reason),'The financial owner may reject incomplete money before its typed projection');assert.equal(preview.orders,undefined);
+ const current=(await s.db.query('select preview_blueprint_swap($1,$2) v',[s.first,s.second])).rows[0].v;assert.equal(current.code,409);
+ const rejected=await s.apply(approved);assert.equal(rejected.status,'rejected');assert.equal(rejected.data.reason,'BLUEPRINT_SWAP_REJECTED');assert.deepEqual(await swapState(s),before);
 });

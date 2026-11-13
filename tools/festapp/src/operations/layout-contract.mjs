@@ -28,6 +28,13 @@ export function fingerprintDraft(profileBinding, request) {
     const { draftFingerprint, ...candidate } = request;
     return digest(JSON.stringify(canonical({ profileBinding, ...candidate })));
 }
+// UUIDv8 binds the SQL command to the actor, canonical tenant and exact
+// reviewed draft. A lost outward response can be replayed even after the
+// server already received the SQL receipt and cleared its pending file.
+export function layoutCommandId(profileBinding, userId, draftFingerprint) {
+    const hash = digest(JSON.stringify(['festapp-ticket-layout', profileBinding, userId, draftFingerprint]));
+    return `${hash.slice(0,8)}-${hash.slice(8,12)}-8${hash.slice(13,16)}-${((parseInt(hash[16],16)&3)|8).toString(16)}${hash.slice(17,20)}-${hash.slice(20,32)}`;
+}
 export function layoutParameters(request) {
     return {
         p_occasion: request.occasionId,

@@ -2052,6 +2052,12 @@
         "legacyReinviteConfirm": "Einige Personen haben bereits eine Einladung erhalten. Erneut senden?"
     },
     "McpConnection": {
+    "mfaLoginHint": "Geben Sie den sechsstelligen Code Ihrer Authenticator-App ein, um fortzufahren.",
+    "mfaApprovalHint": "Warten Sie auf einen neuen Code in Ihrer Authenticator-App und geben Sie ihn ein, um diese unabhängige Verbindung zu sichern.",
+    "mfaCode": "Bestätigungscode",
+    "mfaVerify": "Code bestätigen",
+    "mfaFailed": "Der Code konnte nicht bestätigt werden. Geben Sie einen neuen Code ein und versuchen Sie es erneut.",
+    "mfaUnsupported": "Diese Verbindung erfordert eine bestätigte Authenticator-App.",
         "permissionMode": "Funktionsumfang",
         "permissionMode_requested": "Alle angeforderten Funktionen",
         "permissionMode_read-only": "Nur angeforderte Lesefunktionen",

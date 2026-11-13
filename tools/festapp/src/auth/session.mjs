@@ -1,6 +1,7 @@
 import { acquireProcessLock, rejectLegacyLock } from './process-lock.mjs';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import { verifiedSessionAssurance } from './assurance.mjs';
 import {
     configHome,
     digest,
@@ -86,7 +87,7 @@ export class SessionOwner {
             },
         );
     }
-    async identity(client, expectedUser, accessToken) {
+    async identity(client, expectedUser, accessToken, { withAssurance = false } = {}) {
         const { data, error } = await client.auth.getUser(accessToken);
         authenticationError(error);
         check(data.user, 'AUTHENTICATION_REQUIRED');
@@ -113,15 +114,16 @@ export class SessionOwner {
                 user.data.organization === this.profile.organizationId,
             'TARGET_MISMATCH',
         );
-        return data.user.id;
+        return withAssurance ? { userId: data.user.id,
+            authentication: verifiedSessionAssurance(accessToken, data.user, this.profile.backendOrigin) } : data.user.id;
     }
     // First-party proof is transient; the browser's refresh token is never adopted.
     async withAccessToken(accessToken, action) {
         check(typeof accessToken === 'string' && accessToken.length < 8192, 'AUTHENTICATION_REQUIRED');
         await verifyActivation(this.profile, this.fetch);
         const client = this.client(accessToken);
-        const userId = await this.identity(client, undefined, accessToken);
-        return action(client, { userId });
+        const identity = await this.identity(client, undefined, accessToken, { withAssurance: true });
+        return action(client, identity);
     }
     async adoptSession(session, expectedUser) {
         return this.locked(async () => {
@@ -175,8 +177,8 @@ export class SessionOwner {
                 userId: saved.userId,
                 refreshToken: data.session.refresh_token,
             });
-            const userId = await this.identity(client, saved.userId);
-            return action(client, { userId, profile: this.profile });
+            const identity = await this.identity(client, saved.userId, data.session.access_token, { withAssurance: true });
+            return action(client, { ...identity, profile: this.profile });
         });
     }
     async logout() {

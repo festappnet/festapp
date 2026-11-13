@@ -280,6 +280,7 @@ void main() {
             'applicationType': 'native',
             'canRequestCreate': true,
             'requestedPermissions': ['festapp:forms:read', 'festapp:forms:write'],
+            'requestedPermissionLabels': {'festapp:forms:read': 'formsRead', 'festapp:forms:write': 'formsWrite'},
             'units': [
               {
                 'id': 3,

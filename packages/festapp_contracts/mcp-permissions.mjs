@@ -91,6 +91,8 @@ export const READ_SCOPE = 'festapp:ticket-layouts:read';
 export const CREATE_SCOPE = 'festapp:occasions:create';
 export const DOMAIN_SCOPES = Object.freeze([READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES]);
 export const READ_OPERATIONS = Object.freeze(['context.inspect', 'access.inspect', 'ticket_layouts.inspect']);
+export const DELEGATED_OPERATIONS = Object.freeze([...new Set([...READ_OPERATIONS, 'occasions.create',
+    ...Object.values(MCP_PERMISSIONS).flatMap(permission => permission.operations)])]);
 export function scopesForOperation(operation) {
     if (READ_OPERATIONS.includes(operation)) return [READ_SCOPE];
     if (operation === 'occasions.create') return [READ_SCOPE, CREATE_SCOPE];

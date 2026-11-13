@@ -2,11 +2,13 @@ import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, createHash } from 'node:crypto';
+import {openDisposableDatabase} from './postgres.mjs';
+import {enableFixtureBankPayments} from './form-fixtures.mjs';
 import { connect, fixture } from '../../../automation/authorization/benchmark.mjs';
 const options={skip:!process.env.FESTAPP_AUTHORIZATION_DATABASE_URL};
-async function within(t,body) {
-    const db=await connect(); await db.query('BEGIN');
-    try {const f=await fixture(db,1); await body(db,f);} finally {await db.query('ROLLBACK');await db.end();}
+async function within(t,body,{administrative=false}={}) {
+    const db=administrative?await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL,{administrative:true}):await connect(); await db.query('BEGIN');
+    try {if(administrative)await db.query("select set_config('festapp.authorization_fixture_project',$1,true)",[process.env.FESTAPP_LOCAL_DB_PROJECT_ID]);const f=await fixture(db,1); await body(db,f);} finally {await db.query('ROLLBACK');await db.end();}
 }
 async function identity(db,f,role='authenticated') {
     await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role',$2,true)",[f.actor,role]);
@@ -19,6 +21,7 @@ async function forbidden(db,sql,args) {
 }
 
 test('canonical truth table preserves server operation rights across 2048 role combinations',options,async t=>within(t,async(db,f)=>{
+    await db.query("update units set data='{\"measurement_consent_version\":1,\"measurement_consent_bridge\":false}' where id=$1",[f.unit]);
     await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,false)',[f.org,f.actor]);
     await db.query("update occasions set features='[{\"code\":\"reception\",\"is_enabled\":true}]' where id=$1",[f.occasion]);
     await db.query(await readFile(new URL('../../../database/tests/helpers/authorization_context_reference.sql',import.meta.url),'utf8'));
@@ -73,12 +76,15 @@ test('canonical truth table preserves server operation rights across 2048 role c
         const {capabilities,bank_capabilities,...currentEnvelope}=c;
         // Keep the historical reference exact and assert the approved additive
         // measurement/provider projections separately from authorization facts.
-        const {stripe_preview_enabled,payment_providers,providerFields,...unitEnvelope}=currentEnvelope.unit;
+        const {stripe_preview_enabled,payment_providers,providerFields,payment_method_policy,...unitEnvelope}=currentEnvelope.unit;
         const {FORM_MEASUREMENT_ENABLED,...organizationEnvelope}=currentEnvelope.organization;
-        assert.equal(stripe_preview_enabled,false,`fixture Stripe feature default, roles ${bits}`);
+        assert.equal(stripe_preview_enabled,null,`fixture Stripe feature default, roles ${bits}`);
         assert.equal(FORM_MEASUREMENT_ENABLED,false,`fixture measurement default, roles ${bits}`);
         assert.deepEqual(payment_providers,{stripe:false,barion:false});
-        assert.deepEqual(providerFields,{stripe:{stripe_preview_enabled:false},barion:{}});
+        assert.deepEqual(providerFields,{stripe:{},barion:{}});
+        assert.equal(payment_method_policy.organizationId,f.org);
+        assert.equal(payment_method_policy.unitId,f.unit);
+        assert.deepEqual(Object.fromEntries(Object.entries(payment_method_policy.methods).map(([method,policy])=>[method,policy.policyEnabled])),{bank:false,cash:true,barion:false,stripe:false});
         assert.deepEqual({...currentEnvelope,unit:unitEnvelope,organization:organizationEnvelope},original,`unchanged context envelope, roles ${bits}`);
         for(const [key,expected] of Object.entries({
           'orders.read':r.read,'orders.write':r.write,'orders.delete':r.delete,
@@ -292,7 +298,8 @@ test('app links enqueue binds live participant-management rights before replay',
     assert(queued.message_id);
     assert.equal((await db.query(sql,args)).rows[0].result.message_id,queued.message_id);
     const teamArgs=[...args];teamArgs[1]='custom';teamArgs[7]='TEAM_ACCESS_NOTICE';teamArgs[5]='authorization-'+randomUUID();
-    assert((await db.query(sql,teamArgs)).rows[0].result.message_id,'team notices share the same live sender policy');
+    // Team notices have their own canonical producer; this entrypoint accepts APP_LINKS only.
+    await forbidden(db,sql,teamArgs);
     const invalidKind=[...args];invalidKind[1]=null;
     await forbidden(db,sql,invalidKind);
     await db.query('RESET ROLE');
@@ -311,6 +318,7 @@ test('app links enqueue binds live participant-management rights before replay',
 }));
 
 test('bank management requires both live unit and bank administration, including revocation and demo fences',options,async t=>within(t,async(db,f)=>{
+    await enableFixtureBankPayments(db,f);
     const bank=Number((await db.query("insert into eshop.bank_accounts(account_number,title,type) values($1,'Authorization bank','FIO') returning id",['authz-'+randomUUID()])).rows[0].id);
     await db.query('insert into eshop.bank_account_users(bank_account,"user",is_admin,is_support) values($1,$2,true,false)',[bank,f.actor]);
     await db.query('insert into eshop.unit_bank_accounts(bank_account,unit,priority) values($1,$2,0)',[bank,f.unit]);
@@ -332,12 +340,12 @@ test('bank management requires both live unit and bank administration, including
         assert.equal((await db.query('select can_manage_bank_account($1) allowed',[bank])).rows[0].allowed,manager && admin);
         if (manager && admin) {
             await db.query('select get_bank_sync_connection($1)',[bank]);
-            await db.query('select update_bank_account($1,$2,$3)',[bank,bank+'/2010','Allowed details']);
+            await db.query('select update_bank_account($1,$2,$3,p_creditor_name=>NULL)',[bank,bank+'/2010','Allowed details']);
         } else {
             for (const [sql,args] of [
                 ['select get_bank_sync_connection($1)',[bank]],
                 ['select update_bank_account_user($1,$2,true,false)',[bank,'nobody@example.invalid']],
-                ['select update_bank_account($1,$2,$3)',[bank,bank+'/2010','Denied details']],
+                ['select update_bank_account($1,$2,$3,p_creditor_name=>NULL)',[bank,bank+'/2010','Denied details']],
                 ['select begin_bank_sync_operation($1,$2,$3,$4)',[randomUUID(),bank,'sync','a'.repeat(64)]],
             ]) {
                 await db.query('SAVEPOINT bank_denied');
@@ -364,12 +372,13 @@ test('bank management requires both live unit and bank administration, including
     assert.equal((await context()).bank_capabilities[demo]['bank_accounts.users.write'],false);
     assert.equal((await db.query('select can_manage_bank_account($1) allowed',[bank])).rows[0].allowed,false);
     await db.query('SAVEPOINT readonly_bank');
-    await assert.rejects(db.query('select update_bank_account_user($1,$2,false,false)',[demo,'someone@example.invalid']),e=>e.message.includes('Only bank account admins'));
+    await assert.rejects(db.query('select update_bank_account_user($1,$2,false,false)',[demo,'someone@example.invalid']),e=>e.code==='42501'&&e.message==='PAYMENT_BANK_SCOPE_UNAVAILABLE');
     await db.query('ROLLBACK TO SAVEPOINT readonly_bank');
 }));
 
 
 test('bank linking requires target-unit manager and account admin without authorizing an unrelated unit',options,async t=>within(t,async(db,f)=>{
+    await enableFixtureBankPayments(db,f);
     const bank=Number((await db.query("insert into eshop.bank_accounts(account_number,title,type) values($1,'Unlinked authorization bank','FIO') returning id",['authz-'+randomUUID()])).rows[0].id);
     await db.query('insert into eshop.bank_account_users(bank_account,"user",is_admin) values($1,$2,true)',[bank,f.actor]);
     await identity(db,f);
@@ -389,9 +398,9 @@ test('bank linking requires target-unit manager and account admin without author
     await db.query('update unit_users set is_manager=false where unit=$1 and "user"=$2',[f.unit,f.actor]);
     await identity(db,f);
     await db.query('SAVEPOINT cannot_link_without_unit');
-    await assert.rejects(db.query('select link_bank_account_to_unit($1,$2,0)',[bank,f.unit]),e=>e.message.includes('manager'));
+    await assert.rejects(db.query('select link_bank_account_to_unit($1,$2,0)',[bank,f.unit]),e=>e.code==='42501'&&e.message==='PAYMENT_BANK_SCOPE_UNAVAILABLE');
     await db.query('ROLLBACK TO SAVEPOINT cannot_link_without_unit');
-    await forbidden(db,'select update_bank_account(NULL,$1,$2)',[bank+'/2010','No unit supplied']);
+    await forbidden(db,'select update_bank_account(NULL,$1,$2,p_creditor_name=>NULL)',[bank+'/2010','No unit supplied']);
     await db.query('RESET ROLE');
     const demoUnit=Number((await db.query('select o.unit from demo_occasions d join occasions o on o.id=d.occasion where o.unit IS NOT NULL limit 1')).rows[0].unit);
     await db.query('insert into unit_users(unit,"user",is_manager) values($1,$2,true)',[demoUnit,f.actor]);
@@ -611,7 +620,27 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const before=JSON.parse(await readFile(new URL('../../../database/fixtures/authorization/pre-cutover-acl.json',import.meta.url),'utf8'));
     const query=await readFile(new URL('../../../automation/authorization/catalog.sql',import.meta.url),'utf8');
     const responses=await db.query(query),after=responses.at(-1).rows[0].jsonb_build_object;
+    // Canonical CI clones the marked base into a unique database. Bind the
+    // historical catalog identity to that exact clone, preserving every ACL.
+    const catalog=(await db.query('select current_database() name')).rows[0].name;
+    for(const field of ['tableGrants','columnGrants']) {
+        assert.deepEqual([...new Set(before[field].map(g=>g.table_catalog))],['postgres']);
+        assert.deepEqual([...new Set(after[field].map(g=>g.table_catalog))],[catalog]);
+        before[field]=before[field].map(g=>({...g,table_catalog:catalog}));
+    }
     const sorted=rows=>(rows??[]).map(r=>JSON.stringify(r)).sort();
+    // The pinned native provider predates these four historical GraphQL
+    // schema grants. Assert their exact absence; never restore API access.
+    const nativeProvider=await readFile(new URL('../../../automation/local_db/provider/pg15.sql',import.meta.url),'utf8');
+    assert.doesNotMatch(nativeProvider,/^GRANT .*ON SCHEMA graphql_public TO (?:anon|authenticated|service_role|postgres)/m);
+    {
+        const extensionGrant=g=>g.schema==='graphql_public' && g.privilege==='USAGE'
+          && (['anon','authenticated','service_role'].includes(g.grantee)&&g.grantable===false
+            ||g.grantee==='postgres'&&g.grantable===true);
+        assert.equal(before.schemaGrants.filter(extensionGrant).length,4);
+        assert.deepEqual(after.schemaGrants.filter(extensionGrant),[]);
+        before.schemaGrants=before.schemaGrants.filter(g=>!extensionGrant(g));
+    }
     for(const field of ['schemaGrants','defaultGrants','roles','roleMemberships']) {
         assert.deepEqual(sorted(after[field]),sorted(before[field]),field+' remains unchanged');
     }
@@ -621,6 +650,13 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     for(const field of ['tableGrants','columnGrants']) before[field]=before[field]
       .filter(g=>!(adminOwned.has(g.table_schema+'.'+g.table_name)&&g.grantee==='supabase_admin'&&g.grantor==='supabase_admin'))
       .map(g=>adminOwned.has(g.table_schema+'.'+g.table_name)?{...g,grantor:g.grantor==='supabase_admin'?'postgres':g.grantor,...(g.grantee==='postgres'?{is_grantable:'YES'}:{})}:g);
+    const retiredRelation=g=>g.table_schema==='public'&&g.table_name==='occasion_team_invitations';
+    assert.equal(await db.query("select to_regclass('public.occasion_team_invitations') old").then(r=>r.rows[0].old),null);
+    const removedPolicyWrites=g=>['anon','authenticated','service_role'].includes(g.grantee)
+      && ['INSERT','UPDATE','DELETE'].includes(g.privilege_type)
+      && (g.table_schema==='eshop'&&g.table_name==='bank_account_requests'
+        ||g.table_schema==='public'&&['email_templates','email_wrappers'].includes(g.table_name));
+    for(const field of ['tableGrants','columnGrants'])before[field]=before[field].filter(g=>!retiredRelation(g)&&!removedPolicyWrites(g));
     const removedDirectDelete=g=>g.table_schema==='public'&&['images','log_notifications'].includes(g.table_name)
         &&['anon','authenticated'].includes(g.grantee)&&g.privilege_type==='DELETE';
     assert.equal(before.tableGrants.filter(removedDirectDelete).length,4);
@@ -630,12 +666,12 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const stripeTables=['stripe_admission_decisions','stripe_capabilities','stripe_checkout_attempts',
         'stripe_connection_audit','stripe_connection_flows','stripe_connections','stripe_disconnect_intents',
         'stripe_disputes','stripe_event_inbox','stripe_payment_link_sources','stripe_payment_movements',
-        'stripe_runtime_policy','stripe_unit_features'];
+        'stripe_runtime_policy'];
     // 240230 adds exactly one private invoice journal. Current-main 240100/240200
     // add the exact notification/batch tables below. Live role grants verified.
     const batchTables=['ticket_batches','ticket_batch_items','ticket_batch_document_parts'];
     const approvedPrivateTables=[...stripeTables,...batchTables,'replacement_invoice_preparations'];
-    const notificationTables=['organizations','events','recipients','user_state','deliveries','preferences','source_state','maintenance','bank_health'].map(name=>'notification_center_'+name);
+    const notificationTables=['organizations','events','recipients','user_state','deliveries','preferences','source_state','maintenance'].map(name=>'notification_center_'+name);
     const ownerTables=before.tableGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.grantee==='postgres');
     const ownerColumns=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id'&&g.grantee==='postgres');
     assert.equal(ownerTables.length,7);assert.equal(ownerColumns.length,4);
@@ -643,13 +679,29 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // private. Email seating inspection has one reviewed service SELECT.
     const forwardPrivateTables=[
       ['eshop','checkout_origin_signing_key'],['eshop','order_checkout_origins'],
-      ...['form_seating_transitions','notification_center_read_batches','occasion_media_jobs',
+      ...['notification_center_read_batches','occasion_media_jobs',
       'sale_opening_campaigns','sale_opening_subscriptions','sale_opening_capabilities',
       'service_fee_agreements','service_fee_allocations','service_fee_customer_acquisitions','service_fee_settlements',
       'wix_billing_activation','wix_billing_attempts','wix_billing_deliveries'].map(name=>['public',name])];
     // Exact reviewed additions, pinned to their canonical declaration owners.
     // A new table in any source requires an explicit review of this inventory.
+    // Exact later schema owners; all retain owner-only table/column ACLs.
+    forwardPrivateTables.push(...['organization_payment_method_policies','unit_payment_method_policies',
+      'payment_method_policy_scopes','payment_method_policy_commands','payment_method_policy_unit_preferences']
+      .map(name=>['eshop',name]));
+    forwardPrivateTables.push(['public','access_invitations']);
     const reviewedPrivateSources={
+      "people/access_schema.sql":["public.access_email_preparations", "public.access_preparation_key"],
+      "notification_center/email_delivery_schema.sql":["public.notification_center_email_profiles", "public.notification_center_email_subscriptions", "public.notification_center_email_dispatches", "public.notification_center_email_items", "public.notification_center_email_item_sources"],
+      "notification_center/provider_connections.sql":["eshop.provider_connection_notification_incidents"],
+      "notification_center/payment_sources.sql":["eshop.payment_notification_incidents"],
+      "scanning/credential_revocations.sql":["public.scanner_revoked_credentials"],
+      "ticket_wallet/schema.sql":["eshop.ticket_wallet_integrations", "eshop.ticket_wallet_capabilities", "eshop.ticket_wallet_objects", "eshop.ticket_wallet_audit", "eshop.ticket_wallet_limits"],
+      "ticket_wallet/work_schema.sql":["eshop.ticket_wallet_work"],
+      "ticket_wallet/worker.sql":["eshop.ticket_wallet_worker"],
+      "payment_providers/operations_schema.sql":["eshop.refund_requests", "eshop.refund_settlements", "eshop.payment_operation_events", "eshop.order_deletion_fences"],
+      "payment_providers/template_policy.sql":["eshop.payment_template_reviews", "eshop.payment_template_epochs"],
+
       'payment_providers/schema.sql':['eshop.payment_providers'],
       'eshop_barion/schema.sql':['barion_connections','barion_attempts','barion_movements','barion_capabilities','barion_sources','barion_observations'].map(n=>'eshop.'+n),
       'presale_content/archive.sql':['public.form_presale_content_archive'],
@@ -669,7 +721,6 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     expectedTables.push(...notificationTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_schema:'public',table_name}))));
 
     expectedTables.push(...forwardPrivateTables.flatMap(([table_schema,table_name])=>ownerTables.map(g=>({...g,table_schema,table_name}))));
-    expectedTables.push(...ownerTables.filter(g=>g.privilege_type==='SELECT').map(g=>({...g,table_schema:'public',table_name:'form_seating_transitions',grantee:'service_role',is_grantable:'NO'})));
     const expectedTableGrants=sorted([...before.tableGrants.filter(g=>!removedDirectDelete(g)),...expectedTables]);
     const actualTableGrants=sorted(after.tableGrants);
     assert.deepEqual({extra:actualTableGrants.filter(g=>!expectedTableGrants.includes(g)),missing:expectedTableGrants.filter(g=>!actualTableGrants.includes(g))},{extra:[],missing:[]},
@@ -689,8 +740,10 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       expectedColumns.push(...columns.flatMap(({column_name})=>ownerColumns.map(g=>({...g,table_schema,table_name,column_name}))));
       if(table_name==='form_seating_transitions') expectedColumns.push(...columns.map(({column_name})=>({...ownerColumns.find(g=>g.privilege_type==='SELECT'),table_schema,table_name,column_name,grantee:'service_role',is_grantable:'NO'})));
     }
+    before.columnGrants=before.columnGrants.filter(g=>!(g.table_schema==='eshop'&&g.table_name==='bank_sync_health'&&g.column_name==='notified_at'));
+    expectedColumns.push(...before.columnGrants.filter(g=>g.table_schema==='public'&&g.table_name==='email_messages'&&g.column_name==='message_id').map(g=>({...g,column_name:'notification_dispatch_id'})));
     const bankColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='bank_sync_connections'&&g.column_name==='bank_account_id');
-    for(const column_name of ['failure_observed_at','failure_since','observation_id']) expectedColumns.push(...bankColumnTemplate.map(g=>({...g,column_name})));
+    for(const column_name of ['failure_observed_at','failure_since','observation_id','refund_rf_verified']) expectedColumns.push(...bankColumnTemplate.map(g=>({...g,column_name})));
     // The exact Stripe/Barion payment_info columns inherit its unchanged table ACL.
     // API access to any other new column or any approved private-table column still fails.
     const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
@@ -708,6 +761,8 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     retired.add('record_bank_sync_health(bigint,bigint,timestamp with time zone,text,boolean,boolean,boolean)');
     retired.add('record_bank_sync_pull(bigint,timestamp with time zone,text)');
     retired.add('update_bank_sync_connection_metadata(bigint,text,timestamp with time zone,text,text)');
+    retired.add('enqueue_bank_sync_health_alerts(bigint)');
+    retired.add('enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text)');
     const present=new Set(after.functions.map(f=>f.signature));
     for(const f of before.functions) if(!present.has(f.signature)) assert(retired.has(f.signature),'Unreviewed removed function: '+f.signature);
 
@@ -724,6 +779,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const changes=after.functions.filter(f=>old.has(f.signature)&&JSON.stringify(sorted(f.grants))!==JSON.stringify(sorted(old.get(f.signature).grants)));
     // 240210 replaces ambient PUBLIC execution with exact named role grants.
     const publicRevocations=[
+      "get_form_by_link(text)",
       "check_is_admin_of_organization(bigint)",
       "delete_occasion_email_template(bigint,text)",
       "get_all_occasions_for_edit(bigint)",
@@ -745,6 +801,12 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
 ];
     assert.deepEqual(changes.map(f=>f.signature).sort(),[
         ...publicRevocations,
+        'accept_occasion_team_invitation(text,text)',
+        'create_occasion_user_client_sync_v1(bigint,uuid,jsonb)',
+        'get_my_admin_bank_accounts()',
+        'get_occasion_team_invitation(text)',
+        'get_order_details_for_email(bigint)',
+        'get_waitlist_email_tone_substitutions_internal(bigint)',
         'begin_client_mutation_v1(uuid,text,bigint,uuid,text)',
         'delete_unit_user_internal_v1(uuid,bigint)',
         'get_form_for_edit(text)',
@@ -762,7 +824,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // Later reviewed cuts: explicit application ACLs (240210), ticket
     // cancellation (240240), participant authoring (271500), and the private
     // measurement metadata reader (20261106115500).
-    for(const [signature,removed] of [['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['get_effective_form_data(bigint)',['service_role']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
+    for(const [signature,removed] of [['accept_occasion_team_invitation(text,text)',['service_role']],['create_occasion_user_client_sync_v1(bigint,uuid,jsonb)',['service_role']],['get_my_admin_bank_accounts()',['service_role']],['get_occasion_team_invitation(text)',['service_role']],['get_order_details_for_email(bigint)',['PUBLIC','anon','authenticated']],['get_waitlist_email_tone_substitutions_internal(bigint)',['service_role']],['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['get_effective_form_data(bigint)',['service_role']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
         assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>!removed.includes(g.grantee))),signature+' has only its reviewed revocations');
     for(const signature of publicRevocations) assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>g.grantee!=='PUBLIC')),signature+' removes only PUBLIC execution');
     assert.deepEqual(sorted(changes.find(f=>f.signature==='begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants),sorted(old.get('begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants.filter(g=>g.grantee!=='service_role')));
@@ -780,7 +842,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     assert.deepEqual(grants('update_bank_account_user(bigint,text,boolean,boolean)'),['authenticated','postgres','service_role']);
     // 232300 grants the scanner command to authenticated without ambient access.
     assert.deepEqual(grants('update_scan_code(text,text)'),['authenticated','postgres','service_role']);
-}));
+},{administrative:true}));
 
 
 test('API roles have no effective direct table-write bypass around canonical commands',options,async t=>within(t,async(db,f)=>{

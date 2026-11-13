@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "9ef9fdb93f0029f1716822eb55e0314cd800125a5f7de37c3fc8ad35725b65bc",
+  "sourceDigest": "1b66b32bb50a3a293081ae4bdb486d4d76fef3359810e63b6ab457e7c6b00cc8",
   "permissions": [
     {
       "scope": "festapp:history:delete",
@@ -13332,6 +13332,13 @@
           "inputData": {
             "type": "object",
             "properties": {
+              "payment_method": {
+                "type": "string",
+                "enum": [
+                  "bank",
+                  "cash"
+                ]
+              },
               "email": {
                 "type": "string",
                 "maxLength": 320,
@@ -13681,6 +13688,13 @@
           "inputData": {
             "type": "object",
             "properties": {
+              "payment_method": {
+                "type": "string",
+                "enum": [
+                  "bank",
+                  "cash"
+                ]
+              },
               "email": {
                 "type": "string",
                 "maxLength": 320,

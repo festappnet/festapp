@@ -5,6 +5,7 @@ import { generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
 import { parseRemoteConfig, remoteContexts } from './config.mjs';
 import { privateRoot } from '../context/profile.mjs';
 import { safeError, check } from '../errors.mjs';
+import { migrateLayoutIntents } from './migrate-layout-intents.mjs';
 import { openRemoteStorage } from './storage.mjs';
 import { createRemoteApp } from './server.mjs';
 import { inspectorConfiguration } from './inspector.mjs';
@@ -45,6 +46,17 @@ try {
         check(JSON.stringify(withoutStorage(old))===JSON.stringify(withoutStorage(next)),'STORAGE_ONLY_ROTATION_REQUIRED');
         const storage=await openRemoteStorage(root,Buffer.from(old.storageKey,'base64url'));
         try { process.stdout.write(JSON.stringify({ok:true,...storage.rekey(Buffer.from(next.storageKey,'base64url')),usePreparedSecrets:true})+'\n'); }
+        finally {await storage.close();}
+    } else if (args[0] === 'migrate-layout-intents' && args.length === 6 && args[2] === '--secrets' && args[4] === '--data') {
+        const config=parseRemoteConfig(JSON.parse(await readFile(args[1],'utf8')));
+        const secretPath=resolve(args[3]),root=resolve(args[5]);
+        check(!secretPath.startsWith(root+'/')&&secretPath!==root,'SEPARATE_SECRET_STORAGE_REQUIRED');
+        const stat=await lstat(secretPath);
+        check(stat.isFile()&&!stat.isSymbolicLink()&&!(stat.mode&0o077)&&(!process.getuid||stat.uid===process.getuid()),'INSECURE_SECRET_FILE');
+        const secrets=JSON.parse(await readFile(secretPath,'utf8'));
+        check(secrets.schemaVersion===1&&/^[A-Za-z0-9_-]{43}$/.test(secrets.storageKey),'INVALID_STORAGE_KEY');
+        const storage=await openRemoteStorage(root,Buffer.from(secrets.storageKey,'base64url'));
+        try { process.stdout.write(JSON.stringify({ok:true,...await migrateLayoutIntents(config,storage)})+'\n'); }
         finally {await storage.close();}
     } else if (args[0] === 'recover-restored-state' && args.length === 5 && args[1] === '--secrets' && args[3] === '--data') {
         const secretPath = resolve(args[2]), root = resolve(args[4]);

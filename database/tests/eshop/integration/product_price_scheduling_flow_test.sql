@@ -33,6 +33,8 @@ BEGIN
     -- Setup: Two products - one with deposit, one without
     -- ==================================================================
     INSERT INTO public.organizations (title) VALUES ('Test Org MixCart') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(v_org_id,'bank');
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org_id,'bank',true);
     INSERT INTO public.units (title, organization) VALUES ('Test Unit MixCart', v_org_id) RETURNING id INTO v_unit_id;
     INSERT INTO eshop.secrets (secret) VALUES ('test_secret_mixcart') RETURNING id INTO v_secret_id;
     INSERT INTO eshop.bank_accounts (title, supported_currencies, secret, type)
@@ -53,8 +55,8 @@ BEGIN
         v_hidden_id
     ) RETURNING id INTO v_occasion_id;
 
-    INSERT INTO public.forms (title, occasion, is_open)
-    VALUES ('Test Form MixCart', v_occasion_id, true) RETURNING id, key INTO v_form_id, v_form_key;
+    INSERT INTO public.forms (title, occasion, is_open, bank_account, data)
+    VALUES ('Test Form MixCart', v_occasion_id, true, v_acc_id, '{"payments":{"bankEnabled":true}}'::jsonb) RETURNING id, key INTO v_form_id, v_form_key;
     INSERT INTO eshop.product_types (title, occasion, type)
     VALUES ('Test PT MixCart', v_occasion_id, 'spot') RETURNING id INTO v_product_type_id;
     INSERT INTO public.form_fields (form, product_type) VALUES (v_form_id, v_product_type_id);
@@ -85,7 +87,7 @@ BEGIN
 
     -- Real checkout with a stale public-form price supplied by the client.
     UPDATE eshop.spots SET product=v_product_deposit_id WHERE id=v_spot_2_id;
-    v_input_data := jsonb_build_object('form',v_form_key,'email','before@example.com',
+    v_input_data := jsonb_build_object('form',v_form_key,'payment_method','bank','email','before@example.com',
       'secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_1_id),
       'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_1_id,'price',1000)));
     v_result := public.create_ticket_order(v_input_data);
@@ -96,7 +98,7 @@ BEGIN
     PERFORM set_config('request.jwt.claim.role','service_role',true);
     PERFORM public.apply_planned_changes();
     PERFORM assert_eq((SELECT price FROM eshop.products WHERE id=v_product_deposit_id),1200::numeric,'Scheduled current price');
-    v_input_data := jsonb_build_object('form',v_form_key,'email','after@example.com',
+    v_input_data := jsonb_build_object('form',v_form_key,'payment_method','bank','email','after@example.com',
       'secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_2_id),
       'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_2_id,'price',1000)));
     v_result := public.create_ticket_order(v_input_data);
@@ -114,7 +116,7 @@ BEGIN
     INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion,wave_id)
       VALUES('products.is_hidden',v_product_deposit_id,'true',now()-interval '1 minute',v_occasion_id,v_wave_id);
     PERFORM public.apply_planned_changes();
-    v_input_data := jsonb_build_object('form',v_form_key,'email','hidden@example.com',
+    v_input_data := jsonb_build_object('form',v_form_key,'payment_method','bank','email','hidden@example.com',
       'secret',(SELECT secret FROM eshop.spots WHERE id=v_spot_2_id),
       'ticket',jsonb_build_array(jsonb_build_object('spot',v_spot_2_id,'price',1000)));
     v_result := public.create_ticket_order(v_input_data);

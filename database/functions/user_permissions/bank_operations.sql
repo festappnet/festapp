@@ -68,8 +68,6 @@ GRANT EXECUTE ON FUNCTION public.can_read_bank_account_users(bigint,bigint) TO a
 
 -- The demo migration recreated the details writer after the old grants. Keep
 -- the supported application entry points explicit, with live policy inside.
-REVOKE ALL ON FUNCTION public.update_bank_account(bigint,text,text,text,text[],text,bigint,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_bank_account(bigint,text,text,text,text[],text,bigint,text) TO authenticated,service_role;
 REVOKE ALL ON FUNCTION public.update_bank_account_user(bigint,text,boolean,boolean) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.update_bank_account_user(bigint,text,boolean,boolean) TO authenticated,service_role;
 

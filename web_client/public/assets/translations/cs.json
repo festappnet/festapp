@@ -4035,6 +4035,12 @@
         "no_matching_answers": "Žádné další odpovídající údaje."
     },
     "McpConnection": {
+    "mfaLoginHint": "Pro pokračování zadejte šestimístný kód z ověřovací aplikace.",
+    "mfaApprovalHint": "Počkejte na nový kód v ověřovací aplikaci a zadejte jej pro zabezpečení tohoto samostatného připojení.",
+    "mfaCode": "Ověřovací kód",
+    "mfaVerify": "Ověřit kód",
+    "mfaFailed": "Kód se nepodařilo ověřit. Zadejte nový kód a zkuste to znovu.",
+    "mfaUnsupported": "Toto připojení vyžaduje ověřenou aplikaci pro dvoufázové ověření.",
         "permissionMode": "Rozsah funkcí",
         "permissionMode_requested": "Všechny požadované funkce",
         "permissionMode_read-only": "Jen požadované čtení",

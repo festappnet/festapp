@@ -24,3 +24,18 @@ native README/review, revoke old grants or install a 410 tombstone before the
 existing review is accepted. The live original regional runtime remains intact.
 After acceptance, apply the approved-app maintenance workflow, qualify the
 actual connection/scenarios, prove consumer migration, and then close this ledger.
+
+## Shared operator expansion - source candidate
+
+The sole operation registry is `packages/festapp_contracts/mcp-permissions.mjs`
+(`DELEGATED_OPERATIONS`). MCP reference generation, API projections, client
+registration and delegated execution consume it. Both adapters call the same
+`Operations` executor and domain/SQL owners. The API-specific blanket
+`mutationGaps` and duplicate `apiSupported` filters are removed. Protocol proof
+requirements remain transport policy, with no duplicate domain implementation.
+Shared layout recovery binds one actor/profile and exact reviewed request to
+one command UUID; old pending records migrate offline without a runtime fallback.
+All 196 operations have adapter-parity coverage, with real PostgreSQL workflow
+coverage and production-version GoTrue MFA coverage at the effect boundaries.
+This candidate must still pass canonical CI and deployment gates. Make review
+acceptance remains the prerequisite for its connector cutover.
