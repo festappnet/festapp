@@ -17,7 +17,7 @@ body.dark-mode .oc-card { background-color: #303237; }
 .oc-present { outline: 3px solid var(--accent-color); outline-offset: -3px; }
 .oc-media { position: relative; aspect-ratio: 16 / 9; background: #f8fafc; }
 body.dark-mode .oc-media { background: #232529; }
-.oc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.oc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .oc-overlay-past { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
 
 .oc-header { padding: 10px 12px 12px; }
