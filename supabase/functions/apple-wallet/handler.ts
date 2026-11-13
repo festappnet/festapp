@@ -14,9 +14,9 @@ export function appleWalletHandler(rpc:WalletRpc,configured:()=>Promise<AppleWal
   const response=(status:number)=>new Response(null,{status,headers});
   try {
    const url=new URL(req.url);const parts=url.pathname.replace(/^.*\/apple-wallet\/?/,'').split('/').filter(Boolean).map(decodeURIComponent);
+   if(parts[0]!=='v1')return response(404);
    const source=req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';
    if(!await rpc('allow_apple_wallet_request',{p_source:await walletHash(source)}))return response(429);
-   if(parts[0]!=='v1')return response(404);
    if(parts.length===2&&parts[1]==='log'&&req.method==='POST'){await boundedJson(req);return response(200);} // Discard logs: no QR, tokens or device data in logs.
    const auth=/^ApplePass ([a-f0-9]{64})$/.exec(req.headers.get('authorization')||'');
    if(parts[1]==='devices'&&parts[3]==='registrations'&&parts.length===6&&['POST','DELETE'].includes(req.method)) {
