@@ -167,7 +167,15 @@
   },
   "OccasionSettings": {
     "placeName": "Miejsce wydarzenia",
-    "placeNameHelp": "Opcjonalne. Nazwa obiektu lub adres. Pojawi się na bilecie po dodaniu do szablonu."
+    "placeNameHelp": "Opcjonalne. Nazwa obiektu lub adres. Pojawi się na bilecie po dodaniu do szablonu.",
+    "configure": "Skonfiguruj",
+    "enabled": "Włączona",
+    "disabled": "Wyłączona",
+    "featureEnabled": "Funkcja włączona",
+    "eventDetails": "Dane wydarzenia",
+    "preview": "Podgląd wydarzenia",
+    "appearanceVisibility": "Wygląd i widoczność",
+    "validationSummary": "Sprawdź wyróżnione pola. Zmiany nie zostały jeszcze zapisane."
   },
   "BankAccount": {
     "diagnostic": {

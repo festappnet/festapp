@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 /// Reveal a section within the editor without moving horizontal tab viewports.
-void revealFormEditorTarget(
+void revealEditorTarget(
   BuildContext context, {
   ScrollController? controller,
   double alignment = 0,

@@ -109,6 +109,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                   decoration: InputDecoration(
                     labelText: FormStrings.labelReservationLink,
                     helperText: FormStrings.helperReservationLink,
+                    helperMaxLines: 5,
                   ),
                   onSaved: (val) => widget.formFeature.formExternalLink = val,
                 ),
@@ -121,6 +122,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                   decoration: InputDecoration(
                     labelText: FormStrings.labelPrice,
                     helperText: FormStrings.helperPrice,
+                    helperMaxLines: 5,
                   ),
                   onSaved: (val) => widget.formFeature.formExternalPrice = val,
                 ),
@@ -133,6 +135,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: widget.formFeature.paymentDeadlineMode == 'none' ? 'none' : 'custom',
                   items: [for (final mode in ['custom','none']) DropdownMenuItem(value: mode,
                     child: Text(PaymentMethodStrings.text(mode == 'none' ? 'deadlineNone' : 'deadlineCustom')))],
@@ -148,6 +151,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                   decoration: InputDecoration(
                     labelText: FormStrings.labelDeadlineDuration,
                     helperText: FormStrings.helperDeadlineDuration,
+                    helperMaxLines: 5,
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (_) =>
@@ -175,6 +179,7 @@ class _FormFeatureEditorState extends State<_FormFeatureEditor> {
                     decoration: InputDecoration(
                       labelText: FormStrings.labelReminderInterval,
                       helperText: FormStrings.helperReminderInterval,
+                      helperMaxLines: 5,
                       errorText:
                           (int.tryParse(_reminderController.text) ?? 1) >=
                                   (int.tryParse(_deadlineController.text) ?? 7)

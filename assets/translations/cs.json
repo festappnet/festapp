@@ -1787,7 +1787,15 @@
     "iconsLinkHelper": "Lidsky čitelný identifikátor, např. název Material Symbol.",
     "invalidNumber": "Zadejte prosím platné číslo",
     "placeName": "Místo konání",
-    "placeNameHelp": "Nepovinné. Název sálu nebo adresa. Na vstupence se zobrazí po přidání do šablony."
+    "placeNameHelp": "Nepovinné. Název sálu nebo adresa. Na vstupence se zobrazí po přidání do šablony.",
+    "featureEnabled": "Funkce je zapnutá",
+    "preview": "Náhled akce",
+    "configure": "Nastavit",
+    "enabled": "Zapnuto",
+    "appearanceVisibility": "Vzhled a viditelnost",
+    "eventDetails": "Údaje o akci",
+    "validationSummary": "Zkontrolujte zvýrazněná pole. Změny zatím nejsou uložené.",
+    "disabled": "Vypnuto"
   },
   "Feedback": {
     "helpTitle": "Jak můžeme pomoci?",

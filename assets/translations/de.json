@@ -165,7 +165,15 @@
   },
   "OccasionSettings": {
     "placeName": "Veranstaltungsort",
-    "placeNameHelp": "Optional. Name des Veranstaltungsorts oder Adresse. Wird nach dem Hinzufügen zur Vorlage auf dem Ticket angezeigt."
+    "placeNameHelp": "Optional. Name des Veranstaltungsorts oder Adresse. Wird nach dem Hinzufügen zur Vorlage auf dem Ticket angezeigt.",
+    "configure": "Einstellen",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "featureEnabled": "Funktion aktiviert",
+    "eventDetails": "Veranstaltungsdaten",
+    "preview": "Veranstaltungsvorschau",
+    "appearanceVisibility": "Darstellung und Sichtbarkeit",
+    "validationSummary": "Prüfen Sie die markierten Felder. Ihre Änderungen wurden noch nicht gespeichert."
   },
   "BankAccount": {
     "diagnostic": {

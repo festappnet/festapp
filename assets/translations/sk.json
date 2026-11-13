@@ -185,7 +185,15 @@
   },
   "OccasionSettings": {
     "placeName": "Miesto konania",
-    "placeNameHelp": "Nepovinné. Názov sály alebo adresa. Na vstupenke sa zobrazí po pridaní do šablóny."
+    "placeNameHelp": "Nepovinné. Názov sály alebo adresa. Na vstupenke sa zobrazí po pridaní do šablóny.",
+    "configure": "Nastaviť",
+    "enabled": "Zapnuté",
+    "disabled": "Vypnuté",
+    "featureEnabled": "Funkcia je zapnutá",
+    "eventDetails": "Údaje o akcii",
+    "preview": "Náhľad akcie",
+    "appearanceVisibility": "Vzhľad a viditeľnosť",
+    "validationSummary": "Skontrolujte zvýraznené polia. Zmeny zatiaľ nie sú uložené."
   },
   "BankAccount": {
     "diagnostic": {

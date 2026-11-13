@@ -97,7 +97,15 @@
   },
   "OccasionSettings": {
     "placeName": "Місце проведення",
-    "placeNameHelp": "Необов’язкове. Назва закладу або адреса. З’явиться на квитку після додавання до шаблону."
+    "placeNameHelp": "Необов’язкове. Назва закладу або адреса. З’явиться на квитку після додавання до шаблону.",
+    "configure": "Налаштувати",
+    "enabled": "Увімкнено",
+    "disabled": "Вимкнено",
+    "featureEnabled": "Функцію ввімкнено",
+    "eventDetails": "Дані події",
+    "preview": "Попередній перегляд події",
+    "appearanceVisibility": "Вигляд і видимість",
+    "validationSummary": "Перевірте виділені поля. Зміни ще не збережено."
   },
   "FeatureFormSettings": {
     "measurementWebsites": "My websites",

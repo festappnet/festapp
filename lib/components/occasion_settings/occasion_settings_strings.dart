@@ -2,6 +2,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class OccasionSettingsStrings {
+  static String get eventDetails => 'OccasionSettings.eventDetails'.tr();
+  static String get appearanceVisibility =>
+      'OccasionSettings.appearanceVisibility'.tr();
+  static String get preview => 'OccasionSettings.preview'.tr();
+  static String get configure => 'OccasionSettings.configure'.tr();
+  static String get featureEnabled => 'OccasionSettings.featureEnabled'.tr();
+  static String get enabled => 'OccasionSettings.enabled'.tr();
+  static String get disabled => 'OccasionSettings.disabled'.tr();
+  static String get validationSummary =>
+      'OccasionSettings.validationSummary'.tr();
+
   static String get placeName => 'OccasionSettings.placeName'.tr();
   static String get placeNameHelp => 'OccasionSettings.placeNameHelp'.tr();
 

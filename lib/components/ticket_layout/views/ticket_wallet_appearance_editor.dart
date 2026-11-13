@@ -1,6 +1,7 @@
 import 'ticket_wallet_card_preview.dart';
 
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
 
@@ -21,12 +22,14 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
     this.occasionId,
     this.unitId,
     this.readOnly = false,
+    this.uploadImage,
   });
   final TicketFeature feature;
   final Map<String, dynamic> occasion;
   final ValueChanged<Map<String, dynamic>> onChanged;
   final int? occasionId, unitId;
   final bool readOnly;
+  final Future<String?> Function(Uint8List)? uploadImage;
   String t(String key) => TicketDeliveryStrings.text(key);
   @override
   Widget build(BuildContext context) {
@@ -77,11 +80,13 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
                 } finally {
                   buffer.dispose();
                 }
-                final url = await DbImages.uploadImage(
-                  bytes,
-                  occasionId,
-                  occasionId == null ? unitId : null,
-                );
+                final url = uploadImage != null
+                    ? await uploadImage!(bytes)
+                    : await DbImages.uploadImage(
+                        bytes,
+                        occasionId,
+                        occasionId == null ? unitId : null,
+                      );
                 if (context.mounted) change(key, url);
                 return url;
               },

@@ -1786,7 +1786,15 @@
     "iconsLinkHelper": "Human-readable identifier, e.g. the Material Symbol name.",
     "invalidNumber": "Please enter a valid number",
     "placeName": "Event venue",
-    "placeNameHelp": "Optional. Venue name or address. Appears on tickets when added to the template."
+    "placeNameHelp": "Optional. Venue name or address. Appears on tickets when added to the template.",
+    "featureEnabled": "Feature enabled",
+    "preview": "Event preview",
+    "configure": "Configure",
+    "enabled": "Enabled",
+    "appearanceVisibility": "Appearance and visibility",
+    "eventDetails": "Event details",
+    "validationSummary": "Check the highlighted fields. Your changes have not been saved yet.",
+    "disabled": "Disabled"
   },
   "Feedback": {
     "helpTitle": "How can we help?",

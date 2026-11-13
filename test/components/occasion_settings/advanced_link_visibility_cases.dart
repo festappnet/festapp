@@ -36,12 +36,7 @@ void main() {
                   child: OccasionAdvancedSettings(
                     linkController: link,
                     replyToEmailController: email,
-                    selectedTimezone: 'UTC',
-                    allTimezones: const ['UTC'],
                     isEditingEnabled: true,
-                    initiallyExpanded: true,
-                    onExpansionChanged: (_) {},
-                    onTimezoneSelected: (_) {},
                     onLinkChanged: (_) {},
                     onLinkSaved: (_) => linkSaves++,
                   ))),
