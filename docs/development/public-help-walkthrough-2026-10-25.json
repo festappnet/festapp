@@ -153,10 +153,10 @@
     {
       "mediaId": "cs/seating/templates",
       "file": "cs/walkthrough/09-seating-template-picker.png",
-      "sha256": "a62ab4873d539202e31c90c46a84174b11fa8137b436cf2e6342c604cce6724a",
-      "capturedAt": "2026-10-24T23:20:59.994434+00:00",
-      "captureStep": "135-seating-templates-shot",
-      "alt": "Výběr šablon sálu včetně Ples u kulatých stolů."
+      "sha256": "b8395b478940f75637981fbb3e062c944662f28e35bd0f15912b5966192346b4",
+      "capturedAt": "2026-11-13T00:09:00.685737+00:00",
+      "captureStep": "20261113-current-wizard-visual-template-gallery",
+      "alt": "Vizuální výběr šablon sálu v průvodci založením akce."
     },
     {
       "mediaId": "cs/seating/style",
@@ -1385,5 +1385,12 @@
     "emailsRequested": false,
     "draftContactsSaved": false,
     "servicesClosed": true
+  },
+  "visualGalleryCapture20261113": {
+    "sourceBase": "a21a6f604",
+    "mediaId": "cs/seating/templates",
+    "capture": "Real current Flutter wizard using the production gallery; Czech locale, light theme, 1440x1000, isolated headless browser; synthetic Slavnostní ples U Lípy and Spolek U Lípy.",
+    "backend": "Owned disposable local Supabase on loopback 56821/56822. Canonical automation/baseline.py upgrade-local applied historical forwards through 20261112235500 preserving fixture data; temporary migration superuser restored to NOSUPERUSER. Local test entry selected the real v219 contract; external push SDK callbacks isolated.",
+    "observed": "Ples u kulatých stolů and Zahradní gala each show 96 seats; Lipoltice shows 186. Save and return was not verified for this capture due to local font resolver failure."
   }
 }
