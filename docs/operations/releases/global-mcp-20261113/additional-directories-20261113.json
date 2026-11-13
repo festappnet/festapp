@@ -54,7 +54,8 @@
       }
     ],
     "auth": "OAuth",
-    "no_credentials_shared": true
+    "no_credentials_shared": true,
+    "pendingCopyEdit": "No supported route; original forms remain pending without duplicate submissions."
   },
   "mcpSo": {
     "status": "free-manual-review-requested",
@@ -77,7 +78,7 @@
     "status": "pull-request-awaiting-maintainer",
     "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
     "authoritativeBaseSha": "37c0470e5285023f52b77537eb43b5744cb60418",
-    "headSha": "0023963f232b00dd880ecdff1d1c054f3a523ce8",
+    "headSha": "b72a14f673dc2c37afb132736206b90b203f1791",
     "changedFiles": [
       "README.md"
     ],
@@ -90,7 +91,8 @@
     "canonicalBadgesVerified": true,
     "publicSignUpEntryObserved": true,
     "successfulNewAccountRegistrationTested": false,
-    "requiredUpstreamStarApplied": true
+    "requiredUpstreamStarApplied": true,
+    "initialHeadSha": "0023963f232b00dd880ecdff1d1c054f3a523ce8"
   },
   "lobehub": {
     "status": "not-submitted-human-publisher-auth-required",
@@ -135,5 +137,10 @@
     "payments": false,
     "newChatGptPublication": false,
     "thirdDuplicateMcpServiceCreated": false
-  }
+  },
+  "copyUpdateEvidence": [
+    "catalogue-copy-registry-evidence.json",
+    "catalogue-copy-glama-evidence.json",
+    "catalogue-copy-github-evidence.json"
+  ]
 }

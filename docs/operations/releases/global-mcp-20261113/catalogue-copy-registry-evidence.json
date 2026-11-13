@@ -1,0 +1,57 @@
+{
+  "sourceRevision": "45423958d54255ee9db7ddbb042ce9ea16e6c9ce",
+  "releaseGate": "8/8 passed",
+  "publication": "success",
+  "servers": [
+    {
+      "name": "net.festapp/festapp",
+      "version": "0.1.2",
+      "title": "Festapp",
+      "description": "Create events, plan programs and seating, set ticket prices and track sales with your AI assistant.",
+      "websiteUrl": "https://festapp.net",
+      "icon": {
+        "src": "https://raw.githubusercontent.com/festappnet/festapp/a37389cc225a139725a935d014f1df10f091484e/assets/icons/fstappicon.png",
+        "mimeType": "image/png",
+        "sizes": [
+          "1024x1024"
+        ]
+      },
+      "remote": "https://mcp.festapp.net/mcp",
+      "status": "active",
+      "isLatest": true,
+      "publishedAt": "2026-11-13T07:53:00.44389Z",
+      "readbackUrl": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.2",
+      "manifestSha256": "10c36e1b522d34916b44f28e0c2ba4c140b62930df28ceca6a98266dcf2237e4"
+    },
+    {
+      "name": "net.festapp/vstupenky-online",
+      "version": "0.1.2",
+      "title": "vstupenky.online",
+      "description": "Set up events, seating and ticket prices, then manage orders, sales and check-in with AI.",
+      "websiteUrl": "https://vstupenky.online",
+      "icon": {
+        "src": "https://raw.githubusercontent.com/festappnet/festapp/a37389cc225a139725a935d014f1df10f091484e/integrations/chatgpt/assets/logo.png",
+        "mimeType": "image/png",
+        "sizes": [
+          "1024x1024"
+        ]
+      },
+      "remote": "https://mcp.vstupenky.online/mcp",
+      "status": "active",
+      "isLatest": true,
+      "publishedAt": "2026-11-13T07:53:00.938061Z",
+      "readbackUrl": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.2",
+      "manifestSha256": "8d316ae2443584db60603f6e2f1d9933f2f8d7fcae10b34dfb0c34af30af9968"
+    }
+  ],
+  "latestSearchUrl": "https://registry.modelcontextprotocol.io/v0.1/servers?search=net.festapp%2F&version=latest&limit=100",
+  "latestIdentityCount": 2,
+  "latestIdentities": [
+    "net.festapp/festapp",
+    "net.festapp/vstupenky-online"
+  ],
+  "duplicateIdentitiesCreated": false,
+  "publicReadbackExact": true,
+  "runtimeOrDeploymentChanged": false,
+  "secretValuesRecorded": false
+}

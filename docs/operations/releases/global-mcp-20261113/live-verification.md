@@ -122,8 +122,8 @@ gate was replaced by that optional check.
 
 ## Directory publication and external follow-up
 
-- [Festapp - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.1): published and read-back verified.
-- [vstupenky.online - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.1): published and read-back verified.
+- [Festapp - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.2): published and read-back verified.
+- [vstupenky.online - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.2): published and read-back verified.
 - [Festapp - Glama](https://glama.ai/mcp/connectors/net.festapp/festapp) and
   [vstupenky.online - Glama](https://glama.ai/mcp/connectors/net.festapp/vstupenky-online):
   canonical Official Registry imports, verified ownership, logos and public
@@ -253,3 +253,28 @@ were not unsubscribed or muted, and no support email was sent.
 
 See `glama-live-health-evidence.json`, `glama-refresh-verification-evidence.json`
 and the four initial/post-refresh snapshots for the client and issuer evidence.
+
+## Outcome-focused catalogue copy update
+
+Metadata-only Official Registry version 0.1.2 was published from exact source
+45423958d54255ee9db7ddbb042ce9ea16e6c9ce after eight successful required checks.
+Public readback confirms both descriptions, existing titles, icons and endpoints;
+the latest namespace query still contains exactly two identities. This did not
+change or redeploy the production runtime.
+
+The descriptions now explain concrete event preparation: event creation, program,
+hall/table/seat layout, ticket categories and prices, orders, sales and check-in.
+`catalogue-copy.json` maps these claims to existing canonical operation IDs and
+retains both English and Czech variants. Venue wording means the hall/seating
+plan, without promising a venue-booking directory or merchant onboarding.
+
+Glama publicly matches the full 567/558-character descriptions and remains
+Healthy / Works in Glama. The native listing override preserves its richer text
+from the registry's 100-character description limit; connection metadata and
+health credentials remain unchanged. Both review issues and the external PR also
+carry the improved copy, with successful submission validation. Pending
+MCPservers.org forms cannot currently be edited through a supported route; their
+older text is retained until review, without creating duplicate submissions.
+
+See `catalogue-copy-registry-evidence.json`, `catalogue-copy-glama-evidence.json`
+and `catalogue-copy-github-evidence.json` for exact text hashes and public results.

@@ -1,0 +1,26 @@
+{
+  "capturedAt": "2026-11-13T07:53:36.785665+00:00",
+  "issues": [
+    {
+      "name": "Festapp",
+      "url": "https://github.com/chatmcp/mcpso/issues/7255",
+      "state": "open",
+      "copyReadback": "exact",
+      "bodySha256": "d9aabf08040d76b560fb0dbdeb12340f1e37995182689fa15f04958d1403b3f2"
+    },
+    {
+      "name": "vstupenky.online",
+      "url": "https://github.com/chatmcp/mcpso/issues/7256",
+      "state": "open",
+      "copyReadback": "exact",
+      "bodySha256": "839d4496ff8679df59dd0d4888e75bb76f9dc105b2920b59a4c3e05a5fbbbfc4"
+    }
+  ],
+  "awesomeRemote": {
+    "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
+    "state": "OPEN",
+    "headSha": "b72a14f673dc2c37afb132736206b90b203f1791",
+    "validation": "check-submission: SUCCESS"
+  },
+  "noNewSubmissionOrSupportEmail": true
+}

@@ -3,9 +3,9 @@
 Publisher: Festapp. Source: https://github.com/festappnet/festapp. Support: info@festapp.net.
 
 Both production endpoints passed live verification. Official MCP Registry
-version 0.1.1 records include the canonical titles, websites and pinned logos:
-[Festapp](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.1)
-and [vstupenky.online](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.1).
+version 0.1.2 records include the canonical titles, websites and pinned logos:
+[Festapp](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.2)
+and [vstupenky.online](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.2).
 Both canonical Glama records are public, ownership-verified, branded and searchable:
 [Festapp](https://glama.ai/mcp/connectors/net.festapp/festapp) and
 [vstupenky.online](https://glama.ai/mcp/connectors/net.festapp/vstupenky-online).
@@ -25,7 +25,7 @@ ceilings over the application's canonical authorization, not new account roles.
 
 | Directory | Verified state on 2026-11-13 |
 | --- | --- |
-| [MCPfinder](https://mcpfinder.dev/) | Both canonical 0.1.1 identities are present in the current public snapshot, imported from Official Registry. |
+| [MCPfinder](https://mcpfinder.dev/) | Both canonical identities were verified at 0.1.1 in the 06:54 UTC snapshot, imported from Official Registry; upstream is now 0.1.2. |
 | [MCPservers.org](https://mcpservers.org/submit) | Both Free submissions accepted into review; not yet published. The form estimates review within two weeks. |
 | MCP.so | No-charge manual review requested in [Festapp #7255](https://github.com/chatmcp/mcpso/issues/7255) and [vstupenky.online #7256](https://github.com/chatmcp/mcpso/issues/7256). Acceptance and free review remain unconfirmed. |
 | Awesome Remote MCP Servers | [PR #4589](https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589) adds both endpoints; endpoint/OAuth/badge validation passed. Maintainer review is pending. |
@@ -55,6 +55,11 @@ Get your ball, concert or festival ready for ticket sales with your AI assistant
 Try: "Prepare a seating plan with 20 tables of six and a VIP section." Or: "Show orders awaiting payment and how many tickets have been sold."
 
 Your existing vstupenky.online permissions and the access you approve for the connection determine which actions are available.
+
+The practical English copy is live in Official Registry 0.1.2 and Glama, and
+updated in the MCP.so review requests and remote-catalogue PR. The already
+submitted MCPservers.org forms have no supported pending-edit route and retain
+their original text while awaiting review.
 
 The canonical short/long English and Czech copy and its operation references
 are in [catalogue-copy.json](catalogue-copy.json). Venue copy describes event
