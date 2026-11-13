@@ -163,6 +163,53 @@ Canonical production uses the reviewed self-hosted Function bundle, not
    not restart the runtime or activate clients.** Runtime restart/promotion,
    internal verification and external canaries remain separate release steps.
 
+### Selected Function releases
+
+The same canonical builder/installer can release a bounded set of Function
+directories without activating unrelated pending schema-dependent code. This
+mode never replaces `_shared`, the Deno lock, assets or the installed router.
+
+Collect an inventory with `function-bundle-selection.py inventory --root
+<installed-functions>` through the protected backend channel. On clean,
+synchronized authoritative main, set `FESTAPP_FUNCTION_BUNDLE_FUNCTIONS` to the
+comma-separated canonical Function names and
+`FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY` to that exact inventory when running
+the normal builder. The source's Deno lock and every unselected module in the
+selected import closure must match the installed bytes. Dynamic module or
+filesystem dependencies require a full coordinated release. Missing or changed
+shared dependencies are a release blocker, never a reason to copy a private
+helper into the selected Function.
+
+The ordinary installer rechecks the complete installed tree digest under its
+existing runtime upgrade lock, recomputes the selected source's closure and
+preserves every unselected file. It still requires the complete canonical final
+directory set and saves the previous tree for rollback. Install the matching
+`function-bundle-selection.py` beside the exact installer revision. The manifest
+records the selected source SHA, installed base tree digest and dependency
+hashes; it describes a selected release, not a whole-main runtime. Preserve that
+distinction in receipts. Code activation still requires the standard email
+pause/drain, existing-container reload and health probes.
+
+### Deliberate Functions environment changes
+
+The normal restart command preserves the existing environment. A reviewed
+one-key configuration migration uses `update-production-function-environment.py`
+instead. Supply the already-configured key and an absolute root-owned mode-0600
+single-line value file, first without `--apply`. The tool requires the complete
+installed Compose overlay list, matching baseline Compose service hash and
+canonical database/organization identity. It rejects every model change outside
+that exact Functions environment key.
+
+After exact-source release gates, pause/drain email through the ordinary release
+workflow and rerun with `--apply`. It retains a mode-0600 `.env` backup and
+recreates only Functions with all installed overlays, `--no-deps` and `--pull
+never`. It verifies the unchanged image, host configuration, mounts, command and
+other environment values, then probes the email worker. A failed migration
+restores the original environment through the same bounded recreation. It never
+resumes email. Complete authenticated canaries, resume only the preexisting
+allowed email state and verify `get_email_delivery_health()`. Keep the source
+bundle and configuration rollback receipts together.
+
 See [self-hosted tooling](../../automation/hetzner-supabase/README.md) and the
 [current backend rules](../architecture/ai_context.md). Cloud CLI deployment
 may serve an explicitly selected development project; it does not update the

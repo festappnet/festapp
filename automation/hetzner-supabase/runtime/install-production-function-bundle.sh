@@ -42,7 +42,13 @@ readonly PREVIOUS="volumes/functions.pre-production-$INSTALL_ID"
 [[ ! -e "$STAGE" && ! -e "$PREVIOUS" ]] || fail "Function staging path already exists"
 install -d -o root -g root -m 0755 "$STAGE"
 tar --no-xattrs --no-same-owner --no-same-permissions -C "$STAGE" -xzf "$ARTIFACT"
-cp -a volumes/functions/main "$STAGE/main"
+if jq -e 'has("selection")' "$MANIFEST" >/dev/null; then
+  python3 "$(dirname "${BASH_SOURCE[0]}")/function-bundle-selection.py" stage \
+    --root volumes/functions --stage "$STAGE" --manifest "$MANIFEST"
+else
+  cp -a volumes/functions/main "$STAGE/main"
+fi
+if ! jq -e 'has("selection")' "$MANIFEST" >/dev/null; then
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-proof-routes.py" "$STAGE/main/index.ts"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-static-assets.py" "$STAGE/main/index.ts"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-email-cpu-budget.py" "$STAGE/main/index.ts"
@@ -63,6 +69,7 @@ elif ! grep -Eq '^[[:space:]]*const workerTimeoutMs = 7 \* 60 \* 1000;?$' "$STAG
 fi
 grep -Eq '^[[:space:]]*const workerTimeoutMs = 7 \* 60 \* 1000;?$' "$STAGE/main/index.ts" ||
   fail "Function router timeout was not raised for production workloads"
+fi
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle contains symlinks"
 
 mapfile -t EXPECTED < <({ printf '%s\n' _shared main; jq -r '

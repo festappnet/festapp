@@ -30,7 +30,19 @@ mapfile_compat() {
 FUNCTION_NAMES=()
 mapfile_compat < <(jq -r '(.canonical_function_security.excluded|keys) as $excluded |
   .edge_functions|keys[]|select(. as $name | ($excluded|index($name)|not))' "$POLICY" | sort)
-FUNCTION_NAMES+=("_shared")
+SELECTION_JSON=null
+if [[ -n "${FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:-}" ]]; then
+  [[ -f "${FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY:-}" ]] || fail "selected release requires installed runtime inventory"
+  SELECTION_JSON="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/function-bundle-selection.py" select \
+    --root "$SOURCE_ROOT" --base "$FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY" --functions "$FESTAPP_FUNCTION_BUNDLE_FUNCTIONS")"
+  for name in $(jq -r '.functions[]' <<<"$SELECTION_JSON"); do
+    [[ " ${FUNCTION_NAMES[*]} " == *" $name "* ]] || fail "selected Function is not canonical"
+  done
+  FUNCTION_NAMES=()
+  mapfile_compat < <(jq -r '.functions[]' <<<"$SELECTION_JSON")
+else
+  FUNCTION_NAMES+=("_shared")
+fi
 for name in "${FUNCTION_NAMES[@]}"; do [[ -d "$SOURCE_ROOT/$name" ]] || fail "missing source Function: $name"; done
 
 COPYFILE_DISABLE=1 tar --no-xattrs \
@@ -38,8 +50,12 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
   -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
   tar --no-xattrs -C "$STAGE" -xf -
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle must not contain symlinks"
-readonly TICKET_FONT_ASSET_PROOF="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/ticket-font-asset-proof.py" "$STAGE/_shared/ticket-assets")"
-install -m 0600 "$SOURCE_ROOT/deno.lock" "$STAGE/deno.lock"
+if [[ "$SELECTION_JSON" == null ]]; then
+  TICKET_FONT_ASSET_PROOF="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/ticket-font-asset-proof.py" "$STAGE/_shared/ticket-assets")"
+  install -m 0600 "$SOURCE_ROOT/deno.lock" "$STAGE/deno.lock"
+else
+  TICKET_FONT_ASSET_PROOF='{"inheritedFromInstalledBase":true}'
+fi
 readonly ARCHIVE="$RUN_DIR/functions.tar.gz"
 COPYFILE_DISABLE=1 tar --no-xattrs -C "$STAGE" -czf "$ARCHIVE" .
 chmod 0600 "$ARCHIVE"
@@ -49,11 +65,11 @@ readonly POLICY_SHA256="$(shasum -a 256 "$POLICY" | awk '{print $1}')"
 jq -n --arg bundle_id "$BUNDLE_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg source_sha "$SOURCE_SHA" --arg archive_file "$(basename "$ARCHIVE")" \
   --arg archive_sha256 "$ARCHIVE_SHA256" --arg policy_sha256 "$POLICY_SHA256" \
-  --argjson ticket_font_assets "$TICKET_FONT_ASSET_PROOF" \
+  --argjson selection "$SELECTION_JSON" --argjson ticket_font_assets "$TICKET_FONT_ASSET_PROOF" \
   --argjson functions "$(printf '%s\n' "${FUNCTION_NAMES[@]}" | sort | jq -R . | jq -s .)" \
   '{version:1,bundle_id:$bundle_id,created_at:$created_at,source_sha:$source_sha,
     archive:{file:$archive_file,sha256:$archive_sha256},runtime_writer_policy_sha256:$policy_sha256,
-    ticket_font_assets:$ticket_font_assets,packaged_directories:$functions,host_router_directory:"main",excluded_directories:["hello","instance-install"]}' \
+    ticket_font_assets:$ticket_font_assets,packaged_directories:$functions,host_router_directory:"main",excluded_directories:["hello","instance-install"]} + (if $selection == null then {} else {selection:$selection} end)' \
   >"$RUN_DIR/manifest.json"
 chmod 0600 "$RUN_DIR/manifest.json"
 rm -rf "$STAGE"

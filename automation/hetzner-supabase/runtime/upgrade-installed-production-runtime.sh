@@ -79,6 +79,9 @@ install_runtime_file "$SCRIPT_DIR/promote-production-runtime.sh" "$COMPOSE_DIR/p
 install_runtime_file "$SCRIPT_DIR/set-production-target-write-barrier.sh" "$COMPOSE_DIR/set-production-target-write-barrier.sh"
 install_runtime_file "$SCRIPT_DIR/validate-operational-readiness.mjs" "$COMPOSE_DIR/validate-operational-readiness.mjs"
 install_runtime_file "$SCRIPT_DIR/install-production-function-bundle.sh" "$COMPOSE_DIR/install-production-function-bundle.sh"
+install_runtime_file "$SCRIPT_DIR/function-bundle-selection.py" "$COMPOSE_DIR/function-bundle-selection.py"
+install_runtime_file "$SCRIPT_DIR/restart-production-functions.py" "$COMPOSE_DIR/restart-production-functions.py"
+install_runtime_file "$SCRIPT_DIR/update-production-function-environment.py" "$COMPOSE_DIR/update-production-function-environment.py"
 install_runtime_file "$SCRIPT_DIR/patch-function-proof-routes.py" "$COMPOSE_DIR/patch-function-proof-routes.py"
 install_runtime_file "$SCRIPT_DIR/patch-function-static-assets.py" "$COMPOSE_DIR/patch-function-static-assets.py"
 install_runtime_file "$SCRIPT_DIR/patch-function-email-cpu-budget.py" "$COMPOSE_DIR/patch-function-email-cpu-budget.py"
@@ -109,7 +112,7 @@ readonly INSTALLED_STATE="$(printf '%s|%s' \
 for dependency in install-runtime-registries.mjs validate-production-promotion.mjs \
   promote-production-runtime.sh upgrade-installed-production-runtime.sh \
   set-production-target-write-barrier.sh validate-operational-readiness.mjs \
-  install-production-function-bundle.sh patch-function-proof-routes.py patch-function-static-assets.py patch-function-email-cpu-budget.py patch-function-resource-metrics.py install-google-auth-cleanup.sh \
+  install-production-function-bundle.sh function-bundle-selection.py restart-production-functions.py update-production-function-environment.py patch-function-proof-routes.py patch-function-static-assets.py patch-function-email-cpu-budget.py patch-function-resource-metrics.py install-google-auth-cleanup.sh \
   finalize-canonical-database-operations.sh \
   activate-admin-dashboard.sh Caddyfile docker-compose.festapp.yml \
   studio-customization/entrypoint.sh studio-customization/install-logout.mjs \

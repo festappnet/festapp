@@ -104,7 +104,11 @@
         "tools/festapp/**",
         "supabase/functions/mcp-session-exchange/**",
         "web_client/**",
-        "packages/festapp_contracts/**"
+        "packages/festapp_contracts/**",
+        "automation/hetzner-supabase/runtime/*function*bundle*",
+        "automation/tests/function_bundle_selection.test.mjs",
+        "automation/hetzner-supabase/runtime/update-production-function-environment.py",
+        "automation/tests/test_function_environment.py"
       ]
     },
     "client-contract": {
@@ -515,7 +519,7 @@
       }
     },
     "mcp-auth-contract": {
-      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/forms.test.mjs\npnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/\npnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\n",
+      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/forms.test.mjs\npnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/\npnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n",
       "after": [
         "mcp-auth-install"
       ],
@@ -1170,6 +1174,7 @@
     "automation/tests/flutter_bootstrap_guard.test.mjs",
     "automation/tests/font_cap_height.test.mjs",
     "automation/tests/font_config.test.mjs",
+    "automation/tests/function_bundle_selection.test.mjs",
     "automation/tests/google_auth_hosting.test.mjs",
     "automation/tests/google_auth_links.test.mjs",
     "automation/tests/google_auth_runtime_router.test.mjs",
