@@ -44,7 +44,7 @@ function navigationPage(t,{loaded=true}={}) {
  globalThis.document=dom.window.document;Object.defineProperty(globalThis,'window',{configurable:true,value:dom.window});Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:{list:async()=>[]}});
  page.route={page:'scan'};page.mode='camera';page.storageAvailable=true;page.returnPath=tickets;
- page.row={partition:'current-event',session:{title:'Ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
+ page.row={partition:'current-event',session:{title:'Ples',capabilities:{search_tickets:true,settings:true},settings:{fields:[]}}};
  page.input={pause(){this.paused=true;},stop(){},allowSame(){},suppress(){}};
  page.startCamera=async()=>{page.input.paused=page.controller.state!=='ready';};
  page.api={lookup:async symbol=>({ticket_id:1,symbol,holder_name:'Anna Novotná',state:'sent',source:'online',products:[],fields:[],admission_allowed:true})};
@@ -114,9 +114,21 @@ test('header Back from a scanned ticket shows camera alone',async t=>{
 });
 
 
-test('Back on scanner entry without a session remains a normal exit link',t=>{
- const {page,dom}=navigationPage(t,{loaded:false});page.row=null;page.disposeControllers();page.controller=null;page.render();
- const back=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(back);assert.equal(back.defaultPrevented,false);
+test('scanner entry without a session has no back arrow',t=>{
+ const {page}=navigationPage(t,{loaded:false});page.row=null;page.disposeControllers();page.controller=null;page.render();
+ assert.equal(page.host.querySelector('.scan-home'),null);
+});
+
+for(const mode of ['camera','manual'])test(`anonymous scanner has no administration arrow in ${mode} mode`,t=>{
+ const {page}=navigationPage(t,{loaded:false});
+ page.row.session.capabilities.settings=false;
+ page.returnPath='/skautsky-ples/reservations/tickets';
+ page.setInputMode(mode);
+ assert.equal(page.host.querySelector('.scan-home'),null);
+ assert.equal(page.host.querySelector('a[href="/scan/settings"]'),null);
+ assert.equal(page.host.querySelector('a[href*="/reservations/"]'),null);
+ page.controller.state='result';page.render();
+ assert.equal(page.host.querySelector('.scan-home'),null);
 });
 
 

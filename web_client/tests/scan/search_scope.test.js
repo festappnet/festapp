@@ -16,7 +16,7 @@ for (const supported of [false,true]) for (const tickets of [false,true]) for (c
         AppConfig.isAppSupported=supported;
         try {
             const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
-            page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+            page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;page.returnNavigation={location:dom.window.location};
             page.row={session:{title:'Ples',capabilities:{search_tickets:tickets,search_users:users},settings:{fields:[]}}};
             page.controller={state:'ready',loadTicket:row=>calls.push(['code',row.symbol])};
             page.searchScope='users';page.searchResults=[{symbol:'old-user',holder_name:'Old user'}];
@@ -71,7 +71,7 @@ test('search previews show customer, seat, products and actual status with one s
  globalThis.document=dom.window.document;Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
  try {
   const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
-  page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+  page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;page.returnNavigation={location:dom.window.location};
   page.row={session:{title:'Skautský ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
   let selected,navigations=0;
   page.controller={state:'ready',loadTicket:row=>{selected=row;page.controller.state='result';}};
@@ -104,7 +104,7 @@ test('late searches cannot replace a newer query or a newly selected event',asyn
  globalThis.document=dom.window.document;Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
  try {
   const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
-  page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+  page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;page.returnNavigation={location:dom.window.location};
   const event=title=>({session:{title,capabilities:{search_tickets:true},settings:{fields:[]}}});
   const rowA=event('Ples A'),rowB=event('Skautský ples');
   const pending=new Map();
@@ -147,7 +147,7 @@ function liveSearchPage(t) {
  const previous={document:globalThis.document,navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator')};
  globalThis.document=dom.window.document;Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
- page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;
+ page.route={page:'scan'};page.mode='manual';page.storageAvailable=true;page.returnNavigation={location:dom.window.location};
  page.row={session:{title:'Skautský ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
  page.api={async search(){return [];}};page.controller=page.createController();
  page.controller.state='result';page.controller.ticket={ticket_id:1,symbol:'OLD',state:'used',products:[]};
