@@ -1,0 +1,1176 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-13T04:33:28.155080+00:00",
+  "sourceManifest": {
+    "path": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/feature-rpc-contract-inventory.json",
+    "sha256": "7a55f5bec81f062cde8f352ca7485e7fab84a0d3c8b4afac4e40cf4b71047cb2",
+    "sourceSha": "8aa7379d3a2f337fe298b48bbd2c318932cc5106",
+    "candidateCount": 71
+  },
+  "targetAssertions": {
+    "sshHostname": "festapp-supabase-rehearsal-01",
+    "activeRuntimeDatabase": "festapp_rehearsal_20260909220601",
+    "currentDatabase": "festapp_rehearsal_20260909220601",
+    "tenant": "festapptickets",
+    "organizationId": 3,
+    "assertionsMatched": true
+  },
+  "query": {
+    "scope": "pg_catalog.pg_proc joined to pg_catalog.pg_namespace, schema public only",
+    "transaction": "BEGIN READ ONLY; ROLLBACK",
+    "functionsInvoked": false,
+    "businessDataQueried": false,
+    "executePrivileges": "effective has_function_privilege for authenticated and service_role"
+  },
+  "summary": {
+    "candidateNames": 71,
+    "presentNames": 71,
+    "signatureRows": 71,
+    "missingNames": [],
+    "authenticatedExecuteTrue": 71,
+    "authenticatedExecuteFalse": 0,
+    "serviceRoleExecuteTrue": 18,
+    "serviceRoleExecuteFalse": 53,
+    "securityDefinerTrue": 71,
+    "securityDefinerFalse": 0
+  },
+  "functions": [
+    {
+      "name": "authorize_authoring_export",
+      "canonicalOwners": [
+        "database/functions/authoring/exports.sql"
+      ],
+      "signatures": [
+        {
+          "name": "authorize_authoring_export",
+          "result": "boolean",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_dataset text, p_columns jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "block_blueprint_seats",
+      "canonicalOwners": [
+        "database/functions/blueprint/admin_seats.sql"
+      ],
+      "signatures": [
+        {
+          "name": "block_blueprint_seats",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_spots bigint[], p_affected_spots bigint[], p_expected_revision bigint, p_blocked boolean, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "cancel_blueprint_tickets",
+      "canonicalOwners": [
+        "database/functions/blueprint/ticket_cancellation.sql"
+      ],
+      "signatures": [
+        {
+          "name": "cancel_blueprint_tickets",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_spots bigint[], p_tickets bigint[], p_confirmation_hash text, p_command_id uuid, p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "check_lifecycle_source_scope",
+      "canonicalOwners": [
+        "database/functions/authoring/lifecycle.sql"
+      ],
+      "signatures": [
+        {
+          "name": "check_lifecycle_source_scope",
+          "result": "boolean",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "create_delegated_occasion_client_sync_v1",
+      "canonicalOwners": [
+        "database/functions/user_permissions/delegated_operations.sql"
+      ],
+      "signatures": [
+        {
+          "name": "create_delegated_occasion_client_sync_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_command_id uuid, p_config jsonb",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "create_occasion_client_sync_v1",
+      "canonicalOwners": [
+        "database/functions/others/create_occasion_client_sync_v1.sql"
+      ],
+      "signatures": [
+        {
+          "name": "create_occasion_client_sync_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_command_id uuid, p_config jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "delete_delegated_order_client_sync_v1",
+      "canonicalOwners": [
+        "database/functions/authoring/order_deletion.sql"
+      ],
+      "signatures": [
+        {
+          "name": "delete_delegated_order_client_sync_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_order bigint, p_command_id uuid, p_expected_revision text",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "delete_order_history_client_sync_v1",
+      "canonicalOwners": [
+        "database/functions/authoring/order_deletion.sql"
+      ],
+      "signatures": [
+        {
+          "name": "delete_order_history_client_sync_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_history_id bigint, p_command_id uuid, p_occasion bigint, p_organization bigint, p_unit bigint, p_order bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "delete_resource",
+      "canonicalOwners": [
+        "database/functions/inventory/delete_resource.sql"
+      ],
+      "signatures": [
+        {
+          "name": "delete_resource",
+          "result": "void",
+          "securityDefiner": true,
+          "identityArguments": "p_resource_id bigint",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "delete_unit_client_sync_v1",
+      "canonicalOwners": [
+        "database/functions/authoring/agenda.sql"
+      ],
+      "signatures": [
+        {
+          "name": "delete_unit_client_sync_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_unit bigint, p_command_id uuid, p_organization bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_authoring_export_page",
+      "canonicalOwners": [
+        "database/functions/authoring/exports.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_authoring_export_page",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_dataset text, p_columns jsonb, p_after text, p_limit integer",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_authoring_history",
+      "canonicalOwners": [
+        "database/functions/authoring/history.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_authoring_history",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_blueprint_seats",
+      "canonicalOwners": [
+        "database/functions/blueprint/admin_seats.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_blueprint_seats",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_configuration_settings",
+      "canonicalOwners": [
+        "database/functions/others/configuration_authoring.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_configuration_settings",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_entity_type text, p_entity_id bigint, p_organization bigint, p_unit bigint",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_delegated_order_deletion_context",
+      "canonicalOwners": [
+        "database/functions/authoring/order_deletion.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_delegated_order_deletion_context",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_order bigint, p_command_id uuid, p_expected_revision text",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_delegated_ticket_layout_for_authoring_v1",
+      "canonicalOwners": [
+        "database/functions/user_permissions/delegated_operations.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_delegated_ticket_layout_for_authoring_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_email_banner",
+      "canonicalOwners": [
+        "database/functions/others/email_template_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_email_banner",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_entity_type text, p_entity_id bigint, p_organization bigint, p_unit bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_email_template_catalog",
+      "canonicalOwners": [
+        "database/functions/others/email_template_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_email_template_catalog",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_entity_type text, p_entity_id bigint, p_organization bigint, p_unit bigint, p_code text",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_form_catalog_page",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/admin_form_reads.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_form_catalog_page",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_form_for_authoring",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/admin_form_reads.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_form_for_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_form bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_form_payment_options",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/form_payment_options.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_form_payment_options",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_form bigint, p_livemode boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_form_public_link",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/admin_form_reads.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_form_public_link",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_form bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_form_waitlist_context",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/admin_form_waitlist.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_form_waitlist_context",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_form bigint, p_operation text, p_payload jsonb",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_inventory_catalog",
+      "canonicalOwners": [
+        "database/functions/inventory/inventory_catalog.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_inventory_catalog",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_organization bigint, p_occasion bigint, p_unit bigint, p_occasion_link text, p_after bigint, p_limit integer, p_mode text",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_inventory_context_catalog",
+      "canonicalOwners": [
+        "database/functions/inventory/inventory_catalog.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_inventory_context_catalog",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_pool bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_inventory_pool_settings",
+      "canonicalOwners": [
+        "database/functions/inventory/inventory_authoring_reads.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_inventory_pool_settings",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_pool bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_inventory_resource_slot_page",
+      "canonicalOwners": [
+        "database/functions/inventory/delegated_assignments.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_inventory_resource_slot_page",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_resource bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_inventory_resources",
+      "canonicalOwners": [
+        "database/functions/inventory/inventory_authoring_reads.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_inventory_resources",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_pool bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_inventory_spot_page",
+      "canonicalOwners": [
+        "database/functions/inventory/delegated_assignments.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_inventory_spot_page",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_pool bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_occasion_media_job",
+      "canonicalOwners": [
+        "database/functions/authoring/lifecycle.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_occasion_media_job",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_operator_access_v1",
+      "canonicalOwners": [
+        "database/functions/others/get_operator_access_v1.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_operator_access_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_organization bigint, p_unit bigint, p_occasion bigint",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_operator_order_report_v1",
+      "canonicalOwners": [
+        "database/functions/eshop_orders/operator_orders.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_operator_order_report_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_operator_order_summaries_v1",
+      "canonicalOwners": [
+        "database/functions/eshop_orders/operator_orders.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_operator_order_summaries_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_limit integer, p_before bigint, p_state text, p_symbol text, p_order bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_operator_orders_v1",
+      "canonicalOwners": [
+        "database/functions/eshop_orders/operator_orders.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_operator_orders_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_limit integer, p_before bigint, p_state text, p_search text, p_order bigint",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_pending_occasion_media_jobs",
+      "canonicalOwners": [
+        "database/functions/authoring/lifecycle.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_pending_occasion_media_jobs",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_unit bigint, p_organization bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_product_catalog_options",
+      "canonicalOwners": [
+        "database/functions/eshop/product_catalog_options.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_product_catalog_options",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_kind text, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_product_catalog_page",
+      "canonicalOwners": [
+        "database/functions/eshop/product_catalog.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_product_catalog_page",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_organization bigint, p_occasion bigint, p_unit bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_product_schedule",
+      "canonicalOwners": [
+        "database/functions/eshop/product_schedule_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_product_schedule",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_after bigint, p_limit integer",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_ticket_layout_for_authoring_v1",
+      "canonicalOwners": [
+        "database/functions/others/get_ticket_layout_for_authoring_v1.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_ticket_layout_for_authoring_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "get_ticket_layout_write_contract_v1",
+      "canonicalOwners": [
+        "database/functions/others/get_ticket_layout_write_contract_v1.sql"
+      ],
+      "signatures": [
+        {
+          "name": "get_ticket_layout_write_contract_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_bank_authoring",
+      "canonicalOwners": [
+        "database/functions/authoring/finance.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_bank_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_unit bigint, p_organization bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_blueprint_authoring",
+      "canonicalOwners": [
+        "database/functions/authoring/blueprints.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_blueprint_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_card_refund_authoring",
+      "canonicalOwners": [
+        "database/functions/authoring/finance.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_card_refund_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_order bigint, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_email_banner",
+      "canonicalOwners": [
+        "database/functions/others/email_template_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_email_banner",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_entity_type text, p_entity_id bigint, p_organization bigint, p_unit bigint, p_expected_revision text, p_banner_url text, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_email_template",
+      "canonicalOwners": [
+        "database/functions/others/email_template_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_email_template",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_entity_type text, p_entity_id bigint, p_organization bigint, p_unit bigint, p_action text, p_code text, p_expected_revision text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_form",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/admin_form_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_form",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_game_settings",
+      "canonicalOwners": [
+        "database/functions/others/configuration_authoring.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_game_settings",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_command_id uuid, p_expected_version bigint, p_start timestamp with time zone, p_end timestamp with time zone",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_inventory",
+      "canonicalOwners": [
+        "database/functions/inventory/manage_inventory.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_inventory",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb, p_command_id uuid, p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_inventory_assignments",
+      "canonicalOwners": [
+        "database/functions/inventory/delegated_assignments.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_inventory_assignments",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_changes jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_occasion_public_link",
+      "canonicalOwners": [
+        "database/functions/others/configuration_authoring.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_occasion_public_link",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_command_id uuid, p_expected_version bigint, p_link text",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_occasion_setup_authoring",
+      "canonicalOwners": [
+        "database/functions/authoring/lifecycle.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_occasion_setup_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_unit bigint, p_organization bigint, p_draft uuid, p_expected_revision bigint, p_command_id uuid, p_source_scopes jsonb",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_operator_order_v1",
+      "canonicalOwners": [
+        "database/functions/eshop_orders/operator_orders.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_operator_order_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_order bigint, p_command_id uuid, p_expected_revision text, p_action text, p_changes jsonb",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_people",
+      "canonicalOwners": [
+        "database/functions/people/authoring.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_people",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_product",
+      "canonicalOwners": [
+        "database/functions/eshop/product_catalog.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_product",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_product jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_product_schedule",
+      "canonicalOwners": [
+        "database/functions/eshop/product_schedule_commands.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_product_schedule",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_program_authoring",
+      "canonicalOwners": [
+        "database/functions/authoring/program.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_program_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_scanner_authoring",
+      "canonicalOwners": [
+        "database/functions/authoring/scanner.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_scanner_authoring",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_action text, p_payload jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "manage_unit_agenda",
+      "canonicalOwners": [
+        "database/functions/authoring/agenda.sql"
+      ],
+      "signatures": [
+        {
+          "name": "manage_unit_agenda",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_unit bigint, p_organization bigint, p_action text, p_payload jsonb, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "prepare_standing_inventory",
+      "canonicalOwners": [
+        "database/functions/inventory/prepare_standing_inventory.sql"
+      ],
+      "signatures": [
+        {
+          "name": "prepare_standing_inventory",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_product_id bigint, p_expected_version bigint, p_capacity integer, p_command_id uuid",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "preview_admin_form_order",
+      "canonicalOwners": [
+        "database/functions/eshop_forms/admin_form_orders.sql"
+      ],
+      "signatures": [
+        {
+          "name": "preview_admin_form_order",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_form bigint, p_input jsonb",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_hold_release",
+      "canonicalOwners": [
+        "database/functions/blueprint/hold_release.sql"
+      ],
+      "signatures": [
+        {
+          "name": "preview_blueprint_hold_release",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_spots bigint[], p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_seat_block",
+      "canonicalOwners": [
+        "database/functions/blueprint/admin_seats.sql"
+      ],
+      "signatures": [
+        {
+          "name": "preview_blueprint_seat_block",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_spots bigint[], p_blocked boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_seat_order",
+      "canonicalOwners": [
+        "database/functions/blueprint/seat_orders.sql"
+      ],
+      "signatures": [
+        {
+          "name": "preview_blueprint_seat_order",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_spots bigint[], p_input jsonb, p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_seat_swap",
+      "canonicalOwners": [
+        "database/functions/blueprint/seat_swap.sql"
+      ],
+      "signatures": [
+        {
+          "name": "preview_blueprint_seat_swap",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_first bigint, p_second bigint, p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_ticket_cancellation",
+      "canonicalOwners": [
+        "database/functions/blueprint/ticket_cancellation.sql"
+      ],
+      "signatures": [
+        {
+          "name": "preview_blueprint_ticket_cancellation",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_spots bigint[]",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "release_blueprint_holds",
+      "canonicalOwners": [
+        "database/functions/blueprint/hold_release.sql"
+      ],
+      "signatures": [
+        {
+          "name": "release_blueprint_holds",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_spots bigint[], p_affected_spots bigint[], p_expected_revision bigint, p_hold_snapshot text, p_command_id uuid, p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "save_configuration_settings",
+      "canonicalOwners": [
+        "database/functions/others/configuration_authoring.sql"
+      ],
+      "signatures": [
+        {
+          "name": "save_configuration_settings",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_entity_type text, p_entity_id bigint, p_organization bigint, p_unit bigint, p_expected_version bigint, p_command_id uuid, p_settings jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "save_delegated_ticket_layout",
+      "canonicalOwners": [
+        "database/functions/authoring/blueprints.sql"
+      ],
+      "signatures": [
+        {
+          "name": "save_delegated_ticket_layout",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_command_id uuid, p_expected_version bigint, p_config jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "save_occasion_client_sync_v1",
+      "canonicalOwners": [
+        "database/functions/others/save_occasion_client_sync_v1.sql"
+      ],
+      "signatures": [
+        {
+          "name": "save_occasion_client_sync_v1",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_command_id uuid, p_expected_version bigint, p_config jsonb",
+          "serviceRoleExecute": true,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "start_occasion_lifecycle",
+      "canonicalOwners": [
+        "database/functions/authoring/lifecycle.sql"
+      ],
+      "signatures": [
+        {
+          "name": "start_occasion_lifecycle",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_unit bigint, p_organization bigint, p_occasion bigint, p_action text, p_command_id uuid, p_target_unit bigint, p_locale text",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    },
+    {
+      "name": "swap_blueprint_seats",
+      "canonicalOwners": [
+        "database/functions/blueprint/seat_swap.sql"
+      ],
+      "signatures": [
+        {
+          "name": "swap_blueprint_seats",
+          "result": "jsonb",
+          "securityDefiner": true,
+          "identityArguments": "p_occasion bigint, p_organization bigint, p_unit bigint, p_blueprint bigint, p_first bigint, p_second bigint, p_source_spots bigint[], p_target_spots bigint[], p_expected_revision bigint, p_confirmation_hash text, p_command_id uuid, p_editor boolean",
+          "serviceRoleExecute": false,
+          "authenticatedExecute": true
+        }
+      ]
+    }
+  ],
+  "noSecretOrBusinessDataRecorded": true
+}

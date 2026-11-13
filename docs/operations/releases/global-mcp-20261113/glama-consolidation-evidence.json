@@ -1,0 +1,33 @@
+{
+  "canonical": [
+    {
+      "url": "https://glama.ai/mcp/connectors/net.festapp/festapp",
+      "endpoint": "https://mcp.festapp.net/mcp",
+      "ownership": "verified",
+      "publisher": "Festapp",
+      "thumbnail": "Festapp icon",
+      "test_profile": "OAuth selected, not yet authenticated"
+    },
+    {
+      "url": "https://glama.ai/mcp/connectors/net.festapp/vstupenky-online",
+      "endpoint": "https://mcp.vstupenky.online/mcp",
+      "ownership": "verified",
+      "publisher": "Festapp",
+      "thumbnail": "regional listing logo",
+      "test_profile": "OAuth selected, not yet authenticated"
+    }
+  ],
+  "deprecated": [
+    {
+      "url": "https://glama.ai/mcp/connectors/net.festapp.mcp/festapp",
+      "replacement": "https://glama.ai/mcp/connectors/net.festapp/festapp"
+    },
+    {
+      "url": "https://glama.ai/mcp/connectors/online.vstupenky.mcp/vstupenkyonline",
+      "replacement": "https://glama.ai/mcp/connectors/net.festapp/vstupenky-online"
+    }
+  ],
+  "behavior": "Glama says deprecated listings are excluded from search and recommendations; historic pages remain accessible.",
+  "dns": "Preserve both existing host verification TXT records.",
+  "documentation": "https://vstupenky.online/napoveda/mcp-podporovane-operace/ publicly renders 196 operations."
+}

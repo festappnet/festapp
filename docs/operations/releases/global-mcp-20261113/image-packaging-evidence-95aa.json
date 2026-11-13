@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-13T06:09:51Z",
+  "sourceSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+  "sourceArchive": {
+    "path": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/build-contexts/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/source.tar",
+    "sha256": "877990d3b69c1727047159e625d6e34b967b3d4606e17568171cbaa4c7394a37"
+  },
+  "platform": "linux/arm64",
+  "buildCommand": "docker buildx build --platform linux/arm64 --load --label org.opencontainers.image.revision=95aa06a21898ee5a4eee09ec79f3543b86a1e8a5 --tag festapp-mcp-global:95aa06a21898ee5a4eee09ec79f3543b86a1e8a5-arm64 -f tools/festapp/Dockerfile.remote .",
+  "imageTag": "festapp-mcp-global:95aa06a21898ee5a4eee09ec79f3543b86a1e8a5-arm64",
+  "imageIdAndManifestDigest": "sha256:d132e8c74d832f43f5c86fe7a20f5cb2b5df29ed71ec3eabdd2c81812b302603",
+  "ociRevisionLabel": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+  "imageArchive": {
+    "path": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/images/festapp-mcp-global-95aa06a21898-arm64.tar",
+    "sha256": "a60be526b81a1f2d7279f21b33d599eed67445e7fffc765930369ebf5319fc58",
+    "sizeBytes": 121972224
+  },
+  "packageEvidence": {
+    "noticePackages": 96,
+    "licenseDistribution": {"MIT":86,"Apache-2.0":4,"ISC":4,"BSD-3-Clause":1,"0BSD":1},
+    "missingNoticePackages": 0,
+    "thirdPartyNoticesJsonSha256": "1cb787558a1e9a769d7d10de6db58df5f479102b6956da5d91ab6d241d153088",
+    "thirdPartyNoticesTextSha256": "443019230f0cd8542f6233a9bd2e1d86037db98d1546f3285d7d4fc3ac0be406",
+    "thirdPartyNoticesTextLines": 7859,
+    "rootLicenceSha256": "62327d99a7f43e756bf65296574cfe85fa2a3a2f161a7851d2b1871e99053e1e",
+    "licenseTreeFiles": 254,
+    "licensePathsContainingMpl": 45,
+    "typescriptPackages": 0,
+    "legacySdkInstalled": false,
+    "installedSdkLegacyPackageCount": 0
+  },
+  "isolatedSmoke": {
+    "helperSourceSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+    "helperArchiveSha256": "877990d3b69c1727047159e625d6e34b967b3d4606e17568171cbaa4c7394a37",
+    "helperFileSha256": "16f30bf34aa049a67ae3fc129159feb3611f3c3a31d6163e58ee8f534d1279fb",
+    "result": "pass",
+    "network": "none",
+    "configAndKeys": "disposable synthetic values",
+    "checks": ["Node startup","second owner rejection","SIGKILL/restart","Caddy validation/trusted proxy","spoofed IP overwrite","quota","Compose health"],
+    "productionDataOrCredentials": false,
+    "cleanup": "all test containers and volume removed"
+  },
+  "releaseGate": {
+    "exactSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+    "requiredCount": 8,
+    "statusAtCapture": "pending",
+    "pendingJob": "seat-checkout"
+  },
+  "promotion": "not yet performed"
+}

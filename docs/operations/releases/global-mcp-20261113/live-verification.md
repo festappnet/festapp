@@ -1,12 +1,14 @@
 # Global MCP production verification - 2026-11-13
 
-Global service source: `a37389cc225a139725a935d014f1df10f091484e`.
+Both service images: `95aa06a21898ee5a4eee09ec79f3543b86a1e8a5`.
 Selected broker Function source: `09cdd991fa30dd848324df586e188040931d3bd2`.
 The earlier preparation inventories in this directory describe the pre-release
 state. This document and the accompanying final receipts describe live checks.
 Production verification passed. Both Official MCP Registry records are public.
-Both Glama submissions are pending external review, publisher claim and
-authenticated health/indexing; the complete directory objective is not done.
+Both canonical Glama records are public, claimed, branded and search-indexed.
+Both show Healthy and Works in Glama; actual OAuth and post-expiry refresh
+verification passed. The earlier
+manual duplicate records are deprecated with explicit canonical replacements.
 
 The initial global browser flows required a diagnostic reload of the context
 selector and therefore did not satisfy the end-to-end release gate. CDP then
@@ -28,15 +30,17 @@ See `oauth-browser-diagnosis.jsonl`, `csp-local-ci-evidence.json` and
 - Existing regional endpoint: <https://mcp.vstupenky.online/mcp>.
 - Separate global ARM64 image, loopback 3400, configuration, signing/encryption
   keys and state; regional loopback 3399 and existing grants retained.
-- First-party regional application: `0.20.598+1121`, tenant
-  `defdf72778c1c5e6c329fb680f2b73863ce4aafc`, base main
-  `74262fe1929f55beb365d994bb0c64c6bc5a33c4`, which contains the MCP UI source.
+- First-party regional application: `0.20.598+1123`, tenant
+  `e6f652544a9e6f6e0e71d95e86ce34aee02fed07`, base main
+  `95aa06a21898ee5a4eee09ec79f3543b86a1e8a5`, including the shared consent modes.
   Its release owner confirmed canonical direct deployment and three coherent
   public version probes. No separate global ticketing portal release occurred.
 
-See `backend-live-evidence.json` and `image-packaging-evidence-a37389.json` for
-the final image, exact-source CI jobs, deployment, configuration and smoke
-checks. The earlier `image-packaging-evidence.json` retains original native
+See `backend-promotion-95aa-evidence.json` and `image-packaging-evidence-95aa.json`
+for the final image, eight exact-source CI jobs, preserved configuration/keys/state,
+public TLS probes, deployment, rollback and disposable smoke checks.
+`backend-live-evidence.json` and `image-packaging-evidence-a37389.json` retain the
+earlier broker installation and CSP release provenance. The earlier `image-packaging-evidence.json` retains original native
 provenance and packaging evidence. See
 `public-routing-evidence.json` for public routing, issuer/resource metadata,
 documentation, legal/support routes and unauthenticated MCP challenge checks.
@@ -118,26 +122,31 @@ gate was replaced by that optional check.
 
 ## Directory publication and external follow-up
 
-- [Festapp - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.0): published and read-back verified.
-- [vstupenky.online - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.0): published and read-back verified.
-- Glama: both free Hosted submissions accepted, review pending. No public
-  listing URL, verified publisher claim, authenticated health test or indexing
-  is claimed. Both descriptions say "Published by Festapp"; the personal
-  operator profile was retained accurately. After review, claim each connector,
-  obtain its exact supported OAuth callback/Test Profile requirements, configure
-  only that verified client and confirm healthy public records. Do not infer a
-  callback or enable unrestricted registration. Minimum external prerequisite:
-  Glama approval and access to each connector's Admin/Test Profile settings.
+- [Festapp - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.1): published and read-back verified.
+- [vstupenky.online - Official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.1): published and read-back verified.
+- [Festapp - Glama](https://glama.ai/mcp/connectors/net.festapp/festapp) and
+  [vstupenky.online - Glama](https://glama.ai/mcp/connectors/net.festapp/vstupenky-online):
+  canonical Official Registry imports, verified ownership, logos and public
+  publisher Festapp/First-party. Both appear in public search. The two manual
+  copies were deprecated through the supported replacement UI and disappeared
+  from search; historical URLs remain accessible. DNS ownership TXT records
+  must remain for daily verification. Both show Healthy and Works in Glama;
+  authenticated checks and post-expiry refresh passed.
 - [PulseMCP](https://www.pulsemcp.com/submit): submissions paused; automatic
   Official Registry ingestion awaits its resumed pipeline.
 - MCP.so: remote form is paid and was not purchased. Recent official GitHub
   issues show manual remote-server listings, but current free availability
   was not established. No paid action or unsupported free-listing claim.
 
-See `registry-publication-evidence.json` for submission/readback results.
+See `registry-branding-publication-evidence.json`, `glama-consolidation-evidence.json`
+and `catalogue-followup-receipt.md` for publication and public readback results.
+The initial `registry-publication-evidence.json` is retained as historical evidence.
 There are exactly two identities under Festapp; Festapp Tickets is included
-in Festapp. No third duplicate was created. The Glama pending state remains a
-real external completion blocker, requiring no new user credential input now.
+in Festapp. No third Festapp Tickets identity was created. Glama autoimport produced two
+extra records alongside the manual submissions; these were consolidated onto
+the Official Registry identities and the manual duplicates were deprecated.
+The public publisher is Festapp. Reverse-DNS namespaces remain technical
+registry identities rather than a replacement for the brand.
 
 ## Proxy incident and recovery
 
@@ -171,3 +180,76 @@ keys; do not restore unrelated business data.
 
 New credentials are retained and read-back verified in the encrypted macOS
 login Keychain. iCloud synchronization has not been verified.
+
+## Final consent and canonical contract
+
+The shared permission contract owns three consent choices: requested functions,
+requested read-only functions, and basic connection/access/ticket-layout metadata.
+Both first-party web consent and the issuer form use that same projection.
+The existing broker consent payload remains version 2; there is no parallel
+business implementation or new authorization owner. Basic/read-only choices
+remove creation rights as well as functional writes. Unknown choices fail closed.
+The provider records declined scopes so partial consent finishes without a loop;
+refresh retains the approved scope ceiling. Current SQL rights remain mandatory.
+
+The catalog contains 196 operations and 83 functional permissions, plus the two
+existing foundation scopes. The audit found 38 read scopes, 45 other scopes,
+no duplicate mappings, missing operations, dependency cycles or read/write
+classification mismatches. Client/grant discovery can expose a subset; the full
+supported catalog is documented at
+<https://vstupenky.online/napoveda/mcp-podporovane-operace/>. Account login and
+connection management remain first-party security flows. Application variants
+continue to limit available domains; ticketing does not gain BISCUP program rights.
+
+The final source also repairs the canonical disposable Docker smoke harness:
+Compose itself resolves the port and health probe from explicit synthetic inputs,
+without loading a workstation/production .env file. The exact final image passed
+startup, duplicate-owner rejection, SIGKILL recovery, Caddy validation, spoofed-IP
+handling, quota and health checks. No production database was used as a fixture.
+
+On final source 95aa, fresh uninterrupted OAuth flows again passed for both
+selected tenant contexts with modern and legacy MCP SDKs over public HTTP.
+Ticket report and program digests matched the recorded ordinary-app results;
+foreign context, foreign Origin and wrong audience were denied, both refresh
+credentials rotated, and one grant's revocation left the other usable. See `live-oauth-95aa-evidence.json` for completion and cleanup evidence.
+Both temporary grants were revoked and returned access/refresh 401/400. The
+task-owned loopback listener was closed and its process terminated; token values
+were held only in process memory. The retained catalogue health grants are
+separate and intentionally remain active.
+
+The selected first-party web build, sealed artifact and three coherent live
+version/legal/build probes are recorded in `web-release-1123-evidence.json`.
+The existing regional native connection preserved its account, tenant, organization
+and granted tool set after the image promotion; see
+`regional-existing-client-95aa-evidence.json`.
+
+## Glama authenticated health and renewal
+
+Both canonical Test Profiles persist OAuth Authenticated after fresh navigation.
+First successful tests were at 06:38:43 UTC (global) and 06:41:15 UTC (regional).
+After the 300-second access-token lifetime, actual Glama Test Connection passed
+again at 06:47:30 and 06:47:33 UTC without another OAuth flow. Independent,
+read-only inspection of each issuer's encrypted SQLite records confirmed the
+same single issued, unrevoked grant, one selected occasion, zero units and empty
+functional permissions. New access tokens were issued after the initial tokens
+expired, refresh credentials rotated, and scopes remained exactly
+`festapp:ticket-layouts:read`. No bearer values, account identities, authorization
+codes or request nonces are included in the receipts.
+
+These health grants intentionally remain active for the explicitly selected
+365-day consent period. Refresh credentials have a rolling 30-day lifetime and
+cannot extend the consent deadline. Reauthorize before the November 2027 consent
+deadlines if continued catalogue monitoring is desired. The dedicated account's
+canonical listed-demo affordances do not widen the grant to other occasions,
+orders or writes; see `glama-health-account-evidence.json`.
+
+Both stale Redirect URI checks were refreshed through the supported Re-check UI
+and now show Works in Glama. Public detail pages show Healthy; public Festapp
+search returns exactly two healthy canonical results and excludes deprecated
+copies. Historical alert emails were from the autoimported canonical records,
+which originally had no authenticated test profile. The latest matching mails
+still predated the correction when checked after the successful tests. Alerts
+were not unsubscribed or muted, and no support email was sent.
+
+See `glama-live-health-evidence.json`, `glama-refresh-verification-evidence.json`
+and the four initial/post-refresh snapshots for the client and issuer evidence.

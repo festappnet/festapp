@@ -17,13 +17,20 @@
       "directories": {
         "officialMcpRegistry": {
           "status": "published-readback-verified",
-          "version": "0.1.0",
-          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.0"
+          "version": "0.1.1",
+          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.1"
         },
         "glama": {
-          "status": "submitted-for-review",
-          "publisherClaim": "pending",
-          "healthAndIndexing": "pending"
+          "status": "published",
+          "url": "https://glama.ai/mcp/connectors/net.festapp/festapp",
+          "publisherClaim": "verified",
+          "publisher": "Festapp",
+          "logo": "uploaded-public-readback-verified",
+          "searchIndexing": "verified",
+          "health": "healthy-public-readback-verified",
+          "oauthRefresh": "verified-after-access-token-expiry",
+          "clientCompatibility": "Works in Glama",
+          "healthGrant": "dedicated account; basic read scope; one occasion; no units or functional writes"
         }
       }
     },
@@ -36,20 +43,33 @@
         "ticketing",
         "event-management"
       ],
-      "description": "Sales reports and order status for authorized vstupenky.online event organizers.",
+      "description": "Manage authorized events, ticket sales, seating, orders and check-in on vstupenky.online.",
       "directories": {
         "officialMcpRegistry": {
           "status": "published-readback-verified",
-          "version": "0.1.0",
-          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.0"
+          "version": "0.1.1",
+          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.1"
         },
         "glama": {
-          "status": "submitted-for-review",
-          "publisherClaim": "pending",
-          "healthAndIndexing": "pending"
+          "status": "published",
+          "url": "https://glama.ai/mcp/connectors/net.festapp/vstupenky-online",
+          "publisherClaim": "verified",
+          "publisher": "Festapp",
+          "logo": "uploaded-public-readback-verified",
+          "searchIndexing": "verified",
+          "health": "healthy-public-readback-verified",
+          "oauthRefresh": "verified-after-access-token-expiry",
+          "clientCompatibility": "Works in Glama",
+          "healthGrant": "dedicated account; basic read scope; one occasion; no units or functional writes"
         }
       }
     }
   ],
-  "verificationReport": "docs/operations/releases/global-mcp-20261113/live-verification.md"
+  "verificationReport": "docs/operations/releases/global-mcp-20261113/live-verification.md",
+  "catalog": {
+    "implementedTools": 196,
+    "functionalPermissions": 83,
+    "documentation": "https://vstupenky.online/napoveda/mcp-podporovane-operace/",
+    "availability": "Current rights, explicit consent, client data profile and selected application variant apply."
+  }
 }

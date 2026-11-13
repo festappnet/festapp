@@ -1,0 +1,35 @@
+{
+  "source_revision": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+  "records": [
+    {
+      "url": "https://glama.ai/mcp/connectors/net.festapp/festapp",
+      "issuer": "https://mcp.festapp.net",
+      "first_success_utc": "2026-11-13T06:38:43Z",
+      "manual_success_utc": "2026-11-13T06:42:06Z",
+      "post_ttl_success_utc": "2026-11-13T06:47:30Z"
+    },
+    {
+      "url": "https://glama.ai/mcp/connectors/net.festapp/vstupenky-online",
+      "issuer": "https://mcp.vstupenky.online",
+      "first_success_utc": "2026-11-13T06:41:15Z",
+      "manual_success_utc": "2026-11-13T06:41:48Z",
+      "post_ttl_success_utc": "2026-11-13T06:47:33Z"
+    }
+  ],
+  "grants": {
+    "mode": "basic read",
+    "occasions": 1,
+    "units": 0,
+    "maximum_duration_days": 365,
+    "retained": true
+  },
+  "readback": {
+    "test_profile": "OAuth Authenticated persisted",
+    "public_status": "Healthy on both",
+    "redirect_check": "Works in Glama on both",
+    "directory_search": "Healthy 2, two canonical net.festapp results",
+    "historic_duplicates": "deprecated with canonical replacements"
+  },
+  "refresh_proof": "Verified by independent server snapshots: both same unrevoked basic grants, new access tokens after old expiry and active rotated refresh tokens.",
+  "refresh_evidence": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/glama-refresh-verification-evidence.json"
+}
