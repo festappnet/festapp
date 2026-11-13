@@ -38,7 +38,47 @@ See [additional-directory evidence](../../docs/operations/releases/global-mcp-20
 No paid placement, support email, new service, or separate ChatGPT publication
 was used. Existing production endpoints and retained health grants were preserved.
 
-## English
+## What you can do
+
+### Festapp
+
+Turn an event idea into a working plan with your AI assistant. Create the event, build its program, lay out tables and seats, and set up ticket types and prices with Festapp and Festapp Tickets. Manage reservations and orders, see how sales are doing and handle guest check-in.
+
+Try: "Prepare a ball for 180 guests, with tables of six and two ticket categories." Or: "Show ticket sales and the seats still available for this event."
+
+Available actions depend on the selected Festapp environment, your account permissions and the access you approve for the connection.
+
+### vstupenky.online
+
+Get your ball, concert or festival ready for ticket sales with your AI assistant. Create the event, lay out its tables and seats, and set ticket categories, prices and capacity on vstupenky.online. Work with reservations and orders, track sales and payments, and manage guest check-in.
+
+Try: "Prepare a seating plan with 20 tables of six and a VIP section." Or: "Show orders awaiting payment and how many tickets have been sold."
+
+Your existing vstupenky.online permissions and the access you approve for the connection determine which actions are available.
+
+The canonical short/long English and Czech copy and its operation references
+are in [catalogue-copy.json](catalogue-copy.json). Venue copy describes event
+hall/seating plans; it does not advertise a venue-booking marketplace.
+
+## Co s připojením zvládnete
+
+### Festapp
+
+Proměňte nápad v připravenou akci se svým AI asistentem. Založte událost, sestavte program, rozvrhněte stoly a sedadla a nastavte kategorie vstupenek i ceny ve Festapp a Festapp Tickets. Pracujte s rezervacemi a objednávkami, sledujte prodej a odbavujte hosty.
+
+Zkuste třeba: „Připrav ples pro 180 hostů, stoly po šesti a dvě cenové kategorie vstupenek.“ Nebo: „Ukaž prodej vstupenek a zbývající místa na této akci.“
+
+Dostupné funkce se řídí vybraným prostředím Festapp, Vašimi právy a přístupem, který připojení povolíte.
+
+### vstupenky.online
+
+Připravte ples, koncert nebo festival k prodeji vstupenek se svým AI asistentem. Založte akci, navrhněte rozmístění stolů a sedadel a nastavte kategorie, ceny i kapacity vstupenek na vstupenky.online. Pracujte s rezervacemi a objednávkami, sledujte prodej i platby a spravujte odbavení hostů.
+
+Zkuste třeba: „Připrav plán sálu s dvaceti stoly po šesti místech a VIP sektorem.“ Nebo: „Ukaž objednávky čekající na platbu a počet prodaných vstupenek.“
+
+Dostupné funkce se řídí Vašimi právy ve vstupenky.online a přístupem, který připojení povolíte.
+
+## English connection details
 
 Festapp is an authenticated event-management connection including Festapp Tickets. A connection selects one configured, verified tenant environment, then explicitly selects organizers/events and functions. SQL checks current account rights on each operation. A URL shared by tenants does not grant access to other tenants. Additional environments require separate connections. Supported capabilities come from the granted tool catalog; read and write capabilities also depend on each OAuth client's scope ceiling and data profile. Membership, bank and payment restrictions remain those of the application. No payments are performed by connecting an account.
 

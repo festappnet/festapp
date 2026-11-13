@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "net.festapp/vstupenky-online",
   "title": "vstupenky.online",
-  "description": "Manage authorized events, ticket sales, seating, orders and check-in on vstupenky.online.",
-  "version": "0.1.1",
+  "description": "Set up events, seating and ticket prices, then manage orders, sales and check-in with AI.",
+  "version": "0.1.2",
   "repository": {
     "url": "https://github.com/festappnet/festapp",
     "source": "github"
