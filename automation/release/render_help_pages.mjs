@@ -44,6 +44,16 @@ const ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui.json'), 'utf8'))[
 const site = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers', locale === 'cs' ? 'content.json' : 'content.en.json'), 'utf8')).publicProjection;
 const brand = locale === 'cs' ? (value('APP_NAME') || 'vstupenky.online') : 'Festapp Tickets';
 const origin = new URL(value('WEB_LINK')).origin;
+// Read the published projection metadata instead of maintaining help-only API hosts.
+const apiEndpoint = profile === 'vstupenky-cs' ? 'regional-api' : 'global-api';
+const apiManifestPath = path.join(root,'tools/festapp/contracts/api-v1',apiEndpoint,'proofs/dpop/manifest.json');
+const apiManifest = JSON.parse(fs.readFileSync(apiManifestPath,'utf8'));
+const apiProjection = path.relative(path.join(root,'tools/festapp/contracts/api-v1',apiEndpoint),path.dirname(apiManifestPath)).split(path.sep).join('/');
+const apiBase = new URL(apiProjection+'/',apiManifest.publicBase+'/');
+// The manifest names the built index file; the public viewer uses its directory route.
+const apiReferenceUrl = new URL('./',new URL(apiManifest.reference,apiBase)).href;
+const apiSchemaUrl = new URL('openapi.json',apiBase).href;
+
 
 const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const socialImage = new URL(site.seo.image, origin).href;
@@ -133,6 +143,7 @@ const videoLink = id => {
 const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
+    .replaceAll('{{API_REFERENCE}}',escape(apiReferenceUrl)).replaceAll('{{API_OPENAPI}}',escape(apiSchemaUrl))
     .replaceAll('{{MEASUREMENT_PRESET}}',measurementPresetUrl).replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
     .replace('{{MCP_REFERENCE}}', () => renderMcpReference(mcpReference,locale))
     .replace('{{MCP_PROMPTS}}', () => renderMcpPrompts(mcpReference,mcpPrompts,locale))
@@ -152,9 +163,12 @@ for (const page of pages) {
   }
   bodies.set(page.id, body);
 }
-for (const category of categoryPages) bodies.set(category.id, `<p class="lead">${escape(category.description)}</p><p>${escape(category.intro)}</p><h2 id="guides">${escape(ui.categoryGuides)}</h2>${articleList(category.category)}<h2 id="related">${escape(ui.categoryRelated)}</h2><ul>${categoryPages.filter(other => other.id !== category.id).map(other => `<li><a href="${href(other)}">${escape(other.label)}</a></li>`).join('')}</ul>`);
+const apiReferenceBlock = `<section aria-labelledby="api"><h2 id="api">${escape(ui.apiReference.title)}</h2><p>${escape(ui.apiReference.description)}</p><p><a class="help-step-action" href="${escape(apiReferenceUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(ui.apiReference.open+' ('+ui.opensNewTab+')')}">${escape(ui.apiReference.open)}</a></p><p><a href="${escape(apiSchemaUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(ui.apiReference.schema+' ('+ui.opensNewTab+')')}">${escape(ui.apiReference.schema)}</a></p></section>`;
+for (const category of categoryPages) bodies.set(category.id, `<p class="lead">${escape(category.description)}</p><p>${escape(category.intro)}</p>${category.category === 'integrations' ? apiReferenceBlock : ''}<h2 id="guides">${escape(ui.categoryGuides)}</h2>${articleList(category.category)}<h2 id="related">${escape(ui.categoryRelated)}</h2><ul>${categoryPages.filter(other => other.id !== category.id).map(other => `<li><a href="${href(other)}">${escape(other.label)}</a></li>`).join('')}</ul>`);
 const aliases = JSON.parse(read('search_terms.json'))[locale];
 const entries = pages.filter(page => page.category).map(page => ({id:page.id,title:page.title,description:page.description,url:href(page),category:page.category,categoryLabel:categoryFor(page).label,aliases:aliases[page.id] || [],sections:articleSections(bodies.get(page.id))}));
+const apiCategory = categoryPages.find(category=>category.category==='integrations');
+entries.push({id:'api-reference',title:ui.apiReference.title,description:ui.apiReference.description,url:href(apiCategory)+'#api',category:'integrations',categoryLabel:apiCategory.label,aliases:['API','OpenAPI','Swagger','OAuth','DPoP'],sections:[]});
 const searchData = {entries,locale,ui,helpRoot,supportUrl:origin+'/support/'};
 const searchScript = 'globalThis.FestappHelpSearchData='+JSON.stringify(searchData).replace(/</g,'\\u003c')+';\n'+read('search_engine.js')+'\n'+read('search_ui.js');
 const searchName = `search.${digest(searchScript)}.js`; assets[searchName] = searchScript;

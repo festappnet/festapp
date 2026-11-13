@@ -1,0 +1,60 @@
+{
+  "verification": "canonical local CI mirror",
+  "runs": [
+    {
+      "run": "20261113T200744-afb568782b8c",
+      "head": "97c5d65cd6a24c31acf47178ee09960126ad7726",
+      "inputSha256": "4a149ce1a86b4dac10a21448b5684a9a99c16aa6c70ea8ea075b3881c89a13b4",
+      "complete": true,
+      "inputsUnchanged": true,
+      "jobs": [
+        {
+          "name": "image-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "web-startup",
+          "status": "PASS"
+        },
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        },
+        {
+          "name": "navigation-interactions",
+          "status": "PASS"
+        },
+        {
+          "name": "server-policy",
+          "status": "PASS"
+        },
+        {
+          "name": "client-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "seat-checkout",
+          "status": "PASS"
+        },
+        {
+          "name": "ticket-preview-and-delivery",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "run": "20261113T201457-67f211de3736",
+      "head": "97c5d65cd6a24c31acf47178ee09960126ad7726",
+      "inputSha256": "0d753c399b8592c3835d462a717f4873176ff6754388c4cf7f78aa0ccfb229cf",
+      "complete": true,
+      "inputsUnchanged": true,
+      "jobs": [
+        {
+          "name": "web-startup",
+          "status": "PASS"
+        }
+      ]
+    }
+  ],
+  "explanation": "All eight jobs passed for the Help addition. A subsequent live GET check established that the public reference uses docs/ while the manifest names its built index file. Only URI normalization and the two expected test URLs changed afterward; the owning web-startup job (deploy-contract) passed again, retaining seven unaffected job results. Exact-source eight-job GitHub release gate remains mandatory before web publication."
+}
