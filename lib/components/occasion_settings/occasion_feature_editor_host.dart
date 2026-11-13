@@ -4,7 +4,7 @@ import '../_shared/editor_draft_scope.dart';
 import '../features/feature.dart';
 import 'occasion_features_controller.dart';
 
-/// A keyed, persistent sibling of grid rows, even when hidden or regrouped.
+/// Persistent form whose keyed subtree moves between the page and feature dialog.
 class OccasionFeatureEditorHost extends StatefulWidget {
   final Feature feature;
   final OccasionFeaturesController controller;

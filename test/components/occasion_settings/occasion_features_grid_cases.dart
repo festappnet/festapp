@@ -1,3 +1,9 @@
+import 'dart:ui' show SemanticsAction;
+
+import 'package:flutter/services.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/features/deposit_feature.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -27,6 +33,96 @@ void main() {
         File('assets/translations/cs.json').readAsStringSync(),
       ),
     ),
+  );
+
+  testWidgetsWithEnvironment(
+    () => environment,
+    'card switch changes draft and tile modal retains invalid input across close',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        final controller = OccasionFeaturesController();
+        final feature = DepositFeature(
+          code: FeatureConstants.deposit,
+          isEnabled: false,
+          depositDeadlineDays: 7,
+        );
+        var dirty = 0;
+        await environment.pumpWidget(
+          tester,
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: EditorDraftScope(
+                  onChanged: () {
+                    controller.save();
+                    dirty++;
+                  },
+                  child: OccasionFeaturesSection(
+                    features: [feature],
+                    isEditingEnabled: true,
+                    occasionId: 991,
+                    controller: controller,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(AppDialog), findsNothing);
+        await tester.tap(find.byKey(const ValueKey('toggle-deposit')));
+        await tester.pumpAndSettle();
+        expect(feature.isEnabled, isTrue);
+        expect(dirty, greaterThan(0));
+        expect(find.byType(AppDialog), findsNothing);
+        final toggle = tester.getSemantics(
+          find.byKey(const ValueKey('toggle-deposit')),
+        );
+        expect(toggle.rect.width, lessThanOrEqualTo(80));
+        final card = tester.getSemantics(
+          find.byKey(const ValueKey('feature-action-deposit')),
+        );
+        tester.binding.pipelineOwner.semanticsOwner!.performAction(
+          card.id,
+          SemanticsAction.tap,
+        );
+        await tester.pumpAndSettle();
+        expect(feature.isEnabled, isTrue);
+        expect(find.byType(AppDialog), findsOneWidget);
+        final field = find.byWidgetPredicate(
+          (w) => w is TextFormField && w.controller?.text == '7',
+        );
+        final state = tester.state(field);
+        await tester.enterText(field, '-1');
+        await tester.pumpAndSettle();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byType(AppDialog), findsNothing);
+        final errors = controller.validateGranularly();
+        expect(errors, hasLength(1));
+        controller.reveal(
+          feature.code,
+          target: errors.single.fields.first.context,
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(AppDialog), findsOneWidget);
+        final invalid = find.byWidgetPredicate(
+          (w) => w is TextFormField && w.controller?.text == '-1',
+        );
+        expect(tester.state(invalid), same(state));
+        await tester.enterText(invalid, '9');
+        await tester.pumpAndSettle();
+        Navigator.of(tester.element(find.byType(AppDialog))).maybePop();
+        await tester.pumpAndSettle();
+        expect(find.byType(AppDialog), findsNothing);
+        expect(feature.depositDeadlineDays, 9);
+        expect(controller.validateGranularly(), isEmpty);
+      } finally {
+        semantics.dispose();
+      }
+    },
   );
 
   testWidgetsWithEnvironment(
@@ -80,6 +176,7 @@ void main() {
       final initialDirty = dirty;
       await tester.tap(find.byKey(const ValueKey('configure-form')));
       await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsOneWidget);
       expect(dirty, initialDirty);
       await tester.ensureVisible(find.text(FormStrings.labelAdvancedSettings));
       await tester.tap(find.text(FormStrings.labelAdvancedSettings));
@@ -292,23 +389,29 @@ void main() {
     'read only can configure but cannot toggle or edit and unsupported projection is filtered',
     (tester) async {
       final feature = FormFeature(code: FeatureConstants.form, isEnabled: true);
+      final editable = ValueNotifier(false);
+      addTearDown(editable.dispose);
+      final controller = OccasionFeaturesController();
       await environment.pumpWidget(
         tester,
         MaterialApp(
           builder: DependencyMaterialBridge.builder,
           home: Scaffold(
             body: SingleChildScrollView(
-              child: OccasionFeaturesSection(
-                features: [
-                  feature,
-                  SimpleFeature(
-                    code: FeatureConstants.songbook,
-                    isEnabled: false,
-                  ),
-                ],
-                isEditingEnabled: false,
-                occasionId: 991,
-                controller: OccasionFeaturesController(),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: editable,
+                builder: (_, canEdit, _) => OccasionFeaturesSection(
+                  features: [
+                    feature,
+                    SimpleFeature(
+                      code: FeatureConstants.songbook,
+                      isEnabled: false,
+                    ),
+                  ],
+                  isEditingEnabled: canEdit,
+                  occasionId: 991,
+                  controller: controller,
+                ),
               ),
             ),
           ),
@@ -319,7 +422,29 @@ void main() {
         find.text(FeatureMetadata.getTitle(FeatureConstants.songbook)),
         AppConfig.isAppSupported ? findsOneWidget : findsNothing,
       );
+      expect(
+        tester
+            .widget<Switch>(find.byKey(const ValueKey('toggle-form')))
+            .onChanged,
+        isNull,
+      );
       await tester.tap(find.byKey(const ValueKey('configure-form')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<SwitchListTile>(find.byType(SwitchListTile).first)
+            .onChanged,
+        isNull,
+      );
+      editable.value = true;
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<SwitchListTile>(find.byType(SwitchListTile).first)
+            .onChanged,
+        AppConfig.isAppSupported ? isNotNull : isNull,
+      );
+      editable.value = false;
       await tester.pumpAndSettle();
       expect(
         tester

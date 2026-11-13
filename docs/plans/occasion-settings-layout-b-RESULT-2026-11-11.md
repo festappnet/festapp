@@ -8,8 +8,11 @@ Původní provedení 2026-11-11 bylo lokální, bez publikace a nasazení.
 V rámci sjednocení worktrees 2026-11-13 se změna přenesla na aktuální
 canonical main; nové případy jsou registrované v kanonickém testovacím inventáři.
 
-Desktop používá dokument s navigací nad scrollem, gridem 3/2/1 a skutečným
-editorem pod vybraným řádkem. Telefon používá nezávislé kapitoly a jeden sloupec.
+Desktop používá dokument s navigací nad scrollem a gridem 3/2/1.
+Kliknutí na dlaždici otevře nastavení funkce ve společném aplikačním modalu;
+samostatný přepínač na dlaždici mění její zapnutí. Při zavření se živý editor
+vrací do skrytého hostitele, takže zůstávají zachované i neplatné vstupy
+a rozpracovaný stav. Escape a návrat zavírají modal, fokus se vrací na kartu. Telefon používá nezávislé kapitoly a jeden sloupec.
 Původní dispatch všech specializovaných editorů, práva, datumové pickery,
 ImageArea, EditableHtmlField, HtmlSaveCoordinator, Save/Discard a samostatný
 TicketLayoutSaver zůstávají vlastníky svého chování. Časová zóna je u termínu.
@@ -97,3 +100,12 @@ bez Flutter výjimek nebo přetečení. Náhled byl otevřen v novém aktivním 
 hlavního Google Chromu; headless relace byly ukončeny. Flutter runtime zůstává
 spuštěný na http://127.0.0.1:59273/#/ples-u-lipy/settings .
 Aktuální světlé snímky jsou v `docs/previews/occasion-settings-layout-b-final/`.
+
+
+## Zpřesnění ovládání 2026-11-13
+
+Klikání na tělo karty a přepínač mají oddělené sémantické akce. Ověřeno
+skutečným izolovaným prohlížečem při 390 a 1300 px, včetně opětovného otevření
+se zachovanou hodnotou, klávesy Escape a správných popisků Zapnuto/Vypnuto.
+Testy pokrývají i sémantickou akci karty a změnu oprávnění za otevřeného dialogu.
+Ukládání nadále potvrzuje hlavní akce stránky; zavření modalu koncept nezahazuje.

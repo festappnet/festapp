@@ -11,7 +11,7 @@ class OccasionFeatureErrors {
 /// Local public FormState registry. It owns no domain data or persistence.
 class OccasionFeaturesController {
   final Map<String, (Feature, GlobalKey<FormState>)> _forms = {};
-  void Function(String)? onReveal;
+  void Function(String, BuildContext?)? onReveal;
   void register(Feature feature, GlobalKey<FormState> key) {
     _forms[feature.code] = (feature, key);
   }
@@ -39,5 +39,6 @@ class OccasionFeaturesController {
     return errors;
   }
 
-  void reveal(String code) => onReveal?.call(code);
+  void reveal(String code, {BuildContext? target}) =>
+      onReveal?.call(code, target);
 }

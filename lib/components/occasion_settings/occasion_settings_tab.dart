@@ -294,15 +294,10 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
         );
       } else {
         final error = featureErrors.first;
-        _featuresController.reveal(error.code);
-        final generation = _generation;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || generation != _generation) return;
-          _layoutController.reveal(
-            OccasionSettingsChapter.features,
-            target: error.fields.first.context,
-          );
-        });
+        _featuresController.reveal(
+          error.code,
+          target: error.fields.first.context,
+        );
       }
       return;
     }
@@ -828,7 +823,6 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                 ),
                 features: OccasionFeaturesSection(
                   controller: _featuresController,
-                  scrollController: _layoutController.scrollController,
                   onReveal: () => _layoutController.reveal(
                     OccasionSettingsChapter.features,
                   ),

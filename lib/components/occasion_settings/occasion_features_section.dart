@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../_shared/common_strings.dart';
 import '../_shared/editor_draft_scope.dart';
@@ -24,7 +25,6 @@ class OccasionFeaturesSection extends StatefulWidget {
   final Future<void> Function(TicketFeature)? onSaveTicket;
   final TicketLayoutService? ticketLayoutService;
   final OccasionFeaturesController controller;
-  final ScrollController? scrollController;
   final VoidCallback? onReveal;
   const OccasionFeaturesSection({
     super.key,
@@ -32,7 +32,6 @@ class OccasionFeaturesSection extends StatefulWidget {
     required this.isEditingEnabled,
     required this.occasionId,
     required this.controller,
-    this.scrollController,
     this.onReveal,
     this.onSaveTicket,
     this.ticketLayoutService,
@@ -64,45 +63,172 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
   }
 
   final Map<String, FocusNode> _buttons = {};
-  final Map<String, GlobalKey> _panels = {};
+  final Map<String, GlobalKey> _hosts = {};
   String? _selected;
-  int _revealRevision = 0;
+  bool _dialogAttached = false, _closing = false;
+  BuildContext? _dialogContext;
+  StateSetter? _refreshDialog;
+  ModalRoute<dynamic>? _dialogRoute;
+  NavigatorState? _dialogNavigator;
+  Future<void>? _dialogDone;
+
   Iterable<Feature> get _supported => widget.features.where(
     (f) =>
         AppConfig.isAppSupported ||
         !FeatureService.appSupportedFeatures.contains(f.code),
   );
+
   @override
   void initState() {
     super.initState();
     _visited.addAll(_supported.where((f) => f.isEnabled).map((f) => f.code));
     for (final feature in _supported) {
       _buttons[feature.code] = FocusNode();
-      _panels[feature.code] = GlobalKey();
+      _hosts[feature.code] = GlobalKey();
     }
     widget.controller.onReveal = _reveal;
   }
 
-  void _reveal(String code) {
-    if (!mounted || !_panels.containsKey(code)) return;
-    widget.onReveal?.call();
-    setState(() {
-      _search.clear();
-      _selected = code;
-      _visited.add(code);
-    });
-    _scrollTo(code);
+  @override
+  void didUpdateWidget(covariant OccasionFeaturesSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isEditingEnabled != widget.isEditingEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _dialogAttached) _refreshDialog?.call(() {});
+      });
+    }
   }
 
-  void _scrollTo(String code) {
-    final revision = ++_revealRevision;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || revision != _revealRevision || _selected != code) return;
-      final target = _panels[code]?.currentContext;
-      if (target != null) {
-        revealEditorTarget(target, controller: widget.scrollController);
-      }
+  void _reveal(String code, BuildContext? target) {
+    final feature = _supported.where((f) => f.code == code).firstOrNull;
+    if (feature == null) return;
+    widget.onReveal?.call();
+    _open(feature, target: target);
+  }
+
+  Future<void> _open(Feature feature, {BuildContext? target}) async {
+    if (_selected == feature.code && _dialogAttached) {
+      _revealField(target);
+      return;
+    }
+    final previous = _dialogDone;
+    if (previous != null) {
+      await _closeDialog();
+      await previous;
+      if (!mounted) return;
+    }
+    final onChanged = context
+        .getInheritedWidgetOfExactType<EditorDraftScope>()
+        ?.onChanged;
+    setState(() {
+      _selected = feature.code;
+      _visited.add(feature.code);
+      _dialogAttached = true;
     });
+    final future = showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, refresh) {
+          _dialogContext = dialogContext;
+          _refreshDialog = refresh;
+          _dialogRoute = ModalRoute.of(dialogContext);
+          _dialogNavigator = Navigator.of(dialogContext);
+          return EditorDraftScope(
+            onChanged: () => onChanged?.call(),
+            child: PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, _) {
+                if (!didPop) _closeDialog();
+              },
+              child: AppDialog(
+                onClose: _closeDialog,
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 1050,
+                    maxHeight: MediaQuery.sizeOf(dialogContext).height - 48,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
+                        child: AppDialogHeader(
+                          title: Text(FeatureMetadata.getTitle(feature.code)),
+                          onClose: _closeDialog,
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: _dialogAttached
+                              ? _host(feature, true)
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: FilledButton(
+                            onPressed: _closeDialog,
+                            child: Text(CommonStrings.close),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    _dialogDone = future;
+    _revealField(target);
+    try {
+      await future;
+    } finally {
+      _dialogDone = null;
+      _dialogContext = null;
+      _refreshDialog = null;
+      _dialogRoute = null;
+      _dialogNavigator = null;
+      if (mounted) {
+        setState(() {
+          _selected = null;
+          _dialogAttached = false;
+        });
+        _buttons[feature.code]?.requestFocus();
+      }
+    }
+  }
+
+  void _revealField(BuildContext? target) {
+    if (target == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && target.mounted) revealEditorTarget(target);
+    });
+  }
+
+  Future<void> _closeDialog() async {
+    if (_closing || !_dialogAttached) return;
+    _closing = true;
+    final dialogContext = _dialogContext;
+    // Reparent the live Form back into its hidden page host in the same frame.
+    // Controllers, invalid input and ticket drafts survive dialog dismissal.
+    _refreshDialog?.call(() => _dialogAttached = false);
+    if (mounted) setState(() => _selected = null);
+    await WidgetsBinding.instance.endOfFrame;
+    if (dialogContext?.mounted == true) Navigator.of(dialogContext!).pop();
+    _closing = false;
   }
 
   void _toggle(Feature feature, bool value) {
@@ -111,13 +237,20 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
       feature.isEnabled = value;
       _visited.add(feature.code);
     });
+    _refreshDialog?.call(() {});
     EditorDraftScope.changed(context);
-    if (_selected == feature.code) _scrollTo(feature.code);
   }
 
   @override
   void dispose() {
     widget.controller.onReveal = null;
+    final route = _dialogRoute;
+    final navigator = _dialogNavigator;
+    if (route != null && navigator != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigator.mounted && route.isActive) navigator.removeRoute(route);
+      });
+    }
     _search.dispose();
     for (final node in _buttons.values) {
       node.dispose();
@@ -125,66 +258,37 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     super.dispose();
   }
 
-  Widget _host(Feature feature, bool visible) => OccasionFeatureEditorHost(
-    key: ValueKey('feature-host-${feature.code}'),
-    feature: feature,
-    controller: widget.controller,
-    visible: visible,
-    child: Container(
-      key: _panels[feature.code],
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    FeatureMetadata.getTitle(feature.code),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                IconButton(
-                  tooltip: CommonStrings.close,
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    setState(() {
-                      _selected = null;
-                      ++_revealRevision;
-                    });
-                    _buttons[feature.code]?.requestFocus();
-                  },
-                ),
-              ],
+  Widget _host(Feature feature, bool visible) => KeyedSubtree(
+    key: _hosts[feature.code],
+    child: OccasionFeatureEditorHost(
+      key: ValueKey('feature-host-${feature.code}'),
+      feature: feature,
+      controller: widget.controller,
+      visible: visible,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              feature.isEnabled
+                  ? OccasionSettingsStrings.enabled
+                  : OccasionSettingsStrings.disabled,
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(OccasionSettingsStrings.featureEnabled),
-              value: feature.isEnabled,
-              onChanged: widget.isEditingEnabled && feature.canBeDisabled
-                  ? (value) => _toggle(feature, value)
-                  : null,
+            value: feature.isEnabled,
+            onChanged: widget.isEditingEnabled && feature.canBeDisabled
+                ? (value) => _toggle(feature, value)
+                : null,
+          ),
+          const Divider(height: 24),
+          ExcludeFocus(
+            excluding: !widget.isEditingEnabled,
+            child: AbsorbPointer(
+              absorbing: !widget.isEditingEnabled,
+              child: _editor(feature),
             ),
-            const Divider(height: 24),
-            ExcludeFocus(
-              excluding: !widget.isEditingEnabled,
-              child: AbsorbPointer(
-                absorbing: !widget.isEditingEnabled,
-                child: _editor(feature),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
@@ -233,19 +337,19 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     final statusWidth = statuses
         .map((text) => measure(text, theme.labelMedium, double.infinity).width)
         .reduce(math.max);
-    final stacked = statusWidth + 12 + actionWidth > contentWidth;
+    final stacked = statusWidth + 68 + 12 + actionWidth > contentWidth;
     final statusHeight = statuses
         .map(
           (text) => measure(
             text,
             theme.labelMedium,
-            stacked ? contentWidth : contentWidth - actionWidth - 12,
+            stacked ? contentWidth - 68 : contentWidth - actionWidth - 80,
           ).height,
         )
         .reduce(math.max);
     final footerHeight = stacked
-        ? statusHeight + 8 + actionHeight
-        : math.max(statusHeight, actionHeight);
+        ? math.max(48.0, statusHeight) + 8 + actionHeight
+        : math.max(math.max(48.0, statusHeight), actionHeight);
     var bodyHeight = 0.0;
     // Measure the entire supported catalog, not only the current search/group.
     // A toggle or search therefore never changes the common tile extent.
@@ -274,11 +378,29 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
   Widget _tile(Feature feature, _FeatureTileExtent extent) {
     final selected = _selected == feature.code;
     final colors = Theme.of(context).colorScheme;
-    final status = Text(
-      feature.isEnabled
-          ? OccasionSettingsStrings.enabled
-          : OccasionSettingsStrings.disabled,
-      style: Theme.of(context).textTheme.labelMedium,
+    final status = Row(
+      children: [
+        Semantics(
+          container: true,
+          label: FeatureMetadata.getTitle(feature.code),
+          child: Switch(
+            key: ValueKey('toggle-${feature.code}'),
+            value: feature.isEnabled,
+            onChanged: widget.isEditingEnabled && feature.canBeDisabled
+                ? (value) => _toggle(feature, value)
+                : null,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            feature.isEnabled
+                ? OccasionSettingsStrings.enabled
+                : OccasionSettingsStrings.disabled,
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+        ),
+      ],
     );
     final action = SizedBox(
       width: extent.actionWidth,
@@ -293,68 +415,77 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
         ),
         focusNode: _buttons[feature.code],
         key: ValueKey('configure-${feature.code}'),
-        onPressed: () {
-          setState(() {
-            _selected = feature.code;
-            _visited.add(feature.code);
-          });
-          _scrollTo(feature.code);
-        },
+        onPressed: () => _open(feature),
         child: Text(
           OccasionSettingsStrings.configure,
           textAlign: TextAlign.center,
         ),
       ),
     );
-    return Container(
-      key: ValueKey('feature-tile-${feature.code}'),
-      height: extent.height,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: selected ? colors.primaryContainer : colors.surface,
+    return Material(
+      color: selected ? colors.primaryContainer : colors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
+        side: BorderSide(
           color: selected ? colors.primary : colors.outlineVariant,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            FeatureMetadata.getTitle(feature.code),
-            style: Theme.of(context).textTheme.titleMedium,
+      clipBehavior: Clip.antiAlias,
+      child: Semantics(
+        key: ValueKey('feature-action-${feature.code}'),
+        container: true,
+        button: true,
+        onTap: () => _open(feature),
+        child: InkWell(
+          onTap: () => _open(feature),
+          canRequestFocus: false,
+          excludeFromSemantics: true,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            key: ValueKey('feature-tile-${feature.code}'),
+            height: extent.height,
+            padding: const EdgeInsets.all(17),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  FeatureMetadata.getTitle(feature.code),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  FeatureMetadata.getDescription(feature.code),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  height: extent.footerHeight,
+                  child: extent.stackedFooter
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            status,
+                            const Spacer(),
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: action,
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(child: status),
+                            const SizedBox(width: 12),
+                            action,
+                          ],
+                        ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            FeatureMetadata.getDescription(feature.code),
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            height: extent.footerHeight,
-            child: extent.stackedFooter
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      status,
-                      const Spacer(),
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: action,
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(child: status),
-                      const SizedBox(width: 12),
-                      action,
-                    ],
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -407,7 +538,6 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
         ),
         const SizedBox(height: 24),
       ];
-      final rendered = <String>{};
       for (final enabled in [true, false]) {
         final group = projection.where((f) => f.isEnabled == enabled).toList();
         if (group.isEmpty) continue;
@@ -442,17 +572,15 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
               ),
             ),
           );
-          for (final feature in row.where((f) => f.code == _selected)) {
-            children.add(_host(feature, true));
-            rendered.add(feature.code);
-          }
         }
       }
       if (projection.isEmpty) {
         children.add(Text(OccasionSettingsStrings.noFeaturesFound));
       }
       for (final feature in _supported.where(
-        (f) => _visited.contains(f.code) && !rendered.contains(f.code),
+        (f) =>
+            _visited.contains(f.code) &&
+            !(_dialogAttached && _selected == f.code),
       )) {
         children.add(_host(feature, false));
       }
