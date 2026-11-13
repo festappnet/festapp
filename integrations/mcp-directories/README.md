@@ -3,20 +3,28 @@
 Publisher: Festapp. Source: https://github.com/festappnet/festapp. Support: info@festapp.net.
 
 Both production endpoints passed live verification. Official MCP Registry
-records are published and read-back verified:
-[Festapp](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.0)
-and [vstupenky.online](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.0).
-Both free Glama Hosted submissions are awaiting review; their publisher claim,
-authenticated health checks, indexing and public listing URLs are pending.
-`products.json` records these separate states. There are two identities;
-Festapp Tickets is included in Festapp, never a third duplicate server.
+version 0.1.1 records include the canonical titles, websites and pinned logos:
+[Festapp](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.1)
+and [vstupenky.online](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.1).
+Both canonical Glama records are public, ownership-verified, branded and searchable:
+[Festapp](https://glama.ai/mcp/connectors/net.festapp/festapp) and
+[vstupenky.online](https://glama.ai/mcp/connectors/net.festapp/vstupenky-online).
+Both show **Healthy** and **Works in Glama**. Actual OAuth and refresh after
+access-token expiry passed with dedicated, narrowly scoped health grants.
+The earlier manual Glama copies
+are deprecated with these canonical replacements and excluded from search.
+There are two active identities; Festapp Tickets is included in Festapp.
 See the [production verification evidence](../../docs/operations/releases/global-mcp-20261113/live-verification.md).
 
-[PulseMCP submissions](https://www.pulsemcp.com/submit) are paused; its official
-registry ingestion is a pending external follow-up. MCP.so's remote form offers
-a paid submission, which was not purchased. Recent remote listings processed
-through [official GitHub issues](https://github.com/chatmcp/mcpso/issues/6132)
-show a manual route, but its current free availability was not established.
+The [full supported catalog](https://vstupenky.online/napoveda/mcp-podporovane-operace/)
+documents 196 operations. Discovery depends on current rights, consent, client
+profile and application variant. The 83 functional permissions are delegation
+ceilings over the application's canonical authorization, not new account roles.
+
+[PulseMCP submissions](https://www.pulsemcp.com/submit) are paused; automatic
+Official Registry ingestion awaits resumption. MCP.so's remote form is paid;
+no paid submission was made and a current supported free route was not established.
+No support email or separate ChatGPT publication was sent.
 
 ## English
 
