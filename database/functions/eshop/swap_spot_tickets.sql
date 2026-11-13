@@ -189,6 +189,7 @@ BEGIN
  END IF;
  UPDATE eshop.spots SET order_product_ticket=CASE WHEN id=p_first THEN second_spot.order_product_ticket ELSE first_spot.order_product_ticket END
  WHERE id IN(p_first,p_second);
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY(SELECT ticket FROM eshop.order_product_ticket WHERE id IN(first_spot.order_product_ticket,second_spot.order_product_ticket) ORDER BY ticket));
 END $$;
 REVOKE ALL ON FUNCTION public.apply_blueprint_seat_pair_locked_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 

@@ -100,19 +100,38 @@ export class GoogleWallet {
     res=await this.request(path,'GET',null,before);
     if(res.ok)res=await this.request(path,'PUT',body,before);
    }
-  }else if(res.ok)res=await this.request(path,'PUT',body,before);
+  }else if(res.ok){
+   const remote=await res.json();
+   if(kind==='eventTicketClass' && remote.reviewStatus==='APPROVED')body={...body,reviewStatus:'APPROVED'};
+   // Compare only fields owned by this adapter, including removed optional fields.
+   const keys=kind==='eventTicketClass'
+    ? ['id','issuerName','eventName','reviewStatus','eventId','dateTime','textModulesData','logo','heroImage','hexBackgroundColor']
+    : ['id','classId','state','ticketNumber','barcode','validTimeInterval','textModulesData','seatInfo'];
+   const equal=(a:any,b:any):boolean=>{
+    if(a===b||(a==null&&b==null))return true;
+    if(!a||!b||typeof a!=='object'||typeof b!=='object')return false;
+    if(Array.isArray(a))return Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>equal(v,b[i]));
+    return Object.keys(a).every(k=>equal(a[k],b[k]));
+   };
+   if(keys.every(k=>equal(body[k],remote[k])))return remote;
+   res=await this.request(path,'PUT',body,before);
+  }
   if(!res.ok)throw new Error('wallet_google_unavailable');
   return await res.json();
  }
+ async synchronizeClass(ids:{classId:string;objectId:string},projection:WalletProjection|null,before:()=>Promise<void>) {
+  // Deleted occasions have no shared metadata left; object invalidations still run.
+  if(!projection)return;
+  const {classBody}=walletDocuments(ids,projection);
+  const cls=await this.upsert('eventTicketClass',classBody,before);
+  if(String(cls.reviewStatus).toUpperCase()!=='APPROVED')throw new Error('wallet_class_pending');
+ }
  async synchronize(ids:{classId:string;objectId:string},projection:WalletProjection,before:()=>Promise<void>) {
-  // Revoked/deleted tickets retain remote identity without needing historical QR/PII.
   if(projection.state==='INACTIVE') {
    const res=await this.request('eventTicketObject/'+encodeURIComponent(ids.objectId),'PATCH',{state:'INACTIVE'},before);
    if(!res.ok&&res.status!==404)throw new Error('wallet_google_unavailable');return;
   }
-  const {classBody,objectBody}=walletDocuments(ids,projection);
-  const cls=await this.upsert('eventTicketClass',classBody,before);
-  if(String(cls.reviewStatus).toUpperCase()!=='APPROVED')throw new Error('wallet_class_pending');
+  const {objectBody}=walletDocuments(ids,projection);
   await this.upsert('eventTicketObject',objectBody,before);
  }
  async saveUrl(objectId:string,origin:string) {

@@ -473,6 +473,9 @@
     "eshop_bank_sync/bank_sync_health.sql",
     "notification_center/email_policy.sql",
     "payment_providers/connection_access.sql",
-    "notification_center/provider_connections.sql"
+    "notification_center/provider_connections.sql",
+    "ticket_wallet/enqueue.sql",
+    "ticket_wallet/maintenance.sql",
+    "ticket_wallet/control.sql"
   ]
 }

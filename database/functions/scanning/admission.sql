@@ -19,6 +19,7 @@ BEGIN
  IF NOT public.provider_ticket_admission_allowed_internal(p_ticket) THEN RAISE EXCEPTION 'stripe_admission_hold'; END IF;
  IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=p_ticket AND state='used') THEN RAISE EXCEPTION 'already_used'; END IF;
  UPDATE eshop.tickets SET state='used',updated_at=clock_timestamp() WHERE id=p_ticket;
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY[p_ticket]);
 END $$;
 CREATE OR REPLACE FUNCTION public.scanner_lookup_ticket_internal(p_session uuid,p_token text,p_symbol text,p_ticket bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

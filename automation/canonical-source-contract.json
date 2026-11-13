@@ -151,6 +151,7 @@
     "public.update_order_data_to_sent(bigint)",
     "public.update_ticket_products_ws(bigint,bigint[])",
     "public.update_user(uuid,bigint,jsonb)",
-    "public.upsert_event_user(integer,uuid)"
+    "public.upsert_event_user(integer,uuid)",
+    "public.finish_ticket_wallet(bigint,uuid,boolean)"
   ]
 }

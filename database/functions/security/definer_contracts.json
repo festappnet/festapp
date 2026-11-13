@@ -3238,6 +3238,18 @@
     "8d1d40820ab9d06d9cdfbb49dfee0a892a214b9a2bcdcb8a4860639a2b5c38fa": {
       "signature": "public.get_notification_center_email_health()",
       "source": "database/functions/notification_center/email_delivery.sql"
+    },
+    "ed432af2a87b29d2473de675c93ec9ee5df81b6b48f7ba0e74889a9e426febb1": {
+      "signature": "public.maintain_ticket_wallet(integer)",
+      "source": "database/functions/ticket_wallet/maintenance.sql"
+    },
+    "297200ed1e1d14f3b98dc815a9a1699b8157b4f7c2a5cf1a5a49d42ecb5fb732": {
+      "signature": "public.pause_ticket_wallet(bigint,boolean)",
+      "source": "database/functions/ticket_wallet/control.sql"
+    },
+    "a68185bd0d3baae32614591a3c6183b32893b1350a73294c8b8a117824a95cff": {
+      "signature": "public.finish_ticket_wallet(bigint,uuid,boolean,text)",
+      "source": "database/functions/ticket_wallet/sync.sql"
     }
   }
 }

@@ -158,6 +158,7 @@ BEGIN
  PERFORM public.sync_form_blueprint_internal(id) FROM public.forms WHERE occasion=b.occasion ORDER BY id;
  PERFORM public.assert_form_seating_source_internal(id) FROM public.forms WHERE occasion=b.occasion;
  PERFORM public.notification_center_blueprint_capacity_internal(b.id);
+ PERFORM public.enqueue_wallet_scope_internal(b.occasion);
  RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;

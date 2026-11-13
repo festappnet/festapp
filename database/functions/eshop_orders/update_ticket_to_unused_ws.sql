@@ -34,6 +34,7 @@ BEGIN
     IF updated_count <> 1 THEN
         RAISE EXCEPTION 'Ticket % is not used.', ticket_id;
     END IF;
+    PERFORM public.enqueue_ticket_wallet_internal(ARRAY[ticket_id]);
 END;
 $$;
 

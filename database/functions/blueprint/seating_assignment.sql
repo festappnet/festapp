@@ -130,6 +130,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM eshop.order_product_ticket i JOIN eshop.product_inventory_contexts pic ON pic.product=i.product WHERE i.id=ANY(v_items) AND
  (SELECT count(*) FROM eshop.spots WHERE order_product_ticket=i.id AND inventory_context=pic.inventory_context)<>pic.quantity) THEN RAISE EXCEPTION 'INVENTORY_CONFLICT'; END IF;
  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=ANY(v_orders));
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY(SELECT DISTINCT ticket FROM eshop.order_product_ticket WHERE id=ANY(v_items) ORDER BY ticket));
  RETURN public.complete_private_inventory_mutation_v1(p_command_id,tr.occasion,'seating.assignment.set',
  jsonb_build_array(jsonb_build_object('entityType','blueprint','entityId',tr.id,'operation','update','safeLabel','Admission placement','changedFields',jsonb_build_array('seating'))),
  ARRAY(SELECT "user" FROM public.occasion_users WHERE occasion=tr.occasion),jsonb_build_object('blueprintId',tr.id,'mappings',preview->'mappings','context',public.get_blueprint_seating_context(tr.id)->'data'));

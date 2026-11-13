@@ -36,12 +36,18 @@ BEGIN
  PERFORM assert_true(NOT resolved::text LIKE '%guest@example.invalid%','no customer email');
  PERFORM assert_true(public.resolve_ticket_wallet(repeat('b',64),repeat('f',64)) IS NULL,'unguessable hash');
  claim:=public.claim_ticket_wallet(tid,'1234.object','1234.class');
- PERFORM assert_true(claim IS NOT NULL,'registered before transport');
- PERFORM assert_true(public.claim_ticket_wallet(tid,'1234.object','1234.class') IS NULL,'concurrent claim blocked');
+ PERFORM assert_eq(claim->>'kind','class','class has its own first lease');
+ PERFORM assert_true(public.claim_ticket_wallet(tid) IS NULL,'object waits for approved class');
  PERFORM assert_true(NOT public.finish_ticket_wallet(tid,gen_random_uuid(),true),'stale finish fenced');
- PERFORM assert_true(public.finish_ticket_wallet(tid,(claim->>'lease')::uuid,false),'recover unknown result');
- claim:=public.claim_ticket_wallet(tid,'1234.object','1234.class');
- PERFORM assert_eq(claim->>'objectId','1234.object','retry same identity');
+ PERFORM public.finish_ticket_wallet(tid,(claim->>'lease')::uuid,true);
+ claim:=public.claim_ticket_wallet(tid);
+ PERFORM assert_eq(claim->>'kind','object','registered object after class');
+ PERFORM assert_true(public.claim_ticket_wallet(tid) IS NULL,'concurrent claim blocked');
+ PERFORM public.scanner_admit_ticket_internal(tid);
+ PERFORM assert_true(public.finish_ticket_wallet(tid,(claim->>'lease')::uuid,true),'captured version completed');
+ PERFORM assert_true((SELECT requested>applied FROM eshop.ticket_wallet_work WHERE kind='object' AND ticket_id=tid),'scan during I/O stays dirty');
+ claim:=public.claim_ticket_wallet(tid);
+ PERFORM assert_eq(claim#>>'{projection,state}','COMPLETED','next claim sees actual scanned state');
  PERFORM public.finish_ticket_wallet(tid,(claim->>'lease')::uuid,true);
  UPDATE eshop.tickets SET state='used' WHERE id=tid;
  PERFORM assert_eq(public.ticket_wallet_projection_internal(tid)->>'state','COMPLETED','used state');
@@ -90,6 +96,7 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  PERFORM public.manage_ticket_wallet(tid,'reissue');
+ PERFORM assert_true((SELECT requested>applied FROM eshop.ticket_wallet_work WHERE kind='object' AND ticket_id=tid),'support operation enqueues existing object');
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM assert_true(public.prepare_ticket_wallet(mid,tid,repeat('c',64),'{}') IS NULL,'old intent cannot redeem support reissue');
  reissued:=(public.enqueue_email('order_tickets',jsonb_build_object('organization',org,'occasion',oc,'unit',un),

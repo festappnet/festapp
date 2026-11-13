@@ -34,6 +34,8 @@ BEGIN
  PERFORM set_config('festapp.email_wake','scheduled',true);
  SELECT "order" INTO oid FROM eshop.order_product_ticket WHERE ticket=t;
  SELECT organization,unit INTO org,u FROM public.occasions WHERE id=oc;
+ INSERT INTO eshop.ticket_wallet_objects(ticket_id,organization,occasion,issuer,environment,object_id,class_id) VALUES(t,org,oc,'1234','effects','1234.effects-'||t,'1234.effects-class-'||oc);
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY[t]);
  INSERT INTO eshop.payment_info(amount,currency_code,payment_method) VALUES(100,'CZK','different_gateway') RETURNING id INTO pi;
  UPDATE eshop.orders SET payment_info=pi,price=100,currency_code='CZK' WHERE id=oid;
  c:=jsonb_build_object('attemptId',a,'orderId',oid,'paymentId',pi,'connectionId',extensions.gen_random_uuid(),
@@ -61,6 +63,7 @@ BEGIN
  UPDATE pg_temp.alternate_payment_facts SET context=jsonb_set(c,'{refundedMinor}','10000') WHERE attempt=a;
  result:=public.apply_provider_payment_effects_internal('different_gateway',a,'full-refund',NULL);
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'storno','full refund reaches canonical storno transition');
+ PERFORM assert_true((SELECT requested>1 FROM eshop.ticket_wallet_work WHERE kind='object' AND ticket_id=t),'provider refund enqueues invalidation');
  PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=t),'storno','eligible admission cancelled');
  PERFORM assert_eq((SELECT state FROM eshop.tickets WHERE id=used),'used','used ticket history preserved');
  SELECT email_payment_version INTO emails FROM eshop.orders WHERE id=oid;

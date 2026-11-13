@@ -49,6 +49,8 @@ BEGIN
     SET state = 'storno', updated_at = NOW()
     WHERE id = ANY(ticket_ids_to_storno);
 
+    PERFORM public.enqueue_ticket_wallet_internal(ticket_ids_to_storno);
+
     -- 4. Nullify the relevant spots
     IF opt_ids IS NOT NULL THEN
         UPDATE eshop.spots

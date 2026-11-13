@@ -11,8 +11,9 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions
 DECLARE target text;
 BEGIN
  PERFORM public.require_service_role();
+ PERFORM public.maintain_ticket_wallet(100);
  SELECT worker_url INTO target FROM eshop.ticket_wallet_worker WHERE singleton;
- IF target IS NULL OR NOT EXISTS(SELECT 1 FROM eshop.ticket_wallet_objects WHERE next_attempt<=now() AND (lease_until IS NULL OR lease_until<=now())) THEN RETURN; END IF;
+ IF target IS NULL OR NOT EXISTS(SELECT 1 FROM eshop.ticket_wallet_work w JOIN eshop.ticket_wallet_integrations i ON i.organization=w.organization WHERE NOT i.paused AND w.kind IN ('class','object') AND w.requested>w.applied AND w.due_at<=now() AND (w.lease_until IS NULL OR w.lease_until<=now())) THEN RETURN; END IF;
  PERFORM net.http_post(url:=target,body:=jsonb_build_object('requestSecret',public.generate_request_secret(120)),timeout_milliseconds:=5000);
 END $$;
 REVOKE ALL ON FUNCTION public.wake_ticket_wallet_worker() FROM PUBLIC,anon,authenticated;
@@ -20,14 +21,6 @@ GRANT EXECUTE ON FUNCTION public.wake_ticket_wallet_worker() TO service_role;
 -- Deployment schedules this service-only owner using the existing trusted cron owner.
 -- No trigger, paid dispatch or tenant activation is performed by the migration.
 
--- Install dormant, matching the existing notification workers. Activation is
--- a separate authorized release step after the trusted scheduler/worker probe.
-DO $$ DECLARE job bigint; BEGIN
- IF EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN
-  SELECT jobid INTO job FROM cron.job WHERE jobname='festapp_google_ticket_wallet';
-  IF job IS NULL THEN
-   job:=cron.schedule('festapp_google_ticket_wallet','* * * * *','SELECT public.wake_ticket_wallet_worker()');
-   PERFORM cron.alter_job(job,active:=false);
-  END IF;
- END IF;
-END $$;
+-- The existing scheduler is owned by control-plane postgres. Upgrade that single
+-- job with automation/ticket-wallet/update-control-plane-scheduler.sql after probes.
+-- No runtime-DB schedule is installed by this source.

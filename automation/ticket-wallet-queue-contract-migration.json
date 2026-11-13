@@ -1,0 +1,10 @@
+{
+  "header": "-- Wallet queue forward. Apply only through the documented pause/drain cutover.\nDROP FUNCTION IF EXISTS public.finish_ticket_wallet(bigint,uuid,boolean);",
+  "sources": [
+    "ticket_wallet/schema.sql",
+    "ticket_wallet/maintenance.sql",
+    "ticket_wallet/sync.sql",
+    "ticket_wallet/worker.sql",
+    "ticket_wallet/contract.sql"
+  ]
+}
