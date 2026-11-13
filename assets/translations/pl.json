@@ -667,6 +667,7 @@
     "startDate": "Data rozpoczęcia",
     "storno": "Anuluj",
     "processingCancelled": "Przetwarzanie zostało anulowane.",
+    "processingCompletedTitle": "Zakończono",
     "processingCompleted": "Przetwarzanie zakończyło się pomyślnie.",
     "processingFailed": "Przetwarzanie zakończyło się błędem.",
     "title": "Tytuł",

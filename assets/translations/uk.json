@@ -592,6 +592,7 @@
     "startDate": "Дата початку",
     "storno": "Скасувати",
     "processingCancelled": "Обробку скасовано.",
+    "processingCompletedTitle": "Завершено",
     "processingCompleted": "Обробку успішно завершено.",
     "processingFailed": "Обробка завершилася з помилкою.",
     "ticket": "Квиток",

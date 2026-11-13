@@ -31,7 +31,16 @@ class ProgressDialogs {
           builder: (context, progress, _) {
             return AppAlertDialog(
               dismissible: false,
-              title: Text(title),
+              title: ValueListenableBuilder<bool>(
+                valueListenable: isOkActive,
+                builder: (context, finished, _) => Text(!finished
+                    ? title
+                    : hasError.value
+                        ? CommonStrings.processingFailed
+                        : isCancelled.value
+                            ? CommonStrings.cancelled
+                            : CommonStrings.processingCompletedTitle),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

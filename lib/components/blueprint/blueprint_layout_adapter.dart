@@ -44,10 +44,12 @@ class BlueprintLayoutAdapter {
     ];
   }
 
+  VenueLayoutDocument? _document;
   Map<int, ProductModel> products = {};
   Map<String, Map<String, dynamic>> areaAvailability = {};
   Map<int, BlueprintObjectModel> spots = {};
   void refresh(BlueprintModel source) {
+    _document = source.layoutSnapshot?.document;
     areaAvailability = Map.from(source.areaAvailability);
     products = {
       for (final p in source.products ?? <ProductModel>[])
@@ -138,25 +140,38 @@ class BlueprintLayoutAdapter {
   }
 
   /// Public presentation deliberately excludes all order/customer metadata.
-  Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding) =>
-      _presentationForState(
-        state(binding),
-        label: binding.title,
-        productTitle: product(binding)?.title,
-        productAvailable: product(binding)?.isAvailable == true,
-      );
+  Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding,
+      {VenueLayoutDocument? document}) {
+    final resolvedDocument = document ?? _document;
+    final node = resolvedDocument?.nodes
+        .where((n) => n.id == binding.nodeId)
+        .firstOrNull;
+    return _presentationForState(
+      state(binding),
+      label: binding.title,
+      productTitle: product(binding)?.title,
+      productAvailable: product(binding)?.isAvailable == true,
+      authoredFill: node == null
+          ? null
+          : resolveNodeAppearance(resolvedDocument!, node).values['fill']
+              as String?,
+    );
+  }
 
   static Map<String, dynamic> _presentationForState(
     BlueprintSeatState state, {
     required String label,
     String? productTitle,
     bool productAvailable = false,
+    String? authoredFill,
   }) => {
     'stateMarker': 'auto',
     'label': label,
-    // Available seats inherit the document's resolved appearance.
-    if (state != BlueprintSeatState.available || !productAvailable)
-      'fill': blueprintSeatStateFills[state]!,
+    // Explicit authored fill also survives optimistic selection in the renderer.
+    'fill': state == BlueprintSeatState.selectedByMe ||
+            (state == BlueprintSeatState.available && productAvailable)
+        ? authoredFill ?? blueprintSeatStateFills[state]!
+        : blueprintSeatStateFills[state]!,
     'status': state == BlueprintSeatState.selectedByMe ||
             (state == BlueprintSeatState.available && productAvailable)
         ? 'available'

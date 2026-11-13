@@ -2182,6 +2182,7 @@
     "startDate": "Datum začátku",
     "storno": "Zrušit",
     "processingCancelled": "Zpracování bylo zrušeno.",
+    "processingCompletedTitle": "Dokončeno",
     "processingCompleted": "Zpracování bylo úspěšně dokončeno.",
     "processingFailed": "Zpracování skončilo chybou.",
     "ticket": "Vstupenka",

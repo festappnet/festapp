@@ -665,6 +665,7 @@
     "startDate": "Startdatum",
     "storno": "Stornieren",
     "processingCancelled": "Die Verarbeitung wurde abgebrochen.",
+    "processingCompletedTitle": "Abgeschlossen",
     "processingCompleted": "Die Verarbeitung wurde erfolgreich abgeschlossen.",
     "processingFailed": "Die Verarbeitung wurde mit einem Fehler abgeschlossen.",
     "title": "Titel",

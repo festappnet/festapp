@@ -882,11 +882,17 @@ void main() {
         for (final seat in document.nodes)
           seat.id == node ? seat.copyWith(style: {'fill': fill}) : seat,
       ]);
-      final presentation = controller.adapter.customerPresentation(binding);
+      final presentation = controller.adapter.publicPresentation(binding, document: authored);
       final items = compileScene(authored, presentation: {node: presentation})['items'] as List;
       expect(items.firstWhere((item) => item['id'] == node)['fill'],
           fill ?? '#D9B788FF');
       expect(items.where((item) => item['kind'] == 'state'), isEmpty);
+      final selected = compileScene(authored, presentation: {
+        node: {...presentation, 'selected': true},
+      })['items'] as List;
+      expect(selected.firstWhere((item) => item['id'] == node)['fill'],
+          fill ?? '#D9B788FF');
+      expect(selected.where((item) => item['kind'] == 'state'), hasLength(1));
       final blocked = controller.adapter.customerPresentation(binding.copyWith(blocked: true));
       final unavailable = compileScene(authored, presentation: {node: blocked})['items'] as List;
       expect(unavailable.where((item) => item['kind'] == 'state'), hasLength(1));

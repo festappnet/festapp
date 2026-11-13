@@ -1599,7 +1599,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           binding.nodeId: {
             'label': binding.title,
             for (final entry
-                in controller.adapter.publicPresentation(binding).entries)
+                in controller.adapter.publicPresentation(binding,
+                    document: controller.layout.document).entries)
               if (!_editingPlan || entry.key != 'fill') entry.key: entry.value,
             'selected': controller.operationSelection.contains(binding.nodeId),
             'highlighted': (_seatingOpen && _seating!.compatible.any((s) => s.id == binding.spotId)) || _legendHover != null &&

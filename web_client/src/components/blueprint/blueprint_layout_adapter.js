@@ -3,7 +3,7 @@ import { formatPrice } from '../../utils/formatters.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { LocalizationService } from '../../services/localization_service.js';
 
-// Unavailable and selected states override the authored seat appearance.
+// Unavailable states override the authored seat appearance.
 const basicSeatFills = {
     [SeatStates.AVAILABLE]: '#267329FF', [SeatStates.SELECTED_BY_ME]: '#267329FF',
     [SeatStates.SELECTED]: '#00000042', [SeatStates.ORDERED]: '#0000001F',
@@ -13,9 +13,10 @@ const basicSeatFills = {
 
 /** Public commerce/session adapter. All geometry and gestures belong to the package. */
 export class BlueprintLayoutAdapter {
-    constructor(data, { session, initialSeats = [] } = {}) {
+    constructor(data, { session, initialSeats = [], seatFills = {} } = {}) {
         if (!data?.layout) throw new Error('Blueprint V2 layout unavailable');
         this.document = data.layout;
+        this.authoredFills = seatFills;
         this.resources = data.layoutResources || {};
         this.session = session;
         this.disposed = false;
@@ -85,8 +86,10 @@ export class BlueprintLayoutAdapter {
                 selectable,
                 stateMarker: 'auto',
                 selected: own, label: model.title,
-                // Leave available fills to the document's style cascade.
-                ...(!selectable || own ? {fill: basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY]} : {}),
+                // Selected seats retain their resolved authored fill and check.
+                ...(!selectable || own ? {fill: own
+                    ? this.authoredFills[id] ?? basicSeatFills[SeatStates.AVAILABLE]
+                    : basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY]} : {}),
                 tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${CommonStrings.price}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, LocalizationService.currentLocale)}`,
             }];
         }));

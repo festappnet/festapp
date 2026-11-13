@@ -685,6 +685,7 @@
     "startDate": "Dátum začiatku",
     "storno": "Storno",
     "processingCancelled": "Spracovanie bolo zrušené.",
+    "processingCompletedTitle": "Dokončené",
     "processingCompleted": "Spracovanie bolo úspešne dokončené.",
     "processingFailed": "Spracovanie skončilo chybou.",
     "title": "Názov",

@@ -2181,6 +2181,7 @@
     "startDate": "Start date",
     "storno": "Storno",
     "processingCancelled": "The processing has been cancelled.",
+    "processingCompletedTitle": "Completed",
     "processingCompleted": "The processing has completed successfully.",
     "processingFailed": "The processing has finished with error.",
     "ticket": "Ticket",

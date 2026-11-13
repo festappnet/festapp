@@ -149,7 +149,13 @@ export class BlueprintSelector {
                     session.formModel.secret = data.secret;
                     if (session.payload) session.payload[DbForms.metaSecret] = data.secret;
                 }
-                this.adapter = new BlueprintLayoutAdapter(data, { session, initialSeats });
+                // Let the canonical renderer resolve the style cascade once.
+                // Reuse those colors when selection adds its check marker.
+                const authoredScene = JSON.parse(globalThis.VenueLayoutKernel.compileScene(
+                    JSON.stringify(data.layout), JSON.stringify(data.layoutResources || {}), '{}'));
+                const seatFills = Object.fromEntries(authoredScene.items
+                    .filter(item => item.kind === 'seat').map(item => [item.id, item.fill]));
+                this.adapter = new BlueprintLayoutAdapter(data, { session, initialSeats, seatFills });
                 this.adapter.setReservationReader(() => DbForms.getBlueprint(
                     session.formModel.secret, session.formModel.key, blueprintId));
                 content.replaceChildren();

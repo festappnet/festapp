@@ -342,12 +342,21 @@ test('reservation scene keeps document and individual seat colors with canonical
     for (const fill of ['#D9B788FF', '#DBEAFEFF']) {
         const authored = {...document, nodes: document.nodes.map(node => node.id === seat.id ? {...node, style: {...node.style, fill}} : node)};
         const source = data();
-        const adapter = new BlueprintLayoutAdapter(source);
-        const render = () => JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(authored), JSON.stringify(resources), JSON.stringify({[seat.id]: adapter.seatPresentation.a})));
+        source.layout = authored; source.layoutResources = resources;
+        source.seatBindings[0].nodeId = seat.id;
+        const neutral = JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(authored), JSON.stringify(resources), '{}'));
+        const seatFills = Object.fromEntries(neutral.items.filter(item => item.kind === 'seat').map(item => [item.id, item.fill]));
+        const adapter = new BlueprintLayoutAdapter(source, {seatFills});
+        const render = () => JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(authored), JSON.stringify(resources), JSON.stringify({[seat.id]: adapter.seatPresentation[seat.id]})));
         assert.equal(render().items.find(item => item.id === seat.id).fill, fill);
+        adapter.models.get(seat.id).state = 'selected_by_me';
+        const selected = render().items;
+        assert.equal(selected.find(item => item.id === seat.id).fill, fill);
+        assert.ok(selected.some(item => item.nodeId === seat.id && item.kind === 'state'));
+        assert.equal(adapter.seatPresentation[seat.id].selected, true);
         for (const state of ['selected', 'ordered', 'used', 'black', 'empty']) {
-            adapter.models.get('a').state = state;
-            assert.equal(adapter.seatPresentation.a.selectable, false, state);
+            adapter.models.get(seat.id).state = state;
+            assert.equal(adapter.seatPresentation[seat.id].selectable, false, state);
             assert.ok(render().items.some(item => item.nodeId === seat.id && item.kind === 'state'), state);
         }
     }
