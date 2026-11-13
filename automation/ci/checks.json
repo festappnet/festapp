@@ -478,7 +478,7 @@
       }
     },
     "occasion-lifecycle": {
-      "script": "python3 automation/ci/run.py install workers/image-worker\npnpm --dir workers/image-worker run test:lifecycle\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1\n",
+      "script": "python3 automation/ci/run.py install workers/image-worker\npnpm --dir workers/image-worker run test:lifecycle\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1\nnode --test --test-concurrency=1 database/tests/scanning/ownership_upgrade.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -1644,6 +1644,7 @@
     "database/tests/scanning/custom_fields_test.sql",
     "database/tests/scanning/field_catalog_test.sql",
     "database/tests/scanning/legacy_scan_proof_test.sql",
+    "database/tests/scanning/ownership_upgrade.test.mjs",
     "database/tests/scanning/password_capability_test.sql",
     "database/tests/scanning/scan_code_isolation_test.sql",
     "database/tests/scanning/settings_roles_test.sql",
