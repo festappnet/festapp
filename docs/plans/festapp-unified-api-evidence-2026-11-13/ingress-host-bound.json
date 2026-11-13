@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "checks": 23,
+  "facades": 2,
+  "canonicalListeners": 1,
+  "preserved": [
+    "auth/v1",
+    "rest/v1",
+    "functions/v1"
+  ],
+  "dpopPublicPrefix": true,
+  "forgedForwardingStripped": true,
+  "resourceSubstitutionRejected": true,
+  "productionChanged": false,
+  "execution": "Disposable pinned runtime image with read-only current source overlays; no production change",
+  "sharedSupabaseAliasRejected": true,
+  "sourceDigest": "fbf32ad1c1bd4cd4c3a5ef3e20fcb0d6077adb24642f7da1799aefd90fda5688"
+}

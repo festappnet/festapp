@@ -1,6 +1,43 @@
 {
   "schemaVersion": 1,
-  "state": "unreleased",
-  "contracts": [],
-  "reason": "No public API release authorized or published. Seal the initial approved snapshots and source digests at first publication; never replace a released baseline to accept a break."
+  "state": "approved-initial",
+  "approval": {
+    "date": "2026-11-13",
+    "authority": "Explicit user approval: Ano, cel\u00fd uveden\u00fd rozsah",
+    "scope": "Initial publication of both API facades, generated contracts and Make migration; no previously published API baseline exists."
+  },
+  "contracts": [
+    {
+      "file": "global-api/openapi.json",
+      "snapshot": "global-api/contracts/5bba3c6e37553f45d413684ec73a3aff06f5ac2f110e8653220aae8548a28abb/openapi.json"
+    },
+    {
+      "file": "global-api/profiles/order-summary/openapi.json",
+      "snapshot": "global-api/contracts/9bb298d6c2ea05af8ac83ca61ce131a3bb9f2d52b60d0367512ee027874294c6/openapi.json"
+    },
+    {
+      "file": "global-api/profiles/order-summary/proofs/dpop/openapi.json",
+      "snapshot": "global-api/contracts/063e56eb75688aecb5c74eeada12a35a94facf67ab12fc212c7e37992ea97ab2/openapi.json"
+    },
+    {
+      "file": "global-api/proofs/dpop/openapi.json",
+      "snapshot": "global-api/contracts/8638d222c5c495027893566cf4debdfcfd4fa17f0e8d507938b48fc027aa85f1/openapi.json"
+    },
+    {
+      "file": "regional-api/openapi.json",
+      "snapshot": "regional-api/contracts/d8c0ecac99c97b307fd8ce0f5d4b89569550acb1eeefa085ed5652d2c9e38103/openapi.json"
+    },
+    {
+      "file": "regional-api/profiles/order-summary/openapi.json",
+      "snapshot": "regional-api/contracts/03f1aa82f82bd5075dbcb7efa33df35ba9483c7f2a8d35fe7b0e180c9875c81a/openapi.json"
+    },
+    {
+      "file": "regional-api/profiles/order-summary/proofs/dpop/openapi.json",
+      "snapshot": "regional-api/contracts/02a1dc464989f6c1937cfb6827485b8f758ee6b7792d870427a509f6388575c7/openapi.json"
+    },
+    {
+      "file": "regional-api/proofs/dpop/openapi.json",
+      "snapshot": "regional-api/contracts/2286730e5a5e487aef4b2921bab26127a4f639d0a4d04a1701de9b826d6713f5/openapi.json"
+    }
+  ]
 }

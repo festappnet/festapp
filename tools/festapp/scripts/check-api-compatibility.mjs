@@ -55,8 +55,14 @@ export function compatibilityBreaks(before, after) {
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const baseline = JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/release-baseline.json', import.meta.url)));
-    if (baseline.state !== 'released') throw new Error('No published API baseline exists. Initial baseline approval is a publication gate; do not mark compatibility with a released contract as verified.');
-    const issues = baseline.contracts.flatMap(c => compatibilityBreaks(c.openapi, JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/' + c.file, import.meta.url)))));
+    if (!['released', 'approved-initial'].includes(baseline.state)) throw new Error('No published API baseline exists. Initial baseline approval is a publication gate; do not mark compatibility with a released contract as verified.');
+    if (!baseline.contracts.length) throw new Error('Baseline must seal all approved projections.');
+    const issues = baseline.contracts.flatMap(c => {
+        const previous = c.openapi ?? JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/' + c.snapshot, import.meta.url)));
+        const current = JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/' + c.file, import.meta.url)));
+        if (baseline.state === 'approved-initial' && !equal(previous, current)) return [c.file + ': approved initial projection changed'];
+        return compatibilityBreaks(previous, current);
+    });
     if (issues.length) throw new Error(issues.join('\n'));
-    console.log('API released baseline compatible.');
+    console.log(baseline.state === 'released' ? 'API released baseline compatible.' : 'API initial projections match explicit publication approval; no prior released baseline exists.');
 }

@@ -20,7 +20,7 @@ try{
     const global=await connect(f),regional=await connect(f,{resources:[f.config.endpoints[1].resource]});
     let source=await readFile(new URL('../../../automation/hetzner-supabase/runtime/Caddyfile.integrations',import.meta.url),'utf8');
     source=source.replace('api.vstupenky.online {','http://api.vstupenky.online:8080 {');
-    const config=`{\n admin off\n auto_https off\n}\n${source}\nhttp://api.festapp.net:8080 {\n import festapp_global_integrations\n handle /auth/v1/* {\n respond "existing-auth" 200\n }\n handle /rest/v1/* {\n respond "existing-rest" 200\n }\n handle /functions/v1/* {\n respond "existing-functions" 200\n }\n handle {\n respond "existing-fallback" 404\n }\n}\n`;
+    const config=`{\n admin off\n auto_https off\n}\n${source}\nhttp://api.festapp.net:8080, http://supabase.festapp.net:8080 {\n import festapp_global_integrations\n handle /auth/v1/* {\n respond "existing-auth" 200\n }\n handle /rest/v1/* {\n respond "existing-rest" 200\n }\n handle /functions/v1/* {\n respond "existing-functions" 200\n }\n handle {\n respond "existing-fallback" 404\n }\n}\n`;
     const file=join(directory,'Caddyfile');await writeFile(file,config);
     let diagnostics='';
     child=spawn(binary,['run','--config',file,'--adapter','caddyfile'],{env:{...process.env,FESTAPP_CANONICAL_MCP_LISTENER:new URL(f.issuer).host},stdio:['ignore','ignore','pipe']});
@@ -51,12 +51,14 @@ try{
         assert.match(oversized.headers.get('content-type')??'',/application\/problem\+json/);
         const problem=await oversized.json();assert.equal(problem.code,'BODY_TOO_LARGE');assert.equal(problem.requestId,oversized.headers.get('x-request-id'));
     }
+    const alias=await httpRequest('http://127.0.0.1:8080'+path,{method:'POST',headers:{host:'supabase.festapp.net','content-type':'application/json'},body:'{}'});
+    assert.equal(alias.status,404);assert.equal(await alias.text(),'existing-fallback','Supabase alias must not enter the API proxy');
     const direct=await httpRequest(f.issuer+path,{method:'POST',headers:{host:'api.festapp.net','content-type':'application/json'},body:'{}'});assert.equal(direct.status,400);
     await new Promise(resolve=>f.server.close(resolve));
     const unavailable=await httpRequest('http://127.0.0.1:8080'+path,{method:'POST',headers:{host:'api.festapp.net','content-type':'application/json'},body:'{}'});
     assert.equal(unavailable.status,502);assert.match(unavailable.headers.get('content-type')??'',/application\/problem\+json/);
     const unknown=await unavailable.json();assert.equal(unknown.outcome,'unknown');assert.equal(unknown.requestId,unavailable.headers.get('x-request-id'));
-    console.log(JSON.stringify({ok:true,checks:22,facades:2,canonicalListeners:1,preserved:['auth/v1','rest/v1','functions/v1'],dpopPublicPrefix:true,forgedForwardingStripped:true,resourceSubstitutionRejected:true,productionChanged:false}));
+    console.log(JSON.stringify({ok:true,checks:23,facades:2,canonicalListeners:1,preserved:['auth/v1','rest/v1','functions/v1'],dpopPublicPrefix:true,forgedForwardingStripped:true,resourceSubstitutionRejected:true,productionChanged:false}));
 }finally{
     if(child&&child.exitCode===null){child.kill('SIGTERM');await new Promise(resolve=>child.once('exit',resolve));}
     for(const callback of callbacks.reverse())await callback();await rm(directory,{recursive:true,force:true});
