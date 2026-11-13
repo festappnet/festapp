@@ -133,7 +133,14 @@ BEGIN
  INSERT INTO eshop.bank_accounts(title,account_number,type,is_fetch_enabled,supported_currencies)
  VALUES('Účet pořadatele','123456/0100','FIO',false,ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(un,bank,1);
- UPDATE public.forms SET title='Skautský ples 2026',is_open=false,bank_account=bank WHERE id=source_form;
+ -- The paid-order fixture explicitly enables the bank method for its organizer.
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method)
+ VALUES(org,'bank') ON CONFLICT DO NOTHING;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled)
+ VALUES(org,'bank',true) ON CONFLICT DO NOTHING;
+ -- The paid-order fixture explicitly offers the linked bank account.
+ UPDATE public.forms SET title='Skautský ples 2026',is_open=false,bank_account=bank,
+ data=coalesce(data,'{}'::jsonb)||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=source_form;
  SELECT layout INTO source_layout FROM eshop.blueprints WHERE id=(fixture->>'blueprint')::bigint;
  SET LOCAL ROLE authenticated;
  PERFORM assert_true(public.can_read_unit_administration(un),'Fixture organizer can enter the unit administration UI');
