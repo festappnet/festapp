@@ -62,7 +62,17 @@ To jsou optimistické provider bounds, nikoli produkční SLA; scheduler gaps,
 SQL, cold OAuth a schvalování třídy mohou přidat další čas. Cíl p95 60 s pro
 hromadný burst a max 5 min pro 10 000 se v této kvótě nesplní.
 
-## Konkrétní rollout - neprovedený
+## Konkrétní rollout - dokončený 2026-11-13
+
+Nasazeno pro vstupenky.online / org 3 z canonical source
+`e05a9b68d50f8e898c1fe390239d1b7251a8fbd4`. Expanze a kontrakce jsou v ledgeru,
+worker používá nový protokol a jediný control-plane scheduler běží po 10 sekundách.
+Původní identita peněženky zůstala zachována, e-mail i Wallet byly obnoveny
+a závěrečné health kontroly byly bez chyb. Skutečné uložení produktu pod
+právy vlastníka, opakování stejného příkazu a samostatné načtení prošly
+bez změny obchodních hodnot.
+
+Použitý migrační postup:
 
 1. Samostatně autorizovat scope vstupenky.online / org 3; ověřit canonical
    backend přes project skill a aktuální exact-main CI/release gates. Org 25
@@ -94,8 +104,8 @@ hromadný burst a max 5 min pro 10 000 se v této kvótě nesplní.
 Před kontrakcí je rollback možný pod pause na starý kompatibilní bundle při
 zachování nové práce. Po kontrakci jen dopředná oprava nového ownera pod pause;
 starý full-poll writer se neobnovuje a identity/capabilities se nerotují.
-Live scheduler readback, SQL migrace, Functions install/restart, canary,
-main publication a produkční ověření zůstávají neprovedené.
+Live scheduler readback, SQL migrace, Functions reload a produkční ověření
+jsou dokončené. Nová testovací objednávka ani zátěžové Google zápisy se nevytvářely.
 
 
 ## Publikace na žádost uživatele

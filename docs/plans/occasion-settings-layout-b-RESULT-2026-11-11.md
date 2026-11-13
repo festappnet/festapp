@@ -4,7 +4,9 @@ Realizace podle zadání z 2026-11-11 je v čistém worktree
 `/Users/miakh/source/festapp-occasion-settings-b`, větev
 `feat/occasion-settings-layout-b-20261111`, výchozí main
 `a0cc06649`. Původní rozpracovaná kopie zůstala nedotčena.
-Bez commitu, push, tenant overlay, migrace či nasazení.
+Původní provedení 2026-11-11 bylo lokální, bez publikace a nasazení.
+V rámci sjednocení worktrees 2026-11-13 se změna přenesla na aktuální
+canonical main; nové případy jsou registrované v kanonickém testovacím inventáři.
 
 Desktop používá dokument s navigací nad scrollem, gridem 3/2/1 a skutečným
 editorem pod vybraným řádkem. Telefon používá nezávislé kapitoly a jeden sloupec.
