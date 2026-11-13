@@ -18,8 +18,14 @@ export function takeWalletToken(win=window) {
 export class TicketWalletPage extends Component {
  constructor(host,{invoke,win=window,locale='cs',walletEndpoint=null,connectors=walletConnectors}) {super(host);Object.assign(this,{invoke,win,walletEndpoint,connectors});this.text=copy[locale]??copy.en;this.locale=Object.hasOwn(copy,locale)?locale:'en';}
  async init() {
+  const options=this.win.__festappWalletOptions??Object.fromEntries(new URLSearchParams(this.win.location.search));
+  delete this.win.__festappWalletOptions;
+  if(Object.hasOwn(copy,options.lang)){this.locale=options.lang;this.text=copy[this.locale];}
   this.token=takeWalletToken(this.win);
-  this.win.document.querySelector('meta[name="referrer"]')?.setAttribute('content','no-referrer');
+  // Native cross-origin POST needs Origin. no-referrer turns it into null.
+  // strict-origin sends only the public origin, never the capability or URL path.
+  for(const meta of this.win.document.querySelectorAll('meta[name="referrer"]'))meta.setAttribute('content','strict-origin');
+  this.win.document.documentElement.lang=this.locale;
   this.host.style.display='block';
   const main=this.win.document.createElement('main'); main.className='wallet-page';
   const title=this.win.document.createElement('h1');title.textContent=this.text[0];
@@ -28,14 +34,19 @@ export class TicketWalletPage extends Component {
   main.append(title,this.status);
   for(const connector of this.connectors){
    const button=this.win.document.createElement('button');button.type='button';button.className='wallet-save';
-   const badge=this.win.document.createElement('img');badge.src=connector.badge(this.locale);badge.alt='';badge.height=48;
-   const label=this.win.document.createElement('span');label.textContent=connector.label(this.locale);button.append(badge,label);
+   const badgeUrl=connector.badge(this.locale);
+   if(badgeUrl){const badge=this.win.document.createElement('img');badge.src=badgeUrl;badge.alt='';badge.height=48;button.append(badge);}
+   const label=this.win.document.createElement('span');label.textContent=connector.label(this.locale);button.append(label);
    button.addEventListener('click',()=>connector.delivery==='file'?this.saveFile(connector):this.save(connector));
    button.hidden=!this.token||(connector.delivery==='file'&&!this.walletEndpoint);
    this.actions.set(connector.id,{button,label,connector});main.append(button);
   }
   this.host.replaceChildren(main);
   this.status.textContent=this.text[this.token?1:4];
+  const connector=options.provider?this.connectors.find(item=>item.id===options.provider):this.connectors.find(item=>item.matchesDevice?.(this.win.navigator));
+  if(this.token&&connector){
+   if(connector.delivery==='file')this.saveFile(connector);else await this.save(connector);
+  }
  }
  saveFile(connector) {
   if(this.busy||!this.token||!this.walletEndpoint)return;
@@ -48,6 +59,7 @@ export class TicketWalletPage extends Component {
    for(const [name,value] of Object.entries({token:this.token,provider:connector.id})){
     const input=this.win.document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.append(input);
    }
+   this.status.textContent=this.text[3];
    this.host.append(form);
    try{form.submit();}finally{form.remove();}
   }catch{this.status.textContent=this.text[6];}

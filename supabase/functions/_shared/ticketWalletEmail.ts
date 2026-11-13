@@ -30,6 +30,9 @@ export function walletEmailSection(rows:string[],lang:string) {
 /** One ticket's action area; previews omit href rather than inventing a pass. */
 export function walletEmailLink(url:string|undefined,badge:string|undefined,label:string,lang:string,provider='google') {
  const descriptor=walletEmailProviders[provider];if(!descriptor)throw new Error('wallet_connector_unavailable');
+ if(url){
+  const target=new URL(url);target.searchParams.set('provider',provider);target.searchParams.set('lang',Object.hasOwn(walletEmailCopy,lang)?lang:'en');url=target.href;
+ }
  const translated=descriptor.labels;
  const text=translated[lang]??translated.en;
  const badgeWidth=descriptor.width(lang);
