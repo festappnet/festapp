@@ -1,3 +1,11 @@
+> Aktualizace uživatele 2026-11-13: přepnutí Make je dovoleno až po přijetí
+> stávající aplikace v Make review. Do té doby zachovat původní `/make/v1`,
+> klienta, granty, publikované definice, README, připojení i scénáře. Nové API
+> a obě souhlasové stránky se mohou nasadit samostatně. Předchozí kalendářní
+> sunset ani dřívější souhlas s rolloutem tuto review podmínku nenahrazují.
+> Před případným upgradem regionálního MCP odstranit automatický časový cutoff,
+> aby čekající review nikdy samo nevyřadilo původní Make cestu.
+
 # Jedno API Festapp pro integrace, společné operace s MCP
 
 Datum: 2026-11-13  
@@ -1006,7 +1014,12 @@ useknutí výsledků patří do konektoru. Obecnou kontrolu keysetu/příslušno
 vrácené objednávky přesunout do společného API/operation vlastníka pro všechny
 klienty. Nezmírnit kontrolu summary DTO ani zavést fallback na full RPC.
 
-**Pořadí:** Nejprve server podporující nové API granty a ponechávající staré
+**Review gate uživatele:** publikaci a přepnutí Make provést až po přijetí
+stávající aplikace v review. Do té doby žádný SDK sync, reconsent, změna native
+README, revokace starých grantů ani odstranění route. Datum samo přepnutí
+neautorizuje. Obecné API a souhlasové weby mohou být nasazeny před tímto přijetím.
+
+**Pořadí po přijetí review:** Nejprve server podporující nové API granty a ponechávající staré
 Make granty pouze na staré route, potom ověřený generátor a konektor s novým
 OAuth připojením. Přesun audience vyžaduje reconsent, nikoli znovupoužití
 původního tokenu. Před odstraněním staré route zjistit z reálného

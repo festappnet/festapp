@@ -295,6 +295,14 @@ test('the eight-slot issuer token queue refuses overflow and recovers without re
  assert.equal((await apiRequest(f,rotated)).status,200);
 });
 
+test('legacy Make remains available beyond the former date while review cutover is deferred', async t => {
+ const f=await setup(t,{makeMigration:true});
+ t.mock.method(Date,'now',()=>Date.UTC(2027,0,1));
+ const response=await httpRequest(f.issuer+'/make/v1');
+ assert.equal(response.status,200);
+ assert.equal(response.headers.get('sunset'),null);
+});
+
 test('same Make client keeps original grants live while a distinct regional API grant is consented, without audience promotion',async t=>{
  const f=await setup(t,{makeMigration:true}),scope='festapp:ticket-layouts:read festapp:orders:read';
  const options={clientId:'festapp-make',callbackUri:'https://www.make.com/oauth/cb/app',scope};

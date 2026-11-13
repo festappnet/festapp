@@ -1,3 +1,8 @@
+> Upřesnění uživatele 2026-11-13: Make cutover začíná až po přijetí stávající
+> aplikace v Make review. Do té doby se původní Make cesta, publikované definice,
+> native README, granty, připojení a scénáře nemění. Deletion ledger zůstává
+> záměrně otevřený; API a oba souhlasové weby se dokončí samostatně.
+
 # Realizace společného API Festapp a MCP
 
 Pracujte v `/Users/miakh/source/festapp`. Přečtěte AGENTS.md, CLAUDE.md,
