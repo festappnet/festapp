@@ -23,7 +23,7 @@
   "x-oauth-resource": "https://api.festapp.net/integrations",
   "x-oauth-issuer": "https://mcp.festapp.net",
   "x-data-profile": "order-summary",
-  "x-source-digest": "c1e037420561e2a543c77081e206d07c88dd2d47270246fbebb45223032181b0",
+  "x-source-digest": "d53f91bff823eba9e8e244ec04410168e9d6316847f97bce2452dde5a506d644",
   "x-body-limit-bytes": 49152,
   "x-json-limits": {
     "bytes": 49152,
@@ -4982,5 +4982,5 @@
       }
     }
   },
-  "x-projection-digest": "d3bf49e80f03074375c9db4fe8bafaeac0f65f7e8362cd1f79051e8a36f598f1"
+  "x-projection-digest": "ae293ad3b0968bd6c65bc7dad5956d5fb0c0e24b49cbb7e036c3563318abefd8"
 }
