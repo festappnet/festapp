@@ -1,0 +1,21 @@
+{
+  "timeUtc": "2026-11-13T03:42:13.439753+00:00",
+  "sourceCommit": "a37389cc225a139725a935d014f1df10f091484e",
+  "issuer": "https://mcp.festapp.net",
+  "clientId": "festapp-codex",
+  "registration": "static",
+  "requestedScopes": [
+    "openid",
+    "offline_access",
+    "festapp:ticket-layouts:read",
+    "festapp:orders:read"
+  ],
+  "context": "vstupenky.online",
+  "durationDays": 7,
+  "selectedOccasionCount": 1,
+  "taskIsolatedCodexHome": true,
+  "nativeCodexOAuth": "PASS",
+  "nativeCodexToolCalls": "not tested",
+  "globalSdkReads": "separate evidence",
+  "selectorReloadUsed": false
+}

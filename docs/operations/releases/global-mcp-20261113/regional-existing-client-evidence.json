@@ -1,0 +1,20 @@
+{
+  "at": "2026-11-13T03:23:44Z",
+  "transport": "existing vstupenky.online ChatGPT app connector",
+  "existingGrantPreserved": true,
+  "contextInspect": true,
+  "accessInspect": true,
+  "organizationId": 3,
+  "tenantId": "festapptickets",
+  "writesEnabled": false,
+  "enabledOperations": [
+    "orders.report",
+    "orders.list",
+    "orders.inspect",
+    "access.inspect",
+    "context.inspect",
+    "ticket_layouts.inspect"
+  ],
+  "newChatGptPublication": false,
+  "customerDataRecorded": false
+}

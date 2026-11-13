@@ -1,0 +1,21 @@
+{
+  "source_revision": "a37389cc225a139725a935d014f1df10f091484e",
+  "fresh_global_flows": {
+    "regional": "PASS - PKCE consent and modern/legacy SDK reads, one selected event",
+    "biscup": "PASS - PKCE consent and modern/legacy SDK reads, one selected event, account switch with cookies preserved",
+    "selection_correction": "One mistaken regional context selection was canceled before grant creation; BISCUP was restarted and completed without reload or clearing cookies."
+  },
+  "native_codex_global": "PASS - isolated static-client OAuth authentication only; SDK reads recorded separately",
+  "cleanup": {
+    "regional_global": "UI revoked; access 401 and refresh 400 verified by release driver",
+    "biscup_global": "UI revoked; access 401 and refresh 400 verified by release driver",
+    "global_codex": "Named test grant revoked in UI",
+    "independent_connections": "BISCUP refresh and program read passed after regional grant revocation",
+    "other_grants": "preserved",
+    "task_browser_sessions": "closed",
+    "task_browser_auth_profiles": "removed",
+    "task_cdp_diagnostic": "stopped",
+    "isolated_codex": "both named local OAuth credentials removed and isolated directory deleted",
+    "persistent_keychain_credentials": "preserved"
+  }
+}

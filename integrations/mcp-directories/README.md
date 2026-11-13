@@ -2,7 +2,21 @@
 
 Publisher: Festapp. Source: https://github.com/festappnet/festapp. Support: info@festapp.net.
 
-These are publication inputs, not published registry records. `products.json` records readiness. Submit only after the exact service and declared client scenarios pass live verification. There are two identities; Festapp Tickets is included in Festapp, never a third duplicate server.
+Both production endpoints passed live verification. Official MCP Registry
+records are published and read-back verified:
+[Festapp](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.0)
+and [vstupenky.online](https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.0).
+Both free Glama Hosted submissions are awaiting review; their publisher claim,
+authenticated health checks, indexing and public listing URLs are pending.
+`products.json` records these separate states. There are two identities;
+Festapp Tickets is included in Festapp, never a third duplicate server.
+See the [production verification evidence](../../docs/operations/releases/global-mcp-20261113/live-verification.md).
+
+[PulseMCP submissions](https://www.pulsemcp.com/submit) are paused; its official
+registry ingestion is a pending external follow-up. MCP.so's remote form offers
+a paid submission, which was not purchased. Recent remote listings processed
+through [official GitHub issues](https://github.com/chatmcp/mcpso/issues/6132)
+show a manual route, but its current free availability was not established.
 
 ## English
 

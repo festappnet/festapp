@@ -1,5 +1,7 @@
 # MCP directory research - 2026-11-13
 
+> Historical preparation snapshot. Current production and directory status is recorded in [live-verification.md](live-verification.md).
+
 Research only; no submissions made. Recheck search results and live endpoints immediately before publication.
 
 ## Official MCP Registry

@@ -1,0 +1,76 @@
+{
+  "operation": "user-authorized postgres operational account provisioning",
+  "accountLocatorId": "festapp-mcp-verifier-biscup-20261113",
+  "credentialStore": {
+    "kind": "macOS encrypted login Keychain",
+    "service": "net.festapp.verification-user.v1",
+    "readbackVerified": true,
+    "iCloudSync": "not verified"
+  },
+  "target": {
+    "tenantId": "doobiscup",
+    "organizationId": 5,
+    "occasionLink": "biscup2025",
+    "occasionId": 1072524
+  },
+  "canonicalIdentityOwner": {
+    "function": "public.create_user_in_organization_with_data_pure(bigint,text,text,jsonb)",
+    "owner": "postgres",
+    "invokerSecurity": true,
+    "usedInSameAtomicTransaction": true
+  },
+  "membership": {
+    "scope": "occasion",
+    "isEditorView": true,
+    "isEditor": false,
+    "isManager": false,
+    "isApproved": false,
+    "isApprover": false,
+    "isEditorOrder": false,
+    "isEditorOrderView": false,
+    "isReceptionist": false,
+    "isCleaningCrew": false,
+    "isCleaningBlocked": false,
+    "hasUnitMembership": false,
+    "role": null,
+    "services": null,
+    "ticket": null
+  },
+  "administrativeAudit": {
+    "principal": "postgres",
+    "source": "operator.verification_account.bootstrap",
+    "actorKind": "unknown",
+    "reason": "user-authorized BISCUP read-only verification bootstrap; no manager impersonation or auth-claim substitution",
+    "transaction": "serializable; exact target, uniqueness, and email-absence guarded; one transaction"
+  },
+  "canonicalTechnicalPublication": {
+    "function": "public.record_client_sync_commit_v1",
+    "aggregateVersion": 1,
+    "privateProfileRevision": 1,
+    "commitId": "ba8bdeda-6e0c-4f02-a267-eba097337911"
+  },
+  "changeCounts": {
+    "authUser": 1,
+    "authIdentity": 1,
+    "userInfo": 1,
+    "occasionUser": 1,
+    "unitUser": 0,
+    "emailMessage": 0
+  },
+  "liveVerification": {
+    "realGoTruePasswordGrant": true,
+    "signedUserMatchedCreatedAccount": true,
+    "getOperatorAccessOrg5ExactOccasion": true,
+    "accessibleUnits": 0,
+    "programRead": "manage_program_authoring events.list limit=1 passed",
+    "programRowsRead": 1,
+    "foreignOrg3Denied": true,
+    "foreignSqlstate": "42501",
+    "sessionPersisted": false,
+    "sessionSignedOut": true
+  },
+  "transactionTemplateSha256": "371c986aad4b28f5f0cea213dcb4eb8896ab01e36af82a344ee12c674aed3fb9",
+  "secretValuesRecorded": false,
+  "emailAddressRecorded": false,
+  "actorUuidRecorded": false
+}

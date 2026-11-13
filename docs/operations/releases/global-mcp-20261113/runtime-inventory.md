@@ -1,5 +1,7 @@
 # Global MCP release preparation inventory - 2026-11-13
 
+> Historical preparation snapshot. Current production and directory status is recorded in [live-verification.md](live-verification.md).
+
 Status: read-only preparation. No production or tenant mutations, no deploy, and no credential values recorded. This is not release approval or evidence that the global service is deployed.
 
 ## Runtime target and access

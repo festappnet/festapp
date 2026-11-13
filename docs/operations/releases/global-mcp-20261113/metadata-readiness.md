@@ -1,5 +1,7 @@
 # Global MCP metadata readiness - 2026-11-13
 
+> Historical preparation snapshot. Current production and directory status is recorded in [live-verification.md](live-verification.md).
+
 Read-only research. No registry submission or change to public material was made. Live endpoint and client authorization remain separate release gates.
 
 ## Publisher and support

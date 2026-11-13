@@ -1,0 +1,7 @@
+{"time":"2026-11-13T03:15:53.752Z","event":"ready"}
+{"time":"2026-11-13T03:15:53.765Z","event":"browser_log","level":"error","text":"Loading the script '[URL]' violates the following Content Security Policy directive: \"script-src \". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."}
+{"time":"2026-11-13T03:16:03.062Z","event":"browser_log","level":"error","text":"Loading the script '[URL]' violates the following Content Security Policy directive: \"script-src \". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."}
+{"time":"2026-11-13T03:16:03.063Z","event":"network_failure","host":"static.cloudflareinsights.com","kind":"other","method":"GET","reason":"","blockedReason":"csp","canceled":false}
+{"time":"2026-11-13T03:16:07.645Z","event":"network_failure","host":"mcp.festapp.net","kind":"connect","method":"GET","reason":"net::ERR_ABORTED","blockedReason":null,"canceled":true}
+{"time":"2026-11-13T03:16:07.649Z","event":"browser_log","level":"error","text":"Sending form data to '[URL]' violates the following Content Security Policy directive: \"form-action 'self'\". The request has been blocked.\n"}
+{"time":"2026-11-13T03:17:16.093Z","event":"network_failure","host":"127.0.0.1","kind":"loopback","method":"GET","reason":"net::ERR_ABORTED","blockedReason":null,"canceled":true}

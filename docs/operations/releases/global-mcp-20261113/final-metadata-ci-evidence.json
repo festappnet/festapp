@@ -1,0 +1,19 @@
+{
+  "head": "a37389cc225a139725a935d014f1df10f091484e",
+  "dirty": true,
+  "inputSha256": "43358e18491d10bb8531f09b5b7a80aab96cf4b09a6d315d60aa04a7f5bcd489",
+  "selectedJobs": [
+    "wix-checkout-compatibility"
+  ],
+  "scope": "partial",
+  "complete": true,
+  "jobs": [
+    {
+      "name": "wix-checkout-compatibility",
+      "status": "PASS"
+    }
+  ],
+  "inputsUnchanged": true,
+  "receipt": "20261113T044949-4c6e53a42a14",
+  "purpose": "Affected canonical metadata publication lane after directory readiness updates; no new runtime release."
+}

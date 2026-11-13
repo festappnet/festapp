@@ -1,0 +1,44 @@
+{
+  "timeUtc": "2026-11-13T03:44:40.399430+00:00",
+  "sourceCommit": "a37389cc225a139725a935d014f1df10f091484e",
+  "officialRegistry": [
+    {
+      "name": "net.festapp/festapp",
+      "version": "0.1.0",
+      "readbackUrl": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.0",
+      "endpoint": "https://mcp.festapp.net/mcp",
+      "status": "published-readback-verified"
+    },
+    {
+      "name": "net.festapp/vstupenky-online",
+      "version": "0.1.0",
+      "readbackUrl": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.0",
+      "endpoint": "https://mcp.vstupenky.online/mcp",
+      "status": "published-readback-verified"
+    }
+  ],
+  "glama": [
+    {
+      "name": "Festapp",
+      "endpoint": "https://mcp.festapp.net/mcp",
+      "status": "submitted-for-review",
+      "submissionHttp": 200,
+      "evidence": "success toast; later independent connector directory GET returned 503; no listing or health claim"
+    },
+    {
+      "name": "vstupenky.online",
+      "endpoint": "https://mcp.vstupenky.online/mcp",
+      "status": "submitted-for-review",
+      "submissionHttp": 200,
+      "evidence": "response success true; no listing or health claim"
+    }
+  ],
+  "glamaDescriptionPublisher": "Published by Festapp",
+  "glamaPublisherClaim": "pending/not verified",
+  "notes": [
+    "Before each submission, connector and server name search showed no match.",
+    "Hosted review form did not request OAuth callback, test credentials or legal URLs.",
+    "Glama profile is a personal profile; left unchanged.",
+    "No paid action; no claim that pending reviews are indexed or healthy."
+  ]
+}

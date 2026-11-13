@@ -8,23 +8,48 @@
       "name": "Festapp",
       "namespace": "net.festapp/festapp",
       "endpoint": "https://mcp.festapp.net/mcp",
-      "status": "not-released",
+      "status": "production-verified",
       "categories": [
         "event-management",
         "ticketing"
       ],
-      "description": "Manage authorized Festapp events and Festapp Tickets with explicit per-connection consent."
+      "description": "Manage authorized Festapp events and Festapp Tickets with explicit per-connection consent.",
+      "directories": {
+        "officialMcpRegistry": {
+          "status": "published-readback-verified",
+          "version": "0.1.0",
+          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.0"
+        },
+        "glama": {
+          "status": "submitted-for-review",
+          "publisherClaim": "pending",
+          "healthAndIndexing": "pending"
+        }
+      }
     },
     {
       "name": "vstupenky.online",
       "namespace": "net.festapp/vstupenky-online",
       "endpoint": "https://mcp.vstupenky.online/mcp",
-      "status": "regional-existing-release",
+      "status": "production-verified",
       "categories": [
         "ticketing",
         "event-management"
       ],
-      "description": "Sales reports and order status for authorized vstupenky.online event organizers."
+      "description": "Sales reports and order status for authorized vstupenky.online event organizers.",
+      "directories": {
+        "officialMcpRegistry": {
+          "status": "published-readback-verified",
+          "version": "0.1.0",
+          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.0"
+        },
+        "glama": {
+          "status": "submitted-for-review",
+          "publisherClaim": "pending",
+          "healthAndIndexing": "pending"
+        }
+      }
     }
-  ]
+  ],
+  "verificationReport": "docs/operations/releases/global-mcp-20261113/live-verification.md"
 }
