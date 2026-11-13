@@ -336,41 +336,44 @@
     {
       "mediaId": "cs/check-in/ready-mobile",
       "file": "cs/walkthrough/65-mobile-scanner-ready.png",
-      "sha256": "f90416a1041b89b3062fb240c9b033fcbe667b7f563059e12eaf8a9ca9a2b7e8",
-      "capturedAt": "2026-10-25T00:07:39.543483+00:00",
+      "sha256": "52ea8bc93a99e647418692be0803c8e9227587484a14e6727e4d3b5fc329205a",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M26-mobile-scan-ready",
       "alt": "Mobilní úvod skeneru se správnou akcí a volbami kamery nebo ručního zadání.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/check-in/manual-mobile",
       "file": "cs/walkthrough/66-mobile-scanner-manual.png",
-      "sha256": "0fcda4e5a2b324c24219aa71323a0be45ec4b778a85bcc186c87a893fbc61251",
-      "capturedAt": "2026-10-25T00:07:39.760015+00:00",
+      "sha256": "af091372392c14535098161377524dab524cc8651284c5b9b3fb4617595347c8",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M28-mobile-manual-shot",
       "alt": "Mobilní skener s ručním zadáním symbolu vstupenky.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/check-in/used-mobile",
       "file": "cs/walkthrough/67-mobile-scanner-used.png",
-      "sha256": "f858f1973733d19e37be27239775016af3ba7d47c3f99f7b53bec90ea082a907",
-      "capturedAt": "2026-10-25T00:07:39.959477+00:00",
+      "sha256": "884452fe105941cc5b81c9aadd426df8a5c95f7ccd1ec8d821fca2aba76f50aa",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M31-mobile-used-shot",
       "alt": "Mobilní upozornění Vstupenka už byla použita.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/forms/buyer-mobile",
@@ -388,34 +391,36 @@
     {
       "mediaId": "en/check-in/manual-mobile",
       "file": "en/walkthrough/69-en-mobile-scanner-manual.png",
-      "sha256": "7793c0e9bce71a515214cb0b1cb095733b4dbf2ac630a9dc3da443a93c991202",
-      "capturedAt": "2026-10-25T00:08:06.342371+00:00",
+      "sha256": "56edb86460bc2b981c1a4e8b5024e2e87248783ac0d0ba749961bd3f3f0ded62",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M43-en-manual-shot",
       "alt": "English mobile scanner with a Ticket code field and Look up button.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/check-in/used-mobile",
       "file": "en/walkthrough/70-en-mobile-scanner-used.png",
-      "sha256": "3482cbbf99bd7d30792b437e880dbfee0114aa9e47ed3854be1067915545fc22",
-      "capturedAt": "2026-10-25T00:08:14.223854+00:00",
+      "sha256": "930ceb2df73ad979e2d64b24b33e994a1add5f727021cca3d8b9f1fa053d3baf",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M47-en-result-shot",
       "alt": "English mobile result stating that the ticket has already been used.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/invalid-access",
       "file": "cs/scanner-advanced/invalid-access.png",
-      "sha256": "b906e30b8c15a044206c0c744739735f1cdcf30c66a5c329f7b107c764462f86",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "ab8a767420f0df848e65a8f3cbffbefc1734a2bea1be6e62ea79c761c3c6b27c",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Chybný přístupový kód skeneru s hlášením Kód skeneru není platný.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -424,8 +429,8 @@
     {
       "mediaId": "cs/scanner-advanced/not-found",
       "file": "cs/scanner-advanced/not-found.png",
-      "sha256": "ee847bf60cb1c4db2264572ace0e41799ff51ad7f3906a8644e1aa6a1244ea22",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "e40194c1dabccc4b7a8292faec11aab715ef4fff3bcd691496860e233c05068b",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Mobilní webový skener hlásí Vstupenka nenalezena.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -434,8 +439,8 @@
     {
       "mediaId": "cs/scanner-advanced/settings",
       "file": "cs/scanner-advanced/settings.png",
-      "sha256": "0c0d5e336d9de66023e4f8d3ad47edd63f600071ff6f2819adb4d7f22043841b",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "aeb6957f0b4b829cb2062e05170beaa69fe3ebf9caa40e9907ae262c3f077cfc",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Nastavení mobilního webového skeneru se základními údaji a výběrem produktů.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -444,8 +449,8 @@
     {
       "mediaId": "cs/scanner-advanced/field-options",
       "file": "cs/scanner-advanced/field-options.png",
-      "sha256": "7444b1b8960c5bbf02c24fafd73c30ed66e0e9132741a5736d10ec4704057ef5",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "30cddb78285d271bc0fa2b50a7b6b5e78c288a7df9b08f0c6d9a210f3f8a570e",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Nastavení e-mailu z formuláře: popisek, skrytí prázdných hodnot a pořadí.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -454,8 +459,8 @@
     {
       "mediaId": "cs/scanner-advanced/advanced",
       "file": "cs/scanner-advanced/advanced.png",
-      "sha256": "4dd37620547785495acf7dda1a3a0988cefe7e757ae0d4f751d87e399d863a27",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "d0c48bfd4d14259290899c3f21407119874b4046b64ed42010799464cab1af2f",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Chování skeneru s volbami hledání, cen, interní poznámky a offline přípravy.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -464,8 +469,8 @@
     {
       "mediaId": "cs/scanner-advanced/preview",
       "file": "cs/scanner-advanced/preview.png",
-      "sha256": "4df7b25988e9586b6f8549ebbc3309dbb3c6f660ed2fd7e6ce188daea1ffc668",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "d8bf43aec9fa36a43dcfb96e2a7525ef30bc2a2db773cf3c815a333880e88597",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Náhled ukázkové použité vstupenky v nastavení webového skeneru.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -474,8 +479,8 @@
     {
       "mediaId": "en/scanner-advanced/invalid-access",
       "file": "en/scanner-advanced/invalid-access.png",
-      "sha256": "13522947b328cf5ad422d054acc52d3b9d15a9c651d3474e1c62d02849ddcafe",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "8700a6df01cced2d2eacb613d90dd653349aea16cf12a81f59b35503caa5326e",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Invalid scanner code message in the mobile web scanner.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -484,8 +489,8 @@
     {
       "mediaId": "en/scanner-advanced/not-found",
       "file": "en/scanner-advanced/not-found.png",
-      "sha256": "e347317b9c2d0da678e4e82f4cce2c5d1035bb2d1f0ea0448815484804caf8f1",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "26e61322ffdafe6389394749bcbe8090b78cad1e40b7d6c009e8f5d819be18d7",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Mobile web scanner showing Ticket not found.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -494,8 +499,8 @@
     {
       "mediaId": "en/scanner-advanced/settings",
       "file": "en/scanner-advanced/settings.png",
-      "sha256": "ed3a77e383bc5069441f6d333846afe5553428a9e5b90a0d2740b7c5de3c55c9",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "2601ec9a8daed0dffda9ce13b3f931ec0853c150ab960a492bfb62053071d709",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Mobile web scanner display settings with fixed core details and product selection.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -504,8 +509,8 @@
     {
       "mediaId": "en/scanner-advanced/field-options",
       "file": "en/scanner-advanced/field-options.png",
-      "sha256": "20a30e72d3836071b508c1f7245fdbed5aa68f42787d06087c7984cbbde56370",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "c5a5ff0d1f0ea4be61f081918238eba3afc36f67765db7e74eea40fcbac329f7",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Form email display options including label, empty values and ordering.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -514,8 +519,8 @@
     {
       "mediaId": "en/scanner-advanced/advanced",
       "file": "en/scanner-advanced/advanced.png",
-      "sha256": "15f6aa008134f795ccd77dbfbeadca6e6a9035d5b7ebfa9ac00ef4fe1094512f",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "606d4e73100e330d752122b9217b9e4f2c79983ba927cb1a18472804088d1cf7",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Scanner behavior options for search, prices, internal notes and offline preparation.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -524,8 +529,8 @@
     {
       "mediaId": "en/scanner-advanced/preview",
       "file": "en/scanner-advanced/preview.png",
-      "sha256": "a42a333718faadb196721b6f2c184da1c4a1293816e3b0687bfd60c66d18dd45",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "01d4bcfda74d7b1e7ee54355ed10f23a6ce26d8c62ed066c3358e87b381db634",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "A previously used sample ticket in the web scanner settings preview.",
       "platform": "web-client",
       "physicalDevice": false,

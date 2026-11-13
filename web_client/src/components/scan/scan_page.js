@@ -14,7 +14,7 @@ import './scan.css';
 import { icon } from './scan_icons.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { ScannerFeedback } from './scanner_feedback.js';
-import {scannerSearchPreview} from './scanner_presentation.js';
+import {scannerSearchPreview,refreshScannerUsedTimes} from './scanner_presentation.js';
 export class ScanPage extends Component {
     constructor(host, { client, store = new ScannerStore(), backend = null } = {}) {
         super(host); this.client = client; this.store = store;
@@ -45,7 +45,11 @@ export class ScanPage extends Component {
         this.onUnload = event => { if (this.controller?.state==='persisting' || this.history.some(r => !isTerminal(r.state))) { event.preventDefault(); event.returnValue = ''; } };
         window.addEventListener('online', this.onNetwork); window.addEventListener('offline', this.onNetwork);
         document.addEventListener('visibilitychange', this.onVisible); window.addEventListener('beforeunload', this.onUnload);
-        this.interval = setInterval(() => { if (document.visibilityState === 'visible' && this.row && navigator.onLine) this.recover(); }, 15000);
+        this.interval = setInterval(() => {
+            if(document.visibilityState !== 'visible')return;
+            refreshScannerUsedTimes(this.host);
+            if(this.row && navigator.onLine)this.recover();
+        }, 15000);
         this.render();
         if (route.code) await this.open({ p_scan_code: route.code, p_device_name: tr('device') });
         else if (route.occasion) await this.open({ p_occasion: Number(route.occasion), p_device_name: tr('device') });

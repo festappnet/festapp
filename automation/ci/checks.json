@@ -2154,6 +2154,7 @@
     "web_client/tests/scan/multiple_codes.test.js",
     "web_client/tests/scan/navigation.test.js",
     "web_client/tests/scan/order_presentation.test.js",
+    "web_client/tests/scan/result_status.test.js",
     "web_client/tests/scan/routing.test.js",
     "web_client/tests/scan/search_scope.test.js",
     "web_client/tests/scan/settings.test.js",

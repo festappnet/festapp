@@ -48,7 +48,7 @@ save RPC and validation enabled; a rejected save is not persistence evidence.
 
 ## Scanner errors and settings
 
-`scanner_light.py` captures all six scanner states in Czech and English, using
+`scanner_light.py` captures scanner settings, error and check-in states in Czech and English, using
 actual local Auth/RPC responses and the current webclient UI. Requirements:
 Python 3, agent-browser, a running webclient configured exclusively for the local
 backend, a scanner code, an editor account and an existing used ticket belonging
@@ -62,14 +62,28 @@ python3 automation/help_capture/scanner_light.py \
   --origin http://127.0.0.1:57982 \
   --scan-code '<fixture scanner code>' \
   --occasion '<fixture occasion ID>' \
-  --ticket '<existing fixture ticket symbol>'
+  --ticket '<Czech used fixture ticket symbol>' \
+  --ticket-en '<English used fixture ticket symbol>' \
+  --locale-command "$PWD/automation/help_capture/scanner_fixture_localize.sh" \
+  --search-command "$PWD/automation/help_capture/scanner_fixture_search.sh"
 ```
+
+The supplied guarded commands target only the retained `festapp-wizard-help-20261025` fixture and event 2. The locale command accepts `cs` or `en` and localizes all visible event, form,
+product and ticket-holder data in the owned disposable database. Use natural
+examples for each locale. For a recent used result, set only the used fixture
+ticket's `updated_at` to five minutes before capture; do not alter a receipt.
+The search command accepts `off` or `on` and changes both
+`scanner_settings.config.manual_search.tickets` and `.users` for that fixture.
+The script opens a fresh scanner session with search off to capture an actual
+failed ticket lookup, then restores search and opens a fresh session for the
+ordinary search walkthrough. Both commands must reject unrelated databases. The
+script restores search and the Czech fixture in its cleanup.
 
 The script only permits loopback origins. It authenticates through AuthService,
 looks up a deliberately missing ticket, opens editor settings, changes a draft
 and previews an existing ticket. It does not save settings or confirm admission.
 It checks light mode and overflow before capture and updates both provenance
-registries after all twelve captures succeed. If a capture fails, review any
+registries after all captures succeed. If a capture fails, review any
 partially replaced PNGs before rendering; registry updates are withheld.
 A saved-settings/reopen scenario remains a separate manual chapter in the
 catalogue. Camera acquisition and offline synchronization remain separate checks.

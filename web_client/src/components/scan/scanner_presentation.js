@@ -1,4 +1,5 @@
 import {tr,escape as e} from './scan_strings.js';
+import { LocalizationService } from '../../services/localization_service.js';
 export const scannerProductTitle=product=>typeof product.short_title==='string'&&product.short_title.trim()?product.short_title.trim():product.title||'';
 export function scannerProductCaption(product) {
     const label=product.type==='food'?(product.type_title||tr('dinner')):product.type!=='spot'?product.type_title:null;
@@ -25,10 +26,24 @@ export function scannerSearchPreview(ticket) {
     const heading=holder || ticket.purchaser_name || tr('ticket_label');
     const table=ticket.spot_group?.title;
     const products=(ticket.products||[]).filter(product=>!(ticket.spot && product.type==='spot' && scannerProductTitle(product).trim().toLocaleLowerCase()===product.type_title?.trim().toLocaleLowerCase()));
-    return `<span class="scan-search-heading"><strong>${e(heading)}</strong>${ticket.state?`<span class="scan-ticket-status ${status.tone}">${e(tr(status.key))}</span>`:''}</span>
+    return `<span class="scan-search-heading"><strong>${e(heading)}</strong>${ticket.state?`<span class="scan-ticket-status ${status.tone}" ${status.key==='already_used'?`data-scan-used-at="${e(ticket.updated_at || '')}"`: ""}>${e(status.key==='already_used'?scannerUsedText(ticket.updated_at):tr(status.key))}</span>`:''}</span>
     ${table || ticket.spot?`<span class="scan-search-seat">${table?`${/^\d+$/.test(table)?tr('table')+' ':''}${e(table)}`:''}${table && ticket.spot?' · ':''}${ticket.spot?`${tr('spot')} ${e(ticket.spot)}`:''}</span>`:''}
     ${ticket.purchaser_name && ticket.purchaser_name!==heading?`<span class="scan-search-customer">${tr('purchaser')}: ${e(ticket.purchaser_name)}</span>`:''}
     ${ticket.purchaser_email?`<span class="scan-search-customer">${e(ticket.purchaser_email)}</span>`:''}
     ${products.length?`<span class="scan-search-products">${products.map(product=>`<span>${e(scannerProductCaption(product))}</span>`).join('')}</span>`:''}
     ${ticket.symbol?`<span class="scan-search-code">${e(ticket.symbol)}</span>`:''}`;
+}
+
+// updated_at is the admission timestamp only for a used ticket projection.
+// A conflict receipt's committed_at records the rejected attempt, not first use.
+export function scannerUsedText(timestamp, now=Date.now()) {
+    const usedAt=typeof timestamp==='string' && timestamp.trim()?Date.parse(timestamp):NaN;
+    if(!Number.isFinite(usedAt))return tr('already_used');
+    const seconds=Math.max(0,Math.floor((now-usedAt)/1000));
+    const [unit,size]=seconds<60?['second',1]:seconds<3600?['minute',60]:seconds<86400?['hour',3600]:['day',86400];
+    const relative=new Intl.RelativeTimeFormat(LocalizationService.currentLocale,{numeric:'auto'}).format(-Math.floor(seconds/size),unit);
+    return `${tr('already_used')} (${relative})`;
+}
+export function refreshScannerUsedTimes(root,now=Date.now()) {
+    for(const node of root.querySelectorAll('[data-scan-used-at]'))node.textContent=scannerUsedText(node.dataset.scanUsedAt,now);
 }
