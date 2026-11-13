@@ -1,3 +1,10 @@
+-- Shared product capability: participant notifications exist only in app-supported portals.
+CREATE OR REPLACE FUNCTION public.notification_center_app_supported_internal(p_organization bigint)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT coalesce((SELECT data->>'IS_APP_SUPPORTED'='true' FROM public.organizations WHERE id=p_organization),false);
+$$;
+REVOKE ALL ON FUNCTION public.notification_center_app_supported_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 -- Only the current incident for a connection remains actionable. Historical
 -- episodes can retain deliveries/read receipts, but must not duplicate alerts.
 CREATE OR REPLACE FUNCTION public.notification_center_bank_episode_current(e public.notification_center_events)
@@ -30,8 +37,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,exte
      WHERE o.id=CASE WHEN e.data->>'orderId' ~ '^[0-9]{1,18}$'
       THEN (e.data->>'orderId')::bigint END AND o.occasion=e.occasion),
     e.status,'')<>'storno')
-   AND (e.kind<>'occasion_joined' OR (EXISTS(SELECT 1 FROM public.organizations org
-    WHERE org.id=e.organization AND org.data->>'IS_APP_SUPPORTED'='true') AND EXISTS(
+   AND (e.kind<>'occasion_joined' OR (public.notification_center_app_supported_internal(e.organization) AND EXISTS(
     SELECT 1 FROM public.occasion_users m
     JOIN public.user_info u ON u.id=m."user" AND u.organization=e.organization
     WHERE m.occasion=e.occasion AND m."user"::text=e.data->>'userId'))) END;

@@ -3399,6 +3399,11 @@
       "anon": false,
       "authenticated": false,
       "service_role": true
+    },
+    "public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {

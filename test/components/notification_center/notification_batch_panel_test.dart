@@ -80,12 +80,7 @@ void main() {
                 'payment_problem': 'problems',
               },
               'requiredKinds': ['bank_problem', 'provider_problem'],
-              'scopeCatalogs': {
-                '12': {'order_created': 'orders'},
-              },
-              'subscriptions': [
-                {'occasion': null, 'kinds': selected},
-              ],
+              'kinds': selected,
             },
           };
         },
@@ -150,7 +145,7 @@ void main() {
       expect(find.text('Volitelné e-mailové souhrny'), findsOneWidget);
       expect(
         find.text(
-          'Jednou za 5 minut souhrn napříč vybranými akcemi a organizacemi',
+          'Jednou za 5 minut jeden souhrn. Přepínač platí pro Váš účet napříč portály.',
         ),
         findsOneWidget,
       );
@@ -185,6 +180,8 @@ void main() {
         'payment_problem': false,
       });
       expect(saves.single.containsKey('recipient'), false);
+      expect(saves.single.containsKey('p_occasion'), false);
+      expect(find.byType(DropdownButton<int>), findsNothing);
       expect(tester.takeException(), isNull);
       const capturePath = String.fromEnvironment('NOTIFICATION_CAPTURE_DIR');
       if (capturePath.isNotEmpty) {

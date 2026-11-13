@@ -89,7 +89,7 @@ BEGIN
  BEGIN UPDATE public.notification_center_email_item_sources SET organization=org2 WHERE recipient=u AND organization=org1; RAISE EXCEPTION 'expected source scope FK'; EXCEPTION WHEN foreign_key_violation THEN NULL; END;
  BEGIN UPDATE public.email_messages SET organization=NULL WHERE message_kind<>'admin_notification_digest';
   INSERT INTO public.email_messages(target_time,code,data,organization,message_kind,dedupe_key,input_hash) VALUES(now(),'x','{}',NULL,'custom','bad','bad'); RAISE EXCEPTION 'expected scope CHECK'; EXCEPTION WHEN check_violation THEN NULL; END;
- BEGIN UPDATE public.notification_center_email_subscriptions SET occasion=(SELECT id FROM public.occasions WHERE organization=org2 LIMIT 1) WHERE recipient=u AND organization=org1; RAISE EXCEPTION 'expected subscription scope FK'; EXCEPTION WHEN foreign_key_violation THEN NULL; END;
+ PERFORM assert_false(EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='notification_center_email_subscriptions' AND column_name='occasion'),'subscription storage has no occasion override');
  BEGIN UPDATE public.notification_center_user_state SET email_scanned_sequence=last_delivery_sequence+1 WHERE recipient=u; RAISE EXCEPTION 'expected cursor CHECK'; EXCEPTION WHEN check_violation THEN NULL; END;
 
  BEGIN INSERT INTO public.notification_center_email_subscriptions(recipient,organization,kinds) VALUES(u,org1,'{}'); RAISE EXCEPTION 'expected subscription unique'; EXCEPTION WHEN unique_violation THEN NULL; END;

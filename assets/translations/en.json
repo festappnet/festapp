@@ -4917,13 +4917,13 @@
     },
     "emailRequiredHelp": "Required alerts for authorized recipients. Muting an event or turning summaries off does not disable them.",
     "emailAlwaysOn": "Always on",
-    "emailHelp": "A summary every {minutes} minutes across selected events and organizations",
-    "emailOrganization": "Organization default subscription",
+    "emailHelp": "One summary every {minutes} minutes. This switch applies to your account across portals.",
     "emailCategories": {
       "problems": "Problems",
-      "registrations": "Registrations",
       "orders": "Orders",
-      "payments": "Payments"
+      "payments": "Payments",
+      "participants": "Participants",
+      "waitlist": "Waiting list"
     },
     "emailStates": {
       "no_address": "Delivery email is missing",
@@ -4939,7 +4939,8 @@
       "expired": "Expired",
       "blocked": "Waiting to send"
     },
-    "paymentAssigned": "Assignment of a received payment"
+    "paymentAssigned": "Assignment of a received payment",
+    "emailScopeHelp": "Selected categories apply to all accessible events on this portal. You can mute individual events below."
   },
   "TicketBatches": {
     "selectedCount": "Selected: {count}",

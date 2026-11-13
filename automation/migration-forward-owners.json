@@ -205,6 +205,11 @@
       "active": true
     },
     {
+      "migration": "20261113014000_notification_settings_clarity.sql",
+      "manifest": "notification-settings-clarity-migration.json",
+      "active": true
+    },
+    {
       "migration": "20261113090000_ticket_wallet_queue_expand.sql",
       "manifest": "ticket-wallet-queue-expand-migration.json",
       "active": true

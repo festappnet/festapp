@@ -44,7 +44,7 @@ test('default output cannot rewrite a published migration after source changes',
   const ownership=join(dir,'automation/migration-forward-owners.json'),ownerBefore=readFileSync(ownership);
   const result=spawnSync('python3',[script],{cwd:dir,encoding:'utf8'});
   assert.notEqual(result.status,0);
-  assert.match(result.stderr,/Refusing to overwrite a different migration/);
+  assert.match(result.stderr,/Installed notification migration is immutable/);
   assert.deepEqual(readFileSync(output),before);
   assert.deepEqual(readFileSync(ownership),ownerBefore);
  } finally {rmSync(dir,{recursive:true});}
@@ -63,4 +63,25 @@ test('assembled prerequisite rejects a missing canonical scope owner', {skip: !p
   await db.query('ALTER FUNCTION public.notification_center_prepared_scope(bigint,jsonb) RENAME TO notification_scope_missing_fixture');
   await assert.rejects(db.query(guard), /admin_notification_prerequisites_missing/);
  }finally{await db.query('ROLLBACK');await db.end();}
+});
+
+test('occasion subscription cutover rejects saved overrides without removing data', {skip: !process.env.DATABASE_URL}, async()=>{
+ const {createRequire}=await import('node:module');
+ const {assertLocalDatabaseUrl,assertDisposableDatabase}=await import('../../web_client/tests/database/disposable_database.js');
+ assertLocalDatabaseUrl(process.env.DATABASE_URL);
+ const {Client}=createRequire(new URL('../../web_client/package.json',import.meta.url))('pg');
+ const db=new Client({connectionString:process.env.DATABASE_URL});await db.connect();
+ try {
+  await assertDisposableDatabase(db);await db.query('BEGIN');
+  // Recreate only the retired column to exercise the guarded upgrade boundary.
+  await db.query('ALTER TABLE public.notification_center_email_subscriptions ADD COLUMN occasion bigint');
+  const {rows:[org]}=await db.query("INSERT INTO public.organizations(title) VALUES('Portál pořadatelů') RETURNING id");
+  const {rows:[user]}=await db.query('INSERT INTO auth.users(id) VALUES(gen_random_uuid()) RETURNING id');
+  await db.query('INSERT INTO public.notification_center_email_profiles(recipient) VALUES($1)',[user.id]);
+  await db.query('INSERT INTO public.notification_center_email_subscriptions(recipient,organization,occasion) VALUES($1,$2,42)',[user.id,org.id]);
+  await db.query('SAVEPOINT guarded_cutover');
+  await assert.rejects(db.query(readFileSync(join(root,'database/functions/notification_center/email_scope_cutover.sql'),'utf8')),/notification_email_occasion_overrides_require_resolution/);
+  await db.query('ROLLBACK TO SAVEPOINT guarded_cutover');
+  assert.equal((await db.query('SELECT occasion FROM public.notification_center_email_subscriptions WHERE recipient=$1',[user.id])).rows[0].occasion,'42');
+ } finally {await db.query('ROLLBACK');await db.end();}
 });

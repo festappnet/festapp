@@ -5,7 +5,7 @@ import json
 import hashlib
 from pathlib import Path
 import migration_inputs
-from migration_forward_owners import forward_sources, historical_source, check_effective_sources
+from migration_forward_owners import forward_sources, historical_source, historical_text, check_effective_sources
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
@@ -20,6 +20,13 @@ if output.name != canonical.name:
 for prerequisite in manifest['prerequisites']:
     if hashlib.sha256(migration_inputs.read_bytes(root / 'supabase/migrations' / prerequisite)).hexdigest() != manifest['prerequisiteSha256'][prerequisite]:
         raise SystemExit('Historical prerequisite digest differs: ' + prerequisite)
+if set(manifest['sources']) & forward_sources(root, after=canonical.name):
+    if not args.check:
+        raise SystemExit('Installed notification migration is immutable; use the current explicit forward')
+    historical_text(root, canonical.name)
+    check_effective_sources(root, manifest['sources'])
+    print('Immutable admin notification migration and current owners match')
+    raise SystemExit(0)
 text = '-- Generated forward migration: ' + manifest['name'] + '\nBEGIN;\n'
 text += "DO $$ BEGIN IF to_regclass('public.notification_center_view_members') IS NULL OR to_regclass('public.abuse_policy_rules') IS NULL OR to_regprocedure('public.notification_center_prepared_scope(bigint,jsonb)') IS NULL THEN RAISE EXCEPTION 'admin_notification_prerequisites_missing'; END IF; END $$;\n"
 later = forward_sources(root, after=canonical.name)

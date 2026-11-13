@@ -28,7 +28,6 @@ class NotificationCenterPanel extends StatefulWidget {
 
 class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   bool settings = false;
-  int? emailOccasion;
   final _feedScroll = ScrollController();
   double _feedOffset = 0;
   final _settingsScroll = ScrollController();
@@ -36,18 +35,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   List<Widget> _emailControls(BuildContext context) {
     final c = widget.controller;
     final settings = c.emailSettings;
-    if (emailOccasion != null &&
-        !c.occasions.any((occasion) => occasion['id'] == emailOccasion)) {
-      emailOccasion = null;
-    }
-    final catalog = Map<String, dynamic>.from(
-      (emailOccasion == null
-                  ? settings['catalog']
-                  : (settings['scopeCatalogs'] as Map?)?[emailOccasion
-                        .toString()])
-              as Map? ??
-          {},
-    );
+    final catalog = Map<String, dynamic>.from(settings['catalog'] as Map? ?? {});
     final requiredKinds = (settings['requiredKinds'] as List? ?? [])
         .whereType<String>()
         .where(catalog.containsKey)
@@ -60,24 +48,13 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     if ((settings['catalog'] as Map? ?? {}).isEmpty || windowSeconds is! num) {
       return [];
     }
-    final subscriptions = (settings['subscriptions'] as List? ?? [])
-        .whereType<Map>();
-    Map? own;
-    Map? parent;
-    for (final source in subscriptions) {
-      if (source['occasion'] == emailOccasion) own = source;
-      if (source['occasion'] == null) parent = source;
-    }
-    final effective = Map<String, dynamic>.from(
-      (own ?? parent)?['kinds'] as Map? ?? {},
-    );
+    final effective = Map<String, dynamic>.from(settings['kinds'] as Map? ?? {});
     final kinds = <String, bool>{
       for (final kind in catalog.keys)
         kind: (effective[kind] as Map?)?['enabled'] == true,
     };
     Future<void> save({bool? stopped, Map<String, bool>? next}) async {
       final success = await c.saveEmailSettings(
-        occasion: emailOccasion,
         stopped: stopped ?? settings['stopped'] != false,
         locale: context.locale.languageCode,
         kinds: next ?? kinds,
@@ -109,23 +86,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           value: settings['stopped'] == false,
           onChanged: c.emailSaving ? null : (value) => save(stopped: !value),
         ),
-      if (hasOptionalKinds)
-        DropdownButton<int>(
-          isExpanded: true,
-          value: emailOccasion ?? -1,
-          items: [
-            DropdownMenuItem(value: -1, child: Text(s('emailOrganization'))),
-            for (final occasion in c.occasions)
-              DropdownMenuItem(
-                value: occasion['id'] as int,
-                child: Text(occasion['title']?.toString() ?? ''),
-              ),
-          ],
-          onChanged: c.emailSaving
-              ? null
-              : (value) =>
-                    setState(() => emailOccasion = value == -1 ? null : value),
-        ),
+      if (hasOptionalKinds) Text(s('emailScopeHelp')),
       for (final category in catalog.values.toSet())
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,

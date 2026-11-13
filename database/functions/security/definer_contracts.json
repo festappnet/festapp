@@ -3215,10 +3215,6 @@
       "signature": "public.get_or_create_scan_code(text,boolean)",
       "source": "database/functions/scanning/access_codes.sql"
     },
-    "89b46c580f612e0a1ea12e1dc0cf314b4112299298fc84a33aacc6ad13e38ae9": {
-      "signature": "public.save_notification_center_email_settings(bigint,bigint,bigint,boolean,text,jsonb)",
-      "source": "database/functions/notification_center/email_preferences.sql"
-    },
     "f1cd32b6ac2cb4a5ff6dce30cdcac3159c84164450a919cb8723877776aeac50": {
       "signature": "public.activate_notification_center_emails(bigint)",
       "source": "database/functions/notification_center/email_preferences.sql"
@@ -3250,6 +3246,10 @@
     "a68185bd0d3baae32614591a3c6183b32893b1350a73294c8b8a117824a95cff": {
       "signature": "public.finish_ticket_wallet(bigint,uuid,boolean,text)",
       "source": "database/functions/ticket_wallet/sync.sql"
+    },
+    "d80c4acfef3c01af67cf18a3e6b38e341efd2d3e105c889b3d15d7ea338a12d4": {
+      "signature": "public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb)",
+      "source": "database/functions/notification_center/email_preferences.sql"
     }
   }
 }

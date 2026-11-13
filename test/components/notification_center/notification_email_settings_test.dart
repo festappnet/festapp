@@ -13,7 +13,7 @@ void main() {
         if (name == 'save_notification_center_email_settings') {
           expect(params.containsKey('recipient'), false);
           expect(params['p_revision'], 4);
-          expect(params['p_occasion'], 12);
+          expect(params.containsKey('p_occasion'), false);
           revision++;
           return revision;
         }
@@ -33,7 +33,6 @@ void main() {
     await controller.loadSettings();
     expect(
       await controller.saveEmailSettings(
-        occasion: 12,
         stopped: false,
         locale: 'cs',
         kinds: {'order_created': true},

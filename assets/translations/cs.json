@@ -4919,13 +4919,13 @@
     },
     "emailRequiredHelp": "Povinné upozornění pro oprávněné příjemce. Ztlumení akce ani vypnutí souhrnů jej nevypne.",
     "emailAlwaysOn": "Vždy zapnuto",
-    "emailHelp": "Jednou za {minutes} minut souhrn napříč vybranými akcemi a organizacemi",
-    "emailOrganization": "Výchozí odběr organizace",
+    "emailHelp": "Jednou za {minutes} minut jeden souhrn. Přepínač platí pro Váš účet napříč portály.",
     "emailCategories": {
       "problems": "Problémy",
-      "registrations": "Přihlášky",
       "orders": "Objednávky",
-      "payments": "Platby"
+      "payments": "Platby",
+      "participants": "Účastníci",
+      "waitlist": "Čekací listina"
     },
     "emailStates": {
       "no_address": "Chybí doručovací e-mail",
@@ -4941,7 +4941,8 @@
       "expired": "Platnost vypršela",
       "blocked": "Čeká na odeslání"
     },
-    "paymentAssigned": "Přiřazení přijaté platby"
+    "paymentAssigned": "Přiřazení přijaté platby",
+    "emailScopeHelp": "Vybrané kategorie platí pro všechny dostupné akce na tomto portálu. Jednotlivé akce můžete ztlumit níže."
   },
   "TicketBatches": {
     "selectedCount": "Vybráno: {count}",

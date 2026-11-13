@@ -2777,13 +2777,13 @@
     },
     "emailRequiredHelp": "Pflichtmeldungen für berechtigte Empfänger. Stummschalten einer Veranstaltung oder Ausschalten der Zusammenfassungen deaktiviert sie nicht.",
     "emailAlwaysOn": "Immer aktiv",
-    "emailHelp": "Alle {minutes} Minuten eine Zusammenfassung ausgewählter Veranstaltungen und Organisationen",
-    "emailOrganization": "Standardabonnement der Organisation",
+    "emailHelp": "Eine Zusammenfassung alle {minutes} Minuten. Dieser Schalter gilt für Ihr Konto in allen Portalen.",
     "emailCategories": {
       "problems": "Probleme",
-      "registrations": "Anmeldungen",
       "orders": "Bestellungen",
-      "payments": "Zahlungen"
+      "payments": "Zahlungen",
+      "participants": "Teilnehmende",
+      "waitlist": "Warteliste"
     },
     "emailStates": {
       "no_address": "E-Mail-Adresse für die Zustellung fehlt",
@@ -2799,7 +2799,8 @@
       "expired": "Abgelaufen",
       "blocked": "Wartet auf Versand"
     },
-    "paymentAssigned": "Zuordnung einer eingegangenen Zahlung"
+    "paymentAssigned": "Zuordnung einer eingegangenen Zahlung",
+    "emailScopeHelp": "Die gewählten Kategorien gelten für alle zugänglichen Veranstaltungen dieses Portals. Einzelne Veranstaltungen können Sie unten stummschalten."
   },
   "TicketBatches": {
     "selectedCount": "Ausgewählt: {count}",

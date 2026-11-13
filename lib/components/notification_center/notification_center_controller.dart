@@ -622,7 +622,6 @@ class NotificationCenterController extends ChangeNotifier {
   }
 
   Future<bool> saveEmailSettings({
-    int? occasion,
     required bool stopped,
     required String locale,
     required Map<String, bool> kinds,
@@ -634,7 +633,6 @@ class NotificationCenterController extends ChangeNotifier {
     try {
       await _read('save_notification_center_email_settings', {
         'p_organization': organization,
-        'p_occasion': occasion,
         'p_revision': emailSettings['revision'] ?? 0,
         'p_stopped': stopped,
         'p_locale': locale,

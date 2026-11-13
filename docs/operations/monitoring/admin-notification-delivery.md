@@ -54,3 +54,18 @@ Three consecutive transport failures use one shared policy constant. Confirmed
 Stripe restriction/revocation can alert directly; verified recovery closes the
 episode. Intentional disconnect/disabled sandbox connection is not an outage.
 No independent provider-health scheduler or outbound email path is installed.
+
+Email preferences have one subscription per recipient and portal. Categories
+cover every currently authorized occasion; the existing center occasion mute
+also suppresses optional email. There is no second occasion email subscription
+or inheritance. The account email switch still spans portals. Required bank and
+provider alerts ignore both optional stop and occasion mute. Participant activity
+is offered only when the organization enables `IS_APP_SUPPORTED`; waiting-list
+registrations and offer responses share the separate waiting-list category.
+
+The forward `20261113014000_notification_settings_clarity.sql` locks and rejects
+any non-null occasion subscriptions before removing that storage (the inventory
+contained none). Its five-argument save RPC owns all writes. The former six-
+argument RPC only delegates null-scope requests from cached web 0.20.597+1113,
+rejecting occasion overrides without writes; remove that wire adapter and the
+legacy response `subscriptions` projection once that client release is retired.

@@ -421,7 +421,7 @@
       }
     },
     "seat-notifications": {
-      "script": "python3 automation/assemble-admin-notification-delivery-migration.py --check\nnode --test automation/tests/admin_notification_upgrade.test.mjs automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net supabase/functions/_shared/notificationDispatcher_test.ts supabase/functions/_shared/adminNotificationEmail_test.ts supabase/functions/_shared/adminNotificationSender_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
+      "script": "python3 automation/assemble-admin-notification-delivery-migration.py --check\npython3 automation/assemble-notification-settings-clarity-migration.py --check\nnode --test automation/tests/admin_notification_upgrade.test.mjs automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net supabase/functions/_shared/notificationDispatcher_test.ts supabase/functions/_shared/adminNotificationEmail_test.ts supabase/functions/_shared/adminNotificationSender_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
       "after": [
         "seat-database"
       ],
@@ -959,6 +959,7 @@
       "database/tests/notification_center/delivery_operations_test.sql",
       "database/tests/notification_center/email_preparation_failure_test.sql",
       "database/tests/notification_center/email_recovery_test.sql",
+      "database/tests/notification_center/email_settings_scope_test.sql",
       "database/tests/notification_center/email_sources_test.sql",
       "database/tests/notification_center/email_window_policy_test.sql",
       "database/tests/notification_center/form_availability_save_test.sql",
@@ -1519,6 +1520,7 @@
     "database/tests/notification_center/delivery_scalability_concurrency.test.mjs",
     "database/tests/notification_center/email_preparation_failure_test.sql",
     "database/tests/notification_center/email_recovery_test.sql",
+    "database/tests/notification_center/email_settings_scope_test.sql",
     "database/tests/notification_center/email_sources_test.sql",
     "database/tests/notification_center/email_window_policy_test.sql",
     "database/tests/notification_center/form_availability_concurrency.test.mjs",

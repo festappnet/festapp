@@ -1,0 +1,8 @@
+{
+  "header": "-- One portal subscription, existing occasion mute, and app-supported participant categories. No delivery or provider gate changes.",
+  "sources": [
+    "notification_center/center_policy.sql",
+    "notification_center/email_scope_cutover.sql",
+    "notification_center/email_preferences.sql"
+  ]
+}

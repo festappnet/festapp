@@ -2804,13 +2804,13 @@
     },
     "emailRequiredHelp": "Povinné upozornenia pre oprávnených príjemcov. Stíšenie akcie ani vypnutie súhrnov ich nevypne.",
     "emailAlwaysOn": "Vždy zapnuté",
-    "emailHelp": "Raz za {minutes} minút súhrn vybraných podujatí a organizácií",
-    "emailOrganization": "Predvolený odber organizácie",
+    "emailHelp": "Jeden súhrn každých {minutes} minút. Prepínač platí pre Váš účet naprieč portálmi.",
     "emailCategories": {
       "problems": "Problémy",
-      "registrations": "Prihlášky",
       "orders": "Objednávky",
-      "payments": "Platby"
+      "payments": "Platby",
+      "participants": "Účastníci",
+      "waitlist": "Čakacia listina"
     },
     "emailStates": {
       "no_address": "Chýba doručovací e-mail",
@@ -2826,7 +2826,8 @@
       "expired": "Platnosť vypršala",
       "blocked": "Čaká na odoslanie"
     },
-    "paymentAssigned": "Priradenie prijatej platby"
+    "paymentAssigned": "Priradenie prijatej platby",
+    "emailScopeHelp": "Vybrané kategórie platia pre všetky dostupné akcie na tomto portáli. Jednotlivé akcie môžete stíšiť nižšie."
   },
   "TicketBatches": {
     "selectedCount": "Vybrané: {count}",

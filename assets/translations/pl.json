@@ -2779,13 +2779,13 @@
     },
     "emailRequiredHelp": "Obowiązkowe alerty dla uprawnionych odbiorców. Wyciszenie wydarzenia lub wyłączenie podsumowań ich nie wyłącza.",
     "emailAlwaysOn": "Zawsze włączone",
-    "emailHelp": "Co {minutes} minut podsumowanie wybranych wydarzeń i organizacji",
-    "emailOrganization": "Domyślna subskrypcja organizacji",
+    "emailHelp": "Jedno podsumowanie co {minutes} minut. Przełącznik dotyczy konta we wszystkich portalach.",
     "emailCategories": {
       "problems": "Problemy",
-      "registrations": "Zgłoszenia",
       "orders": "Zamówienia",
-      "payments": "Płatności"
+      "payments": "Płatności",
+      "participants": "Uczestnicy",
+      "waitlist": "Lista oczekujących"
     },
     "emailStates": {
       "no_address": "Brak adresu e-mail do doręczeń",
@@ -2801,7 +2801,8 @@
       "expired": "Wygasło",
       "blocked": "Oczekuje na wysłanie"
     },
-    "paymentAssigned": "Przypisanie otrzymanej płatności"
+    "paymentAssigned": "Przypisanie otrzymanej płatności",
+    "emailScopeHelp": "Wybrane kategorie dotyczą wszystkich dostępnych wydarzeń w tym portalu. Poniżej można wyciszyć poszczególne wydarzenia."
   },
   "TicketBatches": {
     "selectedCount": "Wybrano: {count}",

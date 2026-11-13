@@ -1,9 +1,10 @@
 CREATE OR REPLACE FUNCTION public.notification_center_email_category_internal(p_kind text)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT CASE WHEN p_kind IN ('email_problem','bank_problem','payment_problem','provider_problem') THEN 'problems'
- WHEN p_kind IN ('occasion_joined','waitlist_registered') THEN 'registrations'
+ WHEN p_kind='occasion_joined' THEN 'participants'
+ WHEN p_kind IN ('waitlist_registered','offer_accepted','offer_declined','offer_expired') THEN 'waitlist'
  WHEN p_kind='order_payment_received' THEN 'payments'
- WHEN p_kind IN ('order_created','order_cancelled','offer_accepted','offer_declined','offer_expired') THEN 'orders' END;
+ WHEN p_kind IN ('order_created','order_cancelled') THEN 'orders' END;
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_email_enabled_internal(e public.notification_center_events,p_user uuid,p_scopes text[])
 RETURNS timestamptz LANGUAGE sql STABLE SET search_path=public,extensions AS $$
@@ -15,25 +16,16 @@ RETURNS timestamptz LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    WHEN e.kind='provider_problem' THEN ('provider-unit:'||(e.data->>'unitId'))=ANY(p_scopes) ELSE false END
   AND e.occurred_at>=a.email_collection_started_at
  UNION ALL
- SELECT optional.enabled FROM (WITH source_scopes AS MATERIALIZED(
-  SELECT e.occasion WHERE e.occasion IS NOT NULL
-  UNION ALL SELECT oc FROM unnest(e.affected_occasions) oc WHERE e.occasion IS NULL
-   AND (('bank:'||(e.data->>'bankConnectionId'))=ANY(p_scopes) OR ('bank-occasion:'||oc)=ANY(p_scopes))
-  UNION ALL SELECT NULL::bigint WHERE e.occasion IS NULL AND cardinality(e.affected_occasions)=0),
- subscriptions AS MATERIALIZED(
-  SELECT s.*,scope.occasion source_occasion FROM source_scopes scope
-  CROSS JOIN LATERAL(SELECT s.* FROM public.notification_center_email_subscriptions s
-   WHERE s.recipient=p_user AND s.organization=e.organization AND (s.occasion IS NULL OR s.occasion=scope.occasion)
-   ORDER BY s.occasion NULLS LAST LIMIT 1) s
-  JOIN public.notification_center_email_profiles p ON p.recipient=s.recipient AND NOT p.stopped)
  SELECT min(greatest(s.enabled_from,(s.kinds->e.kind->>'enabledFrom')::timestamptz,a.email_collection_started_at))
- FROM subscriptions s JOIN public.notification_center_organizations a ON a.organization=s.organization
- WHERE a.email_collection_started_at IS NOT NULL
+ FROM public.notification_center_email_subscriptions s
+ JOIN public.notification_center_email_profiles p ON p.recipient=s.recipient AND NOT p.stopped
+ JOIN public.notification_center_organizations a ON a.organization=s.organization
+ WHERE s.recipient=p_user AND s.organization=e.organization AND a.email_collection_started_at IS NOT NULL
   AND public.notification_center_email_category_internal(e.kind) IS NOT NULL
   AND s.kinds->e.kind->>'enabled'='true'
   AND e.occurred_at>=greatest(s.enabled_from,(s.kinds->e.kind->>'enabledFrom')::timestamptz,a.email_collection_started_at)
-  AND public.notification_center_unmuted(jsonb_populate_record(e,jsonb_build_object('occasion',s.source_occasion)),p_user)
-  AND NOT public.notification_center_email_required_kind_internal(e.kind)) optional(enabled)) policy(enabled)
+  AND public.notification_center_unmuted(e,p_user)
+  AND NOT public.notification_center_email_required_kind_internal(e.kind)) policy(enabled)
 $$;
 -- All runtime profile creation uses this owner. Try-lock keeps enrollment from
 -- blocking a second collector behind an uncommitted first-profile insertion.
@@ -53,19 +45,17 @@ END $$;
 REVOKE ALL ON FUNCTION public.notification_center_email_ensure_profile_internal(uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.save_notification_center_email_settings(
- p_organization bigint,p_occasion bigint,p_revision bigint,p_stopped boolean,p_locale text,p_kinds jsonb)
+ p_organization bigint,p_revision bigint,p_stopped boolean,p_locale text,p_kinds jsonb)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE profile public.notification_center_email_profiles; previous jsonb; kinds jsonb; item record; at timestamptz:=clock_timestamp();
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
- IF p_occasion IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.notification_center_prepared_allowed_scopes(p_organization,NULL,auth.uid()) a
-  WHERE a.scope IN ('orders:'||p_occasion,'app:'||p_occasion,'bank-occasion:'||p_occasion)) THEN RAISE EXCEPTION 'notification_email_scope_denied'; END IF;
  IF jsonb_typeof(p_kinds) IS DISTINCT FROM 'object' OR p_stopped IS NULL OR p_locale NOT IN ('cs','en','de','pl','sk','uk') THEN RAISE EXCEPTION 'notification_email_settings_invalid'; END IF;
  PERFORM public.notification_center_email_ensure_profile_internal(auth.uid());
  SELECT * INTO STRICT profile FROM public.notification_center_email_profiles WHERE recipient=auth.uid() FOR UPDATE;
  IF p_revision IS DISTINCT FROM profile.revision THEN RAISE serialization_failure USING MESSAGE='notification_email_revision_conflict'; END IF;
  SELECT s.kinds INTO previous FROM public.notification_center_email_subscriptions s
- WHERE s.recipient=auth.uid() AND s.organization=p_organization AND s.occasion IS NOT DISTINCT FROM p_occasion;
+ WHERE s.recipient=auth.uid() AND s.organization=p_organization;
  kinds:='{}';
  FOR item IN SELECT key,value FROM jsonb_each(p_kinds) LOOP
   IF public.notification_center_email_required_kind_internal(item.key) THEN RAISE EXCEPTION 'notification_email_kind_required'; END IF;
@@ -73,14 +63,27 @@ BEGIN
   kinds:=kinds||jsonb_build_object(item.key,jsonb_build_object('enabled',item.value,
    'enabledFrom',CASE WHEN previous->item.key->>'enabled'='true' AND NOT profile.stopped THEN previous->item.key->>'enabledFrom' ELSE at::text END));
  END LOOP;
- INSERT INTO public.notification_center_email_subscriptions(recipient,organization,occasion,kinds,enabled_from)
- VALUES(auth.uid(),p_organization,p_occasion,kinds,at)
- ON CONFLICT(recipient,organization,occasion) DO UPDATE SET kinds=excluded.kinds,revision=notification_center_email_subscriptions.revision+1;
+ INSERT INTO public.notification_center_email_subscriptions(recipient,organization,kinds,enabled_from)
+ VALUES(auth.uid(),p_organization,kinds,at)
+ ON CONFLICT(recipient,organization) DO UPDATE SET kinds=excluded.kinds,revision=notification_center_email_subscriptions.revision+1;
  IF profile.stopped AND NOT p_stopped THEN
   UPDATE public.notification_center_email_subscriptions SET enabled_from=at WHERE recipient=auth.uid();
  END IF;
  UPDATE public.notification_center_email_profiles SET stopped=p_stopped,locale=p_locale,revision=revision+1 WHERE recipient=auth.uid() RETURNING revision INTO p_revision;
  RETURN p_revision;
+END $$;
+REVOKE ALL ON FUNCTION public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb) TO authenticated;
+
+-- Released web 0.20.597+1113 still sends p_occasion. Keep only its null-scope
+-- wire adapter until that cached web release is retired. No occasion writer or
+-- preference inheritance survives; old non-null requests fail without writing.
+CREATE OR REPLACE FUNCTION public.save_notification_center_email_settings(
+ p_organization bigint,p_occasion bigint,p_revision bigint,p_stopped boolean,p_locale text,p_kinds jsonb)
+RETURNS bigint LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ IF p_occasion IS NOT NULL THEN RAISE EXCEPTION 'notification_email_occasion_settings_removed'; END IF;
+ RETURN public.save_notification_center_email_settings(p_organization,p_revision,p_stopped,p_locale,p_kinds);
 END $$;
 REVOKE ALL ON FUNCTION public.save_notification_center_email_settings(bigint,bigint,bigint,boolean,text,jsonb) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.save_notification_center_email_settings(bigint,bigint,bigint,boolean,text,jsonb) TO authenticated;
@@ -119,13 +122,15 @@ REVOKE ALL ON FUNCTION public.notification_center_email_catalog_internal(text[],
 -- Self-only status: no message payload, address or provider diagnostics.
 CREATE OR REPLACE FUNCTION public.notification_center_email_settings_internal(p_organization bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- WITH scopes AS MATERIALIZED(SELECT array_agg(a.scope) allowed FROM public.notification_center_prepared_allowed_scopes(p_organization,NULL,auth.uid()) a),
+ WITH capability AS MATERIALIZED(SELECT public.notification_center_app_supported_internal(p_organization) app_supported),
+ scopes AS MATERIALIZED(SELECT array_agg(a.scope) FILTER(WHERE a.scope NOT LIKE 'app:%' OR c.app_supported) allowed
+  FROM public.notification_center_prepared_allowed_scopes(p_organization,NULL,auth.uid()) a CROSS JOIN capability c),
  catalog AS MATERIALIZED(SELECT public.notification_center_email_catalog_internal((SELECT allowed FROM scopes),NULL) kinds)
  SELECT jsonb_build_object('windowSeconds',extract(epoch FROM public.notification_center_email_window_internal())::integer,'revision',coalesce(p.revision,0),'stopped',coalesce(p.stopped,true),'locale',coalesce(p.locale,'cs'),
  'catalog',(SELECT kinds FROM catalog),
  'requiredKinds',coalesce((SELECT jsonb_agg(key ORDER BY key) FROM catalog,jsonb_object_keys(kinds) key WHERE public.notification_center_email_required_kind_internal(key)),'[]'::jsonb),
- 'scopeCatalogs',(SELECT jsonb_object_agg(oc.id,public.notification_center_email_catalog_internal((SELECT allowed FROM scopes),oc.id)) FROM public.occasions oc WHERE oc.organization=p_organization),
- 'subscriptions',coalesce((SELECT jsonb_agg(jsonb_build_object('occasion',s.occasion,'kinds',s.kinds)) FROM public.notification_center_email_subscriptions s WHERE s.recipient=auth.uid() AND s.organization=p_organization),'[]'),
+ 'kinds',coalesce((SELECT s.kinds FROM public.notification_center_email_subscriptions s WHERE s.recipient=auth.uid() AND s.organization=p_organization),'{}'),
+ 'subscriptions',coalesce((SELECT jsonb_agg(jsonb_build_object('occasion',NULL,'kinds',s.kinds)) FROM public.notification_center_email_subscriptions s WHERE s.recipient=auth.uid() AND s.organization=p_organization),'[]'),
  'state',CASE WHEN EXISTS(SELECT 1 FROM public.notification_center_email_dispatches d WHERE d.recipient=auth.uid() AND d.state='collecting') AND public.get_user_delivery_email(auth.uid()) IS NULL THEN 'no_address'
   ELSE (SELECT m.workflow_state FROM public.email_messages m WHERE m.recipient_user=auth.uid() AND m.message_kind='admin_notification_digest' ORDER BY m.id DESC LIMIT 1) END)
  FROM (SELECT 1) seed LEFT JOIN public.notification_center_email_profiles p ON p.recipient=auth.uid();
