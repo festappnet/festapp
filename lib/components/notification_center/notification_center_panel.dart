@@ -183,6 +183,47 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
     ),
   );
 
+  List<Widget> _occasionControls(BuildContext context) {
+    final c = widget.controller;
+    final groups = <int?, List<Map<String, dynamic>>>{};
+    for (final occasion in c.occasions) {
+      (groups[occasion['unit'] as int?] ??= []).add(occasion);
+    }
+    return [
+      for (final group in groups.values) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: 16, bottom: 4),
+          child: Semantics(
+            header: true,
+            child: Text(
+              (group.first['unitTitle'] as String?)?.trim().isNotEmpty == true
+                  ? group.first['unitTitle'] as String
+                  : s('unassignedUnit'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+        ),
+        for (final occasion in group)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(occasion['title']?.toString() ?? ''),
+            subtitle: Text(s('muted')),
+            value: occasion['muted'] == true,
+            onChanged: occasion['saving'] == true || c.settingsLoading
+                ? null
+                : (value) async {
+                    final success = await c.mute(occasion, value);
+                    if (!success && context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(s('saveFailed'))));
+                    }
+                  },
+          ),
+      ],
+    ];
+  }
+
   @override
   void dispose() {
     _feedScroll.dispose();
@@ -307,24 +348,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Text(s('muteEmpty')),
                         ),
-                      for (final occasion in c.occasions)
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(occasion['title']?.toString() ?? ''),
-                          subtitle: Text(s('muted')),
-                          value: occasion['muted'] == true,
-                          onChanged:
-                              occasion['saving'] == true || c.settingsLoading
-                              ? null
-                              : (value) async {
-                                  final success = await c.mute(occasion, value);
-                                  if (!success && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(s('saveFailed'))),
-                                    );
-                                  }
-                                },
-                        ),
+                      ..._occasionControls(context),
                       if (c.settingsCursor != null)
                         TextButton(
                           onPressed: c.settingsLoading

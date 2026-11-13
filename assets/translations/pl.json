@@ -2782,7 +2782,7 @@
     "emailHelp": "Jedno podsumowanie co {minutes} minut. Przełącznik dotyczy konta we wszystkich portalach.",
     "emailCategories": {
       "problems": "Problemy",
-      "orders": "Zamówienia",
+      "orders": "Zamówienia/zapisy",
       "payments": "Płatności",
       "participants": "Uczestnicy",
       "waitlist": "Lista oczekujących"
@@ -2811,7 +2811,8 @@
       "no_address": "Nie można wysyłać podsumowań, ponieważ adres e-mail do doręczeń jest niedostępny. Powiadomienia możesz przeczytać w przeglądzie.",
       "dead": "Nie udało się wysłać ostatniego podsumowania e-mail. Powiadomienia możesz przeczytać w przeglądzie.",
       "suppressed": "Wysyłka ostatniego podsumowania e-mail została zablokowana. Powiadomienia możesz przeczytać w przeglądzie."
-    }
+    },
+    "unassignedUnit": "Wydarzenia bez organizatora"
   },
   "TicketBatches": {
     "selectedCount": "Wybrano: {count}",

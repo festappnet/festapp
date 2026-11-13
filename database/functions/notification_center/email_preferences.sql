@@ -2,9 +2,8 @@ CREATE OR REPLACE FUNCTION public.notification_center_email_category_internal(p_
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT CASE WHEN p_kind IN ('email_problem','bank_problem','payment_problem','provider_problem') THEN 'problems'
  WHEN p_kind='occasion_joined' THEN 'participants'
- WHEN p_kind IN ('waitlist_registered','offer_accepted','offer_declined','offer_expired') THEN 'waitlist'
- WHEN p_kind='order_payment_received' THEN 'payments'
- WHEN p_kind IN ('order_created','order_cancelled') THEN 'orders' END;
+ WHEN p_kind IN ('waitlist_registered','offer_accepted','offer_declined','offer_expired','order_created','order_cancelled') THEN 'orders'
+ WHEN p_kind='order_payment_received' THEN 'payments' END;
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_email_enabled_internal(e public.notification_center_events,p_user uuid,p_scopes text[])
 RETURNS timestamptz LANGUAGE sql STABLE SET search_path=public,extensions AS $$

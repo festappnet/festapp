@@ -60,8 +60,15 @@ cover every currently authorized occasion; the existing center occasion mute
 also suppresses optional email. There is no second occasion email subscription
 or inheritance. The account email switch still spans portals. Required bank and
 provider alerts ignore both optional stop and occasion mute. Participant activity
-is offered only when the organization enables `IS_APP_SUPPORTED`; waiting-list
-registrations and offer responses share the separate waiting-list category.
+is offered only when the organization enables `IS_APP_SUPPORTED`. Orders,
+waiting-list registrations and offer responses share the canonical
+orders/registrations control; existing per-kind choices remain stored.
+
+The forward `20261113110000_notification_settings_unit_groups.sql` adds
+`unit` and `unitTitle` to each already-authorized settings occasion. The unit
+join also matches organization; it grants no access through unit membership.
+The occasion-ID cursor is unchanged. The client groups all loaded pages by
+unit identity and keeps unassigned occasions separate. Mutes remain per occasion.
 
 The forward `20261113014000_notification_settings_clarity.sql` locks and rejects
 any non-null occasion subscriptions before removing that storage (the inventory

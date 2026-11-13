@@ -4922,7 +4922,7 @@
     "emailHelp": "Jednou za {minutes} minut jeden souhrn. Přepínač platí pro Váš účet napříč portály.",
     "emailCategories": {
       "problems": "Problémy",
-      "orders": "Objednávky",
+      "orders": "Objednávky/přihlášky",
       "payments": "Platby",
       "participants": "Účastníci",
       "waitlist": "Čekací listina"
@@ -4951,7 +4951,8 @@
       "no_address": "Souhrny nelze odeslat, protože není dostupná doručovací e-mailová adresa. Notifikace si můžete přečíst v přehledu.",
       "dead": "Poslední e-mailový souhrn se nepodařilo odeslat. Notifikace si můžete přečíst v přehledu.",
       "suppressed": "Odeslání posledního e-mailového souhrnu bylo zablokováno. Notifikace si můžete přečíst v přehledu."
-    }
+    },
+    "unassignedUnit": "Akce bez pořadatele"
   },
   "TicketBatches": {
     "selectedCount": "Vybráno: {count}",

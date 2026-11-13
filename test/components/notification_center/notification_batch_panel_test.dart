@@ -75,7 +75,13 @@ void main() {
           if (failLoad) throw StateError('settings unavailable');
           return {
             'items': [
-              {'id': 12, 'title': 'Ples hasičů', 'muted': false},
+              {
+                'id': 12,
+                'title': 'Ples hasičů',
+                'unit': 7,
+                'unitTitle': 'Skauti',
+                'muted': false,
+              },
             ],
             'email': {
               'revision': revision,
@@ -85,7 +91,7 @@ void main() {
               'locale': 'cs',
               'catalog': {
                 'order_created': 'orders',
-                'waitlist_registered': 'waitlist',
+                'waitlist_registered': 'orders',
                 'order_payment_received': 'payments',
                 'bank_problem': 'problems',
                 'provider_problem': 'problems',
@@ -183,15 +189,18 @@ void main() {
         'Problém platební brány',
       );
       expect(find.text('Bankovní problémy'), findsOneWidget);
+      expect(find.text('Čekací listina'), findsNothing);
       final categories = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
           .toList();
       expect(categories.map((tile) => tile.value), contains(null));
-      await tester.tap(find.widgetWithText(CheckboxListTile, 'Objednávky'));
+      await tester.tap(
+        find.widgetWithText(CheckboxListTile, 'Objednávky/přihlášky'),
+      );
       await tester.pumpAndSettle();
       expect(saves.single['p_kinds'], {
         'order_created': true,
-        'waitlist_registered': false,
+        'waitlist_registered': true,
         'order_payment_received': false,
         'email_problem': true,
         'payment_problem': false,
@@ -270,7 +279,7 @@ void main() {
       expect(
         tester
             .widget<CheckboxListTile>(
-              find.widgetWithText(CheckboxListTile, 'Objednávky'),
+              find.widgetWithText(CheckboxListTile, 'Objednávky/přihlášky'),
             )
             .onChanged,
         isNull,
@@ -280,7 +289,7 @@ void main() {
       saving = null;
       expect(stopped, true);
       final disabledOrder = tester.widget<CheckboxListTile>(
-        find.widgetWithText(CheckboxListTile, 'Objednávky'),
+        find.widgetWithText(CheckboxListTile, 'Objednávky/přihlášky'),
       );
       expect(disabledOrder.value, true);
       expect(disabledOrder.onChanged, isNull);
@@ -295,20 +304,22 @@ void main() {
       expect(
         tester
             .widget<CheckboxListTile>(
-              find.widgetWithText(CheckboxListTile, 'Objednávky'),
+              find.widgetWithText(CheckboxListTile, 'Objednávky/přihlášky'),
             )
             .value,
         true,
       );
 
       failSave = true;
-      await tester.tap(find.widgetWithText(CheckboxListTile, 'Objednávky'));
+      await tester.tap(
+        find.widgetWithText(CheckboxListTile, 'Objednávky/přihlášky'),
+      );
       await tester.pumpAndSettle();
       expect(find.byType(SnackBar), findsOneWidget);
       expect(
         tester
             .widget<CheckboxListTile>(
-              find.widgetWithText(CheckboxListTile, 'Objednávky'),
+              find.widgetWithText(CheckboxListTile, 'Objednávky/přihlášky'),
             )
             .value,
         true,
@@ -359,6 +370,115 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('occasion mute groups use unit identity across pagination', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final writes = <Map<String, dynamic>>[];
+    final controller = NotificationCenterController(
+      read: (name, params) async {
+        if (name == 'set_notification_center_muted') {
+          writes.add(Map<String, dynamic>.from(params));
+          return {};
+        }
+        final more = params['p_after'] != 0;
+        return {
+          'items': more
+              ? [
+                  {
+                    'id': 14,
+                    'title': 'Skautský ples',
+                    'unit': 7,
+                    'unitTitle': 'Skauti',
+                    'muted': false,
+                  },
+                  {
+                    'id': 15,
+                    'title': 'Večerní koncert',
+                    'unit': null,
+                    'unitTitle': null,
+                    'muted': false,
+                  },
+                ]
+              : [
+                  {
+                    'id': 12,
+                    'title': 'Ples hasičů',
+                    'unit': 7,
+                    'unitTitle': 'Skauti',
+                    'muted': false,
+                  },
+                  {
+                    'id': 13,
+                    'title': 'Obecní ples',
+                    'unit': 8,
+                    'unitTitle': 'Obec Větřkovice',
+                    'muted': true,
+                  },
+                ],
+          'nextCursor': more ? null : 13,
+          'email': <String, dynamic>{},
+        };
+      },
+    );
+    addTearDown(controller.dispose);
+    controller.organization = 3;
+    controller.user = 'current-user';
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('cs')],
+        startLocale: const Locale('cs'),
+        path: 'assets/translations',
+        assetLoader: _Translations(),
+        child: Builder(
+          builder: (context) => MaterialApp(
+            builder: DependencyMaterialBridge.builder,
+            theme: ThemeConfig.theme(brightness: Brightness.light),
+            locale: context.locale,
+            supportedLocales: context.supportedLocales,
+            localizationsDelegates: [
+              ...context.localizationDelegates,
+              ...GlobalMaterialLocalizations.delegates,
+            ],
+            home: Scaffold(
+              body: NotificationCenterPanel(
+                controller: controller,
+                onDetail: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune));
+    await tester.pumpAndSettle();
+    expect(find.text('Skauti'), findsOneWidget);
+    expect(find.text('Obec Větřkovice'), findsOneWidget);
+    await controller.loadSettings(more: true);
+    await tester.pumpAndSettle();
+    expect(find.text('Skauti'), findsOneWidget);
+    expect(find.text('Akce bez pořadatele'), findsOneWidget);
+    final tiles = tester
+        .widgetList<SwitchListTile>(find.byType(SwitchListTile))
+        .toList();
+    expect(tiles.map((tile) => (tile.title as Text).data).toList(), [
+      'Ples hasičů',
+      'Skautský ples',
+      'Obecní ples',
+      'Večerní koncert',
+    ]);
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Skautský ples'));
+    await tester.pumpAndSettle();
+    expect(writes.single['p_occasion'], 14);
+    expect(writes.single['p_muted'], true);
+    expect(writes.single['p_organization'], 3);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in [390.0, 1000.0]) {
     for (final brightness in Brightness.values) {
       testWidgets(

@@ -2780,7 +2780,7 @@
     "emailHelp": "Eine Zusammenfassung alle {minutes} Minuten. Dieser Schalter gilt für Ihr Konto in allen Portalen.",
     "emailCategories": {
       "problems": "Probleme",
-      "orders": "Bestellungen",
+      "orders": "Bestellungen/Anmeldungen",
       "payments": "Zahlungen",
       "participants": "Teilnehmende",
       "waitlist": "Warteliste"
@@ -2809,7 +2809,8 @@
       "no_address": "Zusammenfassungen können nicht gesendet werden, da keine Zustelladresse für E-Mails verfügbar ist. Sie können Benachrichtigungen in der Übersicht lesen.",
       "dead": "Die letzte E-Mail-Zusammenfassung konnte nicht gesendet werden. Sie können Benachrichtigungen in der Übersicht lesen.",
       "suppressed": "Der Versand der letzten E-Mail-Zusammenfassung wurde blockiert. Sie können Benachrichtigungen in der Übersicht lesen."
-    }
+    },
+    "unassignedUnit": "Veranstaltungen ohne Veranstalter"
   },
   "TicketBatches": {
     "selectedCount": "Ausgewählt: {count}",

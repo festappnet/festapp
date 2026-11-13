@@ -2807,7 +2807,7 @@
     "emailHelp": "Jeden súhrn každých {minutes} minút. Prepínač platí pre Váš účet naprieč portálmi.",
     "emailCategories": {
       "problems": "Problémy",
-      "orders": "Objednávky",
+      "orders": "Objednávky/prihlášky",
       "payments": "Platby",
       "participants": "Účastníci",
       "waitlist": "Čakacia listina"
@@ -2836,7 +2836,8 @@
       "no_address": "Súhrny nemožno odoslať, pretože nie je dostupná doručovacia e-mailová adresa. Upozornenia si môžete prečítať v prehľade.",
       "dead": "Posledný e-mailový súhrn sa nepodarilo odoslať. Upozornenia si môžete prečítať v prehľade.",
       "suppressed": "Odoslanie posledného e-mailového súhrnu bolo zablokované. Upozornenia si môžete prečítať v prehľade."
-    }
+    },
+    "unassignedUnit": "Akcie bez organizátora"
   },
   "TicketBatches": {
     "selectedCount": "Vybrané: {count}",

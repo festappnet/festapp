@@ -4920,7 +4920,7 @@
     "emailHelp": "One summary every {minutes} minutes. This switch applies to your account across portals.",
     "emailCategories": {
       "problems": "Problems",
-      "orders": "Orders",
+      "orders": "Orders/registrations",
       "payments": "Payments",
       "participants": "Participants",
       "waitlist": "Waiting list"
@@ -4949,7 +4949,8 @@
       "no_address": "Summaries cannot be sent because no delivery email address is available. You can read notifications in the overview.",
       "dead": "The last email summary could not be sent. You can read notifications in the overview.",
       "suppressed": "The last email summary was blocked from being sent. You can read notifications in the overview."
-    }
+    },
+    "unassignedUnit": "Events without an organizer"
   },
   "TicketBatches": {
     "selectedCount": "Selected: {count}",

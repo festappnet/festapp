@@ -297,11 +297,12 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE result jsonb;lim integer:=greatest(1,least(coalesce(p_limit,50),100));
 BEGIN
  PERFORM public.notification_center_check_context(p_organization);
- WITH rows AS(SELECT oc.id,oc.title,coalesce(p.muted,false) muted,row_number() OVER(ORDER BY oc.id) position FROM public.occasions oc
+ WITH rows AS(SELECT oc.id,oc.title,u.id unit,u.title unit_title,coalesce(p.muted,false) muted,row_number() OVER(ORDER BY oc.id) position FROM public.occasions oc
+  LEFT JOIN public.units u ON u.id=oc.unit AND u.organization=oc.organization
   LEFT JOIN public.notification_center_preferences p ON p.organization=p_organization AND p.recipient=auth.uid() AND p.occasion=oc.id
   WHERE oc.organization=p_organization AND oc.id>p_after AND NOT public.is_demo_occasion(oc.id)
    AND (public.notification_center_app_admin_internal(p_organization,oc.id,auth.uid()) OR EXISTS(SELECT 1 FROM public.occasion_users m WHERE m.occasion=oc.id AND m."user"=auth.uid() AND m.is_editor_order_view)) ORDER BY oc.id LIMIT lim+1)
- SELECT jsonb_build_object('items',coalesce(jsonb_agg(jsonb_build_object('id',id,'title',title,'muted',muted) ORDER BY id) FILTER(WHERE position<=lim),'[]'),
+ SELECT jsonb_build_object('items',coalesce(jsonb_agg(jsonb_build_object('id',id,'title',title,'unit',unit,'unitTitle',unit_title,'muted',muted) ORDER BY id) FILTER(WHERE position<=lim),'[]'),
   'nextCursor',CASE WHEN count(*)>lim THEN max(id) FILTER(WHERE position<=lim) END) INTO result FROM rows;
  RETURN result||jsonb_build_object('email',public.notification_center_email_settings_internal(p_organization));
 END $$;
