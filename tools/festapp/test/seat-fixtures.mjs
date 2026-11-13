@@ -3,12 +3,16 @@ import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {fixture} from '../../../automation/authorization/benchmark.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
+import {enableFixtureBankPayments} from './form-fixtures.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 export async function install(db) {
  await db.query('RESET ROLE');
  await db.query(await readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));
 }
-export async function setup(t,persistent=false){let root,f;const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{try{await db.query('ROLLBACK');if(persistent&&f&&(await db.query('select exists(select 1 from occasions where id=$1) present',[f.occasion])).rows[0].present)await cleanup(db,f,root);}finally{await db.end();}});await install(db);root=await fixture(db,1);const fx=(await db.query('select blueprint_test_fixture_internal($1) value',[root.org])).rows[0].value;f={...root,occasion:Number(fx.occasion),blueprint:Number(fx.blueprint),unit:Number((await db.query('select unit from occasions where id=$1',[fx.occasion])).rows[0].unit)};
+export async function setup(t,persistent=false,{administrative=false}={}){let root,f;const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL,{administrative});await db.query('BEGIN');t.after(async()=>{try{await db.query('ROLLBACK');if(persistent&&f&&(await db.query('select exists(select 1 from occasions where id=$1) present',[f.occasion])).rows[0].present)await cleanup(db,f,root);}finally{await db.end();}});await install(db);root=await fixture(db,1);await enableFixtureBankPayments(db,root);const fx=(await db.query('select blueprint_test_fixture_internal($1) value',[root.org])).rows[0].value;f={...root,occasion:Number(fx.occasion),blueprint:Number(fx.blueprint),unit:Number((await db.query('select unit from occasions where id=$1',[fx.occasion])).rows[0].unit)};
+ f.bankAccountId=Number((await db.query("insert into eshop.bank_accounts(title,type,supported_currencies,account_number,account_number_human_readable) values('Seat fixture bank','FIO',array['CZK'],'CZ6508000000192000145399','19-2000145399/0800') returning id")).rows[0].id);
+ await db.query('insert into eshop.unit_bank_accounts(unit,bank_account) values($1,$2)',[f.unit,f.bankAccountId]);
+ await db.query("update forms set bank_account=$2,data=coalesce(data,'{}')||jsonb_build_object('payments',coalesce(data->'payments','{}')||'{\"bankEnabled\":true}'::jsonb) where id=$1",[fx.form,f.bankAccountId]);
  await db.query('update occasion_users set "user"=$2 where occasion=$1',[f.occasion,f.actor]);await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');const saved=(await db.query('select update_blueprint_client_sync_v1($1,$2) value',[fx.request,randomUUID()])).rows[0].value;assert.equal(saved.status,'applied',JSON.stringify(saved));
  await db.query('RESET ROLE');const bindings=(await db.query('select blueprint_binding_projection_internal($1) value',[f.blueprint])).rows[0].value.seatBindings;
  const unit=randomUUID();const doc={...fx.request.layout,selectionUnits:[{id:unit,kind:'atomic',nodeIds:bindings.slice(0,2).map(b=>b.nodeId)}]};await db.query('update eshop.blueprints set layout=$2 where id=$1',[f.blueprint,doc]);await db.query('update eshop.blueprint_seat_bindings set selection_unit=$2 where blueprint=$1 and spot=any($3)',[f.blueprint,unit,bindings.slice(0,2).map(b=>b.spotId)]);await db.query('SET LOCAL ROLE authenticated');return{db,f,bindings,doc,fx,ex:executor(db,f)};}
@@ -74,13 +78,13 @@ export async function cleanup(db,f,root){
 }
 
 
-export async function paidSwap(t,persistent=false){
- const state=await setup(t,persistent),{db,f,fx,bindings}=state;await db.query('RESET ROLE');
+export async function paidSwap(t,persistent=false,options={}){
+ const state=await setup(t,persistent,options),{db,f,fx,bindings}=state;await db.query('RESET ROLE');
  const product=Number((await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code) select occasion,product_type,'Expensive destination',150,'CZK' from eshop.products where id=$1 returning id",[fx.product])).rows[0].id);
  const first=bindings[2].spotId,second=bindings[3].spotId;
  await db.query('update eshop.spots set product=$2 where id=$1',[second,product]);
  const order=Number((await db.query('select allocate_ticket_order_identity_internal($1) id',[fx.form])).rows[0].id);
- const payment=Number((await db.query("insert into eshop.payment_info(amount,paid,currency_code) values(100,100,'CZK') returning id")).rows[0].id);
+ const payment=Number((await db.query("insert into eshop.payment_info(amount,paid,currency_code,payment_method,bank_account) values(100,100,'CZK','bank',$1) returning id",[f.bankAccountId])).rows[0].id);
  const ticket=Number((await db.query("insert into eshop.tickets(occasion,state) values($1,'paid') returning id",[f.occasion])).rows[0].id);
  const item=Number((await db.query('insert into eshop.order_product_ticket("order",ticket,product) values($1,$2,$3) returning id',[order,ticket,fx.product])).rows[0].id);
  await db.query("update eshop.orders set state='paid',price=100,payment_info=$2,data=jsonb_build_object('name','Private swap customer','email','private-swap@example.invalid','tickets',jsonb_build_array(jsonb_build_object('id',$3::bigint,'products',jsonb_build_array(_swap_spots_generate_product_json($4,$5))))) where id=$1",[order,payment,ticket,fx.product,first]);
@@ -101,8 +105,8 @@ export async function swapState(s){
 }
 
 
-export async function paidAtomicSwap(t,persistent=false){
- const s=await paidSwap(t,persistent),{db,f,bindings}=s;await db.query('RESET ROLE');s.allSpots=bindings.map(b=>b.spotId);
+export async function paidAtomicSwap(t,persistent=false,options={}){
+ const s=await paidSwap(t,persistent,options),{db,f,bindings}=s;await db.query('RESET ROLE');s.allSpots=bindings.map(b=>b.spotId);
  const source=bindings.slice(2),target=bindings.slice(0,2),unit=randomUUID();
  await db.query('update eshop.blueprint_seat_bindings set selection_unit=$2 where spot=any($1)',[source.map(b=>b.spotId),unit]);
  await db.query('update eshop.blueprints set layout=$2 where id=$1',[f.blueprint,{...s.doc,selectionUnits:[...s.doc.selectionUnits,{id:unit,kind:'atomic',nodeIds:source.map(b=>b.nodeId)}]}]);

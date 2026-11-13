@@ -1,17 +1,17 @@
 import {z} from 'zod';
 import {check,upstream,OperationError,commandEdgeResponse} from '../errors.mjs';
-import {decimalAmount,currencyCode,orderAmountChangeSchema} from './order-money.mjs';
+import {decimalAmount,currencyCode,orderAmountChangeSchema,manualPaymentMethod} from './order-money.mjs';
 const id=z.number().int().positive().max(Number.MAX_SAFE_INTEGER),revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const ids=z.array(id).min(1).max(1000).refine(a=>new Set(a).size===a.length),hash=z.string().regex(/^[0-9a-f]{64}$/);
 const answers=z.array(z.record(z.string().max(100),z.json())).max(20000);
-const inputData=z.strictObject({email:z.email().max(320),form_key:z.uuid(),fields:answers.optional(),ticket_fields:z.record(z.string().regex(/^[1-9][0-9]{0,15}$/),answers).refine(v=>Object.keys(v).length<=1000&&Object.keys(v).every(k=>Number.isSafeInteger(Number(k)))).optional(),lang:z.enum(['cs','en','sk','pl','de','uk']).optional()}).refine(v=>Buffer.byteLength(JSON.stringify(v),'utf8')<=1048576);
+const inputData=z.strictObject({payment_method:manualPaymentMethod.optional(),email:z.email().max(320),form_key:z.uuid(),fields:answers.optional(),ticket_fields:z.record(z.string().regex(/^[1-9][0-9]{0,15}$/),answers).refine(v=>Object.keys(v).length<=1000&&Object.keys(v).every(k=>Number.isSafeInteger(Number(k)))).optional(),lang:z.enum(['cs','en','sk','pl','de','uk']).optional()}).refine(v=>Buffer.byteLength(JSON.stringify(v),'utf8')<=1048576);
 const blueprints=z.array(z.strictObject({id,revision})).min(1).max(1000).refine(a=>new Set(a.map(b=>b.id)).size===a.length);
 const selection={occasionId:id,blueprintId:id,spotIds:ids};
 const confirmation={...selection,actorId:z.uuid(),inputData,targetSpotIds:ids,affectedSpotIds:ids,blueprints,confirmationHash:hash};
 const product=z.strictObject({productId:id,title:z.string().nullable(),amount:decimalAmount.nullable(),currencyCode:currencyCode.nullable()});
 const conflictOrders=z.array(z.strictObject({orderId:id,selectedTicketCount:z.number().int().positive().max(1000),stateAfter:z.string().nullable(),customer:z.strictObject({email:z.string().nullable(),name:z.string().nullable(),surname:z.string().nullable()}),tickets:z.array(z.strictObject({ticketId:id,selectedSpotIds:ids,ticketSymbol:z.string().nullable(),ticketAmount:decimalAmount.nullable(),products:z.array(product).max(1000)})).max(1000)})).max(1000);
 const newProduct=z.strictObject({spotId:id,productId:id,title:z.string().nullable(),amount:decimalAmount,currencyCode});
-const newOrder=z.strictObject({amount:decimalAmount,currencyCode,state:z.string().min(1).max(64),paymentMethod:z.enum(['bank','cash']),paymentPolicy:z.strictObject({mode:z.enum(['none','custom']),cashInstructions:z.string().max(1000).optional()}).optional(),ticketCount:z.number().int().positive().max(1000)});
+const newOrder=z.strictObject({amount:decimalAmount,currencyCode,state:z.string().min(1).max(64),paymentMethod:manualPaymentMethod,paymentPolicy:z.strictObject({mode:z.enum(['none','custom']),cashInstructions:z.string().max(1000).optional()}).optional(),ticketCount:z.number().int().positive().max(1000)});
 const quoteBase={spotIds:ids,affectedSpotIds:ids,releasedSpotIds:z.array(id).max(1000),blueprints,formKey:z.uuid(),orders:z.array(orderAmountChangeSchema).max(1000)};
 const state=z.enum(['available','selected','ordered','used']);
 const quote=z.strictObject({...quoteBase,seats:z.array(z.strictObject({spotId:id,blueprintId:id.nullable(),blueprintTitle:z.string().nullable(),title:z.string().nullable(),stateBefore:state,stateAfter:state,previousOrderId:id.nullable(),previousTicketId:id.nullable(),productId:id.nullable(),productTitle:z.string().nullable()})).max(1000),newOrder:newOrder.extend({products:z.array(newProduct).max(20000)})}).refine(v=>{

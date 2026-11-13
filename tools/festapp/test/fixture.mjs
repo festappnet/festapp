@@ -63,7 +63,7 @@ export function memoryStore() {
 }
 export async function fixture(
     t,
-    { fetchImpl, profileValue = profile(), userId = actor } = {},
+    { fetchImpl, profileValue = profile(), userId = actor, sessionClaims = {}, userFactors = [] } = {},
 ) {
     const root = await mkdtemp(join(tmpdir(), 'festapp-mcp-'));
     t.after(() => rm(root, { recursive: true, force: true }));
@@ -87,7 +87,7 @@ export async function fixture(
                     access_token:
                         'eyJhbGciOiJIUzI1NiJ9.' +
                         Buffer.from(
-                            JSON.stringify({ ...claims, sub: userId }),
+                            JSON.stringify({ ...claims, sub: userId, ...sessionClaims }),
                         ).toString('base64url') +
                         '.fixture',
                     refresh_token: 'rotated-' + ++rotation,
@@ -95,7 +95,7 @@ export async function fixture(
                     token_type: 'bearer',
                     user: {
                         id: userId,
-                        factors: [],
+                        factors: userFactors,
                         app_metadata: {},
                         user_metadata: {},
                     },
@@ -103,7 +103,7 @@ export async function fixture(
             if (url.pathname === '/auth/v1/user')
                 return reply({
                     id: userId,
-                    factors: [],
+                    factors: userFactors,
                     app_metadata: {},
                     user_metadata: {},
                 });

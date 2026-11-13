@@ -463,3 +463,21 @@ test('API consent displays the exact resource/profile and sends the acknowledgem
  await f.page.init();assert(f.container.textContent.includes(api.resource));assert(f.container.textContent.includes(api.dataProfile));
  f.page.selected.add(99);await f.page.call('approve');assert.deepEqual(f.calls.at(-1).access.apiReview,{...api,version:1});
 });
+
+test('MFA approval keeps the code transient and preserves the displayed consent', async () => {
+    const f = fixture(); await f.page.init(); f.page.selected.add(99);
+    f.page.mfaFactor = {id: 'owned-factor'};
+    await f.page.finish('approve');
+    assert.equal(f.page.state, 'mfaApproval');
+    assert.equal(f.calls.length, 1);
+    const input = f.container.querySelector('input[autocomplete="one-time-code"]');
+    assert(input); assert.equal(input.type, 'password');
+    input.value = '123456';
+    f.container.querySelector('form').dispatchEvent(new window.Event('submit', {bubbles: true, cancelable: true}));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(input.value, '');
+    assert.deepEqual(f.calls.at(-1).mfa, {factorId: 'owned-factor', code: '123456'});
+    assert.deepEqual(f.calls.at(-1).access, {type: 'occasions', occasionIds: [99]});
+    assert(!f.container.textContent.includes('123456'));
+    assert.equal(f.page.mfaCode, undefined);
+});

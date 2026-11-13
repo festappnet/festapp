@@ -431,13 +431,29 @@ variants in `profiles/order-summary/docs/`. API and docs ship in the same image.
 `api:compatibility` intentionally blocks initial publication until an approved
 released baseline is sealed. A generated file is not evidence of publication.
 
-Supported reads, synthetic `ticket_layouts.preview` and `products.save` are
-available in this slice. The generated readiness inventory states all remaining mutation gaps.
+API and MCP use `DELEGATED_OPERATIONS` and the same `Operations` executor,
+input/output validation, SQL authorization, preview/version checks and receipts.
+The operator contract exposes 174 operations for Bearer clients and all 196 for
+registered DPoP + PAR clients. The 22 sensitive operations additionally require
+GoTrue-verified AAL2 authentication no older than 300 seconds; refreshing tokens
+does not renew that authentication time. The first-party consent upgrades a
+separate delegated session using the account's verified TOTP factor, preserving
+the browser's independent refresh credential. API bodies cannot assert MFA.
+
 Consent defaults to seven days; explicit client policy may allow 30/90/365 days
 with the fixed deadline and 30-day idle limit. Exact spent-token replay evidence
-is packed into capped encrypted buckets in the existing store. Managed DPoP,
-confidential PKCE/private_key_jwt and PAR have provider/resource tests. Sensitive
-operations requiring trusted fresh step-up remain explicitly blocked. No service credentials grant exists.
+is packed into capped encrypted buckets in the existing store. No service
+credentials grant exists. Registration ceilings never grant account roles or
+expand existing connections; the user must explicitly approve the requested scopes.
+
+Artwork recovery is shared across API/MCP connections of the same actor and
+canonical tenant. Preserve the full original `saveRequest`: repeating it retains
+the same SQL command identity even when an outward reply was lost after commit.
+Pending/resume handles unresolved upstream responses. Before upgrading a hosted
+store, stop its runtime and run `migrate-layout-intents CONFIG --secrets SECRETS
+--data DATA` with the remote CLI. This offline migration preserves legacy UUIDs
+and baselines and fails closed for unknown owners or conflicting pending intents.
+There is no request-time legacy-store fallback.
 
 Make generation consumes the public regional summary contract and preserves
 `festapp-make`, its callback and scope ceiling. It requires a new connection to
@@ -447,6 +463,6 @@ the original MCP resource and legacy transport on the same registered Make clien
 while issuing distinct new regional API grants. It does not copy credentials
 between issuers or upgrade old grants. Keep any original issuer/store intact
 until real consumers reconsent; do not relabel its audience.
-Do not publish the connector before API rollout/qualification. See the
+Keep the current Make connector and connections unchanged until the existing review is accepted. API rollout does not authorize Make publication or cutover. See the
 [cutover ledger](../../docs/plans/festapp-unified-api-DELETION-LEDGER-2026-11-13.md)
 and [authorization recovery](../../docs/operations/festapp-api-auth-recovery.md).

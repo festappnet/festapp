@@ -17,8 +17,8 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-export async function setup(t, { api = true, apiPolicy, makeMigration = false, auditObserver, profileValue = profile(), userId, proofProfile = 'bearer', global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
-    const base = await fixture(t, { profileValue, ...(userId ? {userId} : {}), fetchImpl: (url, init) => global && url.pathname === '/second-activation.json'
+export async function setup(t, { api = true, apiPolicy, makeMigration = false, auditObserver, profileValue = profile(), userId, sessionClaims, userFactors, proofProfile = 'bearer', global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
+    const base = await fixture(t, { profileValue, sessionClaims, userFactors, ...(userId ? {userId} : {}), fetchImpl: (url, init) => global && url.pathname === '/second-activation.json'
         ? reply({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' }) : url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -86,7 +86,7 @@ export async function setup(t, { api = true, apiPolicy, makeMigration = false, a
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, keyMaterial: secrets, clearBrowserCookies: () => jar.clear(), ...service };
 }
-export async function connect(f, { badVerifier = false, usePar = false, clientId = 'api-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.endpoints?.[0]?.resource ?? f.config.resource] } = {}) {
+export async function connect(f, { visibleOccasionId, hiddenOccasionId, badVerifier = false, usePar = false, clientId = 'api-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.endpoints?.[0]?.resource ?? f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
@@ -123,8 +123,8 @@ export async function connect(f, { badVerifier = false, usePar = false, clientId
     assert.match(consent, /Povolit přístup/);
     assert.match(consent, /name="consentVersion" value="3"/);
     assert.doesNotMatch(consent, /type="checkbox" name="(?:permission|create)"/);
-    assert.match(consent, /value="7"/);
-    assert.doesNotMatch(consent, /value="8"/);
+    assert.match(consent, new RegExp('name="occasion" value="' + (visibleOccasionId ?? occasionIds?.[0] ?? 7) + '"'));
+    if (hiddenOccasionId !== undefined) assert.doesNotMatch(consent, new RegExp('name="occasion" value="' + hiddenOccasionId + '"'));
     r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), consentVersion: '3', ...consentFields, ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: occasionIds ?? '7' }) });
     assert.equal(r.status, consentStatus);
     if (consentStatus !== 303) return;

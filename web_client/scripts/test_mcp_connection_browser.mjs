@@ -56,6 +56,36 @@ try {
         assert.equal(await evaluate('document.querySelector(".connection-page").textContent.includes("Codex")'),false,'connected copy is generic');
 
     }
+    for (const width of [320, 1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.goto(fixtureUrl+'?mfa=1');
+        await page.waitForFunction('window.consentFixture?.ready === true && consentFixture.read().state === "mfaLogin"');
+        const input = page.locator('input[autocomplete="one-time-code"]');
+        assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`MFA login overflow ${width}`);
+        assert.deepEqual(await evaluate(`(() => { const i=document.querySelector('input[autocomplete="one-time-code"]'); return [i.type,i.inputMode,i.required,i.pattern,i.maxLength]; })()`),['password','numeric',true,'[0-9]{6}',6]);
+        await input.fill('12345');
+        assert.equal(await evaluate('document.querySelector("form").checkValidity()'),false);
+        await input.fill('abcdef');
+        assert.equal(await evaluate('document.querySelector("form").checkValidity()'),false);
+        await input.fill('123456');
+        await evaluate('window.previousCodeInput=document.querySelector("input[autocomplete=one-time-code]")');
+        await page.locator('form button[type="submit"]').click();
+        await page.waitForFunction('consentFixture.read().state === "consent"');
+        assert.equal(await evaluate('window.previousCodeInput.value'), '');
+        assert.equal(await evaluate('consentFixture.read().verified'),1);
+        await page.locator('input[data-occasion="99"]').first().click();
+        await page.getByRole('button',{name:'Povolit a propojit'}).click();
+        await page.waitForFunction('consentFixture.read().state === "mfaApproval"');
+        assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`MFA approval overflow ${width}`);
+        assert.deepEqual(await evaluate('consentFixture.read().selected'),[99]);
+        await input.fill('654321');
+        await evaluate('window.previousCodeInput=document.querySelector("input[autocomplete=one-time-code]")');
+        await page.locator('form button[type="submit"]').click();
+        await page.waitForFunction('consentFixture.read().state === "connected"');
+        assert.equal(await evaluate('window.previousCodeInput.value'), '');
+        assert.deepEqual(await evaluate('consentFixture.read().operations.find(o=>o.operation === "approve").access.selection.occasionIds'),[99]);
+        assert.equal(await evaluate('consentFixture.read().credentialsPresent'),false);
+    }
     await page.goto(fixtureUrl);
     await page.waitForFunction('window.consentFixture?.ready === true');
     await page.setViewportSize({width:1280,height:1000});
@@ -113,6 +143,13 @@ try {
     assert.deepEqual(await evaluate('consentFixture.read().access'),{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:true}],occasionIds:[]});
     assert.equal(await evaluate('[...document.querySelectorAll("[data-occasion]")].every(i=>i.checked && i.disabled)'),true);
     assert.equal(await evaluate('document.querySelector("[data-permission]") === null'),true);
+    assert.equal(await evaluate('document.querySelector(".mcp-access-summary").textContent.includes("ruční platby")'),true);
+    await page.locator('select[name="permissionMode"]').selectOption('read-only');
+    assert.equal(await evaluate('document.querySelector(".mcp-access-summary").textContent.includes("ruční platby")'),false);
+    assert.equal(await evaluate('document.querySelectorAll(".mcp-access-summary li").length'),1);
+    await page.locator('select[name="permissionMode"]').selectOption('basic');
+    assert.equal(await evaluate('document.querySelectorAll(".mcp-access-summary li").length'),0);
+    await page.locator('select[name="permissionMode"]').selectOption('requested');
     assert.equal(await evaluate('document.querySelector(".mcp-access-summary").textContent.includes("ruční platby")'),true);
 
     await page.setViewportSize({width:1280,height:1000});

@@ -62,3 +62,24 @@ Deno.test("a late revocation/callback cannot return a session after the overall 
     assertEquals(calls.includes("revoke:local"),true);
   }finally{Date.now=original;}
 });
+
+Deno.test("MFA delegation upgrades only its independent session and verifies GoTrue identity and AAL", async () => {
+  const {admin,anon,calls}=fixture();
+  const rpc=admin.rpc.bind(admin);
+  admin.rpc=(async(name:string,params:Record<string,unknown>)=>{
+    const result=await rpc(name,params);if(result.data)result.data.requiresMfa=true;return result;
+  }) as unknown as typeof admin.rpc;
+  const upgraded = {access_token:"strong-access",refresh_token:"strong-refresh",user:{id:target.targetUserId}};
+  admin.auth.getUser=(async(token:string)=>({error:null,data:{user:{id:token==="strong-access"?target.targetUserId:"foreign"}}})) as typeof admin.auth.getUser;
+  anon.auth.getSession=(async()=>({error:null,data:{session:upgraded}})) as typeof anon.auth.getSession;
+  anon.auth.mfa={getAuthenticatorAssuranceLevel:async()=>({error:null,data:{currentLevel:"aal2",nextLevel:"aal2",currentAuthenticationMethods:[]}})} as unknown as typeof anon.auth.mfa;
+  const result=await issueExistingUserSession(target,admin,anon,{purpose:"delegation",completeMfa:async(session)=>{
+    assertEquals(session.access_token,"access");calls.push("mfa");return upgraded as unknown as import("https://esm.sh/@supabase/supabase-js@2.58.0").Session;
+  }});
+  assertEquals(result.access_token,"strong-access");
+  assertEquals(calls.includes("mfa"),true);
+  assertEquals(calls.at(-1),"release_existing_user_session_lease_v1");
+  anon.auth.mfa.getAuthenticatorAssuranceLevel=(async()=>({error:null,data:{currentLevel:"aal1",nextLevel:"aal2",currentAuthenticationMethods:[]}})) as typeof anon.auth.mfa.getAuthenticatorAssuranceLevel;
+  await assertRejects(()=>issueExistingUserSession(target,admin,anon,{purpose:"delegation",completeMfa:async()=>upgraded as unknown as import("https://esm.sh/@supabase/supabase-js@2.58.0").Session}),Error,"mfa_required");
+  assertEquals(calls.at(-1),"revoke:local");
+});

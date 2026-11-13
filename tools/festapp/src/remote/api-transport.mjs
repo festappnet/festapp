@@ -1,14 +1,21 @@
 import express from 'express';
+import { STRONG_AUTHENTICATION_ACR, STEP_UP_MAX_AGE_SECONDS } from '../auth/assurance.mjs';
 import { randomUUID, createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
 import { check, safeError } from '../errors.mjs';
 import { API_PREFIX, API_DATA_PROFILES, API_PROOF_PROFILES, apiProjectionDirectory } from './endpoints.mjs';
-import { publicCatalog, readiness, artifactInput, errorStatuses, API_JSON_LIMITS } from './api-contract.mjs';
+import { publicCatalog, artifactInput, errorStatuses, API_JSON_LIMITS } from './api-contract.mjs';
 const known = new Map(publicCatalog().map(d => [d.id, d]));
+export function stepUpChallenge(endpoint) {
+    const metadata = new URL('/.well-known/oauth-protected-resource/integrations', endpoint.publicBase).href;
+    return `DPoP error="insufficient_user_authentication", acr_values="${STRONG_AUTHENTICATION_ACR}", max_age="${STEP_UP_MAX_AGE_SECONDS}", resource_metadata=${JSON.stringify(metadata)}`;
+}
+
 export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer' } = {}) {
     const safe = error?.code && errorStatuses[error.code] ? error : safeError(error);
     const status = errorStatuses[safe.code] ?? 502;
     if (status === 401 && endpoint) res.set('WWW-Authenticate', `${authScheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${new URL(endpoint.publicBase).origin}/.well-known/oauth-protected-resource/integrations", error="${safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' ? 'insufficient_user_authentication' : 'invalid_token'}"`);
+    if (safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' && endpoint) res.set('WWW-Authenticate', stepUpChallenge(endpoint));
     if (status === 429 && error?.retryAfter) res.set('Retry-After', String(error.retryAfter));
     if (status === 405) res.set('Allow', 'POST');
     return res.status(status).set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' }).type('application/problem+json').json({
@@ -89,10 +96,8 @@ export function installApi(app, { config, run }) {
                 }
                 check(known.has(id), 'UNKNOWN_OPERATION');
                 check(owner.permitsOperation(id), 'FORBIDDEN');
-                check(readiness(known.get(id)).supported, 'FAMILY_NOT_READY');
-                accepted = true;
-                const result = await operations.invoke(id, req.body);
-                if (!result.ok) return sendProblem(res, result.error, { requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, outcome: known.get(id).domainReadOnly ? 'rejected' : 'unknown' });
+                const result = await operations.invoke(id, req.body, { onAccepted: () => { accepted = true; } });
+                if (!result.ok) return sendProblem(res, result.error, { requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, outcome: !accepted || known.get(id).domainReadOnly ? 'rejected' : 'unknown' });
                 const descriptor = publicCatalog(owner.orderSummaryOnly ? 'order-summary' : 'operator').find(d => d.id === id);
                 check(descriptor.output.safeParse(result).success, 'UPSTREAM_CONTRACT_FAILURE');
                 return res.set({ 'X-Request-Id': result.meta.requestId, 'Cache-Control': 'no-store' }).json(result);

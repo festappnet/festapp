@@ -2079,6 +2079,12 @@
         "legacyReinviteConfirm": "Niektorí používatelia už dostali pozvánku. Odoslať ju znova?"
     },
     "McpConnection": {
+    "mfaLoginHint": "Pre pokračovanie zadajte šesťmiestny kód z overovacej aplikácie.",
+    "mfaApprovalHint": "Počkajte na nový kód v overovacej aplikácii a zadajte ho na zabezpečenie tohto samostatného pripojenia.",
+    "mfaCode": "Overovací kód",
+    "mfaVerify": "Overiť kód",
+    "mfaFailed": "Kód sa nepodarilo overiť. Zadajte nový kód a skúste to znova.",
+    "mfaUnsupported": "Toto pripojenie vyžaduje overenú aplikáciu na dvojfázové overenie.",
         "permissionMode": "Rozsah funkcií",
         "permissionMode_requested": "Všetky požadované funkcie",
         "permissionMode_read-only": "Len požadované čítanie",

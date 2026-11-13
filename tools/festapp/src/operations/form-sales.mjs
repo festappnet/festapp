@@ -1,9 +1,10 @@
+import {manualPaymentMethod} from './order-money.mjs';
 import{z}from'zod';
 import{check,upstream,OperationError,commandEdgeResponse}from'../errors.mjs';
 const id=z.number().int().positive().max(Number.MAX_SAFE_INTEGER),version=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const ids=z.array(id).min(1).max(1000).refine(a=>new Set(a).size===a.length);
 const answers=z.array(z.record(z.string().max(100),z.json())).max(20000);
-const input=z.strictObject({payment_method:z.enum(['bank','cash']).optional(),email:z.email().max(320),fields:answers.optional(),ticket:z.array(z.strictObject({spot:id.optional(),fields:answers.optional()})).min(1).max(1000),lang:z.enum(['cs','en','sk','de','pl','uk']).optional()});
+const input=z.strictObject({payment_method:manualPaymentMethod.optional(),email:z.email().max(320),fields:answers.optional(),ticket:z.array(z.strictObject({spot:id.optional(),fields:answers.optional()})).min(1).max(1000),lang:z.enum(['cs','en','sk','de','pl','uk']).optional()});
 const acceptInput=input.extend({ticket:z.array(z.strictObject({ticketId:id,fields:answers.optional(),spot:id.optional()})).min(1).max(1000)});
 const selection={occasionId:id,formId:id};
 const receipt={...selection,commandId:z.uuid(),status:z.enum(['applied','unchanged'])};

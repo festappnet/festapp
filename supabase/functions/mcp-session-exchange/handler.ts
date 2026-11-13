@@ -23,13 +23,14 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
         new URL(config.issuer).protocol !== "https:" || config.brokerSecret.length < 43) return json({ error: "forbidden" }, 403);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (req.method !== "POST") return json({ error: "invalid_request" }, 405);
-    // Bound the streamed body, including requests without Content-Length.
+    // Bound streamed bodies, including chunked requests. A valid consent with
+    // 100 organizers, 100 occasions and all canonical scopes exceeds 8 KiB.
     const reader = req.body?.getReader();
     if (!reader) throw new Error();
     const chunks: Uint8Array[] = []; let size = 0;
     for (;;) {
       const { value, done } = await reader.read(); if (done) break;
-      size += value.length; if (size > 8192) { await reader.cancel(); throw new Error(); }
+      size += value.length; if (size > 16384) { await reader.cancel(); throw new Error(); }
       chunks.push(value);
     }
     const bytes = new Uint8Array(size); let offset = 0;
@@ -56,13 +57,27 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     const { data, error } = await admin.auth.getUser(accessToken);
     if (error || !data.user) return json({ error: "authentication_required" }, 401);
     if (["details", "status"].includes(body.operation)) return json(await broker({ operation: body.operation, accessToken }));
+    const factors = data.user.factors?.filter(f => f.status === "verified" && f.factor_type === "totp") ?? [];
+    const requiresMfa = data.user.factors?.some(f => f.status === "verified") ?? false;
+    if (requiresMfa && (!factors.some(f => f.id === body.mfa?.factorId) ||
+        typeof body.mfa?.code !== "string" || !/^\d{6}$/.test(body.mfa.code)))
+      return json({ error: "mfa_required" }, 401);
     const prepared = await broker({ operation: "prepare", accessToken, access: body.access });
     if (prepared.userId !== data.user.id || prepared.organizationId !== config.organizationId || !prepared.lease) throw new Error();
     // Resolve from the verified actor, never a caller-supplied email/user ID.
     const target = await admin.rpc("resolve_existing_user_session_v1", { p_user: data.user.id });
     if (target.error || target.data?.organization !== config.organizationId || !target.data.authEmail) throw new Error();
+    const delegatedAuth = deps.makeAnon();
     minted = await (deps.issue ?? issueExistingUserSession)(
-      { targetUserId: data.user.id, expectedAuthEmail: target.data.authEmail }, admin, deps.makeAnon(), {
+      { targetUserId: data.user.id, expectedAuthEmail: target.data.authEmail }, admin, delegatedAuth, {
+        purpose: "delegation",
+        ...(requiresMfa ? { completeMfa: async (_session: Session) => {
+          const result = await delegatedAuth.auth.mfa.challengeAndVerify({ factorId: body.mfa.factorId, code: body.mfa.code });
+          if (result.error || !result.data) throw new Error("mfa_required");
+          const current = await delegatedAuth.auth.getSession();
+          if (current.error || !current.data.session) throw new Error("mfa_required");
+          return current.data.session;
+        } } : {}),
         validateContext: async () => {
           const current = await admin.auth.getUser(accessToken);
           if (current.error || current.data.user?.id !== data.user.id) return false;

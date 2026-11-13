@@ -12,6 +12,7 @@ RUN pnpm --dir tools/festapp licenses list --prod --json | node tools/festapp/sc
 COPY tools/festapp/src ./tools/festapp/src
 COPY tools/festapp/contracts/api-v1 ./tools/festapp/contracts/api-v1
 COPY packages/festapp_contracts ./packages/festapp_contracts
+COPY assets/translations/cs.json ./assets/translations/cs.json
 COPY supabase/functions/_shared/ticket-assets/font-catalog.json ./supabase/functions/_shared/ticket-assets/font-catalog.json
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs
 USER node

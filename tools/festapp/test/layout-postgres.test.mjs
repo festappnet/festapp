@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { openDisposableDatabase } from './postgres.mjs';
 import { fixture, reply, profile } from './fixture.mjs';
 import { canonicalPreview } from './render-fixture.mjs';
+import {fingerprintDraft} from '../src/operations/layout-contract.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 import { Client as McpClient } from '@modelcontextprotocol/client';
 import { InMemoryTransport } from '@modelcontextprotocol/client';
@@ -180,10 +181,13 @@ test(
         assert.equal(replay.structuredContent.data.commandId, intent.commandId);
         assert.equal(replay.structuredContent.data.version, 1);
         assert.deepEqual(sent[0], sent[1]);
-        // Same reviewed baseline is stale after the first confirmed mutation, not rebased.
+        // Exact retry retains its command; a different intent cannot reuse the stale baseline.
+        const exact = await client.callTool({name:'festapp_ticket_layouts_save',arguments:input});
+        assert.equal(exact.structuredContent.data.commandId,intent.commandId);
+        const stale = {...input,scenario:'long'};stale.draftFingerprint=fingerprintDraft(f.owner.profile.binding,stale);
         const conflict = await client.callTool({
             name: 'festapp_ticket_layouts_save',
-            arguments: input,
+            arguments: stale,
         });
         assert.equal(conflict.structuredContent.data.status, 'conflict');
         const saved = (

@@ -19,7 +19,8 @@
     "api:check": "node scripts/generate-api-reference.mjs --check && node scripts/check-api-contract.mjs && node scripts/build-api-docs.mjs --check && node scripts/check-api-compatibility.mjs",
     "api:compatibility": "node scripts/check-api-compatibility.mjs",
     "api:docs": "node scripts/build-api-docs.mjs",
-    "api:ingress": "node scripts/check-api-ingress.mjs"
+    "api:ingress": "node scripts/check-api-ingress.mjs",
+    "test:postgres": "node --test --test-concurrency=1 test/*-postgres.test.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.11",

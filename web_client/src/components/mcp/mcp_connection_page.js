@@ -52,11 +52,11 @@ export class McpConnectionPage {
 
     text(key, args = {}) { return LocalizationService.tr(`McpConnection.${key}`, args); }
 
-    async call(operation) {
+    async call(operation, mfa) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
             headers: new URL(this.browser.location.href).searchParams.has('issuer')
                 ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: permissionsForConsent(this.details?.requestedPermissions ?? [], this.permissionMode), ...(this.details?.api ? {apiReview:{...this.details.api,version:1}} : {}), ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
+            body: { request: this.request, operation, ...(mfa ? { mfa } : {}), ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: permissionsForConsent(this.details?.requestedPermissions ?? [], this.permissionMode), ...(this.details?.api ? {apiReview:{...this.details.api,version:1}} : {}), ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -101,6 +101,16 @@ export class McpConnectionPage {
             this.user = data.session?.user;
             if (!this.user) this.state = 'login';
             else {
+                this.mfaFactor = this.user.factors?.find(f => f.status === 'verified' && f.factor_type === 'totp');
+                if (this.user.factors?.some(f => f.status === 'verified')) {
+                    const assurance = await this.client.auth.mfa.getAuthenticatorAssuranceLevel();
+                    if (assurance.error) throw assurance.error;
+                    if (assurance.data.currentLevel !== 'aal2') {
+                        this.state = this.mfaFactor ? 'mfaLogin' : 'mfaUnsupported';
+                        this.render();
+                        return;
+                    }
+                }
                 const details = await this.call('details');
                 if (generation !== this.generation) return;
                 this.details = details;
@@ -130,8 +140,13 @@ export class McpConnectionPage {
         this.render();
     }
 
-    async finish(operation) {
+    async finish(operation, mfa) {
         if (this.busy || (operation === 'approve' && (this.state !== 'consent' || !this.canApprove))) return;
+        if (operation === 'approve' && this.mfaFactor && !mfa) {
+            this.state = 'mfaApproval';
+            this.render();
+            return;
+        }
         const generation = this.generation;
         // Create synchronously from the approval gesture, then sever the opener.
         const callback = operation === 'approve' && this.details?.applicationType === 'native'
@@ -141,7 +156,7 @@ export class McpConnectionPage {
         this.render();
         let dispatched = false;
         try {
-            const result = await this.call(operation);
+            const result = await this.call(operation, mfa);
             if (generation !== this.generation) { callback?.close(); return; }
             const destination = this.resume(result.resumeUrl, result.issuer);
             if (!callback) {
@@ -391,10 +406,58 @@ export class McpConnectionPage {
             summary.className = 'mcp-access-summary';
             add('h2', this.text('accessSummary'), summary);
             add('p', this.text('sameRights'), summary);
+            const effectivePermissions = permissionsForConsent(this.details.requestedPermissions ?? [], this.permissionMode);
+            if (effectivePermissions.length) {
+                const list = add('ul', '', summary);
+                for (const scope of effectivePermissions) add('li', this.text(MCP_PERMISSIONS[scope].label), list);
+            }
             const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
             selectionSummary.className = 'mcp-selection-summary';
             add('p', this.text('duration', { appName: AppConfig.appName }));
             button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove);
+            button('cancel', () => this.finish('cancel'));
+        } else if (['mfaLogin', 'mfaApproval'].includes(this.state)) {
+            add('p', this.text(this.state === 'mfaLogin' ? 'mfaLoginHint' : 'mfaApprovalHint'));
+            const form = add('form', '');
+            const label = add('label', this.text('mfaCode'), form);
+            const input = document.createElement('input');
+            input.type = 'password';
+            input.inputMode = 'numeric';
+            input.autocomplete = 'one-time-code';
+            input.pattern = '[0-9]{6}';
+            input.maxLength = 6;
+            input.required = true;
+            input.disabled = this.busy;
+            label.appendChild(input);
+            const submit = add('button', this.text('mfaVerify'), form);
+            submit.type = 'submit';
+            submit.dataset.primary = '';
+            submit.disabled = this.busy;
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (this.busy || !form.reportValidity()) return;
+                const code = input.value;
+                input.value = '';
+                if (this.state === 'mfaApproval') {
+                    this.state = 'consent';
+                    await this.finish('approve', { factorId: this.mfaFactor.id, code });
+                    return;
+                }
+                this.busy = true;
+                this.render();
+                try {
+                    const result = await this.client.auth.mfa.challengeAndVerify({ factorId: this.mfaFactor.id, code });
+                    if (result.error) throw result.error;
+                    this.busy = false;
+                    await this.init();
+                } catch {
+                    this.busy = false;
+                    this.state = 'mfaLogin';
+                    this.mfaFailed = true;
+                    this.render();
+                }
+            });
+            if (this.mfaFailed) add('p', this.text('mfaFailed')).setAttribute('role', 'alert');
             button('cancel', () => this.finish('cancel'));
         } else if (this.state === 'login') {
             add('p', this.text('loginHint'));

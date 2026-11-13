@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { fixture } from '../../../automation/authorization/benchmark.mjs';
 import { openDisposableDatabase } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
+import {enableFixtureBankPayments} from './form-fixtures.mjs';
 import { orderDescriptors } from '../src/operations/orders.mjs';
 
 test('order MCP executor uses real SQL owners for scoped reads, edits, products, payments, queueing and replay',
@@ -11,7 +12,7 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');
  assert.equal((await db.query('select bool_and(paused AND worker_url IS NULL) safe from email_capacity')).rows[0].safe,true);
  t.after(async()=>{await db.query('ROLLBACK');await db.end();});
- const f=await fixture(db,1);
+ const f=await fixture(db,1);await enableFixtureBankPayments(db,f,{cash:true});
  const form=Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'Order MCP form',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id",[f.occasion])).rows[0].id);
  const field=Number((await db.query("insert into form_fields(form,title,type) values($1,'Email','email') returning id",[form])).rows[0].id);
  const bank=Number((await db.query("insert into eshop.bank_accounts(title,type,supported_currencies) values('Order fixture bank','FIO',ARRAY['CZK']) returning id")).rows[0].id);

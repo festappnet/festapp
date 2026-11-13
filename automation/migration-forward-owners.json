@@ -239,6 +239,15 @@
         "eshop/update_product.sql",
         "eshop/update_product_client_sync_v1.sql"
       ]
+    },
+    {
+      "migration": "20261113160000_shared_bank_writer_acl.sql",
+      "header": "-- Preserve the canonical authenticated bank writer across recreation; live two-role and payment-policy checks remain inside.",
+      "sources": [
+        "user_permissions/bank_operations.sql",
+        "eshop_bank_accounts/update_bank_account.sql"
+      ],
+      "active": true
     }
   ]
 }

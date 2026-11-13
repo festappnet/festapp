@@ -105,3 +105,9 @@ BEGIN
     RETURN v_id;
 END;
 $$;
+
+ALTER FUNCTION public.update_bank_account(bigint,text,text,text,text[],text,bigint,text) OWNER TO postgres;
+
+-- Keep the supported writer ACL with its declaration across every recreation.
+REVOKE ALL ON FUNCTION public.update_bank_account(bigint,text,text,text,text[],text,bigint,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_bank_account(bigint,text,text,text,text[],text,bigint,text) TO authenticated,service_role;
