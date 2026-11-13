@@ -17,8 +17,8 @@
       "directories": {
         "officialMcpRegistry": {
           "status": "published-readback-verified",
-          "version": "0.1.1",
-          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.1"
+          "version": "0.1.2",
+          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Ffestapp/versions/0.1.2"
         },
         "glama": {
           "status": "published",
@@ -42,17 +42,20 @@
           "status": "submitted-for-review",
           "plan": "free",
           "url": "https://mcpservers.org/submit",
-          "publicListingVerified": false
+          "publicListingVerified": false,
+          "copyStatus": "original-submission-pending-no-supported-edit-route"
         },
         "mcpSo": {
           "status": "free-manual-review-requested",
           "url": "https://github.com/chatmcp/mcpso/issues/7255",
-          "freeAcceptanceOrPublicationConfirmed": false
+          "freeAcceptanceOrPublicationConfirmed": false,
+          "copyReadback": "updated-and-verified"
         },
         "awesomeRemoteMcpServers": {
           "status": "pull-request-awaiting-maintainer",
           "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
-          "submissionValidation": "passed"
+          "submissionValidation": "passed",
+          "copyReadback": "updated-and-verified"
         }
       }
     },
@@ -69,8 +72,8 @@
       "directories": {
         "officialMcpRegistry": {
           "status": "published-readback-verified",
-          "version": "0.1.1",
-          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.1"
+          "version": "0.1.2",
+          "url": "https://registry.modelcontextprotocol.io/v0.1/servers/net.festapp%2Fvstupenky-online/versions/0.1.2"
         },
         "glama": {
           "status": "published",
@@ -94,17 +97,20 @@
           "status": "submitted-for-review",
           "plan": "free",
           "url": "https://mcpservers.org/submit",
-          "publicListingVerified": false
+          "publicListingVerified": false,
+          "copyStatus": "original-submission-pending-no-supported-edit-route"
         },
         "mcpSo": {
           "status": "free-manual-review-requested",
           "url": "https://github.com/chatmcp/mcpso/issues/7256",
-          "freeAcceptanceOrPublicationConfirmed": false
+          "freeAcceptanceOrPublicationConfirmed": false,
+          "copyReadback": "updated-and-verified"
         },
         "awesomeRemoteMcpServers": {
           "status": "pull-request-awaiting-maintainer",
           "url": "https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4589",
-          "submissionValidation": "passed"
+          "submissionValidation": "passed",
+          "copyReadback": "updated-and-verified"
         }
       }
     }
@@ -117,5 +123,6 @@
     "availability": "Current rights, explicit consent, client data profile and selected application variant apply."
   },
   "additionalDirectoryEvidence": "docs/operations/releases/global-mcp-20261113/additional-directories-20261113.json",
-  "catalogueCopyFile": "integrations/mcp-directories/catalogue-copy.json"
+  "catalogueCopyFile": "integrations/mcp-directories/catalogue-copy.json",
+  "catalogueCopyEvidence": "docs/operations/releases/global-mcp-20261113/catalogue-copy-registry-evidence.json"
 }
