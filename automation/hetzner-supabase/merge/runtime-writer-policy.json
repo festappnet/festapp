@@ -436,7 +436,8 @@
       "trigger": "capability-http",
       "effects": [
         "database-rpc",
-        "google-wallet-api"
+        "google-wallet-api",
+        "apple-wallet-signing"
       ],
       "mutates_authority": true
     },
@@ -444,7 +445,8 @@
       "trigger": "machine-http",
       "effects": [
         "database-rpc",
-        "google-wallet-api"
+        "google-wallet-api",
+        "apple-apns"
       ],
       "mutates_authority": true
     },
@@ -453,6 +455,14 @@
       "effects": [
         "database-rpc",
         "email-queue"
+      ],
+      "mutates_authority": true
+    },
+    "apple-wallet": {
+      "trigger": "apple-wallet-http",
+      "effects": [
+        "database-rpc",
+        "apple-wallet-signing"
       ],
       "mutates_authority": true
     }
@@ -547,7 +557,8 @@
       "payment-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery",
       "payment-operation": "live-user-jwt-stored-order-scope-typed-operation-policy-exact-receipt-no-client-provider-secrets",
       "ticket-wallet": "explicit-post-256bit-ticket-capability-current-admission-fixed-origin-no-store-fenced-provider-identity",
-      "sync-ticket-wallet": "private-machine-proof-fenced-bounded-current-ticket-state-reconciliation"
+      "sync-ticket-wallet": "private-machine-proof-fenced-bounded-current-ticket-state-reconciliation",
+      "apple-wallet": "pass-type-and-serial-bound-ApplePass-auth-device-scoped-update-enumeration-bounded-discarded-logs-service-only-persistence"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"
