@@ -132,10 +132,8 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
   const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
   if (projection.locale === 'cs') {
     body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
-    const reference=body.match(/<section id="reference"[\s\S]*?<\/section>/)?.[0] ?? '';
-    body=body.replace(reference,'').replace(/<section class="steps wrap reveal"[\s\S]*?<\/section>/,'').replace(/<section class="technical-options wrap"[\s\S]*?<\/section>/,'');
+    body=body.replace(/<section class="steps wrap reveal"[\s\S]*?<\/section>/,'').replace(/<section class="technical-options wrap"[\s\S]*?<\/section>/,'');
     body=body.replace(/<details><summary>{{PAGE_(?:CAN_GUESTS_CHOOSE_SPECIFIC_SEATS|WHAT_CAN_I_CUSTOMIZE|HOW_DO_I_CHECK_TICKETS_AT_THE_DOOR)}}<\/summary>[\s\S]*?<\/details>/g,'');
-    body=body.replace('<section class="payments',reference+'<section class="payments');
   }
 
   if (!projection.references?.length) body = body.replace(/<section id="reference"[\s\S]*?<\/section>/, "");
