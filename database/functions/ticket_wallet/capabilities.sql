@@ -10,7 +10,7 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='Wallet unavailable'; END IF;
  SELECT * INTO o FROM public.occasions WHERE id=m.occasion;
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
- SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=m.organization AND publishing_ready;
+ SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=m.organization AND (publishing_ready OR apple_publishing_ready);
  IF NOT coalesce((f->>'is_enabled')::boolean,false) OR NOT public.ticket_wallet_enabled(f) OR i.organization IS NULL
  OR nullif(btrim(o.title),'') IS NULL OR (o.data->>'timezone' IS NOT NULL AND NOT EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=o.data->>'timezone'))
  OR o.end_time IS NULL OR o.start_time IS NULL OR o.end_time+interval '7 days'<=now() THEN RETURN NULL; END IF;
@@ -33,6 +33,7 @@ BEGIN
  OR c.organization<>m.organization OR c.occasion<>m.occasion OR c.order_id<>m.order_id) THEN RETURN NULL; END IF;
  RETURN jsonb_build_object('organization',m.organization,'occasion',m.occasion,'ticketId',p_ticket,'issuer',i.issuer,
  'environment',i.environment,'webOrigin',i.web_origin,'badgeUrls',i.badge_urls,
+ 'providers',jsonb_build_object('google',i.publishing_ready,'apple',i.apple_publishing_ready),
  'source',CASE WHEN c.ticket_id IS NOT NULL THEN jsonb_build_object('sealed',c.sealed,'tokenHash',c.token_hash,'generation',c.generation) END);
 END $$;
 
@@ -55,7 +56,8 @@ BEGIN
  SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=c.organization;
  IF i.organization IS NULL THEN RETURN NULL; END IF;
  RETURN jsonb_build_object('ticketId',c.ticket_id,'organization',c.organization,'occasion',c.occasion,'issuer',i.issuer,'environment',i.environment,
- 'webOrigin',i.web_origin,'projection',public.ticket_wallet_projection_internal(c.ticket_id));
+ 'webOrigin',i.web_origin,'providers',jsonb_build_object('google',i.publishing_ready,'apple',i.apple_publishing_ready),
+ 'applePassTypeIdentifier',i.apple_pass_type_identifier,'appleTeamIdentifier',i.apple_team_identifier,'projection',public.ticket_wallet_projection_internal(c.ticket_id));
 END $$;
 
 -- Explicit support operation. A new generation always requires a fresh valid email intent.

@@ -12,7 +12,7 @@ Deno.test('email worker offers Wallet without access to the isolated signing cre
   const rpc=async(name:string,p:any)=>{
    assertEquals(name,'prepare_ticket_wallet');
    if(p.p_hash)source={sealed:p.p_sealed,tokenHash:p.p_hash};
-   return {organization:3,occasion:7,webOrigin:'https://vstupenky.online',badgeUrls:{cs:'https://img.festapp.net/assets/google-wallet/v1/cs.png'},source};
+   return {providers:{google:true,apple:false},organization:3,occasion:7,webOrigin:'https://vstupenky.online',badgeUrls:{cs:'https://img.festapp.net/assets/google-wallet/v1/cs.png'},source};
   };
   const html=await prepareWalletEmail({message_id:'message',data:{lang:'cs'}},[{id:1,ticket_symbol:'SAMPLE'}],{is_enabled:true},rpc);
   assert(html.includes('https://vstupenky.online/wallet#'));
@@ -36,7 +36,7 @@ Deno.test('1/N tickets across every delivery mode compose once per ticket in tem
    const saved=new Map<number,any>();let creates=0;
    const rpc=async(_name:string,p:any)=>{
     if(p.p_hash){creates++;saved.set(p.p_ticket,{sealed:p.p_sealed,tokenHash:p.p_hash});}
-    return {organization:1,occasion:7,webOrigin:'https://tenant.invalid',badgeUrls:{en:'https://img.festapp.net/assets/google-wallet/v1/en.png'},source:saved.get(p.p_ticket)};
+    return {providers:{google:true,apple:false},organization:1,occasion:7,webOrigin:'https://tenant.invalid',badgeUrls:{en:'https://img.festapp.net/assets/google-wallet/v1/en.png'},source:saved.get(p.p_ticket)};
    };
    const feature={code:'ticket',is_enabled:true,delivery_mode:mode};
    const tickets=Array.from({length:count},(_,i)=>({id:i+1,occasion:7,state:'paid',ticket_symbol:'EXACT-'+i}));
@@ -73,4 +73,14 @@ Deno.test('Wallet offer uses localized official artwork and readable ticket labe
   assertEquals(live.replace(/href="[^"]+" /,'').replaceAll('<a ','<span ').replaceAll('</a>','</span>'),preview);
  }
  assertEquals(walletEmailSection([],'cs'),'');
+});
+
+Deno.test('Apple-only readiness offers the shared capability without Google credentials or a Google badge',async()=>{
+ Deno.env.set('EMAIL_PAYLOAD_KEY',btoa('a'.repeat(32)));
+ try {
+  let source:any;
+  const rpc=async(_name:string,p:any)=>{if(p.p_hash)source={sealed:p.p_sealed,tokenHash:p.p_hash};return {organization:1,occasion:7,webOrigin:'https://tenant.invalid',providers:{google:false,apple:true},source};};
+  const html=await prepareWalletEmail({message_id:'message',data:{lang:'cs'}},[{id:1,ticket_symbol:'ORIGINAL'}],{is_enabled:true},rpc,{google:false,apple:true});
+  assert(html.includes('Přidat do Apple Peněženky'));assert(!html.includes('Google'));assertEquals((html.match(/\/wallet#/g)??[]).length,1);
+ }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
 });

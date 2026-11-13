@@ -161,6 +161,7 @@ export class RouterService {
             RouterService._walletPage?.clear();
             RouterService._walletPage = new TicketWalletPage(document.getElementById('form-page-container'), {
                 locale: document.documentElement.lang,
+                walletEndpoint: SupabaseService.endpoint + '/functions/v1/ticket-wallet',
                 invoke: async body => {
                     const {data,error} = await SupabaseService.getClient().functions.invoke('ticket-wallet',{body});
                     if(error) {
