@@ -31,22 +31,23 @@ export class TicketWalletPage extends Component {
   const fallback=this.label=this.win.document.createElement('span');fallback.textContent=this.text[2];this.button.append(badge,fallback);
   this.button.addEventListener('click',()=>this.save());
   main.append(title,this.status,this.button);this.host.replaceChildren(main);
-  this.status.textContent=this.text[this.token?1:4];this.button.hidden=!this.token;
+  this.status.textContent=this.text[this.token?3:4];this.button.hidden=true;
+  if(this.token)await this.save();
  }
  async save() {
   if(this.busy||!this.token)return;
-  this.busy=true;this.button.disabled=true;this.status.textContent=this.text[3];
+  this.busy=true;this.button.disabled=true;this.button.hidden=true;this.status.textContent=this.text[3];
   try {
    const result=await this.invoke({token:this.token});
    if(result?.error==='wallet_unavailable'){this.status.textContent=this.text[5];this.button.hidden=true;return;}
    const url=googleWalletSaveUrl(result?.url);if(!url)throw new Error('wallet_retry');
    if(result.state==='COMPLETED'){
-    this.status.textContent=this.text[7];this.label.textContent=this.text[2];
+    this.status.textContent=this.text[7];this.label.textContent=this.text[2];this.button.hidden=false;
     this.button.onclick=()=>this.win.location.assign(url);
     // A used pass is accurately marked; it does not grant another admission.
     this.token=null;
    }else this.win.location.assign(url);
-  }catch{this.status.textContent=this.text[6];this.label.textContent=this.text[8];}
+  }catch{this.status.textContent=this.text[6];this.label.textContent=this.text[8];this.button.hidden=false;}
   finally{this.busy=false;this.button.disabled=false;}
  }
  clear(){this.token=null;this.host.replaceChildren();}

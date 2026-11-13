@@ -76,6 +76,10 @@ is operational; no Apple badge, device claim or placeholder action is shown now.
 `ticket-wallet` accepts only explicit POST with one 256-bit fragment capability.
 GET never creates a Class or Object. The page removes the fragment before other
 resources run, holds it only in memory and is excluded from public analytics.
+Opening the email link automatically submits that capability by POST and
+continues to the validated Google Save URL without a second click. The page
+remains visible for missing or unavailable tickets, an explicit retry after a
+temporary failure, or a used-ticket warning that requires explicit continuation.
 Every resolution rechecks ticket, event, order and online payment state. The
 preference controls future offers; it never revokes already issued links or passes.
 `begin_email_send` discards only unstarted snapshots when the current preference
