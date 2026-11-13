@@ -224,6 +224,11 @@
       "migration": "20261113110000_notification_settings_unit_groups.sql",
       "manifest": "notification-settings-unit-groups-migration.json",
       "active": true
+    },
+    {
+      "migration": "20261113123000_notification_payment_channels.sql",
+      "manifest": "notification-payment-channels-migration.json",
+      "active": true
     }
   ]
 }
