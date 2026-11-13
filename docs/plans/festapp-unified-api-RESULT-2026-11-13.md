@@ -2,22 +2,23 @@
 
 Lokální implementace a kvalifikace připraveného rozsahu je dokončená. Produkční
 přechod, publikace a uzavření deletion ledgeru dosud neproběhly. Verification:
-standard. Žádný commit/push ani produkční migrace/deploy nebyly provedeny.
+standard. Lokální commit vznikl se schválením uživatele; push ani produkční
+migrace/deploy dosud nebyly provedeny.
 
 ## Autoritativní review zdroj
 
 Výsledný checkout je `/Users/miakh/source/festapp-unified-api-review-20261113`,
-nad `origin/main` `8aa7379d3a2f337fe298b48bbd2c318932cc5106`. Původní sdílený
+nad `origin/main` `c02cdad38` (včetně nové volby zúžení souhlasu z `6afb748aa`). Původní sdílený
 worktree s cizí rozpracovanou prací zůstal zachován; jeho prototyp není zdrojem
 pro publikaci. Přenos zachovává novější MCP capability search, inventory operace,
 opravu OAuth CSP a MIT/runtime licence/notices.
 
-Finální lokální image:
+Poslední kvalifikovaný image před integrací novějšího mainu:
 `sha256:350aced2ee377f6a1a6f01b8e5963807a7af84024c60f46fb00aabadddf52a9b`.
 Přesný runtime digest a osm manifestů jsou v
 [source-final.json](festapp-unified-api-evidence-2026-11-13/source-final.json).
-Zdroj je necommitnutý; po schváleném commitu se release manifesty zapečetí z jeho
-přesného checkoutu. Tento receipt není potvrzení nasazení.
+Před produkčním sestavením se release manifesty zapečetí z přesného
+publikovaného checkoutu. Tento receipt není potvrzení nasazení.
 
 ## Připravený rozsah
 
@@ -65,7 +66,7 @@ explicitní politikou klienta. Viz [refresh-year.json](festapp-unified-api-evide
 Rekey CLI ověřil process lock, chráněné soubory, nový klíč/readback a odmítnutí
 starého klíče; test vadného záznamu ověřil rollback celé re-encryption transakce.
 
-Finální image prošel 22 kontrolami skutečného Caddy ingressu, včetně veřejného
+Uvedený image prošel 22 kontrolami skutečného Caddy ingressu, včetně veřejného
 DPoP htu, podvržených hlaviček, oddělených audience, 413, backend-down 502 a
 zachování Auth/REST/Functions cest. Viz [ingress-final.json](festapp-unified-api-evidence-2026-11-13/ingress-final.json).
 
@@ -78,10 +79,25 @@ měření včetně regresí zůstávají uložená; finální běh proběhl po d
 Backend/renderer jsou fixture, externí síť/R2 náklady nejsou měřením pokryté.
 Viz [mixed-benchmark-final.json](festapp-unified-api-evidence-2026-11-13/mixed-benchmark-final.json).
 
-## Provozní dokončení vyžaduje další autorizaci
+## Publikační kontrola po spojení s mainem
 
-Execution prompt výslovně neautorizuje commit/push, produkční migrace/deploy ani
-publikaci Make. Před publikací je třeba čerstvé porovnání upstream, celý
+Úplný lokální mirror provedl všech osm lanes. Jediný neúspěch byl test, který
+předpokládal dokončení všech emailových projekcí v jedné dávce s limitem 250 ms.
+Test nyní omezeně dokončí vlastní fixture ve více dávkách; produkční SQL se
+nemění. Celá opravená seat-checkout lane prošla, včetně 2 API SQL testů bez skipů.
+Po omezení Caddy na přesný API hostname a regenerování všech osmi projekcí
+prošla znovu celá server-policy lane. Ostatní passing vstupy zůstaly beze změny.
+Viz [ci-publication.json](festapp-unified-api-evidence-2026-11-13/ci-publication.json).
+
+Aktuální zdroj prošel 23 disposable Caddy kontrolami, nově včetně odmítnutí API
+přes sdílený `supabase.festapp.net` alias. Viz
+[ingress-host-bound.json](festapp-unified-api-evidence-2026-11-13/ingress-host-bound.json).
+
+## Schválené provozní dokončení
+
+Uživatel dne 2026-11-13 výslovně schválil celý uvedený rozsah: commit/push main,
+auth store, oba API ingressy, souhlasové stránky prod/festapptickets a
+prod/festappticketsglobal a publikaci/přepojení Make. Před publikací je třeba čerstvé porovnání upstream, celý
 publikační CI gate dle aktuální policy a zapečetění přesného commit/image.
 Změna CI metadata konzervativně vybírá všechny lanes; cílené dva passing lanes
 ani Flutter skupina tyto budoucí publikační požadavky nenahrazují.
@@ -97,8 +113,8 @@ známé scénáře; živou inventuru je před přechodem nutné obnovit.
 Starý `/make/v1` proto zůstává jen jako tenký registrovaný adaptér s vlastníkem
 a sunset 2026-12-13. Odstraní se po prokázaném přechodu podle
 [deletion ledgeru](festapp-unified-api-DELETION-LEDGER-2026-11-13.md).
-`api:compatibility` správně blokuje první publikaci bez schválené počáteční
-baseline. Service identities zůstávají oddělenou navazující vlnou S s návrhem
+`api:compatibility` nyní ověřuje přesnou shodu osmi explicitně schválených
+počátečních snapshotů; po živé publikaci přejde baseline do stavu released. Service identities zůstávají oddělenou navazující vlnou S s návrhem
 ADR; `client_credentials` nejsou aktivní. Recovery/rollback postup je v
 [provozním dokumentu](../operations/festapp-api-auth-recovery.md).
 

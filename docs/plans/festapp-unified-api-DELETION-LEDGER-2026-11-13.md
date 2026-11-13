@@ -1,11 +1,11 @@
 # API cutover ledger - local implementation
 
 Owner: Festapp integration runtime maintainer (Michael Bujnovský).
-Legacy migration review/sunset: 2026-12-13 00:00:00 UTC. No publication authorized.
+Legacy migration review/sunset: 2026-12-13 00:00:00 UTC. User explicitly authorized the full publication/rollout scope on 2026-11-13; live migration remains pending.
 
 | Path | Local result | Remaining evidence |
 | --- | --- | --- |
-| Make generator imports of Operations, Zod DTOs and server Make policy | Removed. Generator reads the public regional summary OpenAPI and connector-owned UI/run policy. | Published connector and reconsented real scenario are not authorized. |
+| Make generator imports of Operations, Zod DTOs and server Make policy | Removed. Generator reads the public regional summary OpenAPI and connector-owned UI/run policy. | Publication and real scenario reconsent are authorized, pending verified rollout. |
 | Make generated `/make/v1`, old issuer/resource and custom pagination headers | Removed from generated connector. | Rebuild/republish only after API rollout. |
 | Make-specific pagination semantics on new API | Absent. Generic order membership/keyset/detail checks live in Operations for every adapter. | Connector runtime ceiling still needs real Make qualification before publication. |
 | Duplicate hosted authentication/admission/artifact execution | Removed from server route; one hosted runner owns all transports. | Full mixed-workload container benchmark remains a release gate. |

@@ -2,7 +2,10 @@
 # https://caddyserver.com/docs/caddyfile/directives/handle_errors
 (festapp_integration_errors) {
     handle_errors 413 {
-        @integration_too_large path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
+        @integration_too_large {
+            host api.festapp.net api.vstupenky.online
+            path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
+        }
         handle @integration_too_large {
             header Content-Type application/problem+json
             header Cache-Control no-store
@@ -15,7 +18,10 @@
         }
     }
     handle_errors 502 503 504 {
-        @integration_upstream_error path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
+        @integration_upstream_error {
+            host api.festapp.net api.vstupenky.online
+            path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
+        }
         handle @integration_upstream_error {
             header Content-Type application/problem+json
             header Cache-Control no-store
@@ -34,7 +40,10 @@
 # Canonical global MCP listener only. Never point this at the old regional store.
 (festapp_global_integrations) {
     import festapp_integration_errors
-    @integrations path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
+    @integrations {
+        host api.festapp.net
+        path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
+    }
     handle @integrations {
         request_body {
             max_size 48KB

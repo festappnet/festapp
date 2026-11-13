@@ -1,0 +1,233 @@
+{
+  "verification": "standard",
+  "runs": [
+    {
+      "runId": "20261113T080328-79ede73e5291",
+      "head": "9d9c9282c98c6ff6fe03b73d7fbfa968657f366b",
+      "scope": "full",
+      "selectedJobs": [
+        "image-contract",
+        "web-startup",
+        "wix-checkout-compatibility",
+        "navigation-interactions",
+        "server-policy",
+        "client-contract",
+        "seat-checkout",
+        "ticket-preview-and-delivery"
+      ],
+      "jobs": [
+        {
+          "name": "image-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "web-startup",
+          "status": "PASS"
+        },
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        },
+        {
+          "name": "navigation-interactions",
+          "status": "PASS"
+        },
+        {
+          "name": "server-policy",
+          "status": "PASS"
+        },
+        {
+          "name": "client-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "seat-checkout",
+          "status": "FAIL"
+        },
+        {
+          "name": "ticket-preview-and-delivery",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "image-install": {
+          "status": "PASS"
+        },
+        "web-install": {
+          "status": "PASS"
+        },
+        "seat-install": {
+          "status": "PASS"
+        },
+        "navigation-install": {
+          "status": "PASS"
+        },
+        "mcp-auth-install": {
+          "status": "PASS"
+        },
+        "image-policy": {
+          "status": "PASS"
+        },
+        "image-preflight": {
+          "status": "PASS"
+        },
+        "image-storage": {
+          "status": "PASS"
+        },
+        "ticket-edge": {
+          "status": "PASS"
+        },
+        "web-startup": {
+          "status": "PASS"
+        },
+        "ticket-install": {
+          "status": "PASS"
+        },
+        "ticket-core": {
+          "status": "PASS"
+        },
+        "seat-upgrade": {
+          "status": "PASS"
+        },
+        "web-measurement": {
+          "status": "PASS"
+        },
+        "renderer-install": {
+          "status": "PASS"
+        },
+        "deploy-contract": {
+          "status": "PASS"
+        },
+        "seat-runtime-contract": {
+          "status": "PASS"
+        },
+        "mcp-auth-contract": {
+          "status": "PASS"
+        },
+        "navigation-contract": {
+          "status": "PASS"
+        },
+        "image-client-install": {
+          "status": "PASS"
+        },
+        "seat-database": {
+          "status": "PASS"
+        },
+        "seat-authorization": {
+          "status": "PASS"
+        },
+        "image-client-adapter": {
+          "status": "PASS"
+        },
+        "seat-google-auth": {
+          "status": "PASS"
+        },
+        "image-client-widgets": {
+          "status": "PASS"
+        },
+        "seat-notifications": {
+          "status": "FAIL"
+        },
+        "image-client-browser": {
+          "status": "PASS"
+        },
+        "seat-contract": {
+          "status": "PASS"
+        },
+        "occasion-lifecycle": {
+          "status": "PASS"
+        },
+        "seat-measurement": {
+          "status": "PASS"
+        },
+        "ticket-client": {
+          "status": "PASS"
+        },
+        "seat-browser": {
+          "status": "PASS"
+        },
+        "wix-install": {
+          "status": "PASS"
+        },
+        "wix-contract": {
+          "status": "PASS"
+        }
+      },
+      "inputsUnchanged": false
+    },
+    {
+      "runId": "20261113T081342-c203145667b2",
+      "head": "9d9c9282c98c6ff6fe03b73d7fbfa968657f366b",
+      "scope": "partial",
+      "selectedJobs": [
+        "seat-checkout"
+      ],
+      "jobs": [
+        {
+          "name": "seat-checkout",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "seat-install": {
+          "status": "PASS"
+        },
+        "seat-upgrade": {
+          "status": "PASS"
+        },
+        "seat-runtime-contract": {
+          "status": "PASS"
+        },
+        "seat-database": {
+          "status": "PASS"
+        },
+        "seat-google-auth": {
+          "status": "PASS"
+        },
+        "seat-authorization": {
+          "status": "PASS"
+        },
+        "seat-browser": {
+          "status": "PASS"
+        },
+        "occasion-lifecycle": {
+          "status": "PASS"
+        },
+        "seat-measurement": {
+          "status": "PASS"
+        },
+        "seat-notifications": {
+          "status": "PASS"
+        },
+        "seat-contract": {
+          "status": "PASS"
+        }
+      },
+      "inputsUnchanged": true
+    },
+    {
+      "runId": "20261113T081859-b51ac326b817",
+      "head": "9d9c9282c98c6ff6fe03b73d7fbfa968657f366b",
+      "scope": "partial",
+      "selectedJobs": [
+        "server-policy"
+      ],
+      "jobs": [
+        {
+          "name": "server-policy",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "mcp-auth-install": {
+          "status": "PASS"
+        },
+        "mcp-auth-contract": {
+          "status": "PASS"
+        }
+      },
+      "inputsUnchanged": true
+    }
+  ],
+  "explanation": "Full eight-lane run retained. Notification test assumed all projection work completes in one 250ms batch; fixed test to bounded-drain its own fixture without changing production logic, and complete seat-checkout lane passed. Subsequent exact-host ingress change and regenerated contract docs passed server-policy. Other passing unit inputs unchanged."
+}

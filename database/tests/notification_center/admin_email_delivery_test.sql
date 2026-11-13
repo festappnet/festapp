@@ -2,7 +2,7 @@ BEGIN;
 DO $$
 DECLARE org1 bigint; org2 bigint; oc bigint; oid bigint; form bigint; u uuid:=gen_random_uuid(); v uuid:=gen_random_uuid();
  dispatch uuid; first_due timestamptz; result jsonb; context jsonb; message uuid; facts jsonb; event public.notification_center_events;
- recipient_count integer; attempt uuid; token uuid; before_usage bigint; duplicate_rejected boolean; explain jsonb; sql_body text; violated text;
+ recipient_count integer; projection_batch integer; attempt uuid; token uuid; before_usage bigint; duplicate_rejected boolean; explain jsonb; sql_body text; violated text;
 BEGIN
  INSERT INTO public.organizations(title,data) VALUES('Pořadatel A','{"DEFAULT_URL":"https://a.example.test"}') RETURNING id INTO org1;
  INSERT INTO public.organizations(title,data) VALUES('Pořadatel B','{"DEFAULT_URL":"https://b.example.test"}') RETURNING id INTO org2;
@@ -31,7 +31,13 @@ BEGIN
    PERFORM public.notification_center_order_internal(oid,'order_created',j::text,NULL);
   END LOOP;
  END LOOP;
- PERFORM public.project_notification_center(500);
+ -- Projection has a production wall-clock budget; drain the owned fixture
+ -- across bounded batches rather than assuming one call completes under load.
+ FOR projection_batch IN 1..100 LOOP
+  PERFORM public.project_notification_center(500);
+  EXIT WHEN NOT EXISTS(SELECT 1 FROM public.notification_center_events
+   WHERE organization IN (org1,org2) AND projected_revision<attention_revision);
+ END LOOP;
  PERFORM assert_eq(public.collect_notification_center_emails(100),2,'two recipient identities are processed independently');
  PERFORM assert_eq((SELECT count(*)::int FROM public.notification_center_email_items WHERE recipient=u),30,'all three occasions included');
  SELECT id,due_at INTO dispatch,first_due FROM public.notification_center_email_dispatches WHERE recipient=u;
