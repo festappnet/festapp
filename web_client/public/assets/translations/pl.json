@@ -2196,7 +2196,9 @@
         "blueprintsRead": "Odczytywać plany sal, powiązania sprzedażowe i czcionki",
         "blueprintsWrite": "Zapisywać pełne projekty planów sal i przygotowywać tekst",
         "ticketArtworkPreview": "Wyświetlać podgląd wyglądu przykładowego biletu",
-        "ticketArtworkWrite": "Zapisywać wygląd biletów i wznawiać niedokończone zapisy"
+        "ticketArtworkWrite": "Zapisywać wygląd biletów i wznawiać niedokończone zapisy",
+      "webhooksRead": "Odczytywać webhooki i historię dostarczania",
+      "webhooksWrite": "Zarządzać webhookami i ich dostarczaniem"
     },
     "EditorFileDrop": {
         "hint": "Upuść obraz, aby zastąpić tło",

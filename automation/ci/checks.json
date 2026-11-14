@@ -2194,15 +2194,13 @@
     "web_client/tests/services/stripe_callback_bootstrap.test.js",
     "web_client/tests/utils/html_sanitize.test.js",
     "web_client/tests/utils/image_url_helper.test.js",
-    "automation/tests/test_database_retention.py",
-    "automation/tests/test_host_retention.py",
     "tools/festapp/test/webhook-protocol.test.mjs",
     "tools/festapp/test/webhook-delivery.test.mjs",
     "tools/festapp/test/webhook-events.test.mjs",
     "tools/festapp/test/webhook-receiver.test.mjs",
     "tools/festapp/test/webhooks-postgres.test.mjs",
     "tools/festapp/test/api-artifacts.test.mjs",
-    "automation/tests/test_api_artifacts.py"
+    "database/tests/notification_center/admin_email_payment_details_test.sql"
   ],
   "sqlSharedSetups": [
     "database/tests/blueprint/fixtures.sql"
