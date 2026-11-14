@@ -1,5 +1,5 @@
 msgid ""
-msgstr "Project-Id-Version: vstupenky.online 1.0.8\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
+msgstr "Project-Id-Version: vstupenky.online 1.0.9\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: vstupenky-online\n"
 
 msgid "1. Prepare your form"
 msgstr "1. Připravte formulář"
@@ -10,11 +10,26 @@ msgstr "2. Vložte formulář do stránky"
 msgid "3. Preview and publish"
 msgstr "3. Zkontrolujte a zveřejněte"
 
+msgid "A button or link opening a saved public vstupenky.online form in a new tab."
+msgstr "Tlačítko nebo odkaz, který otevře uložený veřejný formulář vstupenky.online v nové záložce."
+
+msgid "Add %s under “My websites” and wait until the platform approves it."
+msgstr "Přidejte %s do „Moje weby“ a počkejte na schválení platformou."
+
 msgid "After publication, visitors connect to vstupenky.online and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor."
 msgstr "Po zveřejnění se návštěvník připojí k vstupenky.online a zadává údaje přímo službě. Oba režimy výšky načítají její /embed.js. V editoru se vzdálený formulář nenačítá."
 
+msgid "Analytics and marketing need different categories."
+msgstr "Analytika a marketing musí mít různé kategorie."
+
+msgid "Analytics category"
+msgstr "Kategorie analytiky"
+
 msgid "Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes."
 msgstr "Vzhled nastavíte v uloženém formuláři. Otevřete Formuláře, vyberte tento formulář, přejděte na Vzhled a změnu uložte."
+
+msgid "At most the consent expiry configured in Cookiebot, and at most 31536000. 180 days is 15552000."
+msgstr "Nejvýše platnost souhlasu nastavená v Cookiebotu a nejvýše 31536000. 180 dní je 15552000."
 
 msgid "Automatic"
 msgstr "Automatická"
@@ -25,8 +40,32 @@ msgstr "Automatická výška je ve výchozím nastavení zapnutá. Vzhled říd�
 msgid "Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr "Oba režimy výšky načítají pomocný skript služby. Pevná výška (240-4000 px) používá posouvání uvnitř formuláře. Odkaz pod formulářem funguje i bez skriptu. Pokud šablona nebo bezpečnostní pravidla blokují vložení, návštěvník otevře formulář v nové záložce."
 
+msgid "Button"
+msgstr "Tlačítko"
+
+msgid "Buy tickets"
+msgstr "Koupit vstupenky"
+
 msgid "Check the public URL. The server accepts only an allowed form address."
 msgstr "Zkontrolujte veřejný odkaz. Server přijme pouze povolenou adresu formuláře."
+
+msgid "Complianz policy ID"
+msgstr "ID zásad Complianzu"
+
+msgid "Confirm and save the new value"
+msgstr "Potvrdit a uložit novou hodnotu"
+
+msgid "Consent lifetime (seconds)"
+msgstr "Platnost souhlasu (sekundy)"
+
+msgid "Cookie choice in forms opened in a new tab"
+msgstr "Volba cookies ve formulářích otevřených v nové záložce"
+
+msgid "Cookie choice transfer stays off until every required field is valid."
+msgstr "Převzetí volby cookies zůstává vypnuté, dokud nejsou všechna povinná pole platná."
+
+msgid "CookieConsent revision"
+msgstr "Revize CookieConsent"
 
 msgid "Copy the public URL in the form https://vstupenky.online/form/saved-slug. Do not use a personal order link or administration URL."
 msgstr "Zkopírujte veřejný odkaz ve tvaru https://vstupenky.online/form/saved-slug. Nepoužívejte osobní odkaz z objednávky ani adresu administrace."
@@ -43,8 +82,38 @@ msgstr "Založte si účet pořadatele v vstupenky.online, přihlaste se údaji 
 msgid "Describe this form for visitors using screen readers. This does not rename the event."
 msgstr "Popište formulář pro návštěvníky používající čtečku obrazovky. Název akce se tím nezmění."
 
+msgid "Display as"
+msgstr "Zobrazit jako"
+
+msgid "Domain group ID (CBID)"
+msgstr "ID skupiny domén (CBID)"
+
 msgid "Embed a form from your vstupenky.online account. Manage events, orders and admission in the service."
 msgstr "Vložte prodejní formulář z účtu vstupenky.online. Akce, objednávky a odbavení spravujete ve službě, nikoli ve WordPressu."
+
+msgid "Enter a UTC time such as 2026-11-11T00:00:00.000Z."
+msgstr "Zadejte čas v UTC, například 2026-11-11T00:00:00.000Z."
+
+msgid "Enter a positive whole number."
+msgstr "Zadejte kladné celé číslo."
+
+msgid "Enter the 32-character consent revision of the form."
+msgstr "Zadejte 32znakovou revizi souhlasu formuláře."
+
+msgid "Enter the Complianz policy ID as a positive whole number."
+msgstr "Zadejte ID zásad Complianzu jako kladné celé číslo."
+
+msgid "Enter the CookieConsent revision as a positive whole number."
+msgstr "Zadejte revizi CookieConsent jako kladné celé číslo."
+
+msgid "Enter the Cookiebot domain group ID (CBID)."
+msgstr "Zadejte ID skupiny domén Cookiebotu (CBID)."
+
+msgid "Enter the consent lifetime in seconds, at most 31536000."
+msgstr "Zadejte platnost souhlasu v sekundách, nejvýše 31536000."
+
+msgid "Enter the exact HTTPS origin of this website, without a path or trailing slash."
+msgstr "Zadejte přesný HTTPS origin tohoto webu bez cesty a koncového lomítka."
 
 msgid "External service and privacy"
 msgstr "Připojení služby a soukromí"
@@ -55,11 +124,17 @@ msgstr "Výchozí výška bez skriptu (px)"
 msgid "Festapp Unit runtime (existing behavior)"
 msgstr "Runtime jednotky Festapp (dosavadní chování)"
 
+msgid "Fill in the common fields and the fields of the selected banner. Fields of other banners are ignored."
+msgstr "Vyplňte společná pole a pole zvolené lišty. Pole ostatních lišt se nepoužijí."
+
 msgid "Fixed"
 msgstr "Pevná"
 
 msgid "Form URL"
 msgstr "Odkaz formuláře"
+
+msgid "Form consent revision"
+msgstr "Revize souhlasu formuláře"
 
 msgid "Form height"
 msgstr "Výška formuláře"
@@ -76,8 +151,26 @@ msgstr "Výška (px)"
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr "Při nejistém výsledku nákupu ověřte objednávku s pořadatelem před novým nákupem. Platby a dostupnost sedadel řídí služba. Deaktivace ani odinstalace pluginu nemaže objednávky ve službě; shortcode pak může být na stránce viditelný jako text."
 
+msgid "In the measurement settings of your organizer account, enable “Use consent from my website banner”."
+msgstr "V nastavení měření svého účtu pořadatele zapněte „Přebírat souhlas z lišty mého webu“."
+
+msgid "Keep exactly one Cookiebot uc.js loader on the page."
+msgstr "Ponechte na stránce právě jeden loader Cookiebotu uc.js."
+
+msgid "Link text"
+msgstr "Text odkazu"
+
+msgid "Marketing category"
+msgstr "Kategorie marketingu"
+
 msgid "Measurement destination"
 msgstr "Cíl měření"
+
+msgid "Notice valid from (UTC)"
+msgstr "Zásady platné od (UTC)"
+
+msgid "Only choices saved at or after this time transfer. Leave empty to use the moment you save."
+msgstr "Převezmou se jen volby uložené v tento okamžik nebo později. Ponecháte-li pole prázdné, použije se okamžik uložení."
 
 msgid "Open a new or existing WordPress page. Use the block inserter (+), search for vstupenky.online and paste your public form URL into the block."
 msgstr "Otevřete novou nebo existující stránku ve WordPressu. Přes tlačítko + vyhledejte blok vstupenky.online a vložte do něj veřejný odkaz formuláře."
@@ -91,6 +184,18 @@ msgstr "Otevřít formulář v nové záložce"
 msgid "Open vstupenky.online"
 msgstr "Otevřít vstupenky.online"
 
+msgid "Optional. Defaults to analytics."
+msgstr "Nepovinné. Výchozí je analytics."
+
+msgid "Optional. Defaults to marketing."
+msgstr "Nepovinné. Výchozí je marketing."
+
+msgid "Optional. When a visitor has already saved a choice in your website cookie banner, a form opened from a link on this website can take over that choice instead of asking again. Withdrawal on the website also reaches the open form. Without a saved choice, or when anything does not match, the form shows its own cookie notice."
+msgstr "Nepovinné. Pokud návštěvník už uložil volbu v liště cookies vašeho webu, formulář otevřený z odkazu na tomto webu ji může převzít a nemusí se ptát znovu. Odvolání souhlasu na webu se přenese i do otevřeného formuláře. Bez uložené volby nebo při jakékoli neshodě formulář zobrazí vlastní lištu cookies."
+
+msgid "Organization ID"
+msgstr "ID organizace"
+
 msgid "Paid sales also require your payment and organizer details in the service."
 msgstr "Placený prodej vyžaduje také nastavení plateb a údajů pořadatele ve službě."
 
@@ -99,6 +204,24 @@ msgstr "Vložte veřejný odkaz uloženého formuláře. Objednávky spravujete 
 
 msgid "Privacy policy"
 msgstr "Ochrana osobních údajů"
+
+msgid "Required in vstupenky.online"
+msgstr "Potřebné nastavení ve vstupenky.online"
+
+msgid "Review the setting"
+msgstr "Zkontrolovat nastavení"
+
+msgid "Save settings"
+msgstr "Uložit nastavení"
+
+msgid "Saving is your assertion that the archived notice of your banner covers the form, its analytics and marketing purposes, recipients and the separate measurement domain. It is not a visitor consent record. Values are never updated automatically. When the notice or the form consent revision changes, update them here; until then forms show their own notice."
+msgstr "Uložením potvrzujete, že archivované znění zásad vaší lišty pokrývá formulář, jeho analytické a marketingové účely, příjemce a oddělenou doménu měření. Nejde o záznam souhlasu návštěvníka. Hodnoty se nikdy neaktualizují automaticky. Při změně zásad nebo revize souhlasu formuláře je upravte zde; do té doby formuláře zobrazují vlastní lištu."
+
+msgid "Select"
+msgstr "Vyberte"
+
+msgid "Select the consent banner used on this website."
+msgstr "Vyberte lištu souhlasů, kterou tento web používá."
 
 msgid "Sell tickets and collect event registrations with vstupenky.online forms. Add a Gutenberg block or shortcode to your WordPress site."
 msgstr "Prodávejte vstupenky a přijímejte registrace na akce pomocí formulářů vstupenky.online. Vložte je na svůj web blokem Gutenberg nebo shortcodem."
@@ -112,6 +235,9 @@ msgstr "Ochrana osobních údajů služby"
 msgid "Service terms"
 msgstr "Podmínky služby"
 
+msgid "Set the notice time to now and save"
+msgstr "Nastavit platnost zásad na teď a uložit"
+
 msgid "Shortcode and height"
 msgstr "Shortcode a výška"
 
@@ -121,17 +247,59 @@ msgstr "Shortcode, možnosti zobrazení a informace o službě"
 msgid "Sign in to vstupenky.online, open your event and save the form."
 msgstr "Přihlaste se do vstupenky.online, otevřete svou akci a uložte formulář."
 
+msgid "Status: enabled on this website."
+msgstr "Stav: na tomto webu zapnuto."
+
+msgid "Status: off. Forms opened in a new tab show their own cookie notice."
+msgstr "Stav: vypnuto. Formuláře otevřené v nové záložce zobrazují vlastní lištu cookies."
+
+msgid "Suggested from this website. It is saved only when you click Save settings."
+msgstr "Navrženo podle tohoto webu. Uloží se až kliknutím na Uložit nastavení."
+
 msgid "Support"
 msgstr "Podpora"
+
+msgid "Take over the website cookie choice in forms opened in a new tab"
+msgstr "Převzít volbu cookies webu ve formulářích otevřených v nové záložce"
+
+msgid "Text link"
+msgstr "Textový odkaz"
 
 msgid "The editor shows the block settings. Save the page and open its preview to see the real form, then publish when you are ready."
 msgstr "V editoru uvidíte nastavení bloku. Stránku uložte a otevřete její náhled, kde se zobrazí skutečný formulář. Pak ji můžete zveřejnit."
 
+msgid "The exact HTTPS address of this website without a path, as used by Cookiebot."
+msgstr "Přesná HTTPS adresa tohoto webu bez cesty, jak ji používá Cookiebot."
+
 msgid "The form is not configured. Enter a saved public https://vstupenky.online/form/ URL without extra parameters."
 msgstr "Formulář není nastaven. Vložte veřejný uložený odkaz https://vstupenky.online/form/… bez dalších parametrů."
 
+msgid "The form opens in a new tab and takes over the cookie choice saved in the website banner."
+msgstr "Formulář se otevře v nové záložce a převezme volbu cookies uloženou v liště webu."
+
+msgid "The form opens in a new tab with its own cookie notice. Cookie choice transfer can be enabled under Settings."
+msgstr "Formulář se otevře v nové záložce s vlastní lištou cookies. Převzetí volby cookies zapnete v Nastavení."
+
+msgid "The link shortcode and the form link block open the form in a new tab. Use style=\"link\" for a text link instead of a button."
+msgstr "Shortcode odkazu i blok odkazu na formulář otevírají formulář v nové záložce. Pro textový odkaz místo tlačítka použijte style=\"link\"."
+
+msgid "The policy ID whose archived notice covers the form. Complianz increases it when you ask visitors to consent again. Use opt-in consent without consent per service or forced statistics."
+msgstr "ID zásad, jejichž archivované znění pokrývá formulář. Complianz ho zvýší, když návštěvníky požádáte o nový souhlas. Použijte režim opt-in bez souhlasu po jednotlivých službách a bez vynucených statistik."
+
+msgid "The positive revision configured in CookieConsent with mode opt-in. The website must expose the library as window.CookieConsent."
+msgstr "Kladná revize nastavená v CookieConsent v režimu opt-in. Web musí knihovnu zpřístupnit jako window.CookieConsent."
+
 msgid "The published form connects to vstupenky.online and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
 msgstr "Zveřejněný formulář se připojuje k vstupenky.online a načítá /embed.js. Pro existující bloky a shortcode zůstává výchozí měření v jednotce. Nové bloky a příklady shortcode používají měření webu, doporučené pro weby s vlastním GTM a souhlasovou lištou. Měření webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky přes dataLayer. Před zapnutím nastavte značky webu, správce souhlasů a informace o soukromí. Plugin neukládá do WordPressu objednávky kupujících ani přístupy ke službě. Aktivace, tento návod ani editor vzdálený formulář nenačítají."
+
+msgid "The value analytics.consent_revision from the form metadata. Ask vstupenky.online support if you do not have it. It changes when the measurement notice, its purposes or recipients change."
+msgstr "Hodnota analytics.consent_revision z metadat formuláře. Pokud ji nemáte, vyžádejte si ji od podpory vstupenky.online. Mění se se změnou zásad měření, jejich účelů nebo příjemců."
+
+msgid "The website now reports %s. Transfer is refused until you confirm that the notice behind the new value covers the form."
+msgstr "Web nyní uvádí %s. Převzetí je odmítnuto, dokud nepotvrdíte, že zásady nové hodnoty pokrývají formulář."
+
+msgid "This website must use HTTPS. Add its address under “My websites” and wait until the platform approves it."
+msgstr "Tento web musí používat HTTPS. Přidejte jeho adresu do „Moje weby“ a počkejte na schválení platformou."
 
 msgid "Ticket sales - vstupenky.online"
 msgstr "Prodej vstupenek - vstupenky.online"
@@ -139,8 +307,20 @@ msgstr "Prodej vstupenek - vstupenky.online"
 msgid "Tickets on your website"
 msgstr "Vstupenky na vašem webu"
 
+msgid "Transfer"
+msgstr "Převzetí"
+
+msgid "Unit ID"
+msgstr "ID jednotky"
+
+msgid "Use after you renew consents in Cookiebot because the notice changed."
+msgstr "Použijte po obnovení souhlasů v Cookiebotu kvůli změně zásad."
+
 msgid "Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments."
 msgstr "Použijte https://vstupenky.online/form/saved-slug bez parametrů a osobního fragmentu."
+
+msgid "Use letters, digits, dots, colons, hyphens or underscores."
+msgstr "Použijte písmena, číslice, tečky, dvojtečky, pomlčky nebo podtržítka."
 
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your vstupenky.online account."
 msgstr "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Objednávky, platby a odbavení spravujete ve svém účtu vstupenky.online."
@@ -148,14 +328,32 @@ msgstr "Návštěvníci nakupují vstupenky na vaší zveřejněné stránce. Ob
 msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
 msgstr "Vzhled všech vložení řídí pouze uložené nastavení formuláře ve službě. Otevřete Vzhled formuláře, nastavte Přizpůsobit vzhled webu a formulář uložte. Změna se projeví při příštím načtení bez výměny kódu. WordPress ji nemůže přepsat. Plánek sálu si ponechá vlastní vzhled."
 
+msgid "Website cookie banner"
+msgstr "Lišta cookies webu"
+
 msgid "Website dataLayer"
 msgstr "Webový dataLayer"
 
 msgid "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
 msgstr "Režim webu je doporučen pro weby s vlastním GTM a souhlasovou lištou. Nová vložení používají režim webu. Existující obsah bez nastavení zůstává v režimu jednotky. Režim jednotky čte Consent Mode webu pouze po zapnutí volby „Přebírat souhlas z lišty mého webu“ ve Festappu a potvrzení, že lišta pokrývá vložený formulář. Režim webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky. Doména webu musí být schválena ve Festappu."
 
+msgid "Website origin"
+msgstr "Origin webu"
+
+msgid "When enabled, the service helper loads on every page, and new-tab links to public forms in content and menus are marked. Links with download, referrerpolicy or a page-wide referrer policy keep their usual behavior. Links opening in the same tab are not changed."
+msgstr "Po zapnutí se pomocný skript služby načítá na každé stránce a odkazy na veřejné formuláře otevírané v nové záložce v obsahu a menu se označí. Odkazy s download, referrerpolicy nebo s pravidlem referreru pro celou stránku se chovají jako dosud. Odkazy otevírané ve stejné záložce se nemění."
+
+msgid "WordPress cannot read these settings from the service. If either is missing, nothing is transferred and the form shows its own notice."
+msgstr "WordPress tato nastavení ze služby nepřečte. Pokud některé chybí, nic se nepřevezme a formulář zobrazí vlastní lištu."
+
 msgid "vstupenky.online"
 msgstr "vstupenky.online"
+
+msgid "vstupenky.online form link"
+msgstr "Odkaz na formulář vstupenky.online"
+
+msgid "vstupenky.online: your website cookie banner settings changed. Forms opened in a new tab show their own cookie notice until you review and confirm the cookie choice transfer."
+msgstr "vstupenky.online: nastavení lišty cookies vašeho webu se změnilo. Formuláře otevřené v nové záložce zobrazují vlastní lištu cookies, dokud převzetí volby cookies nezkontrolujete a nepotvrdíte."
 
 msgctxt "block title"
 msgid "vstupenky.online"
@@ -164,4 +362,12 @@ msgstr "vstupenky.online"
 msgctxt "block description"
 msgid "Sell tickets using a saved public vstupenky.online form."
 msgstr "Prodej vstupenek pomocí uloženého veřejného formuláře vstupenky.online."
+
+msgctxt "block title"
+msgid "vstupenky.online form link"
+msgstr "Odkaz na formulář vstupenky.online"
+
+msgctxt "block description"
+msgid "A button or link opening a saved public vstupenky.online form in a new tab."
+msgstr "Tlačítko nebo odkaz, který otevře uložený veřejný formulář vstupenky.online v nové záložce."
 

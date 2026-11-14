@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: Festapp Tickets 1.0.2\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: festapp-tickets\n"
+msgstr "Project-Id-Version: Festapp Tickets 1.0.3\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: festapp-tickets\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -12,10 +12,25 @@ msgstr ""
 msgid "3. Preview and publish"
 msgstr ""
 
+msgid "A button or link opening a saved public Festapp Tickets form in a new tab."
+msgstr ""
+
+msgid "Add %s under “My websites” and wait until the platform approves it."
+msgstr ""
+
 msgid "After publication, visitors connect to Festapp Tickets and enter data directly into the service. Both height modes load its /embed.js. The remote form is not loaded in the editor."
 msgstr ""
 
+msgid "Analytics and marketing need different categories."
+msgstr ""
+
+msgid "Analytics category"
+msgstr ""
+
 msgid "Appearance is managed in the saved form. Open Forms, select this form, choose Design and save your changes."
+msgstr ""
+
+msgid "At most the consent expiry configured in Cookiebot, and at most 31536000. 180 days is 15552000."
 msgstr ""
 
 msgid "Automatic"
@@ -27,7 +42,31 @@ msgstr ""
 msgid "Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr ""
 
+msgid "Button"
+msgstr ""
+
+msgid "Buy tickets"
+msgstr ""
+
 msgid "Check the public URL. The server accepts only an allowed form address."
+msgstr ""
+
+msgid "Complianz policy ID"
+msgstr ""
+
+msgid "Confirm and save the new value"
+msgstr ""
+
+msgid "Consent lifetime (seconds)"
+msgstr ""
+
+msgid "Cookie choice in forms opened in a new tab"
+msgstr ""
+
+msgid "Cookie choice transfer stays off until every required field is valid."
+msgstr ""
+
+msgid "CookieConsent revision"
 msgstr ""
 
 msgid "Copy the public URL in the form https://tickets.festapp.net/form/saved-slug. Do not use a personal order link or administration URL."
@@ -45,10 +84,37 @@ msgstr ""
 msgid "Describe this form for visitors using screen readers. This does not rename the event."
 msgstr ""
 
+msgid "Display as"
+msgstr ""
+
+msgid "Domain group ID (CBID)"
+msgstr ""
+
 msgid "Embed a form from your Festapp Tickets account. Manage events, orders and admission in the service."
 msgstr ""
 
-msgid "Embed a saved Festapp Tickets ticket form with a block or shortcode."
+msgid "Enter a UTC time such as 2026-11-11T00:00:00.000Z."
+msgstr ""
+
+msgid "Enter a positive whole number."
+msgstr ""
+
+msgid "Enter the 32-character consent revision of the form."
+msgstr ""
+
+msgid "Enter the Complianz policy ID as a positive whole number."
+msgstr ""
+
+msgid "Enter the CookieConsent revision as a positive whole number."
+msgstr ""
+
+msgid "Enter the Cookiebot domain group ID (CBID)."
+msgstr ""
+
+msgid "Enter the consent lifetime in seconds, at most 31536000."
+msgstr ""
+
+msgid "Enter the exact HTTPS origin of this website, without a path or trailing slash."
 msgstr ""
 
 msgid "External service and privacy"
@@ -60,13 +126,25 @@ msgstr ""
 msgid "Festapp Tickets"
 msgstr ""
 
+msgid "Festapp Tickets form link"
+msgstr ""
+
+msgid "Festapp Tickets: your website cookie banner settings changed. Forms opened in a new tab show their own cookie notice until you review and confirm the cookie choice transfer."
+msgstr ""
+
 msgid "Festapp Unit runtime (existing behavior)"
+msgstr ""
+
+msgid "Fill in the common fields and the fields of the selected banner. Fields of other banners are ignored."
 msgstr ""
 
 msgid "Fixed"
 msgstr ""
 
 msgid "Form URL"
+msgstr ""
+
+msgid "Form consent revision"
 msgstr ""
 
 msgid "Form height"
@@ -84,7 +162,25 @@ msgstr ""
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr ""
 
+msgid "In the measurement settings of your organizer account, enable “Use consent from my website banner”."
+msgstr ""
+
+msgid "Keep exactly one Cookiebot uc.js loader on the page."
+msgstr ""
+
+msgid "Link text"
+msgstr ""
+
+msgid "Marketing category"
+msgstr ""
+
 msgid "Measurement destination"
+msgstr ""
+
+msgid "Notice valid from (UTC)"
+msgstr ""
+
+msgid "Only choices saved at or after this time transfer. Leave empty to use the moment you save."
 msgstr ""
 
 msgid "Open Festapp Tickets"
@@ -99,6 +195,18 @@ msgstr ""
 msgid "Open the form in a new tab"
 msgstr ""
 
+msgid "Optional. Defaults to analytics."
+msgstr ""
+
+msgid "Optional. Defaults to marketing."
+msgstr ""
+
+msgid "Optional. When a visitor has already saved a choice in your website cookie banner, a form opened from a link on this website can take over that choice instead of asking again. Withdrawal on the website also reaches the open form. Without a saved choice, or when anything does not match, the form shows its own cookie notice."
+msgstr ""
+
+msgid "Organization ID"
+msgstr ""
+
 msgid "Paid sales also require your payment and organizer details in the service."
 msgstr ""
 
@@ -106,6 +214,27 @@ msgid "Paste the saved public form URL. Manage orders in Festapp Tickets."
 msgstr ""
 
 msgid "Privacy policy"
+msgstr ""
+
+msgid "Required in Festapp Tickets"
+msgstr ""
+
+msgid "Review the setting"
+msgstr ""
+
+msgid "Save settings"
+msgstr ""
+
+msgid "Saving is your assertion that the archived notice of your banner covers the form, its analytics and marketing purposes, recipients and the separate measurement domain. It is not a visitor consent record. Values are never updated automatically. When the notice or the form consent revision changes, update them here; until then forms show their own notice."
+msgstr ""
+
+msgid "Select"
+msgstr ""
+
+msgid "Select the consent banner used on this website."
+msgstr ""
+
+msgid "Sell tickets and collect event registrations with Festapp Tickets forms. Add a Gutenberg block or shortcode to your WordPress site."
 msgstr ""
 
 msgid "Sell tickets using a saved public Festapp Tickets form."
@@ -117,6 +246,9 @@ msgstr ""
 msgid "Service terms"
 msgstr ""
 
+msgid "Set the notice time to now and save"
+msgstr ""
+
 msgid "Shortcode and height"
 msgstr ""
 
@@ -126,16 +258,58 @@ msgstr ""
 msgid "Sign in to Festapp Tickets, open your event and save the form."
 msgstr ""
 
+msgid "Status: enabled on this website."
+msgstr ""
+
+msgid "Status: off. Forms opened in a new tab show their own cookie notice."
+msgstr ""
+
+msgid "Suggested from this website. It is saved only when you click Save settings."
+msgstr ""
+
 msgid "Support"
+msgstr ""
+
+msgid "Take over the website cookie choice in forms opened in a new tab"
+msgstr ""
+
+msgid "Text link"
 msgstr ""
 
 msgid "The editor shows the block settings. Save the page and open its preview to see the real form, then publish when you are ready."
 msgstr ""
 
+msgid "The exact HTTPS address of this website without a path, as used by Cookiebot."
+msgstr ""
+
 msgid "The form is not configured. Enter a saved public https://tickets.festapp.net/form/ URL without extra parameters."
 msgstr ""
 
+msgid "The form opens in a new tab and takes over the cookie choice saved in the website banner."
+msgstr ""
+
+msgid "The form opens in a new tab with its own cookie notice. Cookie choice transfer can be enabled under Settings."
+msgstr ""
+
+msgid "The link shortcode and the form link block open the form in a new tab. Use style=\"link\" for a text link instead of a button."
+msgstr ""
+
+msgid "The policy ID whose archived notice covers the form. Complianz increases it when you ask visitors to consent again. Use opt-in consent without consent per service or forced statistics."
+msgstr ""
+
+msgid "The positive revision configured in CookieConsent with mode opt-in. The website must expose the library as window.CookieConsent."
+msgstr ""
+
 msgid "The published form connects to Festapp Tickets and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
+msgstr ""
+
+msgid "The value analytics.consent_revision from the form metadata. Ask Festapp Tickets support if you do not have it. It changes when the measurement notice, its purposes or recipients change."
+msgstr ""
+
+msgid "The website now reports %s. Transfer is refused until you confirm that the notice behind the new value covers the form."
+msgstr ""
+
+msgid "This website must use HTTPS. Add its address under “My websites” and wait until the platform approves it."
 msgstr ""
 
 msgid "Ticket sales - Festapp Tickets"
@@ -144,7 +318,19 @@ msgstr ""
 msgid "Tickets on your website"
 msgstr ""
 
+msgid "Transfer"
+msgstr ""
+
+msgid "Unit ID"
+msgstr ""
+
+msgid "Use after you renew consents in Cookiebot because the notice changed."
+msgstr ""
+
 msgid "Use https://tickets.festapp.net/form/saved-slug without query parameters or personal fragments."
+msgstr ""
+
+msgid "Use letters, digits, dots, colons, hyphens or underscores."
 msgstr ""
 
 msgid "Visitors buy tickets on your published page. Manage orders, payments and admission in your Festapp Tickets account."
@@ -153,10 +339,22 @@ msgstr ""
 msgid "Website appearance is controlled only by the saved form setting in the service. Open the form appearance settings, choose Match website appearance and save the form. The choice applies to every embed on subsequent page loads without replacing embed code. WordPress cannot override it. The seating plan keeps its own appearance."
 msgstr ""
 
+msgid "Website cookie banner"
+msgstr ""
+
 msgid "Website dataLayer"
 msgstr ""
 
 msgid "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
+msgstr ""
+
+msgid "Website origin"
+msgstr ""
+
+msgid "When enabled, the service helper loads on every page, and new-tab links to public forms in content and menus are marked. Links with download, referrerpolicy or a page-wide referrer policy keep their usual behavior. Links opening in the same tab are not changed."
+msgstr ""
+
+msgid "WordPress cannot read these settings from the service. If either is missing, nothing is transferred and the form shows its own notice."
 msgstr ""
 
 msgctxt "block title"
@@ -165,5 +363,13 @@ msgstr ""
 
 msgctxt "block description"
 msgid "Sell tickets using a saved public Festapp Tickets form."
+msgstr ""
+
+msgctxt "block title"
+msgid "Festapp Tickets form link"
+msgstr ""
+
+msgctxt "block description"
+msgid "A button or link opening a saved public Festapp Tickets form in a new tab."
 msgstr ""
 

@@ -22,18 +22,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 require_once __DIR__ . '/includes/embed.php';
+require_once __DIR__ . '/includes/consent.php';
 require_once __DIR__ . '/includes/admin.php';
 
 /** Register the block and shortcode backed by one renderer. */
 function register() {
 	load_plugin_textdomain( '@@SLUG@@', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	wp_register_script( '@@SLUG@@-editor', plugins_url( 'blocks/ticket-form/editor.js', __FILE__ ), array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n' ), '@@VERSION@@', true );
-	wp_localize_script( '@@SLUG@@-editor', '@@EDITOR_GLOBAL@@', array( 'origins' => allowed_origins() ) );
+	wp_localize_script(
+		'@@SLUG@@-editor',
+		'@@EDITOR_GLOBAL@@',
+		array(
+			'origins'         => allowed_origins(),
+			'consentTransfer' => null !== consent_config(),
+		)
+	);
 	wp_set_script_translations( '@@SLUG@@-editor', '@@SLUG@@', __DIR__ . '/languages' );
 	wp_register_style( '@@SLUG@@', plugins_url( 'blocks/ticket-form/style.css', __FILE__ ), array(), '@@VERSION@@' );
 	register_block_type( __DIR__ . '/blocks/ticket-form', array( 'render_callback' => __NAMESPACE__ . '\render' ) );
+	register_block_type( __DIR__ . '/blocks/form-link', array( 'render_callback' => __NAMESPACE__ . '\render_link' ) );
 	add_shortcode( '@@SHORTCODE@@', __NAMESPACE__ . '\shortcode' );
+	add_shortcode( '@@SHORTCODE@@_link', __NAMESPACE__ . '\link_shortcode' );
 }
 add_action( 'init', __NAMESPACE__ . '\register' );
 add_action( 'admin_menu', __NAMESPACE__ . '\admin_menu' );
+add_action( 'admin_init', __NAMESPACE__ . '\register_settings' );
+add_action( 'admin_notices', __NAMESPACE__ . '\consent_notice' );
+// Cookie choice transfer: inert unless enabled with a valid saved configuration.
+add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_consent_helper' );
+add_filter( 'wp_script_attributes', __NAMESPACE__ . '\consent_script_attributes' );
+add_filter( 'the_content', __NAMESPACE__ . '\mark_consent_links', 20 );
+add_filter( 'widget_text_content', __NAMESPACE__ . '\mark_consent_links', 20 );
+add_filter( 'widget_block_content', __NAMESPACE__ . '\mark_consent_links', 20 );
+add_filter( 'render_block', __NAMESPACE__ . '\mark_block_links', 20 );
+add_filter( 'nav_menu_link_attributes', __NAMESPACE__ . '\mark_menu_link', 20 );
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), __NAMESPACE__ . '\plugin_action_links' );

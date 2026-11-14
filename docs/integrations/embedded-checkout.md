@@ -430,6 +430,16 @@ novou revizí. Pro jiné CMP zůstává `FestappEmbed.connectMeasurementSource`;
 přesný kontrakt je v dokumentaci měření. Bez adaptéru se odkaz řídí místní lištou.
 Dosavadní GCM cesta vložených formulářů bez napojeného zdroje se nemění.
 
+Doplněk vstupenky.online pro WordPress (od verze 1.0.9) nastaví převzetí pro
+Complianz, Cookiebot i CookieConsent v3 v **Nastavení > vstupenky.online**.
+Hodnoty zjištěné z aktivního Complianzu, Cookiebotu a adresy webu jsou jen
+předvyplněné návrhy; uloží se až potvrzením správce a nikdy se nemění
+automaticky. Při pozdější neshodě doplněk upozorní správce a nabídne výslovné
+potvrzení nové hodnoty, do té doby se nic nepřevezme. Po zapnutí načítá
+`embed.js` na všech veřejných stránkách a označí odkaz pod vloženým formulářem,
+blok a shortcode odkazu na formulář i existující odkazy na veřejné formuláře
+otevírané v nové záložce v obsahu a menu; odebere jim jen `noopener`/`noreferrer`.
+
 Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
 karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,
 referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Bez

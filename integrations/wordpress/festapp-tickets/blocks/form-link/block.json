@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "festapp-tickets/form-link",
+  "version": "1.0.3",
+  "title": "Festapp Tickets form link",
+  "category": "widgets",
+  "icon": "external",
+  "description": "A button or link opening a saved public Festapp Tickets form in a new tab.",
+  "textdomain": "festapp-tickets",
+  "attributes": {
+    "url": {
+      "type": "string",
+      "default": ""
+    },
+    "text": {
+      "type": "string",
+      "default": ""
+    },
+    "style": {
+      "type": "string",
+      "enum": [
+        "button",
+        "link"
+      ],
+      "default": "button"
+    }
+  },
+  "supports": {
+    "html": false
+  },
+  "editorScript": "festapp-tickets-editor",
+  "style": "festapp-tickets"
+}

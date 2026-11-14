@@ -10,7 +10,7 @@ parser.add_argument('--product',choices=[p['slug'] for p in PRODUCTS])
 selected=parser.parse_args().product
 PRODUCTS=[p for p in PRODUCTS if selected is None or p['slug']==selected]
 CS=json.loads((SHARED/'cs_CZ.json').read_text())
-FILES={'plugin.php.in':'{slug}.php','embed.php.in':'includes/embed.php','admin.php.in':'includes/admin.php','editor.js.in':'blocks/ticket-form/editor.js','style.css.in':'blocks/ticket-form/style.css','block.json.in':'blocks/ticket-form/block.json','readme.txt.in':'readme.txt'}
+FILES={'plugin.php.in':'{slug}.php','embed.php.in':'includes/embed.php','consent.php.in':'includes/consent.php','uninstall.php.in':'uninstall.php','admin.php.in':'includes/admin.php','editor.js.in':'blocks/ticket-form/editor.js','style.css.in':'blocks/ticket-form/style.css','block.json.in':'blocks/ticket-form/block.json','link-block.json.in':'blocks/form-link/block.json','readme.txt.in':'readme.txt'}
 
 def replace(source,p):
  values={k.upper():str(v) for k,v in p.items()}
@@ -43,7 +43,7 @@ for p in PRODUCTS:
  for name,text in generated.items():
   if name.endswith(('.php','.js')):
    for match in re.finditer(r"(?:__|esc_html__|esc_html_e)\(\s*'((?:\\.|[^'\\])*)'\s*,\s*'"+re.escape(slug)+"'",text):messages.add(match[1].replace("\\'","'").replace('\\\\','\\'))
- block=json.loads(generated['blocks/ticket-form/block.json']);messages.update([p['name'],block['description']])
+ block=json.loads(generated['blocks/ticket-form/block.json']);link=json.loads(generated['blocks/form-link/block.json']);messages.update([p['name'],block['description'],link['title'],link['description']])
  description=re.search(r' \* Description: (.+)',generated[slug+'.php'])[1];messages.add(description)
  translated={replace(k,p):replace(v,p) for k,v in CS.items()}
  header=f"Project-Id-Version: {p['name']} {p['version']}\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: {slug}\n"
@@ -57,7 +57,7 @@ for p in PRODUCTS:
   if value:catalog[message]=value;jed[message]=[value]
  # Block metadata uses gettext contexts; context belongs in the key, never
  # in the visible translated value (also used by the plugin list).
- for context,message in [('block title',p['name']),('block description',block['description'])]:
+ for context,message in [('block title',p['name']),('block description',block['description']),('block title',link['title']),('block description',link['description'])]:
   value=translated.get(message,'')
   entry='msgctxt '+quote(context)+'\nmsgid '+quote(message)+'\n'
   po+=entry+'msgstr '+quote(value)+'\n\n';pot+=entry+'msgstr ""\n\n'

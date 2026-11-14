@@ -41,4 +41,29 @@
         name: 'website', title: 'vstupenky.online', isDefault: true,
         attributes: {measurement: 'host'}, scope: ['inserter'],
     });
+    // A link or button to the standalone form. PHP renders and validates it.
+    blocks.registerBlockType('vstupenky-online/form-link', {
+        edit: function (props) {
+            const a = props.attributes;
+            const settings = window.vstupenkyOnlineEditor;
+            const plausible = settings.origins.some((origin) => a.url.startsWith(origin + '/form/') && /^(?:[A-Za-z0-9_-]|%[A-F0-9]{2})+$/.test(a.url.slice(origin.length + 6)));
+            return el('div', editor.useBlockProps({className: 'vstupenky-online-editor'}),
+                el('h3', null, __('vstupenky.online form link', 'vstupenky-online')),
+                el(components.TextControl, {label: __('Form URL', 'vstupenky-online'), value: a.url, type: 'url',
+                    placeholder: 'https://vstupenky.online/form/saved-slug',
+                    onChange: (url) => props.setAttributes({url}),
+                    help: __('Use https://vstupenky.online/form/saved-slug without query parameters or personal fragments.', 'vstupenky-online')}),
+                a.url && !plausible ? el(components.Notice, {status: 'warning', isDismissible: false}, __('Check the public URL. The server accepts only an allowed form address.', 'vstupenky-online')) : null,
+                el(components.TextControl, {label: __('Link text', 'vstupenky-online'), value: a.text, placeholder: __('Buy tickets', 'vstupenky-online'),
+                    onChange: (text) => props.setAttributes({text})}),
+                el(components.SelectControl, {label: __('Display as', 'vstupenky-online'), value: a.style,
+                    options: [{label: __('Button', 'vstupenky-online'), value: 'button'}, {label: __('Text link', 'vstupenky-online'), value: 'link'}],
+                    onChange: (style) => props.setAttributes({style})}),
+                el('p', null, settings.consentTransfer
+                    ? __('The form opens in a new tab and takes over the cookie choice saved in the website banner.', 'vstupenky-online')
+                    : __('The form opens in a new tab with its own cookie notice. Cookie choice transfer can be enabled under Settings.', 'vstupenky-online'))
+            );
+        },
+        save: function () { return null; }
+    });
 })(window.wp.blocks, window.wp.element, window.wp.blockEditor, window.wp.components, window.wp.i18n);

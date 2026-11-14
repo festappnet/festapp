@@ -20,7 +20,8 @@ foreach ( array( array( 'vstupenky-online', 'VstupenkyOnline', 'vstupenky.online
     onboarding_assert( $name === _x( $name, 'block title', $slug ), 'Contextual Gutenberg block name translates' );
     onboarding_assert( false === strpos( _x( 'Sell tickets using a saved public ' . $name . ' form.', 'block description', $slug ), 'Sell tickets' ), 'Contextual Gutenberg description translates' );
     ob_start(); call_user_func( $namespace . '\admin_page' ); $html = ob_get_clean();
-    onboarding_assert( 3 === substr_count( $html, 'class="card"' ) && false !== strpos( $html, 'post-new.php?post_type=page' ), 'Three steps and a native page creation action' );
+    // Three onboarding steps; the optional cookie choice settings card has an id.
+    onboarding_assert( 3 === substr_count( $html, 'class="card">' ) && 1 === substr_count( $html, 'class="card" id="' . $slug . '-consent"' ) && false !== strpos( $html, 'post-new.php?post_type=page' ), 'Three steps and a native page creation action' );
     onboarding_assert( false === strpos( $html, '<iframe' ) && false === strpos( $html, '<script' ), 'Onboarding does not load the service' );
     $subscriber = get_user_by( 'login', 'vo-subscriber' );
     wp_set_current_user( $subscriber->ID );

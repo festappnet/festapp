@@ -3,4 +3,5 @@ const run=(...args)=>{const r=spawnSync('node',['scripts/environment.mjs','run',
 try {
  run('config','set','WP_ENVIRONMENT_TYPE','production');
  console.log(run('eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/production-gate.php'));
+ console.log(run('eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-production.php'));
 } finally {run('config','set','WP_ENVIRONMENT_TYPE','local');}

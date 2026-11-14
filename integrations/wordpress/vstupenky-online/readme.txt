@@ -4,7 +4,7 @@ Tags: tickets, events, registration, gutenberg, shortcode
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,8 @@ The free plugin connects WordPress to the Czech vstupenky.online service. An org
 * Website appearance controlled centrally in the saved form settings.
 * A Czech interface for plugin setup and the block editor.
 * Optional measurement integration for websites with their own GTM and consent banner.
+* Optional transfer of the website's saved Complianz, Cookiebot or CookieConsent v3 choice to forms opened in a new tab.
+* A form link block and shortcode that open the form in a new tab.
 
 = Get started in three steps =
 
@@ -67,6 +69,16 @@ New blocks and the shortcode examples use Website dataLayer, recommended for web
 
 The measurement setting selects a destination; it does not enable tracking or grant consent. Both modes require an approved website origin and enabled measurement in Festapp. Unit mode reads website Consent Mode only after the organizer enables Use consent from my website banner in Festapp and confirms that the banner covers the embedded form.
 
+= Cookie choice in forms opened in a new tab =
+
+A form opened in a new tab normally shows its own cookie notice. Optionally, it can take over the choice a visitor already saved in the website's Complianz, Cookiebot or CookieConsent v3 banner, including a refusal. Withdrawal on the website also reaches the open form. Configure it under Settings > vstupenky.online. It is off by default.
+
+The organizer must also enable Use consent from my website banner in vstupenky.online and have this website's HTTPS origin approved under My websites. Enter the organization ID, Unit ID and the form's consent revision, and the banner's policy ID, CBID and validity, or revision. Saving these values asserts that the banner's archived notice covers the form; they are never generated or updated automatically. When anything does not match, nothing is transferred and the form shows its own notice. Detected values from active Complianz and Cookiebot plugins are only suggestions until you save them.
+
+When enabled, https://vstupenky.online/embed.js loads on every public page, and links to public forms that open in a new tab in content, widgets and menus are marked. Marked links no longer use the noopener and noreferrer link relations, so the form receives the website origin as referrer and can talk to the website tab. Links with download or referrerpolicy are not changed. The form link block and the link shortcode create marked links:
+
+    [vstupenky_online_link url="https://vstupenky.online/form/saved-slug" text="Buy tickets"]
+
 = Documentation and support =
 
 Setup guide: https://vstupenky.online/napoveda/wordpress/
@@ -76,9 +88,9 @@ Support: https://vstupenky.online/support/
 
 = External service and privacy =
 
-On a published page with a configured form, the visitor's browser connects to https://vstupenky.online to load /form/saved-slug?embed=1. Both height modes also load https://vstupenky.online/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded.
+On a published page with a configured form, the visitor's browser connects to https://vstupenky.online to load /form/saved-slug?embed=1. Both height modes also load https://vstupenky.online/embed.js once per page. With the optional cookie choice transfer enabled, every public page loads it, and a form opened from a marked link receives the website origin as referrer and exchanges the saved analytics and marketing choice with the website tab. No choice is stored in URLs or new cookies by WordPress. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded.
 
-The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and requires the organizer's explicit consent-bridge setting before reading website Consent Mode. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
+The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and requires the organizer's explicit consent-bridge setting before reading website Consent Mode. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, and optionally the cookie choice transfer settings in one option, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin.
 
 Service: https://vstupenky.online/
 Terms: https://vstupenky.online/terms/
@@ -122,7 +134,7 @@ Use the exact saved public form URL on https://vstupenky.online. Other domains, 
 Allow https://vstupenky.online in frame-src and, for the helper, script-src. Do not add an unverified iframe sandbox. Use fixed mode or the standalone link if necessary. Never automatically repeat a purchase after an uncertain result; check with the organizer first.
 
 = What happens on deactivation or deletion? =
-The plugin owns no tables, options or remote orders, and performs no remote writes on activation, deactivation or uninstall. Service orders remain. Deactivation can expose raw shortcode text; remove the block/shortcode or replace it with a normal public link.
+The plugin owns no tables or remote orders, and performs no remote writes on activation, deactivation or uninstall. Its only option, the optional cookie choice transfer settings, is deleted on uninstall. Service orders remain. Deactivation can expose raw shortcode text; remove the block/shortcode or replace it with a normal public link.
 
 == Screenshots ==
 
@@ -133,6 +145,9 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 5. Seat selection in the embedded form.
 
 == Changelog ==
+
+= 1.0.9 =
+* Optionally take over the website's saved Complianz, Cookiebot or CookieConsent v3 choice in forms opened in a new tab; add a form link block and shortcode.
 
 = 1.0.8 =
 * Improve ticket sales and event registration documentation and Czech translations.
@@ -160,5 +175,5 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Upgrade Notice ==
 
-= 1.0.8 =
-Documentation and Czech translation updates. Existing forms, measurement settings and purchase behavior are unchanged.
+= 1.0.9 =
+Optional cookie choice transfer to forms opened in a new tab, off by default. Existing embeds, links and measurement settings are unchanged until an administrator enables it.

@@ -11,5 +11,6 @@ for (const slug of ['vstupenky-online','festapp-tickets']) test(slug+' persists 
  assert.equal(variation.isDefault,true);assert.equal(variation.attributes.measurement,'host');
  assert.notEqual(variation.attributes.measurement,metadata.attributes.measurement.default,'Gutenberg must serialize host explicitly');
  const help=readFileSync(new URL('includes/admin.php',base),'utf8');
- for(const shortcode of help.matchAll(/\[[a-z_]+ url=[^\]]+\]/g))assert.match(shortcode[0],/measurement="host"/);
+ // Embed examples only; the form link shortcode has no measurement destination.
+ for(const shortcode of help.matchAll(/\[[a-z_]+(?<!_link) url=[^\]]+\]/g))assert.match(shortcode[0],/measurement="host"/);
 });

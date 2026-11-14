@@ -386,6 +386,28 @@ host origin. The website notice and its archived CMP configuration must cover
 this Unit's form, purposes, destinations, recipients and applicable notice revision.
 An opt-in switch is configuration, not evidence that a visitor confirmed a notice.
 
+### WordPress plugin
+
+The vstupenky.online and Festapp Tickets WordPress plugins (from 1.0.9 and 1.0.3)
+configure the standard sources below under Settings. An administrator enters the
+organization/Unit, `analytics.consent_revision` and the provider fields;
+detected Complianz policy IDs, Cookiebot CBIDs and the HTTPS home origin are only
+prefilled suggestions until saved. Saved values are never regenerated or updated
+automatically. When the live policy ID, CBID or origin later differs, the
+plugin shows an administrator notice with an explicit confirmation; until then
+the helper fails closed. An empty Cookiebot `consentValidFrom` is set to the
+confirmation time. WordPress cannot read the form's current consent revision,
+the bridge switch or the website approval, so the settings explain them.
+
+When enabled with a valid configuration, the plugin prints the helper on every
+public page with `data-festapp-consent` through `wp_script_attributes`, adding
+`data-cookieconsent="ignore"` for Cookiebot and `data-category="functional"` for
+Complianz's script blocker. It marks the embed fallback link, the form link block
+and shortcode, and existing new-tab links to valid public forms in content,
+widgets, blocks and classic menus, removing only `noopener`/`noreferrer`. Links
+with `download` or `referrerpolicy` and same-tab links are unchanged. Disabled,
+markup is unchanged.
+
 ### Configured Complianz source
 
 Configure the standard helper once for one organization/Unit and mark links:

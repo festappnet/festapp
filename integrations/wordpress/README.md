@@ -190,6 +190,40 @@ Both modes require enabled Festapp measurement and an approved website origin.
 Unit mode requires a consent adapter. See the canonical
 [measurement contract](../../docs/integrations/form-datalayer.md).
 
+## Převzetí volby cookies do formuláře v nové záložce
+
+Od 1.0.9 (Festapp Tickets 1.0.3) lze v **Nastavení → vstupenky.online** zapnout
+převzetí uložené volby z Complianzu, Cookiebotu nebo CookieConsent v3 podle
+[kontraktu měření](../../docs/integrations/form-datalayer.md#live-consent-transfer-to-a-new-tab).
+Ve výchozím stavu je vypnuté a markup zůstává beze změny. Jediná volba
+`vstupenky_online_consent_transfer` (resp. `festapp_tickets_…`) se ukládá přes
+Settings API (`manage_options`, nonce) a maže při odinstalaci. Zjištěné ID zásad
+Complianzu, CBID Cookiebotu a HTTPS origin webu jsou jen předvyplněné návrhy;
+neshoda s uloženou hodnotou zobrazí upozornění na nástěnce, v seznamu pluginů
+a u pole s tlačítkem výslovného potvrzení. Revizi souhlasu formuláře,
+`measurement_consent_bridge` ani schválení webu WordPress nepřečte: veřejné
+`get_form_measurement_policy` běží jen na backendu služby, ne na jejím originu,
+proto jsou tato pole ruční.
+
+Po zapnutí se `embed.js` načítá na všech veřejných stránkách s atributem
+`data-festapp-consent` (přes `wp_script_attributes`), u Cookiebotu
+s `data-cookieconsent="ignore"` a u Complianzu s `data-category="functional"`,
+který jeho blokovač skriptů nikdy neblokuje (výchozí seznam Complianzu
+`embed.js` neobsahuje). Označí se odkaz pod vloženým formulářem, nový blok
+`…/form-link`, shortcode `[vstupenky_online_link]` a existující odkazy na platné
+veřejné formuláře s `target="_blank"` v obsahu, widgetech, blocích a klasickém
+menu; odstraní se jen `noopener`/`noreferrer`. Odkazy s `download`,
+`referrerpolicy` a odkazy do stejné záložky se nemění. WP 6.6 nerozpozná velká
+písmena v názvech atributů; takový odkaz zůstane nativní.
+
+Testy: `tests/consent-contract.php` (174 assertions pro oba instalované ZIPy),
+`tests/consent-production.php` (spouští `check-production.mjs`) a prohlížečový
+`tests/consent-browser.mjs` se skutečným Complianzem a CookieConsent v3
+(Chromium, Firefox, WebKit; formulář je fixture propojeného souhlasu z web
+clientu, žádné objednávky ani měření). Živý Cookiebot vyžaduje
+`VO_COOKIEBOT_HOST` s doménou skupiny CBID; testovací cesta se obslouží
+lokálně přes route interception.
+
 ## Katalogový popis a české překlady
 
 Anglický popis v `shared/readme.txt.in` je zdrojem katalogových řetězců pro
