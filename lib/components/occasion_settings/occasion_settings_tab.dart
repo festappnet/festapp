@@ -50,6 +50,7 @@ import 'occasion_advanced_settings.dart';
 import 'occasion_features_section.dart';
 import 'occasion_save_state.dart';
 import 'occasion_settings_strings.dart';
+import 'occasion_catalog_preview.dart';
 
 class OccasionSettingsTab extends StatefulWidget {
   final Future<OccasionModel> Function(String) loadOccasion;
@@ -796,14 +797,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                             ..endTime = _to;
                       preview.data ??= {};
                       preview.data![Tb.occasions.data_place_name] = _placeName;
-                      return AspectRatio(
-                        aspectRatio:
-                            OccasionCard.kCardWidth / OccasionCard.kCardHeight,
-                        child: OccasionCard(
-                          key: ValueKey(_draftRevision.value),
-                          occasion: preview,
-                        ),
-                      );
+                      return OccasionCatalogPreview(occasion: preview);
                     },
                   ),
                 ),
