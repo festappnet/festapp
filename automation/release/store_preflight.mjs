@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { parseProjectVersion } from './project_version.mjs';
+import { parseProjectVersion, readProjectVersion } from './project_version.mjs';
 import { storeManifestShapeErrors } from './store_manifest_contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -116,7 +116,9 @@ for (const [configKey, manifestUrl] of [
   if (getConfig(configKey) !== manifestUrl) fail(`project.conf ${configKey} disagrees with manifest`);
 }
 try {
-  parseProjectVersion(config);
+  if (parseProjectVersion(config).full !== readProjectVersion().full) {
+    fail('project.conf version projection is stale; run automation/apply_config.sh');
+  }
 } catch (error) {
   fail(error.message);
 }

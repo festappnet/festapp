@@ -33,10 +33,12 @@ test('defines invalidate and noncanonical compiler flags cannot populate canonic
 test('proven SDK reuses version-only Flutter and stamps fresh PackageInfo/HTML metadata',t=>{
  const f=fixture(t);const policy=JSON.parse(fs.readFileSync(path.join(f.root,'automation/web_build_inputs.json'))).flutterVersionPackaging;
  Object.assign(f.tools,policy);f.put('pubspec.yaml','name: festapp\nversion: 1.0.0+1\n');f.put('web/index.html','window.__FESTAPP_BUILD_VERSION__ = "1.0.0+1";');
+ f.put('automation/release/software-version.conf','VERSION=1.0.0+1\n');
  const key=(component,tools=f.tools)=>fingerprint(f.root,component,'static',tools).key;
  const unknown={...f.tools,sdkRevision:'unproven-sdk'};
  const before={flutter:key('flutter'),vite:key('vite'),bundle:key('bundle'),unknown:key('flutter',unknown)};
  f.put('automation/project.conf',fs.readFileSync(path.join(f.root,'automation/project.conf'),'utf8').replace('VERSION=1.0.0+1','VERSION=1.0.1+2'));
+ f.put('automation/release/software-version.conf','VERSION=1.0.1+2\n');
  f.put('pubspec.yaml','name: festapp\nversion: 1.0.1+2\n');f.put('web/index.html','window.__FESTAPP_BUILD_VERSION__ = "1.0.1+2";');
  assert.equal(key('flutter'),before.flutter);assert.notEqual(key('vite'),before.vite);assert.notEqual(key('bundle'),before.bundle);assert.notEqual(key('flutter',unknown),before.unknown);
  f.put('build/web/index.html','window.__FESTAPP_BUILD_VERSION__ = "1.0.0+1";');

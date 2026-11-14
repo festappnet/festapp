@@ -595,3 +595,13 @@ test('order view overlays retain capability and in-tab offer/view/view changes r
     dom.window.close();
 
 });
+
+test('route publication disposes the active Wallet link lifetime before changing history',async()=>{
+ const {RouterService}=await import('../../src/services/router_service.js');
+ const previous=RouterService._walletPage;const originalPush=window.history.pushState;const steps=[];
+ try {
+  RouterService._walletPage={clear(){steps.push('dispose');}};
+  window.history.pushState=()=>{steps.push('navigate');};RouterService.pushState('/form/next');
+  assert.deepStrictEqual(steps,['dispose','navigate']);assert.strictEqual(RouterService._walletPage,null);
+ }finally{RouterService._walletPage=previous;window.history.pushState=originalPush;}
+});

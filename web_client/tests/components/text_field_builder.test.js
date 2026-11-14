@@ -54,6 +54,34 @@ export default async function test() {
     assert.equal(input.placeholder, 'Formal Placeholder', 'Should fallback to formal placeholder if settings are missing');
   }
   
+  // Years keep numeric entry/validation without the browser's scroll-to-step control.
+  {
+    const element = TextFieldBuilder.create({
+      ...field, type: 'birth_year', value: 2000, isRequired: true
+    }, {});
+    document.body.append(element);
+    const input = element.querySelector('input');
+    assert.equal(input.type, 'text');
+    assert.equal(input.inputMode, 'numeric');
+    assert.equal(input.autocomplete, 'bday-year');
+    assert.equal(input.value, '2000');
+    assert.equal(input.checkValidity(), true);
+    input.focus();
+    const wheel = new dom.window.WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 100 });
+    input.dispatchEvent(wheel);
+    assert.equal(input.value, '2000');
+    assert.equal(document.activeElement, input);
+    assert.equal(wheel.defaultPrevented, false, 'Page scrolling must remain available');
+    for (const invalid of ['', 'abc', '2000.5', '2e3', '-2000']) {
+      input.value = invalid;
+      assert.equal(input.checkValidity(), false, `Reject invalid year: ${invalid}`);
+    }
+    input.required = false;
+    input.value = '';
+    assert.equal(input.checkValidity(), true, 'An optional year can be empty');
+    element.remove();
+  }
+
   console.log('TextFieldBuilder tests passed!');
 }
 

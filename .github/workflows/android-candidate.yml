@@ -85,6 +85,7 @@ jobs:
         run: |
           set -euo pipefail
           cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+          cp automation/release/project_version.mjs "$RUNNER_TEMP/project_version.mjs"
           cp android/gradlew "$RUNNER_TEMP/gradlew"
           cp android/gradle/wrapper/gradle-wrapper.jar "$RUNNER_TEMP/gradle-wrapper.jar"
       - name: Check out immutable tenant source
@@ -98,6 +99,12 @@ jobs:
         run: |
           install -m 0755 "$RUNNER_TEMP/gradlew" android/gradlew
           install -m 0644 "$RUNNER_TEMP/gradle-wrapper.jar" android/gradle/wrapper/gradle-wrapper.jar
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.23.4'
       - name: Prove source is still the current production branch head
         env:
           BRANCH: ${{ matrix.branch }}
@@ -125,11 +132,11 @@ jobs:
           flutter-version: ${{ steps.flutter-version.outputs.version }}
           channel: stable
           cache: true
-      - name: Restore the shared Gradle dependency cache
+      - name: Restore and update the tenant Gradle cache
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
-          cache-read-only: true
+          cache-read-only: false
       - name: Materialize private tenant and signing inputs
         env:
           RELEASE_MANIFEST_JSON: ${{ secrets.RELEASE_MANIFEST_JSON }}

@@ -3404,6 +3404,76 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.refresh_apple_ticket_wallet_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.register_apple_ticket_wallet(text,text,text,text,text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_apple_ticket_wallet(text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.register_apple_wallet_device(text,text,text,text,text,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.list_apple_wallet_updates(text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.claim_apple_ticket_wallet()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.apple_wallet_push_targets(bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_apple_wallet_push(bigint,uuid,text,bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_apple_ticket_wallet(bigint,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.allow_apple_wallet_request(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_state_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.prepare_ticket_wallet_collection(uuid,bigint[],text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_scope_internal(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_ticket_wallet_projections(text,bigint[],text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -3450,7 +3520,9 @@
     "database/functions/notification_center/email_context.sql",
     "database/functions/notification_center/email_delivery.sql",
     "database/functions/ticket_wallet/maintenance.sql",
-    "database/functions/ticket_wallet/control.sql"
+    "database/functions/ticket_wallet/control.sql",
+    "database/functions/ticket_wallet/apple_updates.sql",
+    "database/functions/ticket_wallet/collections.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

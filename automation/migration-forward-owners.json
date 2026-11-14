@@ -169,7 +169,8 @@
         "others/get_entity_email_templates.sql",
         "others/get_ticket_layout_write_contract_v1.sql"
       ],
-      "active": true
+      "sha256": "c09d6b25de38ebb7eb75e6ed37057dd43183b7a17132d6bd6672d56b88d34ea0",
+      "checkSources": true
     },
     {
       "migration": "20261112234500_admin_notification_delivery.sql",
@@ -219,7 +220,8 @@
     {
       "migration": "20261113090100_ticket_wallet_queue_contract.sql",
       "manifest": "ticket-wallet-queue-contract-migration.json",
-      "active": true
+      "sha256": "3f3530246b69fd14bcab7e70736194345d02a9b814c7df066d16b010dd15c4f7",
+      "checkSources": true
     },
     {
       "migration": "20261113110000_notification_settings_unit_groups.sql",
@@ -247,6 +249,22 @@
         "user_permissions/bank_operations.sql",
         "eshop_bank_accounts/update_bank_account.sql"
       ],
+      "active": true
+    },
+    {
+      "migration": "20261113180000_apple_ticket_wallet.sql",
+      "manifest": "apple-ticket-wallet-migration.json",
+      "sha256": "a97dad94dafa7830161f715948a473475ff6a19a4687523a98ec78f02662fea7",
+      "checkSources": true
+    },
+    {
+      "migration": "20261113190000_apple_ticket_wallet_updates.sql",
+      "manifest": "apple-ticket-wallet-updates-migration.json",
+      "active": true
+    },
+    {
+      "migration": "20261114010000_ticket_wallet_collections.sql",
+      "manifest": "ticket-wallet-collections-migration.json",
       "active": true
     }
   ]

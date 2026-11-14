@@ -60,7 +60,11 @@ echo "--- configure_version.js stamps __FESTAPP_BUILD_VERSION__ ---"
 mkdir -p "$TMP_ROOT/automation" "$TMP_ROOT/web" "$TMP_ROOT/web_client/src"
 mkdir -p "$TMP_ROOT/automation/lib"
 cp "$PROJECT_ROOT/automation/lib/startup_theme.cjs" "$TMP_ROOT/automation/lib/startup_theme.cjs"
+cp "$PROJECT_ROOT/automation/lib/write_if_changed.cjs" "$TMP_ROOT/automation/lib/write_if_changed.cjs"
 cp "$PROJECT_ROOT/automation/configure_version.js" "$TMP_ROOT/automation/configure_version.js"
+mkdir -p "$TMP_ROOT/automation/release"
+cp "$PROJECT_ROOT/automation/release/project_version.mjs" "$TMP_ROOT/automation/release/project_version.mjs"
+printf 'VERSION=1.2.3+456\n' > "$TMP_ROOT/automation/release/software-version.conf"
 cp "$PROJECT_ROOT/web/index.html"                  "$TMP_ROOT/web/index.html"
 cp "$PROJECT_ROOT/web_client/index.html" "$TMP_ROOT/web_client/index.html"
 mkdir -p "$TMP_ROOT/web_client/src/services"
@@ -106,7 +110,7 @@ writeFileSync(output, JSON.stringify({ schemaVersion: 1, tenantId,
     syncHeadOrigin: value('SYNC_HEAD_ORIGIN'), syncAssetOrigin: value('SYNC_ASSET_ORIGIN') }));
 NODE
 }
-printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><div id="web-client-startup">Loading</div>\n' \
+printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script type="module" src="/web-assets/app.js"></script><div id="web-client-startup">Loading</div>\n' \
   > "$BUILD_DIR/webclient"
 CONFIG_ANON_KEY="$(sed -n 's/^SUPABASE_ANON_KEY=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_SUPABASE_URL="$(sed -n 's/^SUPABASE_URL=//p' "$PROJECT_ROOT/automation/project.conf")"
@@ -238,6 +242,12 @@ for (const page of context.pages) {
   fs.writeFileSync(file, `<html lang="${page.locale ?? context.locale}"><title>${escape(page.title)}</title><link rel="canonical" href="${page.canonical}"><h1>${escape(page.heading ?? page.title)}</h1>${page.id === "home" ? `<img src="${marketingMedia(context)[0]}">` : ""}</html>`);
 }
 for (const media of marketingMedia(context)) { const file = path.join(build,new URL(media,context.origin).pathname); fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,"fixture media"); }
+if (context.pages.some(page => page.id === "press")) {
+  const {pressAssetBase, pressLogos, logoFilename} = await import(path.join(path.dirname(process.argv[4]), "press.mjs"));
+  for (const name of [...pressLogos.flatMap(logo => [false,true].flatMap(dark => ["svg",...(logo.png?["png"]:[])].map(format => logoFilename(logo,dark,format)))), "vstupenky-online-loga.zip", "pouziti-loga.txt", "o-projektu.txt"]) {
+    const file = path.join(build,pressAssetBase,name); fs.mkdirSync(path.dirname(file),{recursive:true}); fs.writeFileSync(file,"fixture press asset");
+  }
+}
 if (context.updates) fs.writeFileSync(path.join(build,"platform-updates.json"), JSON.stringify(context.updates.feed));
 MARKETING
 node "$TMP_ROOT/marketing-fixture.mjs" "$BUILD_DIR" "$PROJECT_ROOT/automation/project.conf" "$PROJECT_ROOT/automation/release/organizers/context.mjs"

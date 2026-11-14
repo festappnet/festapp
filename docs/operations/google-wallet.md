@@ -68,8 +68,10 @@ Real delivery and server-rendered draft previews use the same Wallet email
 section. Native template/ticket previews use the same localized copy and
 unmodified official badge assets, including PDF-only delivery. Preview actions
 are inert and never mint a capability, call Google or create an email intent.
-The per-ticket action area can accommodate Apple Wallet after that integration
-is operational; no Apple badge, device claim or placeholder action is shown now.
+The per-ticket action area offers each independently ready provider, including
+Apple Wallet. Public labels and supported artwork locales come from the shared
+Wallet presentation module; an unavailable localized image uses translated text
+instead of substituting English artwork into another language.
 
 ## Claims, rate and recovery
 

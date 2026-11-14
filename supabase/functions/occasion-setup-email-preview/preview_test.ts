@@ -30,9 +30,9 @@ const context = {
 };
 Deno.test('ticket email preview shows the real Wallet offer for every delivery mode without an issuance link',async()=>{
  for(const mode of ['pdf_attachment','inline_qr','both']){
-  const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,deliveryMode:mode,sampleTicketCount:3,lang:'en',occasion:{id:0,title:context.title,data:{}}});
+  const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,walletProviders:{google:true,apple:false},deliveryMode:mode,sampleTicketCount:3,lang:'en',occasion:{id:0,title:context.title,data:{}}});
   assert(preview.html.includes('Tickets on your phone'));
-  assert((preview.html.match(/google-wallet\/v1\/en.png/g)??[]).length===3);
+  assert((preview.html.match(/google-wallet\/v1\/condensed\/en.png/g)??[]).length===3);
   assert(preview.authoringContext.walletEnabled===true);
   assert(preview.authoringContext.ticketDeliveryMode===mode);
   assert(preview.authoringContext.language==='en');
@@ -286,5 +286,15 @@ Deno.test('missing or disabled preview method has no implicit bank instructions 
   const rendered=await renderDraftPreview({...context,paymentInfo});
   assert(!rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));
   assert(rendered.authoringContext.paymentAccounts.length===0);
+ }
+});
+
+Deno.test('preview follows collection readiness and singular wording without live capabilities',async()=>{
+ for(const lang of ['cs','en'])for(const count of [1,3]){
+  const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,walletProviders:{google:true,apple:true},walletCollectionEnabled:true,deliveryMode:'inline_qr',sampleTicketCount:count,lang,occasion:{id:0,title:context.title,data:{}}});
+  assert(preview.html.includes(lang==='cs'?(count===1?'Vstupenka v telefonu':'Všechny vstupenky (3)'):(count===1?'Ticket on your phone':'All tickets (3)')));
+  assert((preview.html.match(/google-wallet\/v1\/condensed\//g)??[]).length===1);
+  assert(preview.html.includes(lang==='cs'?'Přidat do Peněženky Apple':'Add to Apple Wallet'));
+  assert(!preview.html.includes('/wallet?'));assert(!preview.html.includes('1 z 1'));assert(!preview.html.includes('1 of 1'));
  }
 });

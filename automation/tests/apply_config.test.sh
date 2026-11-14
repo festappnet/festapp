@@ -53,6 +53,7 @@ mkdir -p "$TMP_ROOT/automation" \
          "$TMP_ROOT/assets/icons"
 
 cp "$PROJECT_ROOT/automation/apply_config.sh" "$TMP_ROOT/automation/apply_config.sh"
+cp "$PROJECT_ROOT/automation/release/project_version.mjs" "$PROJECT_ROOT/automation/release/software-version.conf" "$TMP_ROOT/automation/release/"
 cp "$PROJECT_ROOT/automation/configure_brand_assets.py" "$TMP_ROOT/automation/configure_brand_assets.py"
 mkdir -p "$TMP_ROOT/assets/brand"
 cp -R "$PROJECT_ROOT/assets/brand/vstupenky-online" "$TMP_ROOT/assets/brand/"

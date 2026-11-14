@@ -20,9 +20,10 @@ test('Android Play tooling pins Fastlane through Bundler', () => {
     'utf8',
   );
 
-  assert.match(gemfile, /gem ['"]fastlane['"], ['"]2\.238\.0['"]/);
+  assert.match(gemfile, /gem ['"]fastlane['"], ['"]2\.240\.1['"]/);
   assert.doesNotMatch(wrapper, /bundle exec fastlane android play_/);
   assert.doesNotMatch(wrapper, /GOOGLE_PLAY_JSON_KEY|UploadProduction|PlayCheck/);
+  assert.doesNotMatch(wrapper, /flutter build appbundle/);
   assert.match(fastfile, /def assert_github_play_gateway!/);
   assert.match(fastfile, /'RUNNER_ENVIRONMENT' => 'github-hosted'/);
   assert.match(fastfile, /'RUNNER_OS' => 'Linux'/);

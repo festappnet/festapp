@@ -363,6 +363,15 @@ with `SECURITY DEFINER`, you MUST verify:
 
 ## 4. Commit Workflow
 
+Festapp releases share one software version/build pair from
+`automation/release/software-version.conf` on main. Advance it once above the
+highest already released build for a new software generation and reuse it
+across the authorized tenant/platform releases. Upgrade stale tenant bases
+before releasing; never choose a separate package version or retain an old
+tenant counter. `increment_version.js` updates this owner and generated leaves.
+`project.conf`, pubspec and web metadata do not independently own versions.
+Android builds and Play operations run only in the GitHub-hosted release lanes.
+
 Shared application, SQL, Edge, worker, test and generic automation changes are
 made on a branch from `main`. A `prod/*` change may contain only an approved
 tenant overlay path and must record the main SHA it overlays. Before proposing a

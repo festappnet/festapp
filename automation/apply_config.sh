@@ -48,6 +48,8 @@ fi
 
 # Source the config (DOMAIN)
 source "$CONFIG_FILE"
+# VERSION in older tenant inputs is ignored. Main owns the software generation.
+VERSION="$(node "$PROJECT_ROOT/automation/release/project_version.mjs" --full)"
 MAX_TICKETS_PER_ORDER="${MAX_TICKETS_PER_ORDER:-20}"
 WEB_ORGANIZER_LANDING_ENABLED="${WEB_ORGANIZER_LANDING_ENABLED:-false}"
 case "$WEB_ORGANIZER_LANDING_ENABLED" in true|false) ;; *)

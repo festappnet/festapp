@@ -1,0 +1,30 @@
+{
+  "version": "0.20.605+1130",
+  "checks": [
+    {
+      "locale": "cs",
+      "help": "https://vstupenky.online/napoveda/integrace/#api",
+      "reference": "https://api.vstupenky.online/integrations/v1/proofs/dpop/docs/",
+      "openapi": "https://api.vstupenky.online/integrations/v1/proofs/dpop/openapi.json",
+      "search_swagger": "pass",
+      "search_openapi": "pass",
+      "navigation_and_links": "pass",
+      "reference_rendered": "pass",
+      "openapi_version": "3.2.1"
+    },
+    {
+      "locale": "en",
+      "help": "https://tickets.festapp.net/help/integrations/#api",
+      "reference": "https://api.festapp.net/integrations/v1/proofs/dpop/docs/",
+      "openapi": "https://api.festapp.net/integrations/v1/proofs/dpop/openapi.json",
+      "search_swagger": "pass",
+      "search_openapi": "pass",
+      "navigation_and_links": "pass",
+      "reference_rendered": "pass",
+      "openapi_version": "3.2.1"
+    }
+  ],
+  "browser": "isolated headless light muted",
+  "cleanup": "browser session closed",
+  "auth_or_business_calls": false
+}
