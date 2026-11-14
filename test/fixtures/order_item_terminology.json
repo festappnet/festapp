@@ -1,0 +1,9 @@
+[
+  {"name":"missing features","features":null,"tickets":false},
+  {"name":"empty features","features":[],"tickets":false},
+  {"name":"blueprint alone","features":[{"code":"blueprint","is_enabled":true}],"tickets":false},
+  {"name":"disabled tickets","features":[{"code":"ticket","is_enabled":false}],"tickets":false},
+  {"name":"enabled tickets","features":[{"code":"ticket","is_enabled":true}],"tickets":true},
+  {"name":"enabled tickets with hidden form field","features":[{"code":"ticket","is_enabled":true}],"fields":[{"type":"ticket","is_hidden":true}],"tickets":true},
+  {"name":"disabled tickets with visible form field","features":[{"code":"ticket","is_enabled":false}],"fields":[{"type":"ticket","is_hidden":false}],"tickets":false}
+]

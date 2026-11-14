@@ -40,7 +40,7 @@ BEGIN
  VALUES(oc.id,CASE WHEN origin='authenticated' THEN auth.uid() END,origin,encode(digest(token,'sha256'),'hex'),encode(digest(sec,'sha256'),'hex'),cfg.epoch,left(p_device_name,80),now()+interval '12 hours',
  now()+make_interval(hours=>CASE WHEN (cfg.config#>>'{offline,enabled}')::boolean THEN (cfg.config#>>'{offline,max_hours}')::integer ELSE 0 END)) RETURNING * INTO s;
  RETURN jsonb_build_object('code',200,'server_time',now(),'data',jsonb_build_object('session_id',s.id,'token',token,'occasion_id',oc.id,'organization_id',oc.organization,
- 'title',oc.title,'occasion_link',oc.link,'epoch',s.epoch,'expires_at',s.expires_at,'offline_until',s.offline_until,'settings_revision',cfg.revision,'settings',cfg.config,'device_name',s.device_name,
+ 'title',oc.title,'hasTickets',public.uses_ticket_terminology_internal(oc.features),'occasion_link',oc.link,'epoch',s.epoch,'expires_at',s.expires_at,'offline_until',s.offline_until,'settings_revision',cfg.revision,'settings',cfg.config,'device_name',s.device_name,
  'capabilities',jsonb_build_object('search_tickets',(cfg.config#>>'{manual_search,tickets}')::boolean,'search_users',(cfg.config#>>'{manual_search,users}')::boolean,
  'settings',public.scanner_can_manage_settings_internal(oc.id),'event_history',auth.uid() IS NOT NULL AND public.can_write_orders(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
 END $$;

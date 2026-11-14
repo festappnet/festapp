@@ -10,6 +10,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 
 import '../order_commands.dart';
 import '../order_contact_controller.dart';
+import '../order_item_strings.dart';
 
 class OrderEmailContactEditor extends StatefulWidget {
   const OrderEmailContactEditor({
@@ -178,13 +179,15 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
     final secondaryStyle = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final sendLabel = t(
-      currentKind == 'order_tickets'
-          ? (changed || addressProblem ? 'saveSendTickets' : 'sendTickets')
-          : (changed || addressProblem
+    final sendLabel = currentKind == 'order_tickets'
+        ? (changed || addressProblem
+              ? OrderItemStrings.saveSendActionText
+              : OrderItemStrings.sendActionText)
+        : t(
+            changed || addressProblem
                 ? 'saveSendConfirmation'
-                : 'sendConfirmation'),
-    );
+                : 'sendConfirmation',
+          );
     final explanation = _order?['state'] == 'storno'
         ? t('cancelled')
         : uncertain

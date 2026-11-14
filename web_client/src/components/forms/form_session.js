@@ -267,7 +267,7 @@ export class FormSession extends EventTarget {
         // Check Limit
         if (this.state.tickets.length >= this.maxTickets) {
             console.warn("[FormSession] Max tickets reached");
-            throw new Error(BlueprintStrings.maxTicketsReached);
+            throw new Error(BlueprintStrings.maxTicketsReached(this.formModel.occasionFeatures));
         }
 
         const newTicket = {
@@ -428,7 +428,7 @@ export class FormSession extends EventTarget {
         const field = (this.formModel.offeredTicketProductFields || []).find(field =>
             (field.productTypeData?.products || []).some(p => String(p.id) === String(product.id)));
         const current = this.state.tickets.filter(ticket => ticket._blueprintArea === binding.nodeId);
-        if (this.state.tickets.length - current.length + quantity > this.maxTickets) throw new Error(BlueprintStrings.maxTicketsReached);
+        if (this.state.tickets.length - current.length + quantity > this.maxTickets) throw new Error(BlueprintStrings.maxTicketsReached(this.formModel.occasionFeatures));
         const before = [...this.state.tickets];
         try {
             while (current.length > quantity) {
@@ -463,7 +463,7 @@ export class FormSession extends EventTarget {
             const before = this.state.tickets.filter(ticket => ids.has(String(ticket.spot)));
             const additions = unique.filter(spot => !before.some(ticket => String(ticket.spot) === String(spot.id)));
             if (isSelecting && this.state.tickets.length + additions.length > this.maxTickets) {
-                throw new Error(BlueprintStrings.maxTicketsReached);
+                throw new Error(BlueprintStrings.maxTicketsReached(this.formModel.occasionFeatures));
             }
             for (const spot of unique) this.spotModels.set(String(spot.id), spot);
             const apply = () => {

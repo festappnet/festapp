@@ -4,11 +4,13 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/features/features_strings.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/services/utilities_all.dart';
 
 class TicketSearchDialog extends StatefulWidget {
   final List<TicketModel> allTickets;
-  const TicketSearchDialog({super.key, required this.allTickets});
+  final bool? hasTickets;
+  const TicketSearchDialog({super.key, required this.allTickets, this.hasTickets});
 
   @override
   State<TicketSearchDialog> createState() => _TicketSearchDialogState();
@@ -70,7 +72,8 @@ class _TicketSearchDialogState extends State<TicketSearchDialog> {
   Widget build(BuildContext context) {
     return AppAlertDialog(
       onClose: () => Navigator.of(context).pop(),
-      title: Text(FeaturesStrings.selectTicket),
+      title: Text(OrderItemStrings.text('FeatureTicket.selectTicket',
+          hasTickets: widget.hasTickets)),
       content: SizedBox(
         width: 300,
         height: 400,

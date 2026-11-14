@@ -367,7 +367,8 @@ class _ScanPageState extends State<ScanPage> {
 
     final TicketModel? selectedTicket = await showDialog(
       context: context,
-      builder: (ctx) => TicketSearchDialog(allTickets: allTickets),
+      builder: (ctx) => TicketSearchDialog(allTickets: allTickets,
+          hasTickets: FeatureService.usesTicketTerminology(features: _features)),
     );
 
     if (selectedTicket != null) {

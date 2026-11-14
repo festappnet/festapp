@@ -3142,5 +3142,112 @@
         "notApplied": "Die Anfrage wurde nicht ausgeführt. Ändern Sie die Angaben und versuchen Sie es erneut.",
         "prepareTransfer": "Überweisung vorbereiten",
         "bankManualPrepared": "Die Überweisungsdaten sind bereit. Für diese Währung ist kein QR verfügbar. Die Bank hat die Überweisung noch nicht bestätigt."
+    },
+  "ApplicationTerminology": {
+    "CardPayments": {
+      "emailPending": "Wir bereiten Ihre Anmeldebestätigung vor.",
+      "emailAccepted": "Die E-Mail mit Ihrer Anmeldebestätigung wurde zum Versand angenommen.",
+      "admissionHold": "Die Gültigkeit der Anmeldungen ist ausgesetzt. Kontaktieren Sie den Veranstalter.",
+      "disputed": "Die Gültigkeit der Anmeldungen ist ausgesetzt.",
+      "emailNotRequested": "Informationen zum Versand der Anmeldebestätigung sind noch nicht verfügbar."
+    },
+    "CardRefundDecision": {
+      "explanation": "Rückerstattungen erfolgen im Stripe Dashboard. Hier entscheiden Sie nur, welche Anmeldungen gültig bleiben.",
+      "keep": "Anmeldungen gültig lassen",
+      "keepHint": "Die verbleibenden Anmeldungen bleiben gültig.",
+      "cancelSelected": "Ausgewählte Anmeldungen stornieren",
+      "cancelHint": "Wählen Sie nur unbenutzte Anmeldungen. Dies kann hier nicht rückgängig gemacht werden.",
+      "ineligible": "Diese Anmeldung kann nicht storniert werden.",
+      "chooseAction": "Wählen Sie eine Aktion und bei Stornierung mindestens eine Anmeldung.",
+      "ticketUnavailable": "Eine ausgewählte Anmeldung ist nicht mehr verfügbar. Aktualisieren Sie die Daten und wählen Sie erneut.",
+      "decide": "Einlass klären"
+    },
+    "Seating": {
+      "noAdmissions": "Noch keine zugelassenen Anmeldungen. Neue Anmeldungen erscheinen hier.",
+      "workRemaining": "Weisen Sie zugelassenen Anmeldungen Plätze zu. Die Anmeldung läuft unverändert weiter.",
+      "ticket": "Application",
+      "unchanged": "Anmeldungen, QR-Codes, Preise und Zahlungen bleiben unverändert. Es wird keine E-Mail versendet. Bereits heruntergeladene PDFs aktualisieren sich nicht automatisch.",
+      "selectAdmission": "Wählen Sie eine zugelassene Anmeldung und dann einen passenden Platz im Plan oder in der Liste.",
+      "noResults": "Keine Anmeldungen entsprechen der Suche oder Kategorie.",
+      "search": "Inhaber, Bestellung oder Anmeldung suchen",
+      "admissions": "Zugelassene Anmeldungen",
+      "noChanges": "Wählen Sie mindestens eine Anmeldung und einen Platz.",
+      "CONTEXT_CHANGED": "Eine Anmeldung, ein Platz oder die Konfiguration hat sich geändert. Ihr Entwurf bleibt erhalten. Aktualisieren Sie die Daten und prüfen Sie die Zuweisungen erneut.",
+      "ATOMIC_UNIT_INCOMPLETE": "Jeder Platz einer gemeinsamen Gruppe benötigt eine eigene zulässige Anmeldung. Vervollständigen Sie alle Zuweisungen.",
+      "ADMISSION_DATA_AMBIGUOUS": "Die Eintrittsposition ist nicht eindeutig. Bitten Sie einen berechtigten Veranstalter, die angegebene Anmeldung zu korrigieren.",
+      "ADMISSION_ASSIGNED_ELSEWHERE": "Diese Anmeldung hat bereits einen Platz in einem anderen Plan. Verwenden Sie den ausdrücklichen Umzugsablauf.",
+      "USED_TICKET_PROTECTED": "Eine bereits verwendete Anmeldung kann hier nicht verschoben oder neu zugewiesen werden.",
+      "BATCH_TICKET_PRINT_IMMUTABLE": "Die Platzzuweisung einer Anmeldung aus einer Druckserie kann hier nicht geändert werden.",
+      "readRequired": "Zum Anzeigen der angemeldeten Personen benötigen Sie Leserechte für Bestellungen."
+    },
+    "PaymentOperations": {
+      "belowThreshold": "Die erforderliche Zahlung oder Anzahlung ist danach nicht mehr gedeckt. Benutzte und stornierte Anmeldungen bleiben unverändert.",
+      "lifecyclePreserved": "Die Bestellung ist storniert oder abgelaufen. Die Erstattung stellt weder Status noch Anmeldungen wieder her."
+    },
+    "OrderOverview": {
+      "downloadFailed": "Die Anmeldung konnte nicht heruntergeladen werden. Bitte erneut versuchen.",
+      "usedTickets": "Verwendete Anmeldungen",
+      "order_sent": "Anmeldungen versendet",
+      "tickets": "Applications",
+      "ticket": "Application",
+      "downloadFailed_informal": "Die Anmeldung konnte nicht heruntergeladen werden. Bitte erneut versuchen."
+    },
+    "Scanner": {
+      "ticket_cancelled": "Anmeldung storniert",
+      "entry_intro": "Verbinden Sie dieses Gerät mit einer Veranstaltung, um Anmeldungen zu kontrollieren.",
+      "reason_password_reset_not_available": "Password reset is not available for this application.",
+      "confirm_one": "Confirm this application",
+      "ticket_label": "Anmeldung",
+      "ticket_group": "Scanned applications",
+      "group_hint": "Each application is checked separately. Select one to see its details.",
+      "check_ticket": "Check application",
+      "camera_ready": "Hold a application to the camera",
+      "camera_aim": "Point at the application QR code",
+      "choose_input": "Application details will appear here after scanning. Confirm admission with one button.",
+      "looking_up": "Checking application…",
+      "already_used": "Application has already been used",
+      "unpaid": "Payment has not been confirmed",
+      "valid": "Application is valid",
+      "no_products": "This application has no products selected for this view",
+      "next": "Next application",
+      "used": "Used applications",
+      "symbol": "Application code",
+      "search_input": "Name, E-Mail oder Anmeldecode",
+      "hid_ready": "For scanners that type codes like a keyboard. Focus the field and scan. Enter only looks up the application; confirm admission with the button.",
+      "preview": "Application preview",
+      "reason_not_found": "Anmeldung für diese Veranstaltung nicht gefunden",
+      "reason_admission_not_allowed": "Current application or order state prevents admission.",
+      "note": "Anmeldenotiz",
+      "ticket_fields": "Anmeldedaten",
+      "core_status": "Anmeldestatus und Bestätigung",
+      "core_notes": "Vorhandene Bestell- und Anmeldenotizen",
+      "back_to_tickets": "Zurück zu den Anmeldungen",
+      "all_products_help": "Alle Produkte der Anmeldung werden angezeigt, auch neu hinzugefügte.",
+      "preview_help": "Geben Sie einen vorhandenen Anmeldecode ein, um den Entwurf vor dem Speichern zu prüfen. Der Einlass wird dadurch nicht bestätigt.",
+      "preview_empty": "Geben Sie einen Anmeldecode ein, um die Vorschau zu sehen.",
+      "entry_device_hint": "Zum Beispiel „Haupteingang“. Kontrollen der Anmeldungen werden unter diesem Namen erfasst.",
+      "ticket_note": "Anmeldungnotiz",
+      "confirm_valid": "Confirm valid applications",
+      "tickets": "Applications",
+      "manual_search": "Manual application search",
+      "reason_already_used": "Another device admitted this application, or it was marked used.",
+      "holder_name": "Application holder"
+    },
+    "FeatureOrders": {
+      "waveAvailabilityHideHint": "From the scheduled time, customers cannot place new orders for this product. Hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule. Existing orders and applications are unchanged.",
+      "waveAvailabilityHelp": "At the scheduled time you can change product availability as well as its price. Keep availability: this wave leaves availability unchanged; earlier scheduled changes still apply. Offer for sale: customers can see the product, subject to capacity and other sale conditions. Hide from sale: customers cannot place new orders for the product; existing applications and orders are unchanged.\n\nHiding can withdraw a particular application option from sale. However, hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule."
+    },
+    "PaymentMethods": {
+      "stripeHint": "Bezahlen Sie sicher über Stripe. Ihre Anmeldebestätigung erhalten Sie nach Bestätigung der Zahlung."
+    },
+    "EmailTemplates": {
+      "usage": {
+        "ticketOrderPaymentDone_description": "Wird nach Bestätigung der Anzahlung oder Restzahlung einer Anzahlungsbestellung gesendet. Anmeldungen werden separat verschickt."
+      }
+    },
+    "FeatureBlueprint": {
+      "swapUsedGroup": "Eine unteilbare Gruppe mit einem verwendeten Anmeldung kann nicht getauscht werden.",
+      "releaseTemporaryReservationProtected": "Einige Plätze gehören bereits zu einer Bestellung. Verwalten Sie deren Anmeldungen separat."
     }
+  }
 }

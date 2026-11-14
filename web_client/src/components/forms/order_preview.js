@@ -7,7 +7,8 @@ import { WaitlistStrings } from './waitlist_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { formatPrice } from '../../utils/formatters.js';
 import { FormStrings } from './form_strings.js';
-import { OrdersStrings } from '../eshop/orders_strings.js'; 
+import { OrderItemStrings } from '../eshop/order_item_strings.js';
+import { OrdersStrings } from '../eshop/orders_strings.js';
 
 import { RouterService } from '../../services/router_service.js';
 import { PublicOrderStrings } from './public_order_strings.js';
@@ -50,7 +51,7 @@ export class OrderPreview {
 
         const restoreScroll = preserveCheckoutScroll();
         overlay.innerHTML = OrderPreview._render(data);
-        const paymentOptions = formPaymentOptions(formModel.payments, isEmbed() ? 'embed' : 'web');
+        const paymentOptions = { ...formPaymentOptions(formModel.payments, isEmbed() ? 'embed' : 'web'), hasTickets: data.hasTickets };
         const paymentSubmit = overlay.querySelector('.btn-submit-order');
         let paymentChoice = {selected:null};
         if (data.registrationMode !== 'waitlist' && !presentation.submitLabel && data.totalPrice > 0) paymentChoice = renderPaymentMethodPicker(overlay.querySelector('[data-payment-methods]'),paymentOptions,method=>{
@@ -448,7 +449,7 @@ export class OrderPreview {
             ticketCount: payloadTickets.length,
             totalPrice: totalPriceData.totalPrice,
             currency: totalPriceData.currency,
-            hasTickets: FeatureService.isFeatureEnabled(FeatureService.FeatureConstants.ticket, formModel.occasionFeatures),
+            hasTickets: FeatureService.usesTicketTerminology(formModel.occasionFeatures),
             tone: formModel.communicationTone,
             acceptingOffer: Boolean(formModel.offerBundle),
             deposit: depositInfo,
@@ -521,7 +522,7 @@ export class OrderPreview {
     static _render(data) {
         // Determine labels
         const isWaitlist = data.registrationMode === 'waitlist';
-        const itemLabel = isWaitlist ? WaitlistStrings.text((data.ticketCount ?? data.tickets.length) === 1 ? 'yourRegistration' : 'person', data.tone) : data.hasTickets ? (OrdersStrings.ticket || "Ticket") : (OrdersStrings.application || "Application");
+        const itemLabel = isWaitlist ? WaitlistStrings.text((data.ticketCount ?? data.tickets.length) === 1 ? 'yourRegistration' : 'person', data.tone) : OrderItemStrings.text('FeatureOrders.ticket', { hasTickets: data.hasTickets });
 
         // Header
         let html = `

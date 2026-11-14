@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 
 class PaymentOperationStrings {
   static String bankQrError(String? code) => text(switch (code) {
@@ -13,5 +13,6 @@ class PaymentOperationStrings {
     _ => 'bankQrFailed',
   });
 
-  static String text(String key) => 'PaymentOperations.$key'.tr();
+  static String text(String key) =>
+      OrderItemStrings.text('PaymentOperations.$key');
 }

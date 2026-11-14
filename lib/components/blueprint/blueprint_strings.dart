@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'blueprint_command_rejection.dart';
 import 'package:http/http.dart' as http;
 import 'package:easy_localization/easy_localization.dart';
@@ -7,7 +8,7 @@ import 'package:venue_seat_picker/venue_seat_picker.dart'
 
 class BlueprintStrings {
   static String get standingNoAdmissionType =>
-      'FeatureBlueprint.standingNoAdmissionType'.tr();
+      OrderItemStrings.text('FeatureBlueprint.standingNoAdmissionType');
 
   static String get areaProduct => 'FeatureBlueprint.areaProduct'.tr();
   static String get areaProductAssigned =>
@@ -92,7 +93,7 @@ class BlueprintStrings {
         return 'FeatureBlueprint.releaseTemporaryReservationChanged'.tr();
       }
       if (error.reason == 'BLUEPRINT_SEAT_ORDERED') {
-        return 'FeatureBlueprint.releaseTemporaryReservationProtected'.tr();
+        return OrderItemStrings.text('FeatureBlueprint.releaseTemporaryReservationProtected');
       }
     }
     if (error is ImageUploadOutcomeUnknown)
@@ -202,7 +203,7 @@ class BlueprintStrings {
   static String get layoutUnavailable =>
       'FeatureBlueprint.layoutUnavailable'.tr();
   static String get orderLabel => 'FeatureBlueprint.orderLabel'.tr();
-  static String get ticketLabel => 'FeatureBlueprint.ticketLabel'.tr();
+  static String get ticketLabel => OrderItemStrings.text('FeatureBlueprint.ticketLabel');
   static String seatCount(int count) =>
       'FeatureBlueprint.seatCount'.tr(namedArgs: {'count': '$count'});
   static String protectedCount(int count) =>
@@ -216,8 +217,7 @@ class BlueprintStrings {
   static String get catalogSaveNotice =>
       'FeatureBlueprint.catalogSaveNotice'.tr();
   static String catalogAffectedSeats(int count) =>
-      'FeatureBlueprint.catalogAffectedSeats'
-          .tr(namedArgs: {'count': '$count'});
+      OrderItemStrings.text('FeatureBlueprint.catalogAffectedSeats', namedArgs: {'count': '$count'});
 
   // --- BlueprintTab (General) ---
   static String get changeTitle =>
@@ -308,8 +308,7 @@ class BlueprintStrings {
   static String get toastBackgroundRemoved =>
       'FeatureBlueprint.toastBackgroundRemoved'.tr(); // "Background removed."
   static String get toastMaxTicketsReached =>
-      'FeatureBlueprint.toastMaxTicketsReached'
-          .tr(); // "It is not possible to select more tickets."
+      OrderItemStrings.text('FeatureBlueprint.toastMaxTicketsReached'); // "It is not possible to select more tickets."
 
   // --- Swap Seats Feature ---
   static String get swapHelpIntro => 'FeatureBlueprint.swapHelpIntro'
@@ -334,7 +333,7 @@ class BlueprintStrings {
 
   // --- Swap Summary Strings (used in BlueprintObjectModel) ---
   static String swapSummaryCustomer(String ticketSymbol, String customerName) =>
-      'FeatureBlueprint.swapSummaryCustomer'.tr(namedArgs: {
+      OrderItemStrings.text('FeatureBlueprint.swapSummaryCustomer', namedArgs: {
         'ticketSymbol': ticketSymbol,
         'customerName': customerName
       }); // "Order: {ticketSymbol} ({customerName})"
