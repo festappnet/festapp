@@ -2,6 +2,8 @@
 export const walletPresentation = {
  google: {
   labels: {cs:'Přidat do Peněženky Google',sk:'Pridať do Peňaženky Google',en:'Add to Google Wallet',de:'Zu Google Wallet hinzufügen',pl:'Dodaj do Portfela Google',uk:'Додати в Google Гаманець'},
+  emailWidths: {"cs":205.09,"sk":205.09,"en":173.67,"de":173.67,"pl":185.89,"uk":198.11},
+  emailBadges: Object.fromEntries(['cs','sk','en','de','pl','uk'].map(locale=>[locale,`https://img.festapp.net/assets/google-wallet/v1/condensed/${locale}.png`])),
   widths: {cs:333.12,sk:394.56,en:271.68,de:339.84,pl:307.2,uk:325.44},
   badges: Object.fromEntries(['cs','sk','en','de','pl','uk'].map(locale=>[locale,`https://img.festapp.net/assets/google-wallet/v1/${locale}.png`])),
  },

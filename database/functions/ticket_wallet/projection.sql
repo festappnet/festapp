@@ -1,7 +1,7 @@
 -- The current paid-delivery boundary, never scanner configuration overrides.
-CREATE OR REPLACE FUNCTION public.ticket_wallet_projection_internal(p_ticket bigint)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE t eshop.tickets; o public.occasions; f jsonb; c eshop.ticket_wallet_capabilities; state text; details jsonb;
+CREATE OR REPLACE FUNCTION public.ticket_wallet_state_internal(p_ticket bigint)
+RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE t eshop.tickets; o public.occasions; f jsonb; c eshop.ticket_wallet_capabilities; state text;
 BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO t FROM eshop.tickets WHERE id=p_ticket;
@@ -20,6 +20,21 @@ BEGIN
  AND public.provider_ticket_admission_allowed_internal(t.id) THEN
   state:=CASE WHEN o.end_time<=now() OR c.expires_at<=now() THEN 'EXPIRED' WHEN t.state='used' THEN 'COMPLETED' ELSE 'ACTIVE' END;
  END IF;
+ RETURN state;
+END $$;
+REVOKE ALL ON FUNCTION public.ticket_wallet_state_internal(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.ticket_wallet_state_internal(bigint) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.ticket_wallet_projection_internal(p_ticket bigint)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE t eshop.tickets; o public.occasions; f jsonb; c eshop.ticket_wallet_capabilities; state text; details jsonb;
+BEGIN
+ PERFORM public.require_service_role();
+ SELECT * INTO t FROM eshop.tickets WHERE id=p_ticket;
+ SELECT * INTO c FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket;
+ SELECT * INTO o FROM public.occasions WHERE id=t.occasion;
+ SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
+ state:=public.ticket_wallet_state_internal(p_ticket);
  IF t.id IS NOT NULL THEN
   SELECT x INTO details FROM jsonb_array_elements(public.get_tickets_with_details(c.order_id)) x WHERE (x->>'id')::bigint=t.id;
  END IF;

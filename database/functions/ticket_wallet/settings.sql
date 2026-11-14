@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.ticket_wallet_fingerprint(p_occasion bigint)
 RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
- RETURN (SELECT coalesce((f->>'is_enabled')::boolean,false)::text||'/'||public.ticket_wallet_enabled(f)::text||'/'||public.ticket_wallet_ready(o.organization)::text||'/'||coalesce((SELECT publishing_ready::text||'/'||apple_publishing_ready::text FROM eshop.ticket_wallet_integrations WHERE organization=o.organization),'false/false')
+ RETURN (SELECT coalesce((f->>'is_enabled')::boolean,false)::text||'/'||public.ticket_wallet_enabled(f)::text||'/'||public.ticket_wallet_ready(o.organization)::text||'/'||coalesce((SELECT publishing_ready::text||'/'||apple_publishing_ready::text||'/'||collection_enabled::text FROM eshop.ticket_wallet_integrations WHERE organization=o.organization),'false/false/false')
  FROM public.occasions o LEFT JOIN LATERAL (SELECT x f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket') x ON true WHERE o.id=p_occasion);
 END $$;
 REVOKE ALL ON FUNCTION public.ticket_wallet_fingerprint(bigint) FROM PUBLIC,anon,authenticated;

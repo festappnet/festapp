@@ -120,3 +120,61 @@ BEGIN
  PERFORM assert_eq(public.ticket_wallet_projection_internal(tid)->>'state','INACTIVE','deleted projection');
  RAISE NOTICE 'PASS ticket wallet capability, preference, projection, leases and send fencing';
 END $$;
+
+DO $$
+DECLARE org bigint; un bigint; oc bigint; oid bigint; other_order bigint; a bigint; b bigint; foreign_ticket bigint; later_ticket bigint;
+ mid uuid; other_mid uuid; h1 text:=encode(extensions.digest(gen_random_uuid()::text,'sha256'),'hex');
+ h2 text:=encode(extensions.digest(gen_random_uuid()::text,'sha256'),'hex'); hg text:=encode(extensions.digest(gen_random_uuid()::text,'sha256'),'hex');
+ hf text:=encode(extensions.digest(gen_random_uuid()::text,'sha256'),'hex'); src text:=encode(extensions.digest(gen_random_uuid()::text,'sha256'),'hex');
+ context jsonb; scope jsonb; old_revision text; fingerprint text;
+BEGIN
+ PERFORM set_config('festapp.email_wake','scheduled',true);
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM assert_true(NOT has_table_privilege('authenticated','eshop.ticket_wallet_collections','SELECT'),'collection sources private');
+ PERFORM assert_true(NOT has_function_privilege('anon','public.get_ticket_wallet_projections(text,bigint[],text)','EXECUTE'),'no public ticket-id collection lookup');
+ INSERT INTO public.organizations(title) VALUES('Pořadatel společných vstupenek') RETURNING id INTO org;
+ INSERT INTO public.units(title,organization) VALUES('Společenské akce',org) RETURNING id INTO un;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time,features)
+ VALUES('Ples pod hvězdami',org,un,gen_random_uuid()::text,now()+interval '1 day',now()+interval '2 days','[{"code":"ticket","is_enabled":true}]') RETURNING id INTO oc;
+ INSERT INTO eshop.ticket_wallet_integrations(organization,issuer,environment,publishing_ready,web_origin) VALUES(org,'1234','collections-disposable',true,'https://tenant.invalid');
+ INSERT INTO eshop.orders(occasion,order_symbol,order_sequence,state,data,price,currency_code)
+ VALUES(oc,public.generate_order_symbol(),public.next_order_sequence(oc),'paid','{"email":"guest@example.invalid"}',0,'CZK') RETURNING id INTO oid;
+ INSERT INTO eshop.orders(occasion,order_symbol,order_sequence,state,data,price,currency_code)
+ VALUES(oc,public.generate_order_symbol(),public.next_order_sequence(oc),'paid','{"email":"guest@example.invalid"}',0,'CZK') RETURNING id INTO other_order;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(oc,'paid','COLLECTION-ONE') RETURNING id INTO a;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(oc,'paid','COLLECTION-TWO') RETURNING id INTO b;
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(oc,'paid','OTHER-ORDER') RETURNING id INTO foreign_ticket;
+ INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(oid,a),(oid,b),(other_order,foreign_ticket);
+ PERFORM public.enqueue_paid_order_tickets(oid);PERFORM public.enqueue_paid_order_tickets(other_order);
+ SELECT message_id INTO STRICT mid FROM public.email_messages WHERE order_id=oid AND message_kind='order_tickets';
+ SELECT message_id INTO STRICT other_mid FROM public.email_messages WHERE order_id=other_order AND message_kind='order_tickets';
+ PERFORM public.prepare_ticket_wallet(mid,a,h1,'{"sealed":"one"}');PERFORM public.prepare_ticket_wallet(mid,b,h2,'{"sealed":"two"}');
+ PERFORM public.prepare_ticket_wallet(other_mid,foreign_ticket,hf,'{"sealed":"foreign"}');
+ PERFORM assert_true(public.prepare_ticket_wallet_collection(mid,ARRAY[a,b],hg,'{"sealed":"all"}') IS NULL,'batch not enabled by shared migration');
+ fingerprint:=public.ticket_wallet_fingerprint(oc);
+ UPDATE eshop.ticket_wallet_integrations SET collection_enabled=true WHERE organization=org;
+ PERFORM assert_true(public.ticket_wallet_fingerprint(oc) IS DISTINCT FROM fingerprint,'batch readiness fences unsent snapshots');
+ BEGIN PERFORM public.prepare_ticket_wallet_collection(mid,ARRAY[a,foreign_ticket],hg,'{"sealed":"all"}');RAISE EXCEPTION 'cross-order collection allowed';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ context:=public.prepare_ticket_wallet_collection(mid,ARRAY[b,a],hg,'{"sealed":"all"}');
+ PERFORM assert_eq(context#>>'{source,tokenHash}',hg,'dedicated collection source created');
+ PERFORM assert_eq(public.prepare_ticket_wallet_collection(mid,ARRAY[a,b],repeat('c',64),'{"other":true}')#>>'{source,tokenHash}',hg,'same frozen membership keeps source on resend');
+ scope:=public.resolve_ticket_wallet(h1,src);
+ PERFORM assert_eq(scope->>'kind','ticket','forwarded individual source stays individual');
+ PERFORM assert_eq(jsonb_array_length(scope->'tickets')::text,'1','individual source never expands its order');
+ scope:=public.resolve_ticket_wallet(hg,src);old_revision:=scope->>'revision';
+ PERFORM assert_eq(scope->>'ticketCount','2','collection includes both authorized tickets');
+ PERFORM assert_true(NOT scope::text LIKE '%guest@example.invalid%','collection resolution omits recipient');
+ PERFORM assert_eq(jsonb_array_length(public.get_ticket_wallet_projections(hg,ARRAY[a,b],old_revision))::text,'2','part loads exact authorized QR projections');
+ PERFORM assert_true(public.get_ticket_wallet_projections(hg,ARRAY[foreign_ticket],old_revision) IS NULL,'cannot inject another order ticket into part');
+ INSERT INTO eshop.tickets(occasion,state,ticket_symbol) VALUES(oc,'paid','ADDED-LATER') RETURNING id INTO later_ticket;
+ INSERT INTO eshop.order_product_ticket("order",ticket) VALUES(oid,later_ticket);
+ PERFORM assert_eq(public.resolve_ticket_wallet(hg,src)->>'originalCount','2','old collection does not acquire later order tickets');
+ UPDATE eshop.ticket_wallet_capabilities SET revoked_at=now() WHERE ticket_id=a;
+ scope:=public.resolve_ticket_wallet(hg,src);
+ PERFORM assert_eq(scope->>'ticketCount','1','revoked member cannot be issued');
+ PERFORM assert_eq(scope->>'originalCount','2','partial availability stays explicit');
+ PERFORM assert_true(scope->>'revision' IS DISTINCT FROM old_revision,'membership change invalidates previous plan');
+ PERFORM assert_true(public.get_ticket_wallet_projections(hg,ARRAY[b],old_revision) IS NULL,'stale plan cannot silently change its contents');
+ UPDATE eshop.tickets SET state='used' WHERE id=b;
+ PERFORM assert_true(public.resolve_ticket_wallet(hg,src) IS NULL,'used group has no active ticket to add');
+END $$;
