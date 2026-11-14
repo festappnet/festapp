@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/payment_operation_strings.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/eshop/order_symbol_cell.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -217,6 +218,16 @@ void main() {
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
   });
   setUpAll(() async {
+    // Register this shared font before widget fake-async zones and only once.
+    final loader = FontLoader('NotificationPreviewFont')
+      ..addFont(
+        Future.value(
+          ByteData.sublistView(
+            File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync(),
+          ),
+        ),
+      );
+    await loader.load();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await Supabase.initialize(
@@ -768,7 +779,11 @@ void main() {
         greaterThanOrEqualTo(12),
       );
       expect(find.textContaining('Reference platby'), findsNothing);
-      for (final label in ['Částka', 'Zaplaceno', 'Vráceno']) {
+      for (final label in [
+        'Částka',
+        PaymentOperationStrings.text('received'),
+        'Vráceno',
+      ]) {
         expect(find.text(label), findsOneWidget);
       }
       expect(tester.takeException(), isNull);
@@ -1214,15 +1229,6 @@ void main() {
     testWidgets(
       'localized $kind names fit one line and metadata retains exact counts',
       (tester) async {
-        final loader = FontLoader('NotificationPreviewFont')
-          ..addFont(
-            Future.value(
-              ByteData.sublistView(
-                File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync(),
-              ),
-            ),
-          );
-        await loader.load();
         final c = NotificationCenterController();
         addTearDown(c.dispose);
         addTearDown(tester.view.resetPhysicalSize);

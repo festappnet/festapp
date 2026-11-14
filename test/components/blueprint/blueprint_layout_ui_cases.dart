@@ -1587,6 +1587,8 @@ void main() {
       await tester.pump();
       await tester.pump();
       if (outcome == 'disposed') {
+        await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+        await tester.pumpAndSettle();
         await environment.pumpWidget(tester, const SizedBox.shrink());
         await tester.pumpAndSettle();
         expect(batches, 0);
@@ -1634,6 +1636,10 @@ void main() {
           reason: 'The saved plan remains unchanged');
       expect(source.layoutSnapshot!.revision, 1);
       expect(controller.dirty, isTrue);
+      // Flutter 3.50 delivers native font notifications on the next event turn.
+      // Let the real engine deliver them before disposing the render tree.
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
   }
@@ -2005,6 +2011,9 @@ void main() {
     editor.controller.undo();
     await tester.pump();
     expect(editor.controller.document, same(original));
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
   testWidgetsWithEnvironment(() => environment,
       'blueprint host history shortcuts survive semantic inspector activation',

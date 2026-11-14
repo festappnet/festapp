@@ -884,6 +884,13 @@
       "sources": [
         "test/components/notification_center/notification_email_settings_test.dart"
       ]
+    },
+    "test/components/blueprint/blueprint_template_groups_test.dart": {
+      "kind": "adapter",
+      "reason": "Blueprint template insertion exercises application controller and draft adapters without backend I/O.",
+      "sources": [
+        "test/components/blueprint/blueprint_template_groups_test.dart"
+      ]
     }
   }
 }

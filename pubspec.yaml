@@ -16,11 +16,11 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.20.611+1138
+version: 0.20.612+1139
 
 environment:
-  sdk: ^3.13.0
-  flutter: '>=3.47.0'
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -40,8 +40,8 @@ dependencies:
   flutter_svg: "^2.2.3"
   fluttertoast: "^10.0.2"
   maplibre: 0.3.7
-  app_links: "^7.2.1"
-  crypto: "^3.0.6"
+  app_links: "^7.2.2"
+  crypto: "^3.0.8"
   convert: "^3.1.2"
   flutter_map: "^8.2.0"
   latlong2: "^0.10.1"
@@ -78,7 +78,7 @@ dependencies:
   form_builder_validators: "^11.3.0"
   qr_flutter: "^4.1.0"
   screenshot: "^3.0.0"
-  mobile_scanner: "^7.4.2"
+  mobile_scanner: "^7.5.0"
   flutter_map_animations:
     git:
       url: https://github.com/TesteurManiak/flutter_map_animations.git
@@ -96,12 +96,12 @@ dependencies:
   file_picker: "^13.2.0"
   venue_seat_picker:
     path: vendor/blueprint/venue_seat_picker
-  cached_network_image: "^4.0.5"
-  cached_network_image_platform_interface: "^5.0.3"
+  cached_network_image: "^4.0.7"
+  cached_network_image_platform_interface: "^5.0.4"
   # image 4.11 requires archive APIs outside the current pdf constraint.
   image: ">=4.10.1 <4.11.0"
   cross_file: "^0.4.0"
-  flutter_cache_manager: "^3.4.5"
+  flutter_cache_manager: "^3.5.0"
   url_launcher: "^6.3.3"
   html: "^0.15.7"
   http: any
@@ -109,8 +109,8 @@ dependencies:
   web: any
   path: any
   timeago: "^3.7.1"
-  material_ui: "^1.8.0"
-  cupertino_ui: "^1.0.0"
+  material_ui: "^1.11.0"
+  cupertino_ui: "^1.1.6"
 
   shared_preferences: any
 dev_dependencies:

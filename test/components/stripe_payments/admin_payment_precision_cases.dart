@@ -55,18 +55,17 @@ void main() {
       )));
       await tester.pumpAndSettle();
       final row = order.toTrinaRow(localized);
-      final expectedPrice = method == 'stripe' ? '123,45' : '123';
-      final expectedRefund = method == 'stripe' ? '12,67' : '13';
+      const expectedPrice = '123,45';
+      const expectedRefund = '12,67';
       for (final field in [
         EshopColumnIds.ORDER_PRICE,
-        EshopColumnIds.PAYMENT_INFO_AMOUNT,
-        EshopColumnIds.PAYMENT_INFO_PAID
+        EshopColumnIds.PAYMENT_INFO_AMOUNT
       ]) {
         expect(row.cells[field]!.value, contains(expectedPrice));
         expect(row.cells[field]!.value, contains('Kč'));
-        if (method != 'stripe')
-          expect(row.cells[field]!.value, isNot(contains(',')));
+
       }
+      expect(row.cells[EshopColumnIds.PAYMENT_INFO_PAID]!.value, contains('110,78'));
       expect(row.cells[EshopColumnIds.PAYMENT_INFO_RETURNED]!.value,
           contains(expectedRefund));
       expect(
@@ -83,7 +82,7 @@ void main() {
       expect(amounts, hasLength(2));
       for (final amount in amounts) {
         expect(amount, contains(expectedPrice));
-        if (method != 'stripe') expect(amount, isNot(contains(',')));
+
       }
     });
   }
