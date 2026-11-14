@@ -87,7 +87,7 @@ BEGIN
   ('public.ticket_layout_rule(boolean,boolean)','8bc8e0cd6a5a45d10d57f79cec655768',false,false),
   ('public.ticket_layout_uses_product_type(bigint,bigint)','dddc7962230734dd5835601b455d8bb4',false,true),
   ('public.ticket_wallet_enabled(jsonb)','ccbb73fd52b030315763e2be50b8e7a7',false,true),
-  ('public.ticket_wallet_fingerprint(bigint)','3f120ad5ccdd4541ae4d425d548ffb72',true,true),
+  ('public.ticket_wallet_fingerprint(bigint)','e5418eafc472dc4076cf366b2e82df82',true,true),
   ('public.ticket_wallet_ready(bigint)','25dc8cba98b32f00f8f0980b207fa197',true,true),
   ('public.unit_abuse_policy_read_rule(boolean,boolean)','42fc89183ec978eccce36173bc6c3a50',false,false),
   ('public.unit_discovery_rule(boolean,boolean,boolean)','d49526989a25babf6f7ca9ba34b3061c',false,false),

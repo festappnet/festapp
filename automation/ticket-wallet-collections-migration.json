@@ -6,6 +6,7 @@
     "ticket_wallet/collections.sql",
     "ticket_wallet/capabilities.sql",
     "ticket_wallet/settings.sql",
-    "occasion_setup/email_preview.sql"
+    "occasion_setup/email_preview.sql",
+    "others/get_ticket_layout_write_contract_v1.sql"
   ]
 }
