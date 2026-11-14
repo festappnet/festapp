@@ -128,3 +128,13 @@ runtime, then explicitly enable the registered client policy and obtain new
 consent for the new scopes. This local implementation does not deploy or change
 existing clients automatically. Stop admission/dispatch for rollback; retain
 outbox/key/receipt state until reconciliation instead of dropping queued events.
+
+Production schema rollout also requires
+`automation/hetzner-supabase/runtime/install-integration-webhook-retention.sh`.
+Run it on the canonical host with the verified `FESTAPP_RUNTIME_DATABASE` and
+`FESTAPP_WEBHOOK_RETENTION_INSTALL_ACK=install-integration-webhook-retention-on-canonical-database`.
+The installer owns one ten-minute retention job in the `postgres` control-plane
+scheduler and targets the active application database through
+`cron.schedule_in_database`. Application schema migrations never schedule local
+cron jobs; the application database deliberately disables that scheduler.
+Verify the installer's job readback before enabling the new integration runtime.

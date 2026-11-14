@@ -237,8 +237,9 @@ END $$;
 REVOKE ALL ON FUNCTION public.integration_webhook_api_v1(bigint,bigint,bigint,text,text,jsonb) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.integration_webhook_api_v1(bigint,bigint,bigint,text,text,jsonb) TO authenticated;
 
--- Existing pg_cron is the retention backstop even when every consent has
--- expired. This internal deletion-only job exposes no data and sends no HTTP.
+-- Retention is scheduled from the canonical control database by
+-- automation/hetzner-supabase/runtime/install-integration-webhook-retention.sh.
+-- This deletion-only owner exposes no data and sends no HTTP.
 CREATE OR REPLACE FUNCTION public.purge_integration_webhooks_internal()
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
@@ -256,7 +257,6 @@ BEGIN
  DELETE FROM public.integration_webhook_subscriptions WHERE expires_at<clock_timestamp()-interval '30 days';
 END $$;
 REVOKE ALL ON FUNCTION public.purge_integration_webhooks_internal() FROM PUBLIC,anon,authenticated,service_role;
-SELECT cron.schedule('integration-webhook-retention','*/10 * * * *','SELECT public.purge_integration_webhooks_internal()');
 
 -- SOURCE: eshop/create_ticket_order.sql
 CREATE OR REPLACE FUNCTION public.create_ticket_order_internal_v1(input_data jsonb)

@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {openDisposableDatabase} from './postgres.mjs';
 import { randomUUID } from 'node:crypto';
 import { fixture as formFixture, input } from './form-completion-fixtures.mjs';
-import { options, denied } from './form-fixtures.mjs';
+import { connection, options, denied } from './form-fixtures.mjs';
 import { setup as apiSetup, connect, apiRequest } from './api-fixture.mjs';
 import { profile, reply } from './fixture.mjs';
 import { webhookDescriptors, webhookBinding } from '../src/operations/webhooks.mjs';
@@ -11,6 +13,20 @@ import { WEBHOOK_TYPES } from '../src/remote/webhook-protocol.mjs';
 import { READ_SCOPE } from '../src/remote/config.mjs';
 import { webhookReceiver } from './webhook-tls-fixture.mjs';
 const scopes=[READ_SCOPE,'festapp:orders:read','festapp:webhooks:read','festapp:webhooks:write'];
+
+test('webhook migration installs when application database pg_cron is disabled',options,async t=>{
+ const db=await openDisposableDatabase(connection,{administrative:true});
+ t.after(async()=>{try{await db.query('ROLLBACK');}finally{await db.end();}});
+ await db.query('BEGIN');
+ const args=(await db.query("SELECT pg_get_function_identity_arguments('cron.schedule(text,text,text)'::regprocedure) args")).rows[0].args;
+ await db.query(`CREATE OR REPLACE FUNCTION cron.schedule(${args}) RETURNS bigint LANGUAGE plpgsql AS $$
+ BEGIN RAISE EXCEPTION 'pg_cron is disabled in isolated rehearsal databases'; END $$`);
+ // Replay the actual schema migration at the production scheduler boundary.
+ // Only the canonical control-plane installer may register the retention job.
+ await db.query(readFileSync(new URL('../../../supabase/migrations/20261114120000_integration_webhooks.sql',import.meta.url),'utf8'));
+ assert.equal((await db.query("SELECT to_regprocedure('public.purge_integration_webhooks_internal()') IS NOT NULL ready")).rows[0].ready,true);
+});
+
 
 async function setup(t){
  const s=await formFixture(t),{db,f}=s;
