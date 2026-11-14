@@ -1,4 +1,5 @@
 import { OrderItemStrings } from '../../eshop/order_item_strings.js';
+import { OrdersStrings } from '../../eshop/orders_strings.js';
 import { html, sanitizeHtml } from '../../../utils/html.js';
 import * as FormFieldBuilderModule from './form_field_builder.js';
 import { FormStrings } from '../form_strings.js';

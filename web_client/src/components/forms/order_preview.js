@@ -8,6 +8,7 @@ import { CommonStrings } from '../shared/common_strings.js';
 import { formatPrice } from '../../utils/formatters.js';
 import { FormStrings } from './form_strings.js';
 import { OrderItemStrings } from '../eshop/order_item_strings.js';
+import { OrdersStrings } from '../eshop/orders_strings.js';
 
 import { RouterService } from '../../services/router_service.js';
 import { PublicOrderStrings } from './public_order_strings.js';

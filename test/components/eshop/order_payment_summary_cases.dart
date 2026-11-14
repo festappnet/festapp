@@ -1,3 +1,7 @@
+import 'package:fstapp/components/features/feature.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -11,6 +15,16 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
   WidgetEnvironmentFixture.register();
+  setUp(() {
+    final previous = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+      occasion: OccasionModel(
+        id: 7, isOpen: true, isHidden: false, isPromoted: false,
+        features: [SimpleFeature(code: 'ticket', isEnabled: true)],
+      ),
+    );
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
+  });
   Future<void> open(
     WidgetTester tester,
     Map<String, dynamic> payment, {
@@ -51,6 +65,14 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('application context preserves disputed admission state', (tester) async {
+    RightsService.currentOccasion()!.features.single.isEnabled = false;
+    await open(tester, {'status': 'disputed', 'received': 2800, 'returned': 0}, card: true);
+    expect(find.text('Platnost přihlášek je pozastavena.'), findsWidgets);
+    expect(find.text('Platnost vstupenek je pozastavena.'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'overdue notice uses server due date and preserves partial balance',
