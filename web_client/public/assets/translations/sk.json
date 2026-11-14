@@ -3169,5 +3169,113 @@
         "notApplied": "Požiadavka nebola vykonaná. Upravte údaje a skúste ju znova.",
         "prepareTransfer": "Pripraviť prevod",
         "bankManualPrepared": "Údaje k prevodu sú pripravené. QR pre túto menu nie je dostupný. Banka prevod zatiaľ nepotvrdila."
+    },
+  "ApplicationTerminology": {
+    "CardPayments": {
+      "emailPending": "Pripravujeme potvrdenie prihlášky.",
+      "emailAccepted": "E-mail s potvrdením prihlášky bol prijatý na odoslanie.",
+      "admissionHold": "Platnosť prihlášok je pozastavená. Kontaktujte organizátora.",
+      "disputed": "Platnosť prihlášok je pozastavená.",
+      "emailNotRequested": "Informácia o odoslaní prihlášok zatiaľ nie je k dispozícii."
+    },
+    "CardRefundDecision": {
+      "explanation": "Peniaze sa vracajú v Stripe Dashboard. Tu iba rozhodnete, ktoré prihlášky zostanú platné.",
+      "keep": "Ponechať prihlášky platné",
+      "keepHint": "Zostávajúce prihlášky zostanú platné.",
+      "cancelSelected": "Zrušiť vybrané prihlášky",
+      "cancelHint": "Vyberte iba nepoužité prihlášky na zrušenie. Tento krok tu nemožno vrátiť.",
+      "ineligible": "Túto prihlášku nemožno zrušiť",
+      "chooseAction": "Vyberte postup a pri rušení aspoň jednu prihlášku.",
+      "ticketUnavailable": "Vybraná prihláška už nie je dostupná. Obnovte údaje a vyberte znova.",
+      "decide": "Doriešiť prihlášky"
+    },
+    "Seating": {
+      "noAdmissions": "Zatiaľ nie sú žiadne prijaté prihlášky. Nové prihlášky sa zobrazia tu.",
+      "workRemaining": "Priraďte miesta prijatým prihláškam. Prihlasovanie funguje bez zmeny.",
+      "ticket": "Prihláška",
+      "unchanged": "Prihlášky, QR kódy, ceny a platby zostanú bez zmeny. E-mail sa neodošle. Už stiahnuté PDF sa samo neaktualizuje.",
+      "selectAdmission": "Vyberte prijatú prihlášku a potom zodpovedajúce miesto v pláne alebo zozname.",
+      "noResults": "Vyhľadávaniu alebo kategórii nezodpovedá žiadna prihláška.",
+      "search": "Hľadať držiteľa, objednávku alebo prihlášku",
+      "admissions": "Prijaté prihlášky",
+      "noChanges": "Vyberte aspoň jednu prihlášku a miesto.",
+      "CONTEXT_CHANGED": "Prihláška, miesto alebo nastavenie sa zmenili. Rozpracované priradenia zostali zachované. Obnovte údaje a znova ich skontrolujte.",
+      "ATOMIC_UNIT_INCOMPLETE": "Každé miesto v spoločnej skupine potrebuje vlastnú oprávnenú prihlášku. Doplňte všetky priradenia.",
+      "ADMISSION_DATA_AMBIGUOUS": "Položka vstupného nie je jednoznačná. Požiadajte oprávneného organizátora o opravu uvedenej prihlášky.",
+      "ADMISSION_ASSIGNED_ELSEWHERE": "Prihláška už má miesto v inom pláne. Použite výslovný postup presunutia.",
+      "USED_TICKET_PROTECTED": "Použitú prihlášku tu nemožno presunúť ani jej prideliť nové miesto.",
+      "BATCH_TICKET_PRINT_IMMUTABLE": "Prihláške z tlačovej dávky tu nemožno meniť miesto.",
+      "readRequired": "Na zobrazenie držiteľov potrebujete oprávnenie na čítanie objednávok."
+    },
+    "PaymentOperations": {
+      "belowThreshold": "Po vrátení nebude dosiahnutá potrebná úhrada alebo záloha. Použité a stornované prihlášky zostanú zachované.",
+      "lifecyclePreserved": "Objednávka je stornovaná alebo vypršala. Vrátenie neobnoví jej stav ani prihlášky."
+    },
+    "OrderOverview": {
+      "downloadFailed": "Prihlášku sa nepodarilo stiahnuť. Skúste to znova.",
+      "usedTickets": "Použité prihlášky",
+      "order_sent": "Prihlášky odoslané",
+      "tickets": "Prihlášky",
+      "ticket": "Prihláška",
+      "downloadFailed_informal": "Prihlášku sa nepodarilo stiahnuť. Skús to znova."
+    },
+    "Scanner": {
+      "ticket_cancelled": "Prihláška je stornovaná",
+      "entry_intro": "Pripojte toto zariadenie k akcii a začnite kontrolovať prihlášky.",
+      "reason_password_reset_not_available": "Password reset is not available for this application.",
+      "confirm_one": "Confirm this application",
+      "ticket_label": "Prihláška",
+      "ticket_group": "Scanned applications",
+      "group_hint": "Each application is checked separately. Select one to see its details.",
+      "check_ticket": "Check application",
+      "camera_ready": "Hold a application to the camera",
+      "camera_aim": "Point at the application QR code",
+      "choose_input": "Application details will appear here after scanning. Confirm admission with one button.",
+      "looking_up": "Checking application…",
+      "already_used": "Application has already been used",
+      "unpaid": "Payment has not been confirmed",
+      "valid": "Application is valid",
+      "no_products": "This application has no products selected for this view",
+      "next": "Next application",
+      "used": "Used applications",
+      "symbol": "Application code",
+      "search_input": "Meno, e-mail alebo kód prihlášky",
+      "hid_ready": "For scanners that type codes like a keyboard. Focus the field and scan. Enter only looks up the application; confirm admission with the button.",
+      "preview": "Application preview",
+      "reason_not_found": "Prihláška sa v tomto podujatí nenašla",
+      "reason_admission_not_allowed": "Current application or order state prevents admission.",
+      "note": "Application note",
+      "ticket_fields": "Údaje prihlášky",
+      "core_status": "Stav prihlášky a výsledok potvrdenia",
+      "core_notes": "Vyplnené poznámky objednávky a prihlášky",
+      "back_to_tickets": "Späť na prihlášky",
+      "all_products_help": "Zobrazia sa všetky produkty danej prihlášky vrátane novo pridaných.",
+      "preview_help": "Zadajte kód existujúcej prihlášky a overte návrh pred uložením. Vstup sa tým nepotvrdí.",
+      "preview_empty": "Náhľad sa zobrazí po zadaní kódu prihlášky.",
+      "entry_device_hint": "Napríklad „Hlavný vstup“. Pod týmto názvom budú zaznamenané kontroly prihlášok.",
+      "ticket_note": "Poznámka k prihláške",
+      "confirm_valid": "Confirm valid applications",
+      "tickets": "Applications",
+      "manual_search": "Manual application search",
+      "reason_already_used": "Another device admitted this application, or it was marked used.",
+      "holder_name": "Application holder"
+    },
+    "FeatureOrders": {
+      "waveAvailabilityHideHint": "From the scheduled time, customers cannot place new orders for this product. Hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule. Existing orders and applications are unchanged.",
+      "waveAvailabilityHelp": "At the scheduled time you can change product availability as well as its price. Keep availability: this wave leaves availability unchanged; earlier scheduled changes still apply. Offer for sale: customers can see the product, subject to capacity and other sale conditions. Hide from sale: customers cannot place new orders for the product; existing applications and orders are unchanged.\n\nHiding can withdraw a particular application option from sale. However, hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule."
+    },
+    "PaymentMethods": {
+      "stripeHint": "Zaplatíte bezpečne cez Stripe. Potvrdenie prihlášky dostanete po potvrdení platby."
+    },
+    "EmailTemplates": {
+      "usage": {
+        "ticketOrderPaymentDone_description": "Zákazník ju dostane po potvrdení prijatej zálohy alebo doplatku zálohovej objednávky. Prihlášky sa odosielajú samostatne."
+      }
+    },
+    "FeatureBlueprint": {
+      "swapUsedGroup": "Nedeliteľnú skupinu s použitou prihláškou nemožno vymeniť.",
+      "releaseTemporaryReservationProtected": "Niektoré miesta už patria do objednávky. Ich prihlášky môžete spravovať samostatne.",
+      "standingNoAdmissionType": "Najprv vytvorte pre túto akciu prihlasovací formulár. Ten pripraví potrebný typ vstupného."
     }
+  }
 }

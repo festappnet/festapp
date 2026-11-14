@@ -9,10 +9,11 @@ class PaymentMethodPicker extends StatelessWidget {
       required this.options,
       required this.surface,
       required this.selected,
-      required this.onChanged});
+      required this.onChanged, this.hasTickets});
   final FormPaymentOptions options;
   final String surface;
   final String? selected;
+  final bool? hasTickets;
   final ValueChanged<String> onChanged;
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,8 @@ class PaymentMethodPicker extends StatelessWidget {
           Text(PaymentMethodStrings.recipient(options.providers[selected]!.recipientName!)),
         Text(PaymentMethodStrings.text('fullAmount')),
         Text(PaymentMethodStrings.reservation(options.reservationSeconds)),
-        Text(PaymentMethodStrings.text(paymentConnectors.get(selected)!.hintKey)),
+        Text(PaymentMethodStrings.text(paymentConnectors.get(selected)!.hintKey,
+            hasTickets: hasTickets)),
       ],
       if (options.cardConfigured && !methods.any(paymentConnectors.containsHosted))
         Padding(

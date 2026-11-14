@@ -1,8 +1,8 @@
+import { OrderItemStrings } from '../../eshop/order_item_strings.js';
 import { html, sanitizeHtml } from '../../../utils/html.js';
 import * as FormFieldBuilderModule from './form_field_builder.js';
 import { FormStrings } from '../form_strings.js';
 import { CommonStrings } from '../../shared/common_strings.js';
-import { OrdersStrings } from '../../eshop/orders_strings.js';
 import { FormHelper } from '../form_helper.js';
 // import { BlueprintSelector } from '../../blueprint/blueprint_selector.js';
 import { DbForms } from '../db_forms.js';
@@ -210,7 +210,7 @@ export class TicketFieldBuilder {
             // --- Complex Mode (Seat Selection / Multiple Items) ---
 
             
-             if (field.title && field.title !== 'Tickets' && field.title !== OrdersStrings.tickets) {
+             if (field.title && !OrderItemStrings.isDefaultLabel(field.title)) {
                  const label = document.createElement('label');
                  label.className = 'form-field-label';
                  label.textContent = field.title;
@@ -251,9 +251,9 @@ export class TicketFieldBuilder {
                 
                 // If it's a seat ticket, show seat name instead of "Ticket X"
                 if (seat && seat.objectModel) {
-                     titleSpan.textContent = seat.objectModel.name || `${FormStrings.ticket} ${index + 1}`;
+                     titleSpan.textContent = seat.objectModel.name || `${OrderItemStrings.singular(formModel.occasionFeatures)} ${index + 1}`;
                 } else {
-                     titleSpan.textContent = `${FormStrings.ticket} ${index + 1}`;
+                     titleSpan.textContent = `${OrderItemStrings.singular(formModel.occasionFeatures)} ${index + 1}`;
                 }
                 header.appendChild(titleSpan);
 
@@ -281,8 +281,8 @@ export class TicketFieldBuilder {
                     Array.from(listContainer.children).forEach((child, i) => {
                        const span = child.querySelector('.ticket-header span');
                        // Only update if it contains "Ticket" string to avoid overwriting custom names?
-                       if (span && span.textContent.startsWith(FormStrings.ticket)) {
-                           span.textContent = `${FormStrings.ticket} ${i + 1}`;
+                       if (span && span.textContent.startsWith(OrderItemStrings.singular(formModel.occasionFeatures))) {
+                           span.textContent = `${OrderItemStrings.singular(formModel.occasionFeatures)} ${i + 1}`;
                        }
                     });
                     
@@ -555,7 +555,7 @@ export class TicketFieldBuilder {
                 const addBtn = document.createElement('button');
                 addBtn.type = 'button';
                 addBtn.className = 'btn btn-secondary btn-sm btn-add-ticket';
-                addBtn.textContent = `+ ${FormStrings.addTicket}`;
+                addBtn.textContent = `+ ${OrderItemStrings.text('FormsFeature.addTicket', { features: formModel.occasionFeatures })}`;
                 
                 addBtn.onclick = (event) => {
                      // --- STATE INVERSION: Call Session ---

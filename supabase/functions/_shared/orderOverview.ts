@@ -1,10 +1,11 @@
 import { escapeEmailHtml } from "./emailActionLink.ts";
+import { usesTicketTerminology } from "./orderItemTerminology.ts";
 import { formatCurrency } from "./utilities.ts";
 import {
   aggregateMetaSurchargeSums,
   extractMetaSurcharge,
   formatSignedMetaSurcharge,
-  MetaSurchargeAmount,
+  type MetaSurchargeAmount,
 } from "./metaSurcharge.ts";
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
@@ -65,8 +66,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
 
     // --- 2. Tickets / Applications ---
     let overallTotal = 0;
-    const ticketFeature = occasionFeatures?.find(f => f.code === "ticket");
-    const itemLabel = ticketFeature?.is_enabled ? tr.ticket : tr.application;
+    const itemLabel = usesTicketTerminology(occasionFeatures) ? tr.ticket : tr.application;
     const currencyCode = tickets?.[0]?.products?.[0]?.currency_code || "CZK";
 
     // Visual-only meta surcharge: shown under product (and summed per-currency under

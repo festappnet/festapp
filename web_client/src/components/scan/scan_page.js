@@ -7,7 +7,7 @@ import { ScannerSync } from '../../services/scanner_sync.js';
 import { ScannerController, ticketPayload } from './scanner_controller.js';
 import { ScannerInput } from './scanner_input.js';
 import { scanResult } from './scan_result.js';
-import { tr, reasonText, escape as e } from './scan_strings.js';
+import { tr as scanText, reasonText as scanReasonText, escape as e } from './scan_strings.js';
 import { AppConfig } from '../../app_config.js';
 import { ThemeService } from '../../services/theme_service.js';
 import './scan.css';
@@ -22,6 +22,9 @@ export class ScanPage extends Component {
         this.sound=new ScannerFeedback();this.feedbackStates=new WeakMap();
         this.mode = 'camera'; this.rows = []; this.history = []; this.summaryAt = 0; this.online = navigator.onLine; this.disposed = false;
     }
+    get hasTickets() { return this.row?.session?.hasTickets ?? true; }
+    tr(key, args) { return scanText(key, args, this.hasTickets); }
+    reasonText(reason) { return scanReasonText(reason, this.hasTickets); }
     get isOnline() { return this.online && !this.transportOffline; }
     get canSearchTickets() { return Boolean(this.row?.session.capabilities.search_tickets); }
     get canSearchUsers() { return AppConfig.isAppSupported && Boolean(this.row?.session.capabilities.search_users); }
@@ -48,12 +51,12 @@ export class ScanPage extends Component {
         document.addEventListener('visibilitychange', this.onVisible); window.addEventListener('beforeunload', this.onUnload);
         this.interval = setInterval(() => {
             if(document.visibilityState !== 'visible')return;
-            refreshScannerUsedTimes(this.host);
+            refreshScannerUsedTimes(this.host, Date.now(), this.hasTickets);
             if(this.row)this.recover();
         }, 15000);
         this.render();
-        if (route.code) await this.open({ p_scan_code: route.code, p_device_name: tr('device') });
-        else if (route.occasion) await this.open({ p_occasion: Number(route.occasion), p_device_name: tr('device') });
+        if (route.code) await this.open({ p_scan_code: route.code, p_device_name: this.tr('device') });
+        else if (route.occasion) await this.open({ p_occasion: Number(route.occasion), p_device_name: this.tr('device') });
         else {
             const active = await this.store?.get('preferences', `active:${JSON.stringify(this.backend)}`);
             const row = active && this.rows.find(r => r.key === active.partition && !r.locked);
@@ -221,7 +224,7 @@ export class ScanPage extends Component {
         return true;
     }
     resultHtml(c) {
-        return scanResult(c,this.storageAvailable && !this.authBlocked && !this.row.locked);
+        return scanResult(c,this.storageAvailable && !this.authBlocked && !this.row.locked,this.hasTickets);
     }
     async recover() {
         if (!this.row || this.disposed) return;
@@ -269,13 +272,13 @@ export class ScanPage extends Component {
         const canPrepare=session?.settings?.offline?.enabled;
         const backToCamera=session && (this.route.page!=='scan' || this.mode==='manual' || this.controller && this.controller.state!=='ready');
         const backPath=backToCamera?'/scan':this.returnPath || '/';
-        return `<main class="scan-shell ${session ? '' : 'scan-entry-shell'}"><header class="scan-header">${session?.capabilities.settings?`<a class="scan-home" href="${e(backPath)}" aria-label="${tr(this.returnPath && this.returnPath!=='/'?'back':'home')}">${icon('back')}</a>`:''}<h1>${e(session?.title || tr('scan'))}</h1>${session ? `<details class="scan-menu"><summary>${icon('settings')}<span>${tr('options')}</span></summary><div class="scan-menu-panel"><p class="scan-menu-title">${tr('scanner_tools')}</p>${session ? `<nav aria-label="${tr('scan')}">${this.route.page!=='scan'?`<a href="/scan">${icon('camera')}${tr('back_to_camera')}</a>`:''}<a href="/scan/history" ${this.route.page==='history'?'aria-current="page"':''}>${icon('history')}${tr('history')}</a>${session?.capabilities.settings?`<a href="/scan/settings">${icon('settings')}${tr('display_settings')}</a>`:''}${needsSync?`<a href="/scan/offline">${icon('offline')}${tr('sync_status')}</a>`:''}</nav>` : ''}<button data-theme>${icon('theme')}${tr('theme')}</button>${session ? `<button data-sound>${icon('sound')}${tr(this.sound?.ready?'sound_on':'sound_enable')}</button>` : ''}${canPrepare?`<details class="scan-advanced"><summary>${tr('more_options')}</summary>${canPrepare?`<a href="/scan/offline">${tr('prepare_offline_short')}</a>`:''}</details>`:''}</div></details>` : `<button data-theme aria-label="${tr('theme')}" title="${tr('theme')}">${icon('theme')}</button>`}</header>
-        <div class="scan-status" role="status"><span class="scan-connection ${this.isOnline ? 'is-online' : 'is-offline'}"><span class="scan-dot"></span>${tr(this.isOnline ? 'online' : 'offline')}</span>${sum ? `<span class="scan-count">${tr('used')}: <strong>${formatDisplayNumber(sum.used_current, LocalizationService.currentLocale)} <span>/ ${formatDisplayNumber(sum.eligible_total, LocalizationService.currentLocale)}</span></strong><span class="scan-percent">${percent} %</span></span>` : ''}${pending ? `<span class="scan-pending-count">${tr('pending_count')}: ${pending}</span>` : ''}${conflicts ? `<span class="scan-conflict-count">${tr('conflicts')}: ${conflicts}</span>` : ''}${sum ? `<div class="scan-progress" role="progressbar" aria-label="${tr('used')}" aria-valuemin="0" aria-valuemax="${total||1}" aria-valuenow="${Math.min(used,total)}" aria-valuetext="${used} / ${total} (${percent} %)"><span style="width:${percent}%"></span></div>` : ''}</div>
-        ${session && (!this.isOnline) ? `<p class="scan-offline-notice"><a href="/scan/offline">${tr(this.snapshot?'offline_saved_short':'offline_unprepared_short')}</a></p>` : ''}
-        ${!this.storageAvailable ? `<p class="scan-warning" role="alert">${tr('storage_failed')}</p>` : ''}
-        ${this.authBlocked ? `<p class="scan-warning">${tr('blocked_auth')}</p>` : ''}
+        return `<main class="scan-shell ${session ? '' : 'scan-entry-shell'}"><header class="scan-header">${session?.capabilities.settings?`<a class="scan-home" href="${e(backPath)}" aria-label="${this.tr(this.returnPath && this.returnPath!=='/'?'back':'home')}">${icon('back')}</a>`:''}<h1>${e(session?.title || this.tr('scan'))}</h1>${session ? `<details class="scan-menu"><summary>${icon('settings')}<span>${this.tr('options')}</span></summary><div class="scan-menu-panel"><p class="scan-menu-title">${this.tr('scanner_tools')}</p>${session ? `<nav aria-label="${this.tr('scan')}">${this.route.page!=='scan'?`<a href="/scan">${icon('camera')}${this.tr('back_to_camera')}</a>`:''}<a href="/scan/history" ${this.route.page==='history'?'aria-current="page"':''}>${icon('history')}${this.tr('history')}</a>${session?.capabilities.settings?`<a href="/scan/settings">${icon('settings')}${this.tr('display_settings')}</a>`:''}${needsSync?`<a href="/scan/offline">${icon('offline')}${this.tr('sync_status')}</a>`:''}</nav>` : ''}<button data-theme>${icon('theme')}${this.tr('theme')}</button>${session ? `<button data-sound>${icon('sound')}${this.tr(this.sound?.ready?'sound_on':'sound_enable')}</button>` : ''}${canPrepare?`<details class="scan-advanced"><summary>${this.tr('more_options')}</summary>${canPrepare?`<a href="/scan/offline">${this.tr('prepare_offline_short')}</a>`:''}</details>`:''}</div></details>` : `<button data-theme aria-label="${this.tr('theme')}" title="${this.tr('theme')}">${icon('theme')}</button>`}</header>
+        <div class="scan-status" role="status"><span class="scan-connection ${this.isOnline ? 'is-online' : 'is-offline'}"><span class="scan-dot"></span>${this.tr(this.isOnline ? 'online' : 'offline')}</span>${sum ? `<span class="scan-count">${this.tr('used')}: <strong>${formatDisplayNumber(sum.used_current, LocalizationService.currentLocale)} <span>/ ${formatDisplayNumber(sum.eligible_total, LocalizationService.currentLocale)}</span></strong><span class="scan-percent">${percent} %</span></span>` : ''}${pending ? `<span class="scan-pending-count">${this.tr('pending_count')}: ${pending}</span>` : ''}${conflicts ? `<span class="scan-conflict-count">${this.tr('conflicts')}: ${conflicts}</span>` : ''}${sum ? `<div class="scan-progress" role="progressbar" aria-label="${this.tr('used')}" aria-valuemin="0" aria-valuemax="${total||1}" aria-valuenow="${Math.min(used,total)}" aria-valuetext="${used} / ${total} (${percent} %)"><span style="width:${percent}%"></span></div>` : ''}</div>
+        ${session && (!this.isOnline) ? `<p class="scan-offline-notice"><a href="/scan/offline">${this.tr(this.snapshot?'offline_saved_short':'offline_unprepared_short')}</a></p>` : ''}
+        ${!this.storageAvailable ? `<p class="scan-warning" role="alert">${this.tr('storage_failed')}</p>` : ''}
+        ${this.authBlocked ? `<p class="scan-warning">${this.tr('blocked_auth')}</p>` : ''}
         ${this.message ? `<p role="status">${e(this.message)}</p>` : ''}
-        ${this.error && this.row ? `<p class="scan-warning" role="alert">${e(reasonText(this.error))}</p>` : ''}
+        ${this.error && this.row ? `<p class="scan-warning" role="alert">${e(this.reasonText(this.error))}</p>` : ''}
         ${content}</main>`;
     }
     render() {
@@ -295,14 +298,14 @@ export class ScanPage extends Component {
         if (!liveVideo) this.input?.stop();
         let content;
         if (!this.row) content = this.entryHtml();
-        else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${tr('this_device')}</h2>${this.row.session.capabilities.event_history?`<button data-event-history>${tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${tr('search_more')}</button>`:''}</section>`;
-        else if (this.route.page === 'offline') content = `<section class="scan-settings"><h2>${tr('offline')}</h2><p>${tr('valid_until')}: ${e(new Date(this.row.session.offline_until).toLocaleString(LocalizationService.currentLocale))}</p>
-        ${this.snapshot ? `<p>${tr('prepared')}: ${this.snapshot.ticket_count} ${tr('tickets')} · ${e(new Date(this.snapshot.server_time).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
-        <button data-prepare ${this.preparing || !this.store || !this.isOnline ? 'disabled' : ''}>${tr('prepare')}</button><button data-retry>${tr('retry')}</button><p>${tr('logout_note')}</p><button data-lock>${tr('logout')}</button>
-        <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
+        else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${this.tr('this_device')}</h2>${this.row.session.capabilities.event_history?`<button data-event-history>${this.tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${this.tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(this.reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${this.tr('search_more')}</button>`:''}</section>`;
+        else if (this.route.page === 'offline') content = `<section class="scan-settings"><h2>${this.tr('offline')}</h2><p>${this.tr('valid_until')}: ${e(new Date(this.row.session.offline_until).toLocaleString(LocalizationService.currentLocale))}</p>
+        ${this.snapshot ? `<p>${this.tr('prepared')}: ${this.snapshot.ticket_count} ${this.tr('tickets')} · ${e(new Date(this.snapshot.server_time).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
+        <button data-prepare ${this.preparing || !this.store || !this.isOnline ? 'disabled' : ''}>${this.tr('prepare')}</button><button data-retry>${this.tr('retry')}</button><p>${this.tr('logout_note')}</p><button data-lock>${this.tr('logout')}</button>
+        <p>${this.tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${this.tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${this.tr('pending_count')} / ${this.tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && !reviewing?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.mode==='camera' && c?.state==='ready'?'camera-ready':''} ${reviewing ? 'has-result' : ''}"><section class="scan-input">
-        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><p class="scan-camera-hint">${tr('camera_aim')}</p><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}`}</section>
-        ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button><button data-next-mode="manual" ${navigationBusy?'disabled':''}>${icon('manual')}${tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${!this.searchOpen && c ? this.resultHtml(c) : ''}</section></div>`;
+        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${this.tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${this.tr('camera_ready')}</strong><p>${this.tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${this.tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="scan-camera-live"><span class="scan-dot"></span>${this.tr('camera_live')}</span></div><p class="scan-camera-hint">${this.tr('camera_aim')}</p><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${this.tr('manual_entry')}</button><details class="scan-camera-options"><summary>${this.tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${this.tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${this.tr('camera_stop')}</button><button data-torch hidden>${this.tr('torch')}</button></div><p>${this.tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${this.tr('search_scope')}<select data-search-scope><option value="tickets">${this.tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${this.tr('users')}</option></select></label>`:''}<label>${this.tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?this.reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${this.tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t,this.hasTickets)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${this.tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${this.tr('back_to_camera')}</button>`:''}`}</section>
+        ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('camera')}${this.tr('back_to_camera')}</button><button data-next-mode="manual" ${navigationBusy?'disabled':''}>${icon('manual')}${this.tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${!this.searchOpen && c ? this.resultHtml(c) : ''}</section></div>`;
         // Recovery updates the shell counters without recreating the review surface.
         // Keep native disclosure state, focused controls and the actual scrolling node.
         const template=document.createElement('template');
@@ -364,26 +367,26 @@ export class ScanPage extends Component {
     }
     entryHtml() {
         const invalidCode = this.error === 'invalid_scan_code';
-        const error = this.error ? `<div class="scan-entry-error" id="scan-entry-error" role="alert" tabindex="-1">${icon('alert')}<div><strong>${e(reasonText(this.error))}</strong>${invalidCode ? `<p>${tr('entry_code_retry')}</p>` : ''}</div></div>` : '';
+        const error = this.error ? `<div class="scan-entry-error" id="scan-entry-error" role="alert" tabindex="-1">${icon('alert')}<div><strong>${e(this.reasonText(this.error))}</strong>${invalidCode ? `<p>${this.tr('entry_code_retry')}</p>` : ''}</div></div>` : '';
         return `<section class="scan-entry" aria-labelledby="scan-entry-title">
-            <h2 id="scan-entry-title">${tr('open')}</h2><p class="scan-entry-intro">${tr('entry_intro')}</p>
+            <h2 id="scan-entry-title">${this.tr('open')}</h2><p class="scan-entry-intro">${this.tr('entry_intro')}</p>
             <form data-open aria-busy="${Boolean(this.opening)}">
-                <div class="scan-entry-field"><label for="scan-entry-code">${tr('scan_code')}</label>
+                <div class="scan-entry-field"><label for="scan-entry-code">${this.tr('scan_code')}</label>
                 <input id="scan-entry-code" name="code" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="100" value="${e(this.entryDraft?.code || '')}" aria-invalid="${invalidCode}" aria-describedby="scan-code-hint${invalidCode?' scan-entry-error':''}" ${this.opening?'readonly':''}>
-                ${invalidCode ? error : ''}<p class="scan-entry-hint" id="scan-code-hint">${tr('entry_code_hint')}</p></div>
-                <div class="scan-entry-field"><label for="scan-entry-device">${tr('device')}</label>
-                <input id="scan-entry-device" name="device" autocomplete="off" required maxlength="80" value="${e(this.entryDraft?.device ?? tr('this_device'))}" aria-describedby="scan-device-hint" ${this.opening?'readonly':''}>
-                <p class="scan-entry-hint" id="scan-device-hint">${tr('entry_device_hint')}</p></div>
+                ${invalidCode ? error : ''}<p class="scan-entry-hint" id="scan-code-hint">${this.tr('entry_code_hint')}</p></div>
+                <div class="scan-entry-field"><label for="scan-entry-device">${this.tr('device')}</label>
+                <input id="scan-entry-device" name="device" autocomplete="off" required maxlength="80" value="${e(this.entryDraft?.device ?? this.tr('this_device'))}" aria-describedby="scan-device-hint" ${this.opening?'readonly':''}>
+                <p class="scan-entry-hint" id="scan-device-hint">${this.tr('entry_device_hint')}</p></div>
                 ${!invalidCode ? error : ''}
-                ${!navigator.onLine ? `<p class="scan-entry-network" role="status">${tr('entry_offline')}</p>` : ''}
-                <button class="scan-primary" ${this.opening || !navigator.onLine?'disabled':''}>${this.opening?tr('entry_opening'):tr('open')}${icon(this.opening?'clock':'arrow')}</button>
+                ${!navigator.onLine ? `<p class="scan-entry-network" role="status">${this.tr('entry_offline')}</p>` : ''}
+                <button class="scan-primary" ${this.opening || !navigator.onLine?'disabled':''}>${this.opening?this.tr('entry_opening'):this.tr('open')}${icon(this.opening?'clock':'arrow')}</button>
             </form>
-        </section>${this.rows.length ? `<section class="scan-saved" aria-labelledby="scan-saved-title"><h2 id="scan-saved-title">${tr('saved_sessions')}</h2><p class="scan-entry-hint">${tr('entry_saved_hint')}</p><div class="scan-saved-list">${this.rows.map((r,i)=>`<button data-session="${i}" ${this.opening?'disabled':''}><span><strong>${e(r.session.title)}</strong><span class="scan-saved-device">${e(r.session.device_name)}</span>${r.locked ? `<span class="scan-saved-locked">${tr('blocked_auth')}</span>` : ''}</span>${icon('arrow')}</button>`).join('')}</div></section>` : ''}`;
+        </section>${this.rows.length ? `<section class="scan-saved" aria-labelledby="scan-saved-title"><h2 id="scan-saved-title">${this.tr('saved_sessions')}</h2><p class="scan-entry-hint">${this.tr('entry_saved_hint')}</p><div class="scan-saved-list">${this.rows.map((r,i)=>`<button data-session="${i}" ${this.opening?'disabled':''}><span><strong>${e(r.session.title)}</strong><span class="scan-saved-device">${e(r.session.device_name)}</span>${r.locked ? `<span class="scan-saved-locked">${this.tr('blocked_auth')}</span>` : ''}</span>${icon('arrow')}</button>`).join('')}</div></section>` : ''}`;
     }
     historyHtml(onlyOpen = false) {
         const rows = this.history.filter(r => !onlyOpen || !isTerminal(r.state) || r.state==='conflict').sort((a,b)=>b.payload.captured_at.localeCompare(a.payload.captured_at));
-        return `<ul class="scan-list">${rows.length ? rows.map(r=>`<li><strong>${tr(r.state)==r.state ? reasonText(r.receipt?.reason) : tr(r.state)}</strong> #${r.payload.ticket_id}<p>${tr(r.payload.snapshot_id ? 'source_offline' : 'source_online')}</p><p>${tr('captured_at')}: ${e(new Date(r.payload.captured_at).toLocaleString(LocalizationService.currentLocale))}</p>${r.receipt ? `<p>${tr('committed_at')}: ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
-        ${r.state==='conflict' && this.row.session.capabilities.settings && !r.resolved ? `<form data-resolve="${r.key}"><label>${tr('resolution_reason')}<input name="reason" required minlength="3" maxlength="1000"></label><button>${tr('resolve')}</button></form>` : ''}</li>`).join('') : `<li>${tr('no_history')}</li>`}</ul>`;
+        return `<ul class="scan-list">${rows.length ? rows.map(r=>`<li><strong>${this.tr(r.state)==r.state ? this.reasonText(r.receipt?.reason) : this.tr(r.state)}</strong> #${r.payload.ticket_id}<p>${this.tr(r.payload.snapshot_id ? 'source_offline' : 'source_online')}</p><p>${this.tr('captured_at')}: ${e(new Date(r.payload.captured_at).toLocaleString(LocalizationService.currentLocale))}</p>${r.receipt ? `<p>${this.tr('committed_at')}: ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
+        ${r.state==='conflict' && this.row.session.capabilities.settings && !r.resolved ? `<form data-resolve="${r.key}"><label>${this.tr('resolution_reason')}<input name="reason" required minlength="3" maxlength="1000"></label><button>${this.tr('resolve')}</button></form>` : ''}</li>`).join('') : `<li>${this.tr('no_history')}</li>`}</ul>`;
     }
     bind() {
         const one = (s,f) => { const el=this.host.querySelector(s); if(el) el.onclick=f; };
@@ -420,7 +423,7 @@ export class ScanPage extends Component {
             };
         });
         one('[data-confirm]',()=>this.controller.confirm(Boolean(this.host.querySelector('[data-unpaid]')?.checked)));
-        const reset=this.host.querySelector('[data-reset]'); if(reset) reset.onsubmit=async ev=>{ev.preventDefault();try {await this.api.call('reset_scanner_password',{p_ticket:this.controller.ticket.ticket_id,p_password:reset.elements.password.value});reset.reset();this.error=null;this.message=tr('password_reset_done');this.render();}catch(err){reset.reset();this.error=err.message;this.render();}};
+        const reset=this.host.querySelector('[data-reset]'); if(reset) reset.onsubmit=async ev=>{ev.preventDefault();try {await this.api.call('reset_scanner_password',{p_ticket:this.controller.ticket.ticket_id,p_password:reset.elements.password.value});reset.reset();this.error=null;this.message=this.tr('password_reset_done');this.render();}catch(err){reset.reset();this.error=err.message;this.render();}};
         const unpaid=this.host.querySelector('[data-unpaid]'); if(unpaid){unpaid.checked=Boolean(this.controller.unpaidConfirmed);this.host.querySelector('[data-confirm]').disabled=!unpaid.checked;unpaid.onchange=()=>{this.controller.unpaidConfirmed=unpaid.checked;this.host.querySelector('[data-confirm]').disabled=!unpaid.checked;};}
         one('[data-next]',()=>this.nextScan());
         one('[data-next-mode]',()=>this.setInputMode('manual'));
@@ -452,12 +455,12 @@ export class ScanPage extends Component {
     }
     updateSoundControl() {
         const button=this.host.querySelector('[data-sound]');if(!button)return;
-        button.innerHTML=icon('sound')+tr(this.sound.ready?'sound_on':this.sound.enabled?'sound_enable':'sound_off');
+        button.innerHTML=icon('sound')+this.tr(this.sound.ready?'sound_on':this.sound.enabled?'sound_enable':'sound_off');
         button.setAttribute('aria-pressed',String(this.sound.ready));
     }
     updateCameraState() {
         const camera=this.host.querySelector('.scan-camera');
-        if(camera){camera.dataset.active=String(Boolean(this.input.stream));camera.dataset.paused=String(Boolean(this.input.paused));const hint=this.host.querySelector('.scan-camera-hint');if(hint)hint.textContent=tr(this.input.paused?'camera_review':'camera_aim');}
+        if(camera){camera.dataset.active=String(Boolean(this.input.stream));camera.dataset.paused=String(Boolean(this.input.paused));const hint=this.host.querySelector('.scan-camera-hint');if(hint)hint.textContent=this.tr(this.input.paused?'camera_review':'camera_aim');}
         const start=this.host.querySelector('[data-camera]');if(start){start.disabled=Boolean(this.cameraStarting);start.setAttribute('aria-busy',String(Boolean(this.cameraStarting)));}
         const torch=this.host.querySelector('[data-torch]');
         if(torch)torch.hidden=!this.input.stream?.getVideoTracks()[0]?.getCapabilities?.().torch;

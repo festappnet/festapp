@@ -39,7 +39,7 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
     if (isCardPaymentMethod(payment?.method)) {
         const statusHost = line(host, 'section', '');
         if (includeReference) line(statusHost, 'p', `${overviewText('orderReference')} ${order.symbol}`);
-        renderCardPaymentStatus(statusHost, { ...payment, currency: order.currency }, { onRefresh });
+        renderCardPaymentStatus(statusHost, { ...payment, currency: order.currency }, { onRefresh, hasTickets });
         return statusHost;
     }
     const state = order.state === 'storno' ? 'cancelled' : payment?.status || order.state;

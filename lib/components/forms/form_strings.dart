@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -511,9 +512,9 @@ class FormStrings {
   static String get note => 'FormsFeature.note'.tr(); // "Note"
   // --- Strings for TicketEditorWidgets (Max Tickets) ---
   static String get labelMaxTicketsPerOrder =>
-      'FormsFeature.labelMaxTicketsPerOrder'.tr(); // "Max tickets per order:"
+      OrderItemStrings.text('FormsFeature.labelMaxTicketsPerOrder'); // "Max tickets per order:"
   static String get helperMaxTicketsPerOrder =>
-      'FormsFeature.helperMaxTicketsPerOrder'.tr(); // "How many tickets a user can buy in a single order (default: 1)."
+      OrderItemStrings.text('FormsFeature.helperMaxTicketsPerOrder'); // "How many tickets a user can buy in a single order (default: 1)."
   static String get validationMaxTicketsInvalid =>
       'FormsFeature.validationMaxTicketsInvalid'
           .tr(); // "Please enter a valid number (1 or more)."

@@ -1,5 +1,6 @@
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { FormStrings } from './form_strings.js';
+import { FeatureService } from '../features/feature_service.js';
 import { overviewText } from './order_overview.js';
 import { WaitlistStrings } from './waitlist_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
@@ -22,7 +23,7 @@ export class OrderResult {
             container.append(symbol, statusHost);
             const handoff = resultData.payment_access?.kind === 'handoff';
             // Embedded receipt never consumes or upgrades the one-use capability.
-            renderCardPaymentStatus(statusHost, resultData.payment, handoff ? {} : paymentActions);
+            renderCardPaymentStatus(statusHost, resultData.payment, { ...(handoff ? {} : paymentActions), hasTickets: FeatureService.usesTicketTerminology(formModel.occasionFeatures) });
             if (handoff) {
                 const access = resultData.payment_access;
                 try {
@@ -53,9 +54,7 @@ export class OrderResult {
         // Prepare Data
         const isWaitlist = formModel.registrationMode === 'waitlist';
         const tone = formModel.communicationTone; 
-        // We need to know if tickets were involved. 
-        // FormModel knows fields. If ticket field exists -> hasTickets = true.
-        const hasTickets = formModel.visibleFields.some(f => f.type === 'ticket');
+        const hasTickets = FeatureService.usesTicketTerminology(formModel.occasionFeatures);
         
         let title, subtitle;
         let icon = 'check_circle';

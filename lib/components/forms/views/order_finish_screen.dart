@@ -320,6 +320,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           if (_orderData?['ticketOrder']?['order']?['order_symbol'] is String)
             SelectableText(_orderData!['ticketOrder']['order']['order_symbol']),
           CardPaymentStatus(
+            hasTickets: widget.hasTickets,
             payment: {
               ...payment.cast<String, dynamic>(),
             },

@@ -56,7 +56,8 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
     }
   }
 
-  String text(String key) => OrderOverviewStrings.text(key);
+  String text(String key) => OrderOverviewStrings.text(key,
+      hasTickets: _data?.root['hasTickets'] == true);
   String money(dynamic value, dynamic currency, {bool card = false}) => card
       ? CardPaymentStatus.formatMoney(
               value, currency, context.locale.toLanguageTag()) ??
@@ -159,7 +160,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
 
   List<Widget> _payment(Map payment, dynamic currency) => paymentConnectors.containsHosted(payment['method'])
       ? [
-          CardPaymentStatus(payment: {
+          CardPaymentStatus(hasTickets: _data?.root['hasTickets'] == true, payment: {
             ...payment.cast<String, dynamic>(),
             'currency': currency
           }, onRefresh: _refresh)

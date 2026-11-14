@@ -60,7 +60,6 @@ import 'package:fstapp/components/forms/views/order_preview_screen.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/option_field_helper.dart';
 
-import '../../features/feature_constants.dart';
 import '../../features/feature_service.dart';
 
 import 'package:fstapp/styles/styles_config.dart';
@@ -507,8 +506,7 @@ class _FormPageState extends State<FormPage> {
               // verification of _isOrderPreviewVisible in whenComplete will handle history sync.
               onClose: () => Navigator.of(context).pop(),
               tone: form!.definition.data?[FormMetadata.metaCommunicationTone],
-              hasTickets: FeatureService.isFeatureEnabled(
-                FeatureConstants.ticket,
+              hasTickets: FeatureService.usesTicketTerminology(
                 features: form!.occasion?.features,
               ),
             ),
@@ -642,8 +640,7 @@ class _FormPageState extends State<FormPage> {
           _scrollToTop();
         },
         tone: form!.definition.data?[FormMetadata.metaCommunicationTone],
-        hasTickets: FeatureService.isFeatureEnabled(
-          FeatureConstants.ticket,
+        hasTickets: FeatureService.usesTicketTerminology(
           features: form!.occasion?.features,
         ),
       ),

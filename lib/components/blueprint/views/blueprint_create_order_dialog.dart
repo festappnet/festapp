@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -229,7 +230,7 @@ class _BlueprintCreateOrderDialogState
         ),
         for (final ticket in group['tickets'] as List) ...[
           Text(
-            '${CommonStrings.ticket} ${ticket['ticketSymbol'] ?? ticket['ticketId']}',
+            '${OrderItemStrings.itemSingular} ${ticket['ticketSymbol'] ?? ticket['ticketId']}',
           ),
           for (final product in ticket['products'] as List)
             Text(
@@ -269,7 +270,7 @@ class _BlueprintCreateOrderDialogState
         ),
         if (_customerFields != null) _fields(_customerFields!),
         for (final entry in _ticketFields.entries) ...[
-          Text('${CommonStrings.ticket} - ${entry.key}'),
+          Text('${OrderItemStrings.itemSingular} - ${entry.key}'),
           _fields(entry.value),
         ],
       ],

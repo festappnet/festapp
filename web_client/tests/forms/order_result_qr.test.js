@@ -139,7 +139,7 @@ test('Czech informal confirmation uses tykání with the returned address', () =
   OrderResult.render(host, true, {
     payment_qr: { amount: 490, currency_code: 'CZK' },
     ticketOrder: { order: { data: { email: 'zakaznik@example.cz' } } },
-  }, { communicationTone: 'informal', visibleFields: [{ type: 'ticket' }] }, () => {});
+  }, { communicationTone: 'informal', occasionFeatures: [{ code: 'ticket', is_enabled: true }], visibleFields: [{ type: 'ticket' }] }, () => {});
   assert.match(host.querySelector('.result-title')?.textContent || '', /^Tvá objednávka/);
   assert.match(host.querySelector('.result-subtitle')?.textContent || '', /Platební údaje najdeš níže/);
   dom.window.close();

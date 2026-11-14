@@ -1,5 +1,31 @@
 # Eshop (Orders, Tickets, Payments)
 
+## Ticket and application terminology
+
+`FeatureService.usesTicketTerminology` owns the Dart presentation decision.
+The public web client and Edge email order overview share
+`supabase/functions/_shared/orderItemTerminology.ts` through the web
+`FeatureService` adapter. SQL presentation projections use
+`public.uses_ticket_terminology_internal(features)`; sale notifications,
+occasion sale summaries, customer order overviews and scanner sessions consume
+that owner. The client runtimes use the same cases in
+`test/fixtures/order_item_terminology.json`: an enabled occasion `ticket`
+feature selects ticket wording; otherwise use application/confirmation wording.
+Form field visibility, blueprint configuration, item count, payment state and
+delivery settings do not change terminology. Issuance and download eligibility
+remain separate checks.
+
+`OrderItemStrings.text` in Dart and JavaScript selects authored
+`ApplicationTerminology` translations for reusable product-change, payment,
+refund, seating and scanner copy. Public forms and payment views pass their
+own occasion decision explicitly instead of reading an unrelated admin context.
+User-authored form titles and email templates are preserved. Artwork, Wallet,
+printed ticket batches and ticket-feature setup describe actual tickets and
+keep their literal ticket labels. Organization-wide email history has no single
+occasion and retains its generic message-kind labels. Older saved scanner
+sessions lack the new presentation field and keep their previous wording until
+their normal expiry; new sessions receive the canonical server decision.
+
 ## Split Brain: Dart Reads, SQL Writes (CRITICAL)
 
 Dart is a thin RPC wrapper. ALL write logic lives in SQL. Do NOT replicate multi-step logic in Dart -- causes race conditions.

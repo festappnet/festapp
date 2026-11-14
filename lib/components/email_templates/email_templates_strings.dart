@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../forms/form_strings.dart';
@@ -158,7 +159,7 @@ class EmailTemplatesStrings {
   static String get usageTicketOrderPaymentDoneTitle =>
       'EmailTemplates.usage.ticketOrderPaymentDone_title'.tr();
   static String get usageTicketOrderPaymentDoneDescription =>
-      'EmailTemplates.usage.ticketOrderPaymentDone_description'.tr();
+      OrderItemStrings.text('EmailTemplates.usage.ticketOrderPaymentDone_description');
 
   // TICKET_ORDER_PAYMENT_REMINDER
   static String get usageTicketOrderPaymentReminderTitle =>

@@ -1,5 +1,4 @@
 import 'package:easy_localization/easy_localization.dart';
-import '../features/feature_constants.dart';
 import '../features/feature_service.dart';
 
 class WaitlistStrings {
@@ -32,7 +31,7 @@ class WaitlistStrings {
   static String get applySettings => text('applySettings');
   static String get settings => text('settings');
   static String get capacity =>
-      text(FeatureService.isFeatureEnabled(FeatureConstants.ticket)
+      text(FeatureService.usesTicketTerminology()
           ? 'capacityTickets'
           : 'capacityRegistrations');
   static String get unlimited => text('unlimited');

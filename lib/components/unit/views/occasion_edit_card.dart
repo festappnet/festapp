@@ -313,8 +313,7 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                               Builder(
                                 builder: (context) {
                                   final bool hasTickets =
-                                      FeatureService.isFeatureEnabled(
-                                        FeatureConstants.ticket,
+                                      FeatureService.usesTicketTerminology(
                                         features: occasion.features,
                                       );
 

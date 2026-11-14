@@ -3335,5 +3335,112 @@
   "UnitSettings": {
     "measurementSummaryEnabled": "Pomiar jest włączony",
     "measurementSummaryDisabled": "Pomiar jest wyłączony"
+  },
+  "ApplicationTerminology": {
+    "CardPayments": {
+      "emailPending": "Przygotowujemy potwierdzenie zgłoszenia.",
+      "emailAccepted": "E-mail z potwierdzeniem zgłoszenia został przyjęty do wysłania.",
+      "admissionHold": "Ważność zgłoszeń jest zawieszona. Skontaktuj się z organizatorem.",
+      "disputed": "Ważność zgłoszeń jest zawieszona.",
+      "emailNotRequested": "Informacja o wysyłce zgłoszeń nie jest jeszcze dostępna."
+    },
+    "CardRefundDecision": {
+      "explanation": "Zwroty płatności wykonuje się w Stripe Dashboard. Tutaj decydujesz tylko, które zgłoszenia pozostają ważne.",
+      "keep": "Zachowaj ważność zgłoszeń",
+      "keepHint": "Pozostałe zgłoszenia pozostaną ważne.",
+      "cancelSelected": "Anuluj wybrane zgłoszenia",
+      "cancelHint": "Wybierz tylko niewykorzystane zgłoszenia. Nie można tutaj cofnąć tej czynności.",
+      "ineligible": "Tego zgłoszenia nie można anulować",
+      "chooseAction": "Wybierz działanie, a przy anulowaniu przynajmniej jedno zgłoszenie.",
+      "ticketUnavailable": "Wybrane zgłoszenie nie jest już dostępne. Odśwież dane i wybierz ponownie.",
+      "decide": "Rozstrzygnij ważność zgłoszeń"
+    },
+    "Seating": {
+      "noAdmissions": "Nie ma jeszcze przyjętych zgłoszeń. Nowe zgłoszenia pojawią się tutaj.",
+      "workRemaining": "Proszę przypisać miejsca do przyjętych zgłoszeń. Zapisy działają bez zmian.",
+      "ticket": "Zgłoszenie",
+      "unchanged": "Zgłoszenia, kody QR, ceny i płatności pozostaną bez zmian. E-mail nie zostanie wysłany. Pobrane wcześniej pliki PDF nie aktualizują się automatycznie.",
+      "selectAdmission": "Proszę wybrać przyjęte zgłoszenie, a następnie pasujące miejsce na planie lub liście.",
+      "noResults": "Żadne zgłoszenie nie pasuje do wyszukiwania lub kategorii.",
+      "search": "Szukaj posiadacza, zamówienia lub zgłoszenia",
+      "admissions": "Przyjęte zgłoszenia",
+      "noChanges": "Proszę wybrać co najmniej jedno zgłoszenie i miejsce.",
+      "CONTEXT_CHANGED": "Zgłoszenie, miejsce lub konfiguracja uległy zmianie. Wersja robocza została zachowana. Proszę odświeżyć dane i ponownie sprawdzić przypisania.",
+      "ATOMIC_UNIT_INCOMPLETE": "Każde miejsce we wspólnej grupie wymaga własnego uprawnionego zgłoszenia. Proszę uzupełnić wszystkie przypisania.",
+      "ADMISSION_DATA_AMBIGUOUS": "Pozycja wstępu jest niejednoznaczna. Proszę poprosić uprawnionego organizatora o naprawę wskazanego zgłoszenia.",
+      "ADMISSION_ASSIGNED_ELSEWHERE": "Zgłoszenie ma już miejsce na innym planie. Proszę użyć jawnej procedury przeniesienia.",
+      "USED_TICKET_PROTECTED": "Użytego zgłoszenia nie można tutaj przenieść ani przypisać mu nowego miejsca.",
+      "BATCH_TICKET_PRINT_IMMUTABLE": "Tutaj nie można zmieniać miejsca zgłoszenia z partii drukowanej.",
+      "readRequired": "Do wyświetlenia posiadaczy zgłoszeń potrzebne jest uprawnienie odczytu zamówień."
+    },
+    "PaymentOperations": {
+      "belowThreshold": "Po zwrocie wymagana płatność lub zaliczka nie będzie pokryta. Wykorzystane i anulowane zgłoszenia pozostaną bez zmian.",
+      "lifecyclePreserved": "Zamówienie jest anulowane lub wygasło. Zwrot nie przywróci jego stanu ani zgłoszeń."
+    },
+    "OrderOverview": {
+      "downloadFailed": "Nie udało się pobrać zgłoszenia. Spróbuj ponownie.",
+      "usedTickets": "Wykorzystane zgłoszenia",
+      "order_sent": "Zgłoszenia wysłane",
+      "tickets": "Zgłoszenia",
+      "ticket": "Zgłoszenie",
+      "downloadFailed_informal": "Nie udało się pobrać zgłoszenia. Spróbuj ponownie."
+    },
+    "Scanner": {
+      "ticket_cancelled": "Zgłoszenie anulowane",
+      "entry_intro": "Połącz to urządzenie z wydarzeniem i rozpocznij sprawdzanie zgłoszeń.",
+      "reason_password_reset_not_available": "Password reset is not available for this application.",
+      "confirm_one": "Confirm this application",
+      "ticket_label": "Zgłoszenie",
+      "ticket_group": "Scanned applications",
+      "group_hint": "Each application is checked separately. Select one to see its details.",
+      "check_ticket": "Check application",
+      "camera_ready": "Hold a application to the camera",
+      "camera_aim": "Point at the application QR code",
+      "choose_input": "Application details will appear here after scanning. Confirm admission with one button.",
+      "looking_up": "Checking application…",
+      "already_used": "Application has already been used",
+      "unpaid": "Payment has not been confirmed",
+      "valid": "Application is valid",
+      "no_products": "This application has no products selected for this view",
+      "next": "Next application",
+      "used": "Used applications",
+      "symbol": "Application code",
+      "search_input": "Imię, e-mail lub kod zgłoszenia",
+      "hid_ready": "For scanners that type codes like a keyboard. Focus the field and scan. Enter only looks up the application; confirm admission with the button.",
+      "preview": "Application preview",
+      "reason_not_found": "Nie znaleziono zgłoszenia na to wydarzenie",
+      "reason_admission_not_allowed": "Current application or order state prevents admission.",
+      "note": "Application note",
+      "ticket_fields": "Dane zgłoszenia",
+      "core_status": "Status zgłoszenia i wynik potwierdzenia",
+      "core_notes": "Wypełnione uwagi do zamówienia i zgłoszenia",
+      "back_to_tickets": "Wróć do zgłoszeń",
+      "all_products_help": "Zostaną pokazane wszystkie produkty zgłoszenia, także nowo dodane.",
+      "preview_help": "Wpisz kod istniejącego zgłoszenia, aby sprawdzić podgląd przed zapisaniem. Nie spowoduje to potwierdzenia wejścia.",
+      "preview_empty": "Wpisz kod zgłoszenia, aby zobaczyć podgląd.",
+      "entry_device_hint": "Na przykład „Wejście główne”. Kontrole zgłoszeń będą zapisywane pod tą nazwą.",
+      "ticket_note": "Uwagi do zgłoszenia",
+      "confirm_valid": "Confirm valid applications",
+      "tickets": "Applications",
+      "manual_search": "Manual application search",
+      "reason_already_used": "Another device admitted this application, or it was marked used.",
+      "holder_name": "Application holder"
+    },
+    "FeatureOrders": {
+      "waveAvailabilityHideHint": "From the scheduled time, customers cannot place new orders for this product. Hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule. Existing orders and applications are unchanged.",
+      "waveAvailabilityHelp": "At the scheduled time you can change product availability as well as its price. Keep availability: this wave leaves availability unchanged; earlier scheduled changes still apply. Offer for sale: customers can see the product, subject to capacity and other sale conditions. Hide from sale: customers cannot place new orders for the product; existing applications and orders are unchanged.\n\nHiding can withdraw a particular application option from sale. However, hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule."
+    },
+    "PaymentMethods": {
+      "stripeHint": "Zapłać bezpiecznie przez Stripe. Potwierdzenie zgłoszenia otrzymasz po potwierdzeniu płatności."
+    },
+    "EmailTemplates": {
+      "usage": {
+        "ticketOrderPaymentDone_description": "Wysyłana po potwierdzeniu zaliczki lub dopłaty do zamówienia z zaliczką. Zgłoszenia są wysyłane osobno."
+      }
+    },
+    "FeatureBlueprint": {
+      "swapUsedGroup": "Nie można zamienić niepodzielnej grupy zawierającej wykorzystane zgłoszenie.",
+      "releaseTemporaryReservationProtected": "Niektóre miejsca należą już do zamówienia. Zarządzaj ich zgłoszeniami oddzielnie."
+    }
   }
 }
