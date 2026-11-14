@@ -89,7 +89,7 @@ export class BlueprintLayoutAdapter {
             return [id, {
                 status: selectable ? 'available' : 'occupied',
                 selectable,
-                stateMarker: 'auto',
+                stateMarker: [SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'check' : 'auto',
                 selected: own, label: model.title,
                 ...(fill != null ? {fill} : {}),
                 tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${CommonStrings.price}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, LocalizationService.currentLocale)}`,

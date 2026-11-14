@@ -134,6 +134,7 @@ class BlueprintLayoutAdapter {
       'fill': blueprintSeatStateFills[BlueprintSeatState.ordered]!,
       'status': 'occupied',
       'state': BlueprintSeatState.ordered.name,
+      'stateMarker': 'auto',
       'selectable': false,
       'selected': false,
     };
@@ -165,7 +166,11 @@ class BlueprintLayoutAdapter {
     bool productAvailable = false,
     String? authoredFill,
   }) => {
-    'stateMarker': 'auto',
+    'stateMarker': switch (state) {
+      BlueprintSeatState.used => 'check',
+      BlueprintSeatState.blocked => 'lock',
+      _ => 'auto',
+    },
     'label': label,
     // Explicit authored fill also survives optimistic selection in the renderer.
     'fill': state == BlueprintSeatState.selectedByMe ||

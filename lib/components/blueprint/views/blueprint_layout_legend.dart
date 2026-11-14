@@ -34,9 +34,11 @@ class BlueprintLayoutLegend extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           border:
               Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
-      child: selection
+      child: selection || state == BlueprintSeatState.used
           ? const Icon(Icons.check, size: 16, color: Colors.white)
-          : crossed
+          : state == BlueprintSeatState.blocked
+              ? const Icon(Icons.lock_outline, size: 16, color: Colors.white)
+              : crossed
               ? Icon(Icons.close,
                   size: 16,
                   color: state == BlueprintSeatState.blocked

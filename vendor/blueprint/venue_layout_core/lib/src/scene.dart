@@ -842,16 +842,32 @@ Map<String, dynamic> _compileScene(
         surface.x * scale,
         surface.y * scale,
       );
-      final markerMatrix = selected && n.kind == 'seat'
-          // Selected checks stay upright, at the transformed cushion center.
+      final explicitMarker = !pending ? state['stateMarker'] : null;
+      final check = selected || explicitMarker == 'check';
+      final lock = !selected && explicitMarker == 'lock';
+      final markerMatrix = (check || lock) && n.kind == 'seat'
+          // Checks and locks stay upright at the transformed cushion center.
           ? <num>[1, 0, 0, 1, center[0], center[1]]
           : <num>[...matrix.take(4), center[0], center[1]];
       final unit = min(surface.width, surface.height) * scale * .7 / 24;
-      final statePath = selected
+      final statePath = check
           ? <List<dynamic>>[
               ['M', -7 * unit, 0],
               ['L', -3 * unit, 4 * unit],
               ['L', 7 * unit, -6 * unit],
+            ]
+          : lock
+          ? <List<dynamic>>[
+              ['M', -7 * unit, -2 * unit],
+              ['L', 7 * unit, -2 * unit],
+              ['L', 7 * unit, 9 * unit],
+              ['L', -7 * unit, 9 * unit],
+              ['Z'],
+              ['M', -4 * unit, -2 * unit],
+              ['L', -4 * unit, -5 * unit],
+              ['Q', -4 * unit, -9 * unit, 0, -9 * unit],
+              ['Q', 4 * unit, -9 * unit, 4 * unit, -5 * unit],
+              ['L', 4 * unit, -2 * unit],
             ]
           : status == 'occupied'
           ? <List<dynamic>>[
@@ -873,8 +889,15 @@ Map<String, dynamic> _compileScene(
         'matrix': markerMatrix,
         'path': _qpath(statePath),
         'fill': '#00000000',
-        'stroke': selected ? '#FFFFFFFF' : '#444444FF',
-        'strokeWidth': quantize(unit * (selected ? 3 : 1.5)),
+        'stroke': check || lock ? '#FFFFFFFF' : '#444444FF',
+        'strokeWidth': quantize(
+          unit *
+              (selected
+                  ? 3
+                  : check || lock
+                  ? 2.3
+                  : 1.5),
+        ),
       });
     }
     if (n.kind == 'seat' && state['highlighted'] == true) {

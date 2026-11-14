@@ -23,7 +23,7 @@
     "compile": "vite build"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.13-39a53b150114.tgz",
+    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.13-3b096496c86e.tgz",
     "@supabase/supabase-js": "^2.119.0",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",

@@ -15,6 +15,59 @@ Map<String, dynamic> item(
 
 void main() {
   test(
+    'explicit occupied check and lock retain lifecycle fill and selection semantics',
+    () {
+      final d = tableLayout(shape: 'rect', count: 2);
+      final seat = d.nodes.firstWhere((n) => n.kind == 'seat');
+      for (final entry in {'check': '#412673FF', 'lock': '#000000DE'}.entries) {
+        final presentation = {
+          seat.id: {
+            'status': 'occupied',
+            'selectable': false,
+            'stateMarker': entry.key,
+            'fill': entry.value,
+          },
+        };
+        final scene =
+            compileScene(d, presentation: presentation)['items'] as List;
+        final marker = scene.singleWhere((i) => i['id'] == '${seat.id}:state');
+        expect(marker['stroke'], '#FFFFFFFF');
+        expect((marker['path'] as List).length, entry.key == 'check' ? 3 : 10);
+        expect(
+          scene.singleWhere((i) => i['id'] == seat.id)['fill'],
+          entry.value,
+        );
+        expect(
+          scene.singleWhere((i) => i['id'] == seat.id)['matrix'],
+          item(d, seat.id)['matrix'],
+        );
+        expect(
+          compileSceneNodes(d, {seat.id}, presentation: presentation)['items'],
+          scene
+              .where((i) => i['id'] == seat.id || i['nodeId'] == seat.id)
+              .toList(),
+        );
+        final selected = item(
+          d,
+          '${seat.id}:state',
+          presentation: {
+            seat.id: {...presentation[seat.id]!, 'selected': true},
+          },
+        );
+        expect((selected['path'] as List).length, 3);
+        final pending = item(
+          d,
+          '${seat.id}:state',
+          presentation: {
+            seat.id: {...presentation[seat.id]!, 'pending': true},
+          },
+        );
+        expect(pending['stroke'], '#444444FF');
+      }
+    },
+  );
+
+  test(
     'occupied marker can be hidden without changing status or pending feedback',
     () {
       final d = tableLayout(shape: 'rect', count: 2);

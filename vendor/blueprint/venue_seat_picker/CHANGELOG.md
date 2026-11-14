@@ -1,3 +1,7 @@
+## Unreleased
+
+- Add optional occupied-seat check and lock markers without changing lifecycle, fill or selection.
+
 ## 0.4.8
 
 ## 0.4.10

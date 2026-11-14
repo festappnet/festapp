@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_layout_adapter.dart';
 import 'package:fstapp/components/blueprint/blueprint_font_selection.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
@@ -68,6 +69,39 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
       'areaBindings': []
     };
 void main() {
+  test(
+    'occupied seat symbols preserve lifecycle colors without selecting seats',
+    () {
+      final document = snapshot().document;
+      for (final entry in {
+        'used': ('#412673FF', 'check', 3),
+        'black': ('#000000DE', 'lock', 10),
+        'ordered': ('#0000001F', 'auto', 4),
+      }.entries) {
+        final presentation = BlueprintLayoutAdapter.readonlySeatPresentation({
+          'state': entry.key,
+          'hasProduct': true,
+        });
+        expect(presentation['stateMarker'], entry.value.$2);
+        expect(presentation['selectable'], false);
+        expect(presentation['selected'], false);
+        final items =
+            compileScene(document, presentation: {node: presentation})['items']
+                as List;
+        expect(
+          items.firstWhere((item) => item['id'] == node)['fill'],
+          entry.value.$1,
+        );
+        final marker = items.singleWhere((item) => item['kind'] == 'state');
+        expect((marker['path'] as List).length, entry.value.$3);
+        expect(
+          marker['stroke'],
+          entry.key == 'ordered' ? '#444444FF' : '#FFFFFFFF',
+        );
+      }
+    },
+  );
+
   test(
     'standing setup binds the authoritative prepared product as an undoable draft',
     () async {
@@ -915,8 +949,10 @@ void main() {
     final customer = controller.adapter.customerPresentation(binding);
     expect(admin['status'], 'occupied');
     expect(admin['fill'], '#000000DE');
+    expect(admin['stateMarker'], 'lock');
     expect(customer['status'], 'occupied');
     expect(customer['fill'], '#0000001F');
+    expect(customer['stateMarker'], 'auto');
     expect(customer['state'], 'ordered');
     expect(customer['selectable'], false);
     expect(customer['selected'], false);

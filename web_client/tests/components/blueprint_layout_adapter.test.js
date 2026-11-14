@@ -129,7 +129,7 @@ test('public status palette renders blocked seats like ordered seats', () => {
         if (state === 'empty') fixture.seatBindings[0].productId = null;
         const item = new BlueprintLayoutAdapter(fixture).seatPresentation.a;
         assert.equal(item.fill, fill, state);
-        assert.equal(item.stateMarker, 'auto');
+        assert.equal(item.stateMarker, state === 'used' ? 'check' : 'auto', state);
         assert.equal(item.selected, state === 'selected_by_me');
         if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
         if (state === 'black') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
@@ -355,10 +355,13 @@ test('reservation scene keeps document and individual seat colors with canonical
         assert.equal(selected.find(item => item.id === seat.id).fill, fill);
         assert.ok(selected.some(item => item.nodeId === seat.id && item.kind === 'state'));
         assert.equal(adapter.seatPresentation[seat.id].selected, true);
-        for (const state of ['selected', 'ordered', 'used', 'black', 'empty']) {
+        for (const state of ['selected', 'ordered', 'used', 'taken', 'black', 'empty']) {
             adapter.models.get(seat.id).state = state;
             assert.equal(adapter.seatPresentation[seat.id].selectable, false, state);
-            assert.ok(render().items.some(item => item.nodeId === seat.id && item.kind === 'state'), state);
+            const marker = render().items.find(item => item.nodeId === seat.id && item.kind === 'state');
+            assert.ok(marker, state);
+            assert.equal(marker.stroke, ['used', 'taken'].includes(state) ? '#FFFFFFFF' : '#444444FF', state);
+            assert.equal(marker.path.length, ['used', 'taken'].includes(state) ? 3 : 4, state);
         }
     }
 });
