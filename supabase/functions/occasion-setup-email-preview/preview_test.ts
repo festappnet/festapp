@@ -32,7 +32,7 @@ Deno.test('ticket email preview shows the real Wallet offer for every delivery m
  for(const mode of ['pdf_attachment','inline_qr','both']){
   const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,deliveryMode:mode,sampleTicketCount:3,lang:'en',occasion:{id:0,title:context.title,data:{}}});
   assert(preview.html.includes('Tickets on your phone'));
-  assert((preview.html.match(/google-wallet\/v1\/en.png/g)??[]).length===3);
+  assert((preview.html.match(/google-wallet\/v1\/condensed\/en.png/g)??[]).length===3);
   assert(preview.authoringContext.walletEnabled===true);
   assert(preview.authoringContext.ticketDeliveryMode===mode);
   assert(preview.authoringContext.language==='en');

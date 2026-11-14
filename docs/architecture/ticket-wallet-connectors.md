@@ -102,3 +102,21 @@ single-ticket and bundle implementations.
 Sources: [Apple distribution](https://developer.apple.com/documentation/walletpasses/distributing-and-updating-a-pass),
 [Google save multiple event tickets](https://developers.google.com/wallet/tickets/events/use-cases/save-multiple-passes),
 [Google grouping](https://developers.google.com/wallet/tickets/events/use-cases/group-multiple).
+
+
+## Email action layout
+
+`walletEmailTicket` renders one escaped ticket identity heading with all of its
+ready provider actions beneath it. Providers do not repeat the heading or append
+a second visible copy of their button label. Each live link has a ticket-specific
+accessible name; previews keep actions inert. The same HTML renderer is used by
+live delivery and the server-backed draft preview.
+
+Email uses unmodified official condensed Google badges to retain 48 px height
+and 8 px clear space within a narrow phone message. `wallet/presentation.js`
+contains their versioned URLs and dimensions; the email provider descriptor
+chooses artwork without putting provider branches into the layout. Web primary
+artwork remains unchanged. Localized text actions are used when official artwork
+is unavailable, including Czech Apple text. Publish every new canonical asset
+before deploying the renderer that references it. Each ticket retains its own
+capability and QR; this layout does not implement multi-ticket issuance.
