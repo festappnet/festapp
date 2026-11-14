@@ -3474,6 +3474,16 @@
       "anon": false,
       "authenticated": false,
       "service_role": true
+    },
+    "public.can_manage_webhooks(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.integration_webhook_api_v1(bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {

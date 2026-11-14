@@ -44,14 +44,13 @@ const ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui.json'), 'utf8'))[
 const site = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers', locale === 'cs' ? 'content.json' : 'content.en.json'), 'utf8')).publicProjection;
 const brand = locale === 'cs' ? (value('APP_NAME') || 'vstupenky.online') : 'Festapp Tickets';
 const origin = new URL(value('WEB_LINK')).origin;
-// Read the published projection metadata instead of maintaining help-only API hosts.
+// Shared authored endpoint metadata also serves builds without generated API files.
 const apiEndpoint = profile === 'vstupenky-cs' ? 'regional-api' : 'global-api';
-const apiManifestPath = path.join(root,'tools/festapp/contracts/api-v1',apiEndpoint,'proofs/dpop/manifest.json');
-const apiManifest = JSON.parse(fs.readFileSync(apiManifestPath,'utf8'));
-const apiProjection = path.relative(path.join(root,'tools/festapp/contracts/api-v1',apiEndpoint),path.dirname(apiManifestPath)).split(path.sep).join('/');
-const apiBase = new URL(apiProjection+'/',apiManifest.publicBase+'/');
-// The manifest names the built index file; the public viewer uses its directory route.
-const apiReferenceUrl = new URL('./',new URL(apiManifest.reference,apiBase)).href;
+const apiFacade = JSON.parse(fs.readFileSync(path.join(root,'packages/festapp_contracts/api-facades.json'),'utf8'))
+  .find(endpoint => endpoint.endpointId === apiEndpoint);
+if (!apiFacade) throw new Error('Missing canonical API facade');
+const apiBase = new URL('proofs/dpop/',apiFacade.publicBase+'/');
+const apiReferenceUrl = new URL('docs/',apiBase).href;
 const apiSchemaUrl = new URL('openapi.json',apiBase).href;
 
 

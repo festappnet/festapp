@@ -2207,7 +2207,9 @@
     "blueprintsRead": "Saalpläne, Verkaufszuordnungen und Schriften lesen",
     "blueprintsWrite": "Vollständige Saalplanentwürfe speichern und Texte vorbereiten",
     "ticketArtworkPreview": "Gestaltung eines Mustertickets voranzeigen",
-    "ticketArtworkWrite": "Ticketgestaltung speichern und ausstehende Speicherungen fortsetzen"
+    "ticketArtworkWrite": "Ticketgestaltung speichern und ausstehende Speicherungen fortsetzen",
+    "webhooksRead": "Webhooks und Zustellverlauf lesen",
+    "webhooksWrite": "Webhooks und deren Zustellung verwalten"
   },
   "EditorFileDrop": {
     "hint": "Bild ablegen, um den Hintergrund zu ersetzen",

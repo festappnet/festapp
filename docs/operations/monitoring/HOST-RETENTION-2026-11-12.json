@@ -1,0 +1,52 @@
+{
+  "date_utc": "2026-11-12",
+  "host": "festapp-supabase-rehearsal-01",
+  "database_assertion": "festapp_rehearsal_20260909220601",
+  "scope": "host disk retention only",
+  "artifacts": {
+    "automation/hetzner-supabase/maintenance/host-retention.py": "b5a62fbb4ff4dc6168fe3888d9deecb2ae59645ae3b0df88e87a25d0567a0def",
+    "automation/hetzner-supabase/maintenance/festapp-host-retention.service": "0935715a2b33703bca9df1a879b79f3e7994a7529358fab544b8747dd40ccbe6",
+    "automation/hetzner-supabase/maintenance/festapp-host-retention.timer": "e4635fd04ccb705a15cc58267f5350f9211ca07762fd82e00199a448d0ca6663"
+  },
+  "validation": {
+    "supplied_tests": "3 tests cover real age encryption and recovery, checksum corruption, upload failure, and changed-original safeguards",
+    "remote_python_compile": "passed",
+    "systemd_analyze_verify": "passed with pre-existing CPUAccounting deprecation warnings",
+    "read_only_dry_run": {
+      "eligible_recovery_payload_bytes": 4270425820,
+      "evidence_directories": 23,
+      "function_backup_directories": 126
+    }
+  },
+  "execution": {
+    "service": "festapp-host-retention.service",
+    "service_result": "success",
+    "exit_status": 0,
+    "timer": "festapp-host-retention.timer",
+    "timer_enabled": true,
+    "next_run_utc": "2026-11-13T05:39:12Z",
+    "archives": {
+      "directories": 23,
+      "files": 24,
+      "source_bytes": 4270425820,
+      "all_off_host_ciphertexts_read_back_and_sha256_verified": true,
+      "local_receipts_preserved": true,
+      "off_host_archives_deleted": false
+    },
+    "other_cleanup": {
+      "aged_function_backup_directories_removed": 126,
+      "docker_image_only_prune_completed": true,
+      "containers_or_volumes_removed": false
+    },
+    "disk_free_bytes": {
+      "service_start": 5084012544,
+      "service_end": 12823085056,
+      "net_reclaimed": 7739072512
+    },
+    "running_containers": {
+      "before": 12,
+      "after": 12,
+      "ids_images_states_and_start_times_unchanged": true
+    }
+  }
+}

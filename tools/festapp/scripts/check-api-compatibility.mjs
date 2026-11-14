@@ -1,3 +1,4 @@
+import { restoreApiArchive } from './api-artifacts.mjs';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -66,7 +67,8 @@ export function compatibilityBreaks(before, after) {
     return issues;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    const baseline = JSON.parse(fs.readFileSync(new URL('../contracts/api-v1/release-baseline.json', import.meta.url)));
+    await restoreApiArchive();
+    const baseline = JSON.parse(fs.readFileSync(new URL('../api-release-baseline.json', import.meta.url)));
     if (!['released', 'approved-initial'].includes(baseline.state)) throw new Error('No published API baseline exists. Initial baseline approval is a publication gate; do not mark compatibility with a released contract as verified.');
     if (!baseline.contracts.length) throw new Error('Baseline must seal all approved projections.');
     const issues = baseline.contracts.flatMap(c => {
