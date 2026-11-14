@@ -5,6 +5,6 @@ export function googleWalletSaveUrl(value) {
 }
 const {google,apple}=walletPresentation;
 export const walletConnectors=Object.freeze([
- {id:'google',delivery:'redirect',matchesDevice:nav=>/Android|Windows|Linux|CrOS/.test(nav?.userAgent??''),validateUrl:googleWalletSaveUrl,label:locale=>google.labels[locale]??google.labels.en,badge:locale=>google.badges[locale]??google.badges.en},
- {id:'apple',delivery:'file',matchesDevice:nav=>/iPhone|iPad|iPod|Macintosh/.test(nav?.userAgent??''),label:locale=>apple.labels[locale]??apple.labels.en,badge:locale=>apple.badges[locale]?new URL('../../../assets/brand/apple-wallet/en.svg',import.meta.url).href:undefined},
+ {id:'google',delivery:'redirect',matchesDevice:nav=>/Android|Windows|Linux|CrOS/.test(nav?.userAgent??''),validateUrl:googleWalletSaveUrl,label:locale=>google.labels[locale]??google.labels.en,badge:locale=>google.emailBadges[locale]??google.emailBadges.en},
+ {id:'apple',delivery:'file',matchesDevice:nav=>/iPhone|iPad|iPod|Macintosh/.test(nav?.userAgent??''),label:locale=>apple.labels[locale]??apple.labels.en,badge:locale=>apple.badges[locale]??apple.badges.en,handoff:locale=>apple.handoff[locale]??apple.handoff.en},
 ]);
