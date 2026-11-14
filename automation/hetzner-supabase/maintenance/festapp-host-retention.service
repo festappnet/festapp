@@ -1,0 +1,15 @@
+[Unit]
+Description=Festapp host retention with verified off-host recovery archives
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/python3 /opt/festapp-maintenance/host-retention.py --apply
+TimeoutStartSec=45min
+Nice=15
+IOSchedulingClass=idle
+UMask=0077

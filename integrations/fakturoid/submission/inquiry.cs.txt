@@ -1,0 +1,23 @@
+Komu: podpora@fakturoid.cz
+Předmět: vstupenky.online - zařazení propojení do katalogu aplikací
+Stav: odesláno 2026-11-13, Gmail message/thread ID 1a1d1fe461fd411d
+
+Dobrý den,
+
+provozuji vstupenky.online, službu pro prodej vstupenek a místenek. Jeden
+z našich zákazníků používá Fakturoid, a proto mu chceme umožnit propojení
+prodeje vstupenek s jeho účtem. Napojení na vaše API v3 pro vytváření
+proforem už máme implementované a rádi bychom ho zpřístupnili i dalším
+pořadatelům.
+
+Ve vaší nápovědě jsem našel, že otestované integrace přidáváte do katalogu
+a ověřujete reference. Jaké podklady byste od nás potřebovali a stačí
+reference od jednoho zákazníka? Uvítal bych také testovací účet pro dokončení
+veřejného připojování přes OAuth.
+
+Prosím také o potvrzení, zda je registrace aplikace, její zařazení do katalogu
+a udržování záznamu bez fixních poplatků pro dodavatele propojení.
+
+Děkuji,
+Michael Bujnovský
+https://vstupenky.online/

@@ -292,6 +292,23 @@ bounded sidecar, leaving the existing API release separate. Only one process
 may own its SQLite volume. SIGKILL releases the separate kernel lock automatically;
 never delete or replace SQLite lock anchors. Close storage only after requests drain.
 
+Public API JSON and HTML are ignored build outputs. After a frozen package
+install, run `pnpm --dir tools/festapp run api:prepare` before API tests or
+packaging. Ordinary `api:generate` writes only the eight current projections;
+preparation materializes the pinned release archive and those current immutable
+URLs, then builds the offline HTML. `api:check` verifies the released baseline
+and never skips unavailable or corrupt archive inputs. The archive locator and
+SHA256 are in `api-contract-archive.json`; release approval remains in
+`api-release-baseline.json`. Set `FESTAPP_API_CONTRACT_ARCHIVE` to a verified
+local archive for offline preparation. Runtime requests serve local bytes.
+
+The Docker build generates its artifacts in a separate stage without Git or
+host build outputs. Pass `--build-arg FESTAPP_SOURCE_SHA=$(git rev-parse HEAD)`
+when building `Dockerfile.remote` from the repository root. Provenance lives in
+the manifest; changing implementation bytes alone does not change contract
+identity. Make explicitly prepares its current projection. Help uses the same
+authored facade metadata as the API, without a dependency on generated files.
+
 Order-summary clients use only `get_operator_order_summaries_v1`: SQL returns
 safe facts directly, without customer data or revisions. Exact symbols are
 filtered before pagination; missing migration fails closed without full RPC fallback.

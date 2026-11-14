@@ -1,0 +1,16 @@
+[
+  {
+    "endpointId": "global-api",
+    "brand": "Festapp",
+    "publicBase": "https://api.festapp.net/integrations/v1",
+    "resource": "https://api.festapp.net/integrations",
+    "issuer": "https://mcp.festapp.net"
+  },
+  {
+    "endpointId": "regional-api",
+    "brand": "vstupenky.online",
+    "publicBase": "https://api.vstupenky.online/integrations/v1",
+    "resource": "https://api.vstupenky.online/integrations",
+    "issuer": "https://mcp.festapp.net"
+  }
+]

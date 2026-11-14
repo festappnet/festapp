@@ -691,6 +691,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       .map(name=>['eshop',name]));
     forwardPrivateTables.push(['public','access_invitations']);
     const reviewedPrivateSources={
+      "integration_webhooks/webhooks.sql":["public.integration_webhook_subscriptions", "public.integration_webhook_events", "public.integration_webhook_deliveries", "public.integration_webhook_commands"],
       "people/access_schema.sql":["public.access_email_preparations", "public.access_preparation_key"],
       "notification_center/email_delivery_schema.sql":["public.notification_center_email_profiles", "public.notification_center_email_subscriptions", "public.notification_center_email_dispatches", "public.notification_center_email_items", "public.notification_center_email_item_sources"],
       "notification_center/provider_connections.sql":["eshop.provider_connection_notification_incidents"],

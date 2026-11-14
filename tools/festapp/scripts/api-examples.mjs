@@ -21,7 +21,7 @@ export function schemaExample(schema, root = schema, key = '', depth = 0) {
         if (/(?:Id|_id)$/.test(key) && !/version/i.test(key)) value = Math.max(value,/second|target/i.test(key)?2:1);
         return Math.min(value,schema.maximum ?? Infinity);
     }
-    if (schema.type === 'array') return Array.from({length:schema.minItems ?? 0},()=>schemaExample(schema.items,root,key,depth+1));
+    if (schema.type === 'array') return Array.from({length:schema.minItems ?? 0},(_,index)=>schemaExample(schema.prefixItems?.[index] ?? schema.items,root,key,depth+1));
     if (schema.type === 'object' || schema.properties) return Object.fromEntries((schema.required ?? []).map(name=>[name,schemaExample(schema.properties[name],root,name,depth+1)]));
     if (schema.type === 'string') {
         if (schema.format === 'email') return 'synthetic@example.invalid';
@@ -29,6 +29,7 @@ export function schemaExample(schema, root = schema, key = '', depth = 0) {
         if (schema.format === 'date-time') return /to|end/i.test(key)?'2026-11-14T12:00:00Z':'2026-11-13T12:00:00Z';
         if (schema.format === 'date') return '2026-11-13';
         if (schema.format === 'uri' || schema.format === 'url') return 'https://example.invalid/reference';
+        if (schema.pattern?.startsWith('^whsec_')) return 'whsec_'+'A'.repeat(43)+'=';
         if (schema.pattern?.includes('festapp-export')) return 'festapp-export://artifact/'+'a'.repeat(64)+'.json';
         if (schema.pattern?.includes('festapp-')) return 'festapp-preview://artifact/'+'a'.repeat(64)+'.pdf';
         if (schema.pattern?.includes('\\d')) return schema.pattern.includes('\\.') ? '0.00' : '0';
@@ -43,6 +44,8 @@ export function schemaExample(schema, root = schema, key = '', depth = 0) {
 }
 export function operationExamples(descriptor, inputSchema, outputSchema) {
     const request = descriptor.id === 'products.save' ? {occasionId:7,commandId:UUID,product:{title:'Admission',price:'100.00',currency_code:'CZK',product_type:1}} : schemaExample(inputSchema);
+    if (descriptor.id === 'webhooks.update') request.state = 'active';
+    if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
     if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
     if (descriptor.id === 'payments.record') request.amount = '100.00';
     if (descriptor.id === 'seats.swap') { request.sourceSpotIds = [request.firstSpotId]; request.targetSpotIds = [request.secondSpotId]; }

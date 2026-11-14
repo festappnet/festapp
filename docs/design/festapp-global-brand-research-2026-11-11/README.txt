@@ -1,0 +1,1 @@
+Attach files 01, 02 and 03 in ChatGPT, then paste PROMPT.txt. File 04 is optional historical context. The existing approved logo, rather than the rejected ticket/F draft, is the starting point. Request the horizontal header composition separately after selecting the square identity.

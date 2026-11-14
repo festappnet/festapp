@@ -16,6 +16,17 @@ type Source = {
   affectedOccasions?: { id: number; title: string; link: string }[];
 };
 type Item = Source & {
+  orderSymbol?: string | null;
+  contact?: { name?: string; surname?: string; email?: string };
+  state?: string;
+  payment?: {
+    total: number;
+    paid: number;
+    remaining: number;
+    overpaid: number;
+    currency: string;
+    deposit?: number | null;
+  } | null;
   key: string;
   kind: string;
   sources: Source[];
@@ -152,6 +163,166 @@ const kindIndex: Record<string, number> = {
   payment_problem: 8,
   order_payment_received: 9,
 };
+// These labels describe the current snapshot, never an inferred transition.
+const paymentLabels: Record<string, string[]> = {
+  cs: [
+    "Objednávka",
+    "Přijatá částka",
+    "Aktuální stav",
+    "Zaplaceno",
+    "Nezaplaceno",
+    "Storno",
+    "Stav není dostupný",
+    "Celkem",
+    "Uhrazeno",
+    "Zbývá doplatit",
+    "Přeplatek",
+    "Úhrada zálohy splněna",
+    "Přiřazená částka",
+    "Platební údaje nejsou dostupné",
+    "Částečně zaplaceno",
+  ],
+  en: [
+    "Order",
+    "Amount received",
+    "Current status",
+    "Paid",
+    "Unpaid",
+    "Cancelled",
+    "Status unavailable",
+    "Total",
+    "Paid so far",
+    "Remaining balance",
+    "Overpayment",
+    "Deposit requirement met",
+    "Amount assigned",
+    "Payment details unavailable",
+    "Partially paid",
+  ],
+  de: [
+    "Bestellung",
+    "Eingegangener Betrag",
+    "Aktueller Status",
+    "Bezahlt",
+    "Unbezahlt",
+    "Storniert",
+    "Status nicht verfügbar",
+    "Gesamt",
+    "Bisher bezahlt",
+    "Restbetrag",
+    "Überzahlung",
+    "Anzahlung erfüllt",
+    "Zugeordneter Betrag",
+    "Zahlungsdaten nicht verfügbar",
+    "Teilweise bezahlt",
+  ],
+  pl: [
+    "Zamówienie",
+    "Otrzymana kwota",
+    "Aktualny status",
+    "Opłacone",
+    "Nieopłacone",
+    "Anulowane",
+    "Status niedostępny",
+    "Razem",
+    "Wpłacono",
+    "Pozostało do zapłaty",
+    "Nadpłata",
+    "Wymagana zaliczka opłacona",
+    "Przypisana kwota",
+    "Dane płatności niedostępne",
+    "Częściowo opłacone",
+  ],
+  sk: [
+    "Objednávka",
+    "Prijatá suma",
+    "Aktuálny stav",
+    "Zaplatené",
+    "Nezaplatené",
+    "Storno",
+    "Stav nie je dostupný",
+    "Celkom",
+    "Uhradené",
+    "Zostáva doplatiť",
+    "Preplatok",
+    "Úhrada zálohy splnená",
+    "Priradená suma",
+    "Platobné údaje nie sú dostupné",
+    "Čiastočne zaplatené",
+  ],
+  uk: [
+    "Замовлення",
+    "Отримана сума",
+    "Поточний стан",
+    "Сплачено",
+    "Не сплачено",
+    "Скасовано",
+    "Стан недоступний",
+    "Разом",
+    "Сплачено наразі",
+    "Залишок до сплати",
+    "Переплата",
+    "Вимогу передоплати виконано",
+    "Призначена сума",
+    "Платіжні дані недоступні",
+    "Частково сплачено",
+  ],
+};
+function paymentRow(item: Item, locale: string): string {
+  const w = paymentLabels[locale] ?? paymentLabels.en;
+  const money = (amount: number, currency: string) =>
+    escape(
+      formatDisplayNumber(amount, locale, { style: "currency", currency }),
+    );
+  const order = `${w[0]} ${
+    item.orderSymbol || (item.orderId == null ? "?" : "#" + item.orderId)
+  }`;
+  const url = detailUrl(item);
+  const heading = url
+    ? `<a href="${escape(url)}">${escape(order)}</a>`
+    : escape(order);
+  const customer = [
+    [item.contact?.name, item.contact?.surname].filter(Boolean).join(" "),
+    item.contact?.email,
+  ].filter(Boolean).map(escape).join(" · ");
+  const payment = item.payment;
+  const state = item.state === "storno"
+    ? w[5]
+    : ["paid", "sent"].includes(item.state ?? "")
+    ? (!payment
+      ? w[6]
+      : payment.remaining > 0
+      ? (payment.deposit != null ? w[11] : w[14])
+      : w[3])
+    : item.state === "ordered"
+    ? (payment && payment.paid > 0 ? w[14] : w[4])
+    : w[6];
+  const lines = [heading, customer, `${escape(w[2])}: ${escape(state)}`];
+  if (typeof item.facts.amount === "number" && item.facts.currency) {
+    lines.push(
+      `${escape(w[item.facts.reassigned ? 12 : 1])}: ${
+        money(item.facts.amount, item.facts.currency)
+      }`,
+    );
+  }
+  if (payment) {
+    lines.push(
+      `${escape(w[7])}: ${money(payment.total, payment.currency)} · ${
+        escape(w[8])
+      }: ${money(payment.paid, payment.currency)}`,
+    );
+    // Always show the balance, even for a paid deposit or a cancelled order.
+    lines.push(
+      `${escape(w[9])}: ${money(payment.remaining, payment.currency)}`,
+    );
+    if (payment.overpaid > 0) {
+      lines.push(
+        `${escape(w[10])}: ${money(payment.overpaid, payment.currency)}`,
+      );
+    }
+  } else lines.push(escape(w[13]));
+  return `<li>${lines.filter(Boolean).join("<br>")}</li>`;
+}
 function detailUrl(source: Source): string | null {
   if (!source.webLink) return null;
   try {
@@ -190,10 +361,17 @@ export function adminNotificationEmail(
   from: string,
 ): PreparedEmail {
   const providerLabels: Record<string, string> = {
-    cs: "Problém platební brány", en: "Payment gateway problem", de: "Problem mit dem Zahlungsanbieter",
-    pl: "Problem z bramką płatniczą", sk: "Problém platobnej brány", uk: "Проблема платіжного шлюзу",
+    cs: "Problém platební brány",
+    en: "Payment gateway problem",
+    de: "Problem mit dem Zahlungsanbieter",
+    pl: "Problem z bramką płatniczą",
+    sk: "Problém platobnej brány",
+    uk: "Проблема платіжного шлюзу",
   };
-  const words = [...(labels[context.locale] ?? labels.en), providerLabels[context.locale] ?? providerLabels.en];
+  const words = [
+    ...(labels[context.locale] ?? labels.en),
+    providerLabels[context.locale] ?? providerLabels.en,
+  ];
   const groups = new Map<string, Item[]>();
   for (const item of context.items) {
     const key = JSON.stringify([item.organizationId, item.occasionId]);
@@ -267,6 +445,15 @@ export function adminNotificationEmail(
               : "";
           },
         ).filter(Boolean);
+      const details = [
+          "order_payment_received",
+          "order_payment_received:assigned",
+          "payment_problem",
+        ].includes(kind)
+        ? `<ul>${
+          entries.map((item) => paymentRow(item, context.locale)).join("")
+        }</ul>`
+        : "";
       return `<li>${
         escape(
           kind === "order_payment_received:assigned"
@@ -286,7 +473,7 @@ export function adminNotificationEmail(
         links.length
           ? `<br>${[...new Set(links)].slice(0, 10).join(" · ")}`
           : ""
-      }</li>`;
+      }${details}</li>`;
     }).join("");
     const section = `<section><h2>${escape(first.organizationTitle)}</h2>${
       first.occasionTitle ? `<h3>${escape(first.occasionTitle)}</h3>` : ""

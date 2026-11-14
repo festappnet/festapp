@@ -1,0 +1,26 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { DatabaseSync } from 'node:sqlite';
+import { receiver, verifyWebhook } from '../examples/webhook-receiver.mjs';
+import { signWebhook, createWebhookEvent, serializeWebhookEvent, WEBHOOK_TYPES } from '../src/remote/webhook-protocol.mjs';
+const secret='whsec_'+Buffer.alloc(32,2).toString('base64'),deliveryId='11111111-1111-4111-8111-111111111111';
+test('example receiver verifies raw bytes/time and acknowledges only its deduplicated durable inbox',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'festapp-receiver-')),file=join(dir,'inbox.sqlite');
+ const server=receiver({secret,file});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ t.after(async()=>{await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true});});
+ const event=createWebhookEvent({eventId:deliveryId,organizationId:1,orderId:7,type:WEBHOOK_TYPES.orderCreated,occurredAt:new Date().toISOString(),data:{orderId:7}});
+ const body=serializeWebhookEvent(event),timestamp=Math.floor(Date.now()/1000),headers=signWebhook({body,deliveryId,secrets:[secret],timestamp});
+ assert.equal(verifyWebhook(Buffer.from(body),headers,secret,timestamp),true);
+ assert.equal(verifyWebhook(Buffer.from(body+' '),headers,secret,timestamp),false);
+ assert.equal(verifyWebhook(Buffer.from(body),headers,secret,timestamp+301),false);
+ assert.equal(verifyWebhook(Buffer.from(body),headers,secret,timestamp-301),false);
+ const url=`http://127.0.0.1:${server.address().port}/webhooks/festapp`;
+ for(let i=0;i<2;i++)assert.equal((await fetch(url,{method:'POST',headers,body})).status,202);
+ const second=signWebhook({body,deliveryId:'22222222-2222-4222-8222-222222222222',secrets:[secret],timestamp});
+ assert.equal((await fetch(url,{method:'POST',headers:second,body})).status,202);
+ const db=new DatabaseSync(file);assert.equal(db.prepare('select count(*) n from inbox').get().n,1);db.close();
+ assert.equal((await fetch(url,{method:'POST',headers,body:body+' '})).status,401);
+});

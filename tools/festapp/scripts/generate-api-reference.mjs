@@ -1,3 +1,4 @@
+import {webhookEventSchemas} from '../src/remote/webhook-events.mjs';
 import { operationExamples } from './api-examples.mjs';
 import { PUBLIC_API_FACADES, API_DATA_PROFILES, API_PROOF_PROFILES, apiProjectionDirectory } from '../src/remote/endpoints.mjs';
 import { ARTIFACT_MEDIA_TYPES } from '../src/operations/preview.mjs';
@@ -10,9 +11,12 @@ import { publicCatalog, readiness, jsonSchema, scopesForOperation, problemSchema
 const root = fileURLToPath(new URL('../', import.meta.url));
 const hash = value => createHash('sha256').update(value).digest('hex');
 const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).version;
-const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+const sourceSha = process.env.FESTAPP_SOURCE_SHA ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+if (!/^[a-f0-9]{40}$/.test(sourceSha)) throw new Error('Explicit source provenance must be a full Git SHA');
 const sourceFiles = fs.readdirSync(path.join(root, 'src'), { recursive: true }).filter(f => f.endsWith('.mjs')).sort();
-const contractFiles = ['package.json','pnpm-lock.yaml',...fs.readdirSync(path.join(root,'scripts')).filter(f=>f.endsWith('.mjs')).map(f=>'scripts/'+f), '../../packages/festapp_contracts/mcp-permissions.mjs'];
+const contractFiles = ['package.json','pnpm-lock.yaml','api-contract-archive.json','api-release-baseline.json',
+    ...['generate-api-reference','api-examples','build-api-docs','api-artifacts','prepare-api-artifacts'].map(name=>'scripts/'+name+'.mjs'),
+    '../../packages/festapp_contracts/mcp-permissions.mjs'];
 const inputs = new Set();
 const visit = file => {
     if (inputs.has(file)) return;
@@ -70,17 +74,29 @@ export function specification(endpoint, dataProfile, proofProfile = 'bearer') {
         description: 'Requires the original operation scopes, active grant, actor and session binding. Artifacts expire after 15 minutes; cache holds at most 8 items/16 MiB and is lost on restart. Recreate missing read exports through their read operation. No arbitrary URL fetching.',
         requestBody: { required: true, content: { 'application/json': { schema: register(artifactInput, 'ArtifactInput') } } },
         responses: { 200: { description: 'Authorized binary content.', headers: { 'X-Request-Id': { $ref: '#/components/headers/RequestId' }, 'Cache-Control': { schema: { type: 'string', const: 'no-store' }, description: 'Private response policy.' } }, content: Object.fromEntries(Object.values(ARTIFACT_MEDIA_TYPES).map(mime => [mime, { schema: { contentMediaType: mime } }])) }, ...errors } } };
-    return { openapi: '3.2.1', info: { title: endpoint.brand + ' integrations API', version,
+    const webhooks = dataProfile === 'operator' ? Object.fromEntries(Object.entries(webhookEventSchemas).map(([type,schema])=>[type,{post:{
+        operationId:type==='net.festapp.order.created.v1'?'receiveOrderCreated':'receiveWebhookTest',
+        summary:type,description:'Outbound HTTPS POST to the subscribed receiver. Verify the exact raw body using Standard Webhooks v1 HMAC-SHA256 over webhook-id.timestamp.body and check the send timestamp. The occurrence time/body are immutable. Delivery IDs remain stable through retry/redelivery; deduplicate before acknowledging. No ordering or exactly-once guarantee.',
+        security:[{webhookSignature:[]}],
+        parameters:[
+            {in:'header',name:'webhook-id',required:true,schema:{type:'string',format:'uuid'},description:'Stable delivery ID for this subscription/event pair.'},
+            {in:'header',name:'webhook-timestamp',required:true,schema:{type:'string',pattern:'^[0-9]+$'},description:'Attempt send time in Unix seconds; verify a five-minute tolerance.'},
+            {in:'header',name:'webhook-signature',required:true,schema:{type:'string'},description:'Space-separated v1,BASE64 HMAC-SHA256 signatures during rotation.'},
+        ],
+        requestBody:{required:true,content:{'application/cloudevents+json':{schema:register(schema,type+'.Event')}}},
+        responses:{'2XX':{description:'Durably accepted; receiver deduplicates before processing business effects.'},'410':{description:'Endpoint disabled. Other non-2xx responses retry within the attempt/deadline limits.'}},
+    }}])) : undefined;
+    return { ...(webhooks?{webhooks}:{}), openapi: '3.2.1', info: { title: endpoint.brand + ' integrations API', version,
         description: 'Delegated personal OAuth, code + PKCE S256, explicit resource and consent. Not an autonomous organization identity. Read-only POSTs may be repeated; keyset pages are not a snapshot. Decimal money remains a string. Never generate a new commandId after a timeout. Refresh once per connection; atomically persist the rotated token. Reuse, lost refresh responses and grant expiry require reconnect. Consent defaults to 7 days; 30/90/365 days require explicit client policy. Consumed refresh proofs use capped encrypted buckets, never eviction of live evidence. Capacity exhaustion rejects new grants or exchanges. A 30-day idle limit never extends consent. Access tokens live at most 300 seconds. OAuth 2.1 and Idempotency-Key are drafts; no FAPI compliance claim. API data uses no-store. Runtime cross-field refinements remain mandatory.',
         contact: { name: 'Festapp', url: 'https://festapp.net' }, license: { name: 'Proprietary' } },
         servers: [{ url: endpoint.publicBase }],
         'x-profile-policy': endpoint.endpointId === 'regional-api' ? 'fixed' : 'selected',
         'x-proof-profile': proofProfile, 'x-client-proof-policy': 'A registered DPoP-only client must also supply a bound DPoP token and fresh DPoP proof. OAuth alone is never sufficient for that client.',
         'x-oauth-resource': endpoint.resource, 'x-oauth-issuer': endpoint.issuer, 'x-data-profile': dataProfile,
-        'x-source-digest': sourceDigest, 'x-body-limit-bytes': API_JSON_LIMITS.bytes, 'x-json-limits': API_JSON_LIMITS, 'x-cost-budget': API_COST_BUDGET,
+        'x-body-limit-bytes': API_JSON_LIMITS.bytes, 'x-json-limits': API_JSON_LIMITS, 'x-cost-budget': API_COST_BUDGET,
         'x-readiness': catalog.map(d => ({ operationId: d.id, ...readiness(d,dataProfile,proofProfile) })),
         tags: [...new Set([...supported.map(d => d.id.split('.')[0]), ...(dataProfile === 'operator' ? ['artifacts'] : [])])].map(name => ({ name, description: name + ' operations' })),
-        paths, components: { schemas, headers: { RequestId: { description: 'Correlation ID, matching meta.requestId or problem.requestId.', schema: { type: 'string', minLength: 1, maxLength: 128 } } }, securitySchemes: { ...(proofProfile === 'dpop' ? {dpop:{type:'apiKey',in:'header',name:'DPoP',description:'A per-request signed RFC 9449 proof, not an API key. OAuth and this proof are both required. The OAuth access token uses Authorization: DPoP.'}} : {}), oauth: { type: 'oauth2', description:proofProfile === 'dpop' ? 'DPoP-bound opaque token in Authorization: DPoP. OAuth alone is insufficient; the signed DPoP header is also mandatory.' : 'Bearer opaque token in Authorization: Bearer.', flows: { authorizationCode: { authorizationUrl: endpoint.issuer + '/auth', tokenUrl: endpoint.issuer + '/token', scopes: Object.fromEntries([...new Set(supported.flatMap(d=>scopesForOperation(d.id)))].map(s=>[s,s])) } } } } },
+        paths, components: { schemas, headers: { RequestId: { description: 'Correlation ID, matching meta.requestId or problem.requestId.', schema: { type: 'string', minLength: 1, maxLength: 128 } } }, securitySchemes: { ...(dataProfile === 'operator' ? {webhookSignature:{type:'apiKey',in:'header',name:'webhook-signature',description:'Standard Webhooks v1 per-request HMAC signature, not a fixed API key. Covers webhook-id, webhook-timestamp and the exact raw body with the decoded whsec_ signing key. Used only for outbound webhooks; API operations still require their original OAuth/DPoP policy.'}} : {}), ...(proofProfile === 'dpop' ? {dpop:{type:'apiKey',in:'header',name:'DPoP',description:'A per-request signed RFC 9449 proof, not an API key. OAuth and this proof are both required. The OAuth access token uses Authorization: DPoP.'}} : {}), oauth: { type: 'oauth2', description:proofProfile === 'dpop' ? 'DPoP-bound opaque token in Authorization: DPoP. OAuth alone is insufficient; the signed DPoP header is also mandatory.' : 'Bearer opaque token in Authorization: Bearer.', flows: { authorizationCode: { authorizationUrl: endpoint.issuer + '/auth', tokenUrl: endpoint.issuer + '/token', scopes: Object.fromEntries([...new Set(supported.flatMap(d=>scopesForOperation(d.id)))].map(s=>[s,s])) } } } } },
     };
 }
 export function generate({ check = false } = {}) {
@@ -93,13 +109,6 @@ export function generate({ check = false } = {}) {
             generator: 'festapp-api-v1', redocly: JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).devDependencies['@redocly/cli'],
             endpointId: endpoint.endpointId, publicBase: endpoint.publicBase, resource: endpoint.resource, issuer: endpoint.issuer, dataProfile: profile, proofProfile, schemaDigest, projectionDigest, reference: 'docs/index.html' };
         const dir = path.join(root, 'contracts/api-v1', apiProjectionDirectory(endpoint.endpointId,profile,proofProfile));
-        const snapshotDirectory = path.join(root, 'contracts/api-v1', endpoint.endpointId, 'contracts', projectionDigest);
-        const snapshot = path.join(snapshotDirectory, 'openapi.json');
-        const snapshotText = JSON.stringify(spec, null, 2) + '\n';
-        if (fs.existsSync(snapshot)) {
-            if (fs.readFileSync(snapshot, 'utf8') !== snapshotText) throw new Error('Immutable API snapshot collision: ' + snapshot);
-        } else if (check) throw new Error('Missing immutable API snapshot: ' + snapshot);
-        else { fs.mkdirSync(snapshotDirectory, {recursive:true}); fs.writeFileSync(snapshot, snapshotText); }
         for (const [name, value] of [['openapi.json', spec], ['manifest.json', manifest]]) {
             const file = path.join(dir, name), text = JSON.stringify(value, null, 2) + '\n';
             if (check) {

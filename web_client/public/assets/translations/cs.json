@@ -4212,7 +4212,9 @@
     "blueprintsRead": "Číst plánky, obchodní vazby a fonty",
     "blueprintsWrite": "Ukládat celé návrhy plánků a připravovat texty",
     "ticketArtworkPreview": "Zobrazovat náhled vzhledu vzorové vstupenky",
-    "ticketArtworkWrite": "Ukládat vzhled vstupenek a obnovovat nedokončené ukládání"
+    "ticketArtworkWrite": "Ukládat vzhled vstupenek a obnovovat nedokončené ukládání",
+    "webhooksRead": "Číst webhooky a historii doručení",
+    "webhooksWrite": "Spravovat webhooky a jejich doručování"
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",

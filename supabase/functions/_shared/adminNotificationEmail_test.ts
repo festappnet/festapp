@@ -207,16 +207,135 @@ Deno.test("large activity stays in one bounded HTML summary with an authorized o
 
 Deno.test("required gateway incidents use the same localized digest and authorized unit link", () => {
   const source = {
-    organizationId: 1, organizationTitle: "Pořadatel", occasionId: null,
-    occasionTitle: null, occasionLink: null, webLink: "https://tenant.example.test",
-    orderId: null, unitId: 42, provider: "Stripe",
+    organizationId: 1,
+    organizationTitle: "Pořadatel",
+    occasionId: null,
+    occasionTitle: null,
+    occasionLink: null,
+    webLink: "https://tenant.example.test",
+    orderId: null,
+    unitId: 42,
+    provider: "Stripe",
   };
   const html = adminNotificationEmail({
-    locale: "cs", address: "admin@example.test", fingerprint: "authorized",
-    items: [{ ...source, key: "gateway-episode", kind: "provider_problem", facts: { count: null }, sources: [source] }],
+    locale: "cs",
+    address: "admin@example.test",
+    fingerprint: "authorized",
+    items: [{
+      ...source,
+      key: "gateway-episode",
+      kind: "provider_problem",
+      facts: { count: null },
+      sources: [source],
+    }],
   }, "noreply@example.test").html;
   assertStringIncludes(html, "Problém platební brány: 1");
   assertStringIncludes(html, "https://tenant.example.test/unit/42/edit");
   assertStringIncludes(html, "Pořadatel: Stripe");
   assertEquals(html.includes("Vstupenky:"), false);
+});
+
+Deno.test("payment rows identify each order, escape contacts and distinguish deposits, balances and overpayments", () => {
+  const source = {
+    organizationId: 1,
+    organizationTitle: "Spolek",
+    occasionId: 2,
+    occasionTitle: "Ples",
+    occasionLink: "ples",
+    webLink: "https://a.example.test",
+    orderId: 42,
+  };
+  const item = {
+    ...source,
+    key: "payment",
+    kind: "order_payment_received",
+    sources: [source],
+    orderSymbol: "ABC123",
+    contact: {
+      name: "<Jana>",
+      surname: "Nováková",
+      email: "jana@example.test",
+    },
+    state: "paid",
+    facts: { count: null, amount: 200, currency: "CZK" },
+    payment: {
+      total: 1000,
+      paid: 200,
+      remaining: 800,
+      overpaid: 0,
+      currency: "CZK",
+      deposit: 200,
+    },
+  };
+  const render = (items: DigestContext["items"]) =>
+    adminNotificationEmail({
+      locale: "cs",
+      address: "admin@example.test",
+      fingerprint: "f",
+      items,
+    }, "sender@example.test").html;
+  const html = render([item, {
+    ...item,
+    key: "second",
+    orderId: 43,
+    orderSymbol: "XYZ789",
+    state: "sent",
+    payment: { ...item.payment, paid: 1100, remaining: 0, overpaid: 100 },
+  }]);
+  for (
+    const text of [
+      "Objednávka ABC123",
+      "orderId=42",
+      "Objednávka XYZ789",
+      "orderId=43",
+      "&lt;Jana&gt; Nováková",
+      "jana@example.test",
+      "Úhrada zálohy splněna",
+      "Zbývá doplatit: 800",
+      "Přeplatek: 100",
+      "Aktuální stav: Zaplaceno",
+    ]
+  ) assertStringIncludes(html, text);
+  assertEquals(html.includes("<Jana>"), false);
+  assertStringIncludes(
+    render([{
+      ...item,
+      state: "ordered",
+      payment: { ...item.payment, deposit: null },
+    }]),
+    "Částečně zaplaceno",
+  );
+  const missing = render([{
+    ...item,
+    orderSymbol: null,
+    state: undefined,
+    contact: {},
+    payment: null,
+  }]);
+  assertStringIncludes(missing, "Objednávka #42");
+  assertStringIncludes(missing, "Stav není dostupný");
+  assertStringIncludes(missing, "Platební údaje nejsou dostupné");
+  assertEquals(missing.includes("undefined"), false);
+  assertEquals(
+    render([{ ...item, payment: null }]).includes("Aktuální stav: Zaplaceno"),
+    false,
+  );
+  for (const locale of ["en", "de", "pl", "sk", "uk"]) {
+    const translated = adminNotificationEmail({
+      locale,
+      address: "admin@example.test",
+      fingerprint: "f",
+      items: [item],
+    }, "sender@example.test").html;
+    assertStringIncludes(translated, "ABC123");
+    assertEquals(translated.includes("Zbývá doplatit"), false);
+  }
+  assertStringIncludes(
+    render([{ ...item, state: "storno" }]),
+    "Aktuální stav: Storno",
+  );
+  assertStringIncludes(
+    render([{ ...item, facts: { ...item.facts, reassigned: true } }]),
+    "Přiřazená částka",
+  );
 });

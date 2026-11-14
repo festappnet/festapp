@@ -481,6 +481,8 @@
     "ticket_wallet/maintenance.sql",
     "ticket_wallet/control.sql",
     "ticket_wallet/apple_updates_schema.sql",
-    "ticket_wallet/apple_updates.sql"
+    "ticket_wallet/apple_updates.sql",
+    "user_permissions/webhook_operations.sql",
+    "integration_webhooks/webhooks.sql"
   ]
 }

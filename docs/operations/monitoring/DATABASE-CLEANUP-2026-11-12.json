@@ -1,0 +1,153 @@
+{
+  "date_utc": "2026-11-12",
+  "target": {
+    "host": "festapp-supabase-rehearsal-01",
+    "runtime_database": "festapp_rehearsal_20260909220601",
+    "organization_id": 3
+  },
+  "source_hashes": {
+    "database-cleanup.py": "9142defebfeee0015a9bb5e614a506e9a0a66aa3fa34fe6efc46535da609c92d",
+    "database-retention.py": "7d68f47e1bafc4155677b71ee85125dfbda4834786c021019802639c167331fb",
+    "host-retention.py": "b5a62fbb4ff4dc6168fe3888d9deecb2ae59645ae3b0df88e87a25d0567a0def",
+    "festapp-database-retention.service": "ec32f5551452402f04f8c9fefa35bbb4298ebfb221f26361264277ac246b4e95",
+    "festapp-database-retention.timer": "81b0b200b1f322893ce6889a74e28ea7eea2c77b94c3c9147c74d4c1d72b5fd9"
+  },
+  "validation": {
+    "tests": "6 real PostgreSQL 17 and encrypted dump/restore tests passed before execution; cover retention boundaries, SKIP LOCKED behavior, restore, role-name isolation, and fenced pg_net setup",
+    "python_compile": "passed",
+    "systemd_analyze_verify": "passed with pre-existing CPUAccounting deprecation warnings",
+    "read_only_dry_run": "passed; exact four database names/OIDs, inactive/write-free guard, and seven repack targets verified"
+  },
+  "execution": {
+    "one_time_service": "festapp-database-cleanup-20261112-resume2.service",
+    "result": "success",
+    "exit_status": 0,
+    "backup_guard": "pgBackRest stanza festapp healthy; newest backup 12,895 seconds old; WAL archiving on, no current archive failure, zero pending WAL files",
+    "archives": {
+      "database_dumps": [
+        {
+          "database": "festapp_rehearsal_20260909220601",
+          "encrypted_bytes": 228640073,
+          "restored_tables": 297,
+          "restored_rows": 2994853,
+          "runtime_identity_verified": true,
+          "isolated_pg_repack_rehearsal": true,
+          "ciphertext_readback_sha256_verified": true
+        },
+        {
+          "database": "festapp_stage_default",
+          "encrypted_bytes": 7377902,
+          "restored_tables": 73,
+          "restored_rows": 129527,
+          "table_row_counts_matched": true,
+          "ciphertext_readback_sha256_verified": true,
+          "dropped_without_force": true
+        },
+        {
+          "database": "festapp_stage_a",
+          "encrypted_bytes": 324001098,
+          "restored_tables": 103,
+          "restored_rows": 1877092,
+          "table_row_counts_matched": true,
+          "ciphertext_readback_sha256_verified": true,
+          "dropped_without_force": true
+        },
+        {
+          "database": "festapp_stage_slunovrat",
+          "encrypted_bytes": 44800760,
+          "restored_tables": 69,
+          "restored_rows": 346224,
+          "table_row_counts_matched": true,
+          "ciphertext_readback_sha256_verified": true,
+          "dropped_without_force": true
+        },
+        {
+          "database": "festapp_rehearsal_20260828234500",
+          "encrypted_bytes": 190147200,
+          "restored_tables": 154,
+          "restored_rows": 2723203,
+          "table_row_counts_matched": true,
+          "ciphertext_readback_sha256_verified": true,
+          "dropped_without_force": true
+        }
+      ],
+      "no_password_role_archives": {
+        "count": 1,
+        "encrypted_bytes_each": 7042,
+        "ciphertext_readback_sha256_verified": true,
+        "shared_by_database_dumps": 5
+      },
+      "retired_database_pre_run_size_bytes": 2380092096,
+      "retired_database_names_remaining": [],
+      "prior_diagnostic_role_archive_preserved": true,
+      "remote_archive_locators": "kept only in protected host receipts"
+    },
+    "retention_rows_removed": {
+      "postgres.cron.job_run_details_success_older_than_7_days": 382232,
+      "postgres.cron.job_run_details_failed_older_than_90_days": 0,
+      "runtime.public.log_app_config_older_than_90_days": 453324,
+      "runtime.auth.audit_log_entries_older_than_365_days": 272644
+    },
+    "online_compaction_bytes": [
+      {
+        "relation": "runtime.public.information",
+        "before": 104243200,
+        "after": 6537216
+      },
+      {
+        "relation": "runtime.public.events",
+        "before": 130154496,
+        "after": 66641920
+      },
+      {
+        "relation": "runtime.public.news",
+        "before": 52551680,
+        "after": 15556608
+      },
+      {
+        "relation": "runtime.public.email_messages",
+        "before": 140861440,
+        "after": 121716736
+      },
+      {
+        "relation": "runtime.public.log_app_config",
+        "before": 85835776,
+        "after": 13090816
+      },
+      {
+        "relation": "runtime.auth.audit_log_entries",
+        "before": 232800256,
+        "after": 142925824
+      },
+      {
+        "relation": "postgres.cron.job_run_details",
+        "before": 312205312,
+        "after": 154804224
+      }
+    ],
+    "compaction_bytes_reduced": 537378816,
+    "disk_free_bytes": {
+      "service_start": 12707401728,
+      "service_end": 14718459904,
+      "net_increase": 2011058176
+    },
+    "daily_retention_timer": {
+      "enabled": true,
+      "next_run_utc": "2026-11-13T06:15:59Z",
+      "service_not_run_immediately": true
+    },
+    "post_checks": {
+      "runtime_database_and_organization_healthy": true,
+      "running_container_count": 12,
+      "running_container_ids_images_states_start_times_unchanged": true,
+      "existing_cron_jobs_unchanged": true,
+      "pg_repack_extensions_schemas_triggers_remaining": 0,
+      "invalid_indexes": 0
+    },
+    "pre_success_attempts_without_source_database_changes": [
+      "Initial dry-run SQL ambiguity, then JSON OID comparison; corrected and regression-tested before writes.",
+      "Isolated clone role-grant replay failure; corrected to restore role names only.",
+      "Isolated clone pg_net preload failure; corrected with explicit nonexistent-database fence and network-none verifier."
+    ]
+  }
+}

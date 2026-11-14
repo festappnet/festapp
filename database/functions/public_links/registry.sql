@@ -50,10 +50,6 @@ BEGIN
  RETURN result;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.occasion_reserved_public_paths_internal()
-RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path = public, extensions AS $$
- SELECT ARRAY['resetPassword','forgotPassword','reset-password','forgot-password','login','signup','settings','install','unit','admin','form','order','scan','transfer','app','privacy','terms','support','delete-account','google-auth','stripe','payments','wallet','assets','icons','flutter','index.html','flutter.html','favicon.ico','manifest.json','robots.txt','version.json','backend-activation.json'];
-$$;
 
 CREATE OR REPLACE FUNCTION public.reserve_public_link_internal(p_kind text,p_id bigint,p_slug text,p_create boolean DEFAULT false)
 RETURNS text LANGUAGE plpgsql VOLATILE SET search_path = public, extensions AS $$

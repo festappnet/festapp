@@ -20,7 +20,10 @@
     "api:compatibility": "node scripts/check-api-compatibility.mjs",
     "api:docs": "node scripts/build-api-docs.mjs",
     "api:ingress": "node scripts/check-api-ingress.mjs",
-    "test:postgres": "node --test --test-concurrency=1 test/*-postgres.test.mjs"
+    "test:postgres": "node --test --test-concurrency=1 test/*-postgres.test.mjs",
+    "api:prepare": "node scripts/prepare-api-artifacts.mjs",
+    "pretest": "pnpm run api:prepare",
+    "pretest:postgres": "node scripts/prepare-api-artifacts.mjs --contracts-only"
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.11",

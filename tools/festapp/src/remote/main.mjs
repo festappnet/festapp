@@ -82,19 +82,20 @@ try {
         check(secrets.schemaVersion === 1 && /^[A-Za-z0-9_-]{43}$/.test(secrets.storageKey), 'INVALID_STORAGE_KEY');
         const storage = await openRemoteStorage(root, Buffer.from(secrets.storageKey, 'base64url'));
         try {
-            const { app } = createRemoteApp(config, storage, { ...secrets,
+            const { app, webhooks } = createRemoteApp(config, storage, { ...secrets,
                 audit: record => process.stderr.write(JSON.stringify(record) + '\n') });
-            const listener = app.listen(port, '127.0.0.1', () => process.stderr.write('Festapp MCP listening on loopback\n'));
+            const listener = app.listen(port, '127.0.0.1', () => { webhooks.start(); process.stderr.write('Festapp MCP listening on loopback\n'); });
             let closing = false;
             const close = () => {
                 if (closing) return;
                 closing = true;
                 const timer = setTimeout(() => listener.closeAllConnections(), 30000);
                 timer.unref();
-                listener.close(async () => { clearTimeout(timer); await storage.close(); });
+                const workerClosed = webhooks.close();
+                listener.close(async () => { clearTimeout(timer); await workerClosed; await storage.close(); });
             };
             process.once('SIGINT', close); process.once('SIGTERM', close);
-            listener.on('error', async () => { await storage.close(); process.exitCode = 1; });
+            listener.on('error', async () => { await webhooks.close(); await storage.close(); process.exitCode = 1; });
         } catch (e) { await storage.close(); throw e; }
     }
 } catch (error) {
