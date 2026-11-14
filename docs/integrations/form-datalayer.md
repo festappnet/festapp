@@ -543,6 +543,19 @@ adapters can instead return a saved `consentRevision` matching the requested
 scope's `consentRevision`; a runtime-only deploy then does not invalidate that
 saved notice. Exact current technical scope still binds every live message.
 
+### Joomla module
+
+The Joomla modules (`integrations/joomla`) configure the Cookiebot and CookieConsent
+sources above from saved module settings, off by default. The administrator enters
+every value; empty fields only show placeholders (site HTTPS origin, current UTC
+instant), and nothing is derived from requests or updated on deploy. Only a complete,
+valid configuration is output, once per page on the module's `embed.js` (Cookiebot
+also `data-cookieconsent="ignore"`), and only then is the module link marked and
+emitted without `noopener noreferrer`. Different configurations on one page leave
+the helper unconfigured. A button-only display places a marked link without an
+iframe. Joomla's default `Cross-Origin-Opener-Policy: same-origin` (System - HTTP
+Headers) severs the new tab in Chromium and Firefox; use `same-origin-allow-popups`.
+
 ### Explicit external adapters
 
 For another CMP, register a live source after `embed.js` loads with

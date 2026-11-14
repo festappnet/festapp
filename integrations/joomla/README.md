@@ -182,3 +182,62 @@ Unit mode requires a consent adapter. See the canonical
 [measurement contract](../../docs/integrations/form-datalayer.md).
 
 New modules select Website mode, recommended for websites with their own GTM and consent banner. Saved modules without a measurement parameter keep Unit mode, including when reopened in the editor. Unit mode reads the website Consent Mode unless an explicit adapter is connected.
+
+## Převzetí souhlasu s cookies do nové záložky
+
+Volitelná karta **Souhlas s cookies** v nastavení modulu předá uloženou volbu lišty
+webu formuláři otevřenému v nové záložce. Podporované lišty v Joomle jsou
+**Cookiebot** a **CookieConsent v3 (orestbida)**; Complianz existuje jen pro WordPress.
+Výchozí stav je vypnuto a výstup zůstává bajtově stejný jako dosud.
+
+1. Ve službě zapněte **Převzít souhlas z lišty schválených webů** a web přidejte
+   do **Moje weby**; převzetí funguje až po schválení webu platformou.
+2. V modulu zapněte převzetí, vyberte lištu a vyplňte ID organizace a jednotky
+   a `analytics.consent_revision` z metadat formuláře. Cookiebot: CBID, přesný
+   HTTPS origin, `consentValidFrom` (UTC ISO s milisekundami a `Z`) a
+   `maxAgeSeconds` nejvýše 31536000. CookieConsent: kladná `revision`, volitelně
+   názvy obou kategorií. Prázdná pole jen navrhnou origin webu a aktuální okamžik
+   jako zástupný text; uloží se pouze to, co správce zadá. Hodnoty jsou prohlášením
+   pořadatele o pokrytí lišty, nikdy se negenerují z požadavku ani neaktualizují.
+3. **System - HTTP Headers**: nastavte *Cross-Origin-Opener-Policy* na
+   `same-origin-allow-popups`. Výchozí `same-origin` novou záložku v Chromiu
+   a Firefoxu odpojí a formulář se zeptá sám (ověřeno v E2E testu níže).
+
+Neplatné nastavení nelze uložit; uložené neplatné hodnoty modul ignoruje, odkaz
+zůstane s `rel="noopener noreferrer"` a skript bez `data-festapp-consent`. Platné
+nastavení vydá konfiguraci na jediném `embed.js` (Cookiebot také
+`data-cookieconsent="ignore"`) a odkaz modulu označí `data-festapp-consent-link`
+bez `noopener noreferrer`. Stejné nastavení ve více modulech sdílí jeden skript;
+odlišné nastavení na stejné stránce převzetí na celé stránce vypne. Konflikt,
+neplatné hodnoty a výchozí COOP se zapisují jako varování do logu Joomly
+(*Log Almost Everything* nebo ladění). Nastavení platí i pro vložené formuláře
+v režimu měření jednotky na stejné stránce. Jedna stránka obslouží jednu značku:
+pokud jsou na ní moduly obou značek, běží jen první načtený helper.
+
+**Zobrazení → Pouze tlačítko** vykreslí jen odkaz (výchozí třídy `btn btn-primary`)
+bez iframe, například do menu nebo na úvodní stránku. Bez převzetí souhlasu tento
+režim nenačítá žádný externí skript. Ruční odkazy v článcích se nedoporučují:
+editor TinyMCE k `target="_blank"` doplňuje `rel="noopener"`, který převzetí vypne.
+
+## Cookie consent transfer to a new tab (English)
+
+The optional **Cookie consent** tab passes the website banner's saved choice to a
+form opened in a new tab. Supported Joomla banners: Cookiebot and CookieConsent v3
+(orestbida). Enable “Take over consent from the banner of approved websites” and
+add the website under “My websites” in the service. Enter the organization/Unit
+IDs, `analytics.consent_revision`, and the CMP-specific values from the
+[measurement contract](../../docs/integrations/form-datalayer.md#live-consent-transfer-to-a-new-tab).
+Empty fields only show suggestions as placeholders; the module stores only what
+the administrator saves and never derives values from requests. Set Joomla's
+**System - HTTP Headers** Cross-Origin-Opener-Policy to `same-origin-allow-popups`.
+Invalid, missing or conflicting settings keep the legacy link and an unconfigured
+helper. **Display → Button only** renders a marked link without an iframe.
+
+Tests: `tests/consent-contract.php` (stubbed APIs, also in `automation/test_embed_adapters.sh`
+and both CMS containers), `tests/consent-page.py` (native saves and public markup),
+`node tests/consent-parity.mjs` (generated settings accepted by the real adapters;
+needs `web_client` dependencies and PHP) and `node tests/consent-browser.mjs
+[--browsers=chromium,firefox,webkit] [--cookiebot]` (browser E2E with real
+CookieConsent 3.3.0 in the Joomla template and, with `--cookiebot`, the live
+Cookiebot SDK of a dedicated test domain answered locally; no production form,
+order, lead or measurement request).

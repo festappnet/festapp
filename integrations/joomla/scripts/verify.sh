@@ -18,12 +18,14 @@ for major in 5 6; do
   done
   docker exec "$container" php /tests/contract.php > "evidence/contract-$major.json"
   docker exec --env FESTAPP_JOOMLA_MODULE_ROOT=/var/www/html/modules "$container" php /tests/measurement-defaults.php > "evidence/measurement-defaults-$major.json"
+  docker exec --env FESTAPP_JOOMLA_MODULE_ROOT=/var/www/html/modules "$container" php /tests/consent-contract.php > "evidence/consent-contract-$major.json"
   docker exec "$container" php /tests/seed.php > ".private/seed-$major.json"
   docker exec "$container" php /tests/clear-cache.php > ".private/seed-cache-$major.log"
 done
 python3 tests/installed-files.py
 python3 tests/cms.py
 python3 tests/native-publication.py
+python3 tests/consent-page.py
 python3 tests/browser.py
 python3 tests/updater.py
 python3 scripts/check-live.py

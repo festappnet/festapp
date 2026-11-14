@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Joomla modules can transfer the website's saved Cookiebot or CookieConsent v3 choice to forms opened in a new tab. The organizer saves the documented coverage settings; invalid or conflicting settings keep the unchanged link and the form's own notice. A button-only display places a marked link in menus or on the home page. Off by default.
+
 - Standalone consent links support configured Cookiebot explicit opt-in choices with CBID/origin and archived-notice cutoff mapping, expiry checks and TCF marketing denial.
 
 - Measurement website requests can be retried after cancelled or undelivered notifications; organizer settings distinguish drafts, unsent requests and platform approval, and show website validation while editing.

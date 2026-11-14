@@ -422,6 +422,15 @@ fallbacku na GCM. Interval kontroluje i jinou kartu; při neshodě načtěte web
 TCF marketing zůstává odmítnutý. Podrobné hranice a oficiální zdroje jsou v
 [dokumentaci měření](form-datalayer.md#configured-cookiebot-source).
 
+V Joomle nastavíte Cookiebot nebo CookieConsent v3 na kartě **Souhlas s cookies**
+modulu (výchozí vypnuto). Hodnoty zadává správce; prázdná pole jen navrhnou origin
+webu a aktuální okamžik. Modul vydá konfiguraci jen jednou na stránku a jen při
+platném nastavení; teprve pak odkaz označí a vynechá `noopener noreferrer`.
+Odlišné nastavení více modulů převzetí na stránce vypne. Režim **Pouze tlačítko**
+vloží označený odkaz bez iframe. V pluginu **System - HTTP Headers** nastavte
+Cross-Origin-Opener-Policy na `same-origin-allow-popups`; výchozí `same-origin`
+novou záložku v Chromiu a Firefoxu odpojí.
+
 Technická změna runtime ukončí starou vazbu, ale nemění verzi podmínek souhlasu.
 Při změně účelů, příjemců nebo vzdáleného obsahu GTM/zásad zvyšte
 `measurement_consent_version`, zajistěte nové rozhodnutí v CMP a aktualizujte

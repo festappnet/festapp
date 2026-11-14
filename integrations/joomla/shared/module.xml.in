@@ -21,19 +21,43 @@
   </languages>
 @@UPDATE_SERVERS@@  <config>
     <fields name="params">
-      <fieldset name="basic" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule" addfieldprefix="Festapp\Module\@@NAMESPACE@@\Site\Field">
+      <fieldset name="basic" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule" addfieldprefix="Festapp\Module\@@NAMESPACE@@\Site\Field" addfilterprefix="Festapp\Module\@@NAMESPACE@@\Site\Filter">
         <field name="onboarding" type="note" label="@@KEY@@_START" description="@@KEY@@_ONBOARDING" />
         <field name="url" type="text" required="true" filter="raw" validate="publicform" label="@@KEY@@_URL" description="@@KEY@@_URL_HELP" message="@@KEY@@_INVALID_URL" />
-        <field name="iframe_title" type="text" filter="string" label="@@KEY@@_TITLE" description="@@KEY@@_TITLE_HELP" />
-        <field name="mode" type="list" default="auto" validate="options" label="@@KEY@@_MODE">
+        <field name="output" type="list" default="embed" validate="options" label="@@KEY@@_OUTPUT" description="@@KEY@@_OUTPUT_HELP">
+          <option value="embed">@@KEY@@_OUTPUT_EMBED</option><option value="link">@@KEY@@_OUTPUT_LINK</option>
+        </field>
+        <field name="link_text" type="text" filter="string" label="@@KEY@@_LINK_TEXT" description="@@KEY@@_LINK_TEXT_HELP" />
+        <field name="link_class" type="text" default="btn btn-primary" filter="string" showon="output:link" label="@@KEY@@_LINK_CLASS" description="@@KEY@@_LINK_CLASS_HELP" />
+        <field name="iframe_title" type="text" filter="string" showon="output:embed" label="@@KEY@@_TITLE" description="@@KEY@@_TITLE_HELP" />
+        <field name="mode" type="list" default="auto" validate="options" showon="output:embed" label="@@KEY@@_MODE">
           <option value="auto">@@KEY@@_AUTO</option><option value="fixed">@@KEY@@_FIXED</option>
         </field>
-        <field name="measurement" type="measurement" default="unit" validate="options" label="@@KEY@@_MEASUREMENT" description="@@KEY@@_MEASUREMENT_HELP">
+        <field name="measurement" type="measurement" default="unit" validate="options" showon="output:embed" label="@@KEY@@_MEASUREMENT" description="@@KEY@@_MEASUREMENT_HELP">
           <option value="unit">@@KEY@@_MEASUREMENT_UNIT</option><option value="host">@@KEY@@_MEASUREMENT_HOST</option>
         </field>
-        <field name="height" type="number" default="800" min="240" max="4000" filter="integer" validate="number" label="@@KEY@@_HEIGHT" />
+        <field name="height" type="number" default="800" min="240" max="4000" filter="integer" validate="number" showon="output:embed" label="@@KEY@@_HEIGHT" />
         <field name="appearance_help" type="note" description="@@KEY@@_CENTRAL_APPEARANCE" />
         <field name="external" type="note" label="@@KEY@@_SERVICE" description="@@KEY@@_DISCLOSURE" />
+      </fieldset>
+      <fieldset name="consent" label="@@KEY@@_CONSENT_TAB" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule" addfieldprefix="Festapp\Module\@@NAMESPACE@@\Site\Field" addfilterprefix="Festapp\Module\@@NAMESPACE@@\Site\Filter">
+        <field name="consent_intro" type="note" description="@@KEY@@_CONSENT_INTRO" />
+        <field name="consent_link" type="radio" layout="joomla.form.field.radio.switcher" default="0" filter="integer" validate="consent" label="@@KEY@@_CONSENT_LINK" description="@@KEY@@_CONSENT_LINK_HELP">
+          <option value="0">JNO</option><option value="1">JYES</option>
+        </field>
+        <field name="consent_provider" type="list" default="" filter="consent" showon="consent_link:1" label="@@KEY@@_CONSENT_PROVIDER" description="@@KEY@@_CONSENT_PROVIDER_HELP">
+          <option value="">JSELECT</option><option value="cookiebot">Cookiebot</option><option value="cookieconsent">CookieConsent v3 (orestbida)</option>
+        </field>
+        <field name="consent_organization" type="text" filter="consent" inputmode="numeric" showon="consent_link:1" label="@@KEY@@_CONSENT_ORGANIZATION" description="@@KEY@@_CONSENT_ORGANIZATION_HELP" />
+        <field name="consent_unit" type="text" filter="consent" inputmode="numeric" showon="consent_link:1" label="@@KEY@@_CONSENT_UNIT" description="@@KEY@@_CONSENT_UNIT_HELP" />
+        <field name="consent_revision" type="text" filter="consent" maxlength="32" showon="consent_link:1" label="@@KEY@@_CONSENT_REVISION" description="@@KEY@@_CONSENT_REVISION_HELP" />
+        <field name="consent_cbid" type="text" filter="consent" maxlength="36" showon="consent_link:1[AND]consent_provider:cookiebot" label="@@KEY@@_CONSENT_CBID" description="@@KEY@@_CONSENT_CBID_HELP" />
+        <field name="consent_origin" type="consentsuggestion" suggest="origin" filter="consent" showon="consent_link:1[AND]consent_provider:cookiebot" label="@@KEY@@_CONSENT_ORIGIN" description="@@KEY@@_CONSENT_ORIGIN_HELP" />
+        <field name="consent_valid_from" type="consentsuggestion" suggest="now" filter="consent" maxlength="24" showon="consent_link:1[AND]consent_provider:cookiebot" label="@@KEY@@_CONSENT_VALID_FROM" description="@@KEY@@_CONSENT_VALID_FROM_HELP" />
+        <field name="consent_max_age" type="text" filter="consent" inputmode="numeric" showon="consent_link:1[AND]consent_provider:cookiebot" label="@@KEY@@_CONSENT_MAX_AGE" description="@@KEY@@_CONSENT_MAX_AGE_HELP" />
+        <field name="consent_cc_revision" type="text" filter="consent" inputmode="numeric" showon="consent_link:1[AND]consent_provider:cookieconsent" label="@@KEY@@_CONSENT_CC_REVISION" description="@@KEY@@_CONSENT_CC_REVISION_HELP" />
+        <field name="consent_cc_analytics" type="text" default="analytics" filter="consent" showon="consent_link:1[AND]consent_provider:cookieconsent" label="@@KEY@@_CONSENT_CC_ANALYTICS" description="@@KEY@@_CONSENT_CC_CATEGORIES_HELP" />
+        <field name="consent_cc_marketing" type="text" default="marketing" filter="consent" showon="consent_link:1[AND]consent_provider:cookieconsent" label="@@KEY@@_CONSENT_CC_MARKETING" description="@@KEY@@_CONSENT_CC_CATEGORIES_HELP" />
       </fieldset>
       <fieldset name="advanced">
         <field name="cache" type="hidden" default="0" filter="integer" />

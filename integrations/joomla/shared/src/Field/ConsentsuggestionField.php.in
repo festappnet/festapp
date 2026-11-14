@@ -1,0 +1,38 @@
+<?php
+/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */
+namespace Festapp\Module\@@NAMESPACE@@\Site\Field;
+
+use Joomla\CMS\Form\Field\TextField;
+use Joomla\CMS\Uri\Uri;
+use Festapp\Module\@@NAMESPACE@@\Site\Helper\EmbedHelper;
+
+defined('_JEXEC') or die;
+
+/**
+ * An empty consent setting shows a suggestion as placeholder only: this
+ * website's HTTPS origin or the current UTC moment. Only what the
+ * administrator enters is saved; nothing is filled in or replaced later.
+ */
+class ConsentsuggestionField extends TextField
+{
+    protected $type = 'Consentsuggestion';
+
+    protected function getInput()
+    {
+        if ((string) $this->value === '') {
+            $this->hint = self::suggestion((string) $this->element['suggest']);
+        }
+        return parent::getInput();
+    }
+
+    public static function suggestion(string $kind, ?string $root = null): string
+    {
+        if ($kind === 'now') {
+            return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.v\Z');
+        }
+        $root = Uri::getInstance($root ?? Uri::root());
+        $port = $root->getPort();
+        $origin = 'https://' . strtolower((string) $root->getHost()) . ($port && (int) $port !== 443 ? ':' . (int) $port : '');
+        return $kind === 'origin' && $root->getScheme() === 'https' && EmbedHelper::origin($origin) ? $origin : '';
+    }
+}

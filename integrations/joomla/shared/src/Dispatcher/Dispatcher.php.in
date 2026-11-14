@@ -3,29 +3,86 @@
 namespace Festapp\Module\@@NAMESPACE@@\Site\Dispatcher;
 
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
+use Joomla\CMS\Log\Log;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Registry\Registry;
+use Joomla\CMS\WebAsset\WebAssetItemInterface;
 use Festapp\Module\@@NAMESPACE@@\Site\Helper\EmbedHelper;
 
 defined('_JEXEC') or die;
 
 final class Dispatcher extends AbstractModuleDispatcher
 {
+    /** Consent configuration claimed for each page helper; false after a conflict. */
+    private static ?\WeakMap $claims = null;
+
     protected function getLayoutData()
     {
         $data = parent::getLayoutData();
         // Never load remote assets in administrator previews.
         $data['embed'] = '';
         if ($this->getApplication()->isClient('site')) {
-            $settings = EmbedHelper::settings($data['params']->toArray());
+            $params = $data['params']->toArray();
+            $settings = EmbedHelper::settings($params);
+            $linked = false;
             if ($settings !== null) {
-                $assets = $this->getApplication()->getDocument()->getWebAssetManager();
-                $handle = '@@ELEMENT@@.embed';
-                if (!$assets->assetExists('script', $handle)) {
-                    $assets->registerScript($handle, '@@ORIGIN@@/embed.js', ['version' => false], ['defer' => true]);
+                $consent = EmbedHelper::consent($params);
+                if ($consent === null && EmbedHelper::consentEnabled($params)) {
+                    self::log('Consent transfer is off for module %d: incomplete or invalid settings (%s).', $data['module'], implode(', ', EmbedHelper::consentErrors($params)));
                 }
-                $assets->useScript($handle);
+                // A plain link needs no external helper unless it transfers consent.
+                if ($settings['output'] === 'embed' || $consent !== null) {
+                    $assets = $this->getApplication()->getDocument()->getWebAssetManager();
+                    $handle = '@@ELEMENT@@.embed';
+                    if (!$assets->assetExists('script', $handle)) {
+                        $assets->registerScript($handle, '@@ORIGIN@@/embed.js', ['version' => false], ['defer' => true]);
+                    }
+                    $assets->useScript($handle);
+                    if ($consent !== null) {
+                        $linked = self::claim($assets->getAsset('script', $handle), $consent, $data['module']);
+                    }
+                }
             }
-            $data['embed'] = EmbedHelper::render($data['params']->toArray());
+            $data['embed'] = EmbedHelper::render($params, $linked);
         }
         return $data;
+    }
+
+    /**
+     * One helper serves one organization and Unit. The first valid module sets
+     * its configuration; identical modules share it. A different configuration
+     * removes it for the whole page, so the helper stays unconfigured.
+     */
+    private static function claim(WebAssetItemInterface $asset, array $consent, $module): bool
+    {
+        self::$claims ??= new \WeakMap();
+        if (!isset(self::$claims[$asset])) {
+            foreach ($consent['attributes'] as $name => $value) {
+                $asset->setAttribute($name, $value);
+            }
+            self::$claims[$asset] = $consent['json'];
+            // Joomla's default COOP same-origin severs the new tab (measured in Chromium and Firefox).
+            $headers = PluginHelper::getPlugin('system', 'httpheaders');
+            if (is_object($headers) && (new Registry($headers->params ?? ''))->get('coop', 'same-origin') === 'same-origin') {
+                self::log('Consent transfer for module %d needs Cross-Origin-Opener-Policy same-origin-allow-popups in System - HTTP Headers.', $module);
+            }
+            return true;
+        }
+        if (self::$claims[$asset] === $consent['json']) {
+            return true;
+        }
+        if (self::$claims[$asset] !== false) {
+            self::log('Consent transfer is off on this page: module %d has a different organization, Unit or consent configuration than another module.', $module);
+        }
+        // Joomla does not render attributes whose value is false. A Cookiebot
+        // ignore marker stays: it only keeps the helper running under auto-blocking.
+        $asset->setAttribute('data-festapp-consent', false);
+        self::$claims[$asset] = false;
+        return false;
+    }
+
+    private static function log(string $message, $module, string ...$details): void
+    {
+        Log::add(sprintf($message, (int) ($module->id ?? 0), ...$details), Log::WARNING, '@@ELEMENT@@');
     }
 }

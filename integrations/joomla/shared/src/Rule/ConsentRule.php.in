@@ -1,0 +1,28 @@
+<?php
+/** @copyright (C) 2026 Festapp. @license GNU GPL version 2 or later; see LICENSE.txt */
+namespace Festapp\Module\@@NAMESPACE@@\Site\Rule;
+
+use Joomla\CMS\Form\Form;
+use Joomla\CMS\Form\FormRule;
+use Joomla\CMS\Language\Text;
+use Joomla\Registry\Registry;
+use Festapp\Module\@@NAMESPACE@@\Site\Helper\EmbedHelper;
+
+defined('_JEXEC') or die;
+
+/** Enabled consent transfer is saved only with a complete, valid configuration. */
+final class ConsentRule extends FormRule
+{
+    public function test(\SimpleXMLElement $element, $value, $group = null, ?Registry $input = null, ?Form $form = null)
+    {
+        $params = $input ? (array) $input->get('params', []) : [];
+        $params['consent_link'] = $value;
+        $errors = EmbedHelper::consentErrors(json_decode(json_encode($params), true) ?: []);
+        if ($errors === []) {
+            return true;
+        }
+        $labels = array_map(static fn ($key) => Text::_('@@KEY@@_' . $key), $errors);
+        // Joomla reports a thrown rule exception as the field validation message.
+        throw new \UnexpectedValueException(Text::sprintf('@@KEY@@_CONSENT_INVALID', implode(', ', $labels)));
+    }
+}

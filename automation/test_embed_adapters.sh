@@ -24,6 +24,7 @@ for cms in ('wordpress','joomla'):
     (fixture/'tests').mkdir(exist_ok=True)
 shutil.copy2(source/'integrations/wordpress/tests/measurement-defaults.test.mjs',target/'integrations/wordpress/tests/measurement-defaults.test.mjs')
 shutil.copy2(source/'integrations/joomla/tests/measurement-defaults.php',target/'integrations/joomla/tests/measurement-defaults.php')
+shutil.copy2(source/'integrations/joomla/tests/consent-contract.php',target/'integrations/joomla/tests/consent-contract.php')
 (target/'integrations/tests').mkdir()
 shutil.copy2(source/'integrations/tests/embed-appearance-contract.php',target/'integrations/tests/embed-appearance-contract.php')
 FIXTURE
@@ -37,10 +38,17 @@ tar -cf - \
   integrations/joomla/tests/measurement-defaults.php \
   integrations/joomla/build/mod_vstupenky_online/src/Field/MeasurementField.php \
   integrations/joomla/build/mod_festapp_tickets/src/Field/MeasurementField.php \
+  integrations/joomla/tests/consent-contract.php \
+  integrations/joomla/build/mod_vstupenky_online/src/Rule/ConsentRule.php \
+  integrations/joomla/build/mod_festapp_tickets/src/Rule/ConsentRule.php \
+  integrations/joomla/build/mod_vstupenky_online/src/Filter/ConsentFilter.php \
+  integrations/joomla/build/mod_festapp_tickets/src/Filter/ConsentFilter.php \
+  integrations/joomla/build/mod_vstupenky_online/src/Field/ConsentsuggestionField.php \
+  integrations/joomla/build/mod_festapp_tickets/src/Field/ConsentsuggestionField.php \
   integrations/wordpress/vstupenky-online/includes/embed.php \
   integrations/wordpress/festapp-tickets/includes/embed.php \
   integrations/joomla/build/mod_vstupenky_online/src/Helper/EmbedHelper.php \
   integrations/joomla/build/mod_festapp_tickets/src/Helper/EmbedHelper.php |
   docker run --rm --network none -i \
     php@sha256:d8784155c4d37986be9ddd7a8950df7e78998cc48e35472cd69e2b9371424a65 \
-    sh -eu -c 'mkdir /work; tar -xf - -C /work; php /work/integrations/tests/embed-appearance-contract.php; php /work/integrations/joomla/tests/measurement-defaults.php'
+    sh -eu -c 'mkdir /work; tar -xf - -C /work; php /work/integrations/tests/embed-appearance-contract.php; php /work/integrations/joomla/tests/measurement-defaults.php; php /work/integrations/joomla/tests/consent-contract.php'

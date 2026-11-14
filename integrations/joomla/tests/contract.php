@@ -47,7 +47,9 @@ foreach ($products as [$element, $namespace, $origin]) {
         check(str_contains($helper::render(['url'=>$url, 'measurement'=>$measurement]), 'data-festapp-datalayer') === ($measurement === 'host'), 'Explicit measurement destination');
     }
     $xml = simplexml_load_file(JPATH_ROOT . '/modules/' . $element . '/' . $element . '.xml');
-    check((string)$xml->config->fields->fieldset[1]->field[0]['default'] === '0', 'Module cache disabled');
+    check((string)$xml->xpath('//fieldset[@name="advanced"]/field[@name="cache"]')[0]['default'] === '0', 'Module cache disabled');
+    check((string)$xml->xpath('//field[@name="consent_link"]')[0]['default'] === '0', 'Consent transfer is off by default');
+    check((string)$xml->xpath('//field[@name="output"]')[0]['default'] === 'embed', 'Embedded output by default');
     $form = new Form($element);
     $form->load('<form>' . $xml->config->fields->asXML() . '</form>');
     check(!str_contains($helper::render(['url'=>$url]), 'data-festapp-datalayer'), 'Saved module without measurement remains Unit');
@@ -55,13 +57,34 @@ foreach ($products as [$element, $namespace, $origin]) {
     if (!$accepted) { foreach ($form->getErrors() as $error) { fwrite(STDERR, (string)$error . PHP_EOL); } }
     check($accepted, 'Actual Joomla form accepts saved URL');
     check(!$form->validate(new Registry(['params'=>['url'=>$origin.'/form/a?x=1']])), 'Actual Joomla rule rejects query');
+    // Native Joomla filter + rule on the consent settings, as in the module editor.
+    \Joomla\CMS\Factory::getLanguage()->load($element, JPATH_ROOT . '/modules/' . $element, 'en-GB', true);
+    $consent = ['url'=>$url,'consent_link'=>'1','consent_provider'=>'cookiebot','consent_organization'=>' 1','consent_unit'=>'2','consent_revision'=>str_repeat('a',32),'consent_cbid'=>'12345678-1234-1234-1234-123456789abc','consent_origin'=>'https://poradatel.example ','consent_valid_from'=>'2026-11-11T00:00:00.000Z','consent_max_age'=>'15552000'];
+    $filtered = $form->filter(['params'=>$consent]);
+    check($filtered['params']['consent_organization'] === '1' && $filtered['params']['consent_origin'] === 'https://poradatel.example', 'Native filter trims consent settings');
+    check($form->validate($filtered), 'Native form accepts complete consent settings');
+    check($helper::consent($filtered['params'])['json'] === '{"provider":"cookiebot","organization":1,"unit":2,"consentRevision":"' . str_repeat('a',32) . '","cbid":"12345678-1234-1234-1234-123456789abc","origin":"https://poradatel.example","consentValidFrom":"2026-11-11T00:00:00.000Z","maxAgeSeconds":15552000}', 'Saved settings produce the documented helper JSON');
+    foreach ([['consent_cbid'=>'bad'], ['consent_valid_from'=>''], ['consent_origin'=>'']] as $change) {
+        $filtered = $form->filter(['params'=>$change + $consent]);
+        if (array_values($change) === ['']) { check(($filtered['params'][array_key_first($change)] ?? '') === '', 'Empty value is never filled in'); }
+        check(!$form->validate($filtered), 'Native form rejects incomplete consent settings');
+        $errors = $form->getErrors();
+        $message = (string) end($errors)->getMessage();
+        check(str_contains($message, ['consent_cbid'=>'CBID','consent_valid_from'=>'UTC','consent_origin'=>'origin'][array_key_first($change)]) && !str_contains($message, '%s'), 'Native error names the setting: ' . $message);
+    }
+    check($form->validate($form->filter(['params'=>['consent_link'=>'0','consent_cbid'=>'bad','consent_provider'=>''] + $consent])), 'Disabled consent settings never block saving');
+    $cc = ['url'=>$url,'consent_link'=>'1','consent_provider'=>'cookieconsent','consent_organization'=>'1','consent_unit'=>'2','consent_revision'=>str_repeat('a',32),'consent_cc_revision'=>'3'];
+    check($form->validate($form->filter(['params'=>$cc])), 'Native form accepts CookieConsent settings with default categories');
+    check(!$form->validate($form->filter(['params'=>['consent_cc_marketing'=>'analytics'] + $cc])), 'Native form rejects equal categories');
+    $field = $form->getField('consent_valid_from', 'params');
+    check($field instanceof \Joomla\CMS\Form\FormField && preg_match('/placeholder="\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z"/', $field->input) === 1 && str_contains($field->input, 'value=""'), 'Empty cutoff shows only a placeholder suggestion');
     foreach (['en-GB', 'cs-CZ'] as $locale) {
         $ini = JPATH_ROOT . '/modules/' . $element . '/language/' . $locale . '/' . $element . '.ini';
         check(is_file($ini), 'Installed translation');
         $strings = parse_ini_file($ini);
         check(is_array($strings), 'Translation INI parses');
         $prefix = strtoupper($element);
-        foreach (['START','ONBOARDING','CENTRAL_APPEARANCE','URL','URL_HELP','TITLE','TITLE_HELP','MODE','AUTO','FIXED','HEIGHT','MEASUREMENT','MEASUREMENT_HELP','MEASUREMENT_UNIT','MEASUREMENT_HOST','CACHE','DEFAULT_TITLE','INVALID_URL','FALLBACK','DISCLOSURE','SERVICE','XML_DESCRIPTION'] as $key) {
+        foreach (['CONSENT_TAB','CONSENT_INTRO','CONSENT_LINK','CONSENT_PROVIDER','CONSENT_INVALID','CONSENT_CBID','CONSENT_ORIGIN','CONSENT_VALID_FROM','CONSENT_MAX_AGE','CONSENT_CC_REVISION','CONSENT_CC_CATEGORIES','OUTPUT','OUTPUT_LINK','LINK_DEFAULT','LINK_CLASS','START','ONBOARDING','CENTRAL_APPEARANCE','URL','URL_HELP','TITLE','TITLE_HELP','MODE','AUTO','FIXED','HEIGHT','MEASUREMENT','MEASUREMENT_HELP','MEASUREMENT_UNIT','MEASUREMENT_HOST','CACHE','DEFAULT_TITLE','INVALID_URL','FALLBACK','DISCLOSURE','SERVICE','XML_DESCRIPTION'] as $key) {
             check(isset($strings[$prefix . '_' . $key]) && $strings[$prefix . '_' . $key] !== '', 'Required translation: ' . $key);
         }
         check(!isset($strings[$prefix . '_INHERIT_STYLE']) && !isset($strings[$prefix . '_APPEARANCE']), 'No local appearance override translations');
