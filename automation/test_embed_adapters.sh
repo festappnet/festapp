@@ -37,7 +37,9 @@ tar -cf - \
   integrations/joomla/tests/measurement-defaults.php \
   integrations/joomla/build/mod_vstupenky_online/src/Field/MeasurementField.php \
   integrations/joomla/build/mod_festapp_tickets/src/Field/MeasurementField.php \
+  integrations/wordpress/vstupenky-online/includes/consent.php \
   integrations/wordpress/vstupenky-online/includes/embed.php \
+  integrations/wordpress/festapp-tickets/includes/consent.php \
   integrations/wordpress/festapp-tickets/includes/embed.php \
   integrations/joomla/build/mod_vstupenky_online/src/Helper/EmbedHelper.php \
   integrations/joomla/build/mod_festapp_tickets/src/Helper/EmbedHelper.php |

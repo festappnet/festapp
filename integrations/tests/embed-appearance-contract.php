@@ -12,9 +12,11 @@ namespace {
     function wp_strip_all_tags($value) { return strip_tags($value); }
     function esc_attr($value) { return htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); }
     function esc_html__($value, $domain) { return esc_attr($value); }
+    function esc_html($value) { return esc_attr($value); }
     function esc_url($value) { return esc_attr($value); }
     function __($value, $domain) { return $value; }
     function wp_enqueue_style($handle) {}
+    function get_option($name, $default = false) { return $default; }
     function wp_enqueue_script($handle, $url, ...$args) { $GLOBALS['helpers'][$handle] = $url; }
     function shortcode_atts($defaults, $attributes, $name) { return array_intersect_key($attributes, $defaults) + $defaults; }
     function check($condition, $message) {
@@ -24,6 +26,7 @@ namespace {
     $count = 0;
     foreach ([['vstupenky-online', 'VstupenkyOnline', 'https://vstupenky.online'],
               ['festapp-tickets', 'FestappTickets', 'https://tickets.festapp.net']] as [$product, $namespace, $origin]) {
+        require "$root/wordpress/$product/includes/consent.php";
         require "$root/wordpress/$product/includes/embed.php";
         $module = 'mod_' . str_replace('-', '_', $product);
         require "$root/joomla/build/$module/src/Helper/EmbedHelper.php";
