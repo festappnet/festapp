@@ -32,6 +32,8 @@ for tenant in festapp festapptickets festappticketsglobal absolventskyvelehrad a
   copy_worktree "$root"
   config="$PROJECT_ROOT/automation/tests/fixtures/tenants/$tenant.conf"
   (cd "$root" && bash automation/apply_config.sh "$config" >/dev/null)
+  canonical_version="$(node "$root/automation/release/project_version.mjs" --full)"
+  grep -qF "version: $canonical_version" "$root/pubspec.yaml"
   hash_generated "$root" > "$TMP_ROOT/$tenant.first.sha256"
   (cd "$root" && bash automation/apply_config.sh "$config" >/dev/null)
   hash_generated "$root" > "$TMP_ROOT/$tenant.second.sha256"

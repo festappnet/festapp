@@ -14,6 +14,7 @@
     "web_client/"
   ],
   "packagingOnly": [
+    "automation/release/software-version.conf",
     "docs/plans/",
     "automation/release/help/",
     "automation/release/organizers/",

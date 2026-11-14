@@ -18,16 +18,16 @@
 # build (see automation/tests/update_prompt.test.sh).
 #
 # Usage: emit_version_manifest.sh <build_web_dir> [version]
-#   version defaults to VERSION= in automation/project.conf.
+#   version defaults to automation/release/software-version.conf.
 # ==============================================================================
 set -e
 
 BUILD_DIR="${1:-build/web}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-VERSION="${2:-$(grep -m1 '^VERSION=' "$SCRIPT_DIR/project.conf" | cut -d= -f2 | tr -d '[:space:]')}"
+VERSION="${2:-$(node "$SCRIPT_DIR/release/project_version.mjs" --full)}"
 
 if [ -z "${VERSION}" ]; then
-    echo "emit_version_manifest: VERSION empty (pass as \$2 or set it in project.conf)" >&2
+    echo "emit_version_manifest: VERSION empty (pass as \$2 or set the canonical software version)" >&2
     exit 1
 fi
 
