@@ -74,6 +74,13 @@ generation was stamped as `0.20.613+1140`; eight version tests passed. The brows
 matrix preceded only the generation stamp, whitespace cleanup and unrelated
 upstream terminology changes; hosted CI runs the owner again on the exact main.
 
+The first hosted web-startup lane caught a stale generated copy of the shared
+measurement receiver. It was regenerated using `build_measurement_runtime.mjs`;
+all 16 receiver build/deployment contracts and the runtime/embed/measurement
+generation checks then passed. The selected organization's registered receiver
+must be deployed through the canonical receiver command before the tenant app.
+The failed source is not eligible for the production release gate.
+
 The normal reproducible browser owner is
 `python3 automation/testing/cms_consent_fixture.py`. It creates and tears down
 its own backend/CMS resources, refuses occupied ports and records source hashes.
