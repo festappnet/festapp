@@ -4210,7 +4210,9 @@
     "blueprintsRead": "Read blueprint drafts, bindings and fonts",
     "blueprintsWrite": "Save complete blueprint drafts and prepare text",
     "ticketArtworkPreview": "Preview synthetic ticket artwork",
-    "ticketArtworkWrite": "Save ticket artwork and resume pending saves"
+    "ticketArtworkWrite": "Save ticket artwork and resume pending saves",
+    "webhooksRead": "Read webhooks and delivery history",
+    "webhooksWrite": "Manage webhooks and their delivery"
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",

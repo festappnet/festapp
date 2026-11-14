@@ -2234,7 +2234,9 @@
     "blueprintsRead": "Čítať plániky, obchodné väzby a písma",
     "blueprintsWrite": "Ukladať celé návrhy plánikov a pripravovať texty",
     "ticketArtworkPreview": "Zobrazovať náhľad vzhľadu vzorovej vstupenky",
-    "ticketArtworkWrite": "Ukladať vzhľad vstupeniek a obnovovať nedokončené ukladanie"
+    "ticketArtworkWrite": "Ukladať vzhľad vstupeniek a obnovovať nedokončené ukladanie",
+    "webhooksRead": "Čítať webhooky a históriu doručenia",
+    "webhooksWrite": "Spravovať webhooky a ich doručovanie"
   },
   "EditorFileDrop": {
     "hint": "Pretiahnutím obrázka nahraďte podklad",

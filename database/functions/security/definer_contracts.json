@@ -3306,6 +3306,14 @@
     "2195659f1b09d11a0378ac0570b916d2e6426fa695b4d521f6168708d619a6dc": {
       "signature": "public.get_ticket_wallet_projections(text,bigint[],text)",
       "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "c568d922101fc19c41152f6224375f6182c174f1b755befcc855e84e55e935e9": {
+      "signature": "public.can_manage_webhooks(bigint)",
+      "source": "database/functions/user_permissions/webhook_operations.sql"
+    },
+    "5e08b16671474d6dcb18fcf9591f7a21ef774163cdf2ff7bc7540f74581465a6": {
+      "signature": "public.integration_webhook_api_v1(bigint,text,jsonb)",
+      "source": "database/functions/integration_webhooks/webhooks.sql"
     }
   }
 }

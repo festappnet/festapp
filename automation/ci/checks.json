@@ -254,7 +254,7 @@
       }
     },
     "image-storage": {
-      "script": "python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'\npython3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'\npython3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'\nnode --check automation/image-migration/copy-assets.mjs\nnode automation/generate_storage_asset_migration.mjs --check\nnode --test automation/image-migration/tests/verified-copy.test.js\nnode --test automation/image-migration/tests/remote-r2.test.js\npython3 -m unittest discover -s automation/ci -p 'test_*.py'\n",
+      "script": "python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'\npython3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'\npython3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'\npython3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'\nnode --check automation/image-migration/copy-assets.mjs\nnode automation/generate_storage_asset_migration.mjs --check\nnode --test automation/image-migration/tests/verified-copy.test.js\nnode --test automation/image-migration/tests/remote-r2.test.js\npython3 -m unittest discover -s automation/ci -p 'test_*.py'\n\npython3 -m unittest automation.tests.test_database_retention automation.tests.test_host_retention\n",
       "after": [
         "image-preflight"
       ],
@@ -319,7 +319,8 @@
         "wix-install"
       ],
       "resources": {
-        "ramMiB": 256
+        "ramMiB": 256,
+        "sourceGeneration": 1
       }
     },
     "navigation-install": {
@@ -523,12 +524,13 @@
       }
     },
     "mcp-auth-contract": {
-      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/ supabase/functions/_shared/issueExistingUserSession_test.ts\npnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n\npnpm --dir tools/festapp run api:check\npnpm --dir tools/festapp exec node ../../integrations/make/scripts/build.mjs --check\n",
+      "script": "pnpm --dir tools/festapp run api:prepare\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/ supabase/functions/_shared/issueExistingUserSession_test.ts\npnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n\npnpm --dir tools/festapp run api:check\npnpm --dir tools/festapp exec node ../../integrations/make/scripts/build.mjs --check\n\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\npython3 automation/assemble-integration-webhooks-migration.py --check\npython3 automation/assemble-ticket-layout-contract-refresh-migration.py --check\n\npython3 automation/check_api_artifacts.py\npython3 -m unittest automation.tests.test_api_artifacts\npnpm --dir tools/festapp exec node --test test/api-artifacts.test.mjs\n",
       "after": [
         "mcp-auth-install"
       ],
       "resources": {
-        "ramMiB": 256
+        "ramMiB": 768,
+        "sourceGeneration": 1
       }
     },
     "seat-upgrade": {
@@ -1142,7 +1144,8 @@
       "database/tests/users/profile_ownership_retirement_test.sql",
       "database/tests/users/profile_version_fanout_test.sql",
       "database/tests/users/reception_qr_login_test.sql",
-      "database/tests/users/reset_user_password_permissions_test.sql"
+      "database/tests/users/reset_user_password_permissions_test.sql",
+      "database/tests/notification_center/admin_email_payment_details_test.sql"
     ],
     "unselectedOwner": "automation/test_all.sh db"
   },
@@ -2190,7 +2193,14 @@
     "web_client/tests/services/seo_service.test.js",
     "web_client/tests/services/stripe_callback_bootstrap.test.js",
     "web_client/tests/utils/html_sanitize.test.js",
-    "web_client/tests/utils/image_url_helper.test.js"
+    "web_client/tests/utils/image_url_helper.test.js",
+    "tools/festapp/test/webhook-protocol.test.mjs",
+    "tools/festapp/test/webhook-delivery.test.mjs",
+    "tools/festapp/test/webhook-events.test.mjs",
+    "tools/festapp/test/webhook-receiver.test.mjs",
+    "tools/festapp/test/webhooks-postgres.test.mjs",
+    "tools/festapp/test/api-artifacts.test.mjs",
+    "database/tests/notification_center/admin_email_payment_details_test.sql"
   ],
   "sqlSharedSetups": [
     "database/tests/blueprint/fixtures.sql"

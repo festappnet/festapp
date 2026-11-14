@@ -1,0 +1,20 @@
+Use the attached images as references for the existing vstupenky.online identity. Create an English sister-brand logo for the SAME ticketing product, called exactly:
+
+Festapp
+Tickets
+
+Reference roles:
+- 01-current-logo-light.png: primary reference for the approved geometry, colours and typography.
+- 02-current-logo-dark.png: the same approved identity on a dark background.
+- 03-current-header-logo.png: approved horizontal composition for website navigation.
+- 04-original-selected-concept.png: historical creative reference only. Follow the clean final logo rather than its raster shading or imperfect lettering.
+
+This is an adaptation of an established identity. Preserve the recognisable wide admission-ticket silhouette, the round notches on both sides, the mirrored navy halves, the central white V-shaped separation and the light-blue downward triangle. Keep the symbol headless: no circle, human head, mascot or person. The existing symbol should remain recognisably the same even though the English name no longer starts with V. Do not force an F into the ticket or substitute a generic new ticket icon.
+
+Replace the Czech lettering with a carefully composed English wordmark: “Festapp” as the primary line and “Tickets” as the secondary line. Use the exact capitalization shown. Match the reference's bold, compact Roboto Bold character, with precise kerning and balanced optical spacing. Adapt the line lengths and the relationship between the symbol and type so this feels intentionally designed for the new name, rather than text pasted under the old symbol. The smaller word Tickets must remain legible at website-header sizes.
+
+Palette: deep navy #19243B and light blue #80BDF2. White background for this first proposal. Solid flat colours, crisp geometry, clean edges, confident negative space. The logo should sit naturally beside expressive blue ink illustrations of concerts, classic balls and theatre, while remaining clean and simple itself.
+
+Produce ONE polished, coherent logo proposal, centred on a plain white canvas with comfortable margins. Symbol above the stacked wordmark, as in reference 01. No presentation board, mockup, slogans, website URL, decorative surroundings, 3D, gradients, shadows or distressed texture. The only text in the image is “Festapp” and “Tickets”. Prioritise faithful family resemblance, typography and small-size usability.
+
+The product name is Festapp Tickets. tickets.fesup.net is its website address, not lettering to include in this logo.

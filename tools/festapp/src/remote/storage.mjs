@@ -142,6 +142,27 @@ export async function openRemoteStorage(root, key) {
                 return db.prepare('SELECT id,value FROM records WHERE model=? AND expires>?').all(model, Date.now())
                     .map(r => unseal(model, r.id, r.value));
             },
+            stageWebhookCommand(commandKey, intent, subscriptionKey, subscription, expiresAt) {
+                return transaction(() => {
+                    store.putUntil('WebhookCommand', commandKey, intent, expiresAt);
+                    store.putUntil('WebhookSubscription', subscriptionKey, subscription, expiresAt);
+                });
+            },
+            rejectWebhookCommand(commandKey, intent, subscriptionKey, previous, expiresAt) {
+                return transaction(() => {
+                    if (previous) store.putUntil('WebhookSubscription', subscriptionKey, previous, expiresAt);
+                    else store.remove('WebhookSubscription', subscriptionKey);
+                    store.putUntil('WebhookCommand', commandKey, intent, expiresAt);
+                });
+            },
+            finishWebhookCommand(commandKey, intent, subscriptionKey, subscription, expiresAt) {
+                return transaction(() => {
+                    const current = store.get('WebhookSubscription', subscriptionKey);
+                    if (!current || current.version <= subscription.version)
+                        store.putUntil('WebhookSubscription', subscriptionKey, subscription, expiresAt);
+                    store.putUntil('WebhookCommand', commandKey, intent, expiresAt);
+                });
+            },
             revoke(grantId) { return transaction(() => revokeRecords(grantId)); },
             discardUnissuedTokens(grantId) {
                 db.prepare("DELETE FROM records WHERE grant_id=? AND model IN ('AccessToken','RefreshToken')").run(digest(grantId));

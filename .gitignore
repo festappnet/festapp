@@ -238,3 +238,6 @@ automation/release/platform_updates/node_modules/
 
 /web/help/
 /web_client/public/help/
+
+# Generated public API projections and immutable release materialization.
+/tools/festapp/contracts/api-v1/

@@ -1,0 +1,92 @@
+{
+  "measuredAt": "2026-11-14T05:12:01.520Z",
+  "method": "EXPLAIN ANALYZE server execution time; 120 samples per arm; paired alternating blocks, warm cache, same saved paid order and identical verified payload/fanout. All changes rolled back.",
+  "limits": "Uncontended local execution, not whole-server CPU or full checkout latency. Worker SQL comparison excludes Auth refresh and network. Ordinary host background load uncontrolled.",
+  "sourceHashes": {
+    "beforeSha256": "eb7932e29c807a74fcdf6c7ef04032e78001689f49ceb15c0d37a2ecd85130dd",
+    "afterSha256": "c5f2bc17a4bbb81ca2476956a65dda9361389334a919c885224d637ee065d8ed"
+  },
+  "producer": [
+    {
+      "name": "no_active",
+      "before": {
+        "n": 120,
+        "medianMs": 0.022,
+        "p95Ms": 0.076
+      },
+      "after": {
+        "n": 120,
+        "medianMs": 0.023,
+        "p95Ms": 0.121
+      },
+      "deltaMs": 0.0010000000000000009,
+      "changePct": 4.545454545454541
+    },
+    {
+      "name": "one_matching",
+      "before": {
+        "n": 120,
+        "medianMs": 0.174,
+        "p95Ms": 0.383
+      },
+      "after": {
+        "n": 120,
+        "medianMs": 0.176,
+        "p95Ms": 0.399
+      },
+      "deltaMs": 0.0020000000000000018,
+      "changePct": 1.1494252873563315
+    },
+    {
+      "name": "ten_matching",
+      "before": {
+        "n": 120,
+        "medianMs": 0.245,
+        "p95Ms": 0.442
+      },
+      "after": {
+        "n": 120,
+        "medianMs": 0.254,
+        "p95Ms": 0.462
+      },
+      "deltaMs": 0.009000000000000008,
+      "changePct": 3.6734693877551017
+    },
+    {
+      "name": "one_matching_backlog_10000",
+      "before": {
+        "n": 120,
+        "medianMs": 0.781,
+        "p95Ms": 0.966
+      },
+      "after": {
+        "n": 120,
+        "medianMs": 0.785,
+        "p95Ms": 0.978
+      },
+      "deltaMs": 0.0040000000000000036,
+      "changePct": 0.512163892445594
+    }
+  ],
+  "idleWorker": {
+    "before": {
+      "n": 120,
+      "medianMs": 1.129,
+      "p95Ms": 1.294
+    },
+    "after": {
+      "n": 120,
+      "medianMs": 0.233,
+      "p95Ms": 0.31
+    },
+    "changePct": -79.36226749335695,
+    "rpcsPerTickBefore": 2,
+    "rpcsPerTickAfter": 1,
+    "pausedOrExpiredAfter": 0
+  },
+  "decision": {
+    "producer": "Candidate reverted: no measurable speedup (roughly 0.17 ms for one matching recipient). Production producer remains the original implementation.",
+    "worker": "Adopted: remove redundant per-tick purge and skip inactive/expired subscriptions before backend Auth or SQL. Retention has one authority: the existing cron job.",
+    "cleanup": "Temporary candidate/baseline SQL copies and comparison harness removed after the experiment. Raw measurements retained; no runtime alternative remains."
+  }
+}

@@ -1,7 +1,39 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "4e6436722d87d7fda8b7c3c4e237969329ff8f7fa140e1ec76abcd6ad59957a4",
+  "sourceDigest": "2254bc24383a87dd69ced3a7a05b3ab688eb3431b4d9d099a4bc599c52c1650c",
   "permissions": [
+    {
+      "scope": "festapp:webhooks:read",
+      "labels": {
+        "cs": "Číst webhooky a historii doručení",
+        "en": "Read webhooks and delivery history"
+      },
+      "operations": [
+        "webhooks.list",
+        "webhooks.deliveries"
+      ],
+      "requires": [
+        "festapp:orders:read"
+      ]
+    },
+    {
+      "scope": "festapp:webhooks:write",
+      "labels": {
+        "cs": "Spravovat webhooky a jejich doručování",
+        "en": "Manage webhooks and their delivery"
+      },
+      "operations": [
+        "webhooks.create",
+        "webhooks.update",
+        "webhooks.delete",
+        "webhooks.test",
+        "webhooks.redeliver",
+        "webhooks.rotate_secret"
+      ],
+      "requires": [
+        "festapp:webhooks:read"
+      ]
+    },
     {
       "scope": "festapp:history:delete",
       "labels": {
@@ -16865,6 +16897,384 @@
           "orderId",
           "ticketIds",
           "commandId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.create",
+      "name": "festapp_webhooks_create",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read",
+        "festapp:webhooks:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expectedContractVersion": {
+            "type": "number",
+            "const": 1
+          },
+          "eventTypes": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "const": "net.festapp.order.created.v1"
+              }
+            ],
+            "items": false,
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "formId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId",
+          "commandId",
+          "expectedContractVersion",
+          "eventTypes",
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.delete",
+      "name": "festapp_webhooks_delete",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read",
+        "festapp:webhooks:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId",
+          "subscriptionId",
+          "commandId",
+          "expectedVersion"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.deliveries",
+      "name": "festapp_webhooks_deliveries",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "before": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "occasionId",
+          "subscriptionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.list",
+      "name": "festapp_webhooks_list",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.redeliver",
+      "name": "festapp_webhooks_redeliver",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read",
+        "festapp:webhooks:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "deliveryId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "occasionId",
+          "subscriptionId",
+          "commandId",
+          "deliveryId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.rotate_secret",
+      "name": "festapp_webhooks_rotate_secret",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read",
+        "festapp:webhooks:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId",
+          "subscriptionId",
+          "commandId",
+          "expectedVersion"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.test",
+      "name": "festapp_webhooks_test",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read",
+        "festapp:webhooks:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "occasionId",
+          "subscriptionId",
+          "commandId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "webhooks.update",
+      "name": "festapp_webhooks_update",
+      "description": "Manage this connection's order-created webhook subscriptions for one consented occasion. Requires live order access; order-summary clients are excluded. Commands must preserve commandId and identical arguments on timeout. Signing secrets are returned only for create/rotate, including authorized command replay. Delivery is asynchronous, at least once, with no ordering guarantee. For agent-driven management, obtain explicit user approval of the destination URL, occasion/form and disclosed data before creating or changing an endpoint or redelivering a real event.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:orders:read",
+        "festapp:webhooks:read",
+        "festapp:webhooks:write"
+      ],
+      "readOnly": false,
+      "destructive": true,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ]
+          }
+        },
+        "required": [
+          "occasionId",
+          "subscriptionId",
+          "commandId",
+          "expectedVersion"
         ],
         "additionalProperties": false
       }

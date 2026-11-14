@@ -1,3 +1,4 @@
+import publicFacades from '../../../../packages/festapp_contracts/api-facades.json' with { type: 'json' };
 import { clientPolicy, API_SUMMARY_OPERATIONS } from './client-policy.mjs';
 import { z } from 'zod';
 import { check } from '../errors.mjs';
@@ -9,10 +10,7 @@ export const apiProjectionDirectory = (endpointId, dataProfile, proofProfile = '
     (dataProfile === 'operator' ? '' : '/profiles/order-summary') + (proofProfile === 'dpop' ? '/proofs/dpop' : '');
 
 export const API_PREFIX = '/integrations/v1';
-export const PUBLIC_API_FACADES = Object.freeze([
-    Object.freeze({ endpointId: 'global-api', brand: 'Festapp', publicBase: 'https://api.festapp.net/integrations/v1', resource: 'https://api.festapp.net/integrations', issuer: 'https://mcp.festapp.net' }),
-    Object.freeze({ endpointId: 'regional-api', brand: 'vstupenky.online', publicBase: 'https://api.vstupenky.online/integrations/v1', resource: 'https://api.vstupenky.online/integrations', issuer: 'https://mcp.festapp.net' }),
-]);
+export const PUBLIC_API_FACADES = Object.freeze(publicFacades.map(facade => Object.freeze(facade)));
 export const endpointSchema = z.strictObject({
     endpointId: z.enum(['global-api', 'regional-api']),
     publicBase: z.url(), resource: z.url(), issuer: z.url(),

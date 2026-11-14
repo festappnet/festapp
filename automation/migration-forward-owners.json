@@ -266,6 +266,32 @@
       "migration": "20261114010000_ticket_wallet_collections.sql",
       "manifest": "ticket-wallet-collections-migration.json",
       "active": true
+    },
+    {
+      "migration": "20261114110000_admin_payment_digest_details.sql",
+      "header": "-- Current authorized order and payment details for administration digests.",
+      "sources": [
+        "notification_center/email_context.sql"
+      ],
+      "active": true
+    },
+    {
+      "migration": "20261114120000_integration_webhooks.sql",
+      "active": true,
+      "header": "-- Transactional integration webhooks; no application triggers or outbound SQL HTTP.",
+      "sources": [
+        "user_permissions/webhook_operations.sql",
+        "integration_webhooks/webhooks.sql",
+        "eshop/create_ticket_order.sql"
+      ]
+    },
+    {
+      "migration": "20261114130000_ticket_layout_contract_refresh.sql",
+      "active": true,
+      "header": "-- Refresh the generated ticket-layout readiness attestation from current canonical owners.",
+      "sources": [
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ]
     }
   ]
 }
