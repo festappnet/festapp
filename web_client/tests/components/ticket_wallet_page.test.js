@@ -43,7 +43,7 @@ test('Google redirects are constrained to the save origin/path',()=>{
 test('file-delivery connectors submit capability only in a native POST body to the canonical backend',async()=>{
  const {dom,page}=fixture();let submitted=null;
  dom.window.HTMLFormElement.prototype.submit=function(){submitted={url:this.action,method:this.method,values:Object.fromEntries(new dom.window.FormData(this))};};
- await page.init();const apple=page.actions.get('apple');assert.match(apple.button.textContent,/Přidat do Apple Peněženky/);assert.equal(submitted,null);
+ await page.init();const apple=page.actions.get('apple');assert.match(apple.button.textContent,/Přidat do Peněženky Apple/);assert.equal(submitted,null);
  page.save(apple.connector);assert.deepEqual(submitted,{url:page.walletEndpoint,method:'post',values:{token:'a'.repeat(64),provider:'apple'}});assert.equal(dom.window.location.hash,'');assert.equal(dom.window.document.querySelector('form'),null);assert.equal(dom.window.localStorage.length,0);
  submitted=null;page.walletEndpoint='javascript:alert(1)';page.save(apple.connector);assert.equal(submitted,null);assert.match(page.status.textContent,/dočasně/);page.clear();page.save(apple.connector);assert.equal(submitted,null);dom.window.close();
 });
@@ -70,7 +70,7 @@ test('Apple uses official artwork in each locale with a localized accessible lab
  for(const lang of ['cs','en']){
   const {dom,page}=fixture('');page.win.__festappWalletOptions={lang};await page.init();
   const apple=page.actions.get('apple');assert.equal(Boolean(apple.button.querySelector('img')),true);assert(apple.button.classList.contains('wallet-save--badge'));
-  assert.equal(apple.label.textContent,lang==='cs'?'Přidat do Apple Peněženky':'Add to Apple Wallet');dom.window.close();
+  assert.equal(apple.label.textContent,lang==='cs'?'Přidat do Peněženky Apple':'Add to Apple Wallet');dom.window.close();
  }
 });
 

@@ -123,9 +123,10 @@ accessible name; previews keep actions inert. The same HTML renderer is used by
 live delivery and the server-backed draft preview.
 
 Email and web use unmodified official condensed Google badges and the installed
-original Apple badge, all at 48 px high with 8 px clear space. When an approved
-localized Apple asset is unavailable, use its installed English original with
-localized surrounding copy/accessible labels. Never fabricate a localized badge
+localized Apple badges, all at 48 px high with 8 px clear space. The approved
+Apple archive supplies all six supported locales. If a locale is not installed
+in an integration, use its verified English original with localized surrounding
+copy/accessible labels. Never fabricate a localized badge
 or reshape provider artwork. Their official corner geometry differs; alignment,
 height and clear space are shared. Web labels are visually hidden while artwork
 is present and become visible if loading fails. `wallet/presentation.js` owns
