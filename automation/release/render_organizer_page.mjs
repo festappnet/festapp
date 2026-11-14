@@ -27,7 +27,8 @@ const outputArg = process.argv.indexOf('--output');
 const target = outputArg < 0 ? path.join(root, 'web/organizers-page') : path.resolve(process.argv[outputArg + 1]);
 const index = path.join(root, 'web_client/index.html');
 let catalogOutput;
-if (fs.existsSync(index)) {
+// Final bundle rendering must not mutate the source snapshot being sealed.
+if (fs.existsSync(index) && !process.argv.includes('--built-index')) {
   const canonical = new URL(enabled ? '/events' : '/', value('WEB_LINK')).href;
 const html = fs.readFileSync(index, 'utf8')
     .replace(/(<link[^>]*rel="canonical"[^>]*href=")[^"]*/i, (_, prefix) => prefix + canonical)
@@ -43,14 +44,11 @@ const html = fs.readFileSync(index, 'utf8')
       })}</script>`);
   }
   if (enabled && seo) {
-    // Replace inherited app-icon metadata with this marketing profile's card.
+    // Keep the published app icon in unbuilt source metadata.
     catalog = catalog.replace(/<meta\b[^>]*(?:name|property)=["'](?:(?:og|twitter):image(?::(?:width|height|alt))?|og:locale|og:site_name)["'][^>]*>\s*/gi, '');
-    // Source templates need an asset published by every build. The marketing
-    // card is selected only after its bundle has been assembled.
-    const built = process.argv.includes('--built-index');
-    const image = escape(new URL(built ? seo.image : '/android-chrome-512x512.png', context.origin).href);
-    const tags = `<meta property="og:image" content="${image}"><meta property="og:image:width" content="${built ? 1200 : 512}"><meta property="og:image:height" content="${built ? 630 : 512}"><meta property="og:image:alt" content="${escape(built ? seo.imageAlt : seo.siteName)}">`
-      + `<meta name="twitter:image" content="${image}"><meta name="twitter:image:alt" content="${escape(built ? seo.imageAlt : seo.siteName)}"><meta property="og:locale" content="${escape(projection.ogLocale)}"><meta property="og:site_name" content="${escape(seo.siteName)}">`;
+    const image = escape(new URL('/android-chrome-512x512.png', context.origin).href);
+    const tags = `<meta property="og:image" content="${image}"><meta property="og:image:width" content="512"><meta property="og:image:height" content="512"><meta property="og:image:alt" content="${escape(seo.siteName)}">`
+      + `<meta name="twitter:image" content="${image}"><meta name="twitter:image:alt" content="${escape(seo.siteName)}"><meta property="og:locale" content="${escape(projection.ogLocale)}"><meta property="og:site_name" content="${escape(seo.siteName)}">`;
     catalog = catalog.replace('</head>', tags + '</head>');
   }
   catalogOutput = catalog.replace(/<html lang="[^"]*"/, `<html lang="${context.locale ?? 'cs'}"`);
