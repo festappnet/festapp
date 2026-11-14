@@ -53,6 +53,12 @@ export class TextFieldBuilder {
         actualContainer.querySelector('label').htmlFor = input.id;
         if (field.value !== undefined && field.value !== null) input.value = String(field.value);
         
+        if (field.type === 'birth_year') {
+            // A year is entered as digits, never stepped by scrolling or arrow keys.
+            input.inputMode = 'numeric';
+            input.pattern = '[0-9]+';
+        }
+
         if (field.type === 'phone') {
             TextFieldBuilder._attachPhoneLogic(input, actualContainer, formModel);
         }
@@ -167,7 +173,7 @@ export class TextFieldBuilder {
         switch (fieldType) {
             case 'email': return 'email';
             case 'phone': return 'tel';
-            case 'birth_year': return 'number';
+            case 'birth_year': return 'text';
             case 'note': return 'text'; // or textarea logic if we want
             default: return 'text';
         }
