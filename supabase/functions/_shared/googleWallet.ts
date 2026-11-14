@@ -131,9 +131,9 @@ export class GoogleWallet {
   const {objectBody}=walletDocuments(ids,projection);
   await this.upsert('eventTicketObject',objectBody,before);
  }
- async saveUrl(objectId:string,origin:string) {
+ async saveUrl(objectId:string|string[],origin:string) {
   const iat=Math.floor(this.now()/1000);
-  const jwt=await this.sign({iss:this.email,aud:'google',typ:'savetowallet',iat,exp:iat+300,origins:[origin],payload:{eventTicketObjects:[{id:objectId}]}});
+  const jwt=await this.sign({iss:this.email,aud:'google',typ:'savetowallet',iat,exp:iat+300,origins:[origin],payload:{eventTicketObjects:(Array.isArray(objectId)?objectId:[objectId]).map(id=>({id}))}});
   const url='https://pay.google.com/gp/v/save/'+jwt;
   if(url.length>1800)throw new Error('wallet_link_length');return url;
  }

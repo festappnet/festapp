@@ -254,11 +254,17 @@
     {
       "migration": "20261113180000_apple_ticket_wallet.sql",
       "manifest": "apple-ticket-wallet-migration.json",
-      "active": true
+      "sha256": "a97dad94dafa7830161f715948a473475ff6a19a4687523a98ec78f02662fea7",
+      "checkSources": true
     },
     {
       "migration": "20261113190000_apple_ticket_wallet_updates.sql",
       "manifest": "apple-ticket-wallet-updates-migration.json",
+      "active": true
+    },
+    {
+      "migration": "20261114010000_ticket_wallet_collections.sql",
+      "manifest": "ticket-wallet-collections-migration.json",
       "active": true
     }
   ]

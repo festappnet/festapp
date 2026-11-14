@@ -5,7 +5,7 @@ export function readWalletLink(win=window) {
  delete win.__festappWalletOptions;
  delete win.__festappWalletToken;
  if(win.location.hash||win.location.search)win.history.replaceState(win.history.state,'',win.location.pathname);
- return {token:/^[a-f0-9]{64}$/.test(token||'')?token:null,provider:options.provider,lang:options.lang};
+ return {token:/^[a-f0-9]{64}$/.test(token||'')?token:null,provider:options.provider,lang:options.lang,scope:options.scope};
 }
 
 /** One link owns one lifetime. A later link or disposal cancels its continuations. */

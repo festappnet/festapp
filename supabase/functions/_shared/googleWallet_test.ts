@@ -40,6 +40,9 @@ Deno.test('real RSA signature signs short-lived reference-only Save JWT',async()
  assert(await crypto.subtle.verify('RSASSA-PKCS1-v1_5',keys.publicKey,decode(signature),new TextEncoder().encode(head+'.'+body)));
  const payload=JSON.parse(new TextDecoder().decode(decode(body)));assertEquals(payload.iss,'wallet@example.invalid');assertEquals(payload.aud,'google');assertEquals(payload.exp-payload.iat,300);
  assertEquals(payload.payload,{eventTicketObjects:[{id:'1234.object'}]});
+ const multi=await google.saveUrl(['1234.first','1234.second','1234.third'],'https://tenant.invalid');
+ const multiPayload=JSON.parse(new TextDecoder().decode(decode(multi.split('/').pop()!.split('.')[1])));
+ assertEquals(multiPayload.payload.eventTicketObjects.map((item:any)=>item.id),['1234.first','1234.second','1234.third']);assert(multi.length<=1800);
 });
 Deno.test('Google executor handles concurrent-create 409, 429 and 5xx with fenced retries and cached OAuth',async()=>{
  const paths:string[]=[],methods:string[]=[],waits:number[]=[];let fenced=0;

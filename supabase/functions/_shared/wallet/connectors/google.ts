@@ -1,5 +1,4 @@
 import { GoogleWallet,walletIds } from '../../googleWallet.ts';
-import {walletHash} from '../identity.ts';
 import type {WalletRpc,WalletConnector} from '../contracts.ts';
 export async function synchronizeWallet(claim:any,rpc:WalletRpc,google:GoogleWallet) {
  try {
@@ -13,24 +12,45 @@ export async function synchronizeWallet(claim:any,rpc:WalletRpc,google:GoogleWal
   throw error;
  }
 }
-export async function issueTicketWallet(token:string,source:string,origin:string,rpc:WalletRpc,google:GoogleWallet) {
- const resolved=await rpc('resolve_ticket_wallet',{p_hash:await walletHash(token),p_source:await walletHash(source)});
- if(!resolved||resolved.webOrigin!==origin||!['ACTIVE','COMPLETED'].includes(resolved.projection?.state))return null;
- if(resolved.providers?.google===false)throw new Error('wallet_provider_unavailable');
- const ids=await walletIds(resolved);
- let claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId,p_object:ids.objectId,p_class:ids.classId});
- if(!claim)throw new Error('wallet_busy');
- if(claim.kind==='class') {
-  await synchronizeWallet(claim,rpc,google);
-  claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId});
+import {resolveWallet,walletMembers,walletPlan,walletSelection,walletUnchanged} from '../collection.ts';
+import type {WalletIssueInput} from '../contracts.ts';
+/** Google limits the signed save URL, not a fixed number of tickets. Measure the real JWT. */
+async function partition(scope:any,google:GoogleWallet):Promise<any[][]> {
+ const parts:any[][]=[];let part:any[]=[];
+ for(const item of walletMembers(scope)){
+  const candidate=[...part,item];
+  try{
+   if(candidate.length>10)throw new Error('wallet_link_length');
+   await google.saveUrl(await Promise.all(candidate.map(async member=>(await walletIds(member)).objectId)),scope.webOrigin);
+   part=candidate;
+  }catch(error){
+   if(!(error instanceof Error)||error.message!=='wallet_link_length'||!part.length)throw error;
+   parts.push(part);part=[item];
+   await google.saveUrl([(await walletIds(item)).objectId],scope.webOrigin);
+  }
+ }
+ if(part.length)parts.push(part);return parts;
+}
+async function issueGoogle(input:WalletIssueInput,rpc:WalletRpc,google:GoogleWallet) {
+ const selection=await walletSelection(input,rpc,'google',scope=>partition(scope,google));if(!selection)return null;
+ const objectIds:string[]=[];
+ for(const resolved of selection.items){
+  const ids=await walletIds(resolved);
+  let claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId,p_object:ids.objectId,p_class:ids.classId});
   if(!claim)throw new Error('wallet_busy');
+  if(claim.kind==='class') {
+   await synchronizeWallet(claim,rpc,google);
+   claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId});
+   if(!claim)throw new Error('wallet_busy');
+  }
+  if(!['ACTIVE','COMPLETED'].includes(claim.projection?.state)) {await synchronizeWallet(claim,rpc,google);return null;}
+  await synchronizeWallet(claim,rpc,google);objectIds.push(claim.objectId);
  }
- // Scope/state may have changed between resolve and claim.
- if(!['ACTIVE','COMPLETED'].includes(claim.projection?.state)) {
-  await synchronizeWallet(claim,rpc,google);return null;
- }
- await synchronizeWallet(claim,rpc,google);
- return {url:await google.saveUrl(claim.objectId,origin),state:claim.projection.state};
+ if(!await walletUnchanged(selection,rpc))return null;
+ return {url:await google.saveUrl(selection.scope.kind==='collection'?objectIds:objectIds[0],input.origin),state:selection.scope.state??selection.scope.projection.state};
+}
+export async function issueTicketWallet(token:string,source:string,origin:string,rpc:WalletRpc,google:GoogleWallet) {
+ return await issueGoogle({token,source,origin},rpc,google);
 }
 export async function reconcileTicketWallet(rpc:WalletRpc,google:GoogleWallet,limit=200) {
  await rpc('maintain_ticket_wallet',{p_limit:100});
@@ -46,6 +66,7 @@ export async function reconcileTicketWallet(rpc:WalletRpc,google:GoogleWallet,li
 
 export function googleWalletConnector(rpc:WalletRpc,configured:()=>Promise<GoogleWallet>):WalletConnector {
  return {id:'google',delivery:'redirect',
-  async issue(input){const result=await issueTicketWallet(input.token,input.source,input.origin,rpc,await configured());return result?{kind:'redirect',...result}:null;},
+  async plan(input){const resolved=await resolveWallet(input,rpc,'google');return resolved?walletPlan(resolved.scope,await partition(resolved.scope,await configured())):null;},
+  async issue(input){const result=await issueGoogle(input,rpc,await configured());return result?{kind:'redirect',...result}:null;},
   async reconcile(limit){return await reconcileTicketWallet(rpc,await configured(),limit);}};
 }

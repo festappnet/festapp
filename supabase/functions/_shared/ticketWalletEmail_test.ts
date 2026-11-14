@@ -1,6 +1,6 @@
 import {assert,assertEquals,assertRejects,assertThrows} from 'jsr:@std/assert@1';
 import {walletEmailProviders} from './wallet/emailProviders.ts';
-import {prepareWalletEmail,ticketWalletEnabled,walletEmailCopy,walletEmailLink,walletEmailSection,walletTicketLabel,googleWalletBadgeUrl} from './ticketWalletEmail.ts';
+import {prepareWalletEmail,ticketWalletEnabled,walletEmailCopy,walletEmailTicket,walletEmailSection,walletTicketLabel,googleWalletBadgeUrl} from './ticketWalletEmail.ts';
 import {prepareTicketDelivery} from './ticketDelivery.ts';
 import {renderEmail} from './emailDelivery.ts';
 Deno.test('email worker offers Wallet without access to the isolated signing credential',async()=>{
@@ -65,13 +65,13 @@ Deno.test('Wallet offer uses localized official artwork and readable ticket labe
   assertEquals(copy.ticket,translations.walletEmailTicket);
   assertEquals(copy.fallback,translations.walletEmailFallback);
   const label=walletTicketLabel(2,3,lang)+' <script>';
-  const preview=walletEmailSection([walletEmailLink(undefined,googleWalletBadgeUrl(lang),label,lang)],lang);
+  const preview=walletEmailSection([walletEmailTicket(label,[{provider:'google',badge:googleWalletBadgeUrl(lang)}],lang)],lang);
   assert(preview.includes(`/${lang}.png`));assert(preview.includes('height="48"'));
   assert(!preview.includes('href='));assert(!preview.includes('<script>'));assert(preview.includes('&lt;script&gt;'));
   assert(!preview.includes('Apple'));
-  const live=walletEmailSection([walletEmailLink('https://tenant.invalid/wallet#capability',googleWalletBadgeUrl(lang),label,lang)],lang);
+  const live=walletEmailSection([walletEmailTicket(label,[{provider:'google',url:'https://tenant.invalid/wallet#capability',badge:googleWalletBadgeUrl(lang)}],lang)],lang);
   assertEquals((live.match(/href=/g)??[]).length,1);
-  assertEquals(live.replace(/href="[^"]+" /,'').replaceAll('<a ','<span ').replaceAll('</a>','</span>'),preview);
+  assertEquals(live.replace(/href="[^"]+" /,'').replace(/aria-label="[^"]+" /,'').replaceAll('<a ','<span ').replaceAll('</a>','</span>'),preview);
  }
  assertEquals(walletEmailSection([],'cs'),'');
 });
@@ -88,7 +88,7 @@ Deno.test('Apple-only readiness offers the shared capability without Google cred
 
 Deno.test('email Wallet actions carry distinct provider and email language before the private fragment',()=>{
  for(const lang of ['cs','en'])for(const provider of ['google','apple']){
-  const html=walletEmailLink('https://tenant.invalid/wallet#'+'a'.repeat(64),undefined,'Ticket',lang,provider);
+  const html=walletEmailTicket('Ticket',[{provider,url:'https://tenant.invalid/wallet#'+'a'.repeat(64)}],lang);
   assert(html.includes(`provider=${provider}&amp;lang=${lang}#`));
   assert(html.includes(lang==='cs'?(provider==='apple'?'Přidat do Apple Peněženky':'Přidat do Peněženky Google'):`Add to ${provider==='apple'?'Apple':'Google'} Wallet`));
  }
@@ -97,4 +97,65 @@ Deno.test('email Wallet actions carry distinct provider and email language befor
 Deno.test('localized actions never substitute English artwork into a Czech email',()=>{
  const urls={en:'https://img.festapp.net/assets/google-wallet/v1/en.png',apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg'}};
  for(const descriptor of Object.values(walletEmailProviders)){assertEquals(descriptor.badge(urls,'cs'),undefined);assert(descriptor.badge(urls,'en'));assert(descriptor.labelFallback);}
+});
+
+Deno.test('multiple providers share one ticket heading and actions have no repeated visible label',()=>{
+ const label='Vstupenka 1 z 3 - Stůl 4 - Místo 7';
+ const html=walletEmailTicket(label,[{provider:'google',badge:googleWalletBadgeUrl('cs')},{provider:'apple'}],'cs');
+ assertEquals((html.match(/Vstupenka 1 z 3/g)??[]).length,1);
+ assertEquals((html.match(/Přidat do Apple Peněženky/g)??[]).length,1);
+ assertEquals((html.match(/Přidat do Peněženky Google/g)??[]).length,1);
+ assert(html.includes('vertical-align:middle'));assert(html.includes('height="48"'));
+ assertEquals(walletEmailTicket(label,[],'cs'),'');assert(!html.includes('href='));
+});
+Deno.test('live multi-ticket emails preserve one heading per ticket and each providers own destination',async()=>{
+ Deno.env.set('EMAIL_PAYLOAD_KEY',btoa('a'.repeat(32)));
+ try {
+  const saved=new Map<number,any>();
+  const rpc=async(_name:string,p:any)=>{
+   if(p.p_hash)saved.set(p.p_ticket,{sealed:p.p_sealed,tokenHash:p.p_hash});
+   return {organization:3,occasion:7,webOrigin:'https://tenant.invalid',providers:{google:true,apple:true},badgeUrls:{cs:googleWalletBadgeUrl('cs')},source:saved.get(p.p_ticket)};
+  };
+  const html=await prepareWalletEmail({message_id:'preview',data:{lang:'cs'}},[{id:1},{id:2},{id:3}],{is_enabled:true},rpc,{google:true,apple:true});
+  for(let i=1;i<=3;i++)assertEquals((html.match(new RegExp(`>Vstupenka ${i} z 3<`,'g'))??[]).length,1);
+  assert(html.includes('aria-label="Vstupenka 2 z 3 - Přidat do Apple Peněženky"'));
+  assertEquals((html.match(/provider=apple/g)??[]).length,3);assertEquals((html.match(/provider=google/g)??[]).length,3);
+ }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
+});
+
+Deno.test('compact official email artwork preserves aspect ratio at 48px across supported locales',async()=>{
+ for(const lang of ['cs','sk','en','de','pl','uk']){
+  const bytes=await Deno.readFile(new URL(`../../../assets/brand/google-wallet/condensed/${lang}.png`,import.meta.url));
+  const header=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);const width=header.getUint32(16),height=header.getUint32(20);
+  const artwork=walletEmailProviders.google.artwork(googleWalletBadgeUrl(lang),lang);
+  assert(artwork);assertEquals(artwork.url,`https://img.festapp.net/assets/google-wallet/v1/condensed/${lang}.png`);
+  assert(Math.abs(artwork.width-width/height*48)<0.01);assert(artwork.width+16<=232);
+  assertEquals(walletEmailProviders.google.artwork('https://untrusted.invalid/button.png',lang),undefined);
+ }
+});
+
+Deno.test('collection email has two order actions, private individual links and stable separate capability on resend',async()=>{
+ Deno.env.set('EMAIL_PAYLOAD_KEY',btoa('a'.repeat(32)));
+ try{
+  for(const lang of ['cs','en']){
+   const sources=new Map<string,any>();let creates=0;
+   const rpc=async(name:string,p:any)=>{
+    const collection=name==='prepare_ticket_wallet_collection';const key=collection?'collection':String(p.p_ticket);
+    if(p.p_hash){creates++;sources.set(key,{sealed:p.p_sealed,tokenHash:p.p_hash});}
+    return {organization:3,occasion:7,orderId:8,ticketIds:collection?p.p_tickets:undefined,fingerprint:'f'.repeat(64),collectionEnabled:true,webOrigin:'https://tenant.invalid',providers:{google:true,apple:true},badgeUrls:{[lang]:googleWalletBadgeUrl(lang)},source:sources.get(key)};
+   };
+   const row={message_id:'message',data:{lang}};
+   const html=await prepareWalletEmail(row,[{id:3},{id:1},{id:2}],{is_enabled:true},rpc);
+   assertEquals(creates,4);assertEquals((html.match(/provider=google/g)??[]).length,1);assertEquals((html.match(/provider=apple/g)??[]).length,1);
+   assertEquals((html.match(/scope=collection/g)??[]).length,2);
+   assertEquals((html.match(/href=/g)??[]).length,5);
+   assertEquals(await prepareWalletEmail(row,[{id:3},{id:1},{id:2}],{is_enabled:true},rpc),html);assertEquals(creates,4);
+   const urls=Array.from(html.matchAll(/href="([^"]+)"/g),m=>new URL(m[1].replaceAll('&amp;','&')));
+   assertEquals(new Set(urls.slice(0,2).map(url=>url.hash)).size,1);
+   assertEquals(new Set(urls.map(url=>url.hash)).size,4);
+   const single=await prepareWalletEmail(row,[{id:1}],{is_enabled:true},rpc);
+   assert(!single.includes('scope=collection'));assert(!single.includes('1 z 1'));assert(!single.includes('1 of 1'));
+   assert(single.includes(lang==='cs'?'Vstupenka v telefonu':'Ticket on your phone'));
+  }
+ }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
 });

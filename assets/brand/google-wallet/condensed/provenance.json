@@ -1,0 +1,54 @@
+{
+  "source": "https://developers.google.com/static/wallet/download-assets/add-to-wallet-png.zip",
+  "retrieved": "2026-11-14",
+  "files": [
+    {
+      "locale": "cs",
+      "source": "add-to-wallet-png/png/cz_add_to_google_wallet_add-wallet-badge.png",
+      "sha256": "dd4d94b09ab9f464fdc444d3b9b7ac107ed44ea374878550409bd8c88b23cf4c",
+      "width": 235,
+      "height": 55,
+      "bytes": 4984
+    },
+    {
+      "locale": "sk",
+      "source": "add-to-wallet-png/png/sk_add_to_google_wallet_add-wallet-badge.png",
+      "sha256": "19bb3da0925cd4fedbcc49340f3e981d01ceba7f10cf3c393baf576f81d7d88c",
+      "width": 235,
+      "height": 55,
+      "bytes": 5322
+    },
+    {
+      "locale": "en",
+      "source": "add-to-wallet-png/png/enUS_add_to_google_wallet_add-wallet-badge.png",
+      "sha256": "fd8cb2b91c04f14aa23e8a96b515e2e0abc839fbf88b1212e42708905792284f",
+      "width": 199,
+      "height": 55,
+      "bytes": 4543
+    },
+    {
+      "locale": "de",
+      "source": "add-to-wallet-png/png/de_add_to_google_wallet_add-wallet-badge.png",
+      "sha256": "43120bec73c75eccf801f61d835634086a1818b85441b728a5d21a1812648657",
+      "width": 199,
+      "height": 55,
+      "bytes": 4850
+    },
+    {
+      "locale": "pl",
+      "source": "add-to-wallet-png/png/pl_add_to_google_wallet_add-wallet-badge.png",
+      "sha256": "5846a7725bc842f4fda3206e1fbdbd9f3c76ecd0dafe467aaab881eec51fd004",
+      "width": 213,
+      "height": 55,
+      "bytes": 4674
+    },
+    {
+      "locale": "uk",
+      "source": "add-to-wallet-png/png/uk_add_to_google_wallet_add-wallet-badge.png",
+      "sha256": "2560959619925ea9d73cc4cc6407cefd104f11d5b320022e23433e0d7290b93f",
+      "width": 227,
+      "height": 55,
+      "bytes": 4770
+    }
+  ]
+}
