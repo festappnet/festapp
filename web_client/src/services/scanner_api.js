@@ -8,8 +8,8 @@ export class ScannerApi {
         try {
             let query = this.client.rpc(name, { ...(scoped ? { p_session: this.session.session_id, p_token: this.session.token } : {}), ...params });
             if (query.abortSignal) query = query.abortSignal(abort.signal);
-            const { data, error } = await Promise.race([query,new Promise((_,reject)=>abort.signal.addEventListener('abort',()=>reject(new ScannerError('timeout')),{once:true}))]);
-            if (error) throw new ScannerError(error.message || 'transport_error', error.code?.startsWith('PT') ? error.code.slice(2) : error.code==='42501' ? 403 : error.code?.startsWith('22') ? 400 : error.status || 0);
+            const { data, error, status } = await Promise.race([query,new Promise((_,reject)=>abort.signal.addEventListener('abort',()=>reject(new ScannerError('timeout')),{once:true}))]);
+            if (error) throw new ScannerError(error.message || 'transport_error', error.code?.startsWith('PT') ? error.code.slice(2) : error.code==='42501' ? 403 : error.code?.startsWith('22') ? 400 : error.status || status || 0);
             if (data?.code !== 200) throw new ScannerError(data?.reason || data?.message || 'rpc_failed', data?.code, data?.retry_after_ms);
             return data;
         } catch (e) { if (e instanceof ScannerError) throw e; throw new ScannerError(abort.signal.aborted ? 'timeout' : 'network_error'); }

@@ -210,7 +210,7 @@ test('unified email search uses only the active offline snapshot',async t=>{
  const {page}=liveSearchPage(t),now=Date.now();
  Object.assign(page.row,{partition:'current-event',serverAt:now,wallAt:now});
  page.row.session.offline_until=new Date(now+3600000).toISOString();
- navigator.onLine=false;
+ navigator.onLine=false;page.online=false;
  page.store={list:async(kind,partition)=>{assert.equal(kind,'tickets');assert.equal(partition,'current-event');return [{ticket:{ticket_id:2,symbol:'CODE',purchaser_email:'jana@example.test'}}];}};
  page.api.search=()=>assert.fail('offline search must not request the network');
  page.searchQuery='JANA@EXAMPLE.TEST';await page.search(0);
