@@ -99,8 +99,10 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   mkdirSync(join(root,'web_client/assets/translations'),{recursive:true});
   const bundleOutput = join(root, 'bundle/organizers-page');
   cpSync(join(root,'web/organizers-media'),join(root,'bundle/organizers-media'),{recursive:true});
+  const sourceCatalog = readFileSync(join(root, 'web_client/index.html'), 'utf8');
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr);
+  assert.equal(readFileSync(join(root, 'web_client/index.html'), 'utf8'), sourceCatalog, 'built rendering must preserve the source bytes captured by the build receipt');
   const bundled = readFileSync(bundleOutput, 'utf8');
   const runtimeRoot = bundled.match(/src="(\/organizers-assets\/[a-f0-9]+\/)runtime\/landing-test.js"/)?.[1];
   assert.ok(runtimeRoot, 'homepage uses the canonical versioned public runtime, avoiding cached app-chunk failures');
