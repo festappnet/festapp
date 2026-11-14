@@ -15,6 +15,6 @@ this repository does not publish them or make the integration ready.
 The unmodified official condensed variants in `condensed/` come from the same
 archive, retrieved 2026-11-14 (`*_add-wallet-badge.png`; Czech uses `cz`, English
 uses `enUS`). They retain a 48 px displayed height in narrow emails with 8 px
-clear space; the primary variants remain in use on the web. Publish condensed
+clear space; the web uses the same condensed variants for a consistent action row. Publish condensed
 bytes to `assets/google-wallet/v1/condensed/<locale>.png` before deploying the
 email renderer that references them.

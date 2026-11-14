@@ -106,7 +106,8 @@ buttons. Public `scope=collection` is a presentation hint captured before URL
 scrubbing, never an authorization input. Without it a group cannot issue because
 its mandatory plan revision is absent. Both kinds use the same HTTP entrypoint,
 connector contract and link lifetime. Large-order controls state that each group
-needs confirmation, and say "offered" rather than claiming a native save.
+needs confirmation. A file submission gives conditional native/Downloads instructions;
+it does not claim that a wallet dialog opened or a pass was saved.
 Adding together does not itself configure grouping inside either wallet.
 
 Sources: [Apple distribution](https://developer.apple.com/documentation/walletpasses/distributing-and-updating-a-pass),
@@ -121,11 +122,21 @@ a second visible copy of their button label. Each live link has a ticket-specifi
 accessible name; previews keep actions inert. The same HTML renderer is used by
 live delivery and the server-backed draft preview.
 
-Email uses unmodified official condensed Google badges to retain 48 px height
-and 8 px clear space within a narrow phone message. `wallet/presentation.js`
-contains their versioned URLs and dimensions; the email provider descriptor
-chooses artwork without putting provider branches into the layout. Web primary
-artwork remains unchanged. Localized text actions are used when official artwork
-is unavailable, including Czech Apple text. Publish every new canonical asset
-before deploying the renderer that references it. Each ticket retains its own
-capability and QR; this layout does not implement multi-ticket issuance.
+Email and web use unmodified official condensed Google badges and the installed
+original Apple badge, all at 48 px high with 8 px clear space. When an approved
+localized Apple asset is unavailable, use its installed English original with
+localized surrounding copy/accessible labels. Never fabricate a localized badge
+or reshape provider artwork. Their official corner geometry differs; alignment,
+height and clear space are shared. Web labels are visually hidden while artwork
+is present and become visible if loading fails. `wallet/presentation.js` owns
+public URLs, dimensions, localized labels and provider handoff instructions.
+Publish every new canonical asset before referencing it in live email.
+
+Chrome on macOS may download `.pkpasses` while leaving the bridge document open.
+Submitting a form proves neither native preview nor successful download. The
+file connector's conditional completion copy covers a native dialog, Downloads,
+and opening the original email link in Safari on iPhone. A failed submission
+retains its retry state. A one-part order does not display a technical group
+number; count/availability appears before the provider actions. These changes
+do not alter capabilities, issuer identity, QR data, saved-pass updates or the
+collection authorization boundary.

@@ -1,3 +1,4 @@
+import { walletPreviewBadge } from '../_shared/wallet/emailProviders.ts';
 import {bankCollectionAllowed} from '../_shared/orderEmailPresentation.ts';
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { ticketEmailSubstitutions } from "../_shared/ticketEmail.ts";
@@ -6,7 +7,7 @@ import {
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
-import { googleWalletBadgeUrl, walletEmailTicket, walletEmailSection, walletTicketLabel, walletCollectionLabel, walletEmailIndividual } from '../_shared/ticketWalletEmail.ts';
+import { walletEmailTicket, walletEmailSection, walletTicketLabel, walletCollectionLabel, walletEmailIndividual } from '../_shared/ticketWalletEmail.ts';
 import defaults from "../_shared/emailPreviewDefaults.json" with {
   type: "json",
 };
@@ -139,7 +140,7 @@ export async function renderDraftPreview(context: any) {
     });
     if (context.walletEnabled !== false && context.walletReady === true && context.ticketsEnabled === true) {
       const lang=context.lang??'cs';
-      const actions=Object.entries(context.walletProviders??{}).filter(([,ready])=>ready===true).map(([provider])=>({provider,...(provider==='google'?{badge:googleWalletBadgeUrl(lang)}:{})}));
+      const actions=Object.entries(context.walletProviders??{}).filter(([,ready])=>ready===true).map(([provider])=>({provider,badge:walletPreviewBadge(provider,lang)}));
       const rows=context.walletCollectionEnabled===true&&tickets.length>1
         ? [walletEmailTicket(walletCollectionLabel(tickets.length,lang),actions,lang),...tickets.map((_,i)=>walletEmailIndividual(walletTicketLabel(i+1,tickets.length,lang),undefined,lang))]
         : tickets.map((_,i)=>walletEmailTicket(walletTicketLabel(i+1,tickets.length,lang),actions,lang));

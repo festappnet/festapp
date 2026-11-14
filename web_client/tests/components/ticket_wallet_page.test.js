@@ -66,10 +66,10 @@ test('legacy email links on Apple devices start the native connector automatical
  let submits=0;dom.window.HTMLFormElement.prototype.submit=function(){submits++;};await page.init();assert.equal(submits,1);dom.window.close();
 });
 
-test('Czech Apple action uses Czech text without English artwork; English uses official artwork',async()=>{
+test('Apple uses official artwork in each locale with a localized accessible label',async()=>{
  for(const lang of ['cs','en']){
   const {dom,page}=fixture('');page.win.__festappWalletOptions={lang};await page.init();
-  const apple=page.actions.get('apple');assert.equal(Boolean(apple.button.querySelector('img')),lang==='en');
+  const apple=page.actions.get('apple');assert.equal(Boolean(apple.button.querySelector('img')),true);assert(apple.button.classList.contains('wallet-save--badge'));
   assert.equal(apple.label.textContent,lang==='cs'?'Přidat do Apple Peněženky':'Add to Apple Wallet');dom.window.close();
  }
 });
@@ -110,7 +110,7 @@ test('a late Google response cannot redirect or replace the status of a subseque
  let submitted=null;dom.window.HTMLFormElement.prototype.submit=function(){submitted=new dom.window.FormData(this).get('token');};
  page.win.__festappWalletOptions={provider:'apple',lang:'en'};dom.window.history.replaceState(null,'','/wallet#'+'b'.repeat(64));dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
  finish({state:'ACTIVE',url:'https://pay.google.com/gp/v/save/a.b.c'});await pending;
- assert.equal(submitted,'b'.repeat(64));assert.deepEqual(navigations,[]);assert.equal(page.status.textContent,'Preparing your ticket…');assert.equal(page.locale,'en');dom.window.close();
+ assert.equal(submitted,'b'.repeat(64));assert.deepEqual(navigations,[]);assert.match(page.status.textContent,/If Wallet opened/);assert.equal(page.locale,'en');dom.window.close();
 });
 
 test('leaving the Wallet route cancels pending work without consuming another route fragment',async()=>{
@@ -175,4 +175,28 @@ test('collection Google action issues a reference-only planned part; a stale pla
  const {dom,page,navigations}=fixture('a'.repeat(64),async body=>{calls.push(body);return body.action==='plan'?plan:{state:'ACTIVE',url};});
  page.win.__festappWalletOptions={provider:'google',scope:'collection'};await page.init();
  assert.deepEqual(calls.map(call=>call.action??'issue'),['plan','issue']);assert.equal(calls[1].revision,plan.revision);assert.equal(calls[1].part,0);assert.deepEqual(navigations,[url]);dom.window.close();
+});
+
+test('native collection download gives conditional completion guidance rather than claiming Wallet opened',async()=>{
+ const plan={kind:'collection',revision:'b'.repeat(64),ticketCount:2,originalCount:2,parts:[2],state:'ACTIVE'};
+ const {dom,page}=fixture('a'.repeat(64),async()=>plan);page.win.__festappWalletOptions={provider:'apple',scope:'collection'};
+ let downloads=0;dom.window.HTMLFormElement.prototype.submit=function(){downloads++;};
+ await page.init();assert.equal(downloads,1);
+ assert.match(page.status.textContent,/Pokud se soubor pouze stáhl/);assert.match(page.status.textContent,/Safari na iPhonu/);
+ assert(!page.status.textContent.includes('Skupina 1'));assert(!page.status.textContent.includes('byla nabídnuta'));
+ assert.equal(page.summary.textContent,'Dostupných vstupenek: 2.');
+ const main=page.host.querySelector('main');assert([...main.children].indexOf(page.summary)<[...main.children].indexOf(main.querySelector('.wallet-actions')));
+ for(const {button,label} of page.actions.values()){
+  assert(button.classList.contains('wallet-save--badge'));assert(label.classList.contains('wallet-label'));
+  assert.equal(button.querySelectorAll('img').length,1);
+  const img=button.querySelector('img');img.dispatchEvent(new dom.window.Event('error'));
+  assert.equal(img.hidden,true);assert.equal(button.classList.contains('wallet-save--badge'),false);
+ }
+ dom.window.close();
+});
+test('failed native submission retains retry feedback instead of replacing it with success instructions',async()=>{
+ const plan={kind:'collection',revision:'b'.repeat(64),ticketCount:2,originalCount:2,parts:[2],state:'ACTIVE'};
+ const {dom,page}=fixture('a'.repeat(64),async()=>plan);page.win.__festappWalletOptions={provider:'apple',scope:'collection'};
+ dom.window.HTMLFormElement.prototype.submit=function(){throw new Error('download blocked');};
+ await page.init();assert.match(page.status.textContent,/dočasně nedostupná/);assert(!page.status.textContent.includes('Pokud se soubor'));dom.window.close();
 });
