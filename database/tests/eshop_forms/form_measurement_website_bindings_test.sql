@@ -1,7 +1,7 @@
 -- test-setup: database/tests/helpers/form_measurement_fixture.sql
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; org bigint:=(x->>'organization')::bigint;
- fid bigint:=(x->>'form')::bigint; scope jsonb; result jsonb; b jsonb; exported jsonb; before_policy jsonb; legacy_revision text; rejected boolean;
+ fid bigint:=(x->>'form')::bigint; scope jsonb; result jsonb; b jsonb; exported jsonb; before_policy jsonb; legacy_revision text; rejected boolean; signature text;
  config jsonb:='{"provider":"cookieconsent","revision":7,"categories":{"analytics":"statistika návštěv","marketing":"reklama"}}';
 BEGIN
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
@@ -70,7 +70,16 @@ BEGIN
  BEGIN PERFORM public.disable_unit_website_consent_binding((b->>'id')::uuid,4); EXCEPTION WHEN insufficient_privilege THEN rejected:=true; END;
  PERFORM assert_true(rejected,'disable authorizes stored Unit');
  PERFORM assert_false(has_table_privilege('authenticated','analytics.website_consent_bindings','INSERT'),'direct writes denied');
- PERFORM assert_false(has_function_privilege('anon','public.get_unit_website_consent_bindings(bigint)','EXECUTE'),'anon admin RPC denied');
+ FOREACH signature IN ARRAY ARRAY[
+  'public.get_unit_website_consent_bindings(bigint)',
+  'public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)',
+  'public.disable_unit_website_consent_binding(uuid,bigint)',
+  'public.export_unit_website_consent_binding(uuid,bigint)'
+ ] LOOP
+  PERFORM assert_false(has_function_privilege('anon',signature,'EXECUTE'),'anon admin RPC denied: '||signature);
+  PERFORM assert_true(has_function_privilege('authenticated',signature,'EXECUTE'),'authenticated RPC declared: '||signature);
+  PERFORM assert_false(has_function_privilege('service_role',signature,'EXECUTE'),'service role admin RPC denied: '||signature);
+ END LOOP;
  -- UTF-16 boundary parity with JavaScript, including astral characters.
  PERFORM public.normalize_website_consent_provider_internal(jsonb_build_object('provider','cookieconsent','revision',1,'categories',jsonb_build_object('analytics',repeat('😀',64),'marketing','m')));
  rejected:=false;

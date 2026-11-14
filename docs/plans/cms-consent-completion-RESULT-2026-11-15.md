@@ -81,6 +81,14 @@ generation checks then passed. The selected organization's registered receiver
 must be deployed through the canonical receiver command before the tenant app.
 The failed source is not eligible for the production release gate.
 
+The complete seat lane then found missing security-registry declarations for
+the four new manager RPC headers. Their existing SQL already revoked anonymous
+and service-role execution and granted authenticated execution. Explicit header
+and ACL declarations were added without weakening the checker. All eight
+security migration contracts passed, and the actual database suite now checks
+all three role grants for every new RPC; it passed. SQL migration bytes and
+their digests are unchanged by this registry correction.
+
 The normal reproducible browser owner is
 `python3 automation/testing/cms_consent_fixture.py`. It creates and tears down
 its own backend/CMS resources, refuses occupied ports and records source hashes.
