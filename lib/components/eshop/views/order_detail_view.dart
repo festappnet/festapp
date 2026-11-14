@@ -77,6 +77,7 @@ class OrderDetailView extends StatefulWidget {
     required this.tab,
     required this.onTab,
     required this.onClose,
+    this.onEscape,
     required this.onChanged,
     this.onPrevious,
     this.onNext,
@@ -92,6 +93,7 @@ class OrderDetailView extends StatefulWidget {
   final String tab;
   final ValueChanged<String> onTab;
   final Future<void> Function() onClose;
+  final Future<void> Function()? onEscape;
   final bool outsideFilter;
   final int formCount;
   final Future<void> Function() onChanged;
@@ -1081,7 +1083,8 @@ class _OrderDetailViewState extends State<OrderDetailView>
         child: Actions(
           actions: {
             _CloseOrderDetailIntent: CallbackAction<_CloseOrderDetailIntent>(
-              onInvoke: (_) => c.busy ? null : widget.onClose(),
+              onInvoke: (_) =>
+                  c.busy ? null : (widget.onEscape ?? widget.onClose)(),
             ),
           },
           child: Material(

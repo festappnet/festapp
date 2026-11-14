@@ -1016,7 +1016,11 @@ class _OrdersContentState extends State<OrdersContent> {
                             replace: true,
                           )
                         : null,
-                    onClose: () async {
+                    // Pointer dismissal belongs to this visible detail. Only
+                    // keyboard dismissal needs to check enclosing Navigators:
+                    // a root dialog may leave keyboard focus in the detail.
+                    onClose: () => _navigateDetail(null, replace: true),
+                    onEscape: () async {
                       if (_detailRouteUncovered()) {
                         await _navigateDetail(null, replace: true);
                       }
