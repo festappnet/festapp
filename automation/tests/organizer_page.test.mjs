@@ -57,6 +57,9 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!JSON.stringify(graph).match(/aggregateRating|priceCurrency|SearchAction|FAQPage/));
   const catalog = readFileSync(join(root, 'web_client/index.html'), 'utf8');
   assert.ok(catalog.includes(`<title>${seo.catalogTitle}</title>`));
+  assert.match(catalog, /property="og:image" content="https:\/\/vstupenky\.online\/android-chrome-512x512\.png"/);
+  assert.match(catalog, /property="og:image:width" content="512"/);
+  assert.doesNotMatch(catalog, /(?:property|name)="(?:og|twitter):image" content="[^"]*organizers-social\.png"/);
   assert.ok(catalog.includes('href="https://vstupenky.online/events"'));
   assert.ok(!catalog.includes('SearchAction'));
   assert.ok(!catalog.includes('class="catalog-navigation"'), 'generated catalogue must not duplicate shared header navigation');
