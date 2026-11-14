@@ -294,7 +294,7 @@ Deno.test('preview follows collection readiness and singular wording without liv
   const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,walletProviders:{google:true,apple:true},walletCollectionEnabled:true,deliveryMode:'inline_qr',sampleTicketCount:count,lang,occasion:{id:0,title:context.title,data:{}}});
   assert(preview.html.includes(lang==='cs'?(count===1?'Vstupenka v telefonu':'Všechny vstupenky (3)'):(count===1?'Ticket on your phone':'All tickets (3)')));
   assert((preview.html.match(/google-wallet\/v1\/condensed\//g)??[]).length===1);
-  assert(preview.html.includes(lang==='cs'?'Přidat do Apple Peněženky':'Add to Apple Wallet'));
+  assert(preview.html.includes(lang==='cs'?'Přidat do Peněženky Apple':'Add to Apple Wallet'));
   assert(!preview.html.includes('/wallet?'));assert(!preview.html.includes('1 z 1'));assert(!preview.html.includes('1 of 1'));
  }
 });

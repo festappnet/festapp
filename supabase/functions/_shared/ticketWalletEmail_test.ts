@@ -82,7 +82,7 @@ Deno.test('Apple-only readiness offers the shared capability without Google cred
   let source:any;
   const rpc=async(_name:string,p:any)=>{if(p.p_hash)source={sealed:p.p_sealed,tokenHash:p.p_hash};return {organization:1,occasion:7,webOrigin:'https://tenant.invalid',providers:{google:false,apple:true},source};};
   const html=await prepareWalletEmail({message_id:'message',data:{lang:'cs'}},[{id:1,ticket_symbol:'ORIGINAL'}],{is_enabled:true},rpc,{google:false,apple:true});
-  assert(html.includes('Přidat do Apple Peněženky'));assert(!html.includes('Google'));assertEquals((html.match(/\/wallet\?/g)??[]).length,1);
+  assert(html.includes('Přidat do Peněženky Apple'));assert(!html.includes('Google'));assertEquals((html.match(/\/wallet\?/g)??[]).length,1);
  }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
 });
 
@@ -90,20 +90,23 @@ Deno.test('email Wallet actions carry distinct provider and email language befor
  for(const lang of ['cs','en'])for(const provider of ['google','apple']){
   const html=walletEmailTicket('Ticket',[{provider,url:'https://tenant.invalid/wallet#'+'a'.repeat(64)}],lang);
   assert(html.includes(`provider=${provider}&amp;lang=${lang}#`));
-  assert(html.includes(lang==='cs'?(provider==='apple'?'Přidat do Apple Peněženky':'Přidat do Peněženky Google'):`Add to ${provider==='apple'?'Apple':'Google'} Wallet`));
+  assert(html.includes(lang==='cs'?(provider==='apple'?'Přidat do Peněženky Apple':'Přidat do Peněženky Google'):`Add to ${provider==='apple'?'Apple':'Google'} Wallet`));
  }
 });
 
-Deno.test('localized actions never substitute English artwork into a Czech email',()=>{
+Deno.test('Google stays localized; Apple uses its installed official English artwork when no localized artwork is available',()=>{
  const urls={en:'https://img.festapp.net/assets/google-wallet/v1/en.png',apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg'}};
- for(const descriptor of Object.values(walletEmailProviders)){assertEquals(descriptor.badge(urls,'cs'),undefined);assert(descriptor.badge(urls,'en'));assert(descriptor.labelFallback);}
+ assertEquals(walletEmailProviders.google.badge(urls,'cs'),undefined);
+ assertEquals(walletEmailProviders.apple.badge(urls,'cs'),urls.apple.en);
+ assertEquals(walletEmailProviders.apple.artwork(urls.apple.en,'cs'),{url:urls.apple.en,width:151.80});
+ for(const descriptor of Object.values(walletEmailProviders)){assert(descriptor.badge(urls,'en'));assert(descriptor.labelFallback);}
 });
 
 Deno.test('multiple providers share one ticket heading and actions have no repeated visible label',()=>{
  const label='Vstupenka 1 z 3 - Stůl 4 - Místo 7';
  const html=walletEmailTicket(label,[{provider:'google',badge:googleWalletBadgeUrl('cs')},{provider:'apple'}],'cs');
  assertEquals((html.match(/Vstupenka 1 z 3/g)??[]).length,1);
- assertEquals((html.match(/Přidat do Apple Peněženky/g)??[]).length,1);
+ assertEquals((html.match(/Přidat do Peněženky Apple/g)??[]).length,1);
  assertEquals((html.match(/Přidat do Peněženky Google/g)??[]).length,1);
  assert(html.includes('vertical-align:middle'));assert(html.includes('height="48"'));
  assertEquals(walletEmailTicket(label,[],'cs'),'');assert(!html.includes('href='));
@@ -118,7 +121,7 @@ Deno.test('live multi-ticket emails preserve one heading per ticket and each pro
   };
   const html=await prepareWalletEmail({message_id:'preview',data:{lang:'cs'}},[{id:1},{id:2},{id:3}],{is_enabled:true},rpc,{google:true,apple:true});
   for(let i=1;i<=3;i++)assertEquals((html.match(new RegExp(`>Vstupenka ${i} z 3<`,'g'))??[]).length,1);
-  assert(html.includes('aria-label="Vstupenka 2 z 3 - Přidat do Apple Peněženky"'));
+  assert(html.includes('aria-label="Vstupenka 2 z 3 - Přidat do Peněženky Apple"'));
   assertEquals((html.match(/provider=apple/g)??[]).length,3);assertEquals((html.match(/provider=google/g)??[]).length,3);
  }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
 });
@@ -158,4 +161,27 @@ Deno.test('collection email has two order actions, private individual links and 
    assert(single.includes(lang==='cs'?'Vstupenka v telefonu':'Ticket on your phone'));
   }
  }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
+});
+
+Deno.test('Czech email renders its installed official localized Apple badge without a fabricated button',()=>{
+ const urls={apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg',cs:'https://img.festapp.net/assets/apple-wallet/v1/cs.svg'}};
+ const badge=walletEmailProviders.apple.badge(urls,'cs');
+ const html=walletEmailTicket('Všechny vstupenky (2)',[{provider:'apple',badge,url:'https://tenant.invalid/wallet#'+'a'.repeat(64)}],'cs');
+ assert(html.includes('src="'+urls.apple.cs+'"'));assert(!html.includes('src="'+urls.apple.en+'"'));assert(html.includes('alt="Přidat do Peněženky Apple"'));
+ assert(!html.includes('background:#202124'));assert(html.includes('width:184.14px'));
+});
+
+Deno.test('official localized Apple badges retain provenance bytes and proportional 48px geometry',async()=>{
+ const provenance=JSON.parse(await Deno.readTextFile(new URL('../../../assets/brand/apple-wallet/provenance.json',import.meta.url)));
+ for(const lang of ['cs','sk','en','de','pl','uk']){
+  const bytes=await Deno.readFile(new URL(`../../../assets/brand/apple-wallet/${lang}.svg`,import.meta.url));
+  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+  assertEquals(hash,provenance.files[lang].sha256);
+  const [,dimensions]=new TextDecoder().decode(bytes).match(/viewBox="([^"]+)"/)!;
+  const [,,width,height]=dimensions.split(' ').map(Number);
+  const url=`https://img.festapp.net/assets/apple-wallet/v1/${lang}.svg`;
+  assertEquals(walletEmailProviders.apple.badge({apple:{[lang]:url}},lang),url);
+  const artwork=walletEmailProviders.apple.artwork(url,lang);assert(artwork);
+  assert(Math.abs(artwork.width-width/height*48)<0.01);assert(artwork.width+16<=232);
+ }
 });

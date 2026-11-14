@@ -210,12 +210,18 @@ img.smooth-load.loaded {
     opacity: 1;
 }
 
-.wallet-page { max-width: 440px; margin: 48px auto; padding: 24px; }
-.wallet-page h1 { margin-bottom: 16px; }
-.wallet-page p { line-height: 1.6; margin-bottom: 24px; }
-.wallet-page button { min-height: 48px; padding: 12px 20px; }
-
-.wallet-save { background: transparent; border: 0; cursor: pointer; }
-.wallet-save img { height: 48px; width: auto; max-width: 100%; margin: 8px; }
-.wallet-save span { display: block; }
-.wallet-save:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+/* Official artwork keeps its own geometry; both controls share height and clear space. */
+.wallet-page { max-width: 480px; margin: 48px auto; padding: 24px; box-sizing: border-box; }
+.wallet-page [hidden] { display: none !important; }
+.wallet-page h1 { margin: 0 0 16px; font-size: 2rem; line-height: 1.2; }
+.wallet-page p { line-height: 1.6; margin: 0 0 20px; }
+.wallet-page .wallet-summary { font-weight: 600; margin-bottom: 8px; }
+.wallet-actions { display: flex; flex-wrap: wrap; align-items: center; margin: 8px -8px; }
+.wallet-page .wallet-save { position: relative; display: inline-flex; align-items: center; justify-content: center; max-width: 100%; min-height: 48px; padding: 8px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.wallet-page .wallet-save img { display: block; height: 48px; width: auto; max-width: 100%; margin: 0; }
+.wallet-page .wallet-save img[hidden] { display: none; }
+.wallet-save--badge .wallet-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wallet-save--badge:disabled { opacity: 1; cursor: progress; }
+.wallet-save:not(.wallet-save--badge) .wallet-label { padding: 10px 16px; border: 1px solid currentColor; border-radius: 6px; line-height: 1.4; }
+.wallet-page .wallet-part { display: block; min-height: 48px; margin: 8px 0; padding: 12px 16px; border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.wallet-save:focus-visible, .wallet-part:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
