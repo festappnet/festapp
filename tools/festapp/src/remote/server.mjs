@@ -1,3 +1,4 @@
+import {createWebhookWorker} from './webhook-worker.mjs';
 import { createHostedRunner } from './hosted-runner.mjs';
 import { resourceEndpoint, clientForResource, grantEndpoint, ingressEndpoint, API_PREFIX } from './endpoints.mjs';
 import { installApi, sendProblem } from './api-transport.mjs';
@@ -541,5 +542,6 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         res.status(safe.code === 'FORBIDDEN' ? 403 : safe.code === 'TEMPORARILY_LIMITED' ? 429 : 400)
             .type('html').send(page('Požadavek se nezdařil', '<p>Připojení vypršelo, bylo odmítnuto nebo se službou nelze spojit. Spusťte připojení znovu.</p>'));
     });
-    return { app, provider };
+    const webhooks = createWebhookWorker({config, storage, fetchImpl, audit});
+    return { app, provider, webhooks };
 }

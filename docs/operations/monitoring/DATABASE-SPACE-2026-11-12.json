@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-12",
+  "scope": "read-only database size and retention diagnostics",
+  "host": "festapp-supabase-rehearsal-01",
+  "runtime_database": "festapp_rehearsal_20260909220601",
+  "identity": {
+    "tenant": "festapptickets",
+    "activation_generation": 1,
+    "organization_id": 3,
+    "organization_title": "vstupenky.online"
+  },
+  "database_bytes": {
+    "runtime": 1388752019,
+    "postgres": 1521314963,
+    "previous_rehearsal": 1120100879,
+    "stage_a": 1039950351,
+    "stage_slunovrat": 166011407,
+    "stage_default": 53871119
+  },
+  "cron_history": {
+    "database": "postgres",
+    "relation": "cron.job_run_details",
+    "bytes": 311435264,
+    "rows_snapshot": 1094580,
+    "last_24h_runs": 102229,
+    "oldest": "2026-09-10",
+    "older_than_30_days": 110875,
+    "dominant_job": "festapp_canonical_notification_center_wake",
+    "schedule": "1 second",
+    "dominant_job_last_24h_runs": 85501,
+    "automatic_history_retention_found": false,
+    "growth_note": "Six full days each had about 102000 runs. Estimated disk growth about 30 MB/day if the current bytes/row stays similar."
+  },
+  "runtime_history": {
+    "auth.audit_log_entries": {
+      "bytes": 232792064,
+      "rows": 750090,
+      "older_90d": 653065,
+      "last_day": 622,
+      "last_7d": 3230,
+      "oldest": "2023-12-07"
+    },
+    "public.log_app_config": {
+      "bytes": 85835776,
+      "rows": 551266,
+      "older_90d": 452462,
+      "last_day": 1698,
+      "last_7d": 10199,
+      "oldest": "2025-03-30"
+    },
+    "public.email_messages": {
+      "bytes": 140845056,
+      "rows": 1448,
+      "last_day": 38,
+      "last_7d": 209
+    },
+    "festapp_merge.id_mappings": {
+      "bytes": 260308992,
+      "rows": 798647,
+      "note": "Runtime image project logic still references mappings; not a blind deletion candidate."
+    }
+  },
+  "toast_space": {
+    "public.information": {
+      "heap_bytes": 94617600,
+      "visible_chunk_payload_bytes": 2051899
+    },
+    "public.events": {
+      "heap_bytes": 109617152,
+      "visible_chunk_payload_bytes": 55033774
+    },
+    "public.news": {
+      "heap_bytes": 43294720,
+      "visible_chunk_payload_bytes": 11146857
+    },
+    "public.email_messages": {
+      "heap_bytes": 137117696,
+      "visible_chunk_payload_bytes": 115333361
+    },
+    "interpretation": "Allocated heap versus visible payload indicates substantial reusable/dead space, especially information; includes tuple/page overhead. Not an exact pgstattuple bloat measurement."
+  },
+  "health": {
+    "autovacuum": "on",
+    "wal_bytes_approx": 83886080,
+    "replication_slots": 0,
+    "other_open_transactions_at_probe": 0,
+    "statistics_warning": "n_live_tup is not the actual total for imported tables; exact aggregate counts used for selected tables. pgstattuple is not installed and was not enabled."
+  },
+  "changes_applied": false,
+  "recommended_order": [
+    "Bound successful pg_cron history retention without disabling the one-second application job.",
+    "Define separate retention policies for configuration telemetry and authentication security audit.",
+    "Plan non-destructive relation maintenance to reclaim allocated space, with production lock/WAL/disk safeguards.",
+    "Review historical database recovery/dependency requirements before any retirement."
+  ]
+}

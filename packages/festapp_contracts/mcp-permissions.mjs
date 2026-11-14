@@ -1,6 +1,8 @@
 /** Functional delegation contract shared by issuer and tenant consent UI.
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
+    'festapp:webhooks:read': {label:'webhooksRead',operations:['webhooks.list','webhooks.deliveries'],requires:['festapp:orders:read']},
+    'festapp:webhooks:write': {label:'webhooksWrite',operations:['webhooks.create','webhooks.update','webhooks.delete','webhooks.test','webhooks.redeliver','webhooks.rotate_secret'],requires:['festapp:webhooks:read']},
     'festapp:history:delete': {label:'historyDelete',operations:['history.delete'],requires:['festapp:order-history:read']},
     'festapp:orders:delete': {label:'ordersDelete',operations:['orders.deletion.inspect','orders.delete'],requires:['festapp:orders:read']},
     'festapp:lifecycle:read': {label:'lifecycleRead',operations:['lifecycle.inspect','lifecycle.pending','occasions.setup.inspect'],requires:[]},

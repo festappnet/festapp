@@ -137,9 +137,11 @@ test('installed payment integration cannot be rewritten and rejects changed hist
     fs.mkdirSync(path.join(root,'supabase/migrations'),{recursive:true});
     fs.writeFileSync(path.join(root,'automation/payment-provider-integration-migration.json'),JSON.stringify(config));
     fs.writeFileSync(path.join(root,target),original+'\n-- changed history\n');
+    const entry = JSON.parse(read('automation/migration-forward-owners.json')).migrations.find(e => e.migration === config.migration);
+    fs.writeFileSync(path.join(root,'automation/migration-forward-owners.json'),JSON.stringify({migrations:[entry]}));
     const result=spawnSync('python3',['-c',
-      "import sys,importlib.util; from pathlib import Path; sys.path.insert(0,'automation'); spec=importlib.util.spec_from_file_location('integration','automation/assemble-payment-provider-integration-migration.py'); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); module.render(Path(sys.argv[1]))",root],{encoding:'utf8'});
+      "import sys; from pathlib import Path; sys.path.insert(0,'automation'); from migration_forward_owners import historical_text; historical_text(Path(sys.argv[1]),sys.argv[2])",root,config.migration],{encoding:'utf8'});
     assert.notEqual(result.status,0);
-    assert.match(result.stderr,/Installed payment integration migration bytes changed/);
+    assert.match(result.stderr,/Immutable migration bytes changed/);
   } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });

@@ -1,3 +1,4 @@
+import { generate } from '../../../tools/festapp/scripts/generate-api-reference.mjs';
 import { readFile, writeFile, mkdir, readdir, lstat, unlink, rmdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -8,6 +9,7 @@ const Ajv = require('ajv/dist/2020').default;
 const addFormats = require('ajv-formats');
 const root = new URL('../', import.meta.url);
 export async function assemble({ samples: sampleOverride, presentation: presentationOverride } = {}) {
+generate();
 const read = async p => JSON.parse(await readFile(new URL(p, root), 'utf8'));
 const app = await read('app.json'), presentation = presentationOverride ?? await read('src/catalog.json');
 const samples = sampleOverride ?? await read('src/samples.json'), connection = await read('src/connection.json');
