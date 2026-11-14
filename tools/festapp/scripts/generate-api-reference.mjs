@@ -14,7 +14,9 @@ const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).ver
 const sourceSha = process.env.FESTAPP_SOURCE_SHA ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 if (!/^[a-f0-9]{40}$/.test(sourceSha)) throw new Error('Explicit source provenance must be a full Git SHA');
 const sourceFiles = fs.readdirSync(path.join(root, 'src'), { recursive: true }).filter(f => f.endsWith('.mjs')).sort();
-const contractFiles = ['package.json','pnpm-lock.yaml','api-contract-archive.json','api-release-baseline.json',...fs.readdirSync(path.join(root,'scripts')).filter(f=>f.endsWith('.mjs')).map(f=>'scripts/'+f), '../../packages/festapp_contracts/mcp-permissions.mjs'];
+const contractFiles = ['package.json','pnpm-lock.yaml','api-contract-archive.json','api-release-baseline.json',
+    ...['generate-api-reference','api-examples','build-api-docs','api-artifacts','prepare-api-artifacts'].map(name=>'scripts/'+name+'.mjs'),
+    '../../packages/festapp_contracts/mcp-permissions.mjs'];
 const inputs = new Set();
 const visit = file => {
     if (inputs.has(file)) return;
