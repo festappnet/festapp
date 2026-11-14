@@ -40,6 +40,7 @@ function boot({
     appReady = false,
     clientRuntime,
     cutoverVersion,
+    delayedRegistration = false,
 } = {}) {
     const navigationErrors = [];
     const virtualConsole = new VirtualConsole();
@@ -119,7 +120,7 @@ function boot({
                         }
                     },
                 };
-                const registration = {
+                const registration = Object.assign(new window.EventTarget(), {
                     active: activeWorker,
                     waiting: waitingWorker ? candidate : null,
                     installing: null,
@@ -128,11 +129,28 @@ function boot({
                         window.__festappUnregisterCalls++;
                         return true;
                     },
+                });
+                window.__installUpdate = () => {
+                    candidate.state = 'installing';
+                    registration.installing = candidate;
+                    registration.dispatchEvent(new window.Event('updatefound'));
+                    candidate.state = 'installed';
+                    registration.installing = null;
+                    registration.waiting = candidate;
+                    candidate.dispatchEvent(new window.Event('statechange'));
                 };
                 window.__registration = registration;
                 const serviceWorker = new window.EventTarget();
                 serviceWorker.getRegistrations = async () => [registration];
-                serviceWorker.getRegistration = async () => registration;
+                serviceWorker.getRegistration = async () => delayedRegistration ? undefined : registration;
+                if (delayedRegistration) {
+                    serviceWorker.ready = new Promise(resolve => {
+                        window.__finishRegistration = () => {
+                            delayedRegistration = false;
+                            resolve(registration);
+                        };
+                    });
+                }
                 serviceWorker.controller = activeWorker;
                 Object.defineProperty(window.navigator, 'serviceWorker', {
                     configurable: true,
@@ -171,6 +189,136 @@ const button = (window, action) =>
     window.document.querySelector(`[data-festapp-update-action="${action}"]`);
 
 describe('festapp_update_prompt.js', () => {
+    test('offers an already installed update without waiting for load, focus or polling', async t => {
+        const {window} = boot({waitingWorker: true, appReady: true,
+            latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        assert.ok(banner(window), 'a waiting update must be offered to the interactive app');
+        assert.deepStrictEqual([...window.__skipWaitingMessages], [],
+            'notification must not activate or reload over an open draft');
+        assert.equal(window.__navigationErrors.length, 0);
+        assert.equal(window.__festappUnregisterCalls, 0);
+        assert.deepStrictEqual([...window.__deletedCaches], []);
+    });
+
+    test('offers an installed update even while a version request never completes', async t => {
+        const {window} = boot({activeWorkerWithoutUpdate: true, appReady: true,
+            latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        window.fetch = () => new Promise(() => {});
+        window.dispatchEvent(new window.Event('focus'));
+        await flush();
+        assert.equal(banner(window), null, 'no update is installed yet');
+        window.__installUpdate();
+        await flush();
+        assert.ok(banner(window), 'installation must notify independently of the manifest request');
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+        assert.equal(window.__navigationErrors.length, 0);
+    });
+
+    test('offers an installed update when startup reaches its first usable frame', async t => {
+        const {window} = boot({waitingWorker: true, latestVersion: '2.0.0+2',
+            clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        assert.equal(banner(window), null, 'startup keeps its existing recovery policy');
+        window.FestappRuntime.markReady();
+        await flush();
+        assert.ok(banner(window));
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+        assert.equal(window.__navigationErrors.length, 0);
+    });
+
+    test('an installed update respects Later and never replaces the current generation', async t => {
+        const {window} = boot({waitingWorker: true, appReady: true,
+            latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        assert.ok(banner(window));
+        button(window, 'later').click();
+        window.dispatchEvent(new window.Event('festapp-app-ready'));
+        await flush();
+        assert.equal(banner(window), null);
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+        assert.equal(window.__navigationErrors.length, 0);
+    });
+
+    test('a waiting worker for the current version does not offer an update', async t => {
+        const {window} = boot({waitingWorker: true, appReady: true,
+            latestVersion: '1.0.0+1', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        assert.equal(banner(window), null);
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+    });
+
+    test('an ignored worker query failure cannot reject outside its notification owner', async t => {
+        const {window} = boot({activeWorkerWithoutUpdate: true, appReady: true,
+            latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        window.MessageChannel = class { constructor() { throw new Error('channel unavailable'); } };
+        window.__installUpdate();
+        await flush();
+        assert.equal(banner(window), null);
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+        assert.equal(window.__navigationErrors.length, 0);
+    });
+
+    test('a timed-out manifest request releases the next version check', async t => {
+        const {window} = boot({activeWorkerWithoutUpdate: true, appReady: true,
+            latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        window.fetch = () => new Promise(() => {});
+        window.dispatchEvent(new window.Event('focus'));
+        await flush();
+        assert.equal(banner(window), null);
+        const timeout = window.__timeouts.find(timer => timer.delay === 10000);
+        assert.ok(timeout, 'the manifest request needs a deadline');
+        timeout.listener();
+        await flush();
+        window.fetch = async () => ({ok: true, json: async () => ({version: '2.0.0+2'})});
+        window.dispatchEvent(new window.Event('focus'));
+        await flush();
+        assert.ok(banner(window), 'a timed-out check must not leave checkInFlight locked');
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+    });
+
+    test('explicit reload can use the installed generation after a manifest body times out', async t => {
+        const {window} = boot({waitingWorker: true, appReady: true,
+            latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        assert.ok(banner(window));
+        window.fetch = async () => ({ok: true, json: () => new Promise(() => {})});
+        button(window, 'reload').click();
+        await flush();
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+        const timeout = window.__timeouts.find(timer => timer.delay === 10000);
+        assert.ok(timeout, 'the deadline must include response.json()');
+        timeout.listener();
+        await flush();
+        assert.deepStrictEqual([...window.__skipWaitingMessages], ['SKIP_WAITING']);
+        assert.equal(window.sessionStorage.getItem('festappCutoverVersion'), '2.0.0+2');
+        assert.equal(window.__navigationErrors.length, 1);
+        assert.equal(window.__festappUnregisterCalls, 0);
+        assert.deepStrictEqual([...window.__deletedCaches], []);
+    });
+
+    test('startup observes registration created after the update controller initializes', async t => {
+        const {window} = boot({waitingWorker: true, delayedRegistration: true,
+            appReady: true, latestVersion: '2.0.0+2', clientRuntime: 'flutter'});
+        t.after(() => window.close());
+        await flush();
+        assert.equal(banner(window), null, 'no registration is available yet');
+        window.__finishRegistration();
+        await flush();
+        assert.ok(banner(window), 'registration readiness must connect the installed-worker observer');
+        assert.deepStrictEqual([...window.__skipWaitingMessages], []);
+        assert.equal(window.__navigationErrors.length, 0);
+    });
+
     test('festapp-update-available event shows an English banner by default', () => {
         const { window } = boot();
         window.dispatchEvent(new window.CustomEvent('festapp-update-available', {

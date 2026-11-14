@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { createRequire } from 'node:module';
@@ -30,8 +30,8 @@ navigator.serviceWorker.register('/festapp_service_worker.js', {scope:'/'}).then
   if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, {once:true}));
   document.getElementById('state').textContent='připraveno';
 });`;
-const flutterHtml = `<!doctype html><meta charset="utf-8"><title>Ukázka aplikace</title>
-<p id="state">aplikace</p><script src="/flutter_bootstrap.js"></script><script src="/main.dart.1.2.3-4.js"></script><script src="/main.dart.1.2.3-4.js_1.part.js"></script>`;
+const flutterHtml = buildVersion => `<!doctype html><meta charset="utf-8"><title>Ukázka aplikace</title>
+<p id="state">aplikace</p><input id="draft"><script>window.__FESTAPP_BUILD_VERSION__=${JSON.stringify(buildVersion)};window.__FESTAPP_CLIENT_RUNTIME__='flutter';window.__FESTAPP_APP_READY__=true;</script><script src="/festapp_update_prompt.js"></script><script src="/flutter_bootstrap.js"></script><script src="/main.dart.1.2.3-4.js"></script><script src="/main.dart.1.2.3-4.js_1.part.js"></script>`;
 
 export async function testPwaSplitBrowser({ owner, session, temporary }) {
     const build = path.join(temporary, 'pwa-build');
@@ -41,7 +41,8 @@ export async function testPwaSplitBrowser({ owner, session, temporary }) {
     const files = {
         '/index.html': publicHtml,
         '/web-assets/public.js': publicJs,
-        '/flutter.html': flutterHtml,
+        '/flutter.html': flutterHtml(version),
+        '/festapp_update_prompt.js': await readFile(process.env.FESTAPP_TEST_UPDATE_BUNDLE || path.join(projectRoot, 'web/festapp_update_prompt.js')),
         '/flutter.js': 'window.fixtureFlutterLoader=true;',
         '/flutter_bootstrap.js': 'window.fixtureFlutterBootstrap=true;',
         '/main.dart.1.2.3-4.js': `window.fixtureFlutterMain=true; Promise.all([fetch('/canvaskit/canvaskit.wasm'),fetch('/assets/FontManifest.json')]).then(r=>{if(r.every(x=>x.ok))window.fixtureFlutterAssets=true});`,
@@ -55,12 +56,15 @@ export async function testPwaSplitBrowser({ owner, session, temporary }) {
     files[qrDecoderAsset]=await readFile(createRequire(import.meta.url).resolve('zxing-wasm/reader/zxing_reader.wasm'));
     for (const [name, content] of Object.entries(files)) await writeFile(path.join(build, name.slice(1)), content);
     await execute(process.execPath, [path.join(projectRoot, 'automation/generate_pwa_service_worker.mjs'), build, version], {cwd:projectRoot});
-    const worker = await readFile(path.join(build, 'festapp_service_worker.js'));
+    let worker = await readFile(path.join(build, 'festapp_service_worker.js'));
     let rejectPart = false;
+    let holdManifestChecks = false;
+    const heldResponses = new Set();
     const requests = [];
     const server = createServer((req, res) => {
         const url = new URL(req.url, 'http://127.0.0.1');
         requests.push(url.pathname);
+        if (holdManifestChecks && url.pathname === '/festapp-version.json' && (url.searchParams.has('t') || url.searchParams.has('refresh'))) { heldResponses.add(res); res.on('close', () => heldResponses.delete(res)); return; }
         if (url.pathname === '/__browser_startup') return res.end('<!doctype html><title>Browser startup</title>');
         if (url.pathname === '/festapp_service_worker.js') { res.setHeader('content-type', 'text/javascript'); return res.end(worker); }
         if (rejectPart && url.pathname === '/main.dart.1.2.3-4.js_1.part.js') { res.statusCode=503; return res.end('temporary fixture failure'); }
@@ -136,12 +140,55 @@ export async function testPwaSplitBrowser({ owner, session, temporary }) {
         await session.page.waitForFunction('window.fixtureFlutterMain === true && window.fixtureFlutterPart === true && window.fixtureFlutterAssets === true');
         const directCache = await cachePaths();
         for (const resource of flutterCore) assert.ok(directCache.includes(resource), `direct navigation omitted ${resource}`);
+        // Exercise the production updater with two real generated worker generations.
+        // Keep the normal manifest poll pending so only the installed-worker event
+        // can offer the update. No focus, load or poll is triggered after install.
+        await session.close();
+        holdManifestChecks = true;
+        await session.open(`${origin}/form/update-fixture`);
+        await session.page.waitForFunction('!!navigator.serviceWorker.controller');
+        await session.page.goto(`${origin}/app/update-fixture`);
+        await session.page.waitForFunction('window.__FESTAPP_APP_READY__ === true && window.fixtureFlutterMain === true');
+        const first = session.page;
+        await first.locator('#draft').fill('draft in first client');
+        const other = await session.context.newPage();
+        await other.goto(`${origin}/app/update-fixture`);
+        await other.waitForFunction('window.__FESTAPP_APP_READY__ === true');
+        await other.locator('#draft').fill('draft in other client');
+        assert.equal(await first.locator('#festapp-update-banner').count(), 0, 'no update before installation');
+        await first.evaluate('window.dispatchEvent(new Event(\"focus\"))');
+        for (let i = 0; i < 100 && heldResponses.size === 0; i++) await new Promise(resolve => setTimeout(resolve, 50));
+        assert.ok(heldResponses.size > 0, 'fixture must hold a manifest check before worker installation');
+        const nextVersion = '1.2.3+5';
+        const nextBuild = path.join(temporary, 'pwa-build-next');
+        await cp(build, nextBuild, {recursive:true});
+        files['/flutter.html'] = flutterHtml(nextVersion);
+        files['/festapp-version.json'] = JSON.stringify({version:nextVersion,main:'main.dart.1.2.3-4.js'});
+        await writeFile(path.join(nextBuild, 'flutter.html'), files['/flutter.html']);
+        await writeFile(path.join(nextBuild, 'festapp-version.json'), files['/festapp-version.json']);
+        await execute(process.execPath, [path.join(projectRoot, 'automation/generate_pwa_service_worker.mjs'), nextBuild, nextVersion], {cwd:projectRoot});
+        worker = await readFile(path.join(nextBuild, 'festapp_service_worker.js'));
+        await first.evaluate('navigator.serviceWorker.getRegistration().then(r => r.update())');
+        await first.locator('#festapp-update-banner').waitFor({state:'visible', timeout:10000});
+        assert.ok(heldResponses.size > 0, 'manifest check must still be pending when banner appears');
+        assert.equal(await first.evaluate('window.__FESTAPP_BUILD_VERSION__'), version);
+        assert.equal(await first.locator('#draft').inputValue(), 'draft in first client');
+        assert.equal(await other.locator('#draft').inputValue(), 'draft in other client');
+        holdManifestChecks = false;
+        for (const response of heldResponses) {response.writeHead(503); response.end();}
+        await first.locator('[data-festapp-update-action=reload]').click();
+        await first.waitForFunction(`window.__FESTAPP_BUILD_VERSION__ === ${JSON.stringify(nextVersion)}`, null, {timeout:30000});
+        assert.equal(await other.evaluate('window.__FESTAPP_BUILD_VERSION__'), version);
+        assert.equal(await other.locator('#draft').inputValue(), 'draft in other client');
+        await other.close();
+        console.log('PASS: installed worker offers update with pending manifest; explicit reload updates one client and preserves another draft');
         console.log(`PASS: public install and web repair: ${publicFlutterRequests.length} Flutter requests, ${publicCache.length} public cache entries; failed batch: 0 Flutter entries; successful query and direct navigation: ${flutterCore.length}/${flutterCore.length} Flutter core entries; offline public form fixture and simulated app entry`);
     } catch (error) {
         console.error('PWA fixture requests:', requests);
         console.error('PWA fixture browser errors:', session.errors);
         throw error;
     } finally {
+        for (const response of heldResponses) response.destroy();
         await session.context?.setOffline(false).catch(()=>{});
         await session.close().catch(()=>{});
         await new Promise(resolve => server.close(resolve));
