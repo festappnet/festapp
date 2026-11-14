@@ -91,7 +91,7 @@ class ScanResultDisplay extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        OrdersStrings.scanInstructionsAppUser,
+                        OrderItemStrings.scanInstructionsAppUser,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,

@@ -1,4 +1,3 @@
-import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class FeaturesStrings {
@@ -143,7 +142,6 @@ class FeaturesStrings {
   // Feature Ticket
   static String get labelShowHiddenNote =>
       'FeatureTicket.labelShowHiddenNote'.tr();
-  static String get selectTicket => OrderItemStrings.text('FeatureTicket.selectTicket');
   static String get unknown => 'FeatureTicket.unknown'.tr();
   static String get noData => 'FeatureTicket.noData'.tr();
   static String get ticketDescription => 'FeatureTicket.description'

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -704,7 +705,7 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
                         : hidden == null
                         ? OrdersStrings.waveAvailabilityKeepHint
                         : hidden!
-                        ? OrdersStrings.waveAvailabilityHideHint
+                        ? OrderItemStrings.waveAvailabilityHideHint
                         : OrdersStrings.waveAvailabilityShowHint,
                   ),
                 ),
@@ -725,7 +726,7 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
                             title: Text(
                               OrdersStrings.waveAvailabilityHelpTitle,
                             ),
-                            content: Text(OrdersStrings.waveAvailabilityHelp),
+                            content: Text(OrderItemStrings.waveAvailabilityHelp),
                           ),
                         ),
                 ),

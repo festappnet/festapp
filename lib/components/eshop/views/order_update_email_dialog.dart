@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -44,7 +45,7 @@ Future<bool> showOrderUpdateEmailDialog(
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                OrdersStrings.globalChangesNote,
+                                OrderItemStrings.globalChangesNote,
                                 style: TextStyle(
                                     fontStyle: FontStyle.italic,
                                     color: Colors.orange.shade900,

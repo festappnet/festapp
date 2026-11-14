@@ -93,4 +93,53 @@ abstract final class OrderItemStrings {
   static String get validTickets => FeatureService.usesTicketTerminology()
       ? "OrderGridColumns.validTickets".tr()
       : "OrderGridColumns.validApplications".tr();
+
+  // Contextual UI copy stays outside model and grid localization contracts.
+  static String get waveAvailabilityHideHint =>
+      text('FeatureOrders.waveAvailabilityHideHint');
+
+  static String get waveAvailabilityHelp =>
+      text('FeatureOrders.waveAvailabilityHelp');
+
+  static String get provideScanLinkInstruction =>
+      text('FeatureOrders.provideScanLinkInstruction'); // "Provide the following link or code to the people who will be checking the tickets."
+
+  static String get ticketUsage =>
+      text('FeatureOrders.ticketUsage'); // "Ticket usage"
+
+  static String get scanInstructionsAppUser =>
+      text('FeatureOrders.scanInstructionsAppUser'); // "Tip: Users can show their QR code from their ticket or directly from the mobile app Profile."
+
+  static String get confirmTicketFailed =>
+      text('FeatureOrders.confirmTicketFailed'); // "Failed to confirm ticket"
+
+  static String get dialogTitleFallback =>
+      text('ProductsDialog.dialogTitleFallback'); // "Ticket products"
+
+  static String get infoTicketSymbol =>
+      text('ProductsDialog.infoTicketSymbol'); // "Ticket Symbol"
+
+  static String get cancelledTicketsTitle =>
+      text('ProductsDialog.cancelledTicketsTitle');
+
+  static String get removedTicketsTitle =>
+      text('ProductsDialog.removedTicketsTitle');
+
+  static String get addedTicketsTitle =>
+      text('ProductsDialog.addedTicketsTitle');
+
+  static String changeTicketLabel(String symbol) =>
+      text('ProductsDialog.changeTicketLabel', namedArgs: {'symbol': symbol});
+
+  static String productChangesForTicket(String symbol) => text(
+    'ProductsDialog.productChangesForTicket',
+    namedArgs: {'symbol': symbol},
+  );
+
+  static String get cancelTicketPrefix =>
+      text('ProductsDialog.cancelTicketPrefix'); // "CANCEL TICKET "
+
+  static String get globalChangesNote => text(
+    'ProductsDialog.globalChangesNote',
+  ); // "Note: This includes changes from all tickets in this order."
 }
