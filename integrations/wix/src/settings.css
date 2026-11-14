@@ -12,3 +12,5 @@ button:disabled { opacity: .6; cursor: default; }
 a { color: #0754bf; text-underline-offset: .2em; }
 :focus-visible { outline: 2px solid #0754bf; outline-offset: 3px; }
 #url-help { margin-top: 6px; font-size: 12px; }
+
+textarea{box-sizing:border-box;display:block;width:100%;font:inherit;padding:8px;border:1px solid #c7cdd1;border-radius:4px;resize:vertical}

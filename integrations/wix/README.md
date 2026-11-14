@@ -210,3 +210,27 @@ Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávn�
 Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.
 
 New widget settings select Website measurement, recommended for websites with their own GTM and consent banner. Existing widgets with a saved form URL and no measurement property retain Unit mode. The persisted `measurement` property accepts `host` or `unit`; missing and invalid values render Unit mode. Website mode exposes approved conversion contacts and transaction identifiers to page scripts and still requires an approved website origin in Festapp.
+
+## Managed cookie choice import
+
+Source runtime 0.1.4 adds the same schema-1 configuration used by WordPress,
+Joomla and generic HTML. In Festapp, save **Organizer settings > Measurement >
+My websites**, select Wix and the banner, explicitly confirm coverage and copy
+the export. In the widget settings paste it into **Konfigurace exportovaná z
+Festappu** and turn on **Přenos voleb cookies**. Existing widgets keep transfer off.
+The hosted runtime must be updated before these new settings are available.
+
+Native Wix transfer requires an explicit saved policy and a valid creation date
+within the organizer's archived cutoff/age mapping. Defaults, missing data or
+unavailable native API fall back to the form's own choice. Cookiebot and
+CookieConsent exports use the existing common adapters. Multiple incompatible
+imports on one page fail closed. Only the widget's own fallback link participates;
+manual links and their security attributes remain intact. Import acceptance is
+local; the form checks current server approval and binding version. Cookie choices
+do not preserve analytics visitor identity. The existing native authentication,
+signed checkout provenance and billing boundaries remain independent.
+
+Native SDK tests model the host API. Separate read-only live visitor checks on
+the recorded development site verified cookie deletion and reset in another tab;
+those checks did not publish the app, modify site settings or place an order.
+See the [canonical transfer contract](../../docs/integrations/form-datalayer.md#managed-cms-consent-configuration-schema-1).

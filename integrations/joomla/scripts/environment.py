@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Own loopback-only disposable Joomla instances; never touches other containers."""
 import json
+import os
+import re
 import secrets
 import subprocess
 import sys
@@ -10,7 +12,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIVATE = ROOT / '.private'
-PREFIX = 'festapp-joomla-20261026'
+PREFIX = os.environ.get('FESTAPP_JOOMLA_TEST_PREFIX', 'festapp-joomla-20261026')
+if PREFIX != 'festapp-joomla-20261026' and not re.fullmatch(r'festapp-cms-consent-[a-z0-9-]+', PREFIX):
+    raise SystemExit('Refusing unowned Joomla prefix')
+PORTS = [(6, int(os.environ.get('FESTAPP_JOOMLA_TEST_PORT6', '59916'))),
+         (5, int(os.environ.get('FESTAPP_JOOMLA_TEST_PORT5', '59915')))]
+if len({port for _, port in PORTS}) != 2 or any(port < 1024 or port > 65535 for _, port in PORTS):
+    raise SystemExit('Invalid Joomla fixture ports')
 
 
 def run(*args, **kwargs):
@@ -78,7 +86,7 @@ def start():
         time.sleep(1)
     else:
         raise RuntimeError('Disposable MariaDB did not start')
-    for major, port in [(6, 59916), (5, 59915)]:
+    for major, port in PORTS:
         env = PRIVATE / f'joomla{major}.env'
         env.write_text('\n'.join([
             'JOOMLA_DB_HOST=' + PREFIX + '-db', 'JOOMLA_DB_USER=root',
@@ -92,10 +100,10 @@ def start():
             '--env-file', str(env), '-p', f'127.0.0.1:{port}:80',
             '-v', str(ROOT / 'artifacts') + ':/artifacts:ro',
             '-v', str(ROOT / 'tests') + ':/tests:ro', images['joomla' + str(major)])
-    for major, port in [(6, 59916), (5, 59915)]:
+    for major, port in PORTS:
         expected = images['joomla' + str(major)].split(':', 1)[1].split('-', 1)[0]
         wait_ready(PREFIX + '-' + str(major), port, expected, credentials)
-    print('Ready: isolated Joomla CLI/config/version/HTTP on 127.0.0.1:59915 and :59916')
+    print('Ready: isolated Joomla CLI/config/version/HTTP on ' + ', '.join(f'127.0.0.1:{port}' for _, port in PORTS))
 
 
 def stop():

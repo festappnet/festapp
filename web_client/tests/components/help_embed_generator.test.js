@@ -17,7 +17,7 @@ test('public generator produces isolated service code without loading checkout',
   const {dom,form,submit}=fixture(t);submit('https://vstupenky.online/form/ples-2027');
   assert.equal(form.querySelector('[data-embed-output]').hidden,false);
   assert.equal(dom.window.document.querySelectorAll('iframe').length,0);
-  const code=new JSDOM(form.querySelector('textarea').value);t.after(()=>code.window.close());
+  const code=new JSDOM(form.querySelector('[data-embed-output] textarea').value);t.after(()=>code.window.close());
   const frame=code.window.document.querySelector('iframe');
   assert.equal(frame.src,'https://vstupenky.online/form/ples-2027?embed=1');
   assert.equal(frame.hasAttribute('data-festapp-embed'),true);
@@ -39,7 +39,7 @@ test('English generator uses its configured service origin and localized results
   assert.match(form.querySelector('[data-url-error]').textContent,/Paste a saved public form link/);
   assert.equal(form.querySelector('[data-embed-output]').hidden,true);
   submit('https://example.test/form/my-event');
-  const code=form.querySelector('textarea').value;
+  const code=form.querySelector('[data-embed-output] textarea').value;
   assert.match(code,/https:\/\/example.test\/embed.js/);
   assert.match(code,/title="Order form"/);assert.match(code,/Open the form in a new tab/);
   assert.match(form.querySelector('[role=status]').textContent,/Your code is ready/);
@@ -53,16 +53,16 @@ test('generator leaves appearance to the saved form in both height modes',t=>{
   const mode=form.querySelector('[name=height-mode]');
   assert.equal(form.querySelector('[name=inherit-style]'),null);
   submit('https://vstupenky.online/form/ples');
-  assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
+  assert.doesNotMatch(form.querySelector('[data-embed-output] textarea').value,/data-festapp-style/);
   mode.value='fixed';mode.dispatchEvent(new dom.window.Event('change'));
   submit('https://vstupenky.online/form/ples');
-  assert.doesNotMatch(form.querySelector('textarea').value,/data-festapp-style/);
-  assert.match(form.querySelector('textarea').value,/data-festapp-height="fixed"/);
+  assert.doesNotMatch(form.querySelector('[data-embed-output] textarea').value,/data-festapp-style/);
+  assert.match(form.querySelector('[data-embed-output] textarea').value,/data-festapp-height="fixed"/);
 });
 test('copy action copies the current prepared code',async t=>{
   const {dom,form,submit}=fixture(t);let copied;Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async value=>{copied=value;}}});
   submit('https://vstupenky.online/form/ples');form.querySelector('[data-copy-embed]').click();await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(copied,form.querySelector('textarea').value);assert.match(form.querySelector('[role=status]').textContent,/zkopírován/);
+  assert.equal(copied,form.querySelector('[data-embed-output] textarea').value);assert.match(form.querySelector('[role=status]').textContent,/zkopírován/);
 });
 
 test('both generator guides explain the measurement option and approved domain',t=>{
@@ -83,16 +83,41 @@ for(const english of [false,true])test('measurement option defaults to host and 
   assert.match(option.closest('label').textContent,english?/Send measurement to the website dataLayer/:/Posílat měření do dataLayer webu/);
   for(const height of ['automatic','fixed']) {
     mode.value=height;mode.dispatchEvent(new win.Event('change'));
-    submit(url);const host=form.querySelector('textarea').value;
+    submit(url);const host=form.querySelector('[data-embed-output] textarea').value;
     assert.match(host,/data-festapp-datalayer/);
     option.click();
     assert.equal(form.querySelector('[data-embed-output]').hidden,true,'changing the option invalidates the previous code');
-    submit(url);const runtime=form.querySelector('textarea').value;
+    submit(url);const runtime=form.querySelector('[data-embed-output] textarea').value;
     assert.equal(runtime,host.replace(' data-festapp-datalayer',''));
     let copied;Object.defineProperty(win.navigator,'clipboard',{configurable:true,value:{writeText:async value=>{copied=value;}}});
     form.querySelector('[data-copy-embed]').click();await new Promise(resolve=>setImmediate(resolve));
     assert.equal(copied,runtime);
     option.click();submit(url);
-    assert.equal(form.querySelector('textarea').value,host);
+    assert.equal(form.querySelector('[data-embed-output] textarea').value,host);
   }
+});
+
+test('HTML/Webnode imports one server export and escapes only generated owned links/script',t=>{
+ const {form,submit}=fixture(t);
+ const exported={schemaVersion:1,serviceOrigin:'https://vstupenky.online',websiteOrigin:'https://website.example',
+ binding:{id:'11111111-1111-1111-1111-111111111111',version:1},providerConfig:{provider:'cookieconsent',organization:1,unit:2,
+ consentRevision:'a'.repeat(32),origin:'https://website.example',revision:1,categories:{analytics:'</script><script>alert(1)</script>',marketing:'reklama'}}};
+ form.querySelector('[name=consent-export]').value=JSON.stringify(exported);form.querySelector('[name=consent-enabled]').checked=true;
+ submit('https://vstupenky.online/form/saved');
+ const code=new JSDOM(form.querySelector('[data-embed-output] textarea').value);t.after(()=>code.window.close());
+ assert.equal(code.window.document.scripts.length,1);
+ assert.deepEqual(JSON.parse(code.window.document.scripts[0].getAttribute('data-festapp-consent')),exported);
+ assert.equal(code.window.document.querySelector('a').hasAttribute('data-festapp-consent-link'),true);
+ assert.equal(code.window.document.querySelector('a').hasAttribute('rel'),false);
+ form.querySelector('[name=consent-enabled]').checked=false;submit('https://vstupenky.online/form/saved');
+ assert.doesNotMatch(form.querySelector('[data-embed-output] textarea').value,/data-festapp-consent/);
+});
+test('HTML/Webnode invalid or foreign export blocks stale output and copy',t=>{
+ const {form,submit}=fixture(t);submit('https://vstupenky.online/form/saved');
+ form.querySelector('[name=consent-enabled]').checked=true;
+ for(const raw of ['{','null',JSON.stringify({schemaVersion:2}),JSON.stringify({schemaVersion:1,serviceOrigin:'https://foreign.example'})]) {
+  form.querySelector('[name=consent-export]').value=raw;submit('https://vstupenky.online/form/saved');
+  assert.equal(form.querySelector('[data-embed-output]').hidden,true);
+  assert.equal(form.querySelector('[name=consent-export]').getAttribute('aria-invalid'),'true');
+ }
 });

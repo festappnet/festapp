@@ -1,8 +1,11 @@
+import 'package:collection/collection.dart';
+
 import '../../payments/payment_policy_settings.dart';
 
 import 'package:festapp_core/communication_tone.dart';
 
 import 'unit_measurement_settings.dart';
+import 'unit_website_consent_settings.dart';
 import '../unit_measurement_approval.dart';
 
 import 'package:fstapp/services/exception_handler.dart';
@@ -186,6 +189,28 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     if (mounted && _organizationMeasurementEnabled) {
       await _loadMeasurementApproval();
     }
+  }
+
+  bool get _measurementSaved {
+    final d = _unit.data ?? <String, dynamic>{};
+    return !_isSaving &&
+        _measurementEnabled == (d['measurement_enabled'] == true) &&
+        _measurementConsentBridge ==
+            (d['measurement_consent_bridge'] == true) &&
+        _measurementGtmController.text.trim() ==
+            (d['measurement_gtm_container'] ?? '') &&
+        _measurementScriptsController.text ==
+            (d['measurement_scripts'] ?? '') &&
+        _measurementPrivacyUrlController.text.trim() ==
+            (d['measurement_privacy_url'] ?? '') &&
+        _measurementConsentTitleController.text == _initialConsentTitle &&
+        _measurementConsentTextController.text == _initialConsentText &&
+        const ListEquality<String>().equals(
+          UnitMeasurementSettings.parseWebsites(
+            _measurementWebsitesController.text,
+          ),
+          List<String>.from(d['measurement_websites'] ?? const []),
+        );
   }
 
   Future<void> _loadMeasurementApproval() async {
@@ -787,6 +812,21 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                             ),
                             children: [
                               UnitMeasurementSettings(
+                                websiteConsentBuilder:
+                                    _canEdit && _unit.id != null
+                                    ? () => UnitWebsiteConsentSettings(
+                                        key: ValueKey(
+                                          'website-consent-${_unit.id}',
+                                        ),
+                                        unitId: _unit.id!,
+                                        websites:
+                                            UnitMeasurementSettings.parseWebsites(
+                                              _measurementWebsitesController
+                                                  .text,
+                                            ),
+                                        saved: _measurementSaved,
+                                      )
+                                    : null,
                                 consentBridge: _measurementConsentBridge,
                                 onConsentBridgeChanged: (value) => setState(
                                   () => _measurementConsentBridge = value,

@@ -205,3 +205,27 @@ Překlady je třeba importovat do projektů Stable a Stable Readme na
 jazykový balíček vyžaduje alespoň 90 % schválených řetězců Stable (`Current`);
 text katalogové stránky má samostatný překladový projekt. Stav importu proto
 neoznačujte jako schválený ani jako veřejně dostupný jazykový balíček.
+
+
+## Server-owned cookie choice import
+
+Configure the exact saved website in Festapp under **Organizer settings >
+Measurement > My websites**. Save Unit changes first, choose WordPress/Joomla
+and the CMP, enter its mapping and explicitly confirm coverage. Display and copy
+the JSON export. The extension accepts this export in one field and keeps a
+separate off/on switch. It does not author Unit IDs, notice revisions or CMP
+mapping. Its import status is local acceptance only; the public form checks the
+current server policy. An extension version without the import field must be
+updated when that package is published; manual ID/revision entry is unsupported.
+
+Only the extension's own form links and fallback link opt into transfer.
+Existing manual links and their `noopener`/`noreferrer` attributes stay intact.
+Cookie choices are separate from continuity of analytics visitor identity.
+Blocking COOP, caching or unavailable policy may require the form's own banner;
+checkout remains available. Disabled bindings persist server-side, so an old
+export cannot reactivate a revoked version. Website dataLayer mode retains its
+separate existing contract. See [managed CMS schema and RPCs](../../docs/integrations/form-datalayer.md#managed-cms-consent-configuration-schema-1).
+
+The 2026-11-14 managed import implementation is a source change. Earlier package
+publication receipts do not attest this implementation or authorize a new CMS
+publication. Installed-CMS tests are distinct from stubbed renderer tests.

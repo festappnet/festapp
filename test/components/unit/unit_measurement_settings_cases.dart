@@ -1,4 +1,8 @@
 import 'dart:ui' as ui;
+import 'dart:async';
+
+import 'package:fstapp/components/unit/views/unit_website_consent_settings.dart';
+import 'package:fstapp/components/unit/unit_website_consent.dart';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +13,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/views/unit_measurement_settings.dart';
 import 'package:fstapp/components/unit/unit_measurement_approval.dart';
 import 'package:intl/intl.dart';
@@ -31,6 +36,373 @@ void main() {
       await loader.load();
     }
   });
+  testWidgets(
+    'CMS confirmation requires saved settings and explicit coverage; export and disable use stored binding',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const site = 'https://poradatel.cz';
+      var saved = false;
+      var version = 0;
+      var state = 'draft';
+      var confirmations = 0;
+      UnitWebsiteConsent data() => UnitWebsiteConsent.fromJson({
+        'consentRevision': 'a' * 32,
+        'bindings': version == 0
+            ? []
+            : [
+                {
+                  'id': '11111111-1111-1111-1111-111111111111',
+                  'websiteOrigin': site,
+                  'platform': 'wordpress',
+                  'version': version,
+                  'state': state,
+                  'providerConfig': {'provider': 'complianz', 'policyId': '42'},
+                },
+              ],
+      });
+      Future<void> pump() => tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                unitId: 2,
+                websites: const [site],
+                saved: saved,
+                load: () async => data(),
+                save:
+                    (
+                      origin,
+                      platform,
+                      config,
+                      expected,
+                      revision,
+                      confirm,
+                    ) async {
+                      expect(origin, site);
+                      expect(expected, version);
+                      expect(revision, 'a' * 32);
+                      expect(config['policyId'], '42');
+                      if (confirm) confirmations++;
+                      version++;
+                      state = confirm ? 'ready' : 'draft';
+                      return data();
+                    },
+                export: (id, v) async {
+                  expect(v, version);
+                  return {
+                    'schemaVersion': 1,
+                    'binding': {'id': id, 'version': v},
+                  };
+                },
+                disable: (id, v) async {
+                  expect(v, version);
+                  version++;
+                  state = 'disabled';
+                  return data();
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await pump();
+      await tester.pumpAndSettle();
+      FilledButton confirm() => tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
+      );
+      expect(confirm().onPressed, isNull);
+      expect(
+        find.text(FormStrings.measurementWebsitesSaveFirst),
+        findsOneWidget,
+      );
+      saved = true;
+      await pump();
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '42');
+      expect(confirm().onPressed, isNull);
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      expect(confirm().onPressed, isNotNull);
+      await tester.tap(find.text(FormStrings.cmsConfirm));
+      await tester.pumpAndSettle();
+      expect(confirmations, 1);
+      expect(version, 1);
+      await tester.tap(find.text(FormStrings.cmsExport));
+      await tester.pumpAndSettle();
+      expect(find.byType(SelectableText), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, '43');
+      await tester.pumpAndSettle();
+      expect(find.byType(SelectableText), findsNothing);
+      expect(confirm().onPressed, isNull);
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, FormStrings.cmsExport),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.text(FormStrings.cmsDisable));
+      await tester.pumpAndSettle();
+      expect(state, 'disabled');
+      expect(version, 2);
+    },
+  );
+
+  testWidgets(
+    'CMS provider fields, pending server state and draft changes fail closed',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final pending = Completer<UnitWebsiteConsent>();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                unitId: 2,
+                websites: const ['https://poradatel.cz'],
+                saved: true,
+                load: () => pending.future,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      pending.complete(
+        UnitWebsiteConsent.fromJson({
+          'consentRevision': 'a' * 32,
+          'bindings': [],
+        }),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Complianz'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('CookieConsent v3').last);
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsAnalyticsCategory), findsOneWidget);
+      expect(find.text(FormStrings.cmsPolicyId), findsNothing);
+      await tester.tap(find.text('CookieConsent v3'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cookiebot').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Cookiebot CBID'), findsOneWidget);
+      expect(find.text(FormStrings.cmsValidFrom), findsOneWidget);
+      expect(find.text(FormStrings.cmsAnalyticsCategory), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
+            )
+            .onPressed,
+        isNull,
+      );
+    },
+  );
+
+  testWidgets(
+    'CMS stale confirmation and unavailable server block export until explicit reload',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var loads = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                unitId: 2,
+                websites: const ['https://poradatel.cz'],
+                saved: true,
+                load: () async {
+                  loads++;
+                  return UnitWebsiteConsent.fromJson({
+                    'consentRevision': 'a' * 32,
+                    'bindings': [],
+                  });
+                },
+                save: (_, __, ___, ____, _____, ______) async =>
+                    throw StateError('website_consent_conflict'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '42');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.cmsConfirm));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsUnavailable), findsWidgets);
+      expect(find.byType(SelectableText), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(loads, 1);
+      await tester.tap(find.text(CommonStrings.retry));
+      await tester.pumpAndSettle();
+      expect(loads, 2);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
+            )
+            .onPressed,
+        isNull,
+        reason: 'reloading cannot confirm coverage',
+      );
+    },
+  );
+
+  testWidgets(
+    'CMS website selection follows added, saved and removed origins',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var sites = <String>[];
+      var saved = true;
+      var loads = 0;
+      Future<void> pump() => tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                key: const ValueKey('same-unit'),
+                unitId: 2,
+                websites: sites,
+                saved: saved,
+                load: () async {
+                  loads++;
+                  return UnitWebsiteConsent.fromJson({
+                    'consentRevision': 'a' * 32,
+                    'bindings': [],
+                  });
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await pump();
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      sites = ['https://poradatel.cz', 'https://tanec.cz'];
+      saved = false;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(find.text('https://poradatel.cz'), findsOneWidget);
+      saved = true;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(loads, 2, reason: 'canonical save reloads current semantic scope');
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).enabled,
+        true,
+      );
+      sites = ['https://tanec.cz'];
+      saved = false;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('https://tanec.cz'), findsOneWidget);
+      saved = true;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(loads, 3);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).enabled,
+        true,
+      );
+    },
+  );
+
+  testWidgets(
+    'CMS export text renders inside persisted measurement expansion state',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ExpansionTile(
+                key: const PageStorageKey('measurement-expansion'),
+                title: const Text('Measurement settings'),
+                maintainState: true,
+                children: [
+                  UnitWebsiteConsentSettings(
+                    unitId: 2,
+                    websites: const ['https://poradatel.cz'],
+                    saved: true,
+                    load: () async => UnitWebsiteConsent.fromJson({
+                      'consentRevision': 'a' * 32,
+                      'bindings': [
+                        {
+                          'id': '11111111-1111-1111-1111-111111111111',
+                          'version': 1,
+                          'websiteOrigin': 'https://poradatel.cz',
+                          'platform': 'wordpress',
+                          'state': 'ready',
+                          'providerConfig': {
+                            'provider': 'complianz',
+                            'policyId': '42',
+                          },
+                        },
+                      ],
+                    }),
+                    export: (id, version) async => {
+                      'schemaVersion': 1,
+                      'binding': {'id': id, 'version': version},
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Measurement settings'));
+      await tester.pumpAndSettle();
+      final exportButton = find.widgetWithText(
+        OutlinedButton,
+        FormStrings.cmsExport,
+      );
+      await tester.ensureVisible(exportButton);
+      await tester.tap(exportButton);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SelectableText), findsOneWidget);
+      expect(
+        tester.widget<SelectableText>(find.byType(SelectableText)).data,
+        contains('"schemaVersion": 1'),
+      );
+    },
+  );
+
   for (final state in [
     'draft',
     'unrequested',

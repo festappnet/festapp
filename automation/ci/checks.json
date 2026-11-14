@@ -54,7 +54,12 @@
         "integrations/**",
         "web_client/**",
         "automation/test_embed_adapters.sh",
-        "packages/festapp_contracts/**"
+        "packages/festapp_contracts/**",
+        "automation/testing/cms_consent_fixture.py",
+        "database/**",
+        "supabase/**",
+        "automation/baseline.py",
+        "automation/baselines/**"
       ]
     },
     "navigation-interactions": {
@@ -314,13 +319,15 @@
       }
     },
     "wix-contract": {
-      "script": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\nnode --test web_client/tests/forms/embed_appearance.test.js web_client/tests/components/help_embed_generator.test.js\npnpm --dir integrations/wordpress run test:dependencies\nbash automation/test_embed_adapters.sh\n",
+      "script": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\nnode --test web_client/tests/forms/embed_appearance.test.js web_client/tests/components/help_embed_generator.test.js\npnpm --dir integrations/wordpress run test:dependencies\nbash automation/test_embed_adapters.sh\npython3 automation/testing/cms_consent_fixture.py\n",
       "after": [
         "wix-install"
       ],
       "resources": {
-        "ramMiB": 256,
-        "sourceGeneration": 1
+        "ramMiB": 3000,
+        "sourceGeneration": 1,
+        "browser": 1,
+        "dbCluster": 1
       }
     },
     "navigation-install": {
@@ -497,7 +504,7 @@
       }
     },
     "seat-measurement": {
-      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
+      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-website-consent-bindings-migration.py --check\nnode --test database/tests/eshop_forms/website_consent_concurrency.test.mjs\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
       "after": [
         "seat-database"
       ],
@@ -507,7 +514,7 @@
       }
     },
     "web-measurement": {
-      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
+      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/core/host_consent_export.test.js web_client/tests/core/host_wix_consent.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
       "after": [
         "web-startup"
       ],
@@ -901,6 +908,7 @@
       "database/tests/eshop_forms/form_measurement_runtime_test.sql",
       "database/tests/eshop_forms/form_measurement_test.sql",
       "database/tests/eshop_forms/form_measurement_waitlist_test.sql",
+      "database/tests/eshop_forms/form_measurement_website_bindings_test.sql",
       "database/tests/eshop_forms/form_save_recovery_test.sql",
       "database/tests/eshop_forms/get_form_for_edit_short_title_test.sql",
       "database/tests/eshop_forms/primary_product_guard_test.sql",
@@ -1466,9 +1474,11 @@
     "database/tests/eshop_forms/form_measurement_runtime_test.sql",
     "database/tests/eshop_forms/form_measurement_test.sql",
     "database/tests/eshop_forms/form_measurement_waitlist_test.sql",
+    "database/tests/eshop_forms/form_measurement_website_bindings_test.sql",
     "database/tests/eshop_forms/form_save_recovery_test.sql",
     "database/tests/eshop_forms/get_form_for_edit_short_title_test.sql",
     "database/tests/eshop_forms/primary_product_guard_test.sql",
+    "database/tests/eshop_forms/website_consent_concurrency.test.mjs",
     "database/tests/eshop_orders/application_only_checkout_test.sql",
     "database/tests/eshop_orders/checkout_origin_test.sql",
     "database/tests/eshop_orders/customer_order_access_test.sql",
@@ -2066,10 +2076,12 @@
     "web_client/tests/core/help_navigation.test.js",
     "web_client/tests/core/home_startup.test.js",
     "web_client/tests/core/host_complianz.test.js",
+    "web_client/tests/core/host_consent_export.test.js",
     "web_client/tests/core/host_consent_mode.test.js",
     "web_client/tests/core/host_cookiebot.test.js",
     "web_client/tests/core/host_cookieconsent.test.js",
     "web_client/tests/core/host_gtm_preset.test.js",
+    "web_client/tests/core/host_wix_consent.test.js",
     "web_client/tests/core/initialize_core_services.test.js",
     "web_client/tests/core/locale_preference.test.js",
     "web_client/tests/core/localized_rights_publication.test.js",
@@ -2131,6 +2143,7 @@
     "web_client/tests/forms/form_measurement_cmp.test.js",
     "web_client/tests/forms/form_measurement_compatibility.test.js",
     "web_client/tests/forms/form_measurement_contract.test.js",
+    "web_client/tests/forms/form_measurement_embed_consent.test.js",
     "web_client/tests/forms/form_measurement_review.test.js",
     "web_client/tests/forms/form_measurement_runtime.test.js",
     "web_client/tests/forms/form_measurement_session.test.js",

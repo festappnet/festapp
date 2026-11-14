@@ -2,6 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
+import https from 'node:https';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {execFileSync} from 'node:child_process';
 import {chromium} from 'playwright';
 import {createNativeBrowser} from '../../scripts/native_browser.mjs';
 
@@ -122,4 +127,42 @@ test('a failing context close still closes browser and proxy', async t => {
   t.mock.method(context,'close',async()=>{throw new Error('synthetic context close failure')});
   await assert.rejects(owner.close(),/Owned browser cleanup failed/);
   assert.equal(page.isClosed(),true);
+});
+
+test('rejects unknown engines and accepts explicit loopback HTTPS origins', async () => {
+  await assert.rejects(createNativeBrowser({engine:'unknown'}), /unsupported browser engine/);
+  const owner=await createNativeBrowser();
+  try { owner.allow('https://127.0.0.1:1234'); assert.throws(()=>owner.allow('https://example.invalid:1234')); }
+  finally { await owner.close(); }
+});
+
+test('HTTPS loopback fixture traverses proxy while other destinations remain blocked', async () => {
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-browser-tls-'));
+  execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(dir,'key.pem'),'-out',path.join(dir,'cert.pem'),'-subj','/CN=127.0.0.1','-days','1'],{stdio:'ignore'});
+  const server=https.createServer({key:fs.readFileSync(path.join(dir,'key.pem')),cert:fs.readFileSync(path.join(dir,'cert.pem'))},(_req,res)=>res.end('secure fixture'));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const origin=`https://127.0.0.1:${server.address().port}`;
+  const owner=await createNativeBrowser();
+  try {
+    owner.allow(origin);const context=await owner.context({ignoreHTTPSErrors:true});const page=await context.newPage();
+    await page.goto(origin);assert.equal(await page.locator('body').innerText(),'secure fixture');
+    assert.equal(await page.evaluate(()=>fetch('https://example.invalid/').then(()=>null,e=>e.name)),'SecurityError');
+  } finally {await owner.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('optional engines cannot navigate or fetch an unregistered loopback fixture', {skip:process.env.FESTAPP_VERIFY_ALL_BROWSERS !== '1'}, async () => {
+  for (const engine of ['chromium','firefox','webkit']) {
+    let hits=0;
+    const forbidden=http.createServer((_req,res)=>{hits++;res.end('forbidden');});
+    const denied=await listen(forbidden);
+    const allowed=http.createServer((_req,res)=>{res.setHeader('content-type','text/html');res.end('<!doctype html><title>fixture</title>');});
+    const origin=await listen(allowed);
+    const owner=await createNativeBrowser({engine});owner.allow(origin);
+    try {
+      const context=await owner.context();const page=await context.newPage();await page.goto(origin);
+      assert.equal(await page.evaluate(url=>fetch(url).then(()=>null,error=>error.name),denied),'SecurityError');
+      await page.goto(denied,{timeout:5000}).catch(()=>{});
+      assert.equal(hits,0,`${engine} bypassed proxy for a loopback navigation`);
+    } finally {await owner.close();await Promise.all([new Promise(r=>allowed.close(r)),new Promise(r=>forbidden.close(r))]);}
+  }
 });

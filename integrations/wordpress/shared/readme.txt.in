@@ -121,6 +121,17 @@ Allow @@ORIGIN@@ in frame-src and, for the helper, script-src. Do not add an unv
 = What happens on deactivation or deletion? =
 The plugin owns no tables, options or remote orders, and performs no remote writes on activation, deactivation or uninstall. Service orders remain. Deactivation can expose raw shortcode text; remove the block/shortcode or replace it with a normal public link.
 
+= How do I transfer cookie choices from my website? =
+
+In Festapp, open Organizer settings > Measurement > My websites. Save changes,
+select your website and cookie banner, and explicitly confirm policy coverage.
+Copy the resulting JSON into Configuration exported from Festapp in this
+extension's settings, then enable the import. No internal IDs or revisions are
+entered manually. The form checks current approval; local import acceptance
+alone does not establish a working transfer. Only this extension's form-link
+block/shortcode and fallback links participate. Manual links stay unchanged.
+Cookie choice transfer does not preserve analytics visitor identity.
+
 == Screenshots ==
 
 1. Local onboarding and service disclosure.

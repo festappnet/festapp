@@ -4,9 +4,41 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get cmsEnableImport =>
+      'FeatureFormSettings.cmsEnableImport'.tr();
+  static String get cmsImportLabel => 'FeatureFormSettings.cmsImportLabel'.tr();
+  static String get cmsImportInvalid =>
+      'FeatureFormSettings.cmsImportInvalid'.tr();
+  static String get cmsHtmlImportHelp =>
+      'FeatureFormSettings.cmsHtmlImportHelp'.tr();
+  static String get cmsHtml => 'FeatureFormSettings.cmsHtml'.tr();
+  static String get cmsTransfer => 'FeatureFormSettings.cmsTransfer'.tr();
+  static String get cmsTransferHelp =>
+      'FeatureFormSettings.cmsTransferHelp'.tr();
+  static String get cmsPlatform => 'FeatureFormSettings.cmsPlatform'.tr();
+  static String get cmsProvider => 'FeatureFormSettings.cmsProvider'.tr();
+  static String get cmsPolicyId => 'FeatureFormSettings.cmsPolicyId'.tr();
+  static String get cmsCmpRevision => 'FeatureFormSettings.cmsCmpRevision'.tr();
+  static String get cmsAnalyticsCategory =>
+      'FeatureFormSettings.cmsAnalyticsCategory'.tr();
+  static String get cmsMarketingCategory =>
+      'FeatureFormSettings.cmsMarketingCategory'.tr();
+  static String get cmsValidFrom => 'FeatureFormSettings.cmsValidFrom'.tr();
+  static String get cmsMaxAge => 'FeatureFormSettings.cmsMaxAge'.tr();
+  static String get cmsCoverage => 'FeatureFormSettings.cmsCoverage'.tr();
+  static String get cmsConfirm => 'FeatureFormSettings.cmsConfirm'.tr();
+  static String get cmsExport => 'FeatureFormSettings.cmsExport'.tr();
+  static String get cmsDisable => 'FeatureFormSettings.cmsDisable'.tr();
+  static String get cmsCopy => 'FeatureFormSettings.cmsCopy'.tr();
+  static String get cmsExportHelp => 'FeatureFormSettings.cmsExportHelp'.tr();
+  static String get cmsUnavailable => 'FeatureFormSettings.cmsUnavailable'.tr();
+  static String cmsState(String state) =>
+      'FeatureFormSettings.cmsState_$state'.tr();
+
   static String get formPreview => 'FormEditorLayout.formPreview'.tr();
   static String get publicPage => 'FormEditorLayout.publicPage'.tr();
-  static String get formIntroduction => 'FormEditorLayout.formIntroduction'.tr();
+  static String get formIntroduction =>
+      'FormEditorLayout.formIntroduction'.tr();
   static String get formOutline => 'FormEditorLayout.formOutline'.tr();
 
   static String get measurementFormUnitBlocked =>

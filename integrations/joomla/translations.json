@@ -21,7 +21,17 @@
     "MEASUREMENT": "Measurement destination",
     "MEASUREMENT_UNIT": "Festapp Unit runtime (existing behavior)",
     "MEASUREMENT_HOST": "Website dataLayer",
-    "MEASUREMENT_HELP": "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp."
+    "MEASUREMENT_HELP": "Website mode is recommended for websites with their own GTM and consent banner. New embeds use Website mode. Existing content without a setting retains Unit mode. Unit mode reads website Consent Mode only after the organizer enables “Use consent from my website banner” in Festapp and confirms that the banner covers the embedded form. Website mode shares conversion contacts and transaction identifiers with page scripts. The website domain must be approved in Festapp.",
+    "DISPLAY": "Display",
+    "DISPLAY_EMBED": "Embedded form",
+    "DISPLAY_LINK": "Open form in a new tab",
+    "CONSENT_ENABLE": "Enable imported configuration",
+    "CONSENT_EXPORT": "Configuration exported from Festapp",
+    "CONSENT_HELP": "In Festapp, open Organizer settings > Measurement > My websites, confirm coverage and copy the export. Cookie choice transfer does not preserve analytics visitor identity.",
+    "CONSENT_STATUS": "Import status",
+    "CONSENT_ACCEPTED": "Import accepted locally. The form verifies current server approval.",
+    "CONSENT_OFF": "Transfer is off or the export is invalid. Checkout remains available.",
+    "CONSENT_COOP": "If Cross-Origin-Opener-Policy severs the opener channel, new-tab consent transfer is blocked. The form will show its own banner. This module does not change security headers."
   },
   "cs-CZ": {
     "XML_DESCRIPTION": "Zveřejněte prodej vstupenek přes uložený veřejný formulář @@NAME@@. Vyžaduje samostatný účet pořadatele.",
@@ -45,6 +55,16 @@
     "MEASUREMENT": "Cíl měření",
     "MEASUREMENT_UNIT": "Runtime jednotky Festapp (dosavadní chování)",
     "MEASUREMENT_HOST": "dataLayer webu",
-    "MEASUREMENT_HELP": "Nové moduly používají režim webu, doporučený pro weby s vlastním GTM a souhlasovou lištou. Existující moduly bez nastavení zůstávají v režimu jednotky. Režim jednotky čte Consent Mode webu pouze po zapnutí volby „Přebírat souhlas z lišty mého webu“ ve Festappu a potvrzení, že lišta pokrývá vložený formulář. Režim webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky. Doména webu musí být schválena ve Festappu."
+    "MEASUREMENT_HELP": "Nové moduly používají režim webu, doporučený pro weby s vlastním GTM a souhlasovou lištou. Existující moduly bez nastavení zůstávají v režimu jednotky. Režim jednotky čte Consent Mode webu pouze po zapnutí volby „Přebírat souhlas z lišty mého webu“ ve Festappu a potvrzení, že lišta pokrývá vložený formulář. Režim webu předává kontakty při konverzi a identifikátory transakcí skriptům stránky. Doména webu musí být schválena ve Festappu.",
+    "DISPLAY": "Zobrazení",
+    "DISPLAY_EMBED": "Vložený formulář",
+    "DISPLAY_LINK": "Odkaz do nové karty",
+    "CONSENT_ENABLE": "Zapnout importovanou konfiguraci",
+    "CONSENT_EXPORT": "Konfigurace exportovaná z Festappu",
+    "CONSENT_HELP": "Ve Festappu otevřete Nastavení pořadatele > Měření > Moje weby, potvrďte pokrytí a zkopírujte export. Přenos voleb cookies nezachovává měřicí identitu návštěvníka.",
+    "CONSENT_STATUS": "Stav importu",
+    "CONSENT_ACCEPTED": "Import byl přijat lokálně. Formulář ověří aktuální schválení serverem.",
+    "CONSENT_OFF": "Přenos je vypnutý nebo export není platný. Nákup zůstává dostupný.",
+    "CONSENT_COOP": "Pokud Cross-Origin-Opener-Policy odpojí zdrojovou kartu, přenos do nové karty je blokován. Formulář nabídne vlastní lištu. Modul nemění bezpečnostní hlavičky."
   }
 }

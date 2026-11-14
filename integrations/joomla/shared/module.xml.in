@@ -24,6 +24,10 @@
       <fieldset name="basic" addruleprefix="Festapp\Module\@@NAMESPACE@@\Site\Rule" addfieldprefix="Festapp\Module\@@NAMESPACE@@\Site\Field">
         <field name="onboarding" type="note" label="@@KEY@@_START" description="@@KEY@@_ONBOARDING" />
         <field name="url" type="text" required="true" filter="raw" validate="publicform" label="@@KEY@@_URL" description="@@KEY@@_URL_HELP" message="@@KEY@@_INVALID_URL" />
+        <field name="display" type="list" default="embed" validate="options" label="@@KEY@@_DISPLAY"><option value="embed">@@KEY@@_DISPLAY_EMBED</option><option value="link">@@KEY@@_DISPLAY_LINK</option></field>
+        <field name="consent_enabled" type="radio" default="0" filter="integer" label="@@KEY@@_CONSENT_ENABLE"><option value="0">JNO</option><option value="1">JYES</option></field>
+        <field name="consent_export" type="textarea" rows="8" maxlength="16384" filter="raw" validate="consentexport" label="@@KEY@@_CONSENT_EXPORT" description="@@KEY@@_CONSENT_HELP" />
+        <field name="consent_status" type="consentstatus" label="@@KEY@@_CONSENT_STATUS" />
         <field name="iframe_title" type="text" filter="string" label="@@KEY@@_TITLE" description="@@KEY@@_TITLE_HELP" />
         <field name="mode" type="list" default="auto" validate="options" label="@@KEY@@_MODE">
           <option value="auto">@@KEY@@_AUTO</option><option value="fixed">@@KEY@@_FIXED</option>

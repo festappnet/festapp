@@ -41,6 +41,13 @@ jobs:
           cache-dependency-path: |
             integrations/wix/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
+      - uses: supabase/setup-cli@v3
+        if: steps.selection.outputs.run == 'true'
+        with:
+          version: 2.111.0
+      - name: Ensure disposable backend SQL client
+        if: steps.selection.outputs.run == 'true'
+        run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
