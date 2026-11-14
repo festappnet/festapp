@@ -94,9 +94,12 @@ Deno.test('email Wallet actions carry distinct provider and email language befor
  }
 });
 
-Deno.test('localized actions never substitute English artwork into a Czech email',()=>{
+Deno.test('Google stays localized; Apple uses its installed official English artwork when no localized artwork is available',()=>{
  const urls={en:'https://img.festapp.net/assets/google-wallet/v1/en.png',apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg'}};
- for(const descriptor of Object.values(walletEmailProviders)){assertEquals(descriptor.badge(urls,'cs'),undefined);assert(descriptor.badge(urls,'en'));assert(descriptor.labelFallback);}
+ assertEquals(walletEmailProviders.google.badge(urls,'cs'),undefined);
+ assertEquals(walletEmailProviders.apple.badge(urls,'cs'),urls.apple.en);
+ assertEquals(walletEmailProviders.apple.artwork(urls.apple.en,'cs'),{url:urls.apple.en,width:151.80});
+ for(const descriptor of Object.values(walletEmailProviders)){assert(descriptor.badge(urls,'en'));assert(descriptor.labelFallback);}
 });
 
 Deno.test('multiple providers share one ticket heading and actions have no repeated visible label',()=>{
@@ -158,4 +161,12 @@ Deno.test('collection email has two order actions, private individual links and 
    assert(single.includes(lang==='cs'?'Vstupenka v telefonu':'Ticket on your phone'));
   }
  }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
+});
+
+Deno.test('Czech email renders the installed official Apple badge without a fabricated Czech button',()=>{
+ const urls={apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg'}};
+ const badge=walletEmailProviders.apple.badge(urls,'cs');
+ const html=walletEmailTicket('Všechny vstupenky (2)',[{provider:'apple',badge,url:'https://tenant.invalid/wallet#'+'a'.repeat(64)}],'cs');
+ assert(html.includes('src="'+urls.apple.en+'"'));assert(html.includes('alt="Přidat do Apple Peněženky"'));
+ assert(!html.includes('background:#202124'));assert(html.includes('width:151.8px'));
 });
