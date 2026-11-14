@@ -76,6 +76,49 @@ void main() {
     })));
   });
 
+  testWidgets('grid formats each amount independently of other amounts and method',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      builder: DependencyMaterialBridge.builder,
+      home: Builder(builder: (context) {
+        for (final method in ['bank', 'stripe', 'barion']) {
+          final order = OrderModel(
+            price: 500,
+            currencyCode: 'CZK',
+            paymentInfoModel: PaymentInfoModel(
+              amount: 500,
+              paid: 544.28,
+              returned: 0,
+              currencyCode: 'CZK',
+              paymentMethod: method,
+            ),
+          );
+          final cells = order.toTrinaRow(context).cells;
+          for (final column in [
+            EshopColumnIds.ORDER_PRICE,
+            EshopColumnIds.PAYMENT_INFO_AMOUNT,
+          ]) {
+            expect(cells[column]!.value, '500\u00a0Kč', reason: method);
+          }
+          expect(cells[EshopColumnIds.PAYMENT_INFO_PAID]!.value, '544,28\u00a0Kč');
+          expect(cells[EshopColumnIds.PAYMENT_INFO_RETURNED]!.value, '0\u00a0Kč');
+          final ticket = TicketModel(id: 12)
+            ..relatedOrder = order
+            ..totalPrice = 250;
+          expect(ticket.toTrinaRow(context)
+              .cells[EshopColumnIds.TICKET_TOTAL_PRICE]!.value, '250\u00a0Kč');
+          final history = OrderHistoryModel.fromOrderModel(order);
+          expect(history.toTrinaRow(context)
+              .cells[EshopColumnIds.HISTORY_PRICE]!.value, '500\u00a0Kč');
+          order.price = 500.25;
+          expect(order.toTrinaRow(context)
+              .cells[EshopColumnIds.ORDER_PRICE]!.value, '500,25\u00a0Kč');
+        }
+        return const SizedBox.shrink();
+      }),
+    ));
+  });
+
   test('deletion identifies customer and keeps the edited note', () {
     final order = OrderModel.fromPlutoJson({
       EshopColumnIds.ORDER_ID: 6500,

@@ -132,7 +132,7 @@ class TicketModel extends ITrinaRowModel {
           value: totalPrice != null
               ? Utilities.formatPrice(context, totalPrice!,
                   currencyCode: relatedOrder?.currencyCode,
-                  decimalDigits: relatedOrder?.amountDecimalDigits ?? 0)
+                  decimalDigits: OrderModel.decimalDigitsForAmount(totalPrice))
               : ""),
       EshopColumnIds.TICKET_PRODUCTS_EDIT: TrinaCell(value: ""),
       EshopColumnIds.TICKET_CONFIRM: TrinaCell(value: ""),
