@@ -268,12 +268,8 @@ const paymentLabels: Record<string, string[]> = {
     "Частково сплачено",
   ],
 };
-function paymentRow(item: Item, locale: string): string {
+function orderIdentity(item: Item, locale: string): string[] {
   const w = paymentLabels[locale] ?? paymentLabels.en;
-  const money = (amount: number, currency: string) =>
-    escape(
-      formatDisplayNumber(amount, locale, { style: "currency", currency }),
-    );
   const order = `${w[0]} ${
     item.orderSymbol || (item.orderId == null ? "?" : "#" + item.orderId)
   }`;
@@ -282,9 +278,22 @@ function paymentRow(item: Item, locale: string): string {
     ? `<a href="${escape(url)}">${escape(order)}</a>`
     : escape(order);
   const customer = [
-    [item.contact?.name, item.contact?.surname].filter(Boolean).join(" "),
-    item.contact?.email,
+    [item.contact?.name, item.contact?.surname].map((v) => v?.trim()).filter(
+      Boolean,
+    ).join(" "),
+    item.contact?.email?.trim(),
   ].filter(Boolean).map(escape).join(" · ");
+  return [heading, customer].filter(Boolean);
+}
+function orderRow(item: Item, locale: string): string {
+  return `<li>${orderIdentity(item, locale).join("<br>")}</li>`;
+}
+function paymentRow(item: Item, locale: string): string {
+  const w = paymentLabels[locale] ?? paymentLabels.en;
+  const money = (amount: number, currency: string) =>
+    escape(
+      formatDisplayNumber(amount, locale, { style: "currency", currency }),
+    );
   const payment = item.payment;
   const state = item.state === "storno"
     ? w[5]
@@ -297,7 +306,10 @@ function paymentRow(item: Item, locale: string): string {
     : item.state === "ordered"
     ? (payment && payment.paid > 0 ? w[14] : w[4])
     : w[6];
-  const lines = [heading, customer, `${escape(w[2])}: ${escape(state)}`];
+  const lines = [
+    ...orderIdentity(item, locale),
+    `${escape(w[2])}: ${escape(state)}`,
+  ];
   if (typeof item.facts.amount === "number" && item.facts.currency) {
     lines.push(
       `${escape(w[item.facts.reassigned ? 12 : 1])}: ${
@@ -452,6 +464,17 @@ export function adminNotificationEmail(
         ].includes(kind)
         ? `<ul>${
           entries.map((item) => paymentRow(item, context.locale)).join("")
+        }</ul>`
+        : [
+            "order_created",
+            "order_cancelled",
+            "waitlist_registered",
+            "offer_accepted",
+            "offer_declined",
+            "offer_expired",
+          ].includes(kind)
+        ? `<ul>${
+          entries.map((item) => orderRow(item, context.locale)).join("")
         }</ul>`
         : "";
       return `<li>${

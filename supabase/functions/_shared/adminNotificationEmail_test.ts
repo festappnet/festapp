@@ -339,3 +339,67 @@ Deno.test("payment rows identify each order, escape contacts and distinguish dep
     "Přiřazená částka",
   );
 });
+
+Deno.test("every order activity lists its own customer and order link, including email-only and missing contacts", () => {
+  const source = {
+    organizationId: 1,
+    organizationTitle: "vstupenky.online",
+    occasionId: 2,
+    occasionTitle: "Country bál 2026",
+    occasionLink: "country-bal",
+    webLink: "https://a.example.test",
+    orderId: 42,
+  };
+  for (
+    const kind of [
+      "order_created",
+      "order_cancelled",
+      "waitlist_registered",
+      "offer_accepted",
+      "offer_declined",
+      "offer_expired",
+    ]
+  ) {
+    const item = {
+      ...source,
+      key: kind,
+      kind,
+      orderSymbol: "ABC123",
+      contact: {
+        name: " <Jana> ",
+        surname: "Nováková",
+        email: "jana@example.test",
+      },
+      facts: { count: 1 },
+      sources: [source],
+    };
+    const html = adminNotificationEmail({
+      locale: "cs",
+      address: "admin@example.test",
+      fingerprint: "f",
+      items: [item, {
+        ...item,
+        key: kind + "2",
+        orderId: 43,
+        orderSymbol: "XYZ789",
+        contact: { email: "other@example.test" },
+      }, {
+        ...item,
+        key: kind + "3",
+        orderId: 44,
+        orderSymbol: undefined,
+        contact: {},
+      }],
+    }, "sender@example.test").html;
+    assertStringIncludes(
+      html,
+      "Objednávka ABC123</a><br>&lt;Jana&gt; Nováková · jana@example.test",
+    );
+    assertStringIncludes(html, "Objednávka XYZ789</a><br>other@example.test");
+    assertStringIncludes(html, "Objednávka #44</a>");
+    assertStringIncludes(html, "orderId=43");
+    assertEquals(html.includes("<Jana>"), false);
+    assertEquals(html.includes("Platební údaje nejsou dostupné"), false);
+    assertEquals(html.includes("undefined"), false);
+  }
+});

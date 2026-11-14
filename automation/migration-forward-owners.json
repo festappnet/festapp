@@ -273,7 +273,8 @@
       "sources": [
         "notification_center/email_context.sql"
       ],
-      "active": true
+      "sha256": "9d5e32105c8fccb6accdde8fe3371e29aff895ffeabed9cdd6ada11886cf68a3",
+      "checkSources": true
     },
     {
       "migration": "20261114120000_integration_webhooks.sql",
@@ -292,6 +293,14 @@
       "sources": [
         "others/get_ticket_layout_write_contract_v1.sql"
       ]
+    },
+    {
+      "migration": "20261114140000_admin_order_digest_contacts.sql",
+      "header": "-- Authorized customer identity for every order activity in administration digests.",
+      "sources": [
+        "notification_center/email_context.sql"
+      ],
+      "active": true
     }
   ]
 }

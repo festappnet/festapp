@@ -23,12 +23,16 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   SELECT x.e,public.notification_center_event_facts_internal(x.e) facts
   FROM (SELECT DISTINCT ON ((s.e).id) s.e FROM eligible s ORDER BY (s.e).id) x),
  -- Contacts are delivery-only and read after current recipient authorization.
- payment_orders AS MATERIALIZED(
+ order_details AS MATERIALIZED(
   SELECT DISTINCT o.* FROM eligible s
   JOIN eshop.orders o ON o.id=CASE WHEN (s.e).data->>'orderId' ~ '^[0-9]{1,18}$' THEN ((s.e).data->>'orderId')::bigint END
    AND o.occasion=(s.e).occasion
   JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=s.organization
-  WHERE (s.e).kind IN ('order_payment_received','payment_problem')),
+  WHERE public.notification_center_order_activity_internal((s.e).kind)),
+ payment_orders AS MATERIALIZED(
+  SELECT o.* FROM order_details o WHERE EXISTS(SELECT 1 FROM eligible s
+   WHERE (s.e).kind IN ('order_payment_received','payment_problem') AND (s.e).occasion=o.occasion
+    AND (s.e).data->>'orderId'=o.id::text)),
  payment_totals AS MATERIALIZED(
   SELECT t.* FROM public.payment_financial_totals_bulk_internal(ARRAY(SELECT DISTINCT payment_info FROM payment_orders WHERE payment_info IS NOT NULL)) t),
  payment_details AS MATERIALIZED(
@@ -39,7 +43,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
     'total',o.price,'paid',t.net_received,'remaining',greatest(o.price-t.net_received,0),
     'overpaid',greatest(t.net_received-o.price,0),'currency',o.currency_code,
     'deposit',pi.deposit_amount) ELSE NULL END) value
-  FROM payment_orders o LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info
+  FROM order_details o LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info
   LEFT JOIN payment_totals t ON t.payment_id=pi.id),
  metadata AS MATERIALIZED(
   SELECT (x.e).organization organization,(x.e).occasion occasion,public.notification_center_event_display_internal(x.e) display

@@ -57,4 +57,41 @@ BEGIN
  context:=public.notification_center_email_context_internal(dispatch,u);
  PERFORM assert_eq(jsonb_array_length(context->'items'),0,'revoked order permission removes private data');
 END $$;
+-- Non-payment activity uses the same authorized, live order identity.
+DO $$
+DECLARE org bigint; oc bigint; oid bigint; u uuid:=gen_random_uuid(); dispatch uuid;
+ context jsonb; item jsonb; fingerprint text;
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Spolek') RETURNING id INTO org;
+ INSERT INTO auth.users(id) VALUES(u);
+ INSERT INTO public.user_info(id,organization,email_delivery) VALUES(u,org,'admin@example.test');
+ INSERT INTO public.notification_center_organizations(organization,initialized_at) VALUES(org,now()-interval '1 day');
+ PERFORM public.activate_notification_center_emails(org);
+ INSERT INTO public.occasions(organization,title,link,start_time,end_time)
+ VALUES(org,'Country bál',gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+ INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(oc,u,true);
+ PERFORM set_config('request.jwt.claim.sub',u::text,true);
+ PERFORM public.save_notification_center_email_settings(org,NULL,0,false,'cs','{"order_created":true,"order_cancelled":true,"waitlist_registered":true}');
+ INSERT INTO eshop.orders(occasion,state,order_symbol,order_sequence,data)
+ VALUES(oc,'ordered',public.generate_order_symbol(),1,'{"name":" Jana ","surname":"Nováková","email":" jana@example.test "}') RETURNING id INTO oid;
+ PERFORM public.notification_center_order_internal(oid,'order_created','new',NULL);
+ PERFORM public.notification_center_order_internal(oid,'order_cancelled','cancelled',NULL);
+ PERFORM public.notification_center_order_internal(oid,'waitlist_registered','waiting',NULL);
+ PERFORM public.project_notification_center(500); PERFORM public.collect_notification_center_emails(100);
+ SELECT id INTO STRICT dispatch FROM public.notification_center_email_dispatches WHERE recipient=u AND state='collecting';
+ context:=public.notification_center_email_context_internal(dispatch,u);
+ PERFORM assert_eq(jsonb_array_length(context->'items'),3,'all order activity receives identity without payment info');
+ FOR item IN SELECT value FROM jsonb_array_elements(context->'items') LOOP
+  PERFORM assert_eq(item#>>'{contact,name}','Jana','live name for every order kind');
+  PERFORM assert_eq(item#>>'{contact,email}','jana@example.test','live trimmed email for every order kind');
+  PERFORM assert_eq(item->>'orderSymbol',(SELECT order_symbol FROM eshop.orders WHERE id=oid),'same canonical order identity');
+ END LOOP;
+ fingerprint:=context->>'fingerprint';
+ UPDATE eshop.orders SET data='{"email":"corrected@example.test"}' WHERE id=oid;
+ context:=public.notification_center_email_context_internal(dispatch,u);
+ PERFORM assert_true(context->>'fingerprint'<>fingerprint,'contact change invalidates non-payment prepared content');
+ UPDATE public.occasion_users SET is_editor_order_view=false WHERE occasion=oc AND "user"=u;
+ context:=public.notification_center_email_context_internal(dispatch,u);
+ PERFORM assert_eq(jsonb_array_length(context->'items'),0,'revoked access removes non-payment identities');
+END $$;
 ROLLBACK;
