@@ -449,6 +449,20 @@ Review status, stage, and commit.
 Stage only the files belonging to the change. Agents follow `AGENTS.md` and the
 user's explicit commit and publication scope.
 
+Changes adding at least 10,000 text lines require a concrete explanation,
+including ordinary source, tests, lockfiles and documentation. Explain the
+purpose, affected files and why a smaller change is insufficient in a
+`Large-change-reason:` commit trailer (at least 80 characters). The
+`server-policy` job checks both individual commits and the complete push/PR,
+including additions deleted again within the same change. Agents must also
+explain this growth to the user before publication. This records justification;
+it does not replace human review or establish that the explanation is correct.
+
+Run `python3 automation/check_repository_growth.py --base <base-sha>` locally
+against committed changes. There are no path exemptions for large text files;
+binary files have no line count. The existing API artifact prohibition remains
+unconditional.
+
 ```bash
 git status
 git add path/to/changed-files

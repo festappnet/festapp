@@ -13,6 +13,8 @@ import yaml
 import run as runner
 
 ROOT=Path(__file__).resolve().parents[2]
+GROWTH_GUARD = ('python3 -m unittest automation.tests.test_repository_growth\n'
+                'python3 automation/check_repository_growth.py')
 
 
 class MirrorContractTest(unittest.TestCase):
@@ -33,9 +35,13 @@ class MirrorContractTest(unittest.TestCase):
                 self.assertIn('!github.event.pull_request.draft', job['if'])
                 steps = job['steps']
                 self.assertEqual(steps[0]['with']['fetch-depth'], 0)
-                self.assertEqual(steps[1]['id'], 'selection')
+                selection_index = 2 if name == 'server-policy' else 1
+                if name == 'server-policy':
+                    self.assertEqual(steps[1]['run'].strip(), GROWTH_GUARD)
+                    self.assertNotIn('if', steps[1])
+                self.assertEqual(steps[selection_index]['id'], 'selection')
                 self.assertEqual(steps[-2]['name'], 'All lane tests executed')
-                for step in steps[2:]:
+                for step in steps[selection_index + 1:]:
                     if step.get('uses', '').startswith('actions/upload-artifact@'):
                         self.assertEqual(step['if'], 'always()')
                         continue
@@ -50,7 +56,8 @@ class MirrorContractTest(unittest.TestCase):
             commands=[step['run'].strip() for step in steps if 'run' in step]
             self.assertIn('python3 automation/ci/run.py lane '+name,commands)
             for command in commands:
-                self.assertTrue(command=='python3 automation/ci/run.py lane '+name or any(marker in command for marker in
+                self.assertTrue(command=='python3 automation/ci/run.py lane '+name or
+                    (name == 'server-policy' and command == GROWTH_GUARD) or any(marker in command for marker in
                     ('automation/ci/selection.py ',"echo 'All lane tests executed'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]

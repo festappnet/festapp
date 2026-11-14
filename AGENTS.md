@@ -16,6 +16,19 @@ repository.
   when its overview avoids reading a large file. Do not initialize it solely
   because it is available. If selected, read its initial instructions once.
 
+## Explain large additions before publication
+
+- Before publishing a change adding 10,000 or more text lines, explain the
+  added line count, affected files, purpose and smaller alternatives to the
+  user. This applies to ordinary code, tests, dependencies, documentation and
+  generated files throughout the repository. Do not hide growth by splitting
+  a publication into smaller commits.
+- Record the concrete explanation in a `Large-change-reason:` commit trailer
+  of at least 80 characters. Each individual commit adding 10,000 lines also
+  needs its own explanation. Prefer removing unnecessary additions over
+  recording a generic waiver. The `server-policy` CI job enforces this check
+  on every run, before any cached test result can be reused.
+
 ## Tenant branch and Flutter build scope
 
 - By default, work on `main` and at most one currently selected tenant or
