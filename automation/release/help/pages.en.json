@@ -139,6 +139,16 @@
     "preview": "en/embed/01-generated-code"
   },
   {
+    "id": "webhooks",
+    "category": "integrations",
+    "slug": "webhooks",
+    "title": "Set up webhooks for new orders",
+    "seoTitle": "Webhooks: connect orders to your own application",
+    "description": "Subscribe to new orders, verify message signatures and test delivery. A developer guide with a generated API reference and receiver example.",
+    "label": "Webhooks and custom applications",
+    "preview": "en/forms/editor"
+  },
+  {
     "id": "orders",
     "category": "orders",
     "slug": "orders",

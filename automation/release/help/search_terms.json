@@ -155,6 +155,15 @@
       "MCP možnosti",
       "prompty",
       "oprávnění agenta"
+    ],
+    "webhooks": [
+      "webhook",
+      "webhooky",
+      "API",
+      "nová objednávka",
+      "automatizace",
+      "podpis zprávy",
+      "vlastní aplikace"
     ]
   },
   "en": {
@@ -293,6 +302,14 @@
       "MCP capabilities",
       "prompts",
       "agent permissions"
+    ],
+    "webhooks": [
+      "webhook",
+      "API",
+      "new order",
+      "automation",
+      "message signature",
+      "custom application"
     ]
   }
 }

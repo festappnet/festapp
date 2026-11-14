@@ -61,6 +61,10 @@ const digest = data => createHash('sha256').update(data).digest('hex').slice(0,1
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const runtime=publicRuntime(root,{builtIndex:arg('--built-index'),entry:'src/marketing/help.js',assetRoot:helpRoot+'assets/'});
 const assets = {...runtime.assets};
+// Ship the runnable source directly so the guide cannot retain a stale copy.
+if (pages.some(page => page.id === 'webhooks')) {
+  assets['webhook-receiver.mjs'] = fs.readFileSync(path.join(root,'tools/festapp/examples/webhook-receiver.mjs'));
+}
 if(preview && locale==='en')for(const[name,source]of Object.entries({
  'brand-logo.svg':'header-dark','brand-logo-light.svg':'header',
  'brand-symbol.svg':'symbol-dark','brand-wordmark.svg':'wordmark-dark','brand-wordmark-stacked.svg':'wordmark-dark',

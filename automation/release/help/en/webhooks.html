@@ -1,0 +1,39 @@
+<p class="lead">A webhook sends your application a message when an order is created, so you can update your own records or start further processing without repeatedly fetching orders.</p>
+<p>This guide is for your integration developer. Order creation does not mean payment. The current events are <code>net.festapp.order.created.v1</code> and the synthetic test event <code>net.festapp.webhook.test.v1</code>.</p>
+
+<h2 id="reference">Technical reference and availability</h2>
+<p><a href="{{API_REFERENCE}}" target="_blank" rel="noopener noreferrer">Open the automatically generated API reference</a>. The <code>webhooks.*</code> operations manage subscriptions; the <strong>Webhooks</strong> section describes messages sent to your server. Machine-readable schemas are available as <a href="{{API_OPENAPI}}" target="_blank" rel="noopener noreferrer">OpenAPI JSON</a>. Schemas come from the same definitions that validate outgoing data.</p>
+<p>Documentation alone does not confirm that webhooks are enabled for your connection. Ask your integration administrator to verify availability and register an API client with the <code>operator</code> profile, the required <code>webhooks.*</code> operations and scopes. An ordinary Make order-summary connection does not provide this access.</p>
+
+<h2 id="prepare">1. Prepare your connection and receiver</h2>
+<p>Follow the reference's OAuth flow, sign in and consent to access for the selected event. The client needs <code>festapp:ticket-layouts:read</code>, <code>festapp:orders:read</code>, <code>festapp:webhooks:read</code> and <code>festapp:webhooks:write</code>. You also need current order-management permissions for that event. Request authentication follows the client registration; the linked reference describes the DPoP profile.</p>
+<p>Prepare a public HTTPS endpoint on port 443, such as <code>https://your-service.example/webhooks/festapp</code>. Redirects and local or internal destinations are unsupported. Agree on the event, optional form, destination and handling of disclosed personal data before creating a subscription.</p>
+
+<h2 id="create">2. Create a subscription</h2>
+<p>Send an authenticated <code>POST /operations/webhooks.create</code> to the API base address in the reference. This example represents the Willow Hall Ball form. Replace the event and form IDs and generate your own <code>commandId</code> UUID.</p>
+<div class="help-code-example" data-code-example><pre><code tabindex="0">{
+  "occasionId": 7,
+  "formId": 12,
+  "commandId": "11111111-1111-4111-8111-111111111111",
+  "expectedContractVersion": 1,
+  "eventTypes": ["net.festapp.order.created.v1"],
+  "url": "https://your-service.example/webhooks/festapp"
+}</code></pre><button class="button primary" type="button" data-copy-code>Copy</button><p role="status" aria-live="polite"></p></div>
+<p>Omit <code>formId</code> to cover the selected event's forms. Save <code>data.subscription.id</code>, <code>version</code>, <code>expiresAt</code> and <code>data.signingSecret</code> from the response. Keep the signing secret in protected storage, outside chats and logs. It is returned on creation or rotation, including authorized replay of the same command. After an uncertain result, retry the identical body with the same <code>commandId</code>.</p>
+
+<h2 id="receive">3. Verify and durably accept messages</h2>
+<p>Messages use an immutable CloudEvents envelope with <code>id</code>, <code>source</code>, <code>type</code>, <code>subject</code>, <code>time</code> and <code>data</code>. Order data includes identifiers, buyer contacts, responses and individual tickets. Consult the generated reference for complete schemas and required fields. Admission QR symbols and payment credentials are excluded.</p>
+<ol class="steps"><li><h3>Verify the signature over the original body bytes</h3><p>Use <code>webhook-id</code>, <code>webhook-timestamp</code> and <code>webhook-signature</code>. Standard Webhooks signs <code>webhook-id.webhook-timestamp.body</code> using HMAC-SHA256 and the base64-decoded key after <code>whsec_</code>. Check a five-minute timestamp tolerance and compare signatures in constant time. Parse JSON only after verification.</p></li>
+<li><h3>Store the message and prevent duplicate effects</h3><p><code>webhook-id</code> stays stable on retries. The event's <code>source</code> and <code>id</code> together identify the same occurrence across subscriptions. Messages can arrive more than once and ordering is not guaranteed.</p></li>
+<li><h3>Acknowledge acceptance</h3><p>Return 2xx after durable storage and perform business actions asynchronously. The total request timeout is 10 seconds.</p></li></ol>
+<p><a href="{{HELP_ASSETS}}webhook-receiver.mjs" download>Download the Node.js receiver example</a>. Use Node.js 24, supply the existing signing key through the protected <code>FESTAPP_WEBHOOK_SECRET</code> environment variable and run <code>node webhook-receiver.mjs</code>. The example listens on <code>127.0.0.1:8443</code> behind your HTTPS reverse proxy, verifies signatures and stores messages in SQLite before returning 202. Set <code>FESTAPP_WEBHOOK_INBOX</code> to choose the database path. Implement your business processing separately and protect the stored personal data.</p>
+
+<h2 id="test">4. Test the subscription</h2>
+<p>Call <code>webhooks.test</code> with <code>occasionId</code>, <code>subscriptionId</code> and a new <code>commandId</code>. This queues a synthetic event; accepting the command does not prove delivery. Inspect <code>webhooks.deliveries</code> and verify the stored message in your receiver. The test event contains no real order. After successful delivery, verify the complete business flow in a test environment.</p>
+
+<h2 id="manage">Management, retries and troubleshooting</h2>
+<ul><li><strong>Subscriptions and changes:</strong> <code>webhooks.list</code> returns state and version. <code>webhooks.update</code> changes the URL or active/paused state; <code>webhooks.delete</code> ends the subscription. Changes require the current <code>expectedVersion</code>; reload after conflicts. Create another subscription to change scope or event type.</li>
+<li><strong>Failed delivery:</strong> up to 16 attempts run within 72 hours with increasing delays. HTTP 410 disables the subscription; other unsuccessful responses retry. Check DNS, public HTTPS access, certificates, signatures, server time and <code>webhooks.deliveries</code> history.</li>
+<li><strong>Manual redelivery:</strong> <code>webhooks.redeliver</code> starts a new series for a retained completed or exhausted event. Keep deduplication in place. Event data remains available for 7 days; safe delivery metadata for 30 days.</li>
+<li><strong>Key rotation:</strong> <code>webhooks.rotate_secret</code> returns a new secret with a one-hour overlap for the old key. Prepare your receiver to verify the new key and preserve deduplication during replacement.</li>
+<li><strong>Expiry:</strong> monitor the saved <code>expiresAt</code>. A subscription belongs to its original connection and permissions; an ordinary OAuth token refresh does not extend it. Prepare a replacement before expiry. Pausing or creating a new connection does not backfill missed orders.</li></ul>

@@ -189,6 +189,16 @@
     "preview": "cs/ai-agenti/login"
   },
   {
+    "id": "webhooks",
+    "category": "integrations",
+    "slug": "webhooky",
+    "title": "Jak nastavit webhooky pro nové objednávky",
+    "seoTitle": "Webhooky: propojení objednávek s vlastní aplikací",
+    "description": "Nastavte odběr nových objednávek, ověřte podpis zprávy a otestujte doručení. Postup pro vývojáře s generovanou API referencí a příkladem přijímače.",
+    "label": "Webhooky a vlastní aplikace",
+    "preview": "cs/forms/editor"
+  },
+  {
     "id": "orders",
     "category": "orders",
     "slug": "objednavky",
